@@ -248,7 +248,7 @@ function DocSettings:flush(data)
                 ffiutil.fsyncDirectory(sidecar_file)
             end
 
-            self:purge(false, sidecar_file) -- remove old candidates and empty sidecar folders
+            self:purge(sidecar_file) -- remove old candidates and empty sidecar folders
 
             break
         end
@@ -256,7 +256,7 @@ function DocSettings:flush(data)
 end
 
 --- Purges (removes) sidecar directory.
-function DocSettings:purge(full, sidecar_to_keep)
+function DocSettings:purge(sidecar_to_keep)
     -- Remove any of the old ones we may consider as candidates in DocSettings:open()
     if self.candidates then
         for _, t in ipairs(self.candidates) do
@@ -271,20 +271,12 @@ function DocSettings:purge(full, sidecar_to_keep)
         end
     end
 
-    local function purgeDir(dir, full_purge)
-        if lfs.attributes(dir, "mode") == "directory" then
-            if full_purge then
-                -- Asked to remove all the content of this .sdr directory, whether it's ours or not
-                ffiutil.purgeDir(dir)
-            else
-                -- If the sidecar folder ends up empty, os.remove() can delete it.
-                -- Otherwise, the following statement has no effect.
-                os.remove(dir)
-            end
-        end
+    if lfs.attributes(self.doc_sidecar_dir, "mode") == "directory" then
+        os.remove(self.doc_sidecar_dir) -- keep parent folders
     end
-    purgeDir(self.doc_sidecar_dir, full)
-    purgeDir(self.dir_sidecar_dir, full)
+    if lfs.attributes(self.dir_sidecar_dir, "mode") == "directory" then
+        util.removePath(self.dir_sidecar_dir) -- remove empty parent folders
+    end
 end
 
 --- Updates sidecar info for file rename/copy/move/delete operations.
