@@ -526,7 +526,8 @@ end
 
 function Device:ping4(ip)
     -- Try an unprivileged ICMP socket first
-    -- NOTE: On modern distros, this may be disabled, c.f., sysctl net.ipv4.ping_group_range
+    -- NOTE: On modern distros, this may be disabled, c.f., sysctl net.ipv4.ping_group_range.
+    --       It also requires Linux 3.0+ (https://github.com/torvalds/linux/commit/c319b4d76b9e583a5d88d6bf190e079c4e43213d)
     local socket, socket_type
     socket = C.socket(C.AF_INET, bit.bor(C.SOCK_DGRAM, C.SOCK_NONBLOCK, C.SOCK_CLOEXEC), C.IPPROTO_ICMP)
     if socket == -1 then
@@ -536,7 +537,7 @@ function Device:ping4(ip)
         -- Try a raw socket
         socket = C.socket(C.AF_INET, bit.bor(C.SOCK_RAW, C.SOCK_NONBLOCK, C.SOCK_CLOEXEC), C.IPPROTO_ICMP)
         if socket == -1 then
-            local errno = ffi.errno()
+            errno = ffi.errno()
             if errno == C.EPERM then
                 logger.dbg("Device:ping4: Opening a RAW ICMP sockets requires CAP_NET_RAW capabilities!")
             else
@@ -567,8 +568,7 @@ function Device:ping4(ip)
 
     -- Setup the packet
     local packet = ffi.new("char[?]", DEFDATALEN + MAXIPLEN + MAXICMPLEN)
-    local pkt = ffi.new("struct icmp *")
-    pkt = ffi.cast("struct icmp *", packet)
+    local pkt = ffi.cast("struct icmp *", packet)
     pkt.icmp_type = C.ICMP_ECHO
     pkt.icmp_hun.ih_idseq.icd_id = myid
     pkt.icmp_hun.ih_idseq.icd_seq = C.htons(1)
