@@ -531,6 +531,11 @@ local metadata_folder_str = {
     ["dir"] = "koreader/docsettings",
 }
 
+local metadata_folder_help_text = _([[
+Book view settings, reading progress, highlights, bookmarks and notes ("metadata") are stored in a separate folder named <book-name>.sdr.
+
+This sets the location of the sdr folder: the book folder or koreader/docsettings.]])
+
 local function genMetadataFolderMenuItem(value)
     return {
         text = metadata_folder_str[value],
@@ -548,6 +553,7 @@ common_settings.document_metadata_folder = {
         local value = G_reader_settings:readSetting("document_metadata_folder", "doc")
         return T(_("Book metadata folder: %1"), metadata_folder_str[value])
     end,
+    help_text = metadata_folder_help_text,
     sub_item_table = {
         genMetadataFolderMenuItem("doc"),
         genMetadataFolderMenuItem("dir"),
