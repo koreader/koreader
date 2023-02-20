@@ -605,6 +605,27 @@ function FileManager:tapPlus()
                     end
                 },
             },
+            {
+                {
+                    text = _("Move book metadata"),
+                    enabled = actions_enabled,
+                    callback = function()
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Move selected books metadata in accordance with the current 'Book metadata folder' setting?"),
+                            ok_text = _("Move"),
+                            ok_callback = function()
+                                UIManager:close(self.file_dialog)
+                                for file in pairs(self.selected_files) do
+                                    if lfs.attributes(DocSettings:getSidecarFile(file), "mode") ~= "file" then
+                                        DocSettings:update(file, file)
+                                    end
+                                end
+                                self:onToggleSelectMode()
+                            end,
+                        })
+                    end
+                },
+            },
             {}, -- separator
             {
                 {
