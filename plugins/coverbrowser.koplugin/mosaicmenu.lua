@@ -574,27 +574,10 @@ function MosaicMenuItem:update()
                 self.menu.cover_info_cache = {}
             end
             local percent_finished, status
-            local pages = bookinfo.pages
             if DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
-                if self.menu.cover_info_cache[self.filepath] then
-                    pages, percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath]) -- luacheck: no unused
-                else
-                    local docinfo = DocSettings:open(self.filepath)
-                    -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
-                    if docinfo.data.doc_pages then
-                        pages = docinfo.data.doc_pages
-                    elseif docinfo.data.stats and docinfo.data.stats.pages then
-                        if docinfo.data.stats.pages ~= 0 then -- crengine with statistics disabled stores 0
-                            pages = docinfo.data.stats.pages
-                        end
-                    end
-                    if docinfo.data.summary and docinfo.data.summary.status then
-                        status = docinfo.data.summary.status
-                    end
-                    percent_finished = docinfo.data.percent_finished
-                    self.menu.cover_info_cache[self.filepath] = {pages, percent_finished, status}
-                end
+                self.menu:updateCache(self.filepath, nil, true, bookinfo.pages) -- create new cache entry if absent
+                _, percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
             end
             self.percent_finished = percent_finished
             self.status = status

@@ -390,25 +390,8 @@ function ListMenuItem:update()
             local percent_finished, status
             if DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
-                if self.menu.cover_info_cache[self.filepath] then
-                    pages, percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
-                else
-                    local doc_settings = DocSettings:open(self.filepath)
-                    -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
-                    local doc_pages = doc_settings:readSetting("doc_pages")
-                    if doc_pages then
-                        pages = doc_pages
-                    else
-                        local stats = doc_settings:readSetting("stats")
-                        if stats and stats.pages and stats.pages ~= 0 then -- crengine with statistics disabled stores 0
-                            pages = stats.pages
-                        end
-                    end
-                    percent_finished = doc_settings:readSetting("percent_finished")
-                    local summary = doc_settings:readSetting("summary")
-                    status = summary and summary.status
-                    self.menu.cover_info_cache[self.filepath] = {pages, percent_finished, status}
-                end
+                self.menu:updateCache(self.filepath, nil, true, pages) -- create new cache entry if absent
+                pages, percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
             end
             if status == "complete" or status == "abandoned" then
                 -- Display these instead of the read %
