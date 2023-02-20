@@ -225,7 +225,7 @@ return {
     _o_el = {
         "ο",
         northeast = "ὀ",
-        northwest = "ὁ",        
+        northwest = "ὁ",
         north = "o", -- English o
         east = "ό",
         west = "ὸ",
