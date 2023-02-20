@@ -526,7 +526,7 @@ end
 
 function Device:ping4(ip)
     -- Try an unprivileged ICMP socket first
-    -- NOTE: On modern distros, this may be disabled, c.f., sysctl net.ipv4.ping_group_range.
+    -- NOTE: This may be disabled, c.f., sysctl net.ipv4.ping_group_range
     --       It also requires Linux 3.0+ (https://github.com/torvalds/linux/commit/c319b4d76b9e583a5d88d6bf190e079c4e43213d)
     local socket, socket_type
     socket = C.socket(C.AF_INET, bit.bor(C.SOCK_DGRAM, C.SOCK_NONBLOCK, C.SOCK_CLOEXEC), C.IPPROTO_ICMP)
