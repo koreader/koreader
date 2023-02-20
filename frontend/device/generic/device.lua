@@ -841,11 +841,13 @@ function Device:retrieveNetworkInfo()
     if default_gw then
         local ok, rtt = self:ping4(default_gw)
         if ok then
-            table.insert(results, T(_("Gateway ping successful (RTT: %1ms)"), time.to_ms(rtt)))
+            local rtt = string.format("%.3f", rtt * 1/1000) -- i.e., time.to_ms w/o flooring
+            table.insert(results, T(_("Gateway ping successful (RTT: %1 ms)"), rtt))
         else
             table.insert(results, _("Gateway ping FAILED"))
             if rtt then
-                table.insert(results, T(_("Timed out after %1s"), time.to_s(rtt)))
+                local rtt = string.format("%.1f", time.to_s(rtt))
+                table.insert(results, T(_("Timed out after %1 s"), rtt))
             end
         end
     else
