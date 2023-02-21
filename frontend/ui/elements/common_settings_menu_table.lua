@@ -532,7 +532,7 @@ local metadata_folder_str = {
 }
 
 local metadata_folder_help_text = _([[
-Book view settings, reading progress, highlights, bookmarks and notes ("metadata") are stored in a separate folder named <book-name>.sdr.
+Book view settings, reading progress, highlights, bookmarks and notes (collectively known as metadata) are stored in a separate folder named <book-name>.sdr.
 
 This sets the location of the sdr folder: the book folder or koreader/docsettings.]])
 
