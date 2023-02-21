@@ -540,9 +540,9 @@ function Device:ping4(ip)
         if socket == -1 then
             errno = ffi.errno()
             if errno == C.EPERM then
-                logger.dbg("Device:ping4: Opening a RAW ICMP socket requires CAP_NET_RAW capabilities!")
+                logger.dbg("Device:ping4: opening a RAW ICMP socket requires CAP_NET_RAW capabilities!")
             else
-                logger.dbg("Device:ping4: Raw ICMP socket:", ffi.string(C.strerror(errno)))
+                logger.dbg("Device:ping4: raw ICMP socket:", ffi.string(C.strerror(errno)))
             end
             --- Fall-back to the ping CLI tool, in the hope that it's setuid...
             if self:isKindle() and self:hasDPad() then
@@ -841,9 +841,11 @@ function Device:retrieveNetworkInfo()
     if default_gw then
         local ok, rtt = self:ping4(default_gw)
         if ok then
-            rtt = string.format("%.3f", rtt * 1/1000) -- i.e., time.to_ms w/o flooring
             table.insert(results, _("Gateway ping successful"))
-            table.insert(results, T(_("RTT: %1 ms"), rtt))
+            if rtt then
+                rtt = string.format("%.3f", rtt * 1/1000) -- i.e., time.to_ms w/o flooring
+                table.insert(results, T(_("RTT: %1 ms"), rtt))
+            end
         else
             table.insert(results, _("Gateway ping FAILED"))
             if rtt then
