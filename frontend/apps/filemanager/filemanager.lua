@@ -611,7 +611,7 @@ function FileManager:tapPlus()
                     enabled = actions_enabled,
                     callback = function()
                         UIManager:show(ConfirmBox:new{
-                            text = _("Move selected books metadata in accordance with the current 'Book metadata folder' setting?"),
+                            text = _("Move selected book metadata in accordance with the current 'Book metadata folder' setting?"),
                             ok_text = _("Move"),
                             ok_callback = function()
                                 UIManager:close(self.file_dialog)
