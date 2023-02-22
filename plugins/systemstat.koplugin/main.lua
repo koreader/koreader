@@ -55,18 +55,18 @@ end
 function SystemStat:appendCounters()
     self:put({
         _("KOReader started at"),
-        datetime.secondsToDateTime(time.to_s(self.start_time, nil, true))
+        datetime.secondsToDateTime(time.to_s(self.start_time), nil, true)
     })
     if self.suspend_time then
        self:put({
            "  " .. _("Last suspend time"),
-           datetime.secondsToDateTime(time.to_s(self.suspend_time, nil, true))
+           datetime.secondsToDateTime(time.to_s(self.suspend_time), nil, true)
         })
     end
     if self.resume_time then
         self:put({
             "  " .. _("Last resume time"),
-           datetime.secondsToDateTime(time.to_s(self.resume_time, nil, true))
+           datetime.secondsToDateTime(time.to_s(self.resume_time), nil, true)
         })
     end
     local uptime = time.boottime_or_realtime_coarse() - self.start_monotonic_time
