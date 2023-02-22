@@ -113,7 +113,7 @@ end
 ---- @bool withoutSeconds if true 1h30', if false 1h30'10"
 ---- @bool hmsFormat, if true format 1h 30m 10s
 ---- @bool withDays, if true format 1d12h30'10" or 1d 12h 30m 10s
----- @bool compact, if set removes all leading zeros (incl. units if necessary) and makes spaces hairline (if present)
+---- @bool compact, if set removes all leading zeros (incl. units if necessary) and turns thinspaces into hairspaces (if present)
 ---- @treturn string clock string in the form of 1h30'10" or 1h 30m 10s
 function datetime.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, compact)
     local SECONDS_SYMBOL = "\""
@@ -199,7 +199,7 @@ end
 ---- @string Either "modern" for 1h30'10", "letters" for 1h 30m 10s, or "classic" for 1:30:10
 ---- @bool withoutSeconds if true 1h30' or 1h 30m, if false 1h30'10" or 1h 30m 10s
 ---- @bool withDays, if hours>=24 include days in clock string 1d12h10'10" or 1d 12h 10m 10s
----- @bool compact, if set removes all leading zeros (incl. units if necessary) and makes spaces hairline (if present)
+---- @bool compact, if set removes all leading zeros (incl. units if necessary) and turns thinspaces into hairspaces (if present)
 ---- @treturn string clock string in the specific format of 1h30', 1h30'10" resp. 1h 30m, 1h 30m 10s
 function datetime.secondsToClockDuration(format, seconds, withoutSeconds, withDays, compact)
     if format == "modern" then
