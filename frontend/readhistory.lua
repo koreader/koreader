@@ -23,30 +23,14 @@ end
 
 local function buildEntry(input_time, input_file)
     local file_path = realpath(input_file) or input_file -- keep orig file path of deleted files
+    local is_file_deleted = lfs.attributes(file_path, "mode") ~= "file"
     return {
         time = input_time,
         file = file_path,
         text = input_file:gsub(".*/", ""),
-        dim = lfs.attributes(file_path, "mode") ~= "file", -- "dim", as expected by Menu
-        mandatory_func = function() -- Show the last read time
-            local readerui_instance = require("apps/reader/readerui"):_getRunningInstance()
-            local currently_opened_file = readerui_instance and readerui_instance.document and readerui_instance.document.file
-            local last_read_ts
-            if file_path == currently_opened_file then
-                -- Don't use the sidecar file date which is updated regularly while
-                -- reading: keep showing the opening time for the current document.
-                last_read_ts = input_time
-            else
-                -- For past documents, the last save time of the settings is better
-                -- as last read time than input_time (its last opening time, that
-                -- we fallback to if no sidecar file)
-                last_read_ts = DocSettings:getLastSaveTime(file_path) or input_time
-            end
-            return datetime.secondsToDateTime(last_read_ts, G_reader_settings:isTrue("twelve_hour_clock"))
-        end,
-        select_enabled_func = function()
-            return lfs.attributes(file_path, "mode") == "file"
-        end,
+        dim = is_file_deleted,
+        mandatory = datetime.secondsToDateTime(input_time),
+        select_enabled = not is_file_deleted,
         callback = function()
             selectCallback(input_file)
         end,
@@ -225,6 +209,7 @@ function ReadHistory:fileDeleted(path)
             self:removeItem(self.hist[index], index)
         else
             self.hist[index].dim = true
+            self.hist[index].select_enabled = false
             self:ensureLastFile()
         end
     end
@@ -277,9 +262,10 @@ function ReadHistory:addItem(file, ts, no_flash)
         end
         local now = ts or os.time()
         local mtime = lfs.attributes(file, "modification")
-        lfs.touch(file, now, mtime)
-        if index == 1 and not ts then -- last book
+        lfs.touch(file, now, mtime) -- update book access time for sorting by last read date
+        if index == 1 and not ts then -- last book, update access time only
             self.hist[1].time = now
+            self.hist[1].mandatory = datetime.secondsToDateTime(now)
         else -- old or new book
             if index then -- old book
                 table.remove(self.hist, index)
@@ -293,6 +279,14 @@ function ReadHistory:addItem(file, ts, no_flash)
         end
         return true -- used while adding legacy items
     end
+end
+
+--- Updates last book access time on closing the document.
+function ReadHistory:updateLastBookTime()
+    local now = os.time()
+    self.hist[1].time = now
+    self.hist[1].mandatory = datetime.secondsToDateTime(now)
+    self:_flush()
 end
 
 --- Reloads history from history_file and legacy history folder.
