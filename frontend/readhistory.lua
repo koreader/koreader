@@ -254,7 +254,7 @@ end
 
 --- Adds new item (last opened document) to the top of the history list.
 -- If item time (ts) is passed, add item to the history list at this time position.
-function ReadHistory:addItem(file, ts, no_flash)
+function ReadHistory:addItem(file, ts, no_flush)
     if file ~= nil and lfs.attributes(file, "mode") == "file" then
         local index = self:getIndexByFile(realpath(file))
         if ts and index and self.hist[index].time == ts then
@@ -273,7 +273,7 @@ function ReadHistory:addItem(file, ts, no_flash)
             index = ts and self:getIndexByTime(ts, file:gsub(".*/", "")) or 1
             table.insert(self.hist, index, buildEntry(now, file))
         end
-        if not no_flash then
+        if not no_flush then
             self:_reduce()
             self:_flush()
         end
@@ -282,11 +282,13 @@ function ReadHistory:addItem(file, ts, no_flash)
 end
 
 --- Updates last book access time on closing the document.
-function ReadHistory:updateLastBookTime()
+function ReadHistory:updateLastBookTime(no_flush)
     local now = os.time()
     self.hist[1].time = now
     self.hist[1].mandatory = datetime.secondsToDateTime(now)
-    self:_flush()
+    if not no_flush then
+        self:_flush()
+    end
 end
 
 --- Reloads history from history_file and legacy history folder.
