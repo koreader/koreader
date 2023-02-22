@@ -786,6 +786,7 @@ function ReaderUI:onClose(full_refresh)
         self:saveSettings()
     end
     if self.document ~= nil then
+        require("readhistory"):updateLastBookTime()
         -- Serialize the most recently displayed page for later launch
         DocCache:serialize(self.document.file)
         logger.dbg("closing document")
