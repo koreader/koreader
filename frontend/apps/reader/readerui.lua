@@ -608,6 +608,9 @@ function ReaderUI:showReaderCoroutine(file, provider, seamless)
         if err ~= nil or ok == false then
             io.stderr:write('[!] doShowReader coroutine crashed:\n')
             io.stderr:write(debug.traceback(co, err, 1))
+            -- Restore input if we crashed before ReaderUI has restored it
+            Device:setIgnoreInput(false)
+            Input:inhibitInputUntil(0.2)
             UIManager:show(InfoMessage:new{
                 text = _("No reader engine for this file or invalid file.")
             })
@@ -617,6 +620,9 @@ function ReaderUI:showReaderCoroutine(file, provider, seamless)
 end
 
 function ReaderUI:doShowReader(file, provider, seamless)
+    if seamless then
+        UIManager:avoidFlashOnNextRepaint()
+    end
     logger.info("opening file", file)
     -- Only keep a single instance running
     if ReaderUI.instance then
