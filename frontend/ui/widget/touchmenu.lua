@@ -569,7 +569,7 @@ function TouchMenu:init()
         text_font_bold = false,
         callback = function()
             UIManager:show(InfoMessage:new{
-                text = datetime.secondsToDateTime(os.time(), G_reader_settings:isTrue("twelve_hour_clock"), true),
+                text = datetime.secondsToDateTime(nil, nil, true),
             })
         end,
         hold_callback = function()
