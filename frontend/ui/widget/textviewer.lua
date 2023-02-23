@@ -64,6 +64,7 @@ local TextViewer = InputContainer:extend{
     add_default_buttons = nil,
     default_hold_callback = nil, -- on each default button
     find_centered_lines_count = 5, -- line with find results to be not far from the center
+    start_at_end = nil, -- start viewing at the end
 }
 
 function TextViewer:init()
@@ -279,6 +280,10 @@ function TextViewer:init()
         dimen = self.region,
         self.movable,
     }
+
+    if self.start_at_end then
+        self.scroll_text_w:scrollToBottom()
+    end
 end
 
 function TextViewer:onCloseWidget()
