@@ -37,6 +37,7 @@ local order = {
     },
     document = {
         "document_metadata_folder",
+        "document_metadata_folder_move",
         "document_auto_save",
         "document_save",
         "document_end_action",
