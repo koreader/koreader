@@ -295,6 +295,9 @@ end
 ---- @treturn string date+time
 function datetime.secondsToDateTime(seconds, twelve_hour_clock, use_locale)
     seconds = seconds or os.time()
+    if twelve_hour_clock == nil then
+        twelve_hour_clock = G_reader_settings:isTrue("twelve_hour_clock")
+    end
     local BD = require("ui/bidi")
     local date_string = datetime.secondsToDate(seconds, use_locale)
     local time_string = datetime.secondsToHour(seconds, twelve_hour_clock, not use_locale)
