@@ -48,6 +48,9 @@ local SOURCE_ALL = SOURCE_BOTTOM_MENU +
                    SOURCE_DISPATCHER +
                    SOURCE_OTHER
 
+-- Maximum number of saved message text
+local MAX_NB_PAST_MESSAGES = 20
+
 local Notification = InputContainer:extend{
     face = Font:getFace("x_smallinfofont"),
     text = _("N/A"),
@@ -73,6 +76,7 @@ local Notification = InputContainer:extend{
     SOURCE_SOME = SOURCE_SOME,
     SOURCE_DEFAULT = SOURCE_DEFAULT,
     SOURCE_ALL = SOURCE_ALL,
+    _past_messages = {}, -- a static class member to store the N last messages text
 }
 
 function Notification:init()
@@ -164,6 +168,10 @@ function Notification:notify(arg, source, refresh_after)
     return false
 end
 
+function Notification:getPastMessages()
+    return self._past_messages
+end
+
 function Notification:_cleanShownStack()
     -- Clean stack of shown notifications
     if self._shown_idx then
@@ -204,9 +212,14 @@ function Notification:onShow()
     if self.timeout then
         UIManager:scheduleIn(self.timeout, function() UIManager:close(self) end)
     end
+
+    if #self._past_messages >= MAX_NB_PAST_MESSAGES then
+        table.remove(self._past_messages, 1)
+    end
+    table.insert(self._past_messages, self.text)
+
     return true
 end
-
 
 function Notification:onTapClose()
     if self.toast then return end -- should not happen
