@@ -184,12 +184,12 @@ function Exporter:exportClippings(clippings)
                     local status = v:export(exportables)
                     if status then
                         if v.is_remote then
-                            table.insert(statuses, _(v.name .. ": Exported successfully."))
+                            table.insert(statuses, T(_("%1: Exported successfully."), v.name))
                         else
-                            table.insert(statuses, _(v.name .. ": Exported to " ) .. v:getFilePath(exportables))
+                            table.insert(statuses, T(_("%1: Exported to %2."), v.name, v:getFilePath(exportables)))
                         end
                     else
-                        table.insert(statuses, _(v.name .. ": Failed to export."))
+                        table.insert(statuses, T(_("%1: Failed to export."), v.name))
                     end
                     v.timestamp = nil
                 end
@@ -218,7 +218,7 @@ function Exporter:addToMainMenu(menu_items)
     for k, v in pairs(self.targets) do
         submenu[#submenu + 1] = v:getMenuTable()
         if v.shareable then
-            sharemenu[#sharemenu + 1] = { text = _("Share as " .. v.name), callback = function()
+            sharemenu[#sharemenu + 1] = { text = T(_("Share as %1."), v.name), callback = function()
                 local clippings = self:getDocumentClippings()
                 local document
                 for _, notes in pairs(clippings) do
