@@ -838,7 +838,7 @@ function FileManagerMenu:moveBookMetadata()
         return books_to_move
     end
     UIManager:show(ConfirmBox:new{
-        text = _("Scan books in the current folder for metadata location?"),
+        text = _("Scan current folder and subfolders for book metadata?"),
         ok_text = _("Scan"),
         ok_callback = function()
             local books_to_move = scanPath()
@@ -846,12 +846,14 @@ function FileManagerMenu:moveBookMetadata()
             if books_to_move_nb == 0 then
                 local InfoMessage = require("ui/widget/infomessage")
                 UIManager:show(InfoMessage:new{
-                    text = _("No books with improper metadata location found."),
+                    text = _("No books with metadata out of preferred location found."),
                 })
             else
                 UIManager:show(ConfirmBox:new{
-                    text = T(N_("1 book", "%1 books", books_to_move_nb), books_to_move_nb) ..
-                        _(" with improper metadata location found.\nDo you want to move metadata?"),
+                    text = T(N_("1 book with metadata out of preferred location found.",
+                              "%1 books with metadata out of preferred location found.",
+                              books_to_move_nb), books_to_move_nb) ..
+                              _("\nDo you want to move book metadata to preferred location?"),
                     ok_text = _("Move"),
                     ok_callback = function()
                         UIManager:close(self.menu_container)
