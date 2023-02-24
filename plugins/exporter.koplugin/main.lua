@@ -31,6 +31,7 @@ local MyClipping = require("clip")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local T = require("ffi/util").template
 local logger = require("logger")
 local _ = require("gettext")
 
