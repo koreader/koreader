@@ -21,7 +21,7 @@ describe("Readerui module", function()
         local doc_settings = DocSettings:open(sample_epub)
         assert.are.same(doc_settings.data, {doc_path = sample_epub})
         readerui:saveSettings()
-        assert.are_not.same(readerui.doc_settings.data, {})
+        assert.are_not.same(readerui.doc_settings.data, {doc_path = sample_epub})
         doc_settings = DocSettings:open(sample_epub)
         assert.truthy(doc_settings.data.last_xpointer)
         assert.are.same(doc_settings.data.last_xpointer,
