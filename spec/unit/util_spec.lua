@@ -399,9 +399,7 @@ describe("util module", function()
 
     describe("isEmptyDir()", function()
         it("should return true on empty dir", function()
-            local hist_dir = DataStorage:getHistoryDir()
-            require("libs/libkoreader-lfs").mkdir(hist_dir) -- if absent
-            assert.is_true(util.isEmptyDir(hist_dir)) -- should be empty during unit tests
+            assert.is_true(util.isEmptyDir(DataStorage:getDataDir() .. "/history")) -- should be empty during unit tests
         end)
         it("should return false on non-empty dir", function()
             assert.is_false(util.isEmptyDir(DataStorage:getDataDir())) -- should contain subdirectories
