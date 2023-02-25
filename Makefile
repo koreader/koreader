@@ -393,6 +393,7 @@ androidupdate: all
 		-xr!*clipboard$ \
 		-xr!*data/dict$ \
 		-xr!*data/tessdata$ \
+		-xr!*history$ \
 		-xr!*l10n/templates$ \
 		-xr!*libs$ \
 		-xr!*ota$ \
