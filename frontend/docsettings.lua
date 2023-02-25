@@ -204,6 +204,7 @@ function DocSettings:open(doc_path)
     else
         new.data = {}
     end
+    new.data.doc_path = doc_path
 
     return new
 end
