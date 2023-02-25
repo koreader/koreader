@@ -61,6 +61,7 @@ describe("ReadHistory module", function()
         reload = function() return package.reload("readhistory") end
         lfs = require("libs/libkoreader-lfs")
 
+        mkdir(DataStorage:getHistoryDir())
         mkdir(joinPath(DataStorage:getDataDir(), "testdata"))
     end)
 
@@ -86,7 +87,6 @@ describe("ReadHistory module", function()
     end)
 
     it("should order legacy and history.lua", function()
-        mkdir(DataStorage:getHistoryDir())
         rm(file("history.lua"))
         touch(test_file("a"))
         touch(test_file("b"))
@@ -104,7 +104,6 @@ describe("ReadHistory module", function()
     end)
 
     it("should read legacy history folder", function()
-        mkdir(DataStorage:getHistoryDir())
         rm(file("history.lua"))
         touch(test_file("a"))
         touch(test_file("b"))
