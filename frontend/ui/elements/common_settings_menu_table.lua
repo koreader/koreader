@@ -557,15 +557,16 @@ common_settings.document_metadata_location = {
     end,
     help_text = metadata_folder_help_text,
     sub_item_table = {
-        genMetadataFolderMenuItem("doc"),
-        genMetadataFolderMenuItem("dir"),
         {
             text = _("About book metadata location"),
             keep_menu_open = true,
             callback = function()
                 UIManager:show(InfoMessage:new{ text = metadata_folder_help_text, })
             end,
+            separator = true,
         },
+        genMetadataFolderMenuItem("doc"),
+        genMetadataFolderMenuItem("dir"),
     },
 }
 
