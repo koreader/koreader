@@ -536,7 +536,7 @@ Book view settings, reading progress, highlights, bookmarks and notes (collectiv
 
 You can decide between two locations where these will be saved:
 - alongside the book file itself (the long time default): these sdr folders will be visible when you browse your library directories with another file browser or from your computer, which may clutter your vision of your library. But this allows you to move them along when you reorganize your library, and also survives any renaming of parent directories. Also, if you perform directory synchronization or backups, your settings will be part of them.
-- all inside koreader/docsettings/: these sdr folders will only be visible and used by KOReader, and won't clutter your vision of your library directories with another file browser or from your computer. But any reorganisation of your library (directories or filename moves and renamings) may result in KOReader not finding your previous settings for these books. These settings won't be part of any synchronisation or backups of your library.]])
+- all inside koreader/docsettings/: these sdr folders will only be visible and used by KOReader, and won't clutter your vision of your library directories with another file browser or from your computer. But any reorganisation of your library (directories or filename moves and renamings) may result in KOReader not finding your previous settings for these books. These settings won't be part of any synchronization or backups of your library.]])
 
 local function genMetadataFolderMenuItem(value)
     return {
