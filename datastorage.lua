@@ -1,4 +1,4 @@
--- need low-level mechnism to detect android to avoid recursive dependency
+-- need low-level mechanism to detect android to avoid recursive dependency
 local isAndroid, android = pcall(require, "android")
 local lfs = require("libs/libkoreader-lfs")
 
@@ -60,13 +60,20 @@ end
 
 local function initDataDir()
     local sub_data_dirs = {
-        "cache", "clipboard",
-        "data", "data/dict", "data/tessdata", "docsettings",
-        "history", "ota", "patches", "plugins",
-        "screenshots", "settings", "styletweaks",
+        "cache",
+        "clipboard",
+        "data",
+        "data/dict",
+        "data/tessdata",
+        "ota",
+        "plugins",
+        "screenshots",
+        "settings",
+        "styletweaks",
     }
+    local datadir = DataStorage:getDataDir()
     for _, dir in ipairs(sub_data_dirs) do
-        local sub_data_dir = string.format("%s/%s", DataStorage:getDataDir(), dir)
+        local sub_data_dir = string.format("%s/%s", datadir, dir)
         if lfs.attributes(sub_data_dir, "mode") ~= "directory" then
             lfs.mkdir(sub_data_dir)
         end
