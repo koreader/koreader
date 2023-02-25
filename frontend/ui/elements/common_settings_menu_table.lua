@@ -528,13 +528,15 @@ common_settings.document = {
 
 local metadata_folder_str = {
     ["doc"] = _("book folder"),
-    ["dir"] = "koreader/docsettings",
+    ["dir"] = "koreader/docsettings/",
 }
 
 local metadata_folder_help_text = _([[
-Book view settings, reading progress, highlights, bookmarks and notes (collectively known as metadata) are stored in a separate folder named <book-name>.sdr.
+Book view settings, reading progress, highlights, bookmarks and notes (collectively known as metadata) are stored in a separate folder named <book-filename>.sdr (".sdr" meaning "sidecar").
 
-This sets the preferred location of the sdr folder: the book folder or koreader/docsettings.]])
+You can decide between two locations where these will be saved:
+- alongside the book file itself (the long time default): these sdr folders will be visible when you browse your library directories with another file browser or from your computer, which may clutter your vision of your library. But this allows you to move them along when you reorganize your library, and also survives any renaming of parent directories. Also, if you do directories synchronisation or backups, your settings will be part of them (which might be what you want, or not).
+- all inside koreader/docsettings/: these sdr folders will only be visible and used by KOReader, and won't clutter your vision of your library directories with another file browser or from your computer. But any reorganisation of your library (directories or filename moves and renamings) may result in KOReader not finding your previous settings for these books. These settings won't be part of any synchronisation or backups of your library.]])
 
 local function genMetadataFolderMenuItem(value)
     return {
@@ -548,7 +550,7 @@ local function genMetadataFolderMenuItem(value)
     }
 end
 
-common_settings.document_metadata_folder = {
+common_settings.document_metadata_location = {
     text_func = function()
         local value = G_reader_settings:readSetting("document_metadata_folder", "doc")
         return T(_("Book metadata location: %1"), metadata_folder_str[value])
@@ -558,7 +560,7 @@ common_settings.document_metadata_folder = {
         genMetadataFolderMenuItem("doc"),
         genMetadataFolderMenuItem("dir"),
         {
-            text = _("About book metadata preferred location"),
+            text = _("About book metadata location"),
             keep_menu_open = true,
             callback = function()
                 UIManager:show(InfoMessage:new{ text = metadata_folder_help_text, })
