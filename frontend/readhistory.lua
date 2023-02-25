@@ -125,7 +125,7 @@ function ReadHistory:_read(force_read)
     end
 end
 
---- Reads history from legacy history folder and clear it iff empty.
+--- Reads history from legacy history folder and remove it iff empty.
 -- Legacy history file is deleted when respective book is opened or deleted.
 function ReadHistory:_readLegacyHistory()
     local history_dir = DataStorage:getHistoryDir()
