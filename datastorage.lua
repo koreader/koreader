@@ -65,7 +65,10 @@ local function initDataDir()
         "data",
         "data/dict",
         "data/tessdata",
+        -- "docsettings", -- created when needed
+        -- "history", -- legacy/obsolete sidecar files
         "ota",
+        -- "patches", -- must be created manually by the interested user
         "plugins",
         "screenshots",
         "settings",
