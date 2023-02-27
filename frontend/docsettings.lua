@@ -98,11 +98,6 @@ function DocSettings:hasSidecarFile(doc_path)
         or lfs.attributes(self:getHistoryPath(doc_path), "mode") == "file"
 end
 
-function DocSettings:getLastSaveTime(doc_path) -- for readhistory
-    return lfs.attributes(self:getSidecarFile(doc_path, "doc"), "modification")
-        or lfs.attributes(self:getSidecarFile(doc_path, "dir"), "modification")
-end
-
 function DocSettings:getHistoryPath(doc_path)
     if doc_path == nil or doc_path == "" then return "" end
     return HISTORY_DIR .. "/[" .. doc_path:gsub("(.*/)([^/]+)", "%1] %2"):gsub("/", "#") .. ".lua"
