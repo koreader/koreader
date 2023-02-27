@@ -1123,7 +1123,7 @@ function UIManager:_refresh(mode, region, dither)
     --       (Putting "ui" in that list is problematic with a number of UI elements, most notably, ReaderHighlight,
     --       because it is implemented as "ui" over the full viewport, since we can't devise a proper bounding box).
     --       So we settle for only "partial", but treating full-screen ones slightly differently.
-    if mode == "partial" and not self.refresh_counted then
+    if mode == "partial" and self.FULL_REFRESH_COUNT > 0 and not self.refresh_counted then
         self.refresh_count = (self.refresh_count + 1) % self.FULL_REFRESH_COUNT
         if self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
             -- NOTE: Promote to "full" if no region (reader), to "flashui" otherwise (UI)
@@ -1288,6 +1288,11 @@ end
 --- Explicitly drain the paint & refresh queues *now*, instead of waiting for the next UI tick.
 function UIManager:forceRePaint()
     self:_repaint()
+end
+
+function UIManager:avoidFlashOnNextRepaint()
+    -- Avoid going through the "partial" to "full" refresh promotion: pretend we already checked that.
+    self.refresh_counted = true
 end
 
 --[[--
