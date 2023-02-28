@@ -41,7 +41,7 @@ function ReaderStatus:onEndOfBook()
         return
     end
 
-    -- Should we start by marking the book as read?
+    -- Should we start by marking the book as finished?
     if G_reader_settings:isTrue("end_document_auto_mark") then
         self:onMarkBook(true)
     end
@@ -142,7 +142,7 @@ function ReaderStatus:onEndOfBook()
     elseif settings == "mark_read" then
         self:onMarkBook(true)
         UIManager:show(InfoMessage:new{
-            text = _("You've reached the end of the document.\nThe current book is marked as read."),
+            text = _("You've reached the end of the document.\nThe current book is marked as finished."),
             timeout = 3
         })
     elseif settings == "book_status_file_browser" then

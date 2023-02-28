@@ -624,7 +624,7 @@ common_settings.document_end_action = {
         },
         genGenericMenuEntry(_("Go to beginning"), "end_document_action", "goto_beginning", nil, true),
         genGenericMenuEntry(_("Return to file browser"), "end_document_action", "file_browser", nil, true),
-        genGenericMenuEntry(_("Mark book as read"), "end_document_action", "mark_read", nil, true),
+        genGenericMenuEntry(_("Mark book as finished"), "end_document_action", "mark_read", nil, true),
         genGenericMenuEntry(_("Book status and return to file browser"), "end_document_action", "book_status_file_browser", nil, true),
     }
 }

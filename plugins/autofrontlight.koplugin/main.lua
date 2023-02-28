@@ -116,13 +116,14 @@ end
 function AutoFrontlightWidget:addToMainMenu(menu_items)
     menu_items.auto_frontlight = {
         text = _("Auto frontlight"),
-        callback = function()
+        callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
                 text = T(_("Auto frontlight detects the brightness of the environment and automatically turn on and off the frontlight.\nFrontlight will be turned off to save battery in bright environment, and turned on in dark environment.\nDo you want to %1 it?"),
                          AutoFrontlight.enabled and _("disable") or _("enable")),
                 ok_text = AutoFrontlight.enabled and _("Disable") or _("Enable"),
                 ok_callback = function()
                     self:flipSetting()
+                    touchmenu_instance:updateItems()
                 end
             })
         end,

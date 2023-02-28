@@ -408,7 +408,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    return T(_("Page labels font size (%1)"), self.label_font_size)
+                    return T(_("Page labels font size: %1"), self.label_font_size)
                 end,
                 enabled_func = function() return self.show_page_labels end,
                 callback = function(touchmenu_instance)
