@@ -2482,7 +2482,9 @@ function ReaderFooter:onSuspend()
     self.progress_bar.inital_percentage = nil
 end
 
-ReaderFooter.onEnterStandby = ReaderFooter.onSuspend
+function ReaderFooter:onEnterStandby()
+    self:unscheduleFooterAutoRefresh()
+end
 
 function ReaderFooter:onCloseDocument()
     self:unscheduleFooterAutoRefresh()
