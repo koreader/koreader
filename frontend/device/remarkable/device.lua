@@ -166,7 +166,7 @@ function Remarkable:init()
     end
     if is_mainline then
         local mt_height = self.mt_height
-        local mainlineInputManging = function(this, ev)
+        local mainlineInputMangling = function(this, ev)
             if ev.type == C.EV_ABS then
                 -- Mirror Y for the touch panel
                 if ev.code == C.ABS_MT_POSITION_Y then
@@ -187,7 +187,7 @@ function Remarkable:init()
                 end
             end
         end
-        self.input:registerEventAdjustHook(mainlineInputManging)
+        self.input:registerEventAdjustHook(mainlineInputMangling)
     else
         self.input:registerEventAdjustHook(adjustAbsEvt)
         self.input:registerEventAdjustHook(self.adjustTouchEvent, {mt_scale_x=scalex, mt_scale_y=scaley})
