@@ -166,7 +166,7 @@ function Remarkable:init()
     end
     if is_mainline then
         local mt_height = self.mt_height
-        local mainlineInputManging = function(self, ev)
+        local mainlineInputManging = function(this, ev)
             if ev.type == C.EV_ABS then
                 -- Mirror Y for the touch panel
                 if ev.code == C.ABS_MT_POSITION_Y then
