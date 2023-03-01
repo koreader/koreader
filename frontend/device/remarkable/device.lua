@@ -158,6 +158,7 @@ function Remarkable:init()
     local std_out = io.popen("uname -r", "r")
     if std_out then
         local release = std_out:read("*line")
+        std_out:close()
         release = release:match("^(%d+%.%d+)%.%d+.*$")
         release = tonumber(release)
         if release and release >= 6.2 then
