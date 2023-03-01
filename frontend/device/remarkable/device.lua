@@ -165,6 +165,10 @@ function Remarkable:init()
         end
     end
     if is_mainline then
+        -- NOTE: The panel sends *both* ABS_MT_ & ABS_ coordinates, while the pen only sends ABS_ coordinates.
+        --       Since we have to apply *different* mangling to each of them,
+        --       we use a custom input handler that'll ignore ABS_ coordinates from the panel...
+        self.input.handleTouchEv = self.input.handleMixedTouchEv
         local mt_height = self.mt_height
         local mainlineInputMangling = function(this, ev)
             if ev.type == C.EV_ABS then
@@ -172,18 +176,12 @@ function Remarkable:init()
                 if ev.code == C.ABS_MT_POSITION_Y then
                     ev.value = mt_height - ev.value
                 -- Handle the Wacom pen
-                --- @fixme: The panel also spits out ABS_X & ABS_Y events...
-                ---         and later than their MT counterpart, so we can't do that here.
-                ---         Assuming the Wacom frames report a tool type,
-                --          this'll probably require a protocol tweak to ingnore non-MT coordinate events for the panel...
-                --[[
                 elseif ev.code == C.ABS_X then
                     ev.code = C.ABS_Y
                     ev.value = (wacom_height - ev.value) * wacom_scale_y
                 elseif ev.code == C.ABS_Y then
                     ev.code = C.ABS_X
                     ev.value = ev.value * wacom_scale_x
-                --]]
                 end
             end
         end
