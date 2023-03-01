@@ -101,7 +101,7 @@ end
 
 function DocSettingTweak:onDocSettingsLoad(doc_settings, document)
     -- check that the documents settings are empty & and that we have defaults to customize
-    if next(doc_settings.data) == nil and directory_defaults.data ~= nil then
+    if util.tableSize(doc_settings.data) == 1 and directory_defaults.data ~= nil then
         local base = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
         if document.file == nil or document.file == "" then
             return
@@ -111,6 +111,7 @@ function DocSettingTweak:onDocSettingsLoad(doc_settings, document)
         while directory:sub(1, #base) == base do
             if directory_defaults:has(directory) then
                 doc_settings.data = util.tableDeepCopy(directory_defaults:readSetting(directory))
+                doc_settings.data.doc_path = document.file
                 break
             else
                 if directory == "/" or directory == "." then

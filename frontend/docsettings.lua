@@ -98,11 +98,6 @@ function DocSettings:hasSidecarFile(doc_path)
         or lfs.attributes(self:getHistoryPath(doc_path), "mode") == "file"
 end
 
-function DocSettings:getLastSaveTime(doc_path) -- for readhistory
-    return lfs.attributes(self:getSidecarFile(doc_path, "doc"), "modification")
-        or lfs.attributes(self:getSidecarFile(doc_path, "dir"), "modification")
-end
-
 function DocSettings:getHistoryPath(doc_path)
     if doc_path == nil or doc_path == "" then return "" end
     return HISTORY_DIR .. "/[" .. doc_path:gsub("(.*/)([^/]+)", "%1] %2"):gsub("/", "#") .. ".lua"
@@ -204,6 +199,7 @@ function DocSettings:open(doc_path)
     else
         new.data = {}
     end
+    new.data.doc_path = doc_path
 
     return new
 end
@@ -248,7 +244,7 @@ function DocSettings:flush(data)
                 ffiutil.fsyncDirectory(sidecar_file)
             end
 
-            self:purge(false, sidecar_file) -- remove old candidates and empty sidecar folders
+            self:purge(sidecar_file) -- remove old candidates and empty sidecar folders
 
             break
         end
@@ -256,7 +252,7 @@ function DocSettings:flush(data)
 end
 
 --- Purges (removes) sidecar directory.
-function DocSettings:purge(full, sidecar_to_keep)
+function DocSettings:purge(sidecar_to_keep)
     -- Remove any of the old ones we may consider as candidates in DocSettings:open()
     if self.candidates then
         for _, t in ipairs(self.candidates) do
@@ -271,20 +267,12 @@ function DocSettings:purge(full, sidecar_to_keep)
         end
     end
 
-    local function purgeDir(dir, full_purge)
-        if lfs.attributes(dir, "mode") == "directory" then
-            if full_purge then
-                -- Asked to remove all the content of this .sdr directory, whether it's ours or not
-                ffiutil.purgeDir(dir)
-            else
-                -- If the sidecar folder ends up empty, os.remove() can delete it.
-                -- Otherwise, the following statement has no effect.
-                os.remove(dir)
-            end
-        end
+    if lfs.attributes(self.doc_sidecar_dir, "mode") == "directory" then
+        os.remove(self.doc_sidecar_dir) -- keep parent folders
     end
-    purgeDir(self.doc_sidecar_dir, full)
-    purgeDir(self.dir_sidecar_dir, full)
+    if lfs.attributes(self.dir_sidecar_dir, "mode") == "directory" then
+        util.removePath(self.dir_sidecar_dir) -- remove empty parent folders
+    end
 end
 
 --- Updates sidecar info for file rename/copy/move/delete operations.
