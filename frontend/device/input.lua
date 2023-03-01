@@ -534,22 +534,26 @@ function Input:handleKeyBoardEv(ev)
         end
     elseif self.wacom_protocol then
         if ev.code == C.BTN_TOOL_PEN then
-            -- Always send pen data to slot 0
-            self:setupSlotData(0)
+            -- Always send pen data to slot 2
+            self:setupSlotData(2)
             if ev.value == 1 then
                 self:setCurrentMtSlot("tool", TOOL_TYPE_PEN)
             else
                 self:setCurrentMtSlot("tool", TOOL_TYPE_FINGER)
             end
         elseif ev.code == C.BTN_TOUCH then
-            -- Much like on snow, use this to detect contact down & lift,
-            -- as ABS_PRESSURE may be entirely omitted from hover events,
-            -- and ABS_DISTANCE is not very clear cut...
-            self:setupSlotData(0)
-            if ev.value == 1 then
-                self:setCurrentMtSlot("id", 0)
-            else
-                self:setCurrentMtSlot("id", -1)
+            local tool = self:getCurrentMtSlotData("tool")
+            -- BTN_TOUCH is bracketed by BTN_TOOL_PEN, so we can limit this to pens, to avoid stomping on panel slots.
+            if tool and tool == TOOL_TYPE_PEN then
+                -- Much like on snow, use this to detect contact down & lift,
+                -- as ABS_PRESSURE may be entirely omitted from hover events,
+                -- and ABS_DISTANCE is not very clear cut...
+                self:setupSlotData(2)
+                if ev.value == 1 then
+                    self:setCurrentMtSlot("id", 2)
+                else
+                    self:setCurrentMtSlot("id", -1)
+                end
             end
         end
     end
