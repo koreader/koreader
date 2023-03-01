@@ -446,7 +446,7 @@ function Button:refresh()
     -- e.g., right after a setText or setIcon is a no-go, as those kill the frame.
     --       (Although, setText, if called with the current width, will conserve the frame).
     if not self[1].dimen then
-        logger.dbg("Button:", self, "attempted a repaint in an unpainted frame!")
+        logger.dbg("Button:", tostring(self), "attempted a repaint in an unpainted frame!")
         return
     end
     UIManager:widgetRepaint(self[1], self[1].dimen.x, self.dimen.y)
