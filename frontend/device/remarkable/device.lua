@@ -114,7 +114,6 @@ local adjustAbsEvt = function(self, ev)
     end
 end
 
-
 function Remarkable:init()
     local oxide_running = os.execute("systemctl is-active --quiet tarnish") == 0
     logger.info(string.format("Oxide running?: %s", oxide_running))
@@ -165,7 +164,31 @@ function Remarkable:init()
             is_mainline = true
         end
     end
-    if not is_mainline then
+    if is_mainline then
+        local mt_height = self.mt_height
+        local mainlineInputManging = function(self, ev)
+            if ev.type == C.EV_ABS then
+                -- Mirror Y for the touch panel
+                if ev.code == C.ABS_MT_POSITION_Y then
+                    ev.value = mt_height - ev.value
+                -- Handle the Wacom pen
+                --- @fixme: The panel also spits out ABS_X & ABS_Y events...
+                ---         and later than their MT counterpart, so we can't do that here.
+                ---         Assuming the Wacom frames report a tool type,
+                --          this'll probably require a protocol tweak to ingnore non-MT coordinate events for the panel...
+                --[[
+                elseif ev.code == C.ABS_X then
+                    ev.code = C.ABS_Y
+                    ev.value = (wacom_height - ev.value) * wacom_scale_y
+                elseif ev.code == C.ABS_Y then
+                    ev.code = C.ABS_X
+                    ev.value = ev.value * wacom_scale_x
+                --]]
+                end
+            end
+        end
+        self.input:registerEventAdjustHook(mainlineInputManging)
+    else
         self.input:registerEventAdjustHook(adjustAbsEvt)
         self.input:registerEventAdjustHook(self.adjustTouchEvent, {mt_scale_x=scalex, mt_scale_y=scaley})
     end
