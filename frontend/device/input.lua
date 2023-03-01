@@ -797,6 +797,49 @@ function Input:handleTouchEv(ev)
     end
 end
 
+-- This is a slightly modified version of the above, tailored to play nice with devices with multiple absolute input devices,
+-- (i.e., screen + pen), where one or both of these send conflicting events that we need to hook... (e.g., rM on mainline).
+function Input:handleMixedTouchEv(ev)
+    if ev.type == C.EV_ABS then
+        if ev.code == C.ABS_MT_SLOT then
+            self:setupSlotData(ev.value)
+        elseif ev.code == C.ABS_MT_TRACKING_ID then
+            self:setCurrentMtSlotChecked("id", ev.value)
+        elseif ev.code == C.ABS_MT_POSITION_X then
+            -- Panel
+            self:setCurrentMtSlotChecked("x", ev.value)
+        elseif ev.code == C.ABS_X then
+            -- Panel + Stylus, but we only want to honor stylus!
+            local tool = self:getCurrentMtSlotData("tool")
+            if tool and tool == TOOL_TYPE_PEN then
+                self:setCurrentMtSlotChecked("x", ev.value)
+            end
+        elseif ev.code == C.ABS_MT_POSITION_Y then
+            self:setCurrentMtSlotChecked("y", ev.value)
+        elseif ev.code == C.ABS_Y then
+            local tool = self:getCurrentMtSlotData("tool")
+            if tool and tool == TOOL_TYPE_PEN then
+                self:setCurrentMtSlotChecked("y", ev.value)
+            end
+        end
+    elseif ev.type == C.EV_SYN then
+        if ev.code == C.SYN_REPORT then
+            for _, MTSlot in ipairs(self.MTSlots) do
+                self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
+            end
+            -- feed ev in all slots to state machine
+            local touch_gestures = self.gesture_detector:feedEvent(self.MTSlots)
+            self:newFrame()
+            local ges_evs = {}
+            for _, touch_ges in ipairs(touch_gestures) do
+                self:gestureAdjustHook(touch_ges)
+                table.insert(ges_evs, Event:new("Gesture", self.gesture_detector:adjustGesCoordinate(touch_ges)))
+            end
+            return ges_evs
+        end
+    end
+end
+
 function Input:handleTouchEvPhoenix(ev)
     -- Hack on handleTouchEV for the Kobo Aura
     -- It seems to be using a custom protocol:
