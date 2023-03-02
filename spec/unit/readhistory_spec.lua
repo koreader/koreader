@@ -92,6 +92,7 @@ describe("ReadHistory module", function()
         local h = reload()
         now = now + 61
         h:addItem(test_file("a"), now)
+        mkdir(DataStorage:getHistoryDir())
         touch(legacy_history_file("b"))
         h = reload()
         assert.is.same(2, #h.hist)
@@ -113,6 +114,7 @@ describe("ReadHistory module", function()
         local h = reload()
         now = now + 61
         h:addItem(test_file("f"), now)
+        mkdir(DataStorage:getHistoryDir())
         touch(legacy_history_file("c"))
         touch(legacy_history_file("b"))
         now = now + 61

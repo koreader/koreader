@@ -42,8 +42,10 @@ require("dbg"):turnOff()
 local logger = require("logger")
 logger:setLevel(logger.levels.warn)
 
--- global defaults
 local DataStorage = require("datastorage")
+require("libs/libkoreader-lfs").mkdir(DataStorage:getHistoryDir()) -- for legacy history tests
+
+-- global defaults
 os.remove(DataStorage:getDataDir() .. "/defaults.tests.lua")
 os.remove(DataStorage:getDataDir() .. "/defaults.tests.lua.old")
 G_defaults = require("luadefaults"):open(DataStorage:getDataDir() .. "/defaults.tests.lua")

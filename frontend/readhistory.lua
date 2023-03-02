@@ -125,10 +125,12 @@ function ReadHistory:_read(force_read)
     end
 end
 
---- Reads history from legacy history folder.
+--- Reads history from legacy history folder and remove it iff empty.
+-- Legacy history file is deleted when respective book is opened or deleted.
 function ReadHistory:_readLegacyHistory()
-    local history_updated
     local history_dir = DataStorage:getHistoryDir()
+    if not lfs.attributes(history_dir) then return end
+    local history_updated
     for f in lfs.dir(history_dir) do
         local legacy_history_file = joinPath(history_dir, f)
         if lfs.attributes(legacy_history_file, "mode") == "file" then
@@ -145,6 +147,7 @@ function ReadHistory:_readLegacyHistory()
         self:_reduce()
         self:_flush()
     end
+    os.remove(history_dir)
 end
 
 function ReadHistory:_init()
