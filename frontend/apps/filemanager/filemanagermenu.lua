@@ -852,7 +852,7 @@ function FileManagerMenu:moveBookMetadata()
                 UIManager:show(ConfirmBox:new{
                     text = T(N_("1 book with metadata not in your preferred location found.",
                               "%1 books with metadata not in your preferred location found.",
-                              books_to_move_nb), books_to_move_nb) .. "\n"
+                              books_to_move_nb), books_to_move_nb) .. "\n" ..
                               _("Move book metadata to your preferred location?"),
                     ok_text = _("Move"),
                     ok_callback = function()
