@@ -775,7 +775,7 @@ function Input:handleTouchEv(ev)
             self:setCurrentMtSlotChecked("x", ev.value)
         elseif ev.code == C.ABS_MT_POSITION_Y or ev.code == C.ABS_Y then
             self:setCurrentMtSlotChecked("y", ev.value)
-        elseif self.pressure_event and ev.code == self.pressure_event and ev.value == 0 then
+        elseif ev.code == self.pressure_event and ev.value == 0 then
             -- Drop hovering *pen* events
             if self:getCurrentMtSlotData("tool") == TOOL_TYPE_PEN then
                 self:setCurrentMtSlot("id", -1)
