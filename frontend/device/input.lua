@@ -542,9 +542,8 @@ function Input:handleKeyBoardEv(ev)
                 self:setCurrentMtSlot("tool", TOOL_TYPE_FINGER)
             end
         elseif ev.code == C.BTN_TOUCH then
-            local tool = self:getCurrentMtSlotData("tool")
             -- BTN_TOUCH is bracketed by BTN_TOOL_PEN, so we can limit this to pens, to avoid stomping on panel slots.
-            if tool and tool == TOOL_TYPE_PEN then
+            if self:getCurrentMtSlotData("tool") == TOOL_TYPE_PEN then
                 -- Much like on snow, use this to detect contact down & lift,
                 -- as ABS_PRESSURE may be entirely omitted from hover events,
                 -- and ABS_DISTANCE is not very clear cut...
@@ -778,8 +777,7 @@ function Input:handleTouchEv(ev)
             self:setCurrentMtSlotChecked("y", ev.value)
         elseif self.pressure_event and ev.code == self.pressure_event and ev.value == 0 then
             -- Drop hovering *pen* events
-            local tool = self:getCurrentMtSlotData("tool")
-            if tool and tool == TOOL_TYPE_PEN then
+            if self:getCurrentMtSlotData("tool") == TOOL_TYPE_PEN then
                 self:setCurrentMtSlot("id", -1)
             end
         end
@@ -814,15 +812,13 @@ function Input:handleMixedTouchEv(ev)
             self:setCurrentMtSlotChecked("x", ev.value)
         elseif ev.code == C.ABS_X then
             -- Panel + Stylus, but we only want to honor stylus!
-            local tool = self:getCurrentMtSlotData("tool")
-            if tool and tool == TOOL_TYPE_PEN then
+            if self:getCurrentMtSlotData("tool") == TOOL_TYPE_PEN then
                 self:setCurrentMtSlotChecked("x", ev.value)
             end
         elseif ev.code == C.ABS_MT_POSITION_Y then
             self:setCurrentMtSlotChecked("y", ev.value)
         elseif ev.code == C.ABS_Y then
-            local tool = self:getCurrentMtSlotData("tool")
-            if tool and tool == TOOL_TYPE_PEN then
+            if self:getCurrentMtSlotData("tool") == TOOL_TYPE_PEN then
                 self:setCurrentMtSlotChecked("y", ev.value)
             end
         end
