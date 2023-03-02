@@ -553,7 +553,7 @@ function CalibreSearch:prompt(message)
             if count == 0 then
                 info_text = _("No calibre libraries were found")
             else
-                info_text = T(_("Found %1 calibre libraries with %2 books:%3"), count, #self.books, paths)
+                info_text = T(_("Found %1 calibre libraries with %2 books:\n%3"), count, #self.books, paths)
             end
             UIManager:show(InfoMessage:new{ text = info_text })
         end,
