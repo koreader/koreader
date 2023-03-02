@@ -59,8 +59,7 @@ local Remarkable1 = Remarkable:extend{
 
 function Remarkable1:adjustTouchEvent(ev, by)
     if ev.type == C.EV_ABS then
-        -- Mirror X and Y and scale up both X & Y as touch input is different res from
-        -- display
+        -- Mirror X and Y and scale up both X & Y as touch input is different res from display
         if ev.code == C.ABS_MT_POSITION_X then
             ev.value = (Remarkable1.mt_width - ev.value) *  by.mt_scale_x
         end
@@ -82,8 +81,7 @@ local Remarkable2 = Remarkable:extend{
 
 function Remarkable2:adjustTouchEvent(ev, by)
     if ev.type == C.EV_ABS then
-        -- Mirror Y and scale up both X & Y as touch input is different res from
-        -- display
+        -- Mirror Y and scale up both X & Y as touch input is different res from display
         if ev.code == C.ABS_MT_POSITION_X then
             ev.value = (ev.value) * by.mt_scale_x
         end
@@ -115,7 +113,6 @@ local adjustAbsEvt = function(self, ev)
         end
     end
 end
-
 
 function Remarkable:init()
     local oxide_running = os.execute("systemctl is-active --quiet tarnish") == 0
@@ -153,8 +150,46 @@ function Remarkable:init()
     local scalex = screen_width / self.mt_width
     local scaley = screen_height / self.mt_height
 
-    self.input:registerEventAdjustHook(adjustAbsEvt)
-    self.input:registerEventAdjustHook(self.adjustTouchEvent, {mt_scale_x=scalex, mt_scale_y=scaley})
+    -- Assume input stuff is saner on mainline kernels...
+    -- (c.f., https://github.com/koreader/koreader/issues/10012)
+    local is_mainline = false
+    --- @fixme: Find a better way to discriminate mainline from stock...
+    local std_out = io.popen("uname -r", "r")
+    if std_out then
+        local release = std_out:read("*line")
+        std_out:close()
+        release = release:match("^(%d+%.%d+)%.%d+.*$")
+        release = tonumber(release)
+        if release and release >= 6.2 then
+            is_mainline = true
+        end
+    end
+    if is_mainline then
+        -- NOTE: The panel sends *both* ABS_MT_ & ABS_ coordinates, while the pen only sends ABS_ coordinates.
+        --       Since we have to apply *different* mangling to each of them,
+        --       we use a custom input handler that'll ignore ABS_ coordinates from the panel...
+        self.input.handleTouchEv = self.input.handleMixedTouchEv
+        local mt_height = self.mt_height
+        local mainlineInputMangling = function(this, ev)
+            if ev.type == C.EV_ABS then
+                -- Mirror Y for the touch panel
+                if ev.code == C.ABS_MT_POSITION_Y then
+                    ev.value = mt_height - ev.value
+                -- Handle the Wacom pen
+                elseif ev.code == C.ABS_X then
+                    ev.code = C.ABS_Y
+                    ev.value = (wacom_height - ev.value) * wacom_scale_y
+                elseif ev.code == C.ABS_Y then
+                    ev.code = C.ABS_X
+                    ev.value = ev.value * wacom_scale_x
+                end
+            end
+        end
+        self.input:registerEventAdjustHook(mainlineInputMangling)
+    else
+        self.input:registerEventAdjustHook(adjustAbsEvt)
+        self.input:registerEventAdjustHook(self.adjustTouchEvent, {mt_scale_x=scalex, mt_scale_y=scaley})
+    end
 
     -- USB plug/unplug, battery charge/not charging are generated as fake events
     self.input.open("fake_events")
