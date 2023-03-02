@@ -507,26 +507,28 @@ function Input:handleKeyBoardEv(ev)
     -- Detect loss of contact for the "snow" protocol...
     -- NOTE: Some ST devices may also behave similarly, but we handle those via ABS_PRESSURE
     if self.snow_protocol then
-        if ev.code == C.BTN_TOUCH and ev.value == 0 then
-            -- Kernel sends it after loss of contact for *all* slots,
-            -- only once the final contact point has been lifted.
-            if #self.MTSlots == 0 then
-                -- Likely, since this is usually in its own event stream,
-                -- meaning self.MTSlots has *just* been cleared by our last EV_SYN:SYN_REPORT handler...
-                -- So, poke at the actual data to find the slots that are currently active (i.e., in the down state),
-                -- and re-populate a minimal self.MTSlots array that simply switches them to the up state ;).
-                for _, slot in pairs(self.ev_slots) do
-                    if slot.id ~= -1 then
-                        table.insert(self.MTSlots, slot)
-                        slot.id = -1
+        if ev.code == C.BTN_TOUCH then
+            if ev.value == 0 then
+                -- Kernel sends it after loss of contact for *all* slots,
+                -- only once the final contact point has been lifted.
+                if #self.MTSlots == 0 then
+                    -- Likely, since this is usually in its own event stream,
+                    -- meaning self.MTSlots has *just* been cleared by our last EV_SYN:SYN_REPORT handler...
+                    -- So, poke at the actual data to find the slots that are currently active (i.e., in the down state),
+                    -- and re-populate a minimal self.MTSlots array that simply switches them to the up state ;).
+                    for _, slot in pairs(self.ev_slots) do
+                        if slot.id ~= -1 then
+                            table.insert(self.MTSlots, slot)
+                            slot.id = -1
+                        end
                     end
-                end
-            else
-                -- Unlikely, given what we mentioned above...
-                -- Note that, funnily enough, its EV_KEY:BTN_TOUCH:1 counterpart
-                -- *can* be in the same initial event stream as the EV_ABS batch...
-                for _, MTSlot in ipairs(self.MTSlots) do
-                    self:setMtSlot(MTSlot.slot, "id", -1)
+                else
+                    -- Unlikely, given what we mentioned above...
+                    -- Note that, funnily enough, its EV_KEY:BTN_TOUCH:1 counterpart
+                    -- *can* be in the same initial event stream as the EV_ABS batch...
+                    for _, MTSlot in ipairs(self.MTSlots) do
+                        self:setMtSlot(MTSlot.slot, "id", -1)
+                    end
                 end
             end
 
@@ -541,6 +543,8 @@ function Input:handleKeyBoardEv(ev)
             else
                 self:setCurrentMtSlot("tool", TOOL_TYPE_FINGER)
             end
+
+            return
         elseif ev.code == C.BTN_TOUCH then
             -- BTN_TOUCH is bracketed by BTN_TOOL_PEN, so we can limit this to pens, to avoid stomping on panel slots.
             if self:getCurrentMtSlotData("tool") == TOOL_TYPE_PEN then
@@ -554,6 +558,8 @@ function Input:handleKeyBoardEv(ev)
                     self:setCurrentMtSlot("id", -1)
                 end
             end
+
+            return
         end
     end
 
