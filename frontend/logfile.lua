@@ -14,10 +14,8 @@ function LogFile:getLastLineAndShrinkFile(path, max_nb_log_lines)
     local log_file = io.open(path, "r")
     local log_lines = {}
     if log_file then
-        local next_line = log_file:read("*line")
-        while next_line do
-            table.insert(log_lines, next_line)
-            next_line = log_file:read("*line")
+        for line in log_file:lines() do
+            table.insert(log_lines, line)
         end
         log_file:close()
 
@@ -49,7 +47,7 @@ end
 -- @int max_nb_lines maxiumum number of lines to keep
 function LogFile:append(path, text, max_nb_log_lines)
     max_nb_log_lines = max_nb_log_lines or math.huge
-    if not self.log_files or not self.log_files[path] or self.log_files[path] > max_nb_log_lines then
+    if not self.log_files[path] or self.log_files[path] > max_nb_log_lines then
         LogFile:getLastLineAndShrinkFile(path, max_nb_log_lines - 1)
     end
 
@@ -60,7 +58,7 @@ function LogFile:append(path, text, max_nb_log_lines)
     log_file:write(text, "\n")
     log_file:close()
 
-    local _, nb_new_lines = text:gsub("\n","")
+    local _, nb_new_lines = text:gsub("\n", "")
     if self.log_files and self.log_files[path] then
         self.log_files[path] = self.log_files[path] + nb_new_lines + 1
     else

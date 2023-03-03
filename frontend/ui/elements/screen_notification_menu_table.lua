@@ -80,7 +80,6 @@ This allows selecting which to show or hide.]]),
         },
         {
             text = _("Show past notifications"),
-            help_text = _("Show the text of past Notifications."),
             callback = function()
                 local content = require("ui/widget/notification"):getPastMessages()
 
