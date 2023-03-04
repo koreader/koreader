@@ -514,7 +514,14 @@ function BookStatusWidget:saveSummary()
 end
 
 function BookStatusWidget:generateSwitchGroup(width)
-    local height = Screen:scaleBySize(Screen:getScreenMode() == "landscape" and 60 or 105)
+    local height
+    if Screen:getScreenMode() == "landscape" then
+        -- landscape mode
+        height = Screen:scaleBySize(60)
+    else
+        -- portrait mode
+        height = Screen:scaleBySize(105)
+    end
 
     local args = { "reading", "abandoned", "complete", }
 
