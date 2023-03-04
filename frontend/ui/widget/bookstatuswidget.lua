@@ -514,53 +514,27 @@ function BookStatusWidget:saveSummary()
 end
 
 function BookStatusWidget:generateSwitchGroup(width)
-    local height
-    if Screen:getScreenMode() == "landscape" then
-        -- landscape mode
-        height = Screen:scaleBySize(60)
-    else
-        -- portrait mode
-        height = Screen:scaleBySize(105)
-    end
+    local height = Screen:scaleBySize(Screen:getScreenMode() == "landscape" and 60 or 105)
 
-    local args = { "complete", "reading", "abandoned" }
+    local args = { "reading", "abandoned", "complete", }
 
-    local current_status = self.summary.status
-    local position = 2
-    for k, v in pairs(args) do
-        if v == current_status then
+    local position = 1
+    for k, v in ipairs(args) do
+        if v == self.summary.status then
             position = k
+            break
         end
-    end
-
-    local config = {
-        event = "ChangeBookStatus",
-        default_value = 2,
-        args = args,
-        default_arg = "reading",
-        toggle = { _("Finished"), _("Reading"), _("On hold") },
-        values = { 1, 2, 3 },
-        name = "book_status",
-        alternate = false,
-        enabled = true,
-    }
-
-    if self.readonly then
-        config.enable = false
     end
 
     local switch = ToggleSwitch:new{
         width = math.floor(width * 0.6),
-        default_value = config.default_value,
-        name = config.name,
-        name_text = config.name_text,
-        event = config.event,
-        toggle = config.toggle,
-        args = config.args,
-        alternate = config.alternate,
-        default_arg = config.default_arg,
-        values = config.values,
-        enabled = config.enable,
+        name = "book_status",
+        event = "ChangeBookStatus",
+        toggle = { _("Reading"), _("On hold"), _("Finished"), },
+        args = args,
+        alternate = false,
+        values = { 1, 2, 3, },
+        enabled = not self.readonly,
         config = self,
         readonly = self.readonly,
     }
