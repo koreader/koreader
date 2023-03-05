@@ -50,6 +50,7 @@ local BookStatusWidget = FocusManager:extend{
 }
 
 function BookStatusWidget:init()
+    self.updated = false
     self.layout = {}
     -- What a blank, full summary table should look like
     local new_summary = {
@@ -229,7 +230,7 @@ end
 function BookStatusWidget:onChangeBookStatus(option_name, option_value)
     self.summary.status = option_name[option_value]
     self.summary.modified = os.date("%Y-%m-%d", os.time())
-    self:saveSummary()
+    self.updated = true
     return true
 end
 
@@ -250,7 +251,7 @@ function BookStatusWidget:setStar(num)
     local row = {}
     if num then
         self.summary.rating = num
-        self:saveSummary()
+        self.updated = true
 
         for i = 1, num do
             local star = self.star:new{
@@ -500,19 +501,6 @@ function BookStatusWidget:genSummaryGroup(width)
     }
 end
 
-function BookStatusWidget:onUpdateNote()
-    self.summary.note = self.input_note:getText()
-    self:saveSummary()
-    return true
-end
-
-function BookStatusWidget:saveSummary()
-    if self.summary then
-        self.settings:saveSetting("summary", self.summary)
-        self.settings:flush()
-    end
-end
-
 function BookStatusWidget:generateSwitchGroup(width)
     local height
     if Screen:getScreenMode() == "landscape" then
@@ -523,44 +511,25 @@ function BookStatusWidget:generateSwitchGroup(width)
         height = Screen:scaleBySize(105)
     end
 
-    local args = { "complete", "reading", "abandoned" }
+    local args = { "reading", "abandoned", "complete", }
 
-    local current_status = self.summary.status
-    local position = 2
-    for k, v in pairs(args) do
-        if v == current_status then
+    local position = 1
+    for k, v in ipairs(args) do
+        if v == self.summary.status then
             position = k
+            break
         end
-    end
-
-    local config = {
-        event = "ChangeBookStatus",
-        default_value = 2,
-        args = args,
-        default_arg = "reading",
-        toggle = { _("Finished"), _("Reading"), _("On hold") },
-        values = { 1, 2, 3 },
-        name = "book_status",
-        alternate = false,
-        enabled = true,
-    }
-
-    if self.readonly then
-        config.enable = false
     end
 
     local switch = ToggleSwitch:new{
         width = math.floor(width * 0.6),
-        default_value = config.default_value,
-        name = config.name,
-        name_text = config.name_text,
-        event = config.event,
-        toggle = config.toggle,
-        args = config.args,
-        alternate = config.alternate,
-        default_arg = config.default_arg,
-        values = config.values,
-        enabled = config.enable,
+        name = "book_status",
+        event = "ChangeBookStatus",
+        toggle = { _("Reading"), _("On hold"), _("Finished"), },
+        args = args,
+        alternate = false,
+        values = { 1, 2, 3, },
+        enabled = not self.readonly,
         config = self,
         readonly = self.readonly,
     }
@@ -611,7 +580,10 @@ function BookStatusWidget:onMultiSwipe(arg, ges_ev)
 end
 
 function BookStatusWidget:onClose()
-    self:saveSummary()
+    if self.updated and self.summary then
+        self.settings:saveSetting("summary", self.summary)
+        self.settings:flush()
+    end
     -- NOTE: Flash on close to avoid ghosting, since we show an image.
     UIManager:close(self, "flashpartial")
     return true
@@ -639,9 +611,11 @@ function BookStatusWidget:onSwitchFocus(inputbox)
                     text = _("Save review"),
                     is_enter_default = true,
                     callback = function()
-                        self.input_note:setText(self.note_dialog:getInputText())
+                        local note = self.note_dialog:getInputText()
+                        self.input_note:setText(note)
+                        self.summary.note = note
+                        self.updated = true
                         self:closeInputDialog()
-                        self:onUpdateNote()
                     end,
                 },
             },
