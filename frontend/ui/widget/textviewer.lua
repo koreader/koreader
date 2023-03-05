@@ -86,37 +86,57 @@ function TextViewer:init()
     end
 
     if Device:isTouchDevice() then
+        local range = Geom:new{
+            x = 0, y = 0,
+            w = Screen:getWidth(),
+            h = Screen:getHeight(),
+        }
         self.ges_events = {
             TapClose = {
                 GestureRange:new{
                     ges = "tap",
-                    range = Geom:new{
-                        x = 0, y = 0,
-                        w = Screen:getWidth(),
-                        h = Screen:getHeight(),
-                    }
+                    range = range,
                 },
             },
             Swipe = {
                 GestureRange:new{
                     ges = "swipe",
-                    range = Geom:new{
-                        x = 0, y = 0,
-                        w = Screen:getWidth(),
-                        h = Screen:getHeight(),
-                    }
+                    range = range,
                 },
             },
             MultiSwipe = {
                 GestureRange:new{
                     ges = "multiswipe",
-                    range = Geom:new{
-                        x = 0, y = 0,
-                        w = Screen:getWidth(),
-                        h = Screen:getHeight(),
-                    }
+                    range = range,
                 },
             },
+            -- Allow selection of one or more words (see textboxwidget.lua):
+            HoldStartText = {
+                GestureRange:new{
+                    ges = "hold",
+                    range = range,
+                },
+            },
+            HoldPanText = {
+                GestureRange:new{
+                    ges = "hold",
+                    range = range,
+                },
+            },
+            HoldReleaseText = {
+                GestureRange:new{
+                    ges = "hold_release",
+                    range = range,
+                },
+                -- callback function when HoldReleaseText is handled as args
+                args = function(text, hold_duration, start_idx, end_idx, to_source_index_func)
+                    self:handleTextSelection(text, hold_duration, start_idx, end_idx, to_source_index_func)
+                end
+            },
+            -- These will be forwarded to MovableContainer after some checks
+            ForwardingTouch = { GestureRange:new{ ges = "touch", range = range, }, },
+            ForwardingPan = { GestureRange:new{ ges = "pan", range = range, }, },
+            ForwardingPanRelease = { GestureRange:new{ ges = "pan_release", range = range, }, },
         }
     end
 
@@ -271,7 +291,17 @@ function TextViewer:init()
         }
     }
     self.movable = MovableContainer:new{
-        ignore_events = {"swipe"},
+        -- We'll handle these events ourselves, and call appropriate
+        -- MovableContainer's methods when we didn't process the event
+        ignore_events = {
+            -- These have effects over the text widget, and may
+            -- or may not be processed by it
+            "swipe", "hold", "hold_release", "hold_pan",
+            -- These do not have direct effect over the text widget,
+            -- but may happen while selecting text: we need to check
+            -- a few things before forwarding them
+            "touch", "pan", "pan_release",
+        },
         self.frame,
     }
     self[1] = WidgetContainer:new{
@@ -337,6 +367,58 @@ function TextViewer:onSwipe(arg, ges)
     -- Let our MovableContainer handle swipe outside of text
     return self.movable:onMovableSwipe(arg, ges)
 end
+
+-- The following handlers are similar to the ones in DictQuickLookup:
+-- we just forward to our MoveableContainer the events that our
+-- TextBoxWidget has not handled with text selection.
+function TextViewer:onHoldStartText(_, ges)
+    -- Forward Hold events not processed by TextBoxWidget event handler
+    -- to our MovableContainer
+    return self.movable:onMovableHold(_, ges)
+end
+
+function TextViewer:onHoldPanText(_, ges)
+    -- Forward Hold events not processed by TextBoxWidget event handler
+    -- to our MovableContainer
+    -- We only forward it if we did forward the Touch
+    if self.movable._touch_pre_pan_was_inside then
+        return self.movable:onMovableHoldPan(arg, ges)
+    end
+end
+
+function TextViewer:onHoldReleaseText(_, ges)
+    -- Forward Hold events not processed by TextBoxWidget event handler
+    -- to our MovableContainer
+    return self.movable:onMovableHoldRelease(_, ges)
+end
+
+-- These 3 event processors are just used to forward these events
+-- to our MovableContainer, under certain conditions, to avoid
+-- unwanted moves of the window while we are selecting text in
+-- the definition widget.
+function TextViewer:onForwardingTouch(arg, ges)
+    -- This Touch may be used as the Hold we don't get (for example,
+    -- when we start our Hold on the bottom buttons)
+    if not ges.pos:intersectWith(self.textw.dimen) then
+        return self.movable:onMovableTouch(arg, ges)
+    else
+        -- Ensure this is unset, so we can use it to not forward HoldPan
+        self.movable._touch_pre_pan_was_inside = false
+    end
+end
+
+function TextViewer:onForwardingPan(arg, ges)
+    -- We only forward it if we did forward the Touch or are currently moving
+    if self.movable._touch_pre_pan_was_inside or self.movable._moving then
+        return self.movable:onMovablePan(arg, ges)
+    end
+end
+
+function TextViewer:onForwardingPanRelease(arg, ges)
+    -- We can forward onMovablePanRelease() does enough checks
+    return self.movable:onMovablePanRelease(arg, ges)
+end
+
 
 function TextViewer:findDialog()
     local input_dialog
@@ -419,6 +501,20 @@ function TextViewer:findCallback(input_dialog)
         local find_button = self.button_table:getButtonById("find")
         find_button:setText(button_text, find_button.width)
         find_button:refresh()
+    end
+end
+
+function TextViewer:handleTextSelection(text, hold_duration, start_idx, end_idx, to_source_index_func)
+    if self.text_selection_callback then
+        self.text_selection_callback(text, hold_duration, start_idx, end_idx, to_source_index_func)
+        return
+    end
+    if Device:hasClipboard() then
+        Device.input.setClipboardText(text)
+        UIManager:show(Notification:new{
+            text = start_idx == end_idx and _("Word copied to clipboard.")
+                                         or _("Selection copied to clipboard."),
+        })
     end
 end
 
