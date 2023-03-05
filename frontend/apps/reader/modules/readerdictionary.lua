@@ -136,6 +136,7 @@ function ReaderDictionary:init()
                 f:close()
                 local dictname = content:match("\nbookname=(.-)\r?\n")
                 local is_html = content:find("sametypesequence=h", 1, true) ~= nil
+                local lang_from, lang_to, _, _ = content:match("lang=(%a+)-?(%a*)\r?\n?")
                 -- sdcv won't use dict that don't have a bookname=
                 if dictname then
                     table.insert(available_ifos, {
@@ -144,6 +145,7 @@ function ReaderDictionary:init()
                         is_html = is_html,
                         css = readDictionaryCss(ifo_file:gsub("%.ifo$", ".css")),
                         fix_html_func = getDictionaryFixHtmlFunc(ifo_file:gsub("%.ifo$", ".lua")),
+                        lang = lang_from and { from = lang_from, to = lang_to },
                     })
                 end
             end
@@ -593,6 +595,9 @@ local function tidyMarkup(results)
     local format_escape = "&[29Ib%+]{(.-)}"
     for _, result in ipairs(results) do
         local ifo = getAvailableIfoByName(result.dict)
+        if ifo and ifo.lang then
+            result.dict_lang = ifo.lang
+        end
         if ifo and ifo.is_html then
             result.is_html = ifo.is_html
             result.css = ifo.css
