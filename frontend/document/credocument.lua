@@ -937,6 +937,10 @@ function CreDocument:getHTMLFromXPointers(xp0, xp1, flags, from_root_node)
     end
 end
 
+function CreDocument:getStylesheetsMatchingRulesets(node_dataindex)
+    return self._document:getStylesheetsMatchingRulesets(node_dataindex)
+end
+
 function CreDocument:getNormalizedXPointer(xp)
     -- Returns false when xpointer is not found in the DOM.
     -- When requested DOM version >= getDomVersionWithNormalizedXPointers,
