@@ -1,4 +1,6 @@
 local Notification = require("ui/widget/notification")
+local TextViewer = require("ui/widget/textviewer")
+local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 
 local band = bit.band
@@ -75,6 +77,27 @@ This allows selecting which to show or hide.]]),
                 end
             end,
             separator = true,
+        },
+        {
+            text = _("Show past notifications"),
+            callback = function()
+                local content = require("ui/widget/notification"):getPastMessages()
+
+                if not content or #content == 0 then
+                    content = _("No notifications available.")
+                else
+                    content = table.concat(content, "\n")
+                end
+
+                local textviewer
+                textviewer = TextViewer:new{
+                    title = _("Past notifications"),
+                    text = content,
+                    justified = false,
+                }
+                UIManager:show(textviewer)
+            end,
+            keep_menu_open = true,
         },
     }
 }
