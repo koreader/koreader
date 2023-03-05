@@ -1,21 +1,19 @@
 local BD = require("ui/bidi")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
-local OpenWithDialog = require("ui/widget/openwithdialog")
-local ConfirmBox = require("ui/widget/confirmbox")
 local Menu = require("ui/widget/menu")
+local OpenWithDialog = require("ui/widget/openwithdialog")
 local UIManager = require("ui/uimanager")
 local ffi = require("ffi")
-local lfs = require("libs/libkoreader-lfs")
 local ffiUtil = require("ffi/util")
-local T = ffiUtil.template
-local _ = require("gettext")
-local Screen = Device.screen
+local lfs = require("libs/libkoreader-lfs")
 local sort = require("sort")
 local util = require("util")
-local getFileNameSuffix = util.getFileNameSuffix
-local getFriendlySize = util.getFriendlySize
+local _ = require("gettext")
+local Screen = Device.screen
+local T = ffiUtil.template
 
 local FileChooser = Menu:extend{
     no_title = true,
@@ -73,7 +71,7 @@ local FileChooser = Menu:extend{
         "^%.fat32%-epoch$",
         "^%.metadata%.json$",
     },
-    collate = "strcoll", -- or collate = "access",
+    collate = "strcoll",
     reverse_collate = false,
     path_items = nil, -- hash, store last browsed location (item index) for each path
     goto_letter = true,
@@ -99,6 +97,7 @@ function FileChooser:show_file(filename)
 end
 
 function FileChooser:init()
+    self.up_folder_arrow = BD.mirroredUILayout() and BD.ltr("../ ⬆") or "⬆ ../"
     self.path_items = {}
     self.width = Screen:getWidth()
     self.list = function(path, dirs, files, count_only)
@@ -116,7 +115,6 @@ function FileChooser:init()
                             if self:show_dir(f) then
                                 if not count_only then
                                     item = {name = f,
-                                            suffix = getFileNameSuffix(f),
                                             fullpath = filename,
                                             attr = attributes,}
                                 end
@@ -134,9 +132,9 @@ function FileChooser:init()
                                         end
                                     end
                                     item = {name = f,
-                                            suffix = getFileNameSuffix(f),
                                             fullpath = filename,
                                             attr = attributes,
+                                            suffix = util.getFileNameSuffix(f),
                                             percent_finished = percent_finished or 0,}
                                 end
                                 table.insert(files, item)
@@ -177,6 +175,25 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
         sorting = function(a, b)
             return ffiUtil.strcoll(a.name, b.name)
         end
+    elseif collate == "natural" then
+        local natsort
+        -- Only keep the cache if we're an *instance* of FileChooser
+        if self ~= FileChooser then
+            natsort, self.natsort_cache = sort.natsort_cmp(self.natsort_cache)
+            sorting = function(a, b)
+                return natsort(a.name, b.name)
+            end
+        else
+            natsort = sort.natsort_cmp()
+            sorting = function(a, b)
+                return natsort(a.name, b.name)
+            end
+        end
+    elseif self.collate == "strcoll_mixed" then
+        sorting = function(a, b)
+            if b.text == self.up_folder_arrow then return false end
+            return ffiUtil.strcoll(a.text, b.text)
+        end
     elseif collate == "access" then
         sorting = function(a, b)
             return a.attr.access > b.attr.access
@@ -205,7 +222,7 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
             end
             return ffiUtil.strcoll(a.name, b.name)
         end
-    elseif collate == "percent_unopened_first" or collate == "percent_unopened_last" then
+    else -- collate == "percent_unopened_first" or collate == "percent_unopened_last"
         sorting = function(a, b)
             local a_opened = DocSettings:hasSidecarFile(a.fullpath)
             local b_opened = DocSettings:hasSidecarFile(b.fullpath)
@@ -220,24 +237,6 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
             end
             return a_opened
         end
-    elseif collate == "natural" then
-        local natsort
-        -- Only keep the cache if we're an *instance* of FileChooser
-        if self ~= FileChooser then
-            natsort, self.natsort_cache = sort.natsort_cmp(self.natsort_cache)
-            sorting = function(a, b)
-                return natsort(a.name, b.name)
-            end
-        else
-            natsort = sort.natsort_cmp()
-            sorting = function(a, b)
-                return natsort(a.name, b.name)
-            end
-        end
-    else
-        sorting = function(a, b)
-            return a.name < b.name
-        end
     end
 
     if reverse_collate then
@@ -251,28 +250,35 @@ end
 function FileChooser:genItemTableFromPath(path)
     local dirs = {}
     local files = {}
-    local up_folder_arrow = BD.mirroredUILayout() and BD.ltr("../ ⬆") or "⬆ ../"
 
     self.list(path, dirs, files)
 
     local sorting = self:getSortingFunction(self.collate, self.reverse_collate)
 
     if self.collate ~= "strcoll_mixed" then
-        table.sort(dirs, sorting)
         table.sort(files, sorting)
+        if self.collate == "size" or
+           self.collate == "type" or
+           self.collate == "percent_unopened_first" or
+           self.collate == "percent_unopened_last" then
+            sorting = self:getSortingFunction("strcoll", self.reverse_collate)
+        end
+        table.sort(dirs, sorting)
     end
     if path ~= "/" and not (G_reader_settings:isTrue("lock_home_folder") and
                             path == G_reader_settings:readSetting("home_dir")) then
         table.insert(dirs, 1, {name = ".."})
     end
-    if self.show_current_dir_for_hold then table.insert(dirs, 1, {name = "."}) end
+    if self.show_current_dir_for_hold then
+        table.insert(dirs, 1, {name = "."})
+    end
 
     local item_table = {}
     for i, dir in ipairs(dirs) do
         local subdir_path = self.path.."/"..dir.name
         local text, bidi_wrap_func, istr
         if dir.name == ".." then
-            text = up_folder_arrow
+            text = self.up_folder_arrow
         elseif dir.name == "." then -- possible with show_current_dir_for_hold
             text = _("Long-press to choose current folder")
         elseif dir.name == "./." then -- added as content of an unreadable directory
@@ -294,7 +300,7 @@ function FileChooser:genItemTableFromPath(path)
             bidi_wrap_func = bidi_wrap_func,
             mandatory = istr,
             path = subdir_path,
-            is_go_up = dir.name == ".."
+            is_go_up = dir.name == "..",
         })
     end
 
@@ -303,11 +309,9 @@ function FileChooser:genItemTableFromPath(path)
     -- otherwise, show new files in bold
     local show_file_in_bold = G_reader_settings:readSetting("show_file_in_bold")
 
-    for i = 1, #files do
-        local file = files[i]
+    for i, file in ipairs(files) do
         local full_path = self.path.."/"..file.name
-        local file_size = lfs.attributes(full_path, "size") or 0
-        local sstr = getFriendlySize(file_size)
+        local sstr = util.getFriendlySize(file.attr.size or 0)
         local file_item = {
             text = file.name,
             bidi_wrap_func = BD.filename,
@@ -328,20 +332,12 @@ function FileChooser:genItemTableFromPath(path)
     end
 
     if self.collate == "strcoll_mixed" then
-        sorting = function(a, b)
-            if b.text == up_folder_arrow then return false end
-            return ffiUtil.strcoll(a.text, b.text)
-        end
-        if self.reverse_collate then
-            local sorting_unreversed = sorting
-            sorting = function(a, b) return sorting_unreversed(b, a) end
-        end
         table.sort(item_table, sorting)
     end
     -- lfs.dir iterated node string may be encoded with some weird codepage on
     -- Windows we need to encode them to utf-8
     if ffi.os == "Windows" then
-        for k, v in pairs(item_table) do
+        for _, v in ipairs(item_table) do
             if v.text then
                 v.text = ffiUtil.multiByteToUTF8(v.text) or ""
             end
@@ -428,7 +424,7 @@ end
 function FileChooser:changePageToPath(path)
     if not path then return end
     for num, item in ipairs(self.item_table) do
-        if item.path == path then
+        if not item.is_file and item.path == path then
             local page = math.floor((num-1) / self.perpage) + 1
             if page ~= self.page then
                 self:onGotoPage(page)
@@ -461,7 +457,7 @@ end
 function FileChooser:onMenuSelect(item)
     -- parent directory of dir without permission get nil mode
     -- we need to change to parent path in this case
-    if lfs.attributes(item.path, "mode") == "file" then
+    if item.is_file then
         self:onFileSelect(item.path)
     else
         self:changeToPath(item.path, item.is_go_up and self.path)
@@ -487,27 +483,26 @@ function FileChooser:onPathChanged(path)
     return true
 end
 
+-- Used in ReaderStatus:onOpenNextDocumentInFolder().
 function FileChooser:getNextFile(curr_file)
-    local next_file
-    for index, data in pairs(self.item_table) do
-        if data.path == curr_file then
-            if index+1 <= #self.item_table then
-                next_file = self.item_table[index+1].path
-                if lfs.attributes(next_file, "mode") == "file" and DocumentRegistry:hasProvider(next_file) then
-                    break
-                else
-                    next_file = nil
-                end
+    local is_curr_file_found
+    for i, item in ipairs(self.item_table) do
+        if not is_curr_file_found and item.path == curr_file then
+            is_curr_file_found = true
+        end
+        if is_curr_file_found then
+            local next_file = self.item_table[i+1]
+            if next_file and next_file.is_file and DocumentRegistry:hasProvider(next_file.path) then
+                return next_file.path
             end
         end
     end
-    return next_file
 end
 
 -- Used in file manager select mode to select all files in a folder,
 -- that are visible in all file browser pages, without subfolders.
 function FileChooser:selectAllFilesInFolder()
-    for _, item in pairs(self.item_table) do
+    for _, item in ipairs(self.item_table) do
         if item.is_file then
             self.filemanager.selected_files[item.path] = true
         end
