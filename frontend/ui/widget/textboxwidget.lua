@@ -2012,7 +2012,10 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
 
         logger.dbg("onHoldReleaseText (duration:", time.format_time(hold_duration), ") :",
                         sel_start_idx, ">", sel_end_idx, "=", selected_text)
-        callback(selected_text, hold_duration)
+        -- We give index in the charlist (unicode chars), and provide a function
+        -- to convert these indices as in the utf8 text, to be used by caller
+        -- only if needed, as it may be expensive.
+        callback(selected_text, hold_duration, sel_start_idx, sel_end_idx, function(idx) return self:getSourceIndex(idx) end)
         return true
     end
 
@@ -2029,7 +2032,7 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
 
     local selected_text = table.concat(self.charlist, "", sel_start_idx, sel_end_idx)
     logger.dbg("onHoldReleaseText (duration:", time.format_time(hold_duration), ") :", sel_start_idx, ">", sel_end_idx, "=", selected_text)
-    callback(selected_text, hold_duration)
+    callback(selected_text, hold_duration, sel_start_idx, sel_end_idx, function(idx) return self:getSourceIndex(idx) end)
     return true
 end
 
@@ -2083,6 +2086,16 @@ function TextBoxWidget:_findWordEdge(x, y, side)
         idx = idx + 1
     end
     return edge_idx
+end
+
+function TextBoxWidget:getSourceIndex(char_idx)
+    if self._xtext then
+        local utf8 = self._xtext:getText(1, char_idx)
+        return #utf8
+    else
+        local utf8 = table.concat(self.charlist, "", 1, char_idx)
+        return #utf8
+    end
 end
 
 return TextBoxWidget
