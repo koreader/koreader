@@ -1124,7 +1124,7 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
     end
 
     -- stable target directory is needed so we can look through the folder later
-    local dict_path = self.data_dir .. '/' .. dict.name
+    local dict_path = self.data_dir .. "/" .. dict.name
     util.makePath(dict_path)
     local ok, error = Device:unpackArchive(download_location, dict_path, true)
 
