@@ -44,6 +44,8 @@ local TitleBar = OverlapGroup:extend{
     info_text_face = Font:getFace("x_smallinfofont"),
     info_text_h_padding = nil, -- default to title_h_padding
 
+    lang = nil, -- use this language (string) instead of the UI language
+
     title_top_padding = nil, -- computed if none provided
     title_h_padding = Size.padding.large, -- horizontal padding (this replaces button_padding on the inner/title side)
     title_subtitle_v_padding = Screen:scaleBySize(3),
@@ -134,6 +136,7 @@ function TitleBar:init()
             alignment = self.align,
             width = title_max_width,
             face = title_face,
+            lang = self.lang,
         }
     else
         while true do
@@ -141,6 +144,7 @@ function TitleBar:init()
                 text = self.title,
                 face = title_face,
                 padding = 0,
+                lang = self.lang,
                 max_width = not self.title_shrink_font_to_fit and title_max_width,
                     -- truncate if not self.title_shrink_font_to_fit
             }
@@ -207,6 +211,7 @@ function TitleBar:init()
                 alignment = self.align,
                 width = subtitle_max_width,
                 face = self.subtitle_face,
+                lang = self.lang,
             }
         else
             self.subtitle_widget = TextWidget:new{
@@ -215,6 +220,7 @@ function TitleBar:init()
                 max_width = subtitle_max_width,
                 truncate_left = self.subtitle_truncate_left,
                 padding = 0,
+                lang = self.lang,
             }
         end
     end
@@ -332,6 +338,7 @@ function TitleBar:init()
                     text = self.info_text,
                     face = self.info_text_face,
                     width = self.width - 2 * h_padding,
+                    lang = self.lang,
                 }
             }
         }

@@ -215,6 +215,7 @@ function DictQuickLookup:init()
         -- visual hint: title left aligned for dict, centered for Wikipedia
         align = self.is_wiki and "center" or "left",
         show_parent = self,
+        lang = self.to_lang,
     }
 
     -- This padding and the resulting width apply to the content
