@@ -1,16 +1,12 @@
 local BD = require("ui/bidi")
 local DocSettings = require("docsettings")
-local DocumentRegistry = require("document/documentregistry")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
-local ImageViewer = require("ui/widget/imageviewer")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
-local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local logger = require("logger")
 local _ = require("gettext")
-local util = require("util")
 
 local BookInfoManager = require("bookinfomanager")
 
@@ -271,48 +267,6 @@ function CoverMenu:updateItems(select_number)
 
                 -- Add some new buttons to original buttons set
                 table.insert(orig_buttons, {
-                    { -- Allow user to view real size cover in ImageViewer
-                        text = _("View full size cover"),
-                        enabled = bookinfo.has_cover and true or false,
-                        callback = function()
-                            local document = DocumentRegistry:openDocument(file)
-                            if document then
-                                if document.loadDocument then -- needed for crengine
-                                    document:loadDocument(false) -- load only metadata
-                                end
-                                local cover_bb = document:getCoverPageImage()
-                                if cover_bb then
-                                    local imgviewer = ImageViewer:new{
-                                        image = cover_bb,
-                                        with_title_bar = false,
-                                        fullscreen = true,
-                                    }
-                                    UIManager:show(imgviewer)
-                                else
-                                    UIManager:show(InfoMessage:new{
-                                        text = _("No cover image available."),
-                                    })
-                                end
-                                UIManager:close(self.file_dialog)
-                                document:close()
-                            end
-                        end,
-                    },
-                    { -- Allow user to directly view description in TextViewer
-                        text = _("Book description"),
-                        enabled = bookinfo.description and true or false,
-                        callback = function()
-                            local description = util.htmlToPlainTextIfHtml(bookinfo.description)
-                            local textviewer = TextViewer:new{
-                                title = _("Description:"),
-                                text = description,
-                            }
-                            UIManager:close(self.file_dialog)
-                            UIManager:show(textviewer)
-                        end,
-                    },
-                })
-                table.insert(orig_buttons, {
                     { -- Allow user to ignore some offending cover image
                         text = bookinfo.ignore_cover and _("Unignore cover") or _("Ignore cover"),
                         enabled = bookinfo.has_cover and true or false,
@@ -389,6 +343,21 @@ function CoverMenu:updateItems(select_number)
                     UIManager:close(self.file_dialog)
                 end
 
+                button = self.file_dialog.button_table:getButtonById("book_cover")
+                if not bookinfo.has_cover then
+                    button:disable()
+                end
+
+                button = self.file_dialog.button_table:getButtonById("book_description")
+                if bookinfo.description then
+                    button.callback = function()
+                        UIManager:close(self.file_dialog)
+                        FileManagerBookInfo:onShowBookDescription(bookinfo.description)
+                    end
+                else
+                    button:disable()
+                end
+
                 UIManager:show(self.file_dialog)
                 return true
             end
@@ -424,48 +393,6 @@ function CoverMenu:onHistoryMenuHold(item)
     UIManager:clearRenderStack()
 
     -- Add some new buttons to original buttons set
-    table.insert(orig_buttons, {
-        { -- Allow user to view real size cover in ImageViewer
-            text = _("View full size cover"),
-            enabled = bookinfo.has_cover and true or false,
-            callback = function()
-                local document = DocumentRegistry:openDocument(file)
-                if document then
-                    if document.loadDocument then -- needed for crengine
-                        document:loadDocument(false) -- load only metadata
-                    end
-                    local cover_bb = document:getCoverPageImage()
-                    if cover_bb then
-                        local imgviewer = ImageViewer:new{
-                            image = cover_bb,
-                            with_title_bar = false,
-                            fullscreen = true,
-                        }
-                        UIManager:show(imgviewer)
-                    else
-                        UIManager:show(InfoMessage:new{
-                            text = _("No cover image available."),
-                        })
-                    end
-                    UIManager:close(self.histfile_dialog)
-                    document:close()
-                end
-            end,
-        },
-        { -- Allow user to directly view description in TextViewer
-            text = _("Book description"),
-            enabled = bookinfo.description and true or false,
-            callback = function()
-                local description = util.htmlToPlainTextIfHtml(bookinfo.description)
-                local textviewer = TextViewer:new{
-                    title = _("Description:"),
-                    text = description,
-                }
-                UIManager:close(self.histfile_dialog)
-                UIManager:show(textviewer)
-            end,
-        },
-    })
     table.insert(orig_buttons, {
         { -- Allow user to ignore some offending cover image
             text = bookinfo.ignore_cover and _("Unignore cover") or _("Ignore cover"),
@@ -537,9 +464,25 @@ function CoverMenu:onHistoryMenuHold(item)
     end
 
     -- Replace Book information callback to use directly our bookinfo
-    self.histfile_dialog.button_table:getButtonById("book_information").callback = function()
+    button = self.histfile_dialog.button_table:getButtonById("book_information")
+    button.callback = function()
         FileManagerBookInfo:show(file, bookinfo)
         UIManager:close(self.histfile_dialog)
+    end
+
+    button = self.histfile_dialog.button_table:getButtonById("book_cover")
+    if not bookinfo.has_cover then
+        button:disable()
+    end
+
+    button = self.histfile_dialog.button_table:getButtonById("book_description")
+    if bookinfo.description then
+        button.callback = function()
+            UIManager:close(self.histfile_dialog)
+            FileManagerBookInfo:onShowBookDescription(bookinfo.description)
+        end
+    else
+        button:disable()
     end
 
     UIManager:show(self.histfile_dialog)
@@ -570,48 +513,6 @@ function CoverMenu:onCollectionsMenuHold(item)
     UIManager:clearRenderStack()
 
     -- Add some new buttons to original buttons set
-    table.insert(orig_buttons, {
-        { -- Allow user to view real size cover in ImageViewer
-            text = _("View full size cover"),
-            enabled = bookinfo.has_cover and true or false,
-            callback = function()
-                local document = DocumentRegistry:openDocument(file)
-                if document then
-                    if document.loadDocument then -- needed for crengine
-                        document:loadDocument(false) -- load only metadata
-                    end
-                    local cover_bb = document:getCoverPageImage()
-                    if cover_bb then
-                        local imgviewer = ImageViewer:new{
-                            image = cover_bb,
-                            with_title_bar = false,
-                            fullscreen = true,
-                        }
-                        UIManager:show(imgviewer)
-                    else
-                        UIManager:show(InfoMessage:new{
-                            text = _("No cover image available."),
-                        })
-                    end
-                    UIManager:close(self.collfile_dialog)
-                    document:close()
-                end
-            end,
-        },
-        { -- Allow user to directly view description in TextViewer
-            text = _("Book description"),
-            enabled = bookinfo.description and true or false,
-            callback = function()
-                local description = util.htmlToPlainTextIfHtml(bookinfo.description)
-                local textviewer = TextViewer:new{
-                    title = _("Description:"),
-                    text = description,
-                }
-                UIManager:close(self.collfile_dialog)
-                UIManager:show(textviewer)
-            end,
-        },
-    })
     table.insert(orig_buttons, {
         { -- Allow user to ignore some offending cover image
             text = bookinfo.ignore_cover and _("Unignore cover") or _("Ignore cover"),
@@ -683,9 +584,25 @@ function CoverMenu:onCollectionsMenuHold(item)
     end
 
     -- Replace Book information callback to use directly our bookinfo
-    self.collfile_dialog.button_table:getButtonById("book_information").callback = function()
+    button = self.collfile_dialog.button_table:getButtonById("book_information")
+    button.callback = function()
         FileManagerBookInfo:show(file, bookinfo)
         UIManager:close(self.collfile_dialog)
+    end
+
+    button = self.collfile_dialog.button_table:getButtonById("book_cover")
+    if not bookinfo.has_cover then
+        button:disable()
+    end
+
+    button = self.collfile_dialog.button_table:getButtonById("book_description")
+    if bookinfo.description then
+        button.callback = function()
+            UIManager:close(self.collfile_dialog)
+            FileManagerBookInfo:onShowBookDescription(bookinfo.description)
+        end
+    else
+        button:disable()
     end
 
     UIManager:show(self.collfile_dialog)

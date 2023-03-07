@@ -98,6 +98,24 @@ function FileManagerCollection:onMenuHold(item)
             end,
         },
     })
+    table.insert(buttons, {
+        {
+            text = _("Book cover"),
+            id = "book_cover", -- used by covermenu
+            callback = function()
+                UIManager:close(self.collfile_dialog)
+                FileManagerBookInfo:onShowBookCover(item.file)
+            end,
+        },
+        {
+            text = _("Book description"),
+            id = "book_description", -- used by covermenu
+            callback = function()
+                UIManager:close(self.collfile_dialog)
+                FileManagerBookInfo:onShowBookDescription(nil, item.file)
+            end,
+        },
+    })
 
     if Device:canExecuteScript(item.file) then
         local function button_callback()

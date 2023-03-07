@@ -34,10 +34,6 @@ function BookInfo:addToMainMenu(menu_items)
     }
 end
 
-function BookInfo:isSupported(file)
-    return lfs.attributes(file, "mode") == "file"
-end
-
 function BookInfo:show(file, book_props)
     local kv_pairs = {}
 
@@ -69,70 +65,7 @@ function BookInfo:show(file, book_props)
     -- book_props may be provided if caller already has them available
     -- but it may lack "pages", that we may get from sidecar file
     if not book_props or not book_props.pages then
-        -- check there is actually a sidecar file before calling DocSettings:open()
-        -- that would create an empty sidecar directory
-        if DocSettings:hasSidecarFile(file) then
-            local doc_settings = DocSettings:open(file)
-            if doc_settings then
-                if not book_props then
-                    -- Files opened after 20170701 have a "doc_props" setting with
-                    -- complete metadata and "doc_pages" with accurate nb of pages
-                    book_props = doc_settings:readSetting("doc_props")
-                end
-                if not book_props then
-                    -- File last opened before 20170701 may have a "stats" setting.
-                    -- with partial metadata, or empty metadata if statistics plugin
-                    -- was not enabled when book was read (we can guess that from
-                    -- the fact that stats.page = 0)
-                    local stats = doc_settings:readSetting("stats")
-                    if stats and stats.pages ~= 0 then
-                        -- Let's use them as is (which was what was done before), even if
-                        -- incomplete, to avoid expensive book opening
-                        book_props = stats
-                    end
-                end
-                -- Files opened after 20170701 have an accurate "doc_pages" setting.
-                local doc_pages = doc_settings:readSetting("doc_pages")
-                if doc_pages and book_props then
-                    book_props.pages = doc_pages
-                end
-            end
-        end
-    end
-
-    -- If still no book_props (book never opened or empty "stats"), open the
-    -- document to get them
-    if not book_props then
-        local document = DocumentRegistry:openDocument(file)
-        if document then
-            local loaded = true
-            local pages
-            if document.loadDocument then -- CreDocument
-                if not document:loadDocument(false) then -- load only metadata
-                    -- failed loading, calling other methods would segfault
-                    loaded = false
-                end
-                -- For CreDocument, we would need to call document:render()
-                -- to get nb of pages, but the nb obtained by simply calling
-                -- here document:getPageCount() is wrong, often 2 to 3 times
-                -- the nb of pages we see when opening the document (may be
-                -- some other cre settings should be applied before calling
-                -- render() ?)
-            else
-                -- for all others than crengine, we seem to get an accurate nb of pages
-                pages = document:getPageCount()
-            end
-            if loaded then
-                book_props = document:getProps()
-                book_props.pages = pages
-            end
-            document:close()
-        end
-    end
-
-    -- If still no book_props, fall back to empty ones
-    if not book_props then
-        book_props = {}
+        book_props = self:getBookProps(file, book_props)
     end
 
     local title = book_props.title
@@ -203,30 +136,8 @@ function BookInfo:show(file, book_props)
     -- will show the right thing, that'd we rather not mess with BD wrapping.)
     table.insert(kv_pairs, { _("Description:"), description })
 
-    -- Cover image
     local viewCoverImage = function()
-        local widget
-        local document = DocumentRegistry:openDocument(file)
-        if document then
-            if document.loadDocument then -- CreDocument
-                document:loadDocument(false) -- load only metadata
-            end
-            local cover_bb = document:getCoverPageImage()
-            if cover_bb then
-                widget = ImageViewer:new{
-                    image = cover_bb,
-                    with_title_bar = false,
-                    fullscreen = true,
-                }
-            end
-            document:close()
-        end
-        if not widget then
-            widget = InfoMessage:new{
-                text = _("No cover image available"),
-            }
-        end
-        UIManager:show(widget)
+        self:onShowBookCover(file)
     end
     table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=viewCoverImage })
 
@@ -246,6 +157,66 @@ function BookInfo:show(file, book_props)
     UIManager:show(widget)
 end
 
+function BookInfo:getBookProps(file, book_props)
+    if DocSettings:hasSidecarFile(file) then
+        local doc_settings = DocSettings:open(file)
+        if not book_props then
+            -- Files opened after 20170701 have a "doc_props" setting with
+            -- complete metadata and "doc_pages" with accurate nb of pages
+            book_props = doc_settings:readSetting("doc_props")
+        end
+        if not book_props then
+            -- File last opened before 20170701 may have a "stats" setting.
+            -- with partial metadata, or empty metadata if statistics plugin
+            -- was not enabled when book was read (we can guess that from
+            -- the fact that stats.page = 0)
+            local stats = doc_settings:readSetting("stats")
+            if stats and stats.pages ~= 0 then
+                -- Let's use them as is (which was what was done before), even if
+                -- incomplete, to avoid expensive book opening
+                book_props = stats
+            end
+        end
+        -- Files opened after 20170701 have an accurate "doc_pages" setting.
+        local doc_pages = doc_settings:readSetting("doc_pages")
+        if doc_pages and book_props then
+            book_props.pages = doc_pages
+        end
+    end
+
+    -- If still no book_props (book never opened or empty "stats"), open the document to get them
+    if not book_props then
+        local document = DocumentRegistry:openDocument(file)
+        if document then
+            local loaded = true
+            local pages
+            if document.loadDocument then -- CreDocument
+                if not document:loadDocument(false) then -- load only metadata
+                    -- failed loading, calling other methods would segfault
+                    loaded = false
+                end
+                -- For CreDocument, we would need to call document:render()
+                -- to get nb of pages, but the nb obtained by simply calling
+                -- here document:getPageCount() is wrong, often 2 to 3 times
+                -- the nb of pages we see when opening the document (may be
+                -- some other cre settings should be applied before calling
+                -- render() ?)
+            else
+                -- for all others than crengine, we seem to get an accurate nb of pages
+                pages = document:getPageCount()
+            end
+            if loaded then
+                book_props = document:getProps()
+                book_props.pages = pages
+            end
+            document:close()
+        end
+    end
+
+    -- If still no book_props, fall back to empty ones
+    return book_props or {}
+end
+
 function BookInfo:onShowBookInfo()
     if not self.document then return end
     -- Get them directly from ReaderUI's doc_settings
@@ -260,9 +231,15 @@ function BookInfo:onShowBookInfo()
     self:show(self.document.file, book_props)
 end
 
-function BookInfo:onShowBookDescription()
-    if not self.document then return end
-    local description = self.document:getProps().description
+function BookInfo:onShowBookDescription(description, file)
+    if not description then
+        if file then
+            description = self:getBookProps(file).description
+        elseif self.document then
+            description = self.ui.doc_settings:readSetting("doc_props").description
+                       or self.document:getProps().description
+        end
+    end
     if description and description ~= "" then
         -- Description may (often in EPUB, but not always) or may not (rarely
         -- in PDF) be HTML.
@@ -279,19 +256,31 @@ function BookInfo:onShowBookDescription()
     end
 end
 
-function BookInfo:onShowBookCover()
-    if not self.document then return end
-    local cover_bb = self.document:getCoverPageImage()
-    if cover_bb then
-        UIManager:show(ImageViewer:new{
-            image = cover_bb,
-            with_title_bar = false,
-            fullscreen = true,
-        })
+function BookInfo:onShowBookCover(file)
+    local document
+    if file then
+        document = DocumentRegistry:openDocument(file)
+        if document and document.loadDocument then -- CreDocument
+            document:loadDocument(false) -- load only metadata
+        end
     else
-        UIManager:show(InfoMessage:new{
-            text = _("No cover image available."),
-        })
+        document = self.document
+    end
+    if document then
+        local cover_bb = document:getCoverPageImage()
+        if cover_bb then
+            local imgviewer = ImageViewer:new{
+                image = cover_bb,
+                with_title_bar = false,
+                fullscreen = true,
+            }
+            UIManager:show(imgviewer)
+        else
+            UIManager:show(InfoMessage:new{
+                text = _("No cover image available."),
+            })
+        end
+        document:close()
     end
 end
 
