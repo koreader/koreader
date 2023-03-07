@@ -315,7 +315,25 @@ function FileManager:setupLayout()
                         UIManager:close(self.file_dialog)
                         FileManagerBookInfo:show(file)
                     end,
-                }
+                },
+            })
+            table.insert(buttons, {
+                {
+                    text = _("Book cover"),
+                    id = "book_cover", -- used by covermenu
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        FileManagerBookInfo:onShowBookCover(file)
+                    end,
+                },
+                {
+                    text = _("Book description"),
+                    id = "book_description", -- used by covermenu
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        FileManagerBookInfo:onShowBookDescription(nil, file)
+                    end,
+                },
             })
             if Device:canExecuteScript(file) then
                 local function button_callback()
