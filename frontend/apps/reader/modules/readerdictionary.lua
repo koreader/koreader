@@ -1146,13 +1146,13 @@ end
 
 function ReaderDictionary:extendIfoWithLanguage(dict, download_location)
     local function cb(path, filename)
-        if util.getFileNameSuffix(filename) == 'ifo' and dict.ifo_lang then
+        if util.getFileNameSuffix(filename) == "ifo" and dict.ifo_lang then
             local fmt_string = "lang=%s"
-            local f = io.open(path, 'a+')
+            local f = io.open(path, "a+")
             if f then
                 local ifo = f:read("a*")
-                if ifo[#ifo] ~= '\n' then
-                    fmt_string = '\n' .. fmt_string
+                if ifo[#ifo] ~= "\n" then
+                    fmt_string = "\n" .. fmt_string
                 end
                 f:write(fmt_string:format(dict.ifo_lang))
                 f:close()
