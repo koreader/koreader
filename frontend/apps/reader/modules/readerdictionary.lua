@@ -136,7 +136,7 @@ function ReaderDictionary:init()
                 f:close()
                 local dictname = content:match("\nbookname=(.-)\r?\n")
                 local is_html = content:find("sametypesequence=h", 1, true) ~= nil
-                local lang_from, lang_to, _, _ = content:match("lang=(%a+)-?(%a*)\r?\n?")
+                local lang_from, lang_to = content:match("lang=(%a+)-?(%a*)\r?\n?")
                 -- sdcv won't use dict that don't have a bookname=
                 if dictname then
                     table.insert(available_ifos, {
