@@ -132,6 +132,24 @@ function FileManagerHistory:onMenuHold(item)
             end,
          },
     })
+    table.insert(buttons, {
+        {
+            text = _("Book cover"),
+            id = "book_cover", -- used by covermenu
+            callback = function()
+                UIManager:close(self.histfile_dialog)
+                FileManagerBookInfo:onShowBookCover(item.file)
+            end,
+        },
+        {
+            text = _("Book description"),
+            id = "book_description", -- used by covermenu
+            callback = function()
+                UIManager:close(self.histfile_dialog)
+                FileManagerBookInfo:onShowBookDescription(nil, item.file)
+            end,
+        },
+    })
 
     self.histfile_dialog = ButtonDialogTitle:new{
         title = BD.filename(item.text:match("([^/]+)$")),
