@@ -215,7 +215,7 @@ function DictQuickLookup:init()
         -- visual hint: title left aligned for dict, centered for Wikipedia
         align = self.is_wiki and "center" or "left",
         show_parent = self,
-        lang = self.to_lang,
+        lang = self.lang_out,
     }
 
     -- This padding and the resulting width apply to the content
@@ -295,7 +295,7 @@ function DictQuickLookup:init()
         bold = true,
         max_width = self.content_width - math.max(lookup_edit_button_w, lookup_word_nb_w),
         padding = 0, -- to be aligned with lookup_word_nb
-        lang = self.from_lang
+        lang = self.lang_in
     }
     -- Group these 3 widgets
     local lookup_word = OverlapGroup:new{
@@ -797,7 +797,7 @@ function DictQuickLookup:_instantiateScrollWidget()
             height = self.definition_height,
             dialog = self,
             justified = G_reader_settings:nilOrTrue("dict_justify"), -- allow for disabling justification
-            lang = self.lang and self.lang:lower() or self.to_lang,
+            lang = self.lang and self.lang:lower() or self.lang_out,
             para_direction_rtl = self.rtl_lang,     -- only available on wikipedia results
             auto_para_direction = not self.is_wiki, -- only for dict results (we don't know their lang)
             image_alt_face = self.image_alt_face,
@@ -819,7 +819,7 @@ function DictQuickLookup:update()
         self.displaynb_text:setText(self.displaynb)
     end
     self.lookup_word_text:setText(self.displayword)
-    self.lookup_word_text.lang = self.from_lang
+    self.lookup_word_text.lang = self.lang_in
 
     -- Update Buttons
     if not self.is_wiki_fullpage then
@@ -845,7 +845,7 @@ function DictQuickLookup:update()
         -- Update properties that may change across results (as done in DictQuickLookup:_instantiateScrollWidget())
         self.text_widget.text_widget.text = self.definition
         self.text_widget.text_widget.charlist = nil -- (required when use_xtext=false for proper re-init)
-        self.text_widget.text_widget.lang = self.lang and self.lang:lower() or self.to_lang
+        self.text_widget.text_widget.lang = self.lang and self.lang:lower() or self.lang_out
         self.text_widget.text_widget.para_direction_rtl = self.rtl_lang
         self.text_widget.text_widget.images = self.images
         -- Scroll back to the top, àla TextBoxWidget:scrollToTop
@@ -998,9 +998,9 @@ function DictQuickLookup:changeDictionary(index, skip_update)
     self.is_html = self.results[index].is_html
     self.css = self.results[index].css
     self.lang = self.results[index].lang
-    local dict_lang = self.results[index].dict_lang
-    self.from_lang = dict_lang and dict_lang.from or nil
-    self.to_lang = dict_lang and dict_lang.to or nil
+    local ifo_lang = self.results[index].ifo_lang
+    self.lang_in = ifo_lang and ifo_lang.lang_in or nil
+    self.lang_out = ifo_lang and ifo_lang.lang_out or nil
     self.rtl_lang = self.results[index].rtl_lang
     self.images = self.results[index].images
     if self.images and #self.images > 0 then
