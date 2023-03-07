@@ -1123,9 +1123,13 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
         return false
     end
 
-    local ok, error = Device:unpackArchive(download_location, self.data_dir)
+    -- stable target directory is needed so we can look through the folder later
+    local dict_path = self.data_dir .. '/' .. dict.name
+    util.makePath(dict_path)
+    local ok, error = Device:unpackArchive(download_location, dict_path, true)
 
     if ok then
+        self:extendIfoWithLanguage(dict, dict_path)
         available_ifos = false
         self:init()
         UIManager:show(InfoMessage:new{
@@ -1138,6 +1142,24 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
         })
         return false
     end
+end
+
+function ReaderDictionary:extendIfoWithLanguage(dict, download_location)
+    local function cb(path, filename)
+        if util.getFileNameSuffix(filename) == 'ifo' and dict.ifo_lang then
+            local fmt_string = "lang=%s"
+            local f = io.open(path, 'a+')
+            if f then
+                local ifo = f:read("a*")
+                if ifo[#ifo] ~= '\n' then
+                    fmt_string = '\n' .. fmt_string
+                end
+                f:write(fmt_string:format(dict.ifo_lang))
+                f:close()
+            end
+        end
+    end
+    util.findFiles(download_location, cb)
 end
 
 function ReaderDictionary:onReadSettings(config)
