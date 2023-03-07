@@ -209,8 +209,8 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_danish-english-2.4.2.tar.gz"
     },
     {
-        name = "Deutsch-Russian dictionary",
-        lang_in = "Deutsch",
+        name = "German-Russian dictionary",
+        lang_in = "German",
         lang_out = "Russian",
         ifo_lang = "de-ru",
         entries = 12950,
@@ -668,9 +668,9 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_portuguese-english-2.4.2.tar.gz"
     },
     {
-        name = "Russian-Deutsch dictionary",
+        name = "Russian-German dictionary",
         lang_in = "Russian",
-        lang_out = "Deutsch",
+        lang_out = "German",
         ifo_lang = "ru-de",
         entries = 12101,
         license = "ftp://ftp.ifmo.ru/unix/unix-soft/utils/dictionaries/slowo/dicts/deutsch.tgz",
@@ -740,8 +740,8 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002b/stardict-comn_dls03_xn_sociology_en-ru-2.4.2.tar.gz"
     },
     {
-        name = "Spain-Russian Dictionary (Sadikov) dictionary",
-        lang_in = "Spain",
+        name = "Spanish-Russian Dictionary (Sadikov) dictionary",
+        lang_in = "Spanish",
         lang_out = "Russian",
         ifo_lang = "es-ru",
         entries = 18534,
