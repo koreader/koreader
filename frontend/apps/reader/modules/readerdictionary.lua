@@ -1129,7 +1129,9 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
     local ok, error = Device:unpackArchive(download_location, dict_path, true)
 
     if ok then
-        self:extendIfoWithLanguage(dict, dict_path)
+        if dict.ifo_lang then
+            self:extendIfoWithLanguage(dict_path, dict.ifo_lang)
+        end
         available_ifos = false
         self:init()
         UIManager:show(InfoMessage:new{
@@ -1144,9 +1146,9 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
     end
 end
 
-function ReaderDictionary:extendIfoWithLanguage(dict, download_location)
+function ReaderDictionary:extendIfoWithLanguage(dictionary_location, ifo_lang)
     local function cb(path, filename)
-        if util.getFileNameSuffix(filename) == "ifo" and dict.ifo_lang then
+        if util.getFileNameSuffix(filename) == "ifo" then
             local fmt_string = "lang=%s"
             local f = io.open(path, "a+")
             if f then
@@ -1154,12 +1156,12 @@ function ReaderDictionary:extendIfoWithLanguage(dict, download_location)
                 if ifo[#ifo] ~= "\n" then
                     fmt_string = "\n" .. fmt_string
                 end
-                f:write(fmt_string:format(dict.ifo_lang))
+                f:write(fmt_string:format(ifo_lang))
                 f:close()
             end
         end
     end
-    util.findFiles(download_location, cb)
+    util.findFiles(dictionary_location, cb)
 end
 
 function ReaderDictionary:onReadSettings(config)
