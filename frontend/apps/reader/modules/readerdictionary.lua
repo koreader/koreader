@@ -7,7 +7,6 @@ local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
-local IsoLanguage = require("ui/isolanguage")
 local JSON = require("json")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local LuaData = require("luadata")
@@ -480,12 +479,13 @@ end
 
 function ReaderDictionary:_genDownloadDictionariesMenu()
     local downloadable_dicts = require("ui/data/dictionaries")
+    local isoLanguage = require("ui/isolanguage")
     local languages = {}
 
     for i = 1, #downloadable_dicts do
         local dict = downloadable_dicts[i]
-        dict.lang_in = IsoLanguage:getLocalizedLanguage(dict.lang_in)
-        dict.lang_out = IsoLanguage:getLocalizedLanguage(dict.lang_out)
+        dict.lang_in = isoLanguage:getLocalizedLanguage(dict.lang_in)
+        dict.lang_out = isoLanguage:getLocalizedLanguage(dict.lang_out)
         local dict_lang_in = dict.lang_in
         local dict_lang_out = dict.lang_out
         if not languages[dict_lang_in] then
