@@ -479,7 +479,7 @@ end
 
 function ReaderDictionary:_genDownloadDictionariesMenu()
     local downloadable_dicts = require("ui/data/dictionaries")
-    local IsoLanguage = require("ui/isolanguage")
+    local IsoLanguage = require("ui/data/isolanguage")
     local languages = {}
 
     for i = 1, #downloadable_dicts do
