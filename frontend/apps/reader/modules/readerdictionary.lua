@@ -484,6 +484,7 @@ function ReaderDictionary:_genDownloadDictionariesMenu()
 
     for i = 1, #downloadable_dicts do
         local dict = downloadable_dicts[i]
+        dict.ifo_lang = ("%s-%s"):format(dict.lang_in, dict.lang_out)
         dict.lang_in = IsoLanguage:getLocalizedLanguage(dict.lang_in)
         dict.lang_out = IsoLanguage:getLocalizedLanguage(dict.lang_out)
         local dict_lang_in = dict.lang_in
