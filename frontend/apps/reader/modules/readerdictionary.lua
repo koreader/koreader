@@ -267,7 +267,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
             },
             {
                 text = _("Download dictionaries"),
-                sub_item_table = self:_genDownloadDictionariesMenu()
+                sub_item_table_func = function() return self:_genDownloadDictionariesMenu() end,
             },
             {
                 text = _("Enable fuzzy search"),
