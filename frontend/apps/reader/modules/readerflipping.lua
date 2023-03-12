@@ -17,22 +17,13 @@ local ReaderFlipping = WidgetContainer:extend{
 
 function ReaderFlipping:init()
     local icon_size = Screen:scaleBySize(32)
-    self.flipping_widget = IconWidget:new{
-        icon = "book.opened",
+    local dummy = IconWidget:new{
         width = icon_size,
         height = icon_size,
-    }
-    -- Re-use this widget to show an indicator when we are in select mode
-    icon_size = Screen:scaleBySize(36)
-    self.select_mode_widget = IconWidget:new{
-        icon = "texture-box",
-        width = icon_size,
-        height = icon_size,
-        alpha = true,
     }
     self[1] = LeftContainer:new{
-        dimen = Geom:new{w = Screen:getWidth(), h = self.flipping_widget:getSize().h},
-        self.flipping_widget,
+        dimen = Geom:new{w = Screen:getWidth(), h = dummy:getSize().h},
+        dummy,
     }
     self:resetLayout()
 end
@@ -83,22 +74,34 @@ function ReaderFlipping:onSetStatusLine()
 end
 
 function ReaderFlipping:paintTo(bb, x, y)
-    if self.ui.highlight.select_mode then
-        if self[1][1] ~= self.select_mode_widget then
-            self[1][1] = self.select_mode_widget
-        end
+    local widget
+    if self.ui.paging and self.view.flipping_visible then
+        -- pdf page flipping or bookmark browsing mode
+        local icon_size = Screen:scaleBySize(32)
+        widget = IconWidget:new{
+            icon = self.ui.paging.bookmark_flipping_mode and "bookmark" or "book.opened",
+            width = icon_size,
+            height = icon_size,
+        }
+    elseif self.ui.highlight.select_mode then
+        -- highlight select mode
+        local icon_size = Screen:scaleBySize(36)
+        widget = IconWidget:new{
+            icon = "texture-box",
+            width = icon_size,
+            height = icon_size,
+            alpha = true,
+        }
     elseif self.ui.rolling and self.ui.rolling.rendering_state then
-        local widget = self:getRollingRenderingStateIconWidget()
+        -- epub rerendering
+        widget = self:getRollingRenderingStateIconWidget()
+    end
+    if widget then
         if self[1][1] ~= widget then
             self[1][1] = widget
         end
-        if not widget then return end -- nothing to get painted
-    else
-        if self[1][1] ~= self.flipping_widget then
-            self[1][1] = self.flipping_widget
-        end
+        WidgetContainer.paintTo(self, bb, x, y)
     end
-    WidgetContainer.paintTo(self, bb, x, y)
 end
 
 return ReaderFlipping
