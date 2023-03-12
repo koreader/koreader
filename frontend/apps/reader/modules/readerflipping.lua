@@ -5,7 +5,6 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Screen = require("device").screen
 
 local ReaderFlipping = WidgetContainer:extend{
-    orig_reflow_mode = 0,
     -- Icons to show during crengine partial rerendering automation
     rolling_rendering_state_icons = {
         PARTIALLY_RERENDERED = "cre.render.partial",
@@ -17,13 +16,26 @@ local ReaderFlipping = WidgetContainer:extend{
 
 function ReaderFlipping:init()
     local icon_size = Screen:scaleBySize(32)
-    local dummy = IconWidget:new{
+    self.flipping_widget = IconWidget:new{
+        icon = "book.opened",
         width = icon_size,
         height = icon_size,
     }
+    self.bookmark_flipping_widget = IconWidget:new{
+        icon = "bookmark",
+        width = icon_size,
+        height = icon_size,
+    }
+    icon_size = Screen:scaleBySize(36)
+    self.select_mode_widget = IconWidget:new{
+        icon = "texture-box",
+        width = icon_size,
+        height = icon_size,
+        alpha = true,
+    }
     self[1] = LeftContainer:new{
-        dimen = Geom:new{w = Screen:getWidth(), h = dummy:getSize().h},
-        dummy,
+        dimen = Geom:new{w = Screen:getWidth(), h = self.flipping_widget:getSize().h},
+        self.flipping_widget,
     }
     self:resetLayout()
 end
@@ -77,21 +89,10 @@ function ReaderFlipping:paintTo(bb, x, y)
     local widget
     if self.ui.paging and self.view.flipping_visible then
         -- pdf page flipping or bookmark browsing mode
-        local icon_size = Screen:scaleBySize(32)
-        widget = IconWidget:new{
-            icon = self.ui.paging.bookmark_flipping_mode and "bookmark" or "book.opened",
-            width = icon_size,
-            height = icon_size,
-        }
+        widget = self.ui.paging.bookmark_flipping_mode and self.bookmark_flipping_widget or self.flipping_widget
     elseif self.ui.highlight.select_mode then
         -- highlight select mode
-        local icon_size = Screen:scaleBySize(36)
-        widget = IconWidget:new{
-            icon = "texture-box",
-            width = icon_size,
-            height = icon_size,
-            alpha = true,
-        }
+        widget = self.select_mode_widget
     elseif self.ui.rolling and self.ui.rolling.rendering_state then
         -- epub rerendering
         widget = self:getRollingRenderingStateIconWidget()
