@@ -154,6 +154,7 @@ local settingsList = {
 
     -- paging reader settings
     toggle_page_flipping = {category="none", event="TogglePageFlipping", title=_("Toggle page flipping"), paging=true},
+    toggle_bookmark_flipping = {category="none", event="ToggleBookmarkFlipping", title=_("Toggle bookmark flipping"), paging=true},
     toggle_reflow = {category="none", event="ToggleReflow", title=_("Toggle reflow"), paging=true},
     zoom = {category="string", event="SetZoomMode", title=_("Zoom mode"), args=ReaderZooming.available_zoom_modes, toggle=ReaderZooming.available_zoom_modes, paging=true},
     zoom_factor_change = {category="none", event="ZoomFactorChange", title=_("Change zoom factor"), paging=true, separator=true},
@@ -335,6 +336,7 @@ local dispatcher_menu_order = {
     "toggle_bookmark",
     "toggle_page_change_animation",
     "toggle_page_flipping",
+    "toggle_bookmark_flipping",
     "toggle_reflow",
     "toggle_inverse_reading_order",
     "swap_page_turn_buttons",
