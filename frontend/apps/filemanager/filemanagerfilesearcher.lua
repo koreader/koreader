@@ -3,6 +3,7 @@ local CheckButton = require("ui/widget/checkbutton")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local DocumentRegistry = require("document/documentregistry")
 local FileChooser = require("ui/widget/filechooser")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
@@ -111,14 +112,28 @@ function FileSearcher:setSearchResults()
         keywords = keywords:gsub("%*","%.%*")
         -- replace '?' with '.'
         keywords = keywords:gsub("%?","%.")
-        for __,f in pairs(self.files) do
-            if self.case_sensitive then
-                if string.find(f.name, keywords) then
-                    table.insert(self.results, f)
-                end
-            else
-                if string.find(Utf8Proc.lowercase(util.fixUtf8(f.name, "?")), keywords) then
-                    table.insert(self.results, f)
+        for i, f in ipairs(self.files) do
+            local f_name = self.case_sensitive and f.name or Utf8Proc.lowercase(util.fixUtf8(f.name, "?"))
+            if string.find(f_name, keywords) then
+                table.insert(self.results, f)
+            elseif self.include_metadata and f.mandatory then -- files only
+                local filepath = f.dir.."/"..f.name
+                if DocumentRegistry:hasProvider(filepath) then
+                    local book_props = FileManagerBookInfo:getBookProps(filepath)
+                    if next(book_props) ~= nil then
+                        for k, v in pairs(book_props) do
+                            if k ~= "pages" then
+                                local prop = self.case_sensitive and v or Utf8Proc.lowercase(util.fixUtf8(v, "?"))
+                                if k == "description" then
+                                    prop = util.htmlToPlainTextIfHtml(prop)
+                                end
+                                if string.find(prop, keywords) then
+                                    table.insert(self.results, f)
+                                    break
+                                end
+                            end
+                        end
+                    end
                 end
             end
         end
@@ -196,6 +211,15 @@ function FileSearcher:onShowFileSearch(search_string)
         end,
     }
     self.search_dialog:addWidget(self.check_button_subfolders)
+    self.check_button_metadata = CheckButton:new{
+        text = _("In book metadata (slow)"),
+        checked = self.include_metadata,
+        parent = self.search_dialog,
+        callback = function()
+            self.include_metadata = self.check_button_metadata.checked
+        end,
+    }
+    self.search_dialog:addWidget(self.check_button_metadata)
 
     UIManager:show(self.search_dialog)
     self.search_dialog:onShowKeyboard()
