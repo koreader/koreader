@@ -945,6 +945,7 @@ end
 
 function VocabItemWidget:resetProgress()
     self.item.review_count = 0
+    self.item.streak_count = 0
     self.item.due_time = os.time()
     self.item.review_time = self.item.due_time
     self.item.last_due_time = nil
