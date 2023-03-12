@@ -101,7 +101,7 @@ function CoverBrowser:addToMainMenu(menu_items)
             end,
             callback = function()
                 self:setupFileManagerDisplayMode(mode)
-                if BookInfoManager:getSetting("sync_display_modes") then
+                if BookInfoManager:getSetting("unified_display_mode") then
                     self:setupHistoryDisplayMode(mode)
                     self:setupCollectionDisplayMode(mode)
                 end
@@ -128,13 +128,13 @@ function CoverBrowser:addToMainMenu(menu_items)
         })
     end
     table.insert(sub_item_table, {
-        text = _("Sync display modes"),
+        text = _("Use this mode everywhere"),
         checked_func = function()
-            return BookInfoManager:getSetting("sync_display_modes")
+            return BookInfoManager:getSetting("unified_display_mode")
         end,
         callback = function()
-            local do_sync = not BookInfoManager:getSetting("sync_display_modes")
-            BookInfoManager:saveSetting("sync_display_modes", do_sync)
+            local do_sync = not BookInfoManager:getSetting("unified_display_mode")
+            BookInfoManager:saveSetting("unified_display_mode", do_sync)
             if do_sync then
                 self:setupHistoryDisplayMode(filemanager_display_mode)
                 self:setupCollectionDisplayMode(filemanager_display_mode)
@@ -144,14 +144,14 @@ function CoverBrowser:addToMainMenu(menu_items)
     table.insert(sub_item_table, {
         text = _("History display mode"),
         enabled_func = function()
-            return not BookInfoManager:getSetting("sync_display_modes")
+            return not BookInfoManager:getSetting("unified_display_mode")
         end,
         sub_item_table = history_sub_item_table,
     })
     table.insert(sub_item_table, {
         text = _("Favorites display mode"),
         enabled_func = function()
-            return not BookInfoManager:getSetting("sync_display_modes")
+            return not BookInfoManager:getSetting("unified_display_mode")
         end,
         sub_item_table = collection_sub_item_table,
     })
