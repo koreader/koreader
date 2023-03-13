@@ -95,7 +95,7 @@ local dictionaries = {
         lang_in = "eng",
         lang_out = "ces",
         entries = 178904, -- ~90000 each way
-        license = "GNU/FDL",
+        license = _("GNU/FDL"),
         url = "http://http.debian.net/debian/pool/non-free/s/stardict-english-czech/stardict-english-czech_20161201.orig.tar.gz",
     },
     {
@@ -103,25 +103,26 @@ local dictionaries = {
         lang_in = "ces",
         lang_out = "eng",
         entries = 88994,
-        license = "GNU/FDL",
+        license = _("GNU/FDL"),
         url = "https://github.com/Vuizur/czech-dictionary-extender/releases/download/1.0.0/czech-english-dict.tar.gz",
     },
     {
         name = "GNU/FDL Německo/Český slovník",
         lang_in = "deu",
         lang_out = "ces",
-        entries = 2341,
-        license = "GNU/FDL",
+        entries = 2341, -- ~1200 each way
+        license = _("GNU/FDL"),
         url = "http://http.debian.net/debian/pool/non-free/s/stardict-german-czech/stardict-german-czech_20161201.orig.tar.gz",
     },
     {
         name = "GNU/FDL Německo/Český slovník",
         lang_in = "ces",
         lang_out = "deu",
-        entries = 2341,
-        license = "GNU/FDL",
+        entries = 2341, -- ~1200 each way
+        license = _("GNU/FDL"),
         url = "http://http.debian.net/debian/pool/non-free/s/stardict-german-czech/stardict-german-czech_20161201.orig.tar.gz",
     },
+    -- Dictionaries mirrored from Sourceforge, see https://github.com/koreader/koreader/pull/3176#issuecomment-447085441
     {
         name = "Afrikaans-English dictionary",
         lang_in = "afr",
