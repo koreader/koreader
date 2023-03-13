@@ -243,6 +243,14 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     end
 end
 
+--- Shift the execution times of all scheduled tasks
+-- @param time: if positive execute the tasks later, if positive the should be executed earlier
+function UIManager:shiftScheduledTasksBy(time)
+    for i, v in ipairs(self._task_queue) do
+        v.time = v.time + time
+    end
+end
+
 -- Schedule an execution task; task queue is in descending order
 function UIManager:schedule(sched_time, action, ...)
     local lo, hi = 1, #self._task_queue

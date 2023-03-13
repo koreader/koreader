@@ -2471,19 +2471,10 @@ function ReaderFooter:onOutOfScreenSaver()
     self:rescheduleFooterAutoRefreshIfNeeded()
 end
 
-function ReaderFooter:onLeaveStandby()
-    self:maybeUpdateFooter()
-    self:rescheduleFooterAutoRefreshIfNeeded()
-end
-
 function ReaderFooter:onSuspend()
     self:unscheduleFooterAutoRefresh()
     -- Reset the initial marker
     self.progress_bar.inital_percentage = nil
-end
-
-function ReaderFooter:onEnterStandby()
-    self:unscheduleFooterAutoRefresh()
 end
 
 function ReaderFooter:onCloseDocument()
