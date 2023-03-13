@@ -2061,7 +2061,7 @@ local dictionaries = {
     },
     {
         name = "Northern Sami-English Wiktionary",
-        lang_in = "sme",
+        lang_in = "xxps",
         lang_out = "eng",
         entries = 3773,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
@@ -2245,7 +2245,7 @@ local dictionaries = {
     },
     {
         name = "Proto-Finnic-English Wiktionary",
-        lang_in = "urj",
+        lang_in = "xxpf",
         lang_out = "eng",
         entries = 1622,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
@@ -2253,7 +2253,7 @@ local dictionaries = {
     },
     {
         name = "Proto-Germanic-English Wiktionary",
-        lang_in = "gem",
+        lang_in = "xxpg",
         lang_out = "eng",
         entries = 4798,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
@@ -2269,7 +2269,7 @@ local dictionaries = {
     },
     {
         name = "Proto-Slavic-English Wiktionary",
-        lang_in = "sla",
+        lang_in = "xxsl",
         lang_out = "eng",
         entries = 3410,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
@@ -2277,7 +2277,7 @@ local dictionaries = {
     },
     {
         name = "Proto-West Germanic-English Wiktionary",
-        lang_in = "gem",
+        lang_in = "xxpw",
         lang_out = "eng",
         entries = 3559,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",

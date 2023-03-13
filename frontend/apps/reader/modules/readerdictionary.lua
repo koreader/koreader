@@ -486,7 +486,9 @@ function ReaderDictionary:_genDownloadDictionariesMenu()
         local dict = downloadable_dicts[i]
         if not dict.ifo_lang then
             -- this only needs to happen the first time this function is called
-            dict.ifo_lang = ("%s-%s"):format(dict.lang_in, dict.lang_out)
+            local ifo_in = IsoLanguage:getBCPLanguageTag(dict.lang_in)
+            local ifo_out = IsoLanguage:getBCPLanguageTag(dict.lang_out)
+            dict.ifo_lang = ("%s-%s"):format(ifo_in, ifo_out)
             dict.lang_in = IsoLanguage:getLocalizedLanguage(dict.lang_in)
             dict.lang_out = IsoLanguage:getLocalizedLanguage(dict.lang_out)
         end
