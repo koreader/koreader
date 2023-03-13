@@ -220,7 +220,7 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_dutch-english-2.4.2.tar.gz"
     },
     {
-        name = "Engligh Idioms (eng-eng)",
+        name = "English Idioms (eng-eng)",
         lang_in = "eng",
         lang_out = "eng",
         entries = 8560,
@@ -228,7 +228,7 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_idioms_eng_eng-2.4.2.tar.gz"
     },
     {
-        name = "Engligh Idioms (eng-rus)",
+        name = "English Idioms (eng-rus)",
         lang_in = "eng",
         lang_out = "rus",
         entries = 9739,
