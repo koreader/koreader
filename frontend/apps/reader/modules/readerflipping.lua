@@ -5,7 +5,6 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Screen = require("device").screen
 
 local ReaderFlipping = WidgetContainer:extend{
-    orig_reflow_mode = 0,
     -- Icons to show during crengine partial rerendering automation
     rolling_rendering_state_icons = {
         PARTIALLY_RERENDERED = "cre.render.partial",
@@ -22,7 +21,11 @@ function ReaderFlipping:init()
         width = icon_size,
         height = icon_size,
     }
-    -- Re-use this widget to show an indicator when we are in select mode
+    self.bookmark_flipping_widget = IconWidget:new{
+        icon = "bookmark",
+        width = icon_size,
+        height = icon_size,
+    }
     icon_size = Screen:scaleBySize(36)
     self.select_mode_widget = IconWidget:new{
         icon = "texture-box",
@@ -83,22 +86,23 @@ function ReaderFlipping:onSetStatusLine()
 end
 
 function ReaderFlipping:paintTo(bb, x, y)
-    if self.ui.highlight.select_mode then
-        if self[1][1] ~= self.select_mode_widget then
-            self[1][1] = self.select_mode_widget
-        end
+    local widget
+    if self.ui.paging and self.view.flipping_visible then
+        -- pdf page flipping or bookmark browsing mode
+        widget = self.ui.paging.bookmark_flipping_mode and self.bookmark_flipping_widget or self.flipping_widget
+    elseif self.ui.highlight.select_mode then
+        -- highlight select mode
+        widget = self.select_mode_widget
     elseif self.ui.rolling and self.ui.rolling.rendering_state then
-        local widget = self:getRollingRenderingStateIconWidget()
+        -- epub rerendering
+        widget = self:getRollingRenderingStateIconWidget()
+    end
+    if widget then
         if self[1][1] ~= widget then
             self[1][1] = widget
         end
-        if not widget then return end -- nothing to get painted
-    else
-        if self[1][1] ~= self.flipping_widget then
-            self[1][1] = self.flipping_widget
-        end
+        WidgetContainer.paintTo(self, bb, x, y)
     end
-    WidgetContainer.paintTo(self, bb, x, y)
 end
 
 return ReaderFlipping
