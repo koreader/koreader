@@ -655,6 +655,8 @@ function AutoSuspend:AllowStandbyHandler()
         -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
         Device:standby(wake_in)
 
+        UIManager:shiftScheduledTasksBy( - Device.last_standby_time)
+
         logger.dbg("AutoSuspend: left standby after", time.format_time(Device.last_standby_time), "s")
 
         -- We delay the LeaveStandby event (our onLeaveStandby handler is responsible for rescheduling everything properly),
