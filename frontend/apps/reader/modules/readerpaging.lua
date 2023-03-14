@@ -193,9 +193,6 @@ function ReaderPaging:onReadSettings(config)
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
     self.is_reflowed = config:has("kopt_text_wrap") and config:readSetting("kopt_text_wrap") == 1
-    for _, v in ipairs(ReaderZooming.zoom_pan_settings) do
-        self[v] = config:readSetting(v) or G_reader_settings:readSetting(v) or ReaderZooming[v]
-    end
 end
 
 function ReaderPaging:onSaveSettings()
