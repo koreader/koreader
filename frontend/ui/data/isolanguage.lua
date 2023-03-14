@@ -3,6 +3,7 @@ local _ = require("gettext")
 local locale_lang_map = {
     -- from https://iso639-3.sil.org/sites/iso639-3/files/downloads/iso-639-3.tab
     -- first chunk of names are languages present in iso-639-1
+    -- @translators Most of these language name have already been translated at <https://hosted.weblate.org/projects/iso-codes/iso-639-2/>. Click "Automatic suggestions" to see them below the textfield.
     aar = _("Afar"),
     afr = _("Afrikaans"),
     ara = _("Arabic"), -- macrolanguage
@@ -124,6 +125,7 @@ local locale_lang_map = {
 
     -- second chunk of names are languages present in iso-639-2
     -- this is only as complete as it needs to be to cover the languages in dictionaries.lua
+    -- @translators Most of these language name have already been translated at <https://hosted.weblate.org/projects/iso-codes/iso-639-2/>. Click "Automatic suggestions" to see them below the textfield.
     ady = _("Adyghe"),
     alt = _("Southern Altai"),
     ang = _("Old English"), -- (ca. 450-1100)
@@ -164,6 +166,7 @@ local locale_lang_map = {
 
     -- third chunk of names are only present in iso639-3 standard
     -- this is only as complete as it needs to be to cover the languages in dictionaries.lua
+    -- @translators Most of these language name have already been translated at <https://hosted.weblate.org/projects/iso-codes/iso-639-2/>. Click "Automatic suggestions" to see them below the textfield.
     aii = _("Assyrian Neo-Aramaic"),
     apc = _("Levantine Arabic"),
     ary = _("Moroccan Arabic"),
