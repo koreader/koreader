@@ -904,13 +904,14 @@ end
 -- filename extension. Inspired by luarocks archive_unpack()
 -- @param archive string: Filename of archive.
 -- @param extract_to string: Destination directory.
+-- @param with_stripped_root boolean: true if root directory in archive should be stripped
 -- @return boolean or (boolean, string): true on success, false and an error message on failure.
-function Device:unpackArchive(archive, extract_to)
+function Device:unpackArchive(archive, extract_to, with_stripped_root)
     require("dbg").dassert(type(archive) == "string")
     local BD = require("ui/bidi")
     local ok
     if archive:match("%.tar%.bz2$") or archive:match("%.tar%.gz$") or archive:match("%.tar%.lz$") or archive:match("%.tgz$") then
-        ok = self:untar(archive, extract_to)
+        ok = self:untar(archive, extract_to, with_stripped_root)
     else
         return false, T(_("Couldn't extract archive:\n\n%1\n\nUnrecognized filename extension."), BD.filepath(archive))
     end
@@ -920,8 +921,12 @@ function Device:unpackArchive(archive, extract_to)
     return true
 end
 
-function Device:untar(archive, extract_to)
-    return os.execute(("./tar xf %q -C %q"):format(archive, extract_to))
+function Device:untar(archive, extract_to, with_stripped_root)
+    local cmd = "./tar xf %q -C %q"
+    if with_stripped_root then
+        cmd = cmd .. " --strip-components=1"
+    end
+    return os.execute(cmd:format(archive, extract_to))
 end
 
 -- Set device event handlers common to all devices
