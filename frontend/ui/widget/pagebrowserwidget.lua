@@ -984,6 +984,32 @@ function PageBrowserWidget:onHold(arg, ges)
         end
         return true
     end
+    -- Hold on title: do nothing
+    if ges.pos.y < self.title_bar_h then
+        return true
+    end
+    -- If hold on a thumbnail, toggle bookmark on that page
+    for idx=1, self.nb_grid_items do
+        if ges.pos:intersectWith(self.grid[idx].dimen) then
+            local page = self.grid[idx].page_idx
+            if page and self.grid[idx][1][1].is_page_thumbnail then
+                -- Only allow hold on fully displayed thumbnails.
+                -- Also, a thumbnail might be smaller than the original grid
+                -- item dimension. Be sure the hold is on it (otherwise, it's
+                -- a hold in the inter thumbnail margin, that we'd rather not
+                -- handle)
+                local thumb_frame = self.grid[idx][1][1]
+                if ges.pos:intersectWith(thumb_frame.dimen) then
+                    self.ui.bookmark:toggleBookmark(page)
+                    -- Update our cached bookmarks info and ensure the bottom ribbon is redrawn
+                    self.bookmarked_pages = self.ui.bookmark:getBookmarkedPages()
+                    self:updateLayout()
+                    return true
+                end
+            end
+            break
+        end
+    end
     return true
 end
 
