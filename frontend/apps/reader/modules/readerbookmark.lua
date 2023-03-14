@@ -844,7 +844,7 @@ function ReaderBookmark:isBookmarkMatch(item, pn_or_xp)
     if self.ui.paging then
         return item.page == pn_or_xp
     else
-        return self.ui.document:isXPointerInCurrentPage(item.page)
+        return self.ui.document:getPageFromXPointer(item.page) == self.ui.document:getPageFromXPointer(pn_or_xp)
     end
 end
 
@@ -1190,8 +1190,17 @@ function ReaderBookmark:doesBookmarkMatchTable(item, match_table)
     end
 end
 
-function ReaderBookmark:toggleBookmark()
-    local pn_or_xp = self:getCurrentPageNumber()
+function ReaderBookmark:toggleBookmark(pageno)
+    local pn_or_xp
+    if pageno then
+        if self.ui.rolling then
+            pn_or_xp = self.ui.document:getPageXPointer(pageno)
+        else
+            pn_or_xp = pageno
+        end
+    else
+        pn_or_xp = self:getCurrentPageNumber()
+    end
     local index = self:getDogearBookmarkIndex(pn_or_xp)
     if index then
         self.ui:handleEvent(Event:new("BookmarkRemoved", self.bookmarks[index]))
