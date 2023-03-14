@@ -196,11 +196,11 @@ local locale_lang_map = {
     yue = _("Yue Chinese"),
 
     -- these are made up language codes for very specific languages which do not map to a specific ISO3 code
-    xxpf = _("Proto Finnic"),
-    xxpg = _("Proto Germanic"),
-    xxpw = _("Proto West-Germanic"),
-    xxps = _("Proto Sami"),
-    xxsl = _("Proto Slavic"),
+    xxpf = _("Proto-Finnic"),
+    xxpg = _("Proto-Germanic"),
+    xxpw = _("Proto-West Germanic"),
+    xxps = _("Proto-Sami"),
+    xxsl = _("Proto-Slavic"),
 }
 
 local iso_bcp47_map = {
