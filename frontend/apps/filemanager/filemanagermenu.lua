@@ -501,7 +501,7 @@ To:
                     end
                 end,
             },
-        }
+        },
     }
     if Device:isKobo() and not Device:isSunxi() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
