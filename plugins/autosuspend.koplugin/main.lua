@@ -34,8 +34,6 @@ local AutoSuspend = WidgetContainer:extend{
     task = nil,
     kindle_task = nil,
     standby_task = nil,
-    leave_standby_task = nil,
-    wrapped_leave_standby_task = nil,
     going_to_suspend = nil,
 }
 
@@ -201,14 +199,6 @@ function AutoSuspend:init()
     self.standby_task = function()
         self:_schedule_standby()
     end
-    self.leave_standby_task = function()
-        -- Only if we're not already entering suspend...
-        if self.going_to_suspend then
-            return
-        end
-
-        UIManager:broadcastEvent(Event:new("LeaveStandby"))
-    end
 
     -- Make sure we only have an AllowStandby handler when we actually want one...
     self:toggleStandbyHandler(self:_enabledStandby())
@@ -235,7 +225,6 @@ function AutoSuspend:onCloseWidget()
 
     self:_unschedule_standby()
     self.standby_task = nil
-    self.leave_standby_task = nil
 end
 
 function AutoSuspend:onInputEvent()
@@ -251,12 +240,6 @@ function AutoSuspend:_unschedule_standby()
         UIManager:allowStandby()
 
         self.is_standby_scheduled = false
-    end
-
-    -- Make sure we don't trigger a ghost LeaveStandby event...
-    if self.leave_standby_task then
-        logger.dbg("AutoSuspend: unschedule leave standby task")
-        UIManager:unschedule(self.leave_standby_task)
     end
 end
 
@@ -384,20 +367,6 @@ function AutoSuspend:onResume()
     self:_start_kindle()
     self:_unschedule_standby()
     self:_start_standby()
-end
-
-function AutoSuspend:onLeaveStandby()
-    logger.dbg("AutoSuspend: onLeaveStandby")
-    -- Unschedule suspend and shutdown, as the realtime clock has ticked
-    self:_unschedule()
-    -- Reschedule suspend and shutdown (we'll recompute the delay based on the last user input, *not* the current time).
-    -- i.e., the goal is to behave as if we'd never unscheduled it, making sure we do *NOT* reset the delay to the full timeout.
-    self:_start()
-    -- Assuming _start didn't send us straight to onSuspend (i.e., we were woken from standby by the scheduled suspend task!)...
-    if not self.going_to_suspend then
-        -- Reschedule standby, too (we're guaranteed that no standby task is currently scheduled, hence the lack of unscheduling).
-        self:_start_standby()
-    end
 end
 
 function AutoSuspend:onUnexpectedWakeupLimit()
@@ -655,20 +624,15 @@ function AutoSuspend:AllowStandbyHandler()
         -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
         Device:standby(wake_in)
 
-        UIManager:shiftScheduledTasksBy( - Device.last_standby_time)
-
         logger.dbg("AutoSuspend: left standby after", time.format_time(Device.last_standby_time), "s")
 
-        -- We delay the LeaveStandby event (our onLeaveStandby handler is responsible for rescheduling everything properly),
-        -- to make sure UIManager will consume the input events that woke us up first
-        -- (in case we were woken up by user input, as opposed to an rtc wake alarm)!
-        -- (This ensures we'll use an up to date last_action_time, and that it only ever gets updated from *user* input).
-        -- NOTE: While UIManager consumes scheduled tasks before input events, we do *NOT* have to rely on tickAfterNext,
+        -- NOTE: UIManager consumes scheduled tasks before input events,
         --       solely because of where we run inside an UI frame (via UIManager:_standbyTransition):
         --       we're neither a scheduled task nor an input event, we run *between* scheduled tasks and input polling.
         --       That means we go straight to input polling when returning, *without* a trip through the task queue
         --       (c.f., UIManager:_checkTasks in UIManager:handleInput).
-        UIManager:nextTick(self.leave_standby_task)
+
+        UIManager:shiftScheduledTasksBy( - Device.last_standby_time) -- correct scheduled times by last_standby_time
 
         -- Since we go straight to input polling, and that our time spent in standby won't have affected the already computed
         -- input polling deadline (because MONOTONIC doesn't tick during standby/suspend),
@@ -678,11 +642,17 @@ function AutoSuspend:AllowStandbyHandler()
         -- This shouldn't prevent us from actually consuming any pending input events first,
         -- because if we were woken up by user input, those events should already be in the evdev queue...
         UIManager:consumeInputEarlyAfterPM(true)
-    else
-        if not self.going_to_suspend then
-            self:_start_standby()
-        end
     end
+
+    -- If we are leaving this method we are sure, that the input polling deadline is
+    -- either the value (deadline) of the next scheduled task or zero (consumeInputEarly).
+    -- Then the input waiting is ecexuted, so it is save to schedule a new task.
+    if not self.going_to_suspend then
+        -- Schedule the next standby check in the future
+        self:_start_standby()
+    end
+
+
 end
 
 function AutoSuspend:toggleStandbyHandler(toggle)
