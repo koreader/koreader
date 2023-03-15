@@ -5,7 +5,6 @@ if not Device:canSuspend() then
     return { disabled = true, }
 end
 
-local Event = require("ui/event")
 local Math = require("optmath")
 local NetworkMgr = require("ui/network/manager")
 local PluginShare = require("pluginshare")
@@ -107,10 +106,10 @@ function AutoSuspend:_start()
     end
 end
 
-function AutoSuspend:_start_standby()
+function AutoSuspend:_start_standby(sleep_in)
     if self:_enabledStandby() then
         logger.dbg("AutoSuspend: start standby timer at", time.format_time(self.last_action_time))
-        self:_schedule_standby()
+        self:_schedule_standby(sleep_in)
     end
 end
 
@@ -243,7 +242,9 @@ function AutoSuspend:_unschedule_standby()
     end
 end
 
-function AutoSuspend:_schedule_standby()
+function AutoSuspend:_schedule_standby(sleep_in)
+    sleep_in = sleep_in or self.auto_standby_timeout_seconds
+
     -- Start the long list of conditions in which we do *NOT* want to go into standby ;).
     if not Device:canStandby() then
         return
@@ -275,7 +276,7 @@ function AutoSuspend:_schedule_standby()
         standby_delay_seconds = self.auto_standby_timeout_seconds
     else
         local now = UIManager:getElapsedTimeSinceBoot()
-        standby_delay_seconds = self.auto_standby_timeout_seconds - time.to_number(now - self.last_action_time)
+        standby_delay_seconds = sleep_in - time.to_number(now - self.last_action_time)
 
         -- If we blow past the deadline on the first call of a scheduling cycle,
         -- make sure we don't go straight to allowStandby, as we haven't called preventStandby yet...
@@ -285,7 +286,7 @@ function AutoSuspend:_schedule_standby()
             -- or if the only input events we consumed did not trigger an InputEvent event (woken up by gyro events),
             -- meaning self.last_action_time is further in the past than it ought to.
             -- Delay by the full amount to avoid further bad scheduling interactions.
-            standby_delay_seconds = self.auto_standby_timeout_seconds
+            standby_delay_seconds = sleep_in
         end
     end
 
@@ -618,7 +619,6 @@ function AutoSuspend:AllowStandbyHandler()
     end
 
     if wake_in >= 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
-        UIManager:broadcastEvent(Event:new("EnterStandby"))
         logger.dbg("AutoSuspend: entering standby with a wakeup alarm in", wake_in, "s")
 
         -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
@@ -637,22 +637,22 @@ function AutoSuspend:AllowStandbyHandler()
         -- Since we go straight to input polling, and that our time spent in standby won't have affected the already computed
         -- input polling deadline (because MONOTONIC doesn't tick during standby/suspend),
         -- tweak said deadline to make sure poll will return immediately, so we get a chance to run through the task queue ASAP.
-        -- This ensures we get a LeaveStandby event in a timely fashion,
-        -- even when there isn't actually any user input happening (e.g., woken up by the rtc alarm).
         -- This shouldn't prevent us from actually consuming any pending input events first,
         -- because if we were woken up by user input, those events should already be in the evdev queue...
         UIManager:consumeInputEarlyAfterPM(true)
+        -- If we are leaving this method we are sure, that the input polling deadline is zero (consumeInputEarly).
+        -- Then the input waiting is executed, so it is save to schedule a new task.
+        if not self.going_to_suspend then
+            -- Schedule the next standby check in the future
+            self:_start_standby()
+        end
+    else
+        -- If we are leaving this method we are sure, that the input polling deadline fits the next scheduled task (deadline).
+        if not self.going_to_suspend then
+            -- Schedule the next standby check 0.1 seconds after the next calculated wakeup time.
+            self:_start_standby(wake_in + 0.1)
+        end
     end
-
-    -- If we are leaving this method we are sure, that the input polling deadline is
-    -- either the value (deadline) of the next scheduled task or zero (consumeInputEarly).
-    -- Then the input waiting is ecexuted, so it is save to schedule a new task.
-    if not self.going_to_suspend then
-        -- Schedule the next standby check in the future
-        self:_start_standby()
-    end
-
-
 end
 
 function AutoSuspend:toggleStandbyHandler(toggle)
