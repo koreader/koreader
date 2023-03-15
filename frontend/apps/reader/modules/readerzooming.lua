@@ -72,7 +72,7 @@ local ReaderZooming = InputContainer:extend{
     zoom_overlap_v = 40,
     zoom_bottom_to_top = nil,  -- true for bottom-to-top
     zoom_direction_vertical = nil, -- true for column mode
-    zoom_direction_settings = {
+    zoom_direction_settings = { -- const
         [7] = {right_to_left = false, zoom_bottom_to_top = false, zoom_direction_vertical = false},
         [6] = {right_to_left = false, zoom_bottom_to_top = false, zoom_direction_vertical = true },
         [5] = {right_to_left = false, zoom_bottom_to_top = true,  zoom_direction_vertical = false},
@@ -343,7 +343,7 @@ end
 function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     local config = self.ui.document.configurable
     local zoom_direction_setting = self.zoom_direction_settings[config.zoom_direction]
-    local settings = { -- untie the tables
+    local settings = { -- unpack the table, work on a local copy
         right_to_left = zoom_direction_setting.right_to_left,
         zoom_bottom_to_top = zoom_direction_setting.zoom_bottom_to_top,
         zoom_direction_vertical = zoom_direction_setting.zoom_direction_vertical,
