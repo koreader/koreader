@@ -134,8 +134,6 @@ function FileManager:setupLayout()
         -- remember to adjust the height when new item is added to the group
         path = self.root_path,
         focused_path = self.focused_file,
-        collate = G_reader_settings:readSetting("collate") or "strcoll",
-        reverse_collate = G_reader_settings:isTrue("reverse_collate"),
         show_parent = self.show_parent,
         show_hidden = show_hidden,
         width = Screen:getWidth(),
@@ -793,16 +791,6 @@ function FileManager:toggleUnsupportedFiles()
     G_reader_settings:saveSetting("show_unsupported", self.file_chooser.show_unsupported)
 end
 
-function FileManager:setCollate(collate)
-    self.file_chooser:setCollate(collate)
-    G_reader_settings:saveSetting("collate", self.file_chooser.collate)
-end
-
-function FileManager:toggleReverseCollate()
-    self.file_chooser:toggleReverseCollate()
-    G_reader_settings:saveSetting("reverse_collate", self.file_chooser.reverse_collate)
-end
-
 function FileManager:onClose()
     logger.dbg("close filemanager")
     PluginLoader:finalize()
@@ -1136,106 +1124,6 @@ function FileManager:renameFile(file, basename, is_file)
     else
         doRenameFile()
     end
-end
-
-function FileManager:getSortingMenuTable()
-    local fm = self
-    local collates = {
-        strcoll = {_("filename"), _("Sort by filename")},
-        natural = {_("natural"), _("Sort by filename (natural sorting)")},
-        strcoll_mixed = {_("name mixed"), _("Sort by name – mixed files and folders")},
-        access = {_("date read"), _("Sort by last read date")},
-        change = {_("date added"), _("Sort by date added")},
-        modification = {_("date modified"), _("Sort by date modified")},
-        size = {_("size"), _("Sort by size")},
-        type = {_("type"), _("Sort by type")},
-        percent_unopened_first = {_("percent – unopened first"), _("Sort by percent – unopened first")},
-        percent_unopened_last = {_("percent – unopened last"), _("Sort by percent – unopened last")},
-    }
-    local set_collate_table = function(collate)
-        return {
-            text = collates[collate][2],
-            checked_func = function()
-                return fm.file_chooser.collate == collate
-            end,
-            callback = function() fm:setCollate(collate) end,
-        }
-    end
-    local get_collate_percent = function()
-        local collate_type = G_reader_settings:readSetting("collate")
-        if collate_type == "percent_unopened_first" or collate_type == "percent_unopened_last" then
-            return collates[collate_type][2]
-        else
-            return _("Sort by percent")
-        end
-    end
-    return {
-        text_func = function()
-            return T(
-                _("Sort by: %1"),
-                collates[fm.file_chooser.collate][1]
-            )
-        end,
-        sub_item_table = {
-            set_collate_table("strcoll"),
-            set_collate_table("natural"),
-            set_collate_table("strcoll_mixed"),
-            set_collate_table("access"),
-            set_collate_table("change"),
-            set_collate_table("modification"),
-            set_collate_table("size"),
-            set_collate_table("type"),
-            {
-                text_func =  get_collate_percent,
-                checked_func = function()
-                    return fm.file_chooser.collate == "percent_unopened_first"
-                        or fm.file_chooser.collate == "percent_unopened_last"
-                end,
-                sub_item_table = {
-                    set_collate_table("percent_unopened_first"),
-                    set_collate_table("percent_unopened_last"),
-                }
-            },
-        }
-    }
-end
-
-function FileManager:getStartWithMenuTable()
-    local start_with_setting = G_reader_settings:readSetting("start_with") or "filemanager"
-    local start_withs = {
-        filemanager = {_("file browser"), _("Start with file browser")},
-        history = {_("history"), _("Start with history")},
-        favorites = {_("favorites"), _("Start with favorites")},
-        folder_shortcuts = {_("folder shortcuts"), _("Start with folder shortcuts")},
-        last = {_("last file"), _("Start with last file")},
-    }
-    local set_sw_table = function(start_with)
-        return {
-            text = start_withs[start_with][2],
-            checked_func = function()
-                return start_with_setting == start_with
-            end,
-            callback = function()
-                start_with_setting = start_with
-                G_reader_settings:saveSetting("start_with", start_with)
-            end,
-        }
-    end
-    return {
-        text_func = function()
-            return T(
-                _("Start with: %1"),
-                start_withs[start_with_setting][1]
-            )
-        end,
-        sub_item_table = {
-            set_sw_table("filemanager"),
-            set_sw_table("history"),
-            set_sw_table("favorites"),
-            set_sw_table("folder_shortcuts"),
-            set_sw_table("last"),
-        }
-    }
 end
 
 --- @note: This is the *only* safe way to instantiate a new FileManager instance!
