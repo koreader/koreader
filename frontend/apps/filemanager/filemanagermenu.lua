@@ -406,19 +406,26 @@ To:
         end
     end
 
-    self.menu_items.sort_by = self.ui:getSortingMenuTable()
+    self.menu_items.sort_by = self:getSortingMenuTable()
     self.menu_items.reverse_sorting = {
         text = _("Reverse sorting"),
-        checked_func = function() return self.ui.file_chooser.reverse_collate end,
-        callback = function() self.ui:toggleReverseCollate() end
+        checked_func = function()
+            return G_reader_settings:isTrue("reverse_collate")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("reverse_collate")
+            self.ui.file_chooser:refreshPath()
+        end,
     }
-    self.menu_items.start_with = self.ui:getStartWithMenuTable()
+    self.menu_items.start_with = self:getStartWithMenuTable()
+
     if Device:supportsScreensaver() then
         self.menu_items.screensaver = {
             text = _("Screensaver"),
             sub_item_table = require("ui/elements/screensaver_menu"),
         }
     end
+
     -- insert common settings
     for id, common_setting in pairs(dofile("frontend/ui/elements/common_settings_menu_table.lua")) do
         self.menu_items[id] = common_setting
@@ -799,6 +806,78 @@ dbg:guard(FileManagerMenu, 'setUpdateItemTable',
             widget:addToMainMenu(mock_menu_items)
         end
     end)
+
+function FileManagerMenu:getSortingMenuTable()
+    local collates = {
+        { _("filename"), "strcoll" },
+        { _("filename (natural sorting)"), "natural" },
+        { _("name – mixed files and folders"), "strcoll_mixed" },
+        { _("last read date"), "access" },
+        { _("date added"), "change" },
+        { _("date modified"), "modification" },
+        { _("size"), "size" },
+        { _("type"), "type" },
+        { _("percent – unopened first"), "percent_unopened_first" },
+        { _("percent – unopened last"), "percent_unopened_last" },
+    }
+    local sub_item_table = {}
+    for i, v in ipairs(collates) do
+        table.insert(sub_item_table, {
+            text = v[1],
+            checked_func = function()
+                return v[2] == G_reader_settings:readSetting("collate", "strcoll")
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("collate", v[2])
+                self.ui.file_chooser:refreshPath()
+            end,
+        })
+    end
+    return {
+        text_func = function()
+            local collate = G_reader_settings:readSetting("collate")
+            for i, v in ipairs(collates) do
+                if v[2] == collate then
+                    return T(_("Sort by: %1"), v[1])
+                end
+            end
+        end,
+        sub_item_table = sub_item_table,
+    }
+end
+
+function FileManagerMenu:getStartWithMenuTable()
+    local start_withs = {
+        { _("file browser"), "filemanager" },
+        { _("history"), "history" },
+        { _("favorites"), "favorites" },
+        { _("folder shortcuts"), "folder_shortcuts" },
+        { _("last file"), "last" },
+    }
+    local sub_item_table = {}
+    for i, v in ipairs(start_withs) do
+        table.insert(sub_item_table, {
+            text = v[1],
+            checked_func = function()
+                return v[2] == G_reader_settings:readSetting("start_with", "filemanager")
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("start_with", v[2])
+            end,
+        })
+    end
+    return {
+        text_func = function()
+            local start_with = G_reader_settings:readSetting("start_with")
+            for i, v in ipairs(start_withs) do
+                if v[2] == start_with then
+                    return T(_("Start with: %1"), v[1])
+                end
+            end
+        end,
+        sub_item_table = sub_item_table,
+    }
+end
 
 function FileManagerMenu:moveBookMetadata()
     local DocSettings = require("docsettings")
