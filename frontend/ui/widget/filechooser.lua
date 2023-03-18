@@ -216,7 +216,7 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
             if a.opened == b.opened then
                 return a.attr.change > b.attr.change
             end
-            return b_opened
+            return b.opened
         end
     elseif collate == "size" then
         sorting = function(a, b)
