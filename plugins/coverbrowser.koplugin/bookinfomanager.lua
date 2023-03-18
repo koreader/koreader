@@ -215,6 +215,7 @@ end
 
 function BookInfoManager:closeDbConnection()
     if self.db_conn then
+        self.db_conn:exec("PRAGMA analysis_limit=10000; PRAGMA optimize;")
         self.db_conn:close()
         self.db_conn = nil
     end
