@@ -83,12 +83,13 @@ function HttpRemote:onRequest(client)
     local request = client:receive("*l") -- read the first line of the request
 
     logger.dbg("HttpRemote: Received request: " .. request)
-    local method, path, params, version = request:match("(%u+)%s+(%S+)%?([^%s]+)%s+(%S+)") -- extract method, path, params and version
-
+    local params_string = request:match("%u+%s+%S+%?([^%s]+)%s+%S+") -- extract params 
+    logger.dbg("HttpRemote: Params: " .. params_string)
+ 
     local params_arr = {}
 
-    if params then
-        for params in string.gmatch(params, "[^&]+") do
+    if params_string then
+        for params in string.gmatch(params_string, "[^&]+") do
             -- Split each parameter string into key and value using string.match
             local key, value = string.match(params, "(.-)=(.*)")
             params_arr[key] = value
@@ -194,15 +195,15 @@ function HttpRemote:addToMainMenu(menu_items)
                                 {
                                     text = _("OK"),
                                     callback = function()
-                                        local port = port_dialog:getInputValue()
-                                        if port ~= "" then
-                                            local port = tonumber(port)
-                                            if not port or port < 1 or port > 65355 then
+                                        local port_dialog_input = port_dialog:getInputValue()
+                                        if port_dialog_input ~= "" then
+                                            local input_port = tonumber(port)
+                                            if not input_port or input_port < 1 or input_port > 65355 then
                                                 --default port
-                                                 port = 8080
+                                                input_port = 8080
                                             end
-                                            self.port = port
-                                            G_reader_settings:saveSetting("httpremote_port", port )
+                                            self.port = input_port
+                                            G_reader_settings:saveSetting("httpremote_port", input_port)
 
                                             --restart the server
                                             self:stop()
