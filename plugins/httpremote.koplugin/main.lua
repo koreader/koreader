@@ -84,7 +84,7 @@ function HttpRemote:onRequest(client)
 
     logger.dbg("HttpRemote: Received request: " .. request)
     local params_string = request:match("%u+%s+%S+%?([^%s]+)%s+%S+") -- extract params
-    logger.dbg("HttpRemote: Params: " .. params_string)
+    logger.dbg("HttpRemote: Params: ", params_string)
 
     local params_arr = {}
 
