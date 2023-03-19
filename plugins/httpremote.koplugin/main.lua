@@ -26,6 +26,35 @@ function HttpRemote:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
+function HttpRemote:onEnterStandby()
+    logger.dbg("HttpRemote: onEnterStandby")
+    self:stop()
+end
+
+function HttpRemote:onSuspend()
+    logger.dbg("HttpRemote: onSuspend")
+    self:stop()
+end
+
+function HttpRemote:onExit()
+    logger.dbg("HttpRemote: onExit")
+    self:stop()
+end
+
+function HttpRemote:onLeaveStandby()
+    logger.dbg("HttpRemote: onLeaveStandby")
+    if self.server == nil then
+        self:start()
+    end
+end
+
+function HttpRemote:onResume()
+    logger.dbg("HttpRemote: onResume")
+    if self.server == nil then
+        self:start()
+    end
+end
+
 function HttpRemote:start()
     self.server = socket.bind("*", self.port)
     self.server:settimeout(0.01) -- set timeout (10ms)
@@ -131,6 +160,10 @@ function HttpRemote:turnPage(pages)
     if top_wg.name == "ReaderUI" then
         logger.dbg("HttpRemote: Sent event GotoViewRel " .. pages)
         self.ui:handleEvent(Event:new("GotoViewRel", pages))
+
+        if Device:isKindle() then
+            os.execute("/usr/bin/powerd_test -i")
+        end
     end
 end
 
