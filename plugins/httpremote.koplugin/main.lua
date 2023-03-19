@@ -83,9 +83,9 @@ function HttpRemote:onRequest(client)
     local request = client:receive("*l") -- read the first line of the request
 
     logger.dbg("HttpRemote: Received request: " .. request)
-    local params_string = request:match("%u+%s+%S+%?([^%s]+)%s+%S+") -- extract params 
+    local params_string = request:match("%u+%s+%S+%?([^%s]+)%s+%S+") -- extract params
     logger.dbg("HttpRemote: Params: " .. params_string)
- 
+
     local params_arr = {}
 
     if params_string then
@@ -110,7 +110,7 @@ function HttpRemote:onRequest(client)
 
     -- response body (if available)
     -- if loadpage param is populated, load the html
-    if not params or params_arr["loadpage"] then
+    if not params_string or params_arr["loadpage"] then
         response = response .. [[
 <html><body>
 <h1>KOReader HttpRemote</h1>
@@ -197,7 +197,7 @@ function HttpRemote:addToMainMenu(menu_items)
                                     callback = function()
                                         local port_dialog_input = port_dialog:getInputValue()
                                         if port_dialog_input ~= "" then
-                                            local input_port = tonumber(port)
+                                            local input_port = tonumber(port_dialog_input)
                                             if not input_port or input_port < 1 or input_port > 65355 then
                                                 --default port
                                                 input_port = 8080
