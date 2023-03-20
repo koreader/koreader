@@ -873,19 +873,13 @@ function ReaderLink:onGoBackLink(show_notification_if_empty)
 end
 
 --- Goes to next location.
-function ReaderLink:onGoForwardLink(show_notification_if_empty)
+function ReaderLink:onGoForwardLink()
     local saved_location = self.location_stack[self.location_stack_index+1]
     if saved_location then
         self.location_stack_index = self.location_stack_index + 1
-    end
-    if saved_location then
         logger.dbg("GoForward: restoring:", saved_location)
         self.ui:handleEvent(Event:new('RestoreBookLocation', saved_location))
         return true
-    elseif show_notification_if_empty then
-        UIManager:show(Notification:new{
-            text = _("Location history is empty."),
-        })
     end
 end
 
@@ -893,7 +887,7 @@ function ReaderLink:onSwipe(arg, ges)
     local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
     if direction == "east" then
         if isSwipeToGoBackEnabled() then
-            if self.location_stack_index > 0 or self.location_stack[self.location_stack_index+1] ~= nil then
+            if self.location_stack_index > 0 then
                 -- Remember if location stack is going to be empty, so we
                 -- can stop the propagation of next swipe back: so the user
                 -- knows it is empty and that next swipe back will get him
