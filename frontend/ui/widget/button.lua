@@ -85,6 +85,12 @@ function Button:init()
 
     local outer_pad_width = 2*self.padding_h + 2*self.margin + 2*self.bordersize -- unscaled_size_check: ignore
 
+    -- If this button could be made smaller while still not needing truncation
+    -- or a smaller font size, we'll set this: it may allow an upper widget to
+    -- resize/relayout itself to look more compact/nicer (as this size would
+    -- depends on translations)
+    self._min_needed_width = nil
+
     if self.text then
         local max_width = self.max_width or self.width
         if max_width then
@@ -97,6 +103,9 @@ function Button:init()
             bold = self.text_font_bold,
             face = Font:getFace(self.text_font_face, self.text_font_size)
         }
+        if not self.label_widget:isTruncated() then
+            self._min_needed_width = self.label_widget:getSize().w + outer_pad_width
+        end
         self.did_truncation_tweaks = false
         if self.avoid_text_truncation and self.label_widget:isTruncated() then
             self.did_truncation_tweaks = true
@@ -146,6 +155,7 @@ function Button:init()
             width = self.icon_width,
             height = self.icon_height,
         }
+        self._min_needed_width = self.icon_width + outer_pad_width
     end
     local widget_size = self.label_widget:getSize()
     local inner_width
@@ -210,6 +220,12 @@ function Button:init()
             },
         }
     }
+end
+
+function Button:getMinNeededWidth()
+    if self._min_needed_width and self._min_needed_width < self.width then
+        return self._min_needed_width
+    end
 end
 
 function Button:setText(text, width)
