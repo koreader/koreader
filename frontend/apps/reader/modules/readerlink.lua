@@ -64,6 +64,7 @@ end
 
 local ReaderLink = InputContainer:extend{
     location_stack = nil, -- table, per-instance
+    location_stack_index = 0,
     _external_link_buttons = nil,
 }
 
@@ -250,7 +251,7 @@ ReaderLink.onPhysicalKeyboardConnected = ReaderLink.registerKeyEvents
 
 function ReaderLink:onReadSettings(config)
     -- called when loading new document
-    self.location_stack = {}
+    self:onClearLocationStack()
 end
 
 local function isTapToFollowLinksOn()
@@ -293,7 +294,7 @@ function ReaderLink:addToMainMenu(menu_items)
     -- insert table to main reader menu
     menu_items.go_to_previous_location = {
         text = _("Go back to previous location"),
-        enabled_func = function() return self.location_stack and #self.location_stack > 0 end,
+        enabled_func = function() return self.location_stack and self.location_stack_index > 0 end,
         callback = function() self:onGoBackLink() end,
         hold_callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
@@ -301,6 +302,21 @@ function ReaderLink:addToMainMenu(menu_items)
                 ok_text = _("Clear"),
                 ok_callback = function()
                     self:onClearLocationStack()
+                    touchmenu_instance:closeMenu()
+                end,
+            })
+        end,
+    }
+    menu_items.go_to_next_location = {
+        text = _("Go Forward to next location"),
+        enabled_func = function() return self.location_stack and self.location_stack[self.location_stack_index+1] ~= nil end,
+        callback = function() self:onGoForwardLink() end,
+        hold_callback = function(touchmenu_instance)
+            UIManager:show(ConfirmBox:new{
+                text = _("Clear Forward location history?"),
+                ok_text = _("Clear"),
+                ok_callback = function()
+                    self:onClearForwardLocationStack()
                     touchmenu_instance:closeMenu()
                 end,
             })
@@ -663,18 +679,36 @@ function ReaderLink:onTap(_, ges)
 end
 
 --- Remember current location so we can go back to it
-function ReaderLink:addCurrentLocationToStack()
-    if self.ui.document.info.has_pages then
-        table.insert(self.location_stack, self.ui.paging:getBookLocation())
-    else
-        table.insert(self.location_stack, {
-            xpointer = self.ui.rolling:getBookLocation(),
-        })
+--- increments location_stack_index to point the the last item,
+--- and clears the next item in case there was a Forward history
+function ReaderLink:addCurrentLocationToStack(loc)
+    local location = loc
+    if location == nil then
+        if self.ui.document.info.has_pages then
+            location = self.ui.paging:getBookLocation()
+        else
+            location = {xpointer = self.ui.rolling:getBookLocation(),}
+        end
     end
+    self.location_stack_index = self.location_stack_index + 1
+    self.location_stack[self.location_stack_index] = location
+    self.location_stack[self.location_stack_index+1] = nil
 end
 
 function ReaderLink:onClearLocationStack(show_notification)
     self.location_stack = {}
+    self.location_stack_index = 0
+    if show_notification then
+        UIManager:show(Notification:new{
+            text = _("Location history cleared."),
+        })
+    end
+    return true
+end
+
+--- Clears the Forward locations by setting the next element to nil
+function ReaderLink:onClearForwardLocationStack(show_notification)
+    self.location_stack[self.location_stack_index+1] = nil
     if show_notification then
         UIManager:show(Notification:new{
             text = _("Location history cleared."),
@@ -685,7 +719,7 @@ end
 
 function ReaderLink:getPreviousLocationPages()
     local previous_locations = {}
-    if #self.location_stack > 0 then
+    if self.location_stack_index > 0 or self.location_stack[self.location_stack_index+1] ~= nil then
         for num, location in ipairs(self.location_stack) do
             if self.ui.rolling and location.xpointer then
                 previous_locations[self.ui.document:getPageFromXPointer(location.xpointer)] = num
@@ -751,7 +785,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
                             marker_xpointer = link.from_xpointer,
                         }
                     end
-                    table.insert(self.location_stack, saved_location)
+                    self:addCurrentLocationToStack(saved_location)
                 else
                     self:addCurrentLocationToStack()
                 end
@@ -825,9 +859,27 @@ end
 
 --- Goes back to previous location.
 function ReaderLink:onGoBackLink(show_notification_if_empty)
-    local saved_location = table.remove(self.location_stack)
+    local saved_location = self.location_stack[self.location_stack_index]
     if saved_location then
+        self.location_stack_index = self.location_stack_index - 1
         logger.dbg("GoBack: restoring:", saved_location)
+        self.ui:handleEvent(Event:new('RestoreBookLocation', saved_location))
+        return true
+    elseif show_notification_if_empty then
+        UIManager:show(Notification:new{
+            text = _("Location history is empty."),
+        })
+    end
+end
+
+--- Goes to next location.
+function ReaderLink:onGoForwardLink(show_notification_if_empty)
+    local saved_location = self.location_stack[self.location_stack_index+1]
+    if saved_location then
+        self.location_stack_index = self.location_stack_index + 1
+    end
+    if saved_location then
+        logger.dbg("GoForward: restoring:", saved_location)
         self.ui:handleEvent(Event:new('RestoreBookLocation', saved_location))
         return true
     elseif show_notification_if_empty then
@@ -841,12 +893,12 @@ function ReaderLink:onSwipe(arg, ges)
     local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
     if direction == "east" then
         if isSwipeToGoBackEnabled() then
-            if #self.location_stack > 0 then
+            if self.location_stack_index > 0 or self.location_stack[self.location_stack_index+1] ~= nil then
                 -- Remember if location stack is going to be empty, so we
                 -- can stop the propagation of next swipe back: so the user
                 -- knows it is empty and that next swipe back will get him
                 -- to previous page (and not to previous location)
-                self.swipe_back_resist = #self.location_stack == 1
+                self.swipe_back_resist = self.location_stack_index == 1
                 return self:onGoBackLink()
             elseif self.swipe_back_resist then
                 self.swipe_back_resist = false
