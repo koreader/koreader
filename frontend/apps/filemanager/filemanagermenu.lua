@@ -417,6 +417,28 @@ To:
             self.ui.file_chooser:refreshPath()
         end,
     }
+    self.menu_items.sort_mixed = {
+        text = _("Folders and files mixed"),
+        enabled_func = function()
+            local collate = G_reader_settings:readSetting("collate")
+            return collate ~= "size" and
+                   collate ~= "type" and
+                   collate ~= "percent_unopened_first" and
+                   collate ~= "percent_unopened_last"
+        end,
+        checked_func = function()
+            local collate = G_reader_settings:readSetting("collate")
+            return G_reader_settings:isTrue("collate_mixed") and
+                   collate ~= "size" and
+                   collate ~= "type" and
+                   collate ~= "percent_unopened_first" and
+                   collate ~= "percent_unopened_last"
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("collate_mixed")
+            self.ui.file_chooser:refreshPath()
+        end,
+    }
     self.menu_items.start_with = self:getStartWithMenuTable()
 
     if Device:supportsScreensaver() then
@@ -809,9 +831,8 @@ dbg:guard(FileManagerMenu, 'setUpdateItemTable',
 
 function FileManagerMenu:getSortingMenuTable()
     local collates = {
-        { _("filename"), "strcoll" },
-        { _("filename (natural sorting)"), "natural" },
-        { _("name – mixed files and folders"), "strcoll_mixed" },
+        { _("name"), "strcoll" },
+        { _("name (natural sorting)"), "natural" },
         { _("last read date"), "access" },
         { _("date added"), "change" },
         { _("date modified"), "modification" },
