@@ -14,6 +14,7 @@ local Utf8Proc = require("ffi/utf8proc")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
+local N_ = _.ngettext
 local Screen = require("device").screen
 local T = BaseUtil.template
 
@@ -86,7 +87,7 @@ function FileSearcher:onShowFileSearch(search_string)
     }
     search_dialog:addWidget(check_button_subfolders)
     check_button_metadata = CheckButton:new{
-        text = _("Search in book metadata (slow)"),
+        text = _("Search in book metadata"),
         checked = self.include_metadata,
         parent = search_dialog,
         callback = function()
@@ -111,18 +112,18 @@ function FileSearcher:doSearch()
     if #results > 0 then
         self:showSearchResults(results)
     else
-        UIManager:show(InfoMessage:new{
-            text = T(_("No results for '%1'."), self.search_value),
-        })
+        self:showSearchResultsMessage(true)
     end
 end
 
 function FileSearcher:getList()
+    self.no_metadata_count = 0
     local sys_folders = { -- do not search in sys_folders
         ["/dev"] = true,
         ["/proc"] = true,
         ["/sys"] = true,
     }
+    local show_hidden = G_reader_settings:isTrue("show_hidden")
     local show_unsupported = G_reader_settings:isTrue("show_unsupported")
     local collate = G_reader_settings:readSetting("collate")
     local keywords = self.search_value
@@ -155,7 +156,7 @@ function FileSearcher:getList()
                     local attributes = lfs.attributes(fullpath) or {}
                     -- Don't traverse hidden folders if we're not showing them
                     if attributes.mode == "directory" and f ~= "." and f ~= ".."
-                            and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, "."))
+                            and (show_hidden or not util.stringStartsWith(f, "."))
                             and FileChooser:show_dir(f) then
                         if self.include_subfolders and not sys_folders[fullpath] then
                             table.insert(new_dirs, fullpath)
@@ -199,10 +200,12 @@ function FileSearcher:isFileMatch(filename, fullpath, keywords, is_file)
     if self.include_metadata and is_file and DocumentRegistry:hasProvider(fullpath) then
         local book_props
         if self.ui.coverbrowser then
-            book_props = require("bookinfomanager"):getBookInfo(fullpath)
+            -- fetch metadata from CoverBrowser book cache
+            book_props = self.ui.coverbrowser:getBookInfo(fullpath)
         end
         if not book_props then
-            book_props = FileManagerBookInfo:getBookProps(fullpath)
+            -- fetch metadata from book sdr file (opened books only)
+            book_props = FileManagerBookInfo:getBookProps(fullpath, nil, true)
         end
         if next(book_props) ~= nil then
             for _, key in ipairs(keys) do
@@ -219,8 +222,23 @@ function FileSearcher:isFileMatch(filename, fullpath, keywords, is_file)
                     end
                 end
             end
+        else
+            self.no_metadata_count = self.no_metadata_count + 1
         end
     end
+end
+
+function FileSearcher:showSearchResultsMessage(no_results)
+    local text = no_results and T(_("No results for '%1'."), self.search_value)
+    if self.no_metadata_count ~= 0 then
+        local txt = T(N_("1 book has not been searched in.", "%1 books has not been searched in.",
+            self.no_metadata_count), self.no_metadata_count) .. "\n" ..
+            _("Please do 'Extract and cache book information' from Plus menu to search in all books metadata.")
+        text = text and text .. "\n\n" .. txt or txt
+    end
+    UIManager:show(InfoMessage:new{
+        text = text,
+    })
 end
 
 function FileSearcher:showSearchResults(results)
@@ -243,6 +261,9 @@ function FileSearcher:showSearchResults(results)
     end
     self.search_menu:switchItemTable(T(_("Search results (%1)"), #results), results)
     UIManager:show(menu_container)
+    if self.no_metadata_count ~= 0 then
+        self:showSearchResultsMessage()
+    end
 end
 
 function FileSearcher:onMenuSelect(item)
