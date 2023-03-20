@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
+local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Event = require("ui/event")
@@ -106,11 +107,11 @@ function PageBrowserWidget:init()
     self.title_bar = TitleBar:new{
         fullscreen = true,
         title = self.title,
-        left_icon = "info",
-        left_icon_tap_callback = function() self:showHelp() end,
+        left_icon = "appbar.menu",
+        left_icon_tap_callback = function() self:showMenu() end,
         left_icon_hold_callback = function()
             -- Cycle nb of toc span levels shown in bottom row
-            if self:updateNbTocSpans(-1, true) then
+            if self:updateNbTocSpans(-1, true, true) then
                 self:updateLayout()
             end
         end,
@@ -613,19 +614,152 @@ function PageBrowserWidget:showTile(grid_idx, page, tile, do_refresh)
     end
 end
 
-function PageBrowserWidget:showHelp()
+function PageBrowserWidget:showMenu()
+    local button_dialog
+    -- Width of our -/+ buttons, so it looks fine with Button's default font size of 20
+    local plus_minus_width = Screen:scaleBySize(60)
+    local buttons = {
+        {{
+            text = _("About page browser"),
+            align = "left",
+            callback = function()
+                self:showAbout()
+            end,
+        }},
+        {{
+            text = _("Available gestures"),
+            align = "left",
+            callback = function()
+                self:showGestures()
+            end,
+        }},
+        {
+            {
+                text = _("Thumbnail columns"),
+                callback = function() end,
+                align = "left",
+            },
+            {
+                text = "\u{2796}", -- Heavy minus sign
+                enabled_func = function() return self.nb_cols > self.min_nb_cols end,
+                callback = function()
+                    if self:updateNbCols(-1, true) then
+                        self:updateLayout()
+                    end
+                end,
+                width = plus_minus_width,
+            },
+            {
+                text = "\u{2795}", -- Heavy plus sign
+                enabled_func = function() return self.nb_cols < self.max_nb_cols end,
+                callback = function()
+                    if self:updateNbCols(1, true) then
+                        self:updateLayout()
+                    end
+                end,
+                width = plus_minus_width,
+            }
+        },
+        {
+            {
+                text = _("Thumbnail rows"),
+                callback = function() end,
+                align = "left",
+            },
+            {
+                text = "\u{2796}", -- Heavy minus sign
+                enabled_func = function() return self.nb_rows > self.min_nb_rows end,
+                callback = function()
+                    if self:updateNbRows(-1, true) then
+                        self:updateLayout()
+                    end
+                end,
+                width = plus_minus_width,
+            },
+            {
+                text = "\u{2795}", -- Heavy plus sign
+                enabled_func = function() return self.nb_rows < self.max_nb_rows end,
+                callback = function()
+                    if self:updateNbRows(1, true) then
+                        self:updateLayout()
+                    end
+                end,
+                width = plus_minus_width,
+            }
+        },
+        {
+            {
+                text = _("Chapters in bottom ribbon"),
+                callback = function() end,
+                align = "left",
+            },
+            {
+                text = "\u{2796}", -- Heavy minus sign
+                enabled_func = function() return self.nb_toc_spans > 0 end,
+                callback = function()
+                    if self:updateNbTocSpans(-1, true) then
+                        self:updateLayout()
+                    end
+                end,
+                width = plus_minus_width,
+            },
+            {
+                text = "\u{2795}", -- Heavy plus sign
+                enabled_func = function() return self.nb_toc_spans < self.max_toc_depth end,
+                callback = function()
+                    if self:updateNbTocSpans(1, true) then
+                        self:updateLayout()
+                    end
+                end,
+                width = plus_minus_width,
+            }
+        },
+    }
+    button_dialog = ButtonDialog:new{
+        -- width = math.floor(Screen:getWidth() / 2),
+        width = math.floor(Screen:getWidth() * 0.9), -- max width, will get smaller
+        shrink_unneeded_width = true,
+        buttons = buttons,
+        anchor = function()
+            return self.title_bar.left_button.image.dimen
+        end,
+    }
+    UIManager:show(button_dialog)
+end
+
+function PageBrowserWidget:showAbout()
     UIManager:show(InfoMessage:new{
         text = _([[
 Page browser shows thumbnails of pages.
 
-The bottom ribbon displays an extract of the book map around the shown pages: see the book map help for details.
+The bottom ribbon displays an extract of the book map around the pages displayed:
 
+If statistics are enabled, black bars are shown for already read pages (gray for pages read in the current reading session). Their heights vary with the time spent reading the page.
+Chapters are shown above the pages they encompass.
+Under the pages, these indicators may be shown:
+▲ current page
+❶ ❷ … previous locations
+▒ highlighted text
+ highlighted text with notes
+ bookmarked page]]),
+    })
+end
+
+function PageBrowserWidget:showGestures()
+    UIManager:show(InfoMessage:new{
+        text = _([[
 Swipe along the top or left screen edge to change the number of columns or rows of thumbnails.
-Swipe vertically to move one row, horizontally to move one page.
+
+Swipe vertically to move one row, horizontally to move one screen.
+
 Swipe horizontally in the bottom ribbon to move by the full stripe.
+
 Tap in the bottom ribbon on a page to focus thumbnails on this page.
+
 Tap on a thumbnail to read this page.
-Long-press on ⓘ to decrease or reset the number of chapter levels shown in the bottom ribbon.
+
+Long-press on ≡ to decrease or reset the number of chapter levels shown in the bottom ribbon.
+
 Any multiswipe will close the page browser.]]),
     })
 end
@@ -681,19 +815,26 @@ function PageBrowserWidget:saveSettings(reset)
     G_reader_settings:saveSetting("page_browser_nb_cols", self.nb_cols)
 end
 
-function PageBrowserWidget:updateNbTocSpans(value, relative)
+function PageBrowserWidget:updateNbTocSpans(value, relative, rollover)
     local new_nb_toc_spans
     if relative then
         new_nb_toc_spans = self.nb_toc_spans + value
     else
         new_nb_toc_spans = value
     end
-    -- We don't cap, we cycle
     if new_nb_toc_spans < 0 then
-        new_nb_toc_spans = self.max_toc_depth
+        if rollover then
+            new_nb_toc_spans = self.max_toc_depth
+        else
+            new_nb_toc_spans = 0
+        end
     end
     if new_nb_toc_spans > self.max_toc_depth then
-        new_nb_toc_spans = 0
+        if rollover then
+            new_nb_toc_spans = 0
+        else
+            new_nb_toc_spans = self.max_toc_depth
+        end
     end
     if new_nb_toc_spans == self.nb_toc_spans then
         return false
