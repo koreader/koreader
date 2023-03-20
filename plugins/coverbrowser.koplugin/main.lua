@@ -668,4 +668,8 @@ function CoverBrowser:setupCollectionDisplayMode(display_mode)
     end
 end
 
+function CoverBrowser:getBookInfo(file)
+    return BookInfoManager:getBookInfo(file)
+end
+
 return CoverBrowser
