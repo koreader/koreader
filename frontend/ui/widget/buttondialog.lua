@@ -55,11 +55,19 @@ local Screen = require("device").screen
 
 local ButtonDialog = InputContainer:extend{
     buttons = nil,
+    width = nil,
+    width_factor = nil, -- number between 0 and 1, factor to the smallest of screen width and height
     tap_close_callback = nil,
     alpha = nil, -- passed to MovableContainer
 }
 
 function ButtonDialog:init()
+    if not self.width then
+        if not self.width_factor then
+            self.width_factor = 0.9 -- default if no width specified
+        end
+        self.width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * self.width_factor)
+    end
     if Device:hasKeys() then
         local close_keys = Device:hasFewKeys() and { "Back", "Left" } or Device.input.group.Back
         self.key_events.Close = { { close_keys } }
@@ -81,6 +89,7 @@ function ButtonDialog:init()
             FrameContainer:new{
                 ButtonTable:new{
                     buttons = self.buttons,
+                    width = self.width - 2*Size.border.window - 2*Size.padding.button,
                     show_parent = self,
                 },
                 background = Blitbuffer.COLOR_WHITE,
