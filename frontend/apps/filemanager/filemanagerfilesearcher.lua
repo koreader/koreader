@@ -180,6 +180,13 @@ function FileSearcher:getList()
 end
 
 function FileSearcher:isFileMatch(filename, fullpath, keywords, is_file)
+    local keys = {
+        "authors",
+        "title",
+        "description",
+        "keywords",
+        "language",
+    }
     if keywords == "*" then
         return true
     end
@@ -190,18 +197,26 @@ function FileSearcher:isFileMatch(filename, fullpath, keywords, is_file)
         return true
     end
     if self.include_metadata and is_file and DocumentRegistry:hasProvider(fullpath) then
-        local book_props = FileManagerBookInfo:getBookProps(fullpath)
-        book_props.pages = nil
+        local book_props
+        if self.ui.coverbrowser then
+            book_props = require("bookinfomanager"):getBookInfo(fullpath)
+        end
+        if not book_props then
+            book_props = FileManagerBookInfo:getBookProps(fullpath)
+        end
         if next(book_props) ~= nil then
-            for name, prop in pairs(book_props) do
-                if not self.case_sensitive then
-                    prop = Utf8Proc.lowercase(util.fixUtf8(prop, "?"))
-                end
-                if name == "description" then
-                    prop = util.htmlToPlainTextIfHtml(prop)
-                end
-                if string.find(prop, keywords) then
-                    return true
+            for _, key in ipairs(keys) do
+                local prop = book_props[key]
+                if prop and prop ~= "" then
+                    if not self.case_sensitive then
+                        prop = Utf8Proc.lowercase(util.fixUtf8(prop, "?"))
+                    end
+                    if key == "description" then
+                        prop = util.htmlToPlainTextIfHtml(prop)
+                    end
+                    if string.find(prop, keywords) then
+                        return true
+                    end
                 end
             end
         end
