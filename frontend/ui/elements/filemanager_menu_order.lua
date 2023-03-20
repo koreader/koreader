@@ -15,6 +15,7 @@ local order = {
         "----------------------------",
         "sort_by",
         "reverse_sorting",
+        "sort_mixed",
         "----------------------------",
         "start_with",
     },
