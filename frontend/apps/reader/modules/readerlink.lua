@@ -64,6 +64,7 @@ end
 
 local ReaderLink = InputContainer:extend{
     location_stack = nil, -- table, per-instance
+    forward_location_stack = nil, -- table, per-instance
     _external_link_buttons = nil,
 }
 
@@ -250,7 +251,7 @@ ReaderLink.onPhysicalKeyboardConnected = ReaderLink.registerKeyEvents
 
 function ReaderLink:onReadSettings(config)
     -- called when loading new document
-    self.location_stack = {}
+    self:onClearLocationStack()
 end
 
 local function isTapToFollowLinksOn()
@@ -301,6 +302,21 @@ function ReaderLink:addToMainMenu(menu_items)
                 ok_text = _("Clear"),
                 ok_callback = function()
                     self:onClearLocationStack()
+                    touchmenu_instance:closeMenu()
+                end,
+            })
+        end,
+    }
+    menu_items.go_to_next_location = {
+        text = _("Go Forward to next location"),
+        enabled_func = function() return self.forward_location_stack and #self.forward_location_stack > 0 end,
+        callback = function() self:onGoForwardLink() end,
+        hold_callback = function(touchmenu_instance)
+            UIManager:show(ConfirmBox:new{
+                text = _("Clear Forward location history?"),
+                ok_text = _("Clear"),
+                ok_callback = function()
+                    self:onClearForwardLocationStack()
                     touchmenu_instance:closeMenu()
                 end,
             })
@@ -662,24 +678,35 @@ function ReaderLink:onTap(_, ges)
     end
 end
 
---- Remember current location so we can go back to it
-function ReaderLink:addCurrentLocationToStack()
+function ReaderLink:getCurrentLocation()
     if self.ui.document.info.has_pages then
-        table.insert(self.location_stack, self.ui.paging:getBookLocation())
+        location = self.ui.paging:getBookLocation()
     else
-        table.insert(self.location_stack, {
-            xpointer = self.ui.rolling:getBookLocation(),
-        })
+        location = {xpointer = self.ui.rolling:getBookLocation(),}
     end
+    return location
+end
+
+-- Remember current location so we can go back to it
+function ReaderLink:addCurrentLocationToStack(loc)
+    local location = loc and loc or self:getCurrentLocation()
+    self:onClearForwardLocationStack()
+    table.insert(self.location_stack, location)
 end
 
 function ReaderLink:onClearLocationStack(show_notification)
     self.location_stack = {}
+    self:onClearForwardLocationStack()
     if show_notification then
         UIManager:show(Notification:new{
             text = _("Location history cleared."),
         })
     end
+    return true
+end
+
+function ReaderLink:onClearForwardLocationStack()
+    self.forward_location_stack = {}
     return true
 end
 
@@ -751,7 +778,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
                             marker_xpointer = link.from_xpointer,
                         }
                     end
-                    table.insert(self.location_stack, saved_location)
+                    self:addCurrentLocationToStack(saved_location)
                 else
                     self:addCurrentLocationToStack()
                 end
@@ -827,6 +854,21 @@ end
 function ReaderLink:onGoBackLink(show_notification_if_empty)
     local saved_location = table.remove(self.location_stack)
     if saved_location then
+        -- If there are no forward items
+        if #self.forward_location_stack == 0 then
+            -- If we are not on the same page as the current item,
+            -- then add our current location to the forward stack
+            local current_location = self:getCurrentLocation()
+            if self.ui.rolling and saved_location.xpointer
+            and saved_location.xpointer ~= current_location.xpointer then
+                table.insert(self.forward_location_stack, current_location)
+            end
+            if self.ui.paging and saved_location[1] and current_location[1] and current_location[1].page ~= saved_location[1].page then
+                table.insert(self.forward_location_stack, current_location)
+            end
+        end
+
+        table.insert(self.forward_location_stack, saved_location)
         logger.dbg("GoBack: restoring:", saved_location)
         self.ui:handleEvent(Event:new('RestoreBookLocation', saved_location))
         return true
@@ -834,6 +876,17 @@ function ReaderLink:onGoBackLink(show_notification_if_empty)
         UIManager:show(Notification:new{
             text = _("Location history is empty."),
         })
+    end
+end
+
+--- Goes to next location.
+function ReaderLink:onGoForwardLink()
+    local saved_location = table.remove(self.forward_location_stack)
+    if saved_location then
+        table.insert(self.location_stack, saved_location)
+        logger.dbg("GoForward: restoring:", saved_location)
+        self.ui:handleEvent(Event:new('RestoreBookLocation', saved_location))
+        return true
     end
 end
 
