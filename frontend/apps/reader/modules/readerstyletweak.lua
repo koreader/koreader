@@ -771,6 +771,16 @@ local BOOK_TWEAK_INPUT_HINT = T([[
 
 %2]], _("You can add CSS snippets which will be applied only to this book."), BOOK_TWEAK_SAMPLE_CSS)
 
+local CSS_SUGGESTIONS = {
+    { "-cr-hint: footnote-inpage;", _("When set on a block element containing the target id of a href, this block element will be shown as an in-page footnote.")},
+    { "-cr-hint: non-linear-combining;", _("Can be set on some specific DocFragment (ie. DocFragment[id*=16]) to ignore them in the linear pages flow.")},
+    { "-cr-hint: toc-level1;", _("When set on an element, its text can be used to build the alternative table of contents.")},
+    { "display: run-in !important,", _("When set on a block element, this element content will be inlined with the next block element.")},
+    { "font-size: 1rem !important;", _("1rem will use your default font size")},
+    { "hyphens: none !important", _("Disables hyphenation inside the targeted elements.")},
+    { "text-indent: 1.2em !important;", _("1.2em is our default text indentation.")},
+}
+
 function ReaderStyleTweak:editBookTweak(touchmenu_instance)
     local InputDialog = require("ui/widget/inputdialog")
     local editor -- our InputDialog instance
@@ -839,6 +849,40 @@ function ReaderStyleTweak:editBookTweak(touchmenu_instance)
                         editor:setInputText(css_text, true)
                         toggle_tweak_button()
                     end
+                end,
+            },
+            {
+                id = "css_suggestions_button_id",
+                text = "CSS+…",
+                callback = function()
+                    local suggestions_popup_widget
+                    local buttons = {}
+                    for _, suggestion in ipairs(CSS_SUGGESTIONS) do
+                        table.insert(buttons, {{
+                            text = suggestion[1],
+                            align = "left",
+                            callback = function()
+                                UIManager:close(suggestions_popup_widget)
+                                editor._input_widget:addChars(suggestion[1])
+                            end,
+                            hold_callback = suggestion[2] and function()
+                                UIManager:show(InfoMessage:new{ text = suggestion[2] })
+                            end or nil
+                        }})
+                    end
+                    local ButtonDialog = require("ui/widget/buttondialog")
+                    suggestions_popup_widget = ButtonDialog:new{
+                        modal = true, -- needed when keyboard is shown
+                        width = math.floor(Screen:getWidth() * 0.9), -- max width, will get smaller
+                        shrink_unneeded_width = true,
+                        buttons = buttons,
+                        anchor = function()
+                            -- we return prefers_pop_down=true so it pops over the keyboard
+                            -- instead of the text if it can
+                            return editor.button_table:getButtonById("css_suggestions_button_id").dimen, true
+                        end,
+                    }
+                    UIManager:show(suggestions_popup_widget)
                 end,
             },
         }},
