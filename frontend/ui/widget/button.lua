@@ -8,7 +8,6 @@ A button widget that shows text or an icon and handles callback when tapped.
         enabled = false, -- defaults to true
         callback = some_callback_function,
         width = Screen:scaleBySize(50),
-        max_width = Screen:scaleBySize(100),
         bordersize = Screen:scaleBySize(3),
         margin = 0,
         padding = Screen:scaleBySize(2),
@@ -55,6 +54,8 @@ local Button = InputContainer:extend{
     padding = Size.padding.button,
     padding_h = nil,
     padding_v = nil,
+    -- Provide only one of these two: 'width' to get a fixed width,
+    -- 'max_width' to allow it to be smaller if text or icon is smaller.
     width = nil,
     max_width = nil,
     avoid_text_truncation = true,
@@ -82,12 +83,13 @@ function Button:init()
         self.padding_v = self.padding
     end
 
-    local is_left_aligned = self.align == "left"
-    local right_margin = is_left_aligned and (2 * Size.padding.large) or 0
+    local outer_pad_width = 2*self.padding_h + 2*self.margin + 2*self.bordersize -- unscaled_size_check: ignore
 
     if self.text then
-        local max_width = self.max_width
-            and self.max_width - 2*self.padding_h - 2*self.margin - 2*self.bordersize - right_margin or nil
+        local max_width = self.max_width or self.width
+        if max_width then
+            max_width = max_width - outer_pad_width
+        end
         self.label_widget = TextWidget:new{
             text = self.text,
             max_width = max_width,
@@ -146,14 +148,17 @@ function Button:init()
         }
     end
     local widget_size = self.label_widget:getSize()
-    if self.width == nil then
-        self.width = widget_size.w
+    local inner_width
+    if self.width then
+        inner_width = self.width - outer_pad_width
+    else
+        inner_width = widget_size.w
     end
     -- set FrameContainer content
-    if is_left_aligned then
+    if self.align == "left" then
         self.label_container = LeftContainer:new{
             dimen = Geom:new{
-                w = self.width - 4 * Size.padding.large,
+                w = inner_width,
                 h = widget_size.h
             },
             self.label_widget,
@@ -161,7 +166,7 @@ function Button:init()
     else
         self.label_container = CenterContainer:new{
             dimen = Geom:new{
-                w = self.width,
+                w = inner_width,
                 h = widget_size.h
             },
             self.label_widget,
