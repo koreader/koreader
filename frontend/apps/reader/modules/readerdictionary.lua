@@ -136,6 +136,7 @@ function ReaderDictionary:init()
                 f:close()
                 local dictname = content:match("\nbookname=(.-)\r?\n")
                 local is_html = content:find("sametypesequence=h", 1, true) ~= nil
+                local lang_in, lang_out = content:match("lang=(%a+)-?(%a*)\r?\n?")
                 -- sdcv won't use dict that don't have a bookname=
                 if dictname then
                     table.insert(available_ifos, {
@@ -144,6 +145,7 @@ function ReaderDictionary:init()
                         is_html = is_html,
                         css = readDictionaryCss(ifo_file:gsub("%.ifo$", ".css")),
                         fix_html_func = getDictionaryFixHtmlFunc(ifo_file:gsub("%.ifo$", ".lua")),
+                        lang = lang_in and { lang_in = lang_in, lang_out = lang_out },
                     })
                 end
             end
@@ -265,7 +267,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
             },
             {
                 text = _("Download dictionaries"),
-                sub_item_table = self:_genDownloadDictionariesMenu()
+                sub_item_table_func = function() return self:_genDownloadDictionariesMenu() end,
             },
             {
                 text = _("Enable fuzzy search"),
@@ -477,10 +479,19 @@ end
 
 function ReaderDictionary:_genDownloadDictionariesMenu()
     local downloadable_dicts = require("ui/data/dictionaries")
+    local IsoLanguage = require("ui/data/isolanguage")
     local languages = {}
 
     for i = 1, #downloadable_dicts do
         local dict = downloadable_dicts[i]
+        if not dict.ifo_lang then
+            -- this only needs to happen the first time this function is called
+            local ifo_in = IsoLanguage:getBCPLanguageTag(dict.lang_in)
+            local ifo_out = IsoLanguage:getBCPLanguageTag(dict.lang_out)
+            dict.ifo_lang = ("%s-%s"):format(ifo_in, ifo_out)
+            dict.lang_in = IsoLanguage:getLocalizedLanguage(dict.lang_in)
+            dict.lang_out = IsoLanguage:getLocalizedLanguage(dict.lang_out)
+        end
         local dict_lang_in = dict.lang_in
         local dict_lang_out = dict.lang_out
         if not languages[dict_lang_in] then
@@ -593,6 +604,9 @@ local function tidyMarkup(results)
     local format_escape = "&[29Ib%+]{(.-)}"
     for _, result in ipairs(results) do
         local ifo = getAvailableIfoByName(result.dict)
+        if ifo and ifo.lang then
+            result.ifo_lang = ifo.lang
+        end
         if ifo and ifo.is_html then
             result.is_html = ifo.is_html
             result.css = ifo.css
@@ -1118,9 +1132,15 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
         return false
     end
 
-    local ok, error = Device:unpackArchive(download_location, self.data_dir)
+    -- stable target directory is needed so we can look through the folder later
+    local dict_path = self.data_dir .. "/" .. dict.name
+    util.makePath(dict_path)
+    local ok, error = Device:unpackArchive(download_location, dict_path, true)
 
     if ok then
+        if dict.ifo_lang then
+            self:extendIfoWithLanguage(dict_path, dict.ifo_lang)
+        end
         available_ifos = false
         self:init()
         UIManager:show(InfoMessage:new{
@@ -1133,6 +1153,24 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
         })
         return false
     end
+end
+
+function ReaderDictionary:extendIfoWithLanguage(dictionary_location, ifo_lang)
+    local function cb(path, filename)
+        if util.getFileNameSuffix(filename) == "ifo" then
+            local fmt_string = "lang=%s"
+            local f = io.open(path, "a+")
+            if f then
+                local ifo = f:read("a*")
+                if ifo[#ifo] ~= "\n" then
+                    fmt_string = "\n" .. fmt_string
+                end
+                f:write(fmt_string:format(ifo_lang))
+                f:close()
+            end
+        end
+    end
+    util.findFiles(dictionary_location, cb)
 end
 
 function ReaderDictionary:onReadSettings(config)

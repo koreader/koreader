@@ -413,7 +413,7 @@ function Screensaver:setMessage()
                              or self.default_screensaver_message
     local input_dialog
     input_dialog = InputDialog:new{
-        title = "Screensaver message",
+        title = _("Screensaver message"),
         description = _([[
 Enter the message to be displayed by the screensaver. The following escape sequences can be used:
   %T title

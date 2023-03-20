@@ -103,12 +103,18 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             {
                 name = "page_margin",
                 name_text = _("Margin"),
-                toggle = {C_("Page margin", "small"), C_("Page margin", "medium"), C_("Page margin", "large")},
-                values = {0.05, 0.10, 0.25},
+                buttonprogress = true,
+                values = {0.05, 0.10, 0.25, 0.40, 0.55, 0.70, 0.85, 1.00},
                 default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_PAGE_MARGIN"),
                 event = "MarginUpdate",
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set margins to be applied after page-crop and zoom modes are applied.]]),
+                more_options = true,
+                more_options_param = {
+                    value_step = 0.01, value_hold_step = 0.10,
+                    value_min = 0, value_max = 1.50,
+                    precision = "%.2f",
+                },
             },
             {
                 name = "auto_straighten",

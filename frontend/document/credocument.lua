@@ -831,6 +831,10 @@ function CreDocument:getXPointer()
     return self._document:getXPointer()
 end
 
+function CreDocument:getPageXPointer(page)
+    return self._document:getPageXPointer(page)
+end
+
 function CreDocument:isXPointerInDocument(xp)
     return self._document:isXPointerInDocument(xp)
 end

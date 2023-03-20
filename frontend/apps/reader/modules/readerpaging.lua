@@ -273,15 +273,11 @@ function ReaderPaging:onToggleBookmarkFlipping()
 
     if self.bookmark_flipping_mode then
         self.orig_flipping_mode = self.view.flipping_visible
-        self.orig_dogear_mode = self.view.dogear_visible
-
         self.view.flipping_visible = true
-        self.view.dogear_visible = true
         self.bm_flipping_orig_page = self.current_page
         self:enterFlippingMode()
     else
         self.view.flipping_visible = self.orig_flipping_mode
-        self.view.dogear_visible = self.orig_dogear_mode
         self:exitFlippingMode()
         self:_gotoPage(self.bm_flipping_orig_page)
     end
