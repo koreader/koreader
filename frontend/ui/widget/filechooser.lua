@@ -95,7 +95,6 @@ function FileChooser:show_file(filename)
 end
 
 function FileChooser:init()
-    self.up_folder_arrow = BD.mirroredUILayout() and BD.ltr("../ ⬆") or "⬆ ../"
     self.path_items = {}
     self.width = Screen:getWidth()
     self.item_table = self:genItemTableFromPath(self.path)
@@ -116,7 +115,7 @@ function FileChooser:getList(path, collate)
                     local item = true
                     if attributes.mode == "directory" and f ~= "." and f ~= ".." then
                         if self:show_dir(f) then
-                            if collate then -- when collate == nil count only for folder mandatory
+                            if collate then -- when collate == nil count only to display in folder mandatory
                                 item = self:getListItem(f, filename, attributes)
                             end
                             table.insert(dirs, item)
@@ -124,7 +123,7 @@ function FileChooser:getList(path, collate)
                     -- Always ignore macOS resource forks.
                     elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") then
                         if self:show_file(f) then
-                            if collate then -- when collate == nil count only for folder mandatory
+                            if collate then -- when collate == nil count only to display in folder mandatory
                                 item = self:getListItem(f, filename, attributes, collate)
                             end
                             table.insert(files, item)
@@ -153,7 +152,7 @@ end
 
 function FileChooser:getListItem(f, filename, attributes, collate)
     local item = {
-        name = f,
+        text = f,
         fullpath = filename,
         attr = attributes,
     }
@@ -182,41 +181,30 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
     local sorting
     if collate == "strcoll" then
         sorting = function(a, b)
-            return ffiUtil.strcoll(a.name, b.name)
+            return ffiUtil.strcoll(a.text, b.text)
         end
     elseif collate == "natural" then
         local natsort
         -- Only keep the cache if we're an *instance* of FileChooser
         if self ~= FileChooser then
             natsort, self.natsort_cache = sort.natsort_cmp(self.natsort_cache)
-            sorting = function(a, b)
-                return natsort(a.name, b.name)
-            end
         else
             natsort = sort.natsort_cmp()
-            sorting = function(a, b)
-                return natsort(a.name, b.name)
-            end
         end
-    elseif collate == "strcoll_mixed" then
         sorting = function(a, b)
-            if b.text == self.up_folder_arrow then return false end
-            return ffiUtil.strcoll(a.text, b.text)
+            return natsort(a.text, b.text)
         end
     elseif collate == "access" then
         sorting = function(a, b)
             return a.attr.access > b.attr.access
         end
+    elseif collate == "change" then
+        sorting = function(a, b)
+            return a.attr.change > b.attr.change
+        end
     elseif collate == "modification" then
         sorting = function(a, b)
             return a.attr.modification > b.attr.modification
-        end
-    elseif collate == "change" then
-        sorting = function(a, b)
-            if a.opened == b.opened then
-                return a.attr.change > b.attr.change
-            end
-            return b.opened
         end
     elseif collate == "size" then
         sorting = function(a, b)
@@ -227,7 +215,7 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
             if (a.suffix or b.suffix) and a.suffix ~= b.suffix then
                 return ffiUtil.strcoll(a.suffix, b.suffix)
             end
-            return ffiUtil.strcoll(a.name, b.name)
+            return ffiUtil.strcoll(a.text, b.text)
         end
     else -- collate == "percent_unopened_first" or collate == "percent_unopened_last"
         sorting = function(a, b)
@@ -235,7 +223,7 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
                 if a.opened then
                     return a.percent_finished < b.percent_finished
                 end
-                return a.name < b.name
+                return ffiUtil.strcoll(a.text, b.text)
             end
             if collate == "percent_unopened_first" then
                 return b.opened
@@ -260,41 +248,29 @@ end
 
 function FileChooser:genItemTable(dirs, files, path)
     local collate = G_reader_settings:readSetting("collate")
+    local collate_not_for_mixed = collate == "size" or
+                                  collate == "type" or
+                                  collate == "percent_unopened_first" or
+                                  collate == "percent_unopened_last"
+    local collate_mixed = G_reader_settings:isTrue("collate_mixed")
     local reverse_collate = G_reader_settings:isTrue("reverse_collate")
     local sorting = self:getSortingFunction(collate, reverse_collate)
-    if collate ~= "strcoll_mixed" then
+    if collate_not_for_mixed or not collate_mixed then
         table.sort(files, sorting)
-        if collate == "size" or
-           collate == "type" or
-           collate == "percent_unopened_first" or
-           collate == "percent_unopened_last" then
+        if collate_not_for_mixed then
             sorting = self:getSortingFunction("strcoll", reverse_collate)
         end
         table.sort(dirs, sorting)
     end
 
-    if path then -- file browser or PathChooser
-        if path ~= "/" and not (G_reader_settings:isTrue("lock_home_folder") and
-                                path == G_reader_settings:readSetting("home_dir")) then
-            table.insert(dirs, 1, {name = "..", fullpath = path.."/.."})
-        end
-        if self.show_current_dir_for_hold then
-            table.insert(dirs, 1, {name = ".", fullpath = path.."/."})
-        end
-    end
-
     local item_table = {}
+
     for i, dir in ipairs(dirs) do
-        local text, bidi_wrap_func, mandatory, is_go_up
-        if dir.name == ".." then
-            text = self.up_folder_arrow
-            is_go_up = true
-        elseif dir.name == "." then -- possible with show_current_dir_for_hold
-            text = _("Long-press to choose current folder")
-        elseif dir.name == "./." then -- added as content of an unreadable directory
+        local text, bidi_wrap_func, mandatory
+        if dir.text == "./." then -- added as content of an unreadable directory
             text = _("Current folder not readable. Some content may not be shown.")
         else
-            text = dir.name.."/"
+            text = dir.text.."/"
             bidi_wrap_func = BD.directory
             if path then -- file browser or PathChooser
                 mandatory = self:getMenuItemMandatory(dir)
@@ -302,10 +278,10 @@ function FileChooser:genItemTable(dirs, files, path)
         end
         table.insert(item_table, {
             text = text,
+            attr = dir.attr,
             bidi_wrap_func = bidi_wrap_func,
             mandatory = mandatory,
             path = dir.fullpath,
-            is_go_up = is_go_up,
         })
     end
 
@@ -316,7 +292,8 @@ function FileChooser:genItemTable(dirs, files, path)
 
     for i, file in ipairs(files) do
         local file_item = {
-            text = file.name,
+            text = file.text,
+            attr = file.attr,
             bidi_wrap_func = BD.filename,
             mandatory = self:getMenuItemMandatory(file, collate),
             path = file.fullpath,
@@ -334,9 +311,27 @@ function FileChooser:genItemTable(dirs, files, path)
         table.insert(item_table, file_item)
     end
 
-    if collate == "strcoll_mixed" then
+    if not collate_not_for_mixed and collate_mixed then
         table.sort(item_table, sorting)
     end
+
+    if path then -- file browser or PathChooser
+        if path ~= "/" and not (G_reader_settings:isTrue("lock_home_folder") and
+                                path == G_reader_settings:readSetting("home_dir")) then
+            table.insert(item_table, 1, {
+                text = BD.mirroredUILayout() and BD.ltr("../ ⬆") or "⬆ ../",
+                path = path.."/..",
+                is_go_up = true,
+            })
+        end
+        if self.show_current_dir_for_hold then
+            table.insert(item_table, 1, {
+                text = _("Long-press to choose current folder"),
+                path = path.."/.",
+            })
+        end
+    end
+
     -- lfs.dir iterated node string may be encoded with some weird codepage on
     -- Windows we need to encode them to utf-8
     if ffi.os == "Windows" then
@@ -353,7 +348,7 @@ end
 function FileChooser:getMenuItemMandatory(item, collate)
     local text
     if collate then -- file
-        -- show the sorting parameter in mandatory
+        -- display the sorting parameter in mandatory
         if collate == "access" then
             text = os.date("%Y-%m-%d %H:%M", item.attr.access)
         elseif collate == "change" then
