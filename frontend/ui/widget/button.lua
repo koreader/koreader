@@ -252,6 +252,9 @@ function Button:enable()
     if not self.enabled then
         if self.text then
             self.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
+            if self.label_widget.update then -- using a TextBoxWidget
+                self.label_widget:update() -- needed to redraw with the new color
+            end
         else
             self.label_widget.dim = false
         end
@@ -263,6 +266,9 @@ function Button:disable()
     if self.enabled then
         if self.text then
             self.label_widget.fgcolor = Blitbuffer.COLOR_DARK_GRAY
+            if self.label_widget.update then
+                self.label_widget:update()
+            end
         else
             self.label_widget.dim = true
         end
@@ -287,6 +293,14 @@ function Button:enableDisable(enable)
     else
         self:disable()
     end
+end
+
+function Button:paintTo(bb, x, y)
+    if self.enabled_func then
+        -- state may change because of outside factors, so check it on each painting
+        self:enableDisable(self.enabled_func())
+    end
+    InputContainer.paintTo(self, bb, x, y)
 end
 
 function Button:hide()
