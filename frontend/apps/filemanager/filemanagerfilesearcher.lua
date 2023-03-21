@@ -86,15 +86,17 @@ function FileSearcher:onShowFileSearch(search_string)
         end,
     }
     search_dialog:addWidget(check_button_subfolders)
-    check_button_metadata = CheckButton:new{
-        text = _("Search in book metadata"),
-        checked = self.include_metadata,
-        parent = search_dialog,
-        callback = function()
-            self.include_metadata = check_button_metadata.checked
-        end,
-    }
-    search_dialog:addWidget(check_button_metadata)
+    if self.ui.coverbrowser then
+        check_button_metadata = CheckButton:new{
+            text = _("Search in book metadata"),
+            checked = self.include_metadata,
+            parent = search_dialog,
+            callback = function()
+                self.include_metadata = check_button_metadata.checked
+            end,
+        }
+        search_dialog:addWidget(check_button_metadata)
+    end
 
     UIManager:show(search_dialog)
     search_dialog:onShowKeyboard()
@@ -198,15 +200,8 @@ function FileSearcher:isFileMatch(filename, fullpath, keywords, is_file)
         return true
     end
     if self.include_metadata and is_file and DocumentRegistry:hasProvider(fullpath) then
-        local book_props
-        if self.ui.coverbrowser then
-            -- fetch metadata from CoverBrowser book cache
-            book_props = self.ui.coverbrowser:getBookInfo(fullpath)
-        end
-        if not book_props then
-            -- fetch metadata from book sdr file (opened books only)
-            book_props = FileManagerBookInfo:getBookProps(fullpath, nil, true)
-        end
+        local book_props = self.ui.coverbrowser:getBookInfo(fullpath) or
+                           FileManagerBookInfo:getBookProps(fullpath, nil, true)
         if next(book_props) ~= nil then
             for _, key in ipairs(keys) do
                 local prop = book_props[key]
@@ -230,15 +225,27 @@ end
 
 function FileSearcher:showSearchResultsMessage(no_results)
     local text = no_results and T(_("No results for '%1'."), self.search_value)
-    if self.no_metadata_count ~= 0 then
-        local txt = T(N_("1 book has not been searched in.", "%1 books has not been searched in.",
+    if self.no_metadata_count == 0 then
+        UIManager:show(InfoMessage:new{
+            text = text,
+        })
+    else
+        local txt = T(N_("1 book has been skipped.", "%1 books have been skipped.",
             self.no_metadata_count), self.no_metadata_count) .. "\n" ..
-            _("Please do 'Extract and cache book information' from Plus menu to search in all books metadata.")
+            _("No book metadata extracted yet.\nExtract metadata now?")
         text = text and text .. "\n\n" .. txt or txt
+        local ConfirmBox = require("ui/widget/confirmbox")
+        UIManager:show(ConfirmBox:new{
+            text = text,
+            ok_text = _("Extract"),
+            ok_callback = function()
+                if self.search_menu then
+                    self.search_menu.close_callback()
+                end
+                self.ui.coverbrowser:extractBooksInDirectory(self.path)
+            end
+        })
     end
-    UIManager:show(InfoMessage:new{
-        text = text,
-    })
 end
 
 function FileSearcher:showSearchResults(results)
