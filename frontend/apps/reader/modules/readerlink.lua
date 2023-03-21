@@ -869,6 +869,26 @@ end
 function ReaderLink:onGoBackLink(show_notification_if_empty)
     local saved_location = self.location_stack[self.location_stack_index]
     if saved_location then
+	    -- If we are the last item on the stack.
+	    if self.location_stack[self.location_stack_index+1] == nil then
+	        -- If we are not on the same page as the last stack item
+	        local not_same_page
+            if self.ui.rolling and saved_location.xpointer
+            and saved_location.xpointer ~= self.ui.rolling:getBookLocation() then
+                not_same_page = true
+            end
+            if self.ui.paging and saved_location[1] then
+                local location = self.ui.paging:getBookLocation()
+                if (location[1] and location[1].page) ~= saved_location[1].page then
+                    not_same_page = true
+                end
+            end
+
+	        if not_same_page then
+	            -- add our current location to the stack
+	            self:addCurrentLocationToStack()
+	        end
+	    end
         self.location_stack_index = self.location_stack_index - 1
         logger.dbg("GoBack: restoring:", saved_location)
         self.ui:handleEvent(Event:new('RestoreBookLocation', saved_location))
