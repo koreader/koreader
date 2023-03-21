@@ -678,9 +678,15 @@ function ReaderLink:onTap(_, ges)
     end
 end
 
---- Remember current location so we can go back to it
---- increments location_stack_index to point the the last item,
---- and clears the next item in case there was a Forward history
+-- Remember current location so we can go back to it
+-- increments location_stack_index to point the the last item,
+-- and clears the next item in case there was a Forward history.
+-- self.location_stack is not a stack, rather an array.
+-- We add locations to the end but can go backwards and fowards.
+-- Since this is an array all we need to make sure is that our last value is
+-- followed by a nil.git
+-- If we add a new element we nil index+1 to delete any old forward locations
+-- we cannot delete them earlier as we still need them when judt going back.
 function ReaderLink:addCurrentLocationToStack(loc)
     local location = loc
     if location == nil then
@@ -707,6 +713,7 @@ function ReaderLink:onClearLocationStack(show_notification)
 end
 
 --- Clears the Forward locations by setting the next element to nil
+--- See addCurrentLocationToStack() for how the stack works
 function ReaderLink:onClearForwardLocationStack(show_notification)
     self.location_stack[self.location_stack_index+1] = nil
     if show_notification then
@@ -719,8 +726,9 @@ end
 
 function ReaderLink:getPreviousLocationPages()
     local previous_locations = {}
-    if self.location_stack_index > 0 or self.location_stack[self.location_stack_index+1] ~= nil then
-        for num, location in ipairs(self.location_stack) do
+    if self.location_stack_index > 0 then
+        for num=1, self.location_stack_index do
+            location = self.location_stack[num]
             if self.ui.rolling and location.xpointer then
                 previous_locations[self.ui.document:getPageFromXPointer(location.xpointer)] = num
             end
