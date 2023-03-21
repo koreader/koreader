@@ -157,7 +157,7 @@ function BookInfo:show(file, book_props)
     UIManager:show(widget)
 end
 
-function BookInfo:getBookProps(file, book_props, do_not_open)
+function BookInfo:getBookProps(file, book_props, no_open_document)
     if DocSettings:hasSidecarFile(file) then
         local doc_settings = DocSettings:open(file)
         if not book_props then
@@ -185,7 +185,7 @@ function BookInfo:getBookProps(file, book_props, do_not_open)
     end
 
     -- If still no book_props (book never opened or empty "stats"), open the document to get them
-    if not book_props and not do_not_open then
+    if not book_props and not no_open_document then
         local document = DocumentRegistry:openDocument(file)
         if document then
             local loaded = true
