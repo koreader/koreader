@@ -728,7 +728,7 @@ function ReaderLink:getPreviousLocationPages()
     local previous_locations = {}
     if self.location_stack_index > 0 then
         for num=1, self.location_stack_index do
-            location = self.location_stack[num]
+            local location = self.location_stack[num]
             if self.ui.rolling and location.xpointer then
                 previous_locations[self.ui.document:getPageFromXPointer(location.xpointer)] = num
             end
