@@ -157,22 +157,20 @@ function FileChooser:getListItem(f, filename, attributes, collate)
         attr = attributes,
     }
     if collate then -- file
-        local suffix, opened, percent_finished
+        if G_reader_settings:readSetting("show_file_in_bold") then
+            item.opened = DocSettings:hasSidecarFile(filename)
+        end
         if collate == "type" then
-            suffix = util.getFileNameSuffix(f)
+            item.suffix = util.getFileNameSuffix(f)
         elseif collate == "percent_unopened_first" or collate == "percent_unopened_last" then
-            opened = DocSettings:hasSidecarFile(filename)
-            if opened then
+            local percent_finished
+            item.opened = DocSettings:hasSidecarFile(filename)
+            if item.opened then
                 local doc_settings = DocSettings:open(filename)
                 percent_finished = doc_settings:readSetting("percent_finished")
             end
-            percent_finished = percent_finished or 0
-        elseif collate == "change" or G_reader_settings:readSetting("show_file_in_bold") then
-            opened = DocSettings:hasSidecarFile(filename)
+            item.percent_finished = percent_finished or 0
         end
-        item.suffix = suffix
-        item.opened = opened
-        item.percent_finished = percent_finished
     end
     return item
 end
@@ -555,16 +553,14 @@ function FileChooser:showSetProviderButtons(file, one_time_providers)
             },
         })
     end
-    if one_time_providers and #one_time_providers > 0 then
-        for ___, provider in ipairs(one_time_providers) do
-            provider.one_time_provider = true
-            table.insert(radio_buttons, {
-                {
-                    text = provider.provider_name,
-                    provider = provider,
-                },
-            })
-        end
+    for _, provider in ipairs(one_time_providers) do
+        provider.one_time_provider = true
+        table.insert(radio_buttons, {
+            {
+                text = provider.provider_name,
+                provider = provider,
+            },
+        })
     end
 
     table.insert(buttons, {
