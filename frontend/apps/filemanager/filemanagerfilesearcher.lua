@@ -4,7 +4,6 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local DocumentRegistry = require("document/documentregistry")
 local FileChooser = require("ui/widget/filechooser")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
-local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
@@ -183,9 +182,10 @@ function FileSearcher:getList()
 end
 
 function FileSearcher:isFileMatch(filename, fullpath, keywords, is_file)
-    local keys = {
+    local metadata_keys = {
         "authors",
         "title",
+        "series",
         "description",
         "keywords",
         "language",
@@ -203,7 +203,7 @@ function FileSearcher:isFileMatch(filename, fullpath, keywords, is_file)
         local book_props = self.ui.coverbrowser:getBookInfo(fullpath) or
                            FileManagerBookInfo:getBookProps(fullpath, nil, true)
         if next(book_props) ~= nil then
-            for _, key in ipairs(keys) do
+            for _, key in ipairs(metadata_keys) do
                 local prop = book_props[key]
                 if prop and prop ~= "" then
                     if not self.case_sensitive then
@@ -226,20 +226,19 @@ end
 function FileSearcher:showSearchResultsMessage(no_results)
     local text = no_results and T(_("No results for '%1'."), self.search_value)
     if self.no_metadata_count == 0 then
-        UIManager:show(InfoMessage:new{
-            text = text,
-        })
+        local InfoMessage = require("ui/widget/infomessage")
+        UIManager:show(InfoMessage:new{ text = text })
     else
         local txt = T(N_("1 book has been skipped.", "%1 books have been skipped.",
             self.no_metadata_count), self.no_metadata_count) .. "\n" ..
-            _("No book metadata extracted yet.\nExtract metadata now?")
-        text = text and text .. "\n\n" .. txt or txt
+            _("Not all books metadata extracted yet.\nExtract metadata now?")
+        text = no_results and text .. "\n\n" .. txt or txt
         local ConfirmBox = require("ui/widget/confirmbox")
         UIManager:show(ConfirmBox:new{
             text = text,
             ok_text = _("Extract"),
             ok_callback = function()
-                if self.search_menu then
+                if not no_results then
                     self.search_menu.close_callback()
                 end
                 self.ui.coverbrowser:extractBooksInDirectory(self.path)
