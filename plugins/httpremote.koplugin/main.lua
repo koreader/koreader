@@ -1,7 +1,6 @@
 local Device =  require("device")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local socket = require("socket")
 local Event = require("ui/event")
 local logger = require("logger")
 local _ = require("gettext")
@@ -15,15 +14,25 @@ function HttpRemote:init()
     self.port = G_reader_settings:readSetting("httpremote_port", "8080")
     self.autostart = G_reader_settings:isTrue("httpremote_autostart")
 
-    self.task = function()
-        self:httpListen()
-    end
-
     if self.autostart then
         self:start()
     end
 
     self.ui.menu:registerToMainMenu(self)
+end
+
+function HttpRemote:initHttpMQ(host, port)
+    local StreamMessageQueueServer = require("ui/message/streammessagequeueserver")
+    if self.http_socket == nil then
+        self.http_socket = StreamMessageQueueServer:new{
+            host = host,
+            port = port,
+            receiveCallback = self:onRequest(),
+        }
+        self.http_socket:start()
+        self.http_messagequeue = UIManager:insertZMQ(self.http_socket)
+    end
+    logger.info(string.format("connecting to calibre @ %s:%s", host, port))
 end
 
 function HttpRemote:onEnterStandby()
@@ -41,25 +50,26 @@ function HttpRemote:onExit()
     self:stop()
 end
 
+function HttpRemote:onCloseWidget()
+    logger.dbg("HttpRemote: onCloseWidget")
+    self:stop()
+end
+
 function HttpRemote:onLeaveStandby()
     logger.dbg("HttpRemote: onLeaveStandby")
-    if self.server == nil then
+    if self.http_socket == nil then
         self:start()
     end
 end
 
 function HttpRemote:onResume()
     logger.dbg("HttpRemote: onResume")
-    if self.server == nil then
+    if self.http_socket == nil then
         self:start()
     end
 end
 
 function HttpRemote:start()
-    self.server = socket.bind("*", self.port)
-    self.server:settimeout(0.01) -- set timeout (10ms)
-    logger.dbg("HttpRemote: Server listening on port " .. self.port)
-
     -- Make a hole in the Kindle's firewall
     if Device:isKindle() then
         os.execute(string.format("%s %s %s",
@@ -70,89 +80,86 @@ function HttpRemote:start()
             "-m conntrack --ctstate ESTABLISHED -j ACCEPT"))
     end
 
-    -- start listening
-    UIManager:scheduleIn(0.01, self.task)
+    self:initHttpMQ("*", self.port)
+    logger.dbg("HttpRemote: Server listening on port " .. self.port)
 end
 
 function HttpRemote:stop()
-    if self.server then
-        logger.dbg("HttpRemote: Server stopped.")
-        self.server:close()
-        self.server = nil
+    logger.info("HttpRemote: Stopping server...")
 
-        -- stop listening
-        UIManager:unschedule(self.task)
+    if self.http_socket then
+        self.http_socket:stop()
+        self.http_socket = nil
+    end
+    if self.http_messagequeue then
+        UIManager:removeZMQ(self.http_messagequeue)
+        self.http_messagequeue = nil
+    end
 
-        -- Plug the hole in the Kindle's firewall
-        if Device:isKindle() then
-            os.execute(string.format("%s %s %s",
-                "iptables -D INPUT -p tcp --dport", self.port,
-                "-m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT"))
-            os.execute(string.format("%s %s %s",
-                "iptables -D OUTPUT -p tcp --sport", self.port,
-                "-m conntrack --ctstate ESTABLISHED -j ACCEPT"))
-        end
-    else
-        logger.dbg("HttpRemote: No server running.")
+    logger.dbg("HttpRemote: Server stopped.")
+
+    -- Plug the hole in the Kindle's firewall
+    if Device:isKindle() then
+        os.execute(string.format("%s %s %s",
+            "iptables -D INPUT -p tcp --dport", self.port,
+            "-m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT"))
+        os.execute(string.format("%s %s %s",
+            "iptables -D OUTPUT -p tcp --sport", self.port,
+            "-m conntrack --ctstate ESTABLISHED -j ACCEPT"))
     end
 end
 
-function HttpRemote:httpListen()
-    if self.server then
-        local client = self.server:accept() -- wait for a client to connect
-        if client then
-            self:onRequest(client) -- handle the request
-            client:close() -- close the connection to the client
+function HttpRemote:onRequest(host, port)
+    -- NOTE: Closure trickery because we need a reference to *this* self *inside* the callback,
+    --       which will be called as a function from another object (namely, StreamMessageQueue).
+    local this = self
+    return function(data, id_frame)
+        local request = string.match(data, "[^\n]+") or ""
+        logger.dbg("HttpRemote: Received request: " .. request)
+        local params_string = request:match("%u+%s+%S+%?([^%s]+)%s+%S+") -- extract params
+        logger.dbg("HttpRemote: Params: ", params_string)
+
+        local params_arr = {}
+
+        if params_string then
+            for params in string.gmatch(params_string, "[^&]+") do
+                -- Split each parameter string into key and value using string.match
+                local key, value = string.match(params, "(.-)=(.*)")
+                if key and value then
+                    params_arr[key] = value
+                end
+            end
         end
-        UIManager:scheduleIn(0.01, self.task)
-    end
-end
 
-function HttpRemote:onRequest(client)
-    local request = client:receive("*l") -- read the first line of the request
+        local response = "HTTP/1.1 200 OK" -- start of response header
 
-    logger.dbg("HttpRemote: Received request: " .. request)
-    local params_string = request:match("%u+%s+%S+%?([^%s]+)%s+%S+") -- extract params
-    logger.dbg("HttpRemote: Params: ", params_string)
-
-    local params_arr = {}
-
-    if params_string then
-        for params in string.gmatch(params_string, "[^&]+") do
-            -- Split each parameter string into key and value using string.match
-            local key, value = string.match(params, "(.-)=(.*)")
-            params_arr[key] = value
+        if params_arr["action"] == "nextpage" then
+            this:turnPage(1)
+        elseif params_arr["action"] == "prevpage" then
+            this:turnPage(-1)
+        else
+            response = response .. "\r\nContent-Type: text/html"
         end
-    end
 
-    local response = "HTTP/1.1 200 OK" -- start of response header
+        response = response .. "\r\n\r\n" -- end of response header
 
-    if params_arr["action"] == "nextpage" then
-        self:turnPage(1)
-    elseif params_arr["action"] == "prevpage" then
-        self:turnPage(-1)
-    else
-        response = response .. "\r\nContent-Type: text/html"
-    end
-
-    response = response .. "\r\n\r\n" -- end of response header
-
-    -- response body (if available)
-    -- if loadpage param is populated, load the html
-    if not params_string or params_arr["loadpage"] then
-        response = response .. [[
+        -- response body (if available)
+        -- if loadpage param is populated, load the html
+        if next(params_arr) == nil or params_arr["loadpage"] then
+            response = response .. [[
 <html><body>
 <h1>KOReader HttpRemote</h1>
 <h2>Available actions</h2>
 <p>
-<a href="/?action=prevpage&loadpage=1">prevpage</a>
+<a href="/?action=prevpage&loadpage=1">prevpages</a>
 <a href="/?action=nextpage&loadpage=1">nextpage</a>
 </p>
 </body></html>
-        ]]
+            ]]
+        end
+        logger.dbg("HttpRemote: Sending response: " .. response)
+        this.http_socket:send(response, id_frame) -- send the response back to the client
     end
-
-    client:send(response) -- send the response back to the client
 end
 
 function HttpRemote:turnPage(pages)
@@ -160,10 +167,6 @@ function HttpRemote:turnPage(pages)
     if top_wg.name == "ReaderUI" then
         logger.dbg("HttpRemote: Sent event GotoViewRel " .. pages)
         self.ui:handleEvent(Event:new("GotoViewRel", pages))
-
-        if Device:isKindle() then
-            os.execute("/usr/bin/powerd_test -i")
-        end
     end
 end
 
@@ -174,7 +177,7 @@ function HttpRemote:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text_func = function()
-                    if self.server then
+                    if self.http_socket then
                         return _("Stop server")
                     else
                         return _("Start server")
@@ -182,7 +185,7 @@ function HttpRemote:addToMainMenu(menu_items)
                 end,
                 separator = true,
                 callback = function()
-                    if not self.server then
+                    if not self.http_socket then
                         self:start()
                     else
                         self:stop()
@@ -239,8 +242,10 @@ function HttpRemote:addToMainMenu(menu_items)
                                             G_reader_settings:saveSetting("httpremote_port", input_port)
 
                                             --restart the server
-                                            self:stop()
-                                            self:start()
+                                            if self.http_socket then
+                                                self:stop()
+                                                self:start()
+                                            end
                                         end
                                         UIManager:close(port_dialog)
                                     end,
