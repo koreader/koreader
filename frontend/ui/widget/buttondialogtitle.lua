@@ -88,6 +88,7 @@ function ButtonDialogTitle:init()
         dimen = Screen:getSize(),
         ignore_if_over = "height",
         MovableContainer:new{
+            anchor = self.anchor,
             FrameContainer:new{
                 VerticalGroup:new{
                     align = "center",

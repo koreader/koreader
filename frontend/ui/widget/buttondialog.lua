@@ -88,6 +88,7 @@ function ButtonDialog:init()
     end
     self.movable = MovableContainer:new{
             alpha = self.alpha,
+            anchor = self.anchor,
             FrameContainer:new{
                 ButtonTable:new{
                     buttons = self.buttons,
