@@ -13,6 +13,7 @@ position, Hold will toggle between full opacity and 0.7 transparency.
 This container's content is expected to not change its width and height.
 ]]
 
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local Geom = require("ui/geometry")
@@ -34,6 +35,12 @@ local MovableContainer = InputContainer:extend{
 
     -- Events to ignore (ie: ignore_events={"hold", "hold_release"})
     ignore_events = nil,
+
+    -- Initial position can be set related to an existing widget
+    -- 'anchor' should be a Geom object (a widget's 'dimen', or a point), and
+    -- can be a function returning that object
+    anchor = nil,
+    _anchor_ensured = nil,
 
     -- Current move offset (use getMovedOffset()/setMovedOffset() to access them)
     _moved_offset_x = 0,
@@ -100,6 +107,59 @@ function MovableContainer:setMovedOffset(offset_point)
     end
 end
 
+function MovableContainer:ensureAnchor(x, y)
+    local anchor_dimen = self.anchor
+    local prefers_pop_down
+    if type(self.anchor) == "function" then
+        anchor_dimen, prefers_pop_down = self.anchor()
+    end
+    if not anchor_dimen then
+        return
+    end
+    -- We try to find the best way to draw our content, depending on
+    -- the size of the content and the space available on the screen.
+    local content_w, content_h = self.dimen.w, self.dimen.h
+    local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
+    local left, top
+    if BD.mirroredUILayout() then
+        left = anchor_dimen.x + anchor_dimen.w - content_w
+    else
+        left = anchor_dimen.x
+    end
+    if left < 0 then
+        left = 0
+    elseif left + content_w > screen_w then
+        left = screen_w - content_w
+    end
+    -- We prefer displaying above the anchor if there is room (so it looks like popping up)
+    -- except if anchor() returned prefers_pop_down
+    local h_remaining_if_above = anchor_dimen.y - content_h
+    local h_remaining_if_below = screen_h - (anchor_dimen.y + anchor_dimen.h + content_h)
+    if h_remaining_if_above >= 0 and not prefers_pop_down then
+        -- Enough room above the anchor
+        top = anchor_dimen.y - content_h
+    elseif h_remaining_if_below >= 0 then
+        -- Enough room below the anchor
+        top = anchor_dimen.y + anchor_dimen.h
+    elseif h_remaining_if_above >= 0 then
+        -- Enough room above the anchor
+        top = anchor_dimen.y - content_h
+    else -- both negative
+        if h_remaining_if_above >= h_remaining_if_below then
+            top = 0
+        else
+            top = screen_h - content_h
+        end
+    end
+    -- Ensure we show the top if we would overflow
+    if top < 0 then
+        top = 0
+    end
+    -- Make the initial offsets so that we display at left/top
+    self._moved_offset_x = left - x
+    self._moved_offset_y = top - y
+end
+
 function MovableContainer:paintTo(bb, x, y)
     if self[1] == nil then
         return
@@ -112,6 +172,12 @@ function MovableContainer:paintTo(bb, x, y)
 
     self._orig_x = x
     self._orig_y = y
+    -- If there is a widget passed as anchor, we need to set our initial position
+    -- related to it. After that, we allow it to be moved like any other movable.
+    if self.anchor and not self._anchor_ensured then
+        self:ensureAnchor(x, y)
+        self._anchor_ensured = true
+    end
     -- We just need to shift painting by our _moved_offset_x/y
     self.dimen.x = x + self._moved_offset_x
     self.dimen.y = y + self._moved_offset_y
