@@ -321,8 +321,10 @@ end
 function FileSearcher:onMenuHold(item)
     if item.is_file then
         if DocumentRegistry:hasProvider(item.path) then
-            self.close_callback()
-            require("apps/reader/readerui"):showReader(item.path)
+            UIManager:scheduleIn(0.5, function()
+                self.close_callback()
+                require("apps/reader/readerui"):showReader(item.path)
+            end)
         end
     else
         self.close_callback()
