@@ -288,8 +288,8 @@ function ConfigOption:init()
                 local name_widget_width = math.floor(name_align * Screen:getWidth())
                 -- We don't remove default_option_hpadding from name_text_max_width
                 -- to give more to text and avoid truncation: as it is right aligned,
-                -- the text can grow on the left, padding_small is enough.
-                local name_text_max_width = name_widget_width - 2*padding_small
+                -- the text can grow on the left.
+                local name_text_max_width = name_widget_width
                 local face = Font:getFace(name_font_face, name_font_size)
                 local option_name_container = RightContainer:new{
                     dimen = Geom:new{ w = name_widget_width, h = option_height},
