@@ -57,6 +57,8 @@ local ButtonDialog = InputContainer:extend{
     buttons = nil,
     width = nil,
     width_factor = nil, -- number between 0 and 1, factor to the smallest of screen width and height
+    shrink_unneeded_width = false, -- have 'width' meaning 'max_width'
+    shrink_min_width = nil, -- default to ButtonTable's default
     tap_close_callback = nil,
     alpha = nil, -- passed to MovableContainer
 }
@@ -90,6 +92,8 @@ function ButtonDialog:init()
                 ButtonTable:new{
                     buttons = self.buttons,
                     width = self.width - 2*Size.border.window - 2*Size.padding.button,
+                    shrink_unneeded_width = self.shrink_unneeded_width,
+                    shrink_min_width = self.shrink_min_width,
                     show_parent = self,
                 },
                 background = Blitbuffer.COLOR_WHITE,
