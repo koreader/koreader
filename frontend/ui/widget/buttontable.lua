@@ -42,7 +42,17 @@ function ButtonTable:init()
         local horizontal_group = HorizontalGroup:new{}
         local row = self.buttons[i]
         local column_cnt = #row
-        local sizer_space = self.sep_width * (column_cnt - 1) + 2
+        local available_width = self.width - self.sep_width * (column_cnt - 1)
+        local unspecified_width_buttons = 0
+        for j = 1, column_cnt do
+            local btn_entry = row[j]
+            if btn_entry.width then
+                available_width = available_width - btn_entry.width
+            else
+                unspecified_width_buttons = unspecified_width_buttons + 1
+            end
+        end
+        local default_button_width = math.floor(available_width / unspecified_width_buttons)
         for j = 1, column_cnt do
             local btn_entry = row[j]
             local button = Button:new{
@@ -63,7 +73,7 @@ function ButtonTable:init()
                 hold_callback = btn_entry.hold_callback,
                 allow_hold_when_disabled = btn_entry.allow_hold_when_disabled,
                 vsync = btn_entry.vsync,
-                width = math.ceil((self.width - sizer_space)/column_cnt),
+                width = btn_entry.width or default_button_width,
                 bordersize = 0,
                 margin = 0,
                 padding = Size.padding.buttontable, -- a bit taller than standalone buttons, for easier tap
