@@ -42,6 +42,8 @@ function FrontLightWidget:init()
     self.screen_height = Screen:getHeight()
     self.span = Math.round(self.screen_height * 0.01)
     self.width = math.floor(self.screen_width * 0.95)
+    self.inner_width = self.width - 2 * Size.padding.large
+    self.button_width = math.floor(self.inner_width / 4)
 
     -- State constants
     self.powerd = Device:getPowerDevice()
@@ -134,7 +136,7 @@ function FrontLightWidget:layout()
     end
 
     self.fl_progress = ProgressWidget:new{
-        width = math.floor(self.screen_width * 0.9),
+        width = self.inner_width,
         height = Size.item.height_big,
         percentage = self.fl.cur / self.fl.max,
         ticks = ticks,
@@ -145,14 +147,12 @@ function FrontLightWidget:layout()
         text = _("Brightness"),
         face = self.medium_font_face,
         bold = true,
-        max_width = math.floor(self.screen_width * 0.95),
+        max_width = self.inner_width,
     }
     self.fl_minus = Button:new{
         text = "−",
-        margin = Size.margin.small,
-        radius = 0,
         enabled = self.fl.cur ~= self.fl.min,
-        width = math.floor(self.screen_width * 0.2),
+        width = self.button_width,
         show_parent = self,
         callback = function()
             self:setBrightness(self.fl.cur - 1)
@@ -160,10 +160,8 @@ function FrontLightWidget:layout()
     }
     self.fl_plus = Button:new{
         text = "＋",
-        margin = Size.margin.small,
-        radius = 0,
         enabled = self.fl.cur ~= self.fl.max,
-        width = math.floor(self.screen_width * 0.2),
+        width = self.button_width,
         show_parent = self,
         callback = function()
             self:setBrightness(self.fl.cur + 1)
@@ -172,7 +170,7 @@ function FrontLightWidget:layout()
     self.fl_level = TextWidget:new{
         text = tostring(self.fl.cur),
         face = self.medium_font_face,
-        max_width = math.floor(self.screen_width * 0.95 - 1.275 * (self.fl_minus.width + self.fl_plus.width)),
+        max_width = self.inner_width - 2*self.button_width,
     }
     local fl_level_container = CenterContainer:new{
         dimen = Geom:new{
@@ -183,10 +181,8 @@ function FrontLightWidget:layout()
     }
     local fl_min = Button:new{
         text = C_("Extrema", "Min"),
-        margin = Size.margin.small,
-        radius = 0,
         enabled = true,
-        width = math.floor(self.screen_width * 0.2),
+        width = self.button_width,
         show_parent = self,
         callback = function()
             self:setBrightness(self.fl.min + 1)
@@ -194,10 +190,8 @@ function FrontLightWidget:layout()
     }
     local fl_max = Button:new{
         text = C_("Extrema", "Max"),
-        margin = Size.margin.small,
-        radius = 0,
         enabled = true,
-        width = math.floor(self.screen_width * 0.2),
+        width = self.button_width,
         show_parent = self,
         callback = function()
             self:setBrightness(self.fl.max)
@@ -205,17 +199,15 @@ function FrontLightWidget:layout()
     }
     local fl_toggle = Button:new{
         text = _("Toggle"),
-        margin = Size.margin.small,
-        radius = 0,
         enabled = true,
-        width = math.floor(self.screen_width * 0.2),
+        width = self.button_width,
         show_parent = self,
         callback = function()
             self:setBrightness(self.fl.min)
         end,
     }
     local fl_spacer = HorizontalSpan:new{
-        width = math.floor((self.screen_width * 0.95 - 1.2 * (self.fl_minus.width + self.fl_plus.width + fl_toggle.width)) / 2),
+        width = math.floor((self.inner_width - 3 * self.button_width) / 2)
     }
     local fl_buttons_above = HorizontalGroup:new{
         align = "center",
@@ -257,7 +249,7 @@ function FrontLightWidget:layout()
         local nl_group_below = HorizontalGroup:new{ align = "center" }
 
         self.nl_progress = ButtonProgressWidget:new{
-            width = math.floor(self.screen_width * 0.9),
+            width = self.inner_width,
             font_size = 20, -- match Button's default
             padding = 0,
             thin_grey_style = false,
@@ -276,24 +268,20 @@ function FrontLightWidget:layout()
             text = _("Warmth"),
             face = self.medium_font_face,
             bold = true,
-            max_width = math.floor(self.screen_width * 0.95),
+            max_width = self.inner_width,
         }
         self.nl_minus = Button:new{
             text = "−",
-            margin = Size.margin.small,
-            radius = 0,
             enabled = self.nl.cur ~= self.nl.min,
-            width = math.floor(self.screen_width * 0.2),
+            width = self.button_width,
             show_parent = self,
             callback = function()
                 self:setWarmth(self.nl.cur - 1, true) end,
         }
         self.nl_plus = Button:new{
             text = "＋",
-            margin = Size.margin.small,
-            radius = 0,
             enabled = self.nl.cur ~= self.nl.max,
-            width = math.floor(self.screen_width * 0.2),
+            width = self.button_width,
             show_parent = self,
             callback = function()
                 self:setWarmth(self.nl.cur + 1, true) end,
@@ -301,7 +289,7 @@ function FrontLightWidget:layout()
         self.nl_level = TextWidget:new{
             text = tostring(self.nl.cur),
             face = self.medium_font_face,
-            max_width = math.floor(self.screen_width * 0.95 - 1.275 * (self.nl_minus.width + self.nl_plus.width)),
+            max_width = self.inner_width - 2*self.button_width,
         }
         local nl_level_container = CenterContainer:new{
             dimen = Geom:new{
@@ -312,10 +300,8 @@ function FrontLightWidget:layout()
         }
         local nl_min = Button:new{
             text = C_("Extrema", "Min"),
-            margin = Size.margin.small,
-            radius = 0,
             enabled = true,
-            width = math.floor(self.screen_width * 0.2),
+            width = self.button_width,
             show_parent = self,
             callback = function()
                 self:setWarmth(self.nl.min, true)
@@ -323,17 +309,31 @@ function FrontLightWidget:layout()
         }
         local nl_max = Button:new{
             text = C_("Extrema", "Max"),
-            margin = Size.margin.small,
-            radius = 0,
             enabled = true,
-            width = math.floor(self.screen_width * 0.2),
+            width = self.button_width,
             show_parent = self,
             callback = function()
                 self:setWarmth(self.nl.max, true)
             end,
         }
+        local nl_setup
+        local nl_spacer_width
+        -- Aura One R/G/B widget
+        if not self.has_nl_mixer and not self.has_nl_api then
+            nl_setup =  Button:new{
+                text = _("Configure"),
+                width = self.button_width,
+                show_parent = self,
+                callback = function()
+                    UIManager:show(NaturalLight:new{fl_widget = self})
+                end,
+            }
+            nl_spacer_width = math.floor((self.inner_width - 3 * self.button_width) / 2)
+        else
+            nl_spacer_width = self.inner_width - 2 * self.button_width
+        end
         local nl_spacer = HorizontalSpan:new{
-            width = math.floor((self.screen_width * 0.95 - 1.2 * (self.nl_minus.width + self.nl_plus.width)) / 2),
+            width = nl_spacer_width
         }
         local nl_buttons_above = HorizontalGroup:new{
             align = "center",
@@ -342,13 +342,19 @@ function FrontLightWidget:layout()
             self.nl_plus,
         }
         self.layout[3] = {self.nl_minus, self.nl_plus}
+        self:mergeLayoutInVertical(self.nl_progress) -- move it as self.layout[4]
         local nl_buttons_below = HorizontalGroup:new{
             align = "center",
             nl_min,
             nl_spacer,
             nl_max,
         }
-        self.layout[4] = {nl_min, nl_max}
+        self.layout[5] = {nl_min, nl_max}
+        if nl_setup then
+            table.insert(nl_buttons_below, 3, nl_setup)
+            table.insert(nl_buttons_below, 4, nl_spacer)
+            table.insert(self.layout[5], 2, nl_setup)
+        end
 
         table.insert(main_group, nl_span)
         table.insert(main_group, nl_header)
@@ -363,21 +369,6 @@ function FrontLightWidget:layout()
         table.insert(main_group, nl_group_below)
         table.insert(main_group, nl_padding_span)
 
-        -- Aura One R/G/B widget
-        if not self.has_nl_mixer and not self.has_nl_api then
-            local nl_setup =  Button:new{
-                text = _("Configure"),
-                margin = Size.margin.small,
-                radius = 0,
-                width = math.floor(self.screen_width * 0.2),
-                show_parent = self,
-                callback = function()
-                    UIManager:show(NaturalLight:new{fl_widget = self})
-                end,
-            }
-            table.insert(main_group, nl_setup)
-            self.layout[5] = {nl_setup}
-        end
     end
 
     table.insert(main_container, main_group)
