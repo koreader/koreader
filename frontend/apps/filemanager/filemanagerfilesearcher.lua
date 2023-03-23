@@ -87,7 +87,7 @@ function FileSearcher:onShowFileSearch(search_string)
     search_dialog:addWidget(check_button_subfolders)
     if self.ui.coverbrowser then
         check_button_metadata = CheckButton:new{
-            text = _("Search in book metadata"),
+            text = _("Also search in book metadata"),
             checked = self.include_metadata,
             parent = search_dialog,
             callback = function()
