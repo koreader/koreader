@@ -12,6 +12,14 @@ local Screen = Device.screen
 
 local ButtonTable = FocusManager:extend{
     width = nil,
+    -- If requested, allow ButtonTable to shrink itself if 'width' can
+    -- be reduced without any truncation or font size getting smaller.
+    shrink_unneeded_width = false,
+    -- But we won't go below this: buttons are tapable, we want some
+    -- minimal width so they are easy to tap (this is mostly needed
+    -- for CJK languages where button text can be one or two glyphs).
+    shrink_min_width = Screen:scaleBySize(100),
+
     buttons = {
         {
             {text="OK", enabled=true, callback=nil},
@@ -27,7 +35,7 @@ function ButtonTable:init()
     self.buttons_layout = {}
     self.button_by_id = {}
     self.container = VerticalGroup:new{ width = self.width }
-    table.insert(self, self.container)
+    self[1] = self.container
     if self.zero_sep then
         -- If we're asked to add a first line, don't add a vspan before: caller
         -- must do its own padding before.
@@ -37,6 +45,7 @@ function ButtonTable:init()
         self:addHorizontalSep(false, false, true)
     end
     local row_cnt = #self.buttons
+    local table_min_needed_width = -1
     for i = 1, row_cnt do
         local buttons_layout_line = {}
         local horizontal_group = HorizontalGroup:new{}
@@ -53,6 +62,7 @@ function ButtonTable:init()
             end
         end
         local default_button_width = math.floor(available_width / unspecified_width_buttons)
+        local min_needed_button_width = -1
         for j = 1, column_cnt do
             local btn_entry = row[j]
             local button = Button:new{
@@ -84,6 +94,21 @@ function ButtonTable:init()
                 text_font_bold = btn_entry.font_bold,
                 show_parent = self.show_parent,
             }
+            if self.shrink_unneeded_width and not btn_entry.width and min_needed_button_width ~= false then
+                -- We gather the largest min width of all buttons without a specified width,
+                -- and will see how it does when this largest min width is applied to all
+                -- buttons (without a specified width): we still want to keep them the same
+                -- size and balanced.
+                local min_width = button:getMinNeededWidth()
+                if min_width then
+                    if min_needed_button_width < min_width then
+                        min_needed_button_width = min_width
+                    end
+                else
+                    -- If any one button in this row can't be made smaller, give up
+                    min_needed_button_width = false
+                end
+            end
             if btn_entry.id then
                 self.button_by_id[btn_entry.id] = button
             end
@@ -109,6 +134,19 @@ function ButtonTable:init()
             -- Only add lines that are not separator to the focusmanager
             table.insert(self.buttons_layout, buttons_layout_line)
         end
+        if self.shrink_unneeded_width and table_min_needed_width ~= false then
+            if min_needed_button_width then
+                if min_needed_button_width >= 0 and min_needed_button_width < default_button_width then
+                    local row_min_width = self.width - (default_button_width - min_needed_button_width)*unspecified_width_buttons
+                    if table_min_needed_width < row_min_width then
+                        table_min_needed_width = row_min_width
+                    end
+                end
+            else
+                -- If any one row can't be made smaller, give up
+                table_min_needed_width = false
+            end
+        end
     end -- end for each button line
     self:addHorizontalSep(true, false, false)
     if Device:hasDPad() then
@@ -116,6 +154,13 @@ function ButtonTable:init()
         self:refocusWidget()
     else
         self.key_events = {}  -- deregister all key press event listeners
+    end
+    if self.shrink_unneeded_width and table_min_needed_width ~= false
+            and table_min_needed_width > 0 and table_min_needed_width < self.width then
+        self.width = table_min_needed_width > self.shrink_min_width and table_min_needed_width or self.shrink_min_width
+        self.shrink_unneeded_width = false
+        self:free()
+        self:init()
     end
 end
 
