@@ -679,6 +679,7 @@ function ReaderLink:onTap(_, ges)
 end
 
 function ReaderLink:getCurrentLocation()
+    local location
     if self.ui.document.info.has_pages then
         location = self.ui.paging:getBookLocation()
     else
