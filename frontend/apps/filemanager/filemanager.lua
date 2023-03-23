@@ -135,12 +135,11 @@ function FileManager:setupLayout()
         path = self.root_path,
         focused_path = self.focused_file,
         show_parent = self.show_parent,
-        show_hidden = show_hidden,
         width = Screen:getWidth(),
         height = Screen:getHeight() - self.title_bar:getHeight(),
         is_popout = false,
         is_borderless = true,
-        has_close_button = true,
+        show_hidden = show_hidden,
         show_unsupported = show_unsupported,
         file_filter = function(filename)
             if DocumentRegistry:hasProvider(filename) then
@@ -864,7 +863,6 @@ function FileManager:openRandomFile(dir)
                 self:openRandomFile(dir)
             end,
         })
-        UIManager:close(self.file_dialog)
     else
         UIManager:show(InfoMessage:new {
             text = _("File not found"),
