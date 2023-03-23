@@ -19,8 +19,6 @@ local ButtonTable = FocusManager:extend{
         },
     },
     sep_width = Size.line.medium,
-    padding = Size.padding.default,
-
     zero_sep = false,
 }
 
@@ -65,11 +63,11 @@ function ButtonTable:init()
                 allow_hold_when_disabled = btn_entry.allow_hold_when_disabled,
                 vsync = btn_entry.vsync,
                 width = math.ceil((self.width - sizer_space)/column_cnt),
-                max_width = math.ceil((self.width - sizer_space)/column_cnt - 2*self.sep_width - 2*self.padding),
                 bordersize = 0,
                 margin = 0,
                 padding = Size.padding.buttontable, -- a bit taller than standalone buttons, for easier tap
-                padding_h = 0, -- allow text to take more of the horizontal space
+                padding_h = btn_entry.align == "left" and Size.padding.large or 0,
+                    -- allow text to take more of the horizontal space if centered
                 text_font_face = btn_entry.font_face,
                 text_font_size = btn_entry.font_size,
                 text_font_bold = btn_entry.font_bold,
