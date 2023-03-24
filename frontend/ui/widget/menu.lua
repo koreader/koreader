@@ -490,11 +490,7 @@ function MenuItem:onTapSelect(arg, ges)
 
     local pos = self:getGesPosition(ges)
     if G_reader_settings:isFalse("flash_ui") then
-        logger.dbg("creating coroutine for menu select")
-        local co = coroutine.create(function()
-            self.menu:onMenuSelect(self.table, pos)
-        end)
-        coroutine.resume(co)
+        self.menu:onMenuSelect(self.table, pos)
     else
         -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
 
@@ -515,11 +511,7 @@ function MenuItem:onTapSelect(arg, ges)
 
         -- Callback
         --
-        logger.dbg("creating coroutine for menu select")
-        local co = coroutine.create(function()
-            self.menu:onMenuSelect(self.table, pos)
-        end)
-        coroutine.resume(co)
+        self.menu:onMenuSelect(self.table, pos)
 
         UIManager:forceRePaint()
     end
@@ -602,8 +594,6 @@ local Menu = FocusManager:extend{
     is_popout = true,
     -- set icon to add title bar left button
     title_bar_left_icon = nil,
-    -- set this to true to add close button
-    has_close_button = true,
     -- close_callback is a function, which is executed when menu is closed
     -- it is usually set by the widget which creates the menu
     close_callback = nil,
@@ -640,9 +630,12 @@ function Menu:init()
     self.show_parent = self.show_parent or self
     self.item_table = self.item_table or {}
     self.item_table_stack = {}
-    self.dimen = Geom:new{ x = 0, y = 0, w = self.width, h = self.height or Screen:getHeight() }
-    if self.dimen.h > Screen:getHeight() or self.dimen.h == nil then
-        self.dimen.h = Screen:getHeight()
+    
+    self.screen_w = Screen:getWidth()
+    self.screen_h = Screen:getHeight()
+    self.dimen = Geom:new{ x = 0, y = 0, w = self.width or self.screen_w, h = self.height or self.screen_h }
+    if self.dimen.h > self.screen_h then
+        self.dimen.h = self.screen_h
     end
 
     self.border_size = self.is_borderless and 0 or Size.border.window
@@ -675,7 +668,7 @@ function Menu:init()
         left_icon = self.title_bar_left_icon,
         left_icon_tap_callback = function() self:onLeftButtonTap() end,
         left_icon_hold_callback = function() self:onLeftButtonHold() end,
-        close_callback = self.has_close_button and function() self:onClose() end,
+        close_callback = function() self:onClose() end,
         show_parent = self.show_parent or self,
     }
 
@@ -844,7 +837,7 @@ function Menu:init()
         dimen = self.inner_dimen:copy(),
         WidgetContainer:new{
             dimen = Geom:new{
-                w = Screen:getWidth(),
+                w = self.screen_w,
                 h = self.page_return_arrow:getSize().h,
             },
             self.return_button,
@@ -852,13 +845,9 @@ function Menu:init()
     }
 
     self:_recalculateDimen()
-    self.vertical_span = HorizontalGroup:new{
-        VerticalSpan:new{ width = self.span_width }
-    }
     self.content_group = VerticalGroup:new{
         align = "left",
         header,
-        self.vertical_span,
         body,
     }
     local content = OverlapGroup:new{
@@ -891,8 +880,8 @@ function Menu:init()
                 ges = "tap",
                 range = Geom:new{
                     x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
+                    w = self.screen_w,
+                    h = self.screen_h,
                 }
             }
         }
@@ -984,7 +973,7 @@ function Menu:updatePageInfo(select_number)
             self:moveFocusTo(1, select_number)
         end
         -- update page information
-        self.page_info_text:setText(FFIUtil.template(_("Page %1 of %2"), self.page, self.page_num))
+        self.page_info_text:setText(T(_("Page %1 of %2"), self.page, self.page_num))
         if self.page_num > 1 then
             self.page_info_text:enable()
         else
@@ -1020,7 +1009,6 @@ function Menu:updateItems(select_number)
     self.item_group:clear()
     self.page_info:resetLayout()
     self.return_button:resetLayout()
-    self.vertical_span:clear()
     self.content_group:resetLayout()
     self:_recalculateDimen()
 
@@ -1345,8 +1333,8 @@ function Menu:onSwipe(arg, ges_ev)
     elseif direction == "east" then
         self:onPrevPage()
     elseif direction == "south" then
-        if self.has_close_button and not self.no_title then
-            -- If there is a close button displayed (so, this Menu can be
+        if not self.no_title then
+            -- If there is a titlebar with a close button displayed (so, this Menu can be
             -- closed), allow easier closing with swipe south.
             self:onClose()
         end
@@ -1365,8 +1353,8 @@ function Menu:onMultiSwipe(arg, ges_ev)
     -- For consistency with other fullscreen widgets where swipe south can't be
     -- used to close and where we then allow any multiswipe to close, allow any
     -- multiswipe to close this widget too.
-    if self.has_close_button and not self.no_title then
-        -- If there is a close button displayed (so, this Menu can be
+    if not self.no_title then
+        -- If there is a titlebar with a close button displayed (so, this Menu can be
         -- closed), allow easier closing with swipe south.
         self:onClose()
     end
