@@ -396,7 +396,7 @@ To:
                     UIManager:show(items)
                 end,
             },
-        }
+        },
     }
 
     for _, widget in pairs(self.registered_widgets) do
@@ -530,7 +530,7 @@ To:
                     end
                 end,
             },
-        }
+        },
     }
     if Device:isKobo() and not Device:isSunxi() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
@@ -694,8 +694,8 @@ To:
                     G_reader_settings:flipNilOrFalse("dev_reverse_ui_text_direction")
                     UIManager:askForRestart()
                 end
-            }
-        }
+            },
+        },
     })
     table.insert(self.menu_items.developer_options.sub_item_table, {
         text_func = function()
