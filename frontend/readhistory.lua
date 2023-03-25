@@ -16,11 +16,6 @@ local ReadHistory = {
     last_read_time = 0,
 }
 
-local function selectCallback(path)
-    local ReaderUI = require("apps/reader/readerui")
-    ReaderUI:showReader(path)
-end
-
 local function buildEntry(input_time, input_file)
     local file_path = realpath(input_file) or input_file -- keep orig file path of deleted files
     local is_file_deleted = lfs.attributes(file_path, "mode") ~= "file"
@@ -31,9 +26,6 @@ local function buildEntry(input_time, input_file)
         dim = is_file_deleted,
         mandatory = datetime.secondsToDateTime(input_time),
         select_enabled = not is_file_deleted,
-        callback = function()
-            selectCallback(input_file)
-        end,
     }
 end
 
@@ -196,9 +188,6 @@ function ReadHistory:updateItemByPath(old_path, new_path)
     if index then
         self.hist[index].file = new_path
         self.hist[index].text = new_path:gsub(".*/", "")
-        self.hist[index].callback = function()
-            selectCallback(new_path)
-        end
         self:_flush()
         self:reload(true)
     end
