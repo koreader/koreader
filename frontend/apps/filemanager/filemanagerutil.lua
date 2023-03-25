@@ -140,6 +140,42 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
     }
 end
 
+function filemanagerutil.genBookInformationButton(file, dialog, button_disabled)
+    return {
+        text = _("Book information"),
+        id = "book_information", -- used by covermenu
+        enabled = not button_disabled,
+        callback = function()
+            UIManager:close(dialog)
+            require("apps/filemanager/filemanagerbookinfo"):show(file)
+        end,
+    }
+end
+
+function filemanagerutil.genBookDescriptionButton(file, dialog, button_disabled)
+    return {
+        text = _("Book description"),
+        id = "book_description", -- used by covermenu
+        enabled = not button_disabled,
+        callback = function()
+            UIManager:close(dialog)
+            require("apps/filemanager/filemanagerbookinfo"):onShowBookDescription(nil, file)
+        end,
+    }
+end
+
+function filemanagerutil.genBookCoverButton(file, dialog, button_disabled)
+    return {
+        text = _("Book cover"),
+        id = "book_cover", -- used by covermenu
+        enabled = not button_disabled,
+        callback = function()
+            UIManager:close(dialog)
+            require("apps/filemanager/filemanagerbookinfo"):onShowBookCover(file)
+        end,
+    }
+end
+
 -- Generate "Execute script" file dialog button
 function filemanagerutil.genExecuteScriptButton(file, caller_callback)
     return {
