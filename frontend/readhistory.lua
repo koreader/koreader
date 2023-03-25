@@ -18,14 +18,14 @@ local ReadHistory = {
 
 local function buildEntry(input_time, input_file)
     local file_path = realpath(input_file) or input_file -- keep orig file path of deleted files
-    local is_file_deleted = lfs.attributes(file_path, "mode") ~= "file"
+    local file_exists = lfs.attributes(file_path, "mode") == "file"
     return {
         time = input_time,
         file = file_path,
         text = input_file:gsub(".*/", ""),
-        dim = is_file_deleted,
+        dim = not file_exists,
         mandatory = datetime.secondsToDateTime(input_time),
-        select_enabled = not is_file_deleted,
+        select_enabled = file_exists,
     }
 end
 
