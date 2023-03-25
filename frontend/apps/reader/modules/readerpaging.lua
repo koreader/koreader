@@ -725,12 +725,16 @@ function ReaderPaging:getNextPageState(blank_area, offset)
     visible_area = visible_area:shrinkInside(page_area, offset.x, offset.y)
     -- shrink blank area by the height of visible area
     blank_area.h = blank_area.h - visible_area.h
+    local page_offset = Geom:new{x = self.view.state.offset.x, y = 0}
+    if blank_area.w > page_area.w then
+        page_offset:offsetBy((blank_area.w - page_area.w) / 2, 0)
+    end
     return {
         page = self.view.state.page,
         zoom = self.view.state.zoom,
         rotation = self.view.state.rotation,
         gamma = self.view.state.gamma,
-        offset = Geom:new{ x = self.view.state.offset.x, y = 0},
+        offset = page_offset,
         visible_area = visible_area,
         page_area = page_area,
     }
@@ -748,12 +752,16 @@ function ReaderPaging:getPrevPageState(blank_area, offset)
     visible_area = visible_area:shrinkInside(page_area, offset.x, offset.y)
     -- shrink blank area by the height of visible area
     blank_area.h = blank_area.h - visible_area.h
+    local page_offset = Geom:new{x = self.view.state.offset.x, y = 0}
+    if blank_area.w > page_area.w then
+        page_offset:offsetBy((blank_area.w - page_area.w) / 2, 0)
+    end
     return {
         page = self.view.state.page,
         zoom = self.view.state.zoom,
         rotation = self.view.state.rotation,
         gamma = self.view.state.gamma,
-        offset = Geom:new{ x = self.view.state.offset.x, y = 0},
+        offset = page_offset,
         visible_area = visible_area,
         page_area = page_area,
     }
