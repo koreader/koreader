@@ -68,17 +68,20 @@ local ReaderZooming = InputContainer:extend{
     -- with overlap of zoom_overlap_h % (horizontally)
     -- and zoom_overlap_v % (vertically).
     kopt_zoom_factor = 1.5,
-    zoom_pan_settings = { -- const
-        "kopt_zoom_factor",
-        "zoom_overlap_h",
-        "zoom_overlap_v",
-        "zoom_bottom_to_top",
-        "zoom_direction_vertical",
-    },
     zoom_overlap_h = 40,
     zoom_overlap_v = 40,
     zoom_bottom_to_top = nil,  -- true for bottom-to-top
     zoom_direction_vertical = nil, -- true for column mode
+    zoom_direction_settings = { -- const
+        [7] = {right_to_left = false, zoom_bottom_to_top = false, zoom_direction_vertical = false},
+        [6] = {right_to_left = false, zoom_bottom_to_top = false, zoom_direction_vertical = true },
+        [5] = {right_to_left = false, zoom_bottom_to_top = true,  zoom_direction_vertical = false},
+        [4] = {right_to_left = false, zoom_bottom_to_top = true,  zoom_direction_vertical = true },
+        [3] = {right_to_left = true,  zoom_bottom_to_top = true,  zoom_direction_vertical = true },
+        [2] = {right_to_left = true,  zoom_bottom_to_top = true,  zoom_direction_vertical = false},
+        [1] = {right_to_left = true,  zoom_bottom_to_top = false, zoom_direction_vertical = true },
+        [0] = {right_to_left = true,  zoom_bottom_to_top = false, zoom_direction_vertical = false},
+    },
     current_page = 1,
     rotation = 0,
     paged_modes = { -- const
@@ -250,18 +253,22 @@ function ReaderZooming:onReadSettings(config)
     local is_reflowed = config:has("kopt_text_wrap") and config:readSetting("kopt_text_wrap") == 1
 
     self:setZoomMode(zoom_mode, true, is_reflowed) -- avoid informative message on load
-    for _, setting in ipairs(self.zoom_pan_settings) do
-        self[setting] = config:readSetting(setting)
-                     or G_reader_settings:readSetting(setting)
-                     or self[setting]
-    end
+
+    self.kopt_zoom_factor = config:readSetting("kopt_zoom_factor")
+                            or G_reader_settings:readSetting("kopt_zoom_factor") or self.kopt_zoom_factor
+    self.zoom_overlap_h = config:readSetting("kopt_zoom_overlap_h")
+                            or G_reader_settings:readSetting("kopt_zoom_overlap_h") or self.zoom_overlap_h
+    self.zoom_overlap_v = config:readSetting("kopt_zoom_overlap_v")
+                            or G_reader_settings:readSetting("kopt_zoom_overlap_v") or self.zoom_overlap_v
+
+    -- update zoom direction parameters
+    local zoom_direction_setting = self.zoom_direction_settings[self.document.configurable.zoom_direction]
+    self.zoom_bottom_to_top = zoom_direction_setting.zoom_bottom_to_top
+    self.zoom_direction_vertical = zoom_direction_setting.zoom_direction_vertical
 end
 
 function ReaderZooming:onSaveSettings()
     self.ui.doc_settings:saveSetting("zoom_mode", self.orig_zoom_mode or self.zoom_mode)
-    for _, setting in ipairs(self.zoom_pan_settings) do
-        self.ui.doc_settings:saveSetting(setting, self[setting])
-    end
 end
 
 function ReaderZooming:onSpread(arg, ges)
@@ -335,16 +342,12 @@ end
 
 function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     local config = self.ui.document.configurable
-    local settings = ({
-        [7] = {right_to_left = false, zoom_bottom_to_top = false, zoom_direction_vertical = false},
-        [6] = {right_to_left = false, zoom_bottom_to_top = false, zoom_direction_vertical = true },
-        [5] = {right_to_left = false, zoom_bottom_to_top = true,  zoom_direction_vertical = false},
-        [4] = {right_to_left = false, zoom_bottom_to_top = true,  zoom_direction_vertical = true },
-        [3] = {right_to_left = true,  zoom_bottom_to_top = true,  zoom_direction_vertical = true },
-        [2] = {right_to_left = true,  zoom_bottom_to_top = true,  zoom_direction_vertical = false},
-        [1] = {right_to_left = true,  zoom_bottom_to_top = false, zoom_direction_vertical = true },
-        [0] = {right_to_left = true,  zoom_bottom_to_top = false, zoom_direction_vertical = false},
-    })[config.zoom_direction]
+    local zoom_direction_setting = self.zoom_direction_settings[config.zoom_direction]
+    local settings = { -- unpack the table, work on a local copy
+        right_to_left = zoom_direction_setting.right_to_left,
+        zoom_bottom_to_top = zoom_direction_setting.zoom_bottom_to_top,
+        zoom_direction_vertical = zoom_direction_setting.zoom_direction_vertical,
+    }
     local zoom_range_number = config.zoom_range_number
     local zoom_factor = config.zoom_factor
     local zoom_mode_genus = self.zoom_genus_to_mode[config.zoom_mode_genus]
@@ -712,9 +715,10 @@ function ReaderZooming:onZoomFactorChange()
 end
 
 function ReaderZooming:onSetZoomPan(settings, no_redraw)
+    self.ui.doc_settings:saveSetting("kopt_zoom_factor", settings.kopt_zoom_factor)
+    self.ui.doc_settings:saveSetting("zoom_mode", settings.zoom_mode)
     for k, v in pairs(settings) do
         self[k] = v
-        self.ui.doc_settings:saveSetting(k, v)
         -- Configurable keys aren't prefixed...
         local configurable_key = k:gsub("^kopt_", "")
         if self.ui.document.configurable[configurable_key] then

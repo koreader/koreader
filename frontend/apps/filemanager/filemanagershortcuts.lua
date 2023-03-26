@@ -225,11 +225,8 @@ function FileManagerShortcuts:onShowFolderShortcutsDialog(select_callback)
     self.fm_bookmark = Menu:new{
         title = _("Folder shortcuts"),
         show_parent = self.ui,
-        width = Screen:getWidth(),
-        height = Screen:getHeight(),
         no_title = false,
         parent = nil,
-        has_close_button = true,
         is_popout = false,
         is_borderless = true,
         curr_path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile(),

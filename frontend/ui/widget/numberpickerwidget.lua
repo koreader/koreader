@@ -236,7 +236,6 @@ function NumberPickerWidget:init()
         text_font_face = self.spinner_face.font,
         text_font_size = self.spinner_face.orig_size,
         width = self.width,
-        max_width = self.width,
         show_parent = self.show_parent,
         callback = callback_input,
     }

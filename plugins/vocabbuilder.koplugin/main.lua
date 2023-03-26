@@ -532,7 +532,6 @@ function WordInfoDialog:init()
     self.book_title_button = Button:new{
         text = self.book_title .. book_title_triangle,
         width = width,
-        max_width = width,
         text_font_face = "NotoSans-Italic.ttf",
         text_font_size = 14,
         text_font_bold = false,
@@ -755,7 +754,6 @@ function VocabItemWidget:initItemWidget()
         self.forgot_button = Button:new{
             text = _("Forgot"),
             width = self.review_button_width,
-            max_width = self.review_button_width,
             radius = Size.radius.button,
             callback = function()
                 self:onForgot()
@@ -770,7 +768,6 @@ function VocabItemWidget:initItemWidget()
                 self:onGotIt()
             end,
             width = self.review_button_width,
-            max_width = self.review_button_width,
             show_parent = self,
         }
         right_widget = HorizontalGroup:new{
@@ -1359,7 +1356,7 @@ function VocabularyBuilderWidget:refreshFooter()
     local sync_size = TextWidget:getFontSizeToFitHeight("cfont", footer_height, Size.padding.buttontable*2)
     self.footer_sync = Button:new{
         text = "⇅",
-        width = self.footer_left_corner_width - Size.padding.large * 2,
+        width = self.footer_left_corner_width,
         text_font_size = sync_size,
         text_font_bold = false,
         bordersize = 0,

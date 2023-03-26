@@ -8,7 +8,6 @@ A button widget that shows text or an icon and handles callback when tapped.
         enabled = false, -- defaults to true
         callback = some_callback_function,
         width = Screen:scaleBySize(50),
-        max_width = Screen:scaleBySize(100),
         bordersize = Screen:scaleBySize(3),
         margin = 0,
         padding = Screen:scaleBySize(2),
@@ -55,6 +54,8 @@ local Button = InputContainer:extend{
     padding = Size.padding.button,
     padding_h = nil,
     padding_v = nil,
+    -- Provide only one of these two: 'width' to get a fixed width,
+    -- 'max_width' to allow it to be smaller if text or icon is smaller.
     width = nil,
     max_width = nil,
     avoid_text_truncation = true,
@@ -82,12 +83,19 @@ function Button:init()
         self.padding_v = self.padding
     end
 
-    local is_left_aligned = self.align == "left"
-    local right_margin = is_left_aligned and (2 * Size.padding.large) or 0
+    local outer_pad_width = 2*self.padding_h + 2*self.margin + 2*self.bordersize -- unscaled_size_check: ignore
+
+    -- If this button could be made smaller while still not needing truncation
+    -- or a smaller font size, we'll set this: it may allow an upper widget to
+    -- resize/relayout itself to look more compact/nicer (as this size would
+    -- depends on translations)
+    self._min_needed_width = nil
 
     if self.text then
-        local max_width = self.max_width
-            and self.max_width - 2*self.padding_h - 2*self.margin - 2*self.bordersize - right_margin or nil
+        local max_width = self.max_width or self.width
+        if max_width then
+            max_width = max_width - outer_pad_width
+        end
         self.label_widget = TextWidget:new{
             text = self.text,
             max_width = max_width,
@@ -95,6 +103,9 @@ function Button:init()
             bold = self.text_font_bold,
             face = Font:getFace(self.text_font_face, self.text_font_size)
         }
+        if not self.label_widget:isTruncated() then
+            self._min_needed_width = self.label_widget:getSize().w + outer_pad_width
+        end
         self.did_truncation_tweaks = false
         if self.avoid_text_truncation and self.label_widget:isTruncated() then
             self.did_truncation_tweaks = true
@@ -144,16 +155,20 @@ function Button:init()
             width = self.icon_width,
             height = self.icon_height,
         }
+        self._min_needed_width = self.icon_width + outer_pad_width
     end
     local widget_size = self.label_widget:getSize()
-    if self.width == nil then
-        self.width = widget_size.w
+    local inner_width
+    if self.width then
+        inner_width = self.width - outer_pad_width
+    else
+        inner_width = widget_size.w
     end
     -- set FrameContainer content
-    if is_left_aligned then
+    if self.align == "left" then
         self.label_container = LeftContainer:new{
             dimen = Geom:new{
-                w = self.width - 4 * Size.padding.large,
+                w = inner_width,
                 h = widget_size.h
             },
             self.label_widget,
@@ -161,7 +176,7 @@ function Button:init()
     else
         self.label_container = CenterContainer:new{
             dimen = Geom:new{
-                w = self.width,
+                w = inner_width,
                 h = widget_size.h
             },
             self.label_widget,
@@ -207,6 +222,12 @@ function Button:init()
     }
 end
 
+function Button:getMinNeededWidth()
+    if self._min_needed_width and self._min_needed_width < self.width then
+        return self._min_needed_width
+    end
+end
+
 function Button:setText(text, width)
     if text ~= self.text then
         -- Don't trash the frame if we're already a text button, and we're keeping the geometry intact
@@ -247,6 +268,9 @@ function Button:enable()
     if not self.enabled then
         if self.text then
             self.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
+            if self.label_widget.update then -- using a TextBoxWidget
+                self.label_widget:update() -- needed to redraw with the new color
+            end
         else
             self.label_widget.dim = false
         end
@@ -258,6 +282,9 @@ function Button:disable()
     if self.enabled then
         if self.text then
             self.label_widget.fgcolor = Blitbuffer.COLOR_DARK_GRAY
+            if self.label_widget.update then
+                self.label_widget:update()
+            end
         else
             self.label_widget.dim = true
         end
@@ -282,6 +309,14 @@ function Button:enableDisable(enable)
     else
         self:disable()
     end
+end
+
+function Button:paintTo(bb, x, y)
+    if self.enabled_func then
+        -- state may change because of outside factors, so check it on each painting
+        self:enableDisable(self.enabled_func())
+    end
+    InputContainer.paintTo(self, bb, x, y)
 end
 
 function Button:hide()

@@ -73,7 +73,7 @@ function ButtonProgressWidget:update()
         buttons_count = buttons_count + 1
         span_count = span_count + 1
     end
-    local button_width_real = (self.width - span_count * self.horizontal_span_width) / buttons_count - 2*button_padding - 2*button_margin - 2*button_bordersize
+    local button_width_real = (self.width - span_count * self.horizontal_span_width) / buttons_count
     local button_width = math.floor(button_width_real)
     local button_width_adjust = button_width_real - button_width
     local button_width_to_add = 0
@@ -81,16 +81,14 @@ function ButtonProgressWidget:update()
     -- Minus button on the left
     if self.fine_tune then
         button_width_to_add = button_width_to_add + button_width_adjust
-        local margin = button_margin
-        local extra_border_size = 0
         local button = Button:new{
             text = "−",
             radius = 0,
-            margin = margin,
+            margin = button_margin,
             padding = button_padding,
-            bordersize = button_bordersize + extra_border_size,
+            bordersize = button_bordersize,
             enabled = true,
-            width = button_width - 2*extra_border_size,
+            width = button_width,
             preselect = false,
             text_font_face = self.font_face,
             text_font_size = self.font_size,
@@ -122,6 +120,7 @@ function ButtonProgressWidget:update()
         local margin = button_margin
         if self.thin_grey_style and highlighted then
             margin = 0 -- moved outside button so it's not inverted
+            real_button_width = real_button_width - 2*button_margin
         end
         local extra_border_size = 0
         if not self.thin_grey_style and is_default then
@@ -135,7 +134,7 @@ function ButtonProgressWidget:update()
             padding = button_padding,
             bordersize = button_bordersize + extra_border_size,
             enabled = true,
-            width = real_button_width - 2*extra_border_size,
+            width = real_button_width,
             preselect = highlighted,
             text_font_face = self.font_face,
             text_font_size = self.font_size,
@@ -183,16 +182,14 @@ function ButtonProgressWidget:update()
             real_button_width = button_width + math.floor(button_width_to_add)
             button_width_to_add = button_width_to_add - math.floor(button_width_to_add)
         end
-        local margin = button_margin
-        local extra_border_size = 0
         local button = Button:new{
             text = "＋",
             radius = 0,
-            margin = margin,
+            margin = button_margin,
             padding = button_padding,
-            bordersize = button_bordersize + extra_border_size,
+            bordersize = button_bordersize,
             enabled = true,
-            width = real_button_width - 2*extra_border_size,
+            width = real_button_width,
             preselect = false,
             text_font_face = self.font_face,
             text_font_size = self.font_size,
@@ -218,16 +215,14 @@ function ButtonProgressWidget:update()
             -- One pixel wider to better align the entire widget
             real_button_width = button_width + math.floor(button_width_to_add)
         end
-        local margin = button_margin
-        local extra_border_size = 0
         local button = Button:new{
             text = "⋮",
             radius = 0,
-            margin = margin,
+            margin = button_margin,
             padding = button_padding,
-            bordersize = button_bordersize + extra_border_size,
+            bordersize = button_bordersize,
             enabled = true,
-            width = real_button_width - 2*extra_border_size,
+            width = real_button_width,
             preselect = false,
             text_font_face = self.font_face,
             text_font_size = self.font_size,
