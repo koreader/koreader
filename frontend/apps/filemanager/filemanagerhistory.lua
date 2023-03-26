@@ -1,7 +1,6 @@
 local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
-local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -78,6 +77,10 @@ function FileManagerHistory:onSetDimensions(dimen)
     self.dimen = dimen
 end
 
+function FileManagerHistory:onMenuChoice(item)
+    require("apps/reader/readerui"):showReader(item.file)
+end
+
 function FileManagerHistory:onMenuHold(item)
     self.histfile_dialog = nil
     local function status_button_callback()
@@ -122,33 +125,11 @@ function FileManagerHistory:onMenuHold(item)
                 FileManager:showDeleteFileDialog(item.file, post_delete_callback)
             end,
         },
-        {
-            text = _("Book information"),
-            id = "book_information", -- used by covermenu
-            enabled = not item.dim,
-            callback = function()
-                UIManager:close(self.histfile_dialog)
-                FileManagerBookInfo:show(item.file)
-            end,
-         },
+        filemanagerutil.genBookInformationButton(item.file, self.histfile_dialog, item.dim),
     })
     table.insert(buttons, {
-        {
-            text = _("Book cover"),
-            id = "book_cover", -- used by covermenu
-            callback = function()
-                UIManager:close(self.histfile_dialog)
-                FileManagerBookInfo:onShowBookCover(item.file)
-            end,
-        },
-        {
-            text = _("Book description"),
-            id = "book_description", -- used by covermenu
-            callback = function()
-                UIManager:close(self.histfile_dialog)
-                FileManagerBookInfo:onShowBookDescription(nil, item.file)
-            end,
-        },
+        filemanagerutil.genBookCoverButton(item.file, self.histfile_dialog, item.dim),
+        filemanagerutil.genBookDescriptionButton(item.file, self.histfile_dialog, item.dim),
     })
 
     self.histfile_dialog = ButtonDialogTitle:new{
@@ -180,13 +161,12 @@ end
 function FileManagerHistory:onShowHist()
     self.hist_menu = Menu:new{
         ui = self.ui,
-        width = Screen:getWidth(),
-        height = Screen:getHeight(),
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         is_borderless = true,
         is_popout = false,
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showHistDialog() end,
+        onMenuChoice = self.onMenuChoice,
         onMenuHold = self.onMenuHold,
         onSetRotationMode = self.MenuSetRotationModeHandler,
         _manager = self,
