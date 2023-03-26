@@ -249,6 +249,7 @@ local ReaderStyleTweak = WidgetContainer:extend{
     nb_enabled_tweaks = 0, -- for use by main menu item
     css_text = nil, -- aggregated css text from tweaks individual css snippets
     enabled = true, -- allows for toggling between selected tweaks / none
+    dispatcher_prefix = "style_tweak_",
 }
 
 function ReaderStyleTweak:isTweakEnabled(tweak_id)
@@ -446,12 +447,12 @@ function ReaderStyleTweak:onSaveSettings()
 end
 
 local function dispatcherRegisterStyleTweak(tweak_id, tweak_title)
-    Dispatcher:registerAction("style_tweak_"..tweak_id,
+    Dispatcher:registerAction(ReaderStyleTweak.dispatcher_prefix..tweak_id,
         {category="none", event="ToggleStyleTweak", arg=tweak_id, title=T(_("Toggle style tweak: %1"), tweak_title), rolling=true})
 end
 
 local function dispatcherUnregisterStyleTweak(tweak_id)
-    Dispatcher:removeAction("style_tweak_"..tweak_id)
+    Dispatcher:removeAction(ReaderStyleTweak.dispatcher_prefix..tweak_id)
 end
 
 function ReaderStyleTweak:init()
@@ -566,6 +567,11 @@ You can enable individual tweaks on this book with a tap, or view more details a
                             if self.tweaks_in_dispatcher[item.id] then
                                 self.tweaks_in_dispatcher[item.id] = nil
                                 dispatcherUnregisterStyleTweak(item.id)
+                                local Profiles = self.ui.profiles
+                                if Profiles then
+                                    Profiles:updateGestures(self.dispatcher_prefix..item.id)
+                                    Profiles:updateProfiles(self.dispatcher_prefix..item.id)
+                                end
                             else
                                 self.tweaks_in_dispatcher[item.id] = item.title
                                 dispatcherRegisterStyleTweak(item.id, item.title)
