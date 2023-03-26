@@ -688,6 +688,21 @@ function ReaderLink:getCurrentLocation()
     return location
 end
 
+-- Returns true, current_location if the current location is the same as the
+-- saved_location on the top of the stack.
+-- Otherwise returns false, current_location
+function ReaderLink:compareLocationToCurrent(saved_location)
+    local current_location = self:getCurrentLocation()
+    if self.ui.rolling and saved_location.xpointer
+    and saved_location.xpointer == current_location.xpointer then
+        return true, current_location
+    end
+    if self.ui.paging and saved_location[1] and current_location[1] and current_location[1].page == saved_location[1].page then
+        return true, current_location
+    end
+    return false, current_location
+end
+
 -- Remember current location so we can go back to it
 function ReaderLink:addCurrentLocationToStack(loc)
     local location = loc and loc or self:getCurrentLocation()
@@ -855,20 +870,23 @@ end
 function ReaderLink:onGoBackLink(show_notification_if_empty)
     local saved_location = table.remove(self.location_stack)
     if saved_location then
+        local same_page, current_location = self:compareLocationToCurrent(saved_location)
         -- If there are no forward items
         if #self.forward_location_stack == 0 then
             -- If we are not on the same page as the current item,
             -- then add our current location to the forward stack
-            local current_location = self:getCurrentLocation()
-            if self.ui.rolling and saved_location.xpointer
-            and saved_location.xpointer ~= current_location.xpointer then
-                table.insert(self.forward_location_stack, current_location)
-            end
-            if self.ui.paging and saved_location[1] and current_location[1] and current_location[1].page ~= saved_location[1].page then
+            if not same_page then
                 table.insert(self.forward_location_stack, current_location)
             end
         end
+        if same_page then
+            -- If we are on the same page pass through to the next location
+            table.insert(self.forward_location_stack, saved_location)
+            saved_location = table.remove(self.location_stack)
+        end
+    end
 
+    if saved_location then
         table.insert(self.forward_location_stack, saved_location)
         logger.dbg("GoBack: restoring:", saved_location)
         self.ui:handleEvent(Event:new('RestoreBookLocation', saved_location))
@@ -883,6 +901,15 @@ end
 --- Goes to next location.
 function ReaderLink:onGoForwardLink()
     local saved_location = table.remove(self.forward_location_stack)
+    if saved_location then
+        local same_page = self:compareLocationToCurrent(saved_location)
+        if same_page then
+            -- If we are on the same page pass through to the next location
+            table.insert(self.location_stack, saved_location)
+            saved_location = table.remove(self.forward_location_stack)
+        end
+    end
+
     if saved_location then
         table.insert(self.location_stack, saved_location)
         logger.dbg("GoForward: restoring:", saved_location)
