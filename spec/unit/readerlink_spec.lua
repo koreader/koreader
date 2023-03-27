@@ -124,7 +124,7 @@ describe("ReaderLink module", function()
         local expected_page_states = {
             {
                 gamma = 1,
-                offset = {x = 0, y = 0},
+                offset = {x = 17, y = 0},
                 page = 3,
                 page_area = {
                   x = 0, y = 0,
@@ -139,7 +139,7 @@ describe("ReaderLink module", function()
            },
            {
                 gamma = 1,
-                offset = {x = 0, y = 0},
+                offset = {x = 17, y = 0},
                 page = 4,
                 page_area = {
                   h = 800, w = 566,
