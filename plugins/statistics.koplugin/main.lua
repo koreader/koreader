@@ -2780,7 +2780,7 @@ function ReaderStatistics:getReadBookByDay(month)
         FROM   page_stat
         JOIN   book ON book.id = page_stat.id_book
         WHERE  start_time BETWEEN strftime('%s', ?, 'utc') + ?
-                              AND strftime('%s', ?, 'utc', '+33 days', 'start of month') + ?
+                              AND strftime('%s', ?, 'utc', '+33 days', 'start of month', '-1 second') + ?
         GROUP  BY
             strftime('%Y-%m-%d', start_time - ?, 'unixepoch', 'localtime'),
             id_book,
