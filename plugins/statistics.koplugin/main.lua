@@ -1035,6 +1035,44 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                     },
                     {
                         text_func = function()
+                            -- @translators %1 is the hour and %2 is the minute, units for h and m will be automatically added
+                            return T(_("Calendar days start at %1 %2"),
+                                T(C_("Time", "%1h"), self.settings.calendar_day_start_hour or 0),
+                                T(C_("Time", "%1m"), self.settings.calendar_day_start_minute or 0)
+                            )
+                        end,
+                        callback = function(touchmenu_instance)
+                            local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
+                            local start_of_day_widget = DoubleSpinWidget:new{
+                                left_text = C_("Time", "h"),
+                                left_value = self.settings.calendar_day_start_hour or 0,
+                                left_default = 0,
+                                left_min = 0,
+                                left_max = 6,
+                                left_step = 1,
+                                left_hold_step = 3,
+                                right_text = C_("Time", "m"),
+                                right_value = self.settings.calendar_day_start_minute or 0,
+                                right_default = 0,
+                                right_min = 0,
+                                right_max = 59,
+                                right_step = 1,
+                                right_hold_step = 10,
+                                is_range = false,
+                                title_text = _("Starting time of a day"),
+                                info_text = _("Set starting time of a day to be used in statistics, so that readings past 00:00 would be counted to the previous day."),
+                                callback = function(hour, minute)
+                                    self.settings.calendar_day_start_hour = hour
+                                    self.settings.calendar_day_start_minute = minute
+                                    touchmenu_instance:updateItems()
+                                end,
+                            }
+                            UIManager:show(start_of_day_widget)
+                        end,
+                        keep_menu_open = true,
+                    },
+                    {
+                        text_func = function()
                             return T(_("Books per calendar day: %1"), self.settings.calendar_nb_book_spans)
                         end,
                         callback = function(touchmenu_instance)
