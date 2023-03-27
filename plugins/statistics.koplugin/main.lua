@@ -2737,22 +2737,23 @@ function ReaderStatistics:getReadingRatioPerHourByDay(month)
     -- We let SQLite compute these timestamp boundaries from the provided
     -- month; we need the start of the month to be a real date:
     month = month.."-01"
+    local offset = (self.settings.calendar_day_start_hour or 0) * 3600 + (self.settings.calendar_day_start_minute or 0) * 60
     local sql_stmt = [[
         SELECT
-            strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime') day,
-            strftime('%H', start_time, 'unixepoch', 'localtime') hour,
+            strftime('%Y-%m-%d', start_time - ?, 'unixepoch', 'localtime') day,
+            strftime('%H', start_time - ?, 'unixepoch', 'localtime') hour,
             sum(duration)/3600.0 ratio
         FROM   page_stat
-        WHERE  start_time BETWEEN strftime('%s', ?, 'utc')
-                              AND strftime('%s', ?, 'utc', '+33 days', 'start of month', '-1 second')
+        WHERE  start_time BETWEEN strftime('%s', ?, 'utc') + ?
+                              AND strftime('%s', ?, 'utc', '+33 days', 'start of month', '-1 second') + ?
         GROUP  BY
-            strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime'),
-            strftime('%H', start_time, 'unixepoch', 'localtime')
+            strftime('%Y-%m-%d', start_time - ?, 'unixepoch', 'localtime'),
+            strftime('%H', start_time - ?, 'unixepoch', 'localtime')
         ORDER BY day, hour;
     ]]
     local conn = SQ3.open(db_location)
     local stmt = conn:prepare(sql_stmt)
-    local res, nb = stmt:reset():bind(month, month):resultset("i")
+    local res, nb = stmt:reset():bind(offset, offset, month, offset, month, offset, offset, offset):resultset("i")
     stmt:close()
     conn:close()
     local per_day = {}
@@ -2769,25 +2770,26 @@ end
 
 function ReaderStatistics:getReadBookByDay(month)
     month = month.."-01"
+    local offset = (self.settings.calendar_day_start_hour or 0) * 3600 + (self.settings.calendar_day_start_minute or 0) * 60
     local sql_stmt = [[
         SELECT
-            strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime') day,
+            strftime('%Y-%m-%d', start_time - ?, 'unixepoch', 'localtime') day,
             sum(duration) durations,
             id_book book_id,
             book.title book_title
         FROM   page_stat
         JOIN   book ON book.id = page_stat.id_book
-        WHERE  start_time BETWEEN strftime('%s', ?, 'utc')
-                              AND strftime('%s', ?, 'utc', '+33 days', 'start of month', '-1 second')
+        WHERE  start_time BETWEEN strftime('%s', ?, 'utc') + ?
+                              AND strftime('%s', ?, 'utc', '+33 days', 'start of month') + ?
         GROUP  BY
-            strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime'),
+            strftime('%Y-%m-%d', start_time - ?, 'unixepoch', 'localtime'),
             id_book,
             title
         ORDER BY day, durations desc, book_id, book_title;
     ]]
     local conn = SQ3.open(db_location)
     local stmt = conn:prepare(sql_stmt)
-    local res, nb = stmt:reset():bind(month, month):resultset("i")
+    local res, nb = stmt:reset():bind(offset, month, offset, month, offset, offset):resultset("i")
     stmt:close()
     conn:close()
     local per_day = {}
