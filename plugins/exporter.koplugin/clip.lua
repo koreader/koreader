@@ -334,12 +334,14 @@ end
 function MyClipping:parseHistory()
     local clippings = {}
     local history_dir = DataStorage:getHistoryDir()
-    for f in lfs.dir(history_dir) do
-        local legacy_history_file = ffiutil.joinPath(history_dir, f)
-        if lfs.attributes(legacy_history_file, "mode") == "file" then
-            local doc_file = DocSettings:getFileFromHistory(f)
-            if doc_file then
-                self:parseHistoryFile(clippings, legacy_history_file, doc_file)
+    if lfs.attributes(history_dir, "mode") == "directory" then
+        for f in lfs.dir(history_dir) do
+            local legacy_history_file = ffiutil.joinPath(history_dir, f)
+            if lfs.attributes(legacy_history_file, "mode") == "file" then
+                local doc_file = DocSettings:getFileFromHistory(f)
+                if doc_file then
+                    self:parseHistoryFile(clippings, legacy_history_file, doc_file)
+                end
             end
         end
     end
