@@ -3,6 +3,7 @@ This module provides a way to display book information (filename and book metada
 ]]
 
 local BD = require("ui/bidi")
+local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
@@ -63,58 +64,60 @@ function BookInfo:show(file, book_props)
         { _("Keywords:"), "keywords" },
         { _("Description:"), "description" },
     }
-    for _, v in ipairs(props) do
+    for __, v in ipairs(props) do
         local prop_text, prop_key = unpack(v)
         local prop = book_props[prop_key]
-        if prop and prop ~= "" then
-            if prop_key == "title" then
+        if prop == nil or prop == "" then
+            prop = _("N/A")
+        elseif prop_key == "title" then
+            prop = BD.auto(prop)
+        elseif prop_key == "authors" or prop_key == "keywords" then
+            if prop:find("\n") then -- BD auto isolate each entry
+                prop = util.splitToArray(prop, "\n")
+                for i = 1, #prop do
+                    prop[i] = BD.auto(prop[i])
+                end
+                prop = table.concat(prop, "\n")
+            else
                 prop = BD.auto(prop)
-            elseif prop_key == "authors" or prop_key == "keywords" then
-                if prop:find("\n") then -- BD auto isolate each entry
-                    prop = util.splitToArray(prop, "\n")
-                    for i = 1, #prop do
-                        prop[i] = BD.auto(prop[i])
-                    end
-                    prop = table.concat(prop, "\n")
-                else
-                    prop = BD.auto(prop)
-                end
-            elseif prop_key == "series" then
-                -- If we were fed a BookInfo book_props (e.g., covermenu), series index is in a separate field
-                if book_props.series_index then
-                    -- Here, we're assured that series_index is a Lua number, so round integers are automatically
-                    -- displayed without decimals
-                    prop = prop .. " #" .. book_props.series_index
-                else
-                    -- But here, if we have a plain doc_props series with an index, drop empty decimals from round integers.
-                    prop = prop:gsub("(#%d+)%.0+$", "%1")
-                end
-            elseif prop_key == "language" then
-                -- Get a chance to have title, authors... rendered with alternate
-                -- glyphs for the book language (e.g. japanese book in chinese UI)
-                values_lang = prop
-            elseif prop_key == "description" then
-                -- Description may (often in EPUB, but not always) or may not (rarely in PDF) be HTML
-                prop = util.htmlToPlainTextIfHtml(prop)
             end
-            table.insert(kv_pairs, { prop_text, prop })
+        elseif prop_key == "series" then
+            -- If we were fed a BookInfo book_props (e.g., covermenu), series index is in a separate field
+            if book_props.series_index then
+                -- Here, we're assured that series_index is a Lua number, so round integers are automatically
+                -- displayed without decimals
+                prop = prop .. " #" .. book_props.series_index
+            else
+                -- But here, if we have a plain doc_props series with an index, drop empty decimals from round integers.
+                prop = prop:gsub("(#%d+)%.0+$", "%1")
+            end
+        elseif prop_key == "language" then
+            -- Get a chance to have title, authors... rendered with alternate
+            -- glyphs for the book language (e.g. japanese book in chinese UI)
+            values_lang = prop
+        elseif prop_key == "description" then
+            -- Description may (often in EPUB, but not always) or may not (rarely in PDF) be HTML
+            prop = util.htmlToPlainTextIfHtml(prop)
         end
+        table.insert(kv_pairs, { prop_text, prop })
+    end
+    local lines_nb, words_nb
+    if self.document then
+        lines_nb, words_nb = self:getCurrentPageLinesWordsNumber()
     end
     local viewCoverImage = function()
         self:onShowBookCover(file)
     end
-    table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=viewCoverImage, separator = true })
+    table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=viewCoverImage, separator=lines_nb })
 
     -- Page section
-    if self.document then
-        local lines_nb, words_nb = self:getCurrentPageLinesWordsNumber()
-        if lines_nb then
-            table.insert(kv_pairs, { _("Current page lines:"), lines_nb })
-            table.insert(kv_pairs, { _("Current page words:"), words_nb })
-        end
+    if lines_nb then
+        table.insert(kv_pairs, { _("Current page lines:"), lines_nb })
+        table.insert(kv_pairs, { _("Current page words:"), words_nb })
     end
 
-    local widget = require("ui/widget/keyvaluepage"):new{
+    local KeyValuePage = require("ui/widget/keyvaluepage")
+    local widget = KeyValuePage:new{
         title = _("Book information"),
         value_overflow_align = "right",
         kv_pairs = kv_pairs,
@@ -124,7 +127,6 @@ function BookInfo:show(file, book_props)
 end
 
 function BookInfo:getBookProps(file, book_props, no_open_document)
-    local DocSettings = require("docsettings")
     if DocSettings:hasSidecarFile(file) then
         local doc_settings = DocSettings:open(file)
         if not book_props then
@@ -236,7 +238,8 @@ function BookInfo:onShowBookCover(file)
     if document then
         local cover_bb = document:getCoverPageImage()
         if cover_bb then
-            local imgviewer = require("ui/widget/imageviewer"):new{
+            local ImageViewer = require("ui/widget/imageviewer")
+            local imgviewer = ImageViewer:new{
                 image = cover_bb,
                 with_title_bar = false,
                 fullscreen = true,
@@ -271,7 +274,7 @@ function BookInfo:getCurrentPageLinesWordsNumber()
         return #lines, #words
     else
         local page_boxes = self.ui.document:getTextBoxes(self.ui:getCurrentPage())
-        if not page_boxes then return end
+        if not page_boxes or not page_boxes[1][1].word then return end -- scanned pdf
         local lines_nb = #page_boxes
         local words_nb = 0
         for _, line in ipairs(page_boxes) do
