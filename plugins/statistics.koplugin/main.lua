@@ -1043,7 +1043,11 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         end,
                         callback = function(touchmenu_instance)
                             local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
-                            local start_of_day_widget = DoubleSpinWidget:new{
+                            local getExtraButtonText = function()
+                                return self.settings.calendar_day_start_time_limit_use and _("Tap to use in calendar and daily timeline") or _("Tap to use only in daily timeline")
+                            end
+                            local start_of_day_widget
+                            start_of_day_widget = DoubleSpinWidget:new{
                                 left_text = C_("Time", "h"),
                                 left_value = self.settings.calendar_day_start_hour or 0,
                                 left_default = 0,
@@ -1055,8 +1059,8 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                                 right_value = self.settings.calendar_day_start_minute or 0,
                                 right_default = 0,
                                 right_min = 0,
-                                right_max = 59,
-                                right_step = 1,
+                                right_max = 50,
+                                right_step = 10,
                                 right_hold_step = 10,
                                 is_range = false,
                                 title_text = _("Starting time of a day"),
@@ -1066,6 +1070,14 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                                     self.settings.calendar_day_start_minute = minute
                                     touchmenu_instance:updateItems()
                                 end,
+                                extra_text = getExtraButtonText(),
+                                extra_callback = function()
+                                    local button = start_of_day_widget.button_table:getButtonById("extra_text_button")
+                                    self.settings.calendar_day_start_time_limit_use = not (self.settings.calendar_day_start_time_limit_use or false)
+                                    touchmenu_instance:updateItems()
+                                    button:setText(getExtraButtonText(), button.width)
+                                end,
+                                keep_shown_on_extra = true
                             }
                             UIManager:show(start_of_day_widget)
                         end,
@@ -2042,6 +2054,7 @@ function ReaderStatistics:getBooksFromPeriod(period_begin, period_end, callback_
         table.insert(results, {
             result_book[1][i],
             T(N_("%1 (1 page)", "%1 (%2 pages)", tonumber(result_book[2][i])), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false), tonumber(result_book[2][i])),
+            duration = tonumber(result_book[3][i]),
             book_id = tonumber(result_book[4][i]),
             callback = function()
                 local kv = self.kv
@@ -2737,23 +2750,28 @@ function ReaderStatistics:getReadingRatioPerHourByDay(month)
     -- We let SQLite compute these timestamp boundaries from the provided
     -- month; we need the start of the month to be a real date:
     month = month.."-01"
-    local offset = (self.settings.calendar_day_start_hour or 0) * 3600 + (self.settings.calendar_day_start_minute or 0) * 60
+    local offset = self.settings.calendar_day_start_time_limit_use and 0 or (self.settings.calendar_day_start_hour or 0) * 3600 + (self.settings.calendar_day_start_minute or 0) * 60
     local sql_stmt = [[
         SELECT
-            strftime('%Y-%m-%d', start_time - ?, 'unixepoch', 'localtime') day,
-            strftime('%H', start_time - ?, 'unixepoch', 'localtime') hour,
+            strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime') day,
+            strftime('%H', start_time, 'unixepoch', 'localtime') hour,
             sum(duration)/3600.0 ratio
-        FROM   page_stat
-        WHERE  start_time BETWEEN strftime('%s', ?, 'utc') + ?
-                              AND strftime('%s', ?, 'utc', '+33 days', 'start of month', '-1 second') + ?
+        FROM  (
+            SELECT
+                start_time-? as start_time,
+                duration
+            FROM page_stat
+            WHERE  start_time BETWEEN strftime('%s', ?, 'utc')
+                                  AND strftime('%s', ?, 'utc', '+33 days', 'start of month', '-1 second')
+        )
         GROUP  BY
-            strftime('%Y-%m-%d', start_time - ?, 'unixepoch', 'localtime'),
-            strftime('%H', start_time - ?, 'unixepoch', 'localtime')
+            strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime'),
+            strftime('%H', start_time, 'unixepoch', 'localtime')
         ORDER BY day, hour;
     ]]
     local conn = SQ3.open(db_location)
     local stmt = conn:prepare(sql_stmt)
-    local res, nb = stmt:reset():bind(offset, offset, month, offset, month, offset, offset, offset):resultset("i")
+    local res, nb = stmt:reset():bind(offset, month, month):resultset("i")
     stmt:close()
     conn:close()
     local per_day = {}
@@ -2770,26 +2788,29 @@ end
 
 function ReaderStatistics:getReadBookByDay(month)
     month = month.."-01"
-    local offset = (self.settings.calendar_day_start_hour or 0) * 3600 + (self.settings.calendar_day_start_minute or 0) * 60
+    local offset = self.settings.calendar_day_start_time_limit_use and 0 or (self.settings.calendar_day_start_hour or 0) * 3600 + (self.settings.calendar_day_start_minute or 0) * 60
     local sql_stmt = [[
         SELECT
-            strftime('%Y-%m-%d', start_time - ?, 'unixepoch', 'localtime') day,
+            strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime') day,
             sum(duration) durations,
             id_book book_id,
-            book.title book_title
-        FROM   page_stat
-        JOIN   book ON book.id = page_stat.id_book
-        WHERE  start_time BETWEEN strftime('%s', ?, 'utc') + ?
-                              AND strftime('%s', ?, 'utc', '+33 days', 'start of month', '-1 second') + ?
+            title book_title
+        FROM  (
+            SELECT start_time-? as start_time, duration, page_stat.id_book, book.title
+            FROM page_stat
+            JOIN   book ON book.id = page_stat.id_book
+            WHERE  start_time BETWEEN strftime('%s', ?, 'utc')
+                                  AND strftime('%s', ?, 'utc', '+33 days', 'start of month', '-1 second')
+        )
         GROUP  BY
-            strftime('%Y-%m-%d', start_time - ?, 'unixepoch', 'localtime'),
+            strftime('%Y-%m-%d', start_time , 'unixepoch', 'localtime'),
             id_book,
             title
         ORDER BY day, durations desc, book_id, book_title;
     ]]
     local conn = SQ3.open(db_location)
     local stmt = conn:prepare(sql_stmt)
-    local res, nb = stmt:reset():bind(offset, month, offset, month, offset, offset):resultset("i")
+    local res, nb = stmt:reset():bind(offset, month, month):resultset("i")
     stmt:close()
     conn:close()
     local per_day = {}

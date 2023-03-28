@@ -699,7 +699,7 @@ function CalendarDayView:setupView()
         end
         kv.checked = true
     end
-    table.sort(self.kv_pairs, function(a,b) return a[2] > b[2] end) --sort by value
+    table.sort(self.kv_pairs, function(a,b) return a.duration > b.duration end) --sort by value
     self.title = self:title_callback()
 
     self.show_page = 1

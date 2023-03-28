@@ -222,12 +222,13 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
     if self.extra_text then
         table.insert(buttons, {
             {
+                id = "extra_text_button",
                 text = self.extra_text,
                 callback = function()
                     if self.extra_callback then
                         self.extra_callback(left_widget:getValue(), right_widget:getValue())
                     end
-                    if not self.keep_shown_on_apply then -- assume extra wants it same as ok
+                    if not self.keep_shown_on_apply and not self.keep_shown_on_extra then
                         self:onClose()
                     end
                 end,
@@ -270,6 +271,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         show_parent = self,
     }
     self:mergeLayoutInVertical(button_table)
+    self.button_table = button_table
 
     self.widget_frame = FrameContainer:new{
         radius = Size.radius.window,
