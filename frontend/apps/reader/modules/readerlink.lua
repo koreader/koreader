@@ -693,16 +693,10 @@ end
 -- Otherwise returns false, current_location
 function ReaderLink:compareLocationToCurrent(saved_location)
     local current_location = self:getCurrentLocation()
-    if
-        self.ui.rolling and saved_location.xpointer
-        and saved_location.xpointer == current_location.xpointer
-    then
+    if self.ui.rolling and saved_location.xpointer and saved_location.xpointer == current_location.xpointer then
         return true, current_location
     end
-    if
-        self.ui.paging and saved_location[1] and current_location[1]
-        and current_location[1].page == saved_location[1].page
-    then
+    if self.ui.paging and saved_location[1] and current_location[1] and current_location[1].page == saved_location[1].page then
         return true, current_location
     end
     return false, current_location
