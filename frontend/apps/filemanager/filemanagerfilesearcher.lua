@@ -259,6 +259,7 @@ function FileSearcher:showSearchResults(results)
         show_parent = menu_container,
         onMenuSelect = self.onMenuSelect,
         onMenuHold = self.onMenuHold,
+        handle_hold_on_hold_release = true,
         _manager = self,
     }
     table.insert(menu_container, self.search_menu)
@@ -321,10 +322,8 @@ end
 function FileSearcher:onMenuHold(item)
     if item.is_file then
         if DocumentRegistry:hasProvider(item.path) then
-            UIManager:scheduleIn(0.5, function()
-                self.close_callback()
-                require("apps/reader/readerui"):showReader(item.path)
-            end)
+            self.close_callback()
+            require("apps/reader/readerui"):showReader(item.path)
         end
     else
         self.close_callback()
