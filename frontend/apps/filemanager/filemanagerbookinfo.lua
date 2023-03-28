@@ -64,7 +64,7 @@ function BookInfo:show(file, book_props)
         { _("Keywords:"), "keywords" },
         { _("Description:"), "description" },
     }
-    for __, v in ipairs(props) do
+    for i, v in ipairs(props) do
         local prop_text, prop_key = unpack(v)
         local prop = book_props[prop_key]
         if prop == nil or prop == "" then
