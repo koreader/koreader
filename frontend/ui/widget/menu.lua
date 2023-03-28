@@ -131,7 +131,7 @@ function MenuItem:init()
         },
         HoldSelect = {
             GestureRange:new{
-                ges = "hold",
+                ges = self.handle_hold_on_hold_release and "hold_release" or "hold",
                 range = self.dimen,
             },
         },
@@ -1079,6 +1079,7 @@ function Menu:updateItems(select_number)
                 with_dots = self.with_dots,
                 line_color = self.line_color,
                 items_padding = self.items_padding,
+                handle_hold_on_hold_release = self.handle_hold_on_hold_release,
             }
             table.insert(self.item_group, item_tmp)
             -- this is for focus manager
