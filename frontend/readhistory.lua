@@ -217,9 +217,10 @@ end
 --- Checks the history list for deleted files and removes history items respectively.
 function ReadHistory:clearMissing()
     local history_updated
-    for i, v in ipairs(self.hist) do
-        if v.file == nil or lfs.attributes(v.file, "mode") ~= "file" then
-            self:removeItem(v, i, true) -- no flush
+    for i = #self.hist, 1, -1 do
+        local file = self.hist[i].file
+        if file == nil or lfs.attributes(file, "mode") ~= "file" then
+            self:removeItem(self.hist[i], i, true) -- no flush
             history_updated = true
         end
     end
