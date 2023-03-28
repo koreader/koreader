@@ -38,7 +38,7 @@ local _ = require("gettext")
 
 -- migrate settings from old "evernote.koplugin" or from previous (monolithic) "exporter.koplugin"
 local function migrateSettings()
-    local formats = { "html", "joplin", "json", "readwise", "text" }
+    local formats = { "html", "joplin", "json", "readwise", "text", "myClippings" }
 
     local settings = G_reader_settings:readSetting("exporter")
     if not settings then
@@ -104,6 +104,7 @@ local Exporter = WidgetContainer:extend{
         markdown = require("target/markdown"),
         readwise = require("target/readwise"),
         text = require("target/text"),
+        my_clippings = require("target/my_clippings"),
     },
 }
 
