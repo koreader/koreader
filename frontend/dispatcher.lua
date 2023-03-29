@@ -157,7 +157,7 @@ local settingsList = {
     toggle_page_flipping = {category="none", event="TogglePageFlipping", title=_("Toggle page flipping"), paging=true},
     toggle_bookmark_flipping = {category="none", event="ToggleBookmarkFlipping", title=_("Toggle bookmark flipping"), paging=true},
     toggle_reflow = {category="none", event="ToggleReflow", title=_("Toggle reflow"), paging=true},
-    zoom = {category="string", event="SetZoomMode", title=_("Zoom mode"), args=ReaderZooming.available_zoom_modes, toggle=ReaderZooming.available_zoom_modes, paging=true},
+    zoom = {category="string", event="SetZoomMode", title=_("Zoom mode"), args_func=ReaderZooming.getZoomModeActions, paging=true},
     zoom_factor_change = {category="none", event="ZoomFactorChange", title=_("Change zoom factor"), paging=true, separator=true},
 
     -- parsed from CreOptions
