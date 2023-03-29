@@ -1077,7 +1077,7 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                     {
                         text_func = function()
                             -- @translators %1 is the time in the format 00:00
-                            return T(_("Calendar days start at %1 "),
+                            return T(_("Daily timeline starts at %1"),
                                 string.format("%02d:%02d", self.settings.calendar_day_start_hour or 0,
                                                            self.settings.calendar_day_start_minute or 0)
                             )
@@ -1097,15 +1097,9 @@ If you read past midnight, and wish this reading to appear with the previous eve
 
 Time is in hours and minutes.]]),
                                 callback = function(time)
-                                    if time.hour and time.min then
-                                        self.settings.calendar_day_start_hour = time.hour
-                                        self.settings.calendar_day_start_minute = time.min
-                                        touchmenu_instance:updateItems()
-                                    else
-                                        UIManager:show(InfoMessage:new{
-                                            text = _("Time couldn't be set"),
-                                        })
-                                    end
+                                    self.settings.calendar_day_start_hour = time.hour
+                                    self.settings.calendar_day_start_minute = time.min
+                                    touchmenu_instance:updateItems()
                                 end
                             }
                             UIManager:show(start_of_day_widget)
