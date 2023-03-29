@@ -101,17 +101,19 @@ function BookInfo:show(file, book_props)
         end
         table.insert(kv_pairs, { prop_text, prop })
     end
-    local lines_nb, words_nb
-    if self.document then
-        lines_nb, words_nb = self:getCurrentPageLinesWordsNumber()
-    end
+    local is_doc = self.document and true or false
     local viewCoverImage = function()
         self:onShowBookCover(file)
     end
-    table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=viewCoverImage, separator=lines_nb })
+    table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=viewCoverImage, separator=is_doc })
 
     -- Page section
-    if lines_nb then
+    if is_doc then
+        local lines_nb, words_nb = self:getCurrentPageLinesWordsNumber()
+        if not lines_nb or lines_nb == 0 then
+            lines_nb = _("N/A")
+            words_nb = _("N/A")
+        end
         table.insert(kv_pairs, { _("Current page lines:"), lines_nb })
         table.insert(kv_pairs, { _("Current page words:"), words_nb })
     end
