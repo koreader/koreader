@@ -28,6 +28,7 @@ local order = {
         "autoturn",
         "----------------------------",
         "go_to_previous_location",
+        "go_to_next_location",
     },
     navi_settings = {
         "toc_alt_toc",
