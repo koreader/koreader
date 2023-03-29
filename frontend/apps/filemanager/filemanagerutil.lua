@@ -141,7 +141,8 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
         id = "reset", -- used by covermenu
         enabled = not button_disabled and DocSettings:hasSidecarFile(ffiutil.realpath(file)),
         callback = function()
-            UIManager:show(require("ui/widget/confirmbox"):new{
+            local ConfirmBox = require("ui/widget/confirmbox")
+            local confirmbox = ConfirmBox:new{
                 text = T(_("Reset this document?") .. "\n\n%1\n\n" ..
                     _("Document progress, settings, bookmarks, highlights and notes will be permanently lost."),
                     BD.filepath(file)),
@@ -151,7 +152,8 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
                     require("readhistory"):fileSettingsPurged(file)
                     caller_callback()
                 end,
-            })
+            }
+            UIManager:show(confirmbox)
         end,
     }
 end
