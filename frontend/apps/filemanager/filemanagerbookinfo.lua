@@ -35,7 +35,7 @@ function BookInfo:show(file, book_props)
     local kv_pairs = {}
 
     -- File section
-    local directory, filename = util.splitFilePathName(file)
+    local folder, filename = util.splitFilePathName(file)
     local __, filetype = filemanagerutil.splitFileNameType(filename)
     local attr = lfs.attributes(file)
     local file_size = attr.size or 0
@@ -44,9 +44,8 @@ function BookInfo:show(file, book_props)
     table.insert(kv_pairs, { _("Filename:"), BD.filename(filename) })
     table.insert(kv_pairs, { _("Format:"), filetype:upper() })
     table.insert(kv_pairs, { _("Size:"), string.format("%s (%s bytes)", size_f, size_b) })
-    table.insert(kv_pairs, { _("Last read date:"), os.date("%Y-%m-%d %H:%M:%S", attr.access) })
-    table.insert(kv_pairs, { _("Date modified:"), os.date("%Y-%m-%d %H:%M:%S", attr.modification) })
-    table.insert(kv_pairs, { _("Folder:"), BD.dirpath(filemanagerutil.abbreviate(directory)), separator = true })
+    table.insert(kv_pairs, { _("File date:"), os.date("%Y-%m-%d %H:%M:%S", attr.modification) })
+    table.insert(kv_pairs, { _("Folder:"), BD.dirpath(filemanagerutil.abbreviate(folder)), separator = true })
 
     -- Book section
     -- book_props may be provided if caller already has them available
