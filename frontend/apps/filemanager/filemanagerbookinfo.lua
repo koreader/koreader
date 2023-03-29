@@ -108,7 +108,7 @@ function BookInfo:show(file, book_props)
 
     -- Page section
     if is_doc then
-        local lines_nb, words_nb = self:getCurrentPageLinesWordsNumber()
+        local lines_nb, words_nb = self:getCurrentPageLineWordCounts()
         if not lines_nb or lines_nb == 0 then
             lines_nb = _("N/A")
             words_nb = _("N/A")
@@ -255,7 +255,7 @@ function BookInfo:onShowBookCover(file)
     end
 end
 
-function BookInfo:getCurrentPageLinesWordsNumber()
+function BookInfo:getCurrentPageLineWordCounts()
     if self.ui.rolling then
         local Screen = require("device").screen
         local res = self.ui.document._document:getTextFromPositions(0, 0, Screen:getWidth(), Screen:getHeight(),
