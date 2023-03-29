@@ -765,19 +765,51 @@ function CalendarDayView:goToPage(page)
 end
 
 function CalendarDayView:onNextPage()
-    if not self:nextPage() and self.day_ts + 86400 < os.time() then
-        -- go to next day
-        self.day_ts = self.day_ts + 86400
-        self:setupView()
+    if not self:nextPage() and self.day_ts + 82800 < os.time() then
+        local next_day_ts = self.day_ts + 86400 + 10800 -- make sure it's the next day
+        local next_day_date = os.date("*t", next_day_ts)
+        next_day_ts = os.time({
+            year = next_day_date.year,
+            month = next_day_date.month,
+            day = next_day_date.day,
+        })
+        local current_day_date = os.date("*t", self.day_ts)
+        local current_day_ts = os.time({
+            year = current_day_date.year,
+            month = current_day_date.month,
+            day = current_day_date.day,
+        })
+        local current_day_length = next_day_ts - current_day_ts
+        if self.day_ts + current_day_length < os.time() then
+            -- go to next day
+            self.day_ts = self.day_ts + current_day_length
+            self:setupView()
+        end
     end
     return true
 end
 
 function CalendarDayView:onPrevPage()
-    if not self:prevPage() and self.day_ts - 86400 >= self.min_ts then
-        -- go to previous day
-        self.day_ts = self.day_ts - 86400
-        self:setupView()
+    if not self:prevPage() and self.day_ts - 82800 >= self.min_ts then
+        local previous_day_ts = self.day_ts - 86400 + 10800 -- make sure it's the previous day
+        local previous_day_date = os.date("*t", previous_day_ts)
+        previous_day_ts = os.time({
+            year = previous_day_date.year,
+            month = previous_day_date.month,
+            day = previous_day_date.day,
+        })
+        local current_day_date = os.date("*t", self.day_ts)
+        local current_day_ts = os.time({
+            year = current_day_date.year,
+            month = current_day_date.month,
+            day = current_day_date.day,
+        })
+        local previous_day_length = current_day_ts - previous_day_ts
+        if self.day_ts - previous_day_length >= self.min_ts then
+            -- go to previous day
+            self.day_ts = self.day_ts - previous_day_length
+            self:setupView()
+        end
     end
     return true
 end
