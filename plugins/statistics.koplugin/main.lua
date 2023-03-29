@@ -1035,56 +1035,6 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                     },
                     {
                         text_func = function()
-                            -- @translators %1 is the hour and %2 is the minute, units for h and m will be automatically added
-                            return T(_("Calendar days start at %1 %2"),
-                                T(C_("Time", "%1h"), self.settings.calendar_day_start_hour or 0),
-                                T(C_("Time", "%1m"), self.settings.calendar_day_start_minute or 0)
-                            )
-                        end,
-                        callback = function(touchmenu_instance)
-                            local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
-                            local getExtraButtonText = function()
-                                return self.settings.calendar_day_start_time_limit_use and _("Tap to use in calendar and daily timeline") or _("Tap to use only in daily timeline")
-                            end
-                            local start_of_day_widget
-                            start_of_day_widget = DoubleSpinWidget:new{
-                                left_text = C_("Time", "h"),
-                                left_value = self.settings.calendar_day_start_hour or 0,
-                                left_default = 0,
-                                left_min = 0,
-                                left_max = 6,
-                                left_step = 1,
-                                left_hold_step = 3,
-                                right_text = C_("Time", "m"),
-                                right_value = self.settings.calendar_day_start_minute or 0,
-                                right_default = 0,
-                                right_min = 0,
-                                right_max = 50,
-                                right_step = 10,
-                                right_hold_step = 10,
-                                is_range = false,
-                                title_text = _("Starting time of a day"),
-                                info_text = _("Set starting time of a day to be used in statistics, so that readings past 00:00 would be counted to the previous day."),
-                                callback = function(hour, minute)
-                                    self.settings.calendar_day_start_hour = hour
-                                    self.settings.calendar_day_start_minute = minute
-                                    touchmenu_instance:updateItems()
-                                end,
-                                extra_text = getExtraButtonText(),
-                                extra_callback = function()
-                                    local button = start_of_day_widget.button_table:getButtonById("extra_text_button")
-                                    self.settings.calendar_day_start_time_limit_use = not (self.settings.calendar_day_start_time_limit_use or false)
-                                    touchmenu_instance:updateItems()
-                                    button:setText(getExtraButtonText(), button.width)
-                                end,
-                                keep_shown_on_extra = true
-                            }
-                            UIManager:show(start_of_day_widget)
-                        end,
-                        keep_menu_open = true,
-                    },
-                    {
-                        text_func = function()
                             return T(_("Books per calendar day: %1"), self.settings.calendar_nb_book_spans)
                         end,
                         callback = function(touchmenu_instance)
@@ -1121,6 +1071,52 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         checked_func = function() return self.settings.calendar_browse_future_months end,
                         callback = function()
                             self.settings.calendar_browse_future_months = not self.settings.calendar_browse_future_months
+                        end,
+                        separator = true,
+                    },
+                    {
+                        text_func = function()
+                            -- @translators %1 is the time in the format 00:00
+                            return T(_("Calendar days start at %1 "),
+                                string.format("%02d:%02d", self.settings.calendar_day_start_hour or 0,
+                                                           self.settings.calendar_day_start_minute or 0)
+                            )
+                        end,
+                        callback = function(touchmenu_instance)
+                            local DateTimeWidget = require("ui/widget/datetimewidget")
+                            local start_of_day_widget = DateTimeWidget:new{
+                                hour = self.settings.calendar_day_start_hour or 0,
+                                min = self.settings.calendar_day_start_minute or 0,
+                                hour_max = 6,
+                                ok_text = _("Set time"),
+                                title_text = _("Set starting time of a day"),
+                                info_text =_([[
+Set the time when the day timeline should start.
+
+If you read past midnight, and wish this reading to appear with the previous evening's reading, you can set this to 04:00 for example.
+
+Time is in hours and minutes.]]),
+                                callback = function(time)
+                                    if time.hour and time.min then
+                                        self.settings.calendar_day_start_hour = time.hour
+                                        self.settings.calendar_day_start_minute = time.min
+                                        touchmenu_instance:updateItems()
+                                    else
+                                        UIManager:show(InfoMessage:new{
+                                            text = _("Time couldn't be set"),
+                                        })
+                                    end
+                                end
+                            }
+                            UIManager:show(start_of_day_widget)
+                        end,
+                        keep_menu_open = true,
+                    },
+                    {
+                        text = _("Also use in calendar view"),
+                        checked_func = function() return self.settings.calendar_use_day_time_shift end,
+                        callback = function()
+                            self.settings.calendar_use_day_time_shift = not self.settings.calendar_use_day_time_shift
                         end,
                         separator = true,
                     },
@@ -2750,7 +2746,7 @@ function ReaderStatistics:getReadingRatioPerHourByDay(month)
     -- We let SQLite compute these timestamp boundaries from the provided
     -- month; we need the start of the month to be a real date:
     month = month.."-01"
-    local offset = self.settings.calendar_day_start_time_limit_use and 0 or (self.settings.calendar_day_start_hour or 0) * 3600 + (self.settings.calendar_day_start_minute or 0) * 60
+    local offset = not self.settings.calendar_use_day_time_shift and 0 or (self.settings.calendar_day_start_hour or 0) * 3600 + (self.settings.calendar_day_start_minute or 0) * 60
     local sql_stmt = [[
         SELECT
             strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime') day,
@@ -2788,7 +2784,7 @@ end
 
 function ReaderStatistics:getReadBookByDay(month)
     month = month.."-01"
-    local offset = self.settings.calendar_day_start_time_limit_use and 0 or (self.settings.calendar_day_start_hour or 0) * 3600 + (self.settings.calendar_day_start_minute or 0) * 60
+    local offset = not self.settings.calendar_use_day_time_shift and 0 or (self.settings.calendar_day_start_hour or 0) * 3600 + (self.settings.calendar_day_start_minute or 0) * 60
     local sql_stmt = [[
         SELECT
             strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime') day,
