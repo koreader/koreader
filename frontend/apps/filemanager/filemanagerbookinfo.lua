@@ -12,6 +12,7 @@ local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
+local Screen = require("device").screen
 
 local BookInfo = WidgetContainer:extend{
 }
@@ -109,7 +110,7 @@ function BookInfo:show(file, book_props)
     -- Page section
     if is_doc then
         local lines_nb, words_nb = self:getCurrentPageLineWordCounts()
-        if not lines_nb or lines_nb == 0 then
+        if lines_nb == 0 then
             lines_nb = _("N/A")
             words_nb = _("N/A")
         end
@@ -256,41 +257,40 @@ function BookInfo:onShowBookCover(file)
 end
 
 function BookInfo:getCurrentPageLineWordCounts()
+    local lines_nb, words_nb = 0, 0
     if self.ui.rolling then
-        local Screen = require("device").screen
         local res = self.ui.document._document:getTextFromPositions(0, 0, Screen:getWidth(), Screen:getHeight(),
             false, false) -- do not highlight
-        if not res then return end
-        local lines = self.ui.document:getScreenBoxesFromPositions(res.pos0, res.pos1, true)
-        local words = {}
-        for word in util.gsplit(res.text, "[%s%p]+", false) do
-            if util.hasCJKChar(word) then
-                for char in util.gsplit(word, "[\192-\255][\128-\191]+", true) do
-                    table.insert(words, char)
+        if res then
+            lines_nb = #self.ui.document:getScreenBoxesFromPositions(res.pos0, res.pos1, true)
+            for word in util.gsplit(res.text, "[%s%p]+", false) do
+                if util.hasCJKChar(word) then
+                    for char in util.gsplit(word, "[\192-\255][\128-\191]+", true) do
+                        words_nb = words_nb + 1
+                    end
+                else
+                    words_nb = words_nb + 1
                 end
-            else
-                table.insert(words, word)
             end
         end
-        return #lines, #words
     else
         local page_boxes = self.ui.document:getTextBoxes(self.ui:getCurrentPage())
-        if not page_boxes or not page_boxes[1][1].word then return end -- scanned pdf
-        local lines_nb = #page_boxes
-        local words_nb = 0
-        for _, line in ipairs(page_boxes) do
-            if #line == 1 and line[1].word == "" then -- empty line
-                lines_nb = lines_nb - 1
-            else
-                words_nb = words_nb + #line
-                local last_word = line[#line].word
-                if last_word:sub(-1) == "-" and last_word ~= "-" then -- hyphenated
-                    words_nb = words_nb - 1
+        if page_boxes and page_boxes[1][1].word then
+            lines_nb = #page_boxes
+            for _, line in ipairs(page_boxes) do
+                if #line == 1 and line[1].word == "" then -- empty line
+                    lines_nb = lines_nb - 1
+                else
+                    words_nb = words_nb + #line
+                    local last_word = line[#line].word
+                    if last_word:sub(-1) == "-" and last_word ~= "-" then -- hyphenated
+                        words_nb = words_nb - 1
+                    end
                 end
             end
         end
-        return lines_nb, words_nb
     end
+    return lines_nb, words_nb
 end
 
 return BookInfo
