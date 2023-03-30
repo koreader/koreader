@@ -734,4 +734,12 @@ function ReaderZooming:onBBoxUpdate()
     self:onDefineZoom()
 end
 
+function ReaderZooming:getZoomModeActions() -- for Dispatcher
+    local action_toggles = {}
+    for _, v in ipairs(ReaderZooming.available_zoom_modes) do
+        table.insert(action_toggles, ReaderZooming.zoom_mode_label[v])
+    end
+    return ReaderZooming.available_zoom_modes, action_toggles
+end
+
 return ReaderZooming
