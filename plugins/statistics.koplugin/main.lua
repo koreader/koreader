@@ -2793,7 +2793,7 @@ function ReaderStatistics:getReadBookByDay(month)
                                   AND strftime('%s', ?, 'utc', '+33 days', 'start of month', '-1 second')
         )
         GROUP  BY
-            strftime('%Y-%m-%d', start_time , 'unixepoch', 'localtime'),
+            strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime'),
             id_book,
             title
         ORDER BY day, durations desc, book_id, book_title;
