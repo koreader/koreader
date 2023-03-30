@@ -774,6 +774,8 @@ function CalendarDayView:onNextPage()
             year = next_day_date.year,
             month = next_day_date.month,
             day = next_day_date.day,
+            hour = 0,
+            min = 0,
         })
         local current_day_length = next_day_ts - current_day_ts
         if self.day_ts + current_day_length < os.time() then
@@ -795,6 +797,8 @@ function CalendarDayView:onPrevPage()
             year = previous_day_date.year,
             month = previous_day_date.month,
             day = previous_day_date.day,
+            hour = 0,
+            min = 0,
         })
         local previous_day_length = current_day_ts - previous_day_ts
         if self.day_ts - previous_day_length >= self.min_ts then
