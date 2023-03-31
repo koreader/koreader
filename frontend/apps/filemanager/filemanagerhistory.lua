@@ -83,6 +83,9 @@ end
 
 function FileManagerHistory:onMenuHold(item)
     self.histfile_dialog = nil
+    local function close_dialog_callback()
+        UIManager:close(self.histfile_dialog)
+    end
     local function status_button_callback()
         UIManager:close(self.histfile_dialog)
         if self._manager.filter ~= "all" then
@@ -125,11 +128,11 @@ function FileManagerHistory:onMenuHold(item)
                 FileManager:showDeleteFileDialog(item.file, post_delete_callback)
             end,
         },
-        filemanagerutil.genBookInformationButton(item.file, self.histfile_dialog, item.dim),
+        filemanagerutil.genBookInformationButton(item.file, close_dialog_callback, item.dim),
     })
     table.insert(buttons, {
-        filemanagerutil.genBookCoverButton(item.file, self.histfile_dialog, item.dim),
-        filemanagerutil.genBookDescriptionButton(item.file, self.histfile_dialog, item.dim),
+        filemanagerutil.genBookCoverButton(item.file, close_dialog_callback, item.dim),
+        filemanagerutil.genBookDescriptionButton(item.file, close_dialog_callback, item.dim),
     })
 
     self.histfile_dialog = ButtonDialogTitle:new{
@@ -226,7 +229,7 @@ function FileManagerHistory:showHistDialog()
             {
                 text = _("Clear history of deleted files"),
                 callback = function()
-                    UIManager:show(ConfirmBox:new{
+                    local confirmbox = ConfirmBox:new{
                         text = _("Clear history of deleted files?"),
                         ok_text = _("Clear"),
                         ok_callback = function()
@@ -234,7 +237,8 @@ function FileManagerHistory:showHistDialog()
                             require("readhistory"):clearMissing()
                             self:updateItemTable()
                         end,
-                    })
+                    }
+                    UIManager:show(confirmbox)
                 end,
             },
         })
