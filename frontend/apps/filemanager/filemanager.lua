@@ -1218,10 +1218,7 @@ function FileManager:onShowFolderMenu()
     -- other folders
     local indent = ""
     for part in self.file_chooser.path:gmatch("([^/]+)") do
-        text = part
-        if #buttons> 0 then
-            text = indent .. "└ " .. text
-        end
+        text = (#buttons == 0 and path or indent .. "└ ") .. part
         path = path .. part .. "/"
         is_home = path == home_dir or path == home_dir .. "/"
         if not home_found and is_home then
