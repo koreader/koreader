@@ -10,7 +10,6 @@ local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local FileChooser = require("ui/widget/filechooser")
-local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local FileManagerCollection = require("apps/filemanager/filemanagercollection")
 local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
 local FileManagerFileSearcher = require("apps/filemanager/filemanagerfilesearcher")
@@ -1219,7 +1218,10 @@ function FileManager:onShowFolderMenu()
     -- other folders
     local indent = ""
     for part in self.file_chooser.path:gmatch("([^/]+)") do
-        text = indent .. "└ " .. part
+        text = part
+        if #buttons> 0 then
+            text = indent .. "└ " .. text
+        end
         path = path .. part .. "/"
         is_home = path == home_dir or path == home_dir .. "/"
         if not home_found and is_home then
