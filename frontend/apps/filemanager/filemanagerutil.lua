@@ -158,38 +158,38 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
     }
 end
 
-function filemanagerutil.genBookInformationButton(file, dialog, button_disabled)
+function filemanagerutil.genBookInformationButton(file, caller_callback, button_disabled)
     return {
         text = _("Book information"),
         id = "book_information", -- used by covermenu
         enabled = not button_disabled,
         callback = function()
-            UIManager:close(dialog)
+            caller_callback()
             require("apps/filemanager/filemanagerbookinfo"):show(file)
         end,
     }
 end
 
-function filemanagerutil.genBookDescriptionButton(file, dialog, button_disabled)
-    return {
-        text = _("Book description"),
-        id = "book_description", -- used by covermenu
-        enabled = not button_disabled,
-        callback = function()
-            UIManager:close(dialog)
-            require("apps/filemanager/filemanagerbookinfo"):onShowBookDescription(nil, file)
-        end,
-    }
-end
-
-function filemanagerutil.genBookCoverButton(file, dialog, button_disabled)
+function filemanagerutil.genBookCoverButton(file, caller_callback, button_disabled)
     return {
         text = _("Book cover"),
         id = "book_cover", -- used by covermenu
         enabled = not button_disabled,
         callback = function()
-            UIManager:close(dialog)
+            caller_callback()
             require("apps/filemanager/filemanagerbookinfo"):onShowBookCover(file)
+        end,
+    }
+end
+
+function filemanagerutil.genBookDescriptionButton(file, caller_callback, button_disabled)
+    return {
+        text = _("Book description"),
+        id = "book_description", -- used by covermenu
+        enabled = not button_disabled,
+        callback = function()
+            caller_callback()
+            require("apps/filemanager/filemanagerbookinfo"):onShowBookDescription(nil, file)
         end,
     }
 end
