@@ -3,10 +3,8 @@ This module contains miscellaneous helper functions for FileManager
 ]]
 
 local BD = require("ui/bidi")
-local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DocSettings = require("docsettings")
-local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
 local util = require("util")
@@ -33,6 +31,24 @@ function filemanagerutil.abbreviate(path)
         end
     end
     return path
+end
+
+function filemanagerutil.splitFileNameType(filename)
+    local filename_without_suffix, filetype = util.splitFileNameSuffix(filename)
+    filetype = filetype:lower()
+    if filetype == "zip" then
+        local filename_without_sub_suffix, sub_filetype = util.splitFileNameSuffix(filename_without_suffix)
+        sub_filetype = sub_filetype:lower()
+        local supported_sub_filetypes = { "fb2", "htm", "html", "log", "md", "rtf", "txt", }
+        for _, t in ipairs(supported_sub_filetypes) do
+            if sub_filetype == t then
+                filetype = sub_filetype .. "." .. filetype
+                filename_without_suffix = filename_without_sub_suffix
+                break
+            end
+        end
+    end
+    return filename_without_suffix, filetype
 end
 
 -- Purge doc settings in sidecar directory
@@ -125,7 +141,8 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
         id = "reset", -- used by covermenu
         enabled = not button_disabled and DocSettings:hasSidecarFile(ffiutil.realpath(file)),
         callback = function()
-            UIManager:show(ConfirmBox:new{
+            local ConfirmBox = require("ui/widget/confirmbox")
+            local confirmbox = ConfirmBox:new{
                 text = T(_("Reset this document?") .. "\n\n%1\n\n" ..
                     _("Document progress, settings, bookmarks, highlights and notes will be permanently lost."),
                     BD.filepath(file)),
@@ -135,7 +152,8 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
                     require("readhistory"):fileSettingsPurged(file)
                     caller_callback()
                 end,
-            })
+            }
+            UIManager:show(confirmbox)
         end,
     }
 end
@@ -178,6 +196,7 @@ end
 
 -- Generate "Execute script" file dialog button
 function filemanagerutil.genExecuteScriptButton(file, caller_callback)
+    local InfoMessage = require("ui/widget/infomessage")
     return {
         -- @translators This is the script's programming language (e.g., shell or python)
         text = T(_("Execute %1 script"), util.getScriptType(file)),

@@ -5,18 +5,16 @@ This module provides a way to display book information (filename and book metada
 local BD = require("ui/bidi")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
-local ImageViewer = require("ui/widget/imageviewer")
 local InfoMessage = require("ui/widget/infomessage")
-local KeyValuePage = require("ui/widget/keyvaluepage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
+local Screen = require("device").screen
 
 local BookInfo = WidgetContainer:extend{
-    bookinfo_menu_title = _("Book information"),
 }
 
 function BookInfo:init()
@@ -27,7 +25,7 @@ end
 
 function BookInfo:addToMainMenu(menu_items)
     menu_items.book_info = {
-        text = self.bookinfo_menu_title,
+        text = _("Book information"),
         callback = function()
             self:onShowBookInfo()
         end,
@@ -37,117 +35,90 @@ end
 function BookInfo:show(file, book_props)
     local kv_pairs = {}
 
-    local directory, filename = util.splitFilePathName(file)
-    local filename_without_suffix, filetype = util.splitFileNameSuffix(filename) -- luacheck: no unused
-    if filetype:lower() == "zip" then
-        local filename_without_sub_suffix, sub_filetype = util.splitFileNameSuffix(filename_without_suffix) -- luacheck: no unused
-        sub_filetype = sub_filetype:lower()
-        local supported_sub_filetypes = { "fb2", "htm", "html", "log", "md", "txt" }
-
-        for __, t in ipairs(supported_sub_filetypes) do
-            if sub_filetype == t then
-                filetype = sub_filetype .. "." .. filetype
-                break
-            end
-        end
-    end
-    local file_size = lfs.attributes(file, "size") or 0
-    local file_modification = lfs.attributes(file, "modification") or 0
+    -- File section
+    local folder, filename = util.splitFilePathName(file)
+    local __, filetype = filemanagerutil.splitFileNameType(filename)
+    local attr = lfs.attributes(file)
+    local file_size = attr.size or 0
     local size_f = util.getFriendlySize(file_size)
     local size_b = util.getFormattedSize(file_size)
-    local size = string.format("%s (%s bytes)", size_f, size_b)
     table.insert(kv_pairs, { _("Filename:"), BD.filename(filename) })
     table.insert(kv_pairs, { _("Format:"), filetype:upper() })
-    table.insert(kv_pairs, { _("Size:"), size })
-    table.insert(kv_pairs, { _("File date:"), os.date("%Y-%m-%d %H:%M:%S", file_modification) })
-    table.insert(kv_pairs, { _("Folder:"), BD.dirpath(filemanagerutil.abbreviate(directory)), separator = true })
+    table.insert(kv_pairs, { _("Size:"), string.format("%s (%s bytes)", size_f, size_b) })
+    table.insert(kv_pairs, { _("File date:"), os.date("%Y-%m-%d %H:%M:%S", attr.modification) })
+    table.insert(kv_pairs, { _("Folder:"), BD.dirpath(filemanagerutil.abbreviate(folder)), separator = true })
 
+    -- Book section
     -- book_props may be provided if caller already has them available
     -- but it may lack "pages", that we may get from sidecar file
     if not book_props or not book_props.pages then
         book_props = self:getBookProps(file, book_props)
     end
-
-    local title = book_props.title
-    if title == "" or title == nil then title = _("N/A") end
-    table.insert(kv_pairs, { _("Title:"), BD.auto(title) })
-
-    local authors = book_props.authors
-    if authors == "" or authors == nil then
-        authors = _("N/A")
-    elseif authors:find("\n") then -- BD auto isolate each author
-        authors = util.splitToArray(authors, "\n")
-        for i=1, #authors do
-            authors[i] = BD.auto(authors[i])
+    local values_lang
+    local props = {
+        { _("Title:"), "title" },
+        { _("Authors:"), "authors" },
+        { _("Series:"), "series" },
+        { _("Pages:"), "pages" },
+        { _("Language:"), "language" },
+        { _("Keywords:"), "keywords" },
+        { _("Description:"), "description" },
+    }
+    for _i, v in ipairs(props) do
+        local prop_text, prop_key = unpack(v)
+        local prop = book_props[prop_key]
+        if prop == nil or prop == "" then
+            prop = _("N/A")
+        elseif prop_key == "title" then
+            prop = BD.auto(prop)
+        elseif prop_key == "authors" or prop_key == "keywords" then
+            if prop:find("\n") then -- BD auto isolate each entry
+                prop = util.splitToArray(prop, "\n")
+                for i = 1, #prop do
+                    prop[i] = BD.auto(prop[i])
+                end
+                prop = table.concat(prop, "\n")
+            else
+                prop = BD.auto(prop)
+            end
+        elseif prop_key == "series" then
+            -- If we were fed a BookInfo book_props (e.g., covermenu), series index is in a separate field
+            if book_props.series_index then
+                -- Here, we're assured that series_index is a Lua number, so round integers are automatically
+                -- displayed without decimals
+                prop = prop .. " #" .. book_props.series_index
+            else
+                -- But here, if we have a plain doc_props series with an index, drop empty decimals from round integers.
+                prop = prop:gsub("(#%d+)%.0+$", "%1")
+            end
+        elseif prop_key == "language" then
+            -- Get a chance to have title, authors... rendered with alternate
+            -- glyphs for the book language (e.g. japanese book in chinese UI)
+            values_lang = prop
+        elseif prop_key == "description" then
+            -- Description may (often in EPUB, but not always) or may not (rarely in PDF) be HTML
+            prop = util.htmlToPlainTextIfHtml(prop)
         end
-        authors = table.concat(authors, "\n")
-    else
-        authors = BD.auto(authors)
+        table.insert(kv_pairs, { prop_text, prop })
     end
-    table.insert(kv_pairs, { _("Authors:"), authors })
-
-    local series = book_props.series
-    if series == "" or series == nil then
-        series = _("N/A")
-    else
-        -- If we were fed a BookInfo book_props (e.g., covermenu), series index is in a separate field
-        if book_props.series_index then
-            -- Here, we're assured that series_index is a Lua number, so round integers are automatically displayed without decimals
-            series = book_props.series .. " #" .. book_props.series_index
-        else
-            -- But here, if we have a plain doc_props series with an index, drop empty decimals from round integers.
-            series = book_props.series:gsub("(#%d+)%.0+$", "%1")
-        end
-    end
-    table.insert(kv_pairs, { _("Series:"), BD.auto(series) })
-
-    local pages = book_props.pages
-    if pages == "" or pages == nil then pages = _("N/A") end
-    table.insert(kv_pairs, { _("Pages:"), pages })
-
-    local language = book_props.language
-    if language == "" or language == nil then language = _("N/A") end
-    table.insert(kv_pairs, { _("Language:"), language })
-
-    local keywords = book_props.keywords
-    if keywords == "" or keywords == nil then
-        keywords = _("N/A")
-    elseif keywords:find("\n") then -- BD auto isolate each keywords
-        keywords = util.splitToArray(keywords, "\n")
-        for i=1, #keywords do
-            keywords[i] = BD.auto(keywords[i])
-        end
-        keywords = table.concat(keywords, "\n")
-    else
-        keywords = BD.auto(keywords)
-    end
-    table.insert(kv_pairs, { _("Keywords:"), keywords })
-
-    local description = book_props.description
-    if description == "" or description == nil then
-        description = _("N/A")
-    else
-        -- Description may (often in EPUB, but not always) or may not (rarely
-        -- in PDF) be HTML.
-        description = util.htmlToPlainTextIfHtml(book_props.description)
-    end
-    -- (We don't BD wrap description: it may be multi-lines, and the value we set
-    -- here may be viewed in a TextViewer that has auto_para_direction=true, which
-    -- will show the right thing, that'd we rather not mess with BD wrapping.)
-    table.insert(kv_pairs, { _("Description:"), description })
-
+    local is_doc = self.document and true or false
     local viewCoverImage = function()
         self:onShowBookCover(file)
     end
-    table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=viewCoverImage })
+    table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=viewCoverImage, separator=is_doc })
 
-    -- Get a chance to have title, authors... rendered with alternate
-    -- glyphs for the book language (e.g. japanese book in chinese UI)
-    local values_lang = nil
-    if book_props.language and book_props.language ~= "" then
-        values_lang = book_props.language
+    -- Page section
+    if is_doc then
+        local lines_nb, words_nb = self:getCurrentPageLineWordCounts()
+        if lines_nb == 0 then
+            lines_nb = _("N/A")
+            words_nb = _("N/A")
+        end
+        table.insert(kv_pairs, { _("Current page lines:"), lines_nb })
+        table.insert(kv_pairs, { _("Current page words:"), words_nb })
     end
 
+    local KeyValuePage = require("ui/widget/keyvaluepage")
     local widget = KeyValuePage:new{
         title = _("Book information"),
         value_overflow_align = "right",
@@ -269,6 +240,7 @@ function BookInfo:onShowBookCover(file)
     if document then
         local cover_bb = document:getCoverPageImage()
         if cover_bb then
+            local ImageViewer = require("ui/widget/imageviewer")
             local imgviewer = ImageViewer:new{
                 image = cover_bb,
                 with_title_bar = false,
@@ -282,6 +254,43 @@ function BookInfo:onShowBookCover(file)
         end
         document:close()
     end
+end
+
+function BookInfo:getCurrentPageLineWordCounts()
+    local lines_nb, words_nb = 0, 0
+    if self.ui.rolling then
+        local res = self.ui.document._document:getTextFromPositions(0, 0, Screen:getWidth(), Screen:getHeight(),
+            false, false) -- do not highlight
+        if res then
+            lines_nb = #self.ui.document:getScreenBoxesFromPositions(res.pos0, res.pos1, true)
+            for word in util.gsplit(res.text, "[%s%p]+", false) do
+                if util.hasCJKChar(word) then
+                    for char in util.gsplit(word, "[\192-\255][\128-\191]+", true) do
+                        words_nb = words_nb + 1
+                    end
+                else
+                    words_nb = words_nb + 1
+                end
+            end
+        end
+    else
+        local page_boxes = self.ui.document:getTextBoxes(self.ui:getCurrentPage())
+        if page_boxes and page_boxes[1][1].word then
+            lines_nb = #page_boxes
+            for _, line in ipairs(page_boxes) do
+                if #line == 1 and line[1].word == "" then -- empty line
+                    lines_nb = lines_nb - 1
+                else
+                    words_nb = words_nb + #line
+                    local last_word = line[#line].word
+                    if last_word:sub(-1) == "-" and last_word ~= "-" then -- hyphenated
+                        words_nb = words_nb - 1
+                    end
+                end
+            end
+        end
+    end
+    return lines_nb, words_nb
 end
 
 return BookInfo
