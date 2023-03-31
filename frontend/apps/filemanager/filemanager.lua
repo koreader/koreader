@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
+local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -9,7 +10,6 @@ local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local FileChooser = require("ui/widget/filechooser")
-local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local FileManagerCollection = require("apps/filemanager/filemanagercollection")
 local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
 local FileManagerFileSearcher = require("apps/filemanager/filemanagerfilesearcher")
@@ -52,7 +52,6 @@ local FileManager = InputContainer:extend{
 
     mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv",
     cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp",
-    mkdir_bin =  Device:isAndroid() and "/system/bin/mkdir" or "/bin/mkdir",
 }
 
 function FileManager:onSetRotationMode(rotation)
@@ -120,7 +119,7 @@ function FileManager:setupLayout()
         button_padding = Screen:scaleBySize(5),
         left_icon = "home",
         left_icon_size_ratio = 1,
-        left_icon_tap_callback = function() self:goHome() end,
+        left_icon_tap_callback = function() self:onShowFolderMenu() end,
         left_icon_hold_callback = false, -- propagate long-press to dispatcher
         right_icon = "plus",
         right_icon_size_ratio = 1,
@@ -135,7 +134,6 @@ function FileManager:setupLayout()
         path = self.root_path,
         focused_path = self.focused_file,
         show_parent = self.show_parent,
-        width = Screen:getWidth(),
         height = Screen:getHeight() - self.title_bar:getHeight(),
         is_popout = false,
         is_borderless = true,
@@ -254,6 +252,9 @@ function FileManager:setupLayout()
         }
 
         if is_file then
+            local function close_dialog_callback()
+                UIManager:close(self.file_dialog)
+            end
             local function status_button_callback()
                 UIManager:close(self.file_dialog)
                 self:refreshPath() -- sidecar folder may be created/deleted
@@ -305,39 +306,15 @@ function FileManager:setupLayout()
                         self:showSetProviderButtons(file, one_time_providers)
                     end,
                 },
-                {
-                    text = _("Book information"),
-                    id = "book_information", -- used by covermenu
-                    callback = function()
-                        UIManager:close(self.file_dialog)
-                        FileManagerBookInfo:show(file)
-                    end,
-                },
+                filemanagerutil.genBookInformationButton(file, close_dialog_callback),
             })
             table.insert(buttons, {
-                {
-                    text = _("Book cover"),
-                    id = "book_cover", -- used by covermenu
-                    callback = function()
-                        UIManager:close(self.file_dialog)
-                        FileManagerBookInfo:onShowBookCover(file)
-                    end,
-                },
-                {
-                    text = _("Book description"),
-                    id = "book_description", -- used by covermenu
-                    callback = function()
-                        UIManager:close(self.file_dialog)
-                        FileManagerBookInfo:onShowBookDescription(nil, file)
-                    end,
-                },
+                filemanagerutil.genBookCoverButton(file, close_dialog_callback),
+                filemanagerutil.genBookDescriptionButton(file, close_dialog_callback),
             })
             if Device:canExecuteScript(file) then
-                local function button_callback()
-                    UIManager:close(self.file_dialog)
-                end
                 table.insert(buttons, {
-                    filemanagerutil.genExecuteScriptButton(file, button_callback)
+                    filemanagerutil.genExecuteScriptButton(file, close_dialog_callback),
                 })
             end
             if FileManagerConverter:isSupported(file) then
@@ -348,7 +325,7 @@ function FileManager:setupLayout()
                             UIManager:close(self.file_dialog)
                             FileManagerConverter:showConvertButtons(file, self)
                         end,
-                    }
+                    },
                 })
             end
         end
@@ -361,7 +338,7 @@ function FileManager:setupLayout()
                         UIManager:close(self.file_dialog)
                         file_manager:setHome(BaseUtil.realpath(file))
                     end
-                }
+                },
             })
         end
 
@@ -850,7 +827,7 @@ end
 function FileManager:openRandomFile(dir)
     local random_file = DocumentRegistry:getRandomFile(dir, false)
     if random_file then
-        UIManager:show(MultiConfirmBox:new {
+        UIManager:show(MultiConfirmBox:new{
             text = T(_("Do you want to open %1?"), BD.filename(BaseUtil.basename(random_file))),
             choice1_text = _("Open"),
             choice1_callback = function()
@@ -864,7 +841,7 @@ function FileManager:openRandomFile(dir)
             end,
         })
     else
-        UIManager:show(InfoMessage:new {
+        UIManager:show(InfoMessage:new{
             text = _("File not found"),
         })
     end
@@ -895,7 +872,7 @@ function FileManager:pasteHere(file)
             end
             return true
         else
-            UIManager:show(InfoMessage:new {
+            UIManager:show(InfoMessage:new{
                 text = T(_("Failed to copy:\n%1\nto:\n%2"), BD.filepath(orig_name), BD.dirpath(dest_path)),
                 icon = "notice-warning",
             })
@@ -911,7 +888,7 @@ function FileManager:pasteHere(file)
             ReadCollection:updateItemByPath(orig_file, dest_file)
             return true
         else
-            UIManager:show(InfoMessage:new {
+            UIManager:show(InfoMessage:new{
                 text = T(_("Failed to move:\n%1\nto:\n%2"), BD.filepath(orig_name), BD.dirpath(dest_path)),
                 icon = "notice-warning",
             })
@@ -928,7 +905,7 @@ function FileManager:pasteHere(file)
 
     local mode = lfs.attributes(dest_file, "mode")
     if mode then
-        UIManager:show(ConfirmBox:new {
+        UIManager:show(ConfirmBox:new{
             text = mode == "file" and T(_("File already exists:\n%1\nOverwrite file?"), BD.filename(orig_name))
                                    or T(_("Folder already exists:\n%1\nOverwrite folder?"), BD.directory(orig_name)),
             ok_text = _("Overwrite"),
@@ -1099,7 +1076,7 @@ function FileManager:renameFile(file, basename, is_file)
             else
                 text = T(_("File already exists:\n%1\nFolder cannot be renamed."), BD.filename(basename))
             end
-            UIManager:show(InfoMessage:new {
+            UIManager:show(InfoMessage:new{
                 text = text,
                 icon = "notice-warning",
             })
@@ -1111,7 +1088,7 @@ function FileManager:renameFile(file, basename, is_file)
                 text = T(_("Folder already exists:\n%1\nMove the folder inside it?"), BD.directory(basename))
                 ok_text = _("Move")
             end
-            UIManager:show(ConfirmBox:new {
+            UIManager:show(ConfirmBox:new{
                 text = text,
                 ok_text = ok_text,
                 ok_callback = function()
@@ -1199,6 +1176,72 @@ end
 
 function FileManager:onRefreshContent()
     self:onRefresh()
+end
+
+function FileManager:onShowFolderMenu()
+    local button_dialog
+    local function genButton(button_text, button_path)
+        return {{
+            text = button_text,
+            align = "left",
+            font_face = "smallinfofont",
+            font_size = 22,
+            font_bold = false,
+            avoid_text_truncation = false,
+            callback = function()
+                UIManager:close(button_dialog)
+                self.file_chooser:changeToPath(button_path)
+            end,
+            hold_callback = function()
+                return true -- do not move the menu
+            end,
+        }}
+    end
+
+    local home_dir = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+    local home_dir_shortened = G_reader_settings:nilOrTrue("shorten_home_dir")
+    local home_dir_not_locked = G_reader_settings:nilOrFalse("lock_home_folder")
+    local home_dir_suffix = " (" .. _("Home") .. ")"
+    local buttons = {}
+    -- root folder
+    local text
+    local path = "/"
+    local is_home = path == home_dir
+    local home_found = is_home or home_dir_not_locked
+    if home_found then
+        text = path
+        if is_home and home_dir_shortened then
+            text = text .. home_dir_suffix
+        end
+        table.insert(buttons, genButton(text, path))
+    end
+    -- other folders
+    local indent = ""
+    for part in self.file_chooser.path:gmatch("([^/]+)") do
+        text = (#buttons == 0 and path or indent .. "└ ") .. part
+        path = path .. part .. "/"
+        is_home = path == home_dir or path == home_dir .. "/"
+        if not home_found and is_home then
+            home_found = true
+        end
+        if home_found then
+            if is_home and home_dir_shortened then
+                text = text .. home_dir_suffix
+            end
+            table.insert(buttons, genButton(text, path))
+            indent = indent .. " "
+        end
+    end
+
+    button_dialog = ButtonDialog:new{
+        width = math.floor(Screen:getWidth() * 0.9),
+        shrink_unneeded_width = true,
+        buttons = buttons,
+        anchor = function()
+            return self.title_bar.left_button.image.dimen
+        end,
+    }
+    UIManager:show(button_dialog)
 end
 
 return FileManager

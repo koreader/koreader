@@ -14,7 +14,6 @@ function ReadCollection:read(collection_name)
     local collections = LuaSettings:open(collection_file)
     local coll = collections:readSetting(collection_name) or {}
     local coll_max_item = 0
-
     for _, v in pairs(coll) do
         if v.order > coll_max_item then
             coll_max_item = v.order
@@ -36,17 +35,15 @@ function ReadCollection:prepareList(collection_name)
     local data = self:read(collection_name)
     local list = {}
     for _, v in pairs(data) do
-        local file_exists = lfs.attributes(v.file, "mode") == "file"
+        local file_path = FFIUtil.realpath(v.file) or v.file -- keep orig file path of deleted files
+        local file_exists = lfs.attributes(file_path, "mode") == "file"
         table.insert(list, {
             order = v.order,
+            file = file_path,
             text = v.file:gsub(".*/", ""),
-            file = FFIUtil.realpath(v.file) or v.file, -- keep orig file path of deleted files
-            dim = not file_exists, -- "dim", as expected by Menu
-            mandatory = file_exists and util.getFriendlySize(lfs.attributes(v.file, "size") or 0),
-            callback = function()
-                local ReaderUI = require("apps/reader/readerui")
-                ReaderUI:showReader(v.file)
-            end
+            dim = not file_exists,
+            mandatory = file_exists and util.getFriendlySize(lfs.attributes(file_path, "size") or 0),
+            select_enabled = file_exists,
         })
     end
     table.sort(list, function(v1,v2)
@@ -62,7 +59,7 @@ function ReadCollection:removeItemByPath(path, is_dir)
         path = path .. "/"
     end
     local coll = self:readAllCollection()
-    for i, _ in pairs(coll) do
+    for i in pairs(coll) do
         local single_collection = coll[i]
         for item = #single_collection, 1, -1 do
             if not is_dir and single_collection[item].file == path then
@@ -126,19 +123,16 @@ function ReadCollection:removeItem(item, collection_name)
 end
 
 function ReadCollection:writeCollection(coll_items, collection_name)
-    if not collection_name then collection_name = DEFAULT_COLLECTION_NAME end
     local collection = LuaSettings:open(collection_file)
-    collection:saveSetting(collection_name, coll_items)
+    collection:saveSetting(collection_name or DEFAULT_COLLECTION_NAME, coll_items)
     collection:flush()
 end
 
 function ReadCollection:addItem(file, collection_name)
     local coll, coll_max_item = self:read(collection_name)
-    coll_max_item = coll_max_item + 1
-    local collection_item =
-    {
+    local collection_item = {
         file = file,
-        order = coll_max_item
+        order = coll_max_item + 1,
     }
     table.insert(coll, collection_item)
     self:writeCollection(coll, collection_name)
@@ -151,8 +145,6 @@ function ReadCollection:checkItemExist(item, collection_name)
             return true
         end
     end
-    return false
 end
 
 return ReadCollection
-
