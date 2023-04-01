@@ -666,10 +666,6 @@ function ListMenuItem:update()
             if self.do_hint_opened and DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
             end
-            -- No right widget by default, except in History
-            local wright
-            local wright_width = 0
-            local wright_right_padding = 0
             -- A real simple widget, nothing fancy
             local hint = self.file_deleted and "" or "…" -- display hint it's being loaded
             local text = BD.filename(self.text)
@@ -682,7 +678,7 @@ function ListMenuItem:update()
                 text_widget = TextBoxWidget:new{
                     text = text .. hint,
                     face = Font:getFace("cfont", fontsize_no_bookinfo),
-                    width = dimen.w - 2 * Screen:scaleBySize(10) - wright_width - wright_right_padding,
+                    width = dimen.w - 2 * Screen:scaleBySize(10),
                     alignment = "left",
                     fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
                 }
@@ -696,19 +692,6 @@ function ListMenuItem:update()
                     text_widget
                 },
             }
-            if wright then -- last read date, in History, even for deleted files
-                widget = OverlapGroup:new{
-                    dimen = dimen,
-                    widget,
-                    RightContainer:new{
-                        dimen = dimen,
-                        HorizontalGroup:new{
-                            wright,
-                            HorizontalSpan:new{ width = wright_right_padding },
-                        },
-                    },
-                }
-            end
         end
     end
 
