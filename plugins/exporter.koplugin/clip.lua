@@ -394,8 +394,8 @@ function MyClipping:getDocMeta(view)
     end
     return {
         title = title,
-        -- To make sure that export doesn't fail due to unsupported charchters.
-        exportable_title = parsed_title,
+        -- Replaces characters that are invalid in filenames.
+        output_filename = util.getSafeFilename(title),
         author = author,
         number_of_pages = number_of_pages,
         file = view.document.file,
