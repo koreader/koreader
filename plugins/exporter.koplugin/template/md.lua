@@ -39,7 +39,8 @@ local function prepareBookContent(book, formatting_options, highlight_formatting
     local content = ""
     local current_chapter = nil
     content = content .. "# " .. book.title .. "\n"
-    content = content .. "##### " .. book.author:gsub("\n", ", ") .. "\n\n"
+    local author = book.author or _("N/A")
+    content = content .. "##### " .. author:gsub("\n", ", ") .. "\n\n"
     for _, note in ipairs(book) do
         local entry = note[1]
         if entry.chapter ~= current_chapter then
