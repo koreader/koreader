@@ -2982,7 +2982,7 @@ function ReaderStatistics:onSyncBookStats()
     if not self:canSync() then return end
 
     UIManager:show(InfoMessage:new {
-        text = _("Syncing book statistics, this might take a while…"),
+        text = _("Syncing book statistics. This may take a while."),
         timeout = 1,
     })
 
