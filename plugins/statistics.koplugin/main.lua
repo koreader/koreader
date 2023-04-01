@@ -1192,7 +1192,7 @@ Time is in hours and minutes.]]),
                     self:onSyncBookStats()
                 end,
                 enabled_func = function()
-                    return self:isSyncPossible()
+                    return self:canSync()
                 end,
                 keep_menu_open = true,
                 separator = true,
@@ -2974,12 +2974,12 @@ function ReaderStatistics:getCurrentBookReadPages()
     return read_pages
 end
 
-function ReaderStatistics:isSyncPossible()
+function ReaderStatistics:canSync()
     return self.settings.sync_server ~= nil and self.settings.is_enabled
 end
 
 function ReaderStatistics:onSyncBookStats()
-    if not self:isSyncPossible() then return end
+    if not self:canSync() then return end
 
     UIManager:show(InfoMessage:new {
         text = _("Syncing book statistics, this might take a while…"),
