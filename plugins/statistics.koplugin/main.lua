@@ -97,7 +97,8 @@ ReaderStatistics.default_settings = {
 function ReaderStatistics:onDispatcherRegisterActions()
     Dispatcher:registerAction("stats_calendar_view", {category="none", event="ShowCalendarView", title=_("Statistics calendar view"), general=true, separator=false})
     Dispatcher:registerAction("stats_calendar_day_view", {category="none", event="ShowCalendarDayView", title=_("Statistics today's timeline"), general=true, separator=true})
-    Dispatcher:registerAction("book_statistics", {category="none", event="ShowBookStats", title=_("Book statistics"), reader=true, separator=true})
+    Dispatcher:registerAction("book_statistics", {category="none", event="ShowBookStats", title=_("Book statistics"), reader=true, separator=false})
+    Dispatcher:registerAction("stats_sync", {category="none", event="SyncBookStats", title=_("Synchronize book statistics"), reader=true, separator=true})
 end
 
 function ReaderStatistics:init()
@@ -1188,10 +1189,10 @@ Time is in hours and minutes.]]),
             {
                 text = _("Synchronize now"),
                 callback = function()
-                    SyncService.sync(self.settings.sync_server, db_location, self.onSync )
+                    self:onSyncBookStats()
                 end,
                 enabled_func = function()
-                    return self.settings.sync_server ~= nil and self.settings.is_enabled
+                    return self:isSyncPossible()
                 end,
                 keep_menu_open = true,
                 separator = true,
@@ -2973,7 +2974,24 @@ function ReaderStatistics:getCurrentBookReadPages()
     return read_pages
 end
 
-function ReaderStatistics.onSync(local_path, cached_path, income_path)
+function ReaderStatistics:isSyncPossible()
+    return self.settings.sync_server ~= nil and self.settings.is_enabled
+end
+
+function ReaderStatistics:onSyncBookStats()
+    if not self:isSyncPossible() then return end
+
+    UIManager:show(InfoMessage:new {
+        text = _("Syncing book statistics, this might take a while…"),
+        timeout = 1,
+    })
+
+    UIManager:nextTick(function ()
+        SyncService.sync(self.settings.sync_server, db_location, self.onSyncServiceSync)
+    end)
+end
+
+function ReaderStatistics.onSyncServiceSync(local_path, cached_path, income_path)
     local conn_income = SQ3.open(income_path)
     local ok1, v1 = pcall(conn_income.rowexec, conn_income, "PRAGMA schema_version")
     if not ok1 or tonumber(v1) == 0 then
