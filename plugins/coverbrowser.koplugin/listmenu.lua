@@ -26,6 +26,7 @@ local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -225,7 +226,7 @@ function ListMenuItem:update()
         self.is_directory = true
         -- nb items on the right, directory name on the left
         local wright = TextWidget:new{
-            text = self.mandatory_func and self.mandatory_func() or (self.mandatory and self.mandatory or ""),
+            text = self.mandatory or "",
             face = Font:getFace("infont", _fontSize(14, 18)),
         }
         local pad_width = Screen:scaleBySize(10) -- on the left, in between, and on the right
@@ -358,26 +359,6 @@ function ListMenuItem:update()
             --   file size (self.mandatory) (not available with History)
             --   file type
             --   pages read / nb of pages (not available for crengine doc not opened)
-            local directory, filename = util.splitFilePathName(self.filepath) -- luacheck: no unused
-            local filename_without_suffix, filetype = util.splitFileNameSuffix(filename)
-            local fileinfo_str
-            if self.mandatory_func then
-                -- Currently only provided by History, giving the last time read.
-                -- Just show this date, without the file extension
-                fileinfo_str = self.mandatory_func()
-            else
-                if self.mandatory then
-                    fileinfo_str = BD.wrap(self.mandatory) .. "  " .. BD.wrap(filetype)
-                else
-                    fileinfo_str = filetype
-                end
-                if bookinfo._no_provider then
-                    -- for unspported files: don't show extension on the right,
-                    -- keep it in filename
-                    filename_without_suffix = filename
-                    fileinfo_str = self.mandatory
-                end
-            end
             -- Current page / pages are available or more accurate in .sdr/metadata.lua
             -- We use a cache (cleaned at end of this browsing session) to store
             -- page, percent read and book status from sidecar files, to avoid
@@ -387,12 +368,26 @@ function ListMenuItem:update()
             end
             local pages_str = ""
             local pages = bookinfo.pages -- default to those in bookinfo db
-            local percent_finished, status
+            local percent_finished, status, has_highlight
             if DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
                 self.menu:updateCache(self.filepath, nil, true, pages) -- create new cache entry if absent
-                pages, percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
+                pages, percent_finished, status, has_highlight = unpack(self.menu.cover_info_cache[self.filepath])
             end
+            -- right widget, first line
+            local directory, filename = util.splitFilePathName(self.filepath) -- luacheck: no unused
+            local filename_without_suffix, filetype = filemanagerutil.splitFileNameType(filename)
+            local fileinfo_str
+            if bookinfo._no_provider then
+                -- for unspported files: don't show extension on the right,
+                -- keep it in filename
+                filename_without_suffix = filename
+                fileinfo_str = self.mandatory
+            else
+                local mark = has_highlight and "\u{2592}  " or "" -- "medium shade"
+                fileinfo_str = mark .. BD.wrap(filetype) .. "  " .. BD.wrap(self.mandatory)
+            end
+            -- right widget, second line
             if status == "complete" or status == "abandoned" then
                 -- Display these instead of the read %
                 if pages then
@@ -675,38 +670,8 @@ function ListMenuItem:update()
             local wright
             local wright_width = 0
             local wright_right_padding = 0
-            if self.mandatory_func then
-                -- Currently only provided by History, giving the last time read.
-                -- If we have it, we need to build a more complex widget with
-                -- this date on the right
-                local fileinfo_str = self.mandatory_func()
-                local fontsize_info = _fontSize(14, 18)
-                local wfileinfo = TextWidget:new{
-                    text = fileinfo_str,
-                    face = Font:getFace("cfont", fontsize_info),
-                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
-                }
-                local wpageinfo = TextWidget:new{ -- Empty but needed for similar positionning
-                    text = "",
-                    face = Font:getFace("cfont", fontsize_info),
-                }
-                wright_width = wfileinfo:getSize().w
-                wright = CenterContainer:new{
-                    dimen = Geom:new{ w = wright_width, h = dimen.h },
-                    VerticalGroup:new{
-                        align = "right",
-                        VerticalSpan:new{ width = Screen:scaleBySize(2) },
-                        wfileinfo,
-                        wpageinfo,
-                    }
-                }
-                wright_right_padding = Screen:scaleBySize(10)
-            end
             -- A real simple widget, nothing fancy
-            local hint = "…" -- display hint it's being loaded
-            if self.file_deleted then -- unless file was deleted (can happen with History)
-                hint = " " .. _("(deleted)")
-            end
+            local hint = self.file_deleted and "" or "…" -- display hint it's being loaded
             local text = BD.filename(self.text)
             local text_widget
             local fontsize_no_bookinfo = _fontSize(18, 22)
@@ -984,7 +949,6 @@ function ListMenu:_updateItemsBuildUI()
                 text = getMenuText(entry),
                 show_parent = self.show_parent,
                 mandatory = entry.mandatory,
-                mandatory_func = entry.mandatory_func,
                 dimen = self.item_dimen:new(),
                 shortcut = item_shortcut,
                 shortcut_style = shortcut_style,
