@@ -392,10 +392,11 @@ function MyClipping:getDocMeta(view)
     if isEmpty(author) then
         author = isEmpty(parsed_author) and "Unknown Author" or parsed_author
     end
+    -- Remove illegal characters for the current OS' file names
+    local exportable_title = util.getSafeFilename(title)
     return {
         title = title,
-        -- To make sure that export doesn't fail due to unsupported charchters.
-        exportable_title = parsed_title,
+        exportable_title = exportable_title,
         author = author,
         number_of_pages = number_of_pages,
         file = view.document.file,
