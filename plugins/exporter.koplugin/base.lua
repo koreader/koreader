@@ -93,7 +93,7 @@ function BaseExporter:getFilePath(t)
     if not self.is_remote then
         local filename = string.format("%s-%s.%s",
             self:getTimeStamp(),
-            #t == 1 and t[1].exportable_title or "all-books",
+            #t == 1 and t[1].exportable_title or self.all_books_title or "all-books",
             self.extension)
         return self.clipping_dir .. "/" .. getSafeFilename(filename)
     end
