@@ -2987,11 +2987,11 @@ function ReaderStatistics:onSyncBookStats()
     })
 
     UIManager:nextTick(function()
-        SyncService.sync(self.settings.sync_server, db_location, self.onSyncServiceSync)
+        SyncService.sync(self.settings.sync_server, db_location, self.onSync)
     end)
 end
 
-function ReaderStatistics.onSyncServiceSync(local_path, cached_path, income_path)
+function ReaderStatistics.onSync(local_path, cached_path, income_path)
     local conn_income = SQ3.open(income_path)
     local ok1, v1 = pcall(conn_income.rowexec, conn_income, "PRAGMA schema_version")
     if not ok1 or tonumber(v1) == 0 then
