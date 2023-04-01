@@ -2986,7 +2986,7 @@ function ReaderStatistics:onSyncBookStats()
         timeout = 1,
     })
 
-    UIManager:nextTick(function ()
+    UIManager:nextTick(function()
         SyncService.sync(self.settings.sync_server, db_location, self.onSyncServiceSync)
     end)
 end
