@@ -7,6 +7,7 @@ local ClippingsExporter = require("base"):new {
     name = "myClippings",
     extension = "txt",
     mimetype = "text/plain",
+    all_books_title = "myClippings"
 }
 
 local function format(booknotes)
