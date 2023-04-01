@@ -1089,11 +1089,11 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                                 min = self.settings.calendar_day_start_minute or 0,
                                 hour_max = 6,
                                 ok_text = _("Set time"),
-                                title_text = _("Set starting time of a day"),
+                                title_text = _("Daily timeline starts at"),
                                 info_text =_([[
-Set the time when the day timeline should start.
+Set the time when the daily timeline should start.
 
-If you read past midnight, and wish this reading to appear with the previous evening's reading, you can set this to 04:00 for example.
+If you read past midnight, and would like this reading session to be displayed on the same screen with your previous evening reading sessions, use a value such as 04:00.
 
 Time is in hours and minutes.]]),
                                 callback = function(time)
