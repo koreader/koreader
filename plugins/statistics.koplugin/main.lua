@@ -97,7 +97,8 @@ ReaderStatistics.default_settings = {
 function ReaderStatistics:onDispatcherRegisterActions()
     Dispatcher:registerAction("stats_calendar_view", {category="none", event="ShowCalendarView", title=_("Statistics calendar view"), general=true, separator=false})
     Dispatcher:registerAction("stats_calendar_day_view", {category="none", event="ShowCalendarDayView", title=_("Statistics today's timeline"), general=true, separator=true})
-    Dispatcher:registerAction("book_statistics", {category="none", event="ShowBookStats", title=_("Book statistics"), reader=true, separator=true})
+    Dispatcher:registerAction("book_statistics", {category="none", event="ShowBookStats", title=_("Book statistics"), reader=true, separator=false})
+    Dispatcher:registerAction("stats_sync", {category="none", event="SyncBookStats", title=_("Synchronize book statistics"), reader=true, separator=true})
 end
 
 function ReaderStatistics:init()
@@ -1188,10 +1189,10 @@ Time is in hours and minutes.]]),
             {
                 text = _("Synchronize now"),
                 callback = function()
-                    SyncService.sync(self.settings.sync_server, db_location, self.onSync )
+                    self:onSyncBookStats()
                 end,
                 enabled_func = function()
-                    return self.settings.sync_server ~= nil and self.settings.is_enabled
+                    return self:canSync()
                 end,
                 keep_menu_open = true,
                 separator = true,
@@ -2971,6 +2972,23 @@ function ReaderStatistics:getCurrentBookReadPages()
         read_pages[page][1] = info[1] / max_duration
     end
     return read_pages
+end
+
+function ReaderStatistics:canSync()
+    return self.settings.sync_server ~= nil and self.settings.is_enabled
+end
+
+function ReaderStatistics:onSyncBookStats()
+    if not self:canSync() then return end
+
+    UIManager:show(InfoMessage:new {
+        text = _("Syncing book statistics. This may take a while."),
+        timeout = 1,
+    })
+
+    UIManager:nextTick(function()
+        SyncService.sync(self.settings.sync_server, db_location, self.onSync)
+    end)
 end
 
 function ReaderStatistics.onSync(local_path, cached_path, income_path)
