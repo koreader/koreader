@@ -1064,7 +1064,9 @@ function ReaderBookmark:setBookmarkNote(item, from_highlight, is_new_note, new_t
                         local bm = self.bookmarks[index]
                         bm.text = value
                         self.ui:handleEvent(Event:new("BookmarkEdited", bm))
-                        self.ui.highlight:writePdfAnnotation("content", bookmark.page, bookmark, bookmark.text)
+                        if bookmark.highlighted then
+                            self.ui.highlight:writePdfAnnotation("content", bookmark.page, bookmark, bookmark.text)
+                        end
                         UIManager:close(self.input)
                         if from_highlight then
                             if self.view.highlight.note_mark then
