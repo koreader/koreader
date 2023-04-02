@@ -666,8 +666,42 @@ function ListMenuItem:update()
             if self.do_hint_opened and DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
             end
+            -- No right widget by default, except in History
+            local wright
+            local wright_width = 0
+            local wright_right_padding = 0
+            if self.mandatory then
+                -- Currently only provided by History, giving the last time read.
+                -- If we have it, we need to build a more complex widget with
+                -- this date on the right
+                local fileinfo_str = self.mandatory
+                local fontsize_info = _fontSize(14, 18)
+                local wfileinfo = TextWidget:new{
+                    text = fileinfo_str,
+                    face = Font:getFace("cfont", fontsize_info),
+                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                }
+                local wpageinfo = TextWidget:new{ -- Empty but needed for similar positionning
+                    text = "",
+                    face = Font:getFace("cfont", fontsize_info),
+                }
+                wright_width = wfileinfo:getSize().w
+                wright = CenterContainer:new{
+                    dimen = Geom:new{ w = wright_width, h = dimen.h },
+                    VerticalGroup:new{
+                        align = "right",
+                        VerticalSpan:new{ width = Screen:scaleBySize(2) },
+                        wfileinfo,
+                        wpageinfo,
+                    }
+                }
+                wright_right_padding = Screen:scaleBySize(10)
+            end
             -- A real simple widget, nothing fancy
-            local hint = self.file_deleted and "" or "…" -- display hint it's being loaded
+            local hint = "…" -- display hint it's being loaded
+            if self.file_deleted then -- unless file was deleted (can happen with History)
+                hint = " " .. _("(deleted)")
+            end
             local text = BD.filename(self.text)
             local text_widget
             local fontsize_no_bookinfo = _fontSize(18, 22)
@@ -678,7 +712,7 @@ function ListMenuItem:update()
                 text_widget = TextBoxWidget:new{
                     text = text .. hint,
                     face = Font:getFace("cfont", fontsize_no_bookinfo),
-                    width = dimen.w - 2 * Screen:scaleBySize(10),
+                    width = dimen.w - 2 * Screen:scaleBySize(10) - wright_width - wright_right_padding,
                     alignment = "left",
                     fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
                 }
@@ -692,6 +726,19 @@ function ListMenuItem:update()
                     text_widget
                 },
             }
+            if wright then -- last read date, in History, even for deleted files
+                widget = OverlapGroup:new{
+                    dimen = dimen,
+                    widget,
+                    RightContainer:new{
+                        dimen = dimen,
+                        HorizontalGroup:new{
+                            wright,
+                            HorizontalSpan:new{ width = wright_right_padding },
+                        },
+                    },
+                }
+            end
         end
     end
 
