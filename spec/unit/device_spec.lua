@@ -210,6 +210,7 @@ describe("device module", function()
                 local kindle_dev = require('device/kindle/device')
                 assert.is.truthy(kindle_dev.framework_lipc_handle)
             end)
+
             it("reactivates voyage whispertouch keys", function ()
                 io.open = make_io_open_kindle_model_override("B013XX")
 
@@ -223,7 +224,7 @@ describe("device module", function()
                     "fsrkeypadPrevEnable",
                     "fsrkeypadNextEnable"
                 } do
-                    assert.stub(fw_lipc_handle.set_int_property) .was.called_with(
+                    assert.stub(fw_lipc_handle.set_int_property).was.called_with(
                         fw_lipc_handle, "com.lab126.deviced", fsr_prop, 1
                     )
                 end
