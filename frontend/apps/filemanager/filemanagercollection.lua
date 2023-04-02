@@ -1,6 +1,5 @@
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Device = require("device")
-local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local Menu = require("ui/widget/menu")
 local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
@@ -36,8 +35,15 @@ function FileManagerCollection:updateItemTable()
         ReadCollection:prepareList(self.coll_menu.collection), select_number)
 end
 
+function FileManagerCollection:onMenuChoice(item)
+    require("apps/reader/readerui"):showReader(item.file)
+end
+
 function FileManagerCollection:onMenuHold(item)
     self.collfile_dialog = nil
+    local function close_dialog_callback()
+        UIManager:close(self.collfile_dialog)
+    end
     local function status_button_callback()
         UIManager:close(self.collfile_dialog)
         self._manager:updateItemTable()
@@ -89,37 +95,17 @@ function FileManagerCollection:onMenuHold(item)
                 UIManager:show(sort_item)
             end,
         },
-        {
-            text = _("Book information"),
-            id = "book_information", -- used by covermenu
-            callback = function()
-                UIManager:close(self.collfile_dialog)
-                FileManagerBookInfo:show(item.file)
-            end,
-        },
+        filemanagerutil.genBookInformationButton(item.file, close_dialog_callback, item.dim),
     })
     table.insert(buttons, {
-        {
-            text = _("Book cover"),
-            id = "book_cover", -- used by covermenu
-            callback = function()
-                UIManager:close(self.collfile_dialog)
-                FileManagerBookInfo:onShowBookCover(item.file)
-            end,
-        },
-        {
-            text = _("Book description"),
-            id = "book_description", -- used by covermenu
-            callback = function()
-                UIManager:close(self.collfile_dialog)
-                FileManagerBookInfo:onShowBookDescription(nil, item.file)
-            end,
-        },
+        filemanagerutil.genBookCoverButton(item.file, close_dialog_callback, item.dim),
+        filemanagerutil.genBookDescriptionButton(item.file, close_dialog_callback, item.dim),
     })
 
     if Device:canExecuteScript(item.file) then
         local function button_callback()
             UIManager:close(self.collfile_dialog)
+            self.coll_menu.close_callback()
         end
         table.insert(buttons, {
             filemanagerutil.genExecuteScriptButton(item.file, button_callback)
@@ -153,11 +139,10 @@ end
 function FileManagerCollection:onShowColl(collection)
     self.coll_menu = Menu:new{
         ui = self.ui,
-        width = Screen:getWidth(),
-        height = Screen:getHeight(),
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         is_borderless = true,
         is_popout = false,
+        onMenuChoice = self.onMenuChoice,
         onMenuHold = self.onMenuHold,
         onSetRotationMode = self.MenuSetRotationModeHandler,
         _manager = self,

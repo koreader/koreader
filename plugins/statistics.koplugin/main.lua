@@ -97,7 +97,8 @@ ReaderStatistics.default_settings = {
 function ReaderStatistics:onDispatcherRegisterActions()
     Dispatcher:registerAction("stats_calendar_view", {category="none", event="ShowCalendarView", title=_("Statistics calendar view"), general=true, separator=false})
     Dispatcher:registerAction("stats_calendar_day_view", {category="none", event="ShowCalendarDayView", title=_("Statistics today's timeline"), general=true, separator=true})
-    Dispatcher:registerAction("book_statistics", {category="none", event="ShowBookStats", title=_("Book statistics"), reader=true, separator=true})
+    Dispatcher:registerAction("book_statistics", {category="none", event="ShowBookStats", title=_("Book statistics"), reader=true, separator=false})
+    Dispatcher:registerAction("stats_sync", {category="none", event="SyncBookStats", title=_("Synchronize book statistics"), reader=true, separator=true})
 end
 
 function ReaderStatistics:init()
@@ -1075,6 +1076,46 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         separator = true,
                     },
                     {
+                        text_func = function()
+                            -- @translators %1 is the time in the format 00:00
+                            return T(_("Daily timeline starts at %1"),
+                                string.format("%02d:%02d", self.settings.calendar_day_start_hour or 0,
+                                                           self.settings.calendar_day_start_minute or 0)
+                            )
+                        end,
+                        callback = function(touchmenu_instance)
+                            local DateTimeWidget = require("ui/widget/datetimewidget")
+                            local start_of_day_widget = DateTimeWidget:new{
+                                hour = self.settings.calendar_day_start_hour or 0,
+                                min = self.settings.calendar_day_start_minute or 0,
+                                hour_max = 6,
+                                ok_text = _("Set time"),
+                                title_text = _("Daily timeline starts at"),
+                                info_text =_([[
+Set the time when the daily timeline should start.
+
+If you read past midnight, and would like this reading session to be displayed on the same screen with your previous evening reading sessions, use a value such as 04:00.
+
+Time is in hours and minutes.]]),
+                                callback = function(time)
+                                    self.settings.calendar_day_start_hour = time.hour
+                                    self.settings.calendar_day_start_minute = time.min
+                                    touchmenu_instance:updateItems()
+                                end
+                            }
+                            UIManager:show(start_of_day_widget)
+                        end,
+                        keep_menu_open = true,
+                    },
+                    {
+                        text = _("Also use in calendar view"),
+                        checked_func = function() return self.settings.calendar_use_day_time_shift end,
+                        callback = function()
+                            self.settings.calendar_use_day_time_shift = not self.settings.calendar_use_day_time_shift
+                        end,
+                        separator = true,
+                    },
+                    {
                         text = _("Cloud sync"),
                         callback = function(touchmenu_instance)
                             local server = self.settings.sync_server
@@ -1148,10 +1189,10 @@ The max value ensures a page you stay on for a long time (because you fell aslee
             {
                 text = _("Synchronize now"),
                 callback = function()
-                    SyncService.sync(self.settings.sync_server, db_location, self.onSync )
+                    self:onSyncBookStats()
                 end,
                 enabled_func = function()
-                    return self.settings.sync_server ~= nil and self.settings.is_enabled
+                    return self:canSync()
                 end,
                 keep_menu_open = true,
                 separator = true,
@@ -2004,6 +2045,7 @@ function ReaderStatistics:getBooksFromPeriod(period_begin, period_end, callback_
         table.insert(results, {
             result_book[1][i],
             T(N_("%1 (1 page)", "%1 (%2 pages)", tonumber(result_book[2][i])), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false), tonumber(result_book[2][i])),
+            duration = tonumber(result_book[3][i]),
             book_id = tonumber(result_book[4][i]),
             callback = function()
                 local kv = self.kv
@@ -2699,14 +2741,20 @@ function ReaderStatistics:getReadingRatioPerHourByDay(month)
     -- We let SQLite compute these timestamp boundaries from the provided
     -- month; we need the start of the month to be a real date:
     month = month.."-01"
+    local offset = not self.settings.calendar_use_day_time_shift and 0 or (self.settings.calendar_day_start_hour or 0) * 3600 + (self.settings.calendar_day_start_minute or 0) * 60
     local sql_stmt = [[
         SELECT
             strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime') day,
             strftime('%H', start_time, 'unixepoch', 'localtime') hour,
             sum(duration)/3600.0 ratio
-        FROM   page_stat
-        WHERE  start_time BETWEEN strftime('%s', ?, 'utc')
-                              AND strftime('%s', ?, 'utc', '+33 days', 'start of month', '-1 second')
+        FROM  (
+            SELECT
+                start_time-? as start_time,
+                duration
+            FROM page_stat
+            WHERE  start_time BETWEEN strftime('%s', ?, 'utc')
+                                  AND strftime('%s', ?, 'utc', '+33 days', 'start of month', '-1 second')
+        )
         GROUP  BY
             strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime'),
             strftime('%H', start_time, 'unixepoch', 'localtime')
@@ -2714,7 +2762,7 @@ function ReaderStatistics:getReadingRatioPerHourByDay(month)
     ]]
     local conn = SQ3.open(db_location)
     local stmt = conn:prepare(sql_stmt)
-    local res, nb = stmt:reset():bind(month, month):resultset("i")
+    local res, nb = stmt:reset():bind(offset, month, month):resultset("i")
     stmt:close()
     conn:close()
     local per_day = {}
@@ -2731,16 +2779,20 @@ end
 
 function ReaderStatistics:getReadBookByDay(month)
     month = month.."-01"
+    local offset = not self.settings.calendar_use_day_time_shift and 0 or (self.settings.calendar_day_start_hour or 0) * 3600 + (self.settings.calendar_day_start_minute or 0) * 60
     local sql_stmt = [[
         SELECT
             strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime') day,
             sum(duration) durations,
             id_book book_id,
-            book.title book_title
-        FROM   page_stat
-        JOIN   book ON book.id = page_stat.id_book
-        WHERE  start_time BETWEEN strftime('%s', ?, 'utc')
-                              AND strftime('%s', ?, 'utc', '+33 days', 'start of month', '-1 second')
+            title book_title
+        FROM  (
+            SELECT start_time-? as start_time, duration, page_stat.id_book, book.title
+            FROM page_stat
+            JOIN   book ON book.id = page_stat.id_book
+            WHERE  start_time BETWEEN strftime('%s', ?, 'utc')
+                                  AND strftime('%s', ?, 'utc', '+33 days', 'start of month', '-1 second')
+        )
         GROUP  BY
             strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime'),
             id_book,
@@ -2749,7 +2801,7 @@ function ReaderStatistics:getReadBookByDay(month)
     ]]
     local conn = SQ3.open(db_location)
     local stmt = conn:prepare(sql_stmt)
-    local res, nb = stmt:reset():bind(month, month):resultset("i")
+    local res, nb = stmt:reset():bind(offset, month, month):resultset("i")
     stmt:close()
     conn:close()
     local per_day = {}
@@ -2920,6 +2972,23 @@ function ReaderStatistics:getCurrentBookReadPages()
         read_pages[page][1] = info[1] / max_duration
     end
     return read_pages
+end
+
+function ReaderStatistics:canSync()
+    return self.settings.sync_server ~= nil and self.settings.is_enabled
+end
+
+function ReaderStatistics:onSyncBookStats()
+    if not self:canSync() then return end
+
+    UIManager:show(InfoMessage:new {
+        text = _("Syncing book statistics. This may take a while."),
+        timeout = 1,
+    })
+
+    UIManager:nextTick(function()
+        SyncService.sync(self.settings.sync_server, db_location, self.onSync)
+    end)
 end
 
 function ReaderStatistics.onSync(local_path, cached_path, income_path)

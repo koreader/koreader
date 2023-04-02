@@ -89,6 +89,7 @@ function ButtonTable:init()
                 padding = Size.padding.buttontable, -- a bit taller than standalone buttons, for easier tap
                 padding_h = btn_entry.align == "left" and Size.padding.large or 0,
                     -- allow text to take more of the horizontal space if centered
+                avoid_text_truncation = btn_entry.avoid_text_truncation,
                 text_font_face = btn_entry.font_face,
                 text_font_size = btn_entry.font_size,
                 text_font_bold = btn_entry.font_bold,

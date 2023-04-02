@@ -16,24 +16,16 @@ local ReadHistory = {
     last_read_time = 0,
 }
 
-local function selectCallback(path)
-    local ReaderUI = require("apps/reader/readerui")
-    ReaderUI:showReader(path)
-end
-
 local function buildEntry(input_time, input_file)
     local file_path = realpath(input_file) or input_file -- keep orig file path of deleted files
-    local is_file_deleted = lfs.attributes(file_path, "mode") ~= "file"
+    local file_exists = lfs.attributes(file_path, "mode") == "file"
     return {
         time = input_time,
         file = file_path,
         text = input_file:gsub(".*/", ""),
-        dim = is_file_deleted,
+        dim = not file_exists,
         mandatory = datetime.secondsToDateTime(input_time),
-        select_enabled = not is_file_deleted,
-        callback = function()
-            selectCallback(input_file)
-        end,
+        select_enabled = file_exists,
     }
 end
 
@@ -196,9 +188,6 @@ function ReadHistory:updateItemByPath(old_path, new_path)
     if index then
         self.hist[index].file = new_path
         self.hist[index].text = new_path:gsub(".*/", "")
-        self.hist[index].callback = function()
-            selectCallback(new_path)
-        end
         self:_flush()
         self:reload(true)
     end
@@ -228,9 +217,10 @@ end
 --- Checks the history list for deleted files and removes history items respectively.
 function ReadHistory:clearMissing()
     local history_updated
-    for i, v in ipairs(self.hist) do
-        if v.file == nil or lfs.attributes(v.file, "mode") ~= "file" then
-            self:removeItem(v, i, true) -- no flush
+    for i = #self.hist, 1, -1 do
+        local file = self.hist[i].file
+        if file == nil or lfs.attributes(file, "mode") ~= "file" then
+            self:removeItem(self.hist[i], i, true) -- no flush
             history_updated = true
         end
     end

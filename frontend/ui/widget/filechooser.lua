@@ -71,8 +71,6 @@ local FileChooser = Menu:extend{
         "^%.fat32%-epoch$",
         "^%.metadata%.json$",
     },
-    collate = "strcoll",
-    reverse_collate = false,
     path_items = nil, -- hash, store last browsed location (item index) for each path
     goto_letter = true,
 }
@@ -97,119 +95,114 @@ function FileChooser:show_file(filename)
 end
 
 function FileChooser:init()
-    self.up_folder_arrow = BD.mirroredUILayout() and BD.ltr("../ ⬆") or "⬆ ../"
     self.path_items = {}
     self.width = Screen:getWidth()
-    self.list = function(path, dirs, files, count_only)
-        -- lfs.dir directory without permission will give error
-        local ok, iter, dir_obj = pcall(lfs.dir, path)
-        if ok then
-            unreadable_dir_content[path] = nil
-            for f in iter, dir_obj do
-                if self.show_hidden or not util.stringStartsWith(f, ".") then
-                    local filename = path.."/"..f
-                    local attributes = lfs.attributes(filename)
-                    if attributes ~= nil then
-                        local item = true
-                        if attributes.mode == "directory" and f ~= "." and f ~= ".." then
-                            if self:show_dir(f) then
-                                if not count_only then
-                                    item = {name = f,
-                                            fullpath = filename,
-                                            attr = attributes,}
-                                end
-                                table.insert(dirs, item)
+    self.item_table = self:genItemTableFromPath(self.path)
+    Menu.init(self) -- call parent's init()
+end
+
+function FileChooser:getList(path, collate)
+    local dirs, files = {}, {}
+    -- lfs.dir directory without permission will give error
+    local ok, iter, dir_obj = pcall(lfs.dir, path)
+    if ok then
+        unreadable_dir_content[path] = nil
+        for f in iter, dir_obj do
+            if self.show_hidden or not util.stringStartsWith(f, ".") then
+                local filename = path.."/"..f
+                local attributes = lfs.attributes(filename)
+                if attributes ~= nil then
+                    local item = true
+                    if attributes.mode == "directory" and f ~= "." and f ~= ".." then
+                        if self:show_dir(f) then
+                            if collate then -- when collate == nil count only to display in folder mandatory
+                                item = self:getListItem(f, filename, attributes)
                             end
-                        -- Always ignore macOS resource forks.
-                        elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") then
-                            if self:show_file(f) then
-                                if not count_only then
-                                    local percent_finished
-                                    if self.collate == "percent_unopened_first" or self.collate == "percent_unopened_last" then
-                                        if DocSettings:hasSidecarFile(filename) then
-                                            local docinfo = DocSettings:open(filename)
-                                            percent_finished = docinfo:readSetting("percent_finished")
-                                        end
-                                    end
-                                    item = {name = f,
-                                            fullpath = filename,
-                                            attr = attributes,
-                                            suffix = util.getFileNameSuffix(f),
-                                            percent_finished = percent_finished or 0,}
-                                end
-                                table.insert(files, item)
+                            table.insert(dirs, item)
+                        end
+                    -- Always ignore macOS resource forks.
+                    elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") then
+                        if self:show_file(f) then
+                            if collate then -- when collate == nil count only to display in folder mandatory
+                                item = self:getListItem(f, filename, attributes, collate)
                             end
+                            table.insert(files, item)
                         end
                     end
                 end
             end
-        else -- error, probably "permission denied"
-            if unreadable_dir_content[path] then
-                -- Add this dummy item that will be replaced with a message
-                -- by genItemTableFromPath()
-                table.insert(dirs, {
-                    name = "./.",
-                    fullpath = path,
-                    attr = lfs.attributes(path),
-                })
-                -- If we knew about some content (if we had come up from them
-                -- to this directory), have them shown
-                for k, v in pairs(unreadable_dir_content[path]) do
-                    if v.attr and v.attr.mode == "directory" then
-                        table.insert(dirs, v)
-                    else
-                        table.insert(files, v)
-                    end
+        end
+    else -- error, probably "permission denied"
+        if unreadable_dir_content[path] then
+            -- Add this dummy item that will be replaced with a message by genItemTable()
+            table.insert(dirs, self:getListItem("./.", path, lfs.attributes(path)))
+            -- If we knew about some content (if we had come up from them
+            -- to this directory), have them shown
+            for k, v in pairs(unreadable_dir_content[path]) do
+                if v.attr and v.attr.mode == "directory" then
+                    table.insert(dirs, v)
+                else
+                    table.insert(files, v)
                 end
             end
         end
     end
+    return dirs, files
+end
 
-    self.item_table = self:genItemTableFromPath(self.path)
-    Menu.init(self) -- call parent's init()
+function FileChooser:getListItem(f, filename, attributes, collate)
+    local item = {
+        text = f,
+        fullpath = filename,
+        attr = attributes,
+    }
+    if collate then -- file
+        if G_reader_settings:readSetting("show_file_in_bold") then
+            item.opened = DocSettings:hasSidecarFile(filename)
+        end
+        if collate == "type" then
+            item.suffix = util.getFileNameSuffix(f)
+        elseif collate == "percent_unopened_first" or collate == "percent_unopened_last" then
+            local percent_finished
+            item.opened = DocSettings:hasSidecarFile(filename)
+            if item.opened then
+                local doc_settings = DocSettings:open(filename)
+                percent_finished = doc_settings:readSetting("percent_finished")
+            end
+            item.percent_finished = percent_finished or 0
+        end
+    end
+    return item
 end
 
 function FileChooser:getSortingFunction(collate, reverse_collate)
     local sorting
     if collate == "strcoll" then
         sorting = function(a, b)
-            return ffiUtil.strcoll(a.name, b.name)
+            return ffiUtil.strcoll(a.text, b.text)
         end
     elseif collate == "natural" then
         local natsort
         -- Only keep the cache if we're an *instance* of FileChooser
         if self ~= FileChooser then
             natsort, self.natsort_cache = sort.natsort_cmp(self.natsort_cache)
-            sorting = function(a, b)
-                return natsort(a.name, b.name)
-            end
         else
             natsort = sort.natsort_cmp()
-            sorting = function(a, b)
-                return natsort(a.name, b.name)
-            end
         end
-    elseif self.collate == "strcoll_mixed" then
         sorting = function(a, b)
-            if b.text == self.up_folder_arrow then return false end
-            return ffiUtil.strcoll(a.text, b.text)
+            return natsort(a.text, b.text)
         end
     elseif collate == "access" then
         sorting = function(a, b)
             return a.attr.access > b.attr.access
         end
+    elseif collate == "change" then
+        sorting = function(a, b)
+            return a.attr.change > b.attr.change
+        end
     elseif collate == "modification" then
         sorting = function(a, b)
             return a.attr.modification > b.attr.modification
-        end
-    elseif collate == "change" then
-        sorting = function(a, b)
-            local a_opened = DocSettings:hasSidecarFile(a.fullpath)
-            local b_opened = DocSettings:hasSidecarFile(b.fullpath)
-            if a_opened == b_opened then
-                return a.attr.change > b.attr.change
-            end
-            return b_opened
         end
     elseif collate == "size" then
         sorting = function(a, b)
@@ -220,22 +213,20 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
             if (a.suffix or b.suffix) and a.suffix ~= b.suffix then
                 return ffiUtil.strcoll(a.suffix, b.suffix)
             end
-            return ffiUtil.strcoll(a.name, b.name)
+            return ffiUtil.strcoll(a.text, b.text)
         end
     else -- collate == "percent_unopened_first" or collate == "percent_unopened_last"
         sorting = function(a, b)
-            local a_opened = DocSettings:hasSidecarFile(a.fullpath)
-            local b_opened = DocSettings:hasSidecarFile(b.fullpath)
-            if a_opened == b_opened then
-                if a_opened then
+            if a.opened == b.opened then
+                if a.opened then
                     return a.percent_finished < b.percent_finished
                 end
-                return a.name < b.name
+                return ffiUtil.strcoll(a.text, b.text)
             end
             if collate == "percent_unopened_first" then
-                return b_opened
+                return b.opened
             end
-            return a_opened
+            return a.opened
         end
     end
 
@@ -248,59 +239,47 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
 end
 
 function FileChooser:genItemTableFromPath(path)
-    local dirs = {}
-    local files = {}
+    local collate = G_reader_settings:readSetting("collate", "strcoll")
+    local dirs, files = self:getList(path, collate)
+    return self:genItemTable(dirs, files, path)
+end
 
-    self.list(path, dirs, files)
-
-    local sorting = self:getSortingFunction(self.collate, self.reverse_collate)
-
-    if self.collate ~= "strcoll_mixed" then
+function FileChooser:genItemTable(dirs, files, path)
+    local collate = G_reader_settings:readSetting("collate")
+    local collate_not_for_mixed = collate == "size" or
+                                  collate == "type" or
+                                  collate == "percent_unopened_first" or
+                                  collate == "percent_unopened_last"
+    local collate_mixed = G_reader_settings:isTrue("collate_mixed")
+    local reverse_collate = G_reader_settings:isTrue("reverse_collate")
+    local sorting = self:getSortingFunction(collate, reverse_collate)
+    if collate_not_for_mixed or not collate_mixed then
         table.sort(files, sorting)
-        if self.collate == "size" or
-           self.collate == "type" or
-           self.collate == "percent_unopened_first" or
-           self.collate == "percent_unopened_last" then
-            sorting = self:getSortingFunction("strcoll", self.reverse_collate)
+        if collate_not_for_mixed then
+            sorting = self:getSortingFunction("strcoll", reverse_collate)
         end
         table.sort(dirs, sorting)
     end
-    if path ~= "/" and not (G_reader_settings:isTrue("lock_home_folder") and
-                            path == G_reader_settings:readSetting("home_dir")) then
-        table.insert(dirs, 1, {name = ".."})
-    end
-    if self.show_current_dir_for_hold then
-        table.insert(dirs, 1, {name = "."})
-    end
 
     local item_table = {}
+
     for i, dir in ipairs(dirs) do
-        local subdir_path = self.path.."/"..dir.name
-        local text, bidi_wrap_func, istr
-        if dir.name == ".." then
-            text = self.up_folder_arrow
-        elseif dir.name == "." then -- possible with show_current_dir_for_hold
-            text = _("Long-press to choose current folder")
-        elseif dir.name == "./." then -- added as content of an unreadable directory
+        local text, bidi_wrap_func, mandatory
+        if dir.text == "./." then -- added as content of an unreadable directory
             text = _("Current folder not readable. Some content may not be shown.")
         else
-            text = dir.name.."/"
+            text = dir.text.."/"
             bidi_wrap_func = BD.directory
-            -- count number of folders and files inside dir
-            local sub_dirs = {}
-            local dir_files = {}
-            self.list(subdir_path, sub_dirs, dir_files, true)
-            istr = T("%1 \u{F016}", #dir_files)
-            if #sub_dirs > 0 then
-                istr = T("%1 \u{F114} ", #sub_dirs) .. istr
+            if path then -- file browser or PathChooser
+                mandatory = self:getMenuItemMandatory(dir)
             end
         end
         table.insert(item_table, {
             text = text,
+            attr = dir.attr,
             bidi_wrap_func = bidi_wrap_func,
-            mandatory = istr,
-            path = subdir_path,
-            is_go_up = dir.name == "..",
+            mandatory = mandatory,
+            path = dir.fullpath,
         })
     end
 
@@ -310,30 +289,47 @@ function FileChooser:genItemTableFromPath(path)
     local show_file_in_bold = G_reader_settings:readSetting("show_file_in_bold")
 
     for i, file in ipairs(files) do
-        local full_path = self.path.."/"..file.name
-        local sstr = util.getFriendlySize(file.attr.size or 0)
         local file_item = {
-            text = file.name,
+            text = file.text,
+            attr = file.attr,
             bidi_wrap_func = BD.filename,
-            mandatory = sstr,
-            path = full_path,
+            mandatory = self:getMenuItemMandatory(file, collate),
+            path = file.fullpath,
             is_file = true,
         }
         if show_file_in_bold ~= false then
-            file_item.bold = DocSettings:hasSidecarFile(full_path)
+            file_item.bold = file.opened
             if show_file_in_bold ~= "opened" then
                 file_item.bold = not file_item.bold
             end
         end
-        if self.filemanager and self.filemanager.selected_files and self.filemanager.selected_files[full_path] then
+        if self.filemanager and self.filemanager.selected_files and self.filemanager.selected_files[file.fullpath] then
             file_item.dim = true
         end
         table.insert(item_table, file_item)
     end
 
-    if self.collate == "strcoll_mixed" then
+    if not collate_not_for_mixed and collate_mixed then
         table.sort(item_table, sorting)
     end
+
+    if path then -- file browser or PathChooser
+        if path ~= "/" and not (G_reader_settings:isTrue("lock_home_folder") and
+                                path == G_reader_settings:readSetting("home_dir")) then
+            table.insert(item_table, 1, {
+                text = BD.mirroredUILayout() and BD.ltr("../ ⬆") or "⬆ ../",
+                path = path.."/..",
+                is_go_up = true,
+            })
+        end
+        if self.show_current_dir_for_hold then
+            table.insert(item_table, 1, {
+                text = _("Long-press to choose current folder"),
+                path = path.."/.",
+            })
+        end
+    end
+
     -- lfs.dir iterated node string may be encoded with some weird codepage on
     -- Windows we need to encode them to utf-8
     if ffi.os == "Windows" then
@@ -345,6 +341,31 @@ function FileChooser:genItemTableFromPath(path)
     end
 
     return item_table
+end
+
+function FileChooser:getMenuItemMandatory(item, collate)
+    local text
+    if collate then -- file
+        -- display the sorting parameter in mandatory
+        if collate == "access" then
+            text = os.date("%Y-%m-%d %H:%M", item.attr.access)
+        elseif collate == "change" then
+            text = os.date("%Y-%m-%d %H:%M", item.attr.change)
+        elseif collate == "modification" then
+            text = os.date("%Y-%m-%d %H:%M", item.attr.modification)
+        elseif collate == "percent_unopened_first" or collate == "percent_unopened_last" then
+            text = item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
+        else
+            text = util.getFriendlySize(item.attr.size or 0)
+        end
+    else -- folder, count number of folders and files inside it
+        local sub_dirs, dir_files = self:getList(item.fullpath)
+        text = T("%1 \u{F016}", #dir_files)
+        if #sub_dirs > 0 then
+            text = T("%1 \u{F114} ", #sub_dirs) .. text
+        end
+    end
+    return text
 end
 
 function FileChooser:updateItems(select_number)
@@ -384,7 +405,7 @@ function FileChooser:changeToPath(path, focused_path)
         end
         if not unreadable_dir_content[path][focused_path] then
             unreadable_dir_content[path][focused_path] = {
-                name = focused_path:sub(#path+2),
+                text = focused_path:sub(#path+2),
                 fullpath = focused_path,
                 attr = lfs.attributes(focused_path),
             }
@@ -441,16 +462,6 @@ end
 
 function FileChooser:toggleUnsupportedFiles()
     self.show_unsupported = not self.show_unsupported
-    self:refreshPath()
-end
-
-function FileChooser:setCollate(collate)
-    self.collate = collate
-    self:refreshPath()
-end
-
-function FileChooser:toggleReverseCollate()
-    self.reverse_collate = not self.reverse_collate
     self:refreshPath()
 end
 
@@ -542,16 +553,14 @@ function FileChooser:showSetProviderButtons(file, one_time_providers)
             },
         })
     end
-    if one_time_providers and #one_time_providers > 0 then
-        for ___, provider in ipairs(one_time_providers) do
-            provider.one_time_provider = true
-            table.insert(radio_buttons, {
-                {
-                    text = provider.provider_name,
-                    provider = provider,
-                },
-            })
-        end
+    for _, provider in ipairs(one_time_providers) do
+        provider.one_time_provider = true
+        table.insert(radio_buttons, {
+            {
+                text = provider.provider_name,
+                provider = provider,
+            },
+        })
     end
 
     table.insert(buttons, {

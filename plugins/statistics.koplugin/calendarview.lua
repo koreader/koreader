@@ -683,8 +683,12 @@ function CalendarDayView:setupView()
     self.is_current_day = now >= self.day_ts and now < self.day_ts + 86400
     if self.is_current_day then
         local date = os.date("*t", now)
-        self.current_day_hour = date.hour
-        self.current_hour_second = date.min * 60 + date.sec
+        self.current_day_hour = date.hour - (self.reader_statistics.settings.calendar_day_start_hour or 0)
+        self.current_hour_second = date.min * 60 + date.sec - (self.reader_statistics.settings.calendar_day_start_minute or 0) * 60
+        if self.current_hour_second < 0 then
+            self.current_day_hour = self.current_day_hour - 1
+            self.current_hour_second = 3600 + self.current_hour_second
+        end
     end
 
     self.kv_pairs = self.reader_statistics:getBooksFromPeriod(self.day_ts, self.day_ts + 86400)
@@ -695,7 +699,7 @@ function CalendarDayView:setupView()
         end
         kv.checked = true
     end
-    table.sort(self.kv_pairs, function(a,b) return a[2] > b[2] end) --sort by value
+    table.sort(self.kv_pairs, function(a,b) return a.duration > b.duration end) --sort by value
     self.title = self:title_callback()
 
     self.show_page = 1
@@ -761,19 +765,47 @@ function CalendarDayView:goToPage(page)
 end
 
 function CalendarDayView:onNextPage()
-    if not self:nextPage() and self.day_ts + 86400 < os.time() then
-        -- go to next day
-        self.day_ts = self.day_ts + 86400
-        self:setupView()
+    if not self:nextPage() and self.day_ts + 82800 < os.time() then
+        local current_day_ts = self.day_ts - (self.reader_statistics.settings.calendar_day_start_hour or 0) * 3600
+                                           - (self.reader_statistics.settings.calendar_day_start_minute or 0) * 60
+        local next_day_ts = current_day_ts + 86400 + 10800 -- make sure it's the next day
+        local next_day_date = os.date("*t", next_day_ts)
+        next_day_ts = os.time({
+            year = next_day_date.year,
+            month = next_day_date.month,
+            day = next_day_date.day,
+            hour = 0,
+            min = 0,
+        })
+        local current_day_length = next_day_ts - current_day_ts
+        if self.day_ts + current_day_length < os.time() then
+            -- go to next day
+            self.day_ts = self.day_ts + current_day_length
+            self:setupView()
+        end
     end
     return true
 end
 
 function CalendarDayView:onPrevPage()
-    if not self:prevPage() and self.day_ts - 86400 >= self.min_ts then
-        -- go to previous day
-        self.day_ts = self.day_ts - 86400
-        self:setupView()
+    if not self:prevPage() and self.day_ts - 82800 >= self.min_ts then
+        local current_day_ts = self.day_ts - (self.reader_statistics.settings.calendar_day_start_hour or 0) * 3600
+                                           - (self.reader_statistics.settings.calendar_day_start_minute or 0) * 60
+        local previous_day_ts = current_day_ts - 86400 + 10800 -- make sure it's the previous day
+        local previous_day_date = os.date("*t", previous_day_ts)
+        previous_day_ts = os.time({
+            year = previous_day_date.year,
+            month = previous_day_date.month,
+            day = previous_day_date.day,
+            hour = 0,
+            min = 0,
+        })
+        local previous_day_length = current_day_ts - previous_day_ts
+        if self.day_ts - previous_day_length >= self.min_ts then
+            -- go to previous day
+            self.day_ts = self.day_ts - previous_day_length
+            self:setupView()
+        end
     end
     return true
 end
@@ -868,7 +900,10 @@ function CalendarDayView:refreshTimeline()
             CenterContainer:new{
                 dimen = Geom:new{ w = self.time_text_width, h = self.hour_height},
                 TextWidget:new{
-                    text = string.format("%02d:00", i),
+                    text = string.format("%02d:%02d",
+                        (i + (self.reader_statistics.settings.calendar_day_start_hour or 0)) % 24,
+                        self.reader_statistics.settings.calendar_day_start_minute or 0
+                    ),
                     face = self.time_text_face,
                     padding = Size.padding.small
                 }
@@ -1358,7 +1393,8 @@ function CalendarView:_populateItems()
             show_parent = self,
             callback = not is_future and function()
                 UIManager:show(CalendarDayView:new{
-                    day_ts = day_ts,
+                    day_ts = day_ts + (self.reader_statistics.settings.calendar_day_start_hour or 0) * 3600
+                                    + (self.reader_statistics.settings.calendar_day_start_minute or 0) * 60,
                     reader_statistics = self.reader_statistics,
                     title_callback = function(this)
                         local day = os.date("%Y-%m-%d", this.day_ts + 10800) -- use 3:00 to determine date (summer time change)
@@ -1397,7 +1433,7 @@ end
 function CalendarView:showCalendarDayView(reader_statistics, title_callback)
     local date = os.date("*t", os.time())
     UIManager:show(CalendarDayView:new{
-        day_ts = os.time({ year = date.year, month = date.month, day = date.day, hour = 0 }),
+        day_ts = os.time({ year = date.year, month = date.month, day = date.day, hour = reader_statistics.settings.calendar_day_start_hour or 0, min = reader_statistics.settings.calendar_day_start_minute or 0 }),
         reader_statistics = reader_statistics,
         title_callback = title_callback,
         min_month = self.min_month

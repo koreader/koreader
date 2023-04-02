@@ -123,6 +123,7 @@ local settingsList = {
     skim = {category="none", event="ShowSkimtoDialog", title=_("Skim document"), reader=true},
     back = {category="none", event="Back", title=_("Back"), reader=true},
     previous_location = {category="none", event="GoBackLink", arg=true, title=_("Back to previous location"), reader=true},
+    next_location = {category="none", event="GoForwardLink", arg=true, title=_("Forward to next location"), reader=true},
     latest_bookmark = {category="none", event="GoToLatestBookmark", title=_("Go to latest bookmark"), reader=true},
     follow_nearest_link = {category="arg", event="GoToPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest link"), reader=true},
     follow_nearest_internal_link = {category="arg", event="GoToInternalPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest internal link"), reader=true},
@@ -156,7 +157,7 @@ local settingsList = {
     toggle_page_flipping = {category="none", event="TogglePageFlipping", title=_("Toggle page flipping"), paging=true},
     toggle_bookmark_flipping = {category="none", event="ToggleBookmarkFlipping", title=_("Toggle bookmark flipping"), paging=true},
     toggle_reflow = {category="none", event="ToggleReflow", title=_("Toggle reflow"), paging=true},
-    zoom = {category="string", event="SetZoomMode", title=_("Zoom mode"), args=ReaderZooming.available_zoom_modes, toggle=ReaderZooming.available_zoom_modes, paging=true},
+    zoom = {category="string", event="SetZoomMode", title=_("Zoom mode"), args_func=ReaderZooming.getZoomModeActions, paging=true},
     zoom_factor_change = {category="none", event="ZoomFactorChange", title=_("Change zoom factor"), paging=true, separator=true},
 
     -- parsed from CreOptions
@@ -307,6 +308,7 @@ local dispatcher_menu_order = {
     "latest_bookmark",
     "back",
     "previous_location",
+    "next_location",
     "follow_nearest_link",
     "follow_nearest_internal_link",
     "clear_location_history",
@@ -965,7 +967,7 @@ function Dispatcher:_showAsMenu(settings)
     end
     local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
     quickmenu = ButtonDialogTitle:new{
-        title = settings.settings.name or "Quick Menu",
+        title = settings.settings.name or _("QuickMenu"),
         title_align = "center",
         width_factor = 0.8,
         use_info_style = false,
