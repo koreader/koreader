@@ -1179,11 +1179,6 @@ function FileManager:onRefreshContent()
 end
 
 function FileManager:onShowFolderMenu()
-    local path_prefix = ""
-    if Device:isAndroid() then
-        local A, android = pcall(require, "android")  -- luacheck: ignore
-        path_prefix = android.getExternalStoragePath()
-    end
     local button_dialog
     local function genButton(button_text, button_path)
         return {{
@@ -1195,7 +1190,7 @@ function FileManager:onShowFolderMenu()
             avoid_text_truncation = false,
             callback = function()
                 UIManager:close(button_dialog)
-                self.file_chooser:changeToPath(path_prefix .. button_path)
+                self.file_chooser:changeToPath(button_path)
             end,
             hold_callback = function()
                 return true -- do not move the menu
@@ -1222,7 +1217,7 @@ function FileManager:onShowFolderMenu()
     end
     -- other folders
     local indent = ""
-    for part in self.file_chooser.path:gsub(path_prefix, ""):gmatch("([^/]+)") do
+    for part in self.file_chooser.path:gmatch("([^/]+)") do
         text = (#buttons == 0 and path or indent .. "└ ") .. part
         path = path .. part .. "/"
         is_home = path == home_dir or path == home_dir .. "/"
