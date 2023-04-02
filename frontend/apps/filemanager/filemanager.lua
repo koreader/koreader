@@ -1179,6 +1179,11 @@ function FileManager:onRefreshContent()
 end
 
 function FileManager:onShowFolderMenu()
+    local path_prefix = ""
+    if Device:isAndroid() then
+        local A, android = pcall(require, "android")  -- luacheck: ignore
+        path_prefix = android.getExternalStoragePath()
+    end
     local button_dialog
     local function genButton(button_text, button_path)
         return {{
@@ -1190,7 +1195,7 @@ function FileManager:onShowFolderMenu()
             avoid_text_truncation = false,
             callback = function()
                 UIManager:close(button_dialog)
-                self.file_chooser:changeToPath(button_path)
+                self.file_chooser:changeToPath(path_prefix .. button_path)
             end,
             hold_callback = function()
                 return true -- do not move the menu
@@ -1201,7 +1206,7 @@ function FileManager:onShowFolderMenu()
     local home_dir = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
     local home_dir_shortened = G_reader_settings:nilOrTrue("shorten_home_dir")
     local home_dir_not_locked = G_reader_settings:nilOrFalse("lock_home_folder")
-    local home_dir_suffix = " (" .. _("Home") .. ")"
+    local home_dir_suffix = "  \u{f015}" -- "home" character
     local buttons = {}
     -- root folder
     local text
@@ -1217,7 +1222,7 @@ function FileManager:onShowFolderMenu()
     end
     -- other folders
     local indent = ""
-    for part in self.file_chooser.path:gmatch("([^/]+)") do
+    for part in self.file_chooser.path:gsub(path_prefix, ""):gmatch("([^/]+)") do
         text = (#buttons == 0 and path or indent .. "└ ") .. part
         path = path .. part .. "/"
         is_home = path == home_dir or path == home_dir .. "/"
