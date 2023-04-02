@@ -798,6 +798,13 @@ function KindleVoyage:init()
     self.input.open(self.touch_dev)
     self.input.open("/dev/input/event2") -- WhisperTouch
     self.input.open("fake_events")
+
+    -- reenable WhisperTouch keys when started without framework
+    if self.framework_lipc_handle then
+        self.framework_lipc_handle:set_int_property("com.lab126.deviced", "fsrkeypadEnable", 1)
+        self.framework_lipc_handle:set_int_property("com.lab126.deviced", "fsrkeypadPrevEnable", 1)
+        self.framework_lipc_handle:set_int_property("com.lab126.deviced", "fsrkeypadNextEnable", 1)
+    end
 end
 
 function KindlePaperWhite3:init()
