@@ -179,6 +179,66 @@ describe("device module", function()
             end
         end
 
+        insulate("without framework", function()
+            local mock_lipc = {
+                init = function()
+                    return {
+                        set_int_property = mock(function() end),
+                        get_int_property = function() return 0 end,
+                        get_string_property = function() return "string prop" end,
+                        set_string_property = function() end,
+                        register_int_property = function() return {} end,
+                        close = function () end,
+                    }
+                end
+            }
+            package.loaded['liblipclua'] = mock_lipc
+
+            before_each(function()
+                os.getenv.invokes(function(e)
+                    if e == "STOP_FRAMEWORK" then
+                        return "yes"
+                    else
+                        return osgetenv(e)
+                    end
+                end)
+            end)
+
+            it("sets framework_lipc_handle", function ()
+                io.open = make_io_open_kindle_model_override("B013XX")
+
+                local kindle_dev = require('device/kindle/device')
+                assert.is.truthy(kindle_dev.framework_lipc_handle)
+            end)
+            it("reactivates voyage whispertouch keys", function ()
+                io.open = make_io_open_kindle_model_override("B013XX")
+
+                local kindle_dev = require('device/kindle/device')
+                local fw_lipc_handle = kindle_dev.framework_lipc_handle
+
+                kindle_dev:init()
+
+                for _, fsr_prop in pairs{
+                    "fsrkeypadEnable",
+                    "fsrkeypadPrevEnable",
+                    "fsrkeypadNextEnable"
+                } do
+                    assert.stub(fw_lipc_handle.set_int_property) .was.called_with(
+                        fw_lipc_handle, "com.lab126.deviced", fsr_prop, 1
+                    )
+                end
+            end)
+        end)
+
+        insulate("with framework", function()
+            it("does not set framework_lipc_handle", function ()
+                io.open = make_io_open_kindle_model_override("B013XX")
+
+                local kindle_dev = require('device/kindle/device')
+                assert.is.falsy(kindle_dev.framework_lipc_handle)
+            end)
+        end)
+
         it("should initialize voyage without error", function()
             io.open = make_io_open_kindle_model_override("B013XX")
 
