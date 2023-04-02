@@ -166,17 +166,21 @@ describe("device module", function()
     end)
 
     describe("kindle", function()
-        it("should initialize voyage without error", function()
-            io.open = function(filename, mode)
+        local function make_io_open_kindle_model_override(model_no)
+            return function(filename, mode)
                 if filename == "/proc/usid" then
                     return {
-                        read = function() return "B013XX" end,
+                        read = function() return model_no end,
                         close = function() end
                     }
                 else
                     return iopen(filename, mode)
                 end
             end
+        end
+
+        it("should initialize voyage without error", function()
+            io.open = make_io_open_kindle_model_override("B013XX")
 
             local kindle_dev = require('device/kindle/device')
             assert.is.same(kindle_dev.model, "KindleVoyage")
@@ -228,18 +232,7 @@ describe("device module", function()
 
         it("oasis should interpret orientation event", function()
             package.unload('device/kindle/device')
-            io.open = function(filename, mode)
-                if filename == "/proc/usid" then
-                    return {
-                        read = function()
-                            return "G0B0GCXXX"
-                        end,
-                        close = function() end
-                    }
-                else
-                    return iopen(filename, mode)
-                end
-            end
+            io.open = make_io_open_kindle_model_override("G0B0GCXXX")
 
             mock_ffi_input = require('ffi/input')
             stub(mock_ffi_input, "waitForEvent")
