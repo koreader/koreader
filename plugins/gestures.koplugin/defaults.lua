@@ -7,7 +7,7 @@ return {
         tap_top_right_corner = nil,
         tap_right_bottom_corner = nil,
         tap_left_bottom_corner = Device:hasFrontlight() and {toggle_frontlight = true,} or nil,
-        hold_top_left_corner = nil,
+        hold_top_left_corner = {filemanager = true,},
         hold_top_right_corner = {refresh_content = true,},
         hold_bottom_left_corner = nil,
         hold_bottom_right_corner = nil,
