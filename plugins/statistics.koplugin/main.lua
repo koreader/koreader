@@ -1088,7 +1088,9 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                             local start_of_day_widget = DateTimeWidget:new{
                                 hour = self.settings.calendar_day_start_hour or 0,
                                 min = self.settings.calendar_day_start_minute or 0,
-                                hour_max = 6,
+                                min_max = 50,
+                                min_step = 10, -- we have vertical lines every 10mn, keep them meaningful
+                                min_hold_step = 30,
                                 ok_text = _("Set time"),
                                 title_text = _("Daily timeline starts at"),
                                 info_text =_([[

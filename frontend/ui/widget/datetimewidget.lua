@@ -211,7 +211,7 @@ function DateTimeWidget:createLayout()
             value = self.min,
             value_min = self.min_min or 0,
             value_max = self.min_max or 59,
-            value_step = 1,
+            value_step = self.min_step or 1,
             value_hold_step = self.min_hold_step or 10,
             width = number_picker_widgets_width,
         }

@@ -911,11 +911,21 @@ function CalendarDayView:refreshTimeline()
         })
     end
     -- Horizontal lines
+    local idx_00h00
+    if self.reader_statistics.settings.calendar_day_start_hour and self.reader_statistics.settings.calendar_day_start_hour ~= 0 then
+        idx_00h00 = 24 - self.reader_statistics.settings.calendar_day_start_hour
+    end
     for i=0, 24 do
         local offset_y = self.timeline_offset + self.hour_height * i
+        local height = Size.border.default
+        if idx_00h00 and i == idx_00h00 then
+            -- Thicker separator between 23:00 and 00:00
+            offset_y = offset_y - math.floor(height/2) -- shift it a bit up
+            height = height * 2
+        end
         table.insert(self.timeline, FrameContainer:new{
             width = self.timeline_width,
-            height = Size.border.default,
+            height = height,
             background = Blitbuffer.COLOR_LIGHT_GRAY,
             bordersize = 0,
             padding = 0,
