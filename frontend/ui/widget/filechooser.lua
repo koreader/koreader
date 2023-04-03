@@ -157,7 +157,7 @@ function FileChooser:getListItem(f, filename, attributes, collate)
         attr = attributes,
     }
     if collate then -- file
-        if G_reader_settings:readSetting("show_file_in_bold") then
+        if G_reader_settings:readSetting("show_file_in_bold") ~= false then
             item.opened = DocSettings:hasSidecarFile(filename)
         end
         if collate == "type" then
