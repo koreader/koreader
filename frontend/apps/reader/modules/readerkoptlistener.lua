@@ -72,6 +72,7 @@ function ReaderKoptListener:onDocLangUpdate(lang)
 end
 
 function ReaderKoptListener:onConfigChange(option_name, option_value)
+    if option_name == "font_size" and option_value > 2 then return end
     self.document.configurable[option_name] = option_value
     self.ui:handleEvent(Event:new("StartActivityIndicator"))
     UIManager:setDirty("all", "partial")
