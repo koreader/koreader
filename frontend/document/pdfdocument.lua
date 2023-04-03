@@ -59,7 +59,7 @@ function PdfDocument:layoutDocument(font_size)
 end
 
 local default_font_size = 22
--- the koptreader config goes from 0.1 to 3.0, but we want a regular font size
+-- the koptreader config goes from 0.2 to 2.0, but we want a regular font size
 function PdfDocument:convertKoptToReflowableFontSize(font_size)
     if font_size then
         return font_size * default_font_size
