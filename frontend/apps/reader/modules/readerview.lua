@@ -1023,8 +1023,10 @@ function ReaderView:onSWDitheringUpdate(toggle)
 end
 
 function ReaderView:onFontSizeUpdate(font_size)
-    self.ui:handleEvent(Event:new("ReZoom", font_size))
-    Notification:notify(T(_("Font zoom set to: %1."), font_size))
+    if self.ui.paging then
+        self.ui:handleEvent(Event:new("ReZoom", font_size))
+        Notification:notify(T(_("Font zoom set to: %1."), font_size))
+    end
 end
 
 function ReaderView:onDefectSizeUpdate()

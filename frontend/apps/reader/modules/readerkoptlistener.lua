@@ -72,6 +72,9 @@ function ReaderKoptListener:onDocLangUpdate(lang)
 end
 
 function ReaderKoptListener:onConfigChange(option_name, option_value)
+    -- font_size is historically and sadly shared by both mupdf and cre reader modules,
+    -- but fortunately they can be distinguished by their different ranges
+    if option_name == "font_size" and option_value > 5 then return end
     self.document.configurable[option_name] = option_value
     self.ui:handleEvent(Event:new("StartActivityIndicator"))
     UIManager:setDirty("all", "partial")
