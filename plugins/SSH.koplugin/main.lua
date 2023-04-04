@@ -94,7 +94,7 @@ function SSH:stop()
         text = T(_("SSH server stopped.")),
         timeout = 2,
     })
-    
+
     if self:isRunning() then
         os.execute("rm /tmp/dropbear_koreader.pid")
     end
