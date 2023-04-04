@@ -246,7 +246,7 @@ function AutoSuspend:_schedule_standby(sleep_in)
     sleep_in = sleep_in or self.auto_standby_timeout_seconds
 
     -- Start the long list of conditions in which we do *NOT* want to go into standby ;).
-    if not Device:canStandby() then
+    if not Device:canStandby() or self.going_to_suspend then
         return
     end
 
@@ -344,8 +344,7 @@ function AutoSuspend:onSuspend()
         UIManager:preventStandby()
     end
 
-    -- And make sure onLeaveStandby, which will come *after* us if we suspended *during* standby,
-    -- won't re-schedule stuff right before entering suspend...
+    -- Make sure that we don't re-schedule standby *after* us if we suspended *during* standby,
     self.going_to_suspend = true
 end
 
@@ -640,18 +639,14 @@ function AutoSuspend:AllowStandbyHandler()
         -- This shouldn't prevent us from actually consuming any pending input events first,
         -- because if we were woken up by user input, those events should already be in the evdev queue...
         UIManager:consumeInputEarlyAfterPM(true)
-        -- If we are leaving this method we are sure, that the input polling deadline is zero (consumeInputEarly).
-        -- Then the input waiting is executed, so it is save to schedule a new task.
-        if not self.going_to_suspend then
-            -- Schedule the next standby check in the future
-            self:_start_standby()
-        end
+
+        -- When we exit this method, we are sure that the input polling deadline is zero (consumeInputEarly).
+        -- UIManagerger will check newly scheduled tasks before going to input polling again (with a new deadline).
+        self:_start_standby() -- Schedule the next standby check in the future.
     else
-        -- If we are leaving this method we are sure, that the input polling deadline fits the next scheduled task (deadline).
-        if not self.going_to_suspend then
-            -- Schedule the next standby check 0.1 seconds after the next calculated wakeup time.
-            self:_start_standby(wake_in + 0.1)
-        end
+        -- When we exit this method, we are sure that the input polling deadline is approximately `wake_in`.
+        -- So it is safe to schedule another task a bit later.
+        self:_start_standby(wake_in + 0.1) -- Schedule the next standby check 0.1 seconds after the next calculated wakeup time.
     end
 end
 
