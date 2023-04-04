@@ -689,6 +689,10 @@ function CalendarDayView:setupView()
             self.current_day_hour = self.current_day_hour - 1
             self.current_hour_second = 3600 + self.current_hour_second
         end
+        if self.current_day_hour < 0 then
+            -- showing previous day
+            self.current_day_hour = self.current_day_hour + 24
+        end
     end
 
     self.kv_pairs = self.reader_statistics:getBooksFromPeriod(self.day_ts, self.day_ts + 86400)
@@ -700,7 +704,7 @@ function CalendarDayView:setupView()
         kv.checked = true
     end
     table.sort(self.kv_pairs, function(a,b) return a.duration > b.duration end) --sort by value
-    self.title = self:title_callback()
+    self.title = self:getTitle()
 
     self.show_page = 1
     self.title_bar:setTitle(self.title)
@@ -1071,6 +1075,15 @@ local CalendarView = FocusManager:extend{
         -- (These do not need translations: they are the keys into the datetime module translations)
 }
 
+function CalendarDayView:getTitle()
+    local day_ts = self.day_ts - (self.reader_statistics.settings.calendar_day_start_hour or 0) * 3600
+                               - (self.reader_statistics.settings.calendar_day_start_minute or 0) * 60
+    local day = os.date("%Y-%m-%d", day_ts + 10800) -- use 03:00 to determine date (summer time change)
+    local date = os.date("*t", day_ts + 10800)
+    return string.format("%s (%s)", day, datetime.shortDayOfWeekToLongTranslation[CalendarView.weekdays[date.wday]])
+
+end
+
 function CalendarView:init()
     self.dimen = Geom:new{
         w = self.width or Screen:getWidth(),
@@ -1406,12 +1419,6 @@ function CalendarView:_populateItems()
                     day_ts = day_ts + (self.reader_statistics.settings.calendar_day_start_hour or 0) * 3600
                                     + (self.reader_statistics.settings.calendar_day_start_minute or 0) * 60,
                     reader_statistics = self.reader_statistics,
-                    title_callback = function(this)
-                        local day = os.date("%Y-%m-%d", this.day_ts + 10800) -- use 3:00 to determine date (summer time change)
-                        local date = os.date("*t", this.day_ts + 10800)
-                        return string.format("%s (%s)", day,
-                            datetime.shortDayOfWeekToLongTranslation[self.weekdays[date.wday]])
-                    end,
                     close_callback = function(this)
                         -- Refresh calendar in case some day stats were reset for some books
                         -- (we don't know if some reset were done... so we refresh the current
@@ -1440,12 +1447,16 @@ function CalendarView:_populateItems()
     end)
 end
 
-function CalendarView:showCalendarDayView(reader_statistics, title_callback)
+function CalendarView:showCalendarDayView(reader_statistics)
     local date = os.date("*t", os.time())
+    if date.hour * 3600 + date.min * 60 + date.sec < (reader_statistics.settings.calendar_day_start_hour or 0) * 3600
+                                                  + (reader_statistics.settings.calendar_day_start_minute or 0) * 60 then
+        -- Should still be in previous day's timeline
+        date = os.date("*t", os.time() - 86400 + 10800) -- make sure it's the previous day
+    end
     UIManager:show(CalendarDayView:new{
         day_ts = os.time({ year = date.year, month = date.month, day = date.day, hour = reader_statistics.settings.calendar_day_start_hour or 0, min = reader_statistics.settings.calendar_day_start_minute or 0 }),
         reader_statistics = reader_statistics,
-        title_callback = title_callback,
         min_month = self.min_month
     })
 end
