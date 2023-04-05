@@ -95,6 +95,10 @@ function SSH:stop()
         timeout = 2,
     })
 
+    if self:isRunning() then
+        os.remove("/tmp/dropbear_koreader.pid")
+    end
+
     -- Plug the hole in the Kindle's firewall
     if Device:isKindle() then
         os.execute(string.format("%s %s %s",
