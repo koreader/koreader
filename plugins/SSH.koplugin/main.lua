@@ -96,7 +96,7 @@ function SSH:stop()
     })
 
     if self:isRunning() then
-        os.execute("rm /tmp/dropbear_koreader.pid")
+        os.remove("/tmp/dropbear_koreader.pid")
     end
 
     -- Plug the hole in the Kindle's firewall
