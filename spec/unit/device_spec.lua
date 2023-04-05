@@ -30,8 +30,8 @@ describe("device module", function()
     end)
 
     before_each(function()
-        package.loaded['ffi/framebuffer_mxcfb'] = mock_fb
-        mock_input = require('device/input')
+        package.loaded["ffi/framebuffer_mxcfb"] = mock_fb
+        mock_input = require("device/input")
         stub(mock_input, "open")
         stub(os, "getenv")
         stub(os, "execute")
@@ -85,7 +85,7 @@ describe("device module", function()
                 end
             end)
 
-            package.loaded['device/kobo/device'] = nil
+            package.loaded["device/kobo/device"] = nil
             local kobo_dev = require("device/kobo/device")
             kobo_dev:init()
             local Screen = kobo_dev.screen
@@ -133,7 +133,7 @@ describe("device module", function()
                 end
             end)
 
-            package.loaded['device/kobo/device'] = nil
+            package.loaded["device/kobo/device"] = nil
             local kobo_dev = require("device/kobo/device")
             kobo_dev:init()
             local Screen = kobo_dev.screen
@@ -192,7 +192,7 @@ describe("device module", function()
                     }
                 end
             }
-            package.loaded['liblipclua'] = mock_lipc
+            package.loaded["liblipclua"] = mock_lipc
 
             before_each(function()
                 os.getenv.invokes(function(e)
@@ -207,14 +207,14 @@ describe("device module", function()
             it("sets framework_lipc_handle", function ()
                 io.open = make_io_open_kindle_model_override("B013XX")
 
-                local kindle_dev = require('device/kindle/device')
+                local kindle_dev = require("device/kindle/device")
                 assert.is.truthy(kindle_dev.framework_lipc_handle)
             end)
 
             it("reactivates voyage whispertouch keys", function ()
                 io.open = make_io_open_kindle_model_override("B013XX")
 
-                local kindle_dev = require('device/kindle/device')
+                local kindle_dev = require("device/kindle/device")
                 local fw_lipc_handle = kindle_dev.framework_lipc_handle
 
                 kindle_dev:init()
@@ -235,7 +235,7 @@ describe("device module", function()
             it("does not set framework_lipc_handle", function ()
                 io.open = make_io_open_kindle_model_override("B013XX")
 
-                local kindle_dev = require('device/kindle/device')
+                local kindle_dev = require("device/kindle/device")
                 assert.is.falsy(kindle_dev.framework_lipc_handle)
             end)
         end)
@@ -243,7 +243,7 @@ describe("device module", function()
         it("should initialize voyage without error", function()
             io.open = make_io_open_kindle_model_override("B013XX")
 
-            local kindle_dev = require('device/kindle/device')
+            local kindle_dev = require("device/kindle/device")
             assert.is.same(kindle_dev.model, "KindleVoyage")
             kindle_dev:init()
             assert.is.same(kindle_dev.input.event_map[104], "LPgBack")
@@ -292,10 +292,10 @@ describe("device module", function()
         end)
 
         it("oasis should interpret orientation event", function()
-            package.unload('device/kindle/device')
+            package.unload("device/kindle/device")
             io.open = make_io_open_kindle_model_override("G0B0GCXXX")
 
-            mock_ffi_input = require('ffi/input')
+            mock_ffi_input = require("ffi/input")
             stub(mock_ffi_input, "waitForEvent")
             mock_ffi_input.waitForEvent.returns(true, {
                 {
@@ -312,7 +312,7 @@ describe("device module", function()
             local UIManager = require("ui/uimanager")
             stub(UIManager, "onRotation")
 
-            local kindle_dev = require('device/kindle/device')
+            local kindle_dev = require("device/kindle/device")
             assert.is.same("KindleOasis", kindle_dev.model)
             kindle_dev:init()
             kindle_dev:lockGSensor(true)
