@@ -641,7 +641,7 @@ function AutoSuspend:AllowStandbyHandler()
         UIManager:consumeInputEarlyAfterPM(true)
 
         -- When we exit this method, we are sure that the input polling deadline is zero (consumeInputEarly).
-        -- UIManagerger will check newly scheduled tasks before going to input polling again (with a new deadline).
+        -- UIManager will check newly scheduled tasks before going to input polling again (with a new deadline).
         self:_start_standby() -- Schedule the next standby check in the future.
     else
         -- When we exit this method, we are sure that the input polling deadline is approximately `wake_in`.
