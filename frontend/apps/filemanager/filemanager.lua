@@ -119,8 +119,8 @@ function FileManager:setupLayout()
         button_padding = Screen:scaleBySize(5),
         left_icon = "home",
         left_icon_size_ratio = 1,
-        left_icon_tap_callback = function() self:onShowFolderMenu() end,
-        left_icon_hold_callback = false, -- propagate long-press to dispatcher
+        left_icon_tap_callback = function() self:goHome() end,
+        left_icon_hold_callback = function() self:onShowFolderMenu() end,
         right_icon = "plus",
         right_icon_size_ratio = 1,
         right_icon_tap_callback = function() self:onShowPlusMenu() end,
