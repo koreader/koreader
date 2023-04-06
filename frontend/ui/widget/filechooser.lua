@@ -157,7 +157,7 @@ function FileChooser:getListItem(f, filename, attributes, collate)
         attr = attributes,
     }
     if collate then -- file
-        if G_reader_settings:readSetting("show_file_in_bold") then
+        if G_reader_settings:readSetting("show_file_in_bold") ~= false then
             item.opened = DocSettings:hasSidecarFile(filename)
         end
         if collate == "type" then
@@ -405,7 +405,7 @@ function FileChooser:changeToPath(path, focused_path)
         end
         if not unreadable_dir_content[path][focused_path] then
             unreadable_dir_content[path][focused_path] = {
-                text = focused_path:sub(#path+2),
+                text = focused_path:sub(#path > 1 and #path+2 or 2),
                 fullpath = focused_path,
                 attr = lfs.attributes(focused_path),
             }

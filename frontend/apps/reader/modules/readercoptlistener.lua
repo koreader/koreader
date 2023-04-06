@@ -69,6 +69,9 @@ function ReaderCoptListener:onReadSettings(config)
 end
 
 function ReaderCoptListener:onConfigChange(option_name, option_value)
+    -- font_size is historically and sadly shared by both mupdf and cre reader modules,
+    -- but fortunately they can be distinguished by their different ranges
+    if option_name == "font_size" and option_value < 5 then return end
     self.document.configurable[option_name] = option_value
     self.ui:handleEvent(Event:new("StartActivityIndicator"))
     return true
@@ -162,10 +165,6 @@ function ReaderCoptListener:onResume()
     self:headerRefresh()
 end
 
-function ReaderCoptListener:onLeaveStandby()
-    self:headerRefresh()
-end
-
 function ReaderCoptListener:onOutOfScreenSaver()
     if not self._delayed_screensaver then
         return
@@ -178,7 +177,6 @@ end
 -- Unschedule on these events
 ReaderCoptListener.onCloseDocument = ReaderCoptListener.unscheduleHeaderRefresh
 ReaderCoptListener.onSuspend = ReaderCoptListener.unscheduleHeaderRefresh
-ReaderCoptListener.onEnterStandby = ReaderCoptListener.unscheduleHeaderRefresh
 
 function ReaderCoptListener:setAndSave(setting, property, value)
     self.ui.document._document:setIntProperty(property, value)

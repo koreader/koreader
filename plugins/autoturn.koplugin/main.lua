@@ -1,4 +1,3 @@
-local Device = require("device")
 local Event = require("ui/event")
 local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
@@ -29,14 +28,14 @@ function AutoTurn:_schedule()
         return
     end
 
-    local delay = self.last_action_time + time.s(self.autoturn_sec) - UIManager:getTime()
+    local delay = self.last_action_time + time.s(self.autoturn_sec) - UIManager:getElapsedTimeSinceBoot()
 
     if delay <= 0 then
         local top_wg = UIManager:getTopmostVisibleWidget() or {}
         if top_wg.name == "ReaderUI" then
             logger.dbg("AutoTurn: go to next page")
             self.ui:handleEvent(Event:new("GotoViewRel", self.autoturn_distance))
-            self.last_action_time = UIManager:getTime()
+            self.last_action_time = UIManager:getElapsedTimeSinceBoot()
         end
         logger.dbg("AutoTurn: schedule in", self.autoturn_sec)
         UIManager:scheduleIn(self.autoturn_sec, self.task)
@@ -60,10 +59,10 @@ end
 
 function AutoTurn:_start()
     if self:_enabled() then
-        local now = UIManager:getTime()
-        logger.dbg("AutoTurn: start at", time.format_time(now))
+        local time_since_boot = UIManager:getElapsedTimeSinceBoot()
+        logger.dbg("AutoTurn: start at", time.format_time(time_since_boot))
         PluginShare.pause_auto_suspend = true
-        self.last_action_time = now
+        self.last_action_time = time_since_boot
         self:_schedule()
 
         local text
@@ -109,11 +108,7 @@ end
 
 function AutoTurn:onInputEvent()
     logger.dbg("AutoTurn: onInputEvent")
-    self.last_action_time = UIManager:getTime()
-end
-
-function AutoTurn:onEnterStandby()
-    self:_unschedule()
+    self.last_action_time = UIManager:getElapsedTimeSinceBoot()
 end
 
 -- We do not want autoturn to turn pages during the suspend process.
@@ -121,16 +116,6 @@ end
 function AutoTurn:onSuspend()
     logger.dbg("AutoTurn: onSuspend")
     self:_unschedule()
-end
-
-function AutoTurn:_onLeaveStandby()
-    self.last_action_time = self.last_action_time - Device.last_standby_time
-
-    -- We messed with last_action_time, so a complete reschedule has to be done.
-    if self:_enabled() then
-        self:_unschedule()
-        self:_schedule()
-    end
 end
 
 function AutoTurn:_onResume()
@@ -168,7 +153,6 @@ function AutoTurn:addToMainMenu(menu_items)
                     self:_unschedule()
                     menu:updateItems()
                     self.onResume = nil
-                    self.onLeaveStandby = nil
                 end,
                 ok_always_enabled = true,
                 callback = function(t)
@@ -180,7 +164,6 @@ function AutoTurn:addToMainMenu(menu_items)
                     self:_start()
                     menu:updateItems()
                     self.onResume = self._onResume
-                    self.onLeaveStandby = self._onLeaveStandby
                 end,
             }
             UIManager:show(autoturn_spin)

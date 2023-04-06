@@ -893,11 +893,31 @@ function PageBrowserWidget:updateFocusPage(value, relative)
     else
         new_focus_page = value
     end
-    if new_focus_page < 1 then
-        new_focus_page = 1
-    end
-    if new_focus_page > self.nb_pages then
-        new_focus_page = self.nb_pages
+    -- Handle scroll by row or page a bit differently, so we dont constrain and
+    -- readjust the focus page: when later scrolling in the other direction,
+    -- we'll find exactly the view as it was (this means that we allow a single
+    -- thumbnail in the view, but it's less confusing this way).
+    if relative and (value == -self.nb_grid_items or value == -self.nb_cols) then
+        -- Going back one page or row. If first thumbnail is page 1 (or less if
+        -- blank), don't move. Otherwise, go ahead without any check as we'll
+        -- have something to display.
+        if self.focus_page - self.focus_page_shift <= 1 then
+            return
+        end
+    elseif relative and (value == self.nb_grid_items or value == self.nb_cols) then
+        -- Going forward one page or row. If last thumbnail is last page (or more if
+        -- blank), don't move. Otherwise, go ahead without any check as we'll
+        -- have something to display.
+        if self.focus_page - self.focus_page_shift + self.nb_grid_items - 1 >= self.nb_pages then
+            return
+        end
+    else
+        if new_focus_page < 1 then
+            new_focus_page = 1
+        end
+        if new_focus_page > self.nb_pages then
+            new_focus_page = self.nb_pages
+        end
     end
     if new_focus_page == self.focus_page then
         return false

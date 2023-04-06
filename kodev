@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+ANSI_GREEN="\033[32;1m"
+ANSI_RED="\033[31;1m"
+
 is_mac() {
     if [ "$(uname -s)" != "Darwin" ]; then
         echo "You need a mac to build this package"
@@ -986,6 +989,69 @@ OPTIONS:
     } && popd || exit
 }
 
+function kodev-check() {
+    exit_code=0
+    check_submodules
+
+    # shellcheck disable=2016
+    mapfile -t shellscript_locations < <({ git -c submodule.recurse=0 grep -lE '^#!(/usr)?/bin/(env )?(bash|sh)' && git submodule --quiet foreach '[ "$path" = "base" -o "$path" = "platform/android/luajit-launcher" ] || git grep -lE "^#!(/usr)?/bin/(env )?(bash|sh)" | sed "s|^|$path/|"' && git ls-files ./*.sh; } | sort | uniq)
+
+    SHFMT_OPTIONS="-i 4 -ci"
+
+    for shellscript in "${shellscript_locations[@]}"; do
+        echo -e "${ANSI_GREEN}Running shellcheck on ${shellscript}"
+        shellcheck "${shellscript}" || exit_code=1
+        echo -e "${ANSI_GREEN}Running shfmt on ${shellscript}"
+        # shellcheck disable=2086
+        if ! shfmt ${SHFMT_OPTIONS} -kp "${shellscript}" >/dev/null 2>&1; then
+            echo -e "${ANSI_RED}Warning: ${shellscript} contains the following problem:"
+            # shellcheck disable=2086
+            shfmt ${SHFMT_OPTIONS} -kp "${shellscript}" || exit_code=1
+            continue
+        fi
+        # shellcheck disable=2086
+        if [ "$(cat "${shellscript}")" != "$(shfmt ${SHFMT_OPTIONS} "${shellscript}")" ]; then
+            echo -e "${ANSI_RED}Warning: ${shellscript} does not abide by coding style, diff for expected style:"
+            # shellcheck disable=2086
+            shfmt ${SHFMT_OPTIONS} -d "${shellscript}" || exit_code=1
+        fi
+    done
+
+    echo -e "\\n${ANSI_GREEN}Checking for unscaled sizes"
+    # stick `|| true` at the end to prevent exit on failed command
+    unscaled_size_check=$(grep -nr --include=*.lua --exclude=koptoptions.lua --exclude-dir=base --exclude-dir=luajit-rocks --exclude-dir=install --exclude-dir=keyboardlayouts --exclude-dir=*arm* "\\(padding\\|margin\\|bordersize\\|width\\|height\\|radius\\|linesize\\) = [0-9]\\{1,2\\}" | grep -v '= 0' | grep -v '= [0-9]/[0-9]' | grep -Ev '(default_option_height|default_option_padding)' | grep -v scaleBySize | grep -v 'unscaled_size_check: ignore' || true)
+    # Also check Geom objects; for legibility two regular expressions rather than
+    # one enormous indecipharable blob.
+    unscaled_size_check_geom=$(grep -E -nr --include=*.lua --exclude=gesturerange_spec.lua --exclude-dir=base --exclude-dir=luajit-rocks --exclude-dir=*arm* 'Geom:new{.+ [wh] = [0-9]{1,4}' | grep -Ev '[wh] = 0' | grep -v '= [0-9]/[0-9]' | grep -v scaleBySize || true)
+
+    if [ "${unscaled_size_check}" ] || [ "${unscaled_size_check_geom}" ]; then
+        echo -e "\\n${ANSI_RED}Warning: it looks like you might be using unscaled sizes.\\nIt is almost always preferable to defer to one of the predefined sizes in ui.size in the following files:"
+        echo "${unscaled_size_check}"
+        echo "${unscaled_size_check_geom}"
+        exit_code=1
+    fi
+
+    tab_detected=$(grep -P "\\t" --include \*.lua --exclude={dateparser.lua,xml.lua} --recursive {reader,setupkoenv,datastorage}.lua frontend plugins spec || true)
+    if [ "${tab_detected}" ]; then
+        echo -e "\\n${ANSI_RED}Warning: tab character detected. Please use spaces."
+        echo "${tab_detected}"
+        exit_code=1
+    fi
+
+    untagged_todo=$(grep -Pin "[^\-]\-\-(\s+)?@?(todo|fixme|warning)" --include \*.lua --exclude={dateparser.lua,xml.lua} --recursive {reader,setupkoenv,datastorage}.lua frontend plugins spec || true)
+    if [ "${untagged_todo}" ]; then
+        echo -e "\\n${ANSI_RED}Warning: possible improperly tagged todo, fixme or warning detected."
+        echo -e "\\n${ANSI_RED}         use --- followed by @todo, @fixme or @warning."
+        echo "${untagged_todo}"
+        exit_code=1
+    fi
+
+    echo -e "\n${ANSI_GREEN}Luacheck results"
+    $(command -v luacheck) -q {reader,setupkoenv,datastorage}.lua frontend plugins spec
+
+    exit "${exit_code}"
+}
+
 function kodev-cov() {
     COV_HELP_MSG="
 usage: cov <OPTIONS>
@@ -1213,7 +1279,8 @@ case "${1}" in
         kodev-test "$@"
         ;;
     check)
-        luacheck -q {reader,setupkoenv,datastorage}.lua frontend plugins spec
+        shift 1
+        kodev-check "$@"
         ;;
     cov)
         shift 1
