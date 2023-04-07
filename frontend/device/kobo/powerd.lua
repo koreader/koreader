@@ -300,10 +300,54 @@ function KoboPowerD:isChargedHW()
     return false
 end
 
+function KoboPowerD:_postponedSetIntensityHW(end_intensity)
+    self:setIntensityHW(end_intensity)
+    self.running = false
+end
+
+function KoboPowerD:_stopFrontlightRamp()
+    -- Make sure we have no other ramp running.
+    self.UIManager:unschedule(self.turnOffFrontlightRamp)
+    self.UIManager:unschedule(self.turnOnFrontlightRamp)
+    self.UIManager:unschedule(self.setIntensityHW)
+    self.fl_rump_running = false
+end
+
+-- This ramp down goes faster on high intensity and slower at the end.
+-- The user will notice a linear brightness change.
+-- The whole function gets calles at max log(100)/log(0.75) = 17 times,
+-- which will lead to 0.025*17 + 0.5 = 0.925s ramp down time (non blocking), can be aborted.
+function BasePowerD:turnOffFrontlightRamp(curr_ramp_intensity, end_intensity)
+    curr_ramp_intensity = math.floor(math.max(curr_ramp_intensity * .75, 0))
+
+    if curr_ramp_intensity > end_intensity then
+        self:setIntensityHW(math.floor(curr_ramp_intensity))
+        self.UIManager:scheduleIn(0.025, self.turnOffFrontlightRamp, self, curr_ramp_intensity, end_intensity)
+    else
+        -- On some devices (Sage) setting intensity to zero happens immediately,
+        -- which will lead to a jump and not a ramp. So we postpone the last change by 0.5s to get it smooth
+        self.UIManager:scheduleIn(0.5, self._postponedSetIntensityHW, self, end_intensity)
+        -- no reschedule here, as we are done
+    end
+end
+
 function KoboPowerD:turnOffFrontlightHW()
     if not self:isFrontlightOnHW() then
         return
     end
+
+    if self.UIManager then
+        if self.fl_rump_running then
+            self:_stopFrontlightRamp()
+        else
+            self.fl_rump_running = true
+        end
+
+        self:turnOffFrontlightRamp(self.fl_intensity, self.fl_min)
+        return
+    end
+
+    -- fallback if self.UIManager is not initialized
     ffiUtil.runInSubProcess(function()
         for i = 1, 5 do
             -- NOTE: Do *not* switch to (self.fl_intensity * (1/5) * i) here, it may lead to rounding errors,
@@ -331,6 +375,22 @@ function KoboPowerD:turnOffFrontlightHW()
     self:_decideFrontlightState()
 end
 
+-- This is fairly the same functionallity as in Kobo's turnOnFrontlightHW().
+-- The whole function gets calles at 100/5 + 1 = 21 times,
+-- which will lead to 0.025*21 = 0.525s ramp up time (non blocking), can be aborted.
+function BasePowerD:turnOnFrontlightRamp(curr_ramp_intensity, end_intensity)
+    curr_ramp_intensity = math.floor(math.min(curr_ramp_intensity + end_intensity/5, end_intensity))
+
+    if curr_ramp_intensity < end_intensity then
+        self:setIntensityHW(curr_ramp_intensity)
+        self.UIManager:scheduleIn(0.025, self.turnOnFrontlightRamp, self, curr_ramp_intensity, end_intensity)
+    else
+        self:setIntensityHW(end_intensity)
+        self.fl_rump_running = false
+        -- no reschedule here, as we are done
+    end
+end
+
 function KoboPowerD:turnOnFrontlightHW()
     -- NOTE: Insane workaround for the first toggle after a startup with the FL off.
     -- The light is actually off, but hw_intensity couldn't have been set to a sane value because of a number of interactions.
@@ -341,6 +401,19 @@ function KoboPowerD:turnOnFrontlightHW()
     if self:isFrontlightOnHW() then
         return
     end
+
+    if self.UIManager then
+        if self.fl_rump_running then
+            self:_stopFrontlightRamp()
+        else
+            self.fl_rump_running = true
+        end
+
+        self:turnOnFrontlightRamp(self.fl_min, self.fl_intensity)
+        return
+    end
+
+    -- fallback if self.UIManager is not initialized
     ffiUtil.runInSubProcess(function()
         for i = 1, 5 do
             self:setIntensityHW(math.ceil(self.fl_min + (self.fl_intensity / 5 * i)))
