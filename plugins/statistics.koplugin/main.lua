@@ -2714,12 +2714,7 @@ function ReaderStatistics:onShowCalendarDayView()
     self:insertDB()
     self.kv = nil -- clean left over stack link
     local CalendarView = require("calendarview")
-    local title_callback = function(this)
-        local day = os.date("%Y-%m-%d", this.day_ts + 10800) -- use 03:00 to determine date (summer time change)
-        local date = os.date("*t", this.day_ts + 10800)
-        return string.format("%s (%s)", day, datetime.shortDayOfWeekToLongTranslation[CalendarView.weekdays[date.wday]])
-    end
-    CalendarView:showCalendarDayView(self, title_callback)
+    CalendarView:showCalendarDayView(self)
 end
 
 -- Used by calendarview.lua CalendarView
