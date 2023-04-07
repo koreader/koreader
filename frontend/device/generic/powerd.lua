@@ -1,4 +1,3 @@
-local UIManager -- will be updated when available
 local Math = require("optmath")
 local logger = require("logger")
 local time = require("ui/time")
@@ -17,6 +16,7 @@ local BasePowerD = {
     last_aux_capacity_pull_time = time.s(-61),  -- timestamp of last pull
 
     is_fl_on = false,                 -- whether the frontlight is on
+    UIManager = nil -- will be updated when available
 }
 
 function BasePowerD:new(o)
@@ -42,7 +42,7 @@ function BasePowerD:new(o)
 end
 
 function BasePowerD:readyUI()
-    UIManager = require("ui/uimanager")
+    self.UIManager = require("ui/uimanager")
 end
 
 function BasePowerD:init() end
@@ -210,8 +210,8 @@ function BasePowerD:getCapacity()
     -- BasePowerD is loaded before UIManager.
     -- Nothing *currently* calls this before UIManager is actually loaded, but future-proof this anyway.
     local now
-    if UIManager then
-        now = UIManager:getElapsedTimeSinceBoot()
+    if self.UIManager then
+        now = self.UIManager:getElapsedTimeSinceBoot()
     else
         -- Add time the device was in standby and suspend
         now = time.now() + self.device.total_standby_time + self.device.total_suspend_time
@@ -235,8 +235,8 @@ end
 function BasePowerD:getAuxCapacity()
     local now
 
-    if UIManager then
-        now = UIManager:getElapsedTimeSinceBoot()
+    if self.UIManager then
+        now = self.UIManager:getElapsedTimeSinceBoot()
     else
         -- Add time the device was in standby and suspend
         now = time.now() + self.device.total_standby_time + self.device.total_suspend_time
@@ -272,9 +272,9 @@ end
 
 function BasePowerD:stateChanged()
     -- BasePowerD is loaded before UIManager. So we cannot broadcast events before UIManager has been loaded.
-    if UIManager then
+    if self.UIManager then
         local Event = require("ui/event")
-        UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
+        self.UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
     end
 end
 
