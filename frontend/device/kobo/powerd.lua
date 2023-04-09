@@ -244,7 +244,7 @@ function KoboPowerD:isFrontlightOnHW()
     return self.hw_intensity > 0
 end
 
-function KoboPowerD:setIntensityHW(intensity)
+function KoboPowerD:_setIntensityHW(intensity)
     if self.fl == nil then return end
     if self.fl_warmth == nil or self.device:hasNaturalLightMixer() then
         -- We either don't have NL, or we have a mixer: we only want to set the intensity (c.f., #5429)
@@ -258,6 +258,11 @@ function KoboPowerD:setIntensityHW(intensity)
     -- know about possibly changed frontlight state (if we came
     -- from light toggled off to some intensity > 0).
     self:_decideFrontlightState()
+end
+
+function KoboPowerD:setIntensityHW(intensity)
+    self:_stopFrontlightRamp()
+    self:_setIntensityHW(intensity)
 end
 
 -- NOTE: We *can* actually read this from the system (as well as frontlight level, since Mk. 7),
@@ -301,16 +306,19 @@ function KoboPowerD:isChargedHW()
 end
 
 function KoboPowerD:_postponedSetIntensityHW(end_intensity)
-    self:setIntensityHW(end_intensity)
-    self.running = false
+    self:_setIntensityHW(end_intensity)
+    self.fl_ramp_down_running = false
 end
 
 function KoboPowerD:_stopFrontlightRamp()
-    -- Make sure we have no other ramp running.
-    self.UIManager:unschedule(self.turnOffFrontlightRamp)
-    self.UIManager:unschedule(self.turnOnFrontlightRamp)
-    self.UIManager:unschedule(self.setIntensityHW)
-    self.fl_rump_running = false
+    if self.fl_ramp_up_running or self.fl_ramp_down_running then
+        -- Make sure we have no other ramp running.
+        self.UIManager:unschedule(self.turnOffFrontlightRamp)
+        self.UIManager:unschedule(self.turnOnFrontlightRamp)
+        self.UIManager:unschedule(self._postponedSetIntensityHW)
+        self.fl_ramp_up_running = false
+        self.fl_ramp_down_running = false
+    end
 end
 
 -- This ramp down goes faster on high intensity and slower at the end.
@@ -321,7 +329,7 @@ function BasePowerD:turnOffFrontlightRamp(curr_ramp_intensity, end_intensity)
     curr_ramp_intensity = math.floor(math.max(curr_ramp_intensity * .75, 0))
 
     if curr_ramp_intensity > end_intensity then
-        self:setIntensityHW(math.floor(curr_ramp_intensity))
+        self:_setIntensityHW(math.floor(curr_ramp_intensity))
         self.UIManager:scheduleIn(0.025, self.turnOffFrontlightRamp, self, curr_ramp_intensity, end_intensity)
     else
         -- On some devices (Sage) setting intensity to zero happens immediately,
@@ -336,16 +344,15 @@ function KoboPowerD:turnOffFrontlightHW()
         return
     end
 
-    if self.UIManager then
-        if self.fl_rump_running then
-            self:_stopFrontlightRamp()
-        else
-            self.fl_rump_running = true
-        end
+    if self.UIManager and not self.fl_ramp_down_running then
+        self:_stopFrontlightRamp()
+        self.fl_ramp_down_running = true
 
         self:turnOffFrontlightRamp(self.fl_intensity, self.fl_min)
         return
     end
+
+if true then return end --xxx
 
     -- fallback if self.UIManager is not initialized
     ffiUtil.runInSubProcess(function()
@@ -385,8 +392,8 @@ function BasePowerD:turnOnFrontlightRamp(curr_ramp_intensity, end_intensity)
         self:setIntensityHW(curr_ramp_intensity)
         self.UIManager:scheduleIn(0.025, self.turnOnFrontlightRamp, self, curr_ramp_intensity, end_intensity)
     else
-        self:setIntensityHW(end_intensity)
-        self.fl_rump_running = false
+        self:_setIntensityHW(end_intensity)
+        self.fl_ramp_up_running = false
         -- no reschedule here, as we are done
     end
 end
@@ -402,16 +409,16 @@ function KoboPowerD:turnOnFrontlightHW()
         return
     end
 
-    if self.UIManager then
-        if self.fl_rump_running then
-            self:_stopFrontlightRamp()
-        else
-            self.fl_rump_running = true
-        end
+    if self.UIManager and not self.fl_ramp_up_running then
+        self:_stopFrontlightRamp()
+        self.fl_ramp_up_running = true
 
         self:turnOnFrontlightRamp(self.fl_min, self.fl_intensity)
         return
     end
+
+if true then return end --xxx
+
 
     -- fallback if self.UIManager is not initialized
     ffiUtil.runInSubProcess(function()
