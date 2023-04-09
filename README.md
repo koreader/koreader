@@ -10,28 +10,46 @@
 [![Coverage Status][badge-coverage]][link-coverage]
 [![Weblate Status][badge-weblate]][link-weblate]
 
-[Download](https://github.com/koreader/koreader/releases) •
-[User guide](http://koreader.rocks/koreader-user-guide.pdf) •
-[Wiki](https://github.com/koreader/koreader/wiki) •
-[Developer docs](http://koreader.rocks/doc/)
+<details>
+  <summary>Table of Contents</summary>
 
-## Main features
+- [Main Features](#main-features)
+- [Screenshots](#screenshots)
+- [Installation](#installation)
+- [Development](#development)
+- [Support](#support)
+- [Contributors](#contributors)
 
-* **portable**: runs on embedded devices (Cervantes, Kindle, Kobo, PocketBook, reMarkable), Android and Linux computers. Developers can run a KOReader emulator in Linux and MacOS.
+</details>
 
-* **multi-format documents**: supports fixed page formats (PDF, DjVu, CBT, CBZ) and reflowable e-book formats (EPUB, FB2, Mobi, DOC, RTF, HTML, CHM, TXT). Scanned PDF/DjVu documents can also be reflowed with the built-in K2pdfopt library. [ZIP files][link-wiki-zip] are also supported for some formats.
 
-* **full-featured reading**: multi-lingual user interface with a highly customizable reader view and many typesetting options. You can set arbitrary page margins, override line spacing and choose external fonts and styles. It has multi-lingual hyphenation dictionaries bundled into the application.
+## Introduction
 
-* **integrated** with *calibre* (search metadata, receive ebooks wirelessly, browse library via OPDS), *Wallabag*, *Wikipedia*, *Google Translate* and other content providers.
+KOReader is an open-source document viewer designed primarily for e-ink readers. It supports a wide range of formats and offers an extensive set of features to enhance your reading experience.
 
-* **optimized for e-ink devices**: custom UI without animation, with paginated menus, adjustable text contrast, and easy zoom to fit content or page in paged media.
+## Main Features
 
-* **extensible**: via plugins
-
-* **fast**: on some older devices, it has been measured to have less than half the page-turn delay as the built in reading software.
-
-* **and much more**: look up words with StarDict dictionaries / Wikipedia, add your own online OPDS catalogs and RSS feeds, over-the-air software updates, an FTP client, an SSH server, …
+- **Portability**
+  - Runs on embedded devices (Cervantes, Kindle, Kobo, PocketBook, reMarkable), Android, and Linux computers.
+  - Developers can run a KOReader emulator in Linux and macOS.
+- **Multi-format Document Support**
+  - Supports fixed page formats (PDF, DjVu, CBT, CBZ) and reflowable e-book formats (EPUB, FB2, Mobi, DOC, RTF, HTML, CHM, TXT).
+  - Scanned PDF/DjVu documents can also be reflowed with the built-in K2pdfopt library.
+  - [ZIP files][link-wiki-zip] are also supported for some formats.
+- **Full-featured Reading**
+  - Multi-lingual user interface with a highly customizable reader view and many typesetting options.
+  - Set arbitrary page margins, override line spacing, and choose external fonts and styles.
+  - Multi-lingual hyphenation dictionaries bundled into the application.
+- **Integration**
+  - Integrated with *calibre* (search metadata, receive ebooks wirelessly, browse library via OPDS), *Wallabag*, *Wikipedia*, *Google Translate*, and other content providers.
+- **Optimization for E-ink Devices**
+  - Custom UI without animation, with paginated menus, adjustable text contrast, and easy zoom to fit content or page in paged media.
+- **Extensibility**
+  - Extendable via plugins.
+- **Speed**
+  - On some older devices, it has been measured to have less than half the page-turn delay as the built-in reading software.
+- **And Much More**
+  - Look up words with StarDict dictionaries / Wikipedia, add your own online OPDS catalogs and RSS feeds, over-the-air software updates, an FTP client, an SSH server, and more.
 
 Please check the [user guide](http://koreader.rocks/koreader-user-guide.pdf) and the [wiki][link-wiki] to discover more features and to help us document them.
 
@@ -43,35 +61,34 @@ Please check the [user guide](http://koreader.rocks/koreader-user-guide.pdf) and
 
 ## Installation
 
-Please follow the model specific steps for your device:
+Please follow the model-specific steps for your device:
 
-[Android](https://github.com/koreader/koreader/wiki/Installation-on-Android-devices) •
-[Cervantes](https://github.com/koreader/koreader/wiki/Installation-on-BQ-devices) •
-[Kindle](https://github.com/koreader/koreader/wiki/Installation-on-Kindle-devices) •
-[Kobo](https://github.com/koreader/koreader/wiki/Installation-on-Kobo-devices) •
-[Linux](https://github.com/koreader/koreader/wiki/Installation-on-desktop-linux) •
-[Pocketbook](https://github.com/koreader/koreader/wiki/Installation-on-PocketBook-devices) •
-[reMarkable](https://github.com/koreader/koreader/wiki/Installation-on-Remarkable)
-
+- [Android](https://github.com/koreader/koreader/wiki/Installation-on-Android-devices): Installation guide for Android devices.
+- [Cervantes](https://github.com/koreader/koreader/wiki/Installation-on-BQ-devices): Installation guide for BQ Cervantes devices.
+- [Kindle](https://github.com/koreader/koreader/wiki/Installation-on-Kindle-devices): Installation guide for Amazon Kindle devices.
+- [Kobo](https://github.com/koreader/koreader/wiki/Installation-on-Kobo-devices): Installation guide for Kobo devices.
+- [Linux](https://github.com/koreader/koreader/wiki/Installation-on-desktop-linux): Installation guide for desktop Linux systems.
+- [Pocketbook](https://github.com/koreader/koreader/wiki/Installation-on-PocketBook-devices): Installation guide for PocketBook devices.
+- [reMarkable](https://github.com/koreader/koreader/wiki/Installation-on-Remarkable): Installation guide for reMarkable devices.
 
 ## Development
 
-[Setting up a build environment](doc/Building.md) •
-[Collaborating with Git](doc/Collaborating_with_Git.md) •
-[Building targets](doc/Building_targets.md) •
-[Porting](doc/Porting.md) •
-[Developer docs](http://koreader.rocks/doc/)
+- [Setting up a Build Environment](doc/Building.md)
+- [Collaborating with Git](doc/Collaborating_with_Git.md)
+- [Building Targets](doc/Building_targets.md)
+- [Porting](doc/Porting.md)
+- [Developer Docs](http://koreader.rocks/doc/)
 
 ## Support
 
 KOReader is developed and supported by volunteers all around the world. There are many ways you can help:
 
-- [fix bugs][link-issues-bugs] and [implement new features][link-issues-features]
-- [translate the program into your language][link-weblate] or improve an existing translation
-- document lesser-known features on the [wiki][link-wiki]
-- help others with your knowledge on the [forum][link-forum]
+- [Fix bugs][link-issues-bugs] and [implement new features][link-issues-features].
+- [Translate the program into your language][link-weblate] or improve an existing translation.
+- Document lesser-known features on the [wiki][link-wiki].
+- Help others with your knowledge on the [forum][link-forum].
 
-Right now we only support [liberapay](https://liberapay.com/KOReader) donations, but you can also create a [bounty][link-bountysource] to motivate others to work on a specific bug or feature request.
+Right now, we only support [liberapay](https://liberapay.com/KOReader) donations, but you can also create a [bounty][link-bountysource] to motivate others to work on a specific bug or feature request.
 
 ## Contributors
 
