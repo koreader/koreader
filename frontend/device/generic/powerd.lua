@@ -1,3 +1,4 @@
+local UIManager = nil -- will be updated when available
 local Math = require("optmath")
 local logger = require("logger")
 local time = require("ui/time")
@@ -16,7 +17,6 @@ local BasePowerD = {
     last_aux_capacity_pull_time = time.s(-61),  -- timestamp of last pull
 
     is_fl_on = false,                 -- whether the frontlight is on
-    UIManager = nil -- will be updated when available
 }
 
 function BasePowerD:new(o)
@@ -42,7 +42,8 @@ function BasePowerD:new(o)
 end
 
 function BasePowerD:readyUI()
-    self.UIManager = require("ui/uimanager")
+    UIManager = require("ui/uimanager")
+    self:readyUIHW()
 end
 
 function BasePowerD:init() end
@@ -65,6 +66,7 @@ function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min en
 function BasePowerD:turnOffFrontlightHW() self:setIntensityHW(self.fl_min) end
 function BasePowerD:turnOnFrontlightHW() self:setIntensityHW(self.fl_intensity) end --- @fixme: what if fl_intensity == fl_min (c.f., kindle)?
 function BasePowerD:frontlightWarmthHW() return 0 end
+function BasePowerD:readyUIHW() end
 -- Anything that needs to be done before doing a real hardware suspend.
 -- (Such as turning the front light off).
 function BasePowerD:beforeSuspend() end
@@ -210,8 +212,8 @@ function BasePowerD:getCapacity()
     -- BasePowerD is loaded before UIManager.
     -- Nothing *currently* calls this before UIManager is actually loaded, but future-proof this anyway.
     local now
-    if self.UIManager then
-        now = self.UIManager:getElapsedTimeSinceBoot()
+    if UIManager then
+        now = UIManager:getElapsedTimeSinceBoot()
     else
         -- Add time the device was in standby and suspend
         now = time.now() + self.device.total_standby_time + self.device.total_suspend_time
@@ -235,8 +237,8 @@ end
 function BasePowerD:getAuxCapacity()
     local now
 
-    if self.UIManager then
-        now = self.UIManager:getElapsedTimeSinceBoot()
+    if UIManager then
+        now = UIManager:getElapsedTimeSinceBoot()
     else
         -- Add time the device was in standby and suspend
         now = time.now() + self.device.total_standby_time + self.device.total_suspend_time
@@ -272,9 +274,9 @@ end
 
 function BasePowerD:stateChanged()
     -- BasePowerD is loaded before UIManager. So we cannot broadcast events before UIManager has been loaded.
-    if self.UIManager then
+    if UIManager then
         local Event = require("ui/event")
-        self.UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
+        UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
     end
 end
 
