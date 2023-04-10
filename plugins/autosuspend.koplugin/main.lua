@@ -262,8 +262,7 @@ function AutoSuspend:_schedule_standby(sleep_in)
     local standby_delay_seconds
     -- NOTE: As this may fire repeatedly, we don't want to poke the actual Device implementation every few seconds,
     --       instead, we rely on NetworkMgr's last known status. (i.e., this *should* match NetworkMgr:isWifiOn).
-    -- Interestingly enough, adding NetworkMgr:isWifiOn() here avoids some screen puzzling effects. Dunno why? Kernel quirk?
-    if NetworkMgr:getWifiState() or NetworkMgr:isWifiOn() then
+    if NetworkMgr:getWifiState() then
         -- Don't enter standby if wifi is on, as this will break in fun and interesting ways (from Wi-Fi issues to kernel deadlocks).
         --logger.dbg("AutoSuspend: WiFi is on, delaying standby")
         standby_delay_seconds = self.auto_standby_timeout_seconds
@@ -649,6 +648,11 @@ function AutoSuspend:AllowStandbyHandler()
         -- So it is safe to schedule another task a bit later.
         self:_start_standby(wake_in + 0.1) -- Schedule the next standby check 0.1 seconds after the next calculated wakeup time.
     end
+end
+
+function AutoSuspend:onNetworkConnected()
+    self:_unschedule_standby()
+    self:_start_standby()
 end
 
 function AutoSuspend:toggleStandbyHandler(toggle)
