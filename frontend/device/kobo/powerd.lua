@@ -350,16 +350,6 @@ function KoboPowerD:turnOffFrontlightHW()
             self:_stopFrontlightRamp()
             self:turnOffFrontlightRamp(self.fl_intensity, self.fl_min)
             self.fl_ramp_down_running = true
-
-            -- NOTE: This is essentially what setIntensityHW does, except we don't actually touch the FL,
-            --       we only sync the state of the main process with the final state of what we're doing in the forks.
-            -- And update hw_intensity in our actual process ;).
-            self.hw_intensity = self.fl_min
-            -- NOTE: And don't forget to update sysfs_light, too, as a real setIntensityHW would via setBrightness
-            if self.fl then
-                self.fl.current_brightness = self.fl_min
-            end
-            self:_decideFrontlightState()
         end
     else -- if UIManager is not initialized yet, default to "off" immediately
         self:setIntensityHW(self.fl_min)
@@ -400,16 +390,6 @@ function KoboPowerD:turnOnFrontlightHW()
             self.fl_ramp_up_running = true
 
             self:turnOnFrontlightRamp(self.fl_min, self.fl_intensity)
-
-            -- NOTE: This is essentially what setIntensityHW does, except we don't actually touch the FL,
-            --       we only sync the state of the main process with the final state of what we're doing in the forks.
-            -- And update hw_intensity in our actual process ;).
-            self.hw_intensity = self.fl_intensity
-            -- NOTE: And don't forget to update sysfs_light, too, as a real setIntensityHW would via setBrightness
-            if self.fl then
-                self.fl.current_brightness = self.fl_intensity
-            end
-            self:_decideFrontlightState()
         end
     else -- if UIManager is not initialized yes, default to "on" with no ramp
         self:setIntensityHW(self.fl_intensity)
