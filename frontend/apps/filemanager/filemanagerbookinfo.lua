@@ -252,7 +252,9 @@ function BookInfo:onShowBookCover(file)
                 text = _("No cover image available."),
             })
         end
-        document:close()
+        if not self.document then
+            document:close()
+        end
     end
 end
 
