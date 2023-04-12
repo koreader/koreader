@@ -1,3 +1,7 @@
+--[[--
+The ReaderToC module handles the table of contents.
+]]
+
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
@@ -105,6 +109,9 @@ end
 
 function ReaderToc:onUpdateToc()
     self:resetToc()
+    ---
+    -- Resets the ToC.
+    -- @event TocReset
     self.ui:handleEvent(Event:new("TocReset"))
     return true
 end
