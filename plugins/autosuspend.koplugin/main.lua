@@ -265,7 +265,7 @@ function AutoSuspend:_schedule_standby(sleep_in)
     if NetworkMgr:getWifiState() then
         -- Don't enter standby if wifi is on, as this will break in fun and interesting ways (from Wi-Fi issues to kernel deadlocks).
         --logger.dbg("AutoSuspend: WiFi is on, delaying standby")
-        standby_delay_seconds = self.auto_standby_timeout_seconds
+        standby_delay_seconds = sleep_in
     elseif Device.powerd:isCharging() and not Device:canPowerSaveWhileCharging() then
         -- Don't enter standby when charging on devices where charging *may* prevent entering low power states.
         -- (*May*, because depending on the USB controller, it might depend on what it's plugged to, and how it's setup:
@@ -273,7 +273,7 @@ function AutoSuspend:_schedule_standby(sleep_in)
         -- NOTE: Minor simplification here, we currently don't do the hasAuxBattery dance like in _schedule,
         --       because all the hasAuxBattery devices can currently enter PM states while charging ;).
         --logger.dbg("AutoSuspend: charging, delaying standby")
-        standby_delay_seconds = self.auto_standby_timeout_seconds
+        standby_delay_seconds = sleep_in
     else
         local now = UIManager:getElapsedTimeSinceBoot()
         standby_delay_seconds = sleep_in - time.to_number(now - self.last_action_time)
@@ -650,11 +650,6 @@ function AutoSuspend:AllowStandbyHandler()
     end
 end
 
-function AutoSuspend:onNetworkConnected()
-    self:_unschedule_standby()
-    self:_start_standby()
-end
-
 function AutoSuspend:toggleStandbyHandler(toggle)
     if toggle then
         self.onAllowStandby = self.AllowStandbyHandler
@@ -662,5 +657,32 @@ function AutoSuspend:toggleStandbyHandler(toggle)
         self.onAllowStandby = nil
     end
 end
+
+function AutoSuspend:onNetworkConnected()
+    logger.dbg("AutoSuspend: onNetworkConnected")
+    self:_unschedule_standby()
+    -- Schedule the next check at the end of our timescale, the subsequent checks are ... well never ;)
+    self:_start_standby(math.huge)
+end
+
+function AutoSuspend:onNetworkConnecting()
+    logger.dbg("AutoSuspend: onNetworkConnecting")
+    self:_unschedule_standby()
+    -- Schedule the next check in 60s. If something goes wrong, the subsequent checks are in `self.auto_standby_timeout_seconds`.
+    self:_start_standby(time.s(60))
+end
+
+function AutoSuspend:onNetworkDisconnected()
+    logger.dbg("AutoSuspend: onNetworkDisonnected")
+    self:_unschedule_standby()
+    -- Schedule the next check as usual.
+    self:_start_standby()
+end
+
+--[[ -- not neccessary right now
+function AutoSuspend:onNetworkDisconnecting()
+    logger.dbg("AutoSuspend: onNetworkDisonnecting")
+end
+--]]
 
 return AutoSuspend

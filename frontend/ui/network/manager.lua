@@ -224,6 +224,10 @@ function NetworkMgr:toggleWifiOn(complete_callback, long_press)
     self.wifi_was_on = true
     G_reader_settings:makeTrue("wifi_was_on")
     self.wifi_toggle_long_press = long_press
+
+    -- Connecting might take a few seconds (hello standby).
+    -- Broadcast the information, that network is changing, so affected modules/plugins can react.
+    UIManager:broadcastEvent(Event:new("NetworkConnecting"))
     self:turnOnWifi(complete_callback)
 
     UIManager:close(toggle_im)
@@ -238,6 +242,10 @@ function NetworkMgr:toggleWifiOff(complete_callback)
 
     self.wifi_was_on = false
     G_reader_settings:makeFalse("wifi_was_on")
+
+    -- Disconnecting might take some time, but less than connecting (hello standby).
+    -- Broadcast the information, that network is changing, so affected modules/plugins can react.
+    UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
     self:turnOffWifi(complete_callback)
 
     UIManager:close(toggle_im)
@@ -503,16 +511,16 @@ function NetworkMgr:getWifiToggleMenuTable()
                     UIManager:broadcastEvent(Event:new("NetworkConnected"))
                 end
             end
-        end
+        end -- complete_callback()
         if fully_connected then
             self:toggleWifiOff(complete_callback)
         elseif self.is_wifi_on and not self.is_connected then
             -- ask whether user wants to connect or turn off wifi
             self:promptWifi(complete_callback, long_press)
-        else
+        else -- if not connected at all
             self:toggleWifiOn(complete_callback, long_press)
         end
-    end
+    end -- toggleCallback()
 
     return {
         text = _("Wi-Fi connection"),
