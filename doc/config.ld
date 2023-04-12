@@ -30,4 +30,4 @@ file = {
         '../plugins/newsdownloader.koplugin/lib/xml.lua',
     },
 }
-new_type("event","Events")
+new_type("event", "Events")
