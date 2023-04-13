@@ -681,7 +681,7 @@ end
 
 --[[ -- not neccessary right now
 function AutoSuspend:onNetworkDisconnecting()
-    logger.dbg("AutoSuspend: onNetworkDisonnecting")
+    logger.dbg("AutoSuspend: onNetworkDisconnecting")
 end
 --]]
 
