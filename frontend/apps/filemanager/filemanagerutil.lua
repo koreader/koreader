@@ -63,7 +63,6 @@ end
 function filemanagerutil.resetDocumentSettings(file)
     local settings_to_keep = {
         bookmarks = true,
-        bookmarks_sorted = true,
         bookmarks_sorted_20220106 = true,
         bookmarks_version = true,
         cre_dom_version = true,

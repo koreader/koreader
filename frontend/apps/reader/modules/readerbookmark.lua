@@ -378,7 +378,6 @@ end
 function ReaderBookmark:onSaveSettings()
     self.ui.doc_settings:saveSetting("bookmarks", self.bookmarks)
     self.ui.doc_settings:saveSetting("bookmarks_version", 20200615)
-    self.ui.doc_settings:makeTrue("bookmarks_sorted")
     self.ui.doc_settings:makeTrue("bookmarks_sorted_20220106")
     self.ui.doc_settings:makeTrue("highlights_imported")
 end
@@ -386,7 +385,7 @@ end
 function ReaderBookmark:onToggleBookmark()
     self:toggleBookmark()
     self.view.footer:onUpdateFooter(self.view.footer_visible)
-    self.ui:handleEvent(Event:new("SetDogearVisibility", not self.view.dogear_visible))
+    self.view.dogear:onSetDogearVisibility(not self.view.dogear_visible)
     UIManager:setDirty(self.view.dialog, "ui")
     return true
 end
@@ -397,7 +396,7 @@ function ReaderBookmark:isPageBookmarked(pn_or_xp)
 end
 
 function ReaderBookmark:setDogearVisibility(pn_or_xp)
-    self.ui:handleEvent(Event:new("SetDogearVisibility", self:isPageBookmarked(pn_or_xp)))
+    self.view.dogear:onSetDogearVisibility(self:isPageBookmarked(pn_or_xp))
 end
 
 function ReaderBookmark:onPageUpdate(pageno)
@@ -1002,7 +1001,6 @@ function ReaderBookmark:setBookmarkNote(item, from_highlight, is_new_note, new_t
         bookmark.type = self:getBookmarkType(bookmark)
         bookmark.text_orig = bm.text or bm.notes
         bookmark.mandatory = self:getBookmarkPageString(bm.page)
-        self.ui:handleEvent(Event:new("BookmarkEdited", bm))
     else
         bookmark = item
     end

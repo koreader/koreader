@@ -510,5 +510,6 @@ ReaderThumbnail.onDocumentPartiallyRerendered = ReaderThumbnail.resetCache
 ReaderThumbnail.onBookmarkAdded = ReaderThumbnail.resetCachedPagesForBookmarks
 ReaderThumbnail.onBookmarkRemoved = ReaderThumbnail.resetCachedPagesForBookmarks
 ReaderThumbnail.onBookmarkUpdated = ReaderThumbnail.resetCachedPagesForBookmarks
+ReaderThumbnail.onBookmarkEdited = ReaderThumbnail.resetCachedPagesForBookmarks
 
 return ReaderThumbnail
