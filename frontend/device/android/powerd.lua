@@ -1,3 +1,7 @@
+--[[--
+Android specific PowerD implementations.
+--]]
+
 local BasePowerD = require("device/generic/powerd")
 local _, android = pcall(require, "android")
 

@@ -1,3 +1,7 @@
+--[[--
+Device abstraction for Android.
+--]]
+
 local FFIUtil = require("ffi/util")
 local Generic = require("device/generic/device")
 local A, android = pcall(require, "android")  -- luacheck: ignore

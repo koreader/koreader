@@ -154,7 +154,7 @@ function AutoStandby:genSpinMenuItem(text, cfg, min, max)
     }
 end
 
--- koreader is merely waiting for user input right now.
+--- KOReader is merely waiting for user input right now.
 -- UI signals us that standby is allowed at this very moment because nothing else goes on in the background.
 function AutoStandby:onAllowStandby()
     logger.dbg("AutoStandby: onAllowStandby()")

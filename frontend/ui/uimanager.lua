@@ -246,7 +246,7 @@ end
 --- Shift the execution times of all scheduled tasks.
 -- UIManager uses CLOCK_MONOTONIC (which doesn't tick during standby), so shifting the execution
 -- time by a negative value will lead to an execution at the expected time.
--- @param time if positive execute the tasks later, if negative they should be executed earlier
+-- @param shift_time if positive execute the tasks later, if negative they should be executed earlier
 function UIManager:shiftScheduledTasksBy(shift_time)
     for i, v in ipairs(self._task_queue) do
         v.time = v.time + shift_time
@@ -851,7 +851,7 @@ end
 --[[--
 Transmits an @{ui.event.Event|Event} to active widgets, top to bottom.
 Stops at the first handler that returns `true`.
-Note that most complex widgets are based on @{ui.widget.container.WidgetContainer|WidgetContainer},
+Note that most complex widgets are based on @{ui.widget.container.widgetcontainer|WidgetContainer},
 which itself will take care of propagating an event to its members.
 
 @param event an @{ui.event.Event|Event} object

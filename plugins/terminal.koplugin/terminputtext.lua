@@ -1,7 +1,7 @@
 --[[--
 module used for terminal emulator to override InputText
 
-@module koplugin.terminal
+@module koplugin.terminal.terminputtext
 ]]
 
 local InputText = require("ui/widget/inputtext")
@@ -615,9 +615,7 @@ function TermInputText:exitAlternateKeypad()
 end
 
 --- generates a "tty-matrix"
--- @param maxr number of rows
--- @param maxc number of columns
--- @param clear if true, fill the matrix ' '
+-- @bool clear if true, fill the matrix ' '
 function TermInputText:formatTerminal(clear)
     local i = self.store_position or 1
     -- so we end up in a maxr x maxc array for positioning
@@ -712,9 +710,7 @@ function TermInputText:reverseLineFeed(skip_callback)
     end
 end
 
-------------------------------------------------------------------
---              overridden InputText methods                    --
-------------------------------------------------------------------
+--              overridden InputText methods
 
 function TermInputText:leftChar(skip_callback)
     if self.charpos == 1 then return end

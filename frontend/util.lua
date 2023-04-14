@@ -1225,7 +1225,7 @@ end
 -- With condensed=true, condense each full declaration on a single line.
 --
 --- @string CSS string
---- @boolean condensed[opt=false] true to condense each declaration on a line
+--- @bool condensed[opt=false] true to condense each declaration on a line
 --- @treturn string the CSS prettified
 function util.prettifyCSS(css_text, condensed)
     if not condensed then

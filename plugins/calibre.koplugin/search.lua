@@ -1,4 +1,4 @@
---[[
+--[[--
     This module implements calibre metadata searching.
 --]]
 

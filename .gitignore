@@ -28,6 +28,7 @@ bin/
 install/
 spec/unit/data
 doc/html
+doc/generated
 git-rev
 git-rev-base
 emu
