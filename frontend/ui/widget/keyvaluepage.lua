@@ -626,7 +626,7 @@ function KeyValuePage:_populateItems()
             local key_cut_count = 0
             for ki = #key_widths, 1, -1 do
                 -- from longest to shortest for keys too
-                if key_widths[ki] > key_width_limit then
+                if key_widths[ki] >= key_width_limit then
                     key_cut_count = key_cut_count + 1 -- got cut
                 else
                     last_iter_key_index = ki
