@@ -614,31 +614,29 @@ function KeyValuePage:_populateItems()
     end
     if not width_ratio then
         -- has to adjust, not fitting 1/2 ratio
-        local last_iter_key_index = #key_widths
-        for vi = #value_widths, 1, -1 do
+        for ki = #key_widths, 1, -1 do
             -- from longest to shortest
-            local key_width_limit = available_width - value_widths[vi]
+            local value_width_limit = available_width - key_widths[ki]
 
             -- if we were to draw a vertical line at the start of the value item,
             -- i.e. the border between keys and values, we want the less items cross it the better,
             -- as the keys/values that cross the line (being cut) make clean alignment impossible
             -- we track their number and find the line that cuts the least key/value items
-            local key_cut_count = 0
-            for ki = #key_widths, 1, -1 do
+            local value_cut_count = 0
+            for vi = #value_widths, 1, -1 do
                 -- from longest to shortest for keys too
-                if key_widths[ki] >= key_width_limit then
-                    key_cut_count = key_cut_count + 1 -- got cut
+                if value_widths[vi] > value_width_limit then
+                    value_cut_count = value_cut_count + 1 -- got cut
                 else
-                    last_iter_key_index = ki
                     break -- others are all shorter so no more cut
                 end
             end
-            local total_cut_count = key_cut_count + (#value_widths - vi) -- latter is value_cut_count, as with each increased index, the previous one got cut
+            local total_cut_count = value_cut_count + (#key_widths - ki) -- latter is key_cut_count, as with each increased index, the previous one got cut
 
             if unfit_items_count then -- not the first round of iteration
                 if total_cut_count >= unfit_items_count then
                     -- previous iteration has the least moved ones
-                    width_ratio = (key_widths[last_iter_key_index] + middle_padding) / frame_internal_width
+                    width_ratio = (key_widths[ki+1] + middle_padding) / frame_internal_width
                     break
                 else
                     -- still could be less total cut ones
