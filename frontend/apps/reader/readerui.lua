@@ -1,8 +1,8 @@
---[[
+--[[--
 ReaderUI is an abstraction for a reader interface.
 
 It works using data gathered from a document interface.
-]]--
+]]
 
 local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")

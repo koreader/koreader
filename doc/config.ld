@@ -11,6 +11,7 @@ topics = {
     './DataStore.md',
     './Development_guide.md',
     './Events.md',
+    './generated/Events_and_handler.md',
     './Hacking.md',
     './Porting.md',
     './Unit_tests.md',
@@ -20,14 +21,14 @@ format = 'markdown'
 sort_modules = true
 file = {
     '../frontend',
-    '../plugins',
     '../base/ffi',
     '../platform/android/luajit-launcher/assets',
     exclude = {'../base/ffi/sha2.lua',
         '../base/ffi/qrencode.lua',
-        '../plugins/exporter.koplugin/template/slt2.lua',
-        '../plugins/newsdownloader.koplugin/lib/handler.lua',
-        '../plugins/newsdownloader.koplugin/lib/xml.lua',
+        '../frontend/plugins/exporter.koplugin/template/slt2.lua',
+        '../frontend/plugins/newsdownloader.koplugin/lib/handler.lua',
+        '../frontend/plugins/newsdownloader.koplugin/lib/xml.lua',
     },
 }
 new_type("event", "Events")
+new_type("eventHandler", "EventHandlers")

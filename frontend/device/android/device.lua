@@ -1,3 +1,6 @@
+--[[--
+Device abstraction for Android.
+--]]
 local A, android = pcall(require, "android")  -- luacheck: ignore
 local Event = require("ui/event")
 local Geom = require("ui/geometry")

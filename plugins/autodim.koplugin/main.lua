@@ -183,6 +183,12 @@ function AutoDim:restoreFrontlight()
     end
 end
 
+--- Use time of last input.
+--
+-- * Unschedules the ramp task.
+--
+-- * Schedules wait task for starting dimming the ramp.
+-- @eventHandler onInputEvent
 function AutoDim:onInputEvent()
     self.last_action_time = UIManager:getElapsedTimeSinceBoot()
     -- Make sure the next scheduled autodim check is as much in the future
@@ -191,6 +197,10 @@ function AutoDim:onInputEvent()
     self:_schedule_autodim_task()
 end
 
+--- Unschedule the wait task for starting the dimming ramp.
+--
+-- Addionally make sure the `Resume` event restores the front light level.
+-- @eventHandler onSuspend
 function AutoDim:_onSuspend()
     self:_unschedule_autodim_task()
     if self.isCurrentlyDimming then
@@ -199,6 +209,8 @@ function AutoDim:_onSuspend()
     end
 end
 
+--- Restore the frontlight level after a resume
+-- @eventHandler onResume
 function AutoDim:_onResume()
     self.last_action_time = UIManager:getElapsedTimeSinceBoot()
     if self.trap_widget then
@@ -222,9 +234,12 @@ function AutoDim:clearEventHandlers()
     self.onSuspend = nil
 end
 
+--- Reschedule AutoDim task.
+--
+-- This might be happening through AutoWarmth during a ramp down.
+-- Set original intensity, but don't turn fl on actually.
+-- @eventHandler onFrontlightTurnedOff
 function AutoDim:onFrontlightTurnedOff()
-    -- This might be happening through autowarmth during a ramp down.
-    -- Set original intensity, but don't turn fl on actually.
     self.isCurrentlyDimming = false
     self.last_ramp_scheduling_time = nil
     UIManager:unschedule(self.ramp_task)
@@ -294,7 +309,7 @@ function AutoDim:ramp_task()
         Powerd:setIntensity(fl_level)
         self.ramp_event_countdown = self.ramp_event_countdown - 1
         if self.ramp_event_countdown <= 0 then
-            -- Update footer on every self.ramp_event_countdown call
+            -- Update footer on every `self.ramp_event_countdown call`
             UIManager:broadcastEvent("UpdateFooter")
             self.ramp_event_countdown = self.ramp_event_countdown_startvalue
             self.last_ramp_scheduling_time = nil

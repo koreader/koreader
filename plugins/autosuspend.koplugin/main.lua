@@ -1,3 +1,9 @@
+--[[--
+Plugin for configuring power saving features like standby, suspend and poweroff.
+
+@module koplugin.autosuspend
+--]]--
+
 local Device = require("device")
 
 -- If a device can power off or go into standby, it can also suspend ;).
@@ -652,6 +658,7 @@ end
 
 function AutoSuspend:toggleStandbyHandler(toggle)
     if toggle then
+        --- @eventHandler onAllowStandby
         self.onAllowStandby = self.AllowStandbyHandler
     else
         self.onAllowStandby = nil

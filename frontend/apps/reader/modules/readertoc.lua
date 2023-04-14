@@ -109,9 +109,6 @@ end
 
 function ReaderToc:onUpdateToc()
     self:resetToc()
-    ---
-    -- Resets the ToC.
-    -- @event TocReset
     self.ui:handleEvent(Event:new("TocReset"))
     return true
 end

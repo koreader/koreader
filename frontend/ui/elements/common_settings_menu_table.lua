@@ -1,3 +1,7 @@
+--[[--
+Common menu settings.
+]]
+
 local DateTimeWidget = require("ui/widget/datetimewidget")
 local Device = require("device")
 local Event = require("ui/event")

@@ -1,4 +1,4 @@
---[[
+--[[--
 A LRU cache, based on https://github.com/starius/lua-lru
 ]]--
 
