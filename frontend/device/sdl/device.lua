@@ -1,3 +1,7 @@
+--[[--
+Device abstraction for SDL.
+]]
+
 local Event = require("ui/event")
 local Generic = require("device/generic/device")
 local SDL = require("ffi/SDL2_0")

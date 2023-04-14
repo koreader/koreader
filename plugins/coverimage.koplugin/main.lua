@@ -1,7 +1,7 @@
 --[[--
-@module koplugin.coverimage
-
 Plugin for saving a cover image to a file and scaling it to fit the screen.
+
+@module koplugin.coverimage
 ]]
 
 local Device = require("device")
@@ -315,12 +315,11 @@ end
 --[[--
 chooses a path or (an existing) file
 
-@touchmenu_instance for updating of the menu
+@param touchmenu_instance for updating of the menu
 @string key is the G_reader_setting key which is used and changed
-@boolean folder_only just selects a path, no file handling
-@boolean new_file allows to enter a new filename, or use just an existing file
-@function migrate(a,b) callback to a function to mangle old folder/file with new folder/file.
-    Can be used for migrating the contents of the old path to the new one
+@bool folder_only just selects a path, no file handling
+@bool new_file allows to enter a new filename, or use just an existing file
+@tparam function migrate(a,b) callback to a function to mangle old folder/file with new folder/file. Can be used for migrating the contents of the old path to the new one
 ]]
 function CoverImage:choosePathFile(touchmenu_instance, key, folder_only, new_file, migrate)
     local old_path, dummy = util.splitFilePathName(self[key])
@@ -392,13 +391,14 @@ end
 --[[--
 Update a specific G_reader_setting's value via a Spinner
 
-@touchmenu_instance used for updating the menu
+@param touchmenu_instance used for updating the menu
 @string setting is the G_reader_setting key which is used and changed
 @string title shown in the spinner
 @int min minimum value of the spinner
 @int max maximum value of the spinner
 @int default default value of the spinner
-@function callback to call, when spinner changed the value
+@tparam function callback to call, when spinner changed the value
+@string unit to show in the spinner
 ]]
 function CoverImage:sizeSpinner(touchmenu_instance, setting, title, min, max, default, callback, unit)
     local SpinWidget = require("ui/widget/spinwidget")
@@ -528,10 +528,10 @@ Menu entry for setting an specific G_reader_setting key for a path/file
 @string title shown in the menu
 @string help shown in the menu
 @string info shown in the menu (if containing %1, the value of the key is shown)
-@string the default value
+@string default the default value
 @bool folder_only sets if only folders can be selected
 @bool new_file sets if a new filename can be entered
-@function migrate a callback for example moving the folder contents
+@tparam function migrate a callback for example moving the folder contents
 ]]
 function CoverImage:menuEntrySetPath(key, title, help, info, default, folder_only, new_file, migrate)
     return {

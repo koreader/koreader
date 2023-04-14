@@ -1,3 +1,9 @@
+--[[--
+BackgroundRunner is an experimental feature to execute non-critical jobs in
+the background.
+@module koplugin.backgroundrunner
+--]]--
+
 local Device = require("device")
 
 -- disable on android, since it breaks expect behaviour of an activity.

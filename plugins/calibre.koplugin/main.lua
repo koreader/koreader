@@ -1,11 +1,11 @@
---[[
+--[[--
     This plugin implements KOReader integration with *some* calibre features:
 
         - metadata search
         - wireless transfers
 
     This module handles the UI part of the plugin.
---]]
+]]
 
 local BD = require("ui/bidi")
 local CalibreExtensions = require("extensions")
@@ -25,26 +25,26 @@ local Calibre = WidgetContainer:extend{
     is_doc_only = false,
 }
 
-function Calibre:onCalibreSearch()
+function Calibre:onCalibreSearch() --- @eventHandler onCalibreSearch
     CalibreSearch:ShowSearch()
     return true
 end
 
-function Calibre:onCalibreBrowseBy(field)
+function Calibre:onCalibreBrowseBy(field) --- @eventHandler onCalibreBrowseBy
     CalibreSearch.search_value = ""
     CalibreSearch:find(field)
     return true
 end
 
-function Calibre:onNetworkDisconnected()
+function Calibre:onNetworkDisconnected() --- @eventHandler onNetworkDisconnected
     self:closeWirelessConnection()
 end
 
-function Calibre:onSuspend()
+function Calibre:onSuspend() --- @eventHandler onSuspend
     self:closeWirelessConnection()
 end
 
-function Calibre:onClose()
+function Calibre:onClose() --- @eventHandler onClose
     self:closeWirelessConnection()
 end
 
@@ -54,7 +54,7 @@ function Calibre:closeWirelessConnection()
     end
 end
 
-function Calibre:onDispatcherRegisterActions()
+function Calibre:onDispatcherRegisterActions() --- @eventHandler onDispatcherRegisterActions
     Dispatcher:registerAction("calibre_search", { category="none", event="CalibreSearch", title=_("Calibre metadata search"), general=true,})
     Dispatcher:registerAction("calibre_browse_tags", { category="none", event="CalibreBrowseBy", arg="tags", title=_("Browse all calibre tags"), general=true,})
     Dispatcher:registerAction("calibre_browse_series", { category="none", event="CalibreBrowseBy", arg="series", title=_("Browse all calibre series"), general=true,})

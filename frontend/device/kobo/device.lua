@@ -1,3 +1,7 @@
+--[[--
+Device abstraction for Kobo devices.
+--]]
+
 local Generic = require("device/generic/device")
 local Geom = require("ui/geometry")
 local UIManager -- Updated on UIManager init

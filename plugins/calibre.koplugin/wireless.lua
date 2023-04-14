@@ -1,4 +1,4 @@
---[[
+--[[--
     This module implements the 'smart device app' protocol that communicates with calibre wireless server.
     More details can be found at calibre/devices/smart_device_app/driver.py.
 --]]

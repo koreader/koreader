@@ -64,3 +64,4 @@ Events are sent to the first widget in `UIManager._window_stack`. If it is not c
 * **in document.lua:** `document:drawPage` check for cache, if found, **return cache**
 * **in document.lua:** if cache not found, `document:drawPage` calls `document:renderPage`
 * **in document.lua:** `document:renderPage` calls `_document:openPage`, `page:draw` and put the result into cache
+

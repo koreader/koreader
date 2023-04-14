@@ -1,3 +1,7 @@
+--[[--
+The ReaderFooter module handles the footer.
+]]
+
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
