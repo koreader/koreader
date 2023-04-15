@@ -672,6 +672,10 @@ function CoverBrowser:getBookInfo(file)
     return BookInfoManager:getBookInfo(file)
 end
 
+function CoverBrowser:deleteBookInfo(file)
+    BookInfoManager:deleteBookInfo(file)
+end
+
 function CoverBrowser:extractBooksInDirectory(path)
     local Trapper = require("ui/trapper")
     Trapper:wrap(function()
