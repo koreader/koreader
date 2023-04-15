@@ -6,7 +6,7 @@ local CalibreMetadata = require("metadata")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
-local DocumentRegistry = require("document/documentregistry")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
@@ -272,15 +272,7 @@ end
 
 function CalibreSearch:onMenuHold(item)
     if not item.info or item.info:len() <= 0 then return end
-    local thumbnail
-    local doc = DocumentRegistry:openDocument(item.path)
-    if doc then
-        if doc.loadDocument then -- CreDocument
-            doc:loadDocument(false) -- load only metadata
-        end
-        thumbnail = doc:getCoverPageImage()
-        doc:close()
-    end
+    local thumbnail = FileManagerBookInfo:getCoverPageImage(nil, item.path)
     local thumbwidth = math.min(240, Screen:getWidth()/3)
     UIManager:show(InfoMessage:new{
         text = item.info,
