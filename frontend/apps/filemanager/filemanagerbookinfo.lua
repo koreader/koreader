@@ -378,9 +378,9 @@ function BookInfo:setCustomBookCover(file, book_props, caller_callback, cover_fi
                     sidecar_dir = DocSettings:getSidecarDir(file)
                     util.makePath(sidecar_dir)
                 end
-                local cover_file = sidecar_dir .. "/" .. "cover." .. util.getFileNameSuffix(image_file)
+                local new_cover_file = sidecar_dir .. "/" .. "cover." .. util.getFileNameSuffix(image_file)
                 local cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp"
-                if ffiutil.execute(cp_bin, image_file, cover_file) == 0 then
+                if ffiutil.execute(cp_bin, image_file, new_cover_file) == 0 then
                     kvp_update()
                 end
             end,
