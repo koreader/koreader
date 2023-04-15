@@ -5,6 +5,7 @@ in the so-called sidecar directory
 ]]
 
 local DataStorage = require("datastorage")
+local Device = require("device")
 local LuaSettings = require("luasettings")
 local dump = require("dump")
 local ffiutil = require("ffi/util")
@@ -12,7 +13,17 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 
-local DocSettings = LuaSettings:extend{}
+local DocSettings = LuaSettings:extend{
+    cover_ext = {
+        png  = true,
+        jpg  = true,
+        jpeg = true,
+        gif  = true,
+        tif  = true,
+        tiff = true,
+        svg  = true,
+    },
+}
 
 local HISTORY_DIR = DataStorage:getHistoryDir()
 local DOCSETTINGS_DIR = DataStorage:getDocSettingsDir()
@@ -89,13 +100,25 @@ function DocSettings:getSidecarFile(doc_path, force_location)
     return self:getSidecarDir(doc_path, force_location) .. "/metadata." .. suffix .. ".lua"
 end
 
---- Returns `true` if there is a `metadata.lua` file.
+--- Returns path of `metadata.lua` file if it exists, or nil.
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
--- @treturn bool
-function DocSettings:hasSidecarFile(doc_path)
-    return lfs.attributes(self:getSidecarFile(doc_path, "doc"), "mode") == "file"
-        or lfs.attributes(self:getSidecarFile(doc_path, "dir"), "mode") == "file"
-        or lfs.attributes(self:getHistoryPath(doc_path), "mode") == "file"
+-- @book no_legacy set to true to skip check of the legacy history file
+-- @treturn string
+function DocSettings:hasSidecarFile(doc_path, no_legacy)
+    local sidecar_file = self:getSidecarFile(doc_path, "doc")
+    if lfs.attributes(sidecar_file) then
+        return sidecar_file
+    end
+    sidecar_file = self:getSidecarFile(doc_path, "dir")
+    if lfs.attributes(sidecar_file) then
+        return sidecar_file
+    end
+    if not no_legacy then
+        sidecar_file = self:getHistoryPath(doc_path)
+        if lfs.attributes(sidecar_file) then
+            return sidecar_file
+        end
+    end
 end
 
 function DocSettings:getHistoryPath(doc_path)
@@ -130,6 +153,17 @@ function DocSettings:getFileFromHistory(hist_name)
         local name = self:getNameFromHistory(hist_name)
         if name ~= "" then
             return ffiutil.joinPath(path, name)
+        end
+    end
+end
+
+--- Returns path to book custom cover file if it exists, or nil.
+function DocSettings:getCoverFile(sidecar_dir)
+    local cover_prefix = sidecar_dir .. "/" .. "cover."
+    for cover_ext in pairs(self.cover_ext) do
+        local cover_file = cover_prefix .. cover_ext
+        if lfs.attributes(cover_file) then
+            return cover_file
         end
     end
 end
@@ -178,9 +212,9 @@ function DocSettings:open(doc_path)
     -- We get back an array of tables for *existing* candidates, sorted MRU first (insertion order breaks ties).
     local candidates = buildCandidates(candidates_list)
 
-    local ok, stored
+    local candidate_path, ok, stored
     for _, t in ipairs(candidates) do
-        local candidate_path = t.path
+        candidate_path = t.path
         -- Ignore empty files
         if lfs.attributes(candidate_path, "size") > 0 then
             ok, stored = pcall(dofile, candidate_path)
@@ -196,6 +230,7 @@ function DocSettings:open(doc_path)
     if ok and stored then
         new.data = stored
         new.candidates = candidates
+        new.cover_file = self:getCoverFile(util.splitFilePathName(candidate_path))
     else
         new.data = {}
     end
@@ -215,8 +250,8 @@ function DocSettings:flush(data)
 
     local s_out = dump(data or self.data, nil, true)
     for _, s in ipairs(serials) do
-        util.makePath(s[1])
-        local sidecar_file = s[2]
+        local sidecar_dir, sidecar_file = unpack(s)
+        util.makePath(sidecar_dir)
         local directory_updated = false
         if lfs.attributes(sidecar_file, "mode") == "file" then
             -- As an additional safety measure (to the ffiutil.fsync* calls used below),
@@ -243,10 +278,16 @@ function DocSettings:flush(data)
                 -- Ensure the file renaming is flushed to storage device
                 ffiutil.fsyncDirectory(sidecar_file)
             end
+            
+            -- move cover file to the metadata file location
+            if self.cover_file and util.splitFilePathName(self.cover_file) ~= sidecar_dir then
+                local mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv"
+                ffiutil.execute(mv_bin, self.cover_file, sidecar_dir)
+            end
 
             self:purge(sidecar_file) -- remove old candidates and empty sidecar folders
 
-            break
+            return sidecar_dir
         end
     end
 end
@@ -267,6 +308,9 @@ function DocSettings:purge(sidecar_to_keep)
         end
     end
 
+    if not sidecar_to_keep and self.cover_file then
+        os.remove(self.cover_file)
+    end
     if lfs.attributes(self.doc_sidecar_dir, "mode") == "directory" then
         os.remove(self.doc_sidecar_dir) -- keep parent folders
     end
@@ -281,7 +325,11 @@ function DocSettings:update(doc_path, new_doc_path, copy)
         local doc_settings = DocSettings:open(doc_path)
         if new_doc_path then
             local new_doc_settings = DocSettings:open(new_doc_path)
-            new_doc_settings:flush(doc_settings.data) -- with current "Book metadata folder" setting
+            local new_sidecar_dir = new_doc_settings:flush(doc_settings.data) -- with current "Book metadata folder" setting
+            if doc_settings.cover_file then
+                local cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp"
+                ffiutil.execute(cp_bin, doc_settings.cover_file, new_sidecar_dir)
+            end
         else
             local cache_file_path = doc_settings:readSetting("cache_file_path")
             if cache_file_path then
