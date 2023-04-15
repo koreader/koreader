@@ -278,7 +278,7 @@ function DocSettings:flush(data)
                 -- Ensure the file renaming is flushed to storage device
                 ffiutil.fsyncDirectory(sidecar_file)
             end
-            
+
             -- move cover file to the metadata file location
             if self.cover_file and util.splitFilePathName(self.cover_file) ~= sidecar_dir then
                 local mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv"
