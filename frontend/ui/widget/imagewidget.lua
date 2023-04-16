@@ -375,7 +375,7 @@ function ImageWidget:_render()
     self._bb_h = bb_h
 end
 
-function ImageWidget:getImage()
+function ImageWidget:getImageCopy()
     self:_render()
     return self._bb:copy()
 end
