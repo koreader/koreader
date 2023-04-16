@@ -6,7 +6,6 @@ local BD = require("ui/bidi")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
-local ImageViewer = require("ui/widget/imageviewer")
 local ImageWidget = require("ui/widget/imagewidget")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
@@ -36,7 +35,7 @@ function BookInfo:addToMainMenu(menu_items)
     }
 end
 
-function BookInfo:show(file, book_props, caller_callback)
+function BookInfo:show(file, book_props, metadata_updated_caller_callback)
     self.updated = nil
     local kv_pairs = {}
 
@@ -107,30 +106,30 @@ function BookInfo:show(file, book_props, caller_callback)
         table.insert(kv_pairs, { prop_text, prop })
     end
     -- cover image
-    local item_callback = function()
+    local callback = function()
         self:onShowBookCover(file, true)
     end
-    table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=item_callback })
+    table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=callback })
     -- custom cover image
-    local item_text, item_hold_callback
+    local text, hold_callback
     local custom_book_cover = self:getCustomBookCover(file)
     if custom_book_cover then
-        item_text = _("Tap to display, long-press to reset")
-        item_callback = function()
+        text = _("Tap to display, long-press to reset")
+        callback = function()
             self:onShowBookCover(file)
         end
-        item_hold_callback = function()
-            self:setCustomBookCover(file, book_props, caller_callback, custom_book_cover)
+        hold_callback = function()
+            self:setCustomBookCover(file, book_props, metadata_updated_caller_callback, custom_book_cover)
         end
     else
-        item_text = _("Tap to choose an image")
-        item_callback = function()
-            self:setCustomBookCover(file, book_props, caller_callback)
+        text = _("Tap to choose an image")
+        callback = function()
+            self:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
         end
     end
     local is_doc = self.document and true or false
     table.insert(kv_pairs, { _("Custom cover image:"),
-        item_text, callback=item_callback, hold_callback=item_hold_callback, separator=is_doc })
+        text, callback=callback, hold_callback=hold_callback, separator=is_doc })
 
     -- Page section
     if is_doc then
@@ -151,8 +150,8 @@ function BookInfo:show(file, book_props, caller_callback)
         values_lang = values_lang,
         close_callback = function()
             if self.updated then
-                if caller_callback then
-                    caller_callback()
+                if metadata_updated_caller_callback then
+                    metadata_updated_caller_callback()
                 end
                 local FileManager = require("apps/filemanager/filemanager")
                 if FileManager.instance then
@@ -168,7 +167,6 @@ function BookInfo:getBookProps(file, book_props, no_open_document)
     local cover
     if DocSettings:hasSidecarFile(file) then
         local doc_settings = DocSettings:open(file)
-        cover = doc_settings:readSetting("doc_cover")
         if not book_props then
             -- Files opened after 20170701 have a "doc_props" setting with
             -- complete metadata and "doc_pages" with accurate nb of pages
@@ -226,7 +224,6 @@ function BookInfo:getBookProps(file, book_props, no_open_document)
     if not book_props then
         book_props = {}
     end
-    book_props.cover = cover
     return book_props
 end
 
@@ -241,7 +238,6 @@ function BookInfo:onShowBookInfo()
         book_props[k] = v
     end
     book_props.pages = self.ui.doc_settings:readSetting("doc_pages")
-    book_props.cover = self.ui.doc_settings:readSetting("doc_cover")
     local function refresh_cached_book_info()
         if self.ui.coverbrowser then
             self.ui.coverbrowser:deleteBookInfo(self.document.file)
@@ -278,6 +274,7 @@ end
 function BookInfo:onShowBookCover(file, force_orig)
     local cover_bb = self:getCoverPageImage(self.document, file, force_orig)
     if cover_bb then
+        local ImageViewer = require("ui/widget/imageviewer")
         local imgviewer = ImageViewer:new{
             image = cover_bb,
             with_title_bar = false,
@@ -298,11 +295,11 @@ function BookInfo:getCoverPageImage(doc, file, force_orig)
         local img_widget = ImageWidget:new{
             file = custom_cover,
         }
-        cover_bb = img_widget:getImage()
+        cover_bb = img_widget:getImageCopy()
         img_widget:free()
     else
-        local not_is_doc = not doc and true or false
-        if not_is_doc then
+        local is_doc = doc and true or false
+        if not is_doc then
             doc = DocumentRegistry:openDocument(file)
             if doc and doc.loadDocument then -- CreDocument
                 doc:loadDocument(false) -- load only metadata
@@ -310,7 +307,7 @@ function BookInfo:getCoverPageImage(doc, file, force_orig)
         end
         if doc then
             cover_bb = doc:getCoverPageImage()
-            if not_is_doc then
+            if not is_doc then
                 doc:close()
             end
         end
@@ -328,20 +325,20 @@ function BookInfo:getCustomBookCover(file)
     return cover_file
 end
 
-function BookInfo:setCustomBookCover(file, book_props, caller_callback, cover_file)
+function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_callback, cover_file)
     local function kvp_update()
         self.updated = true
         self.kvp_widget:onClose()
         if self.document then
             self:onShowBookInfo()
         else
-            self:show(file, book_props, caller_callback)
+            self:show(file, book_props, metadata_updated_caller_callback)
         end
     end
     if cover_file then -- reset custom cover
         local ConfirmBox = require("ui/widget/confirmbox")
         local confirm_box = ConfirmBox:new{
-            text = _("Reset custom cover?"),
+            text = _("Reset custom cover?\nImage file will be deleted."),
             ok_text = _("Reset"),
             ok_callback = function()
                 if os.remove(cover_file) then
