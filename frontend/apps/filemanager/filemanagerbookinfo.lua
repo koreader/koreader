@@ -164,7 +164,6 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
 end
 
 function BookInfo:getBookProps(file, book_props, no_open_document)
-    local cover
     if DocSettings:hasSidecarFile(file) then
         local doc_settings = DocSettings:open(file)
         if not book_props then
