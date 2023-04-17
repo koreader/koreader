@@ -3,14 +3,11 @@ This module provides a way to display book information (filename and book metada
 ]]
 
 local BD = require("ui/bidi")
-local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
-local ImageWidget = require("ui/widget/imagewidget")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local ffiutil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
@@ -35,8 +32,7 @@ function BookInfo:addToMainMenu(menu_items)
     }
 end
 
-function BookInfo:show(file, book_props, metadata_updated_caller_callback)
-    self.updated = nil
+function BookInfo:show(file, book_props)
     local kv_pairs = {}
 
     -- File section
@@ -105,31 +101,11 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
         end
         table.insert(kv_pairs, { prop_text, prop })
     end
-    -- cover image
-    local callback = function()
-        self:onShowBookCover(file, true)
-    end
-    table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=callback })
-    -- custom cover image
-    local text, hold_callback
-    local custom_book_cover = self:getCustomBookCover(file)
-    if custom_book_cover then
-        text = _("Tap to display, long-press to reset")
-        callback = function()
-            self:onShowBookCover(file)
-        end
-        hold_callback = function()
-            self:setCustomBookCover(file, book_props, metadata_updated_caller_callback, custom_book_cover)
-        end
-    else
-        text = _("Tap to choose an image")
-        callback = function()
-            self:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
-        end
-    end
     local is_doc = self.document and true or false
-    table.insert(kv_pairs, { _("Custom cover image:"),
-        text, callback=callback, hold_callback=hold_callback, separator=is_doc })
+    local viewCoverImage = function()
+        self:onShowBookCover(file)
+    end
+    table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=viewCoverImage, separator=is_doc })
 
     -- Page section
     if is_doc then
@@ -143,24 +119,13 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
     end
 
     local KeyValuePage = require("ui/widget/keyvaluepage")
-    self.kvp_widget = KeyValuePage:new{
+    local widget = KeyValuePage:new{
         title = _("Book information"),
         value_overflow_align = "right",
         kv_pairs = kv_pairs,
         values_lang = values_lang,
-        close_callback = function()
-            if self.updated then
-                if metadata_updated_caller_callback then
-                    metadata_updated_caller_callback()
-                end
-                local FileManager = require("apps/filemanager/filemanager")
-                if FileManager.instance then
-                    FileManager.instance:onRefresh()
-                end
-            end
-        end,
     }
-    UIManager:show(self.kvp_widget)
+    UIManager:show(widget)
 end
 
 function BookInfo:getBookProps(file, book_props, no_open_document)
@@ -220,10 +185,7 @@ function BookInfo:getBookProps(file, book_props, no_open_document)
     end
 
     -- If still no book_props, fall back to empty ones
-    if not book_props then
-        book_props = {}
-    end
-    return book_props
+    return book_props or {}
 end
 
 function BookInfo:onShowBookInfo()
@@ -237,12 +199,7 @@ function BookInfo:onShowBookInfo()
         book_props[k] = v
     end
     book_props.pages = self.ui.doc_settings:readSetting("doc_pages")
-    local function refresh_cached_book_info()
-        if self.ui.coverbrowser then
-            self.ui.coverbrowser:deleteBookInfo(self.document.file)
-        end
-    end
-    self:show(self.document.file, book_props, refresh_cached_book_info)
+    self:show(self.document.file, book_props)
 end
 
 function BookInfo:onShowBookDescription(description, file)
@@ -270,118 +227,34 @@ function BookInfo:onShowBookDescription(description, file)
     end
 end
 
-function BookInfo:onShowBookCover(file, force_orig)
-    local cover_bb = self:getCoverPageImage(self.document, file, force_orig)
-    if cover_bb then
-        local ImageViewer = require("ui/widget/imageviewer")
-        local imgviewer = ImageViewer:new{
-            image = cover_bb,
-            with_title_bar = false,
-            fullscreen = true,
-        }
-        UIManager:show(imgviewer)
-    else
-        UIManager:show(InfoMessage:new{
-            text = _("No cover image available."),
-        })
-    end
-end
-
-function BookInfo:getCoverPageImage(doc, file, force_orig)
-    local cover_bb
-    local custom_cover = self:getCustomBookCover(file or (doc and doc.file))
-    if not force_orig and custom_cover then
-        local img_widget = ImageWidget:new{
-            file = custom_cover,
-        }
-        cover_bb = img_widget:getImageCopy()
-        img_widget:free()
-    else
-        local is_doc = doc and true or false
-        if not is_doc then
-            doc = DocumentRegistry:openDocument(file)
-            if doc and doc.loadDocument then -- CreDocument
-                doc:loadDocument(false) -- load only metadata
-            end
+function BookInfo:onShowBookCover(file)
+    local document
+    if file then
+        document = DocumentRegistry:openDocument(file)
+        if document and document.loadDocument then -- CreDocument
+            document:loadDocument(false) -- load only metadata
         end
-        if doc then
-            cover_bb = doc:getCoverPageImage()
-            if not is_doc then
-                doc:close()
-            end
-        end
+    else
+        document = self.document
     end
-    return cover_bb
-end
-
-function BookInfo:getCustomBookCover(file)
-    local sidecar_dir = DocSettings:getSidecarDir(file, "doc")
-    local cover_file = DocSettings:getCoverFile(sidecar_dir)
-    if not cover_file then
-        sidecar_dir = DocSettings:getSidecarDir(file, "dir")
-        cover_file = DocSettings:getCoverFile(sidecar_dir)
-    end
-    return cover_file
-end
-
-function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_callback, cover_file)
-    local function kvp_update()
-        self.updated = true
-        self.kvp_widget:onClose()
-        if self.document then
-            self:onShowBookInfo()
+    if document then
+        local cover_bb = document:getCoverPageImage()
+        if cover_bb then
+            local ImageViewer = require("ui/widget/imageviewer")
+            local imgviewer = ImageViewer:new{
+                image = cover_bb,
+                with_title_bar = false,
+                fullscreen = true,
+            }
+            UIManager:show(imgviewer)
         else
-            self:show(file, book_props, metadata_updated_caller_callback)
+            UIManager:show(InfoMessage:new{
+                text = _("No cover image available."),
+            })
         end
-    end
-    if cover_file then -- reset custom cover
-        local ConfirmBox = require("ui/widget/confirmbox")
-        local confirm_box = ConfirmBox:new{
-            text = _("Reset custom cover?\nImage file will be deleted."),
-            ok_text = _("Reset"),
-            ok_callback = function()
-                if os.remove(cover_file) then
-                    -- remove empty sdr folder
-                    local sidecar_dir = util.splitFilePathName(cover_file)
-                    if sidecar_dir == DocSettings:getSidecarDir(file, "doc") then
-                        os.remove(sidecar_dir)
-                    else
-                        util.removePath(sidecar_dir)
-                    end
-                    kvp_update()
-                end
-            end,
-        }
-        UIManager:show(confirm_box)
-    else -- choose an image and set custom cover
-        local PathChooser = require("ui/widget/pathchooser")
-        local path_chooser = PathChooser:new{
-            select_directory = false,
-            file_filter = function(filename)
-                return DocSettings.cover_ext[util.getFileNameSuffix(filename)]
-            end,
-            onConfirm = function(image_file)
-                local sidecar_dir
-                local sidecar_file = self:getCustomBookCover(file) -- existing cover file
-                if sidecar_file then
-                    os.remove(sidecar_file)
-                else -- no existing cover, get metadata file path
-                    sidecar_file = DocSettings:hasSidecarFile(file, true) -- new sdr locations only
-                end
-                if sidecar_file then
-                    sidecar_dir = util.splitFilePathName(sidecar_file)
-                else -- no sdr folder, create new
-                    sidecar_dir = DocSettings:getSidecarDir(file)
-                    util.makePath(sidecar_dir)
-                end
-                local new_cover_file = sidecar_dir .. "/" .. "cover." .. util.getFileNameSuffix(image_file)
-                local cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp"
-                if ffiutil.execute(cp_bin, image_file, new_cover_file) == 0 then
-                    kvp_update()
-                end
-            end,
-        }
-        UIManager:show(path_chooser)
+        if not self.document then
+            document:close()
+        end
     end
 end
 
