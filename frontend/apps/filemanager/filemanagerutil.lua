@@ -55,7 +55,8 @@ end
 function filemanagerutil.purgeSettings(file)
     local file_abs_path = ffiutil.realpath(file)
     if file_abs_path then
-        DocSettings:open(file_abs_path):purge()
+        local doc_settings = DocSettings:open(file_abs_path, true) -- get custom cover file path
+        doc_settings:purge()
     end
 end
 
@@ -73,7 +74,7 @@ function filemanagerutil.resetDocumentSettings(file)
     }
     local file_abs_path = ffiutil.realpath(file)
     if file_abs_path then
-        local doc_settings = DocSettings:open(file_abs_path)
+        local doc_settings = DocSettings:open(file_abs_path, true) -- get custom cover file path
         for k in pairs(doc_settings.data) do
             if not settings_to_keep[k] then
                 doc_settings:delSetting(k)
@@ -99,7 +100,7 @@ end
 -- Set a document status ("reading", "complete", or "abandoned")
 function filemanagerutil.setStatus(file, status)
     -- In case the book doesn't have a sidecar file, this'll create it
-    local doc_settings = DocSettings:open(file)
+    local doc_settings = DocSettings:open(file, true) -- get custom cover file path
     local summary = doc_settings:readSetting("summary") or {}
     summary.status = status
     summary.modified = os.date("%Y-%m-%d", os.time())
