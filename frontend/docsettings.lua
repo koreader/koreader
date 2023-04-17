@@ -220,9 +220,9 @@ function DocSettings:open(doc_path, do_cover)
     -- We get back an array of tables for *existing* candidates, sorted MRU first (insertion order breaks ties).
     local candidates = buildCandidates(candidates_list)
 
-    local candidate_path, ok, stored
+    local ok, stored
     for _, t in ipairs(candidates) do
-        candidate_path = t.path
+        local candidate_path = t.path
         -- Ignore empty files
         if lfs.attributes(candidate_path, "size") > 0 then
             ok, stored = pcall(dofile, candidate_path)
@@ -238,13 +238,13 @@ function DocSettings:open(doc_path, do_cover)
     if ok and stored then
         new.data = stored
         new.candidates = candidates
-        if do_cover then
-            new.cover_file = self:getCoverFile(util.splitFilePathName(candidate_path))
-        end
     else
         new.data = {}
     end
     new.data.doc_path = doc_path
+    if do_cover then
+        new.cover_file = self:getCustomBookCover(doc_path)
+    end
 
     return new
 end
