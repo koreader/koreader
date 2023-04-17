@@ -14,15 +14,7 @@ local logger = require("logger")
 local util = require("util")
 
 local DocSettings = LuaSettings:extend{
-    cover_ext = {
-        png  = true,
-        jpg  = true,
-        jpeg = true,
-        gif  = true,
-        tif  = true,
-        tiff = true,
-        svg  = true,
-    },
+    cover_ext = { "png", "jpg", "jpeg", "gif", "tif", "tiff", "svg" },
 }
 
 local HISTORY_DIR = DataStorage:getHistoryDir()
@@ -102,7 +94,7 @@ end
 
 --- Returns path of `metadata.lua` file if it exists, or nil.
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
--- @book no_legacy set to true to skip check of the legacy history file
+-- @bool no_legacy set to true to skip check of the legacy history file
 -- @treturn string
 function DocSettings:hasSidecarFile(doc_path, no_legacy)
     local sidecar_file = self:getSidecarFile(doc_path, "doc")
@@ -158,20 +150,36 @@ function DocSettings:getFileFromHistory(hist_name)
 end
 
 --- Returns path to book custom cover file if it exists, or nil.
+function DocSettings:getCustomBookCover(doc_path)
+    local location = G_reader_settings:readSetting("document_metadata_folder", "doc")
+    local sidecar_dir = self:getSidecarDir(doc_path, location)
+    local cover_file = self:getCoverFile(sidecar_dir)
+    if not cover_file then
+        location = location == "doc" and "dir" or "doc"
+        sidecar_dir = self:getSidecarDir(doc_path, location)
+        cover_file = self:getCoverFile(sidecar_dir)
+    end
+    return cover_file
+end
+
 function DocSettings:getCoverFile(sidecar_dir)
-    local cover_prefix = sidecar_dir .. "/" .. "cover."
-    for cover_ext in pairs(self.cover_ext) do
-        local cover_file = cover_prefix .. cover_ext
-        if lfs.attributes(cover_file) then
-            return cover_file
+    local ok, iter, dir_obj = pcall(lfs.dir, sidecar_dir)
+    if ok then
+        for f in iter, dir_obj do
+            for _, ext in ipairs(self.cover_ext) do
+                if f == "cover." .. ext then
+                    return sidecar_dir .. "/" .. f
+                end
+            end
         end
     end
 end
 
 --- Opens a document's individual settings (font, margin, dictionary, etc.)
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
+-- @bool do_cover set to true to get custom cover file path
 -- @treturn DocSettings object
-function DocSettings:open(doc_path)
+function DocSettings:open(doc_path, do_cover)
     -- NOTE: Beware, our new instance is new, but self is still DocSettings!
     local new = DocSettings:extend{}
 
@@ -230,7 +238,9 @@ function DocSettings:open(doc_path)
     if ok and stored then
         new.data = stored
         new.candidates = candidates
-        new.cover_file = self:getCoverFile(util.splitFilePathName(candidate_path))
+        if do_cover then
+            new.cover_file = self:getCoverFile(util.splitFilePathName(candidate_path))
+        end
     else
         new.data = {}
     end
@@ -319,10 +329,19 @@ function DocSettings:purge(sidecar_to_keep)
     end
 end
 
+--- Removes empty sidecar dir.
+function DocSettings:removeSidecarDir(doc_path, sidecar_dir)
+    if sidecar_dir == self:getSidecarDir(doc_path, "doc") then
+        os.remove(sidecar_dir)
+    else
+        util.removePath(sidecar_dir)
+    end
+end
+
 --- Updates sidecar info for file rename/copy/move/delete operations.
 function DocSettings:update(doc_path, new_doc_path, copy)
     if self:hasSidecarFile(doc_path) then
-        local doc_settings = DocSettings:open(doc_path)
+        local doc_settings = DocSettings:open(doc_path, true) -- get custom cover file path
         if new_doc_path then
             local new_doc_settings = DocSettings:open(new_doc_path)
             local new_sidecar_dir = new_doc_settings:flush(doc_settings.data) -- with current "Book metadata folder" setting
