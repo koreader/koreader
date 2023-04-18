@@ -253,6 +253,7 @@ function KoboPowerD:isFrontlightOnHW()
 end
 
 function KoboPowerD:_setIntensityHW(intensity)
+    -- FIXME: Drop me!
     print("KoboPowerD:_setIntensityHW", intensity)
     if self.fl == nil then return end
     if self.fl_warmth == nil or self.device:hasNaturalLightMixer() then
@@ -374,7 +375,7 @@ function KoboPowerD:turnOnFrontlightRamp(curr_ramp_intensity, end_intensity, don
     if curr_ramp_intensity == 0 then
         curr_ramp_intensity = 1
     else
-        curr_ramp_intensity = math.ceil(math.min(curr_ramp_intensity * 1.25, self.fl_max))
+        curr_ramp_intensity = math.ceil(math.min(curr_ramp_intensity * 1.5, self.fl_max))
     end
 
     if curr_ramp_intensity < end_intensity then
