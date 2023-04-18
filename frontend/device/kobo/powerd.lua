@@ -339,7 +339,7 @@ function KoboPowerD:turnOffFrontlightRamp(curr_ramp_intensity, end_intensity, do
     curr_ramp_intensity = math.floor(math.max(curr_ramp_intensity * .75, 0))
 
     if curr_ramp_intensity > end_intensity then
-        self:_setIntensityHW(math.floor(curr_ramp_intensity))
+        self:_setIntensityHW(curr_ramp_intensity)
         UIManager:scheduleIn(self.device.frontlight_settings.ramp_delay, self.turnOffFrontlightRamp, self, curr_ramp_intensity, end_intensity, done_callback)
     else
         -- Some devices require delaying the final step, to prevent them from jumping straight to zero and messing up the ramp.
@@ -373,7 +373,7 @@ function KoboPowerD:turnOnFrontlightRamp(curr_ramp_intensity, end_intensity, don
     curr_ramp_intensity = math.floor(math.min(curr_ramp_intensity + end_intensity/5, end_intensity))
 
     if curr_ramp_intensity < end_intensity then
-        self:setIntensityHW(curr_ramp_intensity)
+        self:_setIntensityHW(curr_ramp_intensity)
         UIManager:scheduleIn(self.device.frontlight_settings.ramp_delay, self.turnOnFrontlightRamp, self, curr_ramp_intensity, end_intensity, done_callback)
     else
         self:_setIntensityHW(end_intensity)
