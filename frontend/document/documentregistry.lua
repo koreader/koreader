@@ -176,10 +176,9 @@ function DocumentRegistry:setProvider(file, provider, all)
 
     -- per-document
     if not all then
-        local DocSettings = require("docsettings")
-        local doc_settings = DocSettings:open(file, true) -- get custom cover file path
-        doc_settings:saveSetting("provider", provider.provider)
-        doc_settings:flush()
+        local DocSettings = require("docsettings"):open(file)
+        DocSettings:saveSetting("provider", provider.provider)
+        DocSettings:flush()
     -- global
     else
         local filetype_provider = G_reader_settings:readSetting("provider") or {}
