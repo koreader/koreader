@@ -449,6 +449,7 @@ local KoboCadmus = Kobo:extend{
         nl_min = 0,
         nl_max = 10,
         nl_inverted = false,
+        ramp_delay = 0.025,
         ramp_off_delay = 0.5, -- delay the final ramp off step to prevent the whole ramp from being optimized out
     },
     boot_rota = C.FB_ROTATE_CW,

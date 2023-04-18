@@ -136,8 +136,10 @@ function KoboPowerD:init()
         self.device.frontlight_settings = self.device.frontlight_settings or {}
         -- Does this device require non-standard ramping behavior?
         self.device.frontlight_settings.ramp_off_delay = self.device.frontlight_settings.ramp_off_delay or 0.0
-        -- FIXME: See if !hasNaturalLight still requires a higher delay
-        self.device.frontlight_settings.ramp_delay = self.device.frontlight_settings.ramp_delay or 0.025
+        --- @note: Newer devices appear to block slightly longer on FL ioctls/sysfs, so we only really need a delay on older devices.
+        self.device.frontlight_settings.ramp_delay = self.device.frontlight_settings.ramp_delay or (self.device:hasNaturalLight() and 0.0 or 0.035)
+        --- FIXME: Drop me.
+        print("Ramp delay is", self.device.frontlight_settings.ramp_delay)
 
         -- If this device has natural light (currently only KA1 & Forma)
         -- Use the SysFS interface, and ioctl otherwise.
