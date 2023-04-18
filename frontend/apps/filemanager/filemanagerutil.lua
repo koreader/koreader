@@ -139,7 +139,7 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
     return {
         text = _("Reset"),
         id = "reset", -- used by covermenu
-        enabled = not button_disabled and DocSettings:hasSidecarFile(ffiutil.realpath(file)),
+        enabled = (not button_disabled and DocSettings:hasSidecarFile(ffiutil.realpath(file))) and true or false,
         callback = function()
             local ConfirmBox = require("ui/widget/confirmbox")
             local confirmbox = ConfirmBox:new{
