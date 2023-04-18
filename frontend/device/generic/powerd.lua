@@ -43,7 +43,7 @@ end
 
 function BasePowerD:readyUI()
     UIManager = require("ui/uimanager")
-    self:readyUIHW()
+    self:readyUIHW(UIManager)
 end
 
 function BasePowerD:init() end
@@ -66,7 +66,7 @@ function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min en
 function BasePowerD:turnOffFrontlightHW() self:setIntensityHW(self.fl_min) end
 function BasePowerD:turnOnFrontlightHW() self:setIntensityHW(self.fl_intensity) end --- @fixme: what if fl_intensity == fl_min (c.f., kindle)?
 function BasePowerD:frontlightWarmthHW() return 0 end
-function BasePowerD:readyUIHW() end
+function BasePowerD:readyUIHW(uimgr) end
 -- Anything that needs to be done before doing a real hardware suspend.
 -- (Such as turning the front light off).
 function BasePowerD:beforeSuspend() end

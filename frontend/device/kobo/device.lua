@@ -167,9 +167,6 @@ local Kobo = Generic:extend{
     automagic_sysfs = false,
 
     unexpected_wakeup_count = 0,
-    frontlight_settings = {
-        wait_before_turn_off_s = 0.0, -- time to wait before turning FL off.
-    },
 }
 
 local KoboTrilogyA = Kobo:extend{
@@ -452,7 +449,7 @@ local KoboCadmus = Kobo:extend{
         nl_min = 0,
         nl_max = 10,
         nl_inverted = false,
-        wait_before_turn_off_s = 0.5, -- time to wait before turning FL off.
+        ramp_off_delay = 0.5, -- delay the final ramp off step to prevent the whole ramp from being optimized out
     },
     boot_rota = C.FB_ROTATE_CW,
     battery_sysfs = "/sys/class/power_supply/battery",
