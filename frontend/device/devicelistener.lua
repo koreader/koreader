@@ -186,14 +186,15 @@ if Device:hasFrontlight() then
 
     function DeviceListener:onToggleFrontlight()
         local powerd = Device:getPowerDevice()
-        powerd:toggleFrontlight()
         local new_text
         if powerd.is_fl_on then
-            new_text = _("Frontlight enabled.")
-        else
             new_text = _("Frontlight disabled.")
+        else
+            new_text = _("Frontlight enabled.")
         end
-        Notification:notify(new_text)
+        -- We display the notification first, with a forced refresh *now*, in order to make sure the refresh fencing will not to affect the ramp on devices where we handle both the ramp and the fencing ourselves...
+        Notification:notify(new_text, nil, true)
+        powerd:toggleFrontlight()
     end
 
     function DeviceListener:onShowFlDialog()
