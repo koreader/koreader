@@ -449,7 +449,11 @@ local KoboCadmus = Kobo:extend{
         nl_min = 0,
         nl_max = 10,
         nl_inverted = false,
-        ramp_off_delay = 0.5, -- delay the final ramp off step to prevent the whole ramp from being optimized out
+        --- @note: The Sage natively ramps when setting the frontlight intensity.
+        ---        A side-effect of this behavior is that if you queue a series of intensity changes ending at 0,
+        ---        it won't ramp *at all*, and jump straight to zero.
+        ---        So we delay the final ramp off step to prevent (both) the native and our ramping from being optimized out
+        ramp_off_delay = 0.5,
     },
     boot_rota = C.FB_ROTATE_CW,
     battery_sysfs = "/sys/class/power_supply/battery",
