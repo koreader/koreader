@@ -133,6 +133,7 @@ function KoboPowerD:init()
     self.initial_is_fl_on = true
 
     if self.device:hasFrontlight() then
+        self.device.frontlight_settings = self.device.frontlight_settings or {}
         -- Does this device require non-standard ramping behavior?
         self.device.frontlight_settings.ramp_off_delay = self.device.frontlight_settings.ramp_off_delay or 0.0
         -- FIXME: See if !hasNaturalLight still requires a higher delay
