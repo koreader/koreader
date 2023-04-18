@@ -253,6 +253,7 @@ function KoboPowerD:isFrontlightOnHW()
 end
 
 function KoboPowerD:_setIntensityHW(intensity)
+    print("KoboPowerD:_setIntensityHW", intensity)
     if self.fl == nil then return end
     if self.fl_warmth == nil or self.device:hasNaturalLightMixer() then
         -- We either don't have NL, or we have a mixer: we only want to set the intensity (c.f., #5429)
@@ -338,7 +339,7 @@ end
 -- The whole function gets called at most log(100)/log(0.75) = 17 times,
 -- leading to a 0.025*17 + 0.5 = 0.925s ramp down time (non blocking); can be aborted.
 function KoboPowerD:turnOffFrontlightRamp(curr_ramp_intensity, end_intensity, done_callback)
-    curr_ramp_intensity = math.floor(math.max(curr_ramp_intensity * .75, 0))
+    curr_ramp_intensity = math.floor(math.max(curr_ramp_intensity * .75, self.fl_min))
 
     if curr_ramp_intensity > end_intensity then
         self:_setIntensityHW(curr_ramp_intensity)
@@ -368,11 +369,13 @@ function KoboPowerD:turnOffFrontlightHW(done_callback)
     end
 end
 
--- Similar functionality as `Kobo:turnOnFrontlightHW`.
--- The whole function gets called at most 100/5 + 1 = 21 times,
--- leading to a 0.025*21 = 0.525s ramp up time (non blocking); can be aborted.
+-- Similar functionality as `Kobo:turnOnFrontlightHW`, but the other way around ;).
 function KoboPowerD:turnOnFrontlightRamp(curr_ramp_intensity, end_intensity, done_callback)
-    curr_ramp_intensity = math.floor(math.min(curr_ramp_intensity + end_intensity/5, end_intensity))
+    if curr_ramp_intensity == 0 then
+        curr_ramp_intensity = 1
+    else
+        curr_ramp_intensity = math.ceil(math.min(curr_ramp_intensity * 1.25, self.fl_max))
+    end
 
     if curr_ramp_intensity < end_intensity then
         self:_setIntensityHW(curr_ramp_intensity)
