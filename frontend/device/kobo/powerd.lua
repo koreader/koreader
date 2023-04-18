@@ -138,8 +138,6 @@ function KoboPowerD:init()
         self.device.frontlight_settings.ramp_off_delay = self.device.frontlight_settings.ramp_off_delay or 0.0
         --- @note: Newer devices appear to block slightly longer on FL ioctls/sysfs, so we only really need a delay on older devices.
         self.device.frontlight_settings.ramp_delay = self.device.frontlight_settings.ramp_delay or (self.device:hasNaturalLight() and 0.0 or 0.025)
-        --- FIXME: Drop me.
-        print("Ramp delay is", self.device.frontlight_settings.ramp_delay)
 
         -- If this device has natural light (currently only KA1 & Forma)
         -- Use the SysFS interface, and ioctl otherwise.
@@ -253,8 +251,6 @@ function KoboPowerD:isFrontlightOnHW()
 end
 
 function KoboPowerD:_setIntensityHW(intensity)
-    -- FIXME: Drop me!
-    print("KoboPowerD:_setIntensityHW", intensity)
     if self.fl == nil then return end
     if self.fl_warmth == nil or self.device:hasNaturalLightMixer() then
         -- We either don't have NL, or we have a mixer: we only want to set the intensity (c.f., #5429)
