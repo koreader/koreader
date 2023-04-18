@@ -192,9 +192,12 @@ if Device:hasFrontlight() then
         else
             new_text = _("Frontlight enabled.")
         end
-        -- We display the notification first, with a forced refresh *now*, in order to make sure the refresh fencing will not to affect the ramp on devices where we handle both the ramp and the fencing ourselves...
-        Notification:notify(new_text, nil, true)
-        powerd:toggleFrontlight()
+        -- We defer displaying the Notification to PowerD, as the toggle may be a ramp, and we both want to make sure the refresh fencing won't affect it, and that we only display the Notification at the end...
+        local notif_source = Notification.notify_source
+        local notif_cb = function()
+            Notification:notify(new_text, notif_source)
+        end
+        powerd:toggleFrontlight(notif_cb)
     end
 
     function DeviceListener:onShowFlDialog()
