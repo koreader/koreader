@@ -120,7 +120,7 @@ function ReaderUI:init()
         self.dialog = self
     end
 
-    self.doc_settings = DocSettings:open(self.document.file, true) -- get custom cover file path
+    self.doc_settings = DocSettings:open(self.document.file)
     -- Handle local settings migration
     SettingsMigration:migrateSettings(self.doc_settings)
 
