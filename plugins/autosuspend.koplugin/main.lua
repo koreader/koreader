@@ -679,7 +679,7 @@ function AutoSuspend:onNetworkDisconnected()
     self:_start_standby()
 end
 
---[[ -- not neccessary right now
+--[[ -- not necessary right now
 function AutoSuspend:onNetworkDisconnecting()
     logger.dbg("AutoSuspend: onNetworkDisconnecting")
 end
