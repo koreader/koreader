@@ -149,12 +149,17 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
         values_lang = values_lang,
         close_callback = function()
             if self.updated then
+                local FileManager = require("apps/filemanager/filemanager")
+                local fm_ui = FileManager.instance
+                local ui = self.ui or fm_ui
+                if ui and ui.coverbrowser then
+                    ui.coverbrowser:deleteBookInfo(file)
+                end
+                if fm_ui then
+                    fm_ui:onRefresh()
+                end
                 if metadata_updated_caller_callback then
                     metadata_updated_caller_callback()
-                end
-                local FileManager = require("apps/filemanager/filemanager")
-                if FileManager.instance then
-                    FileManager.instance:onRefresh()
                 end
             end
         end,
@@ -231,17 +236,11 @@ function BookInfo:onShowBookInfo()
     local doc_props = self.ui.doc_settings:readSetting("doc_props")
     -- Make a copy, so we don't add "pages" to the original doc_props
     -- that will be saved at some point by ReaderUI.
-    local book_props = {}
+    local book_props = { pages = self.ui.doc_settings:readSetting("doc_pages") }
     for k, v in pairs(doc_props) do
         book_props[k] = v
     end
-    book_props.pages = self.ui.doc_settings:readSetting("doc_pages")
-    local function refresh_cached_book_info()
-        if self.ui.coverbrowser then
-            self.ui.coverbrowser:deleteBookInfo(self.document.file)
-        end
-    end
-    self:show(self.document.file, book_props, refresh_cached_book_info)
+    self:show(self.document.file, book_props)
 end
 
 function BookInfo:onShowBookDescription(description, file)
@@ -286,17 +285,19 @@ function BookInfo:onShowBookCover(file, force_orig)
     end
 end
 
-function BookInfo:getCoverPageImage(doc, file, force_orig)
+function BookInfo:getCoverPageImage(doc, file, no_custom_cover)
     local cover_bb
-    local custom_cover = DocSettings:getCustomBookCover(file or (doc and doc.file))
-    if not force_orig and custom_cover then
-        local ImageWidget = require("ui/widget/imagewidget")
-        local img_widget = ImageWidget:new{
-            file = custom_cover,
-            file_do_cache = false,
-        }
-        cover_bb = img_widget:getImageCopy()
-        img_widget:free()
+    if not no_custom_cover then
+        local custom_cover = DocSettings:getCustomBookCover(file or (doc and doc.file))
+        if custom_cover then
+            local ImageWidget = require("ui/widget/imagewidget")
+            local img_widget = ImageWidget:new{
+                file = custom_cover,
+                file_do_cache = false,
+            }
+            cover_bb = img_widget:getImageCopy()
+            img_widget:free()
+        end
     else
         local is_doc = doc and true or false
         if not is_doc then
