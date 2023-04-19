@@ -285,19 +285,18 @@ function BookInfo:onShowBookCover(file, force_orig)
     end
 end
 
-function BookInfo:getCoverPageImage(doc, file, no_custom_cover)
+function BookInfo:getCoverPageImage(doc, file, force_orig)
     local cover_bb
-    if not no_custom_cover then
-        local custom_cover = DocSettings:getCustomBookCover(file or (doc and doc.file))
-        if custom_cover then
-            local ImageWidget = require("ui/widget/imagewidget")
-            local img_widget = ImageWidget:new{
-                file = custom_cover,
-                file_do_cache = false,
-            }
-            cover_bb = img_widget:getImageCopy()
-            img_widget:free()
-        end
+    local custom_cover = DocSettings:getCustomBookCover(file or (doc and doc.file))
+    if not force_orig and custom_cover then
+        local ImageWidget = require("ui/widget/imagewidget")
+        local img_widget = ImageWidget:new{
+            file = custom_cover,
+            file_do_cache = false,
+            is_icon = util.getFileNameSuffix(custom_cover) == "svg",
+        }
+        cover_bb = img_widget:getImageCopy()
+        img_widget:free()
     else
         local is_doc = doc and true or false
         if not is_doc then
