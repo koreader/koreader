@@ -55,8 +55,7 @@ end
 function filemanagerutil.purgeSettings(file)
     local file_abs_path = ffiutil.realpath(file)
     if file_abs_path then
-        local doc_settings = DocSettings:open(file_abs_path)
-        doc_settings:purge()
+        DocSettings:open(file_abs_path):purge()
     end
 end
 
