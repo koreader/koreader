@@ -288,10 +288,12 @@ function DocSettings:flush(data, no_cover)
 
             -- move cover file to the metadata file location
             if not no_cover then
-                local cover_file = self:getCustomBookCover(self.data.doc_path)
-                if cover_file and util.splitFilePathName(cover_file) ~= sidecar_dir then
+                if self.cover_file == nil then
+                    self.cover_file = self:getCustomBookCover(self.data.doc_path) or false
+                end
+                if self.cover_file and util.splitFilePathName(self.cover_file) ~= sidecar_dir then
                     local mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv"
-                    ffiutil.execute(mv_bin, cover_file, sidecar_dir)
+                    ffiutil.execute(mv_bin, self.cover_file, sidecar_dir)
                 end
             end
 
@@ -344,7 +346,7 @@ end
 --- Updates sidecar info for file rename/copy/move/delete operations.
 function DocSettings:update(doc_path, new_doc_path, copy)
     if self:hasSidecarFile(doc_path) then
-        local doc_settings = DocSettings:open(doc_path) -- get custom cover file path
+        local doc_settings = DocSettings:open(doc_path)
         if new_doc_path then
             local new_doc_settings = DocSettings:open(new_doc_path)
             -- save doc settings to the new location, no cover file yet
