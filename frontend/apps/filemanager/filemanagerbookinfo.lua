@@ -287,29 +287,33 @@ end
 
 function BookInfo:getCoverPageImage(doc, file, force_orig)
     local cover_bb
-    local custom_cover = DocSettings:getCustomBookCover(file or (doc and doc.file))
-    if not force_orig and custom_cover then
-        local ImageWidget = require("ui/widget/imagewidget")
-        local img_widget = ImageWidget:new{
-            file = custom_cover,
-            file_do_cache = false,
-            is_icon = util.getFileNameSuffix(custom_cover) == "svg",
-        }
-        cover_bb = img_widget:getImageCopy()
-        img_widget:free()
-    else
-        local is_doc = doc and true or false
-        if not is_doc then
-            doc = DocumentRegistry:openDocument(file)
-            if doc and doc.loadDocument then -- CreDocument
-                doc:loadDocument(false) -- load only metadata
-            end
+    -- check for a custom cover (orig cover is forcedly requested in "Book information" only)
+    if not force_orig then
+        local custom_cover = DocSettings:getCustomBookCover(file or (doc and doc.file))
+        if custom_cover then
+            local ImageWidget = require("ui/widget/imagewidget")
+            local img_widget = ImageWidget:new{
+                file = custom_cover,
+                file_do_cache = false,
+                is_icon = util.getFileNameSuffix(custom_cover) == "svg",
+            }
+            cover_bb = img_widget:getImageCopy()
+            img_widget:free()
+            return cover_bb
         end
-        if doc then
-            cover_bb = doc:getCoverPageImage()
-            if not is_doc then
-                doc:close()
-            end
+    end
+    -- orig cover
+    local is_doc = doc and true or false
+    if not is_doc then
+        doc = DocumentRegistry:openDocument(file)
+        if doc and doc.loadDocument then -- CreDocument
+            doc:loadDocument(false) -- load only metadata
+        end
+    end
+    if doc then
+        cover_bb = doc:getCoverPageImage()
+        if not is_doc then
+            doc:close()
         end
     end
     return cover_bb
