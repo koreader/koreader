@@ -150,35 +150,39 @@ function DocSettings:getFileFromHistory(hist_name)
 end
 
 --- Returns path to book custom cover file if it exists, or nil.
--- Call without argument to clear cached cover file path.
-function DocSettings:getCustomBookCover(doc_path)
-    if doc_path then
-        if not self.cover_file then
-            local location = G_reader_settings:readSetting("document_metadata_folder", "doc")
-            local sidecar_dir = self:getSidecarDir(doc_path, location)
-            self.cover_file = self:getCoverFile(sidecar_dir)
-            if not self.cover_file then
-                location = location == "doc" and "dir" or "doc"
-                sidecar_dir = self:getSidecarDir(doc_path, location)
-                self.cover_file = self:getCoverFile(sidecar_dir)
-            end
-        end
-        return self.cover_file
-    else
-        self.cover_file = nil
-    end
-end
-
-function DocSettings:getCoverFile(sidecar_dir)
-    local ok, iter, dir_obj = pcall(lfs.dir, sidecar_dir)
-    if ok then
-        for f in iter, dir_obj do
-            for _, ext in ipairs(self.cover_ext) do
-                if f == "cover." .. ext then
-                    return sidecar_dir .. "/" .. f
+function DocSettings:findCoverFile(doc_path)
+    local function findCoverFileInDir(dir)
+        local ok, iter, dir_obj = pcall(lfs.dir, dir)
+        if ok then
+            for f in iter, dir_obj do
+                for _, ext in ipairs(self.cover_ext) do
+                    if f == "cover." .. ext then
+                        return dir .. "/" .. f
+                    end
                 end
             end
         end
+    end
+
+    local location = G_reader_settings:readSetting("document_metadata_folder", "doc")
+    local sidecar_dir = self:getSidecarDir(doc_path, location)
+    local cover_file = findCoverFileInDir(sidecar_dir)
+    if not cover_file then
+        location = location == "doc" and "dir" or "doc"
+        sidecar_dir = self:getSidecarDir(doc_path, location)
+        cover_file = findCoverFileInDir(sidecar_dir)
+    end
+    return cover_file
+end
+
+function DocSettings:getCoverFile(reset_cache)
+    if reset_cache then
+        self.cover_file = nil
+    else
+        if not self.cover_file then
+            self.cover_file = DocSettings:findCoverFile(self.data.doc_path)
+        end
+        return self.cover_file
     end
 end
 
@@ -294,23 +298,16 @@ function DocSettings:flush(data, no_cover)
             end
 
             -- move cover file to the metadata file location
-            local cover_update
             if not no_cover then
-                local cover_file = self:getCustomBookCover(self.data.doc_path)
-                if cover_file then
-                    if util.splitFilePathName(cover_file) ~= sidecar_dir then
-                        local mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv"
-                        ffiutil.execute(mv_bin, cover_file, sidecar_dir)
-                        cover_update = true
-                    end
+                local cover_file = self:getCoverFile()
+                if cover_file and util.splitFilePathName(cover_file) ~= sidecar_dir then
+                    local mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv"
+                    ffiutil.execute(mv_bin, cover_file, sidecar_dir)
+                    self:getCoverFile(true) -- reset cache
                 end
             end
 
             self:purge(sidecar_file) -- remove old candidates and empty sidecar folders
-
-            if cover_update then
-                DocSettings:getCustomBookCover() -- clear cached cover file path
-            end
 
             return sidecar_dir
         end
@@ -334,10 +331,10 @@ function DocSettings:purge(sidecar_to_keep)
     end
 
     if not sidecar_to_keep then
-        local cover_file = self:getCustomBookCover(self.data.doc_path)
+        local cover_file = self:getCoverFile()
         if cover_file then
             os.remove(cover_file)
-            DocSettings:getCustomBookCover() -- clear cached cover file path
+            self:getCoverFile(true) -- reset cache
         end
     end
     if lfs.attributes(self.doc_sidecar_dir, "mode") == "directory" then
@@ -377,11 +374,11 @@ function DocSettings:update(doc_path, new_doc_path, copy)
     end
 
     -- update cover file
-    local cover_file = self:getCustomBookCover(doc_path)
+    if not doc_settings then
+        doc_settings = DocSettings:open(doc_path)
+    end
+    local cover_file = doc_settings:getCoverFile()
     if cover_file then
-        if not doc_settings then
-            doc_settings = DocSettings:open(doc_path)
-        end
         if new_doc_path then
             if not new_sidecar_dir then
                 new_sidecar_dir = self:getSidecarDir(new_doc_path)
@@ -392,11 +389,11 @@ function DocSettings:update(doc_path, new_doc_path, copy)
         end
     end
 
-    if not copy and doc_settings then
+    if not copy then
         doc_settings:purge()
     end
     if cover_file then
-        self:getCustomBookCover() -- clear cached cover file path
+        doc_settings:getCoverFile(true) -- reset cache
     end
 end
 
