@@ -321,6 +321,7 @@ end
 
 function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_callback, cover_file)
     local function kvp_update()
+        DocSettings:getCustomBookCover() -- clear cached cover file path
         self.updated = true
         self.kvp_widget:onClose()
         if self.document then
