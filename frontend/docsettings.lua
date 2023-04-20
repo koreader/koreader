@@ -150,16 +150,23 @@ function DocSettings:getFileFromHistory(hist_name)
 end
 
 --- Returns path to book custom cover file if it exists, or nil.
+-- Call without argument to clear cached cover file path.
 function DocSettings:getCustomBookCover(doc_path)
-    local location = G_reader_settings:readSetting("document_metadata_folder", "doc")
-    local sidecar_dir = self:getSidecarDir(doc_path, location)
-    local cover_file = self:getCoverFile(sidecar_dir)
-    if not cover_file then
-        location = location == "doc" and "dir" or "doc"
-        sidecar_dir = self:getSidecarDir(doc_path, location)
-        cover_file = self:getCoverFile(sidecar_dir)
+    if doc_path then
+        if not self.cover_file then
+            local location = G_reader_settings:readSetting("document_metadata_folder", "doc")
+            local sidecar_dir = self:getSidecarDir(doc_path, location)
+            self.cover_file = self:getCoverFile(sidecar_dir)
+            if not self.cover_file then
+                location = location == "doc" and "dir" or "doc"
+                sidecar_dir = self:getSidecarDir(doc_path, location)
+                self.cover_file = self:getCoverFile(sidecar_dir)
+            end
+        end
+        return self.cover_file
+    else
+        self.cover_file = nil
     end
-    return cover_file
 end
 
 function DocSettings:getCoverFile(sidecar_dir)
@@ -287,17 +294,23 @@ function DocSettings:flush(data, no_cover)
             end
 
             -- move cover file to the metadata file location
+            local cover_update
             if not no_cover then
-                if self.cover_file == nil then
-                    self.cover_file = self:getCustomBookCover(self.data.doc_path) or false
-                end
-                if self.cover_file and util.splitFilePathName(self.cover_file) ~= sidecar_dir then
-                    local mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv"
-                    ffiutil.execute(mv_bin, self.cover_file, sidecar_dir)
+                local cover_file = self:getCustomBookCover(self.data.doc_path)
+                if cover_file then
+                    if util.splitFilePathName(cover_file) ~= sidecar_dir then
+                        local mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv"
+                        ffiutil.execute(mv_bin, cover_file, sidecar_dir)
+                        cover_update = true
+                    end
                 end
             end
 
             self:purge(sidecar_file) -- remove old candidates and empty sidecar folders
+            
+            if cover_update then
+                DocSettings:getCustomBookCover() -- clear cached cover file path
+            end
 
             return sidecar_dir
         end
@@ -324,6 +337,7 @@ function DocSettings:purge(sidecar_to_keep)
         local cover_file = self:getCustomBookCover(self.data.doc_path)
         if cover_file then
             os.remove(cover_file)
+            DocSettings:getCustomBookCover() -- clear cached cover file path
         end
     end
     if lfs.attributes(self.doc_sidecar_dir, "mode") == "directory" then
@@ -345,26 +359,44 @@ end
 
 --- Updates sidecar info for file rename/copy/move/delete operations.
 function DocSettings:update(doc_path, new_doc_path, copy)
+    local doc_settings, new_sidecar_dir
+
+    -- update metadata
     if self:hasSidecarFile(doc_path) then
-        local doc_settings = DocSettings:open(doc_path)
+        doc_settings = DocSettings:open(doc_path)
         if new_doc_path then
             local new_doc_settings = DocSettings:open(new_doc_path)
             -- save doc settings to the new location, no cover file yet
-            local new_sidecar_dir = new_doc_settings:flush(doc_settings.data, true)
-            local cover_file = self:getCustomBookCover(doc_path)
-            if cover_file then
-                local cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp"
-                ffiutil.execute(cp_bin, cover_file, new_sidecar_dir)
-            end
+            new_sidecar_dir = new_doc_settings:flush(doc_settings.data, true)
         else
             local cache_file_path = doc_settings:readSetting("cache_file_path")
             if cache_file_path then
                 os.remove(cache_file_path)
             end
         end
-        if not copy then
-            doc_settings:purge()
+    end
+
+    -- update cover file
+    local cover_file = self:getCustomBookCover(doc_path)
+    if cover_file then
+        if not doc_settings then
+            doc_settings = DocSettings:open(doc_path)
         end
+        if new_doc_path then
+            if not new_sidecar_dir then
+                new_sidecar_dir = self:getSidecarDir(new_doc_path)
+                util.makePath(new_sidecar_dir)
+            end
+            local cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp"
+            ffiutil.execute(cp_bin, cover_file, new_sidecar_dir)
+        end
+    end
+
+    if not copy and doc_settings then
+        doc_settings:purge()
+    end
+    if cover_file then
+        self:getCustomBookCover() -- clear cached cover file path
     end
 end
 
