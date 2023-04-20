@@ -111,7 +111,7 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
     table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=callback })
     -- custom cover image
     local text, hold_callback
-    local custom_book_cover = DocSettings:getCustomBookCover(file)
+    local custom_book_cover = DocSettings:findCoverFile(file)
     if custom_book_cover then
         text = _("Tap to display, long-press to reset")
         callback = function()
@@ -289,7 +289,7 @@ function BookInfo:getCoverPageImage(doc, file, force_orig)
     local cover_bb
     -- check for a custom cover (orig cover is forcedly requested in "Book information" only)
     if not force_orig then
-        local custom_cover = DocSettings:getCustomBookCover(file or (doc and doc.file))
+        local custom_cover = DocSettings:findCoverFile(file or (doc and doc.file))
         if custom_cover then
             local ImageWidget = require("ui/widget/imagewidget")
             local img_widget = ImageWidget:new{
@@ -321,7 +321,9 @@ end
 
 function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_callback, cover_file)
     local function kvp_update()
-        DocSettings:getCustomBookCover() -- clear cached cover file path
+        if self.ui then
+            self.ui.doc_settings:getCoverFile(true) -- reset cover file cache
+        end
         self.updated = true
         self.kvp_widget:onClose()
         if self.document then
@@ -352,7 +354,7 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
             end,
             onConfirm = function(image_file)
                 local sidecar_dir
-                local sidecar_file = DocSettings:getCustomBookCover(file) -- existing cover file
+                local sidecar_file = DocSettings:findCoverFile(file) -- existing cover file
                 if sidecar_file then
                     os.remove(sidecar_file)
                 else -- no existing cover, get metadata file path
