@@ -307,7 +307,7 @@ function DocSettings:flush(data, no_cover)
             end
 
             self:purge(sidecar_file) -- remove old candidates and empty sidecar folders
-            
+
             if cover_update then
                 DocSettings:getCustomBookCover() -- clear cached cover file path
             end
