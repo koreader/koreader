@@ -179,8 +179,8 @@ function DocSettings:getCoverFile(reset_cache)
     if reset_cache then
         self.cover_file = nil
     else
-        if not self.cover_file then
-            self.cover_file = DocSettings:findCoverFile(self.data.doc_path)
+        if self.cover_file == nil then
+            self.cover_file = DocSettings:findCoverFile(self.data.doc_path) or false
         end
         return self.cover_file
     end
