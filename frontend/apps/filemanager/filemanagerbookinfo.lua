@@ -152,6 +152,10 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
                 local FileManager = require("apps/filemanager/filemanager")
                 local fm_ui = FileManager.instance
                 local ui = self.ui or fm_ui
+                if not ui then
+                    local ReaderUI = require("apps/reader/readerui")
+                    ui = ReaderUI:_getRunningInstance()
+                end
                 if ui and ui.coverbrowser then
                     ui.coverbrowser:deleteBookInfo(file)
                 end
