@@ -3,6 +3,7 @@ This module provides a way to display book information (filename and book metada
 ]]
 
 local BD = require("ui/bidi")
+local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
@@ -110,25 +111,16 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
     end
     table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=callback })
     -- custom cover image
-    local text, hold_callback
-    local custom_book_cover = DocSettings:findCoverFile(file)
-    if custom_book_cover then
-        text = _("Tap to display, long-press to reset")
+    local is_doc = self.document and true or false
+    if self.custom_book_cover == nil then
+        self.custom_book_cover = DocSettings:findCoverFile(file)
+    end
+    if self.custom_book_cover then
         callback = function()
             self:onShowBookCover(file)
         end
-        hold_callback = function()
-            self:setCustomBookCover(file, book_props, metadata_updated_caller_callback, custom_book_cover)
-        end
-    else
-        text = _("Tap to choose an image")
-        callback = function()
-            self:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
-        end
+        table.insert(kv_pairs, { _("Custom cover image:"), _("Tap to display"), callback=callback, separator=is_doc })
     end
-    local is_doc = self.document and true or false
-    table.insert(kv_pairs, { _("Custom cover image:"),
-        text, callback=callback, hold_callback=hold_callback, separator=is_doc })
 
     -- Page section
     if is_doc then
@@ -166,6 +158,10 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
                     metadata_updated_caller_callback()
                 end
             end
+        end,
+        title_bar_left_icon = "appbar.menu",
+        title_bar_left_icon_tap_callback = function()
+            self:showCustomMenu(file, book_props, metadata_updated_caller_callback)
         end,
     }
     UIManager:show(self.kvp_widget)
@@ -323,7 +319,7 @@ function BookInfo:getCoverPageImage(doc, file, force_orig)
     return cover_bb
 end
 
-function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_callback, cover_file)
+function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
     local function kvp_update()
         if self.ui then
             self.ui.doc_settings:getCoverFile(true) -- reset cover file cache
@@ -336,14 +332,15 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
             self:show(file, book_props, metadata_updated_caller_callback)
         end
     end
-    if cover_file then -- reset custom cover
+    if self.custom_book_cover then -- reset custom cover
         local ConfirmBox = require("ui/widget/confirmbox")
         local confirm_box = ConfirmBox:new{
             text = _("Reset custom cover?\nImage file will be deleted."),
             ok_text = _("Reset"),
             ok_callback = function()
-                if os.remove(cover_file) then
-                    DocSettings:removeSidecarDir(file, util.splitFilePathName(cover_file))
+                if os.remove(self.custom_book_cover) then
+                    DocSettings:removeSidecarDir(file, util.splitFilePathName(self.custom_book_cover))
+                    self.custom_book_cover = false
                     kvp_update()
                 end
             end,
@@ -373,6 +370,7 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
                 local new_cover_file = sidecar_dir .. "/" .. "cover." .. util.getFileNameSuffix(image_file)
                 local cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp"
                 if ffiutil.execute(cp_bin, image_file, new_cover_file) == 0 then
+                    self.custom_book_cover = new_cover_file
                     kvp_update()
                 end
             end,
@@ -416,6 +414,32 @@ function BookInfo:getCurrentPageLineWordCounts()
         end
     end
     return lines_nb, words_nb
+end
+
+function BookInfo:showCustomMenu(file, book_props, metadata_updated_caller_callback)
+    local button_dialog
+    local buttons = {{
+        {
+            text = self.custom_book_cover and _("Reset cover image") or _("Set cover image"),
+            align = "left",
+            font_face = "smallinfofont",
+            font_size = 22,
+            font_bold = false,
+            callback = function()
+                UIManager:close(button_dialog)
+                self:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
+            end,
+        },
+    }}
+    button_dialog = ButtonDialog:new{
+        width = math.floor(Screen:getWidth() * 0.9),
+        shrink_unneeded_width = true,
+        buttons = buttons,
+        anchor = function()
+            return self.kvp_widget.title_bar.left_button.image.dimen
+        end,
+    }
+    UIManager:show(button_dialog)
 end
 
 return BookInfo
