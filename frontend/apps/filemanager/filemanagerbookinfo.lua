@@ -107,7 +107,9 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
     end
     -- cover image
     local is_doc = self.document and true or false
-    self.custom_book_cover = DocSettings:findCoverFile(file)
+    if self.custom_book_cover == nil then
+        self.custom_book_cover = DocSettings:findCoverFile(file)
+    end
     local callback = function()
         self:onShowBookCover(file, true)
     end
@@ -339,6 +341,7 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
             ok_callback = function()
                 if os.remove(self.custom_book_cover) then
                     DocSettings:removeSidecarDir(file, util.splitFilePathName(self.custom_book_cover))
+                    self.custom_book_cover = false
                     kvp_update()
                 end
             end,
@@ -368,6 +371,7 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
                 local new_cover_file = sidecar_dir .. "/" .. "cover." .. util.getFileNameSuffix(image_file)
                 local cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp"
                 if ffiutil.execute(cp_bin, image_file, new_cover_file) == 0 then
+                    self.custom_book_cover = new_cover_file
                     kvp_update()
                 end
             end,
