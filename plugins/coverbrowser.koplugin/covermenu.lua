@@ -318,7 +318,6 @@ function CoverMenu:updateItems(select_number)
                 local button = self.file_dialog.button_table:getButtonById("reset")
                 local orig_purge_callback = button.callback
                 button.callback = function()
-                    BookInfoManager:deleteBookInfo(file)
                     -- Wipe the cache
                     self:updateCache(file)
                     -- And then purge the sidecar folder as expected
@@ -446,7 +445,6 @@ function CoverMenu:onHistoryMenuHold(item)
     local button = self.histfile_dialog.button_table:getButtonById("reset")
     local orig_purge_callback = button.callback
     button.callback = function()
-        BookInfoManager:deleteBookInfo(file)
         -- Wipe the cache
         self:updateCache(file)
         -- And then purge the sidecar folder as expected
@@ -570,7 +568,6 @@ function CoverMenu:onCollectionsMenuHold(item)
     local button = self.collfile_dialog.button_table:getButtonById("reset")
     local orig_purge_callback = button.callback
     button.callback = function()
-        BookInfoManager:deleteBookInfo(file)
         -- Wipe the cache
         self:updateCache(file)
         -- And then purge the sidecar folder as expected
