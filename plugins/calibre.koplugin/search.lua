@@ -272,7 +272,7 @@ end
 
 function CalibreSearch:onMenuHold(item)
     if not item.info or item.info:len() <= 0 then return end
-    local thumbnail = FileManagerBookInfo:getCoverPageImage(nil, item.path)
+    local thumbnail = FileManagerBookInfo:getCoverImage(nil, item.path)
     local thumbwidth = math.min(240, Screen:getWidth()/3)
     UIManager:show(InfoMessage:new{
         text = item.info,
