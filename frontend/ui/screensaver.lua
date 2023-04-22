@@ -548,7 +548,7 @@ function Screensaver:setup(event, event_message)
         end
         if not excluded then
             if lastfile and lfs.attributes(lastfile, "mode") == "file" then
-                self.image = FileManagerBookInfo:getCoverPageImage(ui and ui.document, lastfile)
+                self.image = FileManagerBookInfo:getCoverImage(ui and ui.document, lastfile)
                 if self.image == nil then
                     self.screensaver_type = "random_image"
                 end
@@ -659,7 +659,7 @@ function Screensaver:show()
         local doc = ui.document
         local doc_settings = ui.doc_settings
         widget = BookStatusWidget:new{
-            thumbnail = FileManagerBookInfo:getCoverPageImage(doc),
+            thumbnail = FileManagerBookInfo:getCoverImage(doc),
             props = doc:getProps(),
             document = doc,
             settings = doc_settings,
