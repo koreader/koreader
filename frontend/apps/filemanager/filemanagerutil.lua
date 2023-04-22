@@ -143,8 +143,8 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
                     BD.filepath(file)),
                 ok_text = _("Reset"),
                 ok_callback = function()
-                    local custom_metadata_updated = filemanagerutil.purgeSettings(file)
-                    if custom_metadata_updated then -- refresh coverbrowser cached book info
+                    local custom_metadata_purged = filemanagerutil.purgeSettings(file)
+                    if custom_metadata_purged then -- refresh coverbrowser cached book info
                         local FileManager = require("apps/filemanager/filemanager")
                         local ui = FileManager.instance
                         if not ui then
