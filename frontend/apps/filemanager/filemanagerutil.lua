@@ -51,7 +51,7 @@ end
 function filemanagerutil.purgeSettings(file)
     local file_abs_path = ffiutil.realpath(file)
     if file_abs_path then
-        DocSettings:open(file_abs_path):purge()
+        return DocSettings:open(file_abs_path):purge()
     end
 end
 
@@ -143,16 +143,18 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
                     BD.filepath(file)),
                 ok_text = _("Reset"),
                 ok_callback = function()
-                    local FileManager = require("apps/filemanager/filemanager")
-                    local ui = FileManager.instance
-                    if not ui then
-                        local ReaderUI = require("apps/reader/readerui")
-                        ui = ReaderUI:_getRunningInstance()
+                    local custom_metadata_updated = filemanagerutil.purgeSettings(file)
+                    if custom_metadata_updated then -- refresh coverbrowser cached book info
+                        local FileManager = require("apps/filemanager/filemanager")
+                        local ui = FileManager.instance
+                        if not ui then
+                            local ReaderUI = require("apps/reader/readerui")
+                            ui = ReaderUI:_getRunningInstance()
+                        end
+                        if ui and ui.coverbrowser then
+                            ui.coverbrowser:deleteBookInfo(file)
+                        end
                     end
-                    if ui and ui.coverbrowser then
-                        ui.coverbrowser:deleteBookInfo(file)
-                    end
-                    filemanagerutil.purgeSettings(file)
                     require("readhistory"):fileSettingsPurged(file)
                     caller_callback()
                 end,
