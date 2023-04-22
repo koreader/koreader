@@ -868,7 +868,7 @@ function FileManager:pasteHere(file)
     local function infoCopyFile()
         if self:copyRecursive(orig_file, dest_path) then
             if is_file then
-                DocSettings:update(orig_file, dest_file, true)
+                DocSettings:updateDocSettingsLocation(orig_file, dest_file, true)
             end
             return true
         else
@@ -882,7 +882,7 @@ function FileManager:pasteHere(file)
     local function infoMoveFile()
         if self:moveFile(orig_file, dest_path) then
             if is_file then
-                DocSettings:update(orig_file, dest_file)
+                DocSettings:updateDocSettingsLocation(orig_file, dest_file)
                 require("readhistory"):updateItemByPath(orig_file, dest_file) -- (will update "lastfile" if needed)
             end
             ReadCollection:updateItemByPath(orig_file, dest_file)
@@ -1005,7 +1005,7 @@ function FileManager:deleteFile(file, is_file)
     end
     if ok and not err then
         if is_file then
-            DocSettings:update(file)
+            DocSettings:updateDocSettingsLocation(file)
             require("readhistory"):fileDeleted(file)
         end
         ReadCollection:removeItemByPath(file, not is_file)
@@ -1054,7 +1054,7 @@ function FileManager:renameFile(file, basename, is_file)
     local function doRenameFile()
         if self:moveFile(file, dest) then
             if is_file then
-                DocSettings:update(file, dest)
+                DocSettings:updateDocSettingsLocation(file, dest)
                 require("readhistory"):updateItemByPath(file, dest) -- (will update "lastfile" if needed)
             end
             ReadCollection:updateItemByPath(file, dest)
