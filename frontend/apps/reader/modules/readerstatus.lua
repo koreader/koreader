@@ -199,7 +199,7 @@ end
 
 function ReaderStatus:onShowBookStatus(before_show_callback)
     local status_page = BookStatusWidget:new {
-        thumbnail = FileManagerBookInfo:getCoverPageImage(self.document),
+        thumbnail = FileManagerBookInfo:getCoverImage(self.document),
         props = self.document:getProps(),
         document = self.document,
         settings = self.settings,
