@@ -372,7 +372,10 @@ function ListMenuItem:update()
             if DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
                 self.menu:updateCache(self.filepath, nil, true, pages) -- create new cache entry if absent
-                pages, percent_finished, status, has_highlight = unpack(self.menu.cover_info_cache[self.filepath])
+                pages            = self.menu.cover_info_cache[self.filepath][1]
+                percent_finished = self.menu.cover_info_cache[self.filepath][2]
+                status           = self.menu.cover_info_cache[self.filepath][3]
+                has_highlight    = self.menu.cover_info_cache[self.filepath][4]
             end
             -- right widget, first line
             local directory, filename = util.splitFilePathName(self.filepath) -- luacheck: no unused
