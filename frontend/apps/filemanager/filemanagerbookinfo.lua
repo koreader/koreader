@@ -108,18 +108,20 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
     -- cover image
     local is_doc = self.document and true or false
     self.custom_book_cover = DocSettings:findCoverFile(file)
-    local function showOrigCover()
-        self:onShowBookCover(file, true)
-    end
-    table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=showOrigCover,
-        separator=is_doc and not self.custom_book_cover })
+    table.insert(kv_pairs, {
+        _("Cover image:"),
+        _("Tap to display"),
+        callback = function() self:onShowBookCover(file, true) end,
+        separator = is_doc and not self.custom_book_cover,
+    })
     -- custom cover image
     if self.custom_book_cover then
-        local function showCustomCover()
-            self:onShowBookCover(file)
-        end
-        table.insert(kv_pairs, { _("Custom cover image:"), _("Tap to display"), callback=showCustomCover,
-            separator=is_doc })
+        table.insert(kv_pairs, {
+            _("Custom cover image:"),
+            _("Tap to display"),
+            callback = function() self:onShowBookCover(file) end,
+            separator = is_doc,
+        })
     end
 
     -- Page section
