@@ -107,7 +107,7 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
         FileManager:copyFileFromTo(document_full_path, self.archive_dir_path)
     end
     local dest_file = string.format("%s%s", self.archive_dir_path, filename)
-    DocSettings:update(document_full_path, dest_file, not is_move_process)
+    DocSettings:updateDocSettingsLocation(document_full_path, dest_file, not is_move_process)
     ReadHistory:updateItemByPath(document_full_path, dest_file) -- (will update "lastfile" if needed)
     ReadCollection:updateItemByPath(document_full_path, dest_file)
     UIManager:show(ConfirmBox:new{
