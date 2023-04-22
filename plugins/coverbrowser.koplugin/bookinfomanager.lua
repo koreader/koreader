@@ -529,7 +529,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                 local spec_max_cover_h = cover_specs.max_cover_h
 
                 dbrow.cover_fetched = 'Y' -- we had a try at getting a cover
-                local cover_bb = FileManagerBookInfo:getCoverPageImage(document)
+                local cover_bb = FileManagerBookInfo:getCoverImage(document)
                 if cover_bb then
                     dbrow.has_cover = 'Y'
                     dbrow.cover_sizetag = spec_sizetag
