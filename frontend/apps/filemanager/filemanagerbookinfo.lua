@@ -224,10 +224,7 @@ function BookInfo:getBookProps(file, book_props, no_open_document)
     end
 
     -- If still no book_props, fall back to empty ones
-    if not book_props then
-        book_props = {}
-    end
-    return book_props
+    return book_props or {}
 end
 
 function BookInfo:onShowBookInfo()
