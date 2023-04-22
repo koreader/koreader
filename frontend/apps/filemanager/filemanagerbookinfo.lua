@@ -15,7 +15,7 @@ local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
-local Screen = require("device").screen
+local Screen = Device.screen
 
 local BookInfo = WidgetContainer:extend{
 }
@@ -107,20 +107,19 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
     end
     -- cover image
     local is_doc = self.document and true or false
-    if self.custom_book_cover == nil then
-        self.custom_book_cover = DocSettings:findCoverFile(file)
-    end
-    local callback = function()
+    self.custom_book_cover = DocSettings:findCoverFile(file)
+    local function showOrigCover()
         self:onShowBookCover(file, true)
     end
-    table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=callback,
+    table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=showOrigCover,
         separator=is_doc and not self.custom_book_cover })
     -- custom cover image
     if self.custom_book_cover then
-        callback = function()
+        local function showCustomCover()
             self:onShowBookCover(file)
         end
-        table.insert(kv_pairs, { _("Custom cover image:"), _("Tap to display"), callback=callback, separator=is_doc })
+        table.insert(kv_pairs, { _("Custom cover image:"), _("Tap to display"), callback=showCustomCover,
+            separator=is_doc })
     end
 
     -- Page section
@@ -270,7 +269,7 @@ function BookInfo:onShowBookDescription(description, file)
 end
 
 function BookInfo:onShowBookCover(file, force_orig)
-    local cover_bb = self:getCoverPageImage(self.document, file, force_orig)
+    local cover_bb = self:getCoverImage(self.document, file, force_orig)
     if cover_bb then
         local ImageViewer = require("ui/widget/imageviewer")
         local imgviewer = ImageViewer:new{
@@ -286,7 +285,7 @@ function BookInfo:onShowBookCover(file, force_orig)
     end
 end
 
-function BookInfo:getCoverPageImage(doc, file, force_orig)
+function BookInfo:getCoverImage(doc, file, force_orig)
     local cover_bb
     -- check for a custom cover (orig cover is forcedly requested in "Book information" only)
     if not force_orig then
@@ -341,7 +340,6 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
             ok_callback = function()
                 if os.remove(self.custom_book_cover) then
                     DocSettings:removeSidecarDir(file, util.splitFilePathName(self.custom_book_cover))
-                    self.custom_book_cover = false
                     kvp_update()
                 end
             end,
@@ -371,7 +369,6 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
                 local new_cover_file = sidecar_dir .. "/" .. "cover." .. util.getFileNameSuffix(image_file)
                 local cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp"
                 if ffiutil.execute(cp_bin, image_file, new_cover_file) == 0 then
-                    self.custom_book_cover = new_cover_file
                     kvp_update()
                 end
             end,
@@ -423,9 +420,6 @@ function BookInfo:showCustomMenu(file, book_props, metadata_updated_caller_callb
         {
             text = self.custom_book_cover and _("Reset cover image") or _("Set cover image"),
             align = "left",
-            font_face = "smallinfofont",
-            font_size = 22,
-            font_bold = false,
             callback = function()
                 UIManager:close(button_dialog)
                 self:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
@@ -433,7 +427,6 @@ function BookInfo:showCustomMenu(file, book_props, metadata_updated_caller_callb
         },
     }}
     button_dialog = ButtonDialog:new{
-        width = math.floor(Screen:getWidth() * 0.9),
         shrink_unneeded_width = true,
         buttons = buttons,
         anchor = function()
