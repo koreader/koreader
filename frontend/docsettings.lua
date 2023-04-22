@@ -330,13 +330,13 @@ function DocSettings:purge(sidecar_to_keep)
         end
     end
 
-    local custom_metadata_updated
+    local custom_metadata_purged
     if not sidecar_to_keep then
         local cover_file = self:getCoverFile()
         if cover_file then
             os.remove(cover_file)
             self:getCoverFile(true) -- reset cache
-            custom_metadata_updated = true
+            custom_metadata_purged = true
         end
     end
     if lfs.attributes(self.doc_sidecar_dir, "mode") == "directory" then
@@ -346,7 +346,7 @@ function DocSettings:purge(sidecar_to_keep)
         util.removePath(self.dir_sidecar_dir) -- remove empty parent folders
     end
 
-    return custom_metadata_updated
+    return custom_metadata_purged
 end
 
 --- Removes empty sidecar dir.
@@ -359,7 +359,7 @@ function DocSettings:removeSidecarDir(doc_path, sidecar_dir)
 end
 
 --- Updates sdr location for file rename/copy/move/delete operations.
-function DocSettings:updateDocSettingsLocation(doc_path, new_doc_path, copy)
+function DocSettings:updateLocation(doc_path, new_doc_path, copy)
     local doc_settings, new_sidecar_dir
 
     -- update metadata
