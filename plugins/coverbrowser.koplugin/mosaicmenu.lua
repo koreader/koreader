@@ -577,7 +577,8 @@ function MosaicMenuItem:update()
             if DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
                 self.menu:updateCache(self.filepath, nil, true, bookinfo.pages) -- create new cache entry if absent
-                dummy, percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
+                percent_finished = self.menu.cover_info_cache[self.filepath][2]
+                status           = self.menu.cover_info_cache[self.filepath][3]
             end
             self.percent_finished = percent_finished
             self.status = status
