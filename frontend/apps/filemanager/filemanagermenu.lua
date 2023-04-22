@@ -958,7 +958,7 @@ function FileManagerMenu:moveBookMetadata()
                     ok_callback = function()
                         UIManager:close(self.menu_container)
                         for _, book in ipairs(books_to_move) do
-                            DocSettings:updateDocSettingsLocation(book, book)
+                            DocSettings:updateLocation(book, book)
                         end
                         FileChooser:refreshPath()
                     end,
