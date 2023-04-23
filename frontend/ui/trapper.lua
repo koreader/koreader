@@ -674,7 +674,7 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
         if task_returns_simple_string then
             return completed, ret_values
         else
-            return completed, unpack(ret_values)
+            return completed, unpack(ret_values, 1, ret_values.n)
         end
     end
     return completed
