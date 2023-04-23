@@ -41,7 +41,7 @@ for _, widget in ipairs(self) do
     end
 end
 -- If not consumed by children, consume it ourself
-return self["on"..event.name](self, unpack(event.args))
+return self["on"..event.name](self, unpack(event.args, 1, event.args.n))
 ```
 
 ## Event system

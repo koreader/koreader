@@ -34,7 +34,7 @@ By default, it's `"on"..Event.name`.
 function EventListener:handleEvent(event)
     if self[event.handler] then
         --print("EventListener:handleEvent:", event.handler, "handled by", debug.getinfo(self[event.handler], "S").short_src, self)
-        return self[event.handler](self, unpack(event.args))
+        return self[event.handler](self, unpack(event.args, 1, event.args.n))
     end
 end
 

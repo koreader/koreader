@@ -49,7 +49,7 @@ function Dbg:turnOn()
             if post_guard then
                 post_guard(...)
             end
-            return unpack(values)
+            return unpack(values, 1, values.n)
         end
     end
     --- Use this instead of a regular Lua @{assert}().
