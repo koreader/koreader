@@ -149,7 +149,7 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
                         local ui = FileManager.instance
                         if not ui then
                             local ReaderUI = require("apps/reader/readerui")
-                            ui = ReaderUI:_getRunningInstance()
+                            ui = ReaderUI.instance
                         end
                         if ui and ui.coverbrowser then
                             ui.coverbrowser:deleteBookInfo(file)
