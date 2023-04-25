@@ -5,7 +5,6 @@ in the so-called sidecar directory
 ]]
 
 local DataStorage = require("datastorage")
-local Device = require("device")
 local LuaSettings = require("luasettings")
 local dump = require("dump")
 local ffiutil = require("ffi/util")
@@ -98,16 +97,16 @@ end
 -- @treturn string
 function DocSettings:hasSidecarFile(doc_path, no_legacy)
     local sidecar_file = self:getSidecarFile(doc_path, "doc")
-    if lfs.attributes(sidecar_file) then
+    if lfs.attributes(sidecar_file, "mode") == "file" then
         return sidecar_file
     end
     sidecar_file = self:getSidecarFile(doc_path, "dir")
-    if lfs.attributes(sidecar_file) then
+    if lfs.attributes(sidecar_file, "mode") == "file" then
         return sidecar_file
     end
     if not no_legacy then
         sidecar_file = self:getHistoryPath(doc_path)
-        if lfs.attributes(sidecar_file) then
+        if lfs.attributes(sidecar_file, "mode") == "file" then
             return sidecar_file
         end
     end
@@ -300,10 +299,12 @@ function DocSettings:flush(data, no_cover)
             -- move cover file to the metadata file location
             if not no_cover then
                 local cover_file = self:getCoverFile()
-                if cover_file and util.splitFilePathName(cover_file) ~= sidecar_dir then
-                    local mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv"
-                    ffiutil.execute(mv_bin, cover_file, sidecar_dir)
-                    self:getCoverFile(true) -- reset cache
+                if cover_file then
+                    local folder, filename = util.splitFilePathName(cover_file)
+                    if folder ~= sidecar_dir then
+                        os.rename(cover_file, sidecar_dir .. "/" .. filename)
+                        self:getCoverFile(true) -- reset cache
+                    end
                 end
             end
 
@@ -387,8 +388,8 @@ function DocSettings:updateLocation(doc_path, new_doc_path, copy)
             new_sidecar_dir = self:getSidecarDir(new_doc_path)
             util.makePath(new_sidecar_dir)
         end
-        local cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp"
-        ffiutil.execute(cp_bin, cover_file, new_sidecar_dir)
+        local _, filename = util.splitFilePathName(cover_file)
+        ffiutil.copyFile(cover_file, new_sidecar_dir .. "/" .. filename)
     end
 
     if not copy then
