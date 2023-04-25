@@ -4,7 +4,6 @@ This module provides a way to display book information (filename and book metada
 
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
-local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
@@ -15,7 +14,7 @@ local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
-local Screen = Device.screen
+local Screen = require("device").screen
 
 local BookInfo = WidgetContainer:extend{
 }
@@ -148,7 +147,7 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
                 local ui = self.ui or fm_ui
                 if not ui then
                     local ReaderUI = require("apps/reader/readerui")
-                    ui = ReaderUI:_getRunningInstance()
+                    ui = ReaderUI.instance
                 end
                 if ui and ui.coverbrowser then
                     ui.coverbrowser:deleteBookInfo(file)
@@ -286,19 +285,16 @@ end
 
 function BookInfo:getCoverImage(doc, file, force_orig)
     local cover_bb
-    -- check for a custom cover (orig cover is forcedly requested in "Book information" only)
+    -- check for a custom cover (orig cover is forcibly requested in "Book information" only)
     if not force_orig then
         local custom_cover = DocSettings:findCoverFile(file or (doc and doc.file))
         if custom_cover then
-            local ImageWidget = require("ui/widget/imagewidget")
-            local img_widget = ImageWidget:new{
-                file = custom_cover,
-                file_do_cache = false,
-                is_icon = util.getFileNameSuffix(custom_cover) == "svg",
-            }
-            cover_bb = img_widget:getImageCopy()
-            img_widget:free()
-            return cover_bb
+            local cover_doc = DocumentRegistry:openDocument(custom_cover)
+            if cover_doc then
+                cover_bb = cover_doc:getCoverPageImage()
+                cover_doc:close()
+                return cover_bb
+            end
         end
     end
     -- orig cover
@@ -366,8 +362,7 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
                     util.makePath(sidecar_dir)
                 end
                 local new_cover_file = sidecar_dir .. "/" .. "cover." .. util.getFileNameSuffix(image_file)
-                local cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp"
-                if ffiutil.execute(cp_bin, image_file, new_cover_file) == 0 then
+                if ffiutil.copyFile(image_file, new_cover_file) == nil then
                     kvp_update()
                 end
             end,
