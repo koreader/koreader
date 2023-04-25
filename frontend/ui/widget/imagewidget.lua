@@ -375,11 +375,6 @@ function ImageWidget:_render()
     self._bb_h = bb_h
 end
 
-function ImageWidget:getImageCopy()
-    self:_render()
-    return self._bb:copy()
-end
-
 function ImageWidget:getSize()
     self:_render()
     -- getSize will be used by the widget stack for centering/padding
