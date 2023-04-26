@@ -61,7 +61,7 @@ function CoverMenu:updateCache(file, status, do_create, pages)
         status = summary and summary.status
         local highlight = doc_settings:readSetting("highlight")
         local has_highlight = highlight and next(highlight) and true
-        self.cover_info_cache[file] = {pages, percent_finished, status, has_highlight}
+        self.cover_info_cache[file] = table.pack(pages, percent_finished, status, has_highlight) -- may be a sparse array
     else
         if self.cover_info_cache and self.cover_info_cache[file] then
             if status then
