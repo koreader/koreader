@@ -994,7 +994,7 @@ function kodev-check() {
     check_submodules
 
     # shellcheck disable=2016
-    mapfile -t shellscript_locations < <({ git grep -lE '^#!(/usr)?/bin/(env )?(bash|sh)' | sed "/^plugins\/terminal.koplugin\/shfm$/d" && git submodule --quiet foreach '[ "$path" = "base" -o "$path" = "platform/android/luajit-launcher" ] || git grep -lE "^#!(/usr)?/bin/(env )?(bash|sh)" | sed "s|^|$path/|"' && git ls-files ./*.sh; } | sort | uniq)
+    mapfile -t shellscript_locations < <({ git -c submodule.recurse=0 grep -lE '^#!(/usr)?/bin/(env )?(bash|sh)' | sed "/^plugins\/terminal.koplugin\/shfm$/d" && git submodule --quiet foreach '[ "$path" = "base" -o "$path" = "platform/android/luajit-launcher" ] || git grep -lE "^#!(/usr)?/bin/(env )?(bash|sh)" | sed "s|^|$path/|"' && git ls-files ./*.sh; } | sort | uniq)
 
     SHFMT_OPTIONS="-i 4 -ci"
 
