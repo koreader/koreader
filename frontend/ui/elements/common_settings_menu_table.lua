@@ -239,7 +239,7 @@ end
 
 if Device:isKindle() and PowerD:hasHallSensor() then
     common_settings.hall_sensor = {
-        text = _("Hall Sensor"),
+        text = _("Cover events"),
         help_text = _([[Enable or disable the Hall effect sensor.
 This is used to detect if the cover is closed to auto sleep and wake the device. If there is no cover present the sensor may cause spurious wakeups when located next to a magnetic source.]]),
         keep_menu_open = true,
