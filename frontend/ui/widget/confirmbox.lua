@@ -209,12 +209,11 @@ function ConfirmBox:addWidget(widget)
 end
 
 function ConfirmBox:_preserveAddedWidgets()
-    -- remove added widgets to preserve their TextBoxWidget from being free'ed
+    -- remove added widgets to preserve their subwidgets from being free'ed
     for i = 1, #self._added_widgets do
         table.remove(self.text_group)
     end
 end
-
 
 function ConfirmBox:onShow()
     UIManager:setDirty(self, function()
