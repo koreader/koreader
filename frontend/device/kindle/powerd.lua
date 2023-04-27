@@ -1,6 +1,7 @@
 local BasePowerD = require("device/generic/powerd")
 local WakeupMgr = require("device/wakeupmgr")
 local logger = require("logger")
+local util = require("util")
 -- liblipclua, see require below
 
 local KindlePowerD = BasePowerD:new{
@@ -172,11 +173,7 @@ end
 
 function KindlePowerD:onToggleHallSensor()
     local stat = self:getHallSensor()
-    local fd = io.open(self.hall_sensor_file, "we")
-    if fd then
-        fd:write(stat and 0 or 1)
-        fd:close()
-    end
+    util.writeToSysfs(stat and 0 or 1, self.hall_sensor_file)
 end
 
 function KindlePowerD:_readFLIntensity()
