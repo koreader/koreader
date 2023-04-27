@@ -726,6 +726,7 @@ function KindlePaperWhite2:init()
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+        hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 
     Kindle.init(self)
@@ -740,6 +741,7 @@ function KindleBasic:init()
         device = self,
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+        hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 
     Kindle.init(self)
@@ -755,6 +757,7 @@ function KindleVoyage:init()
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+        hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
     self.input = require("device/input"):new{
         device = self,
@@ -807,6 +810,7 @@ function KindlePaperWhite3:init()
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+        hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 
     Kindle.init(self)
@@ -863,6 +867,7 @@ function KindleOasis:init()
         -- NOTE: Points to the embedded battery. The one in the cover is codenamed "soda".
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+        hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 
     self.input = require("device/input"):new{
@@ -1123,6 +1128,7 @@ function KindleBasic2:init()
         batt_capacity_file = "/sys/class/power_supply/bd7181x_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd7181x_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd7181x_bat/status",
+        hall_file = "/sys/devices/system/heisenberg_hall/heisenberg_hall0/hall_enable",
     }
 
     Kindle.init(self)
@@ -1139,6 +1145,7 @@ function KindlePaperWhite4:init()
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
+        hall_file = "/sys/bus/platform/drivers/hall_sensor/rex_hall/hall_enable",
     }
 
     Kindle.init(self)
@@ -1165,6 +1172,7 @@ function KindleBasic3:init()
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
+        hall_file = "/sys/bus/platform/drivers/hall_sensor/rex_hall/hall_enable",
     }
 
     Kindle.init(self)
@@ -1186,6 +1194,7 @@ function KindlePaperWhite5:init()
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
+        hall_file = "/sys/devices/platform/eink_hall/hall_enable",
     }
 
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.

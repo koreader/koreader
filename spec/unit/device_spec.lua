@@ -40,7 +40,6 @@ describe("device module", function()
     after_each(function()
         mock_input.open:revert()
         os.getenv:revert()
-        os.execute:revert()
 
         os.getenv = osgetenv
         io.open = iopen
@@ -213,8 +212,6 @@ describe("device module", function()
             assert.is.same(kindle_dev.powerd.fl_intensity, 5)
 
             kindle_dev.powerd:toggleFrontlight()
-            assert.stub(os.execute).was_called_with(
-                "printf '%s' 0 > /sys/class/backlight/max77696-bl/brightness")
             -- Here be shenanigans: we don't override powerd's fl_intensity when we turn the light off,
             -- so that we can properly turn it back on at the previous intensity ;)
             assert.is.same(kindle_dev.powerd.fl_intensity, 5)
