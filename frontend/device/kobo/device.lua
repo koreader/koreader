@@ -47,25 +47,6 @@ local function checkStandby()
     return no
 end
 
-local function writeToSys(val, file)
-    -- NOTE: We do things by hand via ffi, because io.write uses fwrite,
-    --       which isn't a great fit for procfs/sysfs (e.g., we lose failure cases like EBUSY,
-    --       as it only reports failures to write to the *stream*, not to the disk/file!).
-    local fd = C.open(file, bit.bor(C.O_WRONLY, C.O_CLOEXEC)) -- procfs/sysfs, we shouldn't need O_TRUNC
-    if fd == -1 then
-        logger.err("Cannot open file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
-        return
-    end
-    local bytes = #val
-    local nw = C.write(fd, val, bytes)
-    if nw == -1 then
-        logger.err("Cannot write `" .. val .. "` to file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
-    end
-    C.close(fd)
-    -- NOTE: Allows the caller to possibly handle short writes (not that these should ever happen here).
-    return nw == bytes
-end
-
 -- Return the highest core number
 local function getCPUCount()
     local fd = io.open("/sys/devices/system/cpu/possible", "re")
@@ -1064,7 +1045,7 @@ function Kobo:standby(max_duration)
     logger.dbg("Kobo standby: asking to enter standby . . .")
     local standby_time = time.boottime_or_realtime_coarse()
 
-    local ret = writeToSys("standby", "/sys/power/state")
+    local ret = util.writeToSysfs("standby", "/sys/power/state")
 
     self.last_standby_time = time.boottime_or_realtime_coarse() - standby_time
     self.total_standby_time = self.total_standby_time + self.last_standby_time
@@ -1140,7 +1121,7 @@ function Kobo:suspend()
     -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
     --       kernel to suspend/resume various subsystems
     --       c.f., state_extended_store @ kernel/power/main.c
-    local ret = writeToSys("1", "/sys/power/state-extended")
+    local ret = util.writeToSysfs("1", "/sys/power/state-extended")
     if ret then
         logger.dbg("Kobo suspend: successfully asked the kernel to put subsystems to sleep")
     else
@@ -1174,7 +1155,7 @@ function Kobo:suspend()
     logger.dbg("Kobo suspend: asking for a suspend to RAM . . .")
     local suspend_time = time.boottime_or_realtime_coarse()
 
-    ret = writeToSys("mem", "/sys/power/state")
+    ret = util.writeToSysfs("mem", "/sys/power/state")
 
     -- NOTE: At this point, we *should* be in suspend to RAM, as such,
     --       execution should only resume on wakeup...
@@ -1189,7 +1170,7 @@ function Kobo:suspend()
     else
         logger.warn("Kobo suspend: the kernel refused to enter suspend!")
         -- Reset state-extended back to 0 since we are giving up.
-        writeToSys("0", "/sys/power/state-extended")
+        util.writeToSysfs("0", "/sys/power/state-extended")
         if G_reader_settings:isTrue("pm_debug_entry_failure") then
             self:toggleChargingLED(true)
         end
@@ -1238,7 +1219,7 @@ function Kobo:resume()
     --       kernel to suspend/resume various subsystems
     --       cf. kernel/power/main.c @ L#207
     --       Among other things, this sets up the wakeup pins (e.g., resume on input).
-    local ret = writeToSys("0", "/sys/power/state-extended")
+    local ret = util.writeToSysfs("0", "/sys/power/state-extended")
     if ret then
         logger.dbg("Kobo resume: successfully asked the kernel to resume subsystems")
     else
@@ -1254,7 +1235,7 @@ function Kobo:resume()
         -- c.f., neo_ctl @ drivers/input/touchscreen/zforce_i2c.c,
         -- basically, a is wakeup (for activate), d is sleep (for deactivate), and we don't care about s (set res),
         -- and l (led signal level, actually a NOP on NTX kernels).
-        writeToSys("a", self.hasIRGridSysfsKnob)
+        util.writeToSysfs("a", self.hasIRGridSysfsKnob)
     end
 
     -- A full suspend may have toggled the LED off.
@@ -1367,16 +1348,16 @@ function Kobo:enableCPUCores(amount)
             up = "1"
         end
 
-        writeToSys(up, path)
+        util.writeToSysfs(up, path)
     end
 end
 
 function Kobo:performanceCPUGovernor()
-    writeToSys("performance", self.cpu_governor_knob)
+    util.writeToSysfs("performance", self.cpu_governor_knob)
 end
 
 function Kobo:defaultCPUGovernor()
-    writeToSys(self.default_cpu_governor, self.cpu_governor_knob)
+    util.writeToSysfs(self.default_cpu_governor, self.cpu_governor_knob)
 end
 
 function Kobo:isStartupScriptUpToDate()
