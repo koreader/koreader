@@ -83,14 +83,14 @@ function ConfirmBox:init()
         face = self.face,
         width = self.added_widgets_width,
     }
-    local text_group = VerticalGroup:new{
+    self.text_group = VerticalGroup:new{
         align = "left",
         text_widget,
     }
     if self._added_widgets then
-        table.insert(text_group, VerticalSpan:new{ width = Size.padding.large })
+        table.insert(self.text_group, VerticalSpan:new{ width = Size.padding.large })
         for _, widget in ipairs(self._added_widgets) do
-            table.insert(text_group, widget)
+            table.insert(self.text_group, widget)
         end
     end
     local content = HorizontalGroup:new{
@@ -100,7 +100,7 @@ function ConfirmBox:init()
             alpha = true,
         },
         HorizontalSpan:new{ width = Size.span.horizontal_default },
-        text_group,
+        self.text_group,
     }
 
     local buttons = {{ -- single row
@@ -188,6 +188,9 @@ function ConfirmBox:init()
                 end
             end
             -- re-init this widget
+            if self._added_widgets then
+                self:_preserveAddedWidgets()
+            end
             self:free()
             self:init()
         end
@@ -195,12 +198,23 @@ function ConfirmBox:init()
 end
 
 function ConfirmBox:addWidget(widget)
-    if not self._added_widgets then
+    if self._added_widgets then
+        self:_preserveAddedWidgets()
+    else
         self._added_widgets = {}
     end
     table.insert(self._added_widgets, widget)
+    self:free()
     self:init()
 end
+
+function ConfirmBox:_preserveAddedWidgets()
+    -- remove added widgets to preserve their TextBoxWidget from being free'ed
+    for i = 1, #self._added_widgets do
+        table.remove(self.text_group)
+    end
+end
+
 
 function ConfirmBox:onShow()
     UIManager:setDirty(self, function()
