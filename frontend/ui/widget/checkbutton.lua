@@ -70,7 +70,7 @@ function CheckButton:initCheckButton(checked)
     self._textwidget = TextBoxWidget:new{
         text = self.text,
         face = self.face,
-        width = (self.width or self.parent._input_widget.width) - self._checkmark.dimen.w,
+        width = (self.width or self.parent.added_widgets_width) - self._checkmark.dimen.w,
         fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
     }
     local textbox_shift = math.max(0, self._checkmark.baseline - self._textwidget:getBaseline())
