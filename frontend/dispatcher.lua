@@ -112,7 +112,7 @@ local settingsList = {
 
     -- reader settings
     open_next_document_in_folder = {category="none", event="OpenNextDocumentInFolder", title=_("Open next document in folder"), reader=true, separator=true},
-    toggle_status_bar = {category="none", event="TapFooter", title=_("Toggle status bar"), reader=true, separator=true},
+    toggle_status_bar = {category="none", event="ToggleFooterMode", title=_("Toggle status bar"), reader=true, separator=true},
     prev_chapter = {category="none", event="GotoPrevChapter", title=_("Previous chapter"), reader=true},
     next_chapter = {category="none", event="GotoNextChapter", title=_("Next chapter"), reader=true},
     first_page = {category="none", event="GoToBeginning", title=_("First page"), reader=true},
