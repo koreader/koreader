@@ -161,6 +161,24 @@ function KindlePowerD:isChargedHW()
     return false
 end
 
+function KindlePowerD:hasHallSensor()
+    return self.hall_sensor_file ~= nil
+end
+
+function KindlePowerD:getHallSensor()
+    local int = self:read_int_file(self.hall_sensor_file)
+    return int == 1
+end
+
+function KindlePowerD:onToggleHallSensor()
+    local stat = self:getHallSensor()
+    local fd = io.open(self.hall_sensor_file, "we")
+    if fd then
+        fd:write(stat and 0 or 1)
+        fd:close()
+    end
+end
+
 function KindlePowerD:_readFLIntensity()
     return self:read_int_file(self.fl_intensity_file)
 end

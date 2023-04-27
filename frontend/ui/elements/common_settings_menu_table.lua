@@ -4,6 +4,7 @@ local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local Language = require("ui/language")
 local NetworkMgr = require("ui/network/manager")
+local PowerD = Device:getPowerDevice()
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local N_ = _.ngettext
@@ -233,6 +234,15 @@ if Device:isKobo() then
             G_reader_settings:makeFalse("ignore_power_sleepcover")
             UIManager:askForRestart()
         end
+    }
+end
+
+if Device:isKindle() and PowerD:hasHallSensor() then
+    common_settings.hall_sensor = {
+        text = _("Hall Sensor"),
+        keep_menu_open = true,
+        checked_func = function() return PowerD:getHallSensor() end,
+        callback = function() PowerD:onToggleHallSensor() end,
     }
 end
 
