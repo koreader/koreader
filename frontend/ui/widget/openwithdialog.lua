@@ -43,7 +43,6 @@ function OpenWithDialog:init()
     }
     self.layout = {self.layout[#self.layout]} -- keep bottom buttons
     self:mergeLayoutInVertical(self.radio_button_table, #self.layout) -- before bottom buttons
-    self._input_widget = self.radio_button_table
 
     local vertical_span = VerticalSpan:new{
         width = Size.padding.large,
