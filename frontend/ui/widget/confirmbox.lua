@@ -77,15 +77,15 @@ function ConfirmBox:init()
         end
     end
 
-    self.added_widgets_width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 2/3)
-    local text_widget = TextBoxWidget:new{
+    -- Named so for consistency with other widgets that use addWidget()
+    self._input_widget = TextBoxWidget:new{
         text = self.text,
         face = self.face,
-        width = self.added_widgets_width,
+        width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 2/3),
     }
     self.text_group = VerticalGroup:new{
         align = "left",
-        text_widget,
+        self._input_widget,
     }
     if self._added_widgets then
         table.insert(self.text_group, VerticalSpan:new{ width = Size.padding.large })
@@ -173,9 +173,9 @@ function ConfirmBox:init()
     -- Reduce font size until widget fit screen height if needed
     local cur_size = frame:getSize()
     if cur_size and cur_size.h > 0.95 * Screen:getHeight() then
-        local orig_font = text_widget.face.orig_font
-        local orig_size = text_widget.face.orig_size
-        local real_size = text_widget.face.size
+        local orig_font = self._input_widget.face.orig_font
+        local orig_size = self._input_widget.face.orig_size
+        local real_size = self._input_widget.face.size
         if orig_size > 10 then -- don't go too small
             while true do
                 orig_size = orig_size - 1
