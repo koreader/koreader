@@ -321,13 +321,13 @@ function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
             return
         end
         local _, docname = util.splitFilePathName(doc_file)
-        local title, author = self:parseTitleFromPath(util.splitFileNameSuffix(docname), doc_file)
-        clippings[title] = {
+        local parsed_title, parsed_author = self:parseTitleFromPath(util.splitFileNameSuffix(docname), doc_file)
+        clippings[parsed_title] = {
             file = doc_file,
-            title = title,
-            author = author,
+            title = stored.stats.title or parsed_title,
+            author = stored.stats.authors or parsed_author,
         }
-        self:parseHighlight(stored.highlight, stored.bookmarks, clippings[title])
+        self:parseHighlight(stored.highlight, stored.bookmarks, clippings[parsed_title])
     end
 end
 
