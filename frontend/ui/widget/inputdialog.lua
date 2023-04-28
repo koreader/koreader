@@ -215,7 +215,6 @@ function InputDialog:init()
     else
         self.text_width = self.text_width or math.floor(self.width * 0.9)
     end
-    self.added_widgets_width = self.text_width
     if self.readonly then -- hide keyboard if we can't edit
         self.keyboard_hidden = true
     end
