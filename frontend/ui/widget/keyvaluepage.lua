@@ -589,7 +589,7 @@ function KeyValuePage:_populateItems()
         local kv_pairs_idx = idx_offset + idx
         local entry = self.kv_pairs[kv_pairs_idx]
         if entry == nil then break end
-        if type(entry) == "table" then
+        if type(entry) == "table" and entry[2] ~= "" then
             tvalue = tostring(entry[2])
             tvalue = tvalue:gsub("[\n\t]", "|")
 
@@ -604,7 +604,6 @@ function KeyValuePage:_populateItems()
     value_widget:free()
     table.sort(key_widths)
     table.sort(value_widths)
-    local unfit_items_count -- count item that needs to move or truncate key/value, not fit 1/2 ratio
     -- first we check if no unfit item at all
     local width_ratio
     if (#self.kv_pairs == 0) or
@@ -614,7 +613,8 @@ function KeyValuePage:_populateItems()
     end
     if not width_ratio then
         -- has to adjust, not fitting 1/2 ratio
-        local last_iter_key_index = #key_widths
+        local least_cut_key_index = #key_widths; -- the key index from which there are least number of cuts
+        local least_cut_count = #key_widths; -- the nb of cuts
         for vi = #value_widths, 1, -1 do
             -- from longest to shortest
             local key_width_limit = available_width - value_widths[vi]
@@ -624,27 +624,18 @@ function KeyValuePage:_populateItems()
             -- as the keys/values that cross the line (being cut) make clean alignment impossible
             -- we track their number and find the line that cuts the least key/value items
             local key_cut_count = 0
+            local key_index
             for ki = #key_widths, 1, -1 do
                 -- from longest to shortest for keys too
                 if key_widths[ki] > key_width_limit then
                     key_cut_count = key_cut_count + 1 -- got cut
                 else
-                    last_iter_key_index = ki
+                    key_index = ki
                     break -- others are all shorter so no more cut
                 end
             end
             local total_cut_count = key_cut_count + (#value_widths - vi) -- latter is value_cut_count, as with each increased index, the previous one got cut
-
-            if unfit_items_count then -- not the first round of iteration
-                if total_cut_count >= unfit_items_count then
-                    -- previous iteration has the least moved ones
-                    width_ratio = (key_widths[last_iter_key_index] + middle_padding) / frame_internal_width
-                    break
-                else
-                    -- still could be less total cut ones
-                    unfit_items_count = total_cut_count
-                end
-            elseif total_cut_count == 0 then
+            if total_cut_count == 0 then
                 -- no cross-over
                 if key_widths[#key_widths] >= key_w then
                     width_ratio = (key_widths[#key_widths] + middle_padding) / frame_internal_width
@@ -652,9 +643,13 @@ function KeyValuePage:_populateItems()
                     width_ratio = 1 - value_widths[#value_widths] / frame_internal_width
                 end
                 break
-            else
-                unfit_items_count = total_cut_count
+            elseif total_cut_count < least_cut_count and key_index then
+                least_cut_count = total_cut_count
+                least_cut_key_index = key_index
             end
+        end
+        if not width_ratio then
+            width_ratio = (key_widths[least_cut_key_index] + middle_padding) / frame_internal_width
         end
     end
 
