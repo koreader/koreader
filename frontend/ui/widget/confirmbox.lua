@@ -77,15 +77,15 @@ function ConfirmBox:init()
         end
     end
 
-    -- Named so for consistency with other widgets that use addWidget()
-    self._input_widget = TextBoxWidget:new{
+    self.text_widget_width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 2/3)
+    local text_widget = TextBoxWidget:new{
         text = self.text,
         face = self.face,
-        width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 2/3),
+        width = self.text_widget_width,
     }
     self.text_group = VerticalGroup:new{
         align = "left",
-        self._input_widget,
+        text_widget,
     }
     if self._added_widgets then
         table.insert(self.text_group, VerticalSpan:new{ width = Size.padding.large })
@@ -173,9 +173,9 @@ function ConfirmBox:init()
     -- Reduce font size until widget fit screen height if needed
     local cur_size = frame:getSize()
     if cur_size and cur_size.h > 0.95 * Screen:getHeight() then
-        local orig_font = self._input_widget.face.orig_font
-        local orig_size = self._input_widget.face.orig_size
-        local real_size = self._input_widget.face.size
+        local orig_font = text_widget.face.orig_font
+        local orig_size = text_widget.face.orig_size
+        local real_size = text_widget.face.size
         if orig_size > 10 then -- don't go too small
             while true do
                 orig_size = orig_size - 1
@@ -213,6 +213,10 @@ function ConfirmBox:_preserveAddedWidgets()
     for i = 1, #self._added_widgets do
         table.remove(self.text_group)
     end
+end
+
+function ConfirmBox:getAddedWidgetAvailableWidth()
+    return self.text_widget_width
 end
 
 function ConfirmBox:onShow()
