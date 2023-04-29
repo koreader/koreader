@@ -304,6 +304,7 @@ function BookMapRow:init()
     self.indicators = {}
     self.bottom_texts = {}
     local prev_page_was_read = true -- avoid one at start of row
+    local extended_marker_h = math.ceil(self.span_height * 0.3)
     local unread_marker_h = math.ceil(self.span_height * 0.05)
     local read_min_h = math.max(math.ceil(self.span_height * 0.1), unread_marker_h+Size.line.thick)
     if self.page_slot_width >= 5 * unread_marker_h then
@@ -358,6 +359,35 @@ function BookMapRow:init()
                 })
             end
             prev_page_was_read = false
+        end
+        -- Extended separators below the baseline if requested (by PageBrowser
+        -- to show the start of thumbnail rows)
+        if self.extended_sep_pages and self.extended_sep_pages[page] then
+            local w = Size.line.thin
+            local x
+            if _mirroredUI then
+                x = self:getPageX(page, true) - w
+            else
+                x = self:getPageX(page)
+            end
+            local y = self.pages_frame_height - self.pages_frame_border
+            table.insert(self.pages_markers, {
+                x = x, y = y,
+                w = w, h = extended_marker_h,
+                color = Blitbuffer.COLOR_BLACK,
+            })
+        end
+        -- Add a little spike below the baseline above each page number displayed, so we
+        -- can more easily associate the (possibly wider) page number to its page slot.
+        if self.page_texts and self.page_texts[page] then
+            local w = Screen:scaleBySize(2)
+            local x = math.floor((self:getPageX(page) + self:getPageX(page, true) + 0.5)/2 - w/2)
+            local y = self.pages_frame_height - self.pages_frame_border + 2
+            table.insert(self.pages_markers, {
+                x = x, y = y,
+                w = w, h = math.ceil(w*1.5),
+                color = Blitbuffer.COLOR_BLACK,
+            })
         end
         -- Indicator for bookmark/highlight type, and current page
         if self.bookmarked_pages[page] then
