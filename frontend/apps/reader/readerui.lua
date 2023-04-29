@@ -21,6 +21,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LanguageSupport = require("languagesupport")
+local Notification = require("ui/widget/notification")
 local PluginLoader = require("pluginloader")
 local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
 local ReaderBack = require("apps/reader/modules/readerback")
@@ -742,8 +743,12 @@ function ReaderUI:saveSettings()
     G_reader_settings:flush()
 end
 
-function ReaderUI:onFlushSettings()
+function ReaderUI:onFlushSettings(show_notification)
     self:saveSettings()
+    if show_notification then
+        -- Invoked from dispatcher to explicitely flush settings
+        Notification:notify(_("Book metadata saved."))
+    end
 end
 
 function ReaderUI:closeDocument()
