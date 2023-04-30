@@ -889,7 +889,7 @@ function FileManagerMenu:getStartWithMenuTable()
     end
     return {
         text_func = function()
-            local start_with = G_reader_settings:readSetting("start_with")
+            local start_with = G_reader_settings:readSetting("start_with") or "filemanager"
             for i, v in ipairs(start_withs) do
                 if v[2] == start_with then
                     return T(_("Start with: %1"), v[1])
