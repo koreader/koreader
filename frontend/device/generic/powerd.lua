@@ -1,4 +1,4 @@
-local UIManager -- will be updated when available
+local UIManager = nil -- will be updated when available
 local Math = require("optmath")
 local logger = require("logger")
 local time = require("ui/time")
@@ -43,6 +43,7 @@ end
 
 function BasePowerD:readyUI()
     UIManager = require("ui/uimanager")
+    self:readyUIHW(UIManager)
 end
 
 function BasePowerD:init() end
@@ -62,9 +63,10 @@ function BasePowerD:isAuxChargingHW() return false end
 function BasePowerD:isAuxChargedHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
 function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min end
-function BasePowerD:turnOffFrontlightHW() self:setIntensityHW(self.fl_min) end
-function BasePowerD:turnOnFrontlightHW() self:setIntensityHW(self.fl_intensity) end --- @fixme: what if fl_intensity == fl_min (c.f., kindle)?
+function BasePowerD:turnOffFrontlightHW(done_callback) self:setIntensityHW(self.fl_min) end
+function BasePowerD:turnOnFrontlightHW(done_callback) self:setIntensityHW(self.fl_intensity) end --- @fixme: what if fl_intensity == fl_min (c.f., kindle)?
 function BasePowerD:frontlightWarmthHW() return 0 end
+function BasePowerD:readyUIHW(uimgr) end
 -- Anything that needs to be done before doing a real hardware suspend.
 -- (Such as turning the front light off).
 function BasePowerD:beforeSuspend() end
@@ -94,29 +96,29 @@ function BasePowerD:frontlightIntensity()
     return self.fl_intensity
 end
 
-function BasePowerD:toggleFrontlight()
+function BasePowerD:toggleFrontlight(done_callback)
     if not self.device:hasFrontlight() then return false end
     if self:isFrontlightOn() then
-        return self:turnOffFrontlight()
+        return self:turnOffFrontlight(done_callback)
     else
-        return self:turnOnFrontlight()
+        return self:turnOnFrontlight(done_callback)
     end
 end
 
-function BasePowerD:turnOffFrontlight()
+function BasePowerD:turnOffFrontlight(done_callback)
     if not self.device:hasFrontlight() then return end
     if self:isFrontlightOff() then return false end
-    self:turnOffFrontlightHW()
+    self:turnOffFrontlightHW(done_callback)
     self.is_fl_on = false
     self:stateChanged()
     return true
 end
 
-function BasePowerD:turnOnFrontlight()
+function BasePowerD:turnOnFrontlight(done_callback)
     if not self.device:hasFrontlight() then return end
     if self:isFrontlightOn() then return false end
     if self.fl_intensity == self.fl_min then return false end  --- @fixme what the hell?
-    self:turnOnFrontlightHW()
+    self:turnOnFrontlightHW(done_callback)
     self.is_fl_on = true
     self:stateChanged()
     return true
