@@ -34,7 +34,8 @@ function DataStorage:getDataDir()
         data_dir = "."
     end
     if lfs.attributes(data_dir, "mode") ~= "directory" then
-        lfs.mkdir(data_dir)
+        local ok, err = lfs.mkdir(data_dir)
+        if not ok then error(err) end
     end
 
     return data_dir
