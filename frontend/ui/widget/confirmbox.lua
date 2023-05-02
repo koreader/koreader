@@ -76,11 +76,23 @@ function ConfirmBox:init()
             self.key_events.Close = { { Device.input.group.Back } }
         end
     end
+
+    self.text_widget_width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 2/3)
     local text_widget = TextBoxWidget:new{
         text = self.text,
         face = self.face,
-        width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 2/3),
+        width = self.text_widget_width,
     }
+    self.text_group = VerticalGroup:new{
+        align = "left",
+        text_widget,
+    }
+    if self._added_widgets then
+        table.insert(self.text_group, VerticalSpan:new{ width = Size.padding.large })
+        for _, widget in ipairs(self._added_widgets) do
+            table.insert(self.text_group, widget)
+        end
+    end
     local content = HorizontalGroup:new{
         align = "center",
         IconWidget:new{
@@ -88,36 +100,36 @@ function ConfirmBox:init()
             alpha = true,
         },
         HorizontalSpan:new{ width = Size.span.horizontal_default },
-        text_widget,
+        self.text_group,
     }
 
-    local buttons = {{
-        text = self.cancel_text,
-        callback = function()
-            self.cancel_callback()
-            UIManager:close(self)
-        end,
-    }, {
-        text = self.ok_text,
-        callback = function()
-            self.ok_callback()
-            if self.keep_dialog_open then return end
-            UIManager:close(self)
-        end,
-    },}
-    buttons = { buttons } -- single row
+    local buttons = {{ -- single row
+        {
+            text = self.cancel_text,
+            callback = function()
+                self.cancel_callback()
+                UIManager:close(self)
+            end,
+        },
+        {
+            text = self.ok_text,
+            callback = function()
+                self.ok_callback()
+                if self.keep_dialog_open then return end
+                UIManager:close(self)
+            end,
+        },
+    }}
 
-    if self.other_buttons ~= nil then
-        -- additional rows
+    if self.other_buttons then -- additional rows
         local rownum = self.other_buttons_first and 0 or 1
         for i, buttons_row in ipairs(self.other_buttons) do
             local row = {}
-            table.insert(buttons, rownum + i, row)
-            for ___, button in ipairs(buttons_row) do
+            for _, button in ipairs(buttons_row) do
                 table.insert(row, {
                     text = button.text,
                     callback = function()
-                        if button.callback ~= nil then
+                        if button.callback then
                             button.callback()
                         end
                         if self.keep_dialog_open then return end
@@ -125,13 +137,12 @@ function ConfirmBox:init()
                     end,
                 })
             end
+            table.insert(buttons, rownum + i, row)
         end
     end
 
     local button_table = ButtonTable:new{
         width = content:getSize().w,
-        button_font_face = "cfont",
-        button_font_size = 20,
         buttons = buttons,
         zero_sep = true,
         show_parent = self,
@@ -177,10 +188,35 @@ function ConfirmBox:init()
                 end
             end
             -- re-init this widget
+            if self._added_widgets then
+                self:_preserveAddedWidgets()
+            end
             self:free()
             self:init()
         end
     end
+end
+
+function ConfirmBox:addWidget(widget)
+    if self._added_widgets then
+        self:_preserveAddedWidgets()
+    else
+        self._added_widgets = {}
+    end
+    table.insert(self._added_widgets, widget)
+    self:free()
+    self:init()
+end
+
+function ConfirmBox:_preserveAddedWidgets()
+    -- remove added widgets to preserve their subwidgets from being free'ed
+    for i = 1, #self._added_widgets do
+        table.remove(self.text_group)
+    end
+end
+
+function ConfirmBox:getAddedWidgetAvailableWidth()
+    return self.text_widget_width
 end
 
 function ConfirmBox:onShow()

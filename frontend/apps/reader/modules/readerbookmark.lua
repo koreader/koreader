@@ -1136,15 +1136,16 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
         parent = input_dialog,
     }
     input_dialog:addWidget(check_button_case)
+    local separator_width = input_dialog:getAddedWidgetAvailableWidth()
     separator = CenterContainer:new{
         dimen = Geom:new{
-            w = input_dialog._input_widget.width,
+            w = separator_width,
             h = 2 * Size.span.vertical_large,
         },
         LineWidget:new{
             background = Blitbuffer.COLOR_DARK_GRAY,
             dimen = Geom:new{
-                w = input_dialog._input_widget.width,
+                w = separator_width,
                 h = Size.line.medium,
             }
         },
