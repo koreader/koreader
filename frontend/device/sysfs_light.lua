@@ -2,12 +2,8 @@
 -- This also supports the natural light, which consists of additional
 -- red and green light LEDs.
 
-local logger = require("logger")
 local dbg = require("dbg")
-
-local ffi = require("ffi")
-local C = ffi.C
-require("ffi/posix_h")
+local util = require("util")
 
 local SysfsLight = {
     frontlight_white = nil,
@@ -77,15 +73,15 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
             if self.frontlight_ioctl then
                 self.frontlight_ioctl:setBrightness(brightness)
             else
-                self:_write_value(self.frontlight_white, brightness)
+                util.writeToSysfs(brightness, self.frontlight_white)
             end
         end
         -- The mixer might be using inverted values... (cold is nl_max, warm is nl_min)
         if set_warmth then
             if self.nl_inverted then
-                self:_write_value(self.frontlight_mixer, self.nl_max - warmth)
+                util.writeToSysfs(self.nl_max - warmth, self.frontlight_mixer)
             else
-                self:_write_value(self.frontlight_mixer, warmth)
+                util.writeToSysfs(warmth, self.frontlight_mixer)
             end
         end
     else
@@ -128,30 +124,11 @@ function SysfsLight:_set_light_value(sysfs_directory, value)
     if not sysfs_directory then return end
     -- bl_power is '31' when the light is turned on, '0' otherwise.
     if (value > 0) then
-        self:_write_value(sysfs_directory .. "/bl_power", 31)
+        util.writeToSysfs(31, sysfs_directory .. "/bl_power")
     else
-        self:_write_value(sysfs_directory .. "/bl_power", 0)
+        util.writeToSysfs(0, sysfs_directory .. "/bl_power")
     end
-    self:_write_value(sysfs_directory .. "/brightness", value)
-end
-
-function SysfsLight:_write_value(file, val)
-    local fd = C.open(file, bit.bor(C.O_WRONLY, C.O_CLOEXEC)) -- procfs/sysfs, we shouldn't need O_TRUNC
-    if fd == -1 then
-        logger.err("Cannot open file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
-        return false
-    end
-    val = tostring(val)
-    local bytes = #val
-    local nw = C.write(fd, val, bytes)
-    if nw == -1 then
-        logger.err("Cannot write `" .. val .. "` to file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
-        C.close(fd)
-        return false
-    end
-    C.close(fd)
-    -- NOTE: Allows the caller to possibly handle short writes (not that these should ever happen here).
-    return nw == bytes
+    util.writeToSysfs(value, sysfs_directory .. "/brightness")
 end
 
 return SysfsLight
