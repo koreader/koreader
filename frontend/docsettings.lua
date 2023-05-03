@@ -12,7 +12,9 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 
-local DocSettings = LuaSettings:extend{}
+local DocSettings = LuaSettings:extend{
+    cover_ext = { "png", "jpg", "jpeg", "gif", "tif", "tiff", "svg" },
+}
 
 local HISTORY_DIR = DataStorage:getHistoryDir()
 local DOCSETTINGS_DIR = DataStorage:getDocSettingsDir()
@@ -89,13 +91,25 @@ function DocSettings:getSidecarFile(doc_path, force_location)
     return self:getSidecarDir(doc_path, force_location) .. "/metadata." .. suffix .. ".lua"
 end
 
---- Returns `true` if there is a `metadata.lua` file.
+--- Returns path of `metadata.lua` file if it exists, or nil.
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
--- @treturn bool
-function DocSettings:hasSidecarFile(doc_path)
-    return lfs.attributes(self:getSidecarFile(doc_path, "doc"), "mode") == "file"
-        or lfs.attributes(self:getSidecarFile(doc_path, "dir"), "mode") == "file"
-        or lfs.attributes(self:getHistoryPath(doc_path), "mode") == "file"
+-- @bool no_legacy set to true to skip check of the legacy history file
+-- @treturn string
+function DocSettings:hasSidecarFile(doc_path, no_legacy)
+    local sidecar_file = self:getSidecarFile(doc_path, "doc")
+    if lfs.attributes(sidecar_file, "mode") == "file" then
+        return sidecar_file
+    end
+    sidecar_file = self:getSidecarFile(doc_path, "dir")
+    if lfs.attributes(sidecar_file, "mode") == "file" then
+        return sidecar_file
+    end
+    if not no_legacy then
+        sidecar_file = self:getHistoryPath(doc_path)
+        if lfs.attributes(sidecar_file, "mode") == "file" then
+            return sidecar_file
+        end
+    end
 end
 
 function DocSettings:getHistoryPath(doc_path)
@@ -131,6 +145,43 @@ function DocSettings:getFileFromHistory(hist_name)
         if name ~= "" then
             return ffiutil.joinPath(path, name)
         end
+    end
+end
+
+--- Returns path to book custom cover file if it exists, or nil.
+function DocSettings:findCoverFile(doc_path)
+    local location = G_reader_settings:readSetting("document_metadata_folder", "doc")
+    local sidecar_dir = self:getSidecarDir(doc_path, location)
+    local cover_file = self:_findCoverFileInDir(sidecar_dir)
+    if not cover_file then
+        location = location == "doc" and "dir" or "doc"
+        sidecar_dir = self:getSidecarDir(doc_path, location)
+        cover_file = self:_findCoverFileInDir(sidecar_dir)
+    end
+    return cover_file
+end
+
+function DocSettings:_findCoverFileInDir(dir)
+    local ok, iter, dir_obj = pcall(lfs.dir, dir)
+    if ok then
+        for f in iter, dir_obj do
+            for _, ext in ipairs(self.cover_ext) do
+                if f == "cover." .. ext then
+                    return dir .. "/" .. f
+                end
+            end
+        end
+    end
+end
+
+function DocSettings:getCoverFile(reset_cache)
+    if reset_cache then
+        self.cover_file = nil
+    else
+        if self.cover_file == nil then
+            self.cover_file = DocSettings:findCoverFile(self.data.doc_path) or false
+        end
+        return self.cover_file
     end
 end
 
@@ -178,9 +229,9 @@ function DocSettings:open(doc_path)
     -- We get back an array of tables for *existing* candidates, sorted MRU first (insertion order breaks ties).
     local candidates = buildCandidates(candidates_list)
 
-    local ok, stored
+    local candidate_path, ok, stored
     for _, t in ipairs(candidates) do
-        local candidate_path = t.path
+        candidate_path = t.path
         -- Ignore empty files
         if lfs.attributes(candidate_path, "size") > 0 then
             ok, stored = pcall(dofile, candidate_path)
@@ -196,6 +247,7 @@ function DocSettings:open(doc_path)
     if ok and stored then
         new.data = stored
         new.candidates = candidates
+        new.source_candidate = candidate_path
     else
         new.data = {}
     end
@@ -205,7 +257,7 @@ function DocSettings:open(doc_path)
 end
 
 --- Serializes settings and writes them to `metadata.lua`.
-function DocSettings:flush(data)
+function DocSettings:flush(data, no_cover)
     -- Depending on the settings, doc_settings are saved to the book folder or
     -- to koreader/docsettings folder. The latter is also a fallback for read-only book storage.
     local serials = G_reader_settings:readSetting("document_metadata_folder", "doc") == "doc"
@@ -215,8 +267,8 @@ function DocSettings:flush(data)
 
     local s_out = dump(data or self.data, nil, true)
     for _, s in ipairs(serials) do
-        util.makePath(s[1])
-        local sidecar_file = s[2]
+        local sidecar_dir, sidecar_file = unpack(s)
+        util.makePath(sidecar_dir)
         local directory_updated = false
         if lfs.attributes(sidecar_file, "mode") == "file" then
             -- As an additional safety measure (to the ffiutil.fsync* calls used below),
@@ -244,9 +296,19 @@ function DocSettings:flush(data)
                 ffiutil.fsyncDirectory(sidecar_file)
             end
 
+            -- move cover file to the metadata file location
+            if not no_cover then
+                local cover_file = self:getCoverFile()
+                if cover_file and util.splitFilePathName(cover_file) ~= sidecar_dir then
+                    ffiutil.copyFile(cover_file, sidecar_dir)
+                    os.remove(cover_file)
+                    self:getCoverFile(true) -- reset cache
+                end
+            end
+
             self:purge(sidecar_file) -- remove old candidates and empty sidecar folders
 
-            break
+            return sidecar_dir
         end
     end
 end
@@ -267,30 +329,72 @@ function DocSettings:purge(sidecar_to_keep)
         end
     end
 
+    local custom_metadata_purged
+    if not sidecar_to_keep then
+        local cover_file = self:getCoverFile()
+        if cover_file then
+            os.remove(cover_file)
+            self:getCoverFile(true) -- reset cache
+            custom_metadata_purged = true
+        end
+    end
     if lfs.attributes(self.doc_sidecar_dir, "mode") == "directory" then
         os.remove(self.doc_sidecar_dir) -- keep parent folders
     end
     if lfs.attributes(self.dir_sidecar_dir, "mode") == "directory" then
         util.removePath(self.dir_sidecar_dir) -- remove empty parent folders
     end
+
+    return custom_metadata_purged
 end
 
---- Updates sidecar info for file rename/copy/move/delete operations.
-function DocSettings:update(doc_path, new_doc_path, copy)
+--- Removes empty sidecar dir.
+function DocSettings:removeSidecarDir(doc_path, sidecar_dir)
+    if sidecar_dir == self:getSidecarDir(doc_path, "doc") then
+        os.remove(sidecar_dir)
+    else
+        util.removePath(sidecar_dir)
+    end
+end
+
+--- Updates sdr location for file rename/copy/move/delete operations.
+function DocSettings:updateLocation(doc_path, new_doc_path, copy)
+    local doc_settings, new_sidecar_dir
+
+    -- update metadata
     if self:hasSidecarFile(doc_path) then
-        local doc_settings = DocSettings:open(doc_path)
+        doc_settings = DocSettings:open(doc_path)
         if new_doc_path then
             local new_doc_settings = DocSettings:open(new_doc_path)
-            new_doc_settings:flush(doc_settings.data) -- with current "Book metadata folder" setting
+            -- save doc settings to the new location, no cover file yet
+            new_sidecar_dir = new_doc_settings:flush(doc_settings.data, true)
         else
             local cache_file_path = doc_settings:readSetting("cache_file_path")
             if cache_file_path then
                 os.remove(cache_file_path)
             end
         end
-        if not copy then
-            doc_settings:purge()
+    end
+
+    -- update cover file
+    if not doc_settings then
+        doc_settings = DocSettings:open(doc_path)
+    end
+    local cover_file = doc_settings:getCoverFile()
+    if cover_file and new_doc_path then
+        if not new_sidecar_dir then
+            new_sidecar_dir = self:getSidecarDir(new_doc_path)
+            util.makePath(new_sidecar_dir)
         end
+        local _, filename = util.splitFilePathName(cover_file)
+        ffiutil.copyFile(cover_file, new_sidecar_dir .. "/" .. filename)
+    end
+
+    if not copy then
+        doc_settings:purge()
+    end
+    if cover_file then
+        doc_settings:getCoverFile(true) -- reset cache
     end
 end
 

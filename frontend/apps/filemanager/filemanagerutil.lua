@@ -40,12 +40,8 @@ function filemanagerutil.splitFileNameType(filename)
         local filename_without_sub_suffix, sub_filetype = util.splitFileNameSuffix(filename_without_suffix)
         sub_filetype = sub_filetype:lower()
         local supported_sub_filetypes = { "fb2", "htm", "html", "log", "md", "rtf", "txt", }
-        for _, t in ipairs(supported_sub_filetypes) do
-            if sub_filetype == t then
-                filetype = sub_filetype .. "." .. filetype
-                filename_without_suffix = filename_without_sub_suffix
-                break
-            end
+        if util.arrayContains(supported_sub_filetypes, sub_filetype) then
+            return filename_without_sub_suffix, sub_filetype .. ".zip"
         end
     end
     return filename_without_suffix, filetype
@@ -55,7 +51,7 @@ end
 function filemanagerutil.purgeSettings(file)
     local file_abs_path = ffiutil.realpath(file)
     if file_abs_path then
-        DocSettings:open(file_abs_path):purge()
+        return DocSettings:open(file_abs_path):purge()
     end
 end
 
@@ -138,16 +134,27 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
     return {
         text = _("Reset"),
         id = "reset", -- used by covermenu
-        enabled = not button_disabled and DocSettings:hasSidecarFile(ffiutil.realpath(file)),
+        enabled = (not button_disabled and DocSettings:hasSidecarFile(ffiutil.realpath(file))) and true or false,
         callback = function()
             local ConfirmBox = require("ui/widget/confirmbox")
             local confirmbox = ConfirmBox:new{
                 text = T(_("Reset this document?") .. "\n\n%1\n\n" ..
-                    _("Document progress, settings, bookmarks, highlights and notes will be permanently lost."),
+                    _("Document progress, settings, bookmarks, highlights, notes and custom cover image will be permanently lost."),
                     BD.filepath(file)),
                 ok_text = _("Reset"),
                 ok_callback = function()
-                    filemanagerutil.purgeSettings(file)
+                    local custom_metadata_purged = filemanagerutil.purgeSettings(file)
+                    if custom_metadata_purged then -- refresh coverbrowser cached book info
+                        local FileManager = require("apps/filemanager/filemanager")
+                        local ui = FileManager.instance
+                        if not ui then
+                            local ReaderUI = require("apps/reader/readerui")
+                            ui = ReaderUI.instance
+                        end
+                        if ui and ui.coverbrowser then
+                            ui.coverbrowser:deleteBookInfo(file)
+                        end
+                    end
                     require("readhistory"):fileSettingsPurged(file)
                     caller_callback()
                 end,

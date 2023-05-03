@@ -1,5 +1,4 @@
 local http = require("socket.http")
-local ImageViewer = require("ui/widget/imageviewer")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local logger = require("logger")
@@ -156,6 +155,7 @@ function OPDSPSE:streamPages(remote_url, count, continue, username, password)
             end
         end
     end})
+    local ImageViewer = require("ui/widget/imageviewer")
     local viewer = ImageViewer:new{
         image = page_table,
         fullscreen = true,

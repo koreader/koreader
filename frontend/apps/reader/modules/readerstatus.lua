@@ -2,6 +2,7 @@ local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Device = require("device")
 local Event = require("ui/event")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -198,7 +199,7 @@ end
 
 function ReaderStatus:onShowBookStatus(before_show_callback)
     local status_page = BookStatusWidget:new {
-        thumbnail = self.document:getCoverPageImage(),
+        thumbnail = FileManagerBookInfo:getCoverImage(self.document),
         props = self.document:getProps(),
         document = self.document,
         settings = self.settings,

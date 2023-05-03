@@ -6,6 +6,7 @@ local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
@@ -547,17 +548,7 @@ function Screensaver:setup(event, event_message)
         end
         if not excluded then
             if lastfile and lfs.attributes(lastfile, "mode") == "file" then
-                if ui and ui.document then
-                    local doc = ui.document
-                    self.image = doc:getCoverPageImage()
-                else
-                    local doc = DocumentRegistry:openDocument(lastfile)
-                    if doc.loadDocument then -- CreDocument
-                        doc:loadDocument(false) -- load only metadata
-                    end
-                    self.image = doc:getCoverPageImage()
-                    doc:close()
-                end
+                self.image = FileManagerBookInfo:getCoverImage(ui and ui.document, lastfile)
                 if self.image == nil then
                     self.screensaver_type = "random_image"
                 end
@@ -668,7 +659,7 @@ function Screensaver:show()
         local doc = ui.document
         local doc_settings = ui.doc_settings
         widget = BookStatusWidget:new{
-            thumbnail = doc:getCoverPageImage(),
+            thumbnail = FileManagerBookInfo:getCoverImage(doc),
             props = doc:getProps(),
             document = doc,
             settings = doc_settings,
