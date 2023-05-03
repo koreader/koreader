@@ -2859,6 +2859,14 @@ local dictionaries = {
         license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
         url = "https://khoicandev.github.io/ovdp-mirror/vi-ru.tar.gz"
     },
+    {
+        name = "Esperanto-English dictionary by Paul Denisowski",
+        lang_in = "eto",
+        lang_out = "eng",
+        entries = 63728,
+        license = "Creative Commons Attribution 3.0 Unported License",
+        url = "https://github.com/jmthackett/en-eo-stardict/releases/download/latest/dictionary.tar.gz"
+    },
 }
 
 return dictionaries
