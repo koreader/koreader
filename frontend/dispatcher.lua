@@ -127,6 +127,7 @@ local settingsList = {
     latest_bookmark = {category="none", event="GoToLatestBookmark", title=_("Go to latest bookmark"), reader=true},
     follow_nearest_link = {category="arg", event="GoToPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest link"), reader=true},
     follow_nearest_internal_link = {category="arg", event="GoToInternalPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest internal link"), reader=true},
+    add_location_to_history = {category="none", event="AddCurrentLocationToStack", arg=true, title=_("Add current location to history"), reader=true},
     clear_location_history = {category="none", event="ClearLocationStack", arg=true, title=_("Clear location history"), reader=true, separator=true},
     toc = {category="none", event="ShowToc", title=_("Table of contents"), reader=true},
     book_map = {category="none", event="ShowBookMap", title=_("Book map"), reader=true, condition=Device:isTouchDevice()},
@@ -312,6 +313,7 @@ local dispatcher_menu_order = {
     "next_location",
     "follow_nearest_link",
     "follow_nearest_internal_link",
+    "add_location_to_history",
     "clear_location_history",
 
     "toc",

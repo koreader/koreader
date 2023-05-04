@@ -702,6 +702,13 @@ function ReaderLink:compareLocationToCurrent(saved_location)
     return false, current_location
 end
 
+function ReaderLink:onAddCurrentLocationToStack(show_notification)
+    self:addCurrentLocationToStack()
+    if show_notification then
+        Notification:notify(_("Current location added to history."))
+    end
+end
+
 -- Remember current location so we can go back to it
 function ReaderLink:addCurrentLocationToStack(loc)
     local location = loc and loc or self:getCurrentLocation()
