@@ -164,7 +164,7 @@ function FileChooser:getListItem(f, filename, attributes, collate)
             item.suffix = util.getFileNameSuffix(f)
         elseif collate == "percent_unopened_first" or collate == "percent_unopened_last" then
             local percent_finished
-            item.opened = DocSettings:hasSidecarFile(filename)
+            item.opened = DocSettings:hasSidecarFile(filename) and true or false
             if item.opened then
                 local doc_settings = DocSettings:open(filename)
                 percent_finished = doc_settings:readSetting("percent_finished")
