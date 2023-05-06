@@ -16,13 +16,13 @@ local function format(booknotes)
         for ____, clipping in ipairs(entry) do
             if booknotes.title and clipping.text then
                 content = content .. booknotes.title .. "\n"
-                local header = T(_("- Your Highlight on page %1 | Added on %2\n\n"), clipping.page, os.date("%A, %B %d, %Y %I:%M:%S %p", clipping.time))
+                local header = T(_("- Your highlight on page %1 | Added on %2"), clipping.page, os.date("%A, %B %d, %Y %I:%M:%S %p", clipping.time)) .. "\n\n"
                 content = content .. header
                 content = content .. clipping.text
                 content = content .. "\n==========\n"
                 if clipping.note then
                     content = content .. booknotes.title .. "\n"
-                    header = T(_("- Your Note on page %1 | Added on %2\n\n"), clipping.page, os.date("%A, %B %d, %Y %I:%M:%S %p", clipping.time))
+                    header = T(_("- Your note on page %1 | Added on %2"), clipping.page, os.date("%A, %B %d, %Y %I:%M:%S %p", clipping.time)) .. "\n\n"
                     content = content .. header .. clipping.note
                     content = content .. "\n==========\n"
                 end
