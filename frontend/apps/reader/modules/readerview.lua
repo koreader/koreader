@@ -211,6 +211,9 @@ function ReaderView:paintTo(bb, x, y)
             local center_offset = bit.rshift(self.arrow.height, 1)
             -- Paint at the proper y origin depending on wheter we paged forward (dim_area.y == 0) or backward
             self.arrow:paintTo(bb, 0, self.dim_area.y == 0 and self.dim_area.h - center_offset or self.dim_area.y - center_offset)
+        elseif self.page_overlap_style == "line" then
+            bb:paintRect(0, self.dim_area.y == 0 and self.dim_area.h or self.dim_area.y,
+                self.dim_area.w, 2, Blitbuffer.COLOR_BLACK)
         end
     end
     -- draw saved highlight
