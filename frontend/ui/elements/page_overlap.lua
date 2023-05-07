@@ -1,7 +1,8 @@
+local FFIUtil = require("ffi/util")
 local ReaderUI = require("apps/reader/readerui")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
-local T = require("ffi/util").template
+local T = FFIUtil.template
 
 local PageOverlap = {
     text = _("Page overlap"),
@@ -72,8 +73,9 @@ You can set how many lines are shown.]]),
 local page_overlap_styles = {
     arrow = _("Arrow"),
     dim = _("Gray out"),
+    line = _("Horizontal line"),
 }
-for k, v in pairs(page_overlap_styles) do
+for k, v in FFIUtil.orderedPairs(page_overlap_styles) do
     table.insert(PageOverlap.sub_item_table, {
         text_func = function()
             local text = v
