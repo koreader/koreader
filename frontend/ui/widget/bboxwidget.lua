@@ -323,7 +323,7 @@ function BBoxWidget:onSwipeAdjust(arg, ges)
 end
 
 function BBoxWidget:onHoldAdjust(arg, ges)
-    --- @fixme this is a dirty hack to disable hold gesture in page cropping
+    --- fixme this is a dirty hack to disable hold gesture in page cropping
     -- since Kobo devices may append hold gestures to each swipe gesture rendering
     -- relative replacement impossible. See koreader/koreader#987 at Github.
     --self:adjustScreenBBox(ges)

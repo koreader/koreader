@@ -258,7 +258,7 @@ function Device:init()
                 -- this means we can't just return one ScreenResize or SetDimensons event
                 UIManager:broadcastEvent(Event:new("SetDimensions", new_size))
                 UIManager:broadcastEvent(Event:new("ScreenResize", new_size))
-                --- @todo Toggle this elsewhere based on ScreenResize?
+                --- todo Toggle this elsewhere based on ScreenResize?
 
                 -- this triggers paged media like PDF and DjVu to redraw
                 -- CreDocument doesn't need it

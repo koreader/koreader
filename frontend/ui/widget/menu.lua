@@ -947,7 +947,7 @@ end
 Menu.onSetupShowReader = Menu.onShowingReader
 
 function Menu:onCloseWidget()
-    --- @fixme
+    --- fixme
     -- we cannot refresh regionally using the dimen field
     -- because some menus without menu title use VerticalGroup to include
     -- a text widget which is not calculated into the dimen.
