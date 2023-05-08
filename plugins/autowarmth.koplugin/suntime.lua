@@ -1,9 +1,8 @@
-
+--[[--
 -- Author: Martin Zwicknagl (zwim)
 -- Date: 2021-10-29
 -- The current source code of this file can be found on https://github.com/zwim/suntime.
 
---[[--
 Module to calculate ephemeris and other times depending on the sun position.
 
 Maximal errors from 2020-2050 (compared to https://midcdmz.nrel.gov/spa/) are:
@@ -479,10 +478,10 @@ end
 --[[--
 Calculates the ephemeris and twilight times
 
-@param exact_twilight If not nil, then exact twilight times will be calculated.
+@param fast_twilight If not nil, then exact twilight times will be calculated.
 
 @usage
-SunTime:calculateTimes(exact_twilight)
+SunTime:calculateTimes(fast_twilight)
 
 
 Times are in hours or `nil` if not applicable.
