@@ -18,7 +18,6 @@ fi
 
 MODE=$1
 LUA_SCRIPT=${0//\.sh/\.lua}
-MODULE_SCRIPT=${0//events\.sh/module\.sh}
 
 shift 1
 find -L "$@" -maxdepth 50 -name "*.lua" -exec lua "${LUA_SCRIPT}" "${MODE}" {} \; >>${FILENAME}
