@@ -14,7 +14,8 @@ jobs:
 
     # Please don't update to newer macOS version unless you can test that the new
     # action produces working binaries.
-    runs-on: macos-10.15
+    # 10.15 is no longer supported so lets try 13 before giving up.
+    runs-on: macos-13
 
     steps:
       - name: XCode version
