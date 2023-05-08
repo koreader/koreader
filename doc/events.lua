@@ -39,6 +39,8 @@ local function output_table(events_and_handlers, name_len, module_len)
     end
 
     local function make_source_link(path, lineno)
+        -- Turn the symbolic link from `/frontend/plugins` to `/plugins/`.
+        path = path:gsub("/frontend/plugins/","/plugins/")
         local text = path:gsub("^.*koreader", "koreader")
         local link = path:gsub("^.*koreader", "https://github.com/koreader/koreader/tree/master/") .. "#L" .. lineno
         return "<a href=\""..link.."\">" .. text .. "</a>"
