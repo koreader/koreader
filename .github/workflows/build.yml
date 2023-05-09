@@ -8,13 +8,13 @@ permissions:
 jobs:
   macos_build:
 
-    # macos-11 and macos-12 are broken at this time being.
+    # macos-11, macos-12 & macos-13 are broken at this time being.
     # https://github.com/koreader/koreader/issues/8686,
     # https://github.com/koreader/koreader/issues/8686#issuecomment-1172950236
 
     # Please don't update to newer macOS version unless you can test that the new
     # action produces working binaries.
-    # 10.15 is no longer supported so lets try 13 before giving up.
+    # 10.15 is no longer supported so we are running 13 just to make sure the build does not break.
     runs-on: macos-13
 
     steps:
