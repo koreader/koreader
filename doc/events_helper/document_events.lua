@@ -5,9 +5,6 @@
 local mode = arg[1] -- can be 0 (check) or 1 (document)
 local in_file_name = arg[2] -- in filename
 
-
-print("xxxxx", in_file_name)
-
 local MODE_CHECK = "0"
 local MODE_DOCUMENTED = "1"
 local MODE_ADD = "2"
@@ -58,6 +55,7 @@ local function processFile(in_file_name, out_file_name)
     local line_nb = 0
     local out_file = io.open(out_file_name, "w")
 	local doc_added = false
+	local old_line = ""
     for line in io.lines(in_file_name) do
         line_nb = line_nb + 1
 		-- only for initial comment
@@ -116,10 +114,23 @@ local function processFile(in_file_name, out_file_name)
                     end
                 end
             end
+		elseif line:find("event *= *\"[A-Z]") then
+			-- find events used by dispatcher (i.e. dispatcher:registerAction)
+			local i, j = line:find("event *= *\"[A-Z][a-zA-Z-0-9]*\"")
+			print("xxx", i, j, line)
+			if i and j then
+				local event_part = line:sub(i, j)
+				print("xxx event_part", event_part)
+				i, j = event_part:find("\"[a-zA-Z0-9_]*\"")
+				print("xxx",i,j, event_part)
+				line = line .. " --- @event " .. event_part:sub(i+1, j-1)
+				doc_added = true
+			end
         end
         if mode == MODE_ADD then
             out_file:write(line .. "\n")
         end
+		old_line = line
     end -- for line
     out_file:close()
 	return doc_added
