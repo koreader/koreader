@@ -130,6 +130,15 @@ local function processFile(in_file_name, out_file_name)
 				line = line .. " --- @eventHandler " .. line:sub(i+1, j)
 				doc_added = true
 			end
+		elseif line:find("self%.key_events%.[A-Z][a-zA-Z0-9_]*") then
+			--- find "self.key_events.Abc"
+			local i, j = line:find("self%.key_events%.[A-Z][a-zA-Z0-9_]*")
+			if i and j then
+				local event_part = line:sub(i, j)
+				local i, j = event_part:find("%.[A-Z][a-zA-Z0-9_]*")
+				line = line .. " --- @event " .. event_part:sub(i+1, j) .. "___key_event"
+				doc_added = true
+			end
         end
         if mode == MODE_ADD then
             out_file:write(line .. "\n")
