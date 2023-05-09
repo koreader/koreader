@@ -157,6 +157,8 @@ return {
                     return true
                 elseif is_a_handler and not is_b_handler then
                     return false
+                elseif a_name == b_name then
+                    return a.module_name < b.module_name
                 else
                     return a_name < b_name
                 end
