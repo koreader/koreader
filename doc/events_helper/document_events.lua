@@ -117,13 +117,17 @@ local function processFile(in_file_name, out_file_name)
 		elseif line:find("event *= *\"[A-Z]") then
 			-- find events used by dispatcher (i.e. dispatcher:registerAction)
 			local i, j = line:find("event *= *\"[A-Z][a-zA-Z-0-9]*\"")
-			print("xxx", i, j, line)
 			if i and j then
 				local event_part = line:sub(i, j)
-				print("xxx event_part", event_part)
 				i, j = event_part:find("\"[a-zA-Z0-9_]*\"")
-				print("xxx",i,j, event_part)
 				line = line .. " --- @event " .. event_part:sub(i+1, j-1)
+				doc_added = true
+			end
+		elseif line:find("%.on[A-Z][a-zA-Z0-9_]* *[=]") then
+			--- find "function.onXyz ="
+			local i, j = line:find("%.on[A-Z][a-zA-Z0-9_]*")
+			if i and j then
+				line = line .. " --- @eventHandler " .. line:sub(i+1, j)
 				doc_added = true
 			end
         end
