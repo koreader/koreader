@@ -2,7 +2,6 @@ local DocumentRegistry = require("document/documentregistry")
 local DocSettings = require("docsettings")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
-local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local util = require("util")
 local _ = require("gettext")
