@@ -5,7 +5,7 @@ endif
 	mkdir generated -p
 	touch generated/Events_and_handler.md
 
-	ln -s -t ../frontend/ ../plugins
+	ln -s -t ../frontend/ ../plugins || true
 	ldoc .
 	rm ../frontend/plugins
 
