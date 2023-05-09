@@ -5,7 +5,7 @@
         - wireless transfers
 
     This module handles the UI part of the plugin.
-]]
+--]]--
 
 local BD = require("ui/bidi")
 local CalibreExtensions = require("extensions")
@@ -25,26 +25,26 @@ local Calibre = WidgetContainer:extend{
     is_doc_only = false,
 }
 
-function Calibre:onCalibreSearch() --- @eventHandler onCalibreSearch
+function Calibre:onCalibreSearch()
     CalibreSearch:ShowSearch()
     return true
 end
 
-function Calibre:onCalibreBrowseBy(field) --- @eventHandler onCalibreBrowseBy
+function Calibre:onCalibreBrowseBy(field)
     CalibreSearch.search_value = ""
     CalibreSearch:find(field)
     return true
 end
 
-function Calibre:onNetworkDisconnected() --- @eventHandler onNetworkDisconnected
+function Calibre:onNetworkDisconnected()
     self:closeWirelessConnection()
 end
 
-function Calibre:onSuspend() --- @eventHandler onSuspend
+function Calibre:onSuspend()
     self:closeWirelessConnection()
 end
 
-function Calibre:onClose() --- @eventHandler onClose
+function Calibre:onClose()
     self:closeWirelessConnection()
 end
 
@@ -54,7 +54,7 @@ function Calibre:closeWirelessConnection()
     end
 end
 
-function Calibre:onDispatcherRegisterActions() --- @eventHandler onDispatcherRegisterActions
+function Calibre:onDispatcherRegisterActions()
     Dispatcher:registerAction("calibre_search", { category="none", event="CalibreSearch", title=_("Calibre metadata search"), general=true,})
     Dispatcher:registerAction("calibre_browse_tags", { category="none", event="CalibreBrowseBy", arg="tags", title=_("Browse all calibre tags"), general=true,})
     Dispatcher:registerAction("calibre_browse_series", { category="none", event="CalibreBrowseBy", arg="series", title=_("Browse all calibre series"), general=true,})
