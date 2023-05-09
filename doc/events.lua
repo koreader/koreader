@@ -117,6 +117,15 @@ return {
             end
         end
 
+        local function drop_key_event(text)
+            local i = text:find("[_]+_key_event")
+            if i and i > 1 then
+                return text:sub(1, i-1)
+            else
+                return text
+            end
+        end
+
         local function sort_events_and_handlers(a, b)
             local a_name
             local b_name
@@ -134,6 +143,9 @@ return {
             else
                 b_name = b.name
             end
+            a_name = drop_key_event(a_name)
+            b_name = drop_key_event(b_name)
+
             if a_name < b_name then
                 return true
             elseif a_name > b_name then
@@ -146,7 +158,7 @@ return {
                 elseif is_a_handler and not is_b_handler then
                     return false
                 else
-                    return a.module_name < b.module_name
+                    return a_name < b_name
                 end
 
             end
