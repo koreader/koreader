@@ -2,7 +2,7 @@
 Plugin for saving a cover image to a file and scaling it to fit the screen.
 
 @module koplugin.coverimage
-]]
+--]]--
 
 local Device = require("device")
 
