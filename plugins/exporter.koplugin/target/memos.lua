@@ -108,7 +108,7 @@ function MemosExporter:createHighlights(booknotes)
         end
     end
 
-    logger.dbg("createHighlights result", result)
+    logger.dbg("createHighlights success")
     return true
 end
 
