@@ -93,6 +93,8 @@ function MemosExporter:getMenuTable()
 end
 
 function MemosExporter:createHighlights(booknotes)
+    local number = 0
+    local error_number = 0
     for _, chapter in ipairs(booknotes) do
         for _, clipping in ipairs(chapter) do
             local highlight = clipping.text .. "\n\n"
@@ -103,12 +105,13 @@ function MemosExporter:createHighlights(booknotes)
             local result, err = makeRequest("POST", { content = highlight }, self.settings.api)
             if not result then
                 logger.warn("error creating highlights", err)
-                return false
+                error_number = error_number + 1
             end
+            number = number + 1
         end
     end
-
-    logger.dbg("createHighlights success")
+    local success_number = number - error_number
+    logger.dbg("createHighlights success number: " .. success_number .. " createHighlights error number: "error_number)
     return true
 end
 
