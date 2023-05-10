@@ -111,7 +111,7 @@ function MemosExporter:createHighlights(booknotes)
         end
     end
     local success_number = number - error_number
-    logger.dbg("createHighlights success number: " .. success_number .. " createHighlights error number: "error_number)
+    logger.dbg("createHighlights success number: " .. success_number .. " createHighlights error number: " .. error_number)
     return true
 end
 
