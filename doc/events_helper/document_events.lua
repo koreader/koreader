@@ -55,7 +55,6 @@ local function processFile(in_file_name, out_file_name)
     local line_nb = 0
     local out_file = io.open(out_file_name, "w")
 	local doc_added = false
-	local old_line = ""
     for line in io.lines(in_file_name) do
         line_nb = line_nb + 1
 		-- only for initial comment
@@ -135,15 +134,23 @@ local function processFile(in_file_name, out_file_name)
 			local i, j = line:find("self%.key_events%.[A-Z][a-zA-Z0-9_]*")
 			if i and j then
 				local event_part = line:sub(i, j)
-				local i, j = event_part:find("%.[A-Z][a-zA-Z0-9_]*")
+				i, j = event_part:find("%.[A-Z][a-zA-Z0-9_]*")
 				line = line .. " --- @event " .. event_part:sub(i+1, j) .. "___key_event"
+				doc_added = true
+			end
+		elseif line:find("self%.ges_events%.[A-Z][a-zA-Z0-9_]*") then
+			--- find "self.ges_events.Abc"
+			local i, j = line:find("self%.ges_events%.[A-Z][a-zA-Z0-9_]*")
+			if i and j then
+				local event_part = line:sub(i, j)
+				i, j = event_part:find("%.[A-Z][a-zA-Z0-9_]*")
+				line = line .. " --- @event " .. event_part:sub(i+1, j) .. "___ges_event"
 				doc_added = true
 			end
         end
         if mode == MODE_ADD then
             out_file:write(line .. "\n")
         end
-		old_line = line
     end -- for line
     out_file:close()
 	return doc_added
