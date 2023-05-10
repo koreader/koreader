@@ -72,6 +72,8 @@ local function output_table(events_and_handlers, name_len, module_len)
             elseif name:sub(1, 2) == "on" then
                 name = "&nbsp;" .. name
             end
+            name = name:gsub("[_]+_key_event", "&nbsp;&nbsp; key_event")
+            name = name:gsub("[_]+_ges_event", "&nbsp;&nbsp; gesture_event")
             io.write("<tr>")
             io.write("<td><code>" .. name .. string.rep(" ", name_len - #name) .. "&nbsp;</code></td>")
             io.write("<td>" .. make_modules_link(v.module_name) .. "&nbsp;</td>")
@@ -117,13 +119,17 @@ return {
             end
         end
 
-        local function drop_key_event(text)
-            local i = text:find("[_]+_key_event")
+        local function drop_key_and_ges_event(text)
+            local i
+            i = text:find("[_]+_key_event")
             if i and i > 1 then
-                return text:sub(1, i-1)
-            else
-                return text
+                text = text:sub(1, i-1)
             end
+            i = text:find("[_]+_ges_event")
+            if i and i > 1 then
+                text = text:sub(1, i-1)
+            end
+            return text
         end
 
         local function sort_events_and_handlers(a, b)
@@ -143,8 +149,8 @@ return {
             else
                 b_name = b.name
             end
-            a_name = drop_key_event(a_name)
-            b_name = drop_key_event(b_name)
+            a_name = drop_key_and_ges_event(a_name)
+            b_name = drop_key_and_ges_event(b_name)
 
             if a_name < b_name then
                 return true
