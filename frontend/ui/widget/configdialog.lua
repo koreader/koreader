@@ -863,13 +863,10 @@ local ConfigDialog = FocusManager:extend{
 }
 
 function ConfigDialog:init()
-    ------------------------------------------
-    -- start to set up widget layout ---------
-    ------------------------------------------
+    -- start to set up widget layout
     self:update()
-    ------------------------------------------
-    -- start to set up input event callback --
-    ------------------------------------------
+
+    -- start to set up input event callback
     self.ges_events.TapCloseMenu = {
         GestureRange:new{
             ges = "tap",

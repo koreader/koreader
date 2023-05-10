@@ -14,7 +14,15 @@ ifeq (,$(shell which ldoc))
 	$(error ldoc not found, please install via luarocks.)
 endif
 	rm -f no_stash.tmp
-	git stash && touch no_stash.tmp
+
+	# Check number of stash entries before and after stash
+	git stash list | wc -l > stashes_before.tmp
+	git stash 
+	git stash list | wc -l > stashes_after.tmp
+
+	# create the no_stash.tmp file if no stash has happened
+	diff stashes_before.tmp stashes_after.tmp && touch no_stash.tmp || true
+	rm stashes_before.tmp stashes_after.tmp
 
 	mkdir generated -p
 	touch generated/Events_and_handler.md
@@ -36,8 +44,10 @@ endif
 	# Remove all changes done by annotation
 	git stash && git stash drop || true
 
-	[[ -f no_stash.tmp ]] || git stash pop
-	rm no_stash.tmp
+	# Redo the initial stash, if necessary
+	[ ! -f no_stash.tmp ] && git stash pop || true
+	rm -f no_stash.tmp
+
 test:
 	ldoc --all .
 
