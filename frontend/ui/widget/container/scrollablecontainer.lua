@@ -21,6 +21,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
 local UIManager = require("ui/uimanager")
 local VerticalScrollBar = require("ui/widget/verticalscrollbar")
+local Input = Device.input
 local Screen = Device.screen
 local logger = require("logger")
 
@@ -28,6 +29,35 @@ local ScrollableContainer = InputContainer:extend{
     -- Events to ignore (ie: ignore_events={"hold", "hold_release"})
     ignore_events = nil,
     scroll_bar_width = Screen:scaleBySize(6),
+
+    -- Scroll behaviour
+    -- If true, swipe a full visible width or height no matter the swipe distance
+    swipe_full_view = true,
+
+    -- Array of rows info: if provided, swipe will align the top of the view on
+    -- a row, and ensure any truncated row at top or bottom gets fully visible
+    -- after the swipe.
+    -- Each array element (a row) must contain:
+    --   top = y of the top of a row
+    --   bottom = y of the bottom of a row (included, no overlap with 'top' of next row)
+    -- It may contain:
+    --   content_top = y of the content top of a row
+    --   content_bottom = y of the content bottom of a row (included)
+    -- that should not account for any top or bottom padding (which should be accounted in
+    -- top/bottom), which will be used instead of top/bottom when looking for truncated rows.
+    -- The disctinction allows, if only some top or bottom padding is truncated, but not the
+    -- content, to consider it fully visible and to not need to be visible after the swipe,
+    -- but to still use these padding for the alignments.
+    step_scroll_grid = nil,      -- either this array
+    step_scroll_grid_func = nil, -- or a function returning this array
+        -- Not implemented, but could be when this behaviour is needed on the x-axis:
+        -- each row element could contain an array with the same kind of info (left,
+        -- right, content_left, content_right) for its horizontal components, so
+        -- swiping horizontally can "step" on those of the row at top.
+
+    -- If true, don't draw a truncated row at bottom (we currently let a truncated row
+    -- at top be shown).
+    hide_truncated_grid_items = false,
 
     -- Set to true if child widget is larger, false otherwise
     _is_scrollable = nil,
@@ -46,9 +76,10 @@ local ScrollableContainer = InputContainer:extend{
     _h_scroll_bar = nil,
     -- Scratch buffer
     _bb = nil,
+    _crop_dx = 0,
     _crop_w = nil,
     _crop_h = nil,
-    _crop_dx = 0,
+    _crop_h_limited = nil,
 }
 
 function ScrollableContainer:getScrollbarWidth(scroll_bar_width)
@@ -60,19 +91,19 @@ function ScrollableContainer:getScrollbarWidth(scroll_bar_width)
 end
 
 function ScrollableContainer:init()
+    -- Unflatten self.ignore_events to table keys for cleaner code below
+    local ignore = {}
+    if self.ignore_events then
+        for _, evname in pairs(self.ignore_events) do
+            ignore[evname] = true
+        end
+    end
     if Device:isTouchDevice() then
         local range = Geom:new{
             x = 0, y = 0,
             w = Screen:getWidth(),
             h = Screen:getHeight(),
         }
-        -- Unflatten self.ignore_events to table keys for cleaner code below
-        local ignore = {}
-        if self.ignore_events then
-            for _, evname in pairs(self.ignore_events) do
-                ignore[evname] = true
-            end
-        end
         -- The following gestures need to be supported, depending on the
         -- ways a user can move/scroll things:
         --   Hold happens if he holds at start
@@ -87,6 +118,12 @@ function ScrollableContainer:init()
             ScrollableHoldRelease = not ignore.hold_release and { GestureRange:new{ ges = "hold_release", range = range } } or nil,
             ScrollablePan         = not ignore.pan          and { GestureRange:new{ ges = "pan", range = range } } or nil,
             ScrollablePanRelease  = not ignore.pan_release  and { GestureRange:new{ ges = "pan_release", range = range } } or nil,
+        }
+    end
+    if Device:hasKeys() then
+        self.key_events = {
+            ScrollPageUp   = not ignore.key_pg_back and { { Input.group.PgBack } } or nil,
+            ScrollPageDown = not ignore.key_pg_fwd  and { { Input.group.PgFwd } } or nil,
         }
     end
 end
@@ -145,6 +182,14 @@ function ScrollableContainer:initState()
                 self._crop_dx = self.dimen.w - self._crop_w
             end
         end
+        if self.step_scroll_grid_func then
+            self.step_scroll_grid = self.step_scroll_grid_func()
+        end
+        if self.step_scroll_grid then
+            -- Ensure we anchor on the scroll step grid
+            self:_scrollBy(0, 0, true)
+        end
+        self:_hideTruncatedGridItemsIfRequested()
         self:_updateScrollBars()
     end
 end
@@ -197,24 +242,136 @@ function ScrollableContainer:scrollToRatio(ratio_x, ratio_y)
     self:_scrollBy(0, 0) -- get the additional work done
 end
 
-function ScrollableContainer:_scrollBy(dx, dy)
+function ScrollableContainer:_getStepScrollRowAtY(y, check_below)
+    for _, row in ipairs(self.step_scroll_grid) do
+        if y >= row.top and y <= row.bottom then
+            if check_below then
+                -- return row, is row fully below y, is its content fully below y
+                return row, y == row.top, y <= (row.content_top or row.top)
+            else
+                -- return row, is row fully above y, is its content fully above y
+                return row, y == row.bottom, y >= (row.content_bottom or row.bottom)
+            end
+        end
+    end
+end
+
+function ScrollableContainer:_hideTruncatedGridItemsIfRequested()
+    self._crop_h_limited = nil
+    if self.hide_truncated_grid_items and self.step_scroll_grid then
+        local new_bottom_row, new_bottom_row_fully_visible = self:_getStepScrollRowAtY(self._scroll_offset_y + self._crop_h - 1, false)
+        if new_bottom_row and not new_bottom_row_fully_visible then
+            self._crop_h_limited = new_bottom_row.top - self._scroll_offset_y
+        end
+    end
+end
+
+function ScrollableContainer:_scrollBy(dx, dy, ensure_scroll_steps)
+    dx = Math.round(dx)
+    dy = Math.round(dy)
     if BD.mirroredUILayout() then
         dx = -dx
     end
-    self._scroll_offset_x = self._scroll_offset_x + Math.round(dx)
-    self._scroll_offset_y = self._scroll_offset_y + Math.round(dy)
-    if self._scroll_offset_x < 0 then
+    local allow_overflow_x, allow_overflow_y = false, false
+
+    -- We allow controlled scrolling with swipes and PgDown/PgUp where the scroll
+    -- will align on a grid provided by the containee, so we can get better
+    -- alignment of the content and avoid truncated items.
+    if ensure_scroll_steps and self.step_scroll_grid then
+        -- We want to ensure that after the scroll, we won't have a truncated row at top,
+        -- and that any truncated row content at the point we're crossing will be fully
+        -- visible after the scroll.
+        -- When reaching top or bottom, we also allow overflow and display blank content,
+        -- for easier continuous browsing so we don't have to guess where we were if we
+        -- scrolled by less than a screen
+        local orig_x, orig_y = self._scroll_offset_x, self._scroll_offset_y
+        local new_x = orig_x + dx
+        local new_y = orig_y + dy
+
+        if orig_y <= 0 and dy <= 0 then
+            -- Already overflowing, and scrolling again in the same direction: reset the
+            -- overflow so we can get back in the sane state of anchored at top/bottom.
+            new_y = 0
+        elseif orig_y >= self._max_scroll_offset_y and dy >=0 then
+            -- Already overflowing, as above.
+            new_y = self._max_scroll_offset_y
+        else
+            allow_overflow_y = true -- this might be an option ?
+            local top_row, top_row_fully_visible, top_row_content_visible = -- luacheck: no unused
+                                self:_getStepScrollRowAtY(orig_y, true)
+            local bottom_row, bottom_row_fully_visible, bottom_row_content_visible = -- luacheck: no unused
+                                self:_getStepScrollRowAtY(orig_y + self._crop_h - 1, false)
+            local new_view_bottom_y = new_y + self._crop_h - 1
+            local new_top_row, new_top_row_fully_visible, new_top_row_content_visible = -- luacheck: no unused
+                                self:_getStepScrollRowAtY(new_y, true)
+            if dy >= 0 then -- Scrolling down
+                if bottom_row and not bottom_row_content_visible and new_y > bottom_row.top then
+                    -- If we'd go past the not fully visible original bottom button, have it fully at top
+                    new_y = bottom_row.top
+                else
+                    -- Ensure the new top row is anchored as its top
+                    if new_top_row then
+                        new_y = new_top_row.top
+                    end
+                end
+            else -- Scrolling up
+                if top_row and not top_row_content_visible
+                           and new_view_bottom_y < (top_row.content_bottom or top_row.bottom) then
+                    -- If we'd go past the not fully visible original top button, be sure we'll
+                    -- have its content fully at bottom
+                    new_y = (top_row.content_bottom or top_row.bottom) - self._crop_h + 1
+                    new_top_row, new_top_row_fully_visible, new_top_row_content_visible = -- luacheck: no unused
+                                self:_getStepScrollRowAtY(new_y, true)
+                end
+                if not new_top_row and new_y < 0 then
+                    -- Overflow. If the overflow is less than a ghost row before the first row,
+                    -- do as what the next 'if's would do if it were there: anchor on the first row.
+                    -- This may happen when back up to the first page: we don't want that small overflow.
+                    -- (Not super sure this may not cause other issues like having the previous top
+                    -- row duplicated at the new bottom.)
+                    local first_row = self:_getStepScrollRowAtY(0)
+                    if - new_y < first_row.bottom then
+                        new_top_row, new_top_row_fully_visible, new_top_row_content_visible = -- luacheck: no unused
+                                    self:_getStepScrollRowAtY(0, true)
+                    end
+                end
+                -- If the new top row is not fully visible, use the next row
+                if new_top_row and not new_top_row_fully_visible then
+                    new_top_row, new_top_row_fully_visible, new_top_row_content_visible = -- luacheck: no unused
+                                self:_getStepScrollRowAtY(new_top_row.bottom + 1, true)
+                end
+                -- Ensure the new top row is anchored as its top
+                if new_top_row then
+                    new_y = new_top_row.top
+                end
+            end
+        end
+        self._scroll_offset_y = new_y
+        -- Step scrolling on the x-asis not yet implemented.
+        -- We should find in the top row table:
+        --   columns = { array of similar info about each button in that row's HorizontalGroup }
+        -- Its absence would mean free scrolling on the x-axis.
+        -- For now, allow free scrolling on the x-axis.
+        self._scroll_offset_x = new_x
+    else
+        -- Free scrolling
+        self._scroll_offset_x = self._scroll_offset_x + dx
+        self._scroll_offset_y = self._scroll_offset_y + dy
+    end
+
+    if self._scroll_offset_x < 0 and not allow_overflow_x then
         self._scroll_offset_x = 0
     end
-    if self._scroll_offset_y < 0 then
+    if self._scroll_offset_y < 0 and not allow_overflow_y then
         self._scroll_offset_y = 0
     end
-    if self._scroll_offset_x > self._max_scroll_offset_x then
+    if self._scroll_offset_x > self._max_scroll_offset_x and not allow_overflow_x then
         self._scroll_offset_x = self._max_scroll_offset_x
     end
-    if self._scroll_offset_y > self._max_scroll_offset_y then
+    if self._scroll_offset_y > self._max_scroll_offset_y and not allow_overflow_y then
         self._scroll_offset_y = self._max_scroll_offset_y
     end
+    self:_hideTruncatedGridItemsIfRequested()
     self:_updateScrollBars()
     UIManager:setDirty(self.show_parent, function()
         return "ui", self.dimen
@@ -248,6 +405,7 @@ function ScrollableContainer:reset()
         self._bb = nil
     end
     self._is_scrollable = nil
+    self._crop_h_limited = nil
     self._scroll_offset_x = 0
     self._scroll_offset_y = 0
 end
@@ -294,7 +452,7 @@ function ScrollableContainer:paintTo(bb, x, y)
         dx = self._scroll_offset_x
     end
     self[1]:paintTo(self._bb, x - dx, y - self._scroll_offset_y)
-    bb:blitFrom(self._bb, x + self._crop_dx, y, x + self._crop_dx, y, self._crop_w, self._crop_h)
+    bb:blitFrom(self._bb, x + self._crop_dx, y, x + self._crop_dx, y, self._crop_w, self._crop_h_limited or self._crop_h)
 
     -- Draw our scrollbars over
     if self._h_scroll_bar then
@@ -351,16 +509,29 @@ function ScrollableContainer:onScrollableSwipe(_, ges)
     end
     self._scrolling = false -- could have been set by "pan" event received before "swipe"
     local direction = ges.direction
-    local distance = ges.distance
-    local sq_distance = math.floor(math.sqrt(distance*distance/2))
-    if direction == "north" then self:_scrollBy(0, distance)
-    elseif direction == "south" then self:_scrollBy(0, -distance)
-    elseif direction == "east" then self:_scrollBy(-distance, 0)
-    elseif direction == "west" then self:_scrollBy(distance, 0)
-    elseif direction == "northeast" then self:_scrollBy(-sq_distance, sq_distance)
-    elseif direction == "northwest" then self:_scrollBy(sq_distance, sq_distance)
-    elseif direction == "southeast" then self:_scrollBy(-sq_distance, -sq_distance)
-    elseif direction == "southwest" then self:_scrollBy(sq_distance, -sq_distance)
+    if self.swipe_full_view then
+        -- Swipe by a full visible area, no matter the swipe distance
+        if     direction == "north"     then self:_scrollBy(0, self._crop_h, true)
+        elseif direction == "south"     then self:_scrollBy(0, -self._crop_h, true)
+        elseif direction == "east"      then self:_scrollBy(-self._crop_w, 0, true)
+        elseif direction == "west"      then self:_scrollBy(self._crop_w, 0, true)
+        elseif direction == "northeast" then self:_scrollBy(-self._crop_w, self._crop_h, true)
+        elseif direction == "northwest" then self:_scrollBy(self._crop_w, self._crop_h, true)
+        elseif direction == "southeast" then self:_scrollBy(-self._crop_w, -self._crop_h, true)
+        elseif direction == "southwest" then self:_scrollBy(self._crop_w, -self._crop_h, true)
+        end
+    else
+        local distance = ges.distance
+        local sq_distance = math.floor(math.sqrt(distance*distance/2))
+        if     direction == "north"     then self:_scrollBy(0, distance, true)
+        elseif direction == "south"     then self:_scrollBy(0, -distance, true)
+        elseif direction == "east"      then self:_scrollBy(-distance, 0, true)
+        elseif direction == "west"      then self:_scrollBy(distance, 0, true)
+        elseif direction == "northeast" then self:_scrollBy(-sq_distance, sq_distance, true)
+        elseif direction == "northwest" then self:_scrollBy(sq_distance, sq_distance, true)
+        elseif direction == "southeast" then self:_scrollBy(-sq_distance, -sq_distance, true)
+        elseif direction == "southwest" then self:_scrollBy(sq_distance, -sq_distance, true)
+        end
     end
     return true
 end
@@ -459,6 +630,22 @@ function ScrollableContainer:onScrollablePanRelease(_, ges)
         return true
     end
     return false
+end
+
+function ScrollableContainer:onScrollPageUp()
+    if not self._is_scrollable then
+        return false
+    end
+    self:_scrollBy(0, -self._crop_h, true)
+    return true
+end
+
+function ScrollableContainer:onScrollPageDown()
+    if not self._is_scrollable then
+        return false
+    end
+    self:_scrollBy(0, self._crop_h, true)
+    return true
 end
 
 return ScrollableContainer
