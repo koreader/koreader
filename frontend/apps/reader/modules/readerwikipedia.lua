@@ -488,7 +488,7 @@ function ReaderWikipedia:lookupWikipedia(word, is_sane, box, get_fullpage, force
             pages = sorted_pages
         end
         for pageid, page in pairs(pages) do
-            local definition = page.extract or no_result_text
+            local definition = page.extract or (page.length and _("No introduction.")) or no_result_text
             if page.length then
                 -- we get 'length' only for intro results
                 -- let's append it to definition so we know
