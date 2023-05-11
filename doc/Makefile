@@ -32,7 +32,7 @@ endif
 	ln -s -t ../frontend/ ../plugins || true
 
 	# It is enough to scan frontend, as we have the link to plugins there.
-	events_helper/document_events.sh 2 ../frontend
+	events_helper/document_events.sh ../frontend
 
 	# Write event/handler documentation to generated/Events_and_handler.md
 	ldoc --filter events.filter .
