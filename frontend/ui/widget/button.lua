@@ -37,6 +37,7 @@ local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
 local Button = InputContainer:extend{
     text = nil, -- mandatory (unless icon is provided)
     text_func = nil,
+    lang = nil,
     icon = nil,
     icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
     icon_height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
@@ -91,6 +92,11 @@ function Button:init()
     -- depends on translations)
     self._min_needed_width = nil
 
+    -- Our button's text may end up using a smaller font size, and/or be multiline.
+    -- We will give the button the height it would have if no such tweaks were
+    -- made. LeftContainer and CenterContainer will vertically center the
+    -- TextWidget or TextBoxWidget in that height (hopefully no ink will overflow)
+    local reference_height
     if self.text then
         local max_width = self.max_width or self.width
         if max_width then
@@ -98,35 +104,37 @@ function Button:init()
         end
         self.label_widget = TextWidget:new{
             text = self.text,
+            lang = self.lang,
             max_width = max_width,
             fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
             bold = self.text_font_bold,
             face = Font:getFace(self.text_font_face, self.text_font_size)
         }
+        reference_height = self.label_widget:getSize().h
         if not self.label_widget:isTruncated() then
             self._min_needed_width = self.label_widget:getSize().w + outer_pad_width
         end
         self.did_truncation_tweaks = false
         if self.avoid_text_truncation and self.label_widget:isTruncated() then
             self.did_truncation_tweaks = true
-            local max_height = self.label_widget:getSize().h
-            local font_size_2_lines = TextBoxWidget:getFontSizeToFitHeight(max_height, 2, 0)
+            local font_size_2_lines = TextBoxWidget:getFontSizeToFitHeight(reference_height, 2, 0)
             while self.label_widget:isTruncated() do
                 local new_size = self.label_widget.face.orig_size - 1
-                if new_size < font_size_2_lines then
+                if new_size <= font_size_2_lines then
                     -- Switch to a 2-lines TextBoxWidget
                     self.label_widget:free(true)
                     self.label_widget = TextBoxWidget:new{
                         text = self.text,
+                        lang = self.lang,
                         line_height = 0,
                         alignment = self.align,
                         width = max_width,
-                        height = max_height,
+                        height = reference_height,
                         height_adjust = true,
                         height_overflow_show_ellipsis = true,
                         fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
                         bold = self.text_font_bold,
-                        face = Font:getFace(self.text_font_face, font_size_2_lines)
+                        face = Font:getFace(self.text_font_face, new_size)
                     }
                     if not self.label_widget.has_split_inside_word then
                         break
@@ -140,6 +148,7 @@ function Button:init()
                 self.label_widget:free(true)
                 self.label_widget = TextWidget:new{
                     text = self.text,
+                    lang = self.lang,
                     max_width = max_width,
                     fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
                     bold = self.text_font_bold,
@@ -158,6 +167,7 @@ function Button:init()
         self._min_needed_width = self.icon_width + outer_pad_width
     end
     local widget_size = self.label_widget:getSize()
+    local label_container_height = reference_height or widget_size.h
     local inner_width
     if self.width then
         inner_width = self.width - outer_pad_width
@@ -169,7 +179,7 @@ function Button:init()
         self.label_container = LeftContainer:new{
             dimen = Geom:new{
                 w = inner_width,
-                h = widget_size.h
+                h = label_container_height,
             },
             self.label_widget,
         }
@@ -177,7 +187,7 @@ function Button:init()
         self.label_container = CenterContainer:new{
             dimen = Geom:new{
                 w = inner_width,
-                h = widget_size.h
+                h = label_container_height,
             },
             self.label_widget,
         }
