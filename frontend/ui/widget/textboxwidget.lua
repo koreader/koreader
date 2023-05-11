@@ -1084,7 +1084,7 @@ function TextBoxWidget:getVisibleHeightRatios()
 end
 
 -- Helper function to be used before intanstiating a TextBoxWidget instance
-function TextBoxWidget:getFontSizeToFitHeight(height_px, nb_lines, line_height_em)
+function TextBoxWidget:getFontSizeToFitHeight(height_px, nb_lines, line_height_em, font_face, font_bold)
     -- Get a font size that would fit nb_lines in height_px.
     -- A font with the returned size should then be provided
     -- to TextBoxWidget:new() (as well as the line_height_em given
@@ -1101,6 +1101,32 @@ function TextBoxWidget:getFontSizeToFitHeight(height_px, nb_lines, line_height_e
     local font_size = math.floor(face_size * 1000000 / Screen:scaleBySize(1000000)) -- invert scaleBySize
     if Screen:scaleBySize(font_size) > face_size then -- be really sure we won't get it larger
         font_size = font_size - 1
+    end
+    -- Because of self.line_glyph_extra_height added to the final bb, the font_size we got
+    -- up to here can still generate a TextBoxWidget taller than the provided height_px,
+    -- which might be good enough for some usages.
+    -- If better accuracy is needed, provide (..., font_face, font_bold) so we can return
+    -- a better font_size for the font that will be used.
+    if font_face then
+        while true do
+            -- As done in TextBoxWidget:init():
+            local line_height_px = Math.round( (1 + line_height_em) * Screen:scaleBySize(font_size) )
+            local face = Font:getFace(font_face, font_size)
+            face = Font:getAdjustedFace(face, font_bold)
+            local face_height = face.ftface:getHeightAndAscender()
+            local line_heights_diff = math.floor(line_height_px - face_height)
+            if line_heights_diff >= 0 then
+                break
+            end
+            local line_glyph_extra_height = -line_heights_diff
+            if line_height_px * nb_lines + line_glyph_extra_height <= height_px then
+                break
+            end
+            if font_size <= 1 then
+                break
+            end
+            font_size = font_size - 1
+        end
     end
     return font_size
 end
