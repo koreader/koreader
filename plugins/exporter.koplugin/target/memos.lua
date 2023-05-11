@@ -63,6 +63,7 @@ function MemosExporter:getMenuTable()
                             {
                                 {
                                     text = _("Cancel"),
+                                    id = "close",
                                     callback = function()
                                         UIManager:close(auth_dialog)
                                     end
