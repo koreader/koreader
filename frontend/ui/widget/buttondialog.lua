@@ -48,8 +48,11 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local MovableContainer = require("ui/widget/container/movablecontainer")
+local ScrollableContainer = require("ui/widget/container/scrollablecontainer")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local _ = require("gettext")
 local Screen = require("device").screen
 
@@ -61,6 +64,9 @@ local ButtonDialog = InputContainer:extend{
     shrink_min_width = nil, -- default to ButtonTable's default
     tap_close_callback = nil,
     alpha = nil, -- passed to MovableContainer
+    -- If scrolling, prefers using this/these numbers of buttons rows per page
+    -- (depending on what the screen height allows) to compute the height.
+    rows_per_page = nil, -- number or array of numbers
 }
 
 function ButtonDialog:init()
@@ -86,17 +92,65 @@ function ButtonDialog:init()
             }
         }
     end
+    self.buttontable = ButtonTable:new{
+        buttons = self.buttons,
+        width = self.width - 2*Size.border.window - 2*Size.padding.button,
+        shrink_unneeded_width = self.shrink_unneeded_width,
+        shrink_min_width = self.shrink_min_width,
+        show_parent = self,
+    }
+    -- If the ButtonTable ends up being taller than the screen, wrap it inside a ScrollableContainer.
+    -- Ensure some small top and bottom padding, so the scrollbar stand out, and some outer margin
+    -- so the this dialog does not take the full height and stand as a popup.
+    local max_height = Screen:getHeight() - 2*Size.padding.buttontable - 2*Size.margin.default
+    local height = self.buttontable:getSize().h
+    local scontainer
+    if height > max_height then
+        -- Adjust the ScrollableContainer to an integer multiple of the row height
+        -- (assuming all rows get the same height), so when scrolling per page,
+        -- we always end up seeing full rows.
+        self.buttontable:setupGridScrollBehaviour()
+        local step_scroll_grid = self.buttontable:getStepScrollGrid()
+        local row_height = step_scroll_grid[1].bottom + 1 - step_scroll_grid[1].top
+        local fit_rows = math.floor(max_height / row_height)
+        if self.rows_per_page then
+            if type(self.rows_per_page) == "number" then
+                if fit_rows > self.rows_per_page then
+                    fit_rows = self.rows_per_page
+                end
+            else
+                for _, nb in ipairs(self.rows_per_page) do
+                    if fit_rows >= nb then
+                        fit_rows = nb
+                        break
+                    end
+                end
+            end
+        end
+        -- (Comment the next line to test ScrollableContainer behaviour when things do not fit)
+        max_height = row_height * fit_rows
+        self.cropping_widget = ScrollableContainer:new{
+            dimen = Geom:new{
+                -- We'll be exceeding the provided width in this case (let's not bother
+                -- ensuring it, we'd need to re-setup the ButtonTable...)
+                w = self.buttontable:getSize().w + ScrollableContainer:getScrollbarWidth(),
+                h = max_height,
+            },
+            show_parent = self,
+            step_scroll_grid = step_scroll_grid,
+            self.buttontable,
+        }
+        scontainer = VerticalGroup:new{
+            VerticalSpan:new{ width=Size.padding.buttontable },
+            self.cropping_widget,
+            VerticalSpan:new{ width=Size.padding.buttontable },
+        }
+    end
     self.movable = MovableContainer:new{
             alpha = self.alpha,
             anchor = self.anchor,
             FrameContainer:new{
-                ButtonTable:new{
-                    buttons = self.buttons,
-                    width = self.width - 2*Size.border.window - 2*Size.padding.button,
-                    shrink_unneeded_width = self.shrink_unneeded_width,
-                    shrink_min_width = self.shrink_min_width,
-                    show_parent = self,
-                },
+                scontainer or self.buttontable,
                 background = Blitbuffer.COLOR_WHITE,
                 bordersize = Size.border.window,
                 radius = Size.radius.window,
@@ -112,6 +166,22 @@ function ButtonDialog:init()
         dimen = Screen:getSize(),
         self.movable,
     }
+end
+
+function ButtonDialog:getButtonById(id)
+    return self.buttontable:getButtonById(id)
+end
+
+function ButtonDialog:getScrolledOffset()
+    if self.cropping_widget then
+        return self.cropping_widget:getScrolledOffset()
+    end
+end
+
+function ButtonDialog:setScrolledOffset(offset_point)
+    if offset_point and self.cropping_widget then
+        return self.cropping_widget:setScrolledOffset(offset_point)
+    end
 end
 
 function ButtonDialog:onShow()
