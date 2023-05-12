@@ -277,7 +277,8 @@ function Device:onPowerEvent(ev)
     if self.screen_saver_mode then
         if ev == "Power" or ev == "Resume" then
             if self.is_cover_closed then
-                -- don't let power key press wake up device when the cover is in closed state.
+                -- Don't let power key press wake up device when the cover is in closed state.
+                logger.dbg("Pressed power while asleep in screen saver mode with a closed sleepcover, going back to suspend...")
                 self:rescheduleSuspend()
             else
                 logger.dbg("Resuming...")
