@@ -7,7 +7,7 @@ This module defines stubs for common methods.
 local DataStorage = require("datastorage")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
-local UIManager -- will be updated when available
+local UIManager -- Updated on UIManager init
 local logger = require("logger")
 local ffi = require("ffi")
 local time = require("ui/time")
