@@ -232,7 +232,7 @@ function Cervantes:setEventHandlers(UIManager)
     UIManager.event_handlers.Charging = function()
         self:_beforeCharging()
         -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
-        if self.screen_saver_mode then
+        if self.screen_saver_mode and not self.screen_saver_lock then
            UIManager.event_handlers.Suspend()
         end
     end
@@ -240,7 +240,7 @@ function Cervantes:setEventHandlers(UIManager)
         -- We need to put the device into suspension, other things need to be done before it.
         self:usbPlugOut()
         self:_afterNotCharging()
-        if self.screen_saver_mode then
+        if self.screen_saver_mode and not self.screen_saver_lock then
            UIManager.event_handlers.Suspend()
         end
     end
@@ -248,7 +248,7 @@ function Cervantes:setEventHandlers(UIManager)
     UIManager.event_handlers.UsbPlugIn = function()
         self:_beforeCharging()
         -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
-        if self.screen_saver_mode then
+        if self.screen_saver_mode and not self.screen_saver_lock then
             UIManager.event_handlers.Suspend()
         else
             -- Potentially start an USBMS session
@@ -260,7 +260,7 @@ function Cervantes:setEventHandlers(UIManager)
         -- We need to put the device into suspension, other things need to be done before it.
         self:usbPlugOut()
         self:_afterNotCharging()
-        if self.screen_saver_mode then
+        if self.screen_saver_mode and not self.screen_saver_lock then
             UIManager.event_handlers.Suspend()
         else
             -- Potentially dismiss the USBMS ConfirmBox
