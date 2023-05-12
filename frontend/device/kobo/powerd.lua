@@ -1,4 +1,4 @@
-local UIManager = nil -- will be updated when available
+local UIManager -- will be updated when available
 local BasePowerD = require("device/generic/powerd")
 local Math = require("optmath")
 local NickelConf = require("device/kobo/nickel_conf")

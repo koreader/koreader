@@ -1,6 +1,6 @@
 local Event = require("ui/event")
 local Math = require("optmath")
-local UIManager = nil -- will be updated when available
+local UIManager -- will be updated when available
 local logger = require("logger")
 local time = require("ui/time")
 local BasePowerD = {

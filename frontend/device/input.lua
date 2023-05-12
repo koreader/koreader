@@ -7,7 +7,7 @@ local DEBUG = require("dbg")
 local Event = require("ui/event")
 local GestureDetector = require("device/gesturedetector")
 local Key = require("device/key")
-local UIManager = nil -- will be updated when available
+local UIManager -- will be updated when available
 local framebuffer = require("ffi/framebuffer")
 local input = require("ffi/input")
 local logger = require("logger")
