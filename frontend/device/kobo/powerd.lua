@@ -432,6 +432,10 @@ function KoboPowerD:afterResume()
 
     -- Set the system clock to the hardware clock's time.
     RTC:HCToSys()
+
+    -- Don't forget to call generic's handler, too,
+    -- as it's responsible for restoring user input and emitting the Resume event!
+    BasePowerD.afterResume(self)
 end
 
 function KoboPowerD:readyUIHW(uimgr)
