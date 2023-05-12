@@ -331,10 +331,12 @@ describe("device module", function()
                     return osgetenv(key)
                 end
             end)
+            -- Bypass frontend/device probeDevice, while making sure that it points to the right implementation
+            local Device = require("device/kobo/device")
+            package.loaded.device = Device
+            Device:init()
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
-            local Device = require("device/kobo/device")
-            Device:init()
 
             local UIManager = require("ui/uimanager")
             stub(Device, "suspend")
@@ -368,10 +370,11 @@ describe("device module", function()
                 end
             end
 
+            local Device = require("device/cervantes/device")
+            package.loaded.device = Device
+            Device:init()
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
-            local Device = require("device/cervantes/device")
-            Device:init()
 
             local UIManager = require("ui/uimanager")
 
@@ -393,10 +396,11 @@ describe("device module", function()
         end)
 
         it("SDL", function()
+            local Device = require("device/sdl/device")
+            package.loaded.device = Device
+            Device:init()
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
-            local Device = require("device/sdl/device")
-            Device:init()
 
             local UIManager = require("ui/uimanager")
 
@@ -437,10 +441,11 @@ describe("device module", function()
                     return iopen(filename, mode)
                 end
             end
+            local Device = require("device/remarkable/device")
+            package.loaded.device = Device
+            Device:init()
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
-            local Device = require("device/remarkable/device")
-            Device:init()
 
             local UIManager = require("ui/uimanager")
 
