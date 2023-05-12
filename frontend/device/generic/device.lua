@@ -140,19 +140,6 @@ function Device:extend(o)
     return o
 end
 
--- Update our UIManager reference once its ready
-function Device:UIManagerReady(uimgr)
-    -- Our own ref
-    UIManager = uimgr
-    -- Let implementations do the same thing, too
-    self:_UIManagerReady(uimgr)
-
-    -- Forward that to PowerD
-    self.powerd:UIManagerReady(uimgr)
-end
--- In case implementations *also* need a reference to UIManager, *this* is the one to implement!
-function Device:_UIManagerReady(uimgr) end
-
 -- Inverts PageTurn button mappings
 -- NOTE: For ref. on Kobo, stored by Nickel in the [Reading] section as invertPageTurnButtons=true
 function Device:invertButtons()
@@ -953,8 +940,25 @@ function Device:untar(archive, extract_to, with_stripped_root)
     return os.execute(cmd:format(archive, extract_to))
 end
 
+-- Update our UIManager reference once its ready
+function Device:_UIManagerReady(uimgr)
+    -- Our own ref
+    UIManager = uimgr
+    -- Let implementations do the same thing
+    self:UIManagerReady(uimgr)
+
+    -- Forward that to PowerD
+    self.powerd:UIManagerReady(uimgr)
+
+    -- Setup PM event handlers
+    -- NOTE: We keep forwarding the uimgr reference because some implementations don't actually have a module-local UIManager ref to update
+    self:_setEventHandlers(uimgr)
+end
+-- In case implementations *also* need a reference to UIManager, *this* is the one to implement!
+function Device:UIManagerReady(uimgr) end
+
 -- Set device event handlers common to all devices
-function Device:_setEventHandlers(UIManager)
+function Device:_setEventHandlers(uimgr)
     if self:canReboot() then
         UIManager.event_handlers.Reboot = function(message_text)
             local ConfirmBox = require("ui/widget/confirmbox")
@@ -1008,11 +1012,12 @@ function Device:_setEventHandlers(UIManager)
         end
     end
 
-    self:setEventHandlers(UIManager)
+    -- Let implementations expand on that
+    self:setEventHandlers(uimgr)
 end
 
 -- Devices can add additional event handlers by overwriting this method.
-function Device:setEventHandlers(UIManager)
+function Device:setEventHandlers(uimgr)
     -- These will be most probably overwritten in the device specific `setEventHandlers`
     UIManager.event_handlers.Suspend = function()
         self.powerd:beforeSuspend()

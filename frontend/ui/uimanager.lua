@@ -102,7 +102,8 @@ function UIManager:init()
         end)
     end
 
-    Device:_setEventHandlers(self)
+    -- Tell Device that we're now available, so that it can setup PM event handlers
+    Device:_UIManagerReady(self)
 
     -- A simple wrapper for UIManager:quit()
     -- This may be overwritten by setRunForeverMode(); for testing purposes
@@ -1550,9 +1551,6 @@ This is the main loop of the UI controller.
 It is intended to manage input events and delegate them to dialogs.
 --]]
 function UIManager:run()
-    -- Tell Device that we're ready
-    Device:UIManagerReady(self)
-
     self:initLooper()
     -- currently there is no Turbo support for Windows
     -- use our own main loop
