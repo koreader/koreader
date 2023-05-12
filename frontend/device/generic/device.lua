@@ -301,7 +301,18 @@ function Device:onPowerEvent(ev)
             -- Already in screen saver mode, no need to update UI/state before
             -- suspending the hardware. This usually happens when sleep cover
             -- is closed after the device was sent to suspend state.
-            logger.dbg("Already in screen saver mode, going back to suspend...")
+            if self.screen_saver_lock then
+                -- This can only happen when some sort of screensaver_delay is set,
+                -- and the user presses the Power button *after* already having woken up the device.
+                -- In this case, we want to go back to suspend *without* affecting the screensaver,
+                -- so we simply mimic our own behavior when *not* in screen_saver_mode ;).
+                logger.dbg("Pressed power while awake in screen saver mode, going back to suspend...")
+                -- Basically, this is the only difference.
+                -- We need it because we're actually in a sane post-Resume event state right now.
+                self.powerd:beforeSuspend()
+            else
+                logger.dbg("Already in screen saver mode, going back to suspend...")
+            end
             -- Much like the real suspend codepath below, in case we got here via screen_saver_lock,
             -- make sure we murder WiFi again (because restore WiFi on resume could have kicked in).
             if self:hasWifiToggle() then
