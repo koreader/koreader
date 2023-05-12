@@ -192,14 +192,12 @@ end
 
 function SonyPRSTUX:setEventHandlers(UIManager)
     UIManager.event_handlers.Suspend = function()
-        self:_beforeSuspend()
         self:intoScreenSaver()
         self:suspend()
     end
     UIManager.event_handlers.Resume = function()
         self:resume()
         self:outofScreenSaver()
-        self:_afterResume()
     end
     UIManager.event_handlers.PowerPress = function()
         UIManager:scheduleIn(2, UIManager.poweroff_action)
@@ -225,7 +223,6 @@ function SonyPRSTUX:setEventHandlers(UIManager)
         if self.screen_saver_mode then
             self:resume()
             self:outofScreenSaver()
-            self:_afterResume()
         end
         self:usbPlugIn()
     end
