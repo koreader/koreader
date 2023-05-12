@@ -950,6 +950,9 @@ function Device:_UIManagerReady(uimgr)
     -- Forward that to PowerD
     self.powerd:UIManagerReady(uimgr)
 
+    -- And to Input
+    self.input:UIManagerReady(uimgr)
+
     -- Setup PM event handlers
     -- NOTE: We keep forwarding the uimgr reference because some implementations don't actually have a module-local UIManager ref to update
     self:_setEventHandlers(uimgr)
