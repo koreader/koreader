@@ -299,9 +299,9 @@ function Device:onPowerEvent(ev)
                 self.powerd:afterResume()
             end
         elseif ev == "Suspend" then
-            -- Already in screen saver mode, no need to update UI/state before
-            -- suspending the hardware. This usually happens when sleep cover
-            -- is closed after the device was sent to suspend state.
+            -- Already in screen saver mode, no need to update the UI (and state, usually) before suspending again.
+            -- This usually happens when the sleep cover is closed on an already sleeping device,
+            -- (e.g., it was previously suspended via the Power button).
             if self.screen_saver_lock then
                 -- This can only happen when some sort of screensaver_delay is set,
                 -- and the user presses the Power button *after* already having woken up the device.
