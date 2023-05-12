@@ -5,7 +5,9 @@ This module defines stubs for common methods.
 --]]
 
 local DataStorage = require("datastorage")
+local Event = require("ui/event")
 local Geom = require("ui/geometry")
+local UIManager = nil -- will be updated when available
 local logger = require("logger")
 local ffi = require("ffi")
 local time = require("ui/time")
@@ -138,6 +140,19 @@ function Device:extend(o)
     return o
 end
 
+-- Update our UIManager reference once its ready
+function Device:UIManagerReady(uimgr)
+    -- Our own ref
+    UIManager = uimgr
+    -- Let implementations do the same thing, too
+    self:_UIManagerReady(uimgr)
+
+    -- Forward that to PowerD
+    self.powerd:UIManagerReady(uimgr)
+end
+-- In case implementations *also* need a reference to UIManager, *this* is the one to implement!
+function Device:_UIManagerReady(uimgr) end
+
 -- Inverts PageTurn button mappings
 -- NOTE: For ref. on Kobo, stored by Nickel in the [Reading] section as invertPageTurnButtons=true
 function Device:invertButtons()
@@ -261,7 +276,6 @@ end
 function Device:rescheduleSuspend()
     logger.warn("!! Device:rescheduleSuspend !!")
     print(debug.traceback())
-    local UIManager = require("ui/uimanager")
     UIManager:unschedule(self.suspend)
     UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
 end
@@ -282,7 +296,6 @@ function Device:onPowerEvent(ev)
                 self:rescheduleSuspend()
             else
                 logger.dbg("Resuming...")
-                local UIManager = require("ui/uimanager")
                 UIManager:unschedule(self.suspend)
                 if self:hasWifiManager() then
                     local network_manager = require("ui/network/manager")
@@ -327,7 +340,6 @@ function Device:onPowerEvent(ev)
         end
     -- else we were not in screensaver mode
     elseif ev == "Power" or ev == "Suspend" then
-        local UIManager = require("ui/uimanager")
         logger.dbg("Suspending...")
         -- Add the current state of the SleepCover flag...
         logger.dbg("Sleep cover is", self.is_cover_closed and "closed" or "open")
@@ -367,7 +379,6 @@ end
 
 function Device:showLightDialog()
     local FrontLightWidget = require("ui/widget/frontlightwidget")
-    local UIManager = require("ui/uimanager")
     UIManager:show(FrontLightWidget:new{})
 end
 
@@ -376,8 +387,6 @@ function Device:info()
 end
 
 function Device:install()
-    local Event = require("ui/event")
-    local UIManager = require("ui/uimanager")
     local ConfirmBox = require("ui/widget/confirmbox")
     UIManager:show(ConfirmBox:new{
         text = _("Update is ready. Install it now?"),
@@ -953,7 +962,6 @@ function Device:_setEventHandlers(UIManager)
                 text = message_text or _("Are you sure you want to reboot the device?"),
                 ok_text = _("Reboot"),
                 ok_callback = function()
-                    local Event = require("ui/event")
                     UIManager:broadcastEvent(Event:new("Reboot"))
                     UIManager:nextTick(UIManager.reboot_action)
                 end,
@@ -970,7 +978,6 @@ function Device:_setEventHandlers(UIManager)
                 text = message_text or _("Are you sure you want to power off the device?"),
                 ok_text = _("Power off"),
                 ok_callback = function()
-                    local Event = require("ui/event")
                     UIManager:broadcastEvent(Event:new("PowerOff"))
                     UIManager:nextTick(UIManager.poweroff_action)
                 end,
@@ -987,7 +994,6 @@ function Device:_setEventHandlers(UIManager)
                 text = message_text or _("This will take effect on next restart."),
                 ok_text = _("Restart now"),
                 ok_callback = function()
-                    local Event = require("ui/event")
                     UIManager:broadcastEvent(Event:new("Restart"))
                 end,
                 cancel_text = _("Restart later"),
@@ -1018,8 +1024,6 @@ end
 
 -- The common operations that should be performed before suspending the device.
 function Device:_beforeSuspend(inhibit)
-    local Event = require("ui/event")
-    local UIManager = require("ui/uimanager")
     UIManager:flushSettings()
     UIManager:broadcastEvent(Event:new("Suspend"))
 
@@ -1042,16 +1046,12 @@ function Device:_afterResume(inhibit)
         self.input:inhibitInput(false)
     end
 
-    local Event = require("ui/event")
-    local UIManager = require("ui/uimanager")
     UIManager:broadcastEvent(Event:new("Resume"))
 end
 
 -- The common operations that should be performed when the device is plugged to a power source.
 function Device:_beforeCharging()
     -- Leave the kernel some time to figure it out ;o).
-    local Event = require("ui/event")
-    local UIManager = require("ui/uimanager")
     UIManager:scheduleIn(1, function() self:setupChargingLED() end)
     UIManager:broadcastEvent(Event:new("Charging"))
 end
@@ -1059,8 +1059,6 @@ end
 -- The common operations that should be performed when the device is unplugged from a power source.
 function Device:_afterNotCharging()
     -- Leave the kernel some time to figure it out ;o).
-    local Event = require("ui/event")
-    local UIManager = require("ui/uimanager")
     UIManager:scheduleIn(1, function() self:setupChargingLED() end)
     UIManager:broadcastEvent(Event:new("NotCharging"))
 end

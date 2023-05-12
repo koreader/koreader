@@ -1,5 +1,6 @@
-local UIManager = nil -- will be updated when available
+local Event = require("ui/event")
 local Math = require("optmath")
+local UIManager = nil -- will be updated when available
 local logger = require("logger")
 local time = require("ui/time")
 local BasePowerD = {
@@ -41,11 +42,6 @@ function BasePowerD:new(o)
     return o
 end
 
-function BasePowerD:readyUI()
-    UIManager = require("ui/uimanager")
-    self:readyUIHW(UIManager)
-end
-
 function BasePowerD:init() end
 function BasePowerD:setIntensityHW(intensity) end
 --- @note: Unlike the "public" setWarmth, this one takes a value in the *native* scale!
@@ -66,7 +62,6 @@ function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min en
 function BasePowerD:turnOffFrontlightHW(done_callback) self:setIntensityHW(self.fl_min) end
 function BasePowerD:turnOnFrontlightHW(done_callback) self:setIntensityHW(self.fl_intensity) end --- @fixme: what if fl_intensity == fl_min (c.f., kindle)?
 function BasePowerD:frontlightWarmthHW() return 0 end
-function BasePowerD:readyUIHW(uimgr) end
 -- Anything that needs to be done before doing a real hardware suspend.
 -- (Such as turning the front light off).
 -- Do *not* omit calling Device's _beforeSuspend method! This default implementation passes `false` so as *not* to disable input events during PM.
@@ -75,6 +70,16 @@ function BasePowerD:beforeSuspend() self.device:_beforeSuspend(false) end
 -- (Such as restoring front light state).
 -- Do *not* omit calling Device's _afterResume method!
 function BasePowerD:afterResume() self.device:_afterResume(false) end
+
+-- Update our UIManager reference once its ready
+function BasePowerD:UIManagerReady(uimgr)
+    -- Our own ref
+    UIManager = uimgr
+    -- Let implementations do the same thing, too
+    self:UIManagerReadyHW(uimgr)
+end
+-- Ditto, but for implementations
+function BasePowerD:UIManagerReadyHW(uimgr) end
 
 function BasePowerD:isFrontlightOn()
     return self.is_fl_on
@@ -277,7 +282,6 @@ end
 function BasePowerD:stateChanged()
     -- BasePowerD is loaded before UIManager. So we cannot broadcast events before UIManager has been loaded.
     if UIManager then
-        local Event = require("ui/event")
         UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
     end
 end

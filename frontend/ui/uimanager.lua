@@ -1550,8 +1550,8 @@ This is the main loop of the UI controller.
 It is intended to manage input events and delegate them to dialogs.
 --]]
 function UIManager:run()
-    -- Tell PowerD that we're ready
-    Device:getPowerDevice():readyUI()
+    -- Tell Device that we're ready
+    Device:UIManagerReady(self)
 
     self:initLooper()
     -- currently there is no Turbo support for Windows
