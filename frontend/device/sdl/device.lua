@@ -244,13 +244,14 @@ function Device:init()
                     ReaderUI:doShowReader(dropped_file_path)
                 end
             elseif ev.code == SDL_WINDOWEVENT_RESIZED then
-                device_input.device.screen.screen_size.w = ev.value.data1
-                device_input.device.screen.screen_size.h = ev.value.data2
                 device_input.device.screen.resize(device_input.device.screen, ev.value.data1, ev.value.data2)
                 self.window.width = ev.value.data1
                 self.window.height = ev.value.data2
 
                 local new_size = device_input.device.screen:getSize()
+                device_input.device.screen.screen_size.w = new_size.w
+                device_input.device.screen.screen_size.h = new_size.h
+
                 logger.dbg("Resizing screen to", new_size)
 
                 -- try to catch as many flies as we can
