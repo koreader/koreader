@@ -339,7 +339,6 @@ describe("device module", function()
 
             local UIManager = require("ui/uimanager")
             stub(Device, "suspend")
-            stub(Device.powerd, "beforeSuspend")
             stub(Device, "isKobo")
 
             Device.isKobo.returns(true)
@@ -353,7 +352,6 @@ describe("device module", function()
             assert.stub(readerui.onFlushSettings).was_called()
 
             Device.suspend:revert()
-            Device.powerd.beforeSuspend:revert()
             Device.isKobo:revert()
             readerui.onFlushSettings:revert()
             Device.screen_saver_mode = false
@@ -383,7 +381,6 @@ describe("device module", function()
             local UIManager = require("ui/uimanager")
 
             stub(Device, "suspend")
-            stub(Device.powerd, "beforeSuspend")
             stub(Device, "isCervantes")
 
             Device.isCervantes.returns(true)
@@ -397,7 +394,6 @@ describe("device module", function()
             assert.stub(readerui.onFlushSettings).was_called()
 
             Device.suspend:revert()
-            Device.powerd.beforeSuspend:revert()
             Device.isCervantes:revert()
             readerui.onFlushSettings:revert()
             Device.screen_saver_mode = false
@@ -414,7 +410,6 @@ describe("device module", function()
             local UIManager = require("ui/uimanager")
 
             stub(Device, "suspend")
-            stub(Device.powerd, "beforeSuspend")
             stub(Device, "isSDL")
 
             Device.isSDL.returns(true)
@@ -428,7 +423,6 @@ describe("device module", function()
             assert.stub(readerui.onFlushSettings).was_called()
 
             Device.suspend:revert()
-            Device.powerd.beforeSuspend:revert()
             Device.isSDL:revert()
             readerui.onFlushSettings:revert()
             Device.screen_saver_mode = false
@@ -464,7 +458,6 @@ describe("device module", function()
             local UIManager = require("ui/uimanager")
 
             stub(Device, "suspend")
-            stub(Device.powerd, "beforeSuspend")
             stub(Device, "isRemarkable")
 
             Device.isRemarkable.returns(true)
@@ -478,7 +471,6 @@ describe("device module", function()
             assert.stub(readerui.onFlushSettings).was_called()
 
             Device.suspend:revert()
-            Device.powerd.beforeSuspend:revert()
             Device.isRemarkable:revert()
             readerui.onFlushSettings:revert()
             Device.screen_saver_mode = false
