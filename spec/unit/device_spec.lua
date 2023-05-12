@@ -333,7 +333,8 @@ describe("device module", function()
             end)
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
-            local Device = require("device/kobo/device"):init()
+            local Device = require("device/kobo/device")
+            Device:init()
 
             local UIManager = require("ui/uimanager")
             stub(Device, "suspend")
@@ -369,7 +370,8 @@ describe("device module", function()
 
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
-            local Device = require("device/cervantes/device"):init()
+            local Device = require("device/cervantes/device")
+            Device:init()
 
             local UIManager = require("ui/uimanager")
 
@@ -393,7 +395,8 @@ describe("device module", function()
         it("SDL", function()
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
-            local Device = require("device/sdl/device"):init()
+            local Device = require("device/sdl/device")
+            Device:init()
 
             local UIManager = require("ui/uimanager")
 
@@ -436,7 +439,8 @@ describe("device module", function()
             end
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
-            local Device = require("device/remarkable/device"):init()
+            local Device = require("device/remarkable/device")
+            Device:init()
 
             local UIManager = require("ui/uimanager")
 
