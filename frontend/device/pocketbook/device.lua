@@ -389,10 +389,10 @@ end
 function PocketBook:setEventHandlers(UIManager)
     -- Only fg/bg state plugin notifiers, not real power event.
     UIManager.event_handlers.Suspend = function()
-        self:_beforeSuspend()
+        self.powerd:beforeSuspend()
     end
     UIManager.event_handlers.Resume = function()
-        self:_afterResume()
+        self.powerd:afterResume()
     end
     UIManager.event_handlers.Exit = function()
         local Event = require("ui/event")
