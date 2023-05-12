@@ -349,12 +349,10 @@ function Device:setEventHandlers(UIManager)
     end
 
     UIManager.event_handlers.Suspend = function()
-        self:_beforeSuspend()
         self:simulateSuspend()
     end
     UIManager.event_handlers.Resume = function()
         self:simulateResume()
-        self:_afterResume()
     end
     UIManager.event_handlers.PowerRelease = function()
         -- Resume if we were suspended
@@ -384,11 +382,15 @@ function Emulator:simulateSuspend()
     local Screensaver = require("ui/screensaver")
     Screensaver:setup()
     Screensaver:show()
+
+    self.powerd:beforeSuspend()
 end
 
 function Emulator:simulateResume()
     local Screensaver = require("ui/screensaver")
     Screensaver:close()
+
+    self.powerd:afterResume()
 end
 
 -- fake network manager for the emulator
