@@ -447,7 +447,7 @@ function KoboPowerD:afterResume()
     self.device:_afterResume()
 end
 
-function KoboPowerD:readyUIHW(uimgr)
+function KoboPowerD:UIManagerReadyHW(uimgr)
     UIManager = uimgr
 end
 

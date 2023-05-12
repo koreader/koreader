@@ -501,11 +501,6 @@ local KoboGoldfinch = Kobo:extend{
     hasReliableMxcWaitFor = no,
 }
 
-function Kobo:_UIManagerReady(uimgr)
-    -- NOTE: We've already done this earlier via setEventHandlers ;).
-    UIManager = uimgr
-end
-
 function Kobo:setupChargingLED()
     if G_reader_settings:nilOrTrue("enable_charging_led") then
         if self:hasAuxBattery() and self.powerd:isAuxBatteryConnected() then
@@ -1376,10 +1371,11 @@ function Kobo:isStartupScriptUpToDate()
     return md5.sumFile(current_script) == md5.sumFile(new_script)
 end
 
-function Kobo:setEventHandlers(uimgr)
-    -- Update our module-local
+function Kobo:UIManagerReady(uimgr)
     UIManager = uimgr
+end
 
+function Kobo:setEventHandlers(uimgr)
     -- We do not want auto suspend procedure to waste battery during
     -- suspend. So let's unschedule it when suspending, and restart it after
     -- resume. Done via the plugin's onSuspend/onResume handlers.
