@@ -405,9 +405,9 @@ function UIManager:unschedule(action)
     local removed = false
     for i = #self._task_queue, 1, -1 do
         if self._task_queue[i].action == action then
+            logger.info("Removing task scheduled in", self._task_queue[i].time - time.now(), "@ index", i)
             table.remove(self._task_queue, i)
             removed = true
-            logger.info("Removed task @ index", i)
         end
     end
     return removed
