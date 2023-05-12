@@ -1,5 +1,6 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local PluginShare = require("pluginshare")
+local UIManager
 local ffi = require("ffi")
 local logger = require("logger")
 
@@ -102,7 +103,6 @@ function SonyPRSTUX:outofScreenSaver()
     if self.screen_saver_mode then
         local Screensaver = require("ui/screensaver")
         Screensaver:close()
-        local UIManager = require("ui/uimanager")
         UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
     end
     self.powerd:afterResume()
@@ -190,7 +190,11 @@ function SonyPRSTUX:getDeviceModel()
     return ffi.string("PRS-T2")
 end
 
-function SonyPRSTUX:setEventHandlers(UIManager)
+function SonyPRSTUX:UIManagerReady(uimgr)
+    UIManager = uimgr
+end
+
+function SonyPRSTUX:setEventHandlers(uimgr)
     UIManager.event_handlers.Suspend = function()
         self:intoScreenSaver()
         self:suspend()
