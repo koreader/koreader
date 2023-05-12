@@ -1395,13 +1395,7 @@ function Kobo:setEventHandlers(uimgr)
             -- resume if we were suspended
             if self.screen_saver_mode then
                 if self.screen_saver_lock then
-                    -- This can only happen when some sort of screensaver_delay is set,
-                    -- and the user presses the Power button *after* already having woken up the device.
-                    -- In this case, we want to go back to suspend *without* affecting the screensaver,
-                    -- so we mimic UIManager.event_handlers.Suspend's behavior when *not* in screen_saver_mode ;).
-                    logger.dbg("Pressed power while awake in screen saver mode, going back to suspend...")
-                    self.powerd:beforeSuspend() -- this won't be run by onPowerEvent because we're in screen_saver_mode
-                    self:onPowerEvent("Suspend")
+                    UIManager.event_handlers.Suspend()
                 else
                     UIManager.event_handlers.Resume()
                 end
