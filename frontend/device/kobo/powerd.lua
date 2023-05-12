@@ -1,8 +1,8 @@
-local UIManager -- will be updated when available
 local BasePowerD = require("device/generic/powerd")
 local Math = require("optmath")
 local NickelConf = require("device/kobo/nickel_conf")
 local SysfsLight = require ("device/sysfs_light")
+local UIManager -- will be updated when available
 local RTC = require("ffi/rtc")
 
 -- Here, we only deal with the real hw intensity.

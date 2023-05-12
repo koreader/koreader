@@ -1,4 +1,5 @@
 local Generic = require("device/generic/device")
+local UIManager -- will be updated when available
 local time = require("ui/time")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -177,7 +178,6 @@ function Kindle:initNetworkManager(NetworkMgr)
         kindleEnableWifi(0)
         -- NOTE: Same here, except disconnect is simpler, so a dumb delay will do...
         if complete_callback then
-            local UIManager = require("ui/uimanager")
             UIManager:scheduleIn(2, complete_callback)
         end
     end
@@ -301,7 +301,6 @@ function Kindle:outofScreenSaver()
         if self:supportsScreensaver() then
             local Screensaver = require("ui/screensaver")
             local widget_was_closed = Screensaver:close()
-            local UIManager = require("ui/uimanager")
             if widget_was_closed then
                 -- And redraw everything in case the framework managed to screw us over...
                 UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
@@ -339,7 +338,6 @@ function Kindle:outofScreenSaver()
             elseif os.getenv("CVM_STOPPED") == "yes" then
                 os.execute("killall -STOP cvm")
             end
-            local UIManager = require("ui/uimanager")
             -- NOTE: We redraw after a slightly longer delay to take care of the potentially dynamic ad screen...
             --       This is obviously brittle as all hell. Tested on a slow-ass PW1.
             UIManager:scheduleIn(3, function() UIManager:setDirty("all", "full") end)
@@ -371,7 +369,11 @@ function Kindle:untar(archive, extract_to)
     return os.execute(("./tar --no-same-permissions --no-same-owner -xf %q -C %q"):format(archive, extract_to))
 end
 
-function Kindle:setEventHandlers(UIManager)
+function Kindle:UIManagerReady(uimgr)
+    UIManager = uimgr
+end
+
+function Kindle:setEventHandlers(uimgr)
     UIManager.event_handlers.Suspend = function()
         self.powerd:toggleSuspend()
     end
