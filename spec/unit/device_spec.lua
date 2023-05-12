@@ -333,15 +333,11 @@ describe("device module", function()
             end)
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
-            local device_to_test = require("device/kobo/device")
-            local Device = require("device")
-            Device.setEventHandlers = device_to_test.setEventHandlers
+            local Device = require("device/kobo/device"):init()
 
             local UIManager = require("ui/uimanager")
             stub(Device, "suspend")
-            stub(Device, "isKobo")
 
-            Device.isKobo.returns(true)
             UIManager:init()
 
             ReaderUI:doShowReader(sample_pdf)
@@ -352,7 +348,6 @@ describe("device module", function()
             assert.stub(readerui.onFlushSettings).was_called()
 
             Device.suspend:revert()
-            Device.isKobo:revert()
             readerui.onFlushSettings:revert()
             Device.screen_saver_mode = false
             readerui:onClose()
@@ -374,16 +369,12 @@ describe("device module", function()
 
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
-            local Device = require("device")
-            local device_to_test = require("device/cervantes/device")
-            Device.setEventHandlers = device_to_test.setEventHandlers
+            local Device = require("device/cervantes/device"):init()
 
             local UIManager = require("ui/uimanager")
 
             stub(Device, "suspend")
-            stub(Device, "isCervantes")
 
-            Device.isCervantes.returns(true)
             UIManager:init()
 
             ReaderUI:doShowReader(sample_pdf)
@@ -394,7 +385,6 @@ describe("device module", function()
             assert.stub(readerui.onFlushSettings).was_called()
 
             Device.suspend:revert()
-            Device.isCervantes:revert()
             readerui.onFlushSettings:revert()
             Device.screen_saver_mode = false
             readerui:onClose()
@@ -403,16 +393,12 @@ describe("device module", function()
         it("SDL", function()
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
-            local Device = require("device")
-            local device_to_test = require("device/sdl/device")
-            Device.setEventHandlers = device_to_test.setEventHandlers
+            local Device = require("device/sdl/device"):init()
 
             local UIManager = require("ui/uimanager")
 
             stub(Device, "suspend")
-            stub(Device, "isSDL")
 
-            Device.isSDL.returns(true)
             UIManager:init()
 
             ReaderUI:doShowReader(sample_pdf)
@@ -423,7 +409,6 @@ describe("device module", function()
             assert.stub(readerui.onFlushSettings).was_called()
 
             Device.suspend:revert()
-            Device.isSDL:revert()
             readerui.onFlushSettings:revert()
             Device.screen_saver_mode = false
             readerui:onClose()
@@ -451,16 +436,12 @@ describe("device module", function()
             end
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
-            local Device = require("device")
-            local device_to_test = require("device/remarkable/device")
-            Device.setEventHandlers = device_to_test.setEventHandlers
+            local Device = require("device/remarkable/device"):init()
 
             local UIManager = require("ui/uimanager")
 
             stub(Device, "suspend")
-            stub(Device, "isRemarkable")
 
-            Device.isRemarkable.returns(true)
             UIManager:init()
 
             ReaderUI:doShowReader(sample_pdf)
@@ -471,7 +452,6 @@ describe("device module", function()
             assert.stub(readerui.onFlushSettings).was_called()
 
             Device.suspend:revert()
-            Device.isRemarkable:revert()
             readerui.onFlushSettings:revert()
             Device.screen_saver_mode = false
             readerui:onClose()
