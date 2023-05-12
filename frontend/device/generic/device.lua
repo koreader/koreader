@@ -997,10 +997,10 @@ end
 function Device:setEventHandlers(UIManager)
     -- These will be most probably overwritten in the device specific `setEventHandlers`
     UIManager.event_handlers.Suspend = function()
-        self:_beforeSuspend(false)
+        self.device:beforeSuspend()
     end
     UIManager.event_handlers.Resume = function()
-        self:_afterResume(false)
+        self.device:afterResume()
     end
 end
 
