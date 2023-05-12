@@ -132,19 +132,31 @@ function CervantesPowerD:isChargingHW()
 end
 
 function CervantesPowerD:beforeSuspend()
-    if self.fl == nil then return end
-    -- just turn off frontlight without remembering its state
-    self.fl:setBrightness(0)
+    -- Inhibit user input and emit the Suspend event.
+    self.device:_beforeSuspend()
+
+    if self.fl then
+        -- just turn off frontlight without remembering its state
+        self.fl:setBrightness(0)
+    end
 end
 
 function CervantesPowerD:afterResume()
-    if self.fl == nil then return end
-    -- just re-set it to self.hw_intensity that we haven't change on Suspend
-    if not self.device:hasNaturalLight() then
-        self.fl:setBrightness(self.hw_intensity)
-    else
-        self.fl:setNaturalBrightness(self.hw_intensity, self.fl_warmth)
+    if self.fl then
+        -- just re-set it to self.hw_intensity that we haven't change on Suspend
+        if not self.device:hasNaturalLight() then
+            self.fl:setBrightness(self.hw_intensity)
+        else
+            self.fl:setNaturalBrightness(self.hw_intensity, self.fl_warmth)
+        end
     end
+
+    -- MONOTONIC doesn't tick during suspend,
+    -- invalidate the last battery capacity pull time so that we get up to date data immediately.
+    self:invalidateCapacityCache()
+
+    -- Restore user input and emit the Resume event.
+    self.device:_afterResume()
 end
 
 return CervantesPowerD

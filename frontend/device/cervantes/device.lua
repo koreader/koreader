@@ -200,16 +200,10 @@ function Cervantes:setEventHandlers(UIManager)
     -- suspend. So let's unschedule it when suspending, and restart it after
     -- resume. Done via the plugin's onSuspend/onResume handlers.
     UIManager.event_handlers.Suspend = function()
-        self:_beforeSuspend()
         self:onPowerEvent("Suspend")
     end
     UIManager.event_handlers.Resume = function()
-        -- MONOTONIC doesn't tick during suspend,
-        -- invalidate the last battery capacity pull time so that we get up to date data immediately.
-        self:getPowerDevice():invalidateCapacityCache()
-
         self:onPowerEvent("Resume")
-        self:_afterResume()
     end
     UIManager.event_handlers.PowerPress = function()
         -- Always schedule power off.
@@ -222,10 +216,7 @@ function Cervantes:setEventHandlers(UIManager)
             -- resume if we were suspended
             if self.screen_saver_mode then
                 if self.screen_saver_lock then
-                    logger.dbg("Pressed power while awake in screen saver mode, going back to suspend...")
-                    self:_beforeSuspend()
-                    self.powerd:beforeSuspend() -- this won't be run by onPowerEvent because we're in screen_saver_mode
-                    self:onPowerEvent("Suspend")
+                    UIManager.event_handlers.Suspend()
                 else
                     UIManager.event_handlers.Resume()
                 end
