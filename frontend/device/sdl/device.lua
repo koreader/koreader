@@ -1,5 +1,7 @@
 local Event = require("ui/event")
+local Geom = require("ui/geometry")
 local Generic = require("device/generic/device")
+local UIManager
 local SDL = require("ffi/SDL2_0")
 local ffi = require("ffi")
 local logger = require("logger")
@@ -180,8 +182,7 @@ function Device:init()
         device = self,
         event_map = require("device/sdl/event_map_sdl2"),
         handleSdlEv = function(device_input, ev)
-            local Geom = require("ui/geometry")
-            local UIManager = require("ui/uimanager")
+
 
             -- SDL events can remain cdata but are almost completely transparent
             local SDL_TEXTINPUT = 771
@@ -341,7 +342,11 @@ function Device:toggleFullscreen()
     end
 end
 
-function Device:setEventHandlers(UIManager)
+function Device:UIManagerReady(uimgr)
+    UIManager = uimgr
+end
+
+function Device:setEventHandlers(uimgr)
     if not self:canSuspend() then
         -- If we can't suspend, we have no business even trying to, as we may not have overloaded `Device:simulateResume`.
         -- Instead, rely on the Generic Suspend/Resume handlers.
@@ -395,7 +400,6 @@ end
 
 -- fake network manager for the emulator
 function Emulator:initNetworkManager(NetworkMgr)
-    local UIManager = require("ui/uimanager")
     local connectionChangedEvent = function()
         if G_reader_settings:nilOrTrue("emulator_fake_wifi_connected") then
             UIManager:broadcastEvent(Event:new("NetworkConnected"))
