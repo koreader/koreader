@@ -540,7 +540,6 @@ end
 
 function Device:install()
     local ConfirmBox = require("ui/widget/confirmbox")
-    local Event = require("ui/event")
     UIManager:show(ConfirmBox:new{
         text = _("Update is ready. Install it now?"),
         ok_text = _("Install"),
