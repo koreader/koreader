@@ -1388,7 +1388,6 @@ function Kobo:setEventHandlers(uimgr)
         self:getPowerDevice():invalidateCapacityCache()
 
         self:onPowerEvent("Resume")
-        self:_afterResume()
     end
     UIManager.event_handlers.PowerPress = function()
         -- Always schedule power off.
