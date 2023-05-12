@@ -11,6 +11,8 @@ describe("device module", function()
         mock_fb = {
             new = function()
                 return {
+                    device = package.loaded.device,
+                    bb = require("ffi/blitbuffer").new(600, 800, 1),
                     getRawSize = function() return {w = 600, h = 800} end,
                     getWidth = function() return 600 end,
                     getHeight = function() return 800 end,
