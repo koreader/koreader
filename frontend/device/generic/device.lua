@@ -259,6 +259,8 @@ function Device:getPowerDevice()
 end
 
 function Device:rescheduleSuspend()
+    logger.warn("!! Device:rescheduleSuspend !!")
+    print(debug.traceback())
     local UIManager = require("ui/uimanager")
     UIManager:unschedule(self.suspend)
     UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
@@ -266,6 +268,11 @@ end
 
 -- Only used on platforms where we handle suspend ourselves.
 function Device:onPowerEvent(ev)
+    logger.warn("** Device:onPowerEvent **", ev)
+    logger.dbg("self.screen_saver_mode", self.screen_saver_mode)
+    logger.dbg("self.screen_saver_lock", self.screen_saver_lock)
+    logger.dbg("self.is_cover_closed", self.is_cover_closed)
+    print(debug.traceback())
     local Screensaver = require("ui/screensaver")
     if self.screen_saver_mode then
         if ev == "Power" or ev == "Resume" then
