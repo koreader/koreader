@@ -337,6 +337,8 @@ describe("device module", function()
             -- Bypass frontend/device probeDevice, while making sure that it points to the right implementation
             local Device = require("device/kobo/device")
             package.loaded.device = Device
+            -- Apparently common isn't setup properly in the testsuite, so we can't have nice things
+            stub(Device, "initNetworkManager")
             Device:init()
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
@@ -353,6 +355,7 @@ describe("device module", function()
             UIManager.event_handlers.PowerRelease()
             assert.stub(readerui.onFlushSettings).was_called()
 
+            Device.initNetworkManager:revert()
             Device.suspend:revert()
             readerui.onFlushSettings:revert()
             Device.screen_saver_mode = false
@@ -375,6 +378,7 @@ describe("device module", function()
 
             local Device = require("device/cervantes/device")
             package.loaded.device = Device
+            stub(Device, "initNetworkManager")
             Device:init()
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
@@ -392,6 +396,7 @@ describe("device module", function()
             UIManager.event_handlers.PowerRelease()
             assert.stub(readerui.onFlushSettings).was_called()
 
+            Device.initNetworkManager:revert()
             Device.suspend:revert()
             readerui.onFlushSettings:revert()
             Device.screen_saver_mode = false
@@ -401,6 +406,7 @@ describe("device module", function()
         it("SDL", function()
             local Device = require("device/sdl/device")
             package.loaded.device = Device
+            stub(Device, "initNetworkManager")
             Device:init()
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
@@ -418,6 +424,7 @@ describe("device module", function()
             UIManager.event_handlers.PowerRelease()
             assert.stub(readerui.onFlushSettings).was_called()
 
+            Device.initNetworkManager:revert()
             Device.suspend:revert()
             readerui.onFlushSettings:revert()
             Device.screen_saver_mode = false
@@ -446,6 +453,7 @@ describe("device module", function()
             end
             local Device = require("device/remarkable/device")
             package.loaded.device = Device
+            stub(Device, "initNetworkManager")
             Device:init()
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
@@ -463,6 +471,7 @@ describe("device module", function()
             UIManager.event_handlers.PowerRelease()
             assert.stub(readerui.onFlushSettings).was_called()
 
+            Device.initNetworkManager:revert()
             Device.suspend:revert()
             readerui.onFlushSettings:revert()
             Device.screen_saver_mode = false
