@@ -33,7 +33,6 @@ function SonyPRSTUX_PowerD:beforeSuspend()
     self.device:_beforeSuspend()
 end
 
--- Restore front light state after resume.
 function SonyPRSTUX_PowerD:afterResume()
     -- Restore user input and emit the Resume event.
     self.device:_afterResume()

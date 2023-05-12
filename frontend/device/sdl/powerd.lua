@@ -42,7 +42,6 @@ function SDLPowerD:beforeSuspend()
     self.device:_beforeSuspend()
 end
 
--- Restore front light state after resume.
 function SDLPowerD:afterResume()
     -- Restore user input and emit the Resume event.
     self.device:_afterResume()
