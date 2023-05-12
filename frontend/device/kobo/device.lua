@@ -501,6 +501,11 @@ local KoboGoldfinch = Kobo:extend{
     hasReliableMxcWaitFor = no,
 }
 
+function Kobo:_UIManagerReady(uimgr)
+    -- NOTE: We've already done this earlier via setEventHandlers ;).
+    UIManager = uimgr
+end
+
 function Kobo:setupChargingLED()
     if G_reader_settings:nilOrTrue("enable_charging_led") then
         if self:hasAuxBattery() and self.powerd:isAuxBatteryConnected() then
