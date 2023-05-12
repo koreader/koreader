@@ -32,6 +32,15 @@ end
 if last_migration_date < 20200421 then
     logger.info("Performing one-time migration for 20200421")
 
+    -- Drop the Fontlist cache early, in case it's in an incompatible format for some reason...
+    -- c.f., https://github.com/koreader/koreader/issues/9771#issuecomment-1546308746
+    -- (This is basically the 20220914 migration step applied premptively, as readertypography *will* attempt to load it).
+    local cache_path = DataStorage:getDataDir() .. "/cache/fontlist"
+    local ok, err = os.remove(cache_path .. "/fontinfo.dat")
+    if not ok then
+       logger.warn("os.remove:", err)
+    end
+
     local ReaderTypography = require("apps/reader/modules/readertypography")
     -- Migrate old readerhyphenation settings
     -- (but keep them in case one goes back to a previous version)
