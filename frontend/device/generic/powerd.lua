@@ -69,10 +69,12 @@ function BasePowerD:frontlightWarmthHW() return 0 end
 function BasePowerD:readyUIHW(uimgr) end
 -- Anything that needs to be done before doing a real hardware suspend.
 -- (Such as turning the front light off).
-function BasePowerD:beforeSuspend() end
+-- Do *not* omit calling Device's _beforeSuspend method! This default implementation passes `false` so as *not* to disable input events during PM.
+function BasePowerD:beforeSuspend() self.device:_beforeSuspend(false) end
 -- Anything that needs to be done after doing a real hardware resume.
--- (Such as restoring front light state. Do *not* omit calling Device's _afterResume method!).
-function BasePowerD:afterResume() self.device:_afterResume() end
+-- (Such as restoring front light state).
+-- Do *not* omit calling Device's _afterResume method!
+function BasePowerD:afterResume() self.device:_afterResume(false) end
 
 function BasePowerD:isFrontlightOn()
     return self.is_fl_on

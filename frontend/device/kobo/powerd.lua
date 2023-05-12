@@ -415,27 +415,36 @@ end
 
 -- Turn off front light before suspend.
 function KoboPowerD:beforeSuspend()
-    if self.fl == nil then return end
-    -- Remember the current frontlight state
-    self.fl_was_on = self.is_fl_on
-    -- Turn off the frontlight
-    self:turnOffFrontlight()
+    -- Inhibit user input and emit the Suspend event.
+    self.device:_beforeSuspend()
+
+    if self.fl then
+        -- Remember the current frontlight state
+        self.fl_was_on = self.is_fl_on
+        -- Turn off the frontlight
+        self:turnOffFrontlight()
+    end
 end
 
 -- Restore front light state after resume.
 function KoboPowerD:afterResume()
-    if self.fl == nil then return end
-    -- Don't bother if the light was already off on suspend
-    if not self.fl_was_on then return end
-    -- Turn the frontlight back on
-    self:turnOnFrontlight()
+    if self.fl then
+        -- Don't bother if the light was already off on suspend
+        if self.fl_was_on then
+            -- Turn the frontlight back on
+            self:turnOnFrontlight()
+        end
+    end
 
     -- Set the system clock to the hardware clock's time.
     RTC:HCToSys()
 
-    -- Don't forget to call generic's handler, too,
-    -- as it's responsible for restoring user input and emitting the Resume event!
-    BasePowerD.afterResume(self)
+    -- MONOTONIC doesn't tick during suspend,
+    -- invalidate the last battery capacity pull time so that we get up to date data immediately.
+    self:invalidateCapacityCache()
+
+    -- Restore user input and emit the Resume event.
+    self.device:_afterResume()
 end
 
 function KoboPowerD:readyUIHW(uimgr)

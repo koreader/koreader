@@ -1379,14 +1379,9 @@ function Kobo:setEventHandlers(uimgr)
     -- suspend. So let's unschedule it when suspending, and restart it after
     -- resume. Done via the plugin's onSuspend/onResume handlers.
     UIManager.event_handlers.Suspend = function()
-        self:_beforeSuspend()
         self:onPowerEvent("Suspend")
     end
     UIManager.event_handlers.Resume = function()
-        -- MONOTONIC doesn't tick during suspend,
-        -- invalidate the last battery capacity pull time so that we get up to date data immediately.
-        self:getPowerDevice():invalidateCapacityCache()
-
         self:onPowerEvent("Resume")
     end
     UIManager.event_handlers.PowerPress = function()
@@ -1405,7 +1400,6 @@ function Kobo:setEventHandlers(uimgr)
                     -- In this case, we want to go back to suspend *without* affecting the screensaver,
                     -- so we mimic UIManager.event_handlers.Suspend's behavior when *not* in screen_saver_mode ;).
                     logger.dbg("Pressed power while awake in screen saver mode, going back to suspend...")
-                    self:_beforeSuspend()
                     self.powerd:beforeSuspend() -- this won't be run by onPowerEvent because we're in screen_saver_mode
                     self:onPowerEvent("Suspend")
                 else
