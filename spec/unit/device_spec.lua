@@ -7,17 +7,20 @@ describe("device module", function()
     local ffi, C
 
     setup(function()
+        local fb = require("ffi/framebuffer")
         mock_fb = {
             new = function()
                 return {
                     getRawSize = function() return {w = 600, h = 800} end,
                     getWidth = function() return 600 end,
+                    getHeight = function() return 800 end,
                     getDPI = function() return 72 end,
                     setViewport = function() end,
                     getRotationMode = function() return 0 end,
                     getScreenMode = function() return "portrait" end,
                     setRotationMode = function() end,
-                    scaleByDPI = function(this, dp) return math.ceil(dp * this:getDPI() / 160) end,
+                    scaleByDPI = fb.scaleByDPI,
+                    scaleBySize = fb.scaleBySize,
                 }
             end
         }
