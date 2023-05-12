@@ -284,6 +284,16 @@ function KindlePowerD:resetT1Timeout()
     end
 end
 
+function KindlePowerD:beforeSuspend()
+    -- Inhibit user input and emit the Suspend event.
+    self.device:_beforeSuspend()
+end
+
+function KindlePowerD:afterResume()
+    -- Restore user input and emit the Resume event.
+    self.device:_afterResume()
+end
+
 --- @fixme: This won't ever fire on its own, as KindlePowerD is already a metatable on a plain table.
 function KindlePowerD:__gc()
     if self.lipc_handle then
