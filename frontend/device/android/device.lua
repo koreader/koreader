@@ -1,9 +1,11 @@
-local FFIUtil = require("ffi/util")
-local Generic = require("device/generic/device")
 local A, android = pcall(require, "android")  -- luacheck: ignore
+local Event = require("ui/event")
 local Geom = require("ui/geometry")
+local Generic = require("device/generic/device")
+local UIManager
 local ffi = require("ffi")
 local C = ffi.C
+local FFIUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -129,8 +131,6 @@ function Device:init()
         device = self,
         event_map = event_map,
         handleMiscEv = function(this, ev)
-            local Event = require("ui/event")
-            local UIManager = require("ui/uimanager")
             logger.dbg("Android application event", ev.code)
             if ev.code == C.APP_CMD_SAVE_STATE then
                 UIManager:broadcastEvent(Event:new("FlushSettings"))
@@ -278,6 +278,10 @@ function Device:init()
     end
 
     Generic.init(self)
+end
+
+function Device:UIManagerReady(uimgr)
+    UIManager = uimgr
 end
 
 function Device:initNetworkManager(NetworkMgr)
@@ -483,7 +487,6 @@ function Device:showLightDialog()
     -- Delay it until next tick so that the event loop gets a chance to drain the input queue,
     -- and consume the APP_CMD_LOST_FOCUS event.
     -- This helps prevent ANRs on Tolino (c.f., #6583 & #7552).
-    local UIManager = require("ui/uimanager")
     UIManager:nextTick(function() self:_showLightDialog() end)
 end
 
@@ -499,8 +502,6 @@ function Device:_showLightDialog()
             self.powerd.fl_warmth = self.powerd:frontlightWarmthHW()
             logger.dbg("Dialog OK, warmth: " .. self.powerd.fl_warmth)
         end
-        local Event = require("ui/event")
-        local UIManager = require("ui/uimanager")
         UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
     elseif action == C.ALIGHTS_DIALOG_CANCEL then
         logger.dbg("Dialog Cancel, brightness: " .. self.powerd.fl_intensity)
@@ -519,7 +520,6 @@ end
 function Device:download(link, name, ok_text)
     local ConfirmBox = require("ui/widget/confirmbox")
     local InfoMessage = require("ui/widget/infomessage")
-    local UIManager = require("ui/uimanager")
     local ok = android.download(link, name)
     if ok == C.ADOWNLOAD_EXISTS then
         self:install()
@@ -541,7 +541,6 @@ end
 function Device:install()
     local ConfirmBox = require("ui/widget/confirmbox")
     local Event = require("ui/event")
-    local UIManager = require("ui/uimanager")
     UIManager:show(ConfirmBox:new{
         text = _("Update is ready. Install it now?"),
         ok_text = _("Install"),

@@ -1,5 +1,5 @@
 local BasePowerD = require("device/generic/powerd")
-local UIManager -- will be updated when available
+local UIManager
 local WakeupMgr = require("device/wakeupmgr")
 local logger = require("logger")
 local util = require("util")

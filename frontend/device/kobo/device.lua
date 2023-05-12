@@ -1,6 +1,6 @@
 local Generic = require("device/generic/device")
 local Geom = require("ui/geometry")
-local UIManager -- Updated on UIManager init
+local UIManager
 local WakeupMgr = require("device/wakeupmgr")
 local time = require("ui/time")
 local ffiUtil = require("ffi/util")
