@@ -7,6 +7,7 @@ local DEBUG = require("dbg")
 local Event = require("ui/event")
 local GestureDetector = require("device/gesturedetector")
 local Key = require("device/key")
+local UIManager = nil -- will be updated when available
 local framebuffer = require("ffi/framebuffer")
 local input = require("ffi/input")
 local logger = require("logger")
@@ -273,6 +274,10 @@ function Input:init()
 
     -- setup inhibitInputUntil scheduling function
     self._inhibitInputUntil_func = function() self:inhibitInputUntil() end
+end
+
+function Input:UIManagerReady(uimgr)
+    UIManager = uimgr
 end
 
 --[[--
@@ -606,14 +611,12 @@ function Input:handleKeyBoardEv(ev)
 
     -- toggle fullscreen on F11
     if self:isEvKeyPress(ev) and keycode == "F11" and not self.device:isAlwaysFullscreen() then
-        local UIManager = require("ui/uimanager")
         UIManager:broadcastEvent(Event:new("ToggleFullscreen"))
     end
 
     -- quit on Alt + F4
     -- this is also emitted by the close event in SDL
     if self:isEvKeyPress(ev) and self.modifiers["Alt"] and keycode == "F4" then
-        local UIManager = require("ui/uimanager")
         UIManager:broadcastEvent(Event:new("Close")) -- Tell all widgets to close.
         UIManager:nextTick(function() UIManager:quit() end) -- Ensure the program closes in case of some lingering dialog.
     end
@@ -986,7 +989,6 @@ function Input:handleMiscGyroEv(ev)
         if rotation_mode and rotation_mode ~= old_rotation_mode and screen_mode == old_screen_mode then
             -- Cheaper than a full SetRotationMode event, as we don't need to re-layout anything.
             self.device.screen:setRotationMode(rotation_mode)
-            local UIManager = require("ui/uimanager")
             UIManager:onRotation()
         end
     else
@@ -1284,7 +1286,6 @@ function Input:waitEvent(now, deadline)
         elseif ok == nil then
             -- Something went horribly wrong, abort.
             logger.err("Polling for input events failed catastrophically")
-            local UIManager = require("ui/uimanager")
             UIManager:abort()
             break
         end
@@ -1453,7 +1454,6 @@ Request all input events to be ignored for some duration.
 @param set_or_seconds either `true`, in which case a platform-specific delay is chosen, or a duration in seconds (***int***).
 ]]
 function Input:inhibitInputUntil(set_or_seconds)
-    local UIManager = require("ui/uimanager")
     UIManager:unschedule(self._inhibitInputUntil_func)
     if not set_or_seconds then -- remove any previously set
         self:inhibitInput(false)
