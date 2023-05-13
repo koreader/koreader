@@ -250,7 +250,7 @@ function Cervantes:setEventHandlers(UIManager)
         -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
         if self.screen_saver_mode and not self.screen_saver_lock then
             UIManager.event_handlers.Suspend()
-        else
+        elseif not self.screen_saver_lock then
             -- Potentially start an USBMS session
             local MassStorage = require("ui/elements/mass_storage")
             MassStorage:start()
@@ -262,7 +262,7 @@ function Cervantes:setEventHandlers(UIManager)
         self:_afterNotCharging()
         if self.screen_saver_mode and not self.screen_saver_lock then
             UIManager.event_handlers.Suspend()
-        else
+        elseif not self.screen_saver_lock then
             -- Potentially dismiss the USBMS ConfirmBox
             local MassStorage = require("ui/elements/mass_storage")
             MassStorage:dismiss()
