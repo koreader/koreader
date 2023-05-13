@@ -211,7 +211,11 @@ function SonyPRSTUX:setEventHandlers(uimgr)
             UIManager:unschedule(UIManager.poweroff_action)
             -- resume if we were suspended
             if self.screen_saver_mode then
-                UIManager.event_handlers.Resume()
+                if self.screen_saver_lock then
+                    UIManager.event_handlers.Suspend()
+                else
+                    UIManager.event_handlers.Resume()
+                end
             else
                 UIManager.event_handlers.Suspend()
             end
@@ -224,7 +228,7 @@ function SonyPRSTUX:setEventHandlers(uimgr)
         self:_afterNotCharging()
     end
     UIManager.event_handlers.UsbPlugIn = function()
-        if self.screen_saver_mode then
+        if self.screen_saver_mode and not self.screen_saver_lock then
             self:resume()
             self:outofScreenSaver()
         end
