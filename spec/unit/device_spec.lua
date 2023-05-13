@@ -11,7 +11,6 @@ describe("device module", function()
         mock_fb = {
             new = function()
                 return {
-                    device = package.loaded.device,
                     bb = require("ffi/blitbuffer").new(600, 800, 1),
                     getRawSize = function() return {w = 600, h = 800} end,
                     getWidth = function() return 600 end,
@@ -23,6 +22,7 @@ describe("device module", function()
                     setRotationMode = function() end,
                     scaleByDPI = fb.scaleByDPI,
                     scaleBySize = fb.scaleBySize,
+                    setWindowTitle = function() end,
                 }
             end
         }
@@ -43,8 +43,12 @@ describe("device module", function()
     end)
 
     after_each(function()
+        -- Don't let UIManager hang on to a stale Device reference, as we instantiate a few of them...
+        package.unload("device")
+        package.unload("ui/uimanager")
         mock_input.open:revert()
         os.getenv:revert()
+        os.execute:revert()
 
         os.getenv = osgetenv
         io.open = iopen
@@ -338,19 +342,20 @@ describe("device module", function()
             end)
             -- Bypass frontend/device probeDevice, while making sure that it points to the right implementation
             local Device = require("device/kobo/device")
-            package.loaded.device = Device
             -- Apparently common isn't setup properly in the testsuite, so we can't have nice things
             stub(Device, "initNetworkManager")
+            stub(Device, "suspend")
             Device:init()
+            package.loaded.device = Device
+            print("Kobo:", Device)
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
-
             local UIManager = require("ui/uimanager")
-            stub(Device, "suspend")
-
             UIManager:init()
+            print("whee")
 
             ReaderUI:doShowReader(sample_pdf)
+            print("whoop")
             local readerui = ReaderUI._getRunningInstance()
             stub(readerui, "onFlushSettings")
             UIManager.event_handlers.PowerPress()
