@@ -1,6 +1,6 @@
 --[[--
     This module implements calibre metadata searching.
-----]]
+--]]--
 
 local CalibreMetadata = require("metadata")
 local ConfirmBox = require("ui/widget/confirmbox")

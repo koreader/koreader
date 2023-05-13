@@ -117,11 +117,11 @@ function AutoWarmth:onDispatcherRegisterActions()
 end
 
 --- Shows the current AutoWarmth settings.
+-- @eventHandler onShowEphemeris
 function AutoWarmth:onShowEphemeris()
     self:showTimesInfo(_("Information about the sun in"), true, activate_sun, false)
 end
 
---- Turn AutoWarmth off.
 function AutoWarmth:onAutoWarmthOff()
     self.activate = 0
     G_reader_settings:saveSetting("autowarmth_activate", self.activate)
@@ -130,6 +130,7 @@ function AutoWarmth:onAutoWarmthOff()
 end
 
 --- Cycle to the different AutoWarmth modes: off, sun position, schedule, closer to midnight, closer to noon
+-- @eventHandler onAutoWarmthMode
 function AutoWarmth:onAutoWarmthMode()
     if self.activate > 0 then
         self.activate = self.activate - 1
@@ -154,6 +155,7 @@ function AutoWarmth:onAutoWarmthMode()
 end
 
 --- Restart AutoWarmth after a resume
+-- @eventHandler _onResume
 function AutoWarmth:_onResume()
     logger.dbg("AutoWarmth: onResume", AutoWarmth.fl_turned_off, AutoWarmth.fl_user_toggle)
 
@@ -185,6 +187,7 @@ function AutoWarmth:_onResume()
 end
 
 --- Stop AutoWarmth before a suspend.
+-- @eventHandler _onSuspend
 function AutoWarmth:_onSuspend()
     logger.dbg("AutoWarmth: onSuspend")
     UIManager:unschedule(self.scheduleMidnightUpdate)
@@ -194,6 +197,7 @@ function AutoWarmth:_onSuspend()
 end
 
 --- Toggles AutoWarmth night mode control
+-- @eventHandler _onToggleNightMode
 function AutoWarmth:_onToggleNightMode()
     logger.dbg("AutoWarmth: onToggleNightMode")
     if not self.hide_nightmode_warning then
@@ -231,6 +235,7 @@ function AutoWarmth:_onToggleNightMode()
 end
 
 --- Toggles front light and let AutoWarmth not touch frontlight until the next day/night, night/day change.
+-- @eventHandler _onToggleFrontlight
 function AutoWarmth:_onToggleFrontlight()
     logger.dbg("AutoWarmth: onToggleFrontlight")
     AutoWarmth.fl_user_toggle = true

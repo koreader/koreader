@@ -1,7 +1,7 @@
 -- You can call me with something like `ldoc --filter events.filter .`
 
 local function output_table(events_and_handlers, name_len, module_len)
-    local empty_table_line = "<tr><td bgcolor=\"#FFFFFF\" style=\"line-height:0.8;\" colspan=3>&nbsp;</td></tr>\n"
+    local empty_table_line ="<tr><td colspan=\"4\"><hr style=\"height:1px;border:none\"></td></tr>\n"
 
     local function make_modules_link(link, text)
         text = text or link
@@ -32,7 +32,6 @@ local function output_table(events_and_handlers, name_len, module_len)
     -- Write table body.
     io.write("<tbody>\n")
     io.write(empty_table_line)
-    local event_plus_handler_nb = 0
     -- Write events and handlers.
     for _,v in pairs(events_and_handlers) do
         local name = v.name
@@ -50,44 +49,21 @@ local function output_table(events_and_handlers, name_len, module_len)
             io.write("<td align =\"right\">" .. string.format("%5d", v.lineno) .. "&nbsp;</td>")
             io.write("<td>" .. make_source_link(v.module_file, v.lineno) .. "</td>")
             io.write("</tr>\n")
-
-            event_plus_handler_nb = event_plus_handler_nb + 1
         else
             io.write(empty_table_line)
         end
     end
     io.write("</tr></tbody>\n")
     io.write("</table>\n")
-    return event_plus_handler_nb
 end
 
 -- We process all ldoc tags and look for `event` and `eventHandler`.
 return {
     filter = function (t)
+
         local nb_events = 0
         local nb_handlers = 0
         local events_and_handlers = {} -- table to store events and handlers
-        for _, mod in ipairs(t) do
-            for _, item in ipairs(mod.items) do
-                if item.type == "event" then
-                    nb_events = nb_events + 1
-                    table.insert(events_and_handlers, {
-                        name = item.name,
-                        module_name = mod.name,
-                        module_file = mod.file,
-                        lineno = item.lineno,
-                        })
-                elseif item.type == "eventHandler" then
-                    nb_handlers = nb_handlers + 1
-                    table.insert(events_and_handlers, {
-                        name = item.name,
-                        module_name = mod.name,
-                        module_file = mod.file,
-                        lineno = item.lineno,
-                        })
-                end
-            end
-        end
 
         local function drop_key_and_ges_event(text)
             local i
@@ -114,6 +90,40 @@ return {
             return name
         end
 
+        local function add_group_separators(sortedTable)
+            local position = 1
+            while position < #sortedTable do
+                if get_base_name(sortedTable[position].name) ~= get_base_name(sortedTable[position + 1].name) then
+                    position = position + 1
+                    table.insert(sortedTable, position, {})
+                end
+                position = position + 1
+            end
+            return
+        end
+
+        for _, mod in ipairs(t) do
+            for _, item in ipairs(mod.items) do
+                if item.type == "event" then
+                    nb_events = nb_events + 1
+                    table.insert(events_and_handlers, {
+                        name = item.name,
+                        module_name = mod.name,
+                        module_file = mod.file,
+                        lineno = item.lineno,
+                        })
+                elseif item.type == "eventHandler" then
+                    nb_handlers = nb_handlers + 1
+                    table.insert(events_and_handlers, {
+                        name = item.name,
+                        module_name = mod.name,
+                        module_file = mod.file,
+                        lineno = item.lineno,
+                        })
+                end
+            end
+        end
+
         local function sort_events_and_handlers(a, b)
             local a_name = get_base_name(a.name)
             local b_name = get_base_name(b.name)
@@ -138,6 +148,8 @@ return {
         end
 
         table.sort(events_and_handlers, sort_events_and_handlers)
+
+        add_group_separators(events_and_handlers)
 
         local name_len=15
         local module_len=20
