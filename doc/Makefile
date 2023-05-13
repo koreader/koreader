@@ -3,7 +3,7 @@ ifeq (,$(shell which ldoc))
 	$(error ldoc not found, please install via luarocks.)
 endif
 	mkdir generated -p
-	touch generated/Events_and_handler.md
+	echo "use make -C doc events" > generated/Events_and_handler.md
 
 	ln -s -t ../frontend/ ../plugins || true
 	ldoc .
@@ -49,4 +49,5 @@ endif
 	rm -f no_stash.tmp
 
 clean:
-	rm -rf html
+	rm -r html
+	rm -r generated
