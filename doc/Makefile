@@ -17,7 +17,7 @@ endif
 
 	# Check number of stash entries before and after stash
 	git stash list | wc -l > stashes_before.tmp
-	git stash 
+	git stash
 	git stash list | wc -l > stashes_after.tmp
 
 	# create the no_stash.tmp file if no stash has happened
@@ -47,9 +47,6 @@ endif
 	# Redo the initial stash, if necessary
 	[ ! -f no_stash.tmp ] && git stash pop || true
 	rm -f no_stash.tmp
-
-test:
-	ldoc --all .
 
 clean:
 	rm -rf html

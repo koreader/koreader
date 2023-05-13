@@ -658,7 +658,6 @@ end
 
 function AutoSuspend:toggleStandbyHandler(toggle)
     if toggle then
-        --- @eventHandler onAllowStandby
         self.onAllowStandby = self.AllowStandbyHandler
     else
         self.onAllowStandby = nil

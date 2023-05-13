@@ -1,5 +1,6 @@
 --[[--
-  Minimalistic lua file to detect documented and undocumented events and event handlers and document them
+    Minimalistic lua file to detect documented and undocumented
+    events and event handlers and document them.
 ]]
 
 local in_file_name = arg[1] -- in filename
@@ -21,7 +22,6 @@ io.close(in_file)
 -------------------------
 -- helper functions
 -------------------------
-local header_line = "\n#################################\nfile: " .. in_file_name
 
 local function hasTag(block, tag)
     tag = tag .. " "
@@ -40,17 +40,6 @@ local function hasEventOrHandler(block)
         end
     end
     return false
-end
-
-
-local function show(block, line_nb)
-    if header_line then
-        print(header_line .. " L#:" .. line_nb)
-        header_line = nil
-    end
-    for n = 1, #block do
-        print(block[n])
-    end
 end
 
 local function processFile(in_file_name, out_file_name)
@@ -76,9 +65,10 @@ local function processFile(in_file_name, out_file_name)
             end
         end
 
-        -- Skip a comment block --todo
+        -- Skip a comment block
         if line:find(" *%-%-%[%[%-%-") then
             while line and not line:find("]]") do
+                table.insert(block, line)
                 out_file:write(line .. "\n")
                 line = get_next_line()
             end
