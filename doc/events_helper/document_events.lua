@@ -1,6 +1,7 @@
 --[[--
     Minimalistic lua file to detect documented and undocumented
     events and event handlers and document them.
+    v 0.2 --squish that later xxx
 ]]
 
 local in_file_name = arg[1] -- in filename
@@ -43,19 +44,27 @@ local function hasEventOrHandler(block)
 end
 
 local function processFile(in_file_name, out_file_name)
+    local block = {}
+    local out_file = io.open(out_file_name, "w")
+    local get_next_line = io.lines(in_file_name)
+    local line_nb = 0
+    local doc_added = false
+    local file_changed = false
+
     local function update_depths(line, initial)
         local _, nb_open = line:gsub("{","{")
         local _, nb_close = line:gsub("}","}")
         return initial + nb_open - nb_close
     end
 
-    local block = {}
-    local line_nb = 0
-    local out_file = io.open(out_file_name, "w")
-    local doc_added = false
-    local get_next_line = io.lines(in_file_name)
+    local function write_and_get_next_line(line)
+        out_file:write(line .. "\n")
+        return get_next_line()
+    end
+
     local line = get_next_line()
     while line do
+        doc_added = false
         line_nb = line_nb + 1
         -- only for initial comment
         if line_nb == 1 then
@@ -67,29 +76,28 @@ local function processFile(in_file_name, out_file_name)
         -- Skip a pure comment block.
         if line:find(" *%-%-%[%[") and not line:find(" *%-%-%[%[%-%-") then
             while line and not line:find("]]") do
-                out_file:write(line .. "\n")
-                line = get_next_line()
+                line = write_and_get_next_line(line)
             end
         end
 
-        if line:find(" *%-%-%-*.*") then
+        if line:find("^ *%-%-%-*.*") then
             table.insert(block, line)
-        elseif line:find("^ *$") then
+        elseif line:find("^ *[a-zA-Z0-9_]*$") then
             block = {}
-        elseif line:find("function .*.*:_?on.*%(") then
+        elseif line:find("function .*:_?on.*%(") then
+            -- find abcd:onAbc
             local i, j = line:find(":_?on[A-Z][a-zA-Z0-9_]*")
             local handler_name = line:sub(i+1, j)
             if #block > 0 and block[1]:find("%-%-%-") and not hasEventOrHandler(block) then
-                out_file:write(line .. "\n")
-                line = get_next_line()
+                line = write_and_get_next_line(line)
                 line = line .. " --- @eventHandler " .. handler_name
                 doc_added = true
             elseif not hasTag(block, "@eventHandler") then
                 line = line .. " --- @eventHandler " .. handler_name
                 doc_added = true
             end
-            block = {}
         elseif line:find(":handleEvent") or line:find(":broadcastEvent") then
+            -- find handleEvent and broadcastEvent
             if not hasTag(block, "@event") then
                 local i, j = line:find("Event:new%( *\"[A-Z][a-zA-Z0-9_]*\"")
                 if i and j then
@@ -98,7 +106,6 @@ local function processFile(in_file_name, out_file_name)
                     doc_added = true
                 end
             end
-            block = {}
         elseif line:find("event *= *\"[A-Z]") then
             -- find events used by dispatcher (i.e. dispatcher:registerAction)
             local i, j = line:find("event *= *\"[A-Z][a-zA-Z-0-9]*\"")
@@ -118,21 +125,15 @@ local function processFile(in_file_name, out_file_name)
         elseif line:find("self%.key_events%.[A-Z][a-zA-Z0-9_]*") then
             -- find "self.key_events.Abc"
             local i, j = line:find("self%.key_events%.[A-Z][a-zA-Z0-9_]*")
-            if i and j then
-                local event_part = line:sub(i, j)
-                i, j = event_part:find("%.[A-Z][a-zA-Z0-9_]*")
-                line = line .. " --- @event " .. event_part:sub(i+1, j) .. "___key_event"
-                doc_added = true
-            end
+            i = i + #"self.key_events." -- no escape of "." here
+            line = line .. " --- @event " .. line:sub(i, j) .. "___key_event"
+            doc_added = true
         elseif line:find("self%.ges_events%.[A-Z][a-zA-Z0-9_]*") then
             -- find "self.ges_events.Abc"
             local i, j = line:find("self%.ges_events%.[A-Z][a-zA-Z0-9_]*")
-            if i and j then
-                local event_part = line:sub(i, j)
-                i, j = event_part:find("%.[A-Z][a-zA-Z0-9_]*")
-                line = line .. " --- @event " .. event_part:sub(i+1, j) .. "___ges_event"
-                doc_added = true
-            end
+            i = i + #"self.ges_events." -- no escape of "." here
+            line = line .. " --- @event " .. line:sub(i, j) .. "___ges_event"
+            doc_added = true
         elseif line:find("self%.key_events += *{ ?") then
             if line:find("self%.key_events += *{ *}") then
                 -- nothing to do here
@@ -140,25 +141,19 @@ local function processFile(in_file_name, out_file_name)
                 -- find "self.key_event = { Abc = {},  ... }"
                 print("xxxxxxxxxxx todo1", in_file_name)
                 doc_added = true
-
             else
                 -- find "self.key_event = {"
                 --         Abc = ...
-                out_file:write(line .. "\n")
-                line = get_next_line()
+                line = write_and_get_next_line(line)
                 local depths = 1
                 while line do
                     if depths == 1 and line:find("^ *[A-Z][a-zA-Z0-9_]*") then
                         local i, j = line:find("[A-Z][a-zA-Z0-9_]*")
-                        if i and j then
-                            local event_part = line:sub(i, j)
-                            line = line .. " --- @event " .. event_part .. "___key_event"
-                            doc_added = true
-                        end
+                        line = line .. " --- @event " .. line:sub(i, j) .. "___key_event"
+                        doc_added = true
                     end
                     depths = update_depths(line,  depths)
-                    out_file:write(line .. "\n")
-                    line = get_next_line()
+                    line = write_and_get_next_line(line)
                     if depths == 0 then
                         break
                     end
@@ -171,38 +166,38 @@ local function processFile(in_file_name, out_file_name)
                 -- find "self.ges_event = { Abc = {},  ... }"
                 print("xxxxxxxxxxx todo2", in_file_name, line)
                 doc_added = true
-
             else
                 -- find "self.ges_event = {"
                 --         Abc = ...
-                out_file:write(line .. "\n")
-                line = get_next_line()
+                line = write_and_get_next_line(line)
                 local depths = 1
                 while line do
                     if depths == 1 and line:find("^ *[A-Z][a-zA-Z0-9_]*") then
                         local i, j = line:find("[A-Z][a-zA-Z0-9_]*")
-                        if i and j then
-                            local event_part = line:sub(i, j)
-                            line = line .. " --- @event " .. event_part .. "___ges_event"
-                            doc_added = true
-                        end
+                        local event_part = line:sub(i, j)
+                        line = line .. " --- @event " .. event_part .. "___ges_event"
+                        doc_added = true
                     end
                     depths = update_depths(line, depths)
-                    out_file:write(line .. "\n")
-                    line = get_next_line()
+                    line = write_and_get_next_line(line)
                     if depths == 0 then
                         break
                     end
                 end
             end
         end
+
+        if doc_added then
+            file_changed = true
+            block = {}
+        end
+
         if line then
-            out_file:write(line .. "\n")
-            line = get_next_line()
+            line = write_and_get_next_line(line)
         end
     end -- for line
     out_file:close()
-    return doc_added
+    return file_changed
 end -- function processFile
 
 -------------------------
