@@ -24,6 +24,7 @@ describe("device module", function()
                     scaleByDPI = fb.scaleByDPI,
                     scaleBySize = fb.scaleBySize,
                     setWindowTitle = function() end,
+                    refreshFull = function() end,
                 }
             end
         }
@@ -44,9 +45,12 @@ describe("device module", function()
     end)
 
     after_each(function()
-        -- Don't let UIManager hang on to a stale Device reference, as we instantiate a few of them...
+        -- Don't let UIManager hang on to a stale Device reference, and vice-versa...
         package.unload("device")
+        package.unload("device/generic/device")
+        package.unload("device/generic/powerd")
         package.unload("ui/uimanager")
+        package.unload("apps/reader/readerui")
         mock_input.open:revert()
         os.getenv:revert()
         os.execute:revert()
@@ -337,6 +341,8 @@ describe("device module", function()
             os.getenv.invokes(function(key)
                 if key == "PRODUCT" then
                     return "trilogy"
+                elseif key == "MODEL_NUMBER" then
+                    return "320"
                 else
                     return osgetenv(key)
                 end
@@ -349,15 +355,17 @@ describe("device module", function()
             Device:init()
             -- Don't poke the RTC
             Device.wakeup_mgr = require("device/wakeupmgr"):new{rtc = require("device/kindle/mockrtc")}
+            -- Don't poke the fl
+            Device.powerd.fl = nil
             package.loaded.device = Device
 
-            local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
             local UIManager = require("ui/uimanager")
             -- Generic's onPowerEvent may request a repaint, but we can't do that
             stub(UIManager, "forceRePaint")
             UIManager:init()
 
+            local sample_pdf = "spec/front/unit/data/tall.pdf"
             ReaderUI:doShowReader(sample_pdf)
             local readerui = ReaderUI._getRunningInstance()
             stub(readerui, "onFlushSettings")
@@ -388,18 +396,18 @@ describe("device module", function()
             end
 
             local Device = require("device/cervantes/device")
-            package.loaded.device = Device
             stub(Device, "initNetworkManager")
-            Device:init()
-            local sample_pdf = "spec/front/unit/data/tall.pdf"
-            local ReaderUI = require("apps/reader/readerui")
-
-            local UIManager = require("ui/uimanager")
-
             stub(Device, "suspend")
+            Device:init()
+            Device.powerd.fl = nil
+            package.loaded.device = Device
 
+            local ReaderUI = require("apps/reader/readerui")
+            local UIManager = require("ui/uimanager")
+            stub(UIManager, "forceRePaint")
             UIManager:init()
 
+            local sample_pdf = "spec/front/unit/data/tall.pdf"
             ReaderUI:doShowReader(sample_pdf)
             local readerui = ReaderUI._getRunningInstance()
             stub(readerui, "onFlushSettings")
@@ -407,6 +415,7 @@ describe("device module", function()
             UIManager.event_handlers.PowerRelease()
             assert.stub(readerui.onFlushSettings).was_called()
 
+            UIManager.forceRePaint:revert()
             Device.initNetworkManager:revert()
             Device.suspend:revert()
             readerui.onFlushSettings:revert()
