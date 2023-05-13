@@ -362,7 +362,11 @@ function Device:setEventHandlers(uimgr)
     UIManager.event_handlers.PowerRelease = function()
         -- Resume if we were suspended
         if self.screen_saver_mode then
-            UIManager.event_handlers.Resume()
+            if self.screen_saver_lock then
+                UIManager.event_handlers.Suspend()
+            else
+                UIManager.event_handlers.Resume()
+            end
         else
             UIManager.event_handlers.Suspend()
         end
