@@ -940,7 +940,7 @@ function Device:untar(archive, extract_to, with_stripped_root)
     return os.execute(cmd:format(archive, extract_to))
 end
 
--- Update our UIManager reference once its ready
+-- Update our UIManager reference once it's ready
 function Device:_UIManagerReady(uimgr)
     -- Our own ref
     UIManager = uimgr
@@ -1019,9 +1019,9 @@ function Device:_setEventHandlers(uimgr)
     self:setEventHandlers(uimgr)
 end
 
--- Devices can add additional event handlers by overwriting this method.
+-- Devices can add additional event handlers by implementing this method.
 function Device:setEventHandlers(uimgr)
-    -- These will be most probably overwritten in the device specific `setEventHandlers`
+    -- These will most probably be overwritten by device-specific `setEventHandlers` implementations
     UIManager.event_handlers.Suspend = function()
         self.powerd:beforeSuspend()
     end
