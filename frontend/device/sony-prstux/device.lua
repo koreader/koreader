@@ -233,12 +233,6 @@ function SonyPRSTUX:setEventHandlers(uimgr)
     UIManager.event_handlers.UsbPlugOut = function()
         self:usbPlugOut()
     end
-    UIManager.event_handlers.__default__ = function(input_event)
-        -- Same as in Kobo: we want to ignore keys during suspension
-        if not self.screen_saver_mode then
-            UIManager:sendEvent(input_event)
-        end
-    end
 end
 
 -- For Sony PRS-T2
