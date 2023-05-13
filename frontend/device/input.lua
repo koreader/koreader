@@ -1403,7 +1403,16 @@ function Input:inhibitInput(toggle)
         end
         if not self._sdl_ev_handler then
             self._sdl_ev_handler = self.handleSdlEv
-            self.handleSdlEv = self.voidEv
+            -- This is mainly used for non-input events, so we mostly want to leave it alone (#10427).
+            -- The only exception being mwheel handling, which we *do* want to inhibit.
+            self.handleSdlEv = function(this, ev)
+                local SDL_MOUSEWHEEL = 1027
+                if ev.code == SDL_MOUSEWHEEL then
+                    return
+                else
+                    return this:_sdl_ev_handler(ev)
+                end
+            end
         end
         if not self._generic_ev_handler then
             self._generic_ev_handler = self.handleGenericEv
