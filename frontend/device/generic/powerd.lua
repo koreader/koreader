@@ -69,7 +69,13 @@ function BasePowerD:beforeSuspend() self.device:_beforeSuspend(false) end
 -- Anything that needs to be done after doing a real hardware resume.
 -- (Such as restoring front light state).
 -- Do *not* omit calling Device's _afterResume method!
-function BasePowerD:afterResume() self.device:_afterResume(false) end
+function BasePowerD:afterResume()
+    -- MONOTONIC doesn't tick during suspend,
+    -- invalidate the last battery capacity pull time so that we get up to date data immediately.
+    self:invalidateCapacityCache()
+
+    self.device:_afterResume(false)
+end
 
 -- Update our UIManager reference once its ready
 function BasePowerD:UIManagerReady(uimgr)

@@ -43,6 +43,8 @@ function SDLPowerD:beforeSuspend()
 end
 
 function SDLPowerD:afterResume()
+    self:invalidateCapacityCache()
+
     -- Restore user input and emit the Resume event.
     self.device:_afterResume()
 end

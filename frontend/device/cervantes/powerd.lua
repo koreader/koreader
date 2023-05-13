@@ -143,7 +143,7 @@ end
 
 function CervantesPowerD:afterResume()
     if self.fl then
-        -- just re-set it to self.hw_intensity that we haven't change on Suspend
+        -- just re-set it to self.hw_intensity that we haven't changed on Suspend
         if not self.device:hasNaturalLight() then
             self.fl:setBrightness(self.hw_intensity)
         else
@@ -151,8 +151,6 @@ function CervantesPowerD:afterResume()
         end
     end
 
-    -- MONOTONIC doesn't tick during suspend,
-    -- invalidate the last battery capacity pull time so that we get up to date data immediately.
     self:invalidateCapacityCache()
 
     -- Restore user input and emit the Resume event.

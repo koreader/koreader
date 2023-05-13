@@ -34,6 +34,8 @@ function SonyPRSTUX_PowerD:beforeSuspend()
 end
 
 function SonyPRSTUX_PowerD:afterResume()
+    self:invalidateCapacityCache()
+
     -- Restore user input and emit the Resume event.
     self.device:_afterResume()
 end

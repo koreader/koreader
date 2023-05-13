@@ -289,6 +289,8 @@ function KindlePowerD:beforeSuspend()
 end
 
 function KindlePowerD:afterResume()
+    self:invalidateCapacityCache()
+
     -- Restore user input and emit the Resume event.
     self.device:_afterResume()
 end
