@@ -439,8 +439,6 @@ function KoboPowerD:afterResume()
     -- Set the system clock to the hardware clock's time.
     RTC:HCToSys()
 
-    -- MONOTONIC doesn't tick during suspend,
-    -- invalidate the last battery capacity pull time so that we get up to date data immediately.
     self:invalidateCapacityCache()
 
     -- Restore user input and emit the Resume event.

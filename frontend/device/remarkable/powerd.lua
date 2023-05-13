@@ -28,6 +28,8 @@ function Remarkable_PowerD:beforeSuspend()
 end
 
 function Remarkable_PowerD:afterResume()
+    self:invalidateCapacityCache()
+
     -- Restore user input and emit the Resume event.
     self.device:_afterResume()
 end
