@@ -359,13 +359,13 @@ describe("device module", function()
             Device.powerd.fl = nil
             package.loaded.device = Device
 
-            local ReaderUI = require("apps/reader/readerui")
             local UIManager = require("ui/uimanager")
             -- Generic's onPowerEvent may request a repaint, but we can't do that
             stub(UIManager, "forceRePaint")
             UIManager:init()
 
             local sample_pdf = "spec/front/unit/data/tall.pdf"
+            local ReaderUI = require("apps/reader/readerui")
             ReaderUI:doShowReader(sample_pdf)
             local readerui = ReaderUI._getRunningInstance()
             stub(readerui, "onFlushSettings")
@@ -402,12 +402,12 @@ describe("device module", function()
             Device.powerd.fl = nil
             package.loaded.device = Device
 
-            local ReaderUI = require("apps/reader/readerui")
             local UIManager = require("ui/uimanager")
             stub(UIManager, "forceRePaint")
             UIManager:init()
 
             local sample_pdf = "spec/front/unit/data/tall.pdf"
+            local ReaderUI = require("apps/reader/readerui")
             ReaderUI:doShowReader(sample_pdf)
             local readerui = ReaderUI._getRunningInstance()
             stub(readerui, "onFlushSettings")
@@ -444,18 +444,18 @@ describe("device module", function()
                 end
             end
             local Device = require("device/remarkable/device")
-            package.loaded.device = Device
             stub(Device, "initNetworkManager")
+            stub(Device, "suspend")
             Device:init()
-            local sample_pdf = "spec/front/unit/data/tall.pdf"
-            local ReaderUI = require("apps/reader/readerui")
+            Device.powerd.fl = nil
+            package.loaded.device = Device
 
             local UIManager = require("ui/uimanager")
-
-            stub(Device, "suspend")
-
+            stub(UIManager, "forceRePaint")
             UIManager:init()
 
+            local sample_pdf = "spec/front/unit/data/tall.pdf"
+            local ReaderUI = require("apps/reader/readerui")
             ReaderUI:doShowReader(sample_pdf)
             local readerui = ReaderUI._getRunningInstance()
             stub(readerui, "onFlushSettings")
@@ -463,6 +463,7 @@ describe("device module", function()
             UIManager.event_handlers.PowerRelease()
             assert.stub(readerui.onFlushSettings).was_called()
 
+            UIManager.forceRePaint:revert()
             Device.initNetworkManager:revert()
             Device.suspend:revert()
             readerui.onFlushSettings:revert()
