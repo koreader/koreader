@@ -962,7 +962,6 @@ function Device:UIManagerReady(uimgr) end
 
 -- Set device event handlers common to all devices
 function Device:_setEventHandlers(uimgr)
-    print("Device:_setEventHandlers", uimgr)
     if self:canReboot() then
         UIManager.event_handlers.Reboot = function(message_text)
             local ConfirmBox = require("ui/widget/confirmbox")
@@ -1017,18 +1016,11 @@ function Device:_setEventHandlers(uimgr)
     end
 
     -- Let implementations expand on that
-    print("Calling setEventHandlers")
-    print("self", self)
-    print("Device", Device)
-    print("package.loaded.device", package.loaded.device)
-    print("require('device')", require("device"))
-    print("package.loaded['device/generic/device']", package.loaded['device/generic/device'])
     self:setEventHandlers(uimgr)
 end
 
 -- Devices can add additional event handlers by overwriting this method.
 function Device:setEventHandlers(uimgr)
-    print("Device:setEventHandlers", uimgr)
     -- These will be most probably overwritten in the device specific `setEventHandlers`
     UIManager.event_handlers.Suspend = function()
         self.powerd:beforeSuspend()

@@ -11,6 +11,7 @@ describe("device module", function()
         mock_fb = {
             new = function()
                 return {
+                    device = package.loaded.device,
                     bb = require("ffi/blitbuffer").new(600, 800, 1),
                     getRawSize = function() return {w = 600, h = 800} end,
                     getWidth = function() return 600 end,
@@ -347,15 +348,13 @@ describe("device module", function()
             stub(Device, "suspend")
             Device:init()
             package.loaded.device = Device
-            print("Kobo:", Device)
+
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
             local UIManager = require("ui/uimanager")
             UIManager:init()
-            print("whee")
 
             ReaderUI:doShowReader(sample_pdf)
-            print("whoop")
             local readerui = ReaderUI._getRunningInstance()
             stub(readerui, "onFlushSettings")
             UIManager.event_handlers.PowerPress()
