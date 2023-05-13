@@ -77,7 +77,7 @@ function BasePowerD:afterResume()
     self.device:_afterResume(false)
 end
 
--- Update our UIManager reference once its ready
+-- Update our UIManager reference once it's ready
 function BasePowerD:UIManagerReady(uimgr)
     -- Our own ref
     UIManager = uimgr
