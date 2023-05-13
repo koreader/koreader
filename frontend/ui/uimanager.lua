@@ -103,7 +103,6 @@ function UIManager:init()
     end
 
     -- Tell Device that we're now available, so that it can setup PM event handlers
-    print("UIM Device", Device)
     Device:_UIManagerReady(self)
 
     -- A simple wrapper for UIManager:quit()
