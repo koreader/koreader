@@ -115,6 +115,13 @@ function NaturalLightWidget:adaptableNumber(initial, step)
     table.insert(minus_number_plus, button_minus)
     table.insert(minus_number_plus, input_text)
     table.insert(minus_number_plus, button_plus)
+
+    -- Sanitize the returned value so as not to upset sysfs_light...
+    function input_text:getText()
+        -- Also, while we're here, make sure we actually return a number, because InputText doesn't for... reasons.
+        return tonumber(self.text) or initial
+    end
+
     return minus_number_plus
 end
 
