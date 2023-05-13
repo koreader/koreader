@@ -54,7 +54,6 @@ local function processFile(in_file_name, out_file_name)
     local out_file = io.open(out_file_name, "w")
     local doc_added = false
     local get_next_line = io.lines(in_file_name)
-    local last_line = ""
     local line = get_next_line()
     while line do
         line_nb = line_nb + 1
@@ -65,10 +64,9 @@ local function processFile(in_file_name, out_file_name)
             end
         end
 
-        -- Skip a comment block
-        if line:find(" *%-%-%[%[%-%-") then
+        -- Skip a pure comment block.
+        if line:find(" *%-%-%[%[") and not line:find(" *%-%-%[%[%-%-") then
             while line and not line:find("]]") do
-                table.insert(block, line)
                 out_file:write(line .. "\n")
                 line = get_next_line()
             end
@@ -136,76 +134,69 @@ local function processFile(in_file_name, out_file_name)
                 doc_added = true
             end
         elseif line:find("self%.key_events += *{ ?") then
-            if line:find("self%.key_events += *{ ") then
-                -- find "self.kex_event = { Abc = {},  ... }"
-                print("xxxxxxxxxxx todo")
+            if line:find("self%.key_events += *{ *}") then
+                -- nothing to do here
+            elseif line:find("self%.key_events += *{ ") then
+                -- find "self.key_event = { Abc = {},  ... }"
+                print("xxxxxxxxxxx todo1", in_file_name)
                 doc_added = true
 
             else
-                -- find "self.event = {"
+                -- find "self.key_event = {"
                 --         Abc = ...
-                last_line = line
                 out_file:write(line .. "\n")
                 line = get_next_line()
-
-                local depths = update_depths(line, 0)
-                while depths >= 1 and line do
+                local depths = 1
+                while line do
                     if depths == 1 and line:find("^ *[A-Z][a-zA-Z0-9_]*") then
                         local i, j = line:find("[A-Z][a-zA-Z0-9_]*")
                         if i and j then
                             local event_part = line:sub(i, j)
                             line = line .. " --- @event " .. event_part .. "___key_event"
                             doc_added = true
-                            depths = update_depths(line, depths)
-                            last_line = line
-                            out_file:write(line .. "\n")
-                            line = get_next_line()
                         end
-                    else
-                        depths = update_depths(line, depths)
-                        last_line = line
-                        out_file:write(line .. "\n")
-                        line = get_next_line()
+                    end
+                    depths = update_depths(line,  depths)
+                    out_file:write(line .. "\n")
+                    line = get_next_line()
+                    if depths == 0 then
+                        break
                     end
                 end
             end
         elseif line:find("self%.ges_events += *{ ?") then
-            if line:find("self%.ges_events += *{ ") then
+            if line:find("self%.ges_events += *{ *}") then
+                -- nothing to do here
+            elseif line:find("self%.ges_events += *{ ") then
                 -- find "self.ges_event = { Abc = {},  ... }"
-                print("xxxxxxxxxxx todo")
+                print("xxxxxxxxxxx todo2", in_file_name, line)
                 doc_added = true
 
             else
-                -- find "self.event = {"
+                -- find "self.ges_event = {"
                 --         Abc = ...
-                last_line = line
                 out_file:write(line .. "\n")
                 line = get_next_line()
-
-                local depths = update_depths(line, 0)
-                while depths >= 1 and line do
+                local depths = 1
+                while line do
                     if depths == 1 and line:find("^ *[A-Z][a-zA-Z0-9_]*") then
                         local i, j = line:find("[A-Z][a-zA-Z0-9_]*")
                         if i and j then
                             local event_part = line:sub(i, j)
                             line = line .. " --- @event " .. event_part .. "___ges_event"
                             doc_added = true
-                            depths = update_depths(line, depths)
-                            last_line = line
-                            out_file:write(line .. "\n")
-                            line = get_next_line()
                         end
-                    else
-                        depths = update_depths(line, depths)
-                        last_line = line
-                        out_file:write(line .. "\n")
-                        line = get_next_line()
+                    end
+                    depths = update_depths(line, depths)
+                    out_file:write(line .. "\n")
+                    line = get_next_line()
+                    if depths == 0 then
+                        break
                     end
                 end
             end
         end
         if line then
-            last_line = line
             out_file:write(line .. "\n")
             line = get_next_line()
         end
