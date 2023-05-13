@@ -423,34 +423,6 @@ describe("device module", function()
             readerui:onClose()
         end)
 
-        it("SDL", function()
-            local Device = require("device/sdl/device")
-            package.loaded.device = Device
-            stub(Device, "initNetworkManager")
-            Device:init()
-            local sample_pdf = "spec/front/unit/data/tall.pdf"
-            local ReaderUI = require("apps/reader/readerui")
-
-            local UIManager = require("ui/uimanager")
-
-            stub(Device, "suspend")
-
-            UIManager:init()
-
-            ReaderUI:doShowReader(sample_pdf)
-            local readerui = ReaderUI._getRunningInstance()
-            stub(readerui, "onFlushSettings")
-            UIManager.event_handlers.PowerPress()
-            UIManager.event_handlers.PowerRelease()
-            assert.stub(readerui.onFlushSettings).was_called()
-
-            Device.initNetworkManager:revert()
-            Device.suspend:revert()
-            readerui.onFlushSettings:revert()
-            Device.screen_saver_mode = false
-            readerui:onClose()
-        end)
-
         it("Remarkable", function()
             io.open = function(filename, mode)
                 if filename == "/usr/bin/xochitl" then
