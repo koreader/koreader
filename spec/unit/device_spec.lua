@@ -470,6 +470,32 @@ describe("device module", function()
             Device.screen_saver_mode = false
             readerui:onClose()
         end)
+
+        it("SDL", function()
+            local Device = require("device/sdl/device")
+            stub(Device, "initNetworkManager")
+            stub(Device, "suspend")
+            Device:init()
+            package.loaded.device = Device
+
+            local UIManager = require("ui/uimanager")
+            UIManager:init()
+
+            local sample_pdf = "spec/front/unit/data/tall.pdf"
+            local ReaderUI = require("apps/reader/readerui")
+            ReaderUI:doShowReader(sample_pdf)
+            local readerui = ReaderUI._getRunningInstance()
+            stub(readerui, "onFlushSettings")
+            -- UIManager.event_handlers.PowerPress() -- We only fake a Release event on the Emu
+            UIManager.event_handlers.PowerRelease()
+            assert.stub(readerui.onFlushSettings).was_called()
+
+            Device.initNetworkManager:revert()
+            Device.suspend:revert()
+            readerui.onFlushSettings:revert()
+            Device.screen_saver_mode = false
+            readerui:onClose()
+        end)
     end)
     -- luacheck: pop
 end)
