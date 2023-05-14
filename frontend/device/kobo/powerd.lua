@@ -430,16 +430,8 @@ end
 
 -- Restore front light state after resume.
 function KoboPowerD:afterResume()
-    -- Set the system clock to the hardware clock's time.
-    RTC:HCToSys()
-
-    self:invalidateCapacityCache()
-
-    -- Restore user input and emit the Resume event.
-    self.device:_afterResume()
-
-    -- Much like on suspend, deal with the frontlight last.
-    -- (Except that unlike on suspend, the resume refresh isn't fenced)
+    -- There's a whole bunch of stuff happening before us in Generic:onPowerEvent,
+    -- so this may not be as smooth as on suspend...
     if self.fl then
         -- Don't bother if the light was already off on suspend
         if self.fl_was_on then
@@ -447,6 +439,14 @@ function KoboPowerD:afterResume()
             self:turnOnFrontlight()
         end
     end
+
+    -- Set the system clock to the hardware clock's time.
+    RTC:HCToSys()
+
+    self:invalidateCapacityCache()
+
+    -- Restore user input and emit the Resume event.
+    self.device:_afterResume()
 end
 
 function KoboPowerD:UIManagerReadyHW(uimgr)
