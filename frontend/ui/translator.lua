@@ -22,7 +22,7 @@ local T = ffiutil.template
 local _ = require("gettext")
 
 -- From https://cloud.google.com/translate/docs/languages
--- 20181217: 104 supported languages
+-- 20230514: 132 supported languages
 local AUTODETECT_LANGUAGE = "auto"
 local SUPPORTED_LANGUAGES = {
     -- @translators Many of the names for languages can be conveniently found pre-translated in the relevant language of this Wikipedia article: https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
@@ -31,10 +31,14 @@ local SUPPORTED_LANGUAGES = {
     am = _("Amharic"),
     ar = _("Arabic"),
     hy = _("Armenian"),
+    as = _("Assamese"),
+    ay = _("Aymara"),
     az = _("Azerbaijani"),
+    bm = _("Bambara"),
     eu = _("Basque"),
     be = _("Belarusian"),
     bn = _("Bengali"),
+    bho = _("Bhojpuri"),
     bs = _("Bosnian"),
     bg = _("Bulgarian"),
     ca = _("Catalan"),
@@ -45,10 +49,14 @@ local SUPPORTED_LANGUAGES = {
     hr = _("Croatian"),
     cs = _("Czech"),
     da = _("Danish"),
+    dv = _("Dhivehi"),
+    doi = _("Dogri"),
     nl = _("Dutch"),
     en = _("English"),
     eo = _("Esperanto"),
     et = _("Estonian"),
+    ee = _("Ewe"),
+    fil = _("Filipino (Tagalog)"),
     fi = _("Finnish"),
     fr = _("French"),
     fy = _("Frisian"),
@@ -56,6 +64,7 @@ local SUPPORTED_LANGUAGES = {
     ka = _("Georgian"),
     de = _("German"),
     el = _("Greek"),
+    gn = _("Guarani"),
     -- @translators Many of the names for languages can be conveniently found pre-translated in the relevant language of this Wikipedia article: https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
     gu = _("Gujarati"),
     ht = _("Haitian Creole"),
@@ -67,6 +76,7 @@ local SUPPORTED_LANGUAGES = {
     hu = _("Hungarian"),
     is = _("Icelandic"),
     ig = _("Igbo"),
+    ilo = _("Ilocano"),
     id = _("Indonesian"),
     ga = _("Irish"),
     it = _("Italian"),
@@ -76,35 +86,48 @@ local SUPPORTED_LANGUAGES = {
     kn = _("Kannada"),
     kk = _("Kazakh"),
     km = _("Khmer"),
+    rw = _("Kinyarwanda"),
+    gom = _("Konkani"),
     ko = _("Korean"),
+    kri = _("Krio"),
     ku = _("Kurdish"),
+    ckb = _("Kurdish (Sorani)"),
     ky = _("Kyrgyz"),
     lo = _("Lao"),
     la = _("Latin"),
     lv = _("Latvian"),
+    ln = _("Lingala"),
     lt = _("Lithuanian"),
+    lg = _("Luganda"),
     lb = _("Luxembourgish"),
     mk = _("Macedonian"),
+    mai = _("Maithili"),
     mg = _("Malagasy"),
     ms = _("Malay"),
     ml = _("Malayalam"),
     mt = _("Maltese"),
     mi = _("Maori"),
     mr = _("Marathi"),
+    lus = _("Mizo"),
     mn = _("Mongolian"),
     my = _("Myanmar (Burmese)"),
     ne = _("Nepali"),
     no = _("Norwegian"),
     ny = _("Nyanja (Chichewa)"),
+    ["or"] = _("Odia (Oriya)"),
+    om = _("Oromo"),
     ps = _("Pashto"),
     fa = _("Persian"),
     pl = _("Polish"),
     pt = _("Portuguese"),
     pa = _("Punjabi"),
+    qu = _("Quechua"),
     ro = _("Romanian"),
     ru = _("Russian"),
     sm = _("Samoan"),
+    sa = _("Sanskrit"),
     gd = _("Scots Gaelic"),
+    nso = _("Sepedi"),
     sr = _("Serbian"),
     st = _("Sesotho"),
     sn = _("Shona"),
@@ -120,11 +143,17 @@ local SUPPORTED_LANGUAGES = {
     tl = _("Tagalog (Filipino)"),
     tg = _("Tajik"),
     ta = _("Tamil"),
+    tt = _("Tatar"),
     te = _("Telugu"),
     th = _("Thai"),
+    ti = _("Tigrinya"),
+    ts = _("Tsonga"),
     tr = _("Turkish"),
+    tk = _("Turkmen"),
+    ak = _("Twi (Akan)"),
     uk = _("Ukrainian"),
     ur = _("Urdu"),
+    ug = _("Uyghur"),
     uz = _("Uzbek"),
     vi = _("Vietnamese"),
     cy = _("Welsh"),
@@ -193,6 +222,15 @@ function Translator:getLanguageName(lang, default_string)
 end
 
 -- Will be called by ReaderHighlight to make it available in Reader menu
+function Translator:genTranslatePageMenu()
+    return {
+        text = _("Translate page"),
+        callback = function()
+            self:onTranslateCurrentPage()
+        end,
+    }
+end
+
 function Translator:genSettingsMenu()
     local function genLanguagesItems(setting_name, default_checked_item)
         local items_table = {}
@@ -307,8 +345,8 @@ function Translator:getDocumentLanguage()
     end
 end
 
-function Translator:getSourceLanguage()
-    if G_reader_settings:isTrue("translator_from_doc_lang") then
+function Translator:getSourceLanguage(force_doc_lang)
+    if force_doc_lang or G_reader_settings:isTrue("translator_from_doc_lang") then
         local lang = self:getDocumentLanguage()
         if lang then
             return lang
@@ -478,13 +516,14 @@ Show translated text in TextViewer, with alternate translations
 @string target_lang[opt] (`"en"`, `"fr"`, `…`)
 @string source_lang[opt="auto"] (`"en"`, `"fr"`, `…`) or `"auto"` to auto-detect source language
 --]]
-function Translator:showTranslation(text, target_lang, source_lang, from_highlight, page, index)
+function Translator:showTranslation(text, target_lang, source_lang, from_highlight, page, index, full_page)
     if Device:hasClipboard() then
         Device.input.setClipboardText(text)
     end
 
     local NetworkMgr = require("ui/network/manager")
-    if NetworkMgr:willRerunWhenOnline(function() self:showTranslation(text, target_lang, source_lang, from_highlight, page, index) end) then
+    if NetworkMgr:willRerunWhenOnline(function()
+            self:showTranslation(text, target_lang, source_lang, from_highlight, page, index, full_page) end) then
         return
     end
 
@@ -492,16 +531,16 @@ function Translator:showTranslation(text, target_lang, source_lang, from_highlig
     -- translation service query.
     local Trapper = require("ui/trapper")
     Trapper:wrap(function()
-        self:_showTranslation(text, target_lang, source_lang, from_highlight, page, index)
+        self:_showTranslation(text, target_lang, source_lang, from_highlight, page, index, full_page)
     end)
 end
 
-function Translator:_showTranslation(text, target_lang, source_lang, from_highlight, page, index)
+function Translator:_showTranslation(text, target_lang, source_lang, from_highlight, page, index, full_page)
     if not target_lang then
         target_lang = self:getTargetLanguage()
     end
     if not source_lang then
-        source_lang = self:getSourceLanguage()
+        source_lang = self:getSourceLanguage(full_page)
     end
 
     local Trapper = require("ui/trapper")
@@ -540,12 +579,14 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
             table.insert(source, s)
             table.insert(translated, t)
         end
-        table.insert(output, "▣ " .. table.concat(source, " "))
-        text_main = "● " .. table.concat(translated, " ")
+        if not full_page then
+            table.insert(output, "▣ " .. table.concat(source, " "))
+        end
+        text_main = (full_page and "" or "● ") .. table.concat(translated, " ")
         table.insert(output, text_main)
     end
 
-    if result[6] and type(result[6]) == "table" and #result[6] > 0 then
+    if not full_page and result[6] and type(result[6]) == "table" and #result[6] > 0 then
         -- Alternative translations:
         table.insert(output, "________")
         for i, r in ipairs(result[6]) do
@@ -562,7 +603,7 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
         end
     end
 
-    if result[13] and type(result[13]) == "table" and #result[13] > 0 then
+    if not full_page and result[13] and type(result[13]) == "table" and #result[13] > 0 then
         -- Definition(word)
         table.insert(output, "________")
         for i, r in ipairs(result[13]) do
@@ -613,7 +654,7 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
             }
         )
     end
-    if Device:hasClipboard() then
+    if not full_page and Device:hasClipboard() then
         table.insert(buttons_table,
             {
                 {
@@ -637,7 +678,7 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
             -- Showing the translation target language in this title may make
             -- it quite long and wrapped, taking valuable vertical spacing
         text = text_all,
-        height = math.floor(Screen:getHeight() * 0.8),
+        height = math.floor(Screen:getHeight() * (full_page and 0.95 or 0.8)),
         justified = G_reader_settings:nilOrTrue("dict_justify"),
         add_default_buttons = true,
         buttons_table = buttons_table,
@@ -651,6 +692,31 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
         end,
     }
     UIManager:show(textviewer)
+end
+
+function Translator:onTranslateCurrentPage()
+    local ui = require("apps/reader/readerui").instance
+    if not ui or not ui.document then return end
+    local x0, y0, x1, y1, page
+    if ui.rolling then
+        x0 = 0
+        y0 = 0
+        x1 = Screen:getWidth()
+        y1 = Screen:getHeight()
+    else
+        page = ui:getCurrentPage()
+        local page_boxes = ui.document:getTextBoxes(page)
+        if page_boxes and page_boxes[1][1].word then
+            x0 = page_boxes[1][1].x0
+            y0 = page_boxes[1][1].y0
+            x1 = page_boxes[#page_boxes][#page_boxes[#page_boxes]].x1
+            y1 = page_boxes[#page_boxes][#page_boxes[#page_boxes]].y1
+        end
+    end
+    local res = x0 and ui.document:getTextFromPositions({x = x0, y = y0, page = page}, {x = x1, y = y1}, true)
+    if res and res.text then
+        self:showTranslation(res.text, nil, nil, nil, nil, nil, true)
+    end
 end
 
 return Translator
