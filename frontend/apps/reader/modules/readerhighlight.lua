@@ -466,6 +466,8 @@ function ReaderHighlight:addToMainMenu(menu_items)
             sub_item_table = self:genPanelZoomMenu(),
         }
     end
+
+    menu_items.translate_page = Translator:genTranslatePageMenu()
     menu_items.translation_settings = Translator:genSettingsMenu()
 
     menu_items.long_press = {
@@ -1374,6 +1376,10 @@ dbg:guard(ReaderHighlight, "translate",
 
 function ReaderHighlight:onTranslateText(text, page, index)
     Translator:showTranslation(text, false, false, true, page, index)
+end
+
+function ReaderHighlight:onTranslateCurrentPage()
+    Translator:onTranslateCurrentPage()
 end
 
 function ReaderHighlight:onHoldRelease()
