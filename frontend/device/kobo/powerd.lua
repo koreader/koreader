@@ -419,7 +419,7 @@ function KoboPowerD:beforeSuspend()
     self.device:_beforeSuspend()
 
     -- Handle the frontlight last,
-    -- to prevent as many thing as we can from interfering with the smoothness of the ramp
+    -- to prevent as many things as we can from interfering with the smoothness of the ramp
     if self.fl then
         -- Remember the current frontlight state
         self.fl_was_on = self.is_fl_on
