@@ -418,6 +418,8 @@ function KoboPowerD:beforeSuspend()
     -- Inhibit user input and emit the Suspend event.
     self.device:_beforeSuspend()
 
+    -- Handle the frontlight last,
+    -- to prevent as many thing as we can froma interfering with the smoothness of the ramp
     if self.fl then
         -- Remember the current frontlight state
         self.fl_was_on = self.is_fl_on
@@ -428,14 +430,6 @@ end
 
 -- Restore front light state after resume.
 function KoboPowerD:afterResume()
-    if self.fl then
-        -- Don't bother if the light was already off on suspend
-        if self.fl_was_on then
-            -- Turn the frontlight back on
-            self:turnOnFrontlight()
-        end
-    end
-
     -- Set the system clock to the hardware clock's time.
     RTC:HCToSys()
 
@@ -443,6 +437,16 @@ function KoboPowerD:afterResume()
 
     -- Restore user input and emit the Resume event.
     self.device:_afterResume()
+
+    -- Much like on suspend, deal with the frontlight last.
+    -- (Except that unlike on suspend, the resume refresh isn't fenced)
+    if self.fl then
+        -- Don't bother if the light was already off on suspend
+        if self.fl_was_on then
+            -- Turn the frontlight back on
+            self:turnOnFrontlight()
+        end
+    end
 end
 
 function KoboPowerD:UIManagerReadyHW(uimgr)
