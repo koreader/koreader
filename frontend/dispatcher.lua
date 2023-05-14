@@ -150,6 +150,8 @@ local settingsList = {
     book_description = {category="none", event="ShowBookDescription", title=_("Book description"), reader=true},
     book_cover = {category="none", event="ShowBookCover", title=_("Book cover"), reader=true, separator=true},
 
+    translate_page = {category="none", event="TranslateCurrentPage", title=_("Translate current page"), reader=true, separator=true},
+
     -- rolling reader settings
     set_font = {category="string", event="SetFont", title=_("Set font"), rolling=true, args_func=require("fontlist").getFontArgFunc,},
     increase_font = {category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size"), rolling=true},
@@ -339,6 +341,8 @@ local dispatcher_menu_order = {
     "book_info",
     "book_description",
     "book_cover",
+
+    "translate_page",
 
     "set_font",
     "increase_font",
