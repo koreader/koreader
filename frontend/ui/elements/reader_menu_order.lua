@@ -202,6 +202,7 @@ local order = {
         "wikipedia_history",
         "wikipedia_settings",
         "----------------------------",
+        "translate_page",
         "translation_settings",
         "----------------------------",
         "find_book_in_calibre_catalog",
