@@ -557,6 +557,7 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
     end
     local output = {}
     local text_main = ""
+    local not_full_page = not full_page
 
     -- For both main and alternate translations, we may get multiple slices
     -- of the original text and its translations.
@@ -566,19 +567,22 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
         local source = {}
         local translated = {}
         for i, r in ipairs(result[1]) do
-            local s = type(r[2]) == "string" and r[2] or ""
+            if not_full_page then
+                local s = type(r[2]) == "string" and r[2] or ""
+                table.insert(source, s)
+            end
             local t = type(r[1]) == "string" and r[1] or ""
-            table.insert(source, s)
             table.insert(translated, t)
         end
-        if not full_page then
+        text_main = table.concat(translated, " ")
+        if not_full_page then
             table.insert(output, "▣ " .. table.concat(source, " "))
+            text_main = "● " .. text_main
         end
-        text_main = (full_page and "" or "● ") .. table.concat(translated, " ")
         table.insert(output, text_main)
     end
 
-    if not full_page and result[6] and type(result[6]) == "table" and #result[6] > 0 then
+    if not_full_page and result[6] and type(result[6]) == "table" and #result[6] > 0 then
         -- Alternative translations:
         table.insert(output, "________")
         for i, r in ipairs(result[6]) do
@@ -595,7 +599,7 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
         end
     end
 
-    if not full_page and result[13] and type(result[13]) == "table" and #result[13] > 0 then
+    if not_full_page and result[13] and type(result[13]) == "table" and #result[13] > 0 then
         -- Definition(word)
         table.insert(output, "________")
         for i, r in ipairs(result[13]) do
@@ -646,7 +650,7 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
             }
         )
     end
-    if not full_page and Device:hasClipboard() then
+    if not_full_page and Device:hasClipboard() then
         table.insert(buttons_table,
             {
                 {
