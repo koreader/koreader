@@ -900,14 +900,13 @@ function UIManager:sendEvent(event)
     --       which relies on a hash check of already processed widgets (LuaJIT actually hashes the table's GC reference),
     --       rather than a simple loop counter, and will in fact iterate *at least* #items * 2 times.
     --       Thankfully, that list should be very small, so the overhead should be minimal.
-    local any_handler_called
     repeat
         local i = #self._window_stack
-        any_handler_called = false
+        local further_checked_widgets = false
         while i > 0 do
             local widget = self._window_stack[i].widget
             if not checked_widgets[widget] then
-                any_handler_called = false
+                further_checked_widgets = true
                 checked_widgets[widget] = true
                 -- Widget's active widgets have precedence to handle this event
                 -- NOTE: ReaderUI & FileManager *may* optionally register their modules as such
@@ -929,7 +928,7 @@ function UIManager:sendEvent(event)
             end
             i = math.min(i - 1, #self._window_stack) -- _window_stack might shrink by more than 1 element
         end
-    until not any_handler_called
+    until not further_checked_widgets
 end
 
 --[[--
@@ -941,21 +940,19 @@ function UIManager:broadcastEvent(event)
     -- Unlike sendEvent, we send the event to *all* (window-level) widgets (i.e., we don't stop, even if a handler returns true).
     -- NOTE: Same defensive approach to _window_stack changing from under our feet as above.
     local checked_widgets = {}
-    local any_handler_called
     repeat
-        any_handler_called = false
+        local further_checked_widgets = false
         local i = #self._window_stack
         while i > 0 do
             local widget = self._window_stack[i].widget
             if not checked_widgets[widget] then
-                any_handler_called = true
+                further_checked_widgets = true
                 checked_widgets[widget] = true
                 widget:handleEvent(event)
             end
             i = math.min(i-1, #self._window_stack)
-            print("xx")
         end
-    until not any_handler_called
+    until not further_checked_widgets
 end
 
 --[[
