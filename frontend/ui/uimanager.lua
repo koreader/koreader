@@ -898,37 +898,38 @@ function UIManager:sendEvent(event)
     --       Simply looping in reverse would only cover the list shrinking, and that only by a *single* element,
     --       something we can't really guarantee, hence the more dogged iterator below,
     --       which relies on a hash check of already processed widgets (LuaJIT actually hashes the table's GC reference),
-    --       rather than a simple loop counter, and will in fact iterate *at least* #items ^ 2 times.
+    --       rather than a simple loop counter, and will in fact iterate *at least* #items * 2 times.
     --       Thankfully, that list should be very small, so the overhead should be minimal.
-    local i = #self._window_stack
-    while i > 0 do
-        local widget = self._window_stack[i].widget
-        if not checked_widgets[widget] then
-            checked_widgets[widget] = true
-            -- Widget's active widgets have precedence to handle this event
-            -- NOTE: ReaderUI & FileManager *may* optionally register their modules as such
-            --       (currently, they only do that for the Screenshot module).
-            if widget.active_widgets then
-                for _, active_widget in ipairs(widget.active_widgets) do
-                    if active_widget:handleEvent(event) then
+    local any_handler_called
+    repeat
+        local i = #self._window_stack
+        any_handler_called = false
+        while i > 0 do
+            local widget = self._window_stack[i].widget
+            if not checked_widgets[widget] then
+                any_handler_called = false
+                checked_widgets[widget] = true
+                -- Widget's active widgets have precedence to handle this event
+                -- NOTE: ReaderUI & FileManager *may* optionally register their modules as such
+                --       (currently, they only do that for the Screenshot module).
+                if widget.active_widgets then
+                    for _, active_widget in ipairs(widget.active_widgets) do
+                        if active_widget:handleEvent(event) then
+                            return
+                        end
+                    end
+                end
+                if widget.is_always_active then
+                    -- Widget itself is flagged always active, let it handle the event
+                    -- NOTE: is_always_active widgets are currently widgets that want to show a VirtualKeyboard or listen to Dispatcher events
+                    if widget:handleEvent(event) then
                         return
                     end
                 end
             end
-            if widget.is_always_active then
-                -- Widget itself is flagged always active, let it handle the event
-                -- NOTE: is_always_active widgets are currently widgets that want to show a VirtualKeyboard or listen to Dispatcher events
-                if widget:handleEvent(event) then
-                    return
-                end
-            end
-            -- As mentioned above, event handlers might have shown/closed widgets,
-            -- so all bets are off on our old window tally being accurate, so let's take it from the top again ;).
-            i = #self._window_stack
-        else
-            i = i - 1
+            i = math.min(i - 1, #self._window_stack) -- _window_stack might shrink by more than 1 element
         end
-    end
+    until not any_handler_called
 end
 
 --[[--
@@ -940,17 +941,21 @@ function UIManager:broadcastEvent(event)
     -- Unlike sendEvent, we send the event to *all* (window-level) widgets (i.e., we don't stop, even if a handler returns true).
     -- NOTE: Same defensive approach to _window_stack changing from under our feet as above.
     local checked_widgets = {}
-    local i = #self._window_stack
-    while i > 0 do
-        local widget = self._window_stack[i].widget
-        if not checked_widgets[widget] then
-            checked_widgets[widget] = true
-            widget:handleEvent(event)
-            i = #self._window_stack
-        else
-            i = i - 1
+    local any_handler_called
+    repeat
+        any_handler_called = false
+        local i = #self._window_stack
+        while i > 0 do
+            local widget = self._window_stack[i].widget
+            if not checked_widgets[widget] then
+                any_handler_called = true
+                checked_widgets[widget] = true
+                widget:handleEvent(event)
+            end
+            i = math.min(i-1, #self._window_stack)
+            print("xx")
         end
-    end
+    until not any_handler_called
 end
 
 --[[
