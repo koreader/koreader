@@ -206,6 +206,9 @@ function ReaderDictionary:updateSdcvDictNamesOptions()
 end
 
 function ReaderDictionary:addToMainMenu(menu_items)
+    menu_items.search_settings = { -- submenu with Dict, Wiki, Translation settings
+        text = _("Settings"),
+    }
     menu_items.dictionary_lookup = {
         text = _("Dictionary lookup"),
         callback = function()
