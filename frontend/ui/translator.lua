@@ -222,15 +222,6 @@ function Translator:getLanguageName(lang, default_string)
 end
 
 -- Will be called by ReaderHighlight to make it available in Reader menu
-function Translator:genTranslatePageMenu()
-    return {
-        text = _("Translate page"),
-        callback = function()
-            self:onTranslateCurrentPage()
-        end,
-    }
-end
-
 function Translator:genSettingsMenu()
     local function genLanguagesItems(setting_name, default_checked_item)
         local items_table = {}
@@ -523,7 +514,8 @@ function Translator:showTranslation(text, target_lang, source_lang, from_highlig
 
     local NetworkMgr = require("ui/network/manager")
     if NetworkMgr:willRerunWhenOnline(function()
-            self:showTranslation(text, target_lang, source_lang, from_highlight, page, index, full_page) end) then
+                self:showTranslation(text, target_lang, source_lang, from_highlight, page, index, full_page)
+            end) then
         return
     end
 
@@ -692,31 +684,6 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
         end,
     }
     UIManager:show(textviewer)
-end
-
-function Translator:onTranslateCurrentPage()
-    local ui = require("apps/reader/readerui").instance
-    if not ui or not ui.document then return end
-    local x0, y0, x1, y1, page
-    if ui.rolling then
-        x0 = 0
-        y0 = 0
-        x1 = Screen:getWidth()
-        y1 = Screen:getHeight()
-    else
-        page = ui:getCurrentPage()
-        local page_boxes = ui.document:getTextBoxes(page)
-        if page_boxes and page_boxes[1][1].word then
-            x0 = page_boxes[1][1].x0
-            y0 = page_boxes[1][1].y0
-            x1 = page_boxes[#page_boxes][#page_boxes[#page_boxes]].x1
-            y1 = page_boxes[#page_boxes][#page_boxes[#page_boxes]].y1
-        end
-    end
-    local res = x0 and ui.document:getTextFromPositions({x = x0, y = y0, page = page}, {x = x1, y = y1}, true)
-    if res and res.text then
-        self:showTranslation(res.text, nil, nil, nil, nil, nil, true)
-    end
 end
 
 return Translator
