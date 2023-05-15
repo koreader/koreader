@@ -361,6 +361,8 @@ function ReaderHighlight:addToMainMenu(menu_items)
             end,
         }
     end
+
+    -- main menu Typeset
     menu_items.highlight_options = {
         text = _("Highlight style"),
         sub_item_table = {},
@@ -467,9 +469,19 @@ function ReaderHighlight:addToMainMenu(menu_items)
         }
     end
 
-    menu_items.translate_page = Translator:genTranslatePageMenu()
+    -- main menu Search
+    menu_items.search_settings = { -- submenu with Dict, Wiki, Translation settings
+        text = _("Settings"),
+    }
+    menu_items.translate_current_page = {
+        text = _("Translate current page"),
+        callback = function()
+            self:onTranslateCurrentPage()
+        end,
+    }
     menu_items.translation_settings = Translator:genSettingsMenu()
 
+    -- main menu Settings
     menu_items.long_press = {
         text = _("Long-press on text"),
         sub_item_table = {
@@ -1379,7 +1391,26 @@ function ReaderHighlight:onTranslateText(text, page, index)
 end
 
 function ReaderHighlight:onTranslateCurrentPage()
-    Translator:onTranslateCurrentPage()
+    local x0, y0, x1, y1, page
+    if self.ui.rolling then
+        x0 = 0
+        y0 = 0
+        x1 = Screen:getWidth()
+        y1 = Screen:getHeight()
+    else
+        page = self.ui:getCurrentPage()
+        local page_boxes = self.ui.document:getTextBoxes(page)
+        if page_boxes and page_boxes[1][1].word then
+            x0 = page_boxes[1][1].x0
+            y0 = page_boxes[1][1].y0
+            x1 = page_boxes[#page_boxes][#page_boxes[#page_boxes]].x1
+            y1 = page_boxes[#page_boxes][#page_boxes[#page_boxes]].y1
+        end
+    end
+    local res = x0 and self.ui.document:getTextFromPositions({x = x0, y = y0, page = page}, {x = x1, y = y1}, true)
+    if res and res.text then
+        Translator:showTranslation(res.text, nil, nil, nil, nil, nil, true)
+    end
 end
 
 function ReaderHighlight:onHoldRelease()
