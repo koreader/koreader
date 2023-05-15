@@ -576,8 +576,8 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
         end
         text_main = table.concat(translated, " ")
         if not_full_page then
-            table.insert(output, "▣ " .. table.concat(source, " "))
             text_main = "● " .. text_main
+            table.insert(output, "▣ " .. table.concat(source, " "))
         end
         table.insert(output, text_main)
     end
