@@ -469,18 +469,6 @@ function ReaderHighlight:addToMainMenu(menu_items)
         }
     end
 
-    -- main menu Search
-    menu_items.search_settings = { -- submenu with Dict, Wiki, Translation settings
-        text = _("Settings"),
-    }
-    menu_items.translate_current_page = {
-        text = _("Translate current page"),
-        callback = function()
-            self:onTranslateCurrentPage()
-        end,
-    }
-    menu_items.translation_settings = Translator:genSettingsMenu()
-
     -- main menu Settings
     menu_items.long_press = {
         text = _("Long-press on text"),
@@ -547,6 +535,15 @@ function ReaderHighlight:addToMainMenu(menu_items)
         menu_items.selection_text = util.tableDeepCopy(menu_items.long_press)
         menu_items.selection_text.text = _("Select on text")
     end
+
+    -- main menu Search
+    menu_items.translation_settings = Translator:genSettingsMenu()
+    menu_items.translate_current_page = {
+        text = _("Translate current page"),
+        callback = function()
+            self:onTranslateCurrentPage()
+        end,
+    }
 end
 
 function ReaderHighlight:genPanelZoomMenu()
@@ -1391,7 +1388,7 @@ function ReaderHighlight:onTranslateText(text, page, index)
 end
 
 function ReaderHighlight:onTranslateCurrentPage()
-    local x0, y0, x1, y1, page
+    local x0, y0, x1, y1, page, is_reflow
     if self.ui.rolling then
         x0 = 0
         y0 = 0
@@ -1399,6 +1396,8 @@ function ReaderHighlight:onTranslateCurrentPage()
         y1 = Screen:getHeight()
     else
         page = self.ui:getCurrentPage()
+        is_reflow = self.ui.document.configurable.text_wrap
+        self.ui.document.configurable.text_wrap = 0
         local page_boxes = self.ui.document:getTextBoxes(page)
         if page_boxes and page_boxes[1][1].word then
             x0 = page_boxes[1][1].x0
@@ -1408,6 +1407,9 @@ function ReaderHighlight:onTranslateCurrentPage()
         end
     end
     local res = x0 and self.ui.document:getTextFromPositions({x = x0, y = y0, page = page}, {x = x1, y = y1}, true)
+    if self.ui.paging then
+        self.ui.document.configurable.text_wrap = is_reflow
+    end
     if res and res.text then
         Translator:showTranslation(res.text, nil, nil, nil, nil, nil, true)
     end
