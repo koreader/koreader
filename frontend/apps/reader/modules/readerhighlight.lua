@@ -1384,7 +1384,9 @@ dbg:guard(ReaderHighlight, "translate",
     end)
 
 function ReaderHighlight:onTranslateText(text, page, index)
-    Translator:showTranslation(text, false, false, true, page, index)
+    local doc_props = self.ui.doc_settings:readSetting("doc_props")
+    local doc_lang = doc_props and doc_props.language
+    Translator:showTranslation(text, true, doc_lang, nil, true, page, index)
 end
 
 function ReaderHighlight:onTranslateCurrentPage()
@@ -1411,7 +1413,9 @@ function ReaderHighlight:onTranslateCurrentPage()
         self.ui.document.configurable.text_wrap = is_reflow
     end
     if res and res.text then
-        Translator:showTranslation(res.text, nil, nil, nil, nil, nil, true)
+        local doc_props = self.ui.doc_settings:readSetting("doc_props")
+        local doc_lang = doc_props and doc_props.language
+        Translator:showTranslation(res.text, false, doc_lang)
     end
 end
 
