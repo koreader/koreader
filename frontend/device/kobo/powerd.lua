@@ -430,16 +430,6 @@ end
 
 -- Restore front light state after resume.
 function KoboPowerD:afterResume()
-    -- There's a whole bunch of stuff happening before us in Generic:onPowerEvent,
-    -- so this may not be as smooth as on suspend...
-    if self.fl then
-        -- Don't bother if the light was already off on suspend
-        if self.fl_was_on then
-            -- Turn the frontlight back on
-            self:turnOnFrontlight()
-        end
-    end
-
     -- Set the system clock to the hardware clock's time.
     RTC:HCToSys()
 
@@ -447,6 +437,17 @@ function KoboPowerD:afterResume()
 
     -- Restore user input and emit the Resume event.
     self.device:_afterResume()
+
+    -- There's a whole bunch of stuff happening before us in Generic:onPowerEvent,
+    -- so we'll delay this ever so slightly so as to appear as smooth as possible...
+    if self.fl then
+        -- Don't bother if the light was already off on suspend
+        if self.fl_was_on then
+            -- Turn the frontlight back on
+            -- NOTE: Funky delay mainly to yield to the EPDC's refresh (yieldToEPDC doesn't quite cut it here)...
+            UIManager:scheduleIn(0.001, self.turnOnFrontlight, self)
+        end
+    end
 end
 
 function KoboPowerD:UIManagerReadyHW(uimgr)
