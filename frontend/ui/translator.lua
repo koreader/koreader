@@ -558,7 +558,7 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
     local output = {}
     local text_main = ""
     local translate_fragment = not translate_page
-    
+
     local function is_result_valid(res)
         return res and type(res) == "table" and #res > 0
     end
