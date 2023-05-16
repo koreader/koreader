@@ -335,8 +335,8 @@ function Translator:getDocumentLanguage()
     end
 end
 
-function Translator:getSourceLanguage(force_doc_lang)
-    if force_doc_lang or G_reader_settings:isTrue("translator_from_doc_lang") then
+function Translator:getSourceLanguage()
+    if G_reader_settings:isTrue("translator_from_doc_lang") then
         local lang = self:getDocumentLanguage()
         if lang then
             return lang
@@ -503,18 +503,18 @@ end
 Show translated text in TextViewer, with alternate translations
 
 @string text
-@string target_lang[opt] (`"en"`, `"fr"`, `…`)
+@bool detailed_view "true" to show alternate translation, definition, additional buttons
 @string source_lang[opt="auto"] (`"en"`, `"fr"`, `…`) or `"auto"` to auto-detect source language
-@bool translate_page "true" to use book language as source language, show main translation only, bigger output window
+@string target_lang[opt] (`"en"`, `"fr"`, `…`)
 --]]
-function Translator:showTranslation(text, target_lang, source_lang, from_highlight, page, index, translate_page)
+function Translator:showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, page, index)
     if Device:hasClipboard() then
         Device.input.setClipboardText(text)
     end
 
     local NetworkMgr = require("ui/network/manager")
     if NetworkMgr:willRerunWhenOnline(function()
-                self:showTranslation(text, target_lang, source_lang, from_highlight, page, index, translate_page)
+                self:showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, page, index)
             end) then
         return
     end
@@ -523,16 +523,16 @@ function Translator:showTranslation(text, target_lang, source_lang, from_highlig
     -- translation service query.
     local Trapper = require("ui/trapper")
     Trapper:wrap(function()
-        self:_showTranslation(text, target_lang, source_lang, from_highlight, page, index, translate_page)
+        self:_showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, page, index)
     end)
 end
 
-function Translator:_showTranslation(text, target_lang, source_lang, from_highlight, page, index, translate_page)
+function Translator:_showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, page, index)
     if not target_lang then
         target_lang = self:getTargetLanguage()
     end
     if not source_lang then
-        source_lang = self:getSourceLanguage(translate_page)
+        source_lang = self:getSourceLanguage()
     end
 
     local Trapper = require("ui/trapper")
@@ -557,7 +557,6 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
     end
     local output = {}
     local text_main = ""
-    local translate_fragment = not translate_page
 
     local function is_result_valid(res)
         return res and type(res) == "table" and #res > 0
@@ -571,7 +570,7 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
         local source = {}
         local translated = {}
         for i, r in ipairs(result[1]) do
-            if translate_fragment then
+            if detailed_view then
                 local s = type(r[2]) == "string" and r[2] or ""
                 table.insert(source, s)
             end
@@ -579,14 +578,14 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
             table.insert(translated, t)
         end
         text_main = table.concat(translated, " ")
-        if translate_fragment then
+        if detailed_view then
             text_main = "● " .. text_main
             table.insert(output, "▣ " .. table.concat(source, " "))
         end
         table.insert(output, text_main)
     end
 
-    if translate_fragment then
+    if detailed_view then
         if is_result_valid(result[6]) then
             -- Alternative translations:
             table.insert(output, "________")
@@ -622,7 +621,7 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
     local text_all = table.concat(output, "\n")
 
     local textviewer, height, buttons_table, close_callback
-    if translate_fragment then
+    if detailed_view then
         height = math.floor(Screen:getHeight() * 0.8)
         buttons_table = {}
         if from_highlight then
