@@ -424,7 +424,9 @@ function KoboPowerD:beforeSuspend()
         -- Remember the current frontlight state
         self.fl_was_on = self.is_fl_on
         -- Turn off the frontlight
-        self:turnOffFrontlight()
+        -- NOTE: Funky delay mainly to yield to the EPDC's refresh on UP systems.
+        --       (Neither yieldToEPDC nor nextTick & friends quite cut it here)...
+        UIManager:scheduleIn(0.001, self.turnOffFrontlight, self)
     end
 end
 
@@ -444,7 +446,7 @@ function KoboPowerD:afterResume()
         -- Don't bother if the light was already off on suspend
         if self.fl_was_on then
             -- Turn the frontlight back on
-            -- NOTE: Funky delay mainly to yield to the EPDC's refresh (yieldToEPDC doesn't quite cut it here)...
+            -- NOTE: There's quite likely *more* resource contention than on suspend here :/.
             UIManager:scheduleIn(0.001, self.turnOnFrontlight, self)
         end
     end
