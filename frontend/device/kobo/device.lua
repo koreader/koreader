@@ -983,8 +983,6 @@ end
 
 -- NOTE: We overload this to make sure checkUnexpectedWakeup doesn't trip *before* the newly scheduled suspend
 function Kobo:rescheduleSuspend()
-    logger.warn("** Kobo:rescheduleSuspend **")
-    print(debug.traceback())
     UIManager:unschedule(self.suspend)
     UIManager:unschedule(self.checkUnexpectedWakeup)
     UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
