@@ -263,7 +263,7 @@ function Exporter:addToMainMenu(menu_items)
                 sub_item_table = submenu,
             },
             {
-                text = _("Choose exporting folder"),
+                text = _("Choose export folder"),
                 keep_menu_open = true,
                 callback = function()
                     self:chooseFolder()
@@ -298,7 +298,7 @@ function Exporter:chooseFolder()
     local clipping_dir = settings.clipping_dir or clipping_dir_default
     local MultiConfirmBox = require("ui/widget/multiconfirmbox")
     local confirm_box = MultiConfirmBox:new{
-        text = T(_("Exporting folder is set to:\n%1\n\nChoose new exporting folder?"), clipping_dir),
+        text = T(_("Export folder is set to:\n%1\n\nChoose new export folder?"), clipping_dir),
         choice1_text = _("Use default"),
         choice1_callback = function()
             settings.clipping_dir = nil
