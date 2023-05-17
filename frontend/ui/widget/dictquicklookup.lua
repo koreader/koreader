@@ -1246,27 +1246,29 @@ function DictQuickLookup:lookupInputWord(hint)
     self.input_dialog = InputDialog:new{
         title = _("Enter a word or phrase to look up"),
         input = hint,
-        input_hint = hint or "",
-        input_type = "text",
+        input_hint = hint,
         buttons = {
             {
                 {
                     text = _("Translate"),
-                    is_enter_default = false,
                     callback = function()
-                        if self.input_dialog:getInputText() == "" then return end
-                        self:closeInputDialog()
-                        Translator:showTranslation(self.input_dialog:getInputText())
+                        local text = self.input_dialog:getInputText()
+                        if text ~= "" then
+                            UIManager:close(self.input_dialog)
+                            Translator:showTranslation(text, true)
+                        end
                     end,
                 },
                 {
                     text = _("Search Wikipedia"),
                     is_enter_default = self.is_wiki,
                     callback = function()
-                        if self.input_dialog:getInputText() == "" then return end
-                        self.is_wiki = true
-                        self:closeInputDialog()
-                        self:inputLookup()
+                        local text = self.input_dialog:getInputText()
+                        if text ~= "" then
+                            UIManager:close(self.input_dialog)
+                            self.is_wiki = true
+                            self:lookupWikipedia(false, text, true)
+                        end
                     end,
                 },
             },
@@ -1275,17 +1277,19 @@ function DictQuickLookup:lookupInputWord(hint)
                     text = _("Cancel"),
                     id = "close",
                     callback = function()
-                        self:closeInputDialog()
+                        UIManager:close(self.input_dialog)
                     end,
                 },
                 {
                     text = _("Search dictionary"),
                     is_enter_default = not self.is_wiki,
                     callback = function()
-                        if self.input_dialog:getInputText() == "" then return end
-                        self.is_wiki = false
-                        self:closeInputDialog()
-                        self:inputLookup()
+                        local text = self.input_dialog:getInputText()
+                        if text ~= "" then
+                            UIManager:close(self.input_dialog)
+                            self.is_wiki = false
+                            self.ui:handleEvent(Event:new("LookupWord", text, true))
+                        end
                     end,
                 },
             },
@@ -1293,22 +1297,6 @@ function DictQuickLookup:lookupInputWord(hint)
     }
     UIManager:show(self.input_dialog)
     self.input_dialog:onShowKeyboard()
-end
-
-function DictQuickLookup:inputLookup()
-    local word = self.input_dialog:getInputText()
-    if word and word ~= "" then
-        -- Trust that input text does not need any cleaning (allows querying for "-suffix")
-        if self.is_wiki then
-            self:lookupWikipedia(false, word, true)
-        else
-            self.ui:handleEvent(Event:new("LookupWord", word, true))
-        end
-    end
-end
-
-function DictQuickLookup:closeInputDialog()
-    UIManager:close(self.input_dialog)
 end
 
 function DictQuickLookup:lookupWikipedia(get_fullpage, word, is_sane, lang)

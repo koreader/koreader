@@ -361,6 +361,8 @@ function ReaderHighlight:addToMainMenu(menu_items)
             end,
         }
     end
+
+    -- main menu Typeset
     menu_items.highlight_options = {
         text = _("Highlight style"),
         sub_item_table = {},
@@ -466,8 +468,8 @@ function ReaderHighlight:addToMainMenu(menu_items)
             sub_item_table = self:genPanelZoomMenu(),
         }
     end
-    menu_items.translation_settings = Translator:genSettingsMenu()
 
+    -- main menu Settings
     menu_items.long_press = {
         text = _("Long-press on text"),
         sub_item_table = {
@@ -533,6 +535,15 @@ function ReaderHighlight:addToMainMenu(menu_items)
         menu_items.selection_text = util.tableDeepCopy(menu_items.long_press)
         menu_items.selection_text.text = _("Select on text")
     end
+
+    -- main menu Search
+    menu_items.translation_settings = Translator:genSettingsMenu()
+    menu_items.translate_current_page = {
+        text = _("Translate current page"),
+        callback = function()
+            self:onTranslateCurrentPage()
+        end,
+    }
 end
 
 function ReaderHighlight:genPanelZoomMenu()
@@ -1373,7 +1384,39 @@ dbg:guard(ReaderHighlight, "translate",
     end)
 
 function ReaderHighlight:onTranslateText(text, page, index)
-    Translator:showTranslation(text, false, false, true, page, index)
+    local doc_props = self.ui.doc_settings:readSetting("doc_props")
+    local doc_lang = doc_props and doc_props.language
+    Translator:showTranslation(text, true, doc_lang, nil, true, page, index)
+end
+
+function ReaderHighlight:onTranslateCurrentPage()
+    local x0, y0, x1, y1, page, is_reflow
+    if self.ui.rolling then
+        x0 = 0
+        y0 = 0
+        x1 = Screen:getWidth()
+        y1 = Screen:getHeight()
+    else
+        page = self.ui:getCurrentPage()
+        is_reflow = self.ui.document.configurable.text_wrap
+        self.ui.document.configurable.text_wrap = 0
+        local page_boxes = self.ui.document:getTextBoxes(page)
+        if page_boxes and page_boxes[1][1].word then
+            x0 = page_boxes[1][1].x0
+            y0 = page_boxes[1][1].y0
+            x1 = page_boxes[#page_boxes][#page_boxes[#page_boxes]].x1
+            y1 = page_boxes[#page_boxes][#page_boxes[#page_boxes]].y1
+        end
+    end
+    local res = x0 and self.ui.document:getTextFromPositions({x = x0, y = y0, page = page}, {x = x1, y = y1}, true)
+    if self.ui.paging then
+        self.ui.document.configurable.text_wrap = is_reflow
+    end
+    if res and res.text then
+        local doc_props = self.ui.doc_settings:readSetting("doc_props")
+        local doc_lang = doc_props and doc_props.language
+        Translator:showTranslation(res.text, false, doc_lang)
+    end
 end
 
 function ReaderHighlight:onHoldRelease()

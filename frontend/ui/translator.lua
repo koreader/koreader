@@ -22,7 +22,7 @@ local T = ffiutil.template
 local _ = require("gettext")
 
 -- From https://cloud.google.com/translate/docs/languages
--- 20181217: 104 supported languages
+-- 20230514: 132 supported languages
 local AUTODETECT_LANGUAGE = "auto"
 local SUPPORTED_LANGUAGES = {
     -- @translators Many of the names for languages can be conveniently found pre-translated in the relevant language of this Wikipedia article: https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
@@ -31,10 +31,14 @@ local SUPPORTED_LANGUAGES = {
     am = _("Amharic"),
     ar = _("Arabic"),
     hy = _("Armenian"),
+    as = _("Assamese"),
+    ay = _("Aymara"),
     az = _("Azerbaijani"),
+    bm = _("Bambara"),
     eu = _("Basque"),
     be = _("Belarusian"),
     bn = _("Bengali"),
+    bho = _("Bhojpuri"),
     bs = _("Bosnian"),
     bg = _("Bulgarian"),
     ca = _("Catalan"),
@@ -45,10 +49,14 @@ local SUPPORTED_LANGUAGES = {
     hr = _("Croatian"),
     cs = _("Czech"),
     da = _("Danish"),
+    dv = _("Dhivehi"),
+    doi = _("Dogri"),
     nl = _("Dutch"),
     en = _("English"),
     eo = _("Esperanto"),
     et = _("Estonian"),
+    ee = _("Ewe"),
+    fil = _("Filipino (Tagalog)"),
     fi = _("Finnish"),
     fr = _("French"),
     fy = _("Frisian"),
@@ -56,6 +64,7 @@ local SUPPORTED_LANGUAGES = {
     ka = _("Georgian"),
     de = _("German"),
     el = _("Greek"),
+    gn = _("Guarani"),
     -- @translators Many of the names for languages can be conveniently found pre-translated in the relevant language of this Wikipedia article: https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
     gu = _("Gujarati"),
     ht = _("Haitian Creole"),
@@ -67,6 +76,7 @@ local SUPPORTED_LANGUAGES = {
     hu = _("Hungarian"),
     is = _("Icelandic"),
     ig = _("Igbo"),
+    ilo = _("Ilocano"),
     id = _("Indonesian"),
     ga = _("Irish"),
     it = _("Italian"),
@@ -76,35 +86,48 @@ local SUPPORTED_LANGUAGES = {
     kn = _("Kannada"),
     kk = _("Kazakh"),
     km = _("Khmer"),
+    rw = _("Kinyarwanda"),
+    gom = _("Konkani"),
     ko = _("Korean"),
+    kri = _("Krio"),
     ku = _("Kurdish"),
+    ckb = _("Kurdish (Sorani)"),
     ky = _("Kyrgyz"),
     lo = _("Lao"),
     la = _("Latin"),
     lv = _("Latvian"),
+    ln = _("Lingala"),
     lt = _("Lithuanian"),
+    lg = _("Luganda"),
     lb = _("Luxembourgish"),
     mk = _("Macedonian"),
+    mai = _("Maithili"),
     mg = _("Malagasy"),
     ms = _("Malay"),
     ml = _("Malayalam"),
     mt = _("Maltese"),
     mi = _("Maori"),
     mr = _("Marathi"),
+    lus = _("Mizo"),
     mn = _("Mongolian"),
     my = _("Myanmar (Burmese)"),
     ne = _("Nepali"),
     no = _("Norwegian"),
     ny = _("Nyanja (Chichewa)"),
+    ["or"] = _("Odia (Oriya)"),
+    om = _("Oromo"),
     ps = _("Pashto"),
     fa = _("Persian"),
     pl = _("Polish"),
     pt = _("Portuguese"),
     pa = _("Punjabi"),
+    qu = _("Quechua"),
     ro = _("Romanian"),
     ru = _("Russian"),
     sm = _("Samoan"),
+    sa = _("Sanskrit"),
     gd = _("Scots Gaelic"),
+    nso = _("Sepedi"),
     sr = _("Serbian"),
     st = _("Sesotho"),
     sn = _("Shona"),
@@ -120,11 +143,17 @@ local SUPPORTED_LANGUAGES = {
     tl = _("Tagalog (Filipino)"),
     tg = _("Tajik"),
     ta = _("Tamil"),
+    tt = _("Tatar"),
     te = _("Telugu"),
     th = _("Thai"),
+    ti = _("Tigrinya"),
+    ts = _("Tsonga"),
     tr = _("Turkish"),
+    tk = _("Turkmen"),
+    ak = _("Twi (Akan)"),
     uk = _("Ukrainian"),
     ur = _("Urdu"),
+    ug = _("Uyghur"),
     uz = _("Uzbek"),
     vi = _("Vietnamese"),
     cy = _("Welsh"),
@@ -278,8 +307,7 @@ This is useful:
 end
 
 function Translator:getDocumentLanguage()
-    local ReaderUI = require("apps/reader/readerui")
-    local ui = ReaderUI:_getRunningInstance()
+    local ui = require("apps/reader/readerui").instance
     if not ui or not ui.document then
         return
     end
@@ -475,16 +503,19 @@ end
 Show translated text in TextViewer, with alternate translations
 
 @string text
-@string target_lang[opt] (`"en"`, `"fr"`, `…`)
+@bool detailed_view "true" to show alternate translation, definition, additional buttons
 @string source_lang[opt="auto"] (`"en"`, `"fr"`, `…`) or `"auto"` to auto-detect source language
+@string target_lang[opt] (`"en"`, `"fr"`, `…`)
 --]]
-function Translator:showTranslation(text, target_lang, source_lang, from_highlight, page, index)
+function Translator:showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, page, index)
     if Device:hasClipboard() then
         Device.input.setClipboardText(text)
     end
 
     local NetworkMgr = require("ui/network/manager")
-    if NetworkMgr:willRerunWhenOnline(function() self:showTranslation(text, target_lang, source_lang, from_highlight, page, index) end) then
+    if NetworkMgr:willRerunWhenOnline(function()
+                self:showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, page, index)
+            end) then
         return
     end
 
@@ -492,11 +523,11 @@ function Translator:showTranslation(text, target_lang, source_lang, from_highlig
     -- translation service query.
     local Trapper = require("ui/trapper")
     Trapper:wrap(function()
-        self:_showTranslation(text, target_lang, source_lang, from_highlight, page, index)
+        self:_showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, page, index)
     end)
 end
 
-function Translator:_showTranslation(text, target_lang, source_lang, from_highlight, page, index)
+function Translator:_showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, page, index)
     if not target_lang then
         target_lang = self:getTargetLanguage()
     end
@@ -527,50 +558,60 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
     local output = {}
     local text_main = ""
 
+    local function is_result_valid(res)
+        return res and type(res) == "table" and #res > 0
+    end
+
     -- For both main and alternate translations, we may get multiple slices
     -- of the original text and its translations.
-    if result[1] and type(result[1]) == "table" and #result[1] > 0 then
+    if is_result_valid(result[1]) then
         -- Main translation: we can make a single string from the multiple parts
         -- for easier quick reading
         local source = {}
         local translated = {}
         for i, r in ipairs(result[1]) do
-            local s = type(r[2]) == "string" and r[2] or ""
+            if detailed_view then
+                local s = type(r[2]) == "string" and r[2] or ""
+                table.insert(source, s)
+            end
             local t = type(r[1]) == "string" and r[1] or ""
-            table.insert(source, s)
             table.insert(translated, t)
         end
-        table.insert(output, "▣ " .. table.concat(source, " "))
-        text_main = "● " .. table.concat(translated, " ")
+        text_main = table.concat(translated, " ")
+        if detailed_view then
+            text_main = "● " .. text_main
+            table.insert(output, "▣ " .. table.concat(source, " "))
+        end
         table.insert(output, text_main)
     end
 
-    if result[6] and type(result[6]) == "table" and #result[6] > 0 then
-        -- Alternative translations:
-        table.insert(output, "________")
-        for i, r in ipairs(result[6]) do
-            if type(r[3]) == "table" then
-                local s = type(r[1]) == "string" and r[1]:gsub("\n", "") or ""
-                table.insert(output, "▣ " .. s)
-                for j, rt in ipairs(r[3]) do
-                    -- Use number in solid black circle symbol (U+2776...277F)
-                    local symbol = util.unicodeCodepointToUtf8(10101 + (j < 10 and j or 10))
-                    local t = type(rt[1]) == "string" and rt[1]:gsub("\n", "") or ""
-                    table.insert(output, symbol .. " " .. t)
+    if detailed_view then
+        if is_result_valid(result[6]) then
+            -- Alternative translations:
+            table.insert(output, "________")
+            for i, r in ipairs(result[6]) do
+                if type(r[3]) == "table" then
+                    local s = type(r[1]) == "string" and r[1]:gsub("\n", "") or ""
+                    table.insert(output, "▣ " .. s)
+                    for j, rt in ipairs(r[3]) do
+                        -- Use number in solid black circle symbol (U+2776...277F)
+                        local symbol = util.unicodeCodepointToUtf8(10101 + (j < 10 and j or 10))
+                        local t = type(rt[1]) == "string" and rt[1]:gsub("\n", "") or ""
+                        table.insert(output, symbol .. " " .. t)
+                    end
                 end
             end
         end
-    end
-
-    if result[13] and type(result[13]) == "table" and #result[13] > 0 then
-        -- Definition(word)
-        table.insert(output, "________")
-        for i, r in ipairs(result[13]) do
-            if r[2] and type(r[2]) == "table" then
-                local symbol = util.unicodeCodepointToUtf8(10101 + (i < 10 and i or 10))
-                table.insert(output, symbol.. " ".. r[1])
-                for j, res in ipairs(r[2]) do
-                    table.insert(output, "\t● ".. res[1])
+        if is_result_valid(result[13]) then
+            -- Definition(word)
+            table.insert(output, "________")
+            for i, r in ipairs(result[13]) do
+                if r[2] and type(r[2]) == "table" then
+                    local symbol = util.unicodeCodepointToUtf8(10101 + (i < 10 and i or 10))
+                    table.insert(output, symbol.. " ".. r[1])
+                    for j, res in ipairs(r[2]) do
+                        table.insert(output, "\t● ".. res[1])
+                    end
                 end
             end
         end
@@ -578,77 +619,80 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
 
     -- table.insert(output, require("dump")(result)) -- for debugging
     local text_all = table.concat(output, "\n")
-    local textviewer
-    local buttons_table = {}
-    if from_highlight then
-        local ui = require("apps/reader/readerui").instance
-        table.insert(buttons_table,
-            {
+
+    local textviewer, height, buttons_table, close_callback
+    if detailed_view then
+        height = math.floor(Screen:getHeight() * 0.8)
+        buttons_table = {}
+        if from_highlight then
+            local ui = require("apps/reader/readerui").instance
+            table.insert(buttons_table,
                 {
-                    text = _("Save main translation to note"),
-                    callback = function()
-                        UIManager:close(textviewer)
-                        UIManager:close(ui.highlight.highlight_dialog)
-                        ui.highlight.highlight_dialog = nil
-                        if page then
-                            ui.highlight:editHighlight(page, index, false, text_main)
-                        else
-                            ui.highlight:addNote(text_main)
-                        end
-                    end,
-                },
+                    {
+                        text = _("Save main translation to note"),
+                        callback = function()
+                            UIManager:close(textviewer)
+                            UIManager:close(ui.highlight.highlight_dialog)
+                            ui.highlight.highlight_dialog = nil
+                            if page then
+                                ui.highlight:editHighlight(page, index, false, text_main)
+                            else
+                                ui.highlight:addNote(text_main)
+                            end
+                        end,
+                    },
+                    {
+                        text = _("Save all to note"),
+                        callback = function()
+                            UIManager:close(textviewer)
+                            UIManager:close(ui.highlight.highlight_dialog)
+                            ui.highlight.highlight_dialog = nil
+                            if page then
+                                ui.highlight:editHighlight(page, index, false, text_all)
+                            else
+                                ui.highlight:addNote(text_all)
+                            end
+                        end,
+                    },
+                }
+            )
+            close_callback = function()
+                if not ui.highlight.highlight_dialog then
+                    ui.highlight:clear()
+                end
+            end
+        end
+        if Device:hasClipboard() then
+            table.insert(buttons_table,
                 {
-                    text = _("Save all to note"),
-                    callback = function()
-                        UIManager:close(textviewer)
-                        UIManager:close(ui.highlight.highlight_dialog)
-                        ui.highlight.highlight_dialog = nil
-                        if page then
-                            ui.highlight:editHighlight(page, index, false, text_all)
-                        else
-                            ui.highlight:addNote(text_all)
-                        end
-                    end,
-                },
-            }
-        )
+                    {
+                        text = _("Copy main translation"),
+                        callback = function()
+                            Device.input.setClipboardText(text_main)
+                        end,
+                    },
+                    {
+                        text = _("Copy all"),
+                        callback = function()
+                            Device.input.setClipboardText(text_all)
+                        end,
+                    },
+                }
+            )
+        end
     end
-    if Device:hasClipboard() then
-        table.insert(buttons_table,
-            {
-                {
-                    text = _("Copy main translation"),
-                    callback = function()
-                        Device.input.setClipboardText(text_main)
-                    end,
-                },
-                {
-                    text = _("Copy all"),
-                    callback = function()
-                        Device.input.setClipboardText(text_all)
-                    end,
-                },
-            }
-        )
-    end
+
     textviewer = TextViewer:new{
         title = T(_("Translation from %1"), self:getLanguageName(source_lang, "?")),
         title_multilines = true,
             -- Showing the translation target language in this title may make
             -- it quite long and wrapped, taking valuable vertical spacing
         text = text_all,
-        height = math.floor(Screen:getHeight() * 0.8),
+        height = height,
         justified = G_reader_settings:nilOrTrue("dict_justify"),
         add_default_buttons = true,
         buttons_table = buttons_table,
-        close_callback = function()
-            if from_highlight then
-                local ui = require("apps/reader/readerui").instance
-                if not ui.highlight.highlight_dialog then
-                    ui.highlight:clear()
-                end
-            end
-        end,
+        close_callback = close_callback,
     }
     UIManager:show(textviewer)
 end

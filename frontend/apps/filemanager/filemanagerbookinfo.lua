@@ -374,8 +374,8 @@ end
 function BookInfo:getCurrentPageLineWordCounts()
     local lines_nb, words_nb = 0, 0
     if self.ui.rolling then
-        local res = self.ui.document._document:getTextFromPositions(0, 0, Screen:getWidth(), Screen:getHeight(),
-            false, false) -- do not highlight
+        local res = self.ui.document:getTextFromPositions({x = 0, y = 0},
+            {x = Screen:getWidth(), y = Screen:getHeight()}, true) -- do not highlight
         if res then
             lines_nb = #self.ui.document:getScreenBoxesFromPositions(res.pos0, res.pos1, true)
             for word in util.gsplit(res.text, "[%s%p]+", false) do
