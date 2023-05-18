@@ -2,6 +2,7 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -21,6 +22,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LanguageSupport = require("languagesupport")
+local Menu = require("ui/widget/menu")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local PluginLoader = require("pluginloader")
 local ReadCollection = require("readcollection")
@@ -514,11 +516,11 @@ function FileManager:tapPlus()
         buttons = {
             {
                 {
-                    text = _("Select all files in folder"),
+                    text = _("Show selected files list"),
+                    enabled = actions_enabled,
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        self.file_chooser:selectAllFilesInFolder()
-                        self:onRefresh()
+                        self:showSelectedFilesList()
                     end,
                 },
                 {
@@ -543,11 +545,10 @@ function FileManager:tapPlus()
             },
             {
                 {
-                    text = _("Deselect all"),
-                    enabled = actions_enabled,
+                    text = _("Select all files in folder"),
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        self.selected_files = {}
+                        self.file_chooser:selectAllFilesInFolder()
                         self:onRefresh()
                     end,
                 },
@@ -573,10 +574,12 @@ function FileManager:tapPlus()
             },
             {
                 {
-                    text = _("Exit select mode"),
+                    text = _("Deselect all"),
+                    enabled = actions_enabled,
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        self:onToggleSelectMode()
+                        self.selected_files = {}
+                        self:onRefresh()
                     end,
                 },
                 {
@@ -594,7 +597,23 @@ function FileManager:tapPlus()
                                 self:onToggleSelectMode()
                             end,
                         })
-                    end
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("Exit select mode"),
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        self:onToggleSelectMode()
+                    end,
+                },
+                {
+                    text = _("Export highlights"),
+                    enabled = (actions_enabled and self.exporter) and true or false,
+                    callback = function()
+                        self.exporter:exportFilesNotes(self.selected_files)
+                    end,
                 },
             },
             {}, -- separator
@@ -1242,6 +1261,41 @@ function FileManager:onShowFolderMenu()
         end,
     }
     UIManager:show(button_dialog)
+end
+
+function FileManager:showSelectedFilesList()
+    local selected_files = {}
+    for file in pairs(self.selected_files) do
+        table.insert(selected_files, { text = file })
+    end
+    local function sorting(a, b)
+        local a_path, a_name = util.splitFilePathName(a.text)
+        local b_path, b_name = util.splitFilePathName(b.text)
+        if a_path == b_path then
+            return BaseUtil.strcoll(a_name, b_name)
+        end
+        return BaseUtil.strcoll(a_path, b_path)
+    end
+    table.sort(selected_files, sorting)
+
+    local menu_container = CenterContainer:new{
+        dimen = Screen:getSize(),
+    }
+    local menu = Menu:new{
+        is_borderless = true,
+        is_popout = false,
+        show_parent = menu_container,
+        onMenuSelect = function(_, item)
+            UIManager:close(menu_container)
+            self.file_chooser:changeToPath(util.splitFilePathName(item.text), item.text)
+        end,
+        close_callback = function()
+            UIManager:close(menu_container)
+        end,
+    }
+    table.insert(menu_container, menu)
+    menu:switchItemTable(T(_("Selected files (%1)"), #selected_files), selected_files)
+    UIManager:show(menu_container)
 end
 
 return FileManager
