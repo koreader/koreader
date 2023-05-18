@@ -171,6 +171,18 @@ function Exporter:exportAllNotes()
     self:exportClippings(clippings)
 end
 
+function Exporter:exportFilesNotes(files)
+-- @table files {[file_path] = true}
+    local clippings = self.parser:parseFiles(files)
+    for title, booknotes in pairs(clippings) do
+        -- chapter number is zero
+        if #booknotes == 0 then
+            clippings[title] = nil
+        end
+    end
+    self:exportClippings(clippings)
+end
+
 function Exporter:exportClippings(clippings)
     if type(clippings) ~= "table" then return end
     local exportables = {}
