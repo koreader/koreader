@@ -1,4 +1,5 @@
 local Generic = require("device/generic/device") -- <= look at this file!
+local UIManager
 local logger = require("logger")
 local ffi = require("ffi")
 local C = ffi.C
@@ -333,8 +334,6 @@ function PocketBook:reboot()
 end
 
 function PocketBook:initNetworkManager(NetworkMgr)
-    local UIManager = require("ui/uimanager")
-
     local function keepWifiAlive()
         -- Make sure only one wifiKeepAlive is scheduled
         UIManager:unschedule(keepWifiAlive)
@@ -386,13 +385,17 @@ function PocketBook:getDefaultCoverPath()
     return "/mnt/ext1/system/logo/offlogo/cover.bmp"
 end
 
-function PocketBook:setEventHandlers(UIManager)
+function PocketBook:UIManagerReady(uimgr)
+    UIManager = uimgr
+end
+
+function PocketBook:setEventHandlers(uimgr)
     -- Only fg/bg state plugin notifiers, not real power event.
     UIManager.event_handlers.Suspend = function()
-        self:_beforeSuspend()
+        self.powerd:beforeSuspend()
     end
     UIManager.event_handlers.Resume = function()
-        self:_afterResume()
+        self.powerd:afterResume()
     end
     UIManager.event_handlers.Exit = function()
         local Event = require("ui/event")

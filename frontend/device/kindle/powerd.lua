@@ -1,4 +1,5 @@
 local BasePowerD = require("device/generic/powerd")
+local UIManager
 local WakeupMgr = require("device/wakeupmgr")
 local logger = require("logger")
 local util = require("util")
@@ -185,7 +186,6 @@ function KindlePowerD:afterResume()
     if not self.device:hasFrontlight() then
         return
     end
-    local UIManager = require("ui/uimanager")
     if self:isFrontlightOn() then
         -- The Kindle framework should turn the front light back on automatically.
         -- The following statement ensures consistency of intensity, but should basically always be redundant,
@@ -249,7 +249,6 @@ function KindlePowerD:initWakeupMgr()
         -- This filters out user input resumes -> device will resume to active
         -- Also the Kindle stays in Ready to suspend for 10 seconds
         -- so the alarm may fire 10 seconds early
-        local UIManager = require("ui/uimanager")
         UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
     end
 
@@ -282,6 +281,22 @@ function KindlePowerD:resetT1Timeout()
     else
         os.execute("lipc-set-prop -i com.lab126.powerd touchScreenSaverTimeout 1")
     end
+end
+
+function KindlePowerD:beforeSuspend()
+    -- Inhibit user input and emit the Suspend event.
+    self.device:_beforeSuspend()
+end
+
+function KindlePowerD:afterResume()
+    self:invalidateCapacityCache()
+
+    -- Restore user input and emit the Resume event.
+    self.device:_afterResume()
+end
+
+function KindlePowerD:UIManagerReadyHW(uimgr)
+    UIManager = uimgr
 end
 
 --- @fixme: This won't ever fire on its own, as KindlePowerD is already a metatable on a plain table.

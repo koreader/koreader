@@ -28,4 +28,16 @@ function SonyPRSTUX_PowerD:isChargingHW()
     return self:read_str_file(self.status_file) == "Charging"
 end
 
+function SonyPRSTUX_PowerD:beforeSuspend()
+    -- Inhibit user input and emit the Suspend event.
+    self.device:_beforeSuspend()
+end
+
+function SonyPRSTUX_PowerD:afterResume()
+    self:invalidateCapacityCache()
+
+    -- Restore user input and emit the Resume event.
+    self.device:_afterResume()
+end
+
 return SonyPRSTUX_PowerD

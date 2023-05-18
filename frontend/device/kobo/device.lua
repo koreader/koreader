@@ -1,6 +1,6 @@
 local Generic = require("device/generic/device")
 local Geom = require("ui/geometry")
-local UIManager -- Updated on UIManager init
+local UIManager
 local WakeupMgr = require("device/wakeupmgr")
 local time = require("ui/time")
 local ffiUtil = require("ffi/util")
@@ -1369,24 +1369,19 @@ function Kobo:isStartupScriptUpToDate()
     return md5.sumFile(current_script) == md5.sumFile(new_script)
 end
 
-function Kobo:setEventHandlers(uimgr)
-    -- Update our module-local
+function Kobo:UIManagerReady(uimgr)
     UIManager = uimgr
+end
 
+function Kobo:setEventHandlers(uimgr)
     -- We do not want auto suspend procedure to waste battery during
     -- suspend. So let's unschedule it when suspending, and restart it after
     -- resume. Done via the plugin's onSuspend/onResume handlers.
     UIManager.event_handlers.Suspend = function()
-        self:_beforeSuspend()
         self:onPowerEvent("Suspend")
     end
     UIManager.event_handlers.Resume = function()
-        -- MONOTONIC doesn't tick during suspend,
-        -- invalidate the last battery capacity pull time so that we get up to date data immediately.
-        self:getPowerDevice():invalidateCapacityCache()
-
         self:onPowerEvent("Resume")
-        self:_afterResume()
     end
     UIManager.event_handlers.PowerPress = function()
         -- Always schedule power off.
@@ -1399,14 +1394,7 @@ function Kobo:setEventHandlers(uimgr)
             -- resume if we were suspended
             if self.screen_saver_mode then
                 if self.screen_saver_lock then
-                    -- This can only happen when some sort of screensaver_delay is set,
-                    -- and the user presses the Power button *after* already having woken up the device.
-                    -- In this case, we want to go back to suspend *without* affecting the screensaver,
-                    -- so we mimic UIManager.event_handlers.Suspend's behavior when *not* in screen_saver_mode ;).
-                    logger.dbg("Pressed power while awake in screen saver mode, going back to suspend...")
-                    self:_beforeSuspend()
-                    self.powerd:beforeSuspend() -- this won't be run by onPowerEvent because we're in screen_saver_mode
-                    self:onPowerEvent("Suspend")
+                    UIManager.event_handlers.Suspend()
                 else
                     UIManager.event_handlers.Resume()
                 end
@@ -1422,7 +1410,7 @@ function Kobo:setEventHandlers(uimgr)
     UIManager.event_handlers.Charging = function()
         self:_beforeCharging()
         -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
-        if self.screen_saver_mode then
+        if self.screen_saver_mode and not self.screen_saver_lock then
            UIManager.event_handlers.Suspend()
         end
     end
@@ -1430,7 +1418,7 @@ function Kobo:setEventHandlers(uimgr)
         -- We need to put the device into suspension, other things need to be done before it.
         self:usbPlugOut()
         self:_afterNotCharging()
-        if self.screen_saver_mode then
+        if self.screen_saver_mode and not self.screen_saver_lock then
            UIManager.event_handlers.Suspend()
         end
     end
@@ -1438,9 +1426,9 @@ function Kobo:setEventHandlers(uimgr)
     UIManager.event_handlers.UsbPlugIn = function()
         self:_beforeCharging()
         -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
-        if self.screen_saver_mode then
+        if self.screen_saver_mode and not self.screen_saver_lock then
             UIManager.event_handlers.Suspend()
-        else
+        elseif not self.screen_saver_lock then
             -- Potentially start an USBMS session
             local MassStorage = require("ui/elements/mass_storage")
             MassStorage:start()
@@ -1450,9 +1438,9 @@ function Kobo:setEventHandlers(uimgr)
         -- We need to put the device into suspension, other things need to be done before it.
         self:usbPlugOut()
         self:_afterNotCharging()
-        if self.screen_saver_mode then
+        if self.screen_saver_mode and not self.screen_saver_lock then
             UIManager.event_handlers.Suspend()
-        else
+        elseif not self.screen_saver_lock then
             -- Potentially dismiss the USBMS ConfirmBox
             local MassStorage = require("ui/elements/mass_storage")
             MassStorage:dismiss()

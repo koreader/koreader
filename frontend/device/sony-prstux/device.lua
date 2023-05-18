@@ -1,5 +1,6 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local PluginShare = require("pluginshare")
+local UIManager
 local ffi = require("ffi")
 local logger = require("logger")
 
@@ -102,7 +103,6 @@ function SonyPRSTUX:outofScreenSaver()
     if self.screen_saver_mode then
         local Screensaver = require("ui/screensaver")
         Screensaver:close()
-        local UIManager = require("ui/uimanager")
         UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
     end
     self.powerd:afterResume()
@@ -190,16 +190,18 @@ function SonyPRSTUX:getDeviceModel()
     return ffi.string("PRS-T2")
 end
 
-function SonyPRSTUX:setEventHandlers(UIManager)
+function SonyPRSTUX:UIManagerReady(uimgr)
+    UIManager = uimgr
+end
+
+function SonyPRSTUX:setEventHandlers(uimgr)
     UIManager.event_handlers.Suspend = function()
-        self:_beforeSuspend()
         self:intoScreenSaver()
         self:suspend()
     end
     UIManager.event_handlers.Resume = function()
         self:resume()
         self:outofScreenSaver()
-        self:_afterResume()
     end
     UIManager.event_handlers.PowerPress = function()
         UIManager:scheduleIn(2, UIManager.poweroff_action)
@@ -209,7 +211,11 @@ function SonyPRSTUX:setEventHandlers(UIManager)
             UIManager:unschedule(UIManager.poweroff_action)
             -- resume if we were suspended
             if self.screen_saver_mode then
-                UIManager.event_handlers.Resume()
+                if self.screen_saver_lock then
+                    UIManager.event_handlers.Suspend()
+                else
+                    UIManager.event_handlers.Resume()
+                end
             else
                 UIManager.event_handlers.Suspend()
             end
@@ -222,21 +228,14 @@ function SonyPRSTUX:setEventHandlers(UIManager)
         self:_afterNotCharging()
     end
     UIManager.event_handlers.UsbPlugIn = function()
-        if self.screen_saver_mode then
+        if self.screen_saver_mode and not self.screen_saver_lock then
             self:resume()
             self:outofScreenSaver()
-            self:_afterResume()
         end
         self:usbPlugIn()
     end
     UIManager.event_handlers.UsbPlugOut = function()
         self:usbPlugOut()
-    end
-    UIManager.event_handlers.__default__ = function(input_event)
-        -- Same as in Kobo: we want to ignore keys during suspension
-        if not self.screen_saver_mode then
-            UIManager:sendEvent(input_event)
-        end
     end
 end
 

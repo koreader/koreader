@@ -1,8 +1,8 @@
-local UIManager = nil -- will be updated when available
 local BasePowerD = require("device/generic/powerd")
 local Math = require("optmath")
 local NickelConf = require("device/kobo/nickel_conf")
 local SysfsLight = require ("device/sysfs_light")
+local UIManager
 local RTC = require("ffi/rtc")
 
 -- Here, we only deal with the real hw intensity.
@@ -415,26 +415,44 @@ end
 
 -- Turn off front light before suspend.
 function KoboPowerD:beforeSuspend()
-    if self.fl == nil then return end
-    -- Remember the current frontlight state
-    self.fl_was_on = self.is_fl_on
-    -- Turn off the frontlight
-    self:turnOffFrontlight()
+    -- Inhibit user input and emit the Suspend event.
+    self.device:_beforeSuspend()
+
+    -- Handle the frontlight last,
+    -- to prevent as many things as we can from interfering with the smoothness of the ramp
+    if self.fl then
+        -- Remember the current frontlight state
+        self.fl_was_on = self.is_fl_on
+        -- Turn off the frontlight
+        -- NOTE: Funky delay mainly to yield to the EPDC's refresh on UP systems.
+        --       (Neither yieldToEPDC nor nextTick & friends quite cut it here)...
+        UIManager:scheduleIn(0.001, self.turnOffFrontlight, self)
+    end
 end
 
 -- Restore front light state after resume.
 function KoboPowerD:afterResume()
-    if self.fl == nil then return end
-    -- Don't bother if the light was already off on suspend
-    if not self.fl_was_on then return end
-    -- Turn the frontlight back on
-    self:turnOnFrontlight()
-
     -- Set the system clock to the hardware clock's time.
     RTC:HCToSys()
+
+    self:invalidateCapacityCache()
+
+    -- Restore user input and emit the Resume event.
+    self.device:_afterResume()
+
+    -- There's a whole bunch of stuff happening before us in Generic:onPowerEvent,
+    -- so we'll delay this ever so slightly so as to appear as smooth as possible...
+    if self.fl then
+        -- Don't bother if the light was already off on suspend
+        if self.fl_was_on then
+            -- Turn the frontlight back on
+            -- NOTE: There's quite likely *more* resource contention than on suspend here :/.
+            UIManager:scheduleIn(0.001, self.turnOnFrontlight, self)
+        end
+    end
 end
 
-function KoboPowerD:readyUIHW(uimgr)
+function KoboPowerD:UIManagerReadyHW(uimgr)
     UIManager = uimgr
 end
 

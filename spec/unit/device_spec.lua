@@ -7,17 +7,24 @@ describe("device module", function()
     local ffi, C
 
     setup(function()
+        local fb = require("ffi/framebuffer")
         mock_fb = {
             new = function()
                 return {
+                    device = package.loaded.device,
+                    bb = require("ffi/blitbuffer").new(600, 800, 1),
                     getRawSize = function() return {w = 600, h = 800} end,
                     getWidth = function() return 600 end,
+                    getHeight = function() return 800 end,
                     getDPI = function() return 72 end,
                     setViewport = function() end,
                     getRotationMode = function() return 0 end,
                     getScreenMode = function() return "portrait" end,
                     setRotationMode = function() end,
-                    scaleByDPI = function(this, dp) return math.ceil(dp * this:getDPI() / 160) end,
+                    scaleByDPI = fb.scaleByDPI,
+                    scaleBySize = fb.scaleBySize,
+                    setWindowTitle = function() end,
+                    refreshFull = function() end,
                 }
             end
         }
@@ -38,8 +45,15 @@ describe("device module", function()
     end)
 
     after_each(function()
+        -- Don't let UIManager hang on to a stale Device reference, and vice-versa...
+        package.unload("device")
+        package.unload("device/generic/device")
+        package.unload("device/generic/powerd")
+        package.unload("ui/uimanager")
+        package.unload("apps/reader/readerui")
         mock_input.open:revert()
         os.getenv:revert()
+        os.execute:revert()
 
         os.getenv = osgetenv
         io.open = iopen
@@ -327,24 +341,31 @@ describe("device module", function()
             os.getenv.invokes(function(key)
                 if key == "PRODUCT" then
                     return "trilogy"
+                elseif key == "MODEL_NUMBER" then
+                    return "320"
                 else
                     return osgetenv(key)
                 end
             end)
-            local sample_pdf = "spec/front/unit/data/tall.pdf"
-            local ReaderUI = require("apps/reader/readerui")
-            local device_to_test = require("device/kobo/device")
-            local Device = require("device")
-            Device.setEventHandlers = device_to_test.setEventHandlers
+            -- Bypass frontend/device probeDevice, while making sure that it points to the right implementation
+            local Device = require("device/kobo/device")
+            -- Apparently common isn't setup properly in the testsuite, so we can't have nice things
+            stub(Device, "initNetworkManager")
+            stub(Device, "suspend")
+            Device:init()
+            -- Don't poke the RTC
+            Device.wakeup_mgr = require("device/wakeupmgr"):new{rtc = require("device/kindle/mockrtc")}
+            -- Don't poke the fl
+            Device.powerd.fl = nil
+            package.loaded.device = Device
 
             local UIManager = require("ui/uimanager")
-            stub(Device, "suspend")
-            stub(Device.powerd, "beforeSuspend")
-            stub(Device, "isKobo")
-
-            Device.isKobo.returns(true)
+            -- Generic's onPowerEvent may request a repaint, but we can't do that
+            stub(UIManager, "forceRePaint")
             UIManager:init()
 
+            local sample_pdf = "spec/front/unit/data/tall.pdf"
+            local ReaderUI = require("apps/reader/readerui")
             ReaderUI:doShowReader(sample_pdf)
             local readerui = ReaderUI._getRunningInstance()
             stub(readerui, "onFlushSettings")
@@ -352,9 +373,9 @@ describe("device module", function()
             UIManager.event_handlers.PowerRelease()
             assert.stub(readerui.onFlushSettings).was_called()
 
+            UIManager.forceRePaint:revert()
+            Device.initNetworkManager:revert()
             Device.suspend:revert()
-            Device.powerd.beforeSuspend:revert()
-            Device.isKobo:revert()
             readerui.onFlushSettings:revert()
             Device.screen_saver_mode = false
             readerui:onClose()
@@ -374,21 +395,19 @@ describe("device module", function()
                 end
             end
 
-            local sample_pdf = "spec/front/unit/data/tall.pdf"
-            local ReaderUI = require("apps/reader/readerui")
-            local Device = require("device")
-            local device_to_test = require("device/cervantes/device")
-            Device.setEventHandlers = device_to_test.setEventHandlers
+            local Device = require("device/cervantes/device")
+            stub(Device, "initNetworkManager")
+            stub(Device, "suspend")
+            Device:init()
+            Device.powerd.fl = nil
+            package.loaded.device = Device
 
             local UIManager = require("ui/uimanager")
-
-            stub(Device, "suspend")
-            stub(Device.powerd, "beforeSuspend")
-            stub(Device, "isCervantes")
-
-            Device.isCervantes.returns(true)
+            stub(UIManager, "forceRePaint")
             UIManager:init()
 
+            local sample_pdf = "spec/front/unit/data/tall.pdf"
+            local ReaderUI = require("apps/reader/readerui")
             ReaderUI:doShowReader(sample_pdf)
             local readerui = ReaderUI._getRunningInstance()
             stub(readerui, "onFlushSettings")
@@ -396,40 +415,9 @@ describe("device module", function()
             UIManager.event_handlers.PowerRelease()
             assert.stub(readerui.onFlushSettings).was_called()
 
+            UIManager.forceRePaint:revert()
+            Device.initNetworkManager:revert()
             Device.suspend:revert()
-            Device.powerd.beforeSuspend:revert()
-            Device.isCervantes:revert()
-            readerui.onFlushSettings:revert()
-            Device.screen_saver_mode = false
-            readerui:onClose()
-        end)
-
-        it("SDL", function()
-            local sample_pdf = "spec/front/unit/data/tall.pdf"
-            local ReaderUI = require("apps/reader/readerui")
-            local Device = require("device")
-            local device_to_test = require("device/sdl/device")
-            Device.setEventHandlers = device_to_test.setEventHandlers
-
-            local UIManager = require("ui/uimanager")
-
-            stub(Device, "suspend")
-            stub(Device.powerd, "beforeSuspend")
-            stub(Device, "isSDL")
-
-            Device.isSDL.returns(true)
-            UIManager:init()
-
-            ReaderUI:doShowReader(sample_pdf)
-            local readerui = ReaderUI._getRunningInstance()
-            stub(readerui, "onFlushSettings")
-            UIManager.event_handlers.PowerPress()
-            UIManager.event_handlers.PowerRelease()
-            assert.stub(readerui.onFlushSettings).was_called()
-
-            Device.suspend:revert()
-            Device.powerd.beforeSuspend:revert()
-            Device.isSDL:revert()
             readerui.onFlushSettings:revert()
             Device.screen_saver_mode = false
             readerui:onClose()
@@ -455,21 +443,19 @@ describe("device module", function()
                     return iopen(filename, mode)
                 end
             end
-            local sample_pdf = "spec/front/unit/data/tall.pdf"
-            local ReaderUI = require("apps/reader/readerui")
-            local Device = require("device")
-            local device_to_test = require("device/remarkable/device")
-            Device.setEventHandlers = device_to_test.setEventHandlers
+            local Device = require("device/remarkable/device")
+            stub(Device, "initNetworkManager")
+            stub(Device, "suspend")
+            Device:init()
+            Device.powerd.fl = nil
+            package.loaded.device = Device
 
             local UIManager = require("ui/uimanager")
-
-            stub(Device, "suspend")
-            stub(Device.powerd, "beforeSuspend")
-            stub(Device, "isRemarkable")
-
-            Device.isRemarkable.returns(true)
+            stub(UIManager, "forceRePaint")
             UIManager:init()
 
+            local sample_pdf = "spec/front/unit/data/tall.pdf"
+            local ReaderUI = require("apps/reader/readerui")
             ReaderUI:doShowReader(sample_pdf)
             local readerui = ReaderUI._getRunningInstance()
             stub(readerui, "onFlushSettings")
@@ -477,9 +463,35 @@ describe("device module", function()
             UIManager.event_handlers.PowerRelease()
             assert.stub(readerui.onFlushSettings).was_called()
 
+            UIManager.forceRePaint:revert()
+            Device.initNetworkManager:revert()
             Device.suspend:revert()
-            Device.powerd.beforeSuspend:revert()
-            Device.isRemarkable:revert()
+            readerui.onFlushSettings:revert()
+            Device.screen_saver_mode = false
+            readerui:onClose()
+        end)
+
+        it("SDL", function()
+            local Device = require("device/sdl/device")
+            stub(Device, "initNetworkManager")
+            stub(Device, "suspend")
+            Device:init()
+            package.loaded.device = Device
+
+            local UIManager = require("ui/uimanager")
+            UIManager:init()
+
+            local sample_pdf = "spec/front/unit/data/tall.pdf"
+            local ReaderUI = require("apps/reader/readerui")
+            ReaderUI:doShowReader(sample_pdf)
+            local readerui = ReaderUI._getRunningInstance()
+            stub(readerui, "onFlushSettings")
+            -- UIManager.event_handlers.PowerPress() -- We only fake a Release event on the Emu
+            UIManager.event_handlers.PowerRelease()
+            assert.stub(readerui.onFlushSettings).was_called()
+
+            Device.initNetworkManager:revert()
+            Device.suspend:revert()
             readerui.onFlushSettings:revert()
             Device.screen_saver_mode = false
             readerui:onClose()

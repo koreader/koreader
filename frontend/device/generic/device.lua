@@ -5,7 +5,9 @@ This module defines stubs for common methods.
 --]]
 
 local DataStorage = require("datastorage")
+local Event = require("ui/event")
 local Geom = require("ui/geometry")
+local UIManager -- Updated on UIManager init
 local logger = require("logger")
 local ffi = require("ffi")
 local time = require("ui/time")
@@ -259,7 +261,6 @@ function Device:getPowerDevice()
 end
 
 function Device:rescheduleSuspend()
-    local UIManager = require("ui/uimanager")
     UIManager:unschedule(self.suspend)
     UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
 end
@@ -270,11 +271,11 @@ function Device:onPowerEvent(ev)
     if self.screen_saver_mode then
         if ev == "Power" or ev == "Resume" then
             if self.is_cover_closed then
-                -- don't let power key press wake up device when the cover is in closed state.
+                -- Don't let power key press wake up device when the cover is in closed state.
+                logger.dbg("Pressed power while asleep in screen saver mode with a closed sleepcover, going back to suspend...")
                 self:rescheduleSuspend()
             else
                 logger.dbg("Resuming...")
-                local UIManager = require("ui/uimanager")
                 UIManager:unschedule(self.suspend)
                 if self:hasWifiManager() then
                     local network_manager = require("ui/network/manager")
@@ -291,10 +292,21 @@ function Device:onPowerEvent(ev)
                 self.powerd:afterResume()
             end
         elseif ev == "Suspend" then
-            -- Already in screen saver mode, no need to update UI/state before
-            -- suspending the hardware. This usually happens when sleep cover
-            -- is closed after the device was sent to suspend state.
-            logger.dbg("Already in screen saver mode, going back to suspend...")
+            -- Already in screen saver mode, no need to update the UI (and state, usually) before suspending again.
+            -- This usually happens when the sleep cover is closed on an already sleeping device,
+            -- (e.g., it was previously suspended via the Power button).
+            if self.screen_saver_lock then
+                -- This can only happen when some sort of screensaver_delay is set,
+                -- and the user presses the Power button *after* already having woken up the device.
+                -- In this case, we want to go back to suspend *without* affecting the screensaver,
+                -- so we simply mimic our own behavior when *not* in screen_saver_mode ;).
+                logger.dbg("Pressed power while awake in screen saver mode, going back to suspend...")
+                -- Basically, this is the only difference.
+                -- We need it because we're actually in a sane post-Resume event state right now.
+                self.powerd:beforeSuspend()
+            else
+                logger.dbg("Already in screen saver mode, going back to suspend...")
+            end
             -- Much like the real suspend codepath below, in case we got here via screen_saver_lock,
             -- make sure we murder WiFi again (because restore WiFi on resume could have kicked in).
             if self:hasWifiToggle() then
@@ -308,7 +320,6 @@ function Device:onPowerEvent(ev)
         end
     -- else we were not in screensaver mode
     elseif ev == "Power" or ev == "Suspend" then
-        local UIManager = require("ui/uimanager")
         logger.dbg("Suspending...")
         -- Add the current state of the SleepCover flag...
         logger.dbg("Sleep cover is", self.is_cover_closed and "closed" or "open")
@@ -348,7 +359,6 @@ end
 
 function Device:showLightDialog()
     local FrontLightWidget = require("ui/widget/frontlightwidget")
-    local UIManager = require("ui/uimanager")
     UIManager:show(FrontLightWidget:new{})
 end
 
@@ -357,8 +367,6 @@ function Device:info()
 end
 
 function Device:install()
-    local Event = require("ui/event")
-    local UIManager = require("ui/uimanager")
     local ConfirmBox = require("ui/widget/confirmbox")
     UIManager:show(ConfirmBox:new{
         text = _("Update is ready. Install it now?"),
@@ -925,8 +933,28 @@ function Device:untar(archive, extract_to, with_stripped_root)
     return os.execute(cmd:format(archive, extract_to))
 end
 
+-- Update our UIManager reference once it's ready
+function Device:_UIManagerReady(uimgr)
+    -- Our own ref
+    UIManager = uimgr
+    -- Let implementations do the same thing
+    self:UIManagerReady(uimgr)
+
+    -- Forward that to PowerD
+    self.powerd:UIManagerReady(uimgr)
+
+    -- And to Input
+    self.input:UIManagerReady(uimgr)
+
+    -- Setup PM event handlers
+    -- NOTE: We keep forwarding the uimgr reference because some implementations don't actually have a module-local UIManager ref to update
+    self:_setEventHandlers(uimgr)
+end
+-- In case implementations *also* need a reference to UIManager, *this* is the one to implement!
+function Device:UIManagerReady(uimgr) end
+
 -- Set device event handlers common to all devices
-function Device:_setEventHandlers(UIManager)
+function Device:_setEventHandlers(uimgr)
     if self:canReboot() then
         UIManager.event_handlers.Reboot = function(message_text)
             local ConfirmBox = require("ui/widget/confirmbox")
@@ -934,7 +962,6 @@ function Device:_setEventHandlers(UIManager)
                 text = message_text or _("Are you sure you want to reboot the device?"),
                 ok_text = _("Reboot"),
                 ok_callback = function()
-                    local Event = require("ui/event")
                     UIManager:broadcastEvent(Event:new("Reboot"))
                     UIManager:nextTick(UIManager.reboot_action)
                 end,
@@ -951,7 +978,6 @@ function Device:_setEventHandlers(UIManager)
                 text = message_text or _("Are you sure you want to power off the device?"),
                 ok_text = _("Power off"),
                 ok_callback = function()
-                    local Event = require("ui/event")
                     UIManager:broadcastEvent(Event:new("PowerOff"))
                     UIManager:nextTick(UIManager.poweroff_action)
                 end,
@@ -968,7 +994,6 @@ function Device:_setEventHandlers(UIManager)
                 text = message_text or _("This will take effect on next restart."),
                 ok_text = _("Restart now"),
                 ok_callback = function()
-                    local Event = require("ui/event")
                     UIManager:broadcastEvent(Event:new("Restart"))
                 end,
                 cancel_text = _("Restart later"),
@@ -983,24 +1008,23 @@ function Device:_setEventHandlers(UIManager)
         end
     end
 
-    self:setEventHandlers(UIManager)
+    -- Let implementations expand on that
+    self:setEventHandlers(uimgr)
 end
 
--- Devices can add additional event handlers by overwriting this method.
-function Device:setEventHandlers(UIManager)
-    -- These will be most probably overwritten in the device specific `setEventHandlers`
+-- Devices can add additional event handlers by implementing this method.
+function Device:setEventHandlers(uimgr)
+    -- These will most probably be overwritten by device-specific `setEventHandlers` implementations
     UIManager.event_handlers.Suspend = function()
-        self:_beforeSuspend(false)
+        self.powerd:beforeSuspend()
     end
     UIManager.event_handlers.Resume = function()
-        self:_afterResume(false)
+        self.powerd:afterResume()
     end
 end
 
 -- The common operations that should be performed before suspending the device.
 function Device:_beforeSuspend(inhibit)
-    local Event = require("ui/event")
-    local UIManager = require("ui/uimanager")
     UIManager:flushSettings()
     UIManager:broadcastEvent(Event:new("Suspend"))
 
@@ -1023,16 +1047,12 @@ function Device:_afterResume(inhibit)
         self.input:inhibitInput(false)
     end
 
-    local Event = require("ui/event")
-    local UIManager = require("ui/uimanager")
     UIManager:broadcastEvent(Event:new("Resume"))
 end
 
 -- The common operations that should be performed when the device is plugged to a power source.
 function Device:_beforeCharging()
     -- Leave the kernel some time to figure it out ;o).
-    local Event = require("ui/event")
-    local UIManager = require("ui/uimanager")
     UIManager:scheduleIn(1, function() self:setupChargingLED() end)
     UIManager:broadcastEvent(Event:new("Charging"))
 end
@@ -1040,8 +1060,6 @@ end
 -- The common operations that should be performed when the device is unplugged from a power source.
 function Device:_afterNotCharging()
     -- Leave the kernel some time to figure it out ;o).
-    local Event = require("ui/event")
-    local UIManager = require("ui/uimanager")
     UIManager:scheduleIn(1, function() self:setupChargingLED() end)
     UIManager:broadcastEvent(Event:new("NotCharging"))
 end
