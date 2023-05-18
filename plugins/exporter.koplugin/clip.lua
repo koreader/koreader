@@ -328,6 +328,16 @@ function MyClipping:parseHistory()
     return clippings
 end
 
+function MyClipping:parseFiles(files)
+    local clippings = {}
+    for file in pairs(files) do
+        if DocSettings:hasSidecarFile(file) then
+            self:getClippingsFromBook(clippings, file)
+        end
+    end
+    return clippings
+end
+
 function MyClipping:getProps(file)
     local document = DocumentRegistry:openDocument(file)
     local book_props = nil
