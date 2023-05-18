@@ -63,6 +63,9 @@ Loads settings for the exporter
 function BaseExporter:loadSettings()
     local plugin_settings = G_reader_settings:readSetting("exporter") or {}
     self.settings = plugin_settings[self.name] or {}
+    if plugin_settings.clipping_dir then
+        self.clipping_dir = plugin_settings.clipping_dir
+    end
 end
 
 --[[--
