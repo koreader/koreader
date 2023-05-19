@@ -1,28 +1,29 @@
---[[
- Export highlights to different targets.
+--[[--
+Export highlights to different targets.
 
- Some conventions:
+Some conventions:
 
- - Target: each local format or remote service this plugin can translate to.
+- Target: each local format or remote service this plugin can translate to.
 
- Each new target should inherit from "formats/base" and implement *at least* an export function.
+Each new target should inherit from "formats/base" and implement *at least* an export function.
 
- - Highlight: Text or image in document. Stored in "highlights" table of documents sidecar file.
+- Highlight: Text or image in document. Stored in "highlights" table of documents sidecar file.
 
- Parser uses this table.
- If highlight._._.text field is empty the parser uses highlight._._.pboxes field to get an image instead.
+Parser uses this table.
+If highlight._._.text field is empty the parser uses highlight._._.pboxes field to get an image instead.
 
- - Bookmarks: Data in bookmark explorer. Stored in "bookmarks" table of documents sidecar file.
+- Bookmarks: Data in bookmark explorer. Stored in "bookmarks" table of documents sidecar file.
 
- Every field in bookmarks._ has "text" and "notes" fields.
- When user edits a highlight or "renames" bookmark the text field is created or updated.
- The parser looks to bookmarks._.text field for edited notes. bookmarks._.notes isn't used for exporting operations.
+Every field in bookmarks._ has "text" and "notes" fields.
+When user edits a highlight or "renames" bookmark the text field is created or updated.
+The parser looks to bookmarks._.text field for edited notes. bookmarks._.notes isn't used for exporting operations.
 
- - Clippings: Parsed form of highlights. Single table for all documents.
+- Clippings: Parsed form of highlights. Single table for all documents.
 
- - Booknotes: Every table in clippings table. clippings = {"title" = booknotes}
+- Booknotes: Every table in clippings table. clippings = {"title" = booknotes}
 
---]]
+@module koplugin.exporter
+--]]--
 
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -174,7 +175,7 @@ function Exporter:exportAllNotes()
 end
 
 --- Parse and export highlights from selected documents.
--- @tparam table files list of files 'file_path = true'
+-- @tparam table files list of files as a table of {[file_path] = true}
 function Exporter:exportFilesNotes(files)
     local clippings = self.parser:parseFiles(files)
     for title, booknotes in pairs(clippings) do
