@@ -151,11 +151,14 @@ function Exporter:getDocumentClippings()
     return self.parser:parseCurrentDoc(self.view) or {}
 end
 
+--- Parse and export highlights from the currently opened document.
 function Exporter:exportCurrentNotes()
     local clippings = self:getDocumentClippings()
     self:exportClippings(clippings)
 end
 
+--- Parse and export highlights from all the documents in History
+-- and from the Kindle "My Clippings.txt".
 function Exporter:exportAllNotes()
     local clippings = {}
     clippings = updateHistoryClippings(clippings, self.parser:parseHistory())
@@ -171,8 +174,9 @@ function Exporter:exportAllNotes()
     self:exportClippings(clippings)
 end
 
+--- Parse and export highlights from selected documents.
+-- @tparam table files list of files as a table of {[file_path] = true}
 function Exporter:exportFilesNotes(files)
--- @table files {[file_path] = true}
     local clippings = self.parser:parseFiles(files)
     for title, booknotes in pairs(clippings) do
         -- chapter number is zero
