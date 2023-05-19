@@ -174,7 +174,7 @@ function Exporter:exportAllNotes()
 end
 
 --- Parse and export highlights from selected documents.
--- @tparam table files list of files as a table of {[file_path] = true}
+-- @tparam table files list of files 'file_path = true'
 function Exporter:exportFilesNotes(files)
     local clippings = self.parser:parseFiles(files)
     for title, booknotes in pairs(clippings) do
