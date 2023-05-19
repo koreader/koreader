@@ -1218,6 +1218,12 @@ table {
     -- OEBPS/content.html
     -- Some small fixes to Wikipedia HTML to make crengine and the user happier
 
+    -- In some articles' HTML, we may get <link rel="mw-deduplicated-inline-style" href="mw-data...">
+    -- (which, by specs, is an empty element) without the proper empty tag ending "/>", which
+    -- would cause crengine's EPUB XHTML parser to wait for a proper </link>, hiding all the
+    -- following content... So, just remove them, as we don't make any use of them.
+    html = html:gsub("<link [^>]*>", "")
+
     -- Most images are in a link to the image info page, which is a useless
     -- external link for us, so let's remove this link.
     html = html:gsub("<a[^>]*>%s*(<%s*img [^>]*>)%s*</a>", "%1")
