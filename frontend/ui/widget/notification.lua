@@ -251,4 +251,13 @@ function Notification:onGesture(ev)
     return InputContainer.onGesture(self, ev)
 end
 
+-- Since toasts do *not* prevent event propagation, if we let this go through to InputContainer, shit happens...
+function Notification:onIgnoreTouchInput(toggle)
+    return true
+end
+-- Do the same for other Events caught by our base class
+Notification.onResume = Notification.onIgnoreTouchInput
+Notification.onPhysicalKeyboardDisconnected = Notification.onIgnoreTouchInput
+Notification.onInput = Notification.onIgnoreTouchInput
+
 return Notification
