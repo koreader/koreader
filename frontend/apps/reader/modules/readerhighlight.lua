@@ -1393,7 +1393,7 @@ function ReaderHighlight:getDocumentLanguage()
 end
 
 function ReaderHighlight:onTranslateText(text, page, index)
-    Translator:showTranslation(text, true, self:getDocumentLanguage(), nil, true, page, index)
+    Translator:showTranslation(text, true, nil, nil, true, page, index)
 end
 
 function ReaderHighlight:onTranslateCurrentPage()
