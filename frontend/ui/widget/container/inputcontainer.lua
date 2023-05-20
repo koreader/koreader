@@ -323,9 +323,9 @@ function InputContainer:onIgnoreTouchInput(toggle)
     else
         -- Toggle the current state
         if InputContainer._onGesture then
-            self:onIgnoreTouchInput(false)
+            return self:onIgnoreTouchInput(false)
         else
-            self:onIgnoreTouchInput(true)
+            return self:onIgnoreTouchInput(true)
         end
     end
 
