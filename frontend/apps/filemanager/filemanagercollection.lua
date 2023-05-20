@@ -105,7 +105,7 @@ function FileManagerCollection:onMenuHold(item)
     if Device:canExecuteScript(item.file) then
         local function button_callback()
             UIManager:close(self.collfile_dialog)
-            self.coll_menu.close_callback()
+            self._manager.coll_menu.close_callback()
         end
         table.insert(buttons, {
             filemanagerutil.genExecuteScriptButton(item.file, button_callback)
