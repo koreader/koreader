@@ -1,6 +1,8 @@
 local RequestFactory = require("libs/http/requestfactory")
 local FeedError = require("feed/feederror")
 
+local util = require("frontend/util")
+
 local Entry = {
 
 }
@@ -16,7 +18,7 @@ end
 Entry.extend = Entry.new
 
 function Entry:getTitle()
-   return self.title
+   return util.trim(self.title)
 end
 
 function Entry:getSummary()
