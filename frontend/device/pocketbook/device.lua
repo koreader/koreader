@@ -646,8 +646,8 @@ function PocketBook741._fb_init(fb, finfo, vinfo)
     vinfo.bits_per_pixel = 24
 end
 
--- PocketBook InkPad 4 (743G)
-local PocketBook743G = PocketBook:extend{
+-- PocketBook InkPad 4 (743g)
+local PocketBook743g = PocketBook:extend{
     model = "PBInkPad4",
     display_dpi = 300,
     isAlwaysPortrait = yes,
@@ -757,8 +757,8 @@ elseif codename == "PB740-2" or codename == "PB740-3" then
     return PocketBook740_2
 elseif codename == "PB741" then
     return PocketBook741
-elseif codename == "PB743G" or codename == "PocketBook 743G" then
-    return PocketBook743G
+elseif codename == "PB743g" or codename == "PocketBook 743g" then
+    return PocketBook743g
 elseif codename == "PocketBook 840" then
     return PocketBook840
 elseif codename == "PB970" then
