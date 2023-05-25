@@ -227,7 +227,7 @@ function KindlePowerD:checkUnexpectedWakeup()
     -- then we were woken by user input not our alarm.
     if state ~= "screenSaver" and state ~= "suspended" then return end
 
-    if self.device.wakeup_mgr:isWakeupAlarmScheduled() and self.device.wakeup_mgr:wakeupAction() then
+    if self.device.wakeup_mgr:isWakeupAlarmScheduled() and self.device.wakeup_mgr:wakeupAction(90) then
         logger.info("Kindle scheduled wakeup")
     else
         logger.warn("Kindle unscheduled wakeup")
