@@ -24,16 +24,15 @@ local N_ = _.ngettext
 local Screen = require("device").screen
 local T = require("ffi/util").template
 
--- mark the type of a bookmark with a symbol + non-expandable space
-local DISPLAY_PREFIX = {
-    highlight = "\u{2592}\u{2002}", -- "medium shade"
-    note = "\u{F040}\u{2002}", -- "pencil"
-    bookmark = "\u{F097}\u{2002}", -- "empty bookmark"
-}
-
 local ReaderBookmark = InputContainer:extend{
     bookmarks_items_per_page_default = 14,
     bookmarks = nil,
+    -- mark the type of a bookmark with a symbol + non-expandable space
+    display_prefix = {
+        highlight = "\u{2592}\u{2002}", -- "medium shade"
+        note = "\u{F040}\u{2002}", -- "pencil"
+        bookmark = "\u{F097}\u{2002}", -- "empty bookmark"
+    },
 }
 
 function ReaderBookmark:init()
@@ -437,7 +436,7 @@ function ReaderBookmark:onShowBookmark(match_table)
         item.type = self:getBookmarkType(item)
         if not match_table or self:doesBookmarkMatchTable(item, match_table) then
             item.text_orig = item.text or item.notes
-            item.text = DISPLAY_PREFIX[item.type] .. item.text_orig
+            item.text = self.display_prefix[item.type] .. item.text_orig
             item.mandatory = self:getBookmarkPageString(item.page)
             if (not is_reverse_sorting and i >= curr_page_index) or (is_reverse_sorting and i <= curr_page_index) then
                 item.after_curr_page = true
@@ -517,7 +516,7 @@ function ReaderBookmark:onShowBookmark(match_table)
         if item.type == "bookmark" then
             bm_view = bm_view .. item.text
         else
-            bm_view = bm_view .. DISPLAY_PREFIX["highlight"] .. item.notes
+            bm_view = bm_view .. bookmark.display_prefix["highlight"] .. item.notes
             if item.type == "note" then
                 bm_view = bm_view .. "\n\n" .. item.text
             end
@@ -733,12 +732,12 @@ function ReaderBookmark:onShowBookmark(match_table)
                     bm_count = bm_count + 1
                 end
             end
-            dialog_title = T(DISPLAY_PREFIX["highlight"] .. "%1" .. "       " ..
-                             DISPLAY_PREFIX["note"] .. "%2" .. "       " ..
-                             DISPLAY_PREFIX["bookmark"] .. "%3", hl_count, nt_count, bm_count)
+            dialog_title = T(bookmark.display_prefix["highlight"] .. "%1" .. "       " ..
+                             bookmark.display_prefix["note"] .. "%2" .. "       " ..
+                             bookmark.display_prefix["bookmark"] .. "%3", hl_count, nt_count, bm_count)
             table.insert(buttons, {
                 {
-                    text = DISPLAY_PREFIX["highlight"] .. _("highlights"),
+                    text = bookmark.display_prefix["highlight"] .. _("highlights"),
                     callback = function()
                         UIManager:close(bm_dialog)
                         bm_menu:onClose()
@@ -746,7 +745,7 @@ function ReaderBookmark:onShowBookmark(match_table)
                     end,
                 },
                 {
-                    text = DISPLAY_PREFIX["bookmark"] .. _("page bookmarks"),
+                    text = bookmark.display_prefix["bookmark"] .. _("page bookmarks"),
                     callback = function()
                         UIManager:close(bm_dialog)
                         bm_menu:onClose()
@@ -756,7 +755,7 @@ function ReaderBookmark:onShowBookmark(match_table)
             })
             table.insert(buttons, {
                 {
-                    text = DISPLAY_PREFIX["note"] .. _("notes"),
+                    text = bookmark.display_prefix["note"] .. _("notes"),
                     callback = function()
                         UIManager:close(bm_dialog)
                         bm_menu:onClose()
@@ -1072,7 +1071,7 @@ function ReaderBookmark:setBookmarkNote(item, from_highlight, is_new_note, new_t
                             end
                         else
                             bookmark.text_orig = bookmark.text
-                            bookmark.text = DISPLAY_PREFIX[bookmark.type] .. bookmark.text
+                            bookmark.text = self.display_prefix[bookmark.type] .. bookmark.text
                             self.refresh()
                         end
                     end,
@@ -1152,19 +1151,19 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
     }
     input_dialog:addWidget(separator)
     check_button_highlight = CheckButton:new{
-        text = " " .. DISPLAY_PREFIX["highlight"] .. _("highlights"),
+        text = " " .. self.display_prefix["highlight"] .. _("highlights"),
         checked = true,
         parent = input_dialog,
     }
     input_dialog:addWidget(check_button_highlight)
     check_button_note = CheckButton:new{
-        text = " " .. DISPLAY_PREFIX["note"] .. _("notes"),
+        text = " " .. self.display_prefix["note"] .. _("notes"),
         checked = true,
         parent = input_dialog,
     }
     input_dialog:addWidget(check_button_note)
     check_button_bookmark = CheckButton:new{
-        text = " " .. DISPLAY_PREFIX["bookmark"] .. _("page bookmarks"),
+        text = " " .. self.display_prefix["bookmark"] .. _("page bookmarks"),
         checked = true,
         parent = input_dialog,
     }
