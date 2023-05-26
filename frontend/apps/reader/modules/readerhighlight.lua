@@ -683,8 +683,7 @@ function ReaderHighlight:onTapPageSavedHighlight(ges)
                                     return true
                                 end
                             else
-                                table.insert(highlights_tapped, {hl_page, hl_i})
-                                break
+                                return self:showHighlightNoteOrDialog(hl_page, hl_i)
                             end
                         end
                     end
