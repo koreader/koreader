@@ -850,8 +850,37 @@ end
 
 function ReaderHighlight:showChooseHighlightDialog(highlights)
     if #highlights == 1 then
-        return self:showHighlightNoteOrDialog(unpack(highlights[1]))
+        local page, index = unpack(highlights[1])
+        local item = self.view.highlight.saved[page][index]
+        local bookmark_note = self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
+        self:showHighlightNoteOrDialog(page, index, bookmark_note)
+    else -- overlapped highlights
+        local dialog
+        local buttons = {}
+        for i, v in ipairs(highlights) do
+            local page, index = unpack(v)
+            local item = self.view.highlight.saved[page][index]
+            local bookmark_note = self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
+            buttons[i] = {{
+                text = (bookmark_note and self.ui.bookmark.display_prefix["note"]
+                                       or self.ui.bookmark.display_prefix["highlight"]) .. item.text,
+                align = "left",
+                avoid_text_truncation = false,
+                font_face = "smallinfofont",
+                font_size = 22,
+                font_bold = false,
+                callback = function()
+                    UIManager:close(dialog)
+                    self:showHighlightNoteOrDialog(page, index, bookmark_note)
+                end,
+            }}
+        end
+        dialog = ButtonDialog:new{
+            buttons = buttons,
+        }
+        UIManager:show(dialog)
     end
+    return true
 end
 
 function ReaderHighlight:showHighlightNoteOrDialog(page, index, bookmark_note)
