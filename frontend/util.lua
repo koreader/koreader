@@ -859,7 +859,7 @@ end
 function util.diskUsage(dir)
     -- safe way of testing df & awk
     local function doCommand(d)
-        local handle = io.popen("df -k " .. d .. " 2>&1 | awk '$3 ~ /[0-9]+/ { print $2,$3,$4 }' 2>&1 | grep -v 'ERROR: ld.so' || echo ::ERROR::")
+        local handle = io.popen("df -k " .. d .. " 2>/dev/null | awk '$3 ~ /[0-9]+/ { print $2,$3,$4 }' 2>/dev/null || echo ::ERROR::")
         if not handle then return end
         local output = handle:read("*all")
         handle:close()
