@@ -683,7 +683,8 @@ function ReaderHighlight:onTapPageSavedHighlight(ges)
                                     return true
                                 end
                             else
-                                return self:showHighlightNoteOrDialog(hl_page, hl_i)
+                                table.insert(highlights_tapped, {hl_page, hl_i})
+                                break
                             end
                         end
                     end
@@ -692,7 +693,7 @@ function ReaderHighlight:onTapPageSavedHighlight(ges)
         end
     end
     if #highlights_tapped > 0 then
-        return self:showChooseHighlightDialog(highlights_tapped)
+        return self:showHighlightNoteOrDialog(unpack(highlights_tapped[1]))
     end
 end
 
