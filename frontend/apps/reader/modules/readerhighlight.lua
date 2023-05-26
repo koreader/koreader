@@ -849,7 +849,9 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
 end
 
 function ReaderHighlight:showChooseHighlightDialog(highlights)
-    return self:showHighlightNoteOrDialog(unpack(highlights[1]))
+    if #highlights == 1 then
+        return self:showHighlightNoteOrDialog(unpack(highlights[1]))
+    end
 end
 
 function ReaderHighlight:showHighlightNoteOrDialog(page, index, bookmark_note)
