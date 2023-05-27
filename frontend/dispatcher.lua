@@ -568,7 +568,7 @@ function Dispatcher:getNameFromItem(item, settings, dont_show_value)
             display_value = tostring(value)
         end
         if display_value then
-            if settingsList[item].unit and tonumber(display_value) then
+            if settingsList[item].unit and (type(value) == "table" or tonumber(display_value)) then
                 display_value = display_value .. " " .. settingsList[item].unit
             end
             title = title .. ": " .. display_value
