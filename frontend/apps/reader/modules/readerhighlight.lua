@@ -849,7 +849,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
 end
 
 function ReaderHighlight:showChooseHighlightDialog(highlights)
-    if #highlights == 1 then
+    if #highlights <= 2 then
         local page, index = unpack(highlights[1])
         local item = self.view.highlight.saved[page][index]
         local bookmark_note = self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
