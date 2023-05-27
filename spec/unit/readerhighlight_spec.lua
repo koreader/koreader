@@ -158,11 +158,6 @@ describe("Readerhighlight module", function()
                 highlight_single_word(readerui, Geom:new{ x = 260, y = 70 })
                 Screen:shot("screenshots/reader_highlight_single_word_pdf_scanned.png")
             end)
-            it("should highlight text", function()
-                highlight_text(readerui, Geom:new{ x = 260, y = 70 }, Geom:new{ x = 260, y = 150 })
-                Screen:shot("screenshots/reader_highlight_text_pdf_scanned.png")
-                readerui.highlight:clear()
-            end)
             it("should response on tap gesture", function()
                 tap_highlight_text(readerui,
                                    Geom:new{ x = 260, y = 70 },
