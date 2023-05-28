@@ -42,7 +42,7 @@ function ReadCollection:prepareList(collection_name)
             file = file_path,
             text = v.file:gsub(".*/", ""),
             dim = not file_exists,
-            mandatory = file_exists and util.getFriendlySize(lfs.attributes(file_path, "size") or 0),
+            mandatory = file_exists and util.getFriendlySize(lfs.attributes(file_path, "size") or 0) or "",
             select_enabled = file_exists,
         })
     end
