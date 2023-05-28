@@ -3062,6 +3062,16 @@ function ReaderStatistics.onSync(local_path, cached_path, income_path)
             SELECT title, authors, md5 FROM book
         );
 
+        -- If book was opened more recently on other device, then update local db's `last_open` field
+        -- NOTE: We could do this as an "upsert" (i.e. adding an `ON CONFLICT` clause to the previous `INSERT`)
+        --       but using `ON CONFLICT` unnecessarily increments the autoincrement for the table;
+        --       see https://sqlite.org/forum/info/98d4fb9ced866287
+        UPDATE book AS b
+        SET last_open = i.last_open
+        FROM income_db.book AS i
+        WHERE (b.title, b.authors, b.md5) = (i.title, i.authors, i.md5)
+          AND i.last_open > b.last_open;
+
         -- We create a book_id mapping temp table (view not possible due to attached db)
         CREATE TEMP TABLE book_id_map AS
             SELECT m.id as mid, i.id as iid FROM book m --main
