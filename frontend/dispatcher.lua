@@ -562,13 +562,13 @@ function Dispatcher:getNameFromItem(item, settings, dont_show_value)
                     settingsList[item].args, settingsList[item].toggle = settingsList[item].args_func()
                 end
                 local value_num = util.arrayContains(settingsList[item].args, value)
-                display_value = settingsList[item].toggle[value_num]
+                display_value = settingsList[item].toggle[value_num] or string.format("%.1f", value)
             end
         elseif category == "absolutenumber" or category == "incrementalnumber" then
             display_value = tostring(value)
         end
         if display_value then
-            if settingsList[item].unit then
+            if settingsList[item].unit and (type(value) == "table" or tonumber(display_value)) then
                 display_value = display_value .. " " .. settingsList[item].unit
             end
             title = title .. ": " .. display_value
