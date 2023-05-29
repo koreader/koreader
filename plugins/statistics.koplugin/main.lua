@@ -3051,6 +3051,16 @@ function ReaderStatistics.onSync(local_path, cached_path, income_path)
     end
 
     sql = sql .. [[
+        -- If book was opened more recently on another device, then update local db's `last_open` field
+        -- NOTE: We could do this as an "upsert" by adding an `ON CONFLICT` clause to the following `INSERT`
+        --       but using `ON CONFLICT` unnecessarily increments the autoincrement for the table;
+        --       see https://sqlite.org/forum/info/98d4fb9ced866287
+        UPDATE book AS b
+        SET last_open = i.last_open
+        FROM income_db.book AS i
+        WHERE (b.title, b.authors, b.md5) = (i.title, i.authors, i.md5)
+          AND i.last_open > b.last_open;
+
         -- We merge the local db with income db to form the synced db.
         -- Do the books
         INSERT INTO book (
