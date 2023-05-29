@@ -970,12 +970,24 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
 end
 
 function Dispatcher:_showAsMenu(settings)
+    local ui = require("apps/reader/readerui").instance
+    local state = ui and (ui.paging and "paging" or "rolling")
+    local function action_disabled(action)
+        if state == "paging" then
+            return action["rolling"]
+        elseif state == "rolling" then
+            return action["paging"]
+        else -- FM
+            return action["reader"] or action["rolling"] or action["paging"]
+        end
+    end
     local display_list = Dispatcher:getDisplayList(settings)
     local quickmenu
     local buttons = {}
     for _, v in ipairs(display_list) do
         table.insert(buttons, {{
             text = v.text,
+            enabled = not action_disabled(settingsList[v.key]),
             align = "left",
             font_face = "smallinfofont",
             font_size = 22,
