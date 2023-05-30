@@ -969,25 +969,30 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     })
 end
 
-function Dispatcher:_showAsMenu(settings)
-    local ui = require("apps/reader/readerui").instance
-    local state = ui and (ui.paging and "paging" or "rolling")
-    local function action_disabled(action)
-        if state == "paging" then
-            return action["rolling"]
-        elseif state == "rolling" then
-            return action["paging"]
+function Dispatcher:isActionEnabled(action)
+    local not_enabled = true
+    if action.condition == nil or action.condition == true then
+        local ui = require("apps/reader/readerui").instance
+        local context = ui and (ui.paging and "paging" or "rolling")
+        if context == "paging" then
+            not_enabled = action["rolling"]
+        elseif context == "rolling" then
+            not_enabled = action["paging"]
         else -- FM
-            return action["reader"] or action["rolling"] or action["paging"]
+            not_enabled = action["reader"] or action["rolling"] or action["paging"]
         end
     end
+    return not not_enabled
+end
+
+function Dispatcher:_showAsMenu(settings)
     local display_list = Dispatcher:getDisplayList(settings)
     local quickmenu
     local buttons = {}
     for _, v in ipairs(display_list) do
         table.insert(buttons, {{
             text = v.text,
-            enabled = not action_disabled(settingsList[v.key]),
+            enabled = Dispatcher:isActionEnabled(settingsList[v.key]),
             align = "left",
             font_face = "smallinfofont",
             font_size = 22,
@@ -1028,7 +1033,7 @@ function Dispatcher:execute(settings, gesture)
             k = v
             v = settings[k]
         end
-        if settingsList[k] ~= nil and (settingsList[k].condition == nil or settingsList[k].condition == true) then
+        if settingsList[k] ~= nil and Dispatcher:isActionEnabled(settingsList[k]) then
             Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
             if settingsList[k].configurable then
                 local value = v
