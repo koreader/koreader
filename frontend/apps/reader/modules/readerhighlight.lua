@@ -1452,8 +1452,7 @@ end
 function ReaderHighlight:onTranslateCurrentPage()
     local x0, y0, x1, y1, page, is_reflow
     if self.ui.rolling then
-        x0 = 0
-        y0 = 0
+        y0, x0 = self.ui.document:getScreenPositionFromXPointer(self.ui.document:getXPointer())
         x1 = Screen:getWidth()
         y1 = Screen:getHeight()
     else
