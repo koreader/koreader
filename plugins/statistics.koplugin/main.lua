@@ -3050,11 +3050,11 @@ function ReaderStatistics.onSync(local_path, cached_path, income_path)
         return false
     end
 
+    -- NOTE: We could replace this first `UPDATE` with an "upsert" by adding an `ON CONFLICT` clause to the
+    -- following `INSERT`, but using `ON CONFLICT` unnecessarily increments the autoincrement for the table.
+    -- See https://sqlite.org/forum/info/98d4fb9ced866287
     sql = sql .. [[
-        -- If book was opened more recently on another device, then update local db's `last_open` field
-        -- NOTE: We could do this as an "upsert" by adding an `ON CONFLICT` clause to the following `INSERT`
-        --       but using `ON CONFLICT` unnecessarily increments the autoincrement for the table;
-        --       see https://sqlite.org/forum/info/98d4fb9ced866287
+        -- If book was opened more recently on another device, then update local last_open field
         UPDATE book AS b
         SET last_open = i.last_open
         FROM income_db.book AS i
