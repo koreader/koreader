@@ -299,7 +299,7 @@ function DocSettings:flush(data, no_cover)
             -- move cover file to the metadata file location
             if not no_cover then
                 local cover_file = self:getCoverFile()
-                if cover_file and util.splitFilePathName(cover_file) ~= sidecar_dir then
+                if cover_file and util.splitFilePathName(cover_file) ~= sidecar_dir .. "/" then
                     ffiutil.copyFile(cover_file, sidecar_dir)
                     os.remove(cover_file)
                     self:getCoverFile(true) -- reset cache
