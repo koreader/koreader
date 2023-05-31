@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20221027
+local CURRENT_MIGRATION_DATE = 20230531
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -502,6 +502,15 @@ if last_migration_date < 20221027 then
     local Device = require("device")
     if Device:isKobo() and not Device:hasReliableMxcWaitFor() then
         G_reader_settings:makeFalse("followed_link_marker")
+    end
+end
+
+-- 20230531, Rename `strcoll_mixed` to `strcoll`+`collate_mixed`, https://github.com/koreader/koreader/pull/10198
+if last_migration_date < 20230531 then
+    logger.info("Performing one-time migration for 20230531")
+    if G_reader_settings:readSetting("collate") == "strcoll_mixed" then
+        G_reader_settings:saveSetting("collate", "strcoll")
+        G_reader_settings:makeTrue("collate_mixed")
     end
 end
 
