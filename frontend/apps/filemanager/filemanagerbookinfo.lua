@@ -358,10 +358,10 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
                 if sidecar_file then
                     sidecar_dir = util.splitFilePathName(sidecar_file)
                 else -- no sdr folder, create new
-                    sidecar_dir = DocSettings:getSidecarDir(file)
+                    sidecar_dir = DocSettings:getSidecarDir(file) .. "/"
                     util.makePath(sidecar_dir)
                 end
-                local new_cover_file = sidecar_dir .. "/" .. "cover." .. util.getFileNameSuffix(image_file)
+                local new_cover_file = sidecar_dir .. "cover." .. util.getFileNameSuffix(image_file)
                 if ffiutil.copyFile(image_file, new_cover_file) == nil then
                     kvp_update()
                 end
