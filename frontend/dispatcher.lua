@@ -131,7 +131,7 @@ local settingsList = {
     prev_bookmark = {category="none", event="GotoPreviousBookmarkFromPage", title=_("Previous bookmark"), reader=true},
     next_bookmark = {category="none", event="GotoNextBookmarkFromPage", title=_("Next bookmark"), reader=true},
     latest_bookmark = {category="none", event="GoToLatestBookmark", title=_("Go to latest bookmark"), reader=true},
-    back = {category="none", event="Back", title=_("Back"), reader=true},
+    back = {category="none", event="Back", title=_("Back"), filemanager=true, reader=true},
     previous_location = {category="none", event="GoBackLink", arg=true, title=_("Back to previous location"), reader=true},
     next_location = {category="none", event="GoForwardLink", arg=true, title=_("Forward to next location"), reader=true},
     follow_nearest_link = {category="arg", event="GoToPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest link"), reader=true},
@@ -970,19 +970,19 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
 end
 
 function Dispatcher:isActionEnabled(action)
-    local not_enabled = true
-    if action.condition == nil or action.condition == true then
+    local disabled = true
+    if action and (action.condition == nil or action.condition == true) then
         local ui = require("apps/reader/readerui").instance
         local context = ui and (ui.paging and "paging" or "rolling")
         if context == "paging" then
-            not_enabled = action["rolling"]
+            disabled = action["rolling"]
         elseif context == "rolling" then
-            not_enabled = action["paging"]
+            disabled = action["paging"]
         else -- FM
-            not_enabled = action["reader"] or action["rolling"] or action["paging"]
+            disabled = (action["reader"] or action["rolling"] or action["paging"]) and not action["filemanager"]
         end
     end
-    return not not_enabled
+    return not disabled
 end
 
 function Dispatcher:_showAsMenu(settings)
@@ -1033,7 +1033,7 @@ function Dispatcher:execute(settings, gesture)
             k = v
             v = settings[k]
         end
-        if settingsList[k] ~= nil and Dispatcher:isActionEnabled(settingsList[k]) then
+        if Dispatcher:isActionEnabled(settingsList[k]) then
             Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
             if settingsList[k].configurable then
                 local value = v
