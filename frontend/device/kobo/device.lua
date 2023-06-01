@@ -380,7 +380,6 @@ local KoboStorm = Kobo:extend{
 }
 
 -- Kobo Nia:
---- @fixme: Mostly untested, assume it's Clara-ish for now.
 local KoboLuna = Kobo:extend{
     model = "Kobo_luna",
     isMk7 = yes,
@@ -389,6 +388,8 @@ local KoboLuna = Kobo:extend{
     touch_phoenix_protocol = true,
     display_dpi = 212,
     hasReliableMxcWaitFor = no, -- Board is similar to the Libra 2, but it's such an unpopular device that reports are scarce.
+    -- Handle the HW revision w/ a BD71828 PMIC
+    automagic_sysfs = true,
 }
 
 -- Kobo Elipsa
@@ -629,7 +630,7 @@ function Kobo:init()
 
         -- Power button (this usually ends up in ntx_dev, except with some PMICs)
         if util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey-event") then
-            -- Libra 2 w/ a BD71828 PMIC
+            -- Libra 2 & Nia w/ a BD71828 PMIC
             self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey-event"
         elseif util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event") then
             -- Sage w/ a BD71828 PMIC
