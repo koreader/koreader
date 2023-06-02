@@ -3,6 +3,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
+local Event = require("ui/event")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -1089,6 +1090,33 @@ function BookMapWidget:showMenu()
             end,
         }},
         {{
+            text_func = function(no_size_trick)
+                -- A bit tricky to update the text in the callback, as this button,
+                -- being sized by ButtonTable, can't be rebuilt. We will update its
+                -- text, and we want to be sure it will fit in the initial width,
+                -- which may be with the checkmark or not.
+                local text = _("Page browser on tap")
+                if G_reader_settings:nilOrTrue("book_map_tap_to_page_browser") then
+                    text = text .. "  \u{2713}" -- checkmark
+                else
+                    if not no_size_trick then
+                        -- Initial call, make it wide enough so the checkmark text will fit
+                        text = text .. "  \u{2003}" -- wide em space
+                    end
+                    -- Otherwise, keep it small without the checkmark, which will fit
+                end
+                return text
+            end,
+            id = "tap_to_page_browser",
+            align = "left",
+            callback = function()
+                G_reader_settings:flipNilOrTrue("book_map_tap_to_page_browser")
+                local b = button_dialog:getButtonById("tap_to_page_browser")
+                b:setText(b.text_func(true), b.width)
+                b:refresh()
+            end,
+        }},
+        {{
             text = _("Switch current/initial views"),
             align = "left",
             enabled_func = function() return self.toc_depth > 0 end,
@@ -1108,7 +1136,7 @@ function BookMapWidget:showMenu()
         }},
         {
             {
-                text = _("Chapters"),
+                text = _("Chapter levels"),
                 callback = function() end,
                 align = "left",
             },
@@ -1537,6 +1565,12 @@ function BookMapWidget:onTap(arg, ges)
         page = row:getPageAtX(x, true)
     end
     if page then
+        if not G_reader_settings:nilOrTrue("book_map_tap_to_page_browser") then
+            self:onClose(true)
+            self.ui.link:addCurrentLocationToStack()
+            self.ui:handleEvent(Event:new("GotoPage", page))
+            return true
+        end
         local PageBrowserWidget = require("ui/widget/pagebrowserwidget")
         UIManager:show(PageBrowserWidget:new{
             launcher = self,
