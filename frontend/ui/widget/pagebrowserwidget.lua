@@ -261,21 +261,32 @@ function PageBrowserWidget:updateLayout()
         self.nb_rows = 2
     end
     self.nb_grid_items = self.nb_rows * self.nb_cols
+
+    self.thumbnails_pagenums = self.ui.doc_settings:readSetting("page_browser_thumbnails_pagenums")
+                               or G_reader_settings:readSetting("page_browser_thumbnails_pagenums") or 2
     -- Set our items target size
     -- Borders may eat into the margin, and the horizontal margin should be able to contain the page number
-    -- (let's use this computed margin also vertically)
-    self.grid_item_margin = self.page_num_width + Size.padding.small + Size.border.thick + Size.border.thin
-    self.grid_item_height = math.floor((self.grid_height - (self.nb_rows)*self.grid_item_margin) / self.nb_rows) -- no need for top margin, title bottom padding is enough
-    self.grid_item_width = math.floor((self.grid_width - (1+self.nb_cols)*self.grid_item_margin) / self.nb_cols)
+    local grid_item_default_margin = Screen:scaleBySize(10)
+    local grid_item_pagenum_margin = self.page_num_width + Size.padding.small + Size.border.thick + Size.border.thin
+    local grid_item_inner_h_margin = grid_item_default_margin
+    local grid_item_outer_h_margin = grid_item_default_margin
+    if self.thumbnails_pagenums == 1 then
+        grid_item_outer_h_margin = grid_item_pagenum_margin
+    elseif self.thumbnails_pagenums == 2 then
+        grid_item_outer_h_margin = grid_item_pagenum_margin
+        grid_item_inner_h_margin = grid_item_pagenum_margin
+    end
+    self.grid_item_height = math.floor((self.grid_height - self.nb_rows*grid_item_default_margin) / self.nb_rows) -- no need for top margin, title bottom padding is enough
+    self.grid_item_width = math.floor((self.grid_width - 2*grid_item_outer_h_margin - (self.nb_cols-1)*grid_item_inner_h_margin) / self.nb_cols)
     self.grid_item_dimen = Geom:new{
         w = self.grid_item_width,
         h = self.grid_item_height
     }
+    -- Put any pixel left ouf by the flooring into grid_item_outer_h_margin, so everything looks balanced horizontally
+    grid_item_outer_h_margin = math.floor((self.grid_width - self.nb_cols * self.grid_item_width - (self.nb_cols-1)*grid_item_inner_h_margin) / 2)
 
     self.grid:clear()
 
-    self.thumbnails_pagenums = self.ui.doc_settings:readSetting("page_browser_thumbnails_pagenums")
-                               or G_reader_settings:readSetting("page_browser_thumbnails_pagenums") or 2
     for idx = 1, self.nb_grid_items do
         local row = math.floor((idx-1)/self.nb_cols) -- start from 0
         local col = (idx-1) % self.nb_cols
@@ -288,8 +299,8 @@ function PageBrowserWidget:updateLayout()
         if BD.mirroredUILayout() then
             col = self.nb_cols - col - 1
         end
-        local offset_x = self.grid_item_margin*(col+1) + self.grid_item_width*col
-        local offset_y = self.grid_item_margin*(row) + self.grid_item_height*row -- no need for 1st margin
+        local offset_x = grid_item_outer_h_margin + grid_item_inner_h_margin*col + self.grid_item_width*col
+        local offset_y = grid_item_default_margin*row + self.grid_item_height*row -- no need for 1st margin
         local grid_item = CenterContainer:new{
             dimen = self.grid_item_dimen:copy(),
         }
