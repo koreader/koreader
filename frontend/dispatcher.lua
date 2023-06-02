@@ -131,7 +131,7 @@ local settingsList = {
     prev_bookmark = {category="none", event="GotoPreviousBookmarkFromPage", title=_("Previous bookmark"), reader=true},
     next_bookmark = {category="none", event="GotoNextBookmarkFromPage", title=_("Next bookmark"), reader=true},
     latest_bookmark = {category="none", event="GoToLatestBookmark", title=_("Go to latest bookmark"), reader=true},
-    back = {category="none", event="Back", title=_("Back"), reader=true},
+    back = {category="none", event="Back", title=_("Back"), filemanager=true, reader=true},
     previous_location = {category="none", event="GoBackLink", arg=true, title=_("Back to previous location"), reader=true},
     next_location = {category="none", event="GoForwardLink", arg=true, title=_("Forward to next location"), reader=true},
     follow_nearest_link = {category="arg", event="GoToPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest link"), reader=true},
@@ -969,6 +969,22 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     })
 end
 
+function Dispatcher:isActionEnabled(action)
+    local disabled = true
+    if action and (action.condition == nil or action.condition == true) then
+        local ui = require("apps/reader/readerui").instance
+        local context = ui and (ui.paging and "paging" or "rolling")
+        if context == "paging" then
+            disabled = action["rolling"]
+        elseif context == "rolling" then
+            disabled = action["paging"]
+        else -- FM
+            disabled = (action["reader"] or action["rolling"] or action["paging"]) and not action["filemanager"]
+        end
+    end
+    return not disabled
+end
+
 function Dispatcher:_showAsMenu(settings)
     local display_list = Dispatcher:getDisplayList(settings)
     local quickmenu
@@ -976,6 +992,7 @@ function Dispatcher:_showAsMenu(settings)
     for _, v in ipairs(display_list) do
         table.insert(buttons, {{
             text = v.text,
+            enabled = Dispatcher:isActionEnabled(settingsList[v.key]),
             align = "left",
             font_face = "smallinfofont",
             font_size = 22,
@@ -1016,7 +1033,7 @@ function Dispatcher:execute(settings, gesture)
             k = v
             v = settings[k]
         end
-        if settingsList[k] ~= nil and (settingsList[k].condition == nil or settingsList[k].condition == true) then
+        if Dispatcher:isActionEnabled(settingsList[k]) then
             Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
             if settingsList[k].configurable then
                 local value = v
