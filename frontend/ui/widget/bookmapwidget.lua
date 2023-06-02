@@ -20,6 +20,7 @@ local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local TitleBar = require("ui/widget/titlebar")
+local TopContainer = require("ui/widget/container/topcontainer")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -254,13 +255,32 @@ function BookMapRow:init()
 
     if self.left_spacing > 0 then
         local spacing = Size.padding.small
-        table.insert(self.hgroup, TextBoxWidget:new{
+        local width = self.left_spacing - spacing
+        local widget = TextBoxWidget:new{
             text = self.start_page_text,
-            width = self.left_spacing - spacing,
+            width = width,
             face = self.smaller_font_face,
             line_height = 0, -- no additional line height
             alignment = _mirroredUI and "left" or "right",
             alignment_strict = true,
+        }
+        local text_height = widget:getSize().h
+        -- We want the bottom digit aligned on the pages frame baseline if the number is small,
+        -- but the top digit at top and overflowing down if it is tall.
+        -- (We get better visual alignment by tweaking a bit line_glyph_extra_height.)
+        local shift_y = self.pages_frame_height - text_height + math.ceil(widget.line_glyph_extra_height*2/3)
+        if shift_y > 0 then
+            widget = VerticalGroup:new{
+                VerticalSpan:new{ width = shift_y },
+                widget,
+            }
+        end
+        table.insert(self.hgroup, TopContainer:new{
+            dimen = Geom:new{
+                w = width,
+                h = self.pages_frame_height,
+            },
+            widget,
         })
         table.insert(self.hgroup, HorizontalSpan:new{ width = spacing })
     end
@@ -380,12 +400,12 @@ function BookMapRow:init()
         -- Add a little spike below the baseline above each page number displayed, so we
         -- can more easily associate the (possibly wider) page number to its page slot.
         if self.page_texts and self.page_texts[page] then
-            local w = Screen:scaleBySize(2)
+            local w = Screen:scaleBySize(1.5)
             local x = math.floor((self:getPageX(page) + self:getPageX(page, true) + 0.5)/2 - w/2)
             local y = self.pages_frame_height - self.pages_frame_border + 2
             table.insert(self.pages_markers, {
                 x = x, y = y,
-                w = w, h = math.ceil(w*1.5),
+                w = w, h = w, -- square
                 color = Blitbuffer.COLOR_BLACK,
             })
         end
