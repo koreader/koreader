@@ -588,7 +588,6 @@ end
 
 -- BookMapWidget: shows a map of content, including TOC, boomarks, read pages, non-linear flows...
 local BookMapWidget = InputContainer:extend{
-    title = _("Book map"),
     -- Focus page: show the BookMapRow containing this page
     -- in the middle of screen
     focus_page = nil,
@@ -596,6 +595,8 @@ local BookMapWidget = InputContainer:extend{
     launcher = nil,
     -- Extra symbols to show below pages
     extra_symbols_pages = nil,
+    -- Restricted mode, as initial view (all on one screen), but allowing chapter levels changes
+    overview_mode = false,
 
     -- Make this local subwidget available for reuse by PageBrowser
     BookMapRow = BookMapRow,
@@ -675,12 +676,13 @@ function BookMapWidget:init()
     self.row_left_spacing = self.scrollbar_width
     self.swipe_hint_bar_width = Screen:scaleBySize(6)
 
+    local title = self.overview_mode and _("Book map (overview)") or _("Book map")
     self.title_bar = TitleBar:new{
         fullscreen = true,
-        title = self.title,
+        title = title,
         left_icon = "appbar.menu",
         left_icon_tap_callback = function() self:showMenu() end,
-        left_icon_hold_callback = function()
+        left_icon_hold_callback = not self.overview_mode and function()
             self:toggleDefaultSettings() -- toggle between user settings and default view
         end,
         close_callback = function() self:onClose() end,
@@ -809,6 +811,11 @@ function BookMapWidget:update()
     -- Non-flat book map shows a grid with TOC items following each others.
     self.flat_map = self.ui.doc_settings:readSetting("book_map_flat", false)
     self.toc_depth = self.ui.doc_settings:readSetting("book_map_toc_depth", self.max_toc_depth)
+    if self.overview_mode then
+        -- Restricted to grid mode, fitting on the screen. Only toc depth can be adjusted.
+        self.flat_map = false
+        self.toc_depth = self.ui.doc_settings:readSetting("book_map_overview_toc_depth", self.max_toc_depth)
+    end
     if self.flat_map then
         self.nb_toc_spans = 0 -- no span shown in grid
     else
@@ -882,6 +889,9 @@ function BookMapWidget:update()
 
     -- Show the whole book without scrollbar initially
     self.pages_per_row = self.ui.doc_settings:readSetting("book_map_pages_per_row", self.fit_pages_per_row)
+    if self.overview_mode then
+        self.pages_per_row = self.fit_pages_per_row
+    end
     self.page_slot_width = nil -- will be fetched from the first BookMapRow
 
     -- Build BookMapRows as we walk the ToC
@@ -1126,7 +1136,7 @@ function BookMapWidget:showMenu()
     local plus_minus_width = Screen:scaleBySize(60)
     local buttons = {
         {{
-            text = _("About book map"),
+            text = self.overview_mode and _("About book map (overview)") or _("About book map"),
             align = "left",
             callback = function()
                 self:showAbout()
@@ -1166,7 +1176,7 @@ function BookMapWidget:showMenu()
                 b:refresh()
             end,
         }},
-        {{
+        not self.overview_mode and {{
             text = _("Switch current/initial views"),
             align = "left",
             enabled_func = function() return self.toc_depth > 0 end,
@@ -1174,7 +1184,7 @@ function BookMapWidget:showMenu()
                 self:toggleDefaultSettings()
             end,
         }},
-        {{
+        not self.overview_mode and {{
             text = _("Switch grid/flat views"),
             align = "left",
             enabled_func = function() return self.toc_depth > 0 end,
@@ -1211,7 +1221,7 @@ function BookMapWidget:showMenu()
                 width = plus_minus_width,
             }
         },
-        {
+        not self.overview_mode and {
             {
                 text = _("Page slot width"),
                 callback = function() end,
@@ -1268,6 +1278,12 @@ function BookMapWidget:showMenu()
             }
         },
     }
+    -- Remove false buttons from the list if overview_mode
+    for i = #buttons, 1, -1 do
+        if not buttons[i] then
+            table.remove(buttons, i)
+        end
+    end
     button_dialog = ButtonDialog:new{
         -- width = math.floor(Screen:getWidth() / 2),
         width = math.floor(Screen:getWidth() * 0.9), -- max width, will get smaller
@@ -1280,8 +1296,7 @@ function BookMapWidget:showMenu()
     UIManager:show(button_dialog)
 end
 function BookMapWidget:showAbout()
-    UIManager:show(InfoMessage:new{
-        text = _([[
+    local text = _([[
 Book map displays an overview of the book content.
 
 If statistics are enabled, black bars are shown for already read pages (gray for pages read in the current reading session). Their heights vary depending on the time spent reading the page.
@@ -1292,14 +1307,28 @@ Under the pages, these indicators may be shown:
 ▒ highlighted text
  highlighted text with notes
  bookmarked page
-▢ focused page when coming from Pages browser
+▢ focused page when coming from Pages browser]])
 
-On a newly opened book, the book map will start in grid mode showing all chapter levels, fitting on a single screen, to give the best initial overview of the book's content.]]),
-    })
+    if self.overview_mode then
+        text = text .. "\n\n" .. _([[
+In overview mode, the book map is always in grid mode and ensured to fit on a single screen. Chapter levels can be changed for the most confortable overview.]])
+    else
+        text = text .. "\n\n" .. _([[
+On a newly opened book, the book map will start in grid mode showing all chapter levels, fitting on a single screen, to give the best initial overview of the book's content.]])
+    end
+    UIManager:show(InfoMessage:new{ text = text })
 end
 
 function BookMapWidget:showGestures()
-    UIManager:show(InfoMessage:new{
+    local text
+    if self.overview_mode then
+        text = _([[
+Tap on a location in the book to browse thumbnails of the pages there.
+
+Swipe along the left screen edge to change the level of chapters to include in the book map.
+
+Any multiswipe will close the book map.]])
+    else
         text = _([[
 Tap on a location in the book to browse thumbnails of the pages there.
 
@@ -1311,8 +1340,9 @@ Swipe or pan vertically on content to scroll.
 
 Long-press on ≡ to switch between current and initial views.
 
-Any multiswipe will close the book map.]]),
-    })
+Any multiswipe will close the book map.]])
+    end
+    UIManager:show(InfoMessage:new{ text = text })
 end
 
 function BookMapWidget:onClose(close_all_parents)
@@ -1430,6 +1460,10 @@ function BookMapWidget:saveSettings(reset)
         self.toc_depth = nil
         self.pages_per_row = nil
     end
+    if self.overview_mode then
+        self.ui.doc_settings:saveSetting("book_map_overview_toc_depth", self.toc_depth)
+        return
+    end
     self.ui.doc_settings:saveSetting("book_map_flat", self.flat_map)
     self.ui.doc_settings:saveSetting("book_map_toc_depth", self.toc_depth)
     self.ui.doc_settings:saveSetting("book_map_pages_per_row", self.pages_per_row)
@@ -1465,7 +1499,7 @@ function BookMapWidget:updateTocDepth(depth, flat)
         else
             new_toc_depth = new_toc_depth + depth
         end
-        if new_toc_depth < 0 then
+        if new_toc_depth < 0 and not self.overview_mode then
             new_toc_depth = - new_toc_depth
             new_flat_map = not new_flat_map
         end
@@ -1524,6 +1558,9 @@ function BookMapWidget:onSwipe(arg, ges)
         end
     end
     if ges.pos.y > Screen:getHeight() * 7/8 then
+        if self.overview_mode then
+            return true
+        end
         -- Swipe along the bottom screen edge: increase/decrease pages per row
         if direction == "west" or direction == "east" then
             -- Have a swipe distance 0.8 x screen width do *2 or *1/2
@@ -1545,6 +1582,13 @@ function BookMapWidget:onSwipe(arg, ges)
             return true
         end
     end
+    if self.overview_mode and not self.cropping_widget._is_scrollable and direction == "south" then
+        -- Swipe south won't have any effect in overview mode as we fit on the page (except on
+        -- really big books, where we can still be scrollable), so allow swipe south to close
+        -- as on some other fullscreen widgets.
+        self:onClose()
+        return true
+    end
     -- Let our MovableContainer handle other swipes:
     -- return self.cropping_widget:onScrollableSwipe(arg, ges)
     -- No, we prefer not to, and have swipe north/south do full prev/next page
@@ -1565,6 +1609,9 @@ function BookMapWidget:onSwipe(arg, ges)
 end
 
 function BookMapWidget:onPinch(arg, ges)
+    if self.overview_mode then
+        return true
+    end
     local updated = false
     if ges.direction == "horizontal" or ges.direction == "diagonal" then
         local new_pages_per_row = math.ceil(self.pages_per_row * 1.5)
@@ -1594,6 +1641,9 @@ function BookMapWidget:onPinch(arg, ges)
 end
 
 function BookMapWidget:onSpread(arg, ges)
+    if self.overview_mode then
+        return true
+    end
     local updated = false
     if ges.direction == "horizontal" or ges.direction == "diagonal" then
         local new_pages_per_row = math.floor(self.pages_per_row * (2/3))
@@ -1663,7 +1713,9 @@ function BookMapWidget:paintTo(bb, x, y)
     InputContainer.paintTo(self, bb, x, y)
     -- And explicitely paint "swipe" hints along the left and bottom borders
     self:paintLeftVerticalSwipeHint(bb, x, y)
-    self:paintBottomHorizontalSwipeHint(bb, x, y)
+    if not self.overview_mode then
+        self:paintBottomHorizontalSwipeHint(bb, x, y)
+    end
 end
 
 function BookMapWidget:paintLeftVerticalSwipeHint(bb, x, y)
@@ -1683,6 +1735,9 @@ function BookMapWidget:paintLeftVerticalSwipeHint(bb, x, y)
         v.top = self.title_bar_h + math.floor(self.crop_height * 1/6)
         v.height = math.floor(self.crop_height * 4/6)
         v.nb_units = self.max_toc_depth * 2 + 1
+        if self.overview_mode then
+            v.nb_units = self.max_toc_depth + 1
+        end
         v.unit_h = math.floor(v.height / v.nb_units)
         self.vs_hint_info = v
     end
@@ -1694,6 +1749,9 @@ function BookMapWidget:paintLeftVerticalSwipeHint(bb, x, y)
         unit_idx = self.max_toc_depth - self.toc_depth
     else -- lower part of the vertical bar
         unit_idx = self.max_toc_depth + self.toc_depth
+    end
+    if self.overview_mode then
+        unit_idx = self.toc_depth
     end
     local dy = unit_idx * v.unit_h
     if unit_idx == v.nb_units - 1 then

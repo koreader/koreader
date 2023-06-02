@@ -141,6 +141,7 @@ local settingsList = {
 
     toc = {category="none", event="ShowToc", title=_("Table of contents"), reader=true},
     book_map = {category="none", event="ShowBookMap", title=_("Book map"), reader=true, condition=Device:isTouchDevice()},
+    book_map_overview = {category="none", event="ShowBookMap", arg=true, title=_("Book map (overview)"), reader=true, condition=Device:isTouchDevice()},
     page_browser = {category="none", event="ShowPageBrowser", title=_("Page browser"), reader=true, condition=Device:isTouchDevice()},
     bookmarks = {category="none", event="ShowBookmark", title=_("Bookmarks"), reader=true},
     bookmark_search = {category="none", event="SearchBookmark", title=_("Bookmark search"), reader=true},
@@ -333,6 +334,7 @@ local dispatcher_menu_order = {
 
     "toc",
     "book_map",
+    "book_map_overview",
     "page_browser",
     "bookmarks",
     "bookmark_search",
