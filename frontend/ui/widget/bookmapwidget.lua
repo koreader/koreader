@@ -44,6 +44,12 @@ local BookMapRow = WidgetContainer:extend{
     toc_items = nil, -- Arrays[levels] of arrays[items at this level to show as spans]
     -- Many other options not described here, see BookMapWidget:update()
     -- for the complete list.
+
+    extended_marker = {
+        SMALL = 1,
+        MEDIUM = 2,
+        LARGE = 3,
+    }
 }
 
 function BookMapRow:getPageX(page, right_edge)
@@ -325,7 +331,11 @@ function BookMapRow:init()
     self.indicators = {}
     self.bottom_texts = {}
     local prev_page_was_read = true -- avoid one at start of row
-    local extended_marker_h = math.ceil(self.span_height * 0.3)
+    local extended_marker_h = { -- maps to extended_marker.SMALL/MEDIUM/LARGE
+        math.ceil(self.span_height * 0.12),
+        math.ceil(self.span_height * 0.21),
+        math.ceil(self.span_height * 0.3),
+    }
     local unread_marker_h = math.ceil(self.span_height * 0.05)
     local read_min_h = math.max(math.ceil(self.span_height * 0.1), unread_marker_h+Size.line.thick)
     if self.page_slot_width >= 5 * unread_marker_h then
@@ -388,13 +398,20 @@ function BookMapRow:init()
             local x
             if _mirroredUI then
                 x = self:getPageX(page, true) - w
+                if page == self.start_page then
+                    x = x + w
+                end
             else
                 x = self:getPageX(page)
+                if page == self.start_page then
+                    -- if at 0, make it prolong the left border
+                    x = -self.pages_frame_border
+                end
             end
             local y = self.pages_frame_height - self.pages_frame_border
             table.insert(self.pages_markers, {
                 x = x, y = y,
-                w = w, h = extended_marker_h,
+                w = w, h = extended_marker_h[self.extended_sep_pages[page]],
                 color = Blitbuffer.COLOR_BLACK,
             })
         end
@@ -689,6 +706,8 @@ function BookMapWidget:init()
     -- Reference font size for flat TOC items, as set (or default) in ReaderToc
     self.reader_toc_font_size = G_reader_settings:readSetting("toc_items_font_size")
             or Menu.getItemFontSize(G_reader_settings:readSetting("toc_items_per_page") or self.ui.toc.toc_items_per_page_default)
+
+    self.ten_pages_markers = G_reader_settings:readSetting("book_map_ten_pages_markers", 0)
 
     -- Our container of stacked BookMapRows (and TOC titles in flat map mode)
     self.vgroup = VerticalGroup:new{
@@ -1002,6 +1021,36 @@ function BookMapWidget:update()
             start_page_text = ""
         end
 
+        local extended_sep_pages
+        if self.ten_pages_markers > 0 then
+            -- 0: no marker
+            -- 1: show small marker every 10 pages
+            -- 2: show medium marker every 10 pages
+            -- 3: show medium marker every 10 pages + small every 5 pages
+            local show_5 = self.ten_pages_markers == 3
+            local extended_sep_pages_every = show_5 and 5 or 10
+            local marker_10 = self.ten_pages_markers == 1 and BookMapRow.extended_marker.SMALL or BookMapRow.extended_marker.MEDIUM
+            local marker_5 = BookMapRow.extended_marker.SMALL
+            local start, is_5
+            extended_sep_pages = {}
+            if self.flat_map then
+                -- We start counting at the start of each row (markers won't coincide with pages nn0)
+                start = p_start
+                is_5 = false
+            else
+                -- For simplicity, we show the markers every 10 screen pages (this may look odd though,
+                -- if hidden flows or page labels are at play, as markers may not happen on pages nn0)
+                start = p_start - (p_start % extended_sep_pages_every)
+                is_5 = show_5 and start % 10 == 5 or false
+            end
+            for p = start, p_end, extended_sep_pages_every do
+                extended_sep_pages[p] = is_5 and marker_5 or marker_10
+                if show_5 then
+                    is_5 = not is_5
+                end
+            end
+        end
+
         local row = BookMapRow:new{
             height = self.row_height,
             width = self.row_width,
@@ -1023,6 +1072,7 @@ function BookMapWidget:update()
             hidden_flows = self.hidden_flows,
             read_pages = self.read_pages,
             current_session_duration = self.current_session_duration,
+            extended_sep_pages = extended_sep_pages,
         }
         table.insert(self.vgroup, row)
         if not self.page_slot_width then
@@ -1186,6 +1236,33 @@ function BookMapWidget:showMenu()
                     if self:updatePagesPerRow(-10, true) then
                         self:update()
                     end
+                end,
+                width = plus_minus_width,
+            }
+        },
+        {
+            {
+                text = _("10-page markers"),
+                callback = function() end,
+                align = "left",
+            },
+            {
+                text = "\u{2796}", -- Heavy minus sign
+                enabled_func = function() return self.ten_pages_markers > 0 end,
+                callback = function()
+                    self.ten_pages_markers = self.ten_pages_markers - 1
+                    G_reader_settings:saveSetting("book_map_ten_pages_markers", self.ten_pages_markers)
+                    self:update()
+                end,
+                width = plus_minus_width,
+            },
+            {
+                text = "\u{2795}", -- Heavy plus sign
+                enabled_func = function() return self.ten_pages_markers < 3 end,
+                callback = function()
+                    self.ten_pages_markers = self.ten_pages_markers + 1
+                    G_reader_settings:saveSetting("book_map_ten_pages_markers", self.ten_pages_markers)
+                    self:update()
                 end,
                 width = plus_minus_width,
             }

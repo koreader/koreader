@@ -376,7 +376,7 @@ function PageBrowserWidget:update()
     -- Extended separators below the baseline for pages starting thumbnail rows
     local extended_sep_pages = {}
     for p=grid_page_start+self.nb_cols, grid_page_end, self.nb_cols do
-        extended_sep_pages[p] = true
+        extended_sep_pages[p] = BookMapRow.extended_marker.LARGE
     end
 
     -- Show the page number or label at the bottom page slot every N slots, with N
