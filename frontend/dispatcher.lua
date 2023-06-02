@@ -1003,8 +1003,8 @@ function Dispatcher:_showAsMenu(settings)
             end,
         }})
     end
-    local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
-    quickmenu = ButtonDialogTitle:new{
+    local ButtonDialog = require("ui/widget/buttondialog")
+    quickmenu = ButtonDialog:new{
         title = settings.settings.name or _("QuickMenu"),
         title_align = "center",
         width_factor = 0.8,
