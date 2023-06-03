@@ -199,7 +199,7 @@ function ButtonDialog:init()
         separator = LineWidget:new{
             background = Blitbuffer.COLOR_GRAY,
             dimen = Geom:new{
-                w = self.buttontable:getSize().w + (scrollbar_width or 0),
+                w = content_width + (scrollbar_width or 0),
                 h = Size.line.medium,
             },
         }
@@ -210,11 +210,6 @@ function ButtonDialog:init()
         alpha = self.alpha,
         anchor = self.anchor,
         FrameContainer:new{
-            VerticalGroup:new{
-                title_widget,
-                separator,
-                scontainer or self.buttontable,
-            },
             background = Blitbuffer.COLOR_WHITE,
             bordersize = Size.border.window,
             radius = Size.radius.window,
@@ -223,6 +218,11 @@ function ButtonDialog:init()
             -- look the same size
             padding_top = 0,
             padding_bottom = 0,
+            VerticalGroup:new{
+                title_widget,
+                separator,
+                scontainer or self.buttontable,
+            },
         }
     }
 
