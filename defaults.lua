@@ -198,7 +198,4 @@ DUSE_TURBO_LIB = false,
 -- Absolute path to stardict files (override)
 -- By default they're stored in data/dict under dataDir.
 STARDICT_DATA_DIR = nil,
-
--- Rotate images clockwise (90) counter-clockwsie (-90) or not at all (0) to match their aspect ratio with the screen
-IMAGE_FIT_ROTATE = 0,
 }
