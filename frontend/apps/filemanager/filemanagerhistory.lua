@@ -1,5 +1,5 @@
 local BD = require("ui/bidi")
-local ButtonDialog = require("ui/widget/ButtonDialog")
+local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
