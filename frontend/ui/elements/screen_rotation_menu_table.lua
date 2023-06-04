@@ -60,6 +60,35 @@ When unchecked, the default rotation of the file browser and the default/saved r
             separator = true,
         })
 
+        local function image_rotation_item(setting, label)
+            return {
+                text = label,
+                radio = true,
+                checked_func = function()
+                    return (G_reader_settings:readSetting("image_fit_rotate", 0) == setting)
+                end,
+                callback = function(touchmenu_instance)
+                    G_reader_settings:saveSetting("image_fit_rotate", setting)
+                    G_reader_settings:flush()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+
+            }
+        end
+        table.insert(rotation_table, {
+            text = _("Rotate images to fit screen"),
+            help_text = _([[
+                Rotates images in the fullscreen image viewer if there aspect ratio matches the screen better.
+                For example, if clockwise is selected and a landscape image is displayed with the screen in portrait mode, the image will be rotated by 90 degrees.
+            ]]),
+            separator = true,
+            sub_item_table = {
+                image_rotation_item(0, "No rotation"),
+                image_rotation_item(90, "Clockwise"),
+                image_rotation_item(-90, "Counter-clockwise")
+            }
+        })
+
         if FileManager.instance then
             table.insert(rotation_table, {
                 text_func = function()

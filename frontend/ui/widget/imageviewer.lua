@@ -417,6 +417,16 @@ function ImageViewer:_new_image_wg()
         rotation_angle = rotate_clockwise and 90 or 270
     end
 
+    -- Rotate if image and screen aspect ratio are misaligned
+    local image_fit_rotate = tonumber(G_reader_settings:readSetting("image_fit_rotate", 0))
+    local aspect_screen = Screen:getWidth() / Screen:getHeight()
+    local aspect_image = self.image:getWidth() / self.image:getHeight()
+    if (aspect_screen <= 1 and aspect_image > 1) or
+        (aspect_screen > 1 and aspect_image <= 1) then
+        rotation_angle = (rotation_angle - image_fit_rotate) % 360
+    end
+
+
     if self._scaled_image_func then
         local scale_factor_used
         self.image, scale_factor_used = self._scaled_image_func(self.scale_factor, max_image_w, max_image_h)
