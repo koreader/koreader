@@ -307,7 +307,7 @@ function CoverMenu:updateItems(select_number)
 
                 -- Create the new ButtonDialog, and let UIManager show it
                 -- (all button callback fudging must be done after this block to stick)
-                local ButtonDialog = require("ui/widget/ButtonDialog")
+                local ButtonDialog = require("ui/widget/buttondialog")
                 self.file_dialog = ButtonDialog:new{
                     title = orig_title,
                     title_align = orig_title_align,
@@ -434,7 +434,7 @@ function CoverMenu:onHistoryMenuHold(item)
 
     -- Create the new ButtonDialog, and let UIManager show it
     -- (all button callback replacement must be done after this block to stick)
-    local ButtonDialog = require("ui/widget/ButtonDialog")
+    local ButtonDialog = require("ui/widget/buttondialog")
     self.histfile_dialog = ButtonDialog:new{
         title = orig_title,
         title_align = orig_title_align,
@@ -557,7 +557,7 @@ function CoverMenu:onCollectionsMenuHold(item)
 
     -- Create the new ButtonDialog, and let UIManager show it
     -- (all button callback replacement must be done after this block to stick)
-    local ButtonDialog = require("ui/widget/ButtonDialog")
+    local ButtonDialog = require("ui/widget/buttondialog")
     self.collfile_dialog = ButtonDialog:new{
         title = orig_title,
         title_align = orig_title_align,
@@ -687,7 +687,7 @@ function CoverMenu:tapPlus()
     })
 
     -- Create the new ButtonDialog, and let UIManager show it
-    local ButtonDialog = require("ui/widget/ButtonDialog")
+    local ButtonDialog = require("ui/widget/buttondialog")
     self.file_dialog = ButtonDialog:new{
         title = orig_title,
         title_align = orig_title_align,
