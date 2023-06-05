@@ -1311,7 +1311,7 @@ Under the pages, these indicators may be shown:
 
     if self.overview_mode then
         text = text .. "\n\n" .. _([[
-In overview mode, the book map is always in grid mode and ensured to fit on a single screen. Chapter levels can be changed for the most confortable overview.]])
+In overview mode, the book map is always in grid mode and made to fit on a single screen. Chapter levels can be changed for the most comfortable overview.]])
     else
         text = text .. "\n\n" .. _([[
 On a newly opened book, the book map will start in grid mode showing all chapter levels, fitting on a single screen, to give the best initial overview of the book's content.]])
