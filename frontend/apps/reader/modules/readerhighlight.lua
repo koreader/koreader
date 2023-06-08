@@ -1864,37 +1864,52 @@ end
 
 function ReaderHighlight:editHighlightStyle(page, i)
     local item = self.view.highlight.saved[page][i]
-    local radio_buttons = {}
-    for _, v in ipairs(highlight_style) do
-        table.insert(radio_buttons, {
-            {
-                text = v[1],
-                checked = item.drawer == v[2],
-                provider = v[2],
-            },
-        })
-    end
-    UIManager:show(require("ui/widget/radiobuttonwidget"):new{
-        title_text = _("Highlight style"),
-        width_factor = 0.5,
-        keep_shown_on_apply = true,
-        radio_buttons = radio_buttons,
-        default_provider = self.view.highlight.saved_drawer or
-            G_reader_settings:readSetting("highlight_drawing_style", "lighten"),
-        callback = function(radio)
-            self:writePdfAnnotation("delete", page, item)
-            item.drawer = radio.provider
+    local apply_drawer = function(drawer)
+        self:writePdfAnnotation("delete", page, item)
+        item.drawer = drawer
+        if self.ui.paging then
             self:writePdfAnnotation("save", page, item)
             local bm_note = self.ui.bookmark:getBookmarkNote(item)
             if bm_note then
                 self:writePdfAnnotation("content", page, item, bm_note)
             end
-            UIManager:setDirty(self.dialog, "ui")
-            self.ui:handleEvent(Event:new("BookmarkUpdated",
-                    self.ui.bookmark:getBookmarkForHighlight({
-                        page = self.ui.paging and page or item.pos0,
-                        datetime = item.datetime,
-                    })))
+        end
+        UIManager:setDirty(self.dialog, "ui")
+        self.ui:handleEvent(Event:new("BookmarkUpdated",
+                self.ui.bookmark:getBookmarkForHighlight({
+                    page = self.ui.paging and page or item.pos0,
+                    datetime = item.datetime,
+                })))
+    end
+    self:showHighlightStyleDialog(apply_drawer, item.drawer)
+end
+
+function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer)
+    local default_drawer, keep_shown_on_apply
+    if item_drawer then -- called from editHighlightStyle
+        default_drawer = self.view.highlight.saved_drawer or
+            G_reader_settings:readSetting("highlight_drawing_style", "lighten")
+        keep_shown_on_apply = true
+    end
+    local radio_buttons = {}
+    for _, v in ipairs(highlight_style) do
+        table.insert(radio_buttons, {
+            {
+                text = v[1],
+                checked = item_drawer == v[2],
+                provider = v[2],
+            },
+        })
+    end
+    local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
+    UIManager:show(RadioButtonWidget:new{
+        title_text = _("Highlight style"),
+        width_factor = 0.5,
+        keep_shown_on_apply = keep_shown_on_apply,
+        radio_buttons = radio_buttons,
+        default_provider = default_drawer,
+        callback = function(radio)
+            caller_callback(radio.provider)
         end,
     })
 end

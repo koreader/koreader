@@ -1,6 +1,6 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -437,6 +437,9 @@ function ReaderBookmark:onShowBookmark(match_table)
         if not match_table or self:doesBookmarkMatchTable(item, match_table) then
             item.text_orig = item.text or item.notes
             item.text = self.display_prefix[item.type] .. item.text_orig
+            if item.highlighted then
+                item.drawer = self:getHighlightDrawer(item.datetime)
+            end
             item.mandatory = self:getBookmarkPageString(item.page)
             if (not is_reverse_sorting and i >= curr_page_index) or (is_reverse_sorting and i <= curr_page_index) then
                 item.after_curr_page = true
@@ -719,6 +722,7 @@ function ReaderBookmark:onShowBookmark(match_table)
                 },
             })
         else
+            dialog_title = _("Filter by bookmark type")
             local actions_enabled = #item_table > 0
             local hl_count = 0
             local nt_count = 0
@@ -732,42 +736,47 @@ function ReaderBookmark:onShowBookmark(match_table)
                     bm_count = bm_count + 1
                 end
             end
-            dialog_title = T(bookmark.display_prefix["highlight"] .. "%1" .. "       " ..
-                             bookmark.display_prefix["note"] .. "%2" .. "       " ..
-                             bookmark.display_prefix["bookmark"] .. "%3", hl_count, nt_count, bm_count)
             table.insert(buttons, {
                 {
-                    text = bookmark.display_prefix["highlight"] .. _("highlights"),
+                    text = _("All (reset filters)"),
                     callback = function()
                         UIManager:close(bm_dialog)
                         bm_menu:onClose()
-                        bookmark:onShowBookmark({search_str = "", highlight = true})
+                        bookmark:onShowBookmark()
                     end,
                 },
                 {
-                    text = bookmark.display_prefix["bookmark"] .. _("page bookmarks"),
+                    text = bookmark.display_prefix["highlight"] .. T(_("%1 (%2)"), _("highlights"), hl_count),
                     callback = function()
                         UIManager:close(bm_dialog)
                         bm_menu:onClose()
-                        bookmark:onShowBookmark({search_str = "", bookmark = true})
+                        bookmark:onShowBookmark({highlight = true})
                     end,
                 },
             })
             table.insert(buttons, {
                 {
-                    text = bookmark.display_prefix["note"] .. _("notes"),
+                    text = bookmark.display_prefix["bookmark"] .. T(_("%1 (%2)"), _("page bookmarks"), bm_count),
                     callback = function()
                         UIManager:close(bm_dialog)
                         bm_menu:onClose()
-                        bookmark:onShowBookmark({search_str = "", note = true})
+                        bookmark:onShowBookmark({bookmark = true})
                     end,
                 },
                 {
-                    text = _("All bookmarks"),
+                    text = bookmark.display_prefix["note"] .. T(_("%1 (%2)"), _("notes"), nt_count),
                     callback = function()
                         UIManager:close(bm_dialog)
                         bm_menu:onClose()
-                        bookmark:onShowBookmark()
+                        bookmark:onShowBookmark({note = true})
+                    end,
+                },
+            })
+            table.insert(buttons, {
+                {
+                    text = _("Filter by highlight style"),
+                    callback = function()
+                        bookmark:filterByHighlightStyle(bm_dialog, bm_menu)
                     end,
                 },
             })
@@ -811,7 +820,7 @@ function ReaderBookmark:onShowBookmark(match_table)
                 },
             })
         end
-        bm_dialog = ButtonDialogTitle:new{
+        bm_dialog = ButtonDialog:new{
             title = dialog_title,
             title_align = "center",
             buttons = buttons,
@@ -1102,8 +1111,12 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
                     is_enter_default = true,
                     callback = function()
                         local search_str = input_dialog:getInputText()
-                        if not check_button_case.checked then
-                            search_str = Utf8Proc.lowercase(util.fixUtf8(search_str, "?"))
+                        if search_str == "" then
+                            search_str = nil
+                        else
+                            if not check_button_case.checked then
+                                search_str = Utf8Proc.lowercase(util.fixUtf8(search_str, "?"))
+                            end
                         end
                         local match_table = {
                             search_str = search_str,
@@ -1173,11 +1186,25 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
     input_dialog:onShowKeyboard()
 end
 
+function ReaderBookmark:filterByHighlightStyle(bm_dialog, bm_menu)
+    local filter_by_drawer = function(drawer)
+        UIManager:close(bm_dialog)
+        for i = #bm_menu.item_table, 1, -1 do
+            if not self:doesBookmarkMatchTable(bm_menu.item_table[i], {drawer = drawer}) then
+                table.remove(bm_menu.item_table, i)
+            end
+        end
+        bm_menu:switchItemTable(_("Bookmarks (filtered)"), bm_menu.item_table)
+    end
+    self.ui.highlight:showHighlightStyleDialog(filter_by_drawer)
+end
+
 function ReaderBookmark:doesBookmarkMatchTable(item, match_table)
+    if match_table.drawer then -- filter by highlight style
+        return item.highlighted and match_table.drawer == item.drawer
+    end
     if match_table[item.type] then
-        if match_table.search_str == "" then
-            return true
-        else
+        if match_table.search_str then
             local text = item.notes
             if item.text then -- search in the highlighted text and in the note
                 text = text .. "\u{FFFF}" .. item.text
@@ -1187,6 +1214,7 @@ function ReaderBookmark:doesBookmarkMatchTable(item, match_table)
             end
             return text:find(match_table.search_str)
         end
+        return true
     end
 end
 
@@ -1416,6 +1444,16 @@ end
 
 function ReaderBookmark:getBookmarkForHighlight(item)
     return self.bookmarks[self:getBookmarkIndexFullScan(item)]
+end
+
+function ReaderBookmark:getHighlightDrawer(datetime)
+    for page, highlights in pairs(self.view.highlight.saved) do
+        for _, highlight in ipairs(highlights) do
+            if highlight.datetime == datetime then
+                return highlight.drawer
+            end
+        end
+    end
 end
 
 return ReaderBookmark
