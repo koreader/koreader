@@ -1,7 +1,6 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialog = require("ui/widget/buttondialog")
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -268,21 +267,7 @@ function FileManager:setupLayout()
             end
             table.insert(buttons, {
                 filemanagerutil.genResetSettingsButton(file, status_button_callback),
-                {
-                    text_func = function()
-                        return ReadCollection:checkItemExist(file)
-                            and _("Remove from favorites") or _("Add to favorites")
-                    end,
-                    enabled = has_provider,
-                    callback = function()
-                        UIManager:close(self.file_dialog)
-                        if ReadCollection:checkItemExist(file) then
-                            ReadCollection:removeItem(file)
-                        else
-                            ReadCollection:addItem(file)
-                        end
-                    end,
-                },
+                filemanagerutil.genAddRemoveFavoritesButton(file, close_dialog_callback, not has_provider),
             })
             table.insert(buttons, {
                 {
@@ -344,7 +329,7 @@ function FileManager:setupLayout()
             })
         end
 
-        self.file_dialog = ButtonDialogTitle:new{
+        self.file_dialog = ButtonDialog:new{
             title = is_file and BD.filename(file:match("([^/]+)$")) or BD.directory(file:match("([^/]+)$")),
             title_align = "center",
             buttons = buttons,
@@ -739,7 +724,7 @@ function FileManager:tapPlus()
         end
     end
 
-    self.file_dialog = ButtonDialogTitle:new{
+    self.file_dialog = ButtonDialog:new{
         title = title,
         title_align = "center",
         buttons = buttons,

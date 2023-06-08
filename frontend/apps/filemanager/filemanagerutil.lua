@@ -164,6 +164,44 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
     }
 end
 
+function filemanagerutil.genAddRemoveFavoritesButton(file, caller_callback, button_disabled)
+    local ReadCollection = require("readcollection")
+    local is_added = ReadCollection:checkItemExist(file)
+    return {
+        text_func = function()
+            return is_added and _("Remove from favorites") or _("Add to favorites")
+        end,
+        enabled = not button_disabled,
+        callback = function()
+            caller_callback()
+            if is_added then
+                ReadCollection:removeItem(file)
+            else
+                ReadCollection:addItem(file)
+            end
+        end,
+    }
+end
+
+function filemanagerutil.genShowFolderButton(file, caller_callback, button_disabled)
+    return {
+        text = _("Show folder"),
+        enabled = not button_disabled,
+        callback = function()
+            caller_callback()
+            local ui = require("apps/filemanager/filemanager").instance
+            if ui then
+                local pathname = util.splitFilePathName(file)
+                ui.file_chooser:changeToPath(pathname, file)
+            else
+                ui = require("apps/reader/readerui").instance
+                ui:onClose()
+                ui:showFileManager(file)
+            end
+        end,
+    }
+end
+
 function filemanagerutil.genBookInformationButton(file, caller_callback, button_disabled)
     return {
         text = _("Book information"),
