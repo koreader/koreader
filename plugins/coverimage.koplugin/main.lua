@@ -212,10 +212,10 @@ end
 ---------------------------
 
 function CoverImage:getCacheFile(custom_cover)
-    local mtime = custom_cover and lfs.attributes(custom_cover, "modification") or ""
+    local custom_cover_mtime = custom_cover and lfs.attributes(custom_cover, "modification") or ""
     local dummy, document_name = util.splitFilePathName(self.ui.document.file)
     -- use document_name here. Title may contain characters not allowed on every filesystem (esp. vfat on /sdcard)
-    local key = document_name .. mtime .. self.cover_image_quality .. self.cover_image_stretch_limit
+    local key = document_name .. custom_cover_mtime .. self.cover_image_quality .. self.cover_image_stretch_limit
         .. self.cover_image_background .. self.cover_image_format .. tostring(self.cover_image_grayscale)
 
     return self.cover_image_cache_path .. self.cover_image_cache_prefix .. md5(key) .. "." .. getExtension(self.cover_image_path)
