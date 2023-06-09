@@ -142,6 +142,11 @@ function AutoWarmth:_onResume()
 
     local resume_date = os.date("*t")
 
+    if self.fl_off_during_day then
+    -- We handle the frontlight state ourself.
+        Powerd.fl_was_on = false
+    end
+
     -- check if resume and suspend are done on the same day
     if resume_date.day == SunTime.date.day and resume_date.month == SunTime.date.month
         and resume_date.year == SunTime.date.year then
@@ -163,6 +168,7 @@ function AutoWarmth:_onSuspend()
     UIManager:unschedule(self.scheduleMidnightUpdate)
     UIManager:unschedule(self.setWarmth)
     UIManager:unschedule(self.setFrontlight)
+    UIManager:unschedule(self.scheduleNextWarmthChange)
 end
 
 function AutoWarmth:_onToggleNightMode()
@@ -203,8 +209,10 @@ end
 function AutoWarmth:_onToggleFrontlight()
     logger.dbg("AutoWarmth: onToggleFrontlight")
     local now_s = SunTime:getTimeInSec()
-    AutoWarmth.fl_turned_off = now_s >= self.current_times_h[5]*3600 + self.fl_off_during_day_offset_s and
-        now_s < self.current_times_h[7]*3600 - self.fl_off_during_day_offset_s
+    local sunrise_in_s = self.current_times_h[5] * 3600 + self.fl_off_during_day_offset_s - now_s
+    local sunset_in_s = self.current_times_h[7] * 3600 - self.fl_off_during_day_offset_s - now_s
+
+    AutoWarmth.fl_turned_off = sunrise_in_s < 0 and sunset_in_s > 0
 end
 
 function AutoWarmth:setEventHandlers()
@@ -309,8 +317,8 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
         self.current_times_h[2] = nil   -- Astronomical dawn
         self.current_times_h[3] = nil   -- Nautical dawn
         self.current_times_h[6] = nil   -- Solar noon
-        self.current_times_h[9] = nil   -- Nautical dust
-        self.current_times_h[10] = nil  -- Astronomical dust
+        self.current_times_h[9] = nil   -- Nautical dusk
+        self.current_times_h[10] = nil  -- Astronomical dusk
         self.current_times_h[11] = nil  -- Solar midnight
     end
 
@@ -362,10 +370,10 @@ function AutoWarmth:scheduleToggleFrontlight(now_s)
     -- Reset user fl toggles at sunset or sunrise with offset, as `scheduleNextWarmthChange` gets called only
     -- on scheduled warmth changes.
     local sunset_in_s = self.current_times_h[7] * 3600 - self.fl_off_during_day_offset_s - now_s
-    if sunset_in_s >= 0 then
+    if sunset_in_s >= 0 then -- first check if we are before sunset
         UIManager:scheduleIn(sunset_in_s, self.setFrontlight, self, true)
         local sunrise_in_s = self.current_times_h[5] * 3600 + self.fl_off_during_day_offset_s - now_s
-        if sunrise_in_s >= 0 then
+        if sunrise_in_s >= 0 then -- second check if we are before sunrise
             UIManager:scheduleIn(sunrise_in_s, self.setFrontlight, self, false)
         end
     end
@@ -385,21 +393,23 @@ function AutoWarmth:setFrontlight(enable)
 end
 
 -- toggles Frontlight on or off, only depending on the time
-function AutoWarmth:forceToggleFrontlight()
+function AutoWarmth:forceToggleFrontlight(now_s)
     if not self.fl_off_during_day then
         return
     end
 
-    local now_s = SunTime:getTimeInSec()
-    local is_fl_on = now_s < self.current_times_h[5] * 3600 + self.fl_off_during_day_offset_s
-                  or now_s > self.current_times_h[7] * 3600 - self.fl_off_during_day_offset_s
+    now_s = now_s or SunTime:getTimeInSec()
+    local sunrise_in_s = self.current_times_h[5] * 3600 + self.fl_off_during_day_offset_s - now_s
+    local sunset_in_s = self.current_times_h[7] * 3600 - self.fl_off_during_day_offset_s - now_s
 
-    self:setFrontlight(is_fl_on)
+    self:setFrontlight(sunrise_in_s < 0 or sunset_in_s > 0)
 end
 
 -- toggles Frontlight on or off, depending on `now_s`
 -- decide with the help of `Autowarmth.fl_turned_off` if the fl should be on or off
 function AutoWarmth:toggleFrontlight(now_s)
+    logger.dbg("AutoWarmth: toggleFrontlight", now_s)
+
     if self.fl_off_during_day then
         if now_s >= self.current_times_h[5]*3600 + self.fl_off_during_day_offset_s
             and now_s < self.current_times_h[7]*3600 - self.fl_off_during_day_offset_s then
@@ -1035,6 +1045,17 @@ function AutoWarmth:getWarmthMenu()
             end,
             enabled_func = function()
                 return Device:hasNaturalLight()
+            end,
+            hold_callback = function()
+                if Device:hasNaturalLight() then
+                    UIManager:show(InfoMessage:new{
+                        text = _("Tapping here chooses between the different AutoWarmth modes: 'warmth only', 'warmth and night mode', 'night mode only'."),
+                    })
+                else
+                    UIManager:show(InfoMessage:new{
+                        text = _("Your device supports 'night mode' control only."),
+                    })
+                end
             end,
             callback = function(touchmenu_instance)
                 if self.control_warmth and self.control_nightmode then
