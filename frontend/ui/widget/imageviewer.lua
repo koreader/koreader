@@ -33,8 +33,6 @@ local ImageViewer = InputContainer:extend{
     -- whether the provided BlitBuffer should be free'd. Usually true,
     -- unless our caller wants to reuse the image it provided
     image_disposable = true,
-    file_do_cache = true,
-    close_callback = nil,
 
     -- 'image' can alternatively be a table (list) of multiple BlitBuffers
     -- (or functions returning BlitBuffers).
@@ -78,6 +76,7 @@ local ImageViewer = InputContainer:extend{
     _images_list = nil,
     _images_list_disposable = nil,
     _scaled_image_func = nil,
+
 }
 
 function ImageViewer:init()
@@ -432,7 +431,6 @@ function ImageViewer:_new_image_wg()
         file = self.file,
         image = self.image,
         image_disposable = false, -- we may re-use self.image
-        file_do_cache = self.file_do_cache,
         alpha = true, -- we might be showing images with an alpha channel (e.g., from Wikipedia)
         width = max_image_w,
         height = max_image_h,
@@ -815,9 +813,6 @@ end
 
 function ImageViewer:onClose()
     UIManager:close(self)
-    if self.close_callback then
-        self.close_callback()
-    end
     return true
 end
 
