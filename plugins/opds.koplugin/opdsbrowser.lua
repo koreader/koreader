@@ -1,5 +1,5 @@
 local BD = require("ui/bidi")
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local ButtonDialog = require("ui/widget/buttondialog")
 local Cache = require("cache")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DocumentRegistry = require("document/documentregistry")
@@ -68,8 +68,11 @@ local OPDSBrowser = Menu:extend{
     search_type          = "application/opensearchdescription%+xml",
     search_template_type = "application/atom%+xml",
     acquisition_rel      = "^http://opds%-spec%.org/acquisition",
+    borrow_rel           = "http://opds-spec.org/acquisition/borrow",
     image_rel            = "http://opds-spec.org/image",
+    image_rel_alt        = "http://opds-spec.org/cover", -- ManyBooks.net, not in spec
     thumbnail_rel        = "http://opds-spec.org/image/thumbnail",
+    thumbnail_rel_alt    = "http://opds-spec.org/thumbnail", -- ManyBooks.net, not in spec
     stream_rel           = "http://vaemendis.net/opds-pse/stream",
 
     root_catalog_title    = nil,
@@ -395,20 +398,11 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
     end
     item_table.hrefs = hrefs
 
-    if not feed.entry then
-        if #hrefs == 0 then
-            UIManager:show(InfoMessage:new{
-                text = _("Failed to parse the catalog."),
-            })
-        end
-        return item_table
-    end
-
-    for _, entry in ipairs(feed.entry) do
+    for _, entry in ipairs(feed.entry or {}) do
         local item = {}
         item.acquisitions = {}
         if entry.link then
-            for _, link in ipairs(entry.link) do
+            for __, link in ipairs(entry.link) do
                 local link_href = build_href(link.href)
                 if link.type and link.type:find(self.catalog_type)
                         and (not link.rel
@@ -422,7 +416,11 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                 -- a publication. Arxiv uses title. Specifically, it uses
                 -- a title attribute that contains pdf. (title="pdf")
                 if link.rel or link.title then
-                    if link.rel:match(self.acquisition_rel) then
+                    if link.rel == self.borrow_rel then
+                        table.insert(item.acquisitions, {
+                            type = "borrow",
+                        })
+                    elseif link.rel and link.rel:match(self.acquisition_rel) then
                         table.insert(item.acquisitions, {
                             type  = link.type,
                             href  = link_href,
@@ -447,9 +445,9 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                                 count = count,
                             })
                         end
-                    elseif link.rel == self.thumbnail_rel then
+                    elseif link.rel == self.thumbnail_rel or link.rel == self.thumbnail_rel_alt then
                         item.thumbnail = link_href
-                    elseif link.rel == self.image_rel then
+                    elseif link.rel == self.image_rel or link.rel == self.image_rel_alt then
                         item.image = link_href
                     end
                     -- This statement grabs the catalog items that are
@@ -582,15 +580,14 @@ function OPDSBrowser:showDownloads(item)
     end
     local filename_orig = filename
 
-    local function createTitle(path, file) -- title for ButtonDialogTitle
+    local function createTitle(path, file) -- title for ButtonDialog
         return T(_("Download folder:\n%1\n\nDownload filename:\n%2\n\nDownload file type:"),
             BD.dirpath(path), file)
     end
 
-    local buttons = {} -- buttons for ButtonDialogTitle
+    local buttons = {} -- buttons for ButtonDialog
     local stream_buttons -- page stream buttons
     local download_buttons = {} -- file type download buttons
-
     for i, acquisition in ipairs(acquisitions) do -- filter out unsupported file types
         if acquisition.count then
             stream_buttons = {
@@ -611,6 +608,11 @@ function OPDSBrowser:showDownloads(item)
                     end,
                 },
             }
+        elseif acquisition.type == "borrow" then
+            table.insert(download_buttons, {
+                text = _("Borrow"),
+                enabled = false,
+            })
         else
             local filetype = util.getFileNameSuffix(acquisition.href)
             logger.dbg("Filetype for download is", filetype)
@@ -701,11 +703,13 @@ function OPDSBrowser:showDownloads(item)
             end,
         },
     })
+    local cover_link = item.image or item.thumbnail
     table.insert(buttons, {
         {
-            text = _("Cancel"),
+            text = _("Book cover"),
+            enabled = cover_link and true or false,
             callback = function()
-                UIManager:close(self.download_dialog)
+                OPDSPSE:streamPages(cover_link, 1, false, self.root_catalog_username, self.root_catalog_password)
             end,
         },
         {
@@ -723,7 +727,7 @@ function OPDSBrowser:showDownloads(item)
         },
     })
 
-    self.download_dialog = ButtonDialogTitle:new{
+    self.download_dialog = ButtonDialog:new{
         title = createTitle(self.getCurrentDownloadDir(), filename),
         buttons = buttons,
     }
@@ -839,7 +843,7 @@ function OPDSBrowser:onMenuHold(item)
     if #self.paths > 0 then return end -- not root list
     local is_calibre = item.text == self.calibre_name
     local dialog
-    dialog = ButtonDialogTitle:new{
+    dialog = ButtonDialog:new{
         title = item.text,
         title_align = "center",
         buttons = {
