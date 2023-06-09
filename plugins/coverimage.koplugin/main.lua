@@ -14,6 +14,7 @@ local A, android = pcall(require, "android")  -- luacheck: ignore
 local Blitbuffer = require("ffi/blitbuffer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local PathChooser = require("ui/widget/pathchooser")
@@ -110,9 +111,9 @@ end
 
 function CoverImage:createCoverImage(doc_settings)
     if self:coverEnabled() and doc_settings:nilOrFalse("exclude_cover_image") then
-        local cover_image = self.ui.document:getCoverPageImage()
+        local cover_image, custom_cover = FileManagerBookInfo:getCoverImage(self.ui.document)
         if cover_image then
-            local cache_file = self:getCacheFile()
+            local cache_file = self:getCacheFile(custom_cover)
             if lfs.attributes(cache_file, "mode") == "file" then
                 ffiutil.copyFile(cache_file, self.cover_image_path)
                 lfs.touch(cache_file) -- update date
@@ -210,11 +211,12 @@ end
 -- cache handling functions
 ---------------------------
 
-function CoverImage:getCacheFile()
+function CoverImage:getCacheFile(custom_cover)
+    local custom_cover_mtime = custom_cover and lfs.attributes(custom_cover, "modification") or ""
     local dummy, document_name = util.splitFilePathName(self.ui.document.file)
     -- use document_name here. Title may contain characters not allowed on every filesystem (esp. vfat on /sdcard)
-    local key = document_name .. "_" .. self.cover_image_quality .. "_" .. self.cover_image_stretch_limit .. "_"
-        .. self.cover_image_background .. "_" .. self.cover_image_format .. "_" .. tostring(self.cover_image_grayscale)
+    local key = document_name .. custom_cover_mtime .. self.cover_image_quality .. self.cover_image_stretch_limit
+        .. self.cover_image_background .. self.cover_image_format .. tostring(self.cover_image_grayscale)
 
     return self.cover_image_cache_path .. self.cover_image_cache_prefix .. md5(key) .. "." .. getExtension(self.cover_image_path)
 end

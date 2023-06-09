@@ -141,6 +141,7 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
         kv_pairs = kv_pairs,
         values_lang = values_lang,
         close_callback = function()
+            self.custom_book_cover = nil
             if self.updated then
                 local FileManager = require("apps/filemanager/filemanager")
                 local fm_ui = FileManager.instance
@@ -293,7 +294,7 @@ function BookInfo:getCoverImage(doc, file, force_orig)
             if cover_doc then
                 cover_bb = cover_doc:getCoverPageImage()
                 cover_doc:close()
-                return cover_bb
+                return cover_bb, custom_cover
             end
         end
     end
@@ -321,11 +322,7 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
         end
         self.updated = true
         self.kvp_widget:onClose()
-        if self.document then
-            self:onShowBookInfo()
-        else
-            self:show(file, book_props, metadata_updated_caller_callback)
-        end
+        self:show(file, book_props, metadata_updated_caller_callback)
     end
     if self.custom_book_cover then -- reset custom cover
         local ConfirmBox = require("ui/widget/confirmbox")
