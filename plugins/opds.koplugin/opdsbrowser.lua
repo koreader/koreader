@@ -627,7 +627,7 @@ function OPDSBrowser:showDownloads(item)
                 table.insert(download_buttons, {
                     text = text .. "\u{2B07}", -- append DOWNWARDS BLACK ARROW
                     callback = function()
-                        self:downloadFile(filename .. "." .. string.lower(filetype), acquisition.href, self.file_downloaded_callback)
+                        self:downloadFile(filename .. "." .. string.lower(filetype), acquisition.href)
                         UIManager:close(self.download_dialog)
                     end,
                 })
@@ -703,26 +703,13 @@ function OPDSBrowser:showDownloads(item)
             end,
         },
     })
+    local cover_link = item.image or item.thumbnail
     table.insert(buttons, {
         {
             text = _("Book cover"),
-            enabled = item.image ~= nil or item.thumbnail ~= nil,
+            enabled = cover_link and true or false,
             callback = function()
-                local cover_link = item.image or item.thumbnail
-                local function file_downloaded_callback(cover_file)
-                    local function image_viewer_close_callback()
-                        os.remove(cover_file)
-                    end
-                    local ImageViewer = require("ui/widget/imageviewer")
-                    UIManager:show(ImageViewer:new{
-                        file = cover_file,
-                        fullscreen = true,
-                        with_title_bar = false,
-                        file_do_cache = false,
-                        close_callback = image_viewer_close_callback,
-                    })
-                end
-                self:downloadFile("tmp_cover.jpg", cover_link, file_downloaded_callback)
+                OPDSPSE:streamPages(cover_link, 1, false, self.root_catalog_username, self.root_catalog_password)
             end,
         },
         {
@@ -753,7 +740,7 @@ function OPDSBrowser.getCurrentDownloadDir()
 end
 
 -- Downloads a book (with "File already exists" dialog)
-function OPDSBrowser:downloadFile(filename, remote_url, file_downloaded_callback)
+function OPDSBrowser:downloadFile(filename, remote_url)
     local download_dir = self.getCurrentDownloadDir()
 
     filename = util.getSafeFilename(filename, download_dir)
@@ -786,7 +773,7 @@ function OPDSBrowser:downloadFile(filename, remote_url, file_downloaded_callback
 
             if code == 200 then
                 logger.dbg("File downloaded to", local_path)
-                file_downloaded_callback(local_path)
+                self.file_downloaded_callback(local_path)
             elseif code == 302 and remote_url:match("^https") and headers.location:match("^http[^s]") then
                 util.removeFile(local_path)
                 UIManager:show(InfoMessage:new{
