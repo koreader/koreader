@@ -76,7 +76,9 @@ function AutoWarmth:init()
 
     self.control_warmth = G_reader_settings:nilOrTrue("autowarmth_control_warmth")
     self.control_nightmode = G_reader_settings:nilOrTrue("autowarmth_control_nightmode")
-    if not self.control_warmth and not self.control_nightmode then
+    if not Device:hasNaturalLight() then
+        self.control_nightmode = true
+    elseif not self.control_warmth and not self.control_nightmode then
         logger.dbg("AutoWarmth: autowarmth_control_warmth and autowarmth_control_nightmode are both false, set them to true")
         self.control_warmth = true
         self.control_nightmode = true
@@ -185,6 +187,7 @@ function AutoWarmth:_onToggleNightMode()
                 provider = function()
                     self.control_nightmode = false
                     G_reader_settings:makeFalse("autowarmth_control_nightmode")
+                    self:scheduleMidnightUpdate(true)
                 end,
             }},
         }
@@ -213,6 +216,9 @@ function AutoWarmth:setEventHandlers()
     if self.control_nightmode then
         self.onToggleNightMode = self._onToggleNightMode
         self.onSetNightMode = self._onToggleNightMode
+    else
+        self.onToggleNightMode = nil
+        self.onSetNightMode = nil
     end
     if self.fl_off_during_day then
         self.onToggleFrontlight = self._onToggleFrontlight
@@ -659,7 +665,7 @@ function AutoWarmth:getFlOffDuringDayMenu()
                         if touchmenu_instance then self:updateItems(touchmenu_instance) end
                     end,
                     extra_text = _("Disable"),
-                    extra_callback = self.control_nightmode and function()
+                    extra_callback = function()
                         self.fl_off_during_day = nil
                         G_reader_settings:saveSetting("autowarmth_fl_off_during_day", nil)
                         self:scheduleMidnightUpdate()
@@ -1033,23 +1039,34 @@ function AutoWarmth:getWarmthMenu()
                     return _("Control: night mode")
                 end
             end,
-            enabled_func = function()
-                return Device:hasNaturalLight()
+            checked_func = function()
+                if Device:hasNaturalLight() then
+                    return self.control_nightmode or self.control_warmth
+                else
+                    return self.control_nightmode
+                end
             end,
             callback = function(touchmenu_instance)
-                if self.control_warmth and self.control_nightmode then
-                    self.control_nightmode = false
-                    G_reader_settings:makeFalse("autowarmth_control_nightmode")
-                elseif self.control_warmth and not self.control_nightmode then
-                    self.control_warmth = false
-                    self.control_nightmode = true
-                    G_reader_settings:makeFalse("autowarmth_control_warmth")
-                    G_reader_settings:makeTrue("autowarmth_control_nightmode")
+                if Device:hasNaturalLight() then
+                    if self.control_warmth and self.control_nightmode then
+                        self.control_warmth = true
+                        self.control_nightmode = false
+                        G_reader_settings:makeTrue("autowarmth_control_warmth")
+                        G_reader_settings:makeFalse("autowarmth_control_nightmode")
+                    elseif self.control_warmth and not self.control_nightmode then
+                        self.control_warmth = false
+                        self.control_nightmode = true
+                        G_reader_settings:makeFalse("autowarmth_control_warmth")
+                        G_reader_settings:makeTrue("autowarmth_control_nightmode")
+                    else
+                        self.control_warmth = true
+                        self.control_nightmode = true
+                        G_reader_settings:makeTrue("autowarmth_control_warmth")
+                        G_reader_settings:makeTrue("autowarmth_control_nightmode")
+                    end
                 else
-                    self.control_warmth = true
-                    self.control_nightmode = true
-                    G_reader_settings:makeTrue("autowarmth_control_warmth")
-                    G_reader_settings:makeTrue("autowarmth_control_nightmode")
+                    self.control_nightmode = not self.control_nightmode
+                    G_reader_settings:toggle("autowarmth_control_nightmode")
                 end
                 self:scheduleMidnightUpdate()
                 if touchmenu_instance then self:updateItems(touchmenu_instance) end
