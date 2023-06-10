@@ -13,7 +13,15 @@ local logger = require("logger")
 local util = require("util")
 
 local DocSettings = LuaSettings:extend{
-    cover_ext = { "png", "jpg", "jpeg", "gif", "tif", "tiff", "svg" },
+    image_ext = {
+        png  = true,
+        jpg  = true,
+        jpeg = true,
+        gif  = true,
+        tif  = true,
+        tiff = true,
+        svg  = true,
+    },
 }
 
 local HISTORY_DIR = DataStorage:getHistoryDir()
@@ -165,7 +173,7 @@ function DocSettings:_findCoverFileInDir(dir)
     local ok, iter, dir_obj = pcall(lfs.dir, dir)
     if ok then
         for f in iter, dir_obj do
-            for _, ext in ipairs(self.cover_ext) do
+            for ext in pairs(self.image_ext) do
                 if f == "cover." .. ext then
                     return dir .. "/" .. f
                 end
