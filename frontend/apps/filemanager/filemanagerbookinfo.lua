@@ -342,7 +342,7 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
         local path_chooser = PathChooser:new{
             select_directory = false,
             file_filter = function(filename)
-                return util.arrayContains(DocSettings.cover_ext, util.getFileNameSuffix(filename))
+                return DocSettings.image_ext[util.getFileNameSuffix(filename):lower()]
             end,
             onConfirm = function(image_file)
                 local sidecar_dir
@@ -358,7 +358,7 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
                     sidecar_dir = DocSettings:getSidecarDir(file) .. "/"
                     util.makePath(sidecar_dir)
                 end
-                local new_cover_file = sidecar_dir .. "cover." .. util.getFileNameSuffix(image_file)
+                local new_cover_file = sidecar_dir .. "cover." .. util.getFileNameSuffix(image_file):lower()
                 if ffiutil.copyFile(image_file, new_cover_file) == nil then
                     kvp_update()
                 end
