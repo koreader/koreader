@@ -274,14 +274,26 @@ function FileManager:setupLayout()
                     text = _("Open with…"),
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        local one_time_providers = {
-                            {
-                                provider_name = _("Text viewer"),
+                        local one_time_providers = {}
+                        if DocSettings.image_ext[util.getFileNameSuffix(file):lower()] then
+                            table.insert(one_time_providers, {
+                                provider_name = _("Image viewer"),
                                 callback = function()
-                                    file_manager:openTextViewer(file)
+                                    local ImageViewer = require("ui/widget/imageviewer")
+                                    UIManager:show(ImageViewer:new{
+                                        file = file,
+                                        fullscreen = true,
+                                        with_title_bar = false,
+                                    })
                                 end,
-                            },
-                        }
+                            })
+                        end
+                        table.insert(one_time_providers, {
+                            provider_name = _("Text viewer"),
+                            callback = function()
+                                file_manager:openTextViewer(file)
+                            end,
+                        })
                         if file_manager.texteditor then
                             table.insert(one_time_providers, {
                                 provider_name = _("Text editor"),
@@ -1238,7 +1250,6 @@ function FileManager:onShowFolderMenu()
     end
 
     button_dialog = ButtonDialog:new{
-        width = math.floor(Screen:getWidth() * 0.9),
         shrink_unneeded_width = true,
         buttons = buttons,
         anchor = function()
