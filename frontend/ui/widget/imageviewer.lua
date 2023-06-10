@@ -425,7 +425,7 @@ function ImageViewer:_new_image_wg()
         file = self.file,
         image = self.image,
         image_disposable = false, -- we may re-use self.image
-        file_do_cache = self.image and true or false, -- do not cache local files
+        file_do_cache = false,
         alpha = true, -- we might be showing images with an alpha channel (e.g., from Wikipedia)
         width = max_image_w,
         height = max_image_h,
