@@ -77,7 +77,7 @@ local function isSpecialOffers()
     -- Look at the current blanket modules to see if the SO screensavers are enabled...
     local haslipc, lipc = pcall(require, "liblipclua")
     if not (haslipc and lipc) then
-        logger.warn("could not load liblibclua")
+        logger.warn("could not load liblipclua:", lipc)
         return true
     end
     local lipc_handle = lipc.init("com.github.koreader.device")
