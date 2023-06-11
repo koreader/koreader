@@ -12,17 +12,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 
-local DocSettings = LuaSettings:extend{
-    image_ext = {
-        png  = true,
-        jpg  = true,
-        jpeg = true,
-        gif  = true,
-        tif  = true,
-        tiff = true,
-        svg  = true,
-    },
-}
+local DocSettings = LuaSettings:extend{}
 
 local HISTORY_DIR = DataStorage:getHistoryDir()
 local DOCSETTINGS_DIR = DataStorage:getDocSettingsDir()
@@ -173,10 +163,8 @@ function DocSettings:_findCoverFileInDir(dir)
     local ok, iter, dir_obj = pcall(lfs.dir, dir)
     if ok then
         for f in iter, dir_obj do
-            for ext in pairs(self.image_ext) do
-                if f == "cover." .. ext then
-                    return dir .. "/" .. f
-                end
+            if util.splitFileNameSuffix(f) == "cover" then
+                return dir .. "/" .. f
             end
         end
     end
