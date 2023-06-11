@@ -342,7 +342,7 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
         local path_chooser = PathChooser:new{
             select_directory = false,
             file_filter = function(filename)
-                return DocSettings.image_ext[util.getFileNameSuffix(filename):lower()]
+                return DocumentRegistry:isImageFile(filename)
             end,
             onConfirm = function(image_file)
                 local sidecar_dir
