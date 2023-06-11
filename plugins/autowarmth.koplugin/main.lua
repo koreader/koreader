@@ -49,7 +49,8 @@ local AutoWarmth = WidgetContainer:extend{
     sched_warmths = nil, -- array
 
     -- Static member that shall survive reloading of the plugin but not a restart
-    fl_turned_off = nil -- true/false if someone (AutoWarmth, gesture ...) has toggled the frontlight
+    fl_user_toggle = false, -- true/false if someone (AutoWarmth, gesture ...) has toggled the frontlight
+    fl_turned_off = false, -- the frontlight toggle state
 }
 
 function AutoWarmth:init()
@@ -140,12 +141,12 @@ function AutoWarmth:onAutoWarmthMode()
 end
 
 function AutoWarmth:_onResume()
-    logger.dbg("AutoWarmth: onResume")
+    logger.dbg("AutoWarmth: onResume", AutoWarmth.fl_turned_off, AutoWarmth.fl_user_toggle)
 
     local resume_date = os.date("*t")
 
     if self.fl_off_during_day then
-    -- We handle the frontlight state ourself.
+        -- We handle the frontlight state ourself.
         Powerd.fl_was_on = false
     end
 
@@ -157,7 +158,11 @@ function AutoWarmth:_onResume()
         self.sched_warmth_index = self.sched_warmth_index - 1 -- scheduleNextWarmth will check this
         self:scheduleNextWarmthChange(true)
         self:scheduleToggleFrontlight(now_s) -- reset user toggles at sun set or sun rise
-        self:toggleFrontlight(now_s)
+        if AutoWarmth.fl_user_toggle then
+            self:setFrontlight(not AutoWarmth.fl_turned_off, true) -- keep user toggle state
+        else
+            self:toggleFrontlight(now_s) -- no user toggle
+        end
         -- Reschedule 1sec after midnight
         UIManager:scheduleIn(24*3600 + 1 - now_s, self.scheduleMidnightUpdate, self)
     else
@@ -211,11 +216,8 @@ end
 
 function AutoWarmth:_onToggleFrontlight()
     logger.dbg("AutoWarmth: onToggleFrontlight")
-    local now_s = SunTime:getTimeInSec()
-    local sunrise_in_s = self.current_times_h[5] * 3600 + self.fl_off_during_day_offset_s - now_s
-    local sunset_in_s = self.current_times_h[7] * 3600 - self.fl_off_during_day_offset_s - now_s
-
-    AutoWarmth.fl_turned_off = sunrise_in_s < 0 and sunset_in_s > 0
+    AutoWarmth.fl_user_toggle = true
+    AutoWarmth.fl_turned_off = not AutoWarmth.fl_turned_off
 end
 
 function AutoWarmth:setEventHandlers()
@@ -377,29 +379,39 @@ function AutoWarmth:scheduleToggleFrontlight(now_s)
     -- on scheduled warmth changes.
     local sunset_in_s = self.current_times_h[7] * 3600 - self.fl_off_during_day_offset_s - now_s
     if sunset_in_s >= 0 then -- first check if we are before sunset
-        UIManager:scheduleIn(sunset_in_s, self.setFrontlight, self, true)
+        UIManager:scheduleIn(sunset_in_s, self.setFrontlight, self, true, false)
         local sunrise_in_s = self.current_times_h[5] * 3600 + self.fl_off_during_day_offset_s - now_s
         if sunrise_in_s >= 0 then -- second check if we are before sunrise
-            UIManager:scheduleIn(sunrise_in_s, self.setFrontlight, self, false)
+            UIManager:scheduleIn(sunrise_in_s, self.setFrontlight, self, false, false)
         end
     end
 end
 
 -- turns frontlight on or off and notice AutoDim on turning it off
 -- enable ... true to enable frontlight, false/nil to disable it
-function AutoWarmth:setFrontlight(enable)
-    logger.dbg("AutoWarmth: setFrontlight", enable)
-    AutoWarmth.fl_turned_off = not enable
+function AutoWarmth:setFrontlight(enable, keep_user_toggle)
+    logger.dbg("AutoWarmth: setFrontlight", enable, keep_user_toggle)
+    if not keep_user_toggle then
+        AutoWarmth.fl_user_toggle = false
+    end
+    if not self.fl_off_during_day then
+        return
+    end
+
     if enable then
         Powerd:turnOnFrontlight()
+        AutoWarmth.fl_turned_off = false
     else
         Powerd:turnOffFrontlight()
+        AutoWarmth.fl_turned_off = true
         UIManager:broadcastEvent(Event:new("FrontlightTurnedOff")) -- used e.g. in AutoDim
     end
 end
 
--- toggles Frontlight on or off, only depending on the time
-function AutoWarmth:forceToggleFrontlight(now_s)
+-- toggles Frontlight on or off, depending on `now_s`
+function AutoWarmth:toggleFrontlight(now_s)
+    logger.dbg("AutoWarmth: toggleFrontlight", now_s)
+
     if not self.fl_off_during_day then
         return
     end
@@ -408,34 +420,7 @@ function AutoWarmth:forceToggleFrontlight(now_s)
     local sunrise_in_s = self.current_times_h[5] * 3600 + self.fl_off_during_day_offset_s - now_s
     local sunset_in_s = self.current_times_h[7] * 3600 - self.fl_off_during_day_offset_s - now_s
 
-    self:setFrontlight(sunrise_in_s < 0 or sunset_in_s > 0)
-end
-
--- toggles Frontlight on or off, depending on `now_s`
--- decide with the help of `Autowarmth.fl_turned_off` if the fl should be on or off
-function AutoWarmth:toggleFrontlight(now_s)
-    logger.dbg("AutoWarmth: toggleFrontlight", now_s)
-
-    if self.fl_off_during_day then
-        if now_s >= self.current_times_h[5]*3600 + self.fl_off_during_day_offset_s
-            and now_s < self.current_times_h[7]*3600 - self.fl_off_during_day_offset_s then
-            -- during daytime turn on frontlight off once, user can override this selection by a gesture
-            if AutoWarmth.fl_turned_off ~= true then -- can be false or nil
-                if Powerd:isFrontlightOn() then
-                    self:setFrontlight(false)
-                end
-            end
-            AutoWarmth.fl_turned_off = true -- in case fl_turned_off was nil
-        else
-            -- outside of selected daytime, turn on frontlight once, user can override this selection
-            if AutoWarmth.fl_turned_off ~= false then -- can be true or nil
-                if Powerd:isFrontlightOff() then
-                    self:setFrontlight(true)
-                end
-            end
-            AutoWarmth.fl_turned_off = false -- in case fl_turned_off was nil
-        end
-    end
+    self:setFrontlight(sunrise_in_s > 0 or sunset_in_s < 0)
 end
 
 -- schedules the next warmth change
@@ -646,7 +631,7 @@ function AutoWarmth:getFlOffDuringDayMenu()
                 self.fl_off_during_day = not self.fl_off_during_day
                 G_reader_settings:saveSetting("autowarmth_fl_off_during_day", self.fl_off_during_day)
                 self:scheduleMidnightUpdate()
-                self:forceToggleFrontlight()
+                self:toggleFrontlight()
             else
                 -- hard limit offset to 15 min after sunset and 30 mins before sunset; sunrise vice versa
                 UIManager:show(SpinWidget:new{
@@ -671,7 +656,7 @@ function AutoWarmth:getFlOffDuringDayMenu()
                         self.fl_off_during_day = true
                         G_reader_settings:saveSetting("autowarmth_fl_off_during_day", true)
                         self:scheduleMidnightUpdate()
-                        self:forceToggleFrontlight()
+                        self:toggleFrontlight()
                         if touchmenu_instance then self:updateItems(touchmenu_instance) end
                     end,
                     extra_text = _("Disable"),
@@ -679,7 +664,7 @@ function AutoWarmth:getFlOffDuringDayMenu()
                         self.fl_off_during_day = nil
                         G_reader_settings:saveSetting("autowarmth_fl_off_during_day", nil)
                         self:scheduleMidnightUpdate()
-                        self:forceToggleFrontlight()
+                        self:toggleFrontlight()
                         if touchmenu_instance then self:updateItems(touchmenu_instance) end
                     end,
                 })
