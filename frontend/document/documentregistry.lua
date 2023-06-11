@@ -20,6 +20,7 @@ local DocumentRegistry = {
         svg  = true,
         tif  = true,
         tiff = true,
+        webp = true,
     },
 }
 
