@@ -94,7 +94,7 @@ function Screensaver:_getRandomImage(dir)
         for f in iter, dir_obj do
             -- Always ignore macOS resource forks, too.
             if lfs.attributes(dir .. f, "mode") == "file" and not util.stringStartsWith(f, "._")
-               and DocumentRegistry:isImageFile(f) then
+                    and DocumentRegistry:isImageFile(f) then
                 i = i + 1
                 pics[i] = f
             end
