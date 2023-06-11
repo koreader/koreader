@@ -275,7 +275,7 @@ function FileManager:setupLayout()
                     callback = function()
                         UIManager:close(self.file_dialog)
                         local one_time_providers = {}
-                        if DocSettings.image_ext[util.getFileNameSuffix(file):lower()] then
+                        if DocumentRegistry:isImageFile(file) then
                             table.insert(one_time_providers, {
                                 provider_name = _("Image viewer"),
                                 callback = function()
