@@ -82,13 +82,11 @@ local codecs = {
             if not ok then
                 return nil, "cannot serialize " .. tostring(t) .. " (" .. str .. ")"
             end
-
-            local cbuff, clen = zstd.zstd_compress(str, #str)
-
             local f = C.fopen(path, "wb")
             if f == nil then
                 return nil, "fopen: " .. ffi.string(C.strerror(ffi.errno()))
             end
+            local cbuff, clen = zstd.zstd_compress(str, #str)
             if C.fwrite(cbuff, 1, clen, f) < clen then
                 C.fclose(f)
                 C.free(cbuff)
@@ -98,7 +96,6 @@ local codecs = {
             C.fsync(C.fileno(f))
             C.fclose(f)
             C.free(cbuff)
-
             --- @note: Slight API extension for TileCacheItem, which needs to know the on-disk size, and saves us a :size() call
             return true, clen
         end,
