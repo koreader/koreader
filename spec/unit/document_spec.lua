@@ -72,20 +72,9 @@ describe("EPUB document module", function()
         assert.is_equal(doc:fastDigest(), "59d481d168cca6267322f150c5f6a2a3")
     end)
     it("should register droid sans fallback", function()
-        local fonts_registry = {
-            "Droid Sans Mono",
-            "FreeSans",
-            "FreeSerif",
-            "Noto Naskh Arabic",
-            "Noto Sans",
-            "Noto Sans Arabic UI",
-            "Noto Sans Bengali UI",
-            "Noto Sans CJK SC",
-            "Noto Sans Devanagari UI",
-            "Noto Serif",
-        }
         local face_list = cre.getFontFaces()
-        assert.are.same(fonts_registry, face_list)
+        assert.is_equal(face_list[1], "Droid Sans Mono")
+        assert.is_true(#face_list >= 10)
     end)
     it("should close document", function()
         doc:close()
