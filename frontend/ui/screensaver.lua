@@ -1,6 +1,6 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local ButtonDialog = require("ui/widget/buttondialog")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Device = require("device")
@@ -58,16 +58,6 @@ if G_reader_settings:hasNot("screensaver_hide_fallback_msg") then
 end
 
 local Screensaver = {
-    screensaver_provider = {
-        gif  = true,
-        jpg  = true,
-        jpeg = true,
-        png  = true,
-        svg  = true,
-        tif  = true,
-        tiff = true,
-        webp = true,
-    },
     default_screensaver_message = _("Sleeping"),
 
     -- State values
@@ -103,12 +93,10 @@ function Screensaver:_getRandomImage(dir)
     if ok then
         for f in iter, dir_obj do
             -- Always ignore macOS resource forks, too.
-            if lfs.attributes(dir .. f, "mode") == "file" and not util.stringStartsWith(f, "._") then
-                local extension = string.lower(string.match(f, ".+%.([^.]+)") or "")
-                if self.screensaver_provider[extension] then
-                    i = i + 1
-                    pics[i] = f
-                end
+            if lfs.attributes(dir .. f, "mode") == "file" and not util.stringStartsWith(f, "._")
+               and DocumentRegistry:isImageFile(f) then
+                i = i + 1
+                pics[i] = f
             end
         end
         if i == 0 then
@@ -317,7 +305,7 @@ function Screensaver:chooseFolder()
     })
     local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
                          or _("N/A")
-    choose_dialog = ButtonDialogTitle:new{
+    choose_dialog = ButtonDialog:new{
         title = T(_("Current screensaver image folder:\n%1"), BD.dirpath(screensaver_dir)),
         buttons = buttons
     }
@@ -337,12 +325,8 @@ function Screensaver:chooseFile(document_cover)
                 local path_chooser = PathChooser:new{
                     select_directory = false,
                     file_filter = function(filename)
-                        local suffix = util.getFileNameSuffix(filename)
-                        if document_cover and DocumentRegistry:hasProvider(filename) then
-                            return true
-                        elseif self.screensaver_provider[suffix] then
-                            return true
-                        end
+                        return document_cover and DocumentRegistry:hasProvider(filename)
+                                               or DocumentRegistry:isImageFile(filename)
                     end,
                     path = self.root_path,
                     onConfirm = function(file_path)
@@ -379,7 +363,7 @@ function Screensaver:chooseFile(document_cover)
                                     or _("N/A")
     local title = document_cover and T(_("Current screensaver document cover:\n%1"), BD.filepath(screensaver_document_cover))
         or T(_("Current screensaver image:\n%1"), BD.filepath(screensaver_image))
-    choose_dialog = ButtonDialogTitle:new{
+    choose_dialog = ButtonDialog:new{
         title = title,
         buttons = buttons
     }
