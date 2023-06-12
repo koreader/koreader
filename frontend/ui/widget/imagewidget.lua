@@ -22,12 +22,14 @@ Show image from memory example:
 
 local Blitbuffer = require("ffi/blitbuffer")
 local Cache = require("cache")
+local DocumentRegistry = require("document/documentregistry")
 local Geom = require("ui/geometry")
 local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local Widget = require("ui/widget/widget")
 local logger = require("logger")
+local util = require("util")
 
 -- DPI_SCALE can't change without a restart, so let's compute it now
 local function get_dpi_scale()
@@ -129,9 +131,7 @@ function ImageWidget:_loadimage()
 end
 
 function ImageWidget:_loadfile()
-    local itype = string.lower(string.match(self.file, ".+%.([^.]+)") or "")
-    if itype == "svg" or itype == "png" or itype == "jpg" or itype == "jpeg"
-            or itype == "gif" or itype == "tiff" or itype == "tif" then
+    if DocumentRegistry:isImageFile(self.file) then
         -- In our use cases for files (icons), we either provide width and height,
         -- or just scale_for_dpi, and scale_factor should stay nil.
         -- Other combinations will result in double scaling, and unexpected results.
@@ -159,7 +159,7 @@ function ImageWidget:_loadfile()
             self._bb_disposable = false -- don't touch or free a cached _bb
             self._is_straight_alpha = cached.is_straight_alpha
         else
-            if itype == "svg" then
+            if util.getFileNameSuffix(self.file) == "svg" then
                 local zoom
                 if scale_for_dpi_here then
                     zoom = DPI_SCALE
@@ -399,7 +399,6 @@ function ImageWidget:getScaleFactorExtrema()
 
     -- Compute dynamic limits for the scale factor, based on the screen's area and available memory (if possible).
     -- Extrema eyeballed to be somewhat sensible given our usual screen dimensions and available RAM.
-    local util = require("util")
     local memfree, _ = util.calcFreeMem()
 
     local screen_area = Screen:getWidth() * Screen:getHeight()
