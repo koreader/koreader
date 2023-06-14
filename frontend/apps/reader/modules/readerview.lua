@@ -1147,7 +1147,7 @@ function ReaderView:isOverlapAllowed()
     if self.ui.paging then
         return not self.page_scroll
             and (self.ui.paging.zoom_mode ~= "page"
-                or (self.ui.paging.zoom_mode == "page" and self.ui.paging.is_reflowed))
+                or (self.ui.paging.zoom_mode == "page" and self.document.configurable.text_wrap == 1))
             and not self.ui.paging.zoom_mode:find("height")
     else
         return self.view_mode ~= "page"
