@@ -159,6 +159,8 @@ function Remarkable:init()
     end
 
     if is_mainline then
+        self.input_wacom = "/dev/input/by-path/platform-30a20000.i2c-event-mouse"
+        self.input_buttons = "/dev/input/by-path/platform-30370000.snvs:snvs-powerkey-event"
         self.input_ts = "/dev/input/touchscreen0"
     end
 
