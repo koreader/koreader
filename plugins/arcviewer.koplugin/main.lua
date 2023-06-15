@@ -32,11 +32,12 @@ end
 function ArcViewer:openArcViewer(file)
     local _, filename = util.splitFilePathName(file)
     local fileext = util.getFileNameSuffix(file):lower()
-    self.list_table = {}
     if fileext == "cbz" or fileext == "epub" or fileext == "zip" then
         self.arc_type = "zip"
     end
 
+    self.fm_updated = nil
+    self.list_table = {}
     if self.arc_type == "zip" then
         self:getZipListTable(file)
     else -- add other archivers here
@@ -62,6 +63,9 @@ function ArcViewer:openArcViewer(file)
         end,
         close_callback = function()
             UIManager:close(menu_container)
+            if self.fm_updated then
+                self.ui:onRefresh()
+            end
         end,
     }
     table.insert(menu_container, menu)
@@ -71,6 +75,7 @@ end
 
 function ArcViewer:getZipListTable(file)
     local function parse_path(filepath, filesize)
+        if not filepath then return end
         local path, name = util.splitFilePathName(filepath)
         if path == "" then
             path = "/"
@@ -175,6 +180,7 @@ function ArcViewer:extractFile(arcfile, filepath)
             else -- add other archivers here
                 return
             end
+            self.fm_updated = true
         end,
     })
 end
