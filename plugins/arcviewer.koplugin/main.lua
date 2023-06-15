@@ -93,7 +93,7 @@ function ArcViewer:getZipListTable(file)
     local std_out = io.popen("unzip ".."-qql \""..file.."\"")
     for line in std_out:lines() do
         -- entry datetime not used so far
-        local fsize, _fdate, _ftime, fname = string.match(line, "%s+(%d+)%s+(%d%d%-%d%d%-%d%d%d%d)%s+(%d%d:%d%d)%s+(.+)")
+        local fsize, fname = string.match(line, "%s+(%d+)%s+%d%d%-%d%d%-%d%d%d%d%s+%d%d:%d%d%s+(.+)")
         parse_path(fname, fsize or 0)
     end
 end
