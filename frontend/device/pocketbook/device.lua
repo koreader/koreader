@@ -759,7 +759,7 @@ elseif codename == "PB741" then
     return PocketBook741
 elseif codename == "PB743g" or codename == "PocketBook 743g" then
     return PocketBook743g
-elseif codename == "PocketBook 840" then
+elseif codename == "PocketBook 840" or codename == "Reader InkPad" then
     return PocketBook840
 elseif codename == "PB970" then
     return PocketBook970
