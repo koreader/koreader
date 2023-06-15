@@ -302,6 +302,14 @@ function FileManager:setupLayout()
                                 end,
                             })
                         end
+                        if file_manager.arcviewer and file_manager.arcviewer:isSupported(file) then
+                            table.insert(one_time_providers, {
+                                provider_name = _("Archive viewer"),
+                                callback = function()
+                                    file_manager.arcviewer:openArcViewer(file)
+                                end,
+                            })
+                        end
                         self:showSetProviderButtons(file, one_time_providers)
                     end,
                 },
