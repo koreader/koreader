@@ -222,14 +222,14 @@ function FileManagerHistory:showHistDialog()
         }
     end
     table.insert(buttons, {
-        genFilterButton("reading"),
-        genFilterButton("abandoned"),
-        genFilterButton("complete"),
-    })
-    table.insert(buttons, {
         genFilterButton("all"),
         genFilterButton("new"),
         genFilterButton("deleted"),
+    })
+    table.insert(buttons, {
+        genFilterButton("reading"),
+        genFilterButton("abandoned"),
+        genFilterButton("complete"),
     })
     if self.count.deleted > 0 then
         table.insert(buttons, {}) -- separator
