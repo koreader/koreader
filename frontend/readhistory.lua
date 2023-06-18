@@ -24,7 +24,8 @@ local function buildEntry(input_time, input_file)
         file = file_path,
         text = input_file:gsub(".*/", ""),
         dim = not file_exists,
-        mandatory = datetime.secondsToDateTime(input_time),
+        mandatory = G_reader_settings:isTrue("history_datetime_short")
+            and datetime.secondsToDate(input_time):sub(3) or datetime.secondsToDateTime(input_time),
         select_enabled = file_exists,
     }
 end
