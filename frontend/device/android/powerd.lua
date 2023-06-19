@@ -1,19 +1,10 @@
 local BasePowerD = require("device/generic/powerd")
-local Event = require("ui/event")
-local UIManager
 local _, android = pcall(require, "android")
 
 local AndroidPowerD = BasePowerD:new{
     fl_min = 0,
     fl_max = 100,
 }
-
--- Let the footer know of the change
-local function broadcastLightChanges()
-    if UIManager then
-        UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
-    end
-end
 
 function AndroidPowerD:frontlightIntensityHW()
     return math.floor(android.getScreenBrightness() / self.bright_diff * self.fl_max)
@@ -61,16 +52,18 @@ function AndroidPowerD:isChargingHW()
     return android.isCharging()
 end
 
-function AndroidPowerD:turnOffFrontlightHW()
+function AndroidPowerD:turnOffFrontlightHW(done_callback)
     if not self:isFrontlightOnHW() then
         return
     end
     android.setScreenBrightness(self.fl_min)
-    self.is_fl_on = false
-    broadcastLightChanges()
+
+    if done_callback then
+        done_callback()
+    end
 end
 
-function AndroidPowerD:turnOnFrontlightHW()
+function AndroidPowerD:turnOnFrontlightHW(done_callback)
     if self:isFrontlightOn() and self:isFrontlightOnHW() then
         return
     end
@@ -79,12 +72,9 @@ function AndroidPowerD:turnOnFrontlightHW()
 
     android.setScreenBrightness(math.floor(self.fl_intensity * self.bright_diff / self.fl_max))
 
-    self.is_fl_on = true
-    broadcastLightChanges()
-end
-
-function AndroidPowerD:UIManagerReadyHW(uimgr)
-    UIManager = uimgr
+    if done_callback then
+        done_callback()
+    end
 end
 
 return AndroidPowerD

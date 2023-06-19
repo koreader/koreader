@@ -59,8 +59,21 @@ function BasePowerD:isAuxChargingHW() return false end
 function BasePowerD:isAuxChargedHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
 function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min end
-function BasePowerD:turnOffFrontlightHW(done_callback) self:setIntensityHW(self.fl_min) end
-function BasePowerD:turnOnFrontlightHW(done_callback) self:setIntensityHW(self.fl_intensity) end --- @fixme: what if fl_intensity == fl_min (c.f., kindle)?
+function BasePowerD:turnOffFrontlightHW(done_callback)
+    self:setIntensityHW(self.fl_min)
+
+    if done_callback then
+        done_callback()
+    end
+end
+function BasePowerD:turnOnFrontlightHW(done_callback)
+    --- @fixme: what if fl_intensity == fl_min (c.f., kindle)?
+    self:setIntensityHW(self.fl_intensity)
+
+    if done_callback then
+        done_callback()
+    end
+end
 function BasePowerD:frontlightWarmthHW() return 0 end
 -- Anything that needs to be done before doing a real hardware suspend.
 -- (Such as turning the front light off).
