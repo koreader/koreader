@@ -306,7 +306,7 @@ function FileManager:setupLayout()
                             table.insert(one_time_providers, {
                                 provider_name = _("Archive viewer"),
                                 callback = function()
-                                    file_manager.archiveviewer:openArcViewer(file)
+                                    file_manager.archiveviewer:openArchiveViewer(file)
                                 end,
                             })
                         end
