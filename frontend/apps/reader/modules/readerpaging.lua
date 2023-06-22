@@ -226,7 +226,7 @@ book, the page view will be roughly the same.
 --]]
 function ReaderPaging:setPagePosition(page, pos)
     logger.dbg("set page position", pos)
-    self.page_positions[page] = pos
+    self.page_positions[page] = pos ~= 0 and pos or nil
     self.ui:handleEvent(Event:new("PagePositionUpdated"))
 end
 
