@@ -155,6 +155,18 @@ function ImageViewer:init()
         self.image = self._scaled_image_func(1) -- native image size, that we need to know
     end
 
+    local image_fit_autorotate = G_reader_settings:readSetting("image_fit_rotate", false)
+    if image_fit_autorotate then
+        -- Automatically rotate the image if it better fits the screen rotated.
+        local aspect_screen = Screen:getWidth() / Screen:getHeight()
+        local aspect_image = self.image:getWidth() / self.image:getHeight()
+        local aspect_misaligned = (aspect_screen <= 1 and aspect_image > 1) or (aspect_screen > 1 and aspect_image <= 1)
+
+        if aspect_misaligned then
+            self.rotated = true
+        end
+    end
+
     -- Widget layout
     if self._scale_to_fit == nil then -- initialize our toggle
         self._scale_to_fit = self.scale_factor == 0
@@ -404,11 +416,11 @@ function ImageViewer:_new_image_wg()
     end
 
     local rotation_angle = 0
+    local rotate_clockwise = G_reader_settings:readSetting("image_clockwise_rotation", true)
     if self.rotated then
         -- in portrait mode, rotate according to this global setting so we are
         -- like in landscape mode
         -- NOTE: This is the sole user of this legacy global left!
-        local rotate_clockwise = G_defaults:readSetting("DLANDSCAPE_CLOCKWISE_ROTATION")
         if Screen:getWidth() > Screen:getHeight() then
             -- in landscape mode, counter-rotate landscape rotation so we are
             -- back like in portrait mode
@@ -418,13 +430,6 @@ function ImageViewer:_new_image_wg()
     end
 
     -- Rotate if image and screen aspect ratio are misaligned
-    local image_fit_rotate = tonumber(G_reader_settings:readSetting("image_fit_rotate", 0))
-    local aspect_screen = Screen:getWidth() / Screen:getHeight()
-    local aspect_image = self.image:getWidth() / self.image:getHeight()
-    if (aspect_screen <= 1 and aspect_image > 1) or
-        (aspect_screen > 1 and aspect_image <= 1) then
-        rotation_angle = (rotation_angle - image_fit_rotate) % 360
-    end
 
 
     if self._scaled_image_func then

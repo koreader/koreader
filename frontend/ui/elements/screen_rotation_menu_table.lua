@@ -60,15 +60,16 @@ When unchecked, the default rotation of the file browser and the default/saved r
             separator = true,
         })
 
-        local function image_rotation_item(setting, label)
+        local function image_rotation_item(setting, label, separator)
             return {
                 text = label,
                 radio = true,
+                separator = separator or false,
                 checked_func = function()
-                    return (G_reader_settings:readSetting("image_fit_rotate", 0) == setting)
+                    return (G_reader_settings:readSetting("image_clockwise_rotation", true) == setting)
                 end,
                 callback = function(touchmenu_instance)
-                    G_reader_settings:saveSetting("image_fit_rotate", setting)
+                    G_reader_settings:saveSetting("image_clockwise_rotation", setting)
                     G_reader_settings:flush()
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
@@ -76,16 +77,24 @@ When unchecked, the default rotation of the file browser and the default/saved r
             }
         end
         table.insert(rotation_table, {
-            text = _("Rotate images to fit screen"),
-            help_text = _([[
-                Rotates images in the fullscreen image viewer if there aspect ratio matches the screen better.
-                For example, if clockwise is selected and a landscape image is displayed with the screen in portrait mode, the image will be rotated by 90 degrees.
-            ]]),
+            text = _("Image viewer rotation"),
+            help_text = _("Settings concerning the rotation of images in the full-screen image viewer"),
             separator = true,
             sub_item_table = {
-                image_rotation_item(0, "No rotation"),
-                image_rotation_item(90, "Clockwise"),
-                image_rotation_item(-90, "Counter-clockwise")
+                image_rotation_item(true, "Clockwise"),
+                image_rotation_item(false, "Counter-clockwise", true),
+                {
+                    text = "Auto rotate for best fit",
+                    help_text = _("Rotate the image to better fit the screen if the aspect ratios of the screen and the image are misaligned (landscape screen and portrait image or vice-versa)."),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("image_fit_rotate", false)
+                    end,
+                    callback = function(touchmenu_instance)
+                        G_reader_settings:toggle("image_fit_rotate")
+                        G_reader_settings:flush()
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                }
             }
         })
 

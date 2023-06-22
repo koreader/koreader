@@ -40,10 +40,6 @@ DSHOWOVERLAP = false,
 -- default to false
 DSHOWHIDDENFILES = false,
 
--- landscape clockwise rotation
--- default to true, set to false for counterclockwise rotation
-DLANDSCAPE_CLOCKWISE_ROTATION = true,
-
 -- default minimum screen height for reading with 2 pages in landscape mode
 DCREREADER_TWO_PAGE_THRESHOLD = 7,
 
