@@ -780,11 +780,9 @@ function KOSync:saveSettings()
     G_reader_settings:saveSetting("kosync", settings)
 end
 
-function KOSync:onCloseDocument()
+function KOSync:_onCloseDocument()
     logger.dbg("KOSync: onCloseDocument")
-    if self.kosync_auto_sync then
-        self:updateProgress(true, false)
-    end
+    self:updateProgress(true, false)
 end
 
 function KOSync:_onPageUpdate(page)
@@ -801,7 +799,7 @@ function KOSync:_onPageUpdate(page)
         if self.kosync_pages_before_update and self.page_update_counter >= self.kosync_pages_before_update then
             self.page_update_counter = 0
             -- We do *NOT* want to make sure networking is up here, as the nagging would be extremely annoying; we're leaving that to the network activity check...
-            UIManager:scheduleIn(1, function() self:updateProgress(false, false) end)
+            UIManager:scheduleIn(0.25, function() self:updateProgress(false, false) end)
         end
     end
 end
@@ -840,12 +838,14 @@ end
 
 function KOSync:registerEvents()
     if self.kosync_auto_sync then
+        self.onCloseDocument = self._onCloseDocument
         self.onPageUpdate = self._onPageUpdate
         self.onResume = self._onResume
         self.onFlushSettings = self._onFlushSettings
         self.onNetworkConnected = self._onNetworkConnected
         self.onNetworkDisconnecting = self._onNetworkDisconnecting
     else
+        self.onCloseDocument = nil
         self.onPageUpdate = nil
         self.onResume = nil
         self.onFlushSettings = nil
