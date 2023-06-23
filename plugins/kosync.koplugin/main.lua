@@ -24,7 +24,7 @@ local KOSync = WidgetContainer:extend{
     is_doc_only = true,
     title = _("Register/login to KOReader server"),
 
-    page_update_times = 0,
+    page_update_counter = 0,
     last_page = -1,
     last_page_turn_ticks = 0,
 }
@@ -192,7 +192,7 @@ function KOSync:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Sync every # pages"),
+                text = _("Periodically sync every # pages"),
                 enabled_func = function() return self.kosync_auto_sync end,
                 keep_menu_open = true,
                 callback = function()
@@ -779,9 +779,9 @@ function KOSync:_onPageUpdate(page)
     elseif self.last_page ~= page then
         self.last_page = page
         self.last_page_turn_ticks = os.time()
-        self.page_update_times = self.page_update_times + 1
-        if self.kosync_pages_before_update and self.page_update_times == self.kosync_pages_before_update then
-            self.page_update_times = 0
+        self.page_update_counter = self.page_update_counter + 1
+        if self.kosync_pages_before_update and self.page_update_counter >= self.kosync_pages_before_update then
+            self.page_update_counter = 0
             UIManager:scheduleIn(1, function() self:updateProgress() end)
         end
     end
