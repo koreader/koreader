@@ -114,7 +114,7 @@ function KOSync:onReaderReady()
     self.kosync_custom_server = settings.custom_server
     self.kosync_username = settings.username
     self.kosync_userkey = settings.userkey
-    -- Do *not* default to auto-sync on devices w/ NetworkManager support, as wifi is unlikely to be on at all times there
+    -- Do *not* default to auto-sync on devices w/ NetworkManager support, as wifi is unlikely to be on at all times there, and the nagging enabling this may cause requires careful consideration.
     self.kosync_auto_sync = settings.auto_sync or not Device:hasWifiManager()
     self.kosync_pages_before_update = settings.pages_before_update
     self.kosync_whisper_forward = settings.whisper_forward or SYNC_STRATEGY.DEFAULT_FORWARD
@@ -177,6 +177,7 @@ function KOSync:addToMainMenu(menu_items)
             {
                 text = _("Attempt to synchronize automatically"),
                 checked_func = function() return self.kosync_auto_sync end,
+                help_text = _([[Be aware that this may lead to nagging about toggling WiFi on document close and suspend/resume, depending on how you've setup your network toggles.]]),
                 callback = function()
                     self.kosync_auto_sync = not self.kosync_auto_sync
                     self:registerEvents()
