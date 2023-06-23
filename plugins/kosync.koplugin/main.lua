@@ -138,6 +138,21 @@ function KOSync:addToMainMenu(menu_items)
         text = _("Progress sync"),
         sub_item_table = {
             {
+                text = _("Custom sync server"),
+                keep_menu_open = true,
+                tap_input_func = function()
+                    return {
+                        -- @translators Server address defined by user for progress sync.
+                        title = _("Custom progress sync server address"),
+                        input = self.kosync_custom_server or "https://",
+                        type = "text",
+                        callback = function(input)
+                            self:setCustomServer(input)
+                        end,
+                    }
+                end,
+            },
+            {
                 text_func = function()
                     return self.kosync_userkey and (_("Logout"))
                         or _("Register") .. " / " .. _("Login")
@@ -156,9 +171,10 @@ function KOSync:addToMainMenu(menu_items)
                         end
                     end
                 end,
+                separator = true,
             },
             {
-                text = _("Auto sync now and future"),
+                text = _("Attempt to synchronize automatically"),
                 checked_func = function() return self.kosync_auto_sync end,
                 callback = function()
                     self.kosync_auto_sync = not self.kosync_auto_sync
@@ -176,114 +192,8 @@ function KOSync:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Whisper sync"),
-                enabled_func = function() return self.kosync_auto_sync end,
-                sub_item_table = {
-                    {
-                        text_func = function()
-                            return T(_("Sync to latest record (%1)"), getNameStrategy(self.kosync_whisper_forward))
-                        end,
-                        sub_item_table = {
-                            {
-                                text = _("Auto"),
-                                checked_func = function()
-                                    return self.kosync_whisper_forward == SYNC_STRATEGY.WHISPER
-                                end,
-                                callback = function()
-                                    self:setWhisperForward(SYNC_STRATEGY.WHISPER)
-                                end,
-                            },
-                            {
-                                text = _("Prompt"),
-                                checked_func = function()
-                                    return self.kosync_whisper_forward == SYNC_STRATEGY.PROMPT
-                                end,
-                                callback = function()
-                                    self:setWhisperForward(SYNC_STRATEGY.PROMPT)
-                                end,
-                            },
-                            {
-                                text = _("Disable"),
-                                checked_func = function()
-                                    return self.kosync_whisper_forward == SYNC_STRATEGY.DISABLE
-                                end,
-                                callback = function()
-                                    self:setWhisperForward(SYNC_STRATEGY.DISABLE)
-                                end,
-                            },
-                        }
-                    },
-                    {
-                        text_func = function()
-                            return T(_("Sync to a previous record (%1)"), getNameStrategy(self.kosync_whisper_backward))
-                        end,
-                        sub_item_table = {
-                            {
-                                text = _("Auto"),
-                                checked_func = function()
-                                    return self.kosync_whisper_backward == SYNC_STRATEGY.WHISPER
-                                end,
-                                callback = function()
-                                    self:setWhisperBackward(SYNC_STRATEGY.WHISPER)
-                                end,
-                            },
-                            {
-                                text = _("Prompt"),
-                                checked_func = function()
-                                    return self.kosync_whisper_backward == SYNC_STRATEGY.PROMPT
-                                end,
-                                callback = function()
-                                    self:setWhisperBackward(SYNC_STRATEGY.PROMPT)
-                                end,
-                            },
-                            {
-                                text = _("Disable"),
-                                checked_func = function()
-                                    return self.kosync_whisper_backward == SYNC_STRATEGY.DISABLE
-                                end,
-                                callback = function()
-                                    self:setWhisperBackward(SYNC_STRATEGY.DISABLE)
-                                end,
-                            },
-                        }
-                    },
-                },
-            },
-            {
-                text = _("Push progress from this device"),
-                enabled_func = function()
-                    return self.kosync_userkey ~= nil
-                end,
-                callback = function()
-                    self:updateProgress(true)
-                end,
-            },
-            {
-                text = _("Pull progress from other devices"),
-                enabled_func = function()
-                    return self.kosync_userkey ~= nil
-                end,
-                callback = function()
-                    self:getProgress(true)
-                end,
-            },
-            {
-                text = _("Custom sync server"),
-                keep_menu_open = true,
-                tap_input_func = function()
-                    return {
-                        -- @translators Server address defined by user for progress sync.
-                        title = _("Custom progress sync server address"),
-                        input = self.kosync_custom_server or "https://",
-                        type = "text",
-                        callback = function(input)
-                            self:setCustomServer(input)
-                        end,
-                    }
-                end,
-            },
-            {
                 text = _("Sync every # pages"),
+                enabled_func = function() return self.kosync_auto_sync end,
                 keep_menu_open = true,
                 callback = function()
                     local SpinWidget = require("ui/widget/spinwidget")
@@ -304,6 +214,101 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                     }
                     UIManager:show(items)
                 end,
+                separator = true,
+            },
+            {
+                text = _("Sync behavior"),
+                enabled_func = function() return self.kosync_auto_sync end,
+                sub_item_table = {
+                    {
+                        text_func = function()
+                            return T(_("Sync forward (%1)"), getNameStrategy(self.kosync_whisper_forward))
+                        end,
+                        sub_item_table = {
+                            {
+                                text = _("Silently"),
+                                checked_func = function()
+                                    return self.kosync_whisper_forward == SYNC_STRATEGY.WHISPER
+                                end,
+                                callback = function()
+                                    self:setWhisperForward(SYNC_STRATEGY.WHISPER)
+                                end,
+                            },
+                            {
+                                text = _("Prompt"),
+                                checked_func = function()
+                                    return self.kosync_whisper_forward == SYNC_STRATEGY.PROMPT
+                                end,
+                                callback = function()
+                                    self:setWhisperForward(SYNC_STRATEGY.PROMPT)
+                                end,
+                            },
+                            {
+                                text = _("Never"),
+                                checked_func = function()
+                                    return self.kosync_whisper_forward == SYNC_STRATEGY.DISABLE
+                                end,
+                                callback = function()
+                                    self:setWhisperForward(SYNC_STRATEGY.DISABLE)
+                                end,
+                            },
+                        }
+                    },
+                    {
+                        text_func = function()
+                            return T(_("Sync backward (%1)"), getNameStrategy(self.kosync_whisper_backward))
+                        end,
+                        sub_item_table = {
+                            {
+                                text = _("Silently"),
+                                checked_func = function()
+                                    return self.kosync_whisper_backward == SYNC_STRATEGY.WHISPER
+                                end,
+                                callback = function()
+                                    self:setWhisperBackward(SYNC_STRATEGY.WHISPER)
+                                end,
+                            },
+                            {
+                                text = _("Prompt"),
+                                checked_func = function()
+                                    return self.kosync_whisper_backward == SYNC_STRATEGY.PROMPT
+                                end,
+                                callback = function()
+                                    self:setWhisperBackward(SYNC_STRATEGY.PROMPT)
+                                end,
+                            },
+                            {
+                                text = _("Never"),
+                                checked_func = function()
+                                    return self.kosync_whisper_backward == SYNC_STRATEGY.DISABLE
+                                end,
+                                callback = function()
+                                    self:setWhisperBackward(SYNC_STRATEGY.DISABLE)
+                                end,
+                            },
+                        }
+                    },
+                },
+                separator = true,
+            },
+            {
+                text = _("Push progress from this device now"),
+                enabled_func = function()
+                    return self.kosync_userkey ~= nil
+                end,
+                callback = function()
+                    self:updateProgress(true)
+                end,
+            },
+            {
+                text = _("Pull progress from other devices now"),
+                enabled_func = function()
+                    return self.kosync_userkey ~= nil
+                end,
+                callback = function()
+                    self:getProgress(true)
+                end,
+                separator = true,
             },
             {
                 text = _("Document matching method"),
