@@ -843,7 +843,6 @@ function KOSync:registerEvents()
         self.onPageUpdate = self._onPageUpdate
         self.onResume = self._onResume
         self.onFlushSettings = self._onFlushSettings
-        -- This one doesn't require hasWifiManager, it can fire through NetworkListener on hasWifiToggle platforms
         self.onNetworkConnected = self._onNetworkConnected
         self.onNetworkDisconnecting = self._onNetworkDisconnecting
     else
