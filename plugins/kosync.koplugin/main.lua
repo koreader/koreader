@@ -197,11 +197,11 @@ function KOSync:addToMainMenu(menu_items)
                     if self.kosync_auto_sync then
                         -- since we will update the progress when closing document, we should pull
                         -- current progress now to avoid to overwrite it silently.
-                        self:getProgress(true)
+                        self:getProgress(true, true)
                     else
                         -- since we won't update the progress when closing document, we should push
                         -- current progress now to avoid to lose it silently.
-                        self:updateProgress(true)
+                        self:updateProgress(true, true)
                     end
                     self:saveSettings()
                 end,
@@ -315,7 +315,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                     return self.kosync_userkey ~= nil
                 end,
                 callback = function()
-                    self:updateProgress(true)
+                    self:updateProgress(true, true)
                 end,
             },
             {
@@ -324,7 +324,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                     return self.kosync_userkey ~= nil
                 end,
                 callback = function()
-                    self:getProgress(true)
+                    self:getProgress(true, true)
                 end,
                 separator = true,
             },
@@ -588,15 +588,15 @@ function KOSync:syncToProgress(progress)
     end
 end
 
-function KOSync:updateProgress(manual)
+function KOSync:updateProgress(ensure_networking, interactive)
     if not self.kosync_username or not self.kosync_userkey then
-        if manual then
+        if interactive then
             promptLogin()
         end
         return
     end
 
-    if manual and NetworkMgr:willRerunWhenOnline(function() self:updateProgress(manual) end) then
+    if ensure_networking and NetworkMgr:willRerunWhenOnline(function() self:updateProgress(ensure_networking, interactive) end) then
         return
     end
 
@@ -620,7 +620,7 @@ function KOSync:updateProgress(manual)
         function(ok, body)
             logger.dbg("KOSync: [Push] progress to", percentage, "% =>", progress, "for", self.view.document.file)
             logger.dbg("KOSync: ok:", ok, "body:", body)
-            if manual then
+            if interactive then
                 if ok then
                     UIManager:show(InfoMessage:new{
                         text = _("Progress has been pushed."),
@@ -632,20 +632,20 @@ function KOSync:updateProgress(manual)
             end
         end)
     if not ok then
-        if manual then showSyncError() end
+        if interactive then showSyncError() end
         if err then logger.dbg("err:", err) end
     end
 end
 
-function KOSync:getProgress(manual)
+function KOSync:getProgress(ensure_networking, interactive)
     if not self.kosync_username or not self.kosync_userkey then
-        if manual then
+        if interactive then
             promptLogin()
         end
         return
     end
 
-    if manual and NetworkMgr:willRerunWhenOnline(function() self:getProgress(manual) end) then
+    if ensure_networking and NetworkMgr:willRerunWhenOnline(function() self:getProgress(ensure_networking, interactive) end) then
         return
     end
 
@@ -664,14 +664,14 @@ function KOSync:getProgress(manual)
             logger.dbg("KOSync: [Get] progress for", self.view.document.file)
             logger.dbg("KOSync: ok:", ok, "body:", body)
             if not ok or not body then
-                if manual then
+                if interactive then
                     showSyncError()
                 end
                 return
             end
 
             if not body.percentage then
-                if manual then
+                if interactive then
                     UIManager:show(InfoMessage:new{
                         text = _("No progress found for this document."),
                         timeout = 3,
@@ -682,7 +682,7 @@ function KOSync:getProgress(manual)
 
             if body.device == Device.model
             and body.device_id == self.kosync_device_id then
-                if manual then
+                if interactive then
                     UIManager:show(InfoMessage:new{
                         text = _("Latest progress is coming from this device."),
                         timeout = 3,
@@ -698,7 +698,7 @@ function KOSync:getProgress(manual)
 
             if percentage == body.percentage
             or body.progress == progress then
-                if manual then
+                if interactive then
                     UIManager:show(InfoMessage:new{
                         text = _("The progress has already been synchronized."),
                         timeout = 3,
@@ -708,7 +708,7 @@ function KOSync:getProgress(manual)
             end
 
             -- The progress needs to be updated.
-            if manual then
+            if interactive then
                 -- If user actively pulls progress from other devices, we always update the
                 -- progress without further confirmation.
                 self:syncToProgress(body.progress)
@@ -755,7 +755,7 @@ function KOSync:getProgress(manual)
             end
         end)
     if not ok then
-        if manual then showSyncError() end
+        if interactive then showSyncError() end
         if err then logger.dbg("err:", err) end
     end
 end
@@ -783,7 +783,7 @@ end
 function KOSync:onCloseDocument()
     logger.dbg("KOSync: onCloseDocument")
     if self.kosync_auto_sync then
-        self:updateProgress()
+        self:updateProgress(true, false)
     end
 end
 
@@ -800,50 +800,58 @@ function KOSync:_onPageUpdate(page)
         self.page_update_counter = self.page_update_counter + 1
         if self.kosync_pages_before_update and self.page_update_counter >= self.kosync_pages_before_update then
             self.page_update_counter = 0
-            UIManager:scheduleIn(1, function() self:updateProgress() end)
+            -- We do *NOT* want to make sure networking is up here, as the nagging would be extremely annoying; we're leaving that to the network activity check...
+            UIManager:scheduleIn(1, function() self:updateProgress(false, false) end)
         end
     end
 end
 
 function KOSync:_onResume()
-    UIManager:scheduleIn(1, function() self:getProgress() end)
+    logger.dbg("KOSync: onResume")
+    UIManager:scheduleIn(1, function() self:getProgress(true, false) end)
 end
 
 function KOSync:_onFlushSettings()
+    logger.dbg("KOSync: onFlushSettings")
     if self.ui == nil or self.ui.document == nil then return end
-    self:updateProgress()
+    -- Requiring networking here may not be entirely sound, so, don't do it.
+    self:updateProgress(false, false)
+end
+
+function KOSync:_onNetworkConnected()
+    logger.dbg("KOSync: onNetworkConnected")
+    UIManager:scheduleIn(0.5, function() self:getProgress(true, false) end)
+end
+
+function KOSync:_onNetworkDisconnecting()
+    logger.dbg("KOSync: onNetworkDisconnecting")
+    self:updateProgress(true, false)
 end
 
 function KOSync:onKOSyncPushProgress()
     if not self.kosync_userkey then return end
-    self:updateProgress(true)
+    self:updateProgress(true, true)
 end
 
 function KOSync:onKOSyncPullProgress()
     if not self.kosync_userkey then return end
-    self:getProgress(true)
+    self:getProgress(true, true)
 end
 
 function KOSync:registerEvents()
     if self.kosync_auto_sync then
         self.onPageUpdate = self._onPageUpdate
+        self.onResume = self._onResume
         self.onFlushSettings = self._onFlushSettings
         -- This one doesn't require hasWifiManager, it can fire through NetworkListener on hasWifiToggle platforms
-        self.onNetworkConnected = self._onResume
-        if Device:hasWifiManager() then
-            self.onNetworkDisconnecting = self._onFlushSettings
-        else
-            -- We prefer relying *only* on onNetworkConnected when NetworkManager is available,
-            -- as resume would be too early to have a network connection active on those platforms.
-            -- FIXME: Something something if restroe wifi on resume is not set...
-            self.onResume = self._onResume
-        end
+        self.onNetworkConnected = self._onNetworkConnected
+        self.onNetworkDisconnecting = self._onNetworkDisconnecting
     else
         self.onPageUpdate = nil
+        self.onResume = nil
         self.onFlushSettings = nil
         self.onNetworkConnected = nil
         self.onNetworkDisconnecting = nil
-        self.onResume = nil
     end
 end
 
