@@ -52,18 +52,14 @@ function AndroidPowerD:isChargingHW()
     return android.isCharging()
 end
 
-function AndroidPowerD:turnOffFrontlightHW(done_callback)
+function AndroidPowerD:turnOffFrontlightHW()
     if not self:isFrontlightOnHW() then
         return
     end
     android.setScreenBrightness(self.fl_min)
-
-    if done_callback then
-        done_callback()
-    end
 end
 
-function AndroidPowerD:turnOnFrontlightHW(done_callback)
+function AndroidPowerD:turnOnFrontlightHW()
     if self:isFrontlightOn() and self:isFrontlightOnHW() then
         return
     end
@@ -71,10 +67,6 @@ function AndroidPowerD:turnOnFrontlightHW(done_callback)
     android.enableFrontlightSwitch()
 
     android.setScreenBrightness(math.floor(self.fl_intensity * self.bright_diff / self.fl_max))
-
-    if done_callback then
-        done_callback()
-    end
 end
 
 return AndroidPowerD
