@@ -40,6 +40,7 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
         if Device:hasWifiManager() then
             os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
         end
+        -- We were never connected to begin with, so, no disconnecting broadcast required
         self:turnOffWifi()
 
         -- Handle the UI warning if it's from a beforeWifiAction...
@@ -344,6 +345,7 @@ function NetworkMgr:afterWifiAction(callback)
            callback()
         end
     elseif wifi_disable_action == "turn_off" then
+        UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
         self:turnOffWifi(callback)
     else
         self:promptWifiOff(callback)

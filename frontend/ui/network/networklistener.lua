@@ -39,6 +39,7 @@ function NetworkListener:onToggleWifi()
         UIManager:show(toggle_im)
         UIManager:forceRePaint()
 
+        UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
         NetworkMgr:turnOffWifi(complete_callback)
 
         UIManager:close(toggle_im)
@@ -60,6 +61,7 @@ function NetworkListener:onInfoWifiOff()
     UIManager:show(toggle_im)
     UIManager:forceRePaint()
 
+    UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
     NetworkMgr:turnOffWifi(complete_callback)
 
     UIManager:close(toggle_im)
@@ -166,6 +168,7 @@ function NetworkListener:_scheduleActivityCheck()
             local complete_callback = function()
                 UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
             end
+            UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
             NetworkMgr:turnOffWifi(complete_callback)
             -- NOTE: We leave wifi_was_on as-is on purpose, we wouldn't want to break auto_restore_wifi workflows on the next start...
         else
