@@ -45,6 +45,19 @@ local CHECKSUM_METHOD = {
     FILENAME = 1
 }
 
+function KOSync:getSyncPeriod()
+    if not self.kosync_auto_sync then
+        return _("Unavailable")
+    end
+
+    local period = self.kosync_pages_before_update
+    if period and period > 0 then
+        return period
+    else
+        return _("Never")
+    end
+end
+
 local function getNameStrategy(type)
     if type == 1 then
         return _("Prompt")
@@ -177,7 +190,7 @@ function KOSync:addToMainMenu(menu_items)
             {
                 text = _("Attempt to synchronize automatically"),
                 checked_func = function() return self.kosync_auto_sync end,
-                help_text = _([[Be aware that this may lead to nagging about toggling WiFi on document close and suspend/resume, depending on how you've setup your network toggles.]]),
+                help_text = _([[This may lead to nagging about toggling WiFi on document close and suspend/resume, depending on how you've setup your network toggles.]]),
                 callback = function()
                     self.kosync_auto_sync = not self.kosync_auto_sync
                     self:registerEvents()
@@ -194,8 +207,12 @@ function KOSync:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Periodically sync every # pages"),
+                text_func = function()
+                    return T(_("Periodically sync every # pages (%1)"), self:getSyncPeriod())
+                end,
                 enabled_func = function() return self.kosync_auto_sync end,
+                -- This is the condition that allows enabling auto_disable_wifi in NetworkManager ;).
+                help_text = NetworkMgr:getNetworkInterfaceName() and _([[This may be enough network activity to passively keep WiFi enabled!]]),
                 keep_menu_open = true,
                 callback = function()
                     local SpinWidget = require("ui/widget/spinwidget")
