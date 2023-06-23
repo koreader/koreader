@@ -338,7 +338,7 @@ function KOSync:setPagesBeforeUpdate(pages_before_update)
 end
 
 function KOSync:setCustomServer(server)
-    logger.dbg("set custom server", server)
+    logger.dbg("KOSync: Setting custom server to:", server)
     self.kosync_custom_server = server ~= "" and server or nil
     self:saveSettings()
 end
@@ -557,7 +557,7 @@ function KOSync:getFileNameDigest()
 end
 
 function KOSync:syncToProgress(progress)
-    logger.dbg("sync to", progress)
+    logger.dbg("KOSync: [Sync] progress to", progress)
     if self.ui.document.info.has_pages then
         self.ui:handleEvent(Event:new("GotoPage", tonumber(progress)))
     else
@@ -595,7 +595,8 @@ function KOSync:updateProgress(manual)
         Device.model,
         self.kosync_device_id,
         function(ok, body)
-            logger.dbg("update progress for", self.view.document.file, ok)
+            logger.dbg("KOSync: [Push] progress to", percentage, "% =>", progress, "for", self.view.document.file)
+            logger.dbg("KOSync: ok:", ok, "body:", body)
             if manual then
                 if ok then
                     UIManager:show(InfoMessage:new{
@@ -637,7 +638,8 @@ function KOSync:getProgress(manual)
         self.kosync_userkey,
         doc_digest,
         function(ok, body)
-            logger.dbg("get progress for", self.view.document.file, ok, body)
+            logger.dbg("KOSync: [Get] progress for", self.view.document.file)
+            logger.dbg("KOSync: ok:", ok, "body:", body)
             if not ok or not body then
                 if manual then
                     showSyncError()
@@ -669,7 +671,7 @@ function KOSync:getProgress(manual)
             body.percentage = Math.roundPercent(body.percentage)
             local progress = self:getLastProgress()
             local percentage = self:getLastPercent()
-            logger.dbg("current progress", percentage)
+            logger.dbg("KOSync: Current progress:", percentage, "% =>", progress)
 
             if percentage == body.percentage
             or body.progress == progress then
@@ -756,7 +758,7 @@ function KOSync:saveSettings()
 end
 
 function KOSync:onCloseDocument()
-    logger.dbg("on close document")
+    logger.dbg("KOSync: onCloseDocument")
     if self.kosync_auto_sync then
         self:updateProgress()
     end
