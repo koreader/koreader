@@ -114,7 +114,8 @@ function KOSync:onReaderReady()
     self.kosync_custom_server = settings.custom_server
     self.kosync_username = settings.username
     self.kosync_userkey = settings.userkey
-    self.kosync_auto_sync = settings.auto_sync ~= false
+    -- Do *not* default to auto-sync on devices w/ NetworkManager support, as wifi is unlikely to be on at all times there
+    self.kosync_auto_sync = settings.auto_sync or not Device:hasWifiManager()
     self.kosync_pages_before_update = settings.pages_before_update
     self.kosync_whisper_forward = settings.whisper_forward or SYNC_STRATEGY.DEFAULT_FORWARD
     self.kosync_whisper_backward = settings.whisper_backward or SYNC_STRATEGY.DEFAULT_BACKWARD
@@ -218,7 +219,6 @@ If set to 0, updating progress based on page turns will be disabled.]]),
             },
             {
                 text = _("Sync behavior"),
-                enabled_func = function() return self.kosync_auto_sync end,
                 sub_item_table = {
                     {
                         text_func = function()
