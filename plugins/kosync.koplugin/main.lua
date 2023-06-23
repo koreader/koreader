@@ -791,10 +791,6 @@ function KOSync:_onFlushSettings()
     self:updateProgress()
 end
 
-function KOSync:_onNetworkConnected()
-    self:_onResume()
-end
-
 function KOSync:onKOSyncPushProgress()
     if not self.kosync_userkey then return end
     self:updateProgress(true)
@@ -808,14 +804,23 @@ end
 function KOSync:registerEvents()
     if self.kosync_auto_sync then
         self.onPageUpdate = self._onPageUpdate
-        self.onResume = self._onResume
         self.onFlushSettings = self._onFlushSettings
-        self.onNetworkConnected = self._onNetworkConnected
+        -- This one doesn't require hasWifiManager, it can fire through NetworkListener on hasWifiToggle platforms
+        self.onNetworkConnected = self._onResume
+        if Device:hasWifiManager() then
+            self.onNetworkDisconnecting = self._onFlushSettings
+        else
+            -- We prefer relying *only* on onNetworkConnected when NetworkManager is available,
+            -- as resume would be too early to have a network connection active on those platforms.
+            -- FIXME: Something something if restroe wifi on resume is not set...
+            self.onResume = self._onResume
+        end
     else
         self.onPageUpdate = nil
-        self.onResume = nil
         self.onFlushSettings = nil
         self.onNetworkConnected = nil
+        self.onNetworkDisconnecting = nil
+        self.onResume = nil
     end
 end
 
