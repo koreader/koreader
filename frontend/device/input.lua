@@ -506,6 +506,15 @@ function Input:resetState()
         self.gesture_detector:resetClockSource()
     end
     self:clearTimeouts()
+
+    -- Drop the slots on our end, too
+    self:newFrame()
+    self.cur_slot = self.main_finger_slot
+    self.ev_slots = {
+        [self.main_finger_slot] = {
+            slot = self.main_finger_slot,
+        },
+    }
 end
 
 function Input:handleKeyBoardEv(ev)
