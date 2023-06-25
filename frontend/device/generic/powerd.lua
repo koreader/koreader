@@ -59,8 +59,21 @@ function BasePowerD:isAuxChargingHW() return false end
 function BasePowerD:isAuxChargedHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
 function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min end
-function BasePowerD:turnOffFrontlightHW(done_callback) self:setIntensityHW(self.fl_min) end
-function BasePowerD:turnOnFrontlightHW(done_callback) self:setIntensityHW(self.fl_intensity) end --- @fixme: what if fl_intensity == fl_min (c.f., kindle)?
+--- @note: done_callback is used to display Notifications,
+---        some implementations *may* need to handle it themselves because of timing constraints,
+---        in which case they should return *true* here, so that the public API knows not to consume the callback early.
+function BasePowerD:turnOffFrontlightHW(done_callback)
+    self:setIntensityHW(self.fl_min)
+
+    -- Nothing fancy required, so we leave done_callback handling to the public API
+    return false
+end
+function BasePowerD:turnOnFrontlightHW(done_callback)
+    --- @fixme: what if fl_intensity == fl_min (c.f., kindle)?
+    self:setIntensityHW(self.fl_intensity)
+
+    return false
+end
 function BasePowerD:frontlightWarmthHW() return 0 end
 -- Anything that needs to be done before doing a real hardware suspend.
 -- (Such as turning the front light off).
@@ -121,9 +134,12 @@ end
 function BasePowerD:turnOffFrontlight(done_callback)
     if not self.device:hasFrontlight() then return end
     if self:isFrontlightOff() then return false end
-    self:turnOffFrontlightHW(done_callback)
+    local cb_handled = self:turnOffFrontlightHW(done_callback)
     self.is_fl_on = false
     self:stateChanged()
+    if not cb_handled and done_callback then
+        done_callback()
+    end
     return true
 end
 
@@ -131,9 +147,12 @@ function BasePowerD:turnOnFrontlight(done_callback)
     if not self.device:hasFrontlight() then return end
     if self:isFrontlightOn() then return false end
     if self.fl_intensity == self.fl_min then return false end  --- @fixme what the hell?
-    self:turnOnFrontlightHW(done_callback)
+    local cb_handled = self:turnOnFrontlightHW(done_callback)
     self.is_fl_on = true
     self:stateChanged()
+    if not cb_handled and done_callback then
+        done_callback()
+    end
     return true
 end
 
