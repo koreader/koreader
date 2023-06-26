@@ -475,6 +475,8 @@ function NetworkMgr:goOnlineToRun(callback)
     self:beforeWifiAction()
     -- We'll basically do the same but in a blocking manner...
     UIManager:unschedule(self.connectivityCheck)
+    -- Nasty hack: consume reconnectOrShowNetworkMenu's scheduled task *now*, because we won't let UIManager tick for a while...
+    UIManager:_checkTasks()
 
     local iter = 0
     while not self.is_connected do
