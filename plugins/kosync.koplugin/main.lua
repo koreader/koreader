@@ -813,6 +813,7 @@ end
 
 function KOSync:schedulePeriodicPush()
     UIManager:unschedule(self.periodicPushSchedule)
+    -- Use a sizable delay to make debouncing this on skim feasible...
     UIManager:scheduleIn(5, self.periodicPushSchedule, self)
     self.periodic_push_scheduled = true
 end
