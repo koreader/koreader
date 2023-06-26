@@ -154,6 +154,9 @@ function KOSync:onReaderReady()
     end
     self:registerEvents()
     self:onDispatcherRegisterActions()
+
+    self.last_page = self.ui:getCurrentPage()
+
     -- Make sure checksum has been calculated at the very first time a document has been opened, to
     -- avoid document saving feature to impact the checksum, and eventually impact the document
     -- identity in the progress sync feature.
@@ -805,7 +808,14 @@ end
 
 function KOSync:periodicPushSchedule()
     self.periodic_push_scheduled = false
+    -- We do *NOT* want to make sure networking is up here, as the nagging would be extremely annoying; we're leaving that to the network activity check...
     self:updateProgress(false, false)
+end
+
+function KOSync:schedulePeriodicPush()
+    UIManager:unschedule(self.periodicPushSchedule)
+    UIManager:scheduleIn(0.25, self.periodicPushSchedule, self)
+    self.periodic_push_scheduled = true
 end
 
 function KOSync:_onPageUpdate(page)
@@ -813,16 +823,16 @@ function KOSync:_onPageUpdate(page)
         return
     end
 
-    if self.last_page == -1 then
-        self.last_page = page
-    elseif self.last_page ~= page then
+    if self.last_page ~= page then
         self.last_page = page
         self.last_page_turn_timestamp = os.time()
         self.page_update_counter = self.page_update_counter + 1
-        if self.kosync_pages_before_update and self.page_update_counter >= self.kosync_pages_before_update then
+        -- If we've already scheduled a push, regardless of the counter's state, delay it until we're *actually* idle
+        if self.periodic_push_scheduled then
+            self:schedulePeriodicPush()
+        elseif self.kosync_pages_before_update and self.page_update_counter >= self.kosync_pages_before_update then
             self.page_update_counter = 0
-            -- We do *NOT* want to make sure networking is up here, as the nagging would be extremely annoying; we're leaving that to the network activity check...
-            UIManager:scheduleIn(0.25, function() self:updateProgress(false, false) end)
+            self:schedulePeriodicPush()
         end
     end
 end
