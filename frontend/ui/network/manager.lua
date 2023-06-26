@@ -467,7 +467,7 @@ end
 function NetworkMgr:goOnlineToRun(callback)
     if self:isOnline() then
         callback()
-        return
+        return true
     end
 
     -- In case we abort before the beforeWifiAction, we won't pass it the callback, but run it ourselves,
@@ -486,6 +486,7 @@ function NetworkMgr:goOnlineToRun(callback)
 
     -- We're finally connected!
     callback()
+    return true
 end
 
 
