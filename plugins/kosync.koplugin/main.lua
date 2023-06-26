@@ -11,6 +11,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local random = require("random")
+local time = require("ui/time")
 local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -24,9 +25,11 @@ local KOSync = WidgetContainer:extend{
     is_doc_only = true,
     title = _("Register/login to KOReader server"),
 
-    page_update_counter = 0,
-    last_page = -1,
-    last_page_turn_ticks = 0,
+    page_update_counter = nil,
+    last_page = nil,
+    last_page_turn_timestamp = nil,
+    periodic_push_scheduled = nil,
+    _menu_to_update = nil,
 }
 
 local SYNC_STRATEGY = {
@@ -44,6 +47,29 @@ local CHECKSUM_METHOD = {
     BINARY = 0,
     FILENAME = 1
 }
+
+function KOSync:init()
+    self.page_update_counter = 0
+    self.last_page = -1
+    self.last_page_turn_timestamp = 0
+    self.periodic_push_scheduled = false
+    self._menu_to_update = nil
+
+    --- @todo: Viable candidate for a port to the new readSetting API
+    local settings = G_reader_settings:readSetting("kosync") or {}
+    self.kosync_custom_server = settings.custom_server
+    self.kosync_username = settings.username
+    self.kosync_userkey = settings.userkey
+    -- Do *not* default to auto-sync on devices w/ NetworkManager support, as wifi is unlikely to be on at all times there, and the nagging enabling this may cause requires careful consideration.
+    self.kosync_auto_sync = settings.auto_sync or not Device:hasWifiManager()
+    self.kosync_pages_before_update = settings.pages_before_update
+    self.kosync_whisper_forward = settings.whisper_forward or SYNC_STRATEGY.DEFAULT_FORWARD
+    self.kosync_whisper_backward = settings.whisper_backward or SYNC_STRATEGY.DEFAULT_BACKWARD
+    self.kosync_checksum_method = settings.checksum_method or CHECKSUM_METHOD.BINARY
+    self.kosync_device_id = G_reader_settings:readSetting("device_id")
+
+    self.ui.menu:registerToMainMenu(self)
+end
 
 function KOSync:getSyncPeriod()
     if not self.kosync_auto_sync then
@@ -122,25 +148,12 @@ function KOSync:onDispatcherRegisterActions()
 end
 
 function KOSync:onReaderReady()
-    --- @todo: Viable candidate for a port to the new readSetting API
-    local settings = G_reader_settings:readSetting("kosync") or {}
-    self.kosync_custom_server = settings.custom_server
-    self.kosync_username = settings.username
-    self.kosync_userkey = settings.userkey
-    -- Do *not* default to auto-sync on devices w/ NetworkManager support, as wifi is unlikely to be on at all times there, and the nagging enabling this may cause requires careful consideration.
-    self.kosync_auto_sync = settings.auto_sync or not Device:hasWifiManager()
-    self.kosync_pages_before_update = settings.pages_before_update
-    self.kosync_whisper_forward = settings.whisper_forward or SYNC_STRATEGY.DEFAULT_FORWARD
-    self.kosync_whisper_backward = settings.whisper_backward or SYNC_STRATEGY.DEFAULT_BACKWARD
-    self.kosync_checksum_method = settings.checksum_method or CHECKSUM_METHOD.BINARY
-    self.kosync_device_id = G_reader_settings:readSetting("device_id")
     --assert(self.kosync_device_id)
     if self.kosync_auto_sync then
         self:_onResume()
     end
     self:registerEvents()
     self:onDispatcherRegisterActions()
-    self.ui.menu:registerToMainMenu(self)
     -- Make sure checksum has been calculated at the very first time a document has been opened, to
     -- avoid document saving feature to impact the checksum, and eventually impact the document
     -- identity in the progress sync feature.
@@ -407,6 +420,7 @@ function KOSync:login()
                     id = "close",
                     callback = function()
                         UIManager:close(dialog)
+                        self._menu_to_update = nil
                     end,
                 },
                 {
@@ -495,6 +509,7 @@ function KOSync:doRegister(username, password)
     end
     Device:setIgnoreInput(false)
     self:saveSettings()
+    self._menu_to_update = nil
 end
 
 function KOSync:doLogin(username, password)
@@ -533,6 +548,7 @@ function KOSync:doLogin(username, password)
     end
     Device:setIgnoreInput(false)
     self:saveSettings()
+    self._menu_to_update = nil
 end
 
 function KOSync:logout()
@@ -540,6 +556,7 @@ function KOSync:logout()
     self.kosync_auto_sync = true
     self._menu_to_update:updateItems()
     self:saveSettings()
+    self._menu_to_update = nil
 end
 
 function KOSync:getLastPercent()
@@ -719,7 +736,7 @@ function KOSync:getProgress(ensure_networking, interactive)
 
             local self_older
             if body.timestamp ~= nil then
-                self_older = (body.timestamp > self.last_page_turn_ticks)
+                self_older = (body.timestamp > self.last_page_turn_timestamp)
             else
                 -- If we are working with old sync server, we can only use
                 -- percentage field.
@@ -786,6 +803,11 @@ function KOSync:_onCloseDocument()
     self:updateProgress(true, false)
 end
 
+function KOSync:periodicPushSchedule()
+    self.periodic_push_scheduled = false
+    self:updateProgress(false, false)
+end
+
 function KOSync:_onPageUpdate(page)
     if page == nil then
         return
@@ -795,7 +817,7 @@ function KOSync:_onPageUpdate(page)
         self.last_page = page
     elseif self.last_page ~= page then
         self.last_page = page
-        self.last_page_turn_ticks = os.time()
+        self.last_page_turn_timestamp = os.time()
         self.page_update_counter = self.page_update_counter + 1
         if self.kosync_pages_before_update and self.page_update_counter >= self.kosync_pages_before_update then
             self.page_update_counter = 0
