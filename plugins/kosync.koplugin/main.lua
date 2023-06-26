@@ -147,7 +147,11 @@ function KOSync:onDispatcherRegisterActions()
 end
 
 function KOSync:onReaderReady()
-    --assert(self.kosync_device_id)
+    -- Make sure checksum has been calculated before we ever query it,
+    -- to avoid document saving features to impact the checksum,
+    -- and eventually impact the document identity in the progress sync feature.
+    self.view.document:fastDigest(self.ui.doc_settings)
+
     if self.kosync_auto_sync then
         self:_onResume()
     end
@@ -155,11 +159,6 @@ function KOSync:onReaderReady()
     self:onDispatcherRegisterActions()
 
     self.last_page = self.ui:getCurrentPage()
-
-    -- Make sure checksum has been calculated at the very first time a document has been opened, to
-    -- avoid document saving feature to impact the checksum, and eventually impact the document
-    -- identity in the progress sync feature.
-    self.view.document:fastDigest(self.ui.doc_settings)
 end
 
 function KOSync:addToMainMenu(menu_items)
@@ -586,7 +585,7 @@ function KOSync:getDocumentDigest()
 end
 
 function KOSync:getFileDigest()
-    return self.view.document:fastDigest()
+    return self.ui.doc_settings:readSetting("partial_md5_checksum")
 end
 
 function KOSync:getFileNameDigest()
