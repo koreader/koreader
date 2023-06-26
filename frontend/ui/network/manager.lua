@@ -55,8 +55,8 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
     if self.is_wifi_on and self.is_connected then
         self.wifi_was_on = true
         G_reader_settings:makeTrue("wifi_was_on")
-        UIManager:broadcastEvent(Event:new("NetworkConnected"))
         logger.info("Wi-Fi successfully restored (after", iter * 0.25, "seconds)!")
+        UIManager:broadcastEvent(Event:new("NetworkConnected"))
 
         -- Handle the UI & callback if it's from a beforeWifiAction...
         if widget then
