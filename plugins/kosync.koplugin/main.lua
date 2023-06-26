@@ -27,6 +27,7 @@ local KOSync = WidgetContainer:extend{
     page_update_counter = nil,
     last_page = nil,
     last_page_turn_timestamp = nil,
+    periodic_push_task = nil,
     periodic_push_scheduled = nil,
     _menu_to_update = nil,
 }
@@ -53,6 +54,13 @@ function KOSync:init()
     self.last_page_turn_timestamp = 0
     self.periodic_push_scheduled = false
     self._menu_to_update = nil
+
+    -- Like AutoSuspend, we need an instance-specific task for scheduling/resource management reasons.
+    self.periodic_push_task = function()
+        self.periodic_push_scheduled = false
+        -- We do *NOT* want to make sure networking is up here, as the nagging would be extremely annoying; we're leaving that to the network activity check...
+        self:updateProgress(false, false)
+    end
 
     --- @todo: Viable candidate for a port to the new readSetting API
     local settings = G_reader_settings:readSetting("kosync") or {}
@@ -804,16 +812,10 @@ function KOSync:_onCloseDocument()
     self:updateProgress(true, false)
 end
 
-function KOSync:periodicPushSchedule()
-    self.periodic_push_scheduled = false
-    -- We do *NOT* want to make sure networking is up here, as the nagging would be extremely annoying; we're leaving that to the network activity check...
-    self:updateProgress(false, false)
-end
-
 function KOSync:schedulePeriodicPush()
-    UIManager:unschedule(self.periodicPushSchedule)
+    UIManager:unschedule(self.periodic_push_task)
     -- Use a sizable delay to make debouncing this on skim feasible...
-    UIManager:scheduleIn(5, self.periodicPushSchedule, self)
+    UIManager:scheduleIn(5, self.periodic_push_task)
     self.periodic_push_scheduled = true
 end
 
@@ -887,7 +889,8 @@ function KOSync:registerEvents()
 end
 
 function KOSync:onCloseWidget()
-    UIManager:unschedule(self.periodicPushSchedule)
+    UIManager:unschedule(self.periodic_push_task)
+    self.periodic_push_task = nil
 end
 
 return KOSync
