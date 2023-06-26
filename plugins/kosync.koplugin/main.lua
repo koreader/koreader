@@ -813,7 +813,7 @@ end
 
 function KOSync:schedulePeriodicPush()
     UIManager:unschedule(self.periodicPushSchedule)
-    UIManager:scheduleIn(1.5, self.periodicPushSchedule, self)
+    UIManager:scheduleIn(5, self.periodicPushSchedule, self)
     self.periodic_push_scheduled = true
 end
 
