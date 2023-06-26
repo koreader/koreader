@@ -638,7 +638,7 @@ function KOSync:updateProgress(ensure_networking, interactive)
         Device.model,
         self.kosync_device_id,
         function(ok, body)
-            logger.dbg("KOSync: [Push] progress to", percentage, "% =>", progress, "for", self.view.document.file)
+            logger.dbg("KOSync: [Push] progress to", percentage * 100, "% =>", progress, "for", self.view.document.file)
             logger.dbg("KOSync: ok:", ok, "body:", body)
             if interactive then
                 if ok then
@@ -714,7 +714,7 @@ function KOSync:getProgress(ensure_networking, interactive)
             body.percentage = Math.roundPercent(body.percentage)
             local progress = self:getLastProgress()
             local percentage = self:getLastPercent()
-            logger.dbg("KOSync: Current progress:", percentage, "% =>", progress)
+            logger.dbg("KOSync: Current progress:", percentage * 100, "% =>", progress)
 
             if percentage == body.percentage
             or body.progress == progress then
