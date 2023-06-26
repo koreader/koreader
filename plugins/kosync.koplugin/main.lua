@@ -850,7 +850,7 @@ end
 function KOSync:_onFlushSettings()
     logger.dbg("KOSync: onFlushSettings")
     if self.ui == nil or self.ui.document == nil then return end
-    -- Requiring networking here may not be entirely sound, so, don't do it.
+    -- Requiring networking would be actively harmful here, as we often fire right after NetworkDisconnecting...
     self:updateProgress(false, false)
 end
 
