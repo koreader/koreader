@@ -188,7 +188,7 @@ function KOSync:addToMainMenu(menu_items)
                 separator = true,
             },
             {
-                text = _("Attempt to synchronize automatically"),
+                text = _("Automatically keep documents in sync"),
                 checked_func = function() return self.kosync_auto_sync end,
                 help_text = _([[This may lead to nagging about toggling WiFi on document close and suspend/resume, depending on how you've setup your network toggles.]]),
                 callback = function()
@@ -214,7 +214,7 @@ function KOSync:addToMainMenu(menu_items)
                 -- This is the condition that allows enabling auto_disable_wifi in NetworkManager ;).
                 help_text = NetworkMgr:getNetworkInterfaceName() and _([[This may be enough network activity to passively keep WiFi enabled!]]),
                 keep_menu_open = true,
-                callback = function()
+                callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local items = SpinWidget:new{
                         text = _([[This value determines how many page turns it takes to update book progress.
@@ -229,6 +229,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                         default_value = 0,
                         callback = function(spin)
                             self:setPagesBeforeUpdate(spin.value)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
                         end
                     }
                     UIManager:show(items)
