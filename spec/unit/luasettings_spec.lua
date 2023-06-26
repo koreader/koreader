@@ -67,7 +67,9 @@ describe("luasettings module", function()
     end)
 
     describe("table wrapper", function()
-        Settings:delSetting("key")
+        setup(function()
+            Settings:delSetting("key")
+        end)
 
         it("should add item to table", function()
             Settings:addTableItem("key", 1)
