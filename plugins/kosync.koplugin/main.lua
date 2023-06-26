@@ -826,7 +826,7 @@ function KOSync:_onCloseDocument()
     --       we cannot rely on willRerunWhenOnline, because if we're not currently online,
     --       it *will* return early, and that means the actual callback *will* run *after* teardown of the document instance
     --       (and quite likelmy ours, too).
-    NetworkMgr:runWhenOnline(function()
+    NetworkMgr:goOnlineToRun(function()
         -- Drop the inner willRerunWhenOnline ;).
         self:updateProgress(false, false)
     end)

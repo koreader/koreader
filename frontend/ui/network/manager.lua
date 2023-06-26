@@ -463,6 +463,27 @@ function NetworkMgr:willRerunWhenConnected(callback)
     return false
 end
 
+-- And this one is for when you absolutely *need* to block until we're online to run something (e.g., because it runs in a finalizer).
+function NetworkMgr:goOnlineToRun(callback)
+    -- In case we abort before the beforeWifiAction, we won't pass it the callback, but run it ourselves,
+    -- to avoid it firing too late (or at the very least being pinned for too long).
+    self:runWhenOnline()
+
+    local iter = 0
+    while not self.is_connected do
+        iter = iter + 1
+        if iter >= 30 then
+            logger.info("Failed to go online for over 30s, giving up!")
+            return false
+        end
+        ffiutil.sleep(1)
+    end
+
+    -- We're finally connected!
+    callback()
+end
+
+
 
 function NetworkMgr:getWifiMenuTable()
     if Device:isAndroid() then
