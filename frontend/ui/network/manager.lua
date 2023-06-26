@@ -32,7 +32,7 @@ end
 -- as quite a few things rely on it (KOSync, c.f. #5109; the network activity check, c.f., #6424).
 function NetworkMgr:connectivityCheck(iter, callback, widget)
     -- Give up after a while (restoreWifiAsync can take over 45s, so, try to cover that)...
-    if iter > 25 then
+    if iter > 180 then
         logger.info("Failed to restore Wi-Fi (after", iter, "iterations)!")
         self.wifi_was_on = false
         G_reader_settings:makeFalse("wifi_was_on")
@@ -75,12 +75,12 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
             end
         end
     else
-        UIManager:scheduleIn(2, self.connectivityCheck, self, iter + 1, callback, widget)
+        UIManager:scheduleIn(0.25, self.connectivityCheck, self, iter + 1, callback, widget)
     end
 end
 
 function NetworkMgr:scheduleConnectivityCheck(callback, widget)
-    UIManager:scheduleIn(2, self.connectivityCheck, self, 1, callback, widget)
+    UIManager:scheduleIn(0.5, self.connectivityCheck, self, 1, callback, widget)
 end
 
 function NetworkMgr:init()
@@ -472,11 +472,11 @@ function NetworkMgr:goOnlineToRun(callback)
     local iter = 0
     while not self.is_connected do
         iter = iter + 1
-        if iter >= 30 then
+        if iter >= 120 then
             logger.info("Failed to go online for over 30s, giving up!")
             return false
         end
-        ffiutil.sleep(1)
+        ffiutil.usleep(250000)
     end
 
     -- We're finally connected!
