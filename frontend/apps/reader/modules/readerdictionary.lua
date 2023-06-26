@@ -275,7 +275,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
             {
                 text = _("Enable fuzzy search"),
                 checked_func = function()
-                    return not self.disable_fuzzy_search == true
+                    return self.disable_fuzzy_search ~= true
                 end,
                 callback = function()
                     self.disable_fuzzy_search = not self.disable_fuzzy_search

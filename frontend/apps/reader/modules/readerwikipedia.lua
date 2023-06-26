@@ -244,7 +244,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                     -- home_dir/Wikipedia/
                     if not G_reader_settings:readSetting("wikipedia_save_dir") then
                         local home_dir = G_reader_settings:readSetting("home_dir")
-                        if not home_dir or not lfs.attributes(home_dir, "mode") == "directory" then
+                        if not home_dir or lfs.attributes(home_dir, "mode") ~= "directory" then
                             home_dir = require("apps/filemanager/filemanagerutil").getDefaultDir()
                         end
                         home_dir = home_dir:gsub("^(.-)/*$", "%1") -- remove trailing slash
