@@ -33,7 +33,7 @@ end
 function NetworkMgr:connectivityCheck(iter, callback, widget)
     -- Give up after a while (restoreWifiAsync can take over 45s, so, try to cover that)...
     if iter > 180 then
-        logger.info("Failed to restore Wi-Fi (after", iter, "iterations)!")
+        logger.info("Failed to restore Wi-Fi (after", iter * 0.25, "seconds)!")
         self.wifi_was_on = false
         G_reader_settings:makeFalse("wifi_was_on")
         -- If we abort, murder Wi-Fi and the async script first...
@@ -56,7 +56,7 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
         self.wifi_was_on = true
         G_reader_settings:makeTrue("wifi_was_on")
         UIManager:broadcastEvent(Event:new("NetworkConnected"))
-        logger.info("Wi-Fi successfully restored (after", iter, "iterations)!")
+        logger.info("Wi-Fi successfully restored (after", iter * 0.25, "seconds)!")
 
         -- Handle the UI & callback if it's from a beforeWifiAction...
         if widget then
