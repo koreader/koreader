@@ -11,6 +11,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local random = require("random")
+local time = require("ui/time")
 local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -24,6 +25,7 @@ local KOSync = WidgetContainer:extend{
     is_doc_only = true,
     title = _("Register/login to KOReader server"),
 
+    pull_timestamp = nil,
     page_update_counter = nil,
     last_page = nil,
     last_page_turn_timestamp = nil,
@@ -49,6 +51,7 @@ local CHECKSUM_METHOD = {
 }
 
 function KOSync:init()
+    self.pull_timestamp = 0
     self.page_update_counter = 0
     self.last_page = -1
     self.last_page_turn_timestamp = 0
@@ -674,6 +677,11 @@ function KOSync:getProgress(ensure_networking, interactive)
         return
     end
 
+    local now = UIManager:getElapsedTimeSinceBoot()
+    if not interactive and now - self.pull_timestamp <= time.s(25) then
+        logger.warn("KOSync: We've already pulled progress less than 25s ago!")
+    end
+
     if ensure_networking and NetworkMgr:willRerunWhenOnline(function() self:getProgress(ensure_networking, interactive) end) then
         return
     end
@@ -690,7 +698,7 @@ function KOSync:getProgress(ensure_networking, interactive)
         self.kosync_userkey,
         doc_digest,
         function(ok, body)
-            logger.dbg("KOSync: [Get] progress for", self.view.document.file)
+            logger.dbg("KOSync: [Pull] progress for", self.view.document.file)
             logger.dbg("KOSync: ok:", ok, "body:", body)
             if not ok or not body then
                 if interactive then
@@ -787,6 +795,8 @@ function KOSync:getProgress(ensure_networking, interactive)
         if interactive then showSyncError() end
         if err then logger.dbg("err:", err) end
     end
+
+    self.pull_timestamp = now
 end
 
 function KOSync:saveSettings()
@@ -842,12 +852,14 @@ end
 
 function KOSync:_onResume()
     logger.dbg("KOSync: onResume")
-    -- If we have auto_restore_wifi enabled, skip this to prevent both the "Connecting" UI to pop-up,
+    -- If we have auto_restore_wifi enabled, skip this to prevent both the "Connecting..." UI to pop-up,
     -- *and* a duplicate NetworkConnected event from firing...
     if Device:hasWifiManager() and G_reader_settings:isTrue("auto_restore_wifi") then
         return
     end
 
+    -- And if we don't, this *will* (attempt to) trigger a connection and as such a NetworkConnected event,
+    -- but only a single pull will happen, since getProgress debounces itself.
     UIManager:scheduleIn(1, function()
         self:getProgress(true, false)
     end)
