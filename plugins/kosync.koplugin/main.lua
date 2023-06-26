@@ -11,7 +11,6 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local random = require("random")
-local time = require("ui/time")
 local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
