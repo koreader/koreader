@@ -31,7 +31,6 @@ local KOSync = WidgetContainer:extend{
     last_page_turn_timestamp = nil,
     periodic_push_task = nil,
     periodic_push_scheduled = nil,
-    _menu_to_update = nil,
 }
 
 local SYNC_STRATEGY = {
@@ -56,7 +55,6 @@ function KOSync:init()
     self.last_page = -1
     self.last_page_turn_timestamp = 0
     self.periodic_push_scheduled = false
-    self._menu_to_update = nil
 
     -- Like AutoSuspend, we need an instance-specific task for scheduling/resource management reasons.
     self.periodic_push_task = function()
@@ -202,13 +200,11 @@ function KOSync:addToMainMenu(menu_items)
                 callback_func = function()
                     if self.kosync_userkey then
                         return function(menu)
-                            self._menu_to_update = menu
-                            self:logout()
+                            self:logout(menu)
                         end
                     else
                         return function(menu)
-                            self._menu_to_update = menu
-                            self:login()
+                            self:login(menu)
                         end
                     end
                 end,
@@ -409,8 +405,8 @@ function KOSync:setChecksumMethod(method)
     self:saveSettings()
 end
 
-function KOSync:login()
-    if NetworkMgr:willRerunWhenOnline(function() self:login() end) then
+function KOSync:login(menu)
+    if NetworkMgr:willRerunWhenOnline(function() self:login(menu) end) then
         return
     end
 
@@ -434,7 +430,6 @@ function KOSync:login()
                     id = "close",
                     callback = function()
                         UIManager:close(dialog)
-                        self._menu_to_update = nil
                     end,
                 },
                 {
@@ -450,7 +445,7 @@ function KOSync:login()
                         else
                             UIManager:close(dialog)
                             UIManager:scheduleIn(0.5, function()
-                                self:doLogin(username, password)
+                                self:doLogin(username, password, menu)
                             end)
                             UIManager:show(InfoMessage:new{
                                 text = _("Logging in. Please wait…"),
@@ -472,7 +467,7 @@ function KOSync:login()
                         else
                             UIManager:close(dialog)
                             UIManager:scheduleIn(0.5, function()
-                                self:doRegister(username, password)
+                                self:doRegister(username, password, menu)
                             end)
                             UIManager:show(InfoMessage:new{
                                 text = _("Registering. Please wait…"),
@@ -488,7 +483,7 @@ function KOSync:login()
     dialog:onShowKeyboard()
 end
 
-function KOSync:doRegister(username, password)
+function KOSync:doRegister(username, password, menu)
     local KOSyncClient = require("KOSyncClient")
     local client = KOSyncClient:new{
         custom_url = self.kosync_custom_server,
@@ -512,7 +507,9 @@ function KOSync:doRegister(username, password)
     elseif status then
         self.kosync_username = username
         self.kosync_userkey = userkey
-        self._menu_to_update:updateItems()
+        if menu then
+            menu:updateItems()
+        end
         UIManager:show(InfoMessage:new{
             text = _("Registered to KOReader server."),
         })
@@ -523,10 +520,9 @@ function KOSync:doRegister(username, password)
     end
     Device:setIgnoreInput(false)
     self:saveSettings()
-    self._menu_to_update = nil
 end
 
-function KOSync:doLogin(username, password)
+function KOSync:doLogin(username, password, menu)
     local KOSyncClient = require("KOSyncClient")
     local client = KOSyncClient:new{
         custom_url = self.kosync_custom_server,
@@ -551,7 +547,9 @@ function KOSync:doLogin(username, password)
     elseif status then
         self.kosync_username = username
         self.kosync_userkey = userkey
-        self._menu_to_update:updateItems()
+        if menu then
+            menu:updateItems()
+        end
         UIManager:show(InfoMessage:new{
             text = _("Logged in to KOReader server."),
         })
@@ -562,15 +560,15 @@ function KOSync:doLogin(username, password)
     end
     Device:setIgnoreInput(false)
     self:saveSettings()
-    self._menu_to_update = nil
 end
 
-function KOSync:logout()
+function KOSync:logout(menu)
     self.kosync_userkey = nil
     self.kosync_auto_sync = true
-    self._menu_to_update:updateItems()
+    if menu then
+        menu:updateItems()
+    end
     self:saveSettings()
-    self._menu_to_update = nil
 end
 
 function KOSync:getLastPercent()
