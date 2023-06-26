@@ -680,6 +680,7 @@ function KOSync:getProgress(ensure_networking, interactive)
     local now = UIManager:getElapsedTimeSinceBoot()
     if not interactive and now - self.pull_timestamp <= time.s(25) then
         logger.warn("KOSync: We've already pulled progress less than 25s ago!")
+        return
     end
 
     if ensure_networking and NetworkMgr:willRerunWhenOnline(function() self:getProgress(ensure_networking, interactive) end) then
