@@ -482,10 +482,13 @@ function NetworkMgr:goOnlineToRun(callback)
     while not self.is_connected do
         iter = iter + 1
         if iter >= 120 then
-            logger.info("Failed to go online for over 30s, giving up!")
+            logger.info("Failed to connect to Wi-Fi after 30s, giving up!")
+            self.wifi_was_on = false
+            G_reader_settings:makeFalse("wifi_was_on")
             if info then
                 UIManager:close(info)
             end
+            UIManager:show(InfoMessage:new{ text = _("Error connecting to the network") })
             self:turnOffWifi()
             return false
         end
@@ -498,6 +501,8 @@ function NetworkMgr:goOnlineToRun(callback)
         UIManager:close(info)
     end
     -- We're finally connected!
+    self.wifi_was_on = true
+    G_reader_settings:makeTrue("wifi_was_on")
     callback()
     -- Delay this so it won't fire for dead/dying instances in case we're called by a finalizer...
     UIManager:scheduleIn(2, function()
