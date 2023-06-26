@@ -299,6 +299,8 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     -- This will handle sending the proper Event, manage wifi_was_on, as well as tearing down Wi-Fi in case of failures,
     -- (i.e., much like getWifiToggleMenuTable).
     self:scheduleConnectivityCheck(callback, info)
+
+    return info
 end
 
 --- This quirky internal flag is used for the rare beforeWifiAction -> afterWifiAction brackets.
@@ -323,9 +325,9 @@ function NetworkMgr:beforeWifiAction(callback)
 
     local wifi_enable_action = G_reader_settings:readSetting("wifi_enable_action")
     if wifi_enable_action == "turn_on" then
-        self:turnOnWifiAndWaitForConnection(callback)
+        return self:turnOnWifiAndWaitForConnection(callback)
     else
-        self:promptWifiOn(callback)
+        return self:promptWifiOn(callback)
     end
 end
 
@@ -472,7 +474,7 @@ function NetworkMgr:goOnlineToRun(callback)
 
     -- In case we abort before the beforeWifiAction, we won't pass it the callback, but run it ourselves,
     -- to avoid it firing too late (or at the very least being pinned for too long).
-    self:beforeWifiAction()
+    local info = self:beforeWifiAction()
     -- We'll basically do the same but in a blocking manner...
     UIManager:unschedule(self.connectivityCheck)
 
@@ -481,6 +483,9 @@ function NetworkMgr:goOnlineToRun(callback)
         iter = iter + 1
         if iter >= 120 then
             logger.info("Failed to go online for over 30s, giving up!")
+            if info then
+                UIManager:close(info)
+            end
             self:turnOffWifi()
             return false
         end
@@ -488,6 +493,10 @@ function NetworkMgr:goOnlineToRun(callback)
         self:queryNetworkState()
     end
 
+    -- Close the initial "Connecting..." InfoMessage from turnOnWifiAndWaitForConnection via beforeWifiAction
+    if info then
+        UIManager:close(info)
+    end
     -- We're finally connected!
     callback()
     -- Delay this so it won't fire for dead/dying instances in case we're called by a finalizer...
