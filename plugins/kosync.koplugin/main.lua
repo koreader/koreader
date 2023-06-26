@@ -875,6 +875,9 @@ function KOSync:_onFlushSettings()
     logger.dbg("KOSync: onFlushSettings")
     if self.ui == nil or self.ui.document == nil then return end
     -- Requiring networking would be actively harmful here, as we often fire right after NetworkDisconnecting...
+    -- FIXME: Except that we might actually want a push on suspend when WiFi is off, regardless...
+    --        Add an onSuspend and debounce pushes?
+    --        The connection UI might be unwanted in this case, though... >_<".
     if NetworkMgr:isWifiOn() then
         -- Actively checking for it there allows us to avoid spamming the logs on platforms where Wi-Fi isn't always on
         self:updateProgress(false, false)
