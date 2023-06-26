@@ -822,7 +822,14 @@ end
 
 function KOSync:_onCloseDocument()
     logger.dbg("KOSync: onCloseDocument")
-    self:updateProgress(true, false)
+    -- NOTE: Because we'll lose the document instance on return, we need to *block* until the connection is actually up here,
+    --       we cannot rely on willRerunWhenOnline, because if we're not currently online,
+    --       it *will* return early, and that means the actual callback *will* run *after* teardown of the document instance
+    --       (and quite likelmy ours, too).
+    NetworkMgr:runWhenOnline(function()
+        -- Drop the inner willRerunWhenOnline ;).
+        self:updateProgress(false, false)
+    end)
 end
 
 function KOSync:schedulePeriodicPush()
@@ -879,13 +886,15 @@ end
 function KOSync:_onNetworkConnected()
     logger.dbg("KOSync: onNetworkConnected")
     UIManager:scheduleIn(0.5, function()
-        self:getProgress(true, false)
+        -- Network is supposed to be on already, don't wrap this in willRerunWhenOnline
+        self:getProgress(false, false)
     end)
 end
 
 function KOSync:_onNetworkDisconnecting()
     logger.dbg("KOSync: onNetworkDisconnecting")
-    self:updateProgress(true, false)
+    -- Network is supposed to be on already, don't wrap this in willRerunWhenOnline
+    self:updateProgress(false, false)
 end
 
 function KOSync:onKOSyncPushProgress()
