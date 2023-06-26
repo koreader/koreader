@@ -475,8 +475,6 @@ function NetworkMgr:goOnlineToRun(callback)
     self:beforeWifiAction()
     -- We'll basically do the same but in a blocking manner...
     UIManager:unschedule(self.connectivityCheck)
-    -- Nasty hack: consume reconnectOrShowNetworkMenu's scheduled task *now*, because we won't let UIManager tick for a while...
-    UIManager:_checkTasks()
 
     local iter = 0
     while not self.is_connected do
@@ -740,89 +738,89 @@ end
 function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
     local info = InfoMessage:new{text = _("Scanning for networks…")}
     UIManager:show(info)
-    UIManager:nextTick(function()
-        local network_list, err = self:getNetworkList()
-        UIManager:close(info)
+    UIManager:forceRePaint()
+
+    local network_list, err = self:getNetworkList()
+    UIManager:close(info)
+    if network_list == nil then
+        UIManager:show(InfoMessage:new{text = err})
+        return
+    end
+    -- NOTE: Fairly hackish workaround for #4387,
+    --       rescan if the first scan appeared to yield an empty list.
+    --- @fixme This *might* be an issue better handled in lj-wpaclient...
+    if #network_list == 0 then
+        logger.warn("Initial Wi-Fi scan yielded no results, rescanning")
+        network_list, err = self:getNetworkList()
         if network_list == nil then
             UIManager:show(InfoMessage:new{text = err})
             return
         end
-        -- NOTE: Fairly hackish workaround for #4387,
-        --       rescan if the first scan appeared to yield an empty list.
-        --- @fixme This *might* be an issue better handled in lj-wpaclient...
-        if #network_list == 0 then
-            logger.warn("Initial Wi-Fi scan yielded no results, rescanning")
-            network_list, err = self:getNetworkList()
-            if network_list == nil then
-                UIManager:show(InfoMessage:new{text = err})
-                return
+    end
+
+    table.sort(network_list,
+        function(l, r) return l.signal_quality > r.signal_quality end)
+
+    local success = false
+    if self.wifi_toggle_long_press then
+        self.wifi_toggle_long_press = nil
+    else
+        local ssid
+        -- We need to do two passes, as we may have *both* an already connected network (from the global wpa config),
+        -- *and* preferred networks, and if the prferred networks have a better signal quality,
+        -- they'll be sorted *earlier*, which would cause us to try to associate to a different AP than
+        -- what wpa_supplicant is already trying to do...
+        for dummy, network in ipairs(network_list) do
+            if network.connected then
+                -- On platforms where we use wpa_supplicant (if we're calling this, we are),
+                -- the invocation will check its global config, and if an AP configured there is reachable,
+                -- it'll already have connected to it on its own.
+                success = true
+                ssid = network.ssid
+                break
             end
         end
 
-        table.sort(network_list,
-           function(l, r) return l.signal_quality > r.signal_quality end)
-
-        local success = false
-        if self.wifi_toggle_long_press then
-            self.wifi_toggle_long_press = nil
-        else
-            local ssid
-            -- We need to do two passes, as we may have *both* an already connected network (from the global wpa config),
-            -- *and* preferred networks, and if the prferred networks have a better signal quality,
-            -- they'll be sorted *earlier*, which would cause us to try to associate to a different AP than
-            -- what wpa_supplicant is already trying to do...
+        -- Next, look for our own prferred networks...
+        local err_msg = _("Connection failed")
+        if not success then
             for dummy, network in ipairs(network_list) do
-                if network.connected then
-                    -- On platforms where we use wpa_supplicant (if we're calling this, we are),
-                    -- the invocation will check its global config, and if an AP configured there is reachable,
-                    -- it'll already have connected to it on its own.
-                    success = true
-                    ssid = network.ssid
-                    break
-                end
-            end
-
-            -- Next, look for our own prferred networks...
-            local err_msg = _("Connection failed")
-            if not success then
-                for dummy, network in ipairs(network_list) do
-                    if network.password then
-                        -- If we hit a preferred network and we're not already connected,
-                        -- attempt to connect to said preferred network....
-                        success, err_msg = self:authenticateNetwork(network)
-                        if success then
-                            ssid = network.ssid
-                            break
-                        end
+                if network.password then
+                    -- If we hit a preferred network and we're not already connected,
+                    -- attempt to connect to said preferred network....
+                    success, err_msg = self:authenticateNetwork(network)
+                    if success then
+                        ssid = network.ssid
+                        break
                     end
                 end
             end
-
-            if success then
-                self:obtainIP()
-                if complete_callback then
-                    complete_callback()
-                end
-                UIManager:show(InfoMessage:new{
-                    text = T(_("Connected to network %1"), BD.wrap(ssid)),
-                    timeout = 3,
-                })
-            else
-                UIManager:show(InfoMessage:new{
-                    text = err_msg,
-                    timeout = 3,
-                })
-            end
         end
-        if not success then
-            -- NOTE: Also supports a disconnect_callback, should we use it for something?
-            --       Tearing down Wi-Fi completely when tapping "disconnect" would feel a bit harsh, though...
-            UIManager:show(require("ui/widget/networksetting"):new{
-                network_list = network_list,
-                connect_callback = complete_callback,
+
+        if success then
+            self:obtainIP()
+            if complete_callback then
+                complete_callback()
+            end
+            UIManager:show(InfoMessage:new{
+                text = T(_("Connected to network %1"), BD.wrap(ssid)),
+                timeout = 3,
+            })
+        else
+            UIManager:show(InfoMessage:new{
+                text = err_msg,
+                timeout = 3,
             })
         end
-    end)
+    end
+    if not success then
+        -- NOTE: Also supports a disconnect_callback, should we use it for something?
+        --       Tearing down Wi-Fi completely when tapping "disconnect" would feel a bit harsh, though...
+        UIManager:show(require("ui/widget/networksetting"):new{
+            network_list = network_list,
+            connect_callback = complete_callback,
+        })
+    end
 end
 
 function NetworkMgr:saveNetwork(setting)
