@@ -161,7 +161,9 @@ function KOSync:onReaderReady()
     self.view.document:fastDigest(self.ui.doc_settings)
 
     if self.kosync_auto_sync then
-        self:_onResume()
+        UIManager:nextTick(function()
+            self:getProgress(true, false)
+        end)
     end
     self:registerEvents()
     self:onDispatcherRegisterActions()
@@ -840,7 +842,9 @@ end
 
 function KOSync:_onResume()
     logger.dbg("KOSync: onResume")
-    UIManager:scheduleIn(1, function() self:getProgress(true, false) end)
+    UIManager:scheduleIn(1, function()
+        self:getProgress(true, false)
+    end)
 end
 
 function KOSync:_onFlushSettings()
@@ -852,7 +856,9 @@ end
 
 function KOSync:_onNetworkConnected()
     logger.dbg("KOSync: onNetworkConnected")
-    UIManager:scheduleIn(0.5, function() self:getProgress(true, false) end)
+    UIManager:scheduleIn(0.5, function()
+        self:getProgress(true, false)
+    end)
 end
 
 function KOSync:_onNetworkDisconnecting()
