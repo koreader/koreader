@@ -465,9 +465,14 @@ end
 
 -- And this one is for when you absolutely *need* to block until we're online to run something (e.g., because it runs in a finalizer).
 function NetworkMgr:goOnlineToRun(callback)
+    if self:isOnline() then
+        callback()
+        return
+    end
+
     -- In case we abort before the beforeWifiAction, we won't pass it the callback, but run it ourselves,
     -- to avoid it firing too late (or at the very least being pinned for too long).
-    self:runWhenOnline()
+    self:beforeWifiAction()
 
     local iter = 0
     while not self.is_connected do
