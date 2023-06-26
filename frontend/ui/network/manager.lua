@@ -473,19 +473,27 @@ function NetworkMgr:goOnlineToRun(callback)
     -- In case we abort before the beforeWifiAction, we won't pass it the callback, but run it ourselves,
     -- to avoid it firing too late (or at the very least being pinned for too long).
     self:beforeWifiAction()
+    -- We'll basically do the same but in a blocking manner...
+    UIManager:unschedule(self.connectivityCheck)
 
     local iter = 0
     while not self.is_connected do
         iter = iter + 1
         if iter >= 120 then
             logger.info("Failed to go online for over 30s, giving up!")
+            self:turnOffWifi()
             return false
         end
         ffiutil.usleep(250000)
+        self:queryNetworkState()
     end
 
     -- We're finally connected!
     callback()
+    -- Delay this so it won't fire for dead/dying instances in case we're called by a finalizer...
+    UIManager:scheduleIn(2, function()
+        UIManager:broadcastEvent(Event:new("NetworkConnected"))
+    end)
     return true
 end
 
