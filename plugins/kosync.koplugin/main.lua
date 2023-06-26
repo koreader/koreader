@@ -886,4 +886,8 @@ function KOSync:registerEvents()
     end
 end
 
+function KOSync:onCloseWidget()
+    UIManager:unschedule(self.periodicPushSchedule)
+end
+
 return KOSync
