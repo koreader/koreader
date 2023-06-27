@@ -817,6 +817,7 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
                 complete_callback()
             end
             UIManager:show(InfoMessage:new{
+                tag = "NetworkMgr", -- for crazy KOSync purposes
                 text = T(_("Connected to network %1"), BD.wrap(ssid)),
                 timeout = 3,
             })
