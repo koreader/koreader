@@ -2485,9 +2485,8 @@ function ReaderFooter:maybeUpdateFooter()
     self:onUpdateFooter(self:shouldBeRepainted())
 end
 
--- is the same as maybeUpdateFooter
 function ReaderFooter:onFrontlightStateChanged()
-    self:onUpdateFooter(self:shouldBeRepainted())
+    self:maybeUpdateFooter()
 end
 
 function ReaderFooter:onNetworkConnected()
@@ -2498,7 +2497,7 @@ end
 
 function ReaderFooter:onNetworkDisconnected()
     if self.settings.wifi_status then
-        self:onUpdateFooter(self.view.footer_visible)
+        self:maybeUpdateFooter()
     end
 end
 
