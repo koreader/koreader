@@ -52,6 +52,20 @@ local CHECKSUM_METHOD = {
     FILENAME = 1
 }
 
+-- NOTE: This is used in a migration script by ui/data/onetime_migration,
+--       which is why it's public.
+KOSync.default_settings = {
+    custom_server = nil,
+    username = nil,
+    userkey = nil,
+    -- Do *not* default to auto-sync on devices w/ NetworkManager support, as wifi is unlikely to be on at all times there, and the nagging enabling this may cause requires careful consideration.
+    auto_sync = not Device:hasWifiManager(),
+    pages_before_update = 0,
+    whisper_forward = SYNC_STRATEGY.DEFAULT_FORWARD,
+    whisper_backward = SYNC_STRATEGY.DEFAULT_BACKWARD,
+    checksum_method = CHECKSUM_METHOD.BINARY,
+}
+
 function KOSync:init()
     self.push_timestamp = 0
     self.pull_timestamp = 0
@@ -67,17 +81,7 @@ function KOSync:init()
         self:updateProgress(false, false)
     end
 
-    self.settings = G_reader_settings:readSetting("kosync", {
-        custom_server = nil,
-        username = nil,
-        userkey = nil,
-        -- Do *not* default to auto-sync on devices w/ NetworkManager support, as wifi is unlikely to be on at all times there, and the nagging enabling this may cause requires careful consideration.
-        auto_sync = not Device:hasWifiManager(),
-        pages_before_update = 0,
-        whisper_forward = SYNC_STRATEGY.DEFAULT_FORWARD,
-        whisper_backward = SYNC_STRATEGY.DEFAULT_BACKWARD,
-        checksum_method = CHECKSUM_METHOD.BINARY,
-    })
+    self.settings = G_reader_settings:readSetting("kosync", self.default_settings)
     self.device_id = G_reader_settings:readSetting("device_id")
 
     self.ui.menu:registerToMainMenu(self)

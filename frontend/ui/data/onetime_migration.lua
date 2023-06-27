@@ -514,17 +514,35 @@ if last_migration_date < 20230531 then
     end
 end
 
--- 20230627, Disable KOSync's auto sync mode if wifi_enable_action is not turn_on
+-- 20230627, Migrate to a full settings table, and disable KOSync's auto sync mode if wifi_enable_action is not turn_on
 if last_migration_date < 20230627 then
     logger.info("Performing one-time migration for 20230627")
 
+    -- c.f., PluginLoader
+    local package_path = package.path
+    package.path = string.format("%s/?.lua;%s", "plugins/kosync.koplugin", package_path)
+    local ok, KOSync = pcall(dofile, "plugins/kosync.koplugin/main.lua")
+    package.path = package_path
+    if not ok or not KOSync then
+        logger.warn("Error when loading plugins/kosync.koplugin/main.lua:", KOSync)
+    else
+        local settings = G_reader_settings:readSetting("kosync", KOSync.default_settings)
+        -- Make sure the table is complete
+        for k, v in pairs(KOSync.default_settings) do
+            if settings[k] == nil then
+                settings[k] = v
+            end
+        end
+        G_reader_settings:saveSetting("kosync", settings)
+    end
+
     local Device = require("device")
     if Device:hasWifiManager() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
-        local kosync = G_reader_settings:readSetting("kosync") or {}
+        local kosync = G_reader_settings:readSetting("kosync")
         if kosync.auto_sync then
             kosync.auto_sync = not kosync.auto_sync
+            G_reader_settings:saveSetting("kosync", kosync)
         end
-        G_reader_settings:saveSetting("kosync", kosync)
     end
 end
 
