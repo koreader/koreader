@@ -25,6 +25,7 @@ local KOSync = WidgetContainer:extend{
     is_doc_only = true,
     title = _("Register/login to KOReader server"),
 
+    push_timestamp = nil,
     pull_timestamp = nil,
     page_update_counter = nil,
     last_page = nil,
@@ -50,6 +51,7 @@ local CHECKSUM_METHOD = {
 }
 
 function KOSync:init()
+    self.push_timestamp = 0
     self.pull_timestamp = 0
     self.page_update_counter = 0
     self.last_page = -1
@@ -626,6 +628,12 @@ function KOSync:updateProgress(ensure_networking, interactive)
         return
     end
 
+    local now = UIManager:getElapsedTimeSinceBoot()
+    if not interactive and now - self.push_timestamp <= time.s(25) then
+        logger.dbg("KOSync: We've already pushed progress less than 25s ago!")
+        return
+    end
+
     if ensure_networking and NetworkMgr:willRerunWhenOnline(function() self:updateProgress(ensure_networking, interactive) end) then
         return
     end
@@ -665,6 +673,8 @@ function KOSync:updateProgress(ensure_networking, interactive)
         if interactive then showSyncError() end
         if err then logger.dbg("err:", err) end
     end
+
+    self.push_timestamp = now
 end
 
 function KOSync:getProgress(ensure_networking, interactive)
@@ -677,7 +687,7 @@ function KOSync:getProgress(ensure_networking, interactive)
 
     local now = UIManager:getElapsedTimeSinceBoot()
     if not interactive and now - self.pull_timestamp <= time.s(25) then
-        logger.warn("KOSync: We've already pulled progress less than 25s ago!")
+        logger.dbg("KOSync: We've already pulled progress less than 25s ago!")
         return
     end
 
@@ -871,17 +881,11 @@ function KOSync:_onResume()
     end)
 end
 
-function KOSync:_onFlushSettings()
-    logger.dbg("KOSync: onFlushSettings")
-    if self.ui == nil or self.ui.document == nil then return end
-    -- Requiring networking would be actively harmful here, as we often fire right after NetworkDisconnecting...
-    -- FIXME: Except that we might actually want a push on suspend when WiFi is off, regardless...
-    --        Add (or even replace onFlushSettings with) an onSuspend and debounce pushes?
-    --        The connection UI might be unwanted in this case, though... >_<".
-    if NetworkMgr:isWifiOn() then
-        -- Actively checking for it there allows us to avoid spamming the logs on platforms where Wi-Fi isn't always on
-        self:updateProgress(false, false)
-    end
+function KOSync:_onSuspend()
+    logger.dbg("KOSync: onSuspend")
+    -- FIXME: The connection UI might be unwanted in this case, though... >_<".
+    --        Or just tack on an extra full refresh at the end...
+    self:updateProgress(true, false)
 end
 
 function KOSync:_onNetworkConnected()
@@ -913,14 +917,14 @@ function KOSync:registerEvents()
         self.onCloseDocument = self._onCloseDocument
         self.onPageUpdate = self._onPageUpdate
         self.onResume = self._onResume
-        self.onFlushSettings = self._onFlushSettings
+        self.onSuspend = self._onSuspend
         self.onNetworkConnected = self._onNetworkConnected
         self.onNetworkDisconnecting = self._onNetworkDisconnecting
     else
         self.onCloseDocument = nil
         self.onPageUpdate = nil
         self.onResume = nil
-        self.onFlushSettings = nil
+        self.onSuspend = nil
         self.onNetworkConnected = nil
         self.onNetworkDisconnecting = nil
     end
