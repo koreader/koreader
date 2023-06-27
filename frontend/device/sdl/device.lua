@@ -172,6 +172,9 @@ function Device:init()
         y = self.window.top,
         is_always_portrait = self.isAlwaysPortrait(),
     }
+    -- Pickup the updated window sizes if they were enforced in S.open (we'll get the coordinates via the inital SDL_WINDOWEVENT_MOVED)...
+    self.window.width = self.screen.w
+    self.window.height = self.screen.h
     self.powerd = require("device/sdl/powerd"):new{device = self}
 
     local ok, re = pcall(self.screen.setWindowIcon, self.screen, "resources/koreader.png")
