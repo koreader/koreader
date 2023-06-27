@@ -125,7 +125,7 @@ function TextBoxWidget:init()
     self.line_height_px = Math.round( (1 + self.line_height) * self.face.size )
     -- Get accurate initial baseline and possible height overflow (so our bb
     -- is tall enough to draw glyphs with descender larger than line height)
-    local face_height, face_ascender = self.face.ftface:getHeightAndAscender()
+    local face_height, face_ascender = self.face.ftsize:getHeightAndAscender()
     local line_heights_diff = math.floor(self.line_height_px - face_height)
     if line_heights_diff >= 0 then
         -- Glyphs will fit in our line_height_px: adjust baseline.
@@ -1113,7 +1113,7 @@ function TextBoxWidget:getFontSizeToFitHeight(height_px, nb_lines, line_height_e
             local line_height_px = Math.round( (1 + line_height_em) * Screen:scaleBySize(font_size) )
             local face = Font:getFace(font_face, font_size)
             face = Font:getAdjustedFace(face, font_bold)
-            local face_height = face.ftface:getHeightAndAscender()
+            local face_height = face.ftsize:getHeightAndAscender()
             local line_heights_diff = math.floor(line_height_px - face_height)
             if line_heights_diff >= 0 then
                 break

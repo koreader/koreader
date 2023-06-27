@@ -109,15 +109,15 @@ local function collectFaceInfo(path)
         return
     end
     for i=0, n-1 do
-        local ok, face = pcall(FT.newFace, path, nil, i)
+        local ok, ftsize = pcall(FT.newFaceSize, path, nil, i)
         if not ok then
             return nil
         end
 
         -- If family_name is missing, it's probably too broken to be useful
-        if face.family_name ~= nil then
-            local fres = face:getInfo()
-            local hbface = HB.hb_ft_face_create_referenced(face)
+        if ftsize.face.family_name ~= nil then
+            local fres = ftsize:getInfo()
+            local hbface = HB.hb_ft_face_create_referenced(ftsize.face)
             fres.names = hbface:getNames()
             fres.scripts, fres.langs = hbface:getCoverage()
             fres.path = path
@@ -125,7 +125,7 @@ local function collectFaceInfo(path)
             table.insert(res, fres)
             hbface:destroy()
         end
-        face:done()
+        ftsize:done()
     end
     return res
 end
