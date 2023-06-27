@@ -675,7 +675,15 @@ function KOSync:updateProgress(ensure_networking, interactive, refresh_on_succes
     else
         -- This is solely for onSuspend's sake, to clear the ghosting left by the the "Connected" InfoMessage
         if refresh_on_success then
-            Device.screen:refreshFull()
+            -- Our top-level widget should be the "Connected to network" InfoMessage from NetworkMgr's reconnectOrShowNetworkMenu
+            local widget = UIManager:getTopmostVisibleWidget()
+            -- Crappy heuristics inside!
+            if widget.modal and widget.timeout == 3 and not widget.dismiss_callback then
+                -- We want a full-screen flash on dismiss
+                widget.dismiss_callback = function()
+                    Device.screen:refreshFull()
+                end
+            end
         end
     end
 
