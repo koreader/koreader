@@ -240,8 +240,7 @@ function InfoMessage:onShow()
     -- schedule us to close ourself if timeout provided
     if self.timeout then
         UIManager:scheduleIn(self.timeout, function()
-            -- In case we're provided with dismiss_callback, also call it
-            -- on timeout
+            -- In case we're provided with dismiss_callback, also call it on timeout
             if self.dismiss_callback then
                 self.dismiss_callback()
                 self.dismiss_callback = nil

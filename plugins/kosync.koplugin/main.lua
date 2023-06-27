@@ -680,7 +680,8 @@ function KOSync:updateProgress(ensure_networking, interactive, refresh_on_succes
             if widget.modal and widget.tag == "NetworkMgr" and not widget.dismiss_callback then
                 -- We want a full-screen flash on dismiss
                 widget.dismiss_callback = function()
-                    Device.screen:refreshFull()
+                    -- Enqueued, because we run before the InfoMessage's close
+                    UIManager:setDirty(nil, "full")
                 end
             end
         end
