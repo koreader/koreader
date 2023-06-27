@@ -215,8 +215,14 @@ function KOSync:addToMainMenu(menu_items)
             {
                 text = _("Automatically keep documents in sync"),
                 checked_func = function() return self.kosync_auto_sync end,
-                help_text = _([[This may lead to nagging about toggling WiFi on document close and suspend/resume, depending on how you've setup your network toggles.]]),
+                help_text = _([[This may lead to nagging about toggling WiFi on document close and suspend/resume, depending on the device's connectivity.]]),
                 callback = function()
+                    -- Actively recommend switching the before wifi action to "turn_on" instead of prompt, as prompt will just not be practical (or even plain usable) here.
+                    if Device:hasWifiManager() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
+                        UIManager:show(InfoMessage:new{ text = _("You will have to switch the 'Action when Wi-Fi is off' Network setting to 'turn on' to be able to enable this feature!") })
+                        return
+                    end
+
                     self.kosync_auto_sync = not self.kosync_auto_sync
                     self:registerEvents()
                     if self.kosync_auto_sync then

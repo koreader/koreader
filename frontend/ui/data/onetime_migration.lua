@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20230531
+local CURRENT_MIGRATION_DATE = 20230627
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -511,6 +511,20 @@ if last_migration_date < 20230531 then
     if G_reader_settings:readSetting("collate") == "strcoll_mixed" then
         G_reader_settings:saveSetting("collate", "strcoll")
         G_reader_settings:makeTrue("collate_mixed")
+    end
+end
+
+-- 20230627, Disable KOSync's auto sync mode if wifi_enable_action is not turn_on
+if last_migration_date < 20230627 then
+    logger.info("Performing one-time migration for 20230627")
+
+    local Device = require("device")
+    if Device:hasWifiManager() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
+        local kosync = G_reader_settings:readSetting("kosync") or {}
+        if kosync.auto_sync then
+            kosync.auto_sync = not kosync.auto_sync
+        end
+        G_reader_settings:saveSetting("kosync", kosync)
     end
 end
 
