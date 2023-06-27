@@ -32,6 +32,8 @@ local KOSync = WidgetContainer:extend{
     last_page_turn_timestamp = nil,
     periodic_push_task = nil,
     periodic_push_scheduled = nil,
+
+    settings = nil,
 }
 
 local SYNC_STRATEGY = {
@@ -65,28 +67,28 @@ function KOSync:init()
         self:updateProgress(false, false)
     end
 
-    --- @todo: Viable candidate for a port to the new readSetting API
-    local settings = G_reader_settings:readSetting("kosync") or {}
-    self.kosync_custom_server = settings.custom_server
-    self.kosync_username = settings.username
-    self.kosync_userkey = settings.userkey
-    -- Do *not* default to auto-sync on devices w/ NetworkManager support, as wifi is unlikely to be on at all times there, and the nagging enabling this may cause requires careful consideration.
-    self.kosync_auto_sync = settings.auto_sync or not Device:hasWifiManager()
-    self.kosync_pages_before_update = settings.pages_before_update
-    self.kosync_whisper_forward = settings.whisper_forward or SYNC_STRATEGY.DEFAULT_FORWARD
-    self.kosync_whisper_backward = settings.whisper_backward or SYNC_STRATEGY.DEFAULT_BACKWARD
-    self.kosync_checksum_method = settings.checksum_method or CHECKSUM_METHOD.BINARY
-    self.kosync_device_id = G_reader_settings:readSetting("device_id")
+    self.settings = G_reader_settings:readSetting("kosync", {
+        custom_server = nil,
+        username = nil,
+        userkey = nil,
+        -- Do *not* default to auto-sync on devices w/ NetworkManager support, as wifi is unlikely to be on at all times there, and the nagging enabling this may cause requires careful consideration.
+        auto_sync = not Device:hasWifiManager(),
+        pages_before_update = 0,
+        whisper_forward = SYNC_STRATEGY.DEFAULT_FORWARD,
+        whisper_backward = SYNC_STRATEGY.DEFAULT_BACKWARD,
+        checksum_method = CHECKSUM_METHOD.BINARY,
+    })
+    self.device_id = G_reader_settings:readSetting("device_id")
 
     self.ui.menu:registerToMainMenu(self)
 end
 
 function KOSync:getSyncPeriod()
-    if not self.kosync_auto_sync then
+    if not self.settings.auto_sync then
         return _("Unavailable")
     end
 
-    local period = self.kosync_pages_before_update
+    local period = self.settings.pages_before_update
     if period and period > 0 then
         return period
     else
@@ -163,7 +165,7 @@ function KOSync:onReaderReady()
     -- and eventually impact the document identity in the progress sync feature.
     self.view.document:fastDigest(self.ui.doc_settings)
 
-    if self.kosync_auto_sync then
+    if self.settings.auto_sync then
         UIManager:nextTick(function()
             self:getProgress(true, false)
         end)
@@ -185,7 +187,7 @@ function KOSync:addToMainMenu(menu_items)
                     return {
                         -- @translators Server address defined by user for progress sync.
                         title = _("Custom progress sync server address"),
-                        input = self.kosync_custom_server or "https://",
+                        input = self.settings.custom_server or "https://",
                         type = "text",
                         callback = function(input)
                             self:setCustomServer(input)
@@ -195,12 +197,12 @@ function KOSync:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    return self.kosync_userkey and (_("Logout"))
+                    return self.settings.userkey and (_("Logout"))
                         or _("Register") .. " / " .. _("Login")
                 end,
                 keep_menu_open = true,
                 callback_func = function()
-                    if self.kosync_userkey then
+                    if self.settings.userkey then
                         return function(menu)
                             self:logout(menu)
                         end
@@ -214,7 +216,7 @@ function KOSync:addToMainMenu(menu_items)
             },
             {
                 text = _("Automatically keep documents in sync"),
-                checked_func = function() return self.kosync_auto_sync end,
+                checked_func = function() return self.settings.auto_sync end,
                 help_text = _([[This may lead to nagging about toggling WiFi on document close and suspend/resume, depending on the device's connectivity.]]),
                 callback = function()
                     -- Actively recommend switching the before wifi action to "turn_on" instead of prompt, as prompt will just not be practical (or even plain usable) here.
@@ -223,9 +225,9 @@ function KOSync:addToMainMenu(menu_items)
                         return
                     end
 
-                    self.kosync_auto_sync = not self.kosync_auto_sync
+                    self.settings.auto_sync = not self.settings.auto_sync
                     self:registerEvents()
-                    if self.kosync_auto_sync then
+                    if self.settings.auto_sync then
                         -- since we will update the progress when closing document, we should pull
                         -- current progress now to avoid to overwrite it silently.
                         self:getProgress(true, true)
@@ -234,14 +236,13 @@ function KOSync:addToMainMenu(menu_items)
                         -- current progress now to avoid to lose it silently.
                         self:updateProgress(true, true)
                     end
-                    self:saveSettings()
                 end,
             },
             {
                 text_func = function()
                     return T(_("Periodically sync every # pages (%1)"), self:getSyncPeriod())
                 end,
-                enabled_func = function() return self.kosync_auto_sync end,
+                enabled_func = function() return self.settings.auto_sync end,
                 -- This is the condition that allows enabling auto_disable_wifi in NetworkManager ;).
                 help_text = NetworkMgr:getNetworkInterfaceName() and _([[This may be enough network activity to passively keep WiFi enabled!]]),
                 keep_menu_open = true,
@@ -250,7 +251,7 @@ function KOSync:addToMainMenu(menu_items)
                     local items = SpinWidget:new{
                         text = _([[This value determines how many page turns it takes to update book progress.
 If set to 0, updating progress based on page turns will be disabled.]]),
-                        value = self.kosync_pages_before_update or 0,
+                        value = self.settings.pages_before_update or 0,
                         value_min = 0,
                         value_max = 999,
                         value_step = 1,
@@ -272,13 +273,13 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Sync forward (%1)"), getNameStrategy(self.kosync_whisper_forward))
+                            return T(_("Sync forward (%1)"), getNameStrategy(self.settings.whisper_forward))
                         end,
                         sub_item_table = {
                             {
                                 text = _("Silently"),
                                 checked_func = function()
-                                    return self.kosync_whisper_forward == SYNC_STRATEGY.WHISPER
+                                    return self.settings.whisper_forward == SYNC_STRATEGY.WHISPER
                                 end,
                                 callback = function()
                                     self:setWhisperForward(SYNC_STRATEGY.WHISPER)
@@ -287,7 +288,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                             {
                                 text = _("Prompt"),
                                 checked_func = function()
-                                    return self.kosync_whisper_forward == SYNC_STRATEGY.PROMPT
+                                    return self.settings.whisper_forward == SYNC_STRATEGY.PROMPT
                                 end,
                                 callback = function()
                                     self:setWhisperForward(SYNC_STRATEGY.PROMPT)
@@ -296,7 +297,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                             {
                                 text = _("Never"),
                                 checked_func = function()
-                                    return self.kosync_whisper_forward == SYNC_STRATEGY.DISABLE
+                                    return self.settings.whisper_forward == SYNC_STRATEGY.DISABLE
                                 end,
                                 callback = function()
                                     self:setWhisperForward(SYNC_STRATEGY.DISABLE)
@@ -306,13 +307,13 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                     },
                     {
                         text_func = function()
-                            return T(_("Sync backward (%1)"), getNameStrategy(self.kosync_whisper_backward))
+                            return T(_("Sync backward (%1)"), getNameStrategy(self.settings.whisper_backward))
                         end,
                         sub_item_table = {
                             {
                                 text = _("Silently"),
                                 checked_func = function()
-                                    return self.kosync_whisper_backward == SYNC_STRATEGY.WHISPER
+                                    return self.settings.whisper_backward == SYNC_STRATEGY.WHISPER
                                 end,
                                 callback = function()
                                     self:setWhisperBackward(SYNC_STRATEGY.WHISPER)
@@ -321,7 +322,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                             {
                                 text = _("Prompt"),
                                 checked_func = function()
-                                    return self.kosync_whisper_backward == SYNC_STRATEGY.PROMPT
+                                    return self.settings.whisper_backward == SYNC_STRATEGY.PROMPT
                                 end,
                                 callback = function()
                                     self:setWhisperBackward(SYNC_STRATEGY.PROMPT)
@@ -330,7 +331,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                             {
                                 text = _("Never"),
                                 checked_func = function()
-                                    return self.kosync_whisper_backward == SYNC_STRATEGY.DISABLE
+                                    return self.settings.whisper_backward == SYNC_STRATEGY.DISABLE
                                 end,
                                 callback = function()
                                     self:setWhisperBackward(SYNC_STRATEGY.DISABLE)
@@ -344,7 +345,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
             {
                 text = _("Push progress from this device now"),
                 enabled_func = function()
-                    return self.kosync_userkey ~= nil
+                    return self.settings.userkey ~= nil
                 end,
                 callback = function()
                     self:updateProgress(true, true)
@@ -353,7 +354,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
             {
                 text = _("Pull progress from other devices now"),
                 enabled_func = function()
-                    return self.kosync_userkey ~= nil
+                    return self.settings.userkey ~= nil
                 end,
                 callback = function()
                     self:getProgress(true, true)
@@ -366,7 +367,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                     {
                         text = _("Binary. Only identical files will sync progress."),
                         checked_func = function()
-                            return self.kosync_checksum_method == CHECKSUM_METHOD.BINARY
+                            return self.settings.checksum_method == CHECKSUM_METHOD.BINARY
                         end,
                         callback = function()
                             self:setChecksumMethod(CHECKSUM_METHOD.BINARY)
@@ -375,7 +376,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                     {
                         text = _("Filename. Files with the same name will sync progress."),
                         checked_func = function()
-                            return self.kosync_checksum_method == CHECKSUM_METHOD.FILENAME
+                            return self.settings.checksum_method == CHECKSUM_METHOD.FILENAME
                         end,
                         callback = function()
                             self:setChecksumMethod(CHECKSUM_METHOD.FILENAME)
@@ -388,29 +389,24 @@ If set to 0, updating progress based on page turns will be disabled.]]),
 end
 
 function KOSync:setPagesBeforeUpdate(pages_before_update)
-    self.kosync_pages_before_update = pages_before_update > 0 and pages_before_update or nil
-    self:saveSettings()
+    self.settings.pages_before_update = pages_before_update > 0 and pages_before_update or nil
 end
 
 function KOSync:setCustomServer(server)
     logger.dbg("KOSync: Setting custom server to:", server)
-    self.kosync_custom_server = server ~= "" and server or nil
-    self:saveSettings()
+    self.settings.custom_server = server ~= "" and server or nil
 end
 
 function KOSync:setWhisperForward(strategy)
-    self.kosync_whisper_forward = strategy
-    self:saveSettings()
+    self.settings.whisper_forward = strategy
 end
 
 function KOSync:setWhisperBackward(strategy)
-    self.kosync_whisper_backward = strategy
-    self:saveSettings()
+    self.settings.whisper_backward = strategy
 end
 
 function KOSync:setChecksumMethod(method)
-    self.kosync_checksum_method = method
-    self:saveSettings()
+    self.settings.checksum_method = method
 end
 
 function KOSync:login(menu)
@@ -423,7 +419,7 @@ function KOSync:login(menu)
         title = self.title,
         fields = {
             {
-                text = self.kosync_username,
+                text = self.settings.username,
                 hint = "username",
             },
             {
@@ -494,7 +490,7 @@ end
 function KOSync:doRegister(username, password, menu)
     local KOSyncClient = require("KOSyncClient")
     local client = KOSyncClient:new{
-        custom_url = self.kosync_custom_server,
+        custom_url = self.settings.custom_server,
         service_spec = self.path .. "/api.json"
     }
     -- on Android to avoid ANR (no-op on other platforms)
@@ -513,8 +509,8 @@ function KOSync:doRegister(username, password, menu)
             })
         end
     elseif status then
-        self.kosync_username = username
-        self.kosync_userkey = userkey
+        self.settings.username = username
+        self.settings.userkey = userkey
         if menu then
             menu:updateItems()
         end
@@ -527,13 +523,12 @@ function KOSync:doRegister(username, password, menu)
         })
     end
     Device:setIgnoreInput(false)
-    self:saveSettings()
 end
 
 function KOSync:doLogin(username, password, menu)
     local KOSyncClient = require("KOSyncClient")
     local client = KOSyncClient:new{
-        custom_url = self.kosync_custom_server,
+        custom_url = self.settings.custom_server,
         service_spec = self.path .. "/api.json"
     }
     Device:setIgnoreInput(true)
@@ -553,8 +548,8 @@ function KOSync:doLogin(username, password, menu)
         Device:setIgnoreInput(false)
         return
     elseif status then
-        self.kosync_username = username
-        self.kosync_userkey = userkey
+        self.settings.username = username
+        self.settings.userkey = userkey
         if menu then
             menu:updateItems()
         end
@@ -567,16 +562,14 @@ function KOSync:doLogin(username, password, menu)
         })
     end
     Device:setIgnoreInput(false)
-    self:saveSettings()
 end
 
 function KOSync:logout(menu)
-    self.kosync_userkey = nil
-    self.kosync_auto_sync = true
+    self.settings.userkey = nil
+    self.settings.auto_sync = true
     if menu then
         menu:updateItems()
     end
-    self:saveSettings()
 end
 
 function KOSync:getLastPercent()
@@ -596,7 +589,7 @@ function KOSync:getLastProgress()
 end
 
 function KOSync:getDocumentDigest()
-    if self.kosync_checksum_method == CHECKSUM_METHOD.FILENAME then
+    if self.settings.checksum_method == CHECKSUM_METHOD.FILENAME then
         return self:getFileNameDigest()
     else
         return self:getFileDigest()
@@ -627,7 +620,7 @@ function KOSync:syncToProgress(progress)
 end
 
 function KOSync:updateProgress(ensure_networking, interactive, refresh_on_success)
-    if not self.kosync_username or not self.kosync_userkey then
+    if not self.settings.username or not self.settings.userkey then
         if interactive then
             promptLogin()
         end
@@ -646,7 +639,7 @@ function KOSync:updateProgress(ensure_networking, interactive, refresh_on_succes
 
     local KOSyncClient = require("KOSyncClient")
     local client = KOSyncClient:new{
-        custom_url = self.kosync_custom_server,
+        custom_url = self.settings.custom_server,
         service_spec = self.path .. "/api.json"
     }
     local doc_digest = self:getDocumentDigest()
@@ -654,13 +647,13 @@ function KOSync:updateProgress(ensure_networking, interactive, refresh_on_succes
     local percentage = self:getLastPercent()
     local ok, err = pcall(client.update_progress,
         client,
-        self.kosync_username,
-        self.kosync_userkey,
+        self.settings.username,
+        self.settings.userkey,
         doc_digest,
         progress,
         percentage,
         Device.model,
-        self.kosync_device_id,
+        self.device_id,
         function(ok, body)
             logger.dbg("KOSync: [Push] progress to", percentage * 100, "% =>", progress, "for", self.view.document.file)
             logger.dbg("KOSync: ok:", ok, "body:", body)
@@ -697,7 +690,7 @@ function KOSync:updateProgress(ensure_networking, interactive, refresh_on_succes
 end
 
 function KOSync:getProgress(ensure_networking, interactive)
-    if not self.kosync_username or not self.kosync_userkey then
+    if not self.settings.username or not self.settings.userkey then
         if interactive then
             promptLogin()
         end
@@ -716,14 +709,14 @@ function KOSync:getProgress(ensure_networking, interactive)
 
     local KOSyncClient = require("KOSyncClient")
     local client = KOSyncClient:new{
-        custom_url = self.kosync_custom_server,
+        custom_url = self.settings.custom_server,
         service_spec = self.path .. "/api.json"
     }
     local doc_digest = self:getDocumentDigest()
     local ok, err = pcall(client.get_progress,
         client,
-        self.kosync_username,
-        self.kosync_userkey,
+        self.settings.username,
+        self.settings.userkey,
         doc_digest,
         function(ok, body)
             logger.dbg("KOSync: [Pull] progress for", self.view.document.file)
@@ -746,7 +739,7 @@ function KOSync:getProgress(ensure_networking, interactive)
             end
 
             if body.device == Device.model
-            and body.device_id == self.kosync_device_id then
+            and body.device_id == self.device_id then
                 if interactive then
                     UIManager:show(InfoMessage:new{
                         text = _("Latest progress is coming from this device."),
@@ -790,10 +783,10 @@ function KOSync:getProgress(ensure_networking, interactive)
                 self_older = (body.percentage > percentage)
             end
             if self_older then
-                if self.kosync_whisper_forward == SYNC_STRATEGY.WHISPER then
+                if self.settings.whisper_forward == SYNC_STRATEGY.WHISPER then
                     self:syncToProgress(body.progress)
                     showSyncedMessage()
-                elseif self.kosync_whisper_forward == SYNC_STRATEGY.PROMPT then
+                elseif self.settings.whisper_forward == SYNC_STRATEGY.PROMPT then
                     UIManager:show(ConfirmBox:new{
                         text = T(_("Sync to latest location %1% from device '%2'?"),
                                  Math.round(body.percentage * 100),
@@ -804,10 +797,10 @@ function KOSync:getProgress(ensure_networking, interactive)
                     })
                 end
             else -- if not self_older then
-                if self.kosync_whisper_backward == SYNC_STRATEGY.WHISPER then
+                if self.settings.whisper_backward == SYNC_STRATEGY.WHISPER then
                     self:syncToProgress(body.progress)
                     showSyncedMessage()
-                elseif self.kosync_whisper_backward == SYNC_STRATEGY.PROMPT then
+                elseif self.settings.whisper_backward == SYNC_STRATEGY.PROMPT then
                     UIManager:show(ConfirmBox:new{
                         text = T(_("Sync to previous location %1% from device '%2'?"),
                                  Math.round(body.percentage * 100),
@@ -825,26 +818,6 @@ function KOSync:getProgress(ensure_networking, interactive)
     end
 
     self.pull_timestamp = now
-end
-
-function KOSync:saveSettings()
-    local settings = {
-        custom_server = self.kosync_custom_server,
-        username = self.kosync_username,
-        userkey = self.kosync_userkey,
-        auto_sync = self.kosync_auto_sync,
-        pages_before_update = self.kosync_pages_before_update,
-        whisper_forward =
-              (self.kosync_whisper_forward ~= SYNC_STRATEGY.DEFAULT_FORWARD
-               and self.kosync_whisper_forward
-               or nil),
-        whisper_backward =
-              (self.kosync_whisper_backward ~= SYNC_STRATEGY.DEFAULT_BACKWARD
-               and self.kosync_whisper_backward
-               or nil),
-        checksum_method = self.kosync_checksum_method,
-    }
-    G_reader_settings:saveSetting("kosync", settings)
 end
 
 function KOSync:_onCloseDocument()
@@ -878,7 +851,7 @@ function KOSync:_onPageUpdate(page)
         -- If we've already scheduled a push, regardless of the counter's state, delay it until we're *actually* idle
         if self.periodic_push_scheduled then
             self:schedulePeriodicPush()
-        elseif self.kosync_pages_before_update and self.page_update_counter >= self.kosync_pages_before_update then
+        elseif self.settings.pages_before_update and self.page_update_counter >= self.settings.pages_before_update then
             self.page_update_counter = 0
             self:schedulePeriodicPush()
         end
@@ -921,17 +894,17 @@ function KOSync:_onNetworkDisconnecting()
 end
 
 function KOSync:onKOSyncPushProgress()
-    if not self.kosync_userkey then return end
+    if not self.settings.userkey then return end
     self:updateProgress(true, true)
 end
 
 function KOSync:onKOSyncPullProgress()
-    if not self.kosync_userkey then return end
+    if not self.settings.userkey then return end
     self:getProgress(true, true)
 end
 
 function KOSync:registerEvents()
-    if self.kosync_auto_sync then
+    if self.settings.auto_sync then
         self.onCloseDocument = self._onCloseDocument
         self.onPageUpdate = self._onPageUpdate
         self.onResume = self._onResume
