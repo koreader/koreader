@@ -254,7 +254,7 @@ function KOSync:addToMainMenu(menu_items)
                 end,
                 enabled_func = function() return self.settings.auto_sync end,
                 -- This is the condition that allows enabling auto_disable_wifi in NetworkManager ;).
-                help_text = NetworkMgr:getNetworkInterfaceName() and _([[This may be enough network activity to passively keep WiFi enabled!]]),
+                help_text = NetworkMgr:getNetworkInterfaceName() and _([[Unlike the automatic sync above, this will *not* attempt to setup a network connection, but instead relies on it being already up, and may trigger enough network activity to passively keep WiFi enabled!]]),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
