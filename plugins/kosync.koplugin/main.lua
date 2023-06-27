@@ -620,7 +620,7 @@ function KOSync:syncToProgress(progress)
     end
 end
 
-function KOSync:updateProgress(ensure_networking, interactive)
+function KOSync:updateProgress(ensure_networking, interactive, refresh_on_success)
     if not self.kosync_username or not self.kosync_userkey then
         if interactive then
             promptLogin()
@@ -634,7 +634,7 @@ function KOSync:updateProgress(ensure_networking, interactive)
         return
     end
 
-    if ensure_networking and NetworkMgr:willRerunWhenOnline(function() self:updateProgress(ensure_networking, interactive) end) then
+    if ensure_networking and NetworkMgr:willRerunWhenOnline(function() self:updateProgress(ensure_networking, interactive, refresh_on_success) end) then
         return
     end
 
@@ -672,6 +672,11 @@ function KOSync:updateProgress(ensure_networking, interactive)
     if not ok then
         if interactive then showSyncError() end
         if err then logger.dbg("err:", err) end
+    else
+        -- This is solely for onSuspend's sake, to clear the ghosting left by the the "Connected" InfoMessage
+        if refresh_on_success then
+            Device.screen:refreshFull()
+        end
     end
 
     self.push_timestamp = now
@@ -883,9 +888,8 @@ end
 
 function KOSync:_onSuspend()
     logger.dbg("KOSync: onSuspend")
-    -- FIXME: The connection UI might be unwanted in this case, though... >_<".
-    --        Or just tack on an extra full refresh at the end...
-    self:updateProgress(true, false)
+    -- We request an extra flashing refresh on success, to deal with potential ghosting left by the NetworkMgr UI
+    self:updateProgress(true, false, true)
 end
 
 function KOSync:_onNetworkConnected()
