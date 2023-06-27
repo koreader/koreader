@@ -60,7 +60,7 @@ KOSync.default_settings = {
     userkey = nil,
     -- Do *not* default to auto-sync on devices w/ NetworkManager support, as wifi is unlikely to be on at all times there, and the nagging enabling this may cause requires careful consideration.
     auto_sync = not Device:hasWifiManager(),
-    pages_before_update = 0,
+    pages_before_update = nil,
     whisper_forward = SYNC_STRATEGY.DEFAULT_FORWARD,
     whisper_backward = SYNC_STRATEGY.DEFAULT_BACKWARD,
     checksum_method = CHECKSUM_METHOD.BINARY,
