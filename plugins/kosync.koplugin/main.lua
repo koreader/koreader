@@ -897,12 +897,10 @@ function KOSync:_onNetworkDisconnecting()
 end
 
 function KOSync:onKOSyncPushProgress()
-    if not self.settings.userkey then return end
     self:updateProgress(true, true)
 end
 
 function KOSync:onKOSyncPullProgress()
-    if not self.settings.userkey then return end
     self:getProgress(true, true)
 end
 
