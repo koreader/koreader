@@ -56,8 +56,8 @@ KOSync.default_settings = {
     -- Do *not* default to auto-sync on devices w/ NetworkManager support, as wifi is unlikely to be on at all times there, and the nagging enabling this may cause requires careful consideration.
     auto_sync = not Device:hasWifiManager(),
     pages_before_update = nil,
-    whisper_forward = SYNC_STRATEGY.PROMPT,
-    whisper_backward = SYNC_STRATEGY.DISABLE,
+    sync_forward = SYNC_STRATEGY.PROMPT,
+    sync_backward = SYNC_STRATEGY.DISABLE,
     checksum_method = CHECKSUM_METHOD.BINARY,
 }
 
@@ -278,68 +278,68 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Sync forward (%1)"), getNameStrategy(self.settings.whisper_forward))
+                            return T(_("Sync forward (%1)"), getNameStrategy(self.settings.sync_forward))
                         end,
                         sub_item_table = {
                             {
                                 text = _("Silently"),
                                 checked_func = function()
-                                    return self.settings.whisper_forward == SYNC_STRATEGY.SILENT
+                                    return self.settings.sync_forward == SYNC_STRATEGY.SILENT
                                 end,
                                 callback = function()
-                                    self:setWhisperForward(SYNC_STRATEGY.SILENT)
+                                    self:setSyncForward(SYNC_STRATEGY.SILENT)
                                 end,
                             },
                             {
                                 text = _("Prompt"),
                                 checked_func = function()
-                                    return self.settings.whisper_forward == SYNC_STRATEGY.PROMPT
+                                    return self.settings.sync_forward == SYNC_STRATEGY.PROMPT
                                 end,
                                 callback = function()
-                                    self:setWhisperForward(SYNC_STRATEGY.PROMPT)
+                                    self:setSyncForward(SYNC_STRATEGY.PROMPT)
                                 end,
                             },
                             {
                                 text = _("Never"),
                                 checked_func = function()
-                                    return self.settings.whisper_forward == SYNC_STRATEGY.DISABLE
+                                    return self.settings.sync_forward == SYNC_STRATEGY.DISABLE
                                 end,
                                 callback = function()
-                                    self:setWhisperForward(SYNC_STRATEGY.DISABLE)
+                                    self:setSyncForward(SYNC_STRATEGY.DISABLE)
                                 end,
                             },
                         }
                     },
                     {
                         text_func = function()
-                            return T(_("Sync backward (%1)"), getNameStrategy(self.settings.whisper_backward))
+                            return T(_("Sync backward (%1)"), getNameStrategy(self.settings.sync_backward))
                         end,
                         sub_item_table = {
                             {
                                 text = _("Silently"),
                                 checked_func = function()
-                                    return self.settings.whisper_backward == SYNC_STRATEGY.SILENT
+                                    return self.settings.sync_backward == SYNC_STRATEGY.SILENT
                                 end,
                                 callback = function()
-                                    self:setWhisperBackward(SYNC_STRATEGY.SILENT)
+                                    self:setSyncBackward(SYNC_STRATEGY.SILENT)
                                 end,
                             },
                             {
                                 text = _("Prompt"),
                                 checked_func = function()
-                                    return self.settings.whisper_backward == SYNC_STRATEGY.PROMPT
+                                    return self.settings.sync_backward == SYNC_STRATEGY.PROMPT
                                 end,
                                 callback = function()
-                                    self:setWhisperBackward(SYNC_STRATEGY.PROMPT)
+                                    self:setSyncBackward(SYNC_STRATEGY.PROMPT)
                                 end,
                             },
                             {
                                 text = _("Never"),
                                 checked_func = function()
-                                    return self.settings.whisper_backward == SYNC_STRATEGY.DISABLE
+                                    return self.settings.sync_backward == SYNC_STRATEGY.DISABLE
                                 end,
                                 callback = function()
-                                    self:setWhisperBackward(SYNC_STRATEGY.DISABLE)
+                                    self:setSyncBackward(SYNC_STRATEGY.DISABLE)
                                 end,
                             },
                         }
@@ -402,12 +402,12 @@ function KOSync:setCustomServer(server)
     self.settings.custom_server = server ~= "" and server or nil
 end
 
-function KOSync:setWhisperForward(strategy)
-    self.settings.whisper_forward = strategy
+function KOSync:setSyncForward(strategy)
+    self.settings.sync_forward = strategy
 end
 
-function KOSync:setWhisperBackward(strategy)
-    self.settings.whisper_backward = strategy
+function KOSync:setSyncBackward(strategy)
+    self.settings.sync_backward = strategy
 end
 
 function KOSync:setChecksumMethod(method)
@@ -788,10 +788,10 @@ function KOSync:getProgress(ensure_networking, interactive)
                 self_older = (body.percentage > percentage)
             end
             if self_older then
-                if self.settings.whisper_forward == SYNC_STRATEGY.SILENT then
+                if self.settings.sync_forward == SYNC_STRATEGY.SILENT then
                     self:syncToProgress(body.progress)
                     showSyncedMessage()
-                elseif self.settings.whisper_forward == SYNC_STRATEGY.PROMPT then
+                elseif self.settings.sync_forward == SYNC_STRATEGY.PROMPT then
                     UIManager:show(ConfirmBox:new{
                         text = T(_("Sync to latest location %1% from device '%2'?"),
                                  Math.round(body.percentage * 100),
@@ -802,10 +802,10 @@ function KOSync:getProgress(ensure_networking, interactive)
                     })
                 end
             else -- if not self_older then
-                if self.settings.whisper_backward == SYNC_STRATEGY.SILENT then
+                if self.settings.sync_backward == SYNC_STRATEGY.SILENT then
                     self:syncToProgress(body.progress)
                     showSyncedMessage()
-                elseif self.settings.whisper_backward == SYNC_STRATEGY.PROMPT then
+                elseif self.settings.sync_backward == SYNC_STRATEGY.PROMPT then
                     UIManager:show(ConfirmBox:new{
                         text = T(_("Sync to previous location %1% from device '%2'?"),
                                  Math.round(body.percentage * 100),
