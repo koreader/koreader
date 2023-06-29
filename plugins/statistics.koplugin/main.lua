@@ -2168,10 +2168,12 @@ end
 
 function ReaderStatistics:resetStatsForBookForPeriod(id_book, min_start_time, max_start_time, day_str, on_reset_confirmed_callback)
     local confirm_text
+    local confirm_button_text
     if day_str then
         -- From getDatesForBook(): we are showing a list of days, with book title at top title:
         -- show the day string to confirm the long-press was on the right day
         confirm_text = T(_("Do you want to reset statistics for day %1 for this book?"), day_str)
+        confirm_button_text = C_("Reset statistics for day for book", "Reset")
     else
         -- From getBooksFromPeriod(): we are showing a list of books, with the period as top title:
         -- show the book title to confirm the long-press was on the right book
@@ -2184,6 +2186,7 @@ function ReaderStatistics:resetStatsForBookForPeriod(id_book, min_start_time, ma
         local book_title = conn:rowexec(string.format(sql_stmt, id_book))
         conn:close()
         confirm_text = T(_("Do you want to reset statistics for this period for book:\n%1"), book_title)
+        confirm_button_text = C_("Reset statistics for period for book", "Reset")
     end
     UIManager:show(ConfirmBox:new{
         text = confirm_text,
@@ -2191,7 +2194,7 @@ function ReaderStatistics:resetStatsForBookForPeriod(id_book, min_start_time, ma
         cancel_callback = function()
             return
         end,
-        ok_text = _("Reset"),
+        ok_text = confirm_button_text,
         ok_callback = function()
             local conn = SQ3.open(db_location)
             local sql_stmt = [[
