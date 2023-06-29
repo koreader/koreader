@@ -533,6 +533,13 @@ if last_migration_date < 20230627 then
                 settings[k] = v
             end
         end
+
+        -- Migrate the whisper_* keys
+        settings.sync_forward = settings.whisper_forward or KOSync.default_settings.sync_forward
+        settings.whisper_forward = nil
+        settings.sync_backward = settings.whisper_backward or KOSync.default_settings.sync_backward
+        settings.whisper_backward = nil
+
         G_reader_settings:saveSetting("kosync", settings)
     end
 
