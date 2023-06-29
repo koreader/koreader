@@ -233,12 +233,12 @@ function KOSync:addToMainMenu(menu_items)
                     self.settings.auto_sync = not self.settings.auto_sync
                     self:registerEvents()
                     if self.settings.auto_sync then
-                        -- since we will update the progress when closing document, we should pull
-                        -- current progress now to avoid to overwrite it silently.
+                        -- Since we will update the progress when closing the document,
+                        -- pull the current progress now so as not to silently overwrite it.
                         self:getProgress(true, true)
                     else
-                        -- since we won't update the progress when closing document, we should push
-                        -- current progress now to avoid to lose it silently.
+                        -- Since we won't update the progress when closing the document,
+                        -- push the current progress now so as not to lose it.
                         self:updateProgress(true, true)
                     end
                 end,
