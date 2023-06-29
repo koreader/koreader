@@ -371,7 +371,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                 text = _("Document matching method"),
                 sub_item_table = {
                     {
-                        text = _("Binary. Only identical files will sync progress."),
+                        text = _("Binary. Only identical files will be kept in sync."),
                         checked_func = function()
                             return self.settings.checksum_method == CHECKSUM_METHOD.BINARY
                         end,
@@ -380,7 +380,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                         end,
                     },
                     {
-                        text = _("Filename. Files with the same name will sync progress."),
+                        text = _("Filename. Files with matching names will be kept in sync."),
                         checked_func = function()
                             return self.settings.checksum_method == CHECKSUM_METHOD.FILENAME
                         end,
