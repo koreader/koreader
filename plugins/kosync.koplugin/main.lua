@@ -37,14 +37,9 @@ local KOSync = WidgetContainer:extend{
 }
 
 local SYNC_STRATEGY = {
-    -- Forward and backward whisper sync settings are using different
-    -- default value, so none of following opinions should be zero.
-    PROMPT = 1,
-    WHISPER = 2,
+    PROMPT  = 1,
+    SILENT  = 2,
     DISABLE = 3,
-
-    DEFAULT_FORWARD = 1,
-    DEFAULT_BACKWARD = 3,
 }
 
 local CHECKSUM_METHOD = {
@@ -61,8 +56,8 @@ KOSync.default_settings = {
     -- Do *not* default to auto-sync on devices w/ NetworkManager support, as wifi is unlikely to be on at all times there, and the nagging enabling this may cause requires careful consideration.
     auto_sync = not Device:hasWifiManager(),
     pages_before_update = nil,
-    whisper_forward = SYNC_STRATEGY.DEFAULT_FORWARD,
-    whisper_backward = SYNC_STRATEGY.DEFAULT_BACKWARD,
+    whisper_forward = SYNC_STRATEGY.PROMPT,
+    whisper_backward = SYNC_STRATEGY.DISABLE,
     checksum_method = CHECKSUM_METHOD.BINARY,
 }
 
@@ -289,10 +284,10 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                             {
                                 text = _("Silently"),
                                 checked_func = function()
-                                    return self.settings.whisper_forward == SYNC_STRATEGY.WHISPER
+                                    return self.settings.whisper_forward == SYNC_STRATEGY.SILENT
                                 end,
                                 callback = function()
-                                    self:setWhisperForward(SYNC_STRATEGY.WHISPER)
+                                    self:setWhisperForward(SYNC_STRATEGY.SILENT)
                                 end,
                             },
                             {
@@ -323,10 +318,10 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                             {
                                 text = _("Silently"),
                                 checked_func = function()
-                                    return self.settings.whisper_backward == SYNC_STRATEGY.WHISPER
+                                    return self.settings.whisper_backward == SYNC_STRATEGY.SILENT
                                 end,
                                 callback = function()
-                                    self:setWhisperBackward(SYNC_STRATEGY.WHISPER)
+                                    self:setWhisperBackward(SYNC_STRATEGY.SILENT)
                                 end,
                             },
                             {
@@ -793,7 +788,7 @@ function KOSync:getProgress(ensure_networking, interactive)
                 self_older = (body.percentage > percentage)
             end
             if self_older then
-                if self.settings.whisper_forward == SYNC_STRATEGY.WHISPER then
+                if self.settings.whisper_forward == SYNC_STRATEGY.SILENT then
                     self:syncToProgress(body.progress)
                     showSyncedMessage()
                 elseif self.settings.whisper_forward == SYNC_STRATEGY.PROMPT then
@@ -807,7 +802,7 @@ function KOSync:getProgress(ensure_networking, interactive)
                     })
                 end
             else -- if not self_older then
-                if self.settings.whisper_backward == SYNC_STRATEGY.WHISPER then
+                if self.settings.whisper_backward == SYNC_STRATEGY.SILENT then
                     self:syncToProgress(body.progress)
                     showSyncedMessage()
                 elseif self.settings.whisper_backward == SYNC_STRATEGY.PROMPT then
