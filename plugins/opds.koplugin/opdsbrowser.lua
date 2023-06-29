@@ -61,7 +61,7 @@ local OPDSBrowser = Menu:extend{
             url = "https://gallica.bnf.fr/opds",
         },
     }),
-    calibre_name = _("Local calibre library"),
+    calibre_name = _("Local OPDS Catalog"),
     calibre_opds = G_reader_settings:readSetting("calibre_opds", {}),
 
     catalog_type         = "application/atom%+xml",
@@ -100,7 +100,7 @@ function OPDSBrowser:genItemTableFromRoot()
         {   -- calibre is the first and non-deletable item
             text       = self.calibre_name,
             url        = self.calibre_opds.host and self.calibre_opds.port and
-                         string.format("http://%s:%d/opds", self.calibre_opds.host, self.calibre_opds.port),
+                         string.format("http://%s:%d/%s", self.calibre_opds.host, self.calibre_opds.port, self.calibre_opds.path),
             username   = self.calibre_opds.username,
             password   = self.calibre_opds.password,
             searchable = false,
@@ -121,15 +121,18 @@ end
 -- Shows dialog to edit properties of the new/existing catalog
 function OPDSBrowser:addEditCatalog(item, is_calibre)
     local title
-    local fields = {{}, {}, {}, {}}
+    local fields = {{}, {}, {}, {}, {}}
     if is_calibre then
-        title = _("Edit local calibre host and port")
+        title = _("Edit local OPDS host, port, and path")
         fields[1].text = self.calibre_opds.host or "192.168.1.1"
-        fields[1].hint = _("calibre host")
+        fields[1].hint = _("OPDS host")
         fields[2].text = self.calibre_opds.port and tostring(self.calibre_opds.port) or "8080"
-        fields[2].hint = _("calibre port")
-        fields[3].text = self.calibre_opds.username
-        fields[4].text = self.calibre_opds.password
+        fields[2].hint = _("OPDS port")
+		fields[3].text = self.calibre_opds.path or "opds"
+		fields[3].hint = _("OPDS path")
+		fields[3].description = _("If you're connecting to a local calibre library, set the path to 'opds'.")
+        fields[4].text = self.calibre_opds.username
+        fields[5].text = self.calibre_opds.password
     else
         fields[1].hint = _("Catalog name")
         fields[2].hint = _("Catalog URL")
@@ -137,15 +140,15 @@ function OPDSBrowser:addEditCatalog(item, is_calibre)
             title = _("Edit OPDS catalog")
             fields[1].text = item.text
             fields[2].text = item.url
-            fields[3].text = item.username
-            fields[4].text = item.password
+            fields[4].text = item.username
+            fields[5].text = item.password
         else
             title = _("Add OPDS catalog")
         end
     end
-    fields[3].hint = _("Username (optional)")
-    fields[4].hint = _("Password (optional)")
-    fields[4].text_type = "password"
+    fields[4].hint = _("Username (optional)")
+    fields[5].hint = _("Password (optional)")
+    fields[5].text_type = "password"
 
     local dialog
     dialog = MultiInputDialog:new{
@@ -228,8 +231,8 @@ function OPDSBrowser:editCatalogFromInput(fields, item, no_init)
     end
     new_server.title    = fields[1]
     new_server.url      = fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2]
-    new_server.username = fields[3] ~= "" and fields[3] or nil
-    new_server.password = fields[4]
+    new_server.username = fields[4] ~= "" and fields[4] or nil
+    new_server.password = fields[5]
     if not item then
         table.insert(self.opds_servers, new_server)
     end
@@ -244,8 +247,8 @@ function OPDSBrowser:editCalibreFromInput(fields)
     if tonumber(fields[2]) then
         self.calibre_opds.port = fields[2]
     end
-    self.calibre_opds.username = fields[3] ~= "" and fields[3] or nil
-    self.calibre_opds.password = fields[4]
+    self.calibre_opds.username = fields[4] ~= "" and fields[4] or nil
+    self.calibre_opds.password = fields[5]
     self:init()
 end
 
