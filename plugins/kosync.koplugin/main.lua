@@ -682,7 +682,7 @@ function KOSync:updateProgress(ensure_networking, interactive, refresh_on_succes
         if refresh_on_success then
             -- Our top-level widget should be the "Connected to network" InfoMessage from NetworkMgr's reconnectOrShowNetworkMenu
             local widget = UIManager:getTopmostVisibleWidget()
-            if widget.modal and widget.tag == "NetworkMgr" and not widget.dismiss_callback then
+            if widget and widget.modal and widget.tag == "NetworkMgr" and not widget.dismiss_callback then
                 -- We want a full-screen flash on dismiss
                 widget.dismiss_callback = function()
                     -- Enqueued, because we run before the InfoMessage's close
