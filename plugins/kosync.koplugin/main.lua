@@ -166,8 +166,8 @@ end
 
 function KOSync:onReaderReady()
     -- Make sure checksum has been calculated before we ever query it,
-    -- to avoid document saving features to impact the checksum,
-    -- and eventually impact the document identity in the progress sync feature.
+    -- to prevent document saving features from affecting the checksum,
+    -- and eventually affecting the document identity for the progress sync feature.
     self.view.document:fastDigest(self.ui.doc_settings)
 
     if self.settings.auto_sync then
