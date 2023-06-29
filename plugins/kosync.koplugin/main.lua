@@ -278,7 +278,8 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Sync forward (%1)"), getNameStrategy(self.settings.sync_forward))
+                            -- NOTE: With an up-to-date Sync server, "forward" means *newer*, not necessarily ahead in the document.
+                            return T(_("Sync to a newer state (%1)"), getNameStrategy(self.settings.sync_forward))
                         end,
                         sub_item_table = {
                             {
@@ -312,7 +313,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                     },
                     {
                         text_func = function()
-                            return T(_("Sync backward (%1)"), getNameStrategy(self.settings.sync_backward))
+                            return T(_("Sync to an older state (%1)"), getNameStrategy(self.settings.sync_backward))
                         end,
                         sub_item_table = {
                             {
@@ -772,8 +773,8 @@ function KOSync:getProgress(ensure_networking, interactive)
 
             -- The progress needs to be updated.
             if interactive then
-                -- If user actively pulls progress from other devices, we always update the
-                -- progress without further confirmation.
+                -- If user actively pulls progress from other devices,
+                -- we always update the progress without further confirmation.
                 self:syncToProgress(body.progress)
                 showSyncedMessage()
                 return
@@ -783,8 +784,7 @@ function KOSync:getProgress(ensure_networking, interactive)
             if body.timestamp ~= nil then
                 self_older = (body.timestamp > self.last_page_turn_timestamp)
             else
-                -- If we are working with old sync server, we can only use
-                -- percentage field.
+                -- If we are working with an old sync server, we can only use the percentage field.
                 self_older = (body.percentage > percentage)
             end
             if self_older then
