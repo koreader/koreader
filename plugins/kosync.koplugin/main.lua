@@ -72,6 +72,7 @@ function KOSync:init()
     -- Like AutoSuspend, we need an instance-specific task for scheduling/resource management reasons.
     self.periodic_push_task = function()
         self.periodic_push_scheduled = false
+        self.page_update_counter = 0
         -- We do *NOT* want to make sure networking is up here, as the nagging would be extremely annoying; we're leaving that to the network activity check...
         self:updateProgress(false, false)
     end
@@ -854,10 +855,7 @@ function KOSync:_onPageUpdate(page)
         self.last_page_turn_timestamp = os.time()
         self.page_update_counter = self.page_update_counter + 1
         -- If we've already scheduled a push, regardless of the counter's state, delay it until we're *actually* idle
-        if self.periodic_push_scheduled then
-            self:schedulePeriodicPush()
-        elseif self.settings.pages_before_update and self.page_update_counter >= self.settings.pages_before_update then
-            self.page_update_counter = 0
+        if self.periodic_push_scheduled or self.settings.pages_before_update and self.page_update_counter >= self.settings.pages_before_update then
             self:schedulePeriodicPush()
         end
     end
