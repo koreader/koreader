@@ -134,7 +134,8 @@ function Gestures:isGestureAlwaysActive(ges, multiswipe_directions)
         end
     end
 
-    return self.gestures[ges] and self.gestures[ges].toggle_touch_input
+    return self.gestures[ges] and (self.gestures[ges].toggle_touch_input or
+        (self.gestures[ges].settings and self.gestures[ges].settings.always_active))
 end
 
 function Gestures:init()
