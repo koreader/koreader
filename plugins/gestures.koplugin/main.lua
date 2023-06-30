@@ -121,7 +121,7 @@ Multiswipes allow you to perform complex gestures built up out of multiple swipe
 
 These advanced gestures consist of either straight swipes or diagonal swipes. To ensure accuracy, they can't be mixed.]])
 
--- If the gesture contains the "toggle_touch_input" action,
+-- If the gesture contains "toggle_touch_input" or "touch_input_on" actions, or is set "Always active" manually,
 -- mark it "always active" to make sure that InputContainer won't block it after the IgnoreTouchInput Event.
 function Gestures:isGestureAlwaysActive(ges, multiswipe_directions)
     -- Handle multiswipes properly
@@ -134,8 +134,8 @@ function Gestures:isGestureAlwaysActive(ges, multiswipe_directions)
         end
     end
 
-    return self.gestures[ges] and (self.gestures[ges].toggle_touch_input or self.gestures[ges].touch_input_on or
-        (self.gestures[ges].settings and self.gestures[ges].settings.always_active))
+    local gest = self.gestures[ges]
+    return gest and (gest.toggle_touch_input or gest.touch_input_on or (gest.settings and gest.settings.always_active))
 end
 
 function Gestures:init()
