@@ -128,9 +128,9 @@ function OPDSBrowser:addEditCatalog(item, is_calibre)
         fields[1].hint = _("OPDS host")
         fields[2].text = self.calibre_opds.port and tostring(self.calibre_opds.port) or "8080"
         fields[2].hint = _("OPDS port")
-		fields[3].text = self.calibre_opds.path or "opds"
-		fields[3].hint = _("OPDS path")
-		fields[3].description = _("If you're connecting to a local calibre library, set the path to 'opds'.")
+        fields[3].text = self.calibre_opds.path or "opds"
+        fields[3].hint = _("OPDS path")
+        fields[3].description = _("If you're connecting to a local calibre library, set the path to 'opds'.")
         fields[4].text = self.calibre_opds.username
         fields[5].text = self.calibre_opds.password
     else
