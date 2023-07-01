@@ -7,6 +7,7 @@ local socketutil = require("socketutil")
 local util = require("util")
 local _ = require("gettext")
 local logger = require("logger")
+local lfs = require("libs/libkoreader-lfs")
 
 local WebDavApi = {
 }
@@ -207,7 +208,8 @@ function WebDavApi:uploadFile(file_url, user, pass, local_path, etag)
         user     = user,
         password = pass,
         headers = {
-            ["If-Match"] = etag
+            ["Content-Length"] = lfs.attributes(local_path, "size"),
+            ["If-Match"] = etag,
         }
     })
     socketutil:reset_timeout()
