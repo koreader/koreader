@@ -32,14 +32,15 @@ end
 -- as quite a few things rely on it (KOSync, c.f. #5109; the network activity check, c.f., #6424).
 function NetworkMgr:connectivityCheck(iter, callback, widget)
     -- Give up after a while (restoreWifiAsync can take over 45s, so, try to cover that)...
-    if iter > 25 then
-        logger.info("Failed to restore Wi-Fi (after", iter, "iterations)!")
+    if iter > 180 then
+        logger.info("Failed to restore Wi-Fi (after", iter * 0.25, "seconds)!")
         self.wifi_was_on = false
         G_reader_settings:makeFalse("wifi_was_on")
         -- If we abort, murder Wi-Fi and the async script first...
         if Device:hasWifiManager() then
             os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
         end
+        -- We were never connected to begin with, so, no disconnecting broadcast required
         self:turnOffWifi()
 
         -- Handle the UI warning if it's from a beforeWifiAction...
@@ -54,8 +55,8 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
     if self.is_wifi_on and self.is_connected then
         self.wifi_was_on = true
         G_reader_settings:makeTrue("wifi_was_on")
+        logger.info("Wi-Fi successfully restored (after", iter * 0.25, "seconds)!")
         UIManager:broadcastEvent(Event:new("NetworkConnected"))
-        logger.info("Wi-Fi successfully restored (after", iter, "iterations)!")
 
         -- Handle the UI & callback if it's from a beforeWifiAction...
         if widget then
@@ -74,12 +75,12 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
             end
         end
     else
-        UIManager:scheduleIn(2, self.connectivityCheck, self, iter + 1, callback, widget)
+        UIManager:scheduleIn(0.25, self.connectivityCheck, self, iter + 1, callback, widget)
     end
 end
 
 function NetworkMgr:scheduleConnectivityCheck(callback, widget)
-    UIManager:scheduleIn(2, self.connectivityCheck, self, 1, callback, widget)
+    UIManager:scheduleIn(0.5, self.connectivityCheck, self, 1, callback, widget)
 end
 
 function NetworkMgr:init()
@@ -298,6 +299,8 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     -- This will handle sending the proper Event, manage wifi_was_on, as well as tearing down Wi-Fi in case of failures,
     -- (i.e., much like getWifiToggleMenuTable).
     self:scheduleConnectivityCheck(callback, info)
+
+    return info
 end
 
 --- This quirky internal flag is used for the rare beforeWifiAction -> afterWifiAction brackets.
@@ -322,9 +325,9 @@ function NetworkMgr:beforeWifiAction(callback)
 
     local wifi_enable_action = G_reader_settings:readSetting("wifi_enable_action")
     if wifi_enable_action == "turn_on" then
-        self:turnOnWifiAndWaitForConnection(callback)
+        return self:turnOnWifiAndWaitForConnection(callback)
     else
-        self:promptWifiOn(callback)
+        return self:promptWifiOn(callback)
     end
 end
 
@@ -344,6 +347,7 @@ function NetworkMgr:afterWifiAction(callback)
            callback()
         end
     elseif wifi_disable_action == "turn_off" then
+        UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
         self:turnOffWifi(callback)
     else
         self:promptWifiOff(callback)
@@ -460,6 +464,53 @@ function NetworkMgr:willRerunWhenConnected(callback)
 
     return false
 end
+
+-- And this one is for when you absolutely *need* to block until we're online to run something (e.g., because it runs in a finalizer).
+function NetworkMgr:goOnlineToRun(callback)
+    if self:isOnline() then
+        callback()
+        return true
+    end
+
+    -- In case we abort before the beforeWifiAction, we won't pass it the callback, but run it ourselves,
+    -- to avoid it firing too late (or at the very least being pinned for too long).
+    local info = self:beforeWifiAction()
+    -- We'll basically do the same but in a blocking manner...
+    UIManager:unschedule(self.connectivityCheck)
+
+    local iter = 0
+    while not self.is_connected do
+        iter = iter + 1
+        if iter >= 120 then
+            logger.info("Failed to connect to Wi-Fi after 30s, giving up!")
+            self.wifi_was_on = false
+            G_reader_settings:makeFalse("wifi_was_on")
+            if info then
+                UIManager:close(info)
+            end
+            UIManager:show(InfoMessage:new{ text = _("Error connecting to the network") })
+            self:turnOffWifi()
+            return false
+        end
+        ffiutil.usleep(250000)
+        self:queryNetworkState()
+    end
+
+    -- Close the initial "Connecting..." InfoMessage from turnOnWifiAndWaitForConnection via beforeWifiAction
+    if info then
+        UIManager:close(info)
+    end
+    -- We're finally connected!
+    self.wifi_was_on = true
+    G_reader_settings:makeTrue("wifi_was_on")
+    callback()
+    -- Delay this so it won't fire for dead/dying instances in case we're called by a finalizer...
+    UIManager:scheduleIn(2, function()
+        UIManager:broadcastEvent(Event:new("NetworkConnected"))
+    end)
+    return true
+end
+
 
 
 function NetworkMgr:getWifiMenuTable()
@@ -701,89 +752,90 @@ end
 function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
     local info = InfoMessage:new{text = _("Scanning for networks…")}
     UIManager:show(info)
-    UIManager:nextTick(function()
-        local network_list, err = self:getNetworkList()
-        UIManager:close(info)
+    UIManager:forceRePaint()
+
+    local network_list, err = self:getNetworkList()
+    UIManager:close(info)
+    if network_list == nil then
+        UIManager:show(InfoMessage:new{text = err})
+        return
+    end
+    -- NOTE: Fairly hackish workaround for #4387,
+    --       rescan if the first scan appeared to yield an empty list.
+    --- @fixme This *might* be an issue better handled in lj-wpaclient...
+    if #network_list == 0 then
+        logger.warn("Initial Wi-Fi scan yielded no results, rescanning")
+        network_list, err = self:getNetworkList()
         if network_list == nil then
             UIManager:show(InfoMessage:new{text = err})
             return
         end
-        -- NOTE: Fairly hackish workaround for #4387,
-        --       rescan if the first scan appeared to yield an empty list.
-        --- @fixme This *might* be an issue better handled in lj-wpaclient...
-        if #network_list == 0 then
-            logger.warn("Initial Wi-Fi scan yielded no results, rescanning")
-            network_list, err = self:getNetworkList()
-            if network_list == nil then
-                UIManager:show(InfoMessage:new{text = err})
-                return
+    end
+
+    table.sort(network_list,
+        function(l, r) return l.signal_quality > r.signal_quality end)
+
+    local success = false
+    if self.wifi_toggle_long_press then
+        self.wifi_toggle_long_press = nil
+    else
+        local ssid
+        -- We need to do two passes, as we may have *both* an already connected network (from the global wpa config),
+        -- *and* preferred networks, and if the prferred networks have a better signal quality,
+        -- they'll be sorted *earlier*, which would cause us to try to associate to a different AP than
+        -- what wpa_supplicant is already trying to do...
+        for dummy, network in ipairs(network_list) do
+            if network.connected then
+                -- On platforms where we use wpa_supplicant (if we're calling this, we are),
+                -- the invocation will check its global config, and if an AP configured there is reachable,
+                -- it'll already have connected to it on its own.
+                success = true
+                ssid = network.ssid
+                break
             end
         end
 
-        table.sort(network_list,
-           function(l, r) return l.signal_quality > r.signal_quality end)
-
-        local success = false
-        if self.wifi_toggle_long_press then
-            self.wifi_toggle_long_press = nil
-        else
-            local ssid
-            -- We need to do two passes, as we may have *both* an already connected network (from the global wpa config),
-            -- *and* preferred networks, and if the prferred networks have a better signal quality,
-            -- they'll be sorted *earlier*, which would cause us to try to associate to a different AP than
-            -- what wpa_supplicant is already trying to do...
+        -- Next, look for our own prferred networks...
+        local err_msg = _("Connection failed")
+        if not success then
             for dummy, network in ipairs(network_list) do
-                if network.connected then
-                    -- On platforms where we use wpa_supplicant (if we're calling this, we are),
-                    -- the invocation will check its global config, and if an AP configured there is reachable,
-                    -- it'll already have connected to it on its own.
-                    success = true
-                    ssid = network.ssid
-                    break
-                end
-            end
-
-            -- Next, look for our own prferred networks...
-            local err_msg = _("Connection failed")
-            if not success then
-                for dummy, network in ipairs(network_list) do
-                    if network.password then
-                        -- If we hit a preferred network and we're not already connected,
-                        -- attempt to connect to said preferred network....
-                        success, err_msg = self:authenticateNetwork(network)
-                        if success then
-                            ssid = network.ssid
-                            break
-                        end
+                if network.password then
+                    -- If we hit a preferred network and we're not already connected,
+                    -- attempt to connect to said preferred network....
+                    success, err_msg = self:authenticateNetwork(network)
+                    if success then
+                        ssid = network.ssid
+                        break
                     end
                 end
             end
-
-            if success then
-                self:obtainIP()
-                if complete_callback then
-                    complete_callback()
-                end
-                UIManager:show(InfoMessage:new{
-                    text = T(_("Connected to network %1"), BD.wrap(ssid)),
-                    timeout = 3,
-                })
-            else
-                UIManager:show(InfoMessage:new{
-                    text = err_msg,
-                    timeout = 3,
-                })
-            end
         end
-        if not success then
-            -- NOTE: Also supports a disconnect_callback, should we use it for something?
-            --       Tearing down Wi-Fi completely when tapping "disconnect" would feel a bit harsh, though...
-            UIManager:show(require("ui/widget/networksetting"):new{
-                network_list = network_list,
-                connect_callback = complete_callback,
+
+        if success then
+            self:obtainIP()
+            if complete_callback then
+                complete_callback()
+            end
+            UIManager:show(InfoMessage:new{
+                tag = "NetworkMgr", -- for crazy KOSync purposes
+                text = T(_("Connected to network %1"), BD.wrap(ssid)),
+                timeout = 3,
+            })
+        else
+            UIManager:show(InfoMessage:new{
+                text = err_msg,
+                timeout = 3,
             })
         end
-    end)
+    end
+    if not success then
+        -- NOTE: Also supports a disconnect_callback, should we use it for something?
+        --       Tearing down Wi-Fi completely when tapping "disconnect" would feel a bit harsh, though...
+        UIManager:show(require("ui/widget/networksetting"):new{
+            network_list = network_list,
+            connect_callback = complete_callback,
+        })
+    end
 end
 
 function NetworkMgr:saveNetwork(setting)

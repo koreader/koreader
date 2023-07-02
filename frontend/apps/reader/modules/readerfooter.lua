@@ -2485,35 +2485,24 @@ function ReaderFooter:maybeUpdateFooter()
     self:onUpdateFooter(self:shouldBeRepainted())
 end
 
--- is the same as maybeUpdateFooter
 function ReaderFooter:onFrontlightStateChanged()
-    self:onUpdateFooter(self:shouldBeRepainted())
+    self:maybeUpdateFooter()
 end
+ReaderFooter.onCharging    = ReaderFooter.onFrontlightStateChanged
+ReaderFooter.onNotCharging = ReaderFooter.onFrontlightStateChanged
 
 function ReaderFooter:onNetworkConnected()
     if self.settings.wifi_status then
         self:maybeUpdateFooter()
     end
 end
-
-function ReaderFooter:onNetworkDisconnected()
-    if self.settings.wifi_status then
-        self:onUpdateFooter(self.view.footer_visible)
-    end
-end
-
-function ReaderFooter:onCharging()
-    self:maybeUpdateFooter()
-end
-
-function ReaderFooter:onNotCharging()
-    self:maybeUpdateFooter()
-end
+ReaderFooter.onNetworkDisconnected = ReaderFooter.onNetworkConnected
 
 function ReaderFooter:onSetRotationMode()
     self:updateFooterContainer()
     self:resetLayout(true)
 end
+ReaderFooter.onScreenResize = ReaderFooter.onSetRotationMode
 
 function ReaderFooter:onSetPageHorizMargins(h_margins)
     self.book_margins_footer_width = math.floor((h_margins[1] + h_margins[2])/2)
@@ -2521,11 +2510,6 @@ function ReaderFooter:onSetPageHorizMargins(h_margins)
         self.settings.progress_margin_width = Screen:scaleBySize(self.book_margins_footer_width)
         self:refreshFooter(true)
     end
-end
-
-function ReaderFooter:onScreenResize()
-    self:updateFooterContainer()
-    self:resetLayout(true)
 end
 
 function ReaderFooter:onTimeFormatChanged()

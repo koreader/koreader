@@ -312,7 +312,7 @@ function Device:onPowerEvent(ev)
             if self:hasWifiToggle() then
                 local network_manager = require("ui/network/manager")
                 if network_manager:isWifiOn() then
-                    network_manager:releaseIP()
+                    UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
                     network_manager:turnOffWifi()
                 end
             end
@@ -346,7 +346,7 @@ function Device:onPowerEvent(ev)
             --       because suspend will at best fail, and at worst deadlock the system if Wi-Fi is on,
             --       regardless of who enabled it!
             if network_manager:isWifiOn() then
-                network_manager:releaseIP()
+                UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
                 network_manager:turnOffWifi()
             end
         end
