@@ -145,14 +145,16 @@ if last_migration_date < 20210330 then
     if not ok or not ReaderStatistics then
         logger.warn("Error when loading plugins/statistics.koplugin/main.lua:", ReaderStatistics)
     else
-        local settings = G_reader_settings:readSetting("statistics", ReaderStatistics.default_settings)
-        -- Handle a snafu in 2021.03 that could lead to an empty settings table on fresh installs.
-        for k, v in pairs(ReaderStatistics.default_settings) do
-            if settings[k] == nil then
-                settings[k] = v
+        local settings = G_reader_settings:readSetting("statistics")
+        if settings then
+            -- Handle a snafu in 2021.03 that could lead to an empty settings table on fresh installs.
+            for k, v in pairs(ReaderStatistics.default_settings) do
+                if settings[k] == nil then
+                    settings[k] = v
+                end
             end
+            G_reader_settings:saveSetting("statistics", settings)
         end
-        G_reader_settings:saveSetting("statistics", settings)
     end
 end
 
@@ -526,28 +528,30 @@ if last_migration_date < 20230627 then
     if not ok or not KOSync then
         logger.warn("Error when loading plugins/kosync.koplugin/main.lua:", KOSync)
     else
-        local settings = G_reader_settings:readSetting("kosync", KOSync.default_settings)
-        -- Make sure the table is complete
-        for k, v in pairs(KOSync.default_settings) do
-            if settings[k] == nil then
-                settings[k] = v
+        local settings = G_reader_settings:readSetting("kosync")
+        if settings then
+            -- Make sure the table is complete
+            for k, v in pairs(KOSync.default_settings) do
+                if settings[k] == nil then
+                    settings[k] = v
+                end
             end
+
+            -- Migrate the whisper_* keys
+            settings.sync_forward = settings.whisper_forward or KOSync.default_settings.sync_forward
+            settings.whisper_forward = nil
+            settings.sync_backward = settings.whisper_backward or KOSync.default_settings.sync_backward
+            settings.whisper_backward = nil
+
+            G_reader_settings:saveSetting("kosync", settings)
         end
-
-        -- Migrate the whisper_* keys
-        settings.sync_forward = settings.whisper_forward or KOSync.default_settings.sync_forward
-        settings.whisper_forward = nil
-        settings.sync_backward = settings.whisper_backward or KOSync.default_settings.sync_backward
-        settings.whisper_backward = nil
-
-        G_reader_settings:saveSetting("kosync", settings)
     end
 
     local Device = require("device")
     if Device:hasWifiManager() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
         local kosync = G_reader_settings:readSetting("kosync")
-        if kosync.auto_sync then
-            kosync.auto_sync = not kosync.auto_sync
+        if kosync and kosync.auto_sync then
+            kosync.auto_sync = false
             G_reader_settings:saveSetting("kosync", kosync)
         end
     end
