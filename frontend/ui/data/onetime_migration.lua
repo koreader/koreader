@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20230531
+local CURRENT_MIGRATION_DATE = 20230702
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -511,6 +511,15 @@ if last_migration_date < 20230531 then
     if G_reader_settings:readSetting("collate") == "strcoll_mixed" then
         G_reader_settings:saveSetting("collate", "strcoll")
         G_reader_settings:makeTrue("collate_mixed")
+    end
+end
+
+-- 20230702, FileChooser Sort by: one "date" only
+if last_migration_date < 20230702 then
+    logger.info("Performing one-time migration for 20230702")
+    local collate = G_reader_settings:readSetting("collate")
+    if collate == "modification" or collate == "access" or collate == "change" then
+        G_reader_settings:saveSetting("collate", "date")
     end
 end
 
