@@ -47,6 +47,9 @@ local CHECKSUM_METHOD = {
     FILENAME = 1
 }
 
+-- Debounce push/pull attempts
+local API_CALL_DEBOUNCE_DELAY = time.s(25)
+
 -- NOTE: This is used in a migration script by ui/data/onetime_migration,
 --       which is why it's public.
 KOSync.default_settings = {
@@ -635,7 +638,7 @@ function KOSync:updateProgress(ensure_networking, interactive, refresh_on_succes
     end
 
     local now = UIManager:getElapsedTimeSinceBoot()
-    if not interactive and now - self.push_timestamp <= time.s(25) then
+    if not interactive and now - self.push_timestamp <= API_CALL_DEBOUNCE_DELAY then
         logger.dbg("KOSync: We've already pushed progress less than 25s ago!")
         return
     end
@@ -705,7 +708,7 @@ function KOSync:getProgress(ensure_networking, interactive)
     end
 
     local now = UIManager:getElapsedTimeSinceBoot()
-    if not interactive and now - self.pull_timestamp <= time.s(25) then
+    if not interactive and now - self.pull_timestamp <= API_CALL_DEBOUNCE_DELAY then
         logger.dbg("KOSync: We've already pulled progress less than 25s ago!")
         return
     end
