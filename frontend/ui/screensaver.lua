@@ -156,7 +156,7 @@ function Screensaver:expandSpecial(message, fallback)
     local batt_lvl = _("N/A")
 
     local ReaderUI = require("apps/reader/readerui")
-    local ui = ReaderUI:_getRunningInstance()
+    local ui = ReaderUI.instance
     if ui and ui.document then
         -- If we have a ReaderUI instance, use it.
         local doc = ui.document
@@ -372,7 +372,7 @@ end
 
 function Screensaver:isExcluded()
     local ReaderUI = require("apps/reader/readerui")
-    local ui = ReaderUI:_getRunningInstance()
+    local ui = ReaderUI.instance
     if ui and ui.doc_settings then
         local doc_settings = ui.doc_settings
         return doc_settings:isTrue("exclude_screensaver")
@@ -508,7 +508,7 @@ function Screensaver:setup(event, event_message)
 
     -- Check lastfile and setup the requested mode's resources, or a fallback mode if the required resources are unavailable.
     local ReaderUI = require("apps/reader/readerui")
-    local ui = ReaderUI:_getRunningInstance()
+    local ui = ReaderUI.instance
     local lastfile = G_reader_settings:readSetting("lastfile")
     if self.screensaver_type == "document_cover" then
         -- Set lastfile to the document of which we want to show the cover.
@@ -639,7 +639,7 @@ function Screensaver:show()
         }
     elseif self.screensaver_type == "bookstatus" then
         local ReaderUI = require("apps/reader/readerui")
-        local ui = ReaderUI:_getRunningInstance()
+        local ui = ReaderUI.instance
         local doc = ui.document
         local doc_settings = ui.doc_settings
         widget = BookStatusWidget:new{
