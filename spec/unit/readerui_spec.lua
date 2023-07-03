@@ -44,7 +44,7 @@ describe("Readerui module", function()
     end)
     it("should not reset ReaderUI.instance by mistake", function()
         ReaderUI:doShowReader(sample_epub) -- spins up a new, sane instance
-        local new_readerui = ReaderUI:_getRunningInstance()
+        local new_readerui = ReaderUI.instance
         assert.is.truthy(new_readerui.document)
         -- This *will* trip:
         -- * A pair of ReaderUI instance mimsatch warnings (on open/close) because it bypasses the safety of doShowReader!

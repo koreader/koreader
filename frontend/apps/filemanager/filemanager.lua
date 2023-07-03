@@ -451,7 +451,6 @@ function FileManager:init()
     self:initGesListener()
     self:handleEvent(Event:new("SetDimensions", self.dimen))
 
-    -- NOTE: ReaderUI has a _getRunningInstance method for this, because it used to store the instance reference in a private module variable.
     if FileManager.instance == nil then
         logger.dbg("Spinning up new FileManager instance", tostring(self))
     else
