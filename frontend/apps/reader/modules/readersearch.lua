@@ -6,6 +6,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
+local Utf8Proc = require("ffi/utf8proc")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
@@ -83,7 +84,11 @@ end
 function ReaderSearch:searchCallback(reverse)
     local search_text = self.input_dialog:getInputText()
     if search_text == "" then return end
-    self.last_search_text = search_text
+    -- search_text comes from our keyboard, and may contain multiple diacritics ordered
+    -- in any order: we'd rather have them normalized, and expect the book content to
+    -- be proper and normalized text.
+    self.last_search_text = search_text -- if shown again, show it as it has been inputted
+    search_text = Utf8Proc.normalize_NFC(search_text)
     self.use_regex = self.check_button_regex.checked
     self.case_insensitive = not self.check_button_case.checked
     local regex_error = self.use_regex and self.ui.document:checkRegex(search_text)
