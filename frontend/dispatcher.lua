@@ -72,6 +72,8 @@ local settingsList = {
     poweroff = {category="none", event="RequestPowerOff", title=_("Power off"), device=true, condition=Device:canPowerOff(), separator=true},
 
     toggle_hold_corners = {category="none", event="IgnoreHoldCorners", title=_("Toggle hold corners"), device=true},
+    touch_input_on = {category="none", event="IgnoreTouchInput", arg=false, title=_("Enable touch input"), device=true},
+    touch_input_off = {category="none", event="IgnoreTouchInput", arg=true, title=_("Disable touch input"), device=true},
     toggle_touch_input = {category="none", event="IgnoreTouchInput", title=_("Toggle touch input"), device=true, separator=true},
     toggle_gsensor = {category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:hasGSensor()},
     toggle_rotation = {category="none", event="SwapRotation", title=_("Toggle orientation"), device=true},
@@ -264,6 +266,8 @@ local dispatcher_menu_order = {
     "poweroff",
 
     "toggle_hold_corners",
+    "touch_input_on",
+    "touch_input_off",
     "toggle_touch_input",
     "toggle_gsensor",
     "rotation_mode",
@@ -944,6 +948,31 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
                     end
                 else
                     location[settings].settings = {["show_as_quickmenu"] = true}
+                end
+                caller.updated = true
+            end
+        end,
+    })
+    table.insert(menu, {
+        text = _("Always active"),
+        checked_func = function()
+            return location[settings] ~= nil
+            and location[settings].settings ~= nil
+            and location[settings].settings.always_active
+        end,
+        callback = function()
+            if location[settings] then
+                if location[settings].settings then
+                    if location[settings].settings.always_active then
+                        location[settings].settings.always_active = nil
+                        if next(location[settings].settings) == nil then
+                            location[settings].settings = nil
+                        end
+                    else
+                        location[settings].settings.always_active = true
+                    end
+                else
+                    location[settings].settings = {["always_active"] = true}
                 end
                 caller.updated = true
             end
