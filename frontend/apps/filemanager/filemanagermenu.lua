@@ -844,9 +844,7 @@ function FileManagerMenu:getSortingMenuTable()
     local collates = {
         { _("name"), "strcoll" },
         { _("name (natural sorting)"), "natural" },
-        { _("last read date"), "access" },
-        { _("date added"), "change" },
-        { _("date modified"), "modification" },
+        { _("date modified"), "date" },
         { _("size"), "size" },
         { _("type"), "type" },
         { _("percent – unopened first"), "percent_unopened_first" },
