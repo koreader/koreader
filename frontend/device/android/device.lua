@@ -450,6 +450,10 @@ function Device:info()
     return common_text..platform_text..eink_text..wakelocks_text
 end
 
+function Device:isDeprecated()
+    return self.firmware_rev < 18
+end
+
 function Device:test()
     android.runTest()
 end
