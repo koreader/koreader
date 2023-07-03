@@ -1016,7 +1016,7 @@ function Dispatcher:isActionEnabled(action)
     return not disabled
 end
 
-function Dispatcher:_showAsMenu(settings)
+function Dispatcher:_showAsMenu(settings, gesture)
     local display_list = Dispatcher:getDisplayList(settings)
     local quickmenu
     local buttons = {}
@@ -1041,6 +1041,7 @@ function Dispatcher:_showAsMenu(settings)
         width_factor = 0.8,
         use_info_style = false,
         buttons = buttons,
+        anchor = function() return gesture and gesture.pos end,
     }
     UIManager:show(quickmenu)
 end
@@ -1053,7 +1054,7 @@ arguments are:
 --]]--
 function Dispatcher:execute(settings, gesture)
     if settings.settings ~= nil and settings.settings.show_as_quickmenu == true then
-        return Dispatcher:_showAsMenu(settings)
+        return Dispatcher:_showAsMenu(settings, gesture)
     end
     local has_many = Dispatcher:_itemsCount(settings) > 1
     if has_many then
