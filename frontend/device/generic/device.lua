@@ -48,6 +48,7 @@ local Device = {
     hasWifiManager = no,
     isDefaultFullscreen = yes,
     isHapticFeedbackEnabled = no,
+    isDeprecated = no, -- device no longer receive OTA updates
     isTouchDevice = no,
     hasFrontlight = no,
     hasNaturalLight = no, -- FL warmth implementation specific to NTX boards (Kobo, Cervantes)
