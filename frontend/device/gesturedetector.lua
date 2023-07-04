@@ -1078,6 +1078,7 @@ function Contact:handleTwoFingerPan(buddy_contact)
         local start_distance = tstart_pos:distance(rstart_pos)
         local end_distance = tend_pos:distance(rend_pos)
         -- FIXME: "pan" uses current pos as pos, and reports relative movement instead...
+        --        But swipe does this, and this also happens to be used for swipes (via panState)... -_-"
         local ges_ev = {
             ges = "two_finger_pan",
             pos = start_point,
