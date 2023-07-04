@@ -1041,7 +1041,11 @@ function Dispatcher:_showAsMenu(settings, gesture)
         width_factor = 0.8,
         use_info_style = false,
         buttons = buttons,
-        anchor = function() return gesture and gesture.pos end,
+        anchor = function()
+            if gesture then
+                return gesture.end_pos or gesture.pos
+            end
+        end,
     }
     UIManager:show(quickmenu)
 end

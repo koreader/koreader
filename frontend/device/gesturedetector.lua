@@ -873,6 +873,12 @@ function Contact:handleSwipe()
         w = 0,
         h = 0,
     }
+    local end_pos = Geom:new{
+        x = tev.x,
+        y = tev.y,
+        w = 0,
+        h = 0,
+    }
     local ges = "swipe"
     local multiswipe_directions
 
@@ -895,6 +901,7 @@ function Contact:handleSwipe()
         ges = ges,
         -- use first pan tev coordination as swipe start point
         pos = start_pos,
+        end_pos = end_pos,
         direction = swipe_direction,
         multiswipe_directions = multiswipe_directions,
         distance = swipe_distance,
@@ -1070,9 +1077,11 @@ function Contact:handleTwoFingerPan(buddy_contact)
         -- We'll also want to remember the span between both contacts on start & end for some gestures
         local start_distance = tstart_pos:distance(rstart_pos)
         local end_distance = tend_pos:distance(rend_pos)
+        -- FIXME: "pan" uses current pos as pos, and reports relative movement instead...
         local ges_ev = {
             ges = "two_finger_pan",
             pos = start_point,
+            end_pos = end_point,
             distance = avg_distance,
             direction = tpan_dir,
             time = self.current_tev.timev,
@@ -1130,6 +1139,14 @@ function Contact:handlePanRelease(keep_contact)
 
         logger.dbg("Contact:handlePanRelease: two_finger_pan_release detected")
         pan_ev.ges = "two_finger_pan_release"
+        -- The pan itself uses the midpoint between the two contacts, keep doing that.
+        local buddy_pos = Geom:new{
+            x = buddy_contact.current_tev.x,
+            y = buddy_contact.current_tev.y,
+            w = 0,
+            h = 0,
+        }
+        pan_ev.pos = release_pos:midpoint(buddy_pos)
         -- Don't drop buddy, voidState will handle it
         -- NOTE: This is yet another rotate hack, emanating from voidState into panState.
         if not keep_contact then
