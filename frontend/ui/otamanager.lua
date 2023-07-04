@@ -231,7 +231,7 @@ function OTAManager:fetchAndProcessUpdate()
         })
     elseif ota_version == -1 then
         UIManager:show(InfoMessage:new{
-            text = _("Device no longer supported.\n\nPlease check https://github.com/koreader/koreader/wiki/deprecated-devices"),
+            text = T(_("Device no longer supported.\n\nPlease check %1."), "https://github.com/koreader/koreader/wiki/deprecated-devices")
         })
     elseif ota_version == nil then
         local channel = ota_channels[OTAManager:getOTAChannel()]
