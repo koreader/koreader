@@ -195,7 +195,7 @@ local bold_strength_factor = 3/8 -- as crengine, lighter
 local _completeFaceProperties = function(face_obj)
     if not face_obj.embolden_half_strength then
         -- Cache this value in case we use bold, to avoid recomputation
-        face_obj.embolden_half_strength = face_obj.ftface:getEmboldenHalfStrength(bold_strength_factor)
+        face_obj.embolden_half_strength = face_obj.ftsize:getEmboldenHalfStrength(bold_strength_factor)
     end
 end
 
@@ -302,9 +302,9 @@ function Font:getFace(font, size, faceindex)
             face_obj.orig_size = orig_size
         end
     else
-        -- Build face if not found
+        -- Build face size if not found
         local builtin_font_location = FontList.fontdir.."/"..realname
-        local ok, face = pcall(Freetype.newFace, builtin_font_location, size, faceindex)
+        local ok, ftsize = pcall(Freetype.newFaceSize, builtin_font_location, size, faceindex)
 
         -- Not all fonts are bundled on all platforms because they come with the system.
         -- In that case, search through all font folders for the requested font.
@@ -315,14 +315,14 @@ function Font:getFace(font, size, faceindex)
             for _k, _v in ipairs(fonts) do
                 if _v:find(escaped_realname) then
                     logger.dbg("Found font:", realname, "in", _v)
-                    ok, face = pcall(Freetype.newFace, _v, size, faceindex)
+                    ok, ftsize = pcall(Freetype.newFaceSize, _v, size, faceindex)
 
                     if ok then break end
                 end
             end
         end
         if not ok then
-            logger.err("#! Font ", font, " (", realname, ") not supported: ", face)
+            logger.err("#! Font ", font, " (", realname, ") not supported: ", ftsize)
             return nil
         end
         --- Freetype font face wrapper object
@@ -330,14 +330,14 @@ function Font:getFace(font, size, faceindex)
         -- @field orig_font font name requested
         -- @field size size of the font face (after scaled by screen size)
         -- @field orig_size raw size of the font face (before scale)
-        -- @field ftface font face object from freetype
+        -- @field ftsize font size object from freetype
         -- @field hash hash key for this font face
         face_obj = {
             orig_font = font,
             realname = realname,
             size = size,
             orig_size = orig_size,
-            ftface = face,
+            ftsize = ftsize,
             hash = hash,
             is_real_bold = is_real_bold,
         }
@@ -433,7 +433,7 @@ function Font:getAdjustedFace(face, bold)
         -- We can keep the same FT object and the same hash in this face_obj
         -- (which is only used to identify cached glyphs, that we don't need
         -- to distinguish as "bold" is appended when synthetized as bold)
-        ftface = face.ftface,
+        ftsize = face.ftsize,
         hash = face.hash,
         hb_features = face.hb_features,
         is_real_bold = nil,

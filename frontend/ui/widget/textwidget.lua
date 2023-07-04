@@ -81,7 +81,7 @@ function TextWidget:getFontSizeToFitHeight(font_name, height_px, padding)
             break
         end
         local face = Font:getFace(font_name, font_size)
-        local face_height = face.ftface:getHeightAndAscender()
+        local face_height = face.ftsize:getHeightAndAscender()
         face_height = math.ceil(face_height) + 2*padding
     until face_height <= height_px
     return font_size
@@ -109,7 +109,7 @@ function TextWidget:updateSize()
     -- But better compute baseline alignment from freetype font metrics
     -- to get better vertical centering of text in box
     -- (Freetype doc on this at https://www.freetype.org/freetype2/docs/tutorial/step2.html)
-    local face_height, face_ascender = self.face.ftface:getHeightAndAscender()
+    local face_height, face_ascender = self.face.ftsize:getHeightAndAscender()
     self._height = math.ceil(face_height) + 2*self.padding
     self._baseline_h = Math.round(face_ascender) + self.padding
     -- With our UI fonts, this usually gives 0.72 to 0.74, so text is aligned

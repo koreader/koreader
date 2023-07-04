@@ -87,15 +87,15 @@ function RenderText:getGlyph(face, charcode, bold)
         -- cache hit
         return glyph
     end
-    local rendered_glyph = face.ftface:renderGlyph(charcode, bold)
-    if face.ftface:checkGlyph(charcode) == 0 then
+    local rendered_glyph = face.ftsize:renderGlyph(charcode, bold)
+    if not face.ftsize:hasGlyph(charcode) then
         for index, font in pairs(Font.fallbacks) do
             -- use original size before scaling by screen DPI
             local fb_face = Font:getFace(font, face.orig_size)
             if fb_face ~= nil then
             -- for some characters it cannot find in Fallbacks, it will crash here
-                if fb_face.ftface:checkGlyph(charcode) ~= 0 then
-                    rendered_glyph = fb_face.ftface:renderGlyph(charcode, orig_bold)
+                if fb_face.ftsize:hasGlyph(charcode) then
+                    rendered_glyph = fb_face.ftsize:renderGlyph(charcode, orig_bold)
                     break
                 end
             end
@@ -127,7 +127,7 @@ function RenderText:getSubTextByWidth(text, face, width, kerning, bold)
         if pen_x < width then
             local glyph = self:getGlyph(face, charcode, bold)
             if kerning and prevcharcode then
-                local kern = face.ftface:getKerning(prevcharcode, charcode)
+                local kern = face.ftsize:getKerning(prevcharcode, charcode)
                 pen_x = pen_x + kern
             end
             pen_x = pen_x + glyph.ax
@@ -170,7 +170,7 @@ function RenderText:sizeUtf8Text(x, width, face, text, kerning, bold)
         if not width or pen_x < (width - x) then
             local glyph = self:getGlyph(face, charcode, bold)
             if kerning and (prevcharcode ~= 0) then
-                pen_x = pen_x + (face.ftface):getKerning(prevcharcode, charcode)
+                pen_x = pen_x + (face.ftsize):getKerning(prevcharcode, charcode)
             end
             pen_x = pen_x + glyph.ax
             pen_y_top = math.max(pen_y_top, glyph.t)
@@ -225,7 +225,7 @@ function RenderText:renderUtf8Text(dest_bb, x, baseline, face, text, kerning, bo
         if pen_x < text_width then
             local glyph = self:getGlyph(face, charcode, bold)
             if kerning and (prevcharcode ~= 0) then
-                pen_x = pen_x + face.ftface:getKerning(prevcharcode, charcode)
+                pen_x = pen_x + face.ftsize:getKerning(prevcharcode, charcode)
             end
             dest_bb:colorblitFrom(
                 glyph.bb,
@@ -299,7 +299,7 @@ function RenderText:getGlyphByIndex(face, glyphindex, bold)
         -- cache hit
         return glyph
     end
-    local rendered_glyph = face.ftface:renderGlyphByIndex(glyphindex, bold and face.embolden_half_strength)
+    local rendered_glyph = face.ftsize:renderGlyphByIndex(glyphindex, bold and face.embolden_half_strength)
     if not rendered_glyph then
         logger.warn("error rendering glyph (glyphindex=", glyphindex, ") for face", face)
         return
