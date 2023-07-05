@@ -954,7 +954,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             end
         end,
     })
-    if not (location[settings].settings and location[settings].settings.name ) then -- gesture, not profile
+    if not (location[settings].settings and location[settings].settings.name) then -- gesture, not profile
         table.insert(menu, {
             text = _("Anchor QuickMenu to gesture position"),
             checked_func = function()
