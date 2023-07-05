@@ -1043,6 +1043,7 @@ function Dispatcher:_showAsMenu(settings, gesture)
         buttons = buttons,
         anchor = function()
             if gesture then
+                -- Prefer the lift point if available (e.g., swipes, c.f., `GestureDetector:handleSwipe`)
                 return gesture.end_pos or gesture.pos
             end
         end,
