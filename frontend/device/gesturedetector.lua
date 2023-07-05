@@ -906,10 +906,12 @@ function Contact:handleSwipe()
     gesture_detector:dropContact(self)
     return {
         ges = ges,
-        -- use first pan tev coordination as swipe start point
-        -- FIXME: Or... don't, and match the pan semantics by using the lift point?
-        -- Except maybe it matters for hit detection... (in which case, just fix the hit detection to use start_pos instead?)
+        -- NOTE: Unlike every other gesture, we use the *contact* point as the gesture's position,
+        --       instead of the *lift* point, mainly because that's what makes the most sense
+        --       from a hit-detection standpoint (c.f., `GestureRange:match` & `InputContainer:onGesture`),
+        --       and that's 99% of the use-cases where the position actually matters for a swipe.
         pos = start_pos,
+        -- And for those rare cases that need it, we provide the lift point separately.
         end_pos = end_pos,
         direction = swipe_direction,
         multiswipe_directions = multiswipe_directions,
