@@ -1041,12 +1041,7 @@ function Dispatcher:_showAsMenu(settings, gesture)
         width_factor = 0.8,
         use_info_style = false,
         buttons = buttons,
-        anchor = function()
-            if gesture then
-                -- Prefer the lift point if available (e.g., swipes, c.f., `GestureDetector:handleSwipe`)
-                return gesture.end_pos or gesture.pos
-            end
-        end,
+        anchor = function() return gesture and gesture.pos end,
     }
     UIManager:show(quickmenu)
 end
