@@ -108,7 +108,13 @@ function ButtonDialog:init()
         end
     end
 
-    local content_width = self.width - 2*Size.border.window - 2*Size.padding.button
+    self.buttontable = ButtonTable:new{
+        buttons = self.buttons,
+        width = self.width - 2*Size.border.window - 2*Size.padding.button,
+        shrink_unneeded_width = self.shrink_unneeded_width,
+        shrink_min_width = self.shrink_min_width,
+        show_parent = self,
+    }
 
     local title_widget, title_widget_height
     if self.title then
@@ -128,7 +134,7 @@ function ButtonDialog:init()
             bordersize = 0,
             TextBoxWidget:new{
                 text = self.title,
-                width = content_width - 2 * (title_padding + title_margin),
+                width = self.buttontable.width - 2 * (title_padding + title_margin),
                 face = title_face,
                 alignment = self.title_align,
             },
@@ -139,13 +145,6 @@ function ButtonDialog:init()
         title_widget_height = 0
     end
 
-    self.buttontable = ButtonTable:new{
-        buttons = self.buttons,
-        width = content_width,
-        shrink_unneeded_width = self.shrink_unneeded_width,
-        shrink_min_width = self.shrink_min_width,
-        show_parent = self,
-    }
     -- If the ButtonTable ends up being taller than the screen, wrap it inside a ScrollableContainer.
     -- Ensure some small top and bottom padding, so the scrollbar stand out, and some outer margin
     -- so the this dialog does not take the full height and stand as a popup.
@@ -199,7 +198,7 @@ function ButtonDialog:init()
         separator = LineWidget:new{
             background = Blitbuffer.COLOR_GRAY,
             dimen = Geom:new{
-                w = content_width + (scrollbar_width or 0),
+                w = self.buttontable.width + (scrollbar_width or 0),
                 h = Size.line.medium,
             },
         }
