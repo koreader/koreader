@@ -224,7 +224,6 @@ function GestureDetector:feedEvent(tevs)
         end
         local ges = contact.state(contact)
         if ges then
-            logger.info("GD: Pushed gesture:", ges)
             table.insert(gestures, ges)
         end
     end
