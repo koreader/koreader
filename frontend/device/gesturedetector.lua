@@ -1170,7 +1170,7 @@ function Contact:handlePanRelease(keep_contact)
 
         logger.dbg("Contact:handlePanRelease: two_finger_pan_release detected")
         pan_ev.ges = "two_finger_pan_release"
-        -- The pan itself uses the midpoint between the two contacts, keep doing that.
+        -- The pan itself used the midpoint between the two contacts, keep doing that.
         local buddy_pos = Geom:new{
             x = buddy_contact.current_tev.x,
             y = buddy_contact.current_tev.y,
