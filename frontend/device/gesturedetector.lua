@@ -726,6 +726,7 @@ function Contact:panState(keep_contact)
                             -- Swap from pan semantics to swipe semantics
                             ges_ev.pos = ges_ev._start_pos
                             ges_ev._start_pos = nil
+                            ges_ev.start_pos = nil
                             ges_ev.end_pos = ges_ev._end_pos
                             ges_ev._end_pos = nil
                             ges_ev.relative = nil
