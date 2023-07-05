@@ -722,6 +722,12 @@ function Contact:panState(keep_contact)
                         -- Only accept gestures that require both contacts to have been lifted
                         if ges_ev.ges == "two_finger_pan" then
                             ges_ev.ges = "two_finger_swipe"
+                            -- Swap from pan semantics to swipe semantics
+                            ges_ev.pos = ges_ev._start_pos
+                            ges_ev._start_pos = nil
+                            ges_ev.end_pos = ges_ev._end_pos
+                            ges_ev._end_pos = nil
+                            ges_ev.relative = nil
                         elseif ges_ev.ges == "inward_pan" then
                             ges_ev.ges = "pinch"
                         elseif ges_ev.ges == "outward_pan" then
@@ -939,25 +945,24 @@ function Contact:handlePan()
         local pan_ev = {
             ges = "pan",
             relative = {
-                -- default to pan 0
-                x = 0,
-                y = 0,
+                x = tev.x - self.initial_tev.x,
+                y = tev.y - self.initial_tev.y,
             },
-            pos = nil,
+            start_pos = Geom:new{
+                x = self.initial_tev.x,
+                y = self.initial_tev.y,
+                w = 0,
+                h = 0,
+            },
+            pos = Geom:new{
+                x = tev.x,
+                y = tev.y,
+                w = 0,
+                h = 0,
+            },
             direction = pan_direction,
             distance = pan_distance,
             time = tev.timev,
-        }
-
-        -- Regular pan
-        pan_ev.relative.x = tev.x - self.initial_tev.x
-        pan_ev.relative.y = tev.y - self.initial_tev.y
-
-        pan_ev.pos = Geom:new{
-            x = tev.x,
-            y = tev.y,
-            w = 0,
-            h = 0,
         }
 
         local msd_cnt = #self.multiswipe_directions
@@ -1077,12 +1082,22 @@ function Contact:handleTwoFingerPan(buddy_contact)
         -- We'll also want to remember the span between both contacts on start & end for some gestures
         local start_distance = tstart_pos:distance(rstart_pos)
         local end_distance = tend_pos:distance(rend_pos)
-        -- FIXME: "pan" uses current pos as pos, and reports relative movement instead...
-        --        But swipe does this, and this also happens to be used for swipes (via panState)... -_-"
+        -- NOTE: "pan" and "hold_pan" use current (end) pos as pos, and provide the relative movement,
+        --       but swipe reports pos as start pos, and provides the end pos separately.
+        --       Since this table will be used for both pans and two_finger_swipe via (via panState),
+        --       we stuff a bunch of extra info in there to swap it around later...
         local ges_ev = {
             ges = "two_finger_pan",
-            pos = start_point,
+            relative = {
+                x = end_point.x - start_point.x,
+                y = end_point.y - start_point.y,
+            },
+            -- Default to the pan semantics, c.f., note above
+            pos = end_point,
+            start_pos = start_point,
+            _start_pos = start_point,
             end_pos = end_point,
+            _end_pos = end_point,
             distance = avg_distance,
             direction = tpan_dir,
             time = self.current_tev.timev,
@@ -1090,8 +1105,20 @@ function Contact:handleTwoFingerPan(buddy_contact)
         if tpan_dir ~= rpan_dir then
             if start_distance > end_distance then
                 ges_ev.ges = "inward_pan"
+                -- Use the end pos
+                ges_ev.pos = ges_ev._end_pos
+                ges_ev._end_pos = nil
+                ges_ev.end_pos = nil
+                ges_ev.start_pos = ges_ev._start_pos
+                ges_ev._start_pos = nil
             else
                 ges_ev.ges = "outward_pan"
+                -- Use the start pos
+                ges_ev.pos = ges_ev._start_pos
+                ges_ev._start_pos = nil
+                ges_ev.start_pos = nil
+                ges_ev.end_pos = ges_ev._end_pos
+                ges_ev._end_pos = nil
             end
             ges_ev.direction = gesture_detector.DIRECTION_TABLE[tpan_dir]
             -- Use the the sum of both contacts' travel for the distance
@@ -1099,6 +1126,8 @@ function Contact:handleTwoFingerPan(buddy_contact)
             -- Some handlers might also want to know the distance between the two contacts on lift & down.
             ges_ev.span = end_distance
             ges_ev.start_span = start_distance
+            -- Drop unnecessary fields
+            ges_ev.relative = nil
         elseif self.state == Contact.holdState then
             ges_ev.ges = "two_finger_hold_pan"
             -- Flag 'em for holdState to discriminate with two_finger_hold_release
