@@ -906,6 +906,7 @@ function Contact:handleSwipe()
     return {
         ges = ges,
         -- use first pan tev coordination as swipe start point
+        -- FIXME: Or... don't, and match the pan semantics by using the lift point?
         pos = start_pos,
         end_pos = end_pos,
         direction = swipe_direction,
@@ -1126,7 +1127,7 @@ function Contact:handleTwoFingerPan(buddy_contact)
             -- Some handlers might also want to know the distance between the two contacts on lift & down.
             ges_ev.span = end_distance
             ges_ev.start_span = start_distance
-            -- Drop unnecessary fields
+            -- Drop unnecessary field
             ges_ev.relative = nil
         elseif self.state == Contact.holdState then
             ges_ev.ges = "two_finger_hold_pan"
