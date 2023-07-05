@@ -868,11 +868,10 @@ arguments are:
     2) the table representing the submenu (can be empty)
     3) the object (table) in which the settings table is found
     4) the name of the settings table
-    5) the flag indicating if it is a profile submenu
 example usage:
-    Dispatcher:addSubMenu(self, sub_items, self.data, "profile1", true)
+    Dispatcher:addSubMenu(self, sub_items, self.data, "profile1")
 --]]--
-function Dispatcher:addSubMenu(caller, menu, location, settings, is_profile)
+function Dispatcher:addSubMenu(caller, menu, location, settings)
     Dispatcher:init()
     menu.ignored_by_menu_search = true -- all those would be duplicated
     table.insert(menu, {
@@ -955,7 +954,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings, is_profile)
             end
         end,
     })
-    if not is_profile then
+    if not (location[settings].settings and location[settings].settings.name ) then -- gesture, not profile
         table.insert(menu, {
             text = _("Anchor QuickMenu to gesture position"),
             checked_func = function()
