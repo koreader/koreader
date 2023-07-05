@@ -94,7 +94,7 @@ end
 
 function KOSync:getSyncPeriod()
     if not self.settings.auto_sync then
-        return _("Unavailable")
+        return _("Not available")
     end
 
     local period = self.settings.pages_before_update
