@@ -1088,10 +1088,10 @@ function Contact:handleTwoFingerPan(buddy_contact)
         -- We'll also want to remember the span between both contacts on start & end for some gestures
         local start_distance = tstart_pos:distance(rstart_pos)
         local end_distance = tend_pos:distance(rend_pos)
-        -- NOTE: "pan" and "hold_pan" use current (end) pos as pos, and provide the relative movement,
-        --       but swipe reports pos as start pos, and provides the end pos separately.
-        --       Since this table will be used for both pans and two_finger_swipe via (via panState),
-        --       we stuff a bunch of extra info in there to swap it around later...
+        -- NOTE: "pan" and "hold_pan" use the current/end point as pos,
+        --       but swipe reports pos as the *starting* point (c.f., `Contact:handleSwipe`).
+        --       Since this table will be used for both pans and two_finger_swipe (via panState),
+        --       we stuff a bunch of extra info in there to swap it around as-needed...
         local ges_ev = {
             ges = "two_finger_pan",
             relative = {
