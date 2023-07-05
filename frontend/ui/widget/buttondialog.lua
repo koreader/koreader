@@ -181,7 +181,7 @@ function ButtonDialog:init()
             dimen = Geom:new{
                 -- We'll be exceeding the provided width in this case (let's not bother
                 -- ensuring it, we'd need to re-setup the ButtonTable...)
-                w = self.buttontable:getSize().w + scrollbar_width,
+                w = buttontable_width + scrollbar_width,
                 h = max_height,
             },
             show_parent = self,
