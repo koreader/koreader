@@ -115,6 +115,7 @@ function ButtonDialog:init()
         shrink_min_width = self.shrink_min_width,
         show_parent = self,
     }
+    local buttontable_width = self.buttontable:getSize().w -- may be shrinked
 
     local title_widget, title_widget_height
     if self.title then
@@ -134,7 +135,7 @@ function ButtonDialog:init()
             bordersize = 0,
             TextBoxWidget:new{
                 text = self.title,
-                width = self.buttontable.width - 2 * (title_padding + title_margin),
+                width = buttontable_width - 2 * (title_padding + title_margin),
                 face = title_face,
                 alignment = self.title_align,
             },
@@ -198,7 +199,7 @@ function ButtonDialog:init()
         separator = LineWidget:new{
             background = Blitbuffer.COLOR_GRAY,
             dimen = Geom:new{
-                w = self.buttontable.width + (scrollbar_width or 0),
+                w = buttontable_width + (scrollbar_width or 0),
                 h = Size.line.medium,
             },
         }
