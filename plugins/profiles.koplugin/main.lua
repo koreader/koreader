@@ -118,7 +118,7 @@ function Profiles:getSubMenuItems()
     }
     for k, v in FFIUtil.orderedPairs(self.data) do
         local edit_actions_sub_items = {}
-        Dispatcher:addSubMenu(self, edit_actions_sub_items, self.data, k, true)
+        Dispatcher:addSubMenu(self, edit_actions_sub_items, self.data, k)
         local sub_items = {
             {
                 text = _("Execute"),
