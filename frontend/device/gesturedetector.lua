@@ -1114,7 +1114,8 @@ function Contact:handleTwoFingerPan(buddy_contact)
                 ges_ev._end_pos = nil
             else
                 ges_ev.ges = "outward_pan"
-                -- Use the start pos
+                -- Use the start pos, it'll make more sense than the midpoint of the current contacts,
+                -- given the potentially wide span between the two...
                 ges_ev.pos = ges_ev._start_pos
                 ges_ev._start_pos = nil
                 ges_ev.start_pos = nil
