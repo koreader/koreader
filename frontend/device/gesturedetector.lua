@@ -907,6 +907,7 @@ function Contact:handleSwipe()
         ges = ges,
         -- use first pan tev coordination as swipe start point
         -- FIXME: Or... don't, and match the pan semantics by using the lift point?
+        -- Except maybe it matters for hit detection... (in which case, just fix the hit detection to use start_pos instead?)
         pos = start_pos,
         end_pos = end_pos,
         direction = swipe_direction,
