@@ -1102,7 +1102,6 @@ function Contact:handleTwoFingerPan(buddy_contact)
             pos = end_point,
             start_pos = start_point,
             _start_pos = start_point,
-            end_pos = end_point,
             _end_pos = end_point,
             distance = avg_distance,
             direction = tpan_dir,
@@ -1111,12 +1110,9 @@ function Contact:handleTwoFingerPan(buddy_contact)
         if tpan_dir ~= rpan_dir then
             if start_distance > end_distance then
                 ges_ev.ges = "inward_pan"
-                -- Use the end pos
-                ges_ev.pos = ges_ev._end_pos
-                ges_ev._end_pos = nil
-                ges_ev.end_pos = nil
-                ges_ev.start_pos = ges_ev._start_pos
+                -- Use the end pos (this is the default already)
                 ges_ev._start_pos = nil
+                ges_ev._end_pos = nil
             else
                 ges_ev.ges = "outward_pan"
                 -- Use the start pos
