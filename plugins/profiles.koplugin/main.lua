@@ -118,7 +118,7 @@ function Profiles:getSubMenuItems()
     }
     for k, v in FFIUtil.orderedPairs(self.data) do
         local edit_actions_sub_items = {}
-        Dispatcher:addSubMenu(self, edit_actions_sub_items, self.data, k)
+        Dispatcher:addSubMenu(self, edit_actions_sub_items, self.data, k, true)
         local sub_items = {
             {
                 text = _("Execute"),
@@ -259,8 +259,8 @@ function Profiles:getSubMenuItems()
     return sub_item_table
 end
 
-function Profiles:onProfileExecute(name)
-    Dispatcher:execute(self.data[name])
+function Profiles:onProfileExecute(name, gesture, anchor_quickmenu)
+    Dispatcher:execute(self.data[name], gesture, anchor_quickmenu)
 end
 
 function Profiles:editProfileName(editCallback, old_name)
@@ -271,6 +271,7 @@ function Profiles:editProfileName(editCallback, old_name)
         buttons = {{
             {
                 text = _("Cancel"),
+                id = "close",
                 callback = function()
                     UIManager:close(name_input)
                 end,
