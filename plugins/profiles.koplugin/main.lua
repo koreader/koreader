@@ -259,8 +259,8 @@ function Profiles:getSubMenuItems()
     return sub_item_table
 end
 
-function Profiles:onProfileExecute(name, gesture, anchor_quickmenu)
-    Dispatcher:execute(self.data[name], gesture, anchor_quickmenu)
+function Profiles:onProfileExecute(name, gesture)
+    Dispatcher:execute(self.data[name], gesture)
 end
 
 function Profiles:editProfileName(editCallback, old_name)

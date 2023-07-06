@@ -930,6 +930,26 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     end
     menu[#menu].separator = true
     table.insert(menu, {
+        text = _("Sort"),
+        checked_func = function()
+            return location[settings] ~= nil
+            and location[settings].settings ~= nil
+            and location[settings].settings.order ~= nil
+        end,
+        callback = function(touchmenu_instance)
+            Dispatcher:_sortActions(caller, location, settings, touchmenu_instance)
+        end,
+        hold_callback = function(touchmenu_instance)
+            if location[settings]
+            and location[settings].settings
+            and location[settings].settings.order then
+                Dispatcher:_removeFromOrder(location, settings)
+                caller.updated = true
+                if touchmenu_instance then touchmenu_instance:updateItems() end
+            end
+        end,
+    })
+    table.insert(menu, {
         text = _("Show as QuickMenu"),
         checked_func = function()
             return location[settings] ~= nil
@@ -954,78 +974,6 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             end
         end,
     })
-    if not (location[settings].settings and location[settings].settings.name) then -- gesture, not profile
-        table.insert(menu, {
-            text = _("Anchor QuickMenu to gesture position"),
-            checked_func = function()
-                return location[settings] ~= nil
-                and location[settings].settings ~= nil
-                and location[settings].settings.anchor_quickmenu
-            end,
-            callback = function()
-                if location[settings] then
-                    if location[settings].settings then
-                        if location[settings].settings.anchor_quickmenu then
-                            location[settings].settings.anchor_quickmenu = nil
-                            if next(location[settings].settings) == nil then
-                                location[settings].settings = nil
-                            end
-                        else
-                            location[settings].settings.anchor_quickmenu = true
-                        end
-                    else
-                        location[settings].settings = {["anchor_quickmenu"] = true}
-                    end
-                    caller.updated = true
-                end
-            end,
-        })
-    end
-    table.insert(menu, {
-        text = _("Always active"),
-        checked_func = function()
-            return location[settings] ~= nil
-            and location[settings].settings ~= nil
-            and location[settings].settings.always_active
-        end,
-        callback = function()
-            if location[settings] then
-                if location[settings].settings then
-                    if location[settings].settings.always_active then
-                        location[settings].settings.always_active = nil
-                        if next(location[settings].settings) == nil then
-                            location[settings].settings = nil
-                        end
-                    else
-                        location[settings].settings.always_active = true
-                    end
-                else
-                    location[settings].settings = {["always_active"] = true}
-                end
-                caller.updated = true
-            end
-        end,
-    })
-    table.insert(menu, {
-        text = _("Sort"),
-        checked_func = function()
-            return location[settings] ~= nil
-            and location[settings].settings ~= nil
-            and location[settings].settings.order ~= nil
-        end,
-        callback = function(touchmenu_instance)
-            Dispatcher:_sortActions(caller, location, settings, touchmenu_instance)
-        end,
-        hold_callback = function(touchmenu_instance)
-            if location[settings]
-            and location[settings].settings
-            and location[settings].settings.order then
-                Dispatcher:_removeFromOrder(location, settings)
-                caller.updated = true
-                if touchmenu_instance then touchmenu_instance:updateItems() end
-            end
-        end,
-    })
 end
 
 function Dispatcher:isActionEnabled(action)
@@ -1044,7 +992,7 @@ function Dispatcher:isActionEnabled(action)
     return not disabled
 end
 
-function Dispatcher:_showAsMenu(settings, gesture, anchor_quickmenu)
+function Dispatcher:_showAsMenu(settings, gesture)
     local display_list = Dispatcher:getDisplayList(settings)
     local quickmenu
     local buttons = {}
@@ -1070,7 +1018,7 @@ function Dispatcher:_showAsMenu(settings, gesture, anchor_quickmenu)
         shrink_min_width = math.floor(0.5 * Screen:getWidth()),
         use_info_style = false,
         buttons = buttons,
-        anchor = (settings.settings.anchor_quickmenu or anchor_quickmenu) and gesture and gesture.pos,
+        anchor = (gesture and gesture.anchor_quickmenu) and gesture.pos,
     }
     UIManager:show(quickmenu)
 end
@@ -1082,9 +1030,9 @@ arguments are:
     2) optionally a `gestures` object
     3) optionally a flag indicating that the QuickMenu should be anchored to the gesture position
 --]]--
-function Dispatcher:execute(settings, gesture, anchor_quickmenu)
+function Dispatcher:execute(settings, gesture)
     if settings.settings ~= nil and settings.settings.show_as_quickmenu == true then
-        return Dispatcher:_showAsMenu(settings, gesture, anchor_quickmenu)
+        return Dispatcher:_showAsMenu(settings, gesture)
     end
     local has_many = Dispatcher:_itemsCount(settings) > 1
     if has_many then
@@ -1108,12 +1056,7 @@ function Dispatcher:execute(settings, gesture, anchor_quickmenu)
             end
             if settingsList[k].category == "none" then
                 if settingsList[k].arg ~= nil then
-                    if settingsList[k].event == "ProfileExecute" then
-                        UIManager:sendEvent(Event:new(settingsList[k].event, settingsList[k].arg,
-                            gesture, settings and settings.settings and settings.settings.anchor_quickmenu))
-                    else
-                        UIManager:sendEvent(Event:new(settingsList[k].event, settingsList[k].arg))
-                    end
+                    UIManager:sendEvent(Event:new(settingsList[k].event, settingsList[k].arg, gesture))
                 else
                     UIManager:sendEvent(Event:new(settingsList[k].event))
                 end
