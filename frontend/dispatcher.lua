@@ -1015,10 +1015,10 @@ function Dispatcher:_showAsMenu(settings, gesture)
         title = settings.settings.name or _("QuickMenu"),
         title_align = "center",
         shrink_unneeded_width = true,
-        shrink_min_width = math.floor(0.5 * Screen:getWidth()),
+        shrink_min_width = math.floor(0.6 * Screen:getWidth()),
         use_info_style = false,
         buttons = buttons,
-        anchor = (gesture and gesture.anchor_quickmenu) and gesture.pos,
+        anchor = (gesture and gesture.anchor_quickmenu) and (gesture.end_pos or gesture.pos),
     }
     UIManager:show(quickmenu)
 end
@@ -1028,7 +1028,6 @@ Calls the events in a settings list
 arguments are:
     1) the settings table
     2) optionally a `gestures` object
-    3) optionally a flag indicating that the QuickMenu should be anchored to the gesture position
 --]]--
 function Dispatcher:execute(settings, gesture)
     if settings.settings ~= nil and settings.settings.show_as_quickmenu == true then
