@@ -40,6 +40,7 @@ local ImageViewer = InputContainer:extend{
     -- the image_disposable provided here.
     -- Each BlitBuffer in the table (or returned by functions) will be free'd
     -- if the table itself has an image_disposable field set to true.
+    images_list_nb = nil, -- if set, overrides #self.image
 
     -- With images list, when switching image, whether to keep previous
     -- image pan & zoom
@@ -142,7 +143,7 @@ function ImageViewer:init()
             self.image = self.image()
         end
         self._images_list_cur = 1
-        self._images_list_nb = #self._images_list
+        self._images_list_nb = self.images_list_nb or #self._images_list
         self._images_orig_scale_factor = self.scale_factor
         -- also swap disposable status
         self._images_list_disposable = self.image_disposable
