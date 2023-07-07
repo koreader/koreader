@@ -11,7 +11,6 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
 local OPDSParser = require("opdsparser")
 local OPDSPSE = require("opdspse")
-local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local http = require("socket.http")
 local lfs = require("libs/libkoreader-lfs")
@@ -61,8 +60,6 @@ local OPDSBrowser = Menu:extend{
             url = "https://gallica.bnf.fr/opds",
         },
     }),
-    calibre_name = _("Local calibre library"),
-    calibre_opds = G_reader_settings:readSetting("calibre_opds", {}),
 
     catalog_type         = "application/atom%+xml",
     search_type          = "application/opensearchdescription%+xml",
@@ -79,8 +76,6 @@ local OPDSBrowser = Menu:extend{
     root_catalog_username = nil,
     root_catalog_password = nil,
 
-    width = Screen:getWidth(),
-    height = Screen:getHeight(),
     title_shrink_font_to_fit = true,
 }
 
@@ -96,16 +91,7 @@ end
 
 -- Builds the root list of catalogs
 function OPDSBrowser:genItemTableFromRoot()
-    local item_table = {
-        {   -- calibre is the first and non-deletable item
-            text       = self.calibre_name,
-            url        = self.calibre_opds.host and self.calibre_opds.port and
-                         string.format("http://%s:%d/opds", self.calibre_opds.host, self.calibre_opds.port),
-            username   = self.calibre_opds.username,
-            password   = self.calibre_opds.password,
-            searchable = false,
-        },
-    }
+    local item_table = {}
     for _, server in ipairs(self.opds_servers) do
         table.insert(item_table, {
             text       = server.title,
@@ -119,33 +105,32 @@ function OPDSBrowser:genItemTableFromRoot()
 end
 
 -- Shows dialog to edit properties of the new/existing catalog
-function OPDSBrowser:addEditCatalog(item, is_calibre)
+function OPDSBrowser:addEditCatalog(item)
+    local fields = {
+        {
+            hint = _("Catalog name"),
+        },
+        {
+            hint = _("Catalog URL"),
+        },
+        {
+            hint = _("Username (optional)"),
+        },
+        {
+            hint = _("Password (optional)"),
+            text_type = "password",
+        },
+    }
     local title
-    local fields = {{}, {}, {}, {}}
-    if is_calibre then
-        title = _("Edit local calibre host and port")
-        fields[1].text = self.calibre_opds.host or "192.168.1.1"
-        fields[1].hint = _("calibre host")
-        fields[2].text = self.calibre_opds.port and tostring(self.calibre_opds.port) or "8080"
-        fields[2].hint = _("calibre port")
-        fields[3].text = self.calibre_opds.username
-        fields[4].text = self.calibre_opds.password
+    if item then
+        title = _("Edit OPDS catalog")
+        fields[1].text = item.text
+        fields[2].text = item.url
+        fields[3].text = item.username
+        fields[4].text = item.password
     else
-        fields[1].hint = _("Catalog name")
-        fields[2].hint = _("Catalog URL")
-        if item then
-            title = _("Edit OPDS catalog")
-            fields[1].text = item.text
-            fields[2].text = item.url
-            fields[3].text = item.username
-            fields[4].text = item.password
-        else
-            title = _("Add OPDS catalog")
-        end
+        title = _("Add OPDS catalog")
     end
-    fields[3].hint = _("Username (optional)")
-    fields[4].hint = _("Password (optional)")
-    fields[4].text_type = "password"
 
     local dialog
     dialog = MultiInputDialog:new{
@@ -158,19 +143,14 @@ function OPDSBrowser:addEditCatalog(item, is_calibre)
                     id = "close",
                     callback = function()
                         UIManager:close(dialog)
-                    end
+                    end,
                 },
                 {
                     text = _("Save"),
                     callback = function()
-                        local dialog_fields = dialog:getFields()
-                        if is_calibre then
-                            self:editCalibreFromInput(dialog_fields)
-                        else
-                            self:editCatalogFromInput(dialog_fields, item)
-                        end
+                        self:editCatalogFromInput(dialog:getFields(), item)
                         UIManager:close(dialog)
-                    end
+                    end,
                 },
             },
         },
@@ -236,17 +216,6 @@ function OPDSBrowser:editCatalogFromInput(fields, item, no_init)
     if not no_init then
         self:init()
     end
-end
-
--- Saves calibre properties from input dialog
-function OPDSBrowser:editCalibreFromInput(fields)
-    self.calibre_opds.host     = fields[1]
-    if tonumber(fields[2]) then
-        self.calibre_opds.port = fields[2]
-    end
-    self.calibre_opds.username = fields[3] ~= "" and fields[3] or nil
-    self.calibre_opds.password = fields[4]
-    self:init()
 end
 
 -- Deletes catalog from the root list
@@ -476,9 +445,6 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
             if type(entry.title.type) == "string" and entry.title.div ~= "" then
                 title = entry.title.div
             end
-        end
-        if title == "Unknown" then
-            logger.info("Cannot handle title", entry.title)
         end
         item.text = title
         local author = "Unknown Author"
@@ -841,7 +807,6 @@ end
 -- Menu action on item long-press (dialog Edit / Delete catalog)
 function OPDSBrowser:onMenuHold(item)
     if #self.paths > 0 then return end -- not root list
-    local is_calibre = item.text == self.calibre_name
     local dialog
     dialog = ButtonDialog:new{
         title = item.text,
@@ -852,12 +817,11 @@ function OPDSBrowser:onMenuHold(item)
                     text = _("Edit"),
                     callback = function()
                         UIManager:close(dialog)
-                        self:addEditCatalog(item, is_calibre)
+                        self:addEditCatalog(item)
                     end,
                 },
                 {
                     text = _("Delete"),
-                    enabled = not is_calibre,
                     callback = function()
                         UIManager:show(ConfirmBox:new{
                             text = _("Delete OPDS catalog?"),
