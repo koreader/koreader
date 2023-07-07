@@ -12,11 +12,7 @@ local url = require("socket.url")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-
-
-
 local OPDSPSE = {}
-
 
 -- This function attempts to pull chapter progress from Kavita.
 function OPDSPSE:getLastPage(remote_url, username, password)
@@ -96,8 +92,6 @@ function OPDSPSE:getLastPage(remote_url, username, password)
     return last_page;
 end
 
-
-
 function OPDSPSE:streamPages(remote_url, count, continue, username, password)
     -- attempt to pull chapter progress from Kavita if user pressed
     -- "Page Stream" button.
@@ -142,7 +136,6 @@ function OPDSPSE:streamPages(remote_url, count, continue, username, password)
             end
 
             local data = table.concat(page_data)
-
             if code == 200 then
                 local page_bb = RenderImage:renderImageData(data, #data, false)
                              or RenderImage:renderImageFile("resources/koreader.png", false)
@@ -161,9 +154,8 @@ function OPDSPSE:streamPages(remote_url, count, continue, username, password)
         fullscreen = true,
         with_title_bar = false,
         image_disposable = false, -- instead set page_table image_disposable to true
+        images_list_nb = count,
     }
-    -- in Lua 5.2 we could override __len, but this works too
-    viewer._images_list_nb = count
     UIManager:show(viewer)
     if continue then
         self:jumpToPage(viewer, count)
@@ -179,7 +171,6 @@ function OPDSPSE:jumpToPage(viewer, count)
     local input_dialog
     input_dialog = InputDialog:new{
         title = _("Enter page number"),
-        input = "",
         input_type = "number",
         input_hint = "(" .. "1 - " .. count .. ")",
         buttons = {
