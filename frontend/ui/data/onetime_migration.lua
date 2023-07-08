@@ -572,12 +572,11 @@ if last_migration_date < 20230707 then
     logger.info("Performing one-time migration for 20230707")
 
     local calibre_opds = G_reader_settings:readSetting("calibre_opds")
-    if next(calibre_opds) then
+    if calibre_opds and calibre_opds.host and calibre_opds.port then
         local opds_servers = G_reader_settings:readSetting("opds_servers") or {}
         table.insert(opds_servers, 1, {
             title    = _("Local calibre library"),
-            url      = calibre_opds.host and calibre_opds.port and
-                       string.format("http://%s:%d/opds", calibre_opds.host, calibre_opds.port),
+            url      = string.format("http://%s:%d/opds", calibre_opds.host, calibre_opds.port),
             username = calibre_opds.username,
             password = calibre_opds.password,
         })
