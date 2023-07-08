@@ -14,8 +14,10 @@ local Notification = require("ui/widget/notification")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local cre -- Delayed loading
-local T = require("ffi/util").template
+local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
+local T = require("ffi/util").template
 local C_ = _.pgettext
 local optionsutil = require("ui/data/optionsutil")
 
@@ -30,8 +32,19 @@ local ReaderFont = InputContainer:extend{
     steps = {0,1,1,1,1,1,2,2,2,3,3,3,4,4,5},
 }
 
+-- Keep a list of the new fonts seen at launch
+local newly_added_fonts = nil -- not yet filled
+
 function ReaderFont:init()
     self:registerKeyEvents()
+    self:setupFaceMenuTable()
+    self.ui.menu:registerToMainMenu(self)
+    -- NOP our own gesture handling
+    self.ges_events = nil
+end
+
+function ReaderFont:setupFaceMenuTable()
+    logger.dbg("building font face menu table")
     -- Build face_table for menu
     self.face_table = {}
     -- Font settings
@@ -62,6 +75,7 @@ function ReaderFont:init()
     -- Font list
     cre = require("document/credocument"):engineInit()
     local face_list = cre.getFontFaces()
+    face_list = self:sortFaceList(face_list)
     for k, v in ipairs(face_list) do
         local font_filename, font_faceindex, is_monospace = cre.getFontFaceFilenameAndFaceIndex(v)
         table.insert(self.face_table, {
@@ -86,6 +100,9 @@ function ReaderFont:init()
                 if v == fallback_font then
                     text = text .. "   �"
                 end
+                if newly_added_fonts[v] then
+                    text = text .. "  \u{F196}" -- plus in square (no "new" symbol, and nothing better found)
+                end
                 return text
             end,
             font_func = function(size)
@@ -107,13 +124,18 @@ function ReaderFont:init()
             menu_item_id = v,
         })
     end
+    self.face_table.refresh_func = function()
+        self:setupFaceMenuTable()
+        -- This might be used by TouchMenu to refresh its font list menu,
+        -- so return the newly created menu table.
+        return self.face_table
+    end
     self.face_table.open_on_menu_item_id_func = function()
         return self.font_face
     end
-    self.ui.menu:registerToMainMenu(self)
-
-    -- NOP our own gesture handling
-    self.ges_events = nil
+    -- Have TouchMenu show half of the usual nb of items, so we
+    -- have more room to see how the text looks with that font
+    self.face_table.max_per_page = 5
 end
 
 function ReaderFont:onGesture() end
@@ -346,6 +368,9 @@ function ReaderFont:onSetFont(face)
         self.ui.document:setFontFace(face)
         -- signal readerrolling to update pos in new height
         self.ui:handleEvent(Event:new("UpdatePos"))
+        -- Should we do that here on any onSetFont (ie. gesture/profile)?
+        -- Or only when tapped on the menu?
+        self:addToRecentlySetList(face)
     end
 end
 
@@ -393,15 +418,17 @@ function ReaderFont:makeDefault(face, is_monospace, touchmenu_instance)
 end
 
 function ReaderFont:addToMainMenu(menu_items)
-    -- Have TouchMenu show half of the usual nb of items, so we
-    -- have more room to see how the text looks with that font
-    self.face_table.max_per_page = 5
     -- insert table to main reader menu
     menu_items.change_font = {
         text_func = function()
             return T(_("Font: %1"), BD.wrap(self.font_face))
         end,
-        sub_item_table = self.face_table,
+        sub_item_table_func = function()
+            if self.face_table.needs_refresh and self.face_table.refresh_func then
+                self.face_table.refresh_func()
+            end
+            return self.face_table
+        end
     }
 end
 
@@ -723,6 +750,33 @@ function ReaderFont:getFontSettingsTable()
             G_reader_settings:flipNilOrTrue("font_menu_use_font_face")
         end,
         help_text = _([[In the font menu, display each font name with its own font face.]]),
+    })
+
+    table.insert(settings_table, {
+        text = _("Sort fonts by most recently set or added"),
+        checked_func = function()
+            return G_reader_settings:isTrue("font_menu_sort_by_most_recently_set")
+        end,
+        callback = function()
+            G_reader_settings:flipTrue("font_menu_sort_by_most_recently_set")
+            self.face_table.needs_refresh = true
+        end,
+        hold_callback = function()
+            UIManager:show(ConfirmBox:new{
+                text = _([[
+The font list menu can show fonts sorted by names or by most recently set.
+Do you want to clear the history of selected fonts?]]),
+                ok_text = _("Clear"),
+                ok_callback = function()
+                    G_reader_settings:delSetting("cre_fonts_recently_set")
+                    -- Recreate it now, sorted alphabetically (we may not go visit
+                    -- and refresh the font menu until quit, but we want to be able
+                    -- to notice newly added fonts at next startup).
+                    self:sortFaceList(cre.getFontFaces())
+                    self.face_table.needs_refresh = true
+                end,
+            })
+        end,
         separator = true,
     })
 
@@ -806,6 +860,55 @@ This setting allows scaling all monospace fonts by this percentage so they can f
         end,
     })
     return settings_table
+end
+
+function ReaderFont:addToRecentlySetList(face)
+    local idx = util.arrayContains(self.fonts_recently_set, face)
+    if idx then
+        table.remove(self.fonts_recently_set, idx)
+    end
+    table.insert(self.fonts_recently_set, 1, face)
+    if G_reader_settings:isTrue("font_menu_sort_by_most_recently_set") then
+        self.face_table.needs_refresh = true
+    end
+end
+
+function ReaderFont:sortFaceList(face_list)
+    self.fonts_recently_set = G_reader_settings:readSetting("cre_fonts_recently_set")
+    if not self.fonts_recently_set then
+        -- Init this most recently set list with the alphabetical list we got
+        self.fonts_recently_set = face_list
+        G_reader_settings:saveSetting("cre_fonts_recently_set", self.fonts_recently_set)
+        -- We got no list of previously known fonts, so we can't say which are new.
+        newly_added_fonts = {}
+        return face_list
+    end
+    if not newly_added_fonts then
+        -- First call after launch: check for fonts not yet known
+        newly_added_fonts = {}
+        local seen_fonts = {}
+        for _, face in ipairs(self.fonts_recently_set) do
+            seen_fonts[face] = false -- was there last time
+        end
+        for _, face in ipairs(face_list) do
+            if seen_fonts[face] == nil then -- not known
+                newly_added_fonts[face] = true
+                -- Add newly seen fonts at start of the recently set list,
+                -- so the user can see and test them more easily.
+                table.insert(self.fonts_recently_set, 1, face)
+            end
+            seen_fonts[face] = true
+        end
+        -- Remove no-longer-there fonts from our list
+        util.arrayRemove(self.fonts_recently_set, function(t, i, j)
+            return seen_fonts[t[i]]
+        end)
+    end
+    if G_reader_settings:isTrue("font_menu_sort_by_most_recently_set") then
+        return self.fonts_recently_set
+    end
+    -- Otherwise, return face_list as we got it, alphabetically (as sorted by crengine)
+    return face_list
 end
 
 -- Default sample file
