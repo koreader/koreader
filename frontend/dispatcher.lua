@@ -35,6 +35,7 @@ local Event = require("ui/event")
 local Notification = require("ui/widget/notification")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
+local Screen = Device.screen
 local UIManager = require("ui/uimanager")
 local util = require("util")
 local _ = require("gettext")
@@ -673,7 +674,7 @@ function Dispatcher:_sortActions(caller, location, settings, touchmenu_instance)
                     location[settings].settings.order[i] = v.key
                 end
             end
-            if touchmenu_instance then  touchmenu_instance:updateItems() end
+            if touchmenu_instance then touchmenu_instance:updateItems() end
             caller.updated = true
         end
     }
@@ -929,6 +930,26 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     end
     menu[#menu].separator = true
     table.insert(menu, {
+        text = _("Sort"),
+        checked_func = function()
+            return location[settings] ~= nil
+            and location[settings].settings ~= nil
+            and location[settings].settings.order ~= nil
+        end,
+        callback = function(touchmenu_instance)
+            Dispatcher:_sortActions(caller, location, settings, touchmenu_instance)
+        end,
+        hold_callback = function(touchmenu_instance)
+            if location[settings]
+            and location[settings].settings
+            and location[settings].settings.order then
+                Dispatcher:_removeFromOrder(location, settings)
+                caller.updated = true
+                if touchmenu_instance then touchmenu_instance:updateItems() end
+            end
+        end,
+    })
+    table.insert(menu, {
         text = _("Show as QuickMenu"),
         checked_func = function()
             return location[settings] ~= nil
@@ -950,51 +971,6 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
                     location[settings].settings = {["show_as_quickmenu"] = true}
                 end
                 caller.updated = true
-            end
-        end,
-    })
-    table.insert(menu, {
-        text = _("Always active"),
-        checked_func = function()
-            return location[settings] ~= nil
-            and location[settings].settings ~= nil
-            and location[settings].settings.always_active
-        end,
-        callback = function()
-            if location[settings] then
-                if location[settings].settings then
-                    if location[settings].settings.always_active then
-                        location[settings].settings.always_active = nil
-                        if next(location[settings].settings) == nil then
-                            location[settings].settings = nil
-                        end
-                    else
-                        location[settings].settings.always_active = true
-                    end
-                else
-                    location[settings].settings = {["always_active"] = true}
-                end
-                caller.updated = true
-            end
-        end,
-    })
-    table.insert(menu, {
-        text = _("Sort"),
-        checked_func = function()
-            return location[settings] ~= nil
-            and location[settings].settings ~= nil
-            and location[settings].settings.order ~= nil
-        end,
-        callback = function(touchmenu_instance)
-            Dispatcher:_sortActions(caller, location, settings, touchmenu_instance)
-        end,
-        hold_callback = function(touchmenu_instance)
-            if location[settings]
-            and location[settings].settings
-            and location[settings].settings.order then
-                Dispatcher:_removeFromOrder(location, settings)
-                caller.updated = true
-                if touchmenu_instance then touchmenu_instance:updateItems() end
             end
         end,
     })
@@ -1038,10 +1014,11 @@ function Dispatcher:_showAsMenu(settings, gesture)
     quickmenu = ButtonDialog:new{
         title = settings.settings.name or _("QuickMenu"),
         title_align = "center",
-        width_factor = 0.8,
+        shrink_unneeded_width = true,
+        shrink_min_width = math.floor(0.6 * Screen:getWidth()),
         use_info_style = false,
         buttons = buttons,
-        anchor = function() return gesture and gesture.pos end,
+        anchor = (gesture and gesture.anchor_quickmenu) and (gesture.end_pos or gesture.pos),
     }
     UIManager:show(quickmenu)
 end
@@ -1078,7 +1055,7 @@ function Dispatcher:execute(settings, gesture)
             end
             if settingsList[k].category == "none" then
                 if settingsList[k].arg ~= nil then
-                    UIManager:sendEvent(Event:new(settingsList[k].event, settingsList[k].arg))
+                    UIManager:sendEvent(Event:new(settingsList[k].event, settingsList[k].arg, gesture))
                 else
                     UIManager:sendEvent(Event:new(settingsList[k].event))
                 end

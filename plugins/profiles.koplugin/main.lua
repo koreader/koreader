@@ -259,8 +259,8 @@ function Profiles:getSubMenuItems()
     return sub_item_table
 end
 
-function Profiles:onProfileExecute(name)
-    Dispatcher:execute(self.data[name])
+function Profiles:onProfileExecute(name, gesture)
+    Dispatcher:execute(self.data[name], gesture)
 end
 
 function Profiles:editProfileName(editCallback, old_name)
@@ -271,6 +271,7 @@ function Profiles:editProfileName(editCallback, old_name)
         buttons = {{
             {
                 text = _("Cancel"),
+                id = "close",
                 callback = function()
                     UIManager:close(name_input)
                 end,
