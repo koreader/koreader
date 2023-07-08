@@ -95,6 +95,7 @@ function OPDSBrowser:genItemTableFromRoot()
     for _, server in ipairs(self.opds_servers) do
         table.insert(item_table, {
             text       = server.title,
+            mandatory  = server.username and "\u{f2c0}",
             url        = server.url,
             username   = server.username,
             password   = server.password,
