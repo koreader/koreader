@@ -538,6 +538,9 @@ function NetworkMgr:getWifiToggleMenuTable()
             if fully_connected then
                 UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
             else
+                -- FIXME: Do we still want to keep that mess, or just run a connectivity check and be done with it?
+                --        IIRC, both the scripts and their followup (reconnectOrShowNetworkMenu) is blocking,
+                --        so we should be okay with this...
                 -- On hasWifiManager devices that play with kernel modules directly,
                 -- double-check that the connection attempt was actually successful...
                 if Device:isKobo() or Device:isCervantes() then
@@ -559,6 +562,7 @@ function NetworkMgr:getWifiToggleMenuTable()
                     end
                 else
                     -- Assume success on other platforms
+                    -- FIXME: Don't, and run a connectivitycheck instead? (assuming we don't already have one scheduled, e.g., Kindle's turnOnWifi does one...)
                     UIManager:broadcastEvent(Event:new("NetworkConnected"))
                 end
             end
@@ -639,7 +643,7 @@ function NetworkMgr:getRestoreMenuTable()
         text = _("Restore Wi-Fi connection on resume"),
         help_text = _([[This will attempt to automatically and silently re-connect to Wi-Fi on startup or on resume if Wi-Fi used to be enabled the last time you used KOReader.]]),
         checked_func = function() return G_reader_settings:isTrue("auto_restore_wifi") end,
-        enabled_func = function() return Device:hasWifiManager() end,
+        enabled_func = function() return Device:hasWifiManager() end, -- FIXME
         callback = function() G_reader_settings:flipNilOrFalse("auto_restore_wifi") end,
     }
 end
@@ -742,8 +746,10 @@ function NetworkMgr:getMenuTable(common_settings)
     end
 
     if Device:hasWifiManager() or Device:isEmulator() then
-        common_settings.network_restore = self:getRestoreMenuTable()
+        common_settings.network_restore = self:getRestoreMenuTable() -- FIXME: Better check, if restoreWifiAsync is actually implemented?
         common_settings.network_dismiss_scan = self:getDismissScanMenuTable()
+    end
+    if Device:hasWifiToggle() or Device:isEmulator() then
         common_settings.network_before_wifi_action = self:getBeforeWifiActionMenuTable()
         common_settings.network_after_wifi_action = self:getAfterWifiActionMenuTable()
     end
