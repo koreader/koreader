@@ -868,8 +868,7 @@ function KOSync:_onResume()
     logger.dbg("KOSync: onResume")
     -- If we have auto_restore_wifi enabled, skip this to prevent both the "Connecting..." UI to pop-up,
     -- *and* a duplicate NetworkConnected event from firing...
-    -- FIXME: Proper hasWifiRestore cap
-    if Device:hasWifiManager() and NetworkMgr.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
+    if Device:hasWifiRestore() and NetworkMgr.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
         return
     end
 

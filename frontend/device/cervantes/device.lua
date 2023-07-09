@@ -32,6 +32,7 @@ local Cervantes = Generic:extend{
     hasFastWifiStatusQuery = yes,
     hasKeys = yes,
     hasWifiManager = yes,
+    hasWifiRestore = yes,
     canReboot = yes,
     canPowerOff = yes,
     canSuspend = yes,
