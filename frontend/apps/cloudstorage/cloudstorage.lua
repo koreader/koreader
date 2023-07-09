@@ -1,6 +1,5 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
@@ -123,7 +122,7 @@ function CloudStorage:selectCloudType()
             },
         })
     end
-    self.cloud_dialog = ButtonDialogTitle:new{
+    self.cloud_dialog = ButtonDialog:new{
         title = _("Add new cloud storage"),
         title_align = "center",
         buttons = buttons,
@@ -231,7 +230,7 @@ function CloudStorage:downloadFile(item)
         })
     end
 
-    local function createTitle(filename_orig, filename, path) -- title for ButtonDialogTitle
+    local function createTitle(filename_orig, filename, path) -- title for ButtonDialog
         return T(_("Filename:\n%1\n\nDownload filename:\n%2\n\nDownload folder:\n%3"),
             filename_orig, filename, BD.dirpath(path))
     end
@@ -322,7 +321,7 @@ function CloudStorage:downloadFile(item)
         },
     }
 
-    self.download_dialog = ButtonDialogTitle:new{
+    self.download_dialog = ButtonDialog:new{
         title = createTitle(filename_orig, filename, download_dir),
         buttons = buttons,
     }
@@ -352,7 +351,7 @@ function CloudStorage:onMenuHold(item)
         local title = T(_("Choose this folder?\n\n%1"), BD.dirpath(item.url))
         local onConfirm = self.onConfirm
         local button_dialog
-        button_dialog = ButtonDialogTitle:new{
+        button_dialog = ButtonDialog:new{
             title = title,
             buttons = {
                 {
@@ -532,7 +531,7 @@ function CloudStorage:synchronizeSettings(item)
     local syn_dialog
     local dropbox_sync_folder = item.sync_source_folder or "not set"
     local local_sync_folder = item.sync_dest_folder or "not set"
-    syn_dialog = ButtonDialogTitle:new {
+    syn_dialog = ButtonDialog:new {
         title = T(_("Dropbox folder:\n%1\nLocal folder:\n%2"), BD.dirpath(dropbox_sync_folder), BD.dirpath(local_sync_folder)),
         title_align = "center",
         buttons = {
