@@ -95,6 +95,7 @@ local Kobo = Generic:extend{
     hasOTAUpdates = yes,
     hasFastWifiStatusQuery = yes,
     hasWifiManager = yes,
+    hasWifiRestore = yes,
     canStandby = no, -- will get updated by checkStandby()
     canReboot = yes,
     canPowerOff = yes,

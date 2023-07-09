@@ -46,6 +46,7 @@ local Device = {
     hasFewKeys = no,
     hasWifiToggle = yes,
     hasWifiManager = no,
+    hasWifiRestore = no,
     isDefaultFullscreen = yes,
     isHapticFeedbackEnabled = no,
     isDeprecated = no, -- device no longer receive OTA updates
@@ -278,13 +279,6 @@ function Device:onPowerEvent(ev)
             else
                 logger.dbg("Resuming...")
                 UIManager:unschedule(self.suspend)
-                if self:hasWifiManager() then
-                    local network_manager = require("ui/network/manager")
-                    if network_manager.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
-                        network_manager:restoreWifiAsync()
-                        network_manager:scheduleConnectivityCheck()
-                    end
-                end
                 self:resume()
                 local widget_was_closed = Screensaver:close()
                 if widget_was_closed and self:needsScreenRefreshAfterResume() then

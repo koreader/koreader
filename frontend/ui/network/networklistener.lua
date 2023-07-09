@@ -240,6 +240,16 @@ function NetworkListener:onSuspend()
     self:onNetworkDisconnected()
 end
 
+-- If the platform implements NetworkMgr:restoreWifiAsync, run it as needed
+if Device:hasWifiRestore() then
+    function NetworkListener:onResume()
+        if NetworkMgr.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
+            NetworkMgr:restoreWifiAsync()
+            NetworkMgr:scheduleConnectivityCheck()
+        end
+    end
+end
+
 function NetworkListener:onShowNetworkInfo()
     if Device.retrieveNetworkInfo then
         UIManager:show(InfoMessage:new{

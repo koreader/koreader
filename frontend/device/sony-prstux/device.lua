@@ -168,10 +168,6 @@ function SonyPRSTUX:initNetworkManager(NetworkMgr)
         os.execute("dhclient -x wlan0")
     end
 
-    function NetworkMgr:restoreWifiAsync()
-        -- os.execute("./restore-wifi-async.sh")
-    end
-
     --[[
     function NetworkMgr:isWifiOn()
         return 0 == os.execute("wmiconfig -i wlan0 --wlan query | grep -q enabled")
