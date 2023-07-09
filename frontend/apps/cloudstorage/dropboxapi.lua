@@ -13,14 +13,14 @@ local _ = require("gettext")
 local DropBoxApi = {
 }
 
-local API_TOKEN = "https://api.dropbox.com/oauth2/token"
-local API_URL_INFO = "https://api.dropboxapi.com/2/users/get_current_account"
+local API_TOKEN           = "https://api.dropbox.com/oauth2/token"
+local API_URL_INFO        = "https://api.dropboxapi.com/2/users/get_current_account"
 local API_GET_SPACE_USAGE = "https://api.dropboxapi.com/2/users/get_space_usage"
-local API_LIST_FOLDER = "https://api.dropboxapi.com/2/files/list_folder"
-local API_DOWNLOAD_FILE = "https://content.dropboxapi.com/2/files/download"
-local API_UPLOAD_FILE = "https://content.dropboxapi.com/2/files/upload"
-local API_CREATE_FOLDER = "https://api.dropboxapi.com/2/files/create_folder_v2"
+local API_LIST_FOLDER     = "https://api.dropboxapi.com/2/files/list_folder"
 local API_LIST_ADD_FOLDER = "https://api.dropboxapi.com/2/files/list_folder/continue"
+local API_CREATE_FOLDER   = "https://api.dropboxapi.com/2/files/create_folder_v2"
+local API_DOWNLOAD_FILE   = "https://content.dropboxapi.com/2/files/download"
+local API_UPLOAD_FILE     = "https://content.dropboxapi.com/2/files/upload"
 
 function DropBoxApi:getAccessToken(refresh_token, app_key_colon_secret)
     local sink = {}
@@ -29,24 +29,23 @@ function DropBoxApi:getAccessToken(refresh_token, app_key_colon_secret)
         url     = API_TOKEN,
         method  = "POST",
         headers = {
-            ["Authorization"] = "Basic " .. require("ffi/sha2").bin_to_base64(app_key_colon_secret),
-            ["Content-Type"] = "application/x-www-form-urlencoded",
+            ["Authorization"]  = "Basic " .. require("ffi/sha2").bin_to_base64(app_key_colon_secret),
+            ["Content-Type"]   = "application/x-www-form-urlencoded",
             ["Content-Length"] = string.len(data),
         },
         source  = ltn12.source.string(data),
         sink    = ltn12.sink.table(sink),
     }
     socketutil:set_timeout()
-    local code = socket.skip(1, http.request(request))
+    local code, _, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
-    if code == 200 then
-        local headers = table.concat(sink)
-        if headers ~= "" then
-            local _, result = pcall(JSON.decode, headers)
-            return result["access_token"]
-        end
+    local result_response = table.concat(sink)
+    if code == 200 and result_response ~= "" then
+        local _, result = pcall(JSON.decode, result_response)
+        return result["access_token"]
     end
-    logger.info("Dropbox: cannot get access token")
+    logger.warn("DropBoxApi: cannot get access token:", status or code)
+    logger.warn("DropBoxApi: error:", result_response)
 end
 
 function DropBoxApi:fetchInfo(token, space_usage)
@@ -61,16 +60,15 @@ function DropBoxApi:fetchInfo(token, space_usage)
         sink    = ltn12.sink.table(sink),
     }
     socketutil:set_timeout()
-    local code = socket.skip(1, http.request(request))
+    local code, _, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
-    if code == 200 then
-        local headers = table.concat(sink)
-        if headers ~= "" then
-            local _, result = pcall(JSON.decode, headers)
-            return result
-        end
+    local result_response = table.concat(sink)
+    if code == 200 and result_response ~= "" then
+        local _, result = pcall(JSON.decode, result_response)
+        return result
     end
-    logger.info("Dropbox: cannot get account info")
+    logger.warn("DropBoxApi: cannot get account info:", status or code)
+    logger.warn("DropBoxApi: error:", result_response)
 end
 
 function DropBoxApi:fetchListFolders(path, token)
@@ -78,7 +76,6 @@ function DropBoxApi:fetchListFolders(path, token)
     local data = "{\"path\": \"" .. path .. "\",\"recursive\": false,\"include_media_info\": false,"..
         "\"include_deleted\": false,\"include_has_explicit_shared_members\": false}"
     local sink = {}
-    socketutil:set_timeout()
     local request = {
         url     = API_LIST_FOLDER,
         method  = "POST",
@@ -90,28 +87,23 @@ function DropBoxApi:fetchListFolders(path, token)
         source  = ltn12.source.string(data),
         sink    = ltn12.sink.table(sink),
     }
-    local headers_request = socket.skip(1, http.request(request))
+    socketutil:set_timeout()
+    local code, _, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
-    if headers_request == nil then
-        return nil
-    end
     local result_response = table.concat(sink)
-    if result_response ~= "" then
+    if code == 200 and result_response ~= "" then
         local ret, result = pcall(JSON.decode, result_response)
         if ret then
             -- Check if more results, and then get them
             if result.has_more then
-              logger.dbg("Found additional files")
+              logger.dbg("DropBoxApi: found additional files")
               result = self:fetchAdditionalFolders(result, token)
             end
-
             return result
-        else
-            return nil
         end
-    else
-        return nil
     end
+    logger.warn("DropBoxApi: cannot get folder content:", status or code)
+    logger.warn("DropBoxApi: error:", result_response)
 end
 
 function DropBoxApi:downloadFile(path, token, local_path)
@@ -128,14 +120,16 @@ function DropBoxApi:downloadFile(path, token, local_path)
     })
     socketutil:reset_timeout()
     if code ~= 200 then
-        logger.warn("DropBoxApi: Download failure:", status or code or "network unreachable")
+        logger.warn("DropBoxApi: cannot download file:", status or code)
     end
     return code, (headers or {}).etag
 end
 
 function DropBoxApi:uploadFile(path, token, file_path, etag, overwrite)
     local data = "{\"path\": \"" .. path .. "/" .. BaseUtil.basename(file_path) ..
-        "\",\"mode\":" .. (overwrite and "\"overwrite\"" or "\"add\"") .. ",\"autorename\": " .. (overwrite and "false" or "true") .. ",\"mute\": false,\"strict_conflict\": false}"
+        "\",\"mode\":" .. (overwrite and "\"overwrite\"" or "\"add\"") ..
+        ",\"autorename\": " .. (overwrite and "false" or "true") ..
+        ",\"mute\": false,\"strict_conflict\": false}"
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     local code, _, status = socket.skip(1, http.request{
         url     = API_UPLOAD_FILE,
@@ -143,15 +137,15 @@ function DropBoxApi:uploadFile(path, token, file_path, etag, overwrite)
         headers = {
             ["Authorization"]   = "Bearer ".. token,
             ["Dropbox-API-Arg"] = data,
-            ["Content-Type"] = "application/octet-stream",
-            ["Content-Length"] = lfs.attributes(file_path, "size"),
-            ["If-Match"] = etag,
+            ["Content-Type"]    = "application/octet-stream",
+            ["Content-Length"]  = lfs.attributes(file_path, "size"),
+            ["If-Match"]        = etag,
         },
-        source = ltn12.source.file(io.open(file_path, "r")),
+        source  = ltn12.source.file(io.open(file_path, "r")),
     })
     socketutil:reset_timeout()
     if code ~= 200 then
-        logger.warn("DropBoxApi: Upload failure:", status or code or "network unreachable")
+        logger.warn("DropBoxApi: cannot upload file:", status or code)
     end
     return code
 end
@@ -163,15 +157,15 @@ function DropBoxApi:createFolder(path, token, folder_name)
         url     = API_CREATE_FOLDER,
         method  = "POST",
         headers = {
-            ["Authorization"]   = "Bearer ".. token,
-            ["Content-Type"] = "application/json",
+            ["Authorization"]  = "Bearer ".. token,
+            ["Content-Type"]   = "application/json",
             ["Content-Length"] = #data,
         },
-        source = ltn12.source.string(data),
+        source  = ltn12.source.string(data),
     })
     socketutil:reset_timeout()
     if code ~= 200 then
-        logger.warn("DropBoxApi: Folder creation failure:", status or code or "network unreachable")
+        logger.warn("DropBoxApi: cannot create folder:", status or code)
     end
     return code
 end
@@ -295,4 +289,5 @@ function DropBoxApi:fetchAdditionalFolders(response, token)
 
   return out
 end
+
 return DropBoxApi
