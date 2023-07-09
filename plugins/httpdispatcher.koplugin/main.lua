@@ -146,7 +146,7 @@ function HttpDispatcher:onRequest(host, port)
         local response = "HTTP/1.1 200 OK" -- start of response header
 
         if params_arr["event"] and params_arr["data"] then
-            if params_arr["datatype"] == "number" then  
+            if params_arr["datatype"] == "number" then
                 this:dispatchEvent(params_arr["event"], tonumber(params_arr["data"]))
             else
                 this:dispatchEvent(params_arr["event"], params_arr["data"])
