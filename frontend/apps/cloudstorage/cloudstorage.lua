@@ -246,7 +246,6 @@ function CloudStorage:downloadFile(item)
                 text = _("Choose folder"),
                 callback = function()
                     require("ui/downloadmgr"):new{
-                        show_hidden = G_reader_settings:readSetting("show_hidden"),
                         onConfirm = function(path)
                             self.cs_settings:saveSetting("download_dir", path)
                             self.cs_settings:flush()
