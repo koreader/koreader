@@ -56,8 +56,8 @@ KOSync.default_settings = {
     custom_server = nil,
     username = nil,
     userkey = nil,
-    -- Do *not* default to auto-sync on devices w/ NetworkManager support, as wifi is unlikely to be on at all times there, and the nagging enabling this may cause requires careful consideration.
-    auto_sync = not Device:hasWifiManager(),
+    -- Do *not* default to auto-sync, as wifi may not be on at all times, and the nagging enabling this may cause requires careful consideration.
+    auto_sync = false,
     pages_before_update = nil,
     sync_forward = SYNC_STRATEGY.PROMPT,
     sync_backward = SYNC_STRATEGY.DISABLE,
@@ -84,7 +84,7 @@ function KOSync:init()
     self.device_id = G_reader_settings:readSetting("device_id")
 
     -- Disable auto-sync if beforeWifiAction was reset to "prompt" behind our back...
-    if self.settings.auto_sync and Device:hasWifiManager() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
+    if self.settings.auto_sync and Device:hasWifiToggle() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
         self.settings.auto_sync = false
         logger.warn("KOSync: Automatic sync has been disabled because wifi_enable_action is *not* turn_on")
     end
@@ -229,7 +229,7 @@ function KOSync:addToMainMenu(menu_items)
                 help_text = _([[This may lead to nagging about toggling WiFi on document close and suspend/resume, depending on the device's connectivity.]]),
                 callback = function()
                     -- Actively recommend switching the before wifi action to "turn_on" instead of prompt, as prompt will just not be practical (or even plain usable) here.
-                    if Device:hasWifiManager() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
+                    if Device:hasWifiToggle() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
                         UIManager:show(InfoMessage:new{ text = _("You will have to switch the 'Action when Wi-Fi is off' Network setting to 'turn on' to be able to enable this feature!") })
                         return
                     end
@@ -868,6 +868,7 @@ function KOSync:_onResume()
     logger.dbg("KOSync: onResume")
     -- If we have auto_restore_wifi enabled, skip this to prevent both the "Connecting..." UI to pop-up,
     -- *and* a duplicate NetworkConnected event from firing...
+    -- FIXME: Proper hasWifiRestore cap
     if Device:hasWifiManager() and NetworkMgr.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
         return
     end
