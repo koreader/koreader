@@ -1,18 +1,34 @@
+--[[--
+This plugin allows for remotely triggering KOReader events via HTTP.
+
+Refer to frontend/dispatcher.lua for the list of events supported.
+
+Usage:
+Send a http request with these parameters:
+  event: The event to dispatch.
+  data: The data to pass to the event.
+  datatype: The data type. Default is string, set to 'number' if data is number.
+
+example url (turn to next page)
+localhost:8080/?event=GotoViewRel&data=1&datatype=number
+--]]--
+
 local Device =  require("device")
+local PowerD = Device:getPowerDevice()
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Event = require("ui/event")
 local logger = require("logger")
 local _ = require("gettext")
 
-local HttpRemote = WidgetContainer:extend{
-    name = "httpremote",
-    is_doc_only = true,
+local HttpDispatcher = WidgetContainer:extend{
+    name = "httpdispatcher",
+    --is_doc_only = true,
 }
 
-function HttpRemote:init()
-    self.port = G_reader_settings:readSetting("httpremote_port", "8080")
-    self.autostart = G_reader_settings:isTrue("httpremote_autostart")
+function HttpDispatcher:init()
+    self.port = G_reader_settings:readSetting("httpdispatcher_port", "8080")
+    self.autostart = G_reader_settings:isTrue("httpdispatcher_autostart")
 
     if self.autostart then
         self:start()
@@ -21,55 +37,42 @@ function HttpRemote:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function HttpRemote:initHttpMQ(host, port)
-    local StreamMessageQueueServer = require("ui/message/streammessagequeueserver")
-    if self.http_socket == nil then
-        self.http_socket = StreamMessageQueueServer:new{
-            host = host,
-            port = port,
-            receiveCallback = self:onRequest(),
-        }
-        self.http_socket:start()
-        self.http_messagequeue = UIManager:insertZMQ(self.http_socket)
-    end
-    logger.info(string.format("connecting to calibre @ %s:%s", host, port))
-end
-
-function HttpRemote:onEnterStandby()
-    logger.dbg("HttpRemote: onEnterStandby")
+function HttpDispatcher:onEnterStandby()
+    logger.dbg("HttpDispatcher: onEnterStandby")
     self:stop()
 end
 
-function HttpRemote:onSuspend()
-    logger.dbg("HttpRemote: onSuspend")
+function HttpDispatcher:onSuspend()
+    logger.dbg("HttpDispatcher: onSuspend")
     self:stop()
 end
 
-function HttpRemote:onExit()
-    logger.dbg("HttpRemote: onExit")
+function HttpDispatcher:onExit()
+    logger.dbg("HttpDispatcher: onExit")
     self:stop()
 end
 
-function HttpRemote:onCloseWidget()
-    logger.dbg("HttpRemote: onCloseWidget")
+function HttpDispatcher:onCloseWidget()
+    logger.dbg("HttpDispatcher: onCloseWidget")
     self:stop()
 end
 
-function HttpRemote:onLeaveStandby()
-    logger.dbg("HttpRemote: onLeaveStandby")
+function HttpDispatcher:onLeaveStandby()
+    logger.dbg("HttpDispatcher: onLeaveStandby")
     if self.http_socket == nil then
         self:start()
     end
 end
 
-function HttpRemote:onResume()
-    logger.dbg("HttpRemote: onResume")
+function HttpDispatcher:onResume()
+    logger.dbg("HttpDispatcher: onResume")
     if self.http_socket == nil then
         self:start()
     end
 end
 
-function HttpRemote:start()
+function HttpDispatcher:start()
+    logger.dbg("HttpDispatcher: Starting server...")
     -- Make a hole in the Kindle's firewall
     if Device:isKindle() then
         os.execute(string.format("%s %s %s",
@@ -80,12 +83,21 @@ function HttpRemote:start()
             "-m conntrack --ctstate ESTABLISHED -j ACCEPT"))
     end
 
-    self:initHttpMQ("*", self.port)
-    logger.dbg("HttpRemote: Server listening on port " .. self.port)
+    local StreamMessageQueueServer = require("ui/message/streammessagequeueserver")
+    if self.http_socket == nil then
+        self.http_socket = StreamMessageQueueServer:new{
+            host = "*",
+            port = self.port,
+            receiveCallback = self:onRequest(),
+        }
+        self.http_socket:start()
+        self.http_messagequeue = UIManager:insertZMQ(self.http_socket)
+    end
+    logger.dbg("HttpDispatcher: Server listening on port " .. self.port)
 end
 
-function HttpRemote:stop()
-    logger.info("HttpRemote: Stopping server...")
+function HttpDispatcher:stop()
+    logger.dbg("HttpDispatcher: Stopping server...")
 
     if self.http_socket then
         self.http_socket:stop()
@@ -96,8 +108,6 @@ function HttpRemote:stop()
         self.http_messagequeue = nil
     end
 
-    logger.dbg("HttpRemote: Server stopped.")
-
     -- Plug the hole in the Kindle's firewall
     if Device:isKindle() then
         os.execute(string.format("%s %s %s",
@@ -107,17 +117,19 @@ function HttpRemote:stop()
             "iptables -D OUTPUT -p tcp --sport", self.port,
             "-m conntrack --ctstate ESTABLISHED -j ACCEPT"))
     end
+
+    logger.dbg("HttpDispatcher: Server stopped.")
 end
 
-function HttpRemote:onRequest(host, port)
+function HttpDispatcher:onRequest(host, port)
     -- NOTE: Closure trickery because we need a reference to *this* self *inside* the callback,
     --       which will be called as a function from another object (namely, StreamMessageQueue).
     local this = self
     return function(data, id_frame)
         local request = string.match(data, "[^\n]+") or ""
-        logger.dbg("HttpRemote: Received request: " .. request)
+        logger.dbg("HttpDispatcher: Received request: " .. request)
         local params_string = request:match("%u+%s+%S+%?([^%s]+)%s+%S+") -- extract params
-        logger.dbg("HttpRemote: Params: ", params_string)
+        logger.dbg("HttpDispatcher: Params: ", params_string)
 
         local params_arr = {}
 
@@ -133,46 +145,34 @@ function HttpRemote:onRequest(host, port)
 
         local response = "HTTP/1.1 200 OK" -- start of response header
 
-        if params_arr["action"] == "nextpage" then
-            this:turnPage(1)
-        elseif params_arr["action"] == "prevpage" then
-            this:turnPage(-1)
-        else
-            response = response .. "\r\nContent-Type: text/html"
+        if params_arr["event"] and params_arr["data"] then
+            if params_arr["datatype"] == "number" then  
+                this:dispatchEvent(params_arr["event"], tonumber(params_arr["data"]))
+            else
+                this:dispatchEvent(params_arr["event"], params_arr["data"])
+            end
         end
 
         response = response .. "\r\n\r\n" -- end of response header
 
-        -- response body (if available)
-        -- if loadpage param is populated, load the html
-        if next(params_arr) == nil or params_arr["loadpage"] then
-            response = response .. [[
-<html><body>
-<h1>KOReader HttpRemote</h1>
-<h2>Available actions</h2>
-<p>
-<a href="/?action=prevpage&loadpage=1">prevpages</a>
-<a href="/?action=nextpage&loadpage=1">nextpage</a>
-</p>
-</body></html>
-            ]]
-        end
-        logger.dbg("HttpRemote: Sending response: " .. response)
+        logger.dbg("HttpDispatcher: Sending response: " .. response)
         this.http_socket:send(response, id_frame) -- send the response back to the client
     end
 end
 
-function HttpRemote:turnPage(pages)
-    local top_wg = UIManager:getTopmostVisibleWidget() or {}
-    if top_wg.name == "ReaderUI" then
-        logger.dbg("HttpRemote: Sent event GotoViewRel " .. pages)
-        self.ui:handleEvent(Event:new("GotoViewRel", pages))
+
+function HttpDispatcher:dispatchEvent(event, data)
+    logger.dbg("HttpDispatcher: Dispatch event " .. event .. " " .. data)
+    self.ui:handleEvent(Event:new(event, data))
+
+    if Device:isKindle() then
+        PowerD:resetT1Timeout()
     end
 end
 
-function HttpRemote:addToMainMenu(menu_items)
+function HttpDispatcher:addToMainMenu(menu_items)
     menu_items.httpremote = {
-        text = _("HTTP remote page turner"),
+        text = _("HTTP event dispatcher"),
         sorting_hint = ("tools"),
         sub_item_table = {
             {
@@ -198,8 +198,8 @@ function HttpRemote:addToMainMenu(menu_items)
                     return self.autostart
                 end,
                 callback = function()
-                    G_reader_settings:toggle("httpremote_autostart")
-                    self.autostart = G_reader_settings:isTrue("httpremote_autostart")
+                    G_reader_settings:toggle("httpdispatcher_autostart")
+                    self.autostart = G_reader_settings:isTrue("httpdispatcher_autostart")
                 end,
             },
             {
@@ -239,7 +239,7 @@ function HttpRemote:addToMainMenu(menu_items)
                                                 input_port = 8080
                                             end
                                             self.port = input_port
-                                            G_reader_settings:saveSetting("httpremote_port", input_port)
+                                            G_reader_settings:saveSetting("httpdispatcher_port", input_port)
 
                                             --restart the server
                                             if self.http_socket then
@@ -261,4 +261,4 @@ function HttpRemote:addToMainMenu(menu_items)
     }
 end
 
-return HttpRemote
+return HttpDispatcher
