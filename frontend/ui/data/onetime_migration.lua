@@ -8,7 +8,7 @@ local logger = require("logger")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20230707
+local CURRENT_MIGRATION_DATE = 20230710
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -517,9 +517,18 @@ if last_migration_date < 20230531 then
     end
 end
 
--- 20230627, Migrate to a full settings table, and disable KOSync's auto sync mode if wifi_enable_action is not turn_on
-if last_migration_date < 20230627 then
-    logger.info("Performing one-time migration for 20230627")
+-- 20230703, FileChooser Sort by: "date modified" only
+if last_migration_date < 20230703 then
+    logger.info("Performing one-time migration for 20230703")
+    local collate = G_reader_settings:readSetting("collate")
+    if collate == "modification" or collate == "access" or collate == "change" then
+        G_reader_settings:saveSetting("collate", "date")
+    end
+end
+
+-- 20230710, Migrate to a full settings table, and disable KOSync's auto sync mode if wifi_enable_action is not turn_on
+if last_migration_date < 20230710 then
+    logger.info("Performing one-time migration for 20230710")
 
     -- c.f., PluginLoader
     local package_path = package.path
@@ -549,21 +558,12 @@ if last_migration_date < 20230627 then
     end
 
     local Device = require("device")
-    if Device:hasWifiManager() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
+    if Device:hasWifiToggle() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
         local kosync = G_reader_settings:readSetting("kosync")
         if kosync and kosync.auto_sync then
             kosync.auto_sync = false
             G_reader_settings:saveSetting("kosync", kosync)
         end
-    end
-end
-
--- 20230703, FileChooser Sort by: "date modified" only
-if last_migration_date < 20230703 then
-    logger.info("Performing one-time migration for 20230703")
-    local collate = G_reader_settings:readSetting("collate")
-    if collate == "modification" or collate == "access" or collate == "change" then
-        G_reader_settings:saveSetting("collate", "date")
     end
 end
 
