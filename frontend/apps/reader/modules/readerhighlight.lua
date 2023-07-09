@@ -361,6 +361,8 @@ function ReaderHighlight:addToMainMenu(menu_items)
             end,
         }
     end
+
+    -- main menu Typeset
     menu_items.highlight_options = {
         text = _("Highlight style"),
         sub_item_table = {},
@@ -466,8 +468,8 @@ function ReaderHighlight:addToMainMenu(menu_items)
             sub_item_table = self:genPanelZoomMenu(),
         }
     end
-    menu_items.translation_settings = Translator:genSettingsMenu()
 
+    -- main menu Settings
     menu_items.long_press = {
         text = _("Long-press on text"),
         sub_item_table = {
@@ -533,6 +535,15 @@ function ReaderHighlight:addToMainMenu(menu_items)
         menu_items.selection_text = util.tableDeepCopy(menu_items.long_press)
         menu_items.selection_text.text = _("Select on text")
     end
+
+    -- main menu Search
+    menu_items.translation_settings = Translator:genSettingsMenu()
+    menu_items.translate_current_page = {
+        text = _("Translate current page"),
+        callback = function()
+            self:onTranslateCurrentPage()
+        end,
+    }
 end
 
 function ReaderHighlight:genPanelZoomMenu()
@@ -648,6 +659,7 @@ end
 function ReaderHighlight:onTapPageSavedHighlight(ges)
     local pages = self.view:getCurrentPageList()
     local pos = self.view:screenToPageTransform(ges.pos)
+    local highlights_tapped = {}
     for _, page in ipairs(pages) do
         local items = self.view:getPageSavedHighlights(page)
         if items then
@@ -663,12 +675,25 @@ function ReaderHighlight:onTapPageSavedHighlight(ges)
                             else
                                 hl_page, hl_i = page, i
                             end
-                            return self:onShowHighlightNoteOrDialog(hl_page, hl_i)
+                            if self.select_mode then
+                                if hl_page == self.highlight_page and hl_i == self.highlight_idx then
+                                    -- tap on the first fragment: abort select mode, clear highlight
+                                    self.select_mode = false
+                                    self:deleteHighlight(hl_page, hl_i)
+                                    return true
+                                end
+                            else
+                                table.insert(highlights_tapped, {hl_page, hl_i})
+                                break
+                            end
                         end
                     end
                 end
             end
         end
+    end
+    if #highlights_tapped > 0 then
+        return self:showChooseHighlightDialog(highlights_tapped)
     end
 end
 
@@ -686,6 +711,7 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
     --       because pos.page isn't super accurate in continuous mode
     --       (it's the page number for what's it the topleft corner of the screen,
     --       i.e., often a bit earlier)...
+    local highlights_tapped = {}
     for page, items in pairs(self.view.highlight.saved) do
         if items then
             for i = 1, #items do
@@ -714,13 +740,26 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
                         for index, box in pairs(boxes) do
                             if inside_box(pos, box) then
                                 logger.dbg("Tap on highlight")
-                                return self:onShowHighlightNoteOrDialog(page, i)
+                                if self.select_mode then
+                                    if page == self.highlight_page and i == self.highlight_idx then
+                                        -- tap on the first fragment: abort select mode, clear highlight
+                                        self.select_mode = false
+                                        self:deleteHighlight(page, i)
+                                        return true
+                                    end
+                                else
+                                    table.insert(highlights_tapped, {page, i})
+                                    break
+                                end
                             end
                         end
                     end
                 end
             end
         end
+    end
+    if #highlights_tapped > 0 then
+        return self:showChooseHighlightDialog(highlights_tapped)
     end
 end
 
@@ -809,16 +848,42 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
     UIManager:setDirty(self.dialog, "ui")
 end
 
-function ReaderHighlight:onShowHighlightNoteOrDialog(page, index)
-    if self.select_mode then
-        if page ~= self.highlight_page or index ~= self.highlight_idx then return end
-        -- tap on the first fragment: abort select mode, clear highlight
-        self.select_mode = false
-        self:deleteHighlight(page, index)
-        return true
+function ReaderHighlight:showChooseHighlightDialog(highlights)
+    if #highlights == 1 then
+        local page, index = unpack(highlights[1])
+        local item = self.view.highlight.saved[page][index]
+        local bookmark_note = self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
+        self:showHighlightNoteOrDialog(page, index, bookmark_note)
+    else -- overlapped highlights
+        local dialog
+        local buttons = {}
+        for i, v in ipairs(highlights) do
+            local page, index = unpack(v)
+            local item = self.view.highlight.saved[page][index]
+            local bookmark_note = self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
+            buttons[i] = {{
+                text = (bookmark_note and self.ui.bookmark.display_prefix["note"]
+                                       or self.ui.bookmark.display_prefix["highlight"]) .. item.text,
+                align = "left",
+                avoid_text_truncation = false,
+                font_face = "smallinfofont",
+                font_size = 22,
+                font_bold = false,
+                callback = function()
+                    UIManager:close(dialog)
+                    self:showHighlightNoteOrDialog(page, index, bookmark_note)
+                end,
+            }}
+        end
+        dialog = ButtonDialog:new{
+            buttons = buttons,
+        }
+        UIManager:show(dialog)
     end
-    local item = self.view.highlight.saved[page][index]
-    local bookmark_note = self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
+    return true
+end
+
+function ReaderHighlight:showHighlightNoteOrDialog(page, index, bookmark_note)
     if bookmark_note then
         local textviewer
         textviewer = TextViewer:new{
@@ -849,7 +914,6 @@ function ReaderHighlight:onShowHighlightNoteOrDialog(page, index)
     else
         self:onShowHighlightDialog(page, index, true)
     end
-    return true
 end
 
 function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
@@ -1372,8 +1436,45 @@ dbg:guard(ReaderHighlight, "translate",
             "translate must not be called with nil selected_text!")
     end)
 
+function ReaderHighlight:getDocumentLanguage()
+    local doc_props = self.ui.doc_settings:readSetting("doc_props")
+    local doc_lang = doc_props and doc_props.language
+    if doc_lang == "" then
+        doc_lang = nil
+    end
+    return doc_lang
+end
+
 function ReaderHighlight:onTranslateText(text, page, index)
-    Translator:showTranslation(text, false, false, true, page, index)
+    Translator:showTranslation(text, true, nil, nil, true, page, index)
+end
+
+function ReaderHighlight:onTranslateCurrentPage()
+    local x0, y0, x1, y1, page, is_reflow
+    if self.ui.rolling then
+        x0 = 0
+        y0 = 0
+        x1 = Screen:getWidth()
+        y1 = Screen:getHeight()
+    else
+        page = self.ui:getCurrentPage()
+        is_reflow = self.ui.document.configurable.text_wrap
+        self.ui.document.configurable.text_wrap = 0
+        local page_boxes = self.ui.document:getTextBoxes(page)
+        if page_boxes and page_boxes[1][1].word then
+            x0 = page_boxes[1][1].x0
+            y0 = page_boxes[1][1].y0
+            x1 = page_boxes[#page_boxes][#page_boxes[#page_boxes]].x1
+            y1 = page_boxes[#page_boxes][#page_boxes[#page_boxes]].y1
+        end
+    end
+    local res = x0 and self.ui.document:getTextFromPositions({x = x0, y = y0, page = page}, {x = x1, y = y1}, true)
+    if self.ui.paging then
+        self.ui.document.configurable.text_wrap = is_reflow
+    end
+    if res and res.text then
+        Translator:showTranslation(res.text, false, self:getDocumentLanguage())
+    end
 end
 
 function ReaderHighlight:onHoldRelease()
@@ -1763,37 +1864,52 @@ end
 
 function ReaderHighlight:editHighlightStyle(page, i)
     local item = self.view.highlight.saved[page][i]
-    local radio_buttons = {}
-    for _, v in ipairs(highlight_style) do
-        table.insert(radio_buttons, {
-            {
-                text = v[1],
-                checked = item.drawer == v[2],
-                provider = v[2],
-            },
-        })
-    end
-    UIManager:show(require("ui/widget/radiobuttonwidget"):new{
-        title_text = _("Highlight style"),
-        width_factor = 0.5,
-        keep_shown_on_apply = true,
-        radio_buttons = radio_buttons,
-        default_provider = self.view.highlight.saved_drawer or
-            G_reader_settings:readSetting("highlight_drawing_style", "lighten"),
-        callback = function(radio)
-            self:writePdfAnnotation("delete", page, item)
-            item.drawer = radio.provider
+    local apply_drawer = function(drawer)
+        self:writePdfAnnotation("delete", page, item)
+        item.drawer = drawer
+        if self.ui.paging then
             self:writePdfAnnotation("save", page, item)
             local bm_note = self.ui.bookmark:getBookmarkNote(item)
             if bm_note then
                 self:writePdfAnnotation("content", page, item, bm_note)
             end
-            UIManager:setDirty(self.dialog, "ui")
-            self.ui:handleEvent(Event:new("BookmarkUpdated",
-                    self.ui.bookmark:getBookmarkForHighlight({
-                        page = self.ui.paging and page or item.pos0,
-                        datetime = item.datetime,
-                    })))
+        end
+        UIManager:setDirty(self.dialog, "ui")
+        self.ui:handleEvent(Event:new("BookmarkUpdated",
+                self.ui.bookmark:getBookmarkForHighlight({
+                    page = self.ui.paging and page or item.pos0,
+                    datetime = item.datetime,
+                })))
+    end
+    self:showHighlightStyleDialog(apply_drawer, item.drawer)
+end
+
+function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer)
+    local default_drawer, keep_shown_on_apply
+    if item_drawer then -- called from editHighlightStyle
+        default_drawer = self.view.highlight.saved_drawer or
+            G_reader_settings:readSetting("highlight_drawing_style", "lighten")
+        keep_shown_on_apply = true
+    end
+    local radio_buttons = {}
+    for _, v in ipairs(highlight_style) do
+        table.insert(radio_buttons, {
+            {
+                text = v[1],
+                checked = item_drawer == v[2],
+                provider = v[2],
+            },
+        })
+    end
+    local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
+    UIManager:show(RadioButtonWidget:new{
+        title_text = _("Highlight style"),
+        width_factor = 0.5,
+        keep_shown_on_apply = keep_shown_on_apply,
+        radio_buttons = radio_buttons,
+        default_provider = default_drawer,
+        callback = function(radio)
+            caller_callback(radio.provider)
         end,
     })
 end

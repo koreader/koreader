@@ -308,12 +308,12 @@ function ReaderLink:addToMainMenu(menu_items)
         end,
     }
     menu_items.go_to_next_location = {
-        text = _("Go Forward to next location"),
+        text = _("Go forward to next location"),
         enabled_func = function() return self.forward_location_stack and #self.forward_location_stack > 0 end,
         callback = function() self:onGoForwardLink() end,
         hold_callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
-                text = _("Clear Forward location history?"),
+                text = _("Clear forward location history?"),
                 ok_text = _("Clear"),
                 ok_callback = function()
                     self:onClearForwardLocationStack()
@@ -700,6 +700,13 @@ function ReaderLink:compareLocationToCurrent(saved_location)
         return true, current_location
     end
     return false, current_location
+end
+
+function ReaderLink:onAddCurrentLocationToStack(show_notification)
+    self:addCurrentLocationToStack()
+    if show_notification then
+        Notification:notify(_("Current location added to history."))
+    end
 end
 
 -- Remember current location so we can go back to it

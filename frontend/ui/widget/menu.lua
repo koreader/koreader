@@ -960,8 +960,8 @@ function Menu:onCloseWidget()
     -- Don't do anything if we're in the process of tearing down FM or RD, or if we don't actually have a live instance of 'em...
     local FileManager = require("apps/filemanager/filemanager")
     local ReaderUI = require("apps/reader/readerui")
-    local reader_ui = ReaderUI:_getRunningInstance()
-    if (FileManager.instance and not FileManager.instance.tearing_down) or (reader_ui and not reader_ui.tearing_down) then
+    if (FileManager.instance and not FileManager.instance.tearing_down)
+            or (ReaderUI.instance and not ReaderUI.instance.tearing_down) then
         UIManager:setDirty(nil, "ui")
     end
 end

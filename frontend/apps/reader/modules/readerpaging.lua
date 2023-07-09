@@ -191,7 +191,6 @@ function ReaderPaging:onReadSettings(config)
     self:_gotoPage(config:readSetting("last_page") or 1)
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
-    self.is_reflowed = config:has("kopt_text_wrap") and config:readSetting("kopt_text_wrap") == 1
 end
 
 function ReaderPaging:onSaveSettings()
@@ -227,7 +226,7 @@ book, the page view will be roughly the same.
 --]]
 function ReaderPaging:setPagePosition(page, pos)
     logger.dbg("set page position", pos)
-    self.page_positions[page] = pos
+    self.page_positions[page] = pos ~= 0 and pos or nil
     self.ui:handleEvent(Event:new("PagePositionUpdated"))
 end
 

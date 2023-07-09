@@ -4,6 +4,7 @@ local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local Language = require("ui/language")
 local NetworkMgr = require("ui/network/manager")
+local PowerD = Device:getPowerDevice()
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local N_ = _.ngettext
@@ -233,6 +234,17 @@ if Device:isKobo() then
             G_reader_settings:makeFalse("ignore_power_sleepcover")
             UIManager:askForRestart()
         end
+    }
+end
+
+if Device:isKindle() and PowerD:hasHallSensor() then
+    common_settings.cover_events = {
+        text = _("Disable Kindle cover events"),
+        help_text = _([[Toggle the Hall effect sensor.
+This is used to detect if the cover is closed, which will automatically sleep and wake the device. If there is no cover present the sensor may cause spurious wakeups when located next to a magnetic source.]]),
+        keep_menu_open = true,
+        checked_func = function() return not PowerD:isHallSensorEnabled() end,
+        callback = function() PowerD:onToggleHallSensor() end,
     }
 end
 

@@ -1,28 +1,29 @@
---[[
- Export highlights to different targets.
+--[[--
+Export highlights to different targets.
 
- Some conventions:
+Some conventions:
 
- - Target: each local format or remote service this plugin can translate to.
+- Target: each local format or remote service this plugin can translate to.
 
- Each new target should inherit from "formats/base" and implement *at least* an export function.
+Each new target should inherit from "formats/base" and implement *at least* an export function.
 
- - Highlight: Text or image in document. Stored in "highlights" table of documents sidecar file.
+- Highlight: Text or image in document. Stored in "highlights" table of documents sidecar file.
 
- Parser uses this table.
- If highlight._._.text field is empty the parser uses highlight._._.pboxes field to get an image instead.
+Parser uses this table.
+If highlight._._.text field is empty the parser uses highlight._._.pboxes field to get an image instead.
 
- - Bookmarks: Data in bookmark explorer. Stored in "bookmarks" table of documents sidecar file.
+- Bookmarks: Data in bookmark explorer. Stored in "bookmarks" table of documents sidecar file.
 
- Every field in bookmarks._ has "text" and "notes" fields.
- When user edits a highlight or "renames" bookmark the text field is created or updated.
- The parser looks to bookmarks._.text field for edited notes. bookmarks._.notes isn't used for exporting operations.
+Every field in bookmarks._ has "text" and "notes" fields.
+When user edits a highlight or "renames" bookmark the text field is created or updated.
+The parser looks to bookmarks._.text field for edited notes. bookmarks._.notes isn't used for exporting operations.
 
- - Clippings: Parsed form of highlights. Single table for all documents.
+- Clippings: Parsed form of highlights. Single table for all documents.
 
- - Booknotes: Every table in clippings table. clippings = {"title" = booknotes}
+- Booknotes: Every table in clippings table. clippings = {"title" = booknotes}
 
---]]
+@module koplugin.exporter
+--]]--
 
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -38,7 +39,7 @@ local _ = require("gettext")
 
 -- migrate settings from old "evernote.koplugin" or from previous (monolithic) "exporter.koplugin"
 local function migrateSettings()
-    local formats = { "html", "joplin", "json", "readwise", "text" }
+    local formats = { "html", "joplin", "json", "memos", "my_clippings", "readwise", "text" }
 
     local settings = G_reader_settings:readSetting("exporter")
     if not settings then
@@ -96,7 +97,6 @@ end
 
 local Exporter = WidgetContainer:extend{
     name = "exporter",
-    clipping_dir = DataStorage:getDataDir() .. "/clipboard",
     targets = {
         html = require("target/html"),
         joplin = require("target/joplin"),
@@ -104,6 +104,8 @@ local Exporter = WidgetContainer:extend{
         markdown = require("target/markdown"),
         readwise = require("target/readwise"),
         text = require("target/text"),
+        memos = require("target/memos"),
+        my_clippings = require("target/my_clippings"),
     },
 }
 
@@ -149,17 +151,33 @@ function Exporter:getDocumentClippings()
     return self.parser:parseCurrentDoc(self.view) or {}
 end
 
+--- Parse and export highlights from the currently opened document.
 function Exporter:exportCurrentNotes()
     local clippings = self:getDocumentClippings()
     self:exportClippings(clippings)
 end
 
+--- Parse and export highlights from all the documents in History
+-- and from the Kindle "My Clippings.txt".
 function Exporter:exportAllNotes()
     local clippings = {}
     clippings = updateHistoryClippings(clippings, self.parser:parseHistory())
     if Device:isKindle() then
         clippings = updateMyClippings(clippings, self.parser:parseMyClippings())
     end
+    for title, booknotes in pairs(clippings) do
+        -- chapter number is zero
+        if #booknotes == 0 then
+            clippings[title] = nil
+        end
+    end
+    self:exportClippings(clippings)
+end
+
+--- Parse and export highlights from selected documents.
+-- @tparam table files list of files as a table of {[file_path] = true}
+function Exporter:exportFilesNotes(files)
+    local clippings = self.parser:parseFiles(files)
     for title, booknotes in pairs(clippings) do
         -- chapter number is zero
         if #booknotes == 0 then
@@ -261,7 +279,13 @@ function Exporter:addToMainMenu(menu_items)
             {
                 text = _("Choose formats and services"),
                 sub_item_table = submenu,
-                separator = true,
+            },
+            {
+                text = _("Choose export folder"),
+                keep_menu_open = true,
+                callback = function()
+                    self:chooseFolder()
+                end,
             },
         }
     }
@@ -279,6 +303,43 @@ function Exporter:addToMainMenu(menu_items)
         })
     end
     menu_items.exporter = menu
+end
+
+function Exporter:chooseFolder()
+    local function set_targets_clipping_dir(dir)
+        for k in pairs(self.targets) do
+            self.targets[k].clipping_dir = dir
+        end
+    end
+    local clipping_dir_default = DataStorage:getFullDataDir() .. "/clipboard"
+    local settings = G_reader_settings:readSetting("exporter") or {}
+    local clipping_dir = settings.clipping_dir or clipping_dir_default
+    local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+    local confirm_box = MultiConfirmBox:new{
+        text = T(_("Export folder is set to:\n%1\n\nChoose new export folder?"), clipping_dir),
+        choice1_text = _("Use default"),
+        choice1_callback = function()
+            settings.clipping_dir = nil
+            G_reader_settings:saveSetting("exporter", settings)
+            set_targets_clipping_dir(clipping_dir_default)
+        end,
+        choice2_text = _("Choose folder"),
+        choice2_callback = function()
+            local PathChooser = require("ui/widget/pathchooser")
+            local path_chooser = PathChooser:new{
+                select_file = false,
+                show_files = false,
+                path = clipping_dir,
+                onConfirm = function(new_path)
+                    settings.clipping_dir = new_path
+                    G_reader_settings:saveSetting("exporter", settings)
+                    set_targets_clipping_dir(new_path)
+                end
+            }
+            UIManager:show(path_chooser)
+        end,
+    }
+    UIManager:show(confirm_box)
 end
 
 return Exporter

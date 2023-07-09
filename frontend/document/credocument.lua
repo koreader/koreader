@@ -672,8 +672,13 @@ function CreDocument:getWordFromPosition(pos)
     ]]--
 end
 
-function CreDocument:getTextFromPositions(pos0, pos1)
-    local text_range = self._document:getTextFromPositions(pos0.x, pos0.y, pos1.x, pos1.y)
+function CreDocument:getTextFromPositions(pos0, pos1, do_not_draw_selection)
+    local drawSelection, drawSegmentedSelection
+    if do_not_draw_selection then
+        drawSelection, drawSegmentedSelection = false, false
+    end
+    local text_range = self._document:getTextFromPositions(pos0.x, pos0.y, pos1.x, pos1.y,
+        drawSelection, drawSegmentedSelection)
     logger.dbg("CreDocument: get text range", text_range)
     if text_range then
         -- local line_boxes = self:getScreenBoxesFromPositions(text_range.pos0, text_range.pos1)
@@ -1505,6 +1510,7 @@ function CreDocument:register(registry)
     registry:addProvider("doc", "application/msword", self, 90)
     registry:addProvider("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", self, 90)
     registry:addProvider("epub", "application/epub+zip", self, 100)
+    registry:addProvider("epub", "application/epub", self, 100) -- Alternative mimetype for OPDS.
     registry:addProvider("epub3", "application/epub+zip", self, 100)
     registry:addProvider("fb2", "application/fb2", self, 90)
     registry:addProvider("fb2", "text/fb2+xml", self, 90) -- Alternative mimetype for OPDS.

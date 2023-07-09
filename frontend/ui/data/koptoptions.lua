@@ -107,6 +107,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 values = {0.05, 0.10, 0.25, 0.40, 0.55, 0.70, 0.85, 1.00},
                 default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_PAGE_MARGIN"),
                 event = "MarginUpdate",
+                args = {0.05, 0.10, 0.25, 0.40, 0.55, 0.70, 0.85, 1.00},
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set margins to be applied after page-crop and zoom modes are applied.]]),
                 more_options = true,

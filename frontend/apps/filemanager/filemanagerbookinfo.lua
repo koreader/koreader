@@ -3,11 +3,13 @@ This module provides a way to display book information (filename and book metada
 ]]
 
 local BD = require("ui/bidi")
+local ButtonDialog = require("ui/widget/buttondialog")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local ffiutil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
@@ -32,7 +34,8 @@ function BookInfo:addToMainMenu(menu_items)
     }
 end
 
-function BookInfo:show(file, book_props)
+function BookInfo:show(file, book_props, metadata_updated_caller_callback)
+    self.updated = nil
     local kv_pairs = {}
 
     -- File section
@@ -101,11 +104,24 @@ function BookInfo:show(file, book_props)
         end
         table.insert(kv_pairs, { prop_text, prop })
     end
+    -- cover image
     local is_doc = self.document and true or false
-    local viewCoverImage = function()
-        self:onShowBookCover(file)
+    self.custom_book_cover = DocSettings:findCoverFile(file)
+    table.insert(kv_pairs, {
+        _("Cover image:"),
+        _("Tap to display"),
+        callback = function() self:onShowBookCover(file, true) end,
+        separator = is_doc and not self.custom_book_cover,
+    })
+    -- custom cover image
+    if self.custom_book_cover then
+        table.insert(kv_pairs, {
+            _("Custom cover image:"),
+            _("Tap to display"),
+            callback = function() self:onShowBookCover(file) end,
+            separator = is_doc,
+        })
     end
-    table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=viewCoverImage, separator=is_doc })
 
     -- Page section
     if is_doc then
@@ -119,13 +135,38 @@ function BookInfo:show(file, book_props)
     end
 
     local KeyValuePage = require("ui/widget/keyvaluepage")
-    local widget = KeyValuePage:new{
+    self.kvp_widget = KeyValuePage:new{
         title = _("Book information"),
         value_overflow_align = "right",
         kv_pairs = kv_pairs,
         values_lang = values_lang,
+        close_callback = function()
+            self.custom_book_cover = nil
+            if self.updated then
+                local FileManager = require("apps/filemanager/filemanager")
+                local fm_ui = FileManager.instance
+                local ui = self.ui or fm_ui
+                if not ui then
+                    local ReaderUI = require("apps/reader/readerui")
+                    ui = ReaderUI.instance
+                end
+                if ui and ui.coverbrowser then
+                    ui.coverbrowser:deleteBookInfo(file)
+                end
+                if fm_ui then
+                    fm_ui:onRefresh()
+                end
+                if metadata_updated_caller_callback then
+                    metadata_updated_caller_callback()
+                end
+            end
+        end,
+        title_bar_left_icon = "appbar.menu",
+        title_bar_left_icon_tap_callback = function()
+            self:showCustomMenu(file, book_props, metadata_updated_caller_callback)
+        end,
     }
-    UIManager:show(widget)
+    UIManager:show(self.kvp_widget)
 end
 
 function BookInfo:getBookProps(file, book_props, no_open_document)
@@ -194,11 +235,10 @@ function BookInfo:onShowBookInfo()
     local doc_props = self.ui.doc_settings:readSetting("doc_props")
     -- Make a copy, so we don't add "pages" to the original doc_props
     -- that will be saved at some point by ReaderUI.
-    local book_props = {}
+    local book_props = { pages = self.ui.doc_settings:readSetting("doc_pages") }
     for k, v in pairs(doc_props) do
         book_props[k] = v
     end
-    book_props.pages = self.ui.doc_settings:readSetting("doc_pages")
     self:show(self.document.file, book_props)
 end
 
@@ -227,40 +267,112 @@ function BookInfo:onShowBookDescription(description, file)
     end
 end
 
-function BookInfo:onShowBookCover(file)
-    local document
-    if file then
-        document = DocumentRegistry:openDocument(file)
-        if document and document.loadDocument then -- CreDocument
-            document:loadDocument(false) -- load only metadata
-        end
+function BookInfo:onShowBookCover(file, force_orig)
+    local cover_bb = self:getCoverImage(self.document, file, force_orig)
+    if cover_bb then
+        local ImageViewer = require("ui/widget/imageviewer")
+        local imgviewer = ImageViewer:new{
+            image = cover_bb,
+            with_title_bar = false,
+            fullscreen = true,
+        }
+        UIManager:show(imgviewer)
     else
-        document = self.document
+        UIManager:show(InfoMessage:new{
+            text = _("No cover image available."),
+        })
     end
-    if document then
-        local cover_bb = document:getCoverPageImage()
-        if cover_bb then
-            local ImageViewer = require("ui/widget/imageviewer")
-            local imgviewer = ImageViewer:new{
-                image = cover_bb,
-                with_title_bar = false,
-                fullscreen = true,
-            }
-            UIManager:show(imgviewer)
-        else
-            UIManager:show(InfoMessage:new{
-                text = _("No cover image available."),
-            })
+end
+
+function BookInfo:getCoverImage(doc, file, force_orig)
+    local cover_bb
+    -- check for a custom cover (orig cover is forcibly requested in "Book information" only)
+    if not force_orig then
+        local custom_cover = DocSettings:findCoverFile(file or (doc and doc.file))
+        if custom_cover then
+            local cover_doc = DocumentRegistry:openDocument(custom_cover)
+            if cover_doc then
+                cover_bb = cover_doc:getCoverPageImage()
+                cover_doc:close()
+                return cover_bb, custom_cover
+            end
         end
-        document:close()
+    end
+    -- orig cover
+    local is_doc = doc and true or false
+    if not is_doc then
+        doc = DocumentRegistry:openDocument(file)
+        if doc and doc.loadDocument then -- CreDocument
+            doc:loadDocument(false) -- load only metadata
+        end
+    end
+    if doc then
+        cover_bb = doc:getCoverPageImage()
+        if not is_doc then
+            doc:close()
+        end
+    end
+    return cover_bb
+end
+
+function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
+    local function kvp_update()
+        if self.ui then
+            self.ui.doc_settings:getCoverFile(true) -- reset cover file cache
+        end
+        self.updated = true
+        self.kvp_widget:onClose()
+        self:show(file, book_props, metadata_updated_caller_callback)
+    end
+    if self.custom_book_cover then -- reset custom cover
+        local ConfirmBox = require("ui/widget/confirmbox")
+        local confirm_box = ConfirmBox:new{
+            text = _("Reset custom cover?\nImage file will be deleted."),
+            ok_text = _("Reset"),
+            ok_callback = function()
+                if os.remove(self.custom_book_cover) then
+                    DocSettings:removeSidecarDir(file, util.splitFilePathName(self.custom_book_cover))
+                    kvp_update()
+                end
+            end,
+        }
+        UIManager:show(confirm_box)
+    else -- choose an image and set custom cover
+        local PathChooser = require("ui/widget/pathchooser")
+        local path_chooser = PathChooser:new{
+            select_directory = false,
+            file_filter = function(filename)
+                return DocumentRegistry:isImageFile(filename)
+            end,
+            onConfirm = function(image_file)
+                local sidecar_dir
+                local sidecar_file = DocSettings:findCoverFile(file) -- existing cover file
+                if sidecar_file then
+                    os.remove(sidecar_file)
+                else -- no existing cover, get metadata file path
+                    sidecar_file = DocSettings:hasSidecarFile(file, true) -- new sdr locations only
+                end
+                if sidecar_file then
+                    sidecar_dir = util.splitFilePathName(sidecar_file)
+                else -- no sdr folder, create new
+                    sidecar_dir = DocSettings:getSidecarDir(file) .. "/"
+                    util.makePath(sidecar_dir)
+                end
+                local new_cover_file = sidecar_dir .. "cover." .. util.getFileNameSuffix(image_file):lower()
+                if ffiutil.copyFile(image_file, new_cover_file) == nil then
+                    kvp_update()
+                end
+            end,
+        }
+        UIManager:show(path_chooser)
     end
 end
 
 function BookInfo:getCurrentPageLineWordCounts()
     local lines_nb, words_nb = 0, 0
     if self.ui.rolling then
-        local res = self.ui.document._document:getTextFromPositions(0, 0, Screen:getWidth(), Screen:getHeight(),
-            false, false) -- do not highlight
+        local res = self.ui.document:getTextFromPositions({x = 0, y = 0},
+            {x = Screen:getWidth(), y = Screen:getHeight()}, true) -- do not highlight
         if res then
             lines_nb = #self.ui.document:getScreenBoxesFromPositions(res.pos0, res.pos1, true)
             for word in util.gsplit(res.text, "[%s%p]+", false) do
@@ -291,6 +403,28 @@ function BookInfo:getCurrentPageLineWordCounts()
         end
     end
     return lines_nb, words_nb
+end
+
+function BookInfo:showCustomMenu(file, book_props, metadata_updated_caller_callback)
+    local button_dialog
+    local buttons = {{
+        {
+            text = self.custom_book_cover and _("Reset cover image") or _("Set cover image"),
+            align = "left",
+            callback = function()
+                UIManager:close(button_dialog)
+                self:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
+            end,
+        },
+    }}
+    button_dialog = ButtonDialog:new{
+        shrink_unneeded_width = true,
+        buttons = buttons,
+        anchor = function()
+            return self.kvp_widget.title_bar.left_button.image.dimen
+        end,
+    }
+    UIManager:show(button_dialog)
 end
 
 return BookInfo

@@ -262,7 +262,8 @@ function ReaderZooming:onReadSettings(config)
                             or G_reader_settings:readSetting("kopt_zoom_overlap_v") or self.zoom_overlap_v
 
     -- update zoom direction parameters
-    local zoom_direction_setting = self.zoom_direction_settings[self.document.configurable.zoom_direction]
+    local zoom_direction_setting = self.zoom_direction_settings[self.document.configurable.zoom_direction
+                                                                or G_reader_settings:readSetting("kopt_zoom_direction") or 7]
     self.zoom_bottom_to_top = zoom_direction_setting.zoom_bottom_to_top
     self.zoom_direction_vertical = zoom_direction_setting.zoom_direction_vertical
 end

@@ -68,6 +68,12 @@ function ReaderThumbnail:addToMainMenu(menu_items)
         callback = function()
             self:onShowBookMap()
         end,
+        -- Show the alternative overview mode (which is just a restricted
+        -- variation of the main book map) with long-press (let's avoid
+        -- adding another item in the crowded first menu).
+        hold_callback = function()
+            self:onShowBookMap(true)
+        end,
     }
     menu_items.page_browser = {
         text = _("Page browser"),
@@ -77,10 +83,11 @@ function ReaderThumbnail:addToMainMenu(menu_items)
     }
 end
 
-function ReaderThumbnail:onShowBookMap()
+function ReaderThumbnail:onShowBookMap(overview_mode)
     local BookMapWidget = require("ui/widget/bookmapwidget")
     UIManager:show(BookMapWidget:new{
         ui = self.ui,
+        overview_mode = overview_mode,
     })
     return true
 end
@@ -510,5 +517,6 @@ ReaderThumbnail.onDocumentPartiallyRerendered = ReaderThumbnail.resetCache
 ReaderThumbnail.onBookmarkAdded = ReaderThumbnail.resetCachedPagesForBookmarks
 ReaderThumbnail.onBookmarkRemoved = ReaderThumbnail.resetCachedPagesForBookmarks
 ReaderThumbnail.onBookmarkUpdated = ReaderThumbnail.resetCachedPagesForBookmarks
+ReaderThumbnail.onBookmarkEdited = ReaderThumbnail.resetCachedPagesForBookmarks
 
 return ReaderThumbnail

@@ -58,6 +58,7 @@ local order = {
         "autoshutdown",
         "ignore_sleepcover",
         "ignore_open_sleepcover",
+        "cover_events",
         "ignore_battery_optimizations",
         "mass_storage_settings", -- if Device:canToggleMassStorage()
         "file_ext_assoc",
@@ -143,19 +144,23 @@ local order = {
         "developer_options",
     },
     search = {
+        "search_settings",
+        "----------------------------",
         "dictionary_lookup",
         "dictionary_lookup_history",
         "vocabbuilder",
-        "dictionary_settings",
         "----------------------------",
         "wikipedia_lookup",
         "wikipedia_history",
-        "wikipedia_settings",
         "----------------------------",
         "find_book_in_calibre_catalog",
         "find_file",
         "----------------------------",
         "opds",
+    },
+    search_settings = {
+        "dictionary_settings",
+        "wikipedia_settings",
     },
     main = {
         "history",

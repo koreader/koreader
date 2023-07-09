@@ -1,9 +1,6 @@
-local DataStorage = require("datastorage")
 local DocumentRegistry = require("document/documentregistry")
 local DocSettings = require("docsettings")
 local ffiutil = require("ffi/util")
-local lfs = require("libs/libkoreader-lfs")
-local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local util = require("util")
 local _ = require("gettext")
@@ -303,52 +300,39 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
     end
 end
 
-function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
-    if lfs.attributes(history_file, "mode") ~= "file"
-    or not history_file:find(".+%.lua$") then
-        return
-    end
-    if lfs.attributes(doc_file, "mode") ~= "file" then return end
-    local ok, stored = pcall(dofile, history_file)
-    if ok then
-        if not stored then
-            logger.warn("An empty history file ",
-                        history_file,
-                        "has been found. The book associated is ",
-                        doc_file)
-            return
-        elseif not stored.highlight then
-            return
-        end
-        local _, docname = util.splitFilePathName(doc_file)
-        local title, author = self:parseTitleFromPath(util.splitFileNameSuffix(docname), doc_file)
-        clippings[title] = {
-            file = doc_file,
-            title = title,
-            author = author,
-        }
-        self:parseHighlight(stored.highlight, stored.bookmarks, clippings[title])
-    end
+function MyClipping:getClippingsFromBook(clippings, doc_path)
+    local doc_settings = DocSettings:open(doc_path)
+    local highlights = doc_settings:readSetting("highlight")
+    if not highlights then return end
+    local bookmarks = doc_settings:readSetting("bookmarks")
+    local stats = doc_settings:readSetting("stats")
+    local title = stats and stats.title
+    local author = stats and stats.authors
+    local _, doc_name = util.splitFilePathName(doc_path)
+    local parsed_title, parsed_author = self:parseTitleFromPath(util.splitFileNameSuffix(doc_name))
+    clippings[parsed_title] = {
+        file = doc_path,
+        title = title or parsed_title,
+        author = author or parsed_author,
+    }
+    self:parseHighlight(highlights, bookmarks, clippings[parsed_title])
 end
 
 function MyClipping:parseHistory()
     local clippings = {}
-    local history_dir = DataStorage:getHistoryDir()
-    if lfs.attributes(history_dir, "mode") == "directory" then
-        for f in lfs.dir(history_dir) do
-            local legacy_history_file = ffiutil.joinPath(history_dir, f)
-            if lfs.attributes(legacy_history_file, "mode") == "file" then
-                local doc_file = DocSettings:getFileFromHistory(f)
-                if doc_file then
-                    self:parseHistoryFile(clippings, legacy_history_file, doc_file)
-                end
-            end
+    for _, item in ipairs(require("readhistory").hist) do
+        if not item.dim and DocSettings:hasSidecarFile(item.file) then
+            self:getClippingsFromBook(clippings, item.file)
         end
     end
-    for _, item in ipairs(require("readhistory").hist) do
-        if not item.dim then
-            self:parseHistoryFile(clippings, DocSettings:getSidecarFile(item.file, "doc"), item.file)
-            self:parseHistoryFile(clippings, DocSettings:getSidecarFile(item.file, "dir"), item.file)
+    return clippings
+end
+
+function MyClipping:parseFiles(files)
+    local clippings = {}
+    for file in pairs(files) do
+        if DocSettings:hasSidecarFile(file) then
+            self:getClippingsFromBook(clippings, file)
         end
     end
     return clippings

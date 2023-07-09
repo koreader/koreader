@@ -845,7 +845,7 @@ function ReaderFooter:setupTouchZones()
             id = "readerfooter_tap",
             ges = "tap",
             screen_zone = footer_screen_zone,
-            handler = function(ges) return self:onTapFooter(ges) end,
+            handler = function(ges) return self:TapFooter(ges) end,
             overrides = {
                 "readerconfigmenu_ext_tap",
                 "readerconfigmenu_tap",
@@ -1018,7 +1018,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             enabled_func = function()
                 return not self.view.flipping_visible
             end,
-            callback = function() self:onTapFooter(true) end,
+            callback = function() self:onToggleFooterMode() end,
         })
         settings_submenu_num = 2
     end
@@ -2366,12 +2366,7 @@ function ReaderFooter:onExitFlippingMode()
     self:rescheduleFooterAutoRefreshIfNeeded()
 end
 
-function ReaderFooter:onTapFooter(ges)
-    local ignore_lock = false
-    if ges == true then
-        ignore_lock = true
-        ges = nil
-    end
+function ReaderFooter:TapFooter(ges)
     if self.view.flipping_visible and ges then
         local pos = ges.pos
         local dimen = self.progress_bar.dimen
@@ -2383,9 +2378,12 @@ function ReaderFooter:onTapFooter(ges)
         self:onUpdateFooter(true)
         return true
     end
-    if self.has_no_mode or (self.settings.lock_tap and not ignore_lock) then
-        return
-    end
+    if self.settings.lock_tap then return end
+    return self:onToggleFooterMode()
+end
+
+function ReaderFooter:onToggleFooterMode()
+    if self.has_no_mode and self.settings.disable_progress_bar then return end
     if self.settings.all_at_once or self.has_no_mode then
         if self.mode >= 1 then
             self.mode = self.mode_list.off
@@ -2487,35 +2485,24 @@ function ReaderFooter:maybeUpdateFooter()
     self:onUpdateFooter(self:shouldBeRepainted())
 end
 
--- is the same as maybeUpdateFooter
 function ReaderFooter:onFrontlightStateChanged()
-    self:onUpdateFooter(self:shouldBeRepainted())
+    self:maybeUpdateFooter()
 end
+ReaderFooter.onCharging    = ReaderFooter.onFrontlightStateChanged
+ReaderFooter.onNotCharging = ReaderFooter.onFrontlightStateChanged
 
 function ReaderFooter:onNetworkConnected()
     if self.settings.wifi_status then
         self:maybeUpdateFooter()
     end
 end
-
-function ReaderFooter:onNetworkDisconnected()
-    if self.settings.wifi_status then
-        self:onUpdateFooter(self.view.footer_visible)
-    end
-end
-
-function ReaderFooter:onCharging()
-    self:maybeUpdateFooter()
-end
-
-function ReaderFooter:onNotCharging()
-    self:maybeUpdateFooter()
-end
+ReaderFooter.onNetworkDisconnected = ReaderFooter.onNetworkConnected
 
 function ReaderFooter:onSetRotationMode()
     self:updateFooterContainer()
     self:resetLayout(true)
 end
+ReaderFooter.onScreenResize = ReaderFooter.onSetRotationMode
 
 function ReaderFooter:onSetPageHorizMargins(h_margins)
     self.book_margins_footer_width = math.floor((h_margins[1] + h_margins[2])/2)
@@ -2523,11 +2510,6 @@ function ReaderFooter:onSetPageHorizMargins(h_margins)
         self.settings.progress_margin_width = Screen:scaleBySize(self.book_margins_footer_width)
         self:refreshFooter(true)
     end
-end
-
-function ReaderFooter:onScreenResize()
-    self:updateFooterContainer()
-    self:resetLayout(true)
 end
 
 function ReaderFooter:onTimeFormatChanged()

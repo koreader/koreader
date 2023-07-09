@@ -1,5 +1,6 @@
-local UIManager -- will be updated when available
+local Event = require("ui/event")
 local Math = require("optmath")
+local UIManager
 local logger = require("logger")
 local time = require("ui/time")
 local BasePowerD = {
@@ -41,10 +42,6 @@ function BasePowerD:new(o)
     return o
 end
 
-function BasePowerD:readyUI()
-    UIManager = require("ui/uimanager")
-end
-
 function BasePowerD:init() end
 function BasePowerD:setIntensityHW(intensity) end
 --- @note: Unlike the "public" setWarmth, this one takes a value in the *native* scale!
@@ -62,15 +59,46 @@ function BasePowerD:isAuxChargingHW() return false end
 function BasePowerD:isAuxChargedHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
 function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min end
-function BasePowerD:turnOffFrontlightHW() self:setIntensityHW(self.fl_min) end
-function BasePowerD:turnOnFrontlightHW() self:setIntensityHW(self.fl_intensity) end --- @fixme: what if fl_intensity == fl_min (c.f., kindle)?
+--- @note: done_callback is used to display Notifications,
+---        some implementations *may* need to handle it themselves because of timing constraints,
+---        in which case they should return *true* here, so that the public API knows not to consume the callback early.
+function BasePowerD:turnOffFrontlightHW(done_callback)
+    self:setIntensityHW(self.fl_min)
+
+    -- Nothing fancy required, so we leave done_callback handling to the public API
+    return false
+end
+function BasePowerD:turnOnFrontlightHW(done_callback)
+    --- @fixme: what if fl_intensity == fl_min (c.f., kindle)?
+    self:setIntensityHW(self.fl_intensity)
+
+    return false
+end
 function BasePowerD:frontlightWarmthHW() return 0 end
 -- Anything that needs to be done before doing a real hardware suspend.
 -- (Such as turning the front light off).
-function BasePowerD:beforeSuspend() end
+-- Do *not* omit calling Device's _beforeSuspend method! This default implementation passes `false` so as *not* to disable input events during PM.
+function BasePowerD:beforeSuspend() self.device:_beforeSuspend(false) end
 -- Anything that needs to be done after doing a real hardware resume.
 -- (Such as restoring front light state).
-function BasePowerD:afterResume() end
+-- Do *not* omit calling Device's _afterResume method!
+function BasePowerD:afterResume()
+    -- MONOTONIC doesn't tick during suspend,
+    -- invalidate the last battery capacity pull time so that we get up to date data immediately.
+    self:invalidateCapacityCache()
+
+    self.device:_afterResume(false)
+end
+
+-- Update our UIManager reference once it's ready
+function BasePowerD:UIManagerReady(uimgr)
+    -- Our own ref
+    UIManager = uimgr
+    -- Let implementations do the same thing, too
+    self:UIManagerReadyHW(uimgr)
+end
+-- Ditto, but for implementations
+function BasePowerD:UIManagerReadyHW(uimgr) end
 
 function BasePowerD:isFrontlightOn()
     return self.is_fl_on
@@ -94,31 +122,37 @@ function BasePowerD:frontlightIntensity()
     return self.fl_intensity
 end
 
-function BasePowerD:toggleFrontlight()
+function BasePowerD:toggleFrontlight(done_callback)
     if not self.device:hasFrontlight() then return false end
     if self:isFrontlightOn() then
-        return self:turnOffFrontlight()
+        return self:turnOffFrontlight(done_callback)
     else
-        return self:turnOnFrontlight()
+        return self:turnOnFrontlight(done_callback)
     end
 end
 
-function BasePowerD:turnOffFrontlight()
+function BasePowerD:turnOffFrontlight(done_callback)
     if not self.device:hasFrontlight() then return end
     if self:isFrontlightOff() then return false end
-    self:turnOffFrontlightHW()
+    local cb_handled = self:turnOffFrontlightHW(done_callback)
     self.is_fl_on = false
     self:stateChanged()
+    if not cb_handled and done_callback then
+        done_callback()
+    end
     return true
 end
 
-function BasePowerD:turnOnFrontlight()
+function BasePowerD:turnOnFrontlight(done_callback)
     if not self.device:hasFrontlight() then return end
     if self:isFrontlightOn() then return false end
     if self.fl_intensity == self.fl_min then return false end  --- @fixme what the hell?
-    self:turnOnFrontlightHW()
+    local cb_handled = self:turnOnFrontlightHW(done_callback)
     self.is_fl_on = true
     self:stateChanged()
+    if not cb_handled and done_callback then
+        done_callback()
+    end
     return true
 end
 
@@ -273,7 +307,6 @@ end
 function BasePowerD:stateChanged()
     -- BasePowerD is loaded before UIManager. So we cannot broadcast events before UIManager has been loaded.
     if UIManager then
-        local Event = require("ui/event")
         UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
     end
 end

@@ -469,6 +469,10 @@ function InputDialog:addWidget(widget, re_init)
     table.insert(self.vgroup, #self.vgroup-1, widget)
 end
 
+function InputDialog:getAddedWidgetAvailableWidth()
+    return self._input_widget.width
+end
+
 function InputDialog:onTap()
     if self.deny_keyboard_hiding then
         return

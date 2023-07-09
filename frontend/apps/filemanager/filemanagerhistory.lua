@@ -1,5 +1,5 @@
 local BD = require("ui/bidi")
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
@@ -86,6 +86,10 @@ function FileManagerHistory:onMenuHold(item)
     local function close_dialog_callback()
         UIManager:close(self.histfile_dialog)
     end
+    local function close_dialog_menu_callback()
+        UIManager:close(self.histfile_dialog)
+        self._manager.hist_menu.close_callback()
+    end
     local function status_button_callback()
         UIManager:close(self.histfile_dialog)
         if self._manager.filter ~= "all" then
@@ -105,14 +109,7 @@ function FileManagerHistory:onMenuHold(item)
     end
     table.insert(buttons, {
         filemanagerutil.genResetSettingsButton(item.file, status_button_callback, is_currently_opened),
-        {
-            text = _("Remove from history"),
-            callback = function()
-                UIManager:close(self.histfile_dialog)
-                require("readhistory"):removeItem(item)
-                self._manager:updateItemTable()
-            end,
-        },
+        filemanagerutil.genAddRemoveFavoritesButton(item.file, close_dialog_callback, item.dim),
     })
     table.insert(buttons, {
         {
@@ -128,6 +125,17 @@ function FileManagerHistory:onMenuHold(item)
                 FileManager:showDeleteFileDialog(item.file, post_delete_callback)
             end,
         },
+        {
+            text = _("Remove from history"),
+            callback = function()
+                UIManager:close(self.histfile_dialog)
+                require("readhistory"):removeItem(item)
+                self._manager:updateItemTable()
+            end,
+        },
+    })
+    table.insert(buttons, {
+        filemanagerutil.genShowFolderButton(item.file, close_dialog_menu_callback, item.dim),
         filemanagerutil.genBookInformationButton(item.file, close_dialog_callback, item.dim),
     })
     table.insert(buttons, {
@@ -135,7 +143,7 @@ function FileManagerHistory:onMenuHold(item)
         filemanagerutil.genBookDescriptionButton(item.file, close_dialog_callback, item.dim),
     })
 
-    self.histfile_dialog = ButtonDialogTitle:new{
+    self.histfile_dialog = ButtonDialog:new{
         title = BD.filename(item.text:match("([^/]+)$")),
         title_align = "center",
         buttons = buttons,
@@ -214,14 +222,14 @@ function FileManagerHistory:showHistDialog()
         }
     end
     table.insert(buttons, {
-        genFilterButton("reading"),
-        genFilterButton("abandoned"),
-        genFilterButton("complete"),
-    })
-    table.insert(buttons, {
         genFilterButton("all"),
         genFilterButton("new"),
         genFilterButton("deleted"),
+    })
+    table.insert(buttons, {
+        genFilterButton("reading"),
+        genFilterButton("abandoned"),
+        genFilterButton("complete"),
     })
     if self.count.deleted > 0 then
         table.insert(buttons, {}) -- separator
@@ -243,7 +251,7 @@ function FileManagerHistory:showHistDialog()
             },
         })
     end
-    hist_dialog = ButtonDialogTitle:new{
+    hist_dialog = ButtonDialog:new{
         title = _("Filter by book status"),
         title_align = "center",
         buttons = buttons,

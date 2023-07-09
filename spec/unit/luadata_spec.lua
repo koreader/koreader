@@ -68,7 +68,10 @@ describe("luadata module", function()
     end)
 
     describe("table wrapper", function()
-        Settings:delSetting("key")
+
+        setup(function()
+            Settings:delSetting("key")
+        end)
 
         it("should add item to table", function()
             Settings:addTableItem("key", 1)
@@ -89,8 +92,11 @@ describe("luadata module", function()
     end)
 
     describe("backup data file", function()
-        local file = "dummy-test-file"
-        local d = Settings:open(file)
+        local file, d
+        setup(function()
+            file = "dummy-test-file"
+            d = Settings:open(file)
+        end)
         it("should generate data file", function()
             d:saveSetting("a", "a")
             assert.Equals("file", lfs.attributes(d.file, "mode"))

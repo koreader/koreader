@@ -2,6 +2,7 @@
 This is a registry for document providers
 ]]--
 
+local DocSettings = require("docsettings")
 local logger = require("logger")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
@@ -11,6 +12,16 @@ local DocumentRegistry = {
     providers = {},
     filetype_provider = {},
     mimetype_ext = {},
+    image_ext = {
+        gif  = true,
+        jpeg = true,
+        jpg  = true,
+        png  = true,
+        svg  = true,
+        tif  = true,
+        tiff = true,
+        webp = true,
+    },
 }
 
 function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
@@ -29,8 +40,7 @@ function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
 end
 
 function DocumentRegistry:getRandomFile(dir, opened, extension)
-    local DocSettings = require("docsettings")
-    if string.sub(dir, string.len(dir)) ~= "/" then
+    if dir:sub(-1) ~= "/" then
         dir = dir .. "/"
     end
     local files = {}
@@ -38,8 +48,10 @@ function DocumentRegistry:getRandomFile(dir, opened, extension)
     local ok, iter, dir_obj = pcall(lfs.dir, dir)
     if ok then
         for entry in iter, dir_obj do
-            if lfs.attributes(dir .. entry, "mode") == "file" and self:hasProvider(dir .. entry)
-                and (opened == nil or DocSettings:hasSidecarFile(dir .. entry) == opened)
+            local file = dir .. entry
+            local file_opened = DocSettings:hasSidecarFile(file) and true or false
+            if lfs.attributes(file, "mode") == "file" and self:hasProvider(file)
+                and (opened == nil or file_opened == opened)
                 and (extension == nil or extension[util.getFileNameSuffix(entry)]) then
                 i = i + 1
                 files[i] = entry
@@ -70,7 +82,6 @@ function DocumentRegistry:hasProvider(file, mimetype)
     if self.filetype_provider[filename_suffix] or filetype_provider[filename_suffix] then
         return true
     end
-    local DocSettings = require("docsettings")
     if DocSettings:hasSidecarFile(file) then
         return DocSettings:open(file):has("provider")
     end
@@ -85,7 +96,6 @@ function DocumentRegistry:getProvider(file)
 
     if providers then
         -- provider for document
-        local DocSettings = require("docsettings")
         if DocSettings:hasSidecarFile(file) then
             local doc_settings_provider = DocSettings:open(file):readSetting("provider")
             if doc_settings_provider then
@@ -176,9 +186,9 @@ function DocumentRegistry:setProvider(file, provider, all)
 
     -- per-document
     if not all then
-        local DocSettings = require("docsettings"):open(file)
-        DocSettings:saveSetting("provider", provider.provider)
-        DocSettings:flush()
+        local doc_settings = DocSettings:open(file)
+        doc_settings:saveSetting("provider", provider.provider)
+        doc_settings:flush()
     -- global
     else
         local filetype_provider = G_reader_settings:readSetting("provider") or {}
@@ -244,6 +254,10 @@ function DocumentRegistry:getReferenceCount(file)
     else
         return nil
     end
+end
+
+function DocumentRegistry:isImageFile(file)
+    return self.image_ext[util.getFileNameSuffix(file):lower()] and true or false
 end
 
 -- load implementations:

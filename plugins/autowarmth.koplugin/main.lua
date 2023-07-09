@@ -49,7 +49,8 @@ local AutoWarmth = WidgetContainer:extend{
     sched_warmths = nil, -- array
 
     -- Static member that shall survive reloading of the plugin but not a restart
-    fl_turned_off = nil -- true/false if someone (AutoWarmth, gesture ...) has toggled the frontlight
+    fl_user_toggle = false, -- true/false if someone (AutoWarmth, gesture ...) has toggled the frontlight
+    fl_turned_off = false, -- the frontlight toggle state
 }
 
 function AutoWarmth:init()
@@ -76,7 +77,9 @@ function AutoWarmth:init()
 
     self.control_warmth = G_reader_settings:nilOrTrue("autowarmth_control_warmth")
     self.control_nightmode = G_reader_settings:nilOrTrue("autowarmth_control_nightmode")
-    if not self.control_warmth and not self.control_nightmode then
+    if not Device:hasNaturalLight() then
+        self.control_nightmode = true
+    elseif not self.control_warmth and not self.control_nightmode then
         logger.dbg("AutoWarmth: autowarmth_control_warmth and autowarmth_control_nightmode are both false, set them to true")
         self.control_warmth = true
         self.control_nightmode = true
@@ -138,9 +141,14 @@ function AutoWarmth:onAutoWarmthMode()
 end
 
 function AutoWarmth:_onResume()
-    logger.dbg("AutoWarmth: onResume")
+    logger.dbg("AutoWarmth: onResume", AutoWarmth.fl_turned_off, AutoWarmth.fl_user_toggle)
 
     local resume_date = os.date("*t")
+
+    if self.fl_off_during_day then
+        -- We handle the frontlight state ourself.
+        Powerd.fl_was_on = false
+    end
 
     -- check if resume and suspend are done on the same day
     if resume_date.day == SunTime.date.day and resume_date.month == SunTime.date.month
@@ -150,7 +158,11 @@ function AutoWarmth:_onResume()
         self.sched_warmth_index = self.sched_warmth_index - 1 -- scheduleNextWarmth will check this
         self:scheduleNextWarmthChange(true)
         self:scheduleToggleFrontlight(now_s) -- reset user toggles at sun set or sun rise
-        self:toggleFrontlight(now_s)
+        if AutoWarmth.fl_user_toggle then
+            self:setFrontlight(not AutoWarmth.fl_turned_off, true) -- keep user toggle state
+        else
+            self:toggleFrontlight(now_s) -- no user toggle
+        end
         -- Reschedule 1sec after midnight
         UIManager:scheduleIn(24*3600 + 1 - now_s, self.scheduleMidnightUpdate, self)
     else
@@ -163,6 +175,7 @@ function AutoWarmth:_onSuspend()
     UIManager:unschedule(self.scheduleMidnightUpdate)
     UIManager:unschedule(self.setWarmth)
     UIManager:unschedule(self.setFrontlight)
+    UIManager:unschedule(self.scheduleNextWarmthChange)
 end
 
 function AutoWarmth:_onToggleNightMode()
@@ -185,6 +198,7 @@ function AutoWarmth:_onToggleNightMode()
                 provider = function()
                     self.control_nightmode = false
                     G_reader_settings:makeFalse("autowarmth_control_nightmode")
+                    self:scheduleMidnightUpdate(true)
                 end,
             }},
         }
@@ -202,9 +216,8 @@ end
 
 function AutoWarmth:_onToggleFrontlight()
     logger.dbg("AutoWarmth: onToggleFrontlight")
-    local now_s = SunTime:getTimeInSec()
-    AutoWarmth.fl_turned_off = now_s >= self.current_times_h[5]*3600 + self.fl_off_during_day_offset_s and
-        now_s < self.current_times_h[7]*3600 - self.fl_off_during_day_offset_s
+    AutoWarmth.fl_user_toggle = true
+    AutoWarmth.fl_turned_off = not AutoWarmth.fl_turned_off
 end
 
 function AutoWarmth:setEventHandlers()
@@ -213,6 +226,9 @@ function AutoWarmth:setEventHandlers()
     if self.control_nightmode then
         self.onToggleNightMode = self._onToggleNightMode
         self.onSetNightMode = self._onToggleNightMode
+    else
+        self.onToggleNightMode = nil
+        self.onSetNightMode = nil
     end
     if self.fl_off_during_day then
         self.onToggleFrontlight = self._onToggleFrontlight
@@ -309,8 +325,8 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
         self.current_times_h[2] = nil   -- Astronomical dawn
         self.current_times_h[3] = nil   -- Nautical dawn
         self.current_times_h[6] = nil   -- Solar noon
-        self.current_times_h[9] = nil   -- Nautical dust
-        self.current_times_h[10] = nil  -- Astronomical dust
+        self.current_times_h[9] = nil   -- Nautical dusk
+        self.current_times_h[10] = nil  -- Astronomical dusk
         self.current_times_h[11] = nil  -- Solar midnight
     end
 
@@ -362,64 +378,49 @@ function AutoWarmth:scheduleToggleFrontlight(now_s)
     -- Reset user fl toggles at sunset or sunrise with offset, as `scheduleNextWarmthChange` gets called only
     -- on scheduled warmth changes.
     local sunset_in_s = self.current_times_h[7] * 3600 - self.fl_off_during_day_offset_s - now_s
-    if sunset_in_s >= 0 then
-        UIManager:scheduleIn(sunset_in_s, self.setFrontlight, self, true)
+    if sunset_in_s >= 0 then -- first check if we are before sunset
+        UIManager:scheduleIn(sunset_in_s, self.setFrontlight, self, true, false)
         local sunrise_in_s = self.current_times_h[5] * 3600 + self.fl_off_during_day_offset_s - now_s
-        if sunrise_in_s >= 0 then
-            UIManager:scheduleIn(sunrise_in_s, self.setFrontlight, self, false)
+        if sunrise_in_s >= 0 then -- second check if we are before sunrise
+            UIManager:scheduleIn(sunrise_in_s, self.setFrontlight, self, false, false)
         end
     end
 end
 
 -- turns frontlight on or off and notice AutoDim on turning it off
 -- enable ... true to enable frontlight, false/nil to disable it
-function AutoWarmth:setFrontlight(enable)
-    logger.dbg("AutoWarmth: setFrontlight", enable)
-    AutoWarmth.fl_turned_off = not enable
-    if enable then
-        Powerd:turnOnFrontlight()
-    else
-        Powerd:turnOffFrontlight()
-        UIManager:broadcastEvent(Event:new("FrontlightTurnedOff")) -- used e.g. in AutoDim
+function AutoWarmth:setFrontlight(enable, keep_user_toggle)
+    logger.dbg("AutoWarmth: setFrontlight", enable, keep_user_toggle)
+    if not keep_user_toggle then
+        AutoWarmth.fl_user_toggle = false
     end
-end
-
--- toggles Frontlight on or off, only depending on the time
-function AutoWarmth:forceToggleFrontlight()
     if not self.fl_off_during_day then
         return
     end
 
-    local now_s = SunTime:getTimeInSec()
-    local is_fl_on = now_s < self.current_times_h[5] * 3600 + self.fl_off_during_day_offset_s
-                  or now_s > self.current_times_h[7] * 3600 - self.fl_off_during_day_offset_s
-
-    self:setFrontlight(is_fl_on)
+    if enable then
+        Powerd:turnOnFrontlight()
+        AutoWarmth.fl_turned_off = false
+    else
+        Powerd:turnOffFrontlight()
+        AutoWarmth.fl_turned_off = true
+        UIManager:broadcastEvent(Event:new("FrontlightTurnedOff")) -- used e.g. in AutoDim
+    end
 end
 
 -- toggles Frontlight on or off, depending on `now_s`
--- decide with the help of `Autowarmth.fl_turned_off` if the fl should be on or off
 function AutoWarmth:toggleFrontlight(now_s)
-    if self.fl_off_during_day then
-        if now_s >= self.current_times_h[5]*3600 + self.fl_off_during_day_offset_s
-            and now_s < self.current_times_h[7]*3600 - self.fl_off_during_day_offset_s then
-            -- during daytime turn on frontlight off once, user can override this selection by a gesture
-            if AutoWarmth.fl_turned_off ~= true then -- can be false or nil
-                if Powerd:isFrontlightOn() then
-                    self:setFrontlight(false)
-                end
-            end
-            AutoWarmth.fl_turned_off = true -- in case fl_turned_off was nil
-        else
-            -- outside of selected daytime, turn on frontlight once, user can override this selection
-            if AutoWarmth.fl_turned_off ~= false then -- can be true or nil
-                if Powerd:isFrontlightOff() then
-                    self:setFrontlight(true)
-                end
-            end
-            AutoWarmth.fl_turned_off = false -- in case fl_turned_off was nil
-        end
+    logger.dbg("AutoWarmth: toggleFrontlight", now_s)
+
+    if not self.fl_off_during_day then
+        return
     end
+
+    now_s = now_s or SunTime:getTimeInSec()
+    local sunrise_in_s = self.current_times_h[5] * 3600 + self.fl_off_during_day_offset_s - now_s
+    local sunset_in_s = self.current_times_h[7] * 3600 - self.fl_off_during_day_offset_s - now_s
+
+    self:setFrontlight(sunrise_in_s > 0 or sunset_in_s < 0)
 end
 
 -- schedules the next warmth change
@@ -630,7 +631,7 @@ function AutoWarmth:getFlOffDuringDayMenu()
                 self.fl_off_during_day = not self.fl_off_during_day
                 G_reader_settings:saveSetting("autowarmth_fl_off_during_day", self.fl_off_during_day)
                 self:scheduleMidnightUpdate()
-                self:forceToggleFrontlight()
+                self:toggleFrontlight()
             else
                 -- hard limit offset to 15 min after sunset and 30 mins before sunset; sunrise vice versa
                 UIManager:show(SpinWidget:new{
@@ -655,15 +656,15 @@ function AutoWarmth:getFlOffDuringDayMenu()
                         self.fl_off_during_day = true
                         G_reader_settings:saveSetting("autowarmth_fl_off_during_day", true)
                         self:scheduleMidnightUpdate()
-                        self:forceToggleFrontlight()
+                        self:toggleFrontlight()
                         if touchmenu_instance then self:updateItems(touchmenu_instance) end
                     end,
                     extra_text = _("Disable"),
-                    extra_callback = self.control_nightmode and function()
+                    extra_callback = function()
                         self.fl_off_during_day = nil
                         G_reader_settings:saveSetting("autowarmth_fl_off_during_day", nil)
                         self:scheduleMidnightUpdate()
-                        self:forceToggleFrontlight()
+                        self:toggleFrontlight()
                         if touchmenu_instance then self:updateItems(touchmenu_instance) end
                     end,
                 })
@@ -1033,23 +1034,45 @@ function AutoWarmth:getWarmthMenu()
                     return _("Control: night mode")
                 end
             end,
-            enabled_func = function()
-                return Device:hasNaturalLight()
+            checked_func = function()
+                if Device:hasNaturalLight() then
+                    return self.control_nightmode or self.control_warmth
+                else
+                    return self.control_nightmode
+                end
+            end,
+            hold_callback = function()
+                if Device:hasNaturalLight() then
+                    UIManager:show(InfoMessage:new{
+                        text = _("Tapping here chooses between the different AutoWarmth modes: 'warmth only', 'warmth and night mode', 'night mode only'."),
+                    })
+                else
+                    UIManager:show(InfoMessage:new{
+                        text = _("Your device supports 'night mode' control only."),
+                    })
+                end
             end,
             callback = function(touchmenu_instance)
-                if self.control_warmth and self.control_nightmode then
-                    self.control_nightmode = false
-                    G_reader_settings:makeFalse("autowarmth_control_nightmode")
-                elseif self.control_warmth and not self.control_nightmode then
-                    self.control_warmth = false
-                    self.control_nightmode = true
-                    G_reader_settings:makeFalse("autowarmth_control_warmth")
-                    G_reader_settings:makeTrue("autowarmth_control_nightmode")
+                if Device:hasNaturalLight() then
+                    if self.control_warmth and self.control_nightmode then
+                        self.control_warmth = true
+                        self.control_nightmode = false
+                        G_reader_settings:makeTrue("autowarmth_control_warmth")
+                        G_reader_settings:makeFalse("autowarmth_control_nightmode")
+                    elseif self.control_warmth and not self.control_nightmode then
+                        self.control_warmth = false
+                        self.control_nightmode = true
+                        G_reader_settings:makeFalse("autowarmth_control_warmth")
+                        G_reader_settings:makeTrue("autowarmth_control_nightmode")
+                    else
+                        self.control_warmth = true
+                        self.control_nightmode = true
+                        G_reader_settings:makeTrue("autowarmth_control_warmth")
+                        G_reader_settings:makeTrue("autowarmth_control_nightmode")
+                    end
                 else
-                    self.control_warmth = true
-                    self.control_nightmode = true
-                    G_reader_settings:makeTrue("autowarmth_control_warmth")
-                    G_reader_settings:makeTrue("autowarmth_control_nightmode")
+                    self.control_nightmode = not self.control_nightmode
+                    G_reader_settings:toggle("autowarmth_control_nightmode")
                 end
                 self:scheduleMidnightUpdate()
                 if touchmenu_instance then self:updateItems(touchmenu_instance) end

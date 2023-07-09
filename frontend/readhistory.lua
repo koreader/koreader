@@ -16,6 +16,11 @@ local ReadHistory = {
     last_read_time = 0,
 }
 
+local function getMandatory(date_time)
+    return G_reader_settings:isTrue("history_datetime_short")
+        and datetime.secondsToDate(date_time):sub(3) or datetime.secondsToDateTime(date_time)
+end
+
 local function buildEntry(input_time, input_file)
     local file_path = realpath(input_file) or input_file -- keep orig file path of deleted files
     local file_exists = lfs.attributes(file_path, "mode") == "file"
@@ -24,7 +29,7 @@ local function buildEntry(input_time, input_file)
         file = file_path,
         text = input_file:gsub(".*/", ""),
         dim = not file_exists,
-        mandatory = datetime.secondsToDateTime(input_time),
+        mandatory = getMandatory(input_time),
         select_enabled = file_exists,
     }
 end
@@ -258,7 +263,7 @@ function ReadHistory:addItem(file, ts, no_flush)
         lfs.touch(file, now, mtime) -- update book access time for sorting by last read date
         if index == 1 and not ts then -- last book, update access time only
             self.hist[1].time = now
-            self.hist[1].mandatory = datetime.secondsToDateTime(now)
+            self.hist[1].mandatory = getMandatory(now)
         else -- old or new book
             if index then -- old book
                 table.remove(self.hist, index)
@@ -278,7 +283,7 @@ end
 function ReadHistory:updateLastBookTime(no_flush)
     local now = os.time()
     self.hist[1].time = now
-    self.hist[1].mandatory = datetime.secondsToDateTime(now)
+    self.hist[1].mandatory = getMandatory(now)
     if not no_flush then
         self:_flush()
     end

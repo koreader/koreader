@@ -1,7 +1,7 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialog = require("ui/widget/buttondialog")
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -21,6 +21,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LanguageSupport = require("languagesupport")
+local Menu = require("ui/widget/menu")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local PluginLoader = require("pluginloader")
 local ReadCollection = require("readcollection")
@@ -266,40 +267,46 @@ function FileManager:setupLayout()
             end
             table.insert(buttons, {
                 filemanagerutil.genResetSettingsButton(file, status_button_callback),
-                {
-                    text_func = function()
-                        return ReadCollection:checkItemExist(file)
-                            and _("Remove from favorites") or _("Add to favorites")
-                    end,
-                    enabled = has_provider,
-                    callback = function()
-                        UIManager:close(self.file_dialog)
-                        if ReadCollection:checkItemExist(file) then
-                            ReadCollection:removeItem(file)
-                        else
-                            ReadCollection:addItem(file)
-                        end
-                    end,
-                },
+                filemanagerutil.genAddRemoveFavoritesButton(file, close_dialog_callback, not has_provider),
             })
             table.insert(buttons, {
                 {
                     text = _("Open with…"),
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        local one_time_providers = {
-                            {
-                                provider_name = _("Text viewer"),
+                        local one_time_providers = {}
+                        if DocumentRegistry:isImageFile(file) then
+                            table.insert(one_time_providers, {
+                                provider_name = _("Image viewer"),
                                 callback = function()
-                                    file_manager:openTextViewer(file)
+                                    local ImageViewer = require("ui/widget/imageviewer")
+                                    UIManager:show(ImageViewer:new{
+                                        file = file,
+                                        fullscreen = true,
+                                        with_title_bar = false,
+                                    })
                                 end,
-                            },
-                        }
+                            })
+                        end
+                        table.insert(one_time_providers, {
+                            provider_name = _("Text viewer"),
+                            callback = function()
+                                file_manager:openTextViewer(file)
+                            end,
+                        })
                         if file_manager.texteditor then
                             table.insert(one_time_providers, {
                                 provider_name = _("Text editor"),
                                 callback = function()
                                     file_manager.texteditor:checkEditFile(file)
+                                end,
+                            })
+                        end
+                        if file_manager.archiveviewer and file_manager.archiveviewer:isSupported(file) then
+                            table.insert(one_time_providers, {
+                                provider_name = _("Archive viewer"),
+                                callback = function()
+                                    file_manager.archiveviewer:openArchiveViewer(file)
                                 end,
                             })
                         end
@@ -342,7 +349,7 @@ function FileManager:setupLayout()
             })
         end
 
-        self.file_dialog = ButtonDialogTitle:new{
+        self.file_dialog = ButtonDialog:new{
             title = is_file and BD.filename(file:match("([^/]+)$")) or BD.directory(file:match("([^/]+)$")),
             title_align = "center",
             buttons = buttons,
@@ -444,7 +451,6 @@ function FileManager:init()
     self:initGesListener()
     self:handleEvent(Event:new("SetDimensions", self.dimen))
 
-    -- NOTE: ReaderUI has a _getRunningInstance method for this, because it used to store the instance reference in a private module variable.
     if FileManager.instance == nil then
         logger.dbg("Spinning up new FileManager instance", tostring(self))
     else
@@ -514,11 +520,11 @@ function FileManager:tapPlus()
         buttons = {
             {
                 {
-                    text = _("Select all files in folder"),
+                    text = _("Show selected files list"),
+                    enabled = actions_enabled,
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        self.file_chooser:selectAllFilesInFolder()
-                        self:onRefresh()
+                        self:showSelectedFilesList()
                     end,
                 },
                 {
@@ -543,11 +549,10 @@ function FileManager:tapPlus()
             },
             {
                 {
-                    text = _("Deselect all"),
-                    enabled = actions_enabled,
+                    text = _("Select all files in folder"),
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        self.selected_files = {}
+                        self.file_chooser:selectAllFilesInFolder()
                         self:onRefresh()
                     end,
                 },
@@ -573,10 +578,12 @@ function FileManager:tapPlus()
             },
             {
                 {
-                    text = _("Exit select mode"),
+                    text = _("Deselect all"),
+                    enabled = actions_enabled,
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        self:onToggleSelectMode()
+                        self.selected_files = {}
+                        self:onRefresh()
                     end,
                 },
                 {
@@ -594,7 +601,23 @@ function FileManager:tapPlus()
                                 self:onToggleSelectMode()
                             end,
                         })
-                    end
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("Exit select mode"),
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        self:onToggleSelectMode()
+                    end,
+                },
+                {
+                    text = _("Export highlights"),
+                    enabled = (actions_enabled and self.exporter) and true or false,
+                    callback = function()
+                        self.exporter:exportFilesNotes(self.selected_files)
+                    end,
                 },
             },
             {}, -- separator
@@ -720,7 +743,7 @@ function FileManager:tapPlus()
         end
     end
 
-    self.file_dialog = ButtonDialogTitle:new{
+    self.file_dialog = ButtonDialog:new{
         title = title,
         title_align = "center",
         buttons = buttons,
@@ -868,7 +891,7 @@ function FileManager:pasteHere(file)
     local function infoCopyFile()
         if self:copyRecursive(orig_file, dest_path) then
             if is_file then
-                DocSettings:update(orig_file, dest_file, true)
+                DocSettings:updateLocation(orig_file, dest_file, true)
             end
             return true
         else
@@ -882,7 +905,7 @@ function FileManager:pasteHere(file)
     local function infoMoveFile()
         if self:moveFile(orig_file, dest_path) then
             if is_file then
-                DocSettings:update(orig_file, dest_file)
+                DocSettings:updateLocation(orig_file, dest_file)
                 require("readhistory"):updateItemByPath(orig_file, dest_file) -- (will update "lastfile" if needed)
             end
             ReadCollection:updateItemByPath(orig_file, dest_file)
@@ -1005,7 +1028,7 @@ function FileManager:deleteFile(file, is_file)
     end
     if ok and not err then
         if is_file then
-            DocSettings:update(file)
+            DocSettings:updateLocation(file)
             require("readhistory"):fileDeleted(file)
         end
         ReadCollection:removeItemByPath(file, not is_file)
@@ -1054,7 +1077,7 @@ function FileManager:renameFile(file, basename, is_file)
     local function doRenameFile()
         if self:moveFile(file, dest) then
             if is_file then
-                DocSettings:update(file, dest)
+                DocSettings:updateLocation(file, dest)
                 require("readhistory"):updateItemByPath(file, dest) -- (will update "lastfile" if needed)
             end
             ReadCollection:updateItemByPath(file, dest)
@@ -1234,7 +1257,6 @@ function FileManager:onShowFolderMenu()
     end
 
     button_dialog = ButtonDialog:new{
-        width = math.floor(Screen:getWidth() * 0.9),
         shrink_unneeded_width = true,
         buttons = buttons,
         anchor = function()
@@ -1242,6 +1264,41 @@ function FileManager:onShowFolderMenu()
         end,
     }
     UIManager:show(button_dialog)
+end
+
+function FileManager:showSelectedFilesList()
+    local selected_files = {}
+    for file in pairs(self.selected_files) do
+        table.insert(selected_files, { text = file })
+    end
+    local function sorting(a, b)
+        local a_path, a_name = util.splitFilePathName(a.text)
+        local b_path, b_name = util.splitFilePathName(b.text)
+        if a_path == b_path then
+            return BaseUtil.strcoll(a_name, b_name)
+        end
+        return BaseUtil.strcoll(a_path, b_path)
+    end
+    table.sort(selected_files, sorting)
+
+    local menu_container = CenterContainer:new{
+        dimen = Screen:getSize(),
+    }
+    local menu = Menu:new{
+        is_borderless = true,
+        is_popout = false,
+        show_parent = menu_container,
+        onMenuSelect = function(_, item)
+            UIManager:close(menu_container)
+            self.file_chooser:changeToPath(util.splitFilePathName(item.text), item.text)
+        end,
+        close_callback = function()
+            UIManager:close(menu_container)
+        end,
+    }
+    table.insert(menu_container, menu)
+    menu:switchItemTable(T(_("Selected files (%1)"), #selected_files), selected_files)
+    UIManager:show(menu_container)
 end
 
 return FileManager

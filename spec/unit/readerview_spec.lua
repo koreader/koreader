@@ -22,7 +22,7 @@ describe("Readerview module", function()
         for i = #UIManager._task_queue, 1, -1 do
             local task = UIManager._task_queue[i]
             if task.action == readerui.view.emitHintPageEvent then
-                error("UIManager's task queue should be emtpy.")
+                error("UIManager's task queue should be empty.")
             end
         end
 
@@ -43,7 +43,7 @@ describe("Readerview module", function()
         for i = #UIManager._task_queue, 1, -1 do
             local task = UIManager._task_queue[i]
             if task.action == readerui.view.emitHintPageEvent then
-                error("UIManager's task queue should be emtpy.")
+                error("UIManager's task queue should be empty.")
             end
         end
 

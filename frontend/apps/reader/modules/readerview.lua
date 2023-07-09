@@ -211,6 +211,9 @@ function ReaderView:paintTo(bb, x, y)
             local center_offset = bit.rshift(self.arrow.height, 1)
             -- Paint at the proper y origin depending on wheter we paged forward (dim_area.y == 0) or backward
             self.arrow:paintTo(bb, 0, self.dim_area.y == 0 and self.dim_area.h - center_offset or self.dim_area.y - center_offset)
+        elseif self.page_overlap_style == "line" then
+            bb:paintRect(0, self.dim_area.y == 0 and self.dim_area.h or self.dim_area.y,
+                self.dim_area.w, Size.line.medium, Blitbuffer.COLOR_BLACK)
         end
     end
     -- draw saved highlight
@@ -616,19 +619,19 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, draw_note_mark)
     if drawer == "lighten" then
         bb:lightenRect(x, y, w, h, self.highlight.lighten_factor)
     elseif drawer == "underscore" then
-        bb:paintRect(x, y + h - 1, w, 2, Blitbuffer.COLOR_GRAY)
+        bb:paintRect(x, y + h - 1, w, Size.line.medium, Blitbuffer.COLOR_GRAY)
     elseif drawer == "strikeout" then
         local line_y = y + math.floor(h / 2) + 1
         if self.ui.paging then
             line_y = line_y + 2
         end
-        bb:paintRect(x, line_y, w, 2, Blitbuffer.COLOR_BLACK)
+        bb:paintRect(x, line_y, w, Size.line.medium, Blitbuffer.COLOR_BLACK)
     elseif drawer == "invert" then
         bb:invertRect(x, y, w, h)
     end
     if draw_note_mark then
         if self.highlight.note_mark == "underline" then
-            bb:paintRect(x, y + h - 1, w, 2, Blitbuffer.COLOR_BLACK)
+            bb:paintRect(x, y + h - 1, w, Size.line.medium, Blitbuffer.COLOR_BLACK)
         else
             local note_mark_pos_x
             if self.ui.paging or
@@ -1144,7 +1147,7 @@ function ReaderView:isOverlapAllowed()
     if self.ui.paging then
         return not self.page_scroll
             and (self.ui.paging.zoom_mode ~= "page"
-                or (self.ui.paging.zoom_mode == "page" and self.ui.paging.is_reflowed))
+                or (self.ui.paging.zoom_mode == "page" and self.document.configurable.text_wrap == 1))
             and not self.ui.paging.zoom_mode:find("height")
     else
         return self.view_mode ~= "page"

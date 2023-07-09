@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
+local datetime = require("datetime")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
@@ -158,13 +159,13 @@ function FileChooser:getListItem(f, filename, attributes, collate)
     }
     if collate then -- file
         if G_reader_settings:readSetting("show_file_in_bold") ~= false then
-            item.opened = DocSettings:hasSidecarFile(filename)
+            item.opened = DocSettings:hasSidecarFile(filename) and true or false
         end
         if collate == "type" then
             item.suffix = util.getFileNameSuffix(f)
         elseif collate == "percent_unopened_first" or collate == "percent_unopened_last" then
             local percent_finished
-            item.opened = DocSettings:hasSidecarFile(filename)
+            item.opened = DocSettings:hasSidecarFile(filename) and true or false
             if item.opened then
                 local doc_settings = DocSettings:open(filename)
                 percent_finished = doc_settings:readSetting("percent_finished")
@@ -192,15 +193,7 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
         sorting = function(a, b)
             return natsort(a.text, b.text)
         end
-    elseif collate == "access" then
-        sorting = function(a, b)
-            return a.attr.access > b.attr.access
-        end
-    elseif collate == "change" then
-        sorting = function(a, b)
-            return a.attr.change > b.attr.change
-        end
-    elseif collate == "modification" then
+    elseif collate == "date" then
         sorting = function(a, b)
             return a.attr.modification > b.attr.modification
         end
@@ -347,12 +340,8 @@ function FileChooser:getMenuItemMandatory(item, collate)
     local text
     if collate then -- file
         -- display the sorting parameter in mandatory
-        if collate == "access" then
-            text = os.date("%Y-%m-%d %H:%M", item.attr.access)
-        elseif collate == "change" then
-            text = os.date("%Y-%m-%d %H:%M", item.attr.change)
-        elseif collate == "modification" then
-            text = os.date("%Y-%m-%d %H:%M", item.attr.modification)
+        if collate == "date" then
+            text = datetime.secondsToDateTime(item.attr.modification)
         elseif collate == "percent_unopened_first" or collate == "percent_unopened_last" then
             text = item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
         else

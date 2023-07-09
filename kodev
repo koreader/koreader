@@ -110,8 +110,6 @@ function setup_env() {
     SETUP_ENV_GREP_COMMAND="grep -z -v debug"
     if [ -n "${KODEBUG}" ]; then
         SETUP_ENV_GREP_COMMAND="grep -z debug"
-        # for android adb install
-        KODEBUG_SUFFIX=-debug
     fi
     local files=()
     while IFS= read -r -d $'\0'; do
@@ -811,16 +809,18 @@ TARGET:
                     kodev-release --ignore-translation android
                     assert_ret_zero $?
                 fi
-                setup_env
+                if [ -n "${KODEBUG}" ]; then
+                    KODEBUG_SUFFIX=-debug
+                fi
                 # clear logcat to get rid of useless cruft
                 adb logcat -c
                 # uninstall existing package to make sure *everything* is gone from memory
                 # no assert_ret_zero; uninstall is allowed to fail if there's nothing to uninstall
-                adb uninstall "org.koreader.launcher"
+                adb uninstall "org.koreader.launcher${KODEBUG_SUFFIX/-/.}"
                 adb install "koreader-android-${ANDROID_ARCH}${KODEBUG_SUFFIX}-${VERSION}.apk"
                 assert_ret_zero $?
                 # there's no adb run so we do this…
-                adb shell monkey -p org.koreader.launcher -c android.intent.category.LAUNCHER 1
+                adb shell monkey -p org.koreader.launcher${KODEBUG_SUFFIX/-/.} -c android.intent.category.LAUNCHER 1
                 assert_ret_zero $?
                 adb logcat KOReader:V luajit-launcher:V "*:E"
             } || echo "Failed to find adb in PATH to interact with Android device."
@@ -994,7 +994,7 @@ function kodev-check() {
     check_submodules
 
     # shellcheck disable=2016
-    mapfile -t shellscript_locations < <({ git -c submodule.recurse=0 grep -lE '^#!(/usr)?/bin/(env )?(bash|sh)' && git submodule --quiet foreach '[ "$path" = "base" -o "$path" = "platform/android/luajit-launcher" ] || git grep -lE "^#!(/usr)?/bin/(env )?(bash|sh)" | sed "s|^|$path/|"' && git ls-files ./*.sh; } | sort | uniq)
+    mapfile -t shellscript_locations < <({ git -c submodule.recurse=0 grep -lE '^#!(/usr)?/bin/(env )?(bash|sh)' | sed "/^plugins\/terminal.koplugin\/shfm$/d" && git submodule --quiet foreach '[ "$path" = "base" -o "$path" = "platform/android/luajit-launcher" ] || git grep -lE "^#!(/usr)?/bin/(env )?(bash|sh)" | sed "s|^|$path/|"' && git ls-files ./*.sh; } | sort | uniq)
 
     SHFMT_OPTIONS="-i 4 -ci"
 
@@ -1207,7 +1207,7 @@ TARGET:
                 fi
             else
                 if [ -n "${KODEBUG}" ]; then
-                    adb logcat 'KOReader:V ApkUpdater:V Assets:V Device:V dlopen:V EPD:V EventReceiver:V Lights:V LuaJIT:V MainActivity:V NativeGlue:V NativeThread:V Timeout:V ActivityManager:V AndroidRuntime:V DEBUG:* *:F'
+                    adb logcat 'KOReader:V ApkUpdater:V Assets:V Device:V dlopen:V EPD:V EventReceiver:V Lights:V Surface:V LuaJIT:V MainActivity:V NativeGlue:V NativeThread:V Timeout:V ActivityManager:V AndroidRuntime:V DEBUG:* *:F'
                 else
                     adb logcat 'KOReader:I MainActivity:V NativeGlue:V NativeThread:V ActivityManager:W AndroidRuntime:E DEBUG:* *:F'
                 fi

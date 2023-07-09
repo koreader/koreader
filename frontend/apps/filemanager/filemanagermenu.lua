@@ -264,6 +264,17 @@ function FileManagerMenu:setUpdateItemTable()
                 text = _("History settings"),
                 sub_item_table = {
                     {
+                        text = _("Shorten date/time"),
+                        checked_func = function()
+                            return G_reader_settings:isTrue("history_datetime_short")
+                        end,
+                        callback = function()
+                            G_reader_settings:flipNilOrFalse("history_datetime_short")
+                            require("readhistory"):reload(true)
+                        end,
+                        separator = true,
+                    },
+                    {
                         text = _("Clear history of deleted files"),
                         callback = function()
                             UIManager:show(ConfirmBox:new{
@@ -833,9 +844,7 @@ function FileManagerMenu:getSortingMenuTable()
     local collates = {
         { _("name"), "strcoll" },
         { _("name (natural sorting)"), "natural" },
-        { _("last read date"), "access" },
-        { _("date added"), "change" },
-        { _("date modified"), "modification" },
+        { _("date modified"), "date" },
         { _("size"), "size" },
         { _("type"), "type" },
         { _("percent – unopened first"), "percent_unopened_first" },
@@ -889,7 +898,7 @@ function FileManagerMenu:getStartWithMenuTable()
     end
     return {
         text_func = function()
-            local start_with = G_reader_settings:readSetting("start_with")
+            local start_with = G_reader_settings:readSetting("start_with") or "filemanager"
             for i, v in ipairs(start_withs) do
                 if v[2] == start_with then
                     return T(_("Start with: %1"), v[1])
@@ -958,7 +967,7 @@ function FileManagerMenu:moveBookMetadata()
                     ok_callback = function()
                         UIManager:close(self.menu_container)
                         for _, book in ipairs(books_to_move) do
-                            DocSettings:update(book, book)
+                            DocSettings:updateLocation(book, book)
                         end
                         FileChooser:refreshPath()
                     end,

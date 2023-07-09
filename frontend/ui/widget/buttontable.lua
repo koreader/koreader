@@ -39,14 +39,12 @@ function ButtonTable:init()
     if self.zero_sep then
         -- If we're asked to add a first line, don't add a vspan before: caller
         -- must do its own padding before.
-        -- Things look better when the first line is gray like the others.
-        self:addHorizontalSep(false, true, true)
-    else
-        self:addHorizontalSep(false, false, true)
+        self:addVerticalSeparator()
     end
     local row_cnt = #self.buttons
     local table_min_needed_width = -1
     for i = 1, row_cnt do
+        self:addVerticalSpan()
         local buttons_layout_line = {}
         local horizontal_group = HorizontalGroup:new{}
         local row = self.buttons[i]
@@ -68,6 +66,7 @@ function ButtonTable:init()
             local button = Button:new{
                 text = btn_entry.text,
                 text_func = btn_entry.text_func,
+                lang = btn_entry.lang,
                 icon = btn_entry.icon,
                 icon_width = btn_entry.icon_width,
                 icon_height = btn_entry.icon_height,
@@ -87,7 +86,7 @@ function ButtonTable:init()
                 bordersize = 0,
                 margin = 0,
                 padding = Size.padding.buttontable, -- a bit taller than standalone buttons, for easier tap
-                padding_h = btn_entry.align == "left" and Size.padding.large or 0,
+                padding_h = btn_entry.align == "left" and Size.padding.large or Size.padding.button,
                     -- allow text to take more of the horizontal space if centered
                 avoid_text_truncation = btn_entry.avoid_text_truncation,
                 text_font_face = btn_entry.font_face,
@@ -128,8 +127,9 @@ function ButtonTable:init()
             end
         end -- end for each button
         table.insert(self.container, horizontal_group)
+        self:addVerticalSpan()
         if i < row_cnt then
-            self:addHorizontalSep(true, true, true)
+            self:addVerticalSeparator()
         end
         if column_cnt > 0 then
             -- Only add lines that are not separator to the focusmanager
@@ -149,7 +149,6 @@ function ButtonTable:init()
             end
         end
     end -- end for each button line
-    self:addHorizontalSep(true, false, false)
     if Device:hasDPad() then
         self.layout = self.buttons_layout
         self:refocusWidget()
@@ -165,24 +164,79 @@ function ButtonTable:init()
     end
 end
 
-function ButtonTable:addHorizontalSep(vspan_before, add_line, vspan_after, black_line)
-    if vspan_before then
-        table.insert(self.container,
-                     VerticalSpan:new{ width = Size.span.vertical_default })
-    end
-    if add_line then
-        table.insert(self.container, LineWidget:new{
-            background = black_line and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GRAY,
-            dimen = Geom:new{
-                w = self.width,
-                h = self.sep_width,
+function ButtonTable:addVerticalSpan()
+    table.insert(self.container, VerticalSpan:new{
+        width = Size.span.vertical_default,
+    })
+end
+
+function ButtonTable:addVerticalSeparator(black_line)
+    table.insert(self.container, LineWidget:new{
+        background = black_line and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GRAY,
+        dimen = Geom:new{
+            w = self.width,
+            h = self.sep_width,
+        },
+    })
+end
+
+function ButtonTable:setupGridScrollBehaviour()
+    -- So that the last row get the same height as all others,
+    -- we add an invisible separator below it
+    self.container:resetLayout()
+    table.insert(self.container, VerticalSpan:new{
+        width = self.sep_width,
+    })
+    self.container:getSize() -- have it recompute its offsets and size
+
+    -- Generate self.step_scroll_grid (so that what we add next is not part of it)
+    self:getStepScrollGrid()
+
+    -- Insert 2 lines off-dimensions in VerticalGroup (that will show only when overflowing)
+    table.insert(self.container, 1, LineWidget:new{
+        background = Blitbuffer.COLOR_BLACK,
+        dimen = Geom:new{
+            w = self.width,
+            h = self.sep_width,
+        },
+    })
+    table.insert(self.container._offsets, 1, { x=self.width, y=-self.sep_width })
+    table.insert(self.container, LineWidget:new{
+        background = Blitbuffer.COLOR_BLACK,
+        dimen = Geom:new{
+            w = self.width,
+            h = self.sep_width,
+        },
+    })
+    table.insert(self.container._offsets, { x=self.width, y=self.container._size.h + self.sep_width })
+end
+
+
+function ButtonTable:getStepScrollGrid()
+    if not self.step_scroll_grid then
+        local step_rows = {}
+        local offsets = self.container._offsets
+        local idx = self.zero_sep and 2 or 1
+        local row_num = 1
+        while idx <= #self.container do
+            local row = {
+                row_num = row_num, -- (not used, but may help with debugging)
+                top = offsets[idx].y, -- top of our vspan above text
+                content_top = offsets[idx+1].y, -- top of our text widget
+                content_bottom = offsets[idx+2].y - 1, -- bottom of our text widget
+                bottom = idx+4 <= #self.container and offsets[idx+4].y -1 or self.container:getSize().h -1
+                                                      -- bottom of our vspan + separator below text
+                -- To implement when needed:
+                -- columns = { array of similar info about each button in that row's HorizontalGroup }
+                -- Its absence means free scrolling on the x-axis (if scroll ends up being needed)
             }
-        })
+            table.insert(step_rows, row)
+            idx = idx + 4
+            row_num = row_num + 1
+        end
+        self.step_scroll_grid = step_rows
     end
-    if vspan_after then
-        table.insert(self.container,
-                     VerticalSpan:new{ width = Size.span.vertical_default })
-    end
+    return self.step_scroll_grid
 end
 
 function ButtonTable:getButtonById(id)

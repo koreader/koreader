@@ -1,11 +1,12 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local ButtonDialog = require("ui/widget/buttondialog")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
@@ -57,16 +58,6 @@ if G_reader_settings:hasNot("screensaver_hide_fallback_msg") then
 end
 
 local Screensaver = {
-    screensaver_provider = {
-        gif  = true,
-        jpg  = true,
-        jpeg = true,
-        png  = true,
-        svg  = true,
-        tif  = true,
-        tiff = true,
-        webp = true,
-    },
     default_screensaver_message = _("Sleeping"),
 
     -- State values
@@ -102,12 +93,10 @@ function Screensaver:_getRandomImage(dir)
     if ok then
         for f in iter, dir_obj do
             -- Always ignore macOS resource forks, too.
-            if lfs.attributes(dir .. f, "mode") == "file" and not util.stringStartsWith(f, "._") then
-                local extension = string.lower(string.match(f, ".+%.([^.]+)") or "")
-                if self.screensaver_provider[extension] then
-                    i = i + 1
-                    pics[i] = f
-                end
+            if lfs.attributes(dir .. f, "mode") == "file" and not util.stringStartsWith(f, "._")
+                    and DocumentRegistry:isImageFile(f) then
+                i = i + 1
+                pics[i] = f
             end
         end
         if i == 0 then
@@ -167,7 +156,7 @@ function Screensaver:expandSpecial(message, fallback)
     local batt_lvl = _("N/A")
 
     local ReaderUI = require("apps/reader/readerui")
-    local ui = ReaderUI:_getRunningInstance()
+    local ui = ReaderUI.instance
     if ui and ui.document then
         -- If we have a ReaderUI instance, use it.
         local doc = ui.document
@@ -316,7 +305,7 @@ function Screensaver:chooseFolder()
     })
     local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
                          or _("N/A")
-    choose_dialog = ButtonDialogTitle:new{
+    choose_dialog = ButtonDialog:new{
         title = T(_("Current screensaver image folder:\n%1"), BD.dirpath(screensaver_dir)),
         buttons = buttons
     }
@@ -336,12 +325,8 @@ function Screensaver:chooseFile(document_cover)
                 local path_chooser = PathChooser:new{
                     select_directory = false,
                     file_filter = function(filename)
-                        local suffix = util.getFileNameSuffix(filename)
-                        if document_cover and DocumentRegistry:hasProvider(filename) then
-                            return true
-                        elseif self.screensaver_provider[suffix] then
-                            return true
-                        end
+                        return document_cover and DocumentRegistry:hasProvider(filename)
+                                               or DocumentRegistry:isImageFile(filename)
                     end,
                     path = self.root_path,
                     onConfirm = function(file_path)
@@ -378,7 +363,7 @@ function Screensaver:chooseFile(document_cover)
                                     or _("N/A")
     local title = document_cover and T(_("Current screensaver document cover:\n%1"), BD.filepath(screensaver_document_cover))
         or T(_("Current screensaver image:\n%1"), BD.filepath(screensaver_image))
-    choose_dialog = ButtonDialogTitle:new{
+    choose_dialog = ButtonDialog:new{
         title = title,
         buttons = buttons
     }
@@ -387,7 +372,7 @@ end
 
 function Screensaver:isExcluded()
     local ReaderUI = require("apps/reader/readerui")
-    local ui = ReaderUI:_getRunningInstance()
+    local ui = ReaderUI.instance
     if ui and ui.doc_settings then
         local doc_settings = ui.doc_settings
         return doc_settings:isTrue("exclude_screensaver")
@@ -523,7 +508,7 @@ function Screensaver:setup(event, event_message)
 
     -- Check lastfile and setup the requested mode's resources, or a fallback mode if the required resources are unavailable.
     local ReaderUI = require("apps/reader/readerui")
-    local ui = ReaderUI:_getRunningInstance()
+    local ui = ReaderUI.instance
     local lastfile = G_reader_settings:readSetting("lastfile")
     if self.screensaver_type == "document_cover" then
         -- Set lastfile to the document of which we want to show the cover.
@@ -547,17 +532,7 @@ function Screensaver:setup(event, event_message)
         end
         if not excluded then
             if lastfile and lfs.attributes(lastfile, "mode") == "file" then
-                if ui and ui.document then
-                    local doc = ui.document
-                    self.image = doc:getCoverPageImage()
-                else
-                    local doc = DocumentRegistry:openDocument(lastfile)
-                    if doc.loadDocument then -- CreDocument
-                        doc:loadDocument(false) -- load only metadata
-                    end
-                    self.image = doc:getCoverPageImage()
-                    doc:close()
-                end
+                self.image = FileManagerBookInfo:getCoverImage(ui and ui.document, lastfile)
                 if self.image == nil then
                     self.screensaver_type = "random_image"
                 end
@@ -664,11 +639,11 @@ function Screensaver:show()
         }
     elseif self.screensaver_type == "bookstatus" then
         local ReaderUI = require("apps/reader/readerui")
-        local ui = ReaderUI:_getRunningInstance()
+        local ui = ReaderUI.instance
         local doc = ui.document
         local doc_settings = ui.doc_settings
         widget = BookStatusWidget:new{
-            thumbnail = doc:getCoverPageImage(),
+            thumbnail = FileManagerBookInfo:getCoverImage(doc),
             props = doc:getProps(),
             document = doc,
             settings = doc_settings,

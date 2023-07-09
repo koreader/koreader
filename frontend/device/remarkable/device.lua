@@ -143,13 +143,6 @@ function Remarkable:init()
         wacom_protocol = true,
     }
 
-    self.input.open(self.input_wacom) -- Wacom
-    self.input.open(self.input_ts) -- Touchscreen
-    self.input.open(self.input_buttons) -- Buttons
-
-    local scalex = screen_width / self.mt_width
-    local scaley = screen_height / self.mt_height
-
     -- Assume input stuff is saner on mainline kernels...
     -- (c.f., https://github.com/koreader/koreader/issues/10012)
     local is_mainline = false
@@ -164,6 +157,20 @@ function Remarkable:init()
             is_mainline = true
         end
     end
+
+    if is_mainline then
+        self.input_wacom = "/dev/input/by-path/platform-30a20000.i2c-event-mouse"
+        self.input_buttons = "/dev/input/by-path/platform-30370000.snvs:snvs-powerkey-event"
+        self.input_ts = "/dev/input/touchscreen0"
+    end
+
+    self.input.open(self.input_wacom) -- Wacom
+    self.input.open(self.input_ts) -- Touchscreen
+    self.input.open(self.input_buttons) -- Buttons
+
+    local scalex = screen_width / self.mt_width
+    local scaley = screen_height / self.mt_height
+
     if is_mainline then
         -- NOTE: The panel sends *both* ABS_MT_ & ABS_ coordinates, while the pen only sends ABS_ coordinates.
         --       Since we have to apply *different* mangling to each of them,
@@ -268,12 +275,10 @@ end
 
 function Remarkable:setEventHandlers(UIManager)
     UIManager.event_handlers.Suspend = function()
-        self:_beforeSuspend()
         self:onPowerEvent("Suspend")
     end
     UIManager.event_handlers.Resume = function()
         self:onPowerEvent("Resume")
-        self:_afterResume()
     end
     UIManager.event_handlers.PowerPress = function()
         UIManager:scheduleIn(2, UIManager.poweroff_action)
@@ -284,10 +289,7 @@ function Remarkable:setEventHandlers(UIManager)
             -- resume if we were suspended
             if self.screen_saver_mode then
                 if self.screen_saver_lock then
-                    logger.dbg("Pressed power while awake in screen saver mode, going back to suspend...")
-                    self:_beforeSuspend()
-                    self.powerd:beforeSuspend() -- this won't be run by onPowerEvent because we're in screen_saver_mode
-                    self:onPowerEvent("Suspend")
+                    UIManager.event_handlers.Suspend()
                 else
                     UIManager.event_handlers.Resume()
                 end

@@ -63,6 +63,9 @@ Loads settings for the exporter
 function BaseExporter:loadSettings()
     local plugin_settings = G_reader_settings:readSetting("exporter") or {}
     self.settings = plugin_settings[self.name] or {}
+    if plugin_settings.clipping_dir then
+        self.clipping_dir = plugin_settings.clipping_dir
+    end
 end
 
 --[[--
@@ -93,7 +96,7 @@ function BaseExporter:getFilePath(t)
     if not self.is_remote then
         local filename = string.format("%s-%s.%s",
             self:getTimeStamp(),
-            #t == 1 and t[1].output_filename or "all-books",
+            #t == 1 and t[1].output_filename or self.all_books_title or "all-books",
             self.extension)
         return self.clipping_dir .. "/" .. getSafeFilename(filename)
     end

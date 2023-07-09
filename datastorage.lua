@@ -20,15 +20,22 @@ function DataStorage:getDataDir()
     elseif os.getenv("APPIMAGE") or os.getenv("KO_MULTIUSER") then
         if os.getenv("XDG_CONFIG_HOME") then
             data_dir = string.format("%s/%s", os.getenv("XDG_CONFIG_HOME"), "koreader")
+            if lfs.attributes(os.getenv("XDG_CONFIG_HOME"), "mode") ~= "directory" then
+                lfs.mkdir(os.getenv("XDG_CONFIG_HOME"))
+            end
         else
-            local user_rw = jit.os == "OSX" and "Library/Application Support" or ".config"
-            data_dir = string.format("%s/%s/%s", os.getenv("HOME"), user_rw, "koreader")
+            local user_rw = string.format("%s/%s", os.getenv("HOME"), jit.os == "OSX" and "Library/Application Support" or ".config")
+            if lfs.attributes(user_rw, "mode") ~= "directory" then
+                lfs.mkdir(user_rw)
+            end
+            data_dir = string.format("%s/%s", user_rw, "koreader")
         end
     else
         data_dir = "."
     end
     if lfs.attributes(data_dir, "mode") ~= "directory" then
-        lfs.mkdir(data_dir)
+        local ok, err = lfs.mkdir(data_dir)
+        if not ok then error(err .. " " .. data_dir) end
     end
 
     return data_dir

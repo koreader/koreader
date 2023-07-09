@@ -103,10 +103,17 @@ function PdfDocument:comparePositions(pos1, pos2)
 end
 
 function PdfDocument:getPageTextBoxes(pageno)
-    local page = self._document:openPage(pageno)
-    local text = page:getPageText()
-    page:close()
-    return text
+    local hash = "textbox|"..self.file.."|"..pageno
+    local cached = DocCache:check(hash)
+    if not cached then
+        local page = self._document:openPage(pageno)
+        local text = page:getPageText()
+        page:close()
+        DocCache:insert(hash, CacheItem:new{text=text, size=text.size})
+        return text
+    else
+        return cached.text
+    end
 end
 
 function PdfDocument:getPanelFromPage(pageno, pos)

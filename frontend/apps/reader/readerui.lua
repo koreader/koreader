@@ -21,6 +21,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LanguageSupport = require("languagesupport")
+local Notification = require("ui/widget/notification")
 local PluginLoader = require("pluginloader")
 local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
 local ReaderBack = require("apps/reader/modules/readerback")
@@ -655,7 +656,7 @@ function ReaderUI:doShowReader(file, provider, seamless)
         document = document,
     }
 
-    local title = reader.document:getProps().title
+    local title = reader.doc_settings:readSetting("doc_props").title
 
     if title ~= "" then
         Screen:setWindowTitle(title)
@@ -677,13 +678,6 @@ function ReaderUI:doShowReader(file, provider, seamless)
     UIManager:show(reader, seamless and "ui" or "full")
 end
 
--- NOTE: The instance reference used to be stored in a private module variable, hence the getter method.
---       We've since aligned behavior with FileManager, which uses a class member instead,
---       but kept the function to avoid changing existing code.
-function ReaderUI:_getRunningInstance()
-    return ReaderUI.instance
-end
-
 function ReaderUI:unlockDocumentWithPassword(document, try_again)
     logger.dbg("show input password dialog")
     self.password_dialog = InputDialog:new{
@@ -694,7 +688,6 @@ function ReaderUI:unlockDocumentWithPassword(document, try_again)
                 {
                     text = _("Cancel"),
                     id = "close",
-                    enabled = true,
                     callback = function()
                         self:closeDialog()
                         coroutine.resume(self._coroutine)
@@ -702,7 +695,6 @@ function ReaderUI:unlockDocumentWithPassword(document, try_again)
                 },
                 {
                     text = _("OK"),
-                    enabled = true,
                     callback = function()
                         local success = self:onVerifyPassword(document)
                         self:closeDialog()
@@ -742,8 +734,12 @@ function ReaderUI:saveSettings()
     G_reader_settings:flush()
 end
 
-function ReaderUI:onFlushSettings()
+function ReaderUI:onFlushSettings(show_notification)
     self:saveSettings()
+    if show_notification then
+        -- Invoked from dispatcher to explicitely flush settings
+        Notification:notify(_("Book metadata saved."))
+    end
 end
 
 function ReaderUI:closeDocument()
@@ -762,7 +758,7 @@ function ReaderUI:notifyCloseDocument()
             self:closeDocument()
         else
             UIManager:show(ConfirmBox:new{
-                text = _("Write highlights into this PDF??"),
+                text = _("Write highlights into this PDF?"),
                 ok_text = _("Write"),
                 dismissable = false,
                 ok_callback = function()
@@ -884,11 +880,7 @@ function ReaderUI:onOpenLastDoc()
 end
 
 function ReaderUI:getCurrentPage()
-    if self.document.info.has_pages then
-        return self.paging.current_page
-    else
-        return self.document:getCurrentPage()
-    end
+    return self.paging and self.paging.current_page or self.document:getCurrentPage()
 end
 
 return ReaderUI

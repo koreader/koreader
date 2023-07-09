@@ -4,6 +4,7 @@ local DataStorage = require("datastorage")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local FFIUtil = require("ffi/util")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InfoMessage = require("ui/widget/infomessage")
 local RenderImage = require("ui/renderimage")
 local SQ3 = require("lua-ljsqlite3/init")
@@ -528,7 +529,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                 local spec_max_cover_h = cover_specs.max_cover_h
 
                 dbrow.cover_fetched = 'Y' -- we had a try at getting a cover
-                local cover_bb = document:getCoverPageImage()
+                local cover_bb = FileManagerBookInfo:getCoverImage(document)
                 if cover_bb then
                     dbrow.has_cover = 'Y'
                     dbrow.cover_sizetag = spec_sizetag

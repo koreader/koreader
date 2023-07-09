@@ -182,8 +182,8 @@ function HtmlBoxWidget:getSelectedText(lines, start_pos, end_pos)
     local found_start = false
     local words = {}
 
-    for _, line in pairs(lines) do
-        for _, w in pairs(line) do
+    for _, line in ipairs(lines) do
+        for _, w in ipairs(line) do
             if type(w) == 'table' then
                 if not found_start then
                     if start_pos.x >= w.x0 and start_pos.x < w.x1 and start_pos.y >= w.y0 and start_pos.y < w.y1 then
@@ -246,7 +246,7 @@ function HtmlBoxWidget:getLinkByPosition(pos)
     local links = page:getPageLinks()
     page:close()
 
-    for _, link in pairs(links) do
+    for _, link in ipairs(links) do
         if pos.x >= link.x0 and pos.x < link.x1 and pos.y >= link.y0 and pos.y < link.y1 then
             return link
         end

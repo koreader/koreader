@@ -102,7 +102,8 @@ function UIManager:init()
         end)
     end
 
-    Device:_setEventHandlers(self)
+    -- Tell Device that we're now available, so that it can setup PM event handlers
+    Device:_UIManagerReady(self)
 
     -- A simple wrapper for UIManager:quit()
     -- This may be overwritten by setRunForeverMode(); for testing purposes
@@ -361,7 +362,7 @@ function UIManager:debounce(seconds, immediate, action)
         else
             is_scheduled = false
             if not immediate then
-                result = action(unpack(args))
+                result = action(unpack(args, 1, args.n))
             end
             if not is_scheduled then
                 -- This check is needed because action can recursively call debounced_action_wrapper
@@ -376,7 +377,7 @@ function UIManager:debounce(seconds, immediate, action)
             self:scheduleIn(seconds, scheduled_action)
             is_scheduled = true
             if immediate then
-                result = action(unpack(args))
+                result = action(unpack(args, 1, args.n))
             end
         end
         return result
@@ -987,7 +988,7 @@ function UIManager:_checkTasks()
             -- NOTE: Said task's action might modify _task_queue.
             --       To avoid race conditions and catch new upcoming tasks during this call,
             --       we repeatedly check the head of the queue (c.f., #1758).
-            task.action(unpack(task.args))
+            task.action(unpack(task.args, 1, task.args.n))
         else
             -- As the queue is sorted in descending order, it's safe to assume all items are currently future tasks.
             wait_until = task_time
@@ -1548,9 +1549,6 @@ This is the main loop of the UI controller.
 It is intended to manage input events and delegate them to dialogs.
 --]]
 function UIManager:run()
-    -- Tell PowerD that we're ready
-    Device:getPowerDevice():readyUI()
-
     self:initLooper()
     -- currently there is no Turbo support for Windows
     -- use our own main loop

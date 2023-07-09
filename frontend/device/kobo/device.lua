@@ -1,6 +1,6 @@
 local Generic = require("device/generic/device")
 local Geom = require("ui/geometry")
-local UIManager -- Updated on UIManager init
+local UIManager
 local WakeupMgr = require("device/wakeupmgr")
 local time = require("ui/time")
 local ffiUtil = require("ffi/util")
@@ -45,25 +45,6 @@ local function checkStandby()
     end
     logger.dbg("Kobo: standby state is unsupported")
     return no
-end
-
-local function writeToSys(val, file)
-    -- NOTE: We do things by hand via ffi, because io.write uses fwrite,
-    --       which isn't a great fit for procfs/sysfs (e.g., we lose failure cases like EBUSY,
-    --       as it only reports failures to write to the *stream*, not to the disk/file!).
-    local fd = C.open(file, bit.bor(C.O_WRONLY, C.O_CLOEXEC)) -- procfs/sysfs, we shouldn't need O_TRUNC
-    if fd == -1 then
-        logger.err("Cannot open file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
-        return
-    end
-    local bytes = #val
-    local nw = C.write(fd, val, bytes)
-    if nw == -1 then
-        logger.err("Cannot write `" .. val .. "` to file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
-    end
-    C.close(fd)
-    -- NOTE: Allows the caller to possibly handle short writes (not that these should ever happen here).
-    return nw == bytes
 end
 
 -- Return the highest core number
@@ -166,7 +147,7 @@ local Kobo = Generic:extend{
     -- Device ships with various hardware revisions under the same device code, requirign automatic hardware detection...
     automagic_sysfs = false,
 
-    unexpected_wakeup_count = 0
+    unexpected_wakeup_count = 0,
 }
 
 local KoboTrilogyA = Kobo:extend{
@@ -399,7 +380,6 @@ local KoboStorm = Kobo:extend{
 }
 
 -- Kobo Nia:
---- @fixme: Mostly untested, assume it's Clara-ish for now.
 local KoboLuna = Kobo:extend{
     model = "Kobo_luna",
     isMk7 = yes,
@@ -408,6 +388,8 @@ local KoboLuna = Kobo:extend{
     touch_phoenix_protocol = true,
     display_dpi = 212,
     hasReliableMxcWaitFor = no, -- Board is similar to the Libra 2, but it's such an unpopular device that reports are scarce.
+    -- Handle the HW revision w/ a BD71828 PMIC
+    automagic_sysfs = true,
 }
 
 -- Kobo Elipsa
@@ -449,6 +431,11 @@ local KoboCadmus = Kobo:extend{
         nl_min = 0,
         nl_max = 10,
         nl_inverted = false,
+        --- @note: The Sage natively ramps when setting the frontlight intensity.
+        ---        A side-effect of this behavior is that if you queue a series of intensity changes ending at 0,
+        ---        it won't ramp *at all*, and jump straight to zero.
+        ---        So we delay the final ramp off step to prevent (both) the native and our ramping from being optimized out
+        ramp_off_delay = 0.5,
     },
     boot_rota = C.FB_ROTATE_CW,
     battery_sysfs = "/sys/class/power_supply/battery",
@@ -643,7 +630,7 @@ function Kobo:init()
 
         -- Power button (this usually ends up in ntx_dev, except with some PMICs)
         if util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey-event") then
-            -- Libra 2 w/ a BD71828 PMIC
+            -- Libra 2 & Nia w/ a BD71828 PMIC
             self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey-event"
         elseif util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event") then
             -- Sage w/ a BD71828 PMIC
@@ -1059,7 +1046,7 @@ function Kobo:standby(max_duration)
     logger.dbg("Kobo standby: asking to enter standby . . .")
     local standby_time = time.boottime_or_realtime_coarse()
 
-    local ret = writeToSys("standby", "/sys/power/state")
+    local ret = util.writeToSysfs("standby", "/sys/power/state")
 
     self.last_standby_time = time.boottime_or_realtime_coarse() - standby_time
     self.total_standby_time = self.total_standby_time + self.last_standby_time
@@ -1135,7 +1122,7 @@ function Kobo:suspend()
     -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
     --       kernel to suspend/resume various subsystems
     --       c.f., state_extended_store @ kernel/power/main.c
-    local ret = writeToSys("1", "/sys/power/state-extended")
+    local ret = util.writeToSysfs("1", "/sys/power/state-extended")
     if ret then
         logger.dbg("Kobo suspend: successfully asked the kernel to put subsystems to sleep")
     else
@@ -1169,7 +1156,7 @@ function Kobo:suspend()
     logger.dbg("Kobo suspend: asking for a suspend to RAM . . .")
     local suspend_time = time.boottime_or_realtime_coarse()
 
-    ret = writeToSys("mem", "/sys/power/state")
+    ret = util.writeToSysfs("mem", "/sys/power/state")
 
     -- NOTE: At this point, we *should* be in suspend to RAM, as such,
     --       execution should only resume on wakeup...
@@ -1184,7 +1171,7 @@ function Kobo:suspend()
     else
         logger.warn("Kobo suspend: the kernel refused to enter suspend!")
         -- Reset state-extended back to 0 since we are giving up.
-        writeToSys("0", "/sys/power/state-extended")
+        util.writeToSysfs("0", "/sys/power/state-extended")
         if G_reader_settings:isTrue("pm_debug_entry_failure") then
             self:toggleChargingLED(true)
         end
@@ -1233,7 +1220,7 @@ function Kobo:resume()
     --       kernel to suspend/resume various subsystems
     --       cf. kernel/power/main.c @ L#207
     --       Among other things, this sets up the wakeup pins (e.g., resume on input).
-    local ret = writeToSys("0", "/sys/power/state-extended")
+    local ret = util.writeToSysfs("0", "/sys/power/state-extended")
     if ret then
         logger.dbg("Kobo resume: successfully asked the kernel to resume subsystems")
     else
@@ -1249,7 +1236,7 @@ function Kobo:resume()
         -- c.f., neo_ctl @ drivers/input/touchscreen/zforce_i2c.c,
         -- basically, a is wakeup (for activate), d is sleep (for deactivate), and we don't care about s (set res),
         -- and l (led signal level, actually a NOP on NTX kernels).
-        writeToSys("a", self.hasIRGridSysfsKnob)
+        util.writeToSysfs("a", self.hasIRGridSysfsKnob)
     end
 
     -- A full suspend may have toggled the LED off.
@@ -1362,16 +1349,16 @@ function Kobo:enableCPUCores(amount)
             up = "1"
         end
 
-        writeToSys(up, path)
+        util.writeToSysfs(up, path)
     end
 end
 
 function Kobo:performanceCPUGovernor()
-    writeToSys("performance", self.cpu_governor_knob)
+    util.writeToSysfs("performance", self.cpu_governor_knob)
 end
 
 function Kobo:defaultCPUGovernor()
-    writeToSys(self.default_cpu_governor, self.cpu_governor_knob)
+    util.writeToSysfs(self.default_cpu_governor, self.cpu_governor_knob)
 end
 
 function Kobo:isStartupScriptUpToDate()
@@ -1383,24 +1370,19 @@ function Kobo:isStartupScriptUpToDate()
     return md5.sumFile(current_script) == md5.sumFile(new_script)
 end
 
-function Kobo:setEventHandlers(uimgr)
-    -- Update our module-local
+function Kobo:UIManagerReady(uimgr)
     UIManager = uimgr
+end
 
+function Kobo:setEventHandlers(uimgr)
     -- We do not want auto suspend procedure to waste battery during
     -- suspend. So let's unschedule it when suspending, and restart it after
     -- resume. Done via the plugin's onSuspend/onResume handlers.
     UIManager.event_handlers.Suspend = function()
-        self:_beforeSuspend()
         self:onPowerEvent("Suspend")
     end
     UIManager.event_handlers.Resume = function()
-        -- MONOTONIC doesn't tick during suspend,
-        -- invalidate the last battery capacity pull time so that we get up to date data immediately.
-        self:getPowerDevice():invalidateCapacityCache()
-
         self:onPowerEvent("Resume")
-        self:_afterResume()
     end
     UIManager.event_handlers.PowerPress = function()
         -- Always schedule power off.
@@ -1413,14 +1395,7 @@ function Kobo:setEventHandlers(uimgr)
             -- resume if we were suspended
             if self.screen_saver_mode then
                 if self.screen_saver_lock then
-                    -- This can only happen when some sort of screensaver_delay is set,
-                    -- and the user presses the Power button *after* already having woken up the device.
-                    -- In this case, we want to go back to suspend *without* affecting the screensaver,
-                    -- so we mimic UIManager.event_handlers.Suspend's behavior when *not* in screen_saver_mode ;).
-                    logger.dbg("Pressed power while awake in screen saver mode, going back to suspend...")
-                    self:_beforeSuspend()
-                    self.powerd:beforeSuspend() -- this won't be run by onPowerEvent because we're in screen_saver_mode
-                    self:onPowerEvent("Suspend")
+                    UIManager.event_handlers.Suspend()
                 else
                     UIManager.event_handlers.Resume()
                 end
@@ -1436,7 +1411,7 @@ function Kobo:setEventHandlers(uimgr)
     UIManager.event_handlers.Charging = function()
         self:_beforeCharging()
         -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
-        if self.screen_saver_mode then
+        if self.screen_saver_mode and not self.screen_saver_lock then
            UIManager.event_handlers.Suspend()
         end
     end
@@ -1444,7 +1419,7 @@ function Kobo:setEventHandlers(uimgr)
         -- We need to put the device into suspension, other things need to be done before it.
         self:usbPlugOut()
         self:_afterNotCharging()
-        if self.screen_saver_mode then
+        if self.screen_saver_mode and not self.screen_saver_lock then
            UIManager.event_handlers.Suspend()
         end
     end
@@ -1452,9 +1427,9 @@ function Kobo:setEventHandlers(uimgr)
     UIManager.event_handlers.UsbPlugIn = function()
         self:_beforeCharging()
         -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
-        if self.screen_saver_mode then
+        if self.screen_saver_mode and not self.screen_saver_lock then
             UIManager.event_handlers.Suspend()
-        else
+        elseif not self.screen_saver_lock then
             -- Potentially start an USBMS session
             local MassStorage = require("ui/elements/mass_storage")
             MassStorage:start()
@@ -1464,9 +1439,9 @@ function Kobo:setEventHandlers(uimgr)
         -- We need to put the device into suspension, other things need to be done before it.
         self:usbPlugOut()
         self:_afterNotCharging()
-        if self.screen_saver_mode then
+        if self.screen_saver_mode and not self.screen_saver_lock then
             UIManager.event_handlers.Suspend()
-        else
+        elseif not self.screen_saver_lock then
             -- Potentially dismiss the USBMS ConfirmBox
             local MassStorage = require("ui/elements/mass_storage")
             MassStorage:dismiss()

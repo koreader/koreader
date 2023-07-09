@@ -30,7 +30,7 @@ local Wikipedia = {
        generator = "search",
        gsrnamespace = "0",
        -- gsrsearch = nil, -- text to lookup, will be added below
-       gsrlimit = 20, -- max nb of results to get
+       gsrlimit = 30, -- max nb of results to get
        exlimit = "max",
        prop = "extracts|info|pageimages", -- 'extracts' to get text, 'info' to get full page length
        format = "json",
@@ -1217,6 +1217,12 @@ table {
     -- ----------------------------------------------------------------
     -- OEBPS/content.html
     -- Some small fixes to Wikipedia HTML to make crengine and the user happier
+
+    -- In some articles' HTML, we may get <link rel="mw-deduplicated-inline-style" href="mw-data...">
+    -- (which, by specs, is an empty element) without the proper empty tag ending "/>", which
+    -- would cause crengine's EPUB XHTML parser to wait for a proper </link>, hiding all the
+    -- following content... So, just remove them, as we don't make any use of them.
+    html = html:gsub("<link [^>]*>", "")
 
     -- Most images are in a link to the image info page, which is a useless
     -- external link for us, so let's remove this link.

@@ -121,7 +121,7 @@ Multiswipes allow you to perform complex gestures built up out of multiple swipe
 
 These advanced gestures consist of either straight swipes or diagonal swipes. To ensure accuracy, they can't be mixed.]])
 
--- If the gesture contains the "toggle_touch_input" action,
+-- If the gesture contains "toggle_touch_input" or "touch_input_on" actions, or is set "Always active" manually,
 -- mark it "always active" to make sure that InputContainer won't block it after the IgnoreTouchInput Event.
 function Gestures:isGestureAlwaysActive(ges, multiswipe_directions)
     -- Handle multiswipes properly
@@ -134,7 +134,8 @@ function Gestures:isGestureAlwaysActive(ges, multiswipe_directions)
         end
     end
 
-    return self.gestures[ges] and self.gestures[ges].toggle_touch_input
+    local gest = self.gestures[ges]
+    return gest and (gest.toggle_touch_input or gest.touch_input_on or (gest.settings and gest.settings.always_active))
 end
 
 function Gestures:init()
@@ -243,6 +244,56 @@ function Gestures:genMenu(ges)
         end,
     })
     Dispatcher:addSubMenu(self, sub_items, self.gestures, ges)
+    table.insert(sub_items, {
+        text = _("Anchor QuickMenu to gesture position"),
+        checked_func = function()
+            return self.gestures[ges] ~= nil
+            and self.gestures[ges].settings ~= nil
+            and self.gestures[ges].settings.anchor_quickmenu
+        end,
+        callback = function()
+            if self.gestures[ges] then
+                if self.gestures[ges].settings then
+                    if self.gestures[ges].settings.anchor_quickmenu then
+                        self.gestures[ges].settings.anchor_quickmenu = nil
+                        if next(self.gestures[ges].settings) == nil then
+                            self.gestures[ges].settings = nil
+                        end
+                    else
+                       self.gestures[ges].settings.anchor_quickmenu = true
+                    end
+                else
+                    self.gestures[ges].settings = {["anchor_quickmenu"] = true}
+                end
+                self.updated = true
+            end
+        end,
+    })
+    table.insert(sub_items, {
+        text = _("Always active"),
+        checked_func = function()
+            return self.gestures[ges] ~= nil
+            and self.gestures[ges].settings ~= nil
+            and self.gestures[ges].settings.always_active
+        end,
+        callback = function()
+            if self.gestures[ges] then
+                if self.gestures[ges].settings then
+                    if self.gestures[ges].settings.always_active then
+                        self.gestures[ges].settings.always_active = nil
+                        if next(self.gestures[ges].settings) == nil then
+                            self.gestures[ges].settings = nil
+                        end
+                    else
+                        self.gestures[ges].settings.always_active = true
+                    end
+                else
+                    self.gestures[ges].settings = {["always_active"] = true}
+                end
+                self.updated = true
+            end
+        end,
+    })
     return sub_items
 end
 
@@ -1102,6 +1153,7 @@ function Gestures:gestureAction(action, ges)
         return
     else
         self.ui:handleEvent(Event:new("HandledAsSwipe"))
+        ges.anchor_quickmenu = action_list.settings and action_list.settings.anchor_quickmenu
         Dispatcher:execute(action_list, ges)
     end
     return true

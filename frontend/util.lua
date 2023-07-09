@@ -5,9 +5,13 @@ This module contains miscellaneous helper functions for the KOReader frontend.
 local BaseUtil = require("ffi/util")
 local Utf8Proc = require("ffi/utf8proc")
 local lfs = require("libs/libkoreader-lfs")
+local logger = require("logger")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = BaseUtil.template
+local ffi = require("ffi")
+local C = ffi.C
+require("ffi/posix_h")
 
 local lshift = bit.lshift
 local rshift = bit.rshift
@@ -829,13 +833,33 @@ function util.removeFile(file)
     end
 end
 
+function util.writeToSysfs(val, file)
+    -- NOTE: We do things by hand via ffi, because io.write uses fwrite,
+    --       which isn't a great fit for procfs/sysfs (e.g., we lose failure cases like EBUSY,
+    --       as it only reports failures to write to the *stream*, not to the disk/file!).
+    local fd = C.open(file, bit.bor(C.O_WRONLY, C.O_CLOEXEC)) -- procfs/sysfs, we shouldn't need O_TRUNC
+    if fd == -1 then
+        logger.err("Cannot open file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
+        return
+    end
+    val = tostring(val)
+    local bytes = #val
+    local nw = C.write(fd, val, bytes)
+    if nw == -1 then
+        logger.err("Cannot write `" .. val .. "` to file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
+    end
+    C.close(fd)
+    -- NOTE: Allows the caller to possibly handle short writes (not that these should ever happen here).
+    return nw == bytes
+end
+
 -- Gets total, used and available bytes for the mountpoint that holds a given directory.
 -- @string path of the directory
 -- @treturn table with total, used and available bytes
 function util.diskUsage(dir)
     -- safe way of testing df & awk
     local function doCommand(d)
-        local handle = io.popen("df -k " .. d .. " 2>&1 | awk '$3 ~ /[0-9]+/ { print $2,$3,$4 }' 2>&1 || echo ::ERROR::")
+        local handle = io.popen("df -k " .. d .. " 2>/dev/null | awk '$3 ~ /[0-9]+/ { print $2,$3,$4 }' 2>/dev/null || echo ::ERROR::")
         if not handle then return end
         local output = handle:read("*all")
         handle:close()

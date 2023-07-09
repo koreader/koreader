@@ -1,4 +1,5 @@
 local Generic = require("device/generic/device")
+local UIManager
 local time = require("ui/time")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -76,7 +77,7 @@ local function isSpecialOffers()
     -- Look at the current blanket modules to see if the SO screensavers are enabled...
     local haslipc, lipc = pcall(require, "liblipclua")
     if not (haslipc and lipc) then
-        logger.warn("could not load liblibclua")
+        logger.warn("could not load liblipclua:", lipc)
         return true
     end
     local lipc_handle = lipc.init("com.github.koreader.device")
@@ -177,7 +178,6 @@ function Kindle:initNetworkManager(NetworkMgr)
         kindleEnableWifi(0)
         -- NOTE: Same here, except disconnect is simpler, so a dumb delay will do...
         if complete_callback then
-            local UIManager = require("ui/uimanager")
             UIManager:scheduleIn(2, complete_callback)
         end
     end
@@ -291,8 +291,9 @@ function Kindle:intoScreenSaver()
             -- so that we do the right thing on resume ;).
             self.screen_saver_mode = true
         end
+
+        self.powerd:beforeSuspend()
     end
-    self.powerd:beforeSuspend()
 end
 
 function Kindle:outofScreenSaver()
@@ -300,7 +301,6 @@ function Kindle:outofScreenSaver()
         if self:supportsScreensaver() then
             local Screensaver = require("ui/screensaver")
             local widget_was_closed = Screensaver:close()
-            local UIManager = require("ui/uimanager")
             if widget_was_closed then
                 -- And redraw everything in case the framework managed to screw us over...
                 UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
@@ -338,15 +338,15 @@ function Kindle:outofScreenSaver()
             elseif os.getenv("CVM_STOPPED") == "yes" then
                 os.execute("killall -STOP cvm")
             end
-            local UIManager = require("ui/uimanager")
             -- NOTE: We redraw after a slightly longer delay to take care of the potentially dynamic ad screen...
             --       This is obviously brittle as all hell. Tested on a slow-ass PW1.
             UIManager:scheduleIn(3, function() UIManager:setDirty("all", "full") end)
             -- Flip the switch again
             self.screen_saver_mode = false
         end
+
+        self.powerd:afterResume()
     end
-    self.powerd:afterResume()
 end
 
 function Kindle:usbPlugOut()
@@ -369,17 +369,19 @@ function Kindle:untar(archive, extract_to)
     return os.execute(("./tar --no-same-permissions --no-same-owner -xf %q -C %q"):format(archive, extract_to))
 end
 
-function Kindle:setEventHandlers(UIManager)
+function Kindle:UIManagerReady(uimgr)
+    UIManager = uimgr
+end
+
+function Kindle:setEventHandlers(uimgr)
     UIManager.event_handlers.Suspend = function()
         self.powerd:toggleSuspend()
     end
     UIManager.event_handlers.IntoSS = function()
-        self:_beforeSuspend()
         self:intoScreenSaver()
     end
     UIManager.event_handlers.OutOfSS = function()
         self:outofScreenSaver()
-        self:_afterResume()
     end
     UIManager.event_handlers.Charging = function()
         self:_beforeCharging()
@@ -726,6 +728,7 @@ function KindlePaperWhite2:init()
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+        hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 
     Kindle.init(self)
@@ -740,6 +743,7 @@ function KindleBasic:init()
         device = self,
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+        hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 
     Kindle.init(self)
@@ -755,6 +759,7 @@ function KindleVoyage:init()
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+        hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
     self.input = require("device/input"):new{
         device = self,
@@ -798,6 +803,13 @@ function KindleVoyage:init()
     self.input.open(self.touch_dev)
     self.input.open("/dev/input/event2") -- WhisperTouch
     self.input.open("fake_events")
+
+    -- reenable WhisperTouch keys when started without framework
+    if self.framework_lipc_handle then
+        self.framework_lipc_handle:set_int_property("com.lab126.deviced", "fsrkeypadEnable", 1)
+        self.framework_lipc_handle:set_int_property("com.lab126.deviced", "fsrkeypadPrevEnable", 1)
+        self.framework_lipc_handle:set_int_property("com.lab126.deviced", "fsrkeypadNextEnable", 1)
+    end
 end
 
 function KindlePaperWhite3:init()
@@ -807,6 +819,7 @@ function KindlePaperWhite3:init()
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+        hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 
     Kindle.init(self)
@@ -863,6 +876,7 @@ function KindleOasis:init()
         -- NOTE: Points to the embedded battery. The one in the cover is codenamed "soda".
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+        hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 
     self.input = require("device/input"):new{
@@ -1123,6 +1137,7 @@ function KindleBasic2:init()
         batt_capacity_file = "/sys/class/power_supply/bd7181x_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd7181x_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd7181x_bat/status",
+        hall_file = "/sys/devices/system/heisenberg_hall/heisenberg_hall0/hall_enable",
     }
 
     Kindle.init(self)
@@ -1139,6 +1154,7 @@ function KindlePaperWhite4:init()
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
+        hall_file = "/sys/bus/platform/drivers/hall_sensor/rex_hall/hall_enable",
     }
 
     Kindle.init(self)
@@ -1165,6 +1181,7 @@ function KindleBasic3:init()
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
+        hall_file = "/sys/bus/platform/drivers/hall_sensor/rex_hall/hall_enable",
     }
 
     Kindle.init(self)
@@ -1186,6 +1203,7 @@ function KindlePaperWhite5:init()
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
+        hall_file = "/sys/devices/platform/eink_hall/hall_enable",
     }
 
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.

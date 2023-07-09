@@ -153,6 +153,8 @@ function OTAManager:getZsyncFilename()
 end
 
 function OTAManager:checkUpdate()
+    if Device:isDeprecated() then return -1 end
+
     local http = require("socket.http")
     local ltn12 = require("ltn12")
     local socket = require("socket")
@@ -226,6 +228,10 @@ function OTAManager:fetchAndProcessUpdate()
     if ota_version == 0 then
         UIManager:show(InfoMessage:new{
             text = _("KOReader is up to date."),
+        })
+    elseif ota_version == -1 then
+        UIManager:show(InfoMessage:new{
+            text = T(_("Device no longer supported.\n\nPlease check %1"), "https://github.com/koreader/koreader/wiki/deprecated-devices")
         })
     elseif ota_version == nil then
         local channel = ota_channels[OTAManager:getOTAChannel()]

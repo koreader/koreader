@@ -156,7 +156,7 @@ end
 function Notification:notify(arg, source, refresh_after)
     source = source or self.notify_source
     local mask = G_reader_settings:readSetting("notification_sources_to_show_mask") or self.SOURCE_DEFAULT
-    if source and band(mask, self.notify_source) ~= 0 then
+    if source and band(mask, source) ~= 0 then
         UIManager:show(Notification:new{
             text = arg,
          })
@@ -250,5 +250,14 @@ function Notification:onGesture(ev)
     end
     return InputContainer.onGesture(self, ev)
 end
+
+-- Since toasts do *not* prevent event propagation, if we let this go through to InputContainer, shit happens...
+function Notification:onIgnoreTouchInput(toggle)
+    return true
+end
+-- Do the same for other Events caught by our base class
+Notification.onResume = Notification.onIgnoreTouchInput
+Notification.onPhysicalKeyboardDisconnected = Notification.onIgnoreTouchInput
+Notification.onInput = Notification.onIgnoreTouchInput
 
 return Notification
