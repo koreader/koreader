@@ -18,7 +18,6 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
 local N_ = _.ngettext
-local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local CloudStorage = Menu:extend{
@@ -45,8 +44,6 @@ function CloudStorage:init()
     else
         self.item_table = self:genItemTableFromRoot()
     end
-    self.width = Screen:getWidth()
-    self.height = Screen:getHeight()
     self.title_bar_left_icon = "plus"
     self.onLeftButtonTap = function() -- add new cloud storage
         self:selectCloudType()
