@@ -88,22 +88,21 @@ function NetworkMgr:scheduleConnectivityCheck(callback, widget)
 end
 
 function NetworkMgr:init()
+    logger.info("NetworkMgr:init")
     Device:initNetworkManager(self)
     self.interface = self:getNetworkInterfaceName()
 
     self:queryNetworkState()
     self.wifi_was_on = G_reader_settings:isTrue("wifi_was_on")
-    if self.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
-        -- Don't bother if WiFi is already up...
-        if not self.is_connected then
-            self:restoreWifiAsync()
-        end
-        self:scheduleConnectivityCheck()
+    -- Trigger an initial NetworkConnected event if WiFi was already up when we were launched
+    if self.is_connected then
+        -- NOTE: This needs to be delayed because NetworkListener is initialized slightly later by the FM/Reader app...
+        UIManager:scheduleIn(2, UIManager.broadcastEvent, UIManager, Event:new("NetworkConnected"))
     else
-        -- Trigger an initial NetworkConnected event if WiFi was already up when we were launched
-        if self.is_connected then
-            -- NOTE: This needs to be delayed because NetworkListener is initialized slightly later by the FM/Reader app...
-            UIManager:scheduleIn(2, UIManager.broadcastEvent, UIManager, Event:new("NetworkConnected"))
+        -- Attempt to restore wifi in the background if necessary
+        if Device:hasWifiRestore() and self.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
+            self:restoreWifiAsync()
+            self:scheduleConnectivityCheck()
         end
     end
 
