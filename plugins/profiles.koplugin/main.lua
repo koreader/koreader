@@ -124,20 +124,14 @@ function Profiles:getSubMenuItems()
                 text = _("Execute"),
                 callback = function(touchmenu_instance)
                     touchmenu_instance:onClose()
-                    local show_as_quickmenu = v.settings.show_as_quickmenu
-                    self.data[k].settings.show_as_quickmenu = nil
-                    self:onProfileExecute(k)
-                    self.data[k].settings.show_as_quickmenu = show_as_quickmenu
+                    self:onProfileExecute(k, false, false)
                 end,
             },
             {
                 text = _("Show as QuickMenu"),
                 callback = function(touchmenu_instance)
                     touchmenu_instance:onClose()
-                    local show_as_quickmenu = v.settings.show_as_quickmenu
-                    self.data[k].settings.show_as_quickmenu = true
-                    self:onProfileExecute(k)
-                    self.data[k].settings.show_as_quickmenu = show_as_quickmenu
+                    self:onProfileExecute(k, false, true)
                 end,
             },
             {
@@ -259,8 +253,8 @@ function Profiles:getSubMenuItems()
     return sub_item_table
 end
 
-function Profiles:onProfileExecute(name, gesture)
-    Dispatcher:execute(self.data[name], gesture)
+function Profiles:onProfileExecute(name, gesture, show_as_quickmenu)
+    Dispatcher:execute(self.data[name], gesture, show_as_quickmenu)
 end
 
 function Profiles:editProfileName(editCallback, old_name)
