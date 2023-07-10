@@ -100,6 +100,7 @@ function NetworkMgr:init()
     else
         -- Attempt to restore wifi in the background if necessary
         if Device:hasWifiRestore() and self.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
+            logger.dbg("NetworkMgr: init will restore Wi-Fi in the background")
             self:restoreWifiAsync()
             self:scheduleConnectivityCheck()
         end
