@@ -564,9 +564,10 @@ function NetworkMgr:getWifiToggleMenuTable()
                         })
                     end
                 else
-                    -- Assume success on other platforms
-                    -- FIXME: Don't, and run a connectivitycheck instead? (assuming we don't already have one scheduled, e.g., Kindle's turnOnWifi does one...)
-                    UIManager:broadcastEvent(Event:new("NetworkConnected"))
+                    -- Let our connectivity check figure it out on other platforms (assuming the platform implementation hasn't already fired one up)
+                    if not self.pending_connectivity_check then
+                        self:scheduleConnectivityCheck()
+                    end
                 end
             end
         end -- complete_callback()
