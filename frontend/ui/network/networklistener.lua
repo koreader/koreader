@@ -202,7 +202,7 @@ end
 
 function NetworkListener:onNetworkConnected()
     logger.dbg("NetworkListener: onNetworkConnected")
-    if Device:hasWifiManager() then
+    if Device:hasWifiToggle() then
         -- This is for the sake of events that don't emanate from NetworkMgr itself...
         NetworkMgr:setWifiState(true)
         NetworkMgr:setConnectionState(true)
@@ -220,7 +220,7 @@ end
 
 function NetworkListener:onNetworkDisconnected()
     logger.dbg("NetworkListener: onNetworkDisconnected")
-    if Device:hasWifiManager() then
+    if Device:hasWifiToggle() then
         NetworkMgr:setWifiState(false)
         NetworkMgr:setConnectionState(false)
     end
