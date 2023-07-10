@@ -212,12 +212,7 @@ function NetworkListener:onNetworkDisconnected()
         NetworkMgr:setConnectionState(false)
     end
 
-    if not G_reader_settings:isTrue("auto_disable_wifi") then
-        return
-    end
-
     NetworkListener:_unscheduleActivityCheck()
-
     -- Reset NetworkMgr's beforeWifiAction marker
     NetworkMgr:clearBeforeActionFlag()
 end
