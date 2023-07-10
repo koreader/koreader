@@ -20,15 +20,6 @@ fi
 # Default Android build to arm.
 ANDROID_ARCH="${ANDROID_ARCH:-arm}"
 
-# Default to Android 4.0+; required for NDK 15 but with a custom NDK the strict minimum is 9.
-if [[ "${ANDROID_ARCH}" == "arm64" ]] || [[ "${ANDROID_ARCH}" == "x86_64" ]]; then
-    # 64bit arches require at least ABI 21
-    NDKABI="${NDKABI:-21}"
-else
-    NDKABI="${NDKABI:-14}"
-fi
-export NDKABI
-
 # Default android flavor
 ANDROID_FLAVOR="${ANDROID_FLAVOR:-rocks}"
 export ANDROID_FLAVOR
@@ -264,21 +255,7 @@ ${SUPPORTED_TARGETS}"
             assert_ret_zero $?
             ;;
         android)
-            if [ -z "${NDK}" ]; then
-                if [ -n "${ANDROID_NDK_HOME}" ]; then
-                    # some distributions use `ANDROID_NDK` instead, fall back to it
-                    export NDK="${ANDROID_NDK_HOME}"
-                else
-                    export NDK="${CURDIR}/base/toolchain/android-ndk-r15c"
-                fi
-            fi
-            [ -e "${CURDIR}/base/toolchain/android-toolchain-${ANDROID_ARCH}/bin/" ] || {
-                { [ -e "${NDK}" ] || make -C "${CURDIR}/base/toolchain" android-ndk; }
-                assert_ret_zero $?
-                make android-toolchain
-                assert_ret_zero $?
-            }
-            echo "Using NDK: ${NDK}..."
+            make android-ndk || exit $?
             make TARGET=android
             assert_ret_zero $?
             ;;
@@ -550,14 +527,8 @@ ${SUPPORTED_RELEASE_TARGETS}"
             make TARGET=kindle-legacy update
             ;;
         android)
+            make android-sdk || exit $?
             kodev-build android
-            export PATH=${PATH}:${CURDIR}/base/toolchain/android-sdk-linux/tools
-            command -v android &>/dev/null || {
-                make -C "${CURDIR}/base/toolchain" android-sdk
-            }
-            ANDROID_HOME=$(dirname "$(dirname "$(command -v android)")")
-            export ANDROID_HOME
-            export PATH="${PATH}:${NDK}"
             make TARGET=android update
             ;;
         pocketbook)

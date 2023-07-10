@@ -31,12 +31,7 @@ endif
 ANDROID_VERSION?=$(shell git rev-list --count HEAD)
 ANDROID_NAME?=$(VERSION)
 
-# set PATH to find CC in managed toolchains
-ifeq ($(TARGET), android)
-	PATH:=$(ANDROID_TOOLCHAIN)/bin:$(PATH)
-endif
-
-MACHINE=$(shell PATH='$(PATH)' $(CC) -dumpmachine 2>/dev/null)
+MACHINE=$(shell $(CC) -dumpmachine 2>/dev/null)
 ifdef KODEBUG
 	MACHINE:=$(MACHINE)-debug
 	KODEDUG_SUFFIX:=-debug
@@ -417,7 +412,11 @@ androidupdate: all
 		;
 
 	# make the android APK
-	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) $(if $(KODEBUG), debug, release) \
+	# Note: filter out the `--debug=…` make flag
+	# so the old crummy version provided by the
+	# NDK does not blow a gasket.
+	MAKEFLAGS='$(filter-out --debug=%,$(MAKEFLAGS))' \
+		$(MAKE) -C $(ANDROID_LAUNCHER_DIR) $(if $(KODEBUG), debug, release) \
 		ANDROID_APPNAME=KOReader \
 		ANDROID_VERSION=$(ANDROID_VERSION) \
 		ANDROID_NAME=$(ANDROID_NAME) \
@@ -593,8 +592,11 @@ endif
 androiddev: androidupdate
 	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) dev
 
-android-toolchain:
-	$(MAKE) -C $(KOR_BASE) android-toolchain
+android-ndk:
+	$(MAKE) -C $(KOR_BASE)/toolchain $(ANDROID_NDK_HOME)
+
+android-sdk:
+	$(MAKE) -C $(KOR_BASE)/toolchain $(ANDROID_HOME)
 
 
 # for gettext
