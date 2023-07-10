@@ -21,6 +21,7 @@ require("ffi/posix_h")
 local NetworkMgr = {
     is_wifi_on = false,
     is_connected = false,
+    pending_connectivity_check = false,
     interface = nil,
 }
 
@@ -48,6 +49,7 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
             UIManager:close(widget)
             UIManager:show(InfoMessage:new{ text = _("Error connecting to the network") })
         end
+        self.pending_connectivity_check = false
         return
     end
 
@@ -74,12 +76,14 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
                 })
             end
         end
+        self.pending_connectivity_check = false
     else
         UIManager:scheduleIn(0.25, self.connectivityCheck, self, iter + 1, callback, widget)
     end
 end
 
 function NetworkMgr:scheduleConnectivityCheck(callback, widget)
+    self.pending_connectivity_check = true
     UIManager:scheduleIn(0.5, self.connectivityCheck, self, 1, callback, widget)
 end
 
@@ -477,6 +481,7 @@ function NetworkMgr:goOnlineToRun(callback)
     local info = self:beforeWifiAction()
     -- We'll basically do the same but in a blocking manner...
     UIManager:unschedule(self.connectivityCheck)
+    self.pending_connectivity_check = false
 
     local iter = 0
     while not self.is_connected do
@@ -538,11 +543,11 @@ function NetworkMgr:getWifiToggleMenuTable()
             if fully_connected then
                 UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
             else
-                -- FIXME: Do we still want to keep that mess, or just run a connectivity check and be done with it?
-                --        IIRC, both the scripts and their followup (reconnectOrShowNetworkMenu) is blocking,
-                --        so we should be okay with this...
                 -- On hasWifiManager devices that play with kernel modules directly,
                 -- double-check that the connection attempt was actually successful...
+                -- NOTE: We can get away with this instead of our full-blown connectivity check,
+                --       because on those platforms, the full turnOnWifi implementation is blocking
+                --       (that includes all the scripts and their followup (reconnectOrShowNetworkMenu)).
                 if Device:isKobo() or Device:isCervantes() then
                     if self.is_wifi_on and self.is_connected then
                         UIManager:broadcastEvent(Event:new("NetworkConnected"))
