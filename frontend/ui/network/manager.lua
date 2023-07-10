@@ -572,8 +572,6 @@ function NetworkMgr:getWifiToggleMenuTable()
         self:queryNetworkState()
         local fully_connected = self.is_wifi_on and self.is_connected
         local complete_callback = function()
-            -- Check the connection status again
-            self:queryNetworkState()
             -- Notify TouchMenu to update item check state
             touchmenu_instance:updateItems()
         end -- complete_callback()
