@@ -38,7 +38,7 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
         self.wifi_was_on = false
         G_reader_settings:makeFalse("wifi_was_on")
         -- If we abort, murder Wi-Fi and the async script first...
-        if Device:hasWifiManager() then
+        if Device:hasWifiRestore() and not Device:isKindle() then
             os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
         end
         -- We were never connected to begin with, so, no disconnecting broadcast required
