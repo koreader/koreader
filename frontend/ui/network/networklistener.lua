@@ -9,7 +9,12 @@ local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local NetworkListener = EventListener:extend{}
+local NetworkListener = EventListener:extend{
+    -- Class members, because we want the activity check to be cross-instances...
+    _activity_check_scheduled = nil,
+    _last_tx_packets = nil,
+    _activity_check_delay_seconds = nil,
+}
 
 function NetworkListener:onToggleWifi()
     if not NetworkMgr:isWifiOn() then
@@ -121,39 +126,40 @@ end
 
 function NetworkListener:_unscheduleActivityCheck()
     logger.dbg("NetworkListener: unschedule network activity check")
-    if self._activity_check_scheduled then
-        UIManager:unschedule(self._scheduleActivityCheck)
-        self._activity_check_scheduled = nil
+    if NetworkListener._activity_check_scheduled then
+        UIManager:unschedule(NetworkListener._scheduleActivityCheck)
+        NetworkListener._activity_check_scheduled = nil
         logger.dbg("NetworkListener: network activity check unscheduled")
     end
 
     -- We also need to reset the stats, otherwise we'll be comparing apples vs. oranges... (i.e., two different network sessions)
-    if self._last_tx_packets then
-        self._last_tx_packets = nil
+    if NetworkListener._last_tx_packets then
+        NetworkListener._last_tx_packets = nil
     end
-    if self._activity_check_delay_seconds then
-        self._activity_check_delay_seconds = nil
+    if NetworkListener._activity_check_delay_seconds then
+        NetworkListener._activity_check_delay_seconds = nil
     end
 end
 
+-- NOTE: This must *never* access instance-specific members!
 function NetworkListener:_scheduleActivityCheck()
     logger.dbg("NetworkListener: network activity check")
     local keep_checking = true
 
     local tx_packets = NetworkListener:_getTxPackets()
-    if self._last_tx_packets and tx_packets then
+    if NetworkListener._last_tx_packets and tx_packets then
         -- Compute noise threshold based on the current delay
-        local delay_seconds = self._activity_check_delay_seconds or default_network_timeout_seconds
+        local delay_seconds = NetworkListener._activity_check_delay_seconds or default_network_timeout_seconds
         local noise_threshold = delay_seconds / default_network_timeout_seconds * network_activity_noise_margin
-        local delta = tx_packets - self._last_tx_packets
+        local delta = tx_packets - NetworkListener._last_tx_packets
         -- If there was no meaningful activity (+/- a couple packets), kill the Wi-Fi
         if delta <= noise_threshold then
-            logger.dbg("NetworkListener: No meaningful network activity (delta:", delta, "<= threshold:", noise_threshold, "[ then:", self._last_tx_packets, "vs. now:", tx_packets, "]) -> disabling Wi-Fi")
+            logger.dbg("NetworkListener: No meaningful network activity (delta:", delta, "<= threshold:", noise_threshold, "[ then:", NetworkListener._last_tx_packets, "vs. now:", tx_packets, "]) -> disabling Wi-Fi")
             keep_checking = false
             NetworkMgr:disableWifi()
             -- NOTE: We leave wifi_was_on as-is on purpose, we wouldn't want to break auto_restore_wifi workflows on the next start...
         else
-            logger.dbg("NetworkListener: Significant network activity (delta:", delta, "> threshold:", noise_threshold, "[ then:", self._last_tx_packets, "vs. now:", tx_packets, "]) -> keeping Wi-Fi enabled")
+            logger.dbg("NetworkListener: Significant network activity (delta:", delta, "> threshold:", noise_threshold, "[ then:", NetworkListener._last_tx_packets, "vs. now:", tx_packets, "]) -> keeping Wi-Fi enabled")
         end
     end
 
@@ -163,22 +169,22 @@ function NetworkListener:_scheduleActivityCheck()
     end
 
     -- Update tracker for next iter
-    self._last_tx_packets = tx_packets
+    NetworkListener._last_tx_packets = tx_packets
 
     -- If it's already been scheduled, increase the delay until we hit the ceiling
-    if self._activity_check_delay_seconds then
-        self._activity_check_delay_seconds = self._activity_check_delay_seconds + default_network_timeout_seconds
+    if NetworkListener._activity_check_delay_seconds then
+        NetworkListener._activity_check_delay_seconds = NetworkListener._activity_check_delay_seconds + default_network_timeout_seconds
 
-        if self._activity_check_delay_seconds > max_network_timeout_seconds then
-            self._activity_check_delay_seconds = max_network_timeout_seconds
+        if NetworkListener._activity_check_delay_seconds > max_network_timeout_seconds then
+            NetworkListener._activity_check_delay_seconds = max_network_timeout_seconds
         end
     else
-        self._activity_check_delay_seconds = default_network_timeout_seconds
+        NetworkListener._activity_check_delay_seconds = default_network_timeout_seconds
     end
 
-    UIManager:scheduleIn(self._activity_check_delay_seconds, self._scheduleActivityCheck, self)
-    self._activity_check_scheduled = true
-    logger.dbg("NetworkListener: network activity check scheduled in", self._activity_check_delay_seconds, "seconds")
+    UIManager:scheduleIn(NetworkListener._activity_check_delay_seconds, NetworkListener._scheduleActivityCheck)
+    NetworkListener._activity_check_scheduled = true
+    logger.dbg("NetworkListener: network activity check scheduled in", NetworkListener._activity_check_delay_seconds, "seconds")
 end
 
 function NetworkListener:onNetworkConnected()
