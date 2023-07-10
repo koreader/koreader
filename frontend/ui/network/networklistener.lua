@@ -10,7 +10,7 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 
 local NetworkListener = EventListener:extend{
-    -- Class members, because we want the activity check to be cross-instances...
+    -- Class members, because we want the activity check to be cross-instance...
     _activity_check_scheduled = nil,
     _last_tx_packets = nil,
     _activity_check_delay_seconds = nil,
