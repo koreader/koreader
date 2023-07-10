@@ -750,8 +750,10 @@ function NetworkMgr:getMenuTable(common_settings)
         common_settings.network_powersave = self:getPowersaveMenuTable()
     end
 
+    if Device:hasWifiRestore() or Device:isEmulator() then
+        common_settings.network_restore = self:getRestoreMenuTable()
+    end
     if Device:hasWifiManager() or Device:isEmulator() then
-        common_settings.network_restore = self:getRestoreMenuTable() -- FIXME: Better check, if restoreWifiAsync is actually implemented?
         common_settings.network_dismiss_scan = self:getDismissScanMenuTable()
     end
     if Device:hasWifiToggle() then
