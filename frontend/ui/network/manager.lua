@@ -37,7 +37,7 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
         logger.info("Failed to restore Wi-Fi (after", iter * 0.25, "seconds)!")
         self.wifi_was_on = false
         G_reader_settings:makeFalse("wifi_was_on")
-        -- If we abort, murder Wi-Fi and the async script first...
+        -- If we abort, murder Wi-Fi and the async script (if any) first...
         if Device:hasWifiRestore() and not Device:isKindle() then
             os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
         end
@@ -84,7 +84,7 @@ end
 
 function NetworkMgr:scheduleConnectivityCheck(callback, widget)
     self.pending_connectivity_check = true
-    UIManager:scheduleIn(0.5, self.connectivityCheck, self, 1, callback, widget)
+    UIManager:scheduleIn(0.25, self.connectivityCheck, self, 1, callback, widget)
 end
 
 function NetworkMgr:init()
