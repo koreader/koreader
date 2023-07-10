@@ -634,7 +634,8 @@ end
 function NetworkMgr:getPowersaveMenuTable()
     return {
         text = _("Disable Wi-Fi connection when inactive"),
-        help_text = _([[This will automatically turn Wi-Fi off after a generous period of network inactivity, without disrupting workflows that require a network connection, so you can just keep reading without worrying about battery drain.]]),
+        help_text = Device:isKindle() and _([[This is unlikely to function properly on a stock Kindle, given how chatty the framework is.]]) or
+                    _([[This will automatically turn Wi-Fi off after a generous period of network inactivity, without disrupting workflows that require a network connection, so you can just keep reading without worrying about battery drain.]]),
         checked_func = function() return G_reader_settings:isTrue("auto_disable_wifi") end,
         callback = function()
             G_reader_settings:flipNilOrFalse("auto_disable_wifi")
