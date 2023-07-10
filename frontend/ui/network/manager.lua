@@ -507,6 +507,7 @@ function NetworkMgr:goOnlineToRun(callback)
     -- We're finally connected!
     self.wifi_was_on = true
     G_reader_settings:makeTrue("wifi_was_on")
+    logger.info("Successfully connected to Wi-Fi (after", iter * 0.25, "seconds)!")
     callback()
     -- Delay this so it won't fire for dead/dying instances in case we're called by a finalizer...
     UIManager:scheduleIn(2, function()
