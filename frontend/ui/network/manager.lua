@@ -33,7 +33,7 @@ end
 -- as quite a few things rely on it (KOSync, c.f. #5109; the network activity check, c.f., #6424).
 function NetworkMgr:connectivityCheck(iter, callback, widget)
     -- Give up after a while (restoreWifiAsync can take over 45s, so, try to cover that)...
-    if iter > 180 then
+    if iter >= 180 then
         logger.info("Failed to restore Wi-Fi (after", iter * 0.25, "seconds)!")
         self.wifi_was_on = false
         G_reader_settings:makeFalse("wifi_was_on")
@@ -524,7 +524,7 @@ function NetworkMgr:goOnlineToRun(callback)
     while not self.is_connected do
         iter = iter + 1
         if iter >= 120 then
-            logger.info("Failed to connect to Wi-Fi after 30s, giving up!")
+            logger.info("Failed to connect to Wi-Fi after", iter * 0.25, "seconds, giving up!")
             self.wifi_was_on = false
             G_reader_settings:makeFalse("wifi_was_on")
             if info then
