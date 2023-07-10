@@ -992,10 +992,22 @@ function Dispatcher:isActionEnabled(action)
     return not disabled
 end
 
-function Dispatcher:_showAsMenu(settings, gesture)
+function Dispatcher:_showAsMenu(settings, gesture, show_as_quickmenu)
     local display_list = Dispatcher:getDisplayList(settings)
     local quickmenu
     local buttons = {}
+    if show_as_quickmenu then
+        table.insert(buttons, {{
+            text = _("Execute all"),
+            align = "left",
+            font_face = "smallinfofont",
+            font_size = 22,
+            callback = function()
+                UIManager:close(quickmenu)
+                Dispatcher:execute(settings, gesture, false)
+            end,
+        }})
+    end
     for _, v in ipairs(display_list) do
         table.insert(buttons, {{
             text = v.text,
@@ -1007,6 +1019,12 @@ function Dispatcher:_showAsMenu(settings, gesture)
             callback = function()
                 UIManager:close(quickmenu)
                 Dispatcher:execute({[v.key] = settings[v.key]})
+            end,
+            hold_callback = function()
+                if v.key:sub(1, 13) == "profile_exec_" then
+                    UIManager:close(quickmenu)
+                    UIManager:sendEvent(Event:new(settingsList[v.key].event, settingsList[v.key].arg, gesture, true))
+                end
             end,
         }})
     end
@@ -1028,10 +1046,12 @@ Calls the events in a settings list
 arguments are:
     1) the settings table
     2) optionally a `gestures` object
+    3) optionally show_as_quickmenu: when 'nil' - follow the gesture setting
 --]]--
-function Dispatcher:execute(settings, gesture)
-    if settings.settings ~= nil and settings.settings.show_as_quickmenu == true then
-        return Dispatcher:_showAsMenu(settings, gesture)
+function Dispatcher:execute(settings, gesture, show_as_quickmenu)
+    if show_as_quickmenu or
+            (show_as_quickmenu == nil and settings.settings and settings.settings.show_as_quickmenu) then
+        return Dispatcher:_showAsMenu(settings, gesture, show_as_quickmenu)
     end
     local has_many = Dispatcher:_itemsCount(settings) > 1
     if has_many then
