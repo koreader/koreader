@@ -241,8 +241,11 @@ function NetworkListener:onSuspend()
 
     -- If we haven't already (e.g., via Generic's onPowerEvent), kill Wi-Fi
     if NetworkMgr:isWifiOn() then
+        local complete_callback = function()
+            UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
+        end
         UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
-        NetworkMgr:turnOffWifi()
+        NetworkMgr:turnOffWifi(complete_callback)
     end
 
     -- Unschedule regardless of the current Wi-Fi status
