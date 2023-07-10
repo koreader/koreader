@@ -123,6 +123,7 @@ function NetworkMgr:getNetworkList() end
 function NetworkMgr:getCurrentNetwork() end
 function NetworkMgr:authenticateNetwork() end
 function NetworkMgr:disconnectNetwork() end
+-- NOTE: This is currently only called on hasWifiManager platforms!
 function NetworkMgr:obtainIP() end
 function NetworkMgr:releaseIP() end
 -- This function should call both turnOnWifi() and obtainIP() in a non-blocking manner.
@@ -220,22 +221,28 @@ function NetworkMgr:ifHasAnAddress()
 end
 
 -- Wrappers around turnOnWifi & turnOffWifi with proper Event signaling
-function NetworkMgr:enableWifi()
-    -- FIXME: Err, no, this needs an actual connectivity check?
-    local complete_callback = function()
-        UIManager:broadcastEvent(Event:new("NetworkConnected"))
+function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget)
+    -- Connecting will take a few seconds, broadcast that information so affected modules/plugins can react.
+    UIManager:broadcastEvent(Event:new("NetworkConnecting"))
+    self:turnOnWifi(wifi_cb)
+
+    -- Some turnOnWifi implementations may already have fired a connectivity check...
+    if not self.pending_connectivity_check then
+        -- This will handle sending the proper Event, manage wifi_was_on, as well as tearing down Wi-Fi in case of failures.
+        self:scheduleConnectivityCheck(connectivity_cb, connectivity_widget)
     end
-    self:turnOnWifi(complete_callback)
 end
 
-function NetworkMgr:disableWifi()
+function NetworkMgr:disableWifi(cb)
     local complete_callback = function()
         UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
+        if cb then
+            cb()
+        end
     end
     UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
     self:turnOffWifi(complete_callback)
 end
-
 
 function NetworkMgr:toggleWifiOn(complete_callback, long_press)
     local toggle_im = InfoMessage:new{
@@ -248,10 +255,7 @@ function NetworkMgr:toggleWifiOn(complete_callback, long_press)
     G_reader_settings:makeTrue("wifi_was_on")
     self.wifi_toggle_long_press = long_press
 
-    -- Connecting might take a few seconds (hello standby).
-    -- Broadcast the information, that network is changing, so affected modules/plugins can react.
-    UIManager:broadcastEvent(Event:new("NetworkConnecting"))
-    self:turnOnWifi(complete_callback)
+    self:enableWifi(complete_callback)
 
     UIManager:close(toggle_im)
 end
@@ -266,10 +270,7 @@ function NetworkMgr:toggleWifiOff(complete_callback)
     self.wifi_was_on = false
     G_reader_settings:makeFalse("wifi_was_on")
 
-    -- Disconnecting might take some time, but less than connecting (hello standby).
-    -- Broadcast the information, that network is changing, so affected modules/plugins can react.
-    UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
-    self:turnOffWifi(complete_callback)
+    self:disableWifi(complete_callback)
 
     UIManager:close(toggle_im)
 end
@@ -309,17 +310,26 @@ function NetworkMgr:promptWifi(complete_callback, long_press)
 end
 
 function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
+    -- Just run the callback if WiFi is already up...
+    if self:isWifiOn() and self:isConnected() then
+        -- Given the guards in beforeWifiAction callers, this shouldn't really ever happen...
+        callback()
+        return
+    end
+
     local info = InfoMessage:new{ text = _("Connecting to Wi-Fi…") }
     UIManager:show(info)
     UIManager:forceRePaint()
 
-    -- Don't bother if WiFi is already up...
-    if not (self:isWifiOn() and self:isConnected()) then
-        self:turnOnWifi()
+    -- This is a slightly tweaked variant of enableWifi, because of our peculiar connectivityCheck usage...
+    UIManager:broadcastEvent(Event:new("NetworkConnecting"))
+    self:turnOnWifi()
+    -- Some implementations may fire a connectivity check,
+    -- but we *need* our own, because of the callback & widget passing.
+    if self.pending_connectivity_check then
+        UIManager:unschedule(self.connectivityCheck)
+        self.pending_connectivity_check = false
     end
-
-    -- This will handle sending the proper Event, manage wifi_was_on, as well as tearing down Wi-Fi in case of failures,
-    -- (i.e., much like getWifiToggleMenuTable).
     self:scheduleConnectivityCheck(callback, info)
 
     return info
@@ -369,8 +379,7 @@ function NetworkMgr:afterWifiAction(callback)
            callback()
         end
     elseif wifi_disable_action == "turn_off" then
-        UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
-        self:turnOffWifi(callback)
+        self:disableWifi(callback)
     else
         self:promptWifiOff(callback)
     end
@@ -557,40 +566,6 @@ function NetworkMgr:getWifiToggleMenuTable()
             self:queryNetworkState()
             -- Notify TouchMenu to update item check state
             touchmenu_instance:updateItems()
-            -- If Wi-Fi was on when the menu was shown, this means the tap meant to turn the Wi-Fi *off*,
-            -- as such, this callback will only be executed *after* the network has been disconnected.
-            if fully_connected then
-                UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
-            else
-                -- On hasWifiManager devices that play with kernel modules directly,
-                -- double-check that the connection attempt was actually successful...
-                -- NOTE: We can get away with this instead of our full-blown connectivity check,
-                --       because on those platforms, the full turnOnWifi implementation is blocking
-                --       (that includes all the scripts and their followup (reconnectOrShowNetworkMenu)).
-                if Device:isKobo() or Device:isCervantes() then
-                    if self.is_wifi_on and self.is_connected then
-                        UIManager:broadcastEvent(Event:new("NetworkConnected"))
-                    elseif self.is_wifi_on and not self.is_connected then
-                        -- If we can't ping the gateway, despite a successful authentication w/ the AP, display a warning,
-                        -- because this means that Wi-Fi is technically still enabled (e.g., modules are loaded).
-                        -- We can't really enforce a turnOffWifi right now, because the user might want to try another AP or something.
-                        -- (c.f., #5912, #4616).
-                        -- NOTE: Keep in mind that NetworkSetting only runs this callback on *successful* connections!
-                        --       (It's called connect_callback there).
-                        --       This makes this branch somewhat hard to reach, which is why it gets a dedicated prompt below...
-                        UIManager:show(InfoMessage:new{
-                            icon = "notice-warning",
-                            text = _("Gateway is unreachable, but Wi-Fi is still on!"),
-                            timeout = 3,
-                        })
-                    end
-                else
-                    -- Let our connectivity check figure it out on other platforms (assuming the platform implementation hasn't already fired one up)
-                    if not self.pending_connectivity_check then
-                        self:scheduleConnectivityCheck()
-                    end
-                end
-            end
         end -- complete_callback()
         if fully_connected then
             self:toggleWifiOff(complete_callback)
