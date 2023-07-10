@@ -368,11 +368,9 @@ endif
 		mv *.AppImage ../../koreader-$(DIST)-$(MACHINE)-$(VERSION).AppImage
 
 androidupdate: all
-	# in runtime luajit-launcher's libluajit.so will be loaded
-	-rm $(INSTALL_DIR)/koreader/libs/libluajit.so
-
-        # fresh APK assets
-	rm -rfv $(ANDROID_ASSETS) $(ANDROID_LIBS_ROOT)
+	# Note: do not remove the module directory so there's no need
+	# for `mk7z.sh` to always recreate `assets.7z` from scratch.
+	rm -rfv $(ANDROID_LIBS_ROOT)
 	mkdir -p $(ANDROID_ASSETS) $(ANDROID_LIBS_ABI)
 
 	# APK version
@@ -380,6 +378,8 @@ androidupdate: all
 
 	# shared libraries are stored as raw assets
 	cp -pR $(INSTALL_DIR)/koreader/libs $(ANDROID_LAUNCHER_DIR)/assets
+	# in runtime luajit-launcher's libluajit.so will be loaded
+	rm -vf $(ANDROID_LAUNCHER_DIR)/assets/libs/libluajit.so
 
 	# binaries are stored as shared libraries to prevent W^X exception on Android 10+
 	# https://developer.android.com/about/versions/10/behavior-changes-10#execute-permission
@@ -387,31 +387,34 @@ androidupdate: all
 	echo "sdcv libsdcv.so" > $(ANDROID_ASSETS)/map.txt
 
 	# assets are compressed manually and stored inside the APK.
-	cd $(INSTALL_DIR)/koreader && 7z a -l -m0=lzma2 -mx=9 \
-		../../$(ANDROID_ASSETS)/koreader.7z * \
-		-xr!*cache$ \
-		-xr!*clipboard$ \
-		-xr!*data/dict$ \
-		-xr!*data/tessdata$ \
-		-xr!*history$ \
-		-xr!*l10n/templates$ \
-		-xr!*libs$ \
-		-xr!*ota$ \
-		-xr!*resources/fonts* \
-		-xr!*resources/icons/src* \
-		-xr!*rocks/bin$ \
-		-xr!*rocks/lib/luarocks$ \
-		-xr!*screenshots$ \
-		-xr!*share/man* \
-		-xr!*spec$ \
-		-xr!*tools$ \
-		-xr!*COPYING$ \
-		-xr!*Makefile$ \
-		-xr!*NOTES.txt$ \
-		-xr!*NOTICE$ \
-		-xr!*README.md$ \
-		-xr!*sdcv \
-		-xr'!.*'
+	cd $(INSTALL_DIR)/koreader && \
+		./tools/mk7z.sh \
+		../../$(ANDROID_ASSETS)/koreader.7z \
+		"$$(git show -s --format='%ci')" \
+		-m0=lzma2 -mx=9 \
+		-- . \
+		'-x!cache' \
+		'-x!clipboard' \
+		'-x!data/dict' \
+		'-x!data/tessdata' \
+		'-x!history' \
+		'-x!l10n/templates' \
+		'-x!libs' \
+		'-x!ota' \
+		'-x!resources/fonts*' \
+		'-x!resources/icons/src*' \
+		'-x!rocks/bin' \
+		'-x!rocks/lib/luarocks' \
+		'-x!screenshots' \
+		'-x!sdcv' \
+		'-x!spec' \
+		'-x!tools' \
+		'-xr!.*' \
+		'-xr!COPYING' \
+		'-xr!NOTES.txt' \
+		'-xr!NOTICE' \
+		'-xr!README.md' \
+		;
 
 	# make the android APK
 	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) $(if $(KODEBUG), debug, release) \
