@@ -307,8 +307,7 @@ function Device:onPowerEvent(ev)
             if self:hasWifiToggle() then
                 local network_manager = require("ui/network/manager")
                 if network_manager:isWifiOn() then
-                    UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
-                    network_manager:turnOffWifi()
+                    network_manager:disableWifi()
                 end
             end
             self:rescheduleSuspend()
@@ -341,8 +340,7 @@ function Device:onPowerEvent(ev)
             --       because suspend will at best fail, and at worst deadlock the system if Wi-Fi is on,
             --       regardless of who enabled it!
             if network_manager:isWifiOn() then
-                UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
-                network_manager:turnOffWifi()
+                network_manager:disableWifi()
             end
         end
         -- Only turn off the frontlight *after* we've displayed the screensaver and dealt with Wi-Fi,

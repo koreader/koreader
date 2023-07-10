@@ -1,6 +1,5 @@
 local BD = require("ui/bidi")
 local Device = require("device")
-local Event = require("ui/event")
 local EventListener = require("ui/widget/eventlistener")
 local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
@@ -23,24 +22,17 @@ function NetworkListener:onToggleWifi()
         -- NB Normal widgets should use NetworkMgr:promptWifiOn()
         -- (or, better yet, the NetworkMgr:beforeWifiAction wrappers: NetworkMgr:runWhenOnline() & co.)
         -- This is specifically the toggle Wi-Fi action, so consent is implied.
-        local complete_callback = function()
-            UIManager:broadcastEvent(Event:new("NetworkConnected"))
-        end
-        NetworkMgr:turnOnWifi(complete_callback)
+        NetworkMgr:enableWifi()
 
         UIManager:close(toggle_im)
     else
-        local complete_callback = function()
-            UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
-        end
         local toggle_im = InfoMessage:new{
             text = _("Turning off Wi-Fi…"),
         }
         UIManager:show(toggle_im)
         UIManager:forceRePaint()
 
-        UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
-        NetworkMgr:turnOffWifi(complete_callback)
+        NetworkMgr:disableWifi()
 
         UIManager:close(toggle_im)
         UIManager:show(InfoMessage:new{
@@ -52,17 +44,13 @@ end
 
 function NetworkListener:onInfoWifiOff()
     -- That's the end goal
-    local complete_callback = function()
-        UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
-    end
     local toggle_im = InfoMessage:new{
         text = _("Turning off Wi-Fi…"),
     }
     UIManager:show(toggle_im)
     UIManager:forceRePaint()
 
-    UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
-    NetworkMgr:turnOffWifi(complete_callback)
+    NetworkMgr:disableWifi()
 
     UIManager:close(toggle_im)
     UIManager:show(InfoMessage:new{
@@ -82,10 +70,7 @@ function NetworkListener:onInfoWifiOn()
         -- NB Normal widgets should use NetworkMgr:promptWifiOn()
         -- (or, better yet, the NetworkMgr:beforeWifiAction wrappers: NetworkMgr:runWhenOnline() & co.)
         -- This is specifically the toggle Wi-Fi action, so consent is implied.
-        local complete_callback = function()
-            UIManager:broadcastEvent(Event:new("NetworkConnected"))
-        end
-        NetworkMgr:turnOnWifi(complete_callback)
+        NetworkMgr:enableWifi()
 
         UIManager:close(toggle_im)
     else
@@ -165,11 +150,7 @@ function NetworkListener:_scheduleActivityCheck()
         if delta <= noise_threshold then
             logger.dbg("NetworkListener: No meaningful network activity (delta:", delta, "<= threshold:", noise_threshold, "[ then:", self._last_tx_packets, "vs. now:", tx_packets, "]) -> disabling Wi-Fi")
             keep_checking = false
-            local complete_callback = function()
-                UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
-            end
-            UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
-            NetworkMgr:turnOffWifi(complete_callback)
+            NetworkMgr:disableWifi()
             -- NOTE: We leave wifi_was_on as-is on purpose, we wouldn't want to break auto_restore_wifi workflows on the next start...
         else
             logger.dbg("NetworkListener: Significant network activity (delta:", delta, "> threshold:", noise_threshold, "[ then:", self._last_tx_packets, "vs. now:", tx_packets, "]) -> keeping Wi-Fi enabled")
@@ -241,11 +222,7 @@ function NetworkListener:onSuspend()
 
     -- If we haven't already (e.g., via Generic's onPowerEvent), kill Wi-Fi
     if NetworkMgr:isWifiOn() then
-        local complete_callback = function()
-            UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
-        end
-        UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
-        NetworkMgr:turnOffWifi(complete_callback)
+        NetworkMgr:disableWifi()
     end
 
     -- Unschedule regardless of the current Wi-Fi status
