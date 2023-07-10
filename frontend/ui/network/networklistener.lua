@@ -237,7 +237,17 @@ end
 
 -- Also unschedule on suspend (and we happen to also kill Wi-Fi to do so, so resetting the stats is also relevant here)
 function NetworkListener:onSuspend()
-    self:onNetworkDisconnected()
+    logger.dbg("NetworkListener: onSuspend")
+
+    -- If we haven't already (e.g., via Generic's onPowerEvent), kill Wi-Fi
+    if NetworkMgr:isWifiOn() then
+        UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
+        NetworkMgr:turnOffWifi()
+    end
+
+    -- Unschedule regardless of the current Wi-Fi status
+    NetworkListener:_unscheduleActivityCheck()
+    NetworkMgr:clearBeforeActionFlag()
 end
 
 -- If the platform implements NetworkMgr:restoreWifiAsync, run it as needed
