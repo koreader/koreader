@@ -115,9 +115,19 @@ end
 function NetworkMgr:turnOnWifi(cb) end
 function NetworkMgr:turnOffWifi(cb) end
 -- This function returns the current status of the WiFi radio
--- FIXME: It *might* make sense to always return true on !hasWifiToggle platforms, so as not to confuse the beforeWifi stuff? (and let it fail with network errors owhen offline, instead of looping on unimplemented stuff...)
-function NetworkMgr:isWifiOn() end
-function NetworkMgr:isConnected() end
+-- NOTE: On !hasWifiToggle platforms, we assume networking is always available,
+--       so as not to confuse the whole beforeWifiAction framework
+--       (and let it fail with network errors owhen offline, instead of looping on unimplemented stuff...).
+function NetworkMgr:isWifiOn()
+    if not Device:hasWifiToggle() then
+        return true
+    end
+end
+function NetworkMgr:isConnected()
+    if not Device:hasWifiToggle() then
+        return true
+    end
+end
 function NetworkMgr:getNetworkInterfaceName() end
 function NetworkMgr:getNetworkList() end
 function NetworkMgr:getCurrentNetwork() end
