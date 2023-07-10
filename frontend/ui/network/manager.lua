@@ -112,8 +112,8 @@ end
 -- Following methods are Device specific which need to be initialized in
 -- Device:initNetworkManager. Some of them can be set by calling
 -- NetworkMgr:setWirelessBackend
-function NetworkMgr:turnOnWifi() end
-function NetworkMgr:turnOffWifi() end
+function NetworkMgr:turnOnWifi(cb) end
+function NetworkMgr:turnOffWifi(cb) end
 -- This function returns status of the WiFi radio
 function NetworkMgr:isWifiOn() end
 function NetworkMgr:isConnected() end
@@ -217,6 +217,24 @@ function NetworkMgr:ifHasAnAddress()
 
     return ok
 end
+
+-- Wrappers around turnOnWifi & turnOffWifi with proper Event signaling
+function NetworkMgr:enableWifi()
+    -- FIXME: Err, no, this needs an actual connectivity check?
+    local complete_callback = function()
+        UIManager:broadcastEvent(Event:new("NetworkConnected"))
+    end
+    self:turnOnWifi(complete_callback)
+end
+
+function NetworkMgr:disableWifi()
+    local complete_callback = function()
+        UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
+    end
+    UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
+    self:turnOffWifi(complete_callback)
+end
+
 
 function NetworkMgr:toggleWifiOn(complete_callback, long_press)
     local toggle_im = InfoMessage:new{
