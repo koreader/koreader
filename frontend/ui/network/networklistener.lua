@@ -174,7 +174,7 @@ end
 function NetworkListener:onNetworkConnected()
     logger.dbg("NetworkListener: onNetworkConnected")
     if Device:hasWifiToggle() then
-        -- This is for the sake of events that don't emanate from NetworkMgr itself...
+        -- This is for the sake of events that don't emanate from NetworkMgr itself (e.g., the Emu)...
         NetworkMgr:setWifiState(true)
         NetworkMgr:setConnectionState(true)
     end
