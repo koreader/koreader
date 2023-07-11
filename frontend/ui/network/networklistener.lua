@@ -185,7 +185,6 @@ function NetworkListener:onNetworkConnected()
 
     -- If the activity check has already been scheduled for some reason, unschedule it first.
     NetworkListener:_unscheduleActivityCheck()
-
     NetworkListener:_scheduleActivityCheck()
 end
 
