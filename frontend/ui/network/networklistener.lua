@@ -222,7 +222,7 @@ function NetworkListener:onSuspend()
     logger.dbg("NetworkListener: onSuspend")
 
     -- If we haven't already (e.g., via Generic's onPowerEvent), kill Wi-Fi
-    if NetworkMgr:isWifiOn() then
+    if Device:hasWifiToggle() and NetworkMgr:isWifiOn() then
         NetworkMgr:disableWifi()
     end
 
