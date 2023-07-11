@@ -209,7 +209,7 @@ function NetworkListener:onSuspend()
         NetworkMgr:disableWifi()
     end
 
-    -- Unschedule regardless of the current Wi-Fi status
+    -- Wi-Fi will be down, unschedule unconditionally
     NetworkListener:_unscheduleActivityCheck()
     NetworkMgr:clearBeforeActionFlag()
 end
