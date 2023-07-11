@@ -25,6 +25,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
+local C_ = _.pgettext
 local Screen = Device.screen
 local T = require("ffi/util").template
 
@@ -727,7 +728,7 @@ function ReaderStyleTweak:onToggleStyleTweak(tweak_id, item, no_notification)
         else
             self.doc_tweaks[tweak_id] = nil
         end
-        text = T(_("Off: %1"), self.tweaks_in_dispatcher[tweak_id])
+        text = T(C_("Style tweak", "Off: %1"), self.tweaks_in_dispatcher[tweak_id])
     else
         local conflicts_with
         if item then
@@ -744,7 +745,7 @@ function ReaderStyleTweak:onToggleStyleTweak(tweak_id, item, no_notification)
             self:resolveConflictsBeforeEnabling(tweak_id, conflicts_with)
         end
         self.doc_tweaks[tweak_id] = true
-        text = T(_("On: %1"), self.tweaks_in_dispatcher[tweak_id])
+        text = T(C_("Style tweak", "On: %1"), self.tweaks_in_dispatcher[tweak_id])
     end
     self:updateCssText(true) -- apply it immediately
     if not no_notification then
