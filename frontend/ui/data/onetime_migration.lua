@@ -5,9 +5,10 @@ Centralizes any and all one time migration concerns.
 local DataStorage = require("datastorage")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20230703
+local CURRENT_MIGRATION_DATE = 20230707
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -563,6 +564,24 @@ if last_migration_date < 20230703 then
     local collate = G_reader_settings:readSetting("collate")
     if collate == "modification" or collate == "access" or collate == "change" then
         G_reader_settings:saveSetting("collate", "date")
+    end
+end
+
+-- 20230707, OPDS, no more special calibre catalog
+if last_migration_date < 20230707 then
+    logger.info("Performing one-time migration for 20230707")
+
+    local calibre_opds = G_reader_settings:readSetting("calibre_opds")
+    if calibre_opds and calibre_opds.host and calibre_opds.port then
+        local opds_servers = G_reader_settings:readSetting("opds_servers") or {}
+        table.insert(opds_servers, 1, {
+            title    = _("Local calibre library"),
+            url      = string.format("http://%s:%d/opds", calibre_opds.host, calibre_opds.port),
+            username = calibre_opds.username,
+            password = calibre_opds.password,
+        })
+       G_reader_settings:saveSetting("opds_servers", opds_servers)
+       G_reader_settings:delSetting("calibre_opds")
     end
 end
 
