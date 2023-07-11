@@ -16,39 +16,22 @@ local NetworkListener = EventListener:extend{
     _activity_check_delay_seconds = nil,
 }
 
-function NetworkListener:onToggleWifi()
-    if not NetworkMgr:isWifiOn() then
-        local toggle_im = InfoMessage:new{
-            text = _("Turning on Wi-Fi…"),
-        }
-        UIManager:show(toggle_im)
-        UIManager:forceRePaint()
+local function enableWifi()
+    local toggle_im = InfoMessage:new{
+        text = _("Turning on Wi-Fi…"),
+    }
+    UIManager:show(toggle_im)
+    UIManager:forceRePaint()
 
-        -- NB Normal widgets should use NetworkMgr:promptWifiOn()
-        -- (or, better yet, the NetworkMgr:beforeWifiAction wrappers: NetworkMgr:runWhenOnline() & co.)
-        -- This is specifically the toggle Wi-Fi action, so consent is implied.
-        NetworkMgr:enableWifi()
+    -- NB Normal widgets should use NetworkMgr:promptWifiOn()
+    -- (or, better yet, the NetworkMgr:beforeWifiAction wrappers: NetworkMgr:runWhenOnline() & co.)
+    -- This is specifically the toggle Wi-Fi action, so consent is implied.
+    NetworkMgr:enableWifi()
 
-        UIManager:close(toggle_im)
-    else
-        local toggle_im = InfoMessage:new{
-            text = _("Turning off Wi-Fi…"),
-        }
-        UIManager:show(toggle_im)
-        UIManager:forceRePaint()
-
-        NetworkMgr:disableWifi()
-
-        UIManager:close(toggle_im)
-        UIManager:show(InfoMessage:new{
-            text = _("Wi-Fi off."),
-            timeout = 1,
-        })
-    end
+    UIManager:close(toggle_im)
 end
 
-function NetworkListener:onInfoWifiOff()
-    -- That's the end goal
+local function disableWifi()
     local toggle_im = InfoMessage:new{
         text = _("Turning off Wi-Fi…"),
     }
@@ -64,20 +47,21 @@ function NetworkListener:onInfoWifiOff()
     })
 end
 
+function NetworkListener:onToggleWifi()
+    if not NetworkMgr:isWifiOn() then
+        enableWifi()
+    else
+        disableWifi()
+    end
+end
+
+function NetworkListener:onInfoWifiOff()
+    disableWifi()
+end
+
 function NetworkListener:onInfoWifiOn()
     if not NetworkMgr:isOnline() then
-        local toggle_im = InfoMessage:new{
-            text = _("Enabling Wi-Fi…"),
-        }
-        UIManager:show(toggle_im)
-        UIManager:forceRePaint()
-
-        -- NB Normal widgets should use NetworkMgr:promptWifiOn()
-        -- (or, better yet, the NetworkMgr:beforeWifiAction wrappers: NetworkMgr:runWhenOnline() & co.)
-        -- This is specifically the toggle Wi-Fi action, so consent is implied.
-        NetworkMgr:enableWifi()
-
-        UIManager:close(toggle_im)
+        enableWifi()
     else
         local info_text
         local current_network = NetworkMgr:getCurrentNetwork()
