@@ -526,6 +526,24 @@ if last_migration_date < 20230703 then
     end
 end
 
+-- 20230707, OPDS, no more special calibre catalog
+if last_migration_date < 20230707 then
+    logger.info("Performing one-time migration for 20230707")
+
+    local calibre_opds = G_reader_settings:readSetting("calibre_opds")
+    if calibre_opds and calibre_opds.host and calibre_opds.port then
+        local opds_servers = G_reader_settings:readSetting("opds_servers") or {}
+        table.insert(opds_servers, 1, {
+            title    = _("Local calibre library"),
+            url      = string.format("http://%s:%d/opds", calibre_opds.host, calibre_opds.port),
+            username = calibre_opds.username,
+            password = calibre_opds.password,
+        })
+       G_reader_settings:saveSetting("opds_servers", opds_servers)
+       G_reader_settings:delSetting("calibre_opds")
+    end
+end
+
 -- 20230710, Migrate to a full settings table, and disable KOSync's auto sync mode if wifi_enable_action is not turn_on
 if last_migration_date < 20230710 then
     logger.info("Performing one-time migration for 20230710")
@@ -564,24 +582,6 @@ if last_migration_date < 20230710 then
             kosync.auto_sync = false
             G_reader_settings:saveSetting("kosync", kosync)
         end
-    end
-end
-
--- 20230707, OPDS, no more special calibre catalog
-if last_migration_date < 20230707 then
-    logger.info("Performing one-time migration for 20230707")
-
-    local calibre_opds = G_reader_settings:readSetting("calibre_opds")
-    if calibre_opds and calibre_opds.host and calibre_opds.port then
-        local opds_servers = G_reader_settings:readSetting("opds_servers") or {}
-        table.insert(opds_servers, 1, {
-            title    = _("Local calibre library"),
-            url      = string.format("http://%s:%d/opds", calibre_opds.host, calibre_opds.port),
-            username = calibre_opds.username,
-            password = calibre_opds.password,
-        })
-       G_reader_settings:saveSetting("opds_servers", opds_servers)
-       G_reader_settings:delSetting("calibre_opds")
     end
 end
 
