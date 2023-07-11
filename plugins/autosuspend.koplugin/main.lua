@@ -673,7 +673,7 @@ function AutoSuspend:onNetworkConnecting()
 end
 
 function AutoSuspend:onNetworkDisconnected()
-    logger.dbg("AutoSuspend: onNetworkDisonnected")
+    logger.dbg("AutoSuspend: onNetworkDisconnected")
     self:_unschedule_standby()
     -- Schedule the next check as usual.
     self:_start_standby()
