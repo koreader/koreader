@@ -582,7 +582,7 @@ You can enable individual tweaks on this book with a tap, or view more details a
                 end,
                 callback = function()
                     -- enable/disable only for this book
-                    self:onToggleStyleTweak(item.id, item)
+                    self:onToggleStyleTweak(item.id, item, true) -- no notification
                 end,
                 separator = item.separator,
             })
@@ -716,7 +716,8 @@ function ReaderStyleTweak:addToMainMenu(menu_items)
     }
 end
 
-function ReaderStyleTweak:onToggleStyleTweak(tweak_id, item)
+function ReaderStyleTweak:onToggleStyleTweak(tweak_id, item, no_notification)
+    local text
     local enabled, g_enabled = self:isTweakEnabled(tweak_id)
     if enabled then
         if g_enabled then
@@ -726,6 +727,7 @@ function ReaderStyleTweak:onToggleStyleTweak(tweak_id, item)
         else
             self.doc_tweaks[tweak_id] = nil
         end
+        text = _("Disabled style tweak: ")
     else
         local conflicts_with
         if item then
@@ -742,8 +744,14 @@ function ReaderStyleTweak:onToggleStyleTweak(tweak_id, item)
             self:resolveConflictsBeforeEnabling(tweak_id, conflicts_with)
         end
         self.doc_tweaks[tweak_id] = true
+        text = _("Enabled style tweak: ")
     end
     self:updateCssText(true) -- apply it immediately
+    if not no_notification then
+        UIManager:show(Notification:new{
+            text = text .. self.tweaks_in_dispatcher[tweak_id],
+        })
+    end
 end
 
 function ReaderStyleTweak:onDispatcherRegisterActions()
