@@ -101,7 +101,7 @@ function ReaderFont:setupFaceMenuTable()
                     text = text .. "   �"
                 end
                 if newly_added_fonts[v] then
-                    text = text .. "  \u{F196}" -- plus in square (no "new" symbol, and nothing better found)
+                    text = text .. "  *" -- (no real "new" symbol found in Unicode or nerdfont)
                 end
                 return text
             end,
@@ -114,6 +114,10 @@ function ReaderFont:setupFaceMenuTable()
             end,
             callback = function()
                 self:onSetFont(v)
+                -- We add it to the recently selected list only for tap on the
+                -- menu item (and not when :onSetFont() would be triggered by
+                -- a gesture/profile), which may be convenient for some users.
+                self:addToRecentlySelectedList(v)
             end,
             hold_callback = function(touchmenu_instance)
                 self:makeDefault(v, is_monospace, touchmenu_instance)
@@ -368,9 +372,6 @@ function ReaderFont:onSetFont(face)
         self.ui.document:setFontFace(face)
         -- signal readerrolling to update pos in new height
         self.ui:handleEvent(Event:new("UpdatePos"))
-        -- Should we do that here on any onSetFont (ie. gesture/profile)?
-        -- Or only when tapped on the menu?
-        self:addToRecentlySetList(face)
     end
 end
 
@@ -753,22 +754,24 @@ function ReaderFont:getFontSettingsTable()
     })
 
     table.insert(settings_table, {
-        text = _("Sort fonts by most recently set or added"),
+        text = _("Sort fonts by recently selected"),
         checked_func = function()
-            return G_reader_settings:isTrue("font_menu_sort_by_most_recently_set")
+            return G_reader_settings:isTrue("font_menu_sort_by_recently_selected")
         end,
         callback = function()
-            G_reader_settings:flipTrue("font_menu_sort_by_most_recently_set")
+            G_reader_settings:flipTrue("font_menu_sort_by_recently_selected")
             self.face_table.needs_refresh = true
         end,
         hold_callback = function()
             UIManager:show(ConfirmBox:new{
                 text = _([[
-The font list menu can show fonts sorted by names or by most recently set.
+The font list menu can show fonts sorted by name or by most recently selected.
+New fonts discovered at KOReader startup will be shown first.
+
 Do you want to clear the history of selected fonts?]]),
                 ok_text = _("Clear"),
                 ok_callback = function()
-                    G_reader_settings:delSetting("cre_fonts_recently_set")
+                    G_reader_settings:delSetting("cre_fonts_recently_selected")
                     -- Recreate it now, sorted alphabetically (we may not go visit
                     -- and refresh the font menu until quit, but we want to be able
                     -- to notice newly added fonts at next startup).
@@ -862,23 +865,23 @@ This setting allows scaling all monospace fonts by this percentage so they can f
     return settings_table
 end
 
-function ReaderFont:addToRecentlySetList(face)
-    local idx = util.arrayContains(self.fonts_recently_set, face)
+function ReaderFont:addToRecentlySelectedList(face)
+    local idx = util.arrayContains(self.fonts_recently_selected, face)
     if idx then
-        table.remove(self.fonts_recently_set, idx)
+        table.remove(self.fonts_recently_selected, idx)
     end
-    table.insert(self.fonts_recently_set, 1, face)
-    if G_reader_settings:isTrue("font_menu_sort_by_most_recently_set") then
+    table.insert(self.fonts_recently_selected, 1, face)
+    if G_reader_settings:isTrue("font_menu_sort_by_recently_selected") then
         self.face_table.needs_refresh = true
     end
 end
 
 function ReaderFont:sortFaceList(face_list)
-    self.fonts_recently_set = G_reader_settings:readSetting("cre_fonts_recently_set")
-    if not self.fonts_recently_set then
-        -- Init this most recently set list with the alphabetical list we got
-        self.fonts_recently_set = face_list
-        G_reader_settings:saveSetting("cre_fonts_recently_set", self.fonts_recently_set)
+    self.fonts_recently_selected = G_reader_settings:readSetting("cre_fonts_recently_selected")
+    if not self.fonts_recently_selected then
+        -- Init this list with the alphabetical list we got
+        self.fonts_recently_selected = face_list
+        G_reader_settings:saveSetting("cre_fonts_recently_selected", self.fonts_recently_selected)
         -- We got no list of previously known fonts, so we can't say which are new.
         newly_added_fonts = {}
         return face_list
@@ -887,27 +890,37 @@ function ReaderFont:sortFaceList(face_list)
         -- First call after launch: check for fonts not yet known
         newly_added_fonts = {}
         local seen_fonts = {}
-        for _, face in ipairs(self.fonts_recently_set) do
-            seen_fonts[face] = false -- was there last time
+        for _, face in ipairs(self.fonts_recently_selected) do
+            seen_fonts[face] = false -- was there last time, might no longer be now
         end
         for _, face in ipairs(face_list) do
             if seen_fonts[face] == nil then -- not known
                 newly_added_fonts[face] = true
                 -- Add newly seen fonts at start of the recently set list,
                 -- so the user can see and test them more easily.
-                table.insert(self.fonts_recently_set, 1, face)
+                table.insert(self.fonts_recently_selected, 1, face)
             end
             seen_fonts[face] = true
         end
         -- Remove no-longer-there fonts from our list
-        util.arrayRemove(self.fonts_recently_set, function(t, i, j)
+        util.arrayRemove(self.fonts_recently_selected, function(t, i, j)
             return seen_fonts[t[i]]
         end)
     end
-    if G_reader_settings:isTrue("font_menu_sort_by_most_recently_set") then
-        return self.fonts_recently_set
+    if G_reader_settings:isTrue("font_menu_sort_by_recently_selected") then
+        return self.fonts_recently_selected
     end
-    -- Otherwise, return face_list as we got it, alphabetically (as sorted by crengine)
+    -- Otherwise, return face_list as we got it, alphabetically (as sorted by crengine),
+    -- but still with newly added fonts first
+    if next(newly_added_fonts) then
+        local move_idx = 1
+        for i=1, #face_list do
+            if newly_added_fonts[face_list[i]] then
+                table.insert(face_list, move_idx, table.remove(face_list, i))
+                move_idx = move_idx + 1
+            end
+        end
+    end
     return face_list
 end
 
