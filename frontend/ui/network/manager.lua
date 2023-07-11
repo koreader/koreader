@@ -112,12 +112,12 @@ end
 -- Following methods are Device specific which need to be initialized in
 -- Device:initNetworkManager. Some of them can be set by calling
 -- NetworkMgr:setWirelessBackend
-function NetworkMgr:turnOnWifi(cb) end
-function NetworkMgr:turnOffWifi(cb) end
+function NetworkMgr:turnOnWifi(complete_callback) end
+function NetworkMgr:turnOffWifi(complete_callback) end
 -- This function returns the current status of the WiFi radio
 -- NOTE: On !hasWifiToggle platforms, we assume networking is always available,
 --       so as not to confuse the whole beforeWifiAction framework
---       (and let it fail with network errors owhen offline, instead of looping on unimplemented stuff...).
+--       (and let it fail with network errors when offline, instead of looping on unimplemented stuff...).
 function NetworkMgr:isWifiOn()
     if not Device:hasWifiToggle() then
         return true
