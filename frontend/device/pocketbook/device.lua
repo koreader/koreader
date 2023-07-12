@@ -646,6 +646,24 @@ function PocketBook741._fb_init(fb, finfo, vinfo)
     vinfo.bits_per_pixel = 24
 end
 
+-- PocketBook InkPad Color 2 (743C)
+local PocketBook743C = PocketBook:extend{
+    model = "PBInkPadColor2",
+    display_dpi = 300,
+    color_saturation = 1.5,
+    hasColorScreen = yes,
+    canHWDither = yes, -- Adjust color saturation with inkview
+    canUseCBB = no, -- 24bpp
+    isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
+    hasNaturalLight = yes,
+}
+
+function PocketBook743C._fb_init(fb, finfo, vinfo)
+    -- Pocketbook Color Lux reports bits_per_pixel = 8, but actually uses an RGB24 framebuffer
+    vinfo.bits_per_pixel = 24
+end
+
 -- PocketBook InkPad 4 (743G/743g)
 local PocketBook743G = PocketBook:extend{
     model = "PBInkPad4",
@@ -757,6 +775,8 @@ elseif codename == "PB740-2" or codename == "PB740-3" then
     return PocketBook740_2
 elseif codename == "PB741" then
     return PocketBook741
+elseif codename == "PB743C" then
+    return PocketBook743C
 elseif codename == "PB743G" or codename == "PB743g" or codename == "PocketBook 743G" or codename == "PocketBook 743g" then
     return PocketBook743G
 elseif codename == "PocketBook 840" or codename == "Reader InkPad" then
