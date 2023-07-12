@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
+local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local ConfirmBox = require("ui/widget/confirmbox")
+local DocumentRegistry = require("document/documentregistry")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -58,7 +59,7 @@ function ArchiveViewer:openArchiveViewer(file)
                 local title = item.path == "" and filename or filename.."/"..item.path
                 self_menu:switchItemTable(title, self:getItemTable(item.path))
             else
-                self:extractFile(file, item.path)
+                self:showFileDialog(file, item.path)
             end
         end,
         close_callback = function()
@@ -96,10 +97,13 @@ function ArchiveViewer:getZipListTable(file)
     end
 
     local std_out = io.popen("unzip ".."-qql \""..file.."\"")
-    for line in std_out:lines() do
-        -- entry datetime not used so far
-        local fsize, fname = string.match(line, "%s+(%d+)%s+[-0-9]+%s+[0-9:]+%s+(.+)")
-        parse_path(fname, fsize or 0)
+    if std_out then
+        for line in std_out:lines() do
+            -- entry datetime not used so far
+            local fsize, fname = string.match(line, "%s+(%d+)%s+[-0-9]+%s+[0-9:]+%s+(.+)")
+            parse_path(fname, fsize or 0)
+        end
+        std_out:close()
     end
 end
 
@@ -168,21 +172,78 @@ function ArchiveViewer:getItemDirMandatory(name)
     return text
 end
 
+function ArchiveViewer:showFileDialog(arcfile, filepath)
+    local dialog
+    local buttons = {
+        {
+            {
+                text = _("View"),
+                callback = function()
+                    UIManager:close(dialog)
+                    self:viewFile(arcfile, filepath)
+                end,
+            },
+            {
+                text = _("Extract"),
+                callback = function()
+                    UIManager:close(dialog)
+                    self:extractFile(arcfile, filepath)
+                end,
+            },
+        },
+    }
+    dialog = ButtonDialog:new{
+        title = filepath .. "\n\n" .. _("On extraction, if the file already exists, it will be overwritten."),
+        width_factor = 0.8,
+        buttons = buttons,
+    }
+    UIManager:show(dialog)
+end
+
+function ArchiveViewer:viewFile(arcfile, filepath)
+    local content
+    if self.arc_type == "zip" then
+        local std_out = io.popen("unzip ".."-qp \""..arcfile.."\"".." ".."\""..filepath.."\"")
+        if std_out then
+            content = std_out:read("*all")
+            std_out:close()
+        else
+            return
+        end
+    else
+        return
+    end
+
+    if DocumentRegistry:isImageFile(filepath) then
+        local RenderImage = require("ui/renderimage")
+        local ImageViewer = require("ui/widget/imageviewer")
+        UIManager:show(ImageViewer:new{
+            image = RenderImage:renderImageData(content, #content),
+            fullscreen = true,
+            with_title_bar = false,
+        })
+    else
+        local TextViewer = require("ui/widget/textviewer")
+        UIManager:show(TextViewer:new{
+            title = filepath,
+            title_multilines = true,
+            text = content,
+            justified = false,
+        })
+    end
+end
+
 function ArchiveViewer:extractFile(arcfile, filepath)
-    UIManager:show(ConfirmBox:new{
-        text = _("Extract this file?") .. "\n\n" .. filepath .. "\n\n" ..
-            _("If the file already exists, it will be overwritten."),
-        ok_text = _("Extract"),
-        ok_callback = function()
-            if self.arc_type == "zip" then
-                io.popen("unzip ".."-qo \""..arcfile.."\"".." ".."\""..filepath.."\""..
-                    " -d ".."\""..util.splitFilePathName(arcfile).."\"")
-            else -- add other archivers here
-                return
-            end
-            self.fm_updated = true
-        end,
-    })
+    if self.arc_type == "zip" then
+        local std_out = io.popen("unzip ".."-qo \""..arcfile.."\"".." ".."\""..filepath.."\""..
+                                 " -d ".."\""..util.splitFilePathName(arcfile).."\"")
+        if std_out then
+            std_out:close()
+        end
+    else
+        return
+    end
+    self.fm_updated = true
 end
 
 return ArchiveViewer
