@@ -101,10 +101,7 @@ function ReaderFont:setupFaceMenuTable()
                     text = text .. "   �"
                 end
                 if newly_added_fonts[v] then
-                    -- No real "new" symbol found in Unicode or nerdfont, so let's use
-                    -- this nerdfont small and superscripted "down arrow".
-                    -- (As it includes some left padding, no need for a leading space.)
-                    text = text .. "\u{F479}"
+                    text = text .. "  \u{EA93}" -- "NEW" in a black square, from nerdfont
                 end
                 return text
             end,
