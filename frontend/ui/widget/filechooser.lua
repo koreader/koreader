@@ -345,7 +345,7 @@ function FileChooser:getMenuItemMandatory(item, collate)
     if collate then -- file
         -- display the sorting parameter in mandatory
         if collate == "access" then
-            text = os.date("%Y-%m-%d %H:%M", item.attr.access)
+            text = datetime.secondsToDateTime(item.attr.access)
         elseif collate == "date" then
             text = datetime.secondsToDateTime(item.attr.modification)
         elseif collate == "percent_unopened_first" or collate == "percent_unopened_last" then
