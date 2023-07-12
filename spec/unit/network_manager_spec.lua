@@ -46,6 +46,9 @@ describe("network_manager module", function()
                 self:obtainIP()
             end
         end
+        function Device:hasWifiRestore()
+            return true
+        end
     end)
 
     it("should restore wifi in init if wifi was on", function()
@@ -72,6 +75,7 @@ describe("network_manager module", function()
 
     teardown(function()
         function Device:initNetworkManager() end
+        function Device:hasWifiRestore() return false end
         package.loaded["ui/network/manager"] = nil
     end)
 end)

@@ -46,6 +46,7 @@ local Device = {
     hasFewKeys = no,
     hasWifiToggle = yes,
     hasWifiManager = no,
+    hasWifiRestore = no,
     isDefaultFullscreen = yes,
     isHapticFeedbackEnabled = no,
     isDeprecated = no, -- device no longer receive OTA updates
@@ -278,13 +279,6 @@ function Device:onPowerEvent(ev)
             else
                 logger.dbg("Resuming...")
                 UIManager:unschedule(self.suspend)
-                if self:hasWifiManager() then
-                    local network_manager = require("ui/network/manager")
-                    if network_manager.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
-                        network_manager:restoreWifiAsync()
-                        network_manager:scheduleConnectivityCheck()
-                    end
-                end
                 self:resume()
                 local widget_was_closed = Screensaver:close()
                 if widget_was_closed and self:needsScreenRefreshAfterResume() then
@@ -313,8 +307,7 @@ function Device:onPowerEvent(ev)
             if self:hasWifiToggle() then
                 local network_manager = require("ui/network/manager")
                 if network_manager:isWifiOn() then
-                    UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
-                    network_manager:turnOffWifi()
+                    network_manager:disableWifi()
                 end
             end
             self:rescheduleSuspend()
@@ -347,8 +340,7 @@ function Device:onPowerEvent(ev)
             --       because suspend will at best fail, and at worst deadlock the system if Wi-Fi is on,
             --       regardless of who enabled it!
             if network_manager:isWifiOn() then
-                UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
-                network_manager:turnOffWifi()
+                network_manager:disableWifi()
             end
         end
         -- Only turn off the frontlight *after* we've displayed the screensaver and dealt with Wi-Fi,
