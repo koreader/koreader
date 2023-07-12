@@ -2,6 +2,7 @@ local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local DocumentRegistry = require("document/documentregistry")
+local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -177,17 +178,17 @@ function ArchiveViewer:showFileDialog(arcfile, filepath)
     local buttons = {
         {
             {
-                text = _("View"),
-                callback = function()
-                    UIManager:close(dialog)
-                    self:viewFile(arcfile, filepath)
-                end,
-            },
-            {
                 text = _("Extract"),
                 callback = function()
                     UIManager:close(dialog)
                     self:extractFile(arcfile, filepath)
+                end,
+            },
+            {
+                text = _("View"),
+                callback = function()
+                    UIManager:close(dialog)
+                    self:viewFile(arcfile, filepath)
                 end,
             },
         },
@@ -208,6 +209,10 @@ function ArchiveViewer:viewFile(arcfile, filepath)
             content = std_out:read("*all")
             std_out:close()
         else
+            UIManager:show(InfoMessage:new{
+                text = _("Cannot extract file content."),
+                icon = "notice-warning",
+            })
             return
         end
     else
