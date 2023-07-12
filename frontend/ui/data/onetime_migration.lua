@@ -562,7 +562,7 @@ end
 if last_migration_date < 20230703 then
     logger.info("Performing one-time migration for 20230703")
     local collate = G_reader_settings:readSetting("collate")
-    if collate == "modification" or collate == "access" or collate == "change" then
+    if collate == "modification" or collate == "change" then
         G_reader_settings:saveSetting("collate", "date")
     end
 end
