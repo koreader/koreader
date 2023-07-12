@@ -466,6 +466,18 @@ function DictQuickLookup:init()
             },
             {
                 {
+                    id = "translate",
+                    text_func = function()
+                        return _("Translate")
+                    end,
+                    callback = function()
+                        UIManager:scheduleIn(0.1, function()
+                            Translator:showTranslation(self.word, true, nil, nil, true)
+                        end)
+                    end,
+                },
+                --
+                {
                     id = "wikipedia",
                     -- if dictionary result, do the same search on wikipedia
                     -- if already wiki, get the full page for the current result
