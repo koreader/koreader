@@ -193,6 +193,10 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
         sorting = function(a, b)
             return natsort(a.text, b.text)
         end
+    elseif collate == "access" then
+        sorting = function(a, b)
+            return a.attr.access > b.attr.access
+        end
     elseif collate == "date" then
         sorting = function(a, b)
             return a.attr.modification > b.attr.modification
@@ -340,7 +344,9 @@ function FileChooser:getMenuItemMandatory(item, collate)
     local text
     if collate then -- file
         -- display the sorting parameter in mandatory
-        if collate == "date" then
+        if collate == "access" then
+            text = datetime.secondsToDateTime(item.attr.access)
+        elseif collate == "date" then
             text = datetime.secondsToDateTime(item.attr.modification)
         elseif collate == "percent_unopened_first" or collate == "percent_unopened_last" then
             text = item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
