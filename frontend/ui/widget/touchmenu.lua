@@ -798,6 +798,11 @@ end
 function TouchMenu:backToUpperMenu(no_close)
     if #self.item_table_stack ~= 0 then
         self.item_table = table.remove(self.item_table_stack)
+        -- Allow a menu table to refresh itself when going up (ie. from a setting
+        -- submenu that may want to have its parent menu updated).
+        if self.item_table.needs_refresh and self.item_table.refresh_func then
+            self.item_table = self.item_table.refresh_func()
+        end
         self.page = 1
         if self.parent_id then
             self:_recalculatePageLayout() -- we need an accurate self.perpage
