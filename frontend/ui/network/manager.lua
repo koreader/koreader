@@ -396,6 +396,11 @@ function NetworkMgr:afterWifiAction(callback)
 end
 
 function NetworkMgr:isOnline()
+    -- For the same reasons as isWifiOn and isConnected above, bypass this on !hasWifiToggle platforms.
+    if not Device:hasWifiToggle() then
+        return true
+    end
+
     local socket = require("socket")
     -- Microsoft uses `dns.msftncsi.com` for Windows, see
     -- <https://technet.microsoft.com/en-us/library/ee126135#BKMK_How> for
