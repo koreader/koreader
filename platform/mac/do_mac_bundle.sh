@@ -146,6 +146,7 @@ done
 # Brew has a tendency to infiltrate our builds and take over some of the dependencies...
 BREW="$(brew --prefix)/opt"
 # So, because it made us pick those up, ship 'em
+# FIXME: Double-check whether we still need it, or if we succeeded in getting glib built against our static copy.
 cp "${BREW}/gettext/lib/libintl.8.dylib" "${BREW}/libsodium/lib/libsodium.23.dylib" libs
 chmod 777 libs/libintl.8.dylib libs/libsodium.23.dylib
 # Update their name
