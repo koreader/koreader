@@ -78,9 +78,6 @@ ko_update_check() {
 # we're always starting from our working directory
 cd ${KOREADER_DIR} || exit
 
-# export load library path for some old firmware
-export LD_LIBRARY_PATH="${KOREADER_DIR}/libs:${LD_LIBRARY_PATH}"
-
 # export trained OCR data directory
 export TESSDATA_PREFIX="data"
 
