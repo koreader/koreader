@@ -823,6 +823,9 @@ function ReaderUI:dealWithLoadDocumentFailure()
                 coroutine.resume(_coroutine, false)
             end,
         })
+        -- Restore input, so can catch the InfoMessage dismiss and exit
+        Device:setIgnoreInput(false)
+        Input:inhibitInputUntil(0.2)
         coroutine.yield() -- pause till InfoMessage is dismissed
     end
     -- We have to error and exit the coroutine anyway to avoid any segfault
