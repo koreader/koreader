@@ -31,7 +31,7 @@ if grep -q "^${WIFI_MODULE}" "/proc/modules"; then
     cp -a "/etc/resolv.conf" "/tmp/resolv.ko"
     old_hash="$(md5sum "/etc/resolv.conf" | cut -f1 -d' ')"
     if [ -x "/sbin/dhcpcd" ]; then
-        env -u LD_LIBRARY_PATH dhcpcd -d -k "${INTERFACE}"
+        dhcpcd -d -k "${INTERFACE}"
         killall -q -TERM udhcpc default.script
     else
         killall -q -TERM udhcpc default.script dhcpcd

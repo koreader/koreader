@@ -136,5 +136,4 @@ ifconfig "${INTERFACE}" up
 [ "${WIFI_MODULE}" = "dhd" ] && wlarm_le -i "${INTERFACE}" up
 
 pkill -0 wpa_supplicant ||
-    env -u LD_LIBRARY_PATH \
-        wpa_supplicant -D "${WPA_SUPPLICANT_DRIVER}" -s -i "${INTERFACE}" -c /etc/wpa_supplicant/wpa_supplicant.conf -C /var/run/wpa_supplicant -B
+    wpa_supplicant -D "${WPA_SUPPLICANT_DRIVER}" -s -i "${INTERFACE}" -c /etc/wpa_supplicant/wpa_supplicant.conf -C /var/run/wpa_supplicant -B

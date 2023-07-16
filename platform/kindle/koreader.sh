@@ -177,9 +177,6 @@ if [ -n "${fail}" ] && [ "${fail}" -eq 0 ]; then
     exec ./koreader.sh ${REEXEC_FLAGS} "${@}"
 fi
 
-# load our own shared libraries if possible
-export LD_LIBRARY_PATH="${KOREADER_DIR}/libs:${LD_LIBRARY_PATH}"
-
 # export trained OCR data directory
 export TESSDATA_PREFIX="data"
 
@@ -355,9 +352,9 @@ fi
 if [ "${STOP_FRAMEWORK}" = "yes" ]; then
     logmsg "Restarting framework . . ."
     if [ "${INIT_TYPE}" = "sysv" ]; then
-        cd / && env -u LD_LIBRARY_PATH /etc/init.d/framework start
+        cd / && /etc/init.d/framework start
     else
-        cd / && env -u LD_LIBRARY_PATH start lab126_gui
+        cd / && start lab126_gui
     fi
 fi
 

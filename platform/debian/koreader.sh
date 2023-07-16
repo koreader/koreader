@@ -16,9 +16,6 @@ KOREADER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/koreader"
 # we're always starting from our working directory
 cd "${KOREADER_DIR}" || exit
 
-# export load library path
-export LD_LIBRARY_PATH=${KOREADER_DIR}/libs:${LD_LIBRARY_PATH}
-
 RETURN_VALUE=85
 while [ ${RETURN_VALUE} -eq 85 ]; do
     ./reader.lua "${ARGS}"

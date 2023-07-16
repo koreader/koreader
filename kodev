@@ -136,9 +136,6 @@ function setup_env() {
     fi
     EMU_DIR="${files[${idx}]}/koreader"
     export EMU_DIR
-    KO_LD_LIBRARY_PATH="$(realpath "${EMU_DIR}")/libs:${LD_LIBRARY_PATH}"
-    # Don't export it to avoid messing with tools (e.g., debuggers).
-    # We'll pass it to LuaJIT via env
 }
 
 function kodev-fetch-thirdparty() {
@@ -818,7 +815,7 @@ TARGET:
             fi
 
             KOREADER_ARGS="-d"
-            KOREADER_COMMAND="env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./reader.lua ${KOREADER_ARGS}"
+            KOREADER_COMMAND="./reader.lua ${KOREADER_ARGS}"
 
             # run with catchsegv by default when it is available (unless no-catchsegv is enabled, c.f., #7036)
             # see https://github.com/koreader/koreader/issues/2878#issuecomment-326796777
@@ -829,7 +826,7 @@ TARGET:
             fi
 
             if [ -n "${valgrind}" ]; then
-                KOREADER_COMMAND="${valgrind} env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./luajit reader.lua ${KOREADER_ARGS}"
+                KOREADER_COMMAND="${valgrind} ./luajit reader.lua ${KOREADER_ARGS}"
             fi
 
             echo "[*] Running KOReader with arguments: $* ..."
@@ -843,9 +840,9 @@ TARGET:
                     # We don't want to stack valgrind/catchsegv on top of GDB ;).
                     if [[ "${gdb}" == gdb* ]]; then
                         # The standard CLI needs a little hand holding to properly pass arguments to the process it'll monitor
-                        KOREADER_COMMAND="${gdb} --args env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./luajit reader.lua ${KOREADER_ARGS} ${args}"
+                        KOREADER_COMMAND="${gdb} --args ./luajit reader.lua ${KOREADER_ARGS} ${args}"
                     else
-                        KOREADER_COMMAND="${gdb} env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./luajit reader.lua ${KOREADER_ARGS} ${args}"
+                        KOREADER_COMMAND="${gdb} ./luajit reader.lua ${KOREADER_ARGS} ${args}"
                     fi
                 else
                     KOREADER_COMMAND="${KOREADER_COMMAND} ${args}"
@@ -952,8 +949,7 @@ OPTIONS:
         fi
 
         echo "Running tests in" "${test_path}"
-        env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" \
-            busted --lua="./luajit" "${opts}" \
+        busted --lua="./luajit" "${opts}" \
             --output=gtest \
             --lpath="${test_path_basedir}/?.lua" \
             --exclude-tags=notest "${test_path}"
@@ -1091,8 +1087,7 @@ OPTIONS:
         test_path="./spec/${target}/unit"
         if [ "${show_previous}" -eq 0 ]; then
             echo "Running tests in" ${test_path}
-            env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" \
-                busted --lua="./luajit" \
+            busted --lua="./luajit" \
                 --sort-files \
                 -o "./spec/${target}/unit/verbose_print" \
                 --coverage \
@@ -1260,8 +1255,7 @@ case "${1}" in
     prompt)
         kodev-build
         pushd "${EMU_DIR}" && {
-            env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" \
-                ./luajit -i setupkoenv.lua
+            ./luajit -i setupkoenv.lua
         } && popd || exit
         ;;
     log)
