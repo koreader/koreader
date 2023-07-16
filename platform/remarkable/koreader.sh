@@ -72,9 +72,6 @@ if [ -n "${fail}" ] && [ "${fail}" -eq 0 ]; then
     exec ./koreader.sh "${@}"
 fi
 
-# load our own shared libraries if possible
-export LD_LIBRARY_PATH="${KOREADER_DIR}/libs:${LD_LIBRARY_PATH}"
-
 # export trained OCR data directory
 export TESSDATA_PREFIX="data"
 

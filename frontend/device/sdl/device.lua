@@ -27,8 +27,7 @@ local function isCommand(s)
 end
 
 local function runCommand(command)
-    local env = jit.os ~= "OSX" and 'env -u LD_LIBRARY_PATH ' or ""
-    return os.execute(env..command) == 0
+    return os.execute(command) == 0
 end
 
 local function getDesktopDicts()
