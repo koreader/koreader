@@ -6,6 +6,8 @@ local AndroidPowerD = BasePowerD:new{
     fl_max = 100,
 }
 
+local standalone_warmth = android.hasStandaloneWarmth()
+
 function AndroidPowerD:frontlightIntensityHW()
     return math.floor(android.getScreenBrightness() / self.bright_diff * self.fl_max)
 end
@@ -57,6 +59,12 @@ function AndroidPowerD:turnOffFrontlightHW()
         return
     end
     android.setScreenBrightness(self.fl_min)
+    
+    if standalone_warmth then
+        -- turn off warmth lights too
+        android.setScreenWarmth(self.fl_warmth_min)
+    end
+
 end
 
 function AndroidPowerD:turnOnFrontlightHW()
@@ -67,6 +75,12 @@ function AndroidPowerD:turnOnFrontlightHW()
     android.enableFrontlightSwitch()
 
     android.setScreenBrightness(math.floor(self.fl_intensity * self.bright_diff / self.fl_max))
+    
+    if standalone_warmth then
+        -- restore warmth levels
+        android.setScreenWarmth(math.floor(self.fl_warmth * self.fl_warmth_max / 100))
+    end
+    
 end
 
 return AndroidPowerD
