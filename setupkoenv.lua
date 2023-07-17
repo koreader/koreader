@@ -15,8 +15,8 @@ if ffi.os == "Windows" then
 end
 local ffi_load = ffi.load
 -- patch ffi.load for thirdparty luajit libraries
-ffi.load = function(lib)
-    io.write("ffi.load: ", lib, "\n")
+ffi.load = function(lib, global)
+    io.write("ffi.load: ", lib, global and " (RTLD_GLOBAL)\n" or "\n")
     local loaded, re = pcall(ffi_load, lib)
     if loaded then return re end
 
@@ -27,6 +27,6 @@ ffi.load = function(lib)
         error("Not able to load dynamic library: " .. lib)
     else
         io.write("ffi.load (assisted searchpath): ", lib_path, "\n")
-        return ffi_load(lib_path)
+        return ffi_load(lib_path, global)
     end
 end
