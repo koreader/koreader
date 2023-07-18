@@ -129,6 +129,8 @@ local Kobo = Generic:extend{
     hasReliableMxcWaitFor = yes,
     -- Sunxi devices require a completely different fb backend...
     isSunxi = no,
+    -- The fb backend also needs to know if we're on an MTK SoC.
+    isMTK = no,
     -- On sunxi, "native" panel layout used to compute the G2D rotation handle (e.g., deviceQuirks.nxtBootRota in FBInk).
     boot_rota = nil,
     -- Standard sysfs path to the battery directory
@@ -503,6 +505,39 @@ local KoboGoldfinch = Kobo:extend{
     hasReliableMxcWaitFor = no,
 }
 
+-- Kobo Elipsa 2E:
+local KoboCondor = Kobo:extend{
+    model = "Kobo_condor",
+    isMTK = yes,
+    hasEclipseWfm = yes,
+    -- TBD
+    --[[
+    canToggleChargingLED = yes,
+    led_uses_channel_3 = true,
+    --]]
+    hasFrontlight = yes,
+    hasGSensor = yes,
+    display_dpi = 227,
+    -- TBD
+    --[[
+    pressure_event = C.ABS_MT_PRESSURE,
+    touch_mirrored_x = false,
+    --]]
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_mixer = "/sys/class/leds/aw99703-bl_FL1/color",
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = true,
+    },
+    battery_sysfs = "/sys/class/power_supply/bd71827_bat",
+    touch_dev = "/dev/input/by-path/platform-2-0010-event",
+    ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
+    power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event",
+    isSMP = yes,
+}
+
 function Kobo:setupChargingLED()
     if G_reader_settings:nilOrTrue("enable_charging_led") then
         if self:hasAuxBattery() and self.powerd:isAuxBatteryConnected() then
@@ -605,7 +640,10 @@ function Kobo:init()
         end
 
         -- Touch panel input
-        if util.fileExists("/dev/input/by-path/platform-1-0010-event") then
+        if util.fileExists("/dev/input/by-path/platform-2-0010-event") then
+            -- Elan (HWConfig TouchCtrl is ekth6) on i2c bus 2
+            self.touch_dev = "/dev/input/by-path/platform-2-0010-event"
+        elseif util.fileExists("/dev/input/by-path/platform-1-0010-event") then
             -- Elan (HWConfig TouchCtrl is ekth6) on i2c bus 1
             self.touch_dev = "/dev/input/by-path/platform-1-0010-event"
         elseif util.fileExists("/dev/input/by-path/platform-0-0010-event") then
@@ -620,7 +658,7 @@ function Kobo:init()
             -- Libra 2 w/ a BD71828 PMIC
             self.ntx_dev = "/dev/input/by-path/platform-gpio-keys-event"
         elseif util.fileExists("/dev/input/by-path/platform-ntx_event0-event") then
-            -- sunxi & Mk. 7
+            -- MTK, sunxi & Mk. 7
             self.ntx_dev = "/dev/input/by-path/platform-ntx_event0-event"
         elseif util.fileExists("/dev/input/by-path/platform-mxckpd-event") then
             -- circa Mk. 5 i.MX
@@ -773,7 +811,7 @@ function Kobo:init()
     self:enableCPUCores(1)
 
     self.canStandby = checkStandby()
-    if self.canStandby() and (self:isMk7() or self:isSunxi())  then
+    if self.canStandby() and (self:isMk7() or self:isSunxi() or self:isMTK())  then
         self.canPowerSaveWhileCharging = yes
     end
 
@@ -1261,6 +1299,7 @@ function Kobo:powerOff()
     -- Much like Nickel itself, disable the RTC alarm before powering down.
     self.wakeup_mgr:unsetWakeupAlarm()
 
+    -- FIXME: Check on MTK
     if self:isSunxi() then
         -- On sunxi, apparently, we *do* go through init
         os.execute("sleep 1 && poweroff &")
@@ -1532,6 +1571,8 @@ elseif codename == "io" then
     return KoboIo
 elseif codename == "goldfinch" then
     return KoboGoldfinch
+elseif codename == "condor" then
+    return KoboCondor
 else
     error("unrecognized Kobo model ".. codename .. " with device id " .. product_id)
 end
