@@ -53,6 +53,10 @@ case "${WIFI_MODULE}" in
         WIFI_DEP_MOD="mlan"
         SKIP_SDIO_PWR_MODULE="1"
         ;;
+    "wlan_drv_gen4m")
+        # FIXME: Will have dep(s)!
+        SKIP_SDIO_PWR_MODULE="1"
+        ;;
 esac
 if [ -n "${WIFI_DEP_MOD}" ]; then
     if grep -q "^${WIFI_DEP_MOD}" "/proc/modules"; then
