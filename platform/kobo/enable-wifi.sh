@@ -22,6 +22,9 @@ case "${WIFI_MODULE}" in
         SKIP_SDIO_PWR_MODULE="1"
         WPA_SUPPLICANT_DRIVER="nl80211"
         ;;
+    "wlan_drv_gen4m")
+        SKIP_SDIO_PWR_MODULE="1"
+        ;;
 esac
 
 # Power up WiFi chip
@@ -82,6 +85,11 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
             # NOTE: Nickel sleeps for two whole seconds after each module loading.
             #       Let's try our usual timing instead...
             usleep 250000
+            ;;
+        "wlan_drv_gen4m")
+            # FIXME
+            # Will probably at the very least requires loading mt66xx/wmt_drv.ko, possibly wmt_chrdev_wifi.ko & wmt_cdev_bt.ko, too...
+            # I'm vaguely hoping we won't need to talk to /dev/wmtWifi or /proc/driver/wmt_dbg or go through the even more mysterious /sbin/wfbt_wr helper...
             ;;
     esac
 
