@@ -617,7 +617,20 @@ function Kobo:init()
 
     -- So far, MTK kernels do not export a per-request inversion flag
     if self:isMTK() then
-        self.canHWInvert = no
+        -- Instead, there's a global flag that we can *set* (but not *get*) via a procfs knob...
+        -- Overload the HWNightMode stuff to implement that properly, like we do on Kindle
+        function self.screen:setHWNightmode(toggle)
+            -- No getter, so, keep track of our own state
+            self.hw_night_mode = toggle
+            -- Flip the global invert_fb flag
+            util.writeToSysfs(toggle and "night_mode 4" or "night_mode 0", "/proc/hwtcon/cmd")
+        end
+
+        function self.screen:getHWNightmode()
+            -- Return false on nil for reader.lua's sake, mostly.
+            -- (We want to disable this on exit, always, as it will never be used by Nickel, which does SW inversion).
+            return self.hw_night_mode == true
+        end
     end
 
     -- Automagic sysfs discovery
