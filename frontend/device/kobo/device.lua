@@ -610,6 +610,11 @@ function Kobo:init()
         end
     end
 
+    -- So far, MTK kernels do not export a per-request inversion flag
+    if self:isMTK() then
+        self.canHWInvert = no
+    end
+
     -- Automagic sysfs discovery
     if self.automagic_sysfs then
         -- Battery
