@@ -518,11 +518,8 @@ local KoboCondor = Kobo:extend{
     hasFrontlight = yes,
     hasGSensor = yes,
     display_dpi = 227,
-    -- TBD
-    --[[
     pressure_event = C.ABS_MT_PRESSURE,
     touch_mirrored_x = false,
-    --]]
     hasNaturalLight = yes,
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
