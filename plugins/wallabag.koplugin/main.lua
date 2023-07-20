@@ -63,6 +63,10 @@ function Wallabag:init()
     self.ui.menu:registerToMainMenu(self)
     self.wb_settings = self.readSettings()
     self.server_url = self.wb_settings.data.wallabag.server_url
+    -- Remove any trailing slashes to avoid failures
+    while self.server_url:sub(-1) == "/" do
+      self.server_url = self.server_url:sub(1, -2);
+    end
     self.client_id = self.wb_settings.data.wallabag.client_id
     self.client_secret = self.wb_settings.data.wallabag.client_secret
     self.username = self.wb_settings.data.wallabag.username
