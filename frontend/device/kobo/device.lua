@@ -505,11 +505,7 @@ local KoboCondor = Kobo:extend{
     model = "Kobo_condor",
     isMTK = yes,
     hasEclipseWfm = yes,
-    -- TBD
-    --[[
     canToggleChargingLED = yes,
-    led_uses_channel_3 = true,
-    --]]
     hasFrontlight = yes,
     hasGSensor = yes,
     display_dpi = 227,
@@ -806,12 +802,22 @@ function Kobo:init()
     end
 
     -- Detect the NTX charging LED sysfs knob
-    if util.pathExists("/sys/devices/platform/ntx_led/lit") then
+    if util.pathExists("/sys/class/leds/bd71828-green-led") then
+        -- Standard Linux LED class, wheee!
+        self.charging_led_sysfs_knob = "/sys/class/leds/bd71828-green-led"
+    elseif util.pathExists("/sys/devices/platform/ntx_led/lit") then
         self.ntx_lit_sysfs_knob = "/sys/devices/platform/ntx_led/lit"
     elseif util.pathExists("/sys/devices/platform/pmic_light.1/lit") then
         self.ntx_lit_sysfs_knob = "/sys/devices/platform/pmic_light.1/lit"
     else
         self.canToggleChargingLED = no
+    end
+
+    -- Switch to the simple standard implementation if available
+    if self.charging_led_sysfs_knob then
+        self.charging_led_imp = self._LinuxChargingLEDToggle
+    else
+        self.charging_led_imp = self._NTXChargingLEDToggle
     end
 
     -- NOP unsupported methods
@@ -1331,23 +1337,7 @@ function Kobo:reboot()
     os.execute("sleep 1 && reboot &")
 end
 
-function Kobo:toggleChargingLED(toggle)
-    -- We have no way of querying the current state from the HW!
-    if toggle == nil then
-        return
-    end
-    -- Don't do anything if the state is already correct
-    -- NOTE: What happens to the LED when attempting/successfully entering PM is... kind of a mess.
-    --       On a H2O, even *attempting* to enter PM will kill the light (and it'll stay off).
-    --       On a Forma, a failed attempt will *not* affect the light, but a successful one *will* kill it,
-    --       be that standby or suspend, but it'll be restored on wakeup...
-    --       On sunxi, PM appears to have zero effect on the LED.
-    if self.charging_led_state == toggle then
-        return
-    end
-    self.charging_led_state = toggle
-    logger.dbg("Kobo: Turning the charging LED", toggle and "on" or "off")
-
+function Kobo:_NTXChargingLEDToggle(toggle)
     -- NOTE: While most/all Kobos actually have a charging LED, and it can usually be fiddled with in a similar fashion,
     --       we've seen *extremely* weird behavior in the past when playing with it on older devices (c.f., #5479).
     --       In fact, Nickel itself doesn't provide this feature on said older devices
@@ -1380,6 +1370,30 @@ function Kobo:toggleChargingLED(toggle)
     end
 
     C.close(fd)
+end
+
+function Kobo:_LinuxChargingLEDToggle(toggle)
+    util.writeToSysfs(toggle and "1" or "0", self.charging_led_sysfs_knob)
+end
+
+function Kobo:toggleChargingLED(toggle)
+    -- We have no way of querying the current state from the HW!
+    if toggle == nil then
+        return
+    end
+    -- Don't do anything if the state is already correct
+    -- NOTE: What happens to the LED when attempting/successfully entering PM is... kind of a mess.
+    --       On a H2O, even *attempting* to enter PM will kill the light (and it'll stay off).
+    --       On a Forma, a failed attempt will *not* affect the light, but a successful one *will* kill it,
+    --       be that standby or suspend, but it'll be restored on wakeup...
+    --       On sunxi, PM appears to have zero effect on the LED.
+    if self.charging_led_state == toggle then
+        return
+    end
+    self.charging_led_state = toggle
+    logger.dbg("Kobo: Turning the charging LED", toggle and "on" or "off")
+
+    return self:charging_led_imp(toggle)
 end
 
 -- Return the highest core number
