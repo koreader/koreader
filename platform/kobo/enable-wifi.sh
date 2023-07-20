@@ -14,40 +14,58 @@ for fd in /proc/"$$"/fd/*; do
 done
 
 # Some platforms do *NOT* use sdio_wifi_pwr, even when it is physically there...
-SKIP_SDIO_PWR_MODULE=""
+POWER_TOGGLE="module"
 # We also want to choose the wpa_supplicant driver depending on the module...
 WPA_SUPPLICANT_DRIVER="wext"
 case "${WIFI_MODULE}" in
     "moal")
-        SKIP_SDIO_PWR_MODULE="1"
+        POWER_TOGGLE="ntx_io"
         WPA_SUPPLICANT_DRIVER="nl80211"
         ;;
     "wlan_drv_gen4m")
-        SKIP_SDIO_PWR_MODULE="1"
+        POWER_TOGGLE="wmt"
+        WPA_SUPPLICANT_DRIVER="nl80211"
         ;;
 esac
 
 # Power up WiFi chip
-if [ -n "${SKIP_SDIO_PWR_MODULE}" ]; then
-    # 208 is CM_WIFI_CTRL
-    ./luajit frontend/device/kobo/ntx_io.lua 208 1
-else
-    if ! grep -q "^sdio_wifi_pwr" "/proc/modules"; then
-        if [ -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
-            # Handle the shitty DVFS switcheroo...
-            if [ -n "${CPUFREQ_DVFS}" ]; then
-                echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-                echo "1" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
-            fi
+case "${POWER_TOGGLE}" in
+    "ntx_io")
+        # 208 is CM_WIFI_CTRL
+        ./luajit frontend/device/kobo/ntx_io.lua 208 1
+        ;;
+    "wmt")
+        # FIXME: This probably needs to happen *after* loading some/all of the modules...
+        # Black magic courtesy of wmt_dbg_func_ctrl @ (out of tree) modules/connectivity/wmt_mt66xx/common_main/linux/wmt_dbg.c
+        # Enable debug commands
+        echo "0xDB9DB9" > /proc/driver/wmt_dbg
+        # Disable the LPBK test
+        echo "7 9 0" > /proc/driver/wmt_dbg
+        # Nickel appears to sleep for ~1s
+        sleep 1
+        echo "0xDB9DB9" > /proc/driver/wmt_dbg
+        # Enable the LPBK test (this'll block for ~1.3s)
+        echo "7 9 1" > /proc/driver/wmt_dbg
+        # Finally, power on the chip
+        echo 1 > /dev/wmtWifi
+        ;;
+    *)
+        if ! grep -q "^sdio_wifi_pwr" "/proc/modules"; then
+            if [ -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
+                # Handle the shitty DVFS switcheroo...
+                if [ -n "${CPUFREQ_DVFS}" ]; then
+                    echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                    echo "1" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+                fi
 
-            insmod "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko"
-        else
-            # Poke the kernel via ioctl on platforms without the dedicated power module...
-            # 208 is CM_WIFI_CTRL
-            ./luajit frontend/device/kobo/ntx_io.lua 208 1
+                insmod "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko"
+            else
+                # Poke the kernel via ioctl on platforms without the dedicated power module...
+                ./luajit frontend/device/kobo/ntx_io.lua 208 1
+            fi
         fi
-    fi
-fi
+        ;;
+esac
 # Moar sleep!
 usleep 250000
 
