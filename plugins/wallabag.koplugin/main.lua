@@ -1054,7 +1054,7 @@ Restart KOReader after editing the config file.]]), BD.dirpath(DataStorage:getSe
                     text = _("Apply"),
                     callback = function()
                         local myfields = self.settings_dialog:getFields()
-                        self.server_url    = myfields[1]
+                        self.server_url    = myfields[1]:gsub("/*$", "")  -- remove all trailing "/" slashes
                         self.client_id     = myfields[2]
                         self.client_secret = myfields[3]
                         self.username      = myfields[4]
