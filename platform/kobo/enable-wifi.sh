@@ -17,6 +17,8 @@ done
 POWER_TOGGLE="module"
 # We also want to choose the wpa_supplicant driver depending on the module...
 WPA_SUPPLICANT_DRIVER="wext"
+# And some platforms also put the modules in some funkier paths...
+KMOD_PATH="/drivers/${PLATFORM}/wifi"
 case "${WIFI_MODULE}" in
     "moal")
         POWER_TOGGLE="ntx_io"
@@ -25,8 +27,20 @@ case "${WIFI_MODULE}" in
     "wlan_drv_gen4m")
         POWER_TOGGLE="wmt"
         WPA_SUPPLICANT_DRIVER="nl80211"
+        KMOD_PATH="/drivers/${PLATFORM}/mt66xx"
         ;;
 esac
+
+# Load the requested module if it isn't already
+insmod_asneeded() {
+    kmod="${1}"
+    shift
+
+    if ! grep -q "^${kmod} " "/proc/modules"; then
+        insmod "${KMOD_PATH}/${kmod}.ko" "${@}"
+        usleep 250000
+    fi
+}
 
 # Power up WiFi chip
 case "${POWER_TOGGLE}" in
@@ -35,7 +49,13 @@ case "${POWER_TOGGLE}" in
         ./luajit frontend/device/kobo/ntx_io.lua 208 1
         ;;
     "wmt")
-        # FIXME: This probably needs to happen *after* loading some/all of the modules...
+        # NOTE: Unlike earlier platforms, it seems the WiFi modules are only loaded once, and never unloaded.
+        #       So, just make sure they actually are loaded before we go on...
+        insmod_asneeded "wmt_drv"
+        insmod_asneeded "wmt_chrdev_wifi"
+        insmod_asneeded "wmt_cdev_bt"
+        insmod_asneeded "${WIFI_MODULE}"
+
         # Black magic courtesy of wmt_dbg_func_ctrl @ (out of tree) modules/connectivity/wmt_mt66xx/common_main/linux/wmt_dbg.c
         # Enable debug commands
         echo "0xDB9DB9" > /proc/driver/wmt_dbg
@@ -50,15 +70,15 @@ case "${POWER_TOGGLE}" in
         echo 1 > /dev/wmtWifi
         ;;
     *)
-        if ! grep -q "^sdio_wifi_pwr" "/proc/modules"; then
-            if [ -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
+        if ! grep -q "^sdio_wifi_pwr " "/proc/modules"; then
+            if [ -e "${KMOD_PATH}/sdio_wifi_pwr.ko" ]; then
                 # Handle the shitty DVFS switcheroo...
                 if [ -n "${CPUFREQ_DVFS}" ]; then
                     echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
                     echo "1" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
                 fi
 
-                insmod "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko"
+                insmod "${KMOD_PATH}/sdio_wifi_pwr.ko"
             else
                 # Poke the kernel via ioctl on platforms without the dedicated power module...
                 ./luajit frontend/device/kobo/ntx_io.lua 208 1
@@ -71,7 +91,7 @@ usleep 250000
 
 # Load WiFi modules
 # NOTE: Used to be exported in WIFI_MODULE_PATH before FW 4.23
-if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
+if ! grep -q "^${WIFI_MODULE} " "/proc/modules"; then
     # Set the Wi-Fi regulatory domain properly if necessary...
     WIFI_COUNTRY_CODE_PARM=""
     if grep -q "^WifiRegulatoryDomain=" "/mnt/onboard/.kobo/Kobo/Kobo eReader.conf"; then
@@ -95,8 +115,8 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
 
             # And, of course, it requires a submodule...
             WIFI_DEP_MOD="mlan"
-            if [ -e "/drivers/${PLATFORM}/wifi/${WIFI_DEP_MOD}.ko" ]; then
-                insmod "/drivers/${PLATFORM}/wifi/${WIFI_DEP_MOD}.ko"
+            if [ -e "${KMOD_PATH}/${WIFI_DEP_MOD}.ko" ]; then
+                insmod "${KMOD_PATH}/${WIFI_DEP_MOD}.ko"
             elif [ -e "/drivers/${PLATFORM}/${WIFI_DEP_MOD}.ko" ]; then
                 insmod "/drivers/${PLATFORM}/${WIFI_DEP_MOD}.ko"
             fi
@@ -105,9 +125,7 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
             usleep 250000
             ;;
         "wlan_drv_gen4m")
-            # FIXME
-            # Will probably at the very least requires loading mt66xx/wmt_drv.ko, possibly wmt_chrdev_wifi.ko & wmt_cdev_bt.ko, too...
-            # I'm vaguely hoping we won't need to talk to /dev/wmtWifi or /proc/driver/wmt_dbg or go through the even more mysterious /sbin/wfbt_wr helper...
+            # Nothing to do here, we only load the modules once, so we should never enter this branch.
             ;;
     esac
 
@@ -127,12 +145,12 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
         fi
     fi
 
-    if [ -e "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko" ]; then
+    if [ -e "${KMOD_PATH}/${WIFI_MODULE}.ko" ]; then
         if [ -n "${WIFI_PARM}" ]; then
             # shellcheck disable=SC2086
-            insmod "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko" ${WIFI_PARM}
+            insmod "${KMOD_PATH}/${WIFI_MODULE}.ko" ${WIFI_PARM}
         else
-            insmod "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko"
+            insmod "${KMOD_PATH}/${WIFI_MODULE}.ko"
         fi
     elif [ -e "/drivers/${PLATFORM}/${WIFI_MODULE}.ko" ]; then
         # NOTE: Modules are unsorted on Mk. 8
