@@ -38,16 +38,12 @@ wpa_cli -i "${INTERFACE}" terminate
 [ "${WIFI_MODULE}" = "dhd" ] && wlarm_le -i "${INTERFACE}" down
 ifconfig "${INTERFACE}" down
 
-# Some sleep in between may avoid system getting hung
-# (we test if a module is actually loaded to avoid unneeded sleeps)
-if grep -q "^${WIFI_MODULE}" "/proc/modules"; then
-    usleep 250000
-    rmmod "${WIFI_MODULE}"
-fi
-
 # Handle dependencies, if any
 WIFI_DEP_MOD=""
+# Honor the platform's preferred method to toggle power
 POWER_TOGGLE="module"
+# Some plkatforms never unload the wifi modules
+SKIP_UNLOAD=""
 case "${WIFI_MODULE}" in
     "moal")
         WIFI_DEP_MOD="mlan"
@@ -55,13 +51,23 @@ case "${WIFI_MODULE}" in
         ;;
     "wlan_drv_gen4m")
         POWER_TOGGLE="wmt"
+        SKIP_UNLOAD="true"
         ;;
 esac
 
-if [ -n "${WIFI_DEP_MOD}" ]; then
-    if grep -q "^${WIFI_DEP_MOD}" "/proc/modules"; then
+if [ -z "${SKIP_UNLOAD}" ]; then
+    # Some sleep in between may avoid system getting hung
+    # (we test if a module is actually loaded to avoid unneeded sleeps)
+    if grep -q "^${WIFI_MODULE} " "/proc/modules"; then
         usleep 250000
-        rmmod "${WIFI_DEP_MOD}"
+        rmmod "${WIFI_MODULE}"
+    fi
+
+    if [ -n "${WIFI_DEP_MOD}" ]; then
+        if grep -q "^${WIFI_DEP_MOD} " "/proc/modules"; then
+            usleep 250000
+            rmmod "${WIFI_DEP_MOD}"
+        fi
     fi
 fi
 
