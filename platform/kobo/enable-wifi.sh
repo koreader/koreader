@@ -58,16 +58,16 @@ case "${POWER_TOGGLE}" in
 
         # Black magic courtesy of wmt_dbg_func_ctrl @ (out of tree) modules/connectivity/wmt_mt66xx/common_main/linux/wmt_dbg.c
         # Enable debug commands
-        echo "0xDB9DB9" > /proc/driver/wmt_dbg
+        echo "0xDB9DB9" >/proc/driver/wmt_dbg
         # Disable the LPBK test
-        echo "7 9 0" > /proc/driver/wmt_dbg
+        echo "7 9 0" >/proc/driver/wmt_dbg
         # Nickel appears to sleep for ~1s
         sleep 1
-        echo "0xDB9DB9" > /proc/driver/wmt_dbg
+        echo "0xDB9DB9" >/proc/driver/wmt_dbg
         # Enable the LPBK test (this'll block for ~1.3s)
-        echo "7 9 1" > /proc/driver/wmt_dbg
+        echo "7 9 1" >/proc/driver/wmt_dbg
         # Finally, power on the chip
-        echo 1 > /dev/wmtWifi
+        echo 1 >/dev/wmtWifi
         ;;
     *)
         if ! grep -q "^sdio_wifi_pwr " "/proc/modules"; then
