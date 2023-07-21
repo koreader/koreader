@@ -115,11 +115,7 @@ if ! grep -q "^${WIFI_MODULE} " "/proc/modules"; then
 
             # And, of course, it requires a submodule...
             WIFI_DEP_MOD="mlan"
-            if [ -e "${KMOD_PATH}/${WIFI_DEP_MOD}.ko" ]; then
-                insmod "${KMOD_PATH}/${WIFI_DEP_MOD}.ko"
-            elif [ -e "/drivers/${PLATFORM}/${WIFI_DEP_MOD}.ko" ]; then
-                insmod "/drivers/${PLATFORM}/${WIFI_DEP_MOD}.ko"
-            fi
+            insmod "${KMOD_PATH}/${WIFI_DEP_MOD}.ko"
             # NOTE: Nickel sleeps for two whole seconds after each module loading.
             #       Let's try our usual timing instead...
             usleep 250000
