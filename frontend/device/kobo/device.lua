@@ -127,9 +127,9 @@ local Kobo = Generic:extend{
     isMk7 = no,
     -- MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls are generally reliable
     hasReliableMxcWaitFor = yes,
-    -- Sunxi devices require a completely different fb backend...
+    -- AllWinner SoCs require a completely different fb backend...
     isSunxi = no,
-    -- The fb backend also needs to know if we're on an MTK SoC.
+    -- The fb backend also needs to know if we're on a MediaTek SoC.
     isMTK = no,
     -- On sunxi, "native" panel layout used to compute the G2D rotation handle (e.g., deviceQuirks.nxtBootRota in FBInk).
     boot_rota = nil,
