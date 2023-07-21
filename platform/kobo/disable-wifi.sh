@@ -81,7 +81,7 @@ case "${POWER_TOGGLE}" in
         ./luajit frontend/device/kobo/ntx_io.lua 208 0
         ;;
     "wmt")
-        echo 0 > /dev/wmtWifi
+        echo 0 >/dev/wmtWifi
         ;;
     *)
         if grep -q "^sdio_wifi_pwr " "/proc/modules"; then
