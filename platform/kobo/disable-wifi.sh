@@ -42,7 +42,7 @@ ifconfig "${INTERFACE}" down
 WIFI_DEP_MOD=""
 # Honor the platform's preferred method to toggle power
 POWER_TOGGLE="module"
-# Some plkatforms never unload the wifi modules
+# Some platforms never unload the wifi modules
 SKIP_UNLOAD=""
 case "${WIFI_MODULE}" in
     "moal")
@@ -60,6 +60,10 @@ if [ -z "${SKIP_UNLOAD}" ]; then
     # (we test if a module is actually loaded to avoid unneeded sleeps)
     if grep -q "^${WIFI_MODULE} " "/proc/modules"; then
         usleep 250000
+        # NOTE: Kobo's busybox build is weird. rmmod appears to be modprobe in disguise, defaulting to the -r flag...
+        #       But since there's currently no modules.dep file being shipped, nor do they include the depmod applet,
+        #       go with what the FW is doing, which is rmmod.
+        # c.f., #2394?
         rmmod "${WIFI_MODULE}"
     fi
 
