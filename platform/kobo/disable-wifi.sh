@@ -84,7 +84,7 @@ case "${POWER_TOGGLE}" in
         echo 0 > /dev/wmtWifi
         ;;
     *)
-        if grep -q "^sdio_wifi_pwr" "/proc/modules"; then
+        if grep -q "^sdio_wifi_pwr " "/proc/modules"; then
             # Handle the shitty DVFS switcheroo...
             if [ -n "${CPUFREQ_DVFS}" ]; then
                 echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
