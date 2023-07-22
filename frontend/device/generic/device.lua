@@ -792,12 +792,16 @@ function Device:retrieveNetworkInfo()
                             else
                                 local essid_on = iwr.u.data.flags
                                 if essid_on ~= 0 then
+                                    -- Knowing the token index may be fun, bit it isn't in fact, super interesting...
+                                    --[[
                                     local token_index = bit.band(essid_on, C.IW_ENCODE_INDEX)
                                     if token_index > 1 then
                                         table.insert(results, T(_("SSID: \"%1\" [%2]"), ffi.string(essid), token_index))
                                     else
                                         table.insert(results, T(_("SSID: \"%1\""), ffi.string(essid)))
                                     end
+                                    --]]
+                                    table.insert(results, T(_("SSID: \"%1\""), ffi.string(essid)))
                                 else
                                     table.insert(results, _("SSID: off/any"))
                                 end
