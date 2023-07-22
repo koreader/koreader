@@ -273,12 +273,16 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 sub_item_table_func = function() return self:_genDownloadDictionariesMenu() end,
             },
             {
-                text = _("Enable fuzzy search"),
-                checked_func = function()
-                    return self.disable_fuzzy_search ~= true
-                end,
+                text = self.ui.doc_settings and _("Enable fuzzy search") or _("Enable fuzzy search by default"),
+                keep_menu_open = true,
+                checked_func = self.ui.doc_settings and function() return self.disable_fuzzy_search ~= true end
+                    or nil,
                 callback = function()
-                    self.disable_fuzzy_search = not self.disable_fuzzy_search
+                    if self.ui.doc_settings then
+                        self.disable_fuzzy_search = not self.disable_fuzzy_search
+                    else
+                        self:toggleFuzzyDefault()
+                    end
                 end,
                 hold_callback = function()
                     self:toggleFuzzyDefault()
