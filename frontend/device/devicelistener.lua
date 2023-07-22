@@ -197,7 +197,9 @@ if Device:hasFrontlight() then
         local notif_cb = function()
             Notification:notify(new_text, notif_source)
         end
-        powerd:toggleFrontlight(notif_cb)
+        if not powerd:toggleFrontlight(notif_cb) then
+            Notification:notify(_("Frontlight unchanged."), notif_source)
+        end
     end
 
     function DeviceListener:onShowFlDialog()
