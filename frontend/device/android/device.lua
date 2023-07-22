@@ -499,6 +499,10 @@ function Device:_showLightDialog()
     android.lights.showDialog(title, _("Brightness"), _("Warmth"), _("OK"), _("Cancel"))
 
     local action = android.lights.dialogState()
+    while action == C.ALIGHTS_DIALOG_OPENED do
+        FFIUtil.usleep(250) -- dont pin the CPU
+        action = android.lights.dialogState()
+    end
     if action == C.ALIGHTS_DIALOG_OK then
         self.powerd.fl_intensity = self.powerd:frontlightIntensityHW()
         logger.dbg("Dialog OK, brightness: " .. self.powerd.fl_intensity)
