@@ -500,7 +500,7 @@ function Device:_showLightDialog()
 
     local action = android.lights.dialogState()
     if action == C.ALIGHTS_DIALOG_OK then
-        self.powerd.fl_intensity = self.powerd:frontlightIntensityHW()
+        self.powerd.setIntensityHW(self.powerd:frontlightIntensityHW())
         logger.dbg("Dialog OK, brightness: " .. self.powerd.fl_intensity)
         if android.isWarmthDevice() then
             self.powerd.fl_warmth = self.powerd:frontlightWarmthHW()
