@@ -282,7 +282,10 @@ function ReaderDictionary:addToMainMenu(menu_items)
                     return text
                 end,
                 checked_func = function()
-                    return not (self.ui.doc_settings and self.disable_fuzzy_search or self.disable_fuzzy_search_fm)
+                    if self.ui.doc_settings then
+                        return not self.disable_fuzzy_search
+                    end
+                    return not self.disable_fuzzy_search_fm
                 end,
                 callback = function()
                     if self.ui.doc_settings then
@@ -428,7 +431,12 @@ function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link, tw
     logger.dbg("dict stripped word:", word)
 
     self.highlight = highlight
-    local disable_fuzzy_search = self.ui.doc_settings and self.disable_fuzzy_search or self.disable_fuzzy_search_fm
+    local disable_fuzzy_search
+    if self.ui.doc_settings then
+        disable_fuzzy_search = self.disable_fuzzy_search
+    else
+        disable_fuzzy_search = self.disable_fuzzy_search_fm
+    end
 
     -- Wrapped through Trapper, as we may be using Trapper:dismissablePopen() in it
     Trapper:wrap(function()
