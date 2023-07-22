@@ -102,6 +102,7 @@ function ReaderDictionary:init()
     self.disable_lookup_history = G_reader_settings:isTrue("disable_lookup_history")
     self.dicts_order = G_reader_settings:readSetting("dicts_order", {})
     self.dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {})
+    self.disable_fuzzy_search_fm = G_reader_settings:isTrue("disable_fuzzy_search")
 
     if self.ui then
         self.ui.menu:registerToMainMenu(self)
@@ -273,19 +274,26 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 sub_item_table_func = function() return self:_genDownloadDictionariesMenu() end,
             },
             {
-                text = self.ui.doc_settings and _("Enable fuzzy search") or _("Enable fuzzy search by default"),
-                keep_menu_open = true,
-                checked_func = self.ui.doc_settings and function() return self.disable_fuzzy_search ~= true end
-                    or nil,
+                text_func = function()
+                    local text = _("Enable fuzzy search")
+                    if G_reader_settings:nilOrFalse("disable_fuzzy_search") then
+                        text = text .. "  ★"
+                    end
+                    return text
+                end,
+                checked_func = function()
+                    return not (self.ui.doc_settings and self.disable_fuzzy_search or self.disable_fuzzy_search_fm)
+                end,
                 callback = function()
                     if self.ui.doc_settings then
                         self.disable_fuzzy_search = not self.disable_fuzzy_search
+                        self.ui.doc_settings:saveSetting("disable_fuzzy_search", self.disable_fuzzy_search)
                     else
-                        self:toggleFuzzyDefault()
+                        self.disable_fuzzy_search_fm = not self.disable_fuzzy_search_fm
                     end
                 end,
-                hold_callback = function()
-                    self:toggleFuzzyDefault()
+                hold_callback = function(touchmenu_instance)
+                    self:toggleFuzzyDefault(touchmenu_instance)
                 end,
                 separator = true,
             },
@@ -420,10 +428,11 @@ function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link, tw
     logger.dbg("dict stripped word:", word)
 
     self.highlight = highlight
+    local disable_fuzzy_search = self.ui.doc_settings and self.disable_fuzzy_search or self.disable_fuzzy_search_fm
 
     -- Wrapped through Trapper, as we may be using Trapper:dismissablePopen() in it
     Trapper:wrap(function()
-        self:stardictLookup(word, self.enabled_dict_names, not self.disable_fuzzy_search, boxes, link, tweak_buttons_func)
+        self:stardictLookup(word, self.enabled_dict_names, not disable_fuzzy_search, boxes, link, tweak_buttons_func)
     end)
     return true
 end
@@ -1203,7 +1212,6 @@ end
 function ReaderDictionary:onSaveSettings()
     if self.ui.doc_settings then
         self.ui.doc_settings:saveSetting("preferred_dictionaries", self.preferred_dictionaries)
-        self.ui.doc_settings:saveSetting("disable_fuzzy_search", self.disable_fuzzy_search)
     end
 end
 
@@ -1232,7 +1240,7 @@ function ReaderDictionary:onTogglePreferredDict(dict)
     return true
 end
 
-function ReaderDictionary:toggleFuzzyDefault()
+function ReaderDictionary:toggleFuzzyDefault(touchmenu_instance)
     local disable_fuzzy_search = G_reader_settings:isTrue("disable_fuzzy_search")
     UIManager:show(MultiConfirmBox:new{
         text = T(
@@ -1255,12 +1263,14 @@ The current default (★) is enabled.]])
         end,
         choice1_callback = function()
             G_reader_settings:makeTrue("disable_fuzzy_search")
+            touchmenu_instance:updateItems()
         end,
         choice2_text_func = function()
             return disable_fuzzy_search and _("Enable") or _("Enable (★)")
         end,
         choice2_callback = function()
             G_reader_settings:makeFalse("disable_fuzzy_search")
+            touchmenu_instance:updateItems()
         end,
     })
 end
