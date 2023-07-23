@@ -277,7 +277,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 text_func = function()
                     local text = _("Enable fuzzy search")
                     if G_reader_settings:nilOrFalse("disable_fuzzy_search") then
-                        text = text .. "  ★"
+                        text = text .. "   ★"
                     end
                     return text
                 end,
