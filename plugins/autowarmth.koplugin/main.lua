@@ -995,7 +995,7 @@ function AutoWarmth:getWarmthMenu()
                 else
                     UIManager:show(ConfirmBox:new{
                         text = _("Night mode"),
-                        ok_text = _("Set"),
+                        ok_text = _("Turn on"),
                         ok_callback = function()
                             self.warmth[num] = 110
                             self.warmth[#self.warmth - num + 1] = 110
@@ -1003,7 +1003,7 @@ function AutoWarmth:getWarmthMenu()
                             self:scheduleMidnightUpdate()
                             if touchmenu_instance then self:updateItems(touchmenu_instance) end
                         end,
-                        cancel_text = _("Unset"),
+                        cancel_text = _("Turn off"),
                         cancel_callback = function()
                             self.warmth[num] = 0
                             self.warmth[#self.warmth - num + 1] = 0
