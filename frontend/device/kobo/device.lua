@@ -432,11 +432,6 @@ local KoboCadmus = Kobo:extend{
         nl_min = 0,
         nl_max = 10,
         nl_inverted = false,
-        --- @note: The Sage natively ramps when setting the frontlight intensity.
-        ---        A side-effect of this behavior is that if you queue a series of intensity changes ending at 0,
-        ---        it won't ramp *at all*, and jump straight to zero.
-        ---        So we delay the final ramp off step to prevent (both) the native and our ramping from being optimized out
-        ramp_off_delay = 0.5,
     },
     boot_rota = C.FB_ROTATE_CW,
     battery_sysfs = "/sys/class/power_supply/battery",
@@ -637,6 +632,14 @@ function Kobo:init()
             -- Sage w/ a BD71828 PMIC
             self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event"
         end
+    end
+
+    -- NOTE: Devices with an AW99703 frontlight PWM controller feature a hardware smooth ramp when setting the frontlight intensity.
+    ---      A side-effect of this behavior is that if you queue a series of intensity changes ending at 0,
+    ---      it won't ramp *at all*, jumping straight to zero instead.
+    ---      So we delay the final ramp off step to prevent (both) the native and our ramping from being optimized out.
+    if self.frontlight_settings.frontlight_mixer:find("aw99703", 12, true) then
+        self.frontlight_settings.ramp_off_delay = 0.5
     end
 
     -- NOTE: i.MX5 devices have a wonky RTC that doesn't like alarms set further away that UINT16_MAX seconds from now...
