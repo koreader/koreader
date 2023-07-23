@@ -382,7 +382,7 @@ function Profiles:updateGestures(action_old_name, action_new_name)
                                 table.remove(gesture_loaded.settings.order, i)
                                 if #gesture.settings.order == 0 then
                                     gesture.settings.order = nil
-                                    if #gesture.settings == 0 then
+                                    if next(gesture.settings) == nil then
                                         gesture.settings = nil
                                     end
                                 end
@@ -397,7 +397,7 @@ function Profiles:updateGestures(action_old_name, action_new_name)
                     gesture[action_new_name] = true
                     gesture_loaded[action_new_name] = true
                 else
-                    if #gesture == 0 then
+                    if next(gesture) == nil then
                         all_gestures.data[section][gesture_name] = nil
                     end
                 end
