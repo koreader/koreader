@@ -332,7 +332,7 @@ return {
         "'", -- Apostrophe
         alt_label = ";",
         north = ";", -- Greek Question Mark
-		northeast = "q",
+        northeast = "Q",
         east = "΄", -- Greek Tonos
         south = "͵", -- Greek Lower Numeral Sign
         southeast = "ʹ", -- Greek Numeral Sign
@@ -341,7 +341,7 @@ return {
         ";", -- Greek Question Mark
         alt_label = "'",
         north = "'", -- Apostrophe
-		northeast = "q",
+        northeast = "q",
         east = "΄", -- Greek Tonos
         south = "͵", -- Greek Lower Numeral Sign
         southeast = "ʹ", -- Greek Numeral Sign
@@ -413,18 +413,18 @@ return {
     _W_el = {
         "|",
         north = { label = "◌̈́", key = "̈́", }, -- Combining Greek Dialytika Tonos
-		northeast = "W",
+        northeast = "W",
         east = "·", -- Greek Ano Teleia
     },
     _w_el = {
         "ς",
         north = { label = "◌̈́", key = "̈́", }, -- Combining Greek Dialytika Tonos
-		northeast = "w",
+        northeast = "w",
         east = "·", -- Greek Ano Teleia
     },
     _X_el = {
         "Χ",
-		alt_label = "V",
+        alt_label = "V",
         north = "X", -- Latin capital letter X
         northwest = "A", -- Latin capital letter A
         northeast = "H", -- Latin capital letter H
