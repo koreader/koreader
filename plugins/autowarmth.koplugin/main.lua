@@ -4,6 +4,7 @@ Plugin for setting screen warmth based on the sun position and/or a time schedul
 @module koplugin.autowarmth
 --]]--
 
+local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DateTimeWidget = require("ui/widget/datetimewidget")
@@ -489,10 +490,10 @@ end
 
 -- Set warmth and schedule the next warmth change
 function AutoWarmth:setWarmth(val, force_warmth)
+    -- A value > 100 means to set night mode and set warmth to maximum.
+    -- We use an offset of 1000 to "flag", that night mode is on.
     if val then
-        if self.control_nightmode then
-            DeviceListener:onSetNightMode(val > 100)
-        end
+        DeviceListener:onSetNightMode(self.control_nightmode and val > 100)
 
         if self.control_warmth and Device:hasNaturalLight() then
             val = math.min(val, 100) -- "mask" night mode
@@ -950,10 +951,18 @@ function AutoWarmth:getWarmthMenu()
             mode = mode,
             text_func = function()
                 if Device:hasNaturalLight() and self.control_warmth then
-                    if self.warmth[num] <= 100 then
-                        return T(_("%1: %2 %"), text, self.warmth[num])
+                    if self.control_nightmode then
+                        if self.warmth[num] <= 100 then
+                            return T(_("%1: %2 %"), text, self.warmth[num])
+                        else
+                            return T(_("%1: 100 % + ☾"), text)
+                        end
                     else
-                        return T(_("%1: 100 % %2"), text, self.control_nightmode and "+ ☾" or "")
+                        if self.warmth[num] <= 100 then
+                            return T(_("%1: %2 %"), text, self.warmth[num])
+                        else
+                            return T(_("%1: %2 %"), text, math.max(self.warmth[num] - 1000, 0))
+                        end
                     end
                 else
                     if self.warmth[num] <= 100 then
@@ -965,10 +974,10 @@ function AutoWarmth:getWarmthMenu()
             end,
             callback = function(touchmenu_instance)
                 if Device:hasNaturalLight() and self.control_warmth then
-                    UIManager:show(SpinWidget:new{
+                    local warmth_spinner = SpinWidget:new{
                         title_text = text,
                         info_text = _("Enter percentage of warmth."),
-                        value = self.warmth[num],
+                        value = self.warmth[num] <= 100 and self.warmth[num] or math.max(self.warmth[num] - 1000, 0), -- mask nightmode
                         value_min = 0,
                         value_max = 100,
                         wrap = false,
@@ -976,40 +985,56 @@ function AutoWarmth:getWarmthMenu()
                         value_hold_step = 10,
                         unit = "%",
                         ok_text = _("Set"),
+                        ok_always_enabled = true,
                         callback = function(spin)
                             self.warmth[num] = spin.value
-                            self.warmth[#self.warmth - num + 1] = spin.value
+                            if self.control_nightmode and self.night_mode_check_box.checked then
+                                if self.warmth[num] <= 100 then
+                                    self.warmth[num] = self.warmth[num] + 1000 -- add night mode
+                                end
+                            else
+                                if self.warmth[num] > 100 then
+                                    self.warmth[num] = math.max(self.warmth[num] - 1000, 0) -- delete night mode
+                                end
+                            end
+                            self.warmth[#self.warmth - num + 1] = self.warmth[num]
                             G_reader_settings:saveSetting("autowarmth_warmth", self.warmth)
                             self:scheduleMidnightUpdate()
                             if touchmenu_instance then self:updateItems(touchmenu_instance) end
                         end,
-                        extra_text = self.control_nightmode and  _("Use night mode"),
-                        extra_callback = self.control_nightmode and function()
-                            self.warmth[num] = 110
-                            self.warmth[#self.warmth - num + 1] = 110
-                            G_reader_settings:saveSetting("autowarmth_warmth", self.warmth)
-                            self:scheduleMidnightUpdate()
-                            if touchmenu_instance then self:updateItems(touchmenu_instance) end
-                        end,
-                    })
+                    }
+
+                    if self.control_nightmode then
+                        self.night_mode_check_box = CheckButton:new{
+                            text = _("Night mode"),
+                            checked = self.warmth[num] > 100,
+                            parent = warmth_spinner,
+                        }
+                        warmth_spinner:addWidget(self.night_mode_check_box, false, 0)
+                    end
+                    UIManager:show(warmth_spinner)
                 else
                     UIManager:show(ConfirmBox:new{
                         text = _("Night mode"),
                         ok_text = _("Turn on"),
                         ok_callback = function()
-                            self.warmth[num] = 110
-                            self.warmth[#self.warmth - num + 1] = 110
-                            G_reader_settings:saveSetting("autowarmth_warmth", self.warmth)
-                            self:scheduleMidnightUpdate()
-                            if touchmenu_instance then self:updateItems(touchmenu_instance) end
+                            if self.warmth[num] <= 100 then
+                                self.warmth[num] = self.warmth[num] + 1000
+                                self.warmth[#self.warmth - num + 1] = self.warmth[num]
+                                G_reader_settings:saveSetting("autowarmth_warmth", self.warmth)
+                                self:scheduleMidnightUpdate()
+                                if touchmenu_instance then self:updateItems(touchmenu_instance) end
+                            end
                         end,
                         cancel_text = _("Turn off"),
                         cancel_callback = function()
-                            self.warmth[num] = 0
-                            self.warmth[#self.warmth - num + 1] = 0
-                            G_reader_settings:saveSetting("autowarmth_warmth", self.warmth)
-                            self:scheduleMidnightUpdate()
-                            if touchmenu_instance then self:updateItems(touchmenu_instance) end
+                            if self.warmth[num] > 100 then
+                                self.warmth[num] = math.max(self.warmth[num] - 1000, 0) -- delete night mode
+                                self.warmth[#self.warmth - num + 1] = self.warmth[num]
+                                G_reader_settings:saveSetting("autowarmth_warmth", self.warmth)
+                                self:scheduleMidnightUpdate()
+                                if touchmenu_instance then self:updateItems(touchmenu_instance) end
+                            end
                         end,
                         other_buttons = {{
                             {
