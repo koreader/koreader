@@ -857,8 +857,11 @@ In combination with zoom to fit page, page height, content height, content or co
 end
 
 function ReaderView:onReadSettings(config)
-    self.document:setTileCacheValidity(config:readSetting("tile_cache_validity_ts"))
-    self.render_mode = config:readSetting("render_mode") or 0
+    if self.ui.paging then
+        self.document:setTileCacheValidity(config:readSetting("tile_cache_validity_ts"))
+        self.render_mode = config:readSetting("render_mode") or 0
+        self.state.gamma = config:readSetting("gamma") or 1.0
+    end
     local rotation_mode = nil
     local locked = G_reader_settings:isTrue("lock_rotation")
     -- Keep current rotation by doing nothing when sticky rota is enabled.
@@ -868,17 +871,13 @@ function ReaderView:onReadSettings(config)
             rotation_mode = config:readSetting("rotation_mode") -- Doc's
         else
             -- No doc specific rotation, pickup global defaults for the doc type
-            if self.ui.paging then
-                rotation_mode = G_reader_settings:readSetting("kopt_rotation_mode") or Screen.DEVICE_ROTATED_UPRIGHT
-            else
-                rotation_mode = G_reader_settings:readSetting("copt_rotation_mode") or Screen.DEVICE_ROTATED_UPRIGHT
-            end
+            local setting_name = self.ui.paging and "kopt_rotation_mode" or "copt_rotation_mode"
+            rotation_mode = G_reader_settings:readSetting(setting_name) or Screen.DEVICE_ROTATED_UPRIGHT
         end
     end
     if rotation_mode then
         self:onSetRotationMode(rotation_mode)
     end
-    self.state.gamma = config:readSetting("gamma") or 1.0
     local full_screen = config:readSetting("kopt_full_screen") or self.document.configurable.full_screen
     if full_screen == 0 then
         self.footer_visible = false
@@ -1063,20 +1062,22 @@ function ReaderView:onPageGapUpdate(page_gap)
 end
 
 function ReaderView:onSaveSettings()
-    if self.document:isEdited() and G_reader_settings:readSetting("save_document") ~= "always" then
-        -- Either "disable" (and the current tiles will be wrong) or "prompt" (but the
-        -- prompt will happen later, too late to catch "Don't save"), so force cached
-        -- tiles to be ignored on next opening.
-        self.document:resetTileCacheValidity()
+    if self.ui.paging then
+        if self.document:isEdited() and G_reader_settings:readSetting("save_document") ~= "always" then
+            -- Either "disable" (and the current tiles will be wrong) or "prompt" (but the
+            -- prompt will happen later, too late to catch "Don't save"), so force cached
+            -- tiles to be ignored on next opening.
+            self.document:resetTileCacheValidity()
+        end
+        self.ui.doc_settings:saveSetting("tile_cache_validity_ts", self.document:getTileCacheValidity())
+        self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
+        self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
     end
-    self.ui.doc_settings:saveSetting("tile_cache_validity_ts", self.document:getTileCacheValidity())
-    self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
     -- Don't etch the current rotation in stone when sticky rotation is enabled
     local locked = G_reader_settings:isTrue("lock_rotation")
     if not locked then
         self.ui.doc_settings:saveSetting("rotation_mode", Screen:getRotationMode())
     end
-    self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
     self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.page_overlap_enable)
@@ -1155,11 +1156,7 @@ function ReaderView:isOverlapAllowed()
 end
 
 function ReaderView:setupTouchZones()
-    if self.ui.rolling then
-        self.ui.rolling:setupTouchZones()
-    else
-        self.ui.paging:setupTouchZones()
-    end
+    (self.ui.rolling or self.ui.paging):setupTouchZones()
 end
 
 function ReaderView:onToggleReadingOrder()
