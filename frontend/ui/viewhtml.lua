@@ -353,11 +353,19 @@ function ViewHtml:_handleLongPress(document, css_selectors_offsets, offset_shift
         callback = function()
             self:_showMatchingSelectors(document, ancestors, false)
         end,
+        hold_callback = function()
+            -- skip main stylesheet and style tweaks
+            self:_showMatchingSelectors(document, ancestors, false, false)
+        end,
     }})
     table.insert(copy_buttons, {{
         text = _("Show matched stylesheets rules (all ancestors)"),
         callback = function()
             self:_showMatchingSelectors(document, ancestors, true)
+        end,
+        hold_callback = function()
+            -- skip main stylesheet and style tweaks
+            self:_showMatchingSelectors(document, ancestors, true, false)
         end,
     }})
 
@@ -372,11 +380,11 @@ function ViewHtml:_handleLongPress(document, css_selectors_offsets, offset_shift
     UIManager:show(widget)
 end
 
-function ViewHtml:_showMatchingSelectors(document, ancestors, show_all_ancestors)
+function ViewHtml:_showMatchingSelectors(document, ancestors, show_all_ancestors, with_main_stylesheet)
     local snippets
     if not show_all_ancestors then
         local node_dataindex = ancestors[1][2]
-        snippets = document:getStylesheetsMatchingRulesets(node_dataindex)
+        snippets = document:getStylesheetsMatchingRulesets(node_dataindex, with_main_stylesheet)
     else
         snippets = {}
         local elements = {}
@@ -391,8 +399,11 @@ function ViewHtml:_showMatchingSelectors(document, ancestors, show_all_ancestors
                 table.insert(snippets, "")
             end
             local desc = table.concat(elements, " > ", 1, #ancestors - i + 1)
-            table.insert(snippets, "/* ====== " .. desc .. " */")
-            util.arrayAppend(snippets, document:getStylesheetsMatchingRulesets(node_dataindex))
+            -- We use Unicode solid black blocks to make these really visible
+            table.insert(snippets, "/* \u{259B}" .. ("\u{2580}"):rep(20) .. " */")
+            table.insert(snippets, "/* \u{258C}" .. desc .. " */")
+            table.insert(snippets, "/* \u{2599}" .. ("\u{2584}"):rep(20) .. " */")
+            util.arrayAppend(snippets, document:getStylesheetsMatchingRulesets(node_dataindex, with_main_stylesheet))
         end
     end
 
