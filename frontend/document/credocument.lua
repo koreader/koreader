@@ -946,8 +946,8 @@ function CreDocument:getHTMLFromXPointers(xp0, xp1, flags, from_root_node)
     end
 end
 
-function CreDocument:getStylesheetsMatchingRulesets(node_dataindex)
-    return self._document:getStylesheetsMatchingRulesets(node_dataindex)
+function CreDocument:getStylesheetsMatchingRulesets(node_dataindex, with_main_stylesheet)
+    return self._document:getStylesheetsMatchingRulesets(node_dataindex, with_main_stylesheet)
 end
 
 function CreDocument:getNormalizedXPointer(xp)
