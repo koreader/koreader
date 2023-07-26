@@ -1045,10 +1045,11 @@ end
 Calls the events in a settings list
 arguments are:
     1) the settings table
-    2) execution management table: { qm_show = true|false} - forcibly show QM / run
+    2) optionally a `gestures` object
+    3) execution management table: { qm_show = true|false} - forcibly show QM / run
                                    { qm_anchor = ges.pos } - anchor position
 --]]--
-function Dispatcher:execute(settings, exec_props)
+function Dispatcher:execute(settings, gesture, exec_props)
     if ((exec_props == nil or exec_props.qm_show == nil) and settings.settings and settings.settings.show_as_quickmenu)
             or (exec_props and exec_props.qm_show) then
         return Dispatcher:_showAsMenu(settings, exec_props)
