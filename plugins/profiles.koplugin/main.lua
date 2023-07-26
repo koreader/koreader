@@ -254,7 +254,7 @@ function Profiles:getSubMenuItems()
 end
 
 function Profiles:onProfileExecute(name, exec_props)
-    Dispatcher:execute(self.data[name], exec_props)
+    Dispatcher:execute(self.data[name], nil, exec_props)
 end
 
 function Profiles:editProfileName(editCallback, old_name)
