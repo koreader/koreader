@@ -124,14 +124,14 @@ function Profiles:getSubMenuItems()
                 text = _("Execute"),
                 callback = function(touchmenu_instance)
                     touchmenu_instance:onClose()
-                    self:onProfileExecute(k, false, false)
+                    self:onProfileExecute(k, { qm_show = false })
                 end,
             },
             {
                 text = _("Show as QuickMenu"),
                 callback = function(touchmenu_instance)
                     touchmenu_instance:onClose()
-                    self:onProfileExecute(k, false, true)
+                    self:onProfileExecute(k, { qm_show = true })
                 end,
             },
             {
@@ -253,8 +253,8 @@ function Profiles:getSubMenuItems()
     return sub_item_table
 end
 
-function Profiles:onProfileExecute(name, gesture, show_as_quickmenu)
-    Dispatcher:execute(self.data[name], gesture, show_as_quickmenu)
+function Profiles:onProfileExecute(name, exec_props)
+    Dispatcher:execute(self.data[name], exec_props)
 end
 
 function Profiles:editProfileName(editCallback, old_name)
