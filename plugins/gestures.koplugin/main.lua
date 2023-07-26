@@ -1157,7 +1157,7 @@ function Gestures:gestureAction(action, ges)
         if action_list.settings and action_list.settings.anchor_quickmenu then
             exec_props = { qm_anchor = ges.end_pos or ges.pos }
         end
-        Dispatcher:execute(action_list, exec_props)
+        Dispatcher:execute(action_list, ges, exec_props)
     end
     return true
 end
