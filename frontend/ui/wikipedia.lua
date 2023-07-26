@@ -58,6 +58,7 @@ local Wikipedia = {
        prop = "text|sections|displaytitle|revid",
        -- page = nil, -- text to lookup, will be added below
        -- disabletoc = "", -- if we want to remove toc IN html
+            -- 20230722: there is no longer the TOC in the html no matter this param
        disablelimitreport = "",
        disableeditsection = "",
    },
@@ -306,14 +307,15 @@ function Wikipedia:getFullPageImages(wiki_title, lang)
         local wiki_base_url = self:getWikiServer(lang)
 
         local thumbs = {} -- bits of HTML containing an image
-        -- We first try to catch images in <div class=thumbinner>, which should exclude
-        -- wikipedia icons, flags... These seem to all end with a double </div>.
-        for thtml in html:gmatch([[<div class="thumbinner".-</div>%s*</div>]]) do
+        -- We first try to catch images in <figure>, which should exclude
+        -- wikipedia icons, flags...
+        -- (We want to match both typeof="mw:File/Thumb" and typeof="mw:File/Frame", so this [TF][hr][ua]m[be]...
+        for thtml in html:gmatch([[<figure [^>]*typeof="mw:File/[TF][hr][ua]m[be]"[^>]*>.-</figure>]]) do
             table.insert(thumbs, thtml)
         end
         -- We then also try to catch images in galleries (which often are less
         -- interesting than those in thumbinner) as a 2nd set.
-        for thtml in html:gmatch([[<li class="gallerybox".-<div class="thumb".-</div>%s*</div>%s*<div class="gallerytext">.-</div>%s*</div>]]) do
+        for thtml in html:gmatch([[<li class="gallerybox".-<div class="thumb".-</div>%s*<div class="gallerytext">.-</div>]]) do
             table.insert(thumbs, thtml)
         end
         -- We may miss some interesting images in the page's top right table, but
@@ -322,7 +324,7 @@ function Wikipedia:getFullPageImages(wiki_title, lang)
         for _, thtml in ipairs(thumbs) do
             -- We get <a href="/wiki/File:real_file_name.jpg (or /wiki/Fichier:real_file_name.jpg
             -- depending on Wikipedia lang)
-            local filename = thtml:match([[<a href="/wiki/[^:]*:([^"]*)" class="image"]])
+            local filename = thtml:match([[<a href="/wiki/[^:]*:([^"]*)" class="mw.file.description"]])
             if filename then
                 filename = url.unescape(filename)
             end
@@ -975,17 +977,36 @@ ol.references {
 }
 
 /* Show a box around image thumbnails */
-div.thumb {
+figure[typeof~='mw:File/Thumb'],
+figure[typeof~='mw:File/Frame'] {
+    display: table;
     border: dotted 1px black;
     margin:  0.5em 2.5em 0.5em 2.5em;
-    padding: 0.5em 0.5em 0.2em 0.5em;
-    padding-top: ]].. (include_images and "0.5em" or "0.15em") .. [[;
+    padding: 0 0.5em 0 0.5em;
+    padding-top: ]].. (include_images and "0.5em" or "0") .. [[;
     text-align: center;
     font-size: 90%;
     page-break-inside: avoid;
+    -cr-only-if: float-floatboxes;
+        max-width: 50vw; /* ensure we never take half of screen width */
+    -cr-only-if: -float-floatboxes;
+        width: 100% !important;
+    -cr-only-if: legacy;
+        display: block;
 }
-/* Allow main thumbnails to float */
-body > div > div.thumb {
+figure[typeof~='mw:File/Thumb'] > figcaption,
+figure[typeof~='mw:File/Frame'] > figcaption {
+    display: table-caption;
+    caption-side: bottom;
+    padding: 0.2em 0.5em 0.2em 0.5em;
+    /* No padding-top if image, as the image's strut brings some enough spacing */
+    padding-top: ]].. (include_images and "0" or "0.2em") .. [[;
+    -cr-only-if: legacy;
+        display: block;
+}
+/* Allow main thumbnails to float, preferably on the right */
+body > div > figure[typeof~='mw:File/Thumb'],
+body > div > figure[typeof~='mw:File/Frame'] {
     float: right !important;
     /* Change some of their styles when floating */
     -cr-only-if: float-floatboxes;
@@ -996,39 +1017,48 @@ body > div > div.thumb {
     -cr-only-if: float-floatboxes -allow-style-w-h-absolute-units;
         width: 33% !important;
 }
-body > div:dir(rtl) > div.thumb { /* invert if RTL */
+/* invert if RTL */
+body > div:dir(rtl) > figure[typeof~='mw:File/Thumb'],
+body > div:dir(rtl) > figure[typeof~='mw:File/Frame'] {
     float: left !important;
     -cr-only-if: float-floatboxes;
         clear: left;
         margin:  0 0.5em 0.2em 0 !important;
 }
 /* Allow original mix of left/right floats in web mode */
-body > div > div.thumb.tleft {
+body > div > figure[typeof~='mw:File/Thumb'].mw-halign-left,
+body > div > figure[typeof~='mw:File/Frame'].mw-halign-left {
     -cr-only-if: float-floatboxes allow-style-w-h-absolute-units;
         float: left !important;
         clear: left;
         margin:  0 0.5em 0.2em 0 !important;
 }
-body > div > div.thumb.tright {
+body > div > figure[typeof~='mw:File/Thumb'].mw-halign-right,
+body > div > figure[typeof~='mw:File/Frame'].mw-halign-right {
     -cr-only-if: float-floatboxes allow-style-w-h-absolute-units;
         float: right !important;
         clear: right;
         margin:  0 0 0.2em 0.5em !important;
 }
-
-body > div > div.thumb img {
+body > div > figure[typeof~='mw:File/Thumb'] > img,
+body > div > figure[typeof~='mw:File/Frame'] > img {
     /* Make float's inner images 100% of their container's width when not in "web" mode */
     -cr-only-if: float-floatboxes -allow-style-w-h-absolute-units;
         width: 100% !important;
         height: 100% !important;
 }
-
-/* Some other (usually wide) thumbnails are wrapped in a DIV.center:
- * avoid having them overflowing in web mode (no issue in other modes).
- * (Use "width: auto", as crengine does not support "max-width:") */
-body > div > div.center > div.thumb * {
-    -cr-only-if: allow-style-w-h-absolute-units;
-        width: auto !important;
+/* For centered figure, we need to reset a few things, and to not
+ * use display:table if we want them wide and centered */
+body > div > figure[typeof~='mw:File/Thumb'].mw-halign-center,
+body > div > figure[typeof~='mw:File/Frame'].mw-halign-center {
+    display: block;
+    float: none !important;
+    margin:  0.5em 2.5em 0.5em 2.5em !important;
+    max-width: none;
+}
+body > div > figure[typeof~='mw:File/Thumb'].mw-halign-center > figcaption,
+body > div > figure[typeof~='mw:File/Frame'].mw-halign-center > figcaption{
+    display: block;
 }
 
 /* Style gallery and the galleryboxes it contains.
@@ -1081,6 +1111,7 @@ li.gallerybox {
     -cr-only-if: -float-floatboxes;
         width: 100% !important; /* flat mode: force full width */
     -cr-only-if: float-floatboxes;
+        font-size: 80%;
         /* Remove our wide horizontal margins in book/web modes */
         margin:  0.5em 0.5em 0.5em 0.5em !important;
     -cr-only-if: float-floatboxes -allow-style-w-h-absolute-units;
@@ -1097,6 +1128,7 @@ li.gallerybox div.thumb {
     border: solid 1px white;
     margin: 0;
     padding: 0;
+    height: auto !important;
 }
 li.gallerybox div.thumb div {
     /* Override this one often set in style="" with various values */

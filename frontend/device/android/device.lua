@@ -499,8 +499,13 @@ function Device:_showLightDialog()
     android.lights.showDialog(title, _("Brightness"), _("Warmth"), _("OK"), _("Cancel"))
 
     local action = android.lights.dialogState()
+    while action == C.ALIGHTS_DIALOG_OPENED do
+        FFIUtil.usleep(250) -- dont pin the CPU
+        action = android.lights.dialogState()
+    end
     if action == C.ALIGHTS_DIALOG_OK then
         self.powerd.fl_intensity = self.powerd:frontlightIntensityHW()
+        self.powerd:_decideFrontlightState()
         logger.dbg("Dialog OK, brightness: " .. self.powerd.fl_intensity)
         if android.isWarmthDevice() then
             self.powerd.fl_warmth = self.powerd:frontlightWarmthHW()
@@ -510,6 +515,7 @@ function Device:_showLightDialog()
     elseif action == C.ALIGHTS_DIALOG_CANCEL then
         logger.dbg("Dialog Cancel, brightness: " .. self.powerd.fl_intensity)
         self.powerd:setIntensityHW(self.powerd.fl_intensity)
+        self.powerd:_decideFrontlightState()
         if android.isWarmthDevice() then
             logger.dbg("Dialog Cancel, warmth: " .. self.powerd.fl_warmth)
             self.powerd:setWarmth(self.powerd.fl_warmth)

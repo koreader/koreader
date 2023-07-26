@@ -946,8 +946,8 @@ function CreDocument:getHTMLFromXPointers(xp0, xp1, flags, from_root_node)
     end
 end
 
-function CreDocument:getStylesheetsMatchingRulesets(node_dataindex)
-    return self._document:getStylesheetsMatchingRulesets(node_dataindex)
+function CreDocument:getStylesheetsMatchingRulesets(node_dataindex, with_main_stylesheet)
+    return self._document:getStylesheetsMatchingRulesets(node_dataindex, with_main_stylesheet)
 end
 
 function CreDocument:getNormalizedXPointer(xp)
@@ -1509,6 +1509,7 @@ function CreDocument:register(registry)
     registry:addProvider("chm", "application/vnd.ms-htmlhelp", self, 90)
     registry:addProvider("doc", "application/msword", self, 90)
     registry:addProvider("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", self, 90)
+    registry:addProvider("docm", "application/vnd.ms-word.document.macroEnabled.12", self, 90)
     registry:addProvider("epub", "application/epub+zip", self, 100)
     registry:addProvider("epub", "application/epub", self, 100) -- Alternative mimetype for OPDS.
     registry:addProvider("epub3", "application/epub+zip", self, 100)

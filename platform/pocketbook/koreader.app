@@ -4,6 +4,10 @@ export LC_ALL="en_US.UTF-8"
 # working directory of koreader
 KOREADER_DIR="/mnt/ext1/applications/koreader"
 
+# load our own shared libraries if possible, solely because we don't control InkView, and we'd rather not it have load duplicate system libs...
+# (We handle this via DT_RPATH for our own stuff).
+export LD_LIBRARY_PATH="${KOREADER_DIR}/libs${LD_LIBRARY_PATH+:}${LD_LIBRARY_PATH}"
+
 # file through which we communicate instanced opens
 export KO_PATH_OPEN_BOOK="/tmp/.koreader.open"
 
@@ -73,9 +77,6 @@ ko_update_check() {
 
 # we're always starting from our working directory
 cd ${KOREADER_DIR} || exit
-
-# export load library path for some old firmware
-export LD_LIBRARY_PATH="${KOREADER_DIR}/libs:${LD_LIBRARY_PATH}"
 
 # export trained OCR data directory
 export TESSDATA_PREFIX="data"
