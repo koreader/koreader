@@ -1004,7 +1004,7 @@ function Dispatcher:_showAsMenu(settings, exec_props)
             font_size = 22,
             callback = function()
                 UIManager:close(quickmenu)
-                Dispatcher:execute(settings, { qm_show = false })
+                Dispatcher:execute(settings, nil, { qm_show = false })
             end,
         }})
     end
