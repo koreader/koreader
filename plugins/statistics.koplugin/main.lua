@@ -428,6 +428,14 @@ Please wait…
             end
         end
     end
+    if not self.settings.fixed_null_idbook then
+        self.settings.fixed_null_idbook = true
+        conn:exec("DELETE FROM page_stat_data WHERE id_book IS null;")
+        local ok, errmsg = pcall(conn.exec, conn, "VACUUM;")
+        if not ok then
+            logger.warn("Failed compacting statistics database when fixing null id_book:", errmsg)
+        end
+    end
     conn:close()
 end
 
@@ -3104,9 +3112,9 @@ function ReaderStatistics.onSync(local_path, cached_path, income_path)
         INSERT INTO page_stat_data (id_book, page, start_time, duration, total_pages)
             SELECT map.mid, page, start_time, duration, total_pages
             FROM income_db.page_stat_data
-            LEFT JOIN book_id_map as map
+            INNER JOIN book_id_map as map
             ON id_book = map.iid
-            WHERE true
+            WHERE map.mid IS NOT null
         ON CONFLICT(id_book, page, start_time) DO UPDATE SET
         duration = MAX(duration, excluded.duration);
 
