@@ -992,11 +992,11 @@ function Dispatcher:isActionEnabled(action)
     return not disabled
 end
 
-function Dispatcher:_showAsMenu(settings, gesture, show_as_quickmenu)
+function Dispatcher:_showAsMenu(settings, exec_props)
     local display_list = Dispatcher:getDisplayList(settings)
     local quickmenu
     local buttons = {}
-    if show_as_quickmenu then
+    if exec_props and exec_props.qm_show then
         table.insert(buttons, {{
             text = _("Execute all"),
             align = "left",
@@ -1004,7 +1004,7 @@ function Dispatcher:_showAsMenu(settings, gesture, show_as_quickmenu)
             font_size = 22,
             callback = function()
                 UIManager:close(quickmenu)
-                Dispatcher:execute(settings, gesture, false)
+                Dispatcher:execute(settings, { qm_show = false })
             end,
         }})
     end
@@ -1023,7 +1023,7 @@ function Dispatcher:_showAsMenu(settings, gesture, show_as_quickmenu)
             hold_callback = function()
                 if v.key:sub(1, 13) == "profile_exec_" then
                     UIManager:close(quickmenu)
-                    UIManager:sendEvent(Event:new(settingsList[v.key].event, settingsList[v.key].arg, gesture, true))
+                    UIManager:sendEvent(Event:new(settingsList[v.key].event, settingsList[v.key].arg, { qm_show = true }))
                 end
             end,
         }})
@@ -1036,7 +1036,7 @@ function Dispatcher:_showAsMenu(settings, gesture, show_as_quickmenu)
         shrink_min_width = math.floor(0.6 * Screen:getWidth()),
         use_info_style = false,
         buttons = buttons,
-        anchor = (gesture and gesture.anchor_quickmenu) and (gesture.end_pos or gesture.pos),
+        anchor = exec_props and exec_props.qm_anchor,
     }
     UIManager:show(quickmenu)
 end
@@ -1045,13 +1045,13 @@ end
 Calls the events in a settings list
 arguments are:
     1) the settings table
-    2) optionally a `gestures` object
-    3) optionally show_as_quickmenu: when 'nil' - follow the gesture setting
+    2) execution management table: { qm_show = true|false} - forcibly show QM / run
+                                   { qm_anchor = ges.pos } - anchor position
 --]]--
-function Dispatcher:execute(settings, gesture, show_as_quickmenu)
-    if show_as_quickmenu or
-            (show_as_quickmenu == nil and settings.settings and settings.settings.show_as_quickmenu) then
-        return Dispatcher:_showAsMenu(settings, gesture, show_as_quickmenu)
+function Dispatcher:execute(settings, exec_props)
+    if ((exec_props == nil or exec_props.qm_show == nil) and settings.settings and settings.settings.show_as_quickmenu)
+            or (exec_props and exec_props.qm_show) then
+        return Dispatcher:_showAsMenu(settings, exec_props)
     end
     local has_many = Dispatcher:_itemsCount(settings) > 1
     if has_many then
@@ -1075,7 +1075,7 @@ function Dispatcher:execute(settings, gesture, show_as_quickmenu)
             end
             if settingsList[k].category == "none" then
                 if settingsList[k].arg ~= nil then
-                    UIManager:sendEvent(Event:new(settingsList[k].event, settingsList[k].arg, gesture))
+                    UIManager:sendEvent(Event:new(settingsList[k].event, settingsList[k].arg, exec_props))
                 else
                     UIManager:sendEvent(Event:new(settingsList[k].event))
                 end
