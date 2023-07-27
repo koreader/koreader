@@ -1153,11 +1153,11 @@ function Gestures:gestureAction(action, ges)
         return
     else
         self.ui:handleEvent(Event:new("HandledAsSwipe"))
-        local exec_props
+        local exec_props = { gesture = ges }
         if action_list.settings and action_list.settings.anchor_quickmenu then
-            exec_props = { qm_anchor = ges.end_pos or ges.pos }
+            exec_props.qm_anchor = ges.end_pos or ges.pos
         end
-        Dispatcher:execute(action_list, ges, exec_props)
+        Dispatcher:execute(action_list, exec_props)
     end
     return true
 end
