@@ -1004,7 +1004,7 @@ function Dispatcher:_showAsMenu(settings, exec_props)
             font_size = 22,
             callback = function()
                 UIManager:close(quickmenu)
-                Dispatcher:execute(settings, nil, { qm_show = false })
+                Dispatcher:execute(settings, { qm_show = false })
             end,
         }})
     end
@@ -1045,11 +1045,11 @@ end
 Calls the events in a settings list
 arguments are:
     1) the settings table
-    2) optionally a `gestures` object
-    3) execution management table: { qm_show = true|false} - forcibly show QM / run
+    2) execution management table: { qm_show = true|false} - forcibly show QM / run
                                    { qm_anchor = ges.pos } - anchor position
+                                   { gesture = ges } - a `gestures` object
 --]]--
-function Dispatcher:execute(settings, gesture, exec_props)
+function Dispatcher:execute(settings, exec_props)
     if ((exec_props == nil or exec_props.qm_show == nil) and settings.settings and settings.settings.show_as_quickmenu)
             or (exec_props and exec_props.qm_show) then
         return Dispatcher:_showAsMenu(settings, exec_props)
@@ -1086,6 +1086,8 @@ function Dispatcher:execute(settings, gesture, exec_props)
             then
                 UIManager:sendEvent(Event:new(settingsList[k].event, v))
             end
+
+            local gesture = exec_props and exec_props.gesture
             -- the event can accept a gesture object or an argument
             if settingsList[k].category == "arg" then
                 local arg = gesture or settingsList[k].arg
