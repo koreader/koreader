@@ -1058,6 +1058,7 @@ function Dispatcher:execute(settings, exec_props)
     if has_many then
         UIManager:broadcastEvent(Event:new("BatchedUpdate"))
     end
+    local gesture = exec_props and exec_props.gesture
     for k, v in iter_func(settings) do
         if type(k) == "number" then
             k = v
@@ -1074,29 +1075,25 @@ function Dispatcher:execute(settings, exec_props)
                 end
                 UIManager:sendEvent(Event:new("ConfigChange", settingsList[k].configurable.name, value))
             end
-            if settingsList[k].category == "none" then
-                if settingsList[k].arg ~= nil then
-                    UIManager:sendEvent(Event:new(settingsList[k].event, settingsList[k].arg, exec_props))
-                else
-                    UIManager:sendEvent(Event:new(settingsList[k].event))
-                end
-            end
-            if settingsList[k].category == "absolutenumber"
-                or settingsList[k].category == "string"
-            then
-                UIManager:sendEvent(Event:new(settingsList[k].event, v))
-            end
 
-            local gesture = exec_props and exec_props.gesture
-            -- the event can accept a gesture object or an argument
-            if settingsList[k].category == "arg" then
+            local category = settingsList[k].category
+            local event = settingsList[k].event
+            if category == "none" then
+                if settingsList[k].arg ~= nil then
+                    UIManager:sendEvent(Event:new(event, settingsList[k].arg, exec_props))
+                else
+                    UIManager:sendEvent(Event:new(event))
+                end
+            elseif category == "absolutenumber" or category == "string" then
+                UIManager:sendEvent(Event:new(event, v))
+            elseif category == "arg" then
+                -- the event can accept a gesture object or an argument
                 local arg = gesture or settingsList[k].arg
-                UIManager:sendEvent(Event:new(settingsList[k].event, arg))
-            end
-            -- the event can accept a gesture object or a number
-            if settingsList[k].category == "incrementalnumber" then
+                UIManager:sendEvent(Event:new(event, arg))
+            elseif category == "incrementalnumber" then
+                -- the event can accept a gesture object or a number
                 local arg = v ~= 0 and v or gesture or 0
-                UIManager:sendEvent(Event:new(settingsList[k].event, arg))
+                UIManager:sendEvent(Event:new(event, arg))
             end
         end
         Notification:resetNotifySource()
