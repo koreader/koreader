@@ -428,14 +428,6 @@ Please wait…
             end
         end
     end
-    if not self.settings.fixed_null_idbook then
-        self.settings.fixed_null_idbook = true
-        conn:exec("DELETE FROM page_stat_data WHERE id_book IS null;")
-        local ok, errmsg = pcall(conn.exec, conn, "VACUUM;")
-        if not ok then
-            logger.warn("Failed compacting statistics database when fixing null id_book:", errmsg)
-        end
-    end
     conn:close()
 end
 

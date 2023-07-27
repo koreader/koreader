@@ -5,10 +5,11 @@ Centralizes any and all one time migration concerns.
 local DataStorage = require("datastorage")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local SQ3 = require("lua-ljsqlite3/init")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20230710
+local CURRENT_MIGRATION_DATE = 20230727
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -582,6 +583,23 @@ if last_migration_date < 20230710 then
             kosync.auto_sync = false
             G_reader_settings:saveSetting("kosync", kosync)
         end
+    end
+end
+
+-- 20230727, Statistics plugin null id_book in page_stat_data
+if last_migration_date < 20230727 then
+    logger.info("Performing one-time migration for 20230727")
+    local conn = SQ3.open(DataStorage:getSettingsDir() .. "/statistics.sqlite3")
+    local ok, value = pcall(conn.exec, conn, "PRAGMA table_info('page_stat_data')")
+    if ok and value then
+        -- Has table
+        conn:exec("DELETE FROM page_stat_data WHERE id_book IS null;")
+        local ok2, errmsg = pcall(conn.exec, conn, "VACUUM;")
+        if not ok2 then
+            logger.warn("Failed compacting statistics database when fixing null id_book:", errmsg)
+        end
+    else
+        logger.warn("db not compatible when performing onetime migration:", ok, value)
     end
 end
 
