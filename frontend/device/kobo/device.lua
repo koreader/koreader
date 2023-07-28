@@ -634,14 +634,6 @@ function Kobo:init()
         end
     end
 
-    -- NOTE: Devices with an AW99703 frontlight PWM controller feature a hardware smooth ramp when setting the frontlight intensity.
-    ---      A side-effect of this behavior is that if you queue a series of intensity changes ending at 0,
-    ---      it won't ramp *at all*, jumping straight to zero instead.
-    ---      So we delay the final ramp off step to prevent (both) the native and our ramping from being optimized out.
-    if self:hasNaturalLight() and self.frontlight_settings.frontlight_mixer:find("aw99703", 12, true) then
-        self.frontlight_settings.ramp_off_delay = 0.5
-    end
-
     -- NOTE: i.MX5 devices have a wonky RTC that doesn't like alarms set further away that UINT16_MAX seconds from now...
     --       (c.f., WakeupMgr for more details).
     -- NOTE: getRTCName is currently hardcoded to rtc0 (which is also WakeupMgr's default).
@@ -678,6 +670,14 @@ function Kobo:init()
     -- Ditto
     if self:isMk7() then
         self.canHWDither = yes
+    end
+
+    -- NOTE: Devices with an AW99703 frontlight PWM controller feature a hardware smooth ramp when setting the frontlight intensity.
+    ---      A side-effect of this behavior is that if you queue a series of intensity changes ending at 0,
+    ---      it won't ramp *at all*, jumping straight to zero instead.
+    ---      So we delay the final ramp off step to prevent (both) the native and our ramping from being optimized out.
+    if self:hasNaturalLightMixer() and self.frontlight_settings.frontlight_mixer:find("aw99703", 12, true) then
+        self.frontlight_settings.ramp_off_delay = 0.5
     end
 
     self.powerd = require("device/kobo/powerd"):new{
