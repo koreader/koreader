@@ -157,11 +157,11 @@ return {
     },
     _D_el = {
         "Δ",
-        northwest = "D",
+        north = "D",
     },
     _d_el = {
         "δ",
-        northwest = "d",
+        north = "d",
     },
     _E_el = {
         "Ε",
@@ -197,11 +197,11 @@ return {
     },
     _G_el = {
         "Γ",
-        northwest = "G",
+        north = "G",
     },
     _g_el = {
         "γ",
-        northwest = "g",
+        north = "g",
     },
     _H_el = {
         "Η",
@@ -260,43 +260,43 @@ return {
     },
     _J_el = {
         "Ξ",
-        northwest = "J",
+        north = "J",
     },
     _j_el = {
         "ξ",
-        northwest = "j",
+        north = "j",
     },
     _K_el = {
         "Κ",
-        northwest = "K", -- Latin capital letter K
+        north = "K", -- Latin capital letter K
     },
     _k_el = {
         "κ",
-        northwest = "k",
+        north = "k",
     },
     _L_el = {
         "Λ",
-        northwest = "L",
+        north = "L",
     },
     _l_el = {
         "λ",
-        northwest = "l",
+        north = "l",
     },
     _M_el = {
         "Μ",
-        northwest = "M", -- Latin capital letter M
+        north = "M", -- Latin capital letter M
     },
     _m_el = {
         "μ",
-        northwest = "m",
+        north = "m",
     },
     _N_el = {
         "Ν",
-        northwest = "N", -- Latin capital letter N
+        north = "N", -- Latin capital letter N
     },
     _n_el = {
         "ν",
-        northwest = "n",
+        north = "n",
     },
     _O_el = {
         "Ο",
@@ -322,11 +322,11 @@ return {
     },
     _P_el = {
         "Π",
-        northwest = "P", -- Latin capital letter P
+        north = "P", -- Latin capital letter P
     },
     _p_el = {
         "π",
-        northwest = "p",
+        north = "p",
     },
     _Q_el = {
         "'", -- Apostrophe
@@ -348,7 +348,7 @@ return {
     },
     _R_el = {
         "Ρ",
-        northwest = "R",
+        north = "R",
         northeast = "Ῥ",
     },
     _r_el = {
@@ -359,28 +359,28 @@ return {
     },
     _S_el = {
         "Σ",
-        northwest = "S",
+        north = "S",
     },
     _s_el = {
         "σ",
         northeast = "ς",
-        northwest = "s",
+        north = "s",
     },
     _T_el = {
         "Τ",
-        northwest = "T", -- Latin capital letter T
+        north = "T", -- Latin capital letter T
     },
     _t_el = {
         "τ",
-        northwest = "t",
+        north = "t",
     },
     _U_el = {
         "Θ",
-        northwest = "U",
+        north = "U",
     },
     _u_el = {
         "θ",
-        northwest = "u",
+        north = "u",
     },
     _V_el = {
         "Ω",
@@ -412,14 +412,14 @@ return {
     },
     _W_el = {
         "|",
-        north = { label = "◌̈́", key = "̈́", }, -- Combining Greek Dialytika Tonos
-        northeast = "W",
+        north = "W",
+        northeast = { label = "◌̈́", key = "̈́", }, -- Combining Greek Dialytika Tonos
         east = "·", -- Greek Ano Teleia
     },
     _w_el = {
         "ς",
-        north = { label = "◌̈́", key = "̈́", }, -- Combining Greek Dialytika Tonos
-        northeast = "w",
+        north = "w",
+        northeast = { label = "◌̈́", key = "̈́", }, -- Combining Greek Dialytika Tonos
         east = "·", -- Greek Ano Teleia
     },
     _X_el = {
@@ -465,11 +465,11 @@ return {
     },
     _Z_el = {
         "Ζ",
-        northwest = "Z", -- Latin capital letter Z
+        north = "Z", -- Latin capital letter Z
     },
     _z_el = {
         "ζ",
-        northwest = "z",
+        north = "z",
     },
   -- _1_ and _1p: numeric key 1 and its popup sibling (they have north swipe ups of each other, the rest is the same)
   -- _1n and _1s: numpad key 1 (layer 2), -- superscript key 1 (layer 2, shifted)
