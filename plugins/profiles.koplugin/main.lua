@@ -124,20 +124,14 @@ function Profiles:getSubMenuItems()
                 text = _("Execute"),
                 callback = function(touchmenu_instance)
                     touchmenu_instance:onClose()
-                    local show_as_quickmenu = v.settings.show_as_quickmenu
-                    self.data[k].settings.show_as_quickmenu = nil
-                    self:onProfileExecute(k)
-                    self.data[k].settings.show_as_quickmenu = show_as_quickmenu
+                    self:onProfileExecute(k, { qm_show = false })
                 end,
             },
             {
                 text = _("Show as QuickMenu"),
                 callback = function(touchmenu_instance)
                     touchmenu_instance:onClose()
-                    local show_as_quickmenu = v.settings.show_as_quickmenu
-                    self.data[k].settings.show_as_quickmenu = true
-                    self:onProfileExecute(k)
-                    self.data[k].settings.show_as_quickmenu = show_as_quickmenu
+                    self:onProfileExecute(k, { qm_show = true })
                 end,
             },
             {
@@ -259,8 +253,8 @@ function Profiles:getSubMenuItems()
     return sub_item_table
 end
 
-function Profiles:onProfileExecute(name, gesture)
-    Dispatcher:execute(self.data[name], gesture)
+function Profiles:onProfileExecute(name, exec_props)
+    Dispatcher:execute(self.data[name], exec_props)
 end
 
 function Profiles:editProfileName(editCallback, old_name)
@@ -388,7 +382,7 @@ function Profiles:updateGestures(action_old_name, action_new_name)
                                 table.remove(gesture_loaded.settings.order, i)
                                 if #gesture.settings.order == 0 then
                                     gesture.settings.order = nil
-                                    if #gesture.settings == 0 then
+                                    if next(gesture.settings) == nil then
                                         gesture.settings = nil
                                     end
                                 end
@@ -403,7 +397,7 @@ function Profiles:updateGestures(action_old_name, action_new_name)
                     gesture[action_new_name] = true
                     gesture_loaded[action_new_name] = true
                 else
-                    if #gesture == 0 then
+                    if next(gesture) == nil then
                         all_gestures.data[section][gesture_name] = nil
                     end
                 end

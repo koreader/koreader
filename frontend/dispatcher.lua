@@ -992,10 +992,22 @@ function Dispatcher:isActionEnabled(action)
     return not disabled
 end
 
-function Dispatcher:_showAsMenu(settings, gesture)
+function Dispatcher:_showAsMenu(settings, exec_props)
     local display_list = Dispatcher:getDisplayList(settings)
     local quickmenu
     local buttons = {}
+    if exec_props and exec_props.qm_show then
+        table.insert(buttons, {{
+            text = _("Execute all"),
+            align = "left",
+            font_face = "smallinfofont",
+            font_size = 22,
+            callback = function()
+                UIManager:close(quickmenu)
+                Dispatcher:execute(settings, { qm_show = false })
+            end,
+        }})
+    end
     for _, v in ipairs(display_list) do
         table.insert(buttons, {{
             text = v.text,
@@ -1008,6 +1020,12 @@ function Dispatcher:_showAsMenu(settings, gesture)
                 UIManager:close(quickmenu)
                 Dispatcher:execute({[v.key] = settings[v.key]})
             end,
+            hold_callback = function()
+                if v.key:sub(1, 13) == "profile_exec_" then
+                    UIManager:close(quickmenu)
+                    UIManager:sendEvent(Event:new(settingsList[v.key].event, settingsList[v.key].arg, { qm_show = true }))
+                end
+            end,
         }})
     end
     local ButtonDialog = require("ui/widget/buttondialog")
@@ -1018,7 +1036,7 @@ function Dispatcher:_showAsMenu(settings, gesture)
         shrink_min_width = math.floor(0.6 * Screen:getWidth()),
         use_info_style = false,
         buttons = buttons,
-        anchor = (gesture and gesture.anchor_quickmenu) and (gesture.end_pos or gesture.pos),
+        anchor = exec_props and exec_props.qm_anchor,
     }
     UIManager:show(quickmenu)
 end
@@ -1027,16 +1045,20 @@ end
 Calls the events in a settings list
 arguments are:
     1) the settings table
-    2) optionally a `gestures` object
+    2) execution management table: { qm_show = true|false} - forcibly show QM / run
+                                   { qm_anchor = ges.pos } - anchor position
+                                   { gesture = ges } - a `gestures` object
 --]]--
-function Dispatcher:execute(settings, gesture)
-    if settings.settings ~= nil and settings.settings.show_as_quickmenu == true then
-        return Dispatcher:_showAsMenu(settings, gesture)
+function Dispatcher:execute(settings, exec_props)
+    if ((exec_props == nil or exec_props.qm_show == nil) and settings.settings and settings.settings.show_as_quickmenu)
+            or (exec_props and exec_props.qm_show) then
+        return Dispatcher:_showAsMenu(settings, exec_props)
     end
     local has_many = Dispatcher:_itemsCount(settings) > 1
     if has_many then
         UIManager:broadcastEvent(Event:new("BatchedUpdate"))
     end
+    local gesture = exec_props and exec_props.gesture
     for k, v in iter_func(settings) do
         if type(k) == "number" then
             k = v
@@ -1053,27 +1075,25 @@ function Dispatcher:execute(settings, gesture)
                 end
                 UIManager:sendEvent(Event:new("ConfigChange", settingsList[k].configurable.name, value))
             end
-            if settingsList[k].category == "none" then
+
+            local category = settingsList[k].category
+            local event = settingsList[k].event
+            if category == "none" then
                 if settingsList[k].arg ~= nil then
-                    UIManager:sendEvent(Event:new(settingsList[k].event, settingsList[k].arg, gesture))
+                    UIManager:sendEvent(Event:new(event, settingsList[k].arg, exec_props))
                 else
-                    UIManager:sendEvent(Event:new(settingsList[k].event))
+                    UIManager:sendEvent(Event:new(event))
                 end
-            end
-            if settingsList[k].category == "absolutenumber"
-                or settingsList[k].category == "string"
-            then
-                UIManager:sendEvent(Event:new(settingsList[k].event, v))
-            end
-            -- the event can accept a gesture object or an argument
-            if settingsList[k].category == "arg" then
+            elseif category == "absolutenumber" or category == "string" then
+                UIManager:sendEvent(Event:new(event, v))
+            elseif category == "arg" then
+                -- the event can accept a gesture object or an argument
                 local arg = gesture or settingsList[k].arg
-                UIManager:sendEvent(Event:new(settingsList[k].event, arg))
-            end
-            -- the event can accept a gesture object or a number
-            if settingsList[k].category == "incrementalnumber" then
+                UIManager:sendEvent(Event:new(event, arg))
+            elseif category == "incrementalnumber" then
+                -- the event can accept a gesture object or a number
                 local arg = v ~= 0 and v or gesture or 0
-                UIManager:sendEvent(Event:new(settingsList[k].event, arg))
+                UIManager:sendEvent(Event:new(event, arg))
             end
         end
         Notification:resetNotifySource()
