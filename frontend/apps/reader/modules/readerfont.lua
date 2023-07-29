@@ -180,48 +180,48 @@ function ReaderFont:onReadSettings(config)
                          or self.ui.document.header_font
     self.ui.document:setHeaderFont(self.header_font_face)
 
-    self.font_size = config:readSetting("font_size")
+    self.font_size = config:readSetting("copt_font_size")
                   or G_reader_settings:readSetting("copt_font_size")
                   or G_defaults:readSetting("DCREREADER_CONFIG_DEFAULT_FONT_SIZE")
                   or 22
     self.ui.document:setFontSize(Screen:scaleBySize(self.font_size))
 
-    self.font_base_weight = config:readSetting("font_base_weight")
+    self.font_base_weight = config:readSetting("copt_font_base_weight")
                       or G_reader_settings:readSetting("copt_font_base_weight")
                       or 0
     self.ui.document:setFontBaseWeight(self.font_base_weight)
 
-    self.font_hinting = config:readSetting("font_hinting")
+    self.font_hinting = config:readSetting("copt_font_hinting")
                      or G_reader_settings:readSetting("copt_font_hinting")
                      or 2 -- auto (default in cre.cpp)
     self.ui.document:setFontHinting(self.font_hinting)
 
-    self.font_kerning = config:readSetting("font_kerning")
+    self.font_kerning = config:readSetting("copt_font_kerning")
                      or G_reader_settings:readSetting("copt_font_kerning")
                      or 3 -- harfbuzz (slower, but needed for proper arabic)
     self.ui.document:setFontKerning(self.font_kerning)
 
-    self.word_spacing = config:readSetting("word_spacing")
+    self.word_spacing = config:readSetting("copt_word_spacing")
                      or G_reader_settings:readSetting("copt_word_spacing")
                      or {95, 75}
     self.ui.document:setWordSpacing(self.word_spacing)
 
-    self.word_expansion = config:readSetting("word_expansion")
+    self.word_expansion = config:readSetting("copt_word_expansion")
                        or G_reader_settings:readSetting("copt_word_expansion")
                        or 0
     self.ui.document:setWordExpansion(self.word_expansion)
 
-    self.cjk_width_scaling = config:readSetting("cjk_width_scaling")
+    self.cjk_width_scaling = config:readSetting("copt_cjk_width_scaling")
                        or G_reader_settings:readSetting("copt_cjk_width_scaling")
                        or 100
     self.ui.document:setCJKWidthScaling(self.cjk_width_scaling)
 
-    self.line_space_percent = config:readSetting("line_space_percent")
+    self.line_space_percent = config:readSetting("copt_line_spacing")
                            or G_reader_settings:readSetting("copt_line_spacing")
                            or G_defaults:readSetting("DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM")
     self.ui.document:setInterlineSpacePercent(self.line_space_percent)
 
-    self.gamma_index = config:readSetting("gamma_index")
+    self.gamma_index = config:readSetting("copt_font_gamma")
                     or G_reader_settings:readSetting("copt_font_gamma")
                     or 15 -- gamma = 1.0
     self.ui.document:setGammaIndex(self.gamma_index)
@@ -354,15 +354,6 @@ end
 function ReaderFont:onSaveSettings()
     self.ui.doc_settings:saveSetting("font_face", self.font_face)
     self.ui.doc_settings:saveSetting("header_font_face", self.header_font_face)
-    self.ui.doc_settings:saveSetting("font_size", self.font_size)
-    self.ui.doc_settings:saveSetting("font_base_weight", self.font_base_weight)
-    self.ui.doc_settings:saveSetting("font_hinting", self.font_hinting)
-    self.ui.doc_settings:saveSetting("font_kerning", self.font_kerning)
-    self.ui.doc_settings:saveSetting("word_spacing", self.word_spacing)
-    self.ui.doc_settings:saveSetting("word_expansion", self.word_expansion)
-    self.ui.doc_settings:saveSetting("cjk_width_scaling", self.cjk_width_scaling)
-    self.ui.doc_settings:saveSetting("line_space_percent", self.line_space_percent)
-    self.ui.doc_settings:saveSetting("gamma_index", self.gamma_index)
     self.ui.doc_settings:saveSetting("font_family_fonts", self.font_family_fonts)
 end
 
