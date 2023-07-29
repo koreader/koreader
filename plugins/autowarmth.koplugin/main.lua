@@ -1010,7 +1010,7 @@ function AutoWarmth:getWarmthMenu()
                             checked = self.warmth[num] > 100,
                             parent = warmth_spinner,
                         }
-                        warmth_spinner:addWidget(self.night_mode_check_box, false, 0)
+                        warmth_spinner:addWidget(self.night_mode_check_box)
                     end
                     UIManager:show(warmth_spinner)
                 else
