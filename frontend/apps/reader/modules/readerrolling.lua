@@ -823,12 +823,14 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
     --   followed_link_marker = true: maker shown and not auto removed
     --   followed_link_marker = <number>: removed after <number> seconds
     -- (no real need for a menu item, the default is the finest)
-    local marker_setting
+    local marker_setting = 1
+    --[[
     if G_reader_settings:has("followed_link_marker") then
         marker_setting = G_reader_settings:readSetting("followed_link_marker")
     else
         marker_setting = 1 -- default is: shown and removed after 1 second
     end
+    --]]
 
     if marker_xp and marker_setting then
         -- Show a mark on left side of screen to give a visual feedback of
