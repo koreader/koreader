@@ -110,7 +110,7 @@ return {
     _A_el = {
         "Α",
         northeast = "Ἀ",
-        north = "ᾎ",
+        north = "α",
         northwest = "Ἁ",
         east = "Ά",
         west = " ᾍ",
@@ -124,7 +124,7 @@ return {
     _a_el = {
         "α",
         northeast = "ἀ",
-        north = "ᾷ",
+        north = "Α",
         northwest = "ἁ",
         east = "ά",
         west = "ὰ",
@@ -138,76 +138,90 @@ return {
     _B_el = {
         "Β",
         northeast = "♭",
-        north = "B", -- Latin capital letter B
+        north = "β",
+        northwest = "B", -- Latin capital letter B
     },
     _b_el = {
         "β",
         northeast = "♭",
-        north = "b",
+        north = "Β",
+        northwest = "b",
+        west = "ϐ", -- Greek beta symbol
     },
     _C_el = {
         "Ψ",
         northeast = "©",
-        north = "C",
+        north = "ψ",
+        northwest = "C",
     },
     _c_el = {
         "ψ",
         northeast = "©",
-        north = "c",
+        north = "Ψ",
+        northwest = "c",
     },
     _D_el = {
         "Δ",
-        north = "D",
+        north = "δ",
+        northwest = "D",
     },
     _d_el = {
         "δ",
-        north = "d",
+        north = "Δ",
+        northwest = "d",
     },
     _E_el = {
         "Ε",
         northeast = "Ἐ",
         northwest = "Ἑ",
-        north = "E", -- Latin capital letter E
+        north = "ε",
         east = "Έ",
         west = "Ὲ",
-        south = "€", -- Euro currency
+        south = "E", -- Latin capital letter E
         southeast = "Ἔ",
         southwest = "Ἕ",
+        "€", -- Euro currency
     },
     _e_el = {
         "ε",
         northeast = "ἐ",
-        north = "e",
+        north = "Ε",
         northwest = "ἑ",
         east = "έ",
         west = "ὲ",
-        south = "€", -- Euro currency
+        south = "e",
         southeast = "ἔ",
         southwest = "ἕ",
+        "€", -- Euro currency
     },
     _F_el = {
         "Φ",
         northeast = "ƒ", -- Guilder/Florin
-        north = "F",
+        north = "φ",
+        northwest = "F",
     },
     _f_el = {
         "φ",
         northeast = "ƒ", -- Guilder/Florin
-        north = "f",
+        north = "Φ",
+        northwest = "f",
+        west = "ϕ", -- Greek phi symbol
     },
     _G_el = {
         "Γ",
-        north = "G",
+        north = "γ",
+        northwest = "G",
     },
     _g_el = {
         "γ",
-        north = "g",
+        north = "Γ",
+        northwest = "g",
     },
     _H_el = {
         "Η",
         northeast = "Ἠ",
         northwest = "Ἡ",
-        north = "ᾞ",
+        north = "η",
         east = "Ή",
         south = "ῌ",
         west = "Ὴ",
@@ -220,7 +234,7 @@ return {
     _h_el = {
         "η",
         northeast = "ἠ",
-        north = "ῇ",
+        north = "Η",
         northwest = "ἡ",
         east = "ή",
         west = "ὴ",
@@ -234,12 +248,13 @@ return {
     _I_el = {
         "Ι",
         northeast = "Ἰ",
-        north = "I", -- Latin capital letter I
+        north = "ι",
         northwest = "Ἱ",
         east = "Ί",
         west = "Ὶ",
         southeast = "Ἴ",
         southwest = "Ἵ",
+        south = "I", -- Latin capital letter I
         "Ἷ",
         "Ϊ",
         "Ἶ",
@@ -247,7 +262,7 @@ return {
     _i_el = {
         "ι",
         northeast = "ἰ",
-        north = "i",
+        north = "Ι",
         northwest = "ἱ",
         east = "ί",
         west = "ὶ",
@@ -260,133 +275,155 @@ return {
     },
     _J_el = {
         "Ξ",
-        north = "J",
+        north = "ξ",
+        northwest = "J",
     },
     _j_el = {
         "ξ",
-        north = "j",
+        north = "Ξ",
+        northwest = "j",
     },
     _K_el = {
         "Κ",
-        north = "K", -- Latin capital letter K
+        north = "κ",
+        northwest = "K", -- Latin capital letter K
+        northeast = "Ϗ", -- Greek capital kai symbol
     },
     _k_el = {
         "κ",
-        north = "k",
+        north = "Κ",
+        northwest = "k",
+        northeast = "ϗ", -- Greek kai symbol
     },
     _L_el = {
         "Λ",
-        north = "L",
+        north = "λ",
+        northwest = "L",
     },
     _l_el = {
         "λ",
-        north = "l",
+        north = "Λ",
+        northwest = "l",
     },
     _M_el = {
         "Μ",
-        north = "M", -- Latin capital letter M
+        north = "μ",
+        northwest = "M", -- Latin capital letter M
     },
     _m_el = {
         "μ",
-        north = "m",
+        north = "Μ",
+        northwest = "m",
     },
     _N_el = {
         "Ν",
-        north = "N", -- Latin capital letter N
+        north = "ν",
+        northwest = "N", -- Latin capital letter N
     },
     _n_el = {
         "ν",
-        north = "n",
+        north = "Ν",
+        northwest = "n",
     },
     _O_el = {
         "Ο",
         northeast = "Ὀ",
         northwest = "Ὁ",
-        north = "O", -- Latin capital letter O
+        north = "ο",
         east = "Ό",
         west = "Ὸ",
         south = "Ø",
         southeast = "Ὄ",
         southwest = "Ὅ",
+        "O", -- Latin capital letter O
     },
     _o_el = {
         "ο",
         northeast = "ὀ",
         northwest = "ὁ",
-        north = "o", -- Latin small letter o
+        north = "Ο",
         east = "ό",
         west = "ὸ",
         south = "ø",
         southeast = "ὄ",
         southwest = "ὅ",
+        "o", -- Latin small letter o
     },
     _P_el = {
         "Π",
-        north = "P", -- Latin capital letter P
+        north = "π",
+        northwest = "P", -- Latin capital letter P
     },
     _p_el = {
         "π",
-        north = "p",
+        north = "Π",
+        northwest = "p",
+        west = "ϖ", -- Greek pi symbol
     },
     _Q_el = {
-        "'", -- Apostrophe
+        "΄", -- Greek tonos
         alt_label = ";",
-        north = ";", -- Greek Question Mark
+        north = ";", -- Greek question mark
         northeast = "Q",
-        east = "΄", -- Greek Tonos
-        south = "͵", -- Greek Lower Numeral Sign
-        southeast = "ʹ", -- Greek Numeral Sign
+        east = "Ϙ", -- Greek letter archaic koppa
     },
     _q_el = {
-        ";", -- Greek Question Mark
-        alt_label = "'",
-        north = "'", -- Apostrophe
+        ";", -- Greek question mark
+        alt_label = "΄",
+        north = "΄", -- Greek tonos
         northeast = "q",
-        east = "΄", -- Greek Tonos
-        south = "͵", -- Greek Lower Numeral Sign
-        southeast = "ʹ", -- Greek Numeral Sign
+        east = "ϙ", -- Greek small letter archaic koppa
     },
     _R_el = {
         "Ρ",
-        north = "R",
+        north = "ρ",
         northeast = "Ῥ",
+        northwest = "R",
     },
     _r_el = {
         "ρ",
         northwest = "ῥ",
         northeast = "ῤ",
-        north = "r",
+        north = "Ρ",
+        west = "r",
     },
     _S_el = {
         "Σ",
-        north = "S",
+        north = "σ",
+        northwest = "S",
     },
     _s_el = {
         "σ",
         northeast = "ς",
-        north = "s",
+        north = "Σ",
+        northwest = "s",
     },
     _T_el = {
         "Τ",
-        north = "T", -- Latin capital letter T
+        north = "τ",
+        northwest = "T", -- Latin capital letter T
     },
     _t_el = {
         "τ",
-        north = "t",
+        north = "Τ",
+        northwest = "t",
     },
     _U_el = {
         "Θ",
-        north = "U",
+        north = "θ",
+        northwest = "U",
     },
     _u_el = {
         "θ",
-        north = "u",
+        north = "Θ",
+        northwest = "u",
+        west = "ϑ", -- Greek theta symbol
     },
     _V_el = {
         "Ω",
         northeast = "Ὠ",
         northwest = "Ὡ",
-        north = "ᾮ",
+        north = "ω",
         east = "Ώ",
         south = "ῼ",
         west = "Ὼ",
@@ -399,7 +436,7 @@ return {
     _v_el = {
         "ω",
         northeast = "ὠ",
-        north = "ῷ",
+        north = "Ω",
         northwest = "ὡ",
         east = "ώ",
         west = "ὼ",
@@ -411,36 +448,52 @@ return {
         "ὦ",
     },
     _W_el = {
-        "|",
-        north = "W",
-        northeast = { label = "◌̈́", key = "̈́", }, -- Combining Greek Dialytika Tonos
-        east = "·", -- Greek Ano Teleia
+        "·", -- Greek ano teleia
+        alt_label = "ς",
+        north = "ς",
+        northeast = "Ϛ", -- Greek letter stigma
+        northwest = "W",
+        east = "ʹ", -- Greek numeral sign
+        west = "͵", -- Greek lower numeral sign
+        southwest = "Ϝ", -- Greek letter digamma
+        south = "Ϟ", -- Greek letter koppa
+        southeast = "Ϡ", -- Greek letter sampi
     },
     _w_el = {
         "ς",
-        north = "w",
-        northeast = { label = "◌̈́", key = "̈́", }, -- Combining Greek Dialytika Tonos
-        east = "·", -- Greek Ano Teleia
+        alt_label = "·",
+        north = "·", -- Greek ano teleia
+        northeast = "ϛ", -- Greek small letter stigma
+        northwest = "w",
+        east = "ʹ", -- Greek numeral sign
+        west = "͵", -- Greek lower numeral sign
+        southwest = "ϝ", -- Greek small letter digamma
+        south = "ϟ", -- Greek small letter koppa
+        southeast = "ϡ", -- Greek small letter sampi
     },
     _X_el = {
         "Χ",
         alt_label = "V",
-        north = "X", -- Latin capital letter X
-        northwest = "A", -- Latin capital letter A
+        north = "χ",
+        northwest = "X", -- Latin capital letter X
         northeast = "H", -- Latin capital letter H
         east = "V",
+        west = "A", -- Latin capital letter A
     },
     _x_el = {
         "χ",
         alt_label = "v",
-        north = "x", -- Latin small letter X
-        northwest = "a", -- Latin small letter a
+        north = "Χ",
+        northwest = "x", -- Latin small letter X
         northeast = "h", -- Latin small letter h
         east = "v",
+        west = "a", -- Latin small letter a
+        southwest = "i",
+        southeast = "y",
     },
     _Y_el = {
         "Υ",
-        north = "Y", -- Latin capital letter Y
+        north = "υ",
         northwest = "Ὑ",
         northeast = "Ϋ",
         east = "Ύ",
@@ -448,11 +501,12 @@ return {
         south = "Ὗ",
         southeast = "Ὕ",
         southwest = "Ὓ",
+        "Y", -- Latin capital letter Y
     },
     _y_el = {
         "υ",
         northeast = "ὐ",
-        north = "y",
+        north = "Υ",
         northwest = "ὑ",
         east = "ύ",
         west = "ὺ",
@@ -465,11 +519,13 @@ return {
     },
     _Z_el = {
         "Ζ",
-        north = "Z", -- Latin capital letter Z
+        north = "ζ",
+        northwest = "Z", -- Latin capital letter Z
     },
     _z_el = {
         "ζ",
-        north = "z",
+        north = "Ζ",
+        northwest = "z",
     },
   -- _1_ and _1p: numeric key 1 and its popup sibling (they have north swipe ups of each other, the rest is the same)
   -- _1n and _1s: numpad key 1 (layer 2), -- superscript key 1 (layer 2, shifted)
