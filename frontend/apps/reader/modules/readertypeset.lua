@@ -110,22 +110,16 @@ function ReaderTypeset:onReadSettings(config)
                          or 1
     self:toggleTxtPreFormatted(self.txt_preformatted)
 
-    -- default to disable smooth scaling for now.
-    if config:has("smooth_scaling") then
-        self.smooth_scaling = config:isTrue("smooth_scaling")
-    else
-        local global = G_reader_settings:readSetting("copt_smooth_scaling")
-        self.smooth_scaling = global == 1 and true or false
-    end
+    -- default to disable smooth scaling for now
+    local setting = config:readSetting("copt_smooth_scaling")
+                 or G_reader_settings:readSetting("copt_smooth_scaling")
+    self.smooth_scaling = setting == 1
     self:toggleImageScaling(self.smooth_scaling)
 
     -- default to automagic nightmode-friendly handling of images
-    if config:has("nightmode_images") then
-        self.nightmode_images = config:isTrue("nightmode_images")
-    else
-        local global = G_reader_settings:readSetting("copt_nightmode_images")
-        self.nightmode_images = (global == nil or global == 1) and true or false
-    end
+    setting = config:readSetting("copt_nightmode_images")
+           or G_reader_settings:readSetting("copt_nightmode_images")
+    self.nightmode_images = setting == 1 or setting == nil
     self:toggleNightmodeImages(self.nightmode_images)
 end
 
@@ -134,8 +128,6 @@ function ReaderTypeset:onSaveSettings()
     self.ui.doc_settings:saveSetting("embedded_css", self.embedded_css)
     self.ui.doc_settings:saveSetting("embedded_fonts", self.embedded_fonts)
     self.ui.doc_settings:saveSetting("render_dpi", self.render_dpi)
-    self.ui.doc_settings:saveSetting("smooth_scaling", self.smooth_scaling)
-    self.ui.doc_settings:saveSetting("nightmode_images", self.nightmode_images)
 end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
