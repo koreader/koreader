@@ -79,7 +79,7 @@ function ReaderTypeset:onReadSettings(config)
     self:setBlockRenderingMode(self.block_rendering_mode)
 
     -- set render DPI
-    self.render_dpi = config:readSetting("render_dpi")
+    self.render_dpi = config:readSetting("copt_render_dpi")
                    or G_reader_settings:readSetting("copt_render_dpi")
                    or 96
     self:setRenderDPI(self.render_dpi)
@@ -127,7 +127,6 @@ function ReaderTypeset:onSaveSettings()
     self.ui.doc_settings:saveSetting("css", self.css)
     self.ui.doc_settings:saveSetting("embedded_css", self.embedded_css)
     self.ui.doc_settings:saveSetting("embedded_fonts", self.embedded_fonts)
-    self.ui.doc_settings:saveSetting("render_dpi", self.render_dpi)
 end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
