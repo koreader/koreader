@@ -5,13 +5,9 @@ This module contains miscellaneous helper functions for the KOReader frontend.
 local BaseUtil = require("ffi/util")
 local Utf8Proc = require("ffi/utf8proc")
 local lfs = require("libs/libkoreader-lfs")
-local logger = require("logger")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = BaseUtil.template
-local ffi = require("ffi")
-local C = ffi.C
-require("ffi/posix_h")
 
 local lshift = bit.lshift
 local rshift = bit.rshift
