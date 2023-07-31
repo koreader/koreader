@@ -8,7 +8,7 @@ local logger = require("logger")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20230710
+local CURRENT_MIGRATION_DATE = 20230731
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -582,6 +582,22 @@ if last_migration_date < 20230710 then
             kosync.auto_sync = false
             G_reader_settings:saveSetting("kosync", kosync)
         end
+    end
+end
+
+-- 20230731, aka., "let's kill all those stupid and weird mxcfb workarounds"
+if last_migration_date < 20230731 then
+    logger.info("Performing one-time migration for 20230731")
+
+    local Device = require("device")
+    if Device:isKobo() then
+        if not Device:hasReliableMxcWaitFor() then
+            G_reader_settings:delSetting("followed_link_marker")
+        end
+
+        -- Kill this one unconditionally, as it's user-visible in the dev menu, and I don't want random strays...
+        -- (Will require a restart to take, anyway...)
+        G_reader_settings:delSetting("mxcfb_bypass_wait_for")
     end
 end
 
