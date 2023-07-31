@@ -833,26 +833,6 @@ function util.removeFile(file)
     end
 end
 
-function util.writeToSysfs(val, file)
-    -- NOTE: We do things by hand via ffi, because io.write uses fwrite,
-    --       which isn't a great fit for procfs/sysfs (e.g., we lose failure cases like EBUSY,
-    --       as it only reports failures to write to the *stream*, not to the disk/file!).
-    local fd = C.open(file, bit.bor(C.O_WRONLY, C.O_CLOEXEC)) -- procfs/sysfs, we shouldn't need O_TRUNC
-    if fd == -1 then
-        logger.err("Cannot open file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
-        return
-    end
-    val = tostring(val)
-    local bytes = #val
-    local nw = C.write(fd, val, bytes)
-    if nw == -1 then
-        logger.err("Cannot write `" .. val .. "` to file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
-    end
-    C.close(fd)
-    -- NOTE: Allows the caller to possibly handle short writes (not that these should ever happen here).
-    return nw == bytes
-end
-
 -- Gets total, used and available bytes for the mountpoint that holds a given directory.
 -- @string path of the directory
 -- @treturn table with total, used and available bytes
