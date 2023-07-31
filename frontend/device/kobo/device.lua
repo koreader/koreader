@@ -379,6 +379,10 @@ local KoboStorm = Kobo:extend{
     --       This obviously leads to *terrible* user experience, so, until more is understood about the issue,
     --       bypass this ioctl on this device.
     --       c.f., https://github.com/koreader/koreader/issues/7340
+    -- NOTE: On a possibly related note, on NXP devices (even earlier ones), Nickel will *always* wait for markers in pairs:
+    --       the "expected" marker to wait for, *and* the *previous* one right before that.
+    --       Of course, that first wait will mostly always return early, because it's usually much older and already done.
+    --       This weird quirk was dropped on sunxi & MTK, FWIW.
     hasReliableMxcWaitFor = no,
 }
 
