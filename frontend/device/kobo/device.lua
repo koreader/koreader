@@ -376,9 +376,9 @@ local KoboStorm = Kobo:extend{
     },
     -- NOTE: The Libra apparently suffers from a mysterious issue where completely innocuous WAIT_FOR_UPDATE_COMPLETE ioctls
     --       will mysteriously fail with a timeout (5s)...
-    --       This obviously leads to *terrible* user experience, so, until more is understood about the issue,
-    --       bypass this ioctl on this device.
-    --       c.f., https://github.com/koreader/koreader/issues/7340
+    --       This obviously leads to *terrible* user experience,
+    --       so we've tried a few things over the years to attempt to deal with it.
+    --       c.f., https://github.com/koreader/koreader/issues/7340 for the genesis of all that.
     -- NOTE: On a possibly related note, on NXP devices (even earlier ones), Nickel will *always* wait for markers in pairs:
     --       the "expected" marker to wait for, *and* the *previous* one right before that.
     --       Of course, that first wait will mostly always return early, because it's usually much older and already done.
@@ -499,7 +499,7 @@ local KoboGoldfinch = Kobo:extend{
     },
     battery_sysfs = "/sys/class/power_supply/battery",
     power_dev = "/dev/input/by-path/platform-bd71828-pwrkey-event",
-    -- Board is eerily similar to the Libra 2, which, unfortunately, means it's also buggy as hell...
+    -- Board is eerily similar to the Libra 2, so, it inherits the same quirks...
     -- c.f., https://github.com/koreader/koreader/issues/9552#issuecomment-1293000313
     hasReliableMxcWaitFor = no,
 }
