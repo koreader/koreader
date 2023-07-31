@@ -2446,6 +2446,11 @@ function ReaderFooter:refreshFooter(refresh, signal)
 end
 
 function ReaderFooter:onResume()
+    -- Reset the initial marker, if any
+    if self.progress_bar.initial_pos_marker then
+        self.progress_bar.inital_percentage = self.progress_bar.percentage
+    end
+
     -- Don't repaint the footer until OutOfScreenSaver if screensaver_delay is enabled...
     local screensaver_delay = G_reader_settings:readSetting("screensaver_delay")
     if screensaver_delay and screensaver_delay ~= "disable" then
@@ -2471,8 +2476,6 @@ end
 
 function ReaderFooter:onSuspend()
     self:unscheduleFooterAutoRefresh()
-    -- Reset the initial marker
-    self.progress_bar.inital_percentage = nil
 end
 
 function ReaderFooter:onCloseDocument()
