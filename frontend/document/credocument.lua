@@ -29,7 +29,6 @@ local CreDocument = Document:extend{
     _smooth_scaling = false,
     _nightmode_images = true,
 
-    line_space_percent = 100,
     default_font = "Noto Serif",
     monospace_font = "Droid Sans Mono",
     header_font = "Noto Sans",
