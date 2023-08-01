@@ -24,7 +24,6 @@ local optionsutil = require("ui/data/optionsutil")
 local ReaderFont = InputContainer:extend{
     font_face = nil,
     font_size = nil,
-    line_space_percent = nil,
     font_menu_title = _("Font"),
     face_table = nil,
     -- default gamma from crengine's lvfntman.cpp
@@ -216,10 +215,7 @@ function ReaderFont:onReadSettings(config)
                        or 100
     self.ui.document:setCJKWidthScaling(self.cjk_width_scaling)
 
-    self.line_space_percent = config:readSetting("line_space_percent")
-                           or G_reader_settings:readSetting("copt_line_spacing")
-                           or G_defaults:readSetting("DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM")
-    self.ui.document:setInterlineSpacePercent(self.line_space_percent)
+    self.ui.document:setInterlineSpacePercent(self.configurable.line_spacing)
 
     self.gamma_index = config:readSetting("gamma_index")
                     or G_reader_settings:readSetting("copt_font_gamma")
@@ -287,10 +283,11 @@ function ReaderFont:onSetFontSize(new_size)
 end
 
 function ReaderFont:onSetLineSpace(space)
-    self.line_space_percent = math.min(200, math.max(50, space))
-    self.ui.document:setInterlineSpacePercent(self.line_space_percent)
+    space = math.max(50, math.min(space, 200))
+    self.configurable.line_spacing = space
+    self.ui.document:setInterlineSpacePercent(space)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Line spacing set to: %1%."), self.line_space_percent))
+    Notification:notify(T(_("Line spacing set to: %1%."), space))
     return true
 end
 
@@ -361,7 +358,6 @@ function ReaderFont:onSaveSettings()
     self.ui.doc_settings:saveSetting("word_spacing", self.word_spacing)
     self.ui.doc_settings:saveSetting("word_expansion", self.word_expansion)
     self.ui.doc_settings:saveSetting("cjk_width_scaling", self.cjk_width_scaling)
-    self.ui.doc_settings:saveSetting("line_space_percent", self.line_space_percent)
     self.ui.doc_settings:saveSetting("gamma_index", self.gamma_index)
     self.ui.doc_settings:saveSetting("font_family_fonts", self.font_family_fonts)
 end
