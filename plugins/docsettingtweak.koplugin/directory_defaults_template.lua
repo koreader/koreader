@@ -21,11 +21,11 @@ return {--do NOT change this line
     },
     ["/mnt/onboard/smalltext"] = {
         ["font_size"] = 34,
-        ["line_space_percent"] = 130,
+        ["copt_line_spacing"] = 130,
     },
     ["/sdcard/Books/smalltext"] = {
         ["font_size"] = 34,
-        ["line_space_percent"] = 130,
+        ["copt_line_spacing"] = 130,
     },
 --]]
 
