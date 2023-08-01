@@ -835,7 +835,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
         -- where xpointer target is (and remove if after 1s)
         local screen_y, screen_x = self.ui.document:getScreenPositionFromXPointer(marker_xp)
         local doc_margins = self.ui.document:getPageMargins()
-        local marker_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent * (1/100))
+        local marker_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.configurable.line_spacing * (1/100))
         -- Make it 4/5 of left margin wide (and bigger when huge margin)
         local marker_w = math.floor(math.max(doc_margins["left"] - Screen:scaleBySize(5), doc_margins["left"] * 4/5))
 
@@ -933,7 +933,7 @@ function ReaderRolling:onGotoViewRel(diff)
         local pan_diff = diff * page_visible_height
         if self.view.page_overlap_enable then
             local overlap_lines = G_reader_settings:readSetting("copt_overlap_lines") or 1
-            local overlap_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent * (1/100)) * overlap_lines
+            local overlap_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.configurable.line_spacing * (1/100)) * overlap_lines
             if pan_diff > overlap_h then
                 pan_diff = pan_diff - overlap_h
             elseif pan_diff < -overlap_h then
