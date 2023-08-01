@@ -168,12 +168,12 @@ function FakeCover:init()
         -- But at least, make dots breakable (they wouldn't be if not
         -- followed by a space), by adding to them a zero-width-space,
         -- so the dots stay on the right of their preceeding word.
-        title = title:gsub("%.", ".\xE2\x80\x8B")
+        title = title:gsub("%.", ".\u{200B}")
         -- Except for a last dot near end of title that might preceed
         -- a file extension: we'd rather want the dot and its suffix
         -- together on a last line: so, move the zero-width-space
         -- before it.
-        title = title:gsub("%.\xE2\x80\x8B(%w%w?%w?%w?%w?)$", "\xE2\x80\x8B.%1")
+        title = title:gsub("%.\u{200B}(%w%w?%w?%w?%w?)$", "\u{200B}.%1")
         -- These substitutions will hopefully have no impact with the following BD wrapping
     end
     if title then
@@ -295,10 +295,10 @@ function FakeCover:init()
                     -- but not around underscores and dots without any space around.
                     -- So, append a zero-width-space to allow text wrap after them.
                     if title then
-                        title = title:gsub("_", "_\xE2\x80\x8B"):gsub("%.", ".\xE2\x80\x8B")
+                        title = title:gsub("_", "_\u{200B}"):gsub("%.", ".\u{200B}")
                     end
                     if authors then
-                        authors = authors:gsub("_", "_\xE2\x80\x8B"):gsub("%.", ".\xE2\x80\x8B")
+                        authors = authors:gsub("_", "_\u{200B}"):gsub("%.", ".\u{200B}")
                     end
                 else
                     -- Replace underscores and hyphens with spaces, to allow text wrap there.

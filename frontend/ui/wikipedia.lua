@@ -546,17 +546,17 @@ end
 -- These chosen ones are available in most fonts (prettier symbols
 -- exist in unicode, but are available in a few fonts only) and
 -- have a quite consistent size/weight in all fonts.
-local th1_sym = "\xE2\x96\x88"         -- full block (big black rectangle) (never met, only for web page title?)
-local th2_sym = "\xE2\x96\x89"         -- big black square
-local th3_sym = "\xC2\xA0\xE2\x97\xA4" -- black upper left triangle (indented, nicer)
-local th4_sym = "\xE2\x97\x86"         -- black diamond
-local th5_sym = "\xE2\x9C\xBF"         -- black florette
-local th6_sym = "\xE2\x9D\x96"         -- black diamond minus white x
+local th1_sym = "\u{2588}"         -- full block (big black rectangle) (never met, only for web page title?)
+local th2_sym = "\u{2589}"         -- big black square
+local th3_sym = "\u{00A0}\u{25E4}" -- black upper left triangle (indented, nicer)
+local th4_sym = "\u{25C6}"         -- black diamond
+local th5_sym = "\u{273F}"         -- black florette
+local th6_sym = "\u{2756}"         -- black diamond minus white x
 -- Others available in most fonts
--- local thX_sym = "\xE2\x9C\x9A"         -- heavy greek cross
--- local thX_sym = "\xE2\x97\xA2"         -- black lower right triangle
--- local thX_sym = "\xE2\x97\x89"         -- fish eye
--- local thX_sym = "\xE2\x96\x97"         -- quadrant lower right
+-- local thX_sym = "\u{271A}"         -- heavy greek cross
+-- local thX_sym = "\u{25E2}"         -- black lower right triangle
+-- local thX_sym = "\u{25C9}"         -- fish eye
+-- local thX_sym = "\u{2597}"         -- quadrant lower right
 
 -- For optional prettification of the plain text full page
 function Wikipedia:prettifyText(text)
@@ -571,7 +571,7 @@ function Wikipedia:prettifyText(text)
     text = text:gsub("==$", "==\n")        -- for a </hN> at end of text to be matched by next gsub
     text = text:gsub(" ===?\n+", "\n\n")   -- </h2> to </h3> : empty line after
     text = text:gsub(" ====+\n+", "\n")    -- </h4> to </hN> : single \n, no empty line
-    text = text:gsub("\n\n+\xE2\x80\x94", "\n\xE2\x80\x94") -- em dash, used for quote author, make it stick to prev text
+    text = text:gsub("\n\n+\u{2014}", "\n\u{2014}") -- em dash, used for quote author, make it stick to prev text
     text = text:gsub("\n +\n", "\n")  -- trim lines full of only spaces (often seen in math formulas)
     text = text:gsub("^\n*", "")      -- trim new lines at start
     text = text:gsub("\n*$", "")      -- trim new lines at end
@@ -587,17 +587,17 @@ end
 -- These chosen ones are available in most fonts (prettier symbols
 -- exist in unicode, but are available in a few fonts only) and
 -- have a quite consistent size/weight in all fonts.
-local h1_sym = "\xE2\x96\x88"     -- full block (big black rectangle) (never met, only for web page title?)
-local h2_sym = "\xE2\x96\x89"     -- big black square
-local h3_sym = "\xE2\x97\xA4"     -- black upper left triangle
-local h4_sym = "\xE2\x97\x86"     -- black diamond
-local h5_sym = "\xE2\x9C\xBF"     -- black florette
-local h6_sym = "\xE2\x9D\x96"     -- black diamond minus white x
+local h1_sym = "\u{2588}"     -- full block (big black rectangle) (never met, only for web page title?)
+local h2_sym = "\u{2589}"     -- big black square
+local h3_sym = "\u{25E4}"     -- black upper left triangle
+local h4_sym = "\u{25C6}"     -- black diamond
+local h5_sym = "\u{273F}"     -- black florette
+local h6_sym = "\u{2756}"     -- black diamond minus white x
 -- Other available ones in most fonts
--- local hXsym = "\xE2\x9C\x9A"     -- heavy greek cross
--- local hXsym = "\xE2\x97\xA2"     -- black lower right triangle
--- local hXsym = "\xE2\x97\x89"     -- fish eye
--- local hXsym = "\xE2\x96\x97"     -- quadrant lower right
+-- local hXsym = "\u{271A}"     -- heavy greek cross
+-- local hXsym = "\u{25E2}"     -- black lower right triangle
+-- local hXsym = "\u{25C9}"     -- fish eye
+-- local hXsym = "\u{2597}"     -- quadrant lower right
 
 local ext_to_mimetype = {
     png = "image/png",
