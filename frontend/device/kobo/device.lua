@@ -127,8 +127,10 @@ local Kobo = Generic:extend{
     isMk7 = no,
     -- MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls are generally reliable
     hasReliableMxcWaitFor = yes,
-    -- Sunxi devices require a completely different fb backend...
+    -- AllWinner SoCs require a completely different fb backend...
     isSunxi = no,
+    -- The fb backend also needs to know if we're on a MediaTek SoC.
+    isMTK = no,
     -- On sunxi, "native" panel layout used to compute the G2D rotation handle (e.g., deviceQuirks.nxtBootRota in FBInk).
     boot_rota = nil,
     -- Standard sysfs path to the battery directory
@@ -498,6 +500,32 @@ local KoboGoldfinch = Kobo:extend{
     hasReliableMxcWaitFor = no,
 }
 
+-- Kobo Elipsa 2E:
+local KoboCondor = Kobo:extend{
+    model = "Kobo_condor",
+    isMTK = yes,
+    hasEclipseWfm = yes,
+    canToggleChargingLED = yes,
+    hasFrontlight = yes,
+    hasGSensor = yes,
+    display_dpi = 227,
+    pressure_event = C.ABS_MT_PRESSURE,
+    touch_mirrored_x = false,
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_mixer = "/sys/class/leds/aw99703-bl_FL1/color",
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = true,
+    },
+    battery_sysfs = "/sys/class/power_supply/bd71827_bat",
+    touch_dev = "/dev/input/by-path/platform-2-0010-event",
+    ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
+    power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event",
+    isSMP = yes,
+}
+
 function Kobo:setupChargingLED()
     if G_reader_settings:nilOrTrue("enable_charging_led") then
         if self:hasAuxBattery() and self.powerd:isAuxBatteryConnected() then
@@ -575,6 +603,24 @@ function Kobo:init()
         end
     end
 
+    -- So far, MTK kernels do not export a per-request inversion flag
+    if self:isMTK() then
+        -- Instead, there's a global flag that we can *set* (but not *get*) via a procfs knob...
+        -- Overload the HWNightMode stuff to implement that properly, like we do on Kindle
+        function self.screen:setHWNightmode(toggle)
+            -- No getter, so, keep track of our own state
+            self.hw_night_mode = toggle
+            -- Flip the global invert_fb flag
+            util.writeToSysfs(toggle and "night_mode 4" or "night_mode 0", "/proc/hwtcon/cmd")
+        end
+
+        function self.screen:getHWNightmode()
+            -- Return false on nil for reader.lua's sake, mostly.
+            -- (We want to disable this on exit, always, as it will never be used by Nickel, which does SW inversion).
+            return self.hw_night_mode == true
+        end
+    end
+
     -- Automagic sysfs discovery
     if self.automagic_sysfs then
         -- Battery
@@ -600,7 +646,10 @@ function Kobo:init()
         end
 
         -- Touch panel input
-        if util.fileExists("/dev/input/by-path/platform-1-0010-event") then
+        if util.fileExists("/dev/input/by-path/platform-2-0010-event") then
+            -- Elan (HWConfig TouchCtrl is ekth6) on i2c bus 2
+            self.touch_dev = "/dev/input/by-path/platform-2-0010-event"
+        elseif util.fileExists("/dev/input/by-path/platform-1-0010-event") then
             -- Elan (HWConfig TouchCtrl is ekth6) on i2c bus 1
             self.touch_dev = "/dev/input/by-path/platform-1-0010-event"
         elseif util.fileExists("/dev/input/by-path/platform-0-0010-event") then
@@ -615,7 +664,7 @@ function Kobo:init()
             -- Libra 2 w/ a BD71828 PMIC
             self.ntx_dev = "/dev/input/by-path/platform-gpio-keys-event"
         elseif util.fileExists("/dev/input/by-path/platform-ntx_event0-event") then
-            -- sunxi & Mk. 7
+            -- MTK, sunxi & Mk. 7
             self.ntx_dev = "/dev/input/by-path/platform-ntx_event0-event"
         elseif util.fileExists("/dev/input/by-path/platform-mxckpd-event") then
             -- circa Mk. 5 i.MX
@@ -753,12 +802,22 @@ function Kobo:init()
     end
 
     -- Detect the NTX charging LED sysfs knob
-    if util.pathExists("/sys/devices/platform/ntx_led/lit") then
+    if util.pathExists("/sys/class/leds/bd71828-green-led") then
+        -- Standard Linux LED class, wheee!
+        self.charging_led_sysfs_knob = "/sys/class/leds/bd71828-green-led"
+    elseif util.pathExists("/sys/devices/platform/ntx_led/lit") then
         self.ntx_lit_sysfs_knob = "/sys/devices/platform/ntx_led/lit"
     elseif util.pathExists("/sys/devices/platform/pmic_light.1/lit") then
         self.ntx_lit_sysfs_knob = "/sys/devices/platform/pmic_light.1/lit"
     else
         self.canToggleChargingLED = no
+    end
+
+    -- Switch to the simple standard implementation if available
+    if self.charging_led_sysfs_knob then
+        self.charging_led_imp = self._LinuxChargingLEDToggle
+    else
+        self.charging_led_imp = self._NTXChargingLEDToggle
     end
 
     -- NOP unsupported methods
@@ -776,7 +835,7 @@ function Kobo:init()
     self:enableCPUCores(1)
 
     self.canStandby = checkStandby()
-    if self.canStandby() and (self:isMk7() or self:isSunxi())  then
+    if self.canStandby() and (self:isMk7() or self:isSunxi() or self:isMTK())  then
         self.canPowerSaveWhileCharging = yes
     end
 
@@ -1264,7 +1323,8 @@ function Kobo:powerOff()
     -- Much like Nickel itself, disable the RTC alarm before powering down.
     self.wakeup_mgr:unsetWakeupAlarm()
 
-    if self:isSunxi() then
+    --- @todo: Check on MTK
+    if self:isSunxi() or self:isMTK() then
         -- On sunxi, apparently, we *do* go through init
         os.execute("sleep 1 && poweroff &")
     else
@@ -1277,23 +1337,7 @@ function Kobo:reboot()
     os.execute("sleep 1 && reboot &")
 end
 
-function Kobo:toggleChargingLED(toggle)
-    -- We have no way of querying the current state from the HW!
-    if toggle == nil then
-        return
-    end
-    -- Don't do anything if the state is already correct
-    -- NOTE: What happens to the LED when attempting/successfully entering PM is... kind of a mess.
-    --       On a H2O, even *attempting* to enter PM will kill the light (and it'll stay off).
-    --       On a Forma, a failed attempt will *not* affect the light, but a successful one *will* kill it,
-    --       be that standby or suspend, but it'll be restored on wakeup...
-    --       On sunxi, PM appears to have zero effect on the LED.
-    if self.charging_led_state == toggle then
-        return
-    end
-    self.charging_led_state = toggle
-    logger.dbg("Kobo: Turning the charging LED", toggle and "on" or "off")
-
+function Kobo:_NTXChargingLEDToggle(toggle)
     -- NOTE: While most/all Kobos actually have a charging LED, and it can usually be fiddled with in a similar fashion,
     --       we've seen *extremely* weird behavior in the past when playing with it on older devices (c.f., #5479).
     --       In fact, Nickel itself doesn't provide this feature on said older devices
@@ -1326,6 +1370,30 @@ function Kobo:toggleChargingLED(toggle)
     end
 
     C.close(fd)
+end
+
+function Kobo:_LinuxChargingLEDToggle(toggle)
+    util.writeToSysfs(toggle and "1" or "0", self.charging_led_sysfs_knob)
+end
+
+function Kobo:toggleChargingLED(toggle)
+    -- We have no way of querying the current state from the HW!
+    if toggle == nil then
+        return
+    end
+    -- Don't do anything if the state is already correct
+    -- NOTE: What happens to the LED when attempting/successfully entering PM is... kind of a mess.
+    --       On a H2O, even *attempting* to enter PM will kill the light (and it'll stay off).
+    --       On a Forma, a failed attempt will *not* affect the light, but a successful one *will* kill it,
+    --       be that standby or suspend, but it'll be restored on wakeup...
+    --       On sunxi, PM appears to have zero effect on the LED.
+    if self.charging_led_state == toggle then
+        return
+    end
+    self.charging_led_state = toggle
+    logger.dbg("Kobo: Turning the charging LED", toggle and "on" or "off")
+
+    return self:charging_led_imp(toggle)
 end
 
 -- Return the highest core number
@@ -1535,6 +1603,8 @@ elseif codename == "io" then
     return KoboIo
 elseif codename == "goldfinch" then
     return KoboGoldfinch
+elseif codename == "condor" then
+    return KoboCondor
 else
     error("unrecognized Kobo model ".. codename .. " with device id " .. product_id)
 end
