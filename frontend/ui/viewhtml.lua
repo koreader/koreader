@@ -63,7 +63,7 @@ function ViewHtml:_viewSelectionHTML(document, selected_text, view, with_css_fil
     local replace_in_html = function(pat, repl)
         local new_html = ""
         local is_match = false -- given the html we get and our patterns, we know the first part won't be a match
-        for part in util.gsplit(html, pat, true) do
+        for part in util.gsplit(html, pat, true, true) do
             if is_match then
                 local r = type(repl) == "function" and repl(part) or repl
                 local offset_shift = #r - #part
@@ -72,6 +72,8 @@ function ViewHtml:_viewSelectionHTML(document, selected_text, view, with_css_fil
                 end
                 new_html = new_html .. r
             else
+                -- (we provided capture_empty_entity=true, to match adjacent 'pat',
+                -- so here we may get empty 'part', that we can just concatenate)
                 new_html = new_html .. part
             end
             is_match = not is_match
@@ -98,6 +100,10 @@ function ViewHtml:_viewSelectionHTML(document, selected_text, view, with_css_fil
             return pre .. "\n" .. util.prettifyCSS(css_text) .. post
         end)
     end
+    -- Make sure we won't get wrapped just after our indentation if there is no break opportunity later
+    replace_in_html("\n( *)", function(s)
+        return "\n" .. ("\u{00A0}"):rep(#s)
+    end)
 
     local textviewer
     -- Prepare bottom buttons and their actions
