@@ -1205,25 +1205,54 @@ end
 --- @treturn string the CSS prettified
 function util.prettifyCSS(css_text, condensed)
     if not condensed then
-        -- Get rid of \t so we can use it as a replacement/hiding char
+        -- Get rid of \t
         css_text = css_text:gsub("\t", " ")
-        -- Wrap and indent declarations
-        css_text = css_text:gsub("%s*{%s*", " {\n    ")
-        css_text = css_text:gsub(";%s*}%s*", ";\n}\n")
-        css_text = css_text:gsub(";%s*([^}])", ";\n    %1")
-        css_text = css_text:gsub("%s*}%s*", "\n}\n")
-        -- Cleanup declarations
-        css_text = css_text:gsub("{[^}]*}", function(s)
-            s = s:gsub("%s*:%s*", ": ")
-            -- Temporarily hide/replace ',' in declaration so they
-            -- are not matched and made multi-lines by followup gsub
-            s = s:gsub("%s*,%s*", "\t")
+        css_text = css_text:gsub("\r", "")
+        -- Protect ',:;' in comments by replacing them with rare control chars
+        css_text = css_text:gsub("/%*.-%*/", function(s)
+            s = s:gsub(",", "\v")
+            s = s:gsub(":", "\f")
+            s = s:gsub(";", "\b")
             return s
+        end)
+        -- Cleanup declarations (the most nested ones only, which may be
+        -- contained in "@supports (...) {...}" or "@media (...) {...}")
+        css_text = css_text:gsub(" *{([^{}]*)} *", function(s)
+            -- Comments inside declaration may be mixed with properties, on a same line,
+            -- before or after them, and we don't know if they apply to what's before or
+            -- what's after, except when they are standalone and probably apply to the
+            -- next line. So, when not standalone, double indent them (so it looks like
+            -- they apply to what's above - but will still look fine if they are about
+            -- what's after.
+            s = "\n" .. s -- so the next one match on the first line
+            s = s:gsub("\n */%*", "\a/*")          -- '/*' with only blank before: mark them with '\a'
+            s = s:gsub(" *([^\a])/%*", "\n\t/*")   -- unmarked '/*' (content before): marked, more indentation later
+            s = s:gsub("\a", "")                   -- remove mark
+            s = s:gsub("\t", "\a")                 -- replace mark by one that is not caught by '%s'
+            s = s:gsub("%*/%s*", "*/\n")           -- '*/' end of css comment: newline after
+            s = s:gsub("%s*;%s*", ";\n")           -- newline after ';'
+            s = s:gsub("\n+%s*", "\n    ")         -- remove blank lines, 4 spaces indent on all lines
+            s = s:gsub("\a", "    ")               -- expand our \a marks to have these /* more indented
+            s = s:gsub("%s*:%s*", ": ")            -- normalize spacing in "keyword: value"
+            s = s:gsub("^%s*(.-)%s*$", "\n    %1") -- remove leading and trailing spaces, indent first line
+            s = s:gsub("^%s*$", "")                -- but have empty declaration really empty
+            -- less indent for these crengine specific tweaks to the followup properties
+            s = s:gsub("\n    %-cr%-hint: late", "\n -cr-hint: late")
+            s = s:gsub("\n    %-cr%-only%-if", "\n -cr-only-if")
+            -- Protect and normalize ',' in declarations (ie. in font-family list, rgb()...)
+            s = s:gsub("%s*,%s*", "\v ")
+            return " {" .. s .. "\n}"
         end)
         -- Have each selector (separated by ',') on a new line
         css_text = css_text:gsub("%s*,%s*", " ,\n")
-        -- Restore hidden ',' in declarations
-        css_text = css_text:gsub("\t", ", ")
+        css_text = css_text:gsub("\n *([^\n]+),", "\n%1,") -- remove leading spaces on the first one
+        css_text = css_text:gsub("\n *([^\n]+){", "\n%1{") -- remove leading spaces on a standalone one
+        -- Make sure { is on the same line with the selector it follows
+        css_text = css_text:gsub("%s*\n *{", " {")
+        -- Restore all protected chars
+        css_text = css_text:gsub("\v", ",")
+        css_text = css_text:gsub("\f", ":")
+        css_text = css_text:gsub("\b", ";")
     else
         -- Go thru previous method to have something standard to work on
         css_text = util.prettifyCSS(css_text)
