@@ -1323,8 +1323,8 @@ function Kobo:powerOff()
     -- Much like Nickel itself, disable the RTC alarm before powering down.
     self.wakeup_mgr:unsetWakeupAlarm()
 
-    -- FIXME: Check on MTK
-    if self:isSunxi() then
+    --- @todo: Check on MTK
+    if self:isSunxi() and self:isMTK() then
         -- On sunxi, apparently, we *do* go through init
         os.execute("sleep 1 && poweroff &")
     else
