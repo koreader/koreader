@@ -3,7 +3,7 @@
 -- red and green light LEDs.
 
 local dbg = require("dbg")
-local util = require("util")
+local ffiUtil = require("ffi/util")
 
 local SysfsLight = {
     frontlight_white = nil,
@@ -73,15 +73,15 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
             if self.frontlight_ioctl then
                 self.frontlight_ioctl:setBrightness(brightness)
             else
-                util.writeToSysfs(brightness, self.frontlight_white)
+                ffiUtil.writeToSysfs(brightness, self.frontlight_white)
             end
         end
         -- The mixer might be using inverted values... (cold is nl_max, warm is nl_min)
         if set_warmth then
             if self.nl_inverted then
-                util.writeToSysfs(self.nl_max - warmth, self.frontlight_mixer)
+                ffiUtil.writeToSysfs(self.nl_max - warmth, self.frontlight_mixer)
             else
-                util.writeToSysfs(warmth, self.frontlight_mixer)
+                ffiUtil.writeToSysfs(warmth, self.frontlight_mixer)
             end
         end
     else
@@ -124,11 +124,11 @@ function SysfsLight:_set_light_value(sysfs_directory, value)
     if not sysfs_directory then return end
     -- bl_power is '31' when the light is turned on, '0' otherwise.
     if (value > 0) then
-        util.writeToSysfs(31, sysfs_directory .. "/bl_power")
+        ffiUtil.writeToSysfs(31, sysfs_directory .. "/bl_power")
     else
-        util.writeToSysfs(0, sysfs_directory .. "/bl_power")
+        ffiUtil.writeToSysfs(0, sysfs_directory .. "/bl_power")
     end
-    util.writeToSysfs(value, sysfs_directory .. "/brightness")
+    ffiUtil.writeToSysfs(value, sysfs_directory .. "/brightness")
 end
 
 return SysfsLight
