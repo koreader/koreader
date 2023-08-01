@@ -945,6 +945,24 @@ hr.koreaderwikifrontpage {
     margin-right: 20%;
     margin-bottom: 1.2em;
 }
+/* Have these HR get the same margins and position as our H2 */
+hr.koreaderwikitocstart {
+    page-break-before: always;
+    font-size: 140%;
+    margin: 0.7em 30% 1.5em;
+    height: 0.22em;
+    border: none;
+    background-color: black;
+}
+hr.koreaderwikitocend {
+    page-break-before: avoid;
+    page-break-after: always;
+    font-size: 140%;
+    margin: 1.2em 30% 0;
+    height: 0.22em;
+    border: none;
+    background-color: black;
+}
 
 /* So many links, make them look like normal text except for underline */
 a {
@@ -1245,6 +1263,58 @@ table {
 </ncx>
 ]])
     epub:add("OEBPS/toc.ncx", table.concat(toc_ncx_parts))
+
+    -- ----------------------------------------------------------------
+    -- HTML table of content
+    -- We used to have it in the HTML we got from Wikipedia, but we no longer do.
+    -- So, build it from the 'sections' we got from the API.
+    local toc_html_parts = {}
+    -- Unfortunately, we don't and can't get any localized "Contents" or "Sommaire" to use
+    -- as a heading. So, use some <hr> at start and at end to make this HTML ToC stand out.
+    table.insert(toc_html_parts, '<hr class="koreaderwikitocstart"/>\n')
+    cur_level = 0
+    for isec, s in ipairs(sections) do
+        -- Some chars in headings are converted to html entities in the
+        -- wikipedia-generated HTML. We need to do the same in TOC links
+        -- for the links to be valid.
+        local s_anchor = s.anchor:gsub("&", "&amp;"):gsub('"', "&quot;"):gsub(">", "&gt;"):gsub("<", "&lt;")
+        local s_title = string.format("%s %s", s.number, s.line)
+        local s_level = s.toclevel
+        if s_level == cur_level then
+            table.insert(toc_html_parts, "</li>")
+        elseif s_level < cur_level then
+            table.insert(toc_html_parts, "</li>")
+            while cur_level > s_level do
+                cur_level = cur_level - 1
+                table.insert(toc_html_parts, "\n"..(" "):rep(cur_level))
+                table.insert(toc_html_parts, "</ul>")
+                table.insert(toc_html_parts, "\n"..(" "):rep(cur_level))
+                table.insert(toc_html_parts, "</li>")
+            end
+        else -- s_level > cur_level
+            while cur_level < s_level do
+                table.insert(toc_html_parts, "\n"..(" "):rep(cur_level))
+                table.insert(toc_html_parts, "<ul>")
+                cur_level = cur_level + 1
+            end
+        end
+        cur_level = s_level
+        table.insert(toc_html_parts, "\n"..(" "):rep(cur_level))
+        table.insert(toc_html_parts, string.format([[<li><div><a href="#%s">%s</a></div>]], s_anchor, s_title))
+    end
+    -- close nested <ul>
+    table.insert(toc_html_parts, "</li>")
+    while cur_level > 0 do
+        cur_level = cur_level - 1
+        table.insert(toc_html_parts, "\n"..(" "):rep(cur_level))
+        table.insert(toc_html_parts, "</ul>")
+        if cur_level > 0 then
+            table.insert(toc_html_parts, "\n"..(" "):rep(cur_level))
+            table.insert(toc_html_parts, "</li>")
+        end
+    end
+    table.insert(toc_html_parts, '<hr class="koreaderwikitocend"/>\n')
+    html = html:gsub([[<meta property="mw:PageProp/toc" />]], table.concat(toc_html_parts))
 
     -- ----------------------------------------------------------------
     -- OEBPS/content.html
