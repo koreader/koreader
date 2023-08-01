@@ -1324,7 +1324,7 @@ function Kobo:powerOff()
     self.wakeup_mgr:unsetWakeupAlarm()
 
     --- @todo: Check on MTK
-    if self:isSunxi() and self:isMTK() then
+    if self:isSunxi() or self:isMTK() then
         -- On sunxi, apparently, we *do* go through init
         os.execute("sleep 1 && poweroff &")
     else
