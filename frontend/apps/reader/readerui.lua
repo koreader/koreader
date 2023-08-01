@@ -324,6 +324,7 @@ function ReaderUI:init()
         })
         -- font menu
         self:registerModule("font", ReaderFont:new{
+            configurable = self.document.configurable,
             dialog = self.dialog,
             view = self.view,
             ui = self
@@ -342,6 +343,7 @@ function ReaderUI:init()
         })
         -- rolling controller
         self:registerModule("rolling", ReaderRolling:new{
+            configurable = self.document.configurable,
             pan_rate = pan_rate,
             dialog = self.dialog,
             view = self.view,
