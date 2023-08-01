@@ -594,10 +594,6 @@ if last_migration_date < 20230731 then
         if not Device:hasReliableMxcWaitFor() then
             G_reader_settings:delSetting("followed_link_marker")
         end
-
-        -- Kill this one unconditionally, as it's user-visible in the dev menu, and I don't want random strays...
-        -- (Will require a restart to take, anyway...)
-        G_reader_settings:delSetting("mxcfb_bypass_wait_for")
     end
 end
 
