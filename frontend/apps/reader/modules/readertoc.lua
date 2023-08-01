@@ -83,7 +83,7 @@ end
 function ReaderToc:cleanUpTocTitle(title, replace_empty)
     title = title:gsub("\13", "")
     if replace_empty and title:match("^%s*$") then
-        title = "\xE2\x80\x93" -- U+2013 En-Dash
+        title = "\u{2013}" -- En-Dash
     end
     return title
 end

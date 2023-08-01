@@ -1649,7 +1649,7 @@ function ReaderHighlight:onUnhighlight(bookmark_item)
     if self.ui.paging then -- We can safely use page
         -- As we may have changed spaces and hyphens handling in the extracted
         -- text over the years, check text identities with them removed
-        local sel_text_cleaned = sel_text:gsub("[ -]", ""):gsub("\xC2\xAD", "")
+        local sel_text_cleaned = sel_text:gsub("[ -]", ""):gsub("\u{00AD}", "")
         for index = 1, #self.view.highlight.saved[page] do
             local highlight = self.view.highlight.saved[page][index]
             -- pos0 are tables and can't be compared directly, except when from
@@ -1657,7 +1657,7 @@ function ReaderHighlight:onUnhighlight(bookmark_item)
             -- If bookmark_item provided, just check datetime
             if ( (datetime == nil and highlight.pos0 == sel_pos0) or
                  (datetime ~= nil and highlight.datetime == datetime) ) then
-                if highlight.text:gsub("[ -]", ""):gsub("\xC2\xAD", "") == sel_text_cleaned then
+                if highlight.text:gsub("[ -]", ""):gsub("\u{00AD}", "") == sel_text_cleaned then
                     idx = index
                     break
                 end

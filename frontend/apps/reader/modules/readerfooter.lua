@@ -386,7 +386,7 @@ local footerTextGeneratorMap = {
     book_title = function(footer)
         local doc_info = footer.ui.document:getProps()
         if doc_info and doc_info.title then
-            local title = doc_info.title:gsub(" ", "\xC2\xA0") -- replace space with no-break-space
+            local title = doc_info.title:gsub(" ", "\u{00A0}") -- replace space with no-break-space
             local title_widget = TextWidget:new{
                 text = title,
                 max_width = footer._saved_screen_width * footer.settings.book_title_max_width_pct * (1/100),
@@ -406,7 +406,7 @@ local footerTextGeneratorMap = {
     book_chapter = function(footer)
         local chapter_title = footer.ui.toc:getTocTitleByPage(footer.pageno)
         if chapter_title and chapter_title ~= "" then
-            chapter_title = chapter_title:gsub(" ", "\xC2\xA0") -- replace space with no-break-space
+            chapter_title = chapter_title:gsub(" ", "\u{00A0}") -- replace space with no-break-space
             local chapter_widget = TextWidget:new{
                 text = chapter_title,
                 max_width = footer._saved_screen_width * footer.settings.book_chapter_max_width_pct * (1/100),
@@ -2037,7 +2037,7 @@ function ReaderFooter:genAllFooterText()
             if self.settings.item_prefix == "compact_items" then
                 -- remove whitespace from footer items if symbol_type is compact_items
                 -- use a hair-space to avoid issues with RTL display
-                text = text:gsub("%s", "\xE2\x80\x8A")
+                text = text:gsub("%s", "\u{200A}")
             end
             -- if generator request a merge of this item, add it directly,
             -- i.e. no separator before and after the text then.

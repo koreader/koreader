@@ -82,8 +82,8 @@ function ViewHtml:_viewSelectionHTML(document, selected_text, view, with_css_fil
     end
     if massage_html then
         -- Make some invisible chars visible
-        replace_in_html("\xC2\xA0", "␣")  -- no break space: open box
-        replace_in_html("\xC2\xAD", "⋅") -- soft hyphen: dot operator (smaller than middle dot ·)
+        replace_in_html("\u{00A0}", "\u{2423}") -- no break space: open box
+        replace_in_html("\u{00AD}", "\u{22C5}") -- soft hyphen: dot operator (smaller than middle dot ·)
         -- Prettify inlined CSS (from <HEAD>, put in an internal
         -- <body><stylesheet> element by crengine (the opening tag may
         -- include some href=, or end with " ~X>" with some html_flags)

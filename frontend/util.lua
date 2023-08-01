@@ -1093,7 +1093,7 @@ local HTML_ENTITIES_TO_UTF8 = {
     {"&gt;", ">"},
     {"&quot;", '"'},
     {"&apos;", "'"},
-    {"&nbsp;", "\xC2\xA0"},
+    {"&nbsp;", "\u{00A0}"},
     {"&#(%d+);", function(x) return util.unicodeCodepointToUtf8(tonumber(x)) end},
     {"&#x(%x+);", function(x) return util.unicodeCodepointToUtf8(tonumber(x, 16)) end},
     {"&amp;", "&"}, -- must be last

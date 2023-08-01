@@ -201,7 +201,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
             if self.unit == "°" then
                 unit = self.unit
             elseif self.unit ~= "" then
-                unit = "\xE2\x80\xAF" .. self.unit -- use Narrow No-Break Space (NNBSP) here
+                unit = "\u{202F}" .. self.unit -- use Narrow No-Break Space (NNBSP) here
             end
         end
         table.insert(buttons, {

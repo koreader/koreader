@@ -677,14 +677,14 @@ function ReaderDictionary:cleanSelection(text, is_sane)
     -- (example: pdf selection "qu’autrefois," will be cleaned to "autrefois")
     --
     -- Replace no-break space with regular space
-    text = text:gsub("\xC2\xA0", ' ') -- U+00A0 no-break space
+    text = text:gsub("\u{00A0}", ' ')
     -- Trim any space at start or end
     text = text:gsub("^%s+", "")
     text = text:gsub("%s+$", "")
     if not is_sane then
         -- Replace extended quote (included in the general puncturation range)
         -- with plain ascii quote (for french words like "aujourd’hui")
-        text = text:gsub("\xE2\x80\x99", "'") -- U+2019 (right single quotation mark)
+        text = text:gsub("\u{2019}", "'") -- Right single quotation mark
         -- Strip punctuation characters around selection
         text = util.stripPunctuation(text)
         -- Strip some common english grammatical construct

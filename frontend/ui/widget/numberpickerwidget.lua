@@ -226,7 +226,7 @@ function NumberPickerWidget:init()
         if self.unit == "°" then
             unit = self.unit
         elseif self.unit ~= "" then
-            unit = "\xE2\x80\xAF" .. self.unit -- use Narrow No-Break Space (NNBSP) here
+            unit = "\u{202F}" .. self.unit -- use Narrow No-Break Space (NNBSP) here
         end
     end
     self.text_value = Button:new{
