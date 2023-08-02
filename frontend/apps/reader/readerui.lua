@@ -318,6 +318,7 @@ function ReaderUI:init()
         })
         -- typeset controller
         self:registerModule("typeset", ReaderTypeset:new{
+            configurable = self.document.configurable,
             dialog = self.dialog,
             view = self.view,
             ui = self
