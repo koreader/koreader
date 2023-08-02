@@ -49,7 +49,7 @@ local SpinWidget = FocusManager:extend{
     -- Optional extra button above ok/cancel buttons row
     option_text = nil,
     option_callback = nil,
-    unit = nil,
+    unit = nil, -- unit to show or nil
 }
 
 function SpinWidget:init()
@@ -226,30 +226,30 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         show_parent = self,
     }
     self:mergeLayoutInVertical(ok_cancel_buttons)
-    local vgroup = VerticalGroup:new{
+    self.vgroup = VerticalGroup:new{
         align = "left",
         title_bar,
     }
-    table.insert(vgroup, CenterContainer:new{
+    table.insert(self.vgroup, CenterContainer:new{
         dimen = Geom:new{
             w = self.width,
             h = value_group:getSize().h + 4 * Size.padding.large,
         },
-        value_group
+        value_group,
     })
-    table.insert(vgroup, CenterContainer:new{
+    table.insert(self.vgroup, CenterContainer:new{
         dimen = Geom:new{
             w = self.width,
             h = ok_cancel_buttons:getSize().h,
         },
-        ok_cancel_buttons
+        ok_cancel_buttons,
     })
     self.spin_frame = FrameContainer:new{
         radius = Size.radius.window,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
-        vgroup,
+        self.vgroup,
     }
     self.movable = MovableContainer:new{
         alpha = prev_movable_alpha,
@@ -264,6 +264,13 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         },
         self.movable,
     }
+
+    if self._added_widgets then
+        for _, widget in ipairs(self._added_widgets) do
+            self:addWidget(widget, true)
+        end
+    end
+
     if prev_movable_offset then
         self.movable:setMovedOffset(prev_movable_offset)
     end
@@ -271,6 +278,31 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
     UIManager:setDirty(self, function()
         return "ui", self.spin_frame.dimen
     end)
+end
+
+-- This is almost the same functionality as in InputDialog, except positioning
+function SpinWidget:addWidget(widget, re_init)
+    table.insert(self.layout, #self.layout, {widget})
+    if not re_init then -- backup widget for re-init
+        widget = CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width,
+                h = widget:getSize().h,
+            },
+            widget,
+        }
+        if not self._added_widgets then
+            self._added_widgets = {}
+        end
+        table.insert(self._added_widgets, widget)
+    end
+    -- Insert widget before the bottom buttons and their previous vspan.
+    -- This is different to InputDialog.
+    table.insert(self.vgroup, #self.vgroup, widget)
+end
+
+function SpinWidget:getAddedWidgetAvailableWidth()
+    return self.width - 2 * Size.padding.large
 end
 
 function SpinWidget:hasMoved()
