@@ -616,6 +616,7 @@ if last_migration_date < 20230802 then
         else
             logger.warn("db not compatible when performing onetime migration:", ok, value)
         end
+        conn:close()
     else
         logger.info("statistics.sqlite3 not found.")
     end
