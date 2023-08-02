@@ -316,6 +316,7 @@ function Profiles:getProfileFromCurrentDocument(new_name)
             "embedded_css",
             "embedded_fonts",
             "smooth_scaling",
+            "nightmode_images",
         }
     else
         document_settings = {
@@ -348,7 +349,8 @@ function Profiles:getProfileFromCurrentDocument(new_name)
         profile["view_mode"] = self.view.view_mode
         profile["embedded_css"] = self.ui.typeset.embedded_css
         profile["embedded_fonts"] = self.ui.typeset.embedded_fonts
-        profile["smooth_scaling"] = self.ui.typeset.smooth_scaling
+        profile["smooth_scaling"] = profile["smooth_scaling"] == 1
+        profile["nightmode_images"] = profile["nightmode_images"] == 1
     else
         local trim_page_to_mode = { _("manual"), _("auto"), _("semi-auto"), _("none") }
         local zoom_genus_to_mode = { _("manual"), _("rows"), _("columns"), _("content"), _("page") }
