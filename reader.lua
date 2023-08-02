@@ -190,7 +190,9 @@ CanvasContext:init(Device)
 Version:updateVersionLog(Device.model)
 
 -- Handle one time migration stuff (settings, deprecation, ...) in case of an upgrade...
-require("ui/data/onetime_migration")
+do
+    dofile("frontend/ui/data/onetime_migration.lua")
+end
 
 -- UI mirroring for RTL languages, and text shaping configuration
 local Bidi = require("ui/bidi")
