@@ -683,9 +683,12 @@ function InputText:onShowKeyboard(ignore_first_hold_release)
 end
 
 function InputText:onCloseKeyboard()
-    UIManager:close(self.keyboard)
     Device:stopTextInput()
-    self.is_keyboard_hidden = true
+
+    if not self.is_keyboard_hidden then
+        UIManager:close(self.keyboard)
+        self.is_keyboard_hidden = true
+    end
 end
 
 function InputText:onCloseWidget()

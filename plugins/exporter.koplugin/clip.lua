@@ -163,7 +163,7 @@ function MyClipping:getTime(line)
         for k, v in pairs(months) do
             if line:find(k) then
                 month = v
-                _, _, day = line:find(" (%d?%d),")
+                _, _, day = line:find(" (%d?%d)[, ]")
                 _, _, year = line:find(" (%d%d%d%d)")
                 break
             end
@@ -305,9 +305,9 @@ function MyClipping:getClippingsFromBook(clippings, doc_path)
     local highlights = doc_settings:readSetting("highlight")
     if not highlights then return end
     local bookmarks = doc_settings:readSetting("bookmarks")
-    local stats = doc_settings:readSetting("stats")
-    local title = stats and stats.title
-    local author = stats and stats.authors
+    local props = doc_settings:readSetting("doc_props")
+    local title = props.title
+    local author = props.authors
     local _, doc_name = util.splitFilePathName(doc_path)
     local parsed_title, parsed_author = self:parseTitleFromPath(util.splitFileNameSuffix(doc_name))
     clippings[parsed_title] = {
@@ -338,37 +338,15 @@ function MyClipping:parseFiles(files)
     return clippings
 end
 
-function MyClipping:getProps(file)
-    local document = DocumentRegistry:openDocument(file)
-    local book_props = nil
-    if document then
-        local loaded = true
-        if document.loadDocument then -- CreDocument
-            if not document:loadDocument(false) then -- load only metadata
-                -- failed loading, calling other methods would segfault
-                loaded = false
-            end
-        end
-        if loaded then
-            book_props = document:getProps()
-        end
-        document:close()
-    end
-
-    return book_props
-end
-
 local function isEmpty(s)
     return s == nil or s == ""
 end
 
 function MyClipping:getDocMeta(view)
-    local props = self:getProps(view.document.file)
-    local number_of_pages = view.document.info.number_of_pages
+    local props = view.ui.doc_settings:readSetting("doc_props")
     local title = props.title
-    local author = props.author or props.authors
-    local path = view.document.file
-    local _, _, docname = path:find(".*/(.*)")
+    local author = props.authors
+    local _, _, docname = view.document.file:find(".*/(.*)")
     local parsed_title, parsed_author = self:parseTitleFromPath(docname)
     if isEmpty(title) then
         title = isEmpty(parsed_title) and "Unknown Book" or parsed_title
@@ -381,7 +359,7 @@ function MyClipping:getDocMeta(view)
         -- Replaces characters that are invalid in filenames.
         output_filename = util.getSafeFilename(title),
         author = author,
-        number_of_pages = number_of_pages,
+        number_of_pages = view.document.info.number_of_pages,
         file = view.document.file,
     }
 end

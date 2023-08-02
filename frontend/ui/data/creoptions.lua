@@ -410,7 +410,7 @@ Note that your selected font size is not affected by this setting.]]),
                 },
                 name_text_hold_callback = optionsutil.showValues,
                 show_true_value_func = function(val) -- add "%"
-                    return string.format("%d\xE2\x80\xAF%%", val) -- use Narrow No-Break space here
+                    return string.format("%d\u{202F}%%", val) -- use Narrow No-Break space here
                 end,
             },
         }
@@ -498,7 +498,7 @@ Note that your selected font size is not affected by this setting.]]),
                 name_text_hold_callback = optionsutil.showValues,
                 name_text_true_values = true,
                 show_true_value_func = function(val)
-                    return string.format("%d\xE2\x80\xAF%%, %d\xE2\x80\xAF%%", val[1], val[2]) -- use Narrow Now-Break space here
+                    return string.format("%d\u{202F}%%, %d\u{202F}%%", val[1], val[2]) -- use Narrow Now-Break space here
                 end,
             },
             {
@@ -537,7 +537,7 @@ Note that your selected font size is not affected by this setting.]]),
                 name_text_hold_callback = optionsutil.showValues,
                 name_text_true_values = true,
                 show_true_value_func = function(val)
-                    return string.format("%d\xE2\x80\xAF%%", val) -- use Narrow No-Break space here
+                    return string.format("%d\u{202F}%%", val) -- use Narrow No-Break space here
                 end,
             },
             {

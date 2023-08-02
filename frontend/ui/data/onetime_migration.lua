@@ -587,6 +587,18 @@ if last_migration_date < 20230710 then
     end
 end
 
+-- 20230731, aka., "let's kill all those stupid and weird mxcfb workarounds"
+if last_migration_date < 20230731 then
+    logger.info("Performing one-time migration for 20230731")
+
+    local Device = require("device")
+    if Device:isKobo() then
+        if not Device:hasReliableMxcWaitFor() then
+            G_reader_settings:delSetting("followed_link_marker")
+        end
+    end
+end
+
 -- 20230802, Statistics plugin null id_book in page_stat_data
 if last_migration_date < 20230802 then
     logger.info("Performing one-time migration for 20230802")

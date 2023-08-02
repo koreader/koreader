@@ -546,17 +546,17 @@ end
 -- These chosen ones are available in most fonts (prettier symbols
 -- exist in unicode, but are available in a few fonts only) and
 -- have a quite consistent size/weight in all fonts.
-local th1_sym = "\xE2\x96\x88"         -- full block (big black rectangle) (never met, only for web page title?)
-local th2_sym = "\xE2\x96\x89"         -- big black square
-local th3_sym = "\xC2\xA0\xE2\x97\xA4" -- black upper left triangle (indented, nicer)
-local th4_sym = "\xE2\x97\x86"         -- black diamond
-local th5_sym = "\xE2\x9C\xBF"         -- black florette
-local th6_sym = "\xE2\x9D\x96"         -- black diamond minus white x
+local th1_sym = "\u{2588}"         -- full block (big black rectangle) (never met, only for web page title?)
+local th2_sym = "\u{2589}"         -- big black square
+local th3_sym = "\u{00A0}\u{25E4}" -- black upper left triangle (indented, nicer)
+local th4_sym = "\u{25C6}"         -- black diamond
+local th5_sym = "\u{273F}"         -- black florette
+local th6_sym = "\u{2756}"         -- black diamond minus white x
 -- Others available in most fonts
--- local thX_sym = "\xE2\x9C\x9A"         -- heavy greek cross
--- local thX_sym = "\xE2\x97\xA2"         -- black lower right triangle
--- local thX_sym = "\xE2\x97\x89"         -- fish eye
--- local thX_sym = "\xE2\x96\x97"         -- quadrant lower right
+-- local thX_sym = "\u{271A}"         -- heavy greek cross
+-- local thX_sym = "\u{25E2}"         -- black lower right triangle
+-- local thX_sym = "\u{25C9}"         -- fish eye
+-- local thX_sym = "\u{2597}"         -- quadrant lower right
 
 -- For optional prettification of the plain text full page
 function Wikipedia:prettifyText(text)
@@ -571,7 +571,7 @@ function Wikipedia:prettifyText(text)
     text = text:gsub("==$", "==\n")        -- for a </hN> at end of text to be matched by next gsub
     text = text:gsub(" ===?\n+", "\n\n")   -- </h2> to </h3> : empty line after
     text = text:gsub(" ====+\n+", "\n")    -- </h4> to </hN> : single \n, no empty line
-    text = text:gsub("\n\n+\xE2\x80\x94", "\n\xE2\x80\x94") -- em dash, used for quote author, make it stick to prev text
+    text = text:gsub("\n\n+\u{2014}", "\n\u{2014}") -- em dash, used for quote author, make it stick to prev text
     text = text:gsub("\n +\n", "\n")  -- trim lines full of only spaces (often seen in math formulas)
     text = text:gsub("^\n*", "")      -- trim new lines at start
     text = text:gsub("\n*$", "")      -- trim new lines at end
@@ -587,17 +587,17 @@ end
 -- These chosen ones are available in most fonts (prettier symbols
 -- exist in unicode, but are available in a few fonts only) and
 -- have a quite consistent size/weight in all fonts.
-local h1_sym = "\xE2\x96\x88"     -- full block (big black rectangle) (never met, only for web page title?)
-local h2_sym = "\xE2\x96\x89"     -- big black square
-local h3_sym = "\xE2\x97\xA4"     -- black upper left triangle
-local h4_sym = "\xE2\x97\x86"     -- black diamond
-local h5_sym = "\xE2\x9C\xBF"     -- black florette
-local h6_sym = "\xE2\x9D\x96"     -- black diamond minus white x
+local h1_sym = "\u{2588}"     -- full block (big black rectangle) (never met, only for web page title?)
+local h2_sym = "\u{2589}"     -- big black square
+local h3_sym = "\u{25E4}"     -- black upper left triangle
+local h4_sym = "\u{25C6}"     -- black diamond
+local h5_sym = "\u{273F}"     -- black florette
+local h6_sym = "\u{2756}"     -- black diamond minus white x
 -- Other available ones in most fonts
--- local hXsym = "\xE2\x9C\x9A"     -- heavy greek cross
--- local hXsym = "\xE2\x97\xA2"     -- black lower right triangle
--- local hXsym = "\xE2\x97\x89"     -- fish eye
--- local hXsym = "\xE2\x96\x97"     -- quadrant lower right
+-- local hXsym = "\u{271A}"     -- heavy greek cross
+-- local hXsym = "\u{25E2}"     -- black lower right triangle
+-- local hXsym = "\u{25C9}"     -- fish eye
+-- local hXsym = "\u{2597}"     -- quadrant lower right
 
 local ext_to_mimetype = {
     png = "image/png",
@@ -945,6 +945,24 @@ hr.koreaderwikifrontpage {
     margin-right: 20%;
     margin-bottom: 1.2em;
 }
+/* Have these HR get the same margins and position as our H2 */
+hr.koreaderwikitocstart {
+    page-break-before: always;
+    font-size: 140%;
+    margin: 0.7em 30% 1.5em;
+    height: 0.22em;
+    border: none;
+    background-color: black;
+}
+hr.koreaderwikitocend {
+    page-break-before: avoid;
+    page-break-after: always;
+    font-size: 140%;
+    margin: 1.2em 30% 0;
+    height: 0.22em;
+    border: none;
+    background-color: black;
+}
 
 /* So many links, make them look like normal text except for underline */
 a {
@@ -1245,6 +1263,58 @@ table {
 </ncx>
 ]])
     epub:add("OEBPS/toc.ncx", table.concat(toc_ncx_parts))
+
+    -- ----------------------------------------------------------------
+    -- HTML table of content
+    -- We used to have it in the HTML we got from Wikipedia, but we no longer do.
+    -- So, build it from the 'sections' we got from the API.
+    local toc_html_parts = {}
+    -- Unfortunately, we don't and can't get any localized "Contents" or "Sommaire" to use
+    -- as a heading. So, use some <hr> at start and at end to make this HTML ToC stand out.
+    table.insert(toc_html_parts, '<hr class="koreaderwikitocstart"/>\n')
+    cur_level = 0
+    for isec, s in ipairs(sections) do
+        -- Some chars in headings are converted to html entities in the
+        -- wikipedia-generated HTML. We need to do the same in TOC links
+        -- for the links to be valid.
+        local s_anchor = s.anchor:gsub("&", "&amp;"):gsub('"', "&quot;"):gsub(">", "&gt;"):gsub("<", "&lt;")
+        local s_title = string.format("%s %s", s.number, s.line)
+        local s_level = s.toclevel
+        if s_level == cur_level then
+            table.insert(toc_html_parts, "</li>")
+        elseif s_level < cur_level then
+            table.insert(toc_html_parts, "</li>")
+            while cur_level > s_level do
+                cur_level = cur_level - 1
+                table.insert(toc_html_parts, "\n"..(" "):rep(cur_level))
+                table.insert(toc_html_parts, "</ul>")
+                table.insert(toc_html_parts, "\n"..(" "):rep(cur_level))
+                table.insert(toc_html_parts, "</li>")
+            end
+        else -- s_level > cur_level
+            while cur_level < s_level do
+                table.insert(toc_html_parts, "\n"..(" "):rep(cur_level))
+                table.insert(toc_html_parts, "<ul>")
+                cur_level = cur_level + 1
+            end
+        end
+        cur_level = s_level
+        table.insert(toc_html_parts, "\n"..(" "):rep(cur_level))
+        table.insert(toc_html_parts, string.format([[<li><div><a href="#%s">%s</a></div>]], s_anchor, s_title))
+    end
+    -- close nested <ul>
+    table.insert(toc_html_parts, "</li>")
+    while cur_level > 0 do
+        cur_level = cur_level - 1
+        table.insert(toc_html_parts, "\n"..(" "):rep(cur_level))
+        table.insert(toc_html_parts, "</ul>")
+        if cur_level > 0 then
+            table.insert(toc_html_parts, "\n"..(" "):rep(cur_level))
+            table.insert(toc_html_parts, "</li>")
+        end
+    end
+    table.insert(toc_html_parts, '<hr class="koreaderwikitocend"/>\n')
+    html = html:gsub([[<meta property="mw:PageProp/toc" />]], table.concat(toc_html_parts))
 
     -- ----------------------------------------------------------------
     -- OEBPS/content.html

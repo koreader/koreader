@@ -933,7 +933,7 @@ function VirtualKeyboard:onShow()
 end
 
 function VirtualKeyboard:onCloseWidget()
-    self:_refresh(false)
+    self:_refresh(true)
 end
 
 function VirtualKeyboard:initLayer(layer)

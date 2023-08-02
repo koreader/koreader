@@ -63,7 +63,7 @@ function ViewHtml:_viewSelectionHTML(document, selected_text, view, with_css_fil
     local replace_in_html = function(pat, repl)
         local new_html = ""
         local is_match = false -- given the html we get and our patterns, we know the first part won't be a match
-        for part in util.gsplit(html, pat, true) do
+        for part in util.gsplit(html, pat, true, true) do
             if is_match then
                 local r = type(repl) == "function" and repl(part) or repl
                 local offset_shift = #r - #part
@@ -72,6 +72,8 @@ function ViewHtml:_viewSelectionHTML(document, selected_text, view, with_css_fil
                 end
                 new_html = new_html .. r
             else
+                -- (we provided capture_empty_entity=true, to match adjacent 'pat',
+                -- so here we may get empty 'part', that we can just concatenate)
                 new_html = new_html .. part
             end
             is_match = not is_match
@@ -80,8 +82,8 @@ function ViewHtml:_viewSelectionHTML(document, selected_text, view, with_css_fil
     end
     if massage_html then
         -- Make some invisible chars visible
-        replace_in_html("\xC2\xA0", "␣")  -- no break space: open box
-        replace_in_html("\xC2\xAD", "⋅") -- soft hyphen: dot operator (smaller than middle dot ·)
+        replace_in_html("\u{00A0}", "\u{2423}") -- no break space: open box
+        replace_in_html("\u{00AD}", "\u{22C5}") -- soft hyphen: dot operator (smaller than middle dot ·)
         -- Prettify inlined CSS (from <HEAD>, put in an internal
         -- <body><stylesheet> element by crengine (the opening tag may
         -- include some href=, or end with " ~X>" with some html_flags)
@@ -98,6 +100,10 @@ function ViewHtml:_viewSelectionHTML(document, selected_text, view, with_css_fil
             return pre .. "\n" .. util.prettifyCSS(css_text) .. post
         end)
     end
+    -- Make sure we won't get wrapped just after our indentation if there is no break opportunity later
+    replace_in_html("\n( *)", function(s)
+        return "\n" .. ("\u{00A0}"):rep(#s)
+    end)
 
     local textviewer
     -- Prepare bottom buttons and their actions

@@ -38,51 +38,71 @@ wpa_cli -i "${INTERFACE}" terminate
 [ "${WIFI_MODULE}" = "dhd" ] && wlarm_le -i "${INTERFACE}" down
 ifconfig "${INTERFACE}" down
 
-# Some sleep in between may avoid system getting hung
-# (we test if a module is actually loaded to avoid unneeded sleeps)
-if grep -q "^${WIFI_MODULE}" "/proc/modules"; then
-    usleep 250000
-    rmmod "${WIFI_MODULE}"
-fi
-
 # Handle dependencies, if any
 WIFI_DEP_MOD=""
-SKIP_SDIO_PWR_MODULE=""
+# Honor the platform's preferred method to toggle power
+POWER_TOGGLE="module"
+# Some platforms never unload the wifi modules
+SKIP_UNLOAD=""
 case "${WIFI_MODULE}" in
     "moal")
         WIFI_DEP_MOD="mlan"
-        SKIP_SDIO_PWR_MODULE="1"
+        POWER_TOGGLE="ntx_io"
+        ;;
+    "wlan_drv_gen4m")
+        POWER_TOGGLE="wmt"
+        SKIP_UNLOAD="true"
         ;;
 esac
-if [ -n "${WIFI_DEP_MOD}" ]; then
-    if grep -q "^${WIFI_DEP_MOD}" "/proc/modules"; then
+
+if [ -z "${SKIP_UNLOAD}" ]; then
+    # Some sleep in between may avoid system getting hung
+    # (we test if a module is actually loaded to avoid unneeded sleeps)
+    if grep -q "^${WIFI_MODULE} " "/proc/modules"; then
         usleep 250000
-        rmmod "${WIFI_DEP_MOD}"
+        # NOTE: Kobo's busybox build is weird. rmmod appears to be modprobe in disguise, defaulting to the -r flag...
+        #       But since there's currently no modules.dep file being shipped, nor do they include the depmod applet,
+        #       go with what the FW is doing, which is rmmod.
+        # c.f., #2394?
+        rmmod "${WIFI_MODULE}"
+    fi
+
+    if [ -n "${WIFI_DEP_MOD}" ]; then
+        if grep -q "^${WIFI_DEP_MOD} " "/proc/modules"; then
+            usleep 250000
+            rmmod "${WIFI_DEP_MOD}"
+        fi
     fi
 fi
 
-if [ -n "${SKIP_SDIO_PWR_MODULE}" ]; then
-    usleep 250000
-    ./luajit frontend/device/kobo/ntx_io.lua 208 0
-else
-    if grep -q "^sdio_wifi_pwr" "/proc/modules"; then
-        # Handle the shitty DVFS switcheroo...
-        if [ -n "${CPUFREQ_DVFS}" ]; then
-            echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
-            if [ -n "${CPUFREQ_CONSERVATIVE}" ]; then
-                echo "conservative" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-            else
-                echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-                cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
-            fi
-        fi
-        usleep 250000
-        rmmod sdio_wifi_pwr
-    fi
-
-    # Poke the kernel via ioctl on platforms without the dedicated power module...
-    if [ ! -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
+case "${POWER_TOGGLE}" in
+    "ntx_io")
         usleep 250000
         ./luajit frontend/device/kobo/ntx_io.lua 208 0
-    fi
-fi
+        ;;
+    "wmt")
+        echo 0 >/dev/wmtWifi
+        ;;
+    *)
+        if grep -q "^sdio_wifi_pwr " "/proc/modules"; then
+            # Handle the shitty DVFS switcheroo...
+            if [ -n "${CPUFREQ_DVFS}" ]; then
+                echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+                if [ -n "${CPUFREQ_CONSERVATIVE}" ]; then
+                    echo "conservative" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                else
+                    echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                    cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+                fi
+            fi
+            usleep 250000
+            rmmod sdio_wifi_pwr
+        fi
+
+        # Poke the kernel via ioctl on platforms without the dedicated power module...
+        if [ ! -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
+            usleep 250000
+            ./luajit frontend/device/kobo/ntx_io.lua 208 0
+        fi
+        ;;
+esac

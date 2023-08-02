@@ -946,7 +946,7 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
                             -- Previous line ended with a minus.
                             -- Assume it's some hyphenation and discard it.
                             line_text = line_text:sub(1, -2)
-                        elseif line_text:sub(-2, -1) == "\xC2\xAD" then
+                        elseif line_text:sub(-2, -1) == "\u{00AD}" then
                             -- Previous line ended with a hyphen.
                             -- Assume it's some hyphenation and discard it.
                             line_text = line_text:sub(1, -3)

@@ -26,22 +26,21 @@ unset FBINK_FORCE_ROTA
 ) &
 
 # Make sure we kill the Wi-Fi first, because nickel apparently doesn't like it if it's up... (cf. #1520)
-if grep -q "^${WIFI_MODULE}" "/proc/modules"; then
+if grep -q "^${WIFI_MODULE} " "/proc/modules"; then
     killall -q -TERM restore-wifi-async.sh enable-wifi.sh obtain-ip.sh
+
     cp -a "/etc/resolv.conf" "/tmp/resolv.ko"
     old_hash="$(md5sum "/etc/resolv.conf" | cut -f1 -d' ')"
+
     if [ -x "/sbin/dhcpcd" ]; then
         dhcpcd -d -k "${INTERFACE}"
         killall -q -TERM udhcpc default.script
     else
         killall -q -TERM udhcpc default.script dhcpcd
     fi
-    # NOTE: dhcpcd -k waits for the signalled process to die, but busybox's killall doesn't have a -w, --wait flag,
-    #       so we have to wait for udhcpc to die ourselves...
-    # NOTE: But if all is well, there *isn't* any udhcpc process or script left to begin with...
+
     kill_timeout=0
     while pkill -0 udhcpc; do
-        # Stop waiting after 5s
         if [ ${kill_timeout} -ge 20 ]; then
             break
         fi
@@ -56,52 +55,64 @@ if grep -q "^${WIFI_MODULE}" "/proc/modules"; then
     else
         rm -f "/tmp/resolv.ko"
     fi
-    wpa_cli terminate
+
+    wpa_cli -i "${INTERFACE}" terminate
+
     [ "${WIFI_MODULE}" = "dhd" ] && wlarm_le -i "${INTERFACE}" down
     ifconfig "${INTERFACE}" down
-    # NOTE: Kobo's busybox build is weird. rmmod appears to be modprobe in disguise, defaulting to the -r flag...
-    #       But since there's currently no modules.dep file being shipped, nor do they include the depmod applet,
-    #       go with what the FW is doing, which is rmmod.
-    # c.f., #2394?
-    usleep 250000
-    rmmod "${WIFI_MODULE}"
 
     WIFI_DEP_MOD=""
-    SKIP_SDIO_PWR_MODULE=""
+    POWER_TOGGLE="module"
+    SKIP_UNLOAD=""
     case "${WIFI_MODULE}" in
         "moal")
             WIFI_DEP_MOD="mlan"
-            SKIP_SDIO_PWR_MODULE="1"
+            POWER_TOGGLE="ntx_io"
+            ;;
+        "wlan_drv_gen4m")
+            POWER_TOGGLE="wmt"
+            SKIP_UNLOAD="true"
             ;;
     esac
-    if [ -n "${WIFI_DEP_MOD}" ]; then
-        if grep -q "^${WIFI_DEP_MOD}" "/proc/modules"; then
-            usleep 250000
-            rmmod "${WIFI_DEP_MOD}"
+
+    if [ -z "${SKIP_UNLOAD}" ]; then
+        usleep 250000
+        rmmod "${WIFI_MODULE}"
+
+        if [ -n "${WIFI_DEP_MOD}" ]; then
+            if grep -q "^${WIFI_DEP_MOD} " "/proc/modules"; then
+                usleep 250000
+                rmmod "${WIFI_DEP_MOD}"
+            fi
         fi
     fi
 
-    if [ -n "${SKIP_SDIO_PWR_MODULE}" ]; then
-        usleep 250000
-        "${KOREADER_DIR}"/luajit "${KOREADER_DIR}"/frontend/device/kobo/ntx_io.lua 208 0
-    else
-        if grep -q "^sdio_wifi_pwr" "/proc/modules"; then
-            if [ -n "${CPUFREQ_DVFS}" ]; then
-                echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
-                # Leave Nickel in its usual state, don't try to use conservative
-                echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-                cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
-            fi
-            usleep 250000
-            rmmod sdio_wifi_pwr
-        fi
-
-        # Poke the kernel via ioctl on platforms without the dedicated power module...
-        if [ ! -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
+    case "${POWER_TOGGLE}" in
+        "ntx_io")
             usleep 250000
             "${KOREADER_DIR}"/luajit "${KOREADER_DIR}"/frontend/device/kobo/ntx_io.lua 208 0
-        fi
-    fi
+            ;;
+        "wmt")
+            echo 0 >/dev/wmtWifi
+            ;;
+        *)
+            if grep -q "^sdio_wifi_pwr " "/proc/modules"; then
+                if [ -n "${CPUFREQ_DVFS}" ]; then
+                    echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+                    # Leave Nickel in its usual state, don't try to use conservative
+                    echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                    cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+                fi
+                usleep 250000
+                rmmod sdio_wifi_pwr
+            fi
+
+            if [ ! -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
+                usleep 250000
+                "${KOREADER_DIR}"/luajit "${KOREADER_DIR}"/frontend/device/kobo/ntx_io.lua 208 0
+            fi
+            ;;
+    esac
 fi
 
 unset KOREADER_DIR

@@ -2,7 +2,7 @@ local BasePowerD = require("device/generic/powerd")
 local UIManager
 local WakeupMgr = require("device/wakeupmgr")
 local logger = require("logger")
-local util = require("util")
+local ffiUtil = require("ffi/util")
 -- liblipclua, see require below
 
 local KindlePowerD = BasePowerD:new{
@@ -100,12 +100,12 @@ function KindlePowerD:setIntensityHW(intensity)
         -- NOTE: when intensity is 0, we want to *really* kill the light, so do it manually
         -- (asking lipc to set it to 0 would in fact set it to > 0 on ! canTurnFrontlightOff Kindles).
         -- We do *both* to make the fl restore on resume less jarring on devices where lipc 0 != off.
-        util.writeToSysfs(intensity, self.fl_intensity_file)
+        ffiUtil.writeToSysfs(intensity, self.fl_intensity_file)
 
         -- And in case there are two LED groups...
         -- This should never happen as all warmth devices so far canTurnFrontlightOff
         if self.warmth_intensity_file then
-            util.writeToSysfs(intensity, self.warmth_intensity_file)
+            ffiUtil.writeToSysfs(intensity, self.warmth_intensity_file)
         end
     end
 end
@@ -175,7 +175,7 @@ end
 
 function KindlePowerD:onToggleHallSensor()
     local stat = self:isHallSensorEnabled()
-    util.writeToSysfs(stat and 0 or 1, self.hall_file)
+    ffiUtil.writeToSysfs(stat and 0 or 1, self.hall_file)
 end
 
 function KindlePowerD:_readFLIntensity()

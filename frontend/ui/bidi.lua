@@ -187,14 +187,14 @@ end
 -- which would be an issue and would need stripping. But as these
 -- Free fonts are only used as fallback fonts, and the invisible glyphs
 -- will have been found in the previous fonts, we don't need to.
-local LRI = "\xE2\x81\xA6"     -- U+2066 LRI / LEFT-TO-RIGHT ISOLATE
-local RLI = "\xE2\x81\xA7"     -- U+2067 RLI / RIGHT-TO-LEFT ISOLATE
-local FSI = "\xE2\x81\xA8"     -- U+2068 FSI / FIRST STRONG ISOLATE
-local PDI = "\xE2\x81\xA9"     -- U+2069 PDI / POP DIRECTIONAL ISOLATE
+local LRI = "\u{2066}"     -- LRI / LEFT-TO-RIGHT ISOLATE
+local RLI = "\u{2067}"     -- RLI / RIGHT-TO-LEFT ISOLATE
+local FSI = "\u{2068}"     -- FSI / FIRST STRONG ISOLATE
+local PDI = "\u{2069}"     -- PDI / POP DIRECTIONAL ISOLATE
 
 -- Not currently needed:
--- local LRM = "\xE2\x80\x8E"     -- U+200E LRM / LEFT-TO-RIGHT MARK
--- local RLM = "\xE2\x80\x8F"     -- U+200F RLM / RIGHT-TO-LEFT MARK
+-- local LRM = "\u{200E}"     -- LRM / LEFT-TO-RIGHT MARK
+-- local RLM = "\u{200F}"     -- RLM / RIGHT-TO-LEFT MARK
 
 function Bidi.ltr(text)
     return string.format("%s%s%s", LRI, text, PDI)
