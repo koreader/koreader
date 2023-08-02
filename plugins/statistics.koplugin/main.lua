@@ -3104,9 +3104,9 @@ function ReaderStatistics.onSync(local_path, cached_path, income_path)
         INSERT INTO page_stat_data (id_book, page, start_time, duration, total_pages)
             SELECT map.mid, page, start_time, duration, total_pages
             FROM income_db.page_stat_data
-            LEFT JOIN book_id_map as map
+            INNER JOIN book_id_map as map
             ON id_book = map.iid
-            WHERE true
+            WHERE map.mid IS NOT null
         ON CONFLICT(id_book, page, start_time) DO UPDATE SET
         duration = MAX(duration, excluded.duration);
 
