@@ -10,7 +10,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20230727
+local CURRENT_MIGRATION_DATE = 20230802
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -587,9 +587,9 @@ if last_migration_date < 20230710 then
     end
 end
 
--- 20230727, Statistics plugin null id_book in page_stat_data
-if last_migration_date < 20230727 then
-    logger.info("Performing one-time migration for 20230727")
+-- 20230802, Statistics plugin null id_book in page_stat_data
+if last_migration_date < 20230802 then
+    logger.info("Performing one-time migration for 20230802")
     local db_location = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
     if util.fileExists(db_location) then
         local conn = SQ3.open(db_location)
