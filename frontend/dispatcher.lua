@@ -584,6 +584,11 @@ function Dispatcher:getNameFromItem(item, settings, dont_show_value)
     return title
 end
 
+function Dispatcher:getArgFromValue(item, value)
+    local value_num = util.arrayContains(settingsList[item].configurable.values, value)
+    return settingsList[item].args[value_num]
+end
+
 -- Add the item to the end of the execution order.
 -- If item or the order is nil all items will be added.
 function Dispatcher:_addToOrder(location, settings, item)
