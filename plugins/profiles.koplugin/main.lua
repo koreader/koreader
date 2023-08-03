@@ -360,7 +360,6 @@ function Profiles:getProfileFromCurrentDocument(new_name)
         profile["embedded_fonts"] = self.ui.typeset.embedded_fonts
         profile["smooth_scaling"] = self.ui.typeset.smooth_scaling
     else
-        profile["rotation_mode"] = self.document.configurable.rotation_mode
         profile["kopt_page_scroll"] = self.view.page_scroll
     end
     return profile
