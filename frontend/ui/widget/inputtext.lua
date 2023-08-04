@@ -179,7 +179,7 @@ local function initTouchEvents()
                     end
                 end
                 local clipboard_value = Device.input.getClipboardText()
-                local is_clipboard_empty = clipboard_value == nil or clipboard_value == ""
+                local is_clipboard_empty = clipboard_value == ""
                 local clipboard_dialog
                 clipboard_dialog = require("ui/widget/textviewer"):new{
                     title = _("Clipboard"),
