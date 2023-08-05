@@ -224,13 +224,17 @@ function MenuItem:init()
             text = text,
             face = self.face,
             bold = self.bold,
+            truncate_left = self.truncate_left,
             fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
         }
         local w = item_name:getWidth()
         if w > available_width then
-            -- We give it a little more room if truncated for better visual
+            local text_max_width_if_ellipsis = available_width
+            -- We give it a little more room if truncated at the right for better visual
             -- feeling (which might make it no more truncated, but well...)
-            local text_max_width_if_ellipsis = available_width + text_mandatory_padding - text_ellipsis_mandatory_padding
+            if not self.truncate_left then
+                text_max_width_if_ellipsis = text_max_width_if_ellipsis + text_mandatory_padding - text_ellipsis_mandatory_padding
+            end
             item_name:setMaxWidth(text_max_width_if_ellipsis)
         else
             if self.with_dots then
@@ -1063,6 +1067,7 @@ function Menu:updateItems(select_number)
                 linesize = self.linesize,
                 single_line = self.single_line,
                 multilines_show_more_text = multilines_show_more_text,
+                truncate_left = self.truncate_left,
                 align_baselines = self.align_baselines,
                 with_dots = self.with_dots,
                 line_color = self.line_color,
