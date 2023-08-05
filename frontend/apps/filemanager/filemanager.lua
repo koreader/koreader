@@ -1287,6 +1287,7 @@ function FileManager:showSelectedFilesList()
     local menu = Menu:new{
         is_borderless = true,
         is_popout = false,
+        truncate_left = true,
         show_parent = menu_container,
         onMenuSelect = function(_, item)
             UIManager:close(menu_container)
