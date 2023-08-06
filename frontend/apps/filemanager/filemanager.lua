@@ -1269,7 +1269,10 @@ end
 function FileManager:showSelectedFilesList()
     local selected_files = {}
     for file in pairs(self.selected_files) do
-        table.insert(selected_files, { text = file })
+        table.insert(selected_files, {
+            text = file,
+            bidi_wrap_func = BD.filepath,
+        })
     end
     local function sorting(a, b)
         local a_path, a_name = util.splitFilePathName(a.text)
