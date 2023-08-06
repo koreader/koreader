@@ -58,7 +58,7 @@
   <div style="width:90%; max-width:600px; margin:0 auto; padding:5px; font-size:12pt; font-family:Georgia, serif">
     #{ for  _, booknotes in ipairs(clippings) do }#
     <h2 style="font-size:18pt; text-align:right;">#{= htmlescape(booknotes.title) }#</h2>
-    <h5 style="font-size:12pt; text-align:right; color:gray;">#{= htmlescape(booknotes.author) }#</h5>
+    <h5 style="font-size:12pt; text-align:right; color:gray;">#{= htmlescape(booknotes.author:gsub("\n", ", ")) }#</h5>
     #{ for  _, chapter in ipairs(booknotes.chapters) do }#
       #{ if chapter.title then }#
         <div style="font-size:14pt; font-weight:bold; text-align:center; margin:0.5em;"><span>#{= htmlescape(chapter.title) }#</span></div>
