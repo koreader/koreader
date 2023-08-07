@@ -342,6 +342,7 @@ function Profiles:getProfileFromCurrentDocument(new_name)
         ["kopt_trim_page"]       = true,
         ["kopt_zoom_mode_genus"] = true,
         ["kopt_zoom_mode_type"]  = true,
+        ["kopt_page_scroll"]     = true,
     }
 
     local profile = { settings = { name = new_name, order = document_settings } }
@@ -359,8 +360,6 @@ function Profiles:getProfileFromCurrentDocument(new_name)
         profile["embedded_css"] = self.ui.typeset.embedded_css
         profile["embedded_fonts"] = self.ui.typeset.embedded_fonts
         profile["smooth_scaling"] = self.ui.typeset.smooth_scaling
-    else
-        profile["kopt_page_scroll"] = self.view.page_scroll
     end
     return profile
 end
