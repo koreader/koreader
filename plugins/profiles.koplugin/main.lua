@@ -338,6 +338,7 @@ function Profiles:getProfileFromCurrentDocument(new_name)
         }
     end
     local setting_needs_arg = {
+        ["view_mode"]            = true,
         ["kopt_trim_page"]       = true,
         ["kopt_zoom_mode_genus"] = true,
         ["kopt_zoom_mode_type"]  = true,
@@ -355,7 +356,6 @@ function Profiles:getProfileFromCurrentDocument(new_name)
     if self.ui.rolling then
         profile["set_font"] = self.ui.font.font_face
         profile["sync_t_b_page_margins"] = self.ui.typeset.sync_t_b_page_margins
-        profile["view_mode"] = self.view.view_mode
         profile["embedded_css"] = self.ui.typeset.embedded_css
         profile["embedded_fonts"] = self.ui.typeset.embedded_fonts
         profile["smooth_scaling"] = self.ui.typeset.smooth_scaling
