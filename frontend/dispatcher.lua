@@ -584,6 +584,7 @@ function Dispatcher:getNameFromItem(item, settings, dont_show_value)
     return title
 end
 
+-- Converts copt/kopt-options values to args.
 function Dispatcher:getArgFromValue(item, value)
     local value_num = util.arrayContains(settingsList[item].configurable.values, value)
     return settingsList[item].args[value_num]
