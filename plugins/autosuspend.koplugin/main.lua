@@ -2,7 +2,7 @@
 Plugin for configuring power saving features like standby, suspend and poweroff.
 
 @module koplugin.autosuspend
---]]--
+--]]
 
 local Device = require("device")
 

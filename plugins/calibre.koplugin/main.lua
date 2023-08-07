@@ -5,7 +5,7 @@
         - wireless transfers
 
     This module handles the UI part of the plugin.
---]]--
+--]]
 
 local BD = require("ui/bidi")
 local CalibreExtensions = require("extensions")

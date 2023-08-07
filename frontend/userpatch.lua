@@ -2,7 +2,7 @@
 Allows applying developer patches while running KOReader.
 
 The contents in `koreader/patches/` are applied on calling `userpatch.applyPatches(priority)`.
---]]--
+--]]
 
 local isAndroid, android = pcall(require, "android")
 

@@ -1,6 +1,6 @@
 --[[--
 This module manages widgets.
-]]
+--]]
 
 local Device = require("device")
 local Event = require("ui/event")

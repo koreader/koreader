@@ -1,6 +1,6 @@
 --[[--
 This module contains miscellaneous helper functions for the KOReader frontend.
-]]
+--]]
 
 local BaseUtil = require("ffi/util")
 local Utf8Proc = require("ffi/utf8proc")

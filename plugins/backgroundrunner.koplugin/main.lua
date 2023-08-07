@@ -2,7 +2,7 @@
 BackgroundRunner is an experimental feature to execute non-critical jobs in
 the background.
 @module koplugin.backgroundrunner
---]]--
+--]]
 
 local Device = require("device")
 

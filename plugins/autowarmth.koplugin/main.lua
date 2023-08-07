@@ -2,7 +2,7 @@
 Plugin for setting screen warmth based on the sun position and/or a time schedule
 
 @module koplugin.autowarmth
---]]--
+--]]
 
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")

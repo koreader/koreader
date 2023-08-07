@@ -1,6 +1,6 @@
 --[[--
 BBoxWidget shows a bbox for page cropping.
-]]
+--]]
 
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Device = require("device")

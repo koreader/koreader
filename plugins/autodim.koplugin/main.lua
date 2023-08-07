@@ -2,7 +2,7 @@
 Plugin for automatic dimming of the frontlight after an idle period.
 
 @module koplugin.autodim
---]]--
+--]]
 
 local Device = require("device")
 local FFIUtil = require("ffi/util")

@@ -72,7 +72,7 @@ Example for input of two strings and a number:
 It is strongly recommended to use a text describing the action to be
 executed, as demonstrated in the example above. If the resulting phrase would be
 longer than three words it should just read "OK".
---]]--
+--]]
 
 
 local Blitbuffer = require("ffi/blitbuffer")

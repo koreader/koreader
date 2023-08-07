@@ -1,6 +1,6 @@
 --[[--
 Device abstraction for SDL.
-]]
+--]]
 
 local Event = require("ui/event")
 local Geom = require("ui/geometry")

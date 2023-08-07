@@ -48,7 +48,7 @@ Example to input a duration in days, hours and minutes:
         end
     }
     UIManager:show(date_widget)
---]]--
+--]]
 
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")

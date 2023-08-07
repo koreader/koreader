@@ -1,14 +1,18 @@
-all:
+all: events
+
+# Don't preprocess with any luadoc filters
+no-events:
 ifeq (,$(shell which ldoc))
 	$(error ldoc not found, please install via luarocks.)
 endif
 	mkdir generated -p
-	echo "use make -C doc events" > generated/Events_and_handler.md
+	echo "Events and handlers not created yet. Generate them with: \`make -C doc events\`" > generated/Events_and_handler.md
 
 	ln -s -t ../frontend/ ../plugins || true
 	ldoc .
 	rm ../frontend/plugins
 
+# Generate events and handlers, preprocess document them and clean up
 events:
 ifeq (,$(shell which ldoc))
 	$(error ldoc not found, please install via luarocks.)

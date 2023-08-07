@@ -1,6 +1,6 @@
 --[[--
 Handles a lot of device specific events.
-]]
+--]]
 
 local Device = require("device")
 local Event = require("ui/event")

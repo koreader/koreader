@@ -2,7 +2,7 @@
 Plugin for automatic page turn.
 
 @module koplugin.autoturn
-]]
+--]]
 
 local Event = require("ui/event")
 local PluginShare = require("pluginshare")

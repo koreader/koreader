@@ -21,6 +21,7 @@ format = 'markdown'
 sort_modules = true
 file = {
     '../frontend',
+    '../plugins',
     '../base/ffi',
     '../platform/android/luajit-launcher/assets',
     exclude = {'../base/ffi/sha2.lua',
