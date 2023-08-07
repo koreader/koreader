@@ -1114,6 +1114,9 @@ function Kobo:standby(max_duration)
     logger.dbg("Kobo standby: asking to enter standby . . .")
     local standby_time = time.boottime_or_realtime_coarse()
 
+    -- The odd Sunxi needs some time to settle before entering standby.
+    ffiUtil.usleep(150e3) -- sleep 150ms
+
     local ret = ffiUtil.writeToSysfs("standby", "/sys/power/state")
 
     self.last_standby_time = time.boottime_or_realtime_coarse() - standby_time

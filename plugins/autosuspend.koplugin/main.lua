@@ -590,7 +590,7 @@ Upon user input, the device needs a certain amount of time to wake up. Generally
                 self:pickTimeoutValue(touchmenu_instance,
                     _("Timeout for autostandby"), _("Enter time in minutes and seconds."),
                     "auto_standby_timeout_seconds", default_auto_standby_timeout_seconds,
-                    {3, 15*60}, 0)
+                    {1, 15*60}, 0)
             end,
         }
     end
@@ -617,7 +617,7 @@ function AutoSuspend:AllowStandbyHandler()
         wake_in = math.huge
     end
 
-    if wake_in >= 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
+    if wake_in >= 1 then -- don't go into standby, if scheduled wakeup is in less than 1 secs
         logger.dbg("AutoSuspend: entering standby with a wakeup alarm in", wake_in, "s")
 
         -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
@@ -679,7 +679,7 @@ function AutoSuspend:onNetworkDisconnected()
     self:_start_standby()
 end
 
---[[ -- not necessary right now
+--[[-- not necessary right now
 function AutoSuspend:onNetworkDisconnecting()
     logger.dbg("AutoSuspend: onNetworkDisconnecting")
 end
