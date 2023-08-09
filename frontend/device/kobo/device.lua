@@ -38,6 +38,7 @@ local function checkStandby()
         return no
     end
     local mode = f:read()
+    f:close()
     logger.dbg("Kobo: available power states:", mode)
     if mode and mode:find("standby") then
         logger.dbg("Kobo: standby state is supported")
