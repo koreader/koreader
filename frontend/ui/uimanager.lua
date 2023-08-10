@@ -1290,6 +1290,7 @@ function UIManager:_repaint()
     -- Don't trigger afterPaint if we did not, in fact, paint anything
     if dirty then
         Screen:afterPaint()
+        Device:storeTimeOfLastPaint()
     end
 
     self._refresh_stack = {}
