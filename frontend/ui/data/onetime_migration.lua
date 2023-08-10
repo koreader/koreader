@@ -10,7 +10,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20230802
+local CURRENT_MIGRATION_DATE = 20230810
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -619,6 +619,16 @@ if last_migration_date < 20230802 then
         conn:close()
     else
         logger.info("statistics.sqlite3 not found.")
+    end
+end
+
+-- 20230810, new handling of the pdf contrast ("gamma") setting
+if last_migration_date < 20230810 then
+    logger.info("Performing one-time migration for 20230810")
+
+    local contrast = G_reader_settings:readSetting("kopt_contrast")
+    if contrast then
+        G_reader_settings:saveSetting("kopt_contrast", 1 / contrast)
     end
 end
 
