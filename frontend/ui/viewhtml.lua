@@ -92,7 +92,7 @@ function ViewHtml:_viewSelectionHTML(document, selected_text, view, with_css_fil
         -- pages to get to the HTML content on the initial view.)
     end
     if massage_html or hide_stylesheet_elem_content then
-        replace_in_html("<stylesheet[^>]*>(.-)</stylesheet>", function(s)
+        replace_in_html("<stylesheet[^>]*>.-</stylesheet>", function(s)
             local pre, css_text, post = s:match("(<stylesheet[^>]*>)%s*(.-)%s*(</stylesheet>)")
             if hide_stylesheet_elem_content then
                 return pre .. "[...]" .. post
@@ -101,8 +101,8 @@ function ViewHtml:_viewSelectionHTML(document, selected_text, view, with_css_fil
         end)
     end
     -- Make sure we won't get wrapped just after our indentation if there is no break opportunity later
-    replace_in_html("\n( *)", function(s)
-        return "\n" .. ("\u{00A0}"):rep(#s)
+    replace_in_html("\n *", function(s)
+        return "\n" .. ("\u{00A0}"):rep(#s - 1)
     end)
 
     local textviewer

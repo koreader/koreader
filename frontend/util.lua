@@ -1249,6 +1249,8 @@ function util.prettifyCSS(css_text, condensed)
         css_text = css_text:gsub("\n *([^\n]+){", "\n%1{") -- remove leading spaces on a standalone one
         -- Make sure { is on the same line with the selector it follows
         css_text = css_text:gsub("%s*\n *{", " {")
+        -- Make sure we have a newline after our }
+        css_text = css_text:gsub("\n} *([^\n]+)", "\n}\n%1")
         -- Restore all protected chars
         css_text = css_text:gsub("\v", ",")
         css_text = css_text:gsub("\f", ":")
