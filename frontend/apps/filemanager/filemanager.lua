@@ -1269,7 +1269,10 @@ end
 function FileManager:showSelectedFilesList()
     local selected_files = {}
     for file in pairs(self.selected_files) do
-        table.insert(selected_files, { text = file })
+        table.insert(selected_files, {
+            text = file,
+            bidi_wrap_func = BD.filepath,
+        })
     end
     local function sorting(a, b)
         local a_path, a_name = util.splitFilePathName(a.text)
@@ -1287,6 +1290,7 @@ function FileManager:showSelectedFilesList()
     local menu = Menu:new{
         is_borderless = true,
         is_popout = false,
+        truncate_left = true,
         show_parent = menu_container,
         onMenuSelect = function(_, item)
             UIManager:close(menu_container)
