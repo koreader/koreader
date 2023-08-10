@@ -1177,7 +1177,7 @@ function Kobo:standby(max_duration)
     local standby_time = time.boottime_or_realtime_coarse()
 
     -- The odd Sunxi needs some time to settle before entering standby.
-    ffiUtil.usleep(150e3) -- sleep 150ms
+    ffiUtil.usleep(110000) -- sleep 0.1s (+10%)
 
     local ret = ffiUtil.writeToSysfs("standby", "/sys/power/state")
 

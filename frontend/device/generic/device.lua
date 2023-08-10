@@ -134,6 +134,8 @@ local Device = {
     canOpenLink = no,
     openLink = no,
     canExternalDictLookup = no,
+
+    timeOfLastPaint = 0,
 }
 
 function Device:extend(o)
@@ -1110,6 +1112,14 @@ function Device:_afterNotCharging()
     -- Leave the kernel some time to figure it out ;o).
     UIManager:scheduleIn(1, function() self:setupChargingLED() end)
     UIManager:broadcastEvent(Event:new("NotCharging"))
+end
+
+function Device:storeTimeOfLastPaint()
+    self.lastPaintTime = UIManager:getElapsedTimeSinceBoot()
+end
+
+function Device:secondsSinceLastPaint()
+    return UIManager:getElapsedTimeSinceBoot() - self.lastPaintTime
 end
 
 return Device
