@@ -631,6 +631,14 @@ function Kobo:init()
 
         -- Sunxi means no HW inversion :(
         self.canHWInvert = no
+
+        self.storeTimeOfLastPaint = function()
+            self.lastPaintTime = UIManager:getElapsedTimeSinceBoot()
+        end
+
+        self.secondsSinceLastPaint = function()
+            return UIManager:getElapsedTimeSinceBoot() - self.lastPaintTime
+        end
     else
         self.screen = require("ffi/framebuffer_mxcfb"):new{
             device = self,
@@ -1177,7 +1185,7 @@ function Kobo:standby(max_duration)
     local standby_time = time.boottime_or_realtime_coarse()
 
     -- The odd Sunxi needs some time to settle before entering standby.
-    ffiUtil.usleep(110000) -- sleep 0.1s (+10%)
+    ffiUtil.usleep(150000) -- sleep 0.15s
 
     local ret = ffiUtil.writeToSysfs("standby", "/sys/power/state")
 

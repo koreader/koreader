@@ -135,7 +135,7 @@ local Device = {
     openLink = no,
     canExternalDictLookup = no,
 
-    timeOfLastPaint = 0,
+    lastPaintTime = 0,
 }
 
 function Device:extend(o)
@@ -1115,11 +1115,16 @@ function Device:_afterNotCharging()
 end
 
 function Device:storeTimeOfLastPaint()
-    self.lastPaintTime = UIManager:getElapsedTimeSinceBoot()
+    -- A full featured device specific implementation can use:
+    --      self.lastPaintTime = UIManager:getElapsedTimeSinceBoot()
+    -- For the generic implementation we let the default value of 0 here.
 end
 
 function Device:secondsSinceLastPaint()
-    return UIManager:getElapsedTimeSinceBoot() - self.lastPaintTime
+    -- A full featured device specific implemenatation can use:
+    --      return UIManager:getElapsedTimeSinceBoot() - self.lastPaintTime
+    -- For the generic implementation we return 10s
+    return 10
 end
 
 return Device

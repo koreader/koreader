@@ -367,7 +367,7 @@ function AutoSuspend:onResume()
     self:_start()
     self:_start_kindle()
     self:_unschedule_standby()
-    -- Use default value for first scheduled standby after a suspend here.
+    -- Use a default value for first scheduled standby after a suspend here.
     -- This avoids screen glitches after a full suspend
     -- and avoids broken refreshes after aborted suspend (when standby_time is 1s).
     -- (And we like 1s for power saving reasons!)
