@@ -237,11 +237,11 @@ function ReaderMenu:setUpdateItemTable()
     end
 
     if Device:isTouchDevice() then
+        -- Mostly concern about touch related page turn stuff, which only applies to Reader; ends up in Taps & Gestures
         self.menu_items.page_turns = require("ui/elements/page_turns")
-    else
-        -- Placed elsewhere than in Taps and gestures, with only a subset of menu items.
-        self.menu_items.page_turns_non_touch = require("ui/elements/page_turns")
     end
+    -- While also related to page turns, this mostly concerns platform-specific features or physical keys, and applies *everywhere*
+    self.menu_items.platform_navigation_features = require("ui/elements/platform_navigation")
     -- insert DjVu render mode submenu just before the last entry (show advanced)
     -- this is a bit of a hack
     if self.ui.document.is_djvu then
