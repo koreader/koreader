@@ -241,7 +241,9 @@ function ReaderMenu:setUpdateItemTable()
         self.menu_items.page_turns = require("ui/elements/page_turns")
     end
     -- While also related to page turns, this mostly concerns platform-specific features or physical keys, and applies *everywhere*
-    self.menu_items.platform_navigation_features = require("ui/elements/platform_navigation")
+    if Device:hasKeys() then
+        self.menu_items.platform_navigation_features = require("ui/elements/platform_navigation")
+    end
     -- insert DjVu render mode submenu just before the last entry (show advanced)
     -- this is a bit of a hack
     if self.ui.document.is_djvu then
