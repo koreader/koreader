@@ -337,27 +337,29 @@ function Profiles:getProfileFromCurrentDocument(new_name)
             "kopt_quality",
         }
     end
+    local setting_needs_arg = {
+        ["view_mode"]            = true,
+        ["kopt_trim_page"]       = true,
+        ["kopt_zoom_mode_genus"] = true,
+        ["kopt_zoom_mode_type"]  = true,
+        ["kopt_page_scroll"]     = true,
+    }
 
     local profile = { settings = { name = new_name, order = document_settings } }
     for _, v in ipairs(document_settings) do
-        profile[v] = self.document.configurable[self.ui.rolling and v or v:sub(6)]
+        -- document configurable settings do not have prefixes
+        local value = self.document.configurable[v:gsub("^kopt_", "")]
+        if setting_needs_arg[v] then
+            value = Dispatcher:getArgFromValue(v, value)
+        end
+        profile[v] = value
     end
     if self.ui.rolling then
         profile["set_font"] = self.ui.font.font_face
         profile["sync_t_b_page_margins"] = self.ui.typeset.sync_t_b_page_margins
-        profile["view_mode"] = self.view.view_mode
         profile["embedded_css"] = self.ui.typeset.embedded_css
         profile["embedded_fonts"] = self.ui.typeset.embedded_fonts
         profile["smooth_scaling"] = self.ui.typeset.smooth_scaling
-    else
-        local trim_page_to_mode = { _("manual"), _("auto"), _("semi-auto"), _("none") }
-        local zoom_genus_to_mode = { _("manual"), _("rows"), _("columns"), _("content"), _("page") }
-        local zoom_type_to_mode = { _("height"), _("width"), _("full") }
-        profile["rotation_mode"] = self.document.configurable.rotation_mode
-        profile["kopt_trim_page"] = trim_page_to_mode[profile["kopt_trim_page"]+1]
-        profile["kopt_zoom_mode_genus"] = zoom_genus_to_mode[profile["kopt_zoom_mode_genus"]+1]
-        profile["kopt_zoom_mode_type"] = zoom_type_to_mode[profile["kopt_zoom_mode_type"]+1]
-        profile["kopt_page_scroll"] = self.view.page_scroll
     end
     return profile
 end
