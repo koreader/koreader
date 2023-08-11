@@ -465,7 +465,9 @@ To:
     end
 
     -- settings > Navigation; this mostly concerns platform-specific features or physical keys, and applies *everywhere*
-    self.menu_items.platform_navigation_features = require("ui/elements/platform_navigation")
+    if Device:hasKeys() then
+        self.menu_items.platform_navigation_features = require("ui/elements/platform_navigation")
+    end
 
     -- settings tab - Document submenu
     self.menu_items.document_metadata_location_move = {
