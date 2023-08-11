@@ -464,6 +464,9 @@ To:
         self.menu_items[id] = common_setting
     end
 
+    -- settings > Navigation; this mostly concerns platform-specific features or physical keys, and applies *everywhere*
+    self.menu_items.platform_navigation_features = require("ui/elements/platform_navigation")
+
     -- settings tab - Document submenu
     self.menu_items.document_metadata_location_move = {
         text = _("Move book metadata"),
