@@ -392,6 +392,20 @@ function Input:adjustABS_SwitchAxesAndMirrorX(ev, max_x)
     end
 end
 
+function Input:adjustABS_SwitchAxesAndMirrorY(ev, max_y)
+    if ev.code == C.ABS_X then
+        ev.code = C.ABS_Y
+        ev.value = max_y - ev.value
+    elseif ev.code == C.ABS_Y then
+        ev.code = C.ABS_X
+    elseif ev.code == C.ABS_MT_POSITION_X then
+        ev.code = C.ABS_MT_POSITION_Y
+        ev.value = max_y - ev.value
+    elseif ev.code == C.ABS_MT_POSITION_Y then
+        ev.code = C.ABS_MT_POSITION_X
+    end
+end
+
 function Input:adjustABS_Translate(ev, by)
     if ev.code == C.ABS_X or ev.code == C.ABS_MT_POSITION_X then
         ev.value = by.x + ev.value
