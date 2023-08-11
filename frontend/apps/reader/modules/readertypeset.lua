@@ -110,23 +110,11 @@ function ReaderTypeset:onReadSettings(config)
                          or 1
     self:toggleTxtPreFormatted(self.txt_preformatted)
 
-    -- default to disable smooth scaling for now.
-    if config:has("smooth_scaling") then
-        self.smooth_scaling = config:isTrue("smooth_scaling")
-    else
-        local global = G_reader_settings:readSetting("copt_smooth_scaling")
-        self.smooth_scaling = global == 1 and true or false
-    end
-    self:toggleImageScaling(self.smooth_scaling)
+    -- default to disable smooth scaling
+    self:toggleImageScaling(self.configurable.smooth_scaling == 1)
 
     -- default to automagic nightmode-friendly handling of images
-    if config:has("nightmode_images") then
-        self.nightmode_images = config:isTrue("nightmode_images")
-    else
-        local global = G_reader_settings:readSetting("copt_nightmode_images")
-        self.nightmode_images = (global == nil or global == 1) and true or false
-    end
-    self:toggleNightmodeImages(self.nightmode_images)
+    self:toggleNightmodeImages(self.configurable.nightmode_images == 1)
 end
 
 function ReaderTypeset:onSaveSettings()
@@ -134,8 +122,6 @@ function ReaderTypeset:onSaveSettings()
     self.ui.doc_settings:saveSetting("embedded_css", self.embedded_css)
     self.ui.doc_settings:saveSetting("embedded_fonts", self.embedded_fonts)
     self.ui.doc_settings:saveSetting("render_dpi", self.render_dpi)
-    self.ui.doc_settings:saveSetting("smooth_scaling", self.smooth_scaling)
-    self.ui.doc_settings:saveSetting("nightmode_images", self.nightmode_images)
 end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
@@ -159,12 +145,14 @@ function ReaderTypeset:onToggleEmbeddedFonts(toggle)
 end
 
 function ReaderTypeset:onToggleImageScaling(toggle)
+    self.configurable.smooth_scaling = toggle and 1 or 0
     self:toggleImageScaling(toggle)
     Notification:notify(T( _("Image scaling set to: %1"), optionsutil:getOptionText("ToggleImageScaling", toggle)))
     return true
 end
 
 function ReaderTypeset:onToggleNightmodeImages(toggle)
+    self.configurable.nightmode_images = toggle and 1 or 0
     self:toggleNightmodeImages(toggle)
     return true
 end
@@ -405,24 +393,12 @@ function ReaderTypeset:ensureSanerBlockRenderingFlags(mode)
 end
 
 function ReaderTypeset:toggleImageScaling(toggle)
-    if toggle and (toggle == true or toggle == 1) then
-        self.smooth_scaling = true
-        self.ui.document:setImageScaling(true)
-    else
-        self.smooth_scaling = false
-        self.ui.document:setImageScaling(false)
-    end
+    self.ui.document:setImageScaling(toggle)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
 function ReaderTypeset:toggleNightmodeImages(toggle)
-    if toggle and (toggle == true or toggle == 1) then
-        self.nightmode_images = true
-        self.ui.document:setNightmodeImages(true)
-    else
-        self.nightmode_images = false
-        self.ui.document:setNightmodeImages(false)
-    end
+    self.ui.document:setNightmodeImages(toggle)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
