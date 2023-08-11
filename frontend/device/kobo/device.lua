@@ -816,10 +816,6 @@ function Kobo:init()
     -- And then handle the extra shenanigans if necessary.
     self:initEventAdjustHooks()
 
-    -- Let generic properly setup the standard stuff
-    -- (*after* we've set our input hooks, so that the viewport translation runs last).
-    Generic.init(self)
-
     -- Various HW Buttons, Switches & Synthetic NTX events
     self.ntx_fd = self.input.open(self.ntx_dev)
     -- Dedicated Power Button input device (if any)
@@ -898,6 +894,10 @@ function Kobo:init()
     if G_reader_settings:isTrue("input_no_key_repeats") then
         self:toggleKeyRepeat(false)
     end
+
+    -- Finally, Let Generic properly setup the standard stuff.
+    -- (Of particular import, this needs to come *after* we've set our input hooks, so that the viewport translation runs last).
+    Generic.init(self)
 end
 
 function Kobo:exit()
