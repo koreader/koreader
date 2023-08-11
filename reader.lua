@@ -324,16 +324,6 @@ end
 
 -- Exit
 local function exitReader()
-    -- Exit code can be shoddy on some platforms due to broken library dtors calling _exit(0) from os.exit(N)
-    local ko_exit = os.getenv("KO_EXIT_CODE")
-    if ko_exit then
-        local fo = io.open(ko_exit, "w+")
-        if fo then
-            fo:write(tostring(exit_code))
-            fo:close()
-        end
-    end
-
     -- Save any device settings before closing G_reader_settings
     Device:saveSettings()
 
