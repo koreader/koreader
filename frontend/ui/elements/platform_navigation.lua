@@ -25,4 +25,18 @@ local PlatformNav = {
     },
 }
 
+if Device:canKeyRepeat() then
+    table.insert(PlatformNav.sub_item_table, {
+        text = _("Disable key repeats"),
+        help_text = _("Useful if you don't like the behavior or if your device has faulty switches"),
+        checked_func = function()
+            return G_reader_settings:isTrue("input_no_key_repeats")
+        end,
+        callback = function()
+            UIManager:broadcastEvent(Event:new("ToggleKeyRepeat"))
+        end,
+        separator = true,
+    })
+end
+
 return PlatformNav

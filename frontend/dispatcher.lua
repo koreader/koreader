@@ -76,6 +76,8 @@ local settingsList = {
     touch_input_on = {category="none", event="IgnoreTouchInput", arg=false, title=_("Enable touch input"), device=true},
     touch_input_off = {category="none", event="IgnoreTouchInput", arg=true, title=_("Disable touch input"), device=true},
     toggle_touch_input = {category="none", event="IgnoreTouchInput", title=_("Toggle touch input"), device=true, separator=true},
+    swap_page_turn_buttons = {category="none", event="SwapPageTurnButtons", title=_("Invert page turn buttons"), device=true, condition=Device:hasKeys(), separator=true},
+    toggle_key_repeat = {category="none", event="ToggleKeyRepeat", title=_("Toggle key repeat"), device=true, condition=Device:hasKeys() and Device:canKeyRepeat(), separator=true},
     toggle_gsensor = {category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:hasGSensor()},
     toggle_rotation = {category="none", event="SwapRotation", title=_("Toggle orientation"), device=true},
     invert_rotation = {category="none", event="InvertRotation", title=_("Invert rotation"), device=true},
@@ -174,7 +176,6 @@ local settingsList = {
     --
 
     toggle_inverse_reading_order = {category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), reader=true, separator=true},
-    swap_page_turn_buttons = {category="none", event="SwapPageTurnButtons", title=_("Invert page turn buttons"), reader=true, condition=Device:hasKeys(), separator=true},
     set_highlight_action = {category="string", event="SetHighlightAction", title=_("Set highlight action"), args_func=ReaderHighlight.getHighlightActions, reader=true},
     cycle_highlight_action = {category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), reader=true},
     cycle_highlight_style = {category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), reader=true, separator=true},
@@ -270,6 +271,8 @@ local dispatcher_menu_order = {
     "touch_input_on",
     "touch_input_off",
     "toggle_touch_input",
+    "swap_page_turn_buttons",
+    "toggle_key_repeat",
     "toggle_gsensor",
     "rotation_mode",
     "toggle_rotation",
@@ -368,7 +371,6 @@ local dispatcher_menu_order = {
     "toggle_bookmark_flipping",
     "toggle_reflow",
     "toggle_inverse_reading_order",
-    "swap_page_turn_buttons",
     "zoom",
     "zoom_factor_change",
     "set_highlight_action",
