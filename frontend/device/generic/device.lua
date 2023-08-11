@@ -247,6 +247,42 @@ function Device:init()
         local rect = self.screen.getRawSize(self.screen)
         return Geom:new{ x = rect.x, y = rect.y, w = rect.w, h = rect.h }
     end
+
+    -- DPI
+    local dpi_override = G_reader_settings:readSetting("screen_dpi")
+    if dpi_override ~= nil then
+        self:setScreenDPI(dpi_override)
+    end
+
+    -- Night mode
+    self.orig_hw_nightmode = self.screen:getHWNightmode()
+    if G_reader_settings:isTrue("night_mode") then
+        self.screen:toggleNightMode()
+    end
+
+    -- Ensure the proper rotation on startup.
+    -- We default to the rotation KOReader closed with.
+    -- If the rotation is not locked it will be overridden by a book or the FM when opened.
+    local rotation_mode = G_reader_settings:readSetting("closed_rotation_mode")
+    if rotation_mode and rotation_mode ~= self.screen:getRotationMode() then
+        self.screen:setRotationMode(rotation_mode)
+    end
+
+    -- Dithering
+    if self:hasEinkScreen() then
+        self.screen:setupDithering()
+        if self.screen.hw_dithering and G_reader_settings:isTrue("dev_no_hw_dither") then
+            self.screen:toggleHWDithering(false)
+        end
+        if self.screen.sw_dithering and G_reader_settings:isTrue("dev_no_sw_dither") then
+            self.screen:toggleSWDithering(false)
+        end
+        -- NOTE: If device can HW dither (i.e., after setupDithering(), hw_dithering is true, but sw_dithering is false),
+        --       but HW dither is explicitly disabled, and SW dither enabled, don't leave SW dither disabled (i.e., re-enable sw_dithering)!
+        if self:canHWDither() and G_reader_settings:isTrue("dev_no_hw_dither") and G_reader_settings:nilOrFalse("dev_no_sw_dither") then
+            self.screen:toggleSWDithering(true)
+        end
+    end
 end
 
 function Device:setScreenDPI(dpi_override)
@@ -498,6 +534,16 @@ function Device:toggleKeyRepeat(toggle) end
 prepare for application shutdown
 --]]
 function Device:exit()
+    -- Save any implementation-specific settings
+    self:saveSettings()
+
+    -- Save current rotation (or the original rotation if ScreenSaver temporarily modified it) to remember it for next startup
+    G_reader_settings:saveSetting("closed_rotation_mode", self.orig_rotation_mode or self.screen:getRotationMode())
+
+    -- Restore initial HW inversion state
+    self.screen:setHWNightmode(self.orig_hw_nightmode)
+
+    -- I/O teardown
     self.screen:close()
     require("ffi/input"):closeAll()
 end
