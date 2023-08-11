@@ -557,6 +557,7 @@ function Kobo:getKeyRepeat()
         return false
     else
         logger.dbg("Key repeat is set up to repeat every", self.key_repeat[C.REP_PERIOD], "ms after a delay of", self.key_repeat[C.REP_DELAY], "ms")
+        self.canKeyRepeat = yes
         return true
     end
 end
@@ -575,6 +576,39 @@ function Kobo:restoreKeyRepeat()
         local err = ffi.errno()
         logger.warn("Device:restoreKeyRepeat: EVIOCSREP ioctl failed:", ffi.string(C.strerror(err)))
     end
+end
+
+function Kobo:toggleKeyRepeat(toggle)
+    local key_repeat = ffi.new("unsigned int[?]", C.REP_CNT)
+    if toggle == true then
+        -- Use the defaults from a Sage, as we can't guarantee the state of the setup on startup, so we can't just use self.key_repeat
+        key_repeat[C.REP_DELAY] = 400
+        key_repeat[C.REP_PERIOD] = 80
+    elseif toggle == false then
+        key_repeat[C.REP_DELAY] = 0
+        key_repeat[C.REP_PERIOD] = 0
+    else
+        -- Check the current (kernel) state to know what to do
+        if C.ioctl(self.ntx_fd, C.EVIOCGREP, key_repeat) < 0 then
+            local err = ffi.errno()
+            logger.warn("Device:toggleKeyRepeat: EVIOCGREP ioctl failed:", ffi.string(C.strerror(err)))
+            return false
+        else
+            if key_repeat[C.REP_DELAY] == 0 and key_repeat[C.REP_PERIOD] == 0 then
+                return self:toggleKeyRepeat(true)
+            else
+                return self:toggleKeyRepeat(false)
+            end
+        end
+    end
+
+    if C.ioctl(self.ntx_fd, C.EVIOCSREP, key_repeat) < 0 then
+        local err = ffi.errno()
+        logger.warn("Device:toggleKeyRepeat: EVIOCSREP ioctl failed:", ffi.string(C.strerror(err)))
+        return false
+    end
+
+    return true
 end
 
 function Kobo:init()
@@ -803,10 +837,14 @@ function Kobo:init()
     self.input.open("fake_events")
 
     -- See if the device supports key repeat
-    if not self:getKeyRepeat() then
+    -- This is *not* behind a hasKeys check, because we mainly use it to stop SleepCover chatter,
+    -- and sleep covers are available on a number of devices without keys ;).
+    self:getKeyRepeat()
+    if not self:canKeyRepeat() then
         -- NOP unsupported methods
         self.disableKeyRepeat = NOP
         self.restoreKeyRepeat = NOP
+        self.toggleKeyRepeat  = NOP
     end
 
     -- Detect the NTX charging LED sysfs knob
@@ -855,6 +893,18 @@ function Kobo:init()
         -- As found on (at least) the Glo HD (c.f., https://github.com/koreader/koreader/pull/9377#issuecomment-1213544478)
         self.hasIRGridSysfsKnob = "/sys/devices/platform/imx-i2c.1/i2c-1/1-0050/neocmd"
     end
+
+    -- Disable key repeats if requested
+    if G_reader_settings:isTrue("input_no_key_repeats") then
+        self:toggleKeyRepeat(false)
+    end
+end
+
+function Kobo:exit()
+    -- Re-enable key repeats on exit, that's the default state
+    self:toggleKeyRepeat(true)
+
+    Generic.exit(self)
 end
 
 function Kobo:setDateTime(year, month, day, hour, min, sec)

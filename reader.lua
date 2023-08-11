@@ -350,7 +350,7 @@ local function exitReader()
     -- Restore initial inversion state
     Device.screen:setHWNightmode(hw_nightmode)
 
-    -- shutdown hardware abstraction
+    -- Shutdown hardware abstraction
     Device:exit()
 
     if Profiler then Profiler.stop() end

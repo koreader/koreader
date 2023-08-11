@@ -317,6 +317,17 @@ function DeviceListener:onSwapPageTurnButtons()
     Device:invertButtons()
 end
 
+function DeviceListener:onToggleKeyRepeat(toggle)
+    if toggle == true then
+        G_reader_settings:makeFalse("input_no_key_repeats")
+    elseif toggle == false then
+        G_reader_settings:makeTrue("input_no_key_repeats")
+    else
+        G_reader_settings:flipNilOrFalse("input_no_key_repeats")
+    end
+    Device:toggleKeyRepeat(G_reader_settings:nilOrFalse("input_no_key_repeats"))
+end
+
 function DeviceListener:onRestart()
     self.ui.menu:exitOrRestart(function() UIManager:restartKOReader() end)
 end

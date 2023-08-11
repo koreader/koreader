@@ -41,6 +41,7 @@ local Device = {
     hasAuxBattery = no,
     hasKeyboard = no,
     hasKeys = no,
+    canKeyRepeat = no,
     hasDPad = no,
     hasExitOptions = yes,
     hasFewKeys = no,
@@ -484,12 +485,14 @@ function Device:setupChargingLED() end
 function Device:enableCPUCores(amount) end
 
 -- NOTE: For this to work, all three must be implemented, and getKeyRepeat must be run on init (c.f., Kobo)!
--- Device specific method to get the current key repeat setup
+-- Device specific method to get the current key repeat setup (and is responsible for setting the canKeyRepeat cap)
 function Device:getKeyRepeat() end
 -- Device specific method to disable key repeat
 function Device:disableKeyRepeat() end
 -- Device specific method to restore key repeat
 function Device:restoreKeyRepeat() end
+-- Device specific method to toggle key repeat (between off and a hard-coded delay/period combo)
+function Device:toggleKeyRepeat(toggle) end
 
 --[[
 prepare for application shutdown

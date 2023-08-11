@@ -173,7 +173,7 @@ When enabled the UI direction for the Table of Contents, Book Map, and Page Brow
 
 if Device:canDoSwipeAnimation() then
     table.insert(PageTurns.sub_item_table, {
-        text =_("Page turn animations"),
+        text = _("Page turn animations"),
         checked_func = function()
             return G_reader_settings:isTrue("swipe_animations")
         end,
