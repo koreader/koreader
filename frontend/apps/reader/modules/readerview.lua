@@ -997,7 +997,7 @@ function ReaderView:onGammaUpdate(gamma)
     if self.page_scroll then
         self.ui:handleEvent(Event:new("UpdateScrollPageGamma", gamma))
     end
-    Notification:notify(T(_("Font gamma set to: %1."), gamma))
+    Notification:notify(T(_("Contrast set to: %1."), gamma))
 end
 
 -- For ReaderKOptListener
