@@ -334,18 +334,12 @@ local function exitReader()
         end
     end
 
-    local ReaderActivityIndicator =
-        require("apps/reader/modules/readeractivityindicator")
-
     -- Save any device settings before closing G_reader_settings
     Device:saveSettings()
 
     -- Save current rotation (or the original rotation if ScreenSaver temporarily modified it) to remember it for next startup
     G_reader_settings:saveSetting("closed_rotation_mode", Device.orig_rotation_mode or Device.screen:getRotationMode())
     G_reader_settings:close()
-
-    -- Close lipc handles
-    ReaderActivityIndicator:coda()
 
     -- Restore initial inversion state
     Device.screen:setHWNightmode(hw_nightmode)

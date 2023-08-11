@@ -2,10 +2,8 @@
 local ReaderActivityIndicator = {}
 
 function ReaderActivityIndicator:isStub() return true end
-function ReaderActivityIndicator:init() end
 function ReaderActivityIndicator:onStartActivityIndicator() end
 function ReaderActivityIndicator:onStopActivityIndicator() end
-function ReaderActivityIndicator:coda() end
 
 -- Now, if we're on Kindle, and we haven't actually murdered Pillow, see what we can do...
 local Device = require("device")
@@ -31,7 +29,9 @@ local EventListener = require("ui/widget/eventlistener")
 local util = require("ffi/util")
 -- lipc
 
-ReaderActivityIndicator = EventListener:new{}
+ReaderActivityIndicator = EventListener:extend{
+    lipc_handle = nil,
+}
 
 function ReaderActivityIndicator:isStub() return false end
 
@@ -69,15 +69,15 @@ function ReaderActivityIndicator:onStopActivityIndicator()
                 "clientId":"com.github.koreader.activityindicator", \
                 "priority":true}}')
         self.indicator_started = false
-        util.usleep(1000000)
     end
     return true
 end
 
-function ReaderActivityIndicator:coda()
+function ReaderActivityIndicator:onCloseWidget()
     if self.lipc_handle then
         self.lipc_handle:close()
     end
+    self.lipc_handle = nil
 end
 
 return ReaderActivityIndicator
