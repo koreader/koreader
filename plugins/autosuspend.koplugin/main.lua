@@ -200,6 +200,16 @@ function AutoSuspend:init()
         self:_schedule_standby()
     end
 
+    if Device:isSunxi() then
+        self.secondsSinceLastPaint = function()
+            return UIManager:secondsSinceLastPaint()
+        end
+    else
+        self.secondsSinceLastPaint = function()
+            return math.huge
+        end
+    end
+
     -- Make sure we only have an AllowStandby handler when we actually want one...
     self:toggleStandbyHandler(self:_enabledStandby())
 
@@ -622,7 +632,7 @@ function AutoSuspend:AllowStandbyHandler()
         wake_in = math.huge
     end
 
-    local secondsSinceLastPaint = Device:secondsSinceLastPaint()
+    local secondsSinceLastPaint = UIManager:secondsSinceLastPaint()
 
     if wake_in >= 1 and secondsSinceLastPaint >= 3 then
         -- Go into standby, if scheduled wakeup is in less than 1 secs and no recent paints to screen.

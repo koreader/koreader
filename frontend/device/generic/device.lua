@@ -134,8 +134,6 @@ local Device = {
     canOpenLink = no,
     openLink = no,
     canExternalDictLookup = no,
-
-    lastPaintTime = 0,
 }
 
 function Device:extend(o)
@@ -1112,19 +1110,6 @@ function Device:_afterNotCharging()
     -- Leave the kernel some time to figure it out ;o).
     UIManager:scheduleIn(1, function() self:setupChargingLED() end)
     UIManager:broadcastEvent(Event:new("NotCharging"))
-end
-
-function Device:storeTimeOfLastPaint()
-    -- A full featured device specific implementation can use:
-    --      self.lastPaintTime = UIManager:getElapsedTimeSinceBoot()
-    -- For the generic implementation we let the default value of 0 here.
-end
-
-function Device:secondsSinceLastPaint()
-    -- A full featured device specific implemenatation can use:
-    --      return UIManager:getElapsedTimeSinceBoot() - self.lastPaintTime
-    -- For the generic implementation we return 10s
-    return 10
 end
 
 return Device
