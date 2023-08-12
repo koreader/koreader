@@ -25,6 +25,8 @@ describe("device module", function()
                     scaleBySize = fb.scaleBySize,
                     setWindowTitle = function() end,
                     refreshFull = function() end,
+                    getHWNightmode = function() return false end,
+                    setupDithering = function() end,
                 }
             end
         }

@@ -890,8 +890,8 @@ function Kobo:init()
         self.hasIRGridSysfsKnob = "/sys/devices/platform/imx-i2c.1/i2c-1/1-0050/neocmd"
     end
 
-    -- Disable key repeats if requested
-    if G_reader_settings:isTrue("input_no_key_repeats") then
+    -- Disable key repeat if requested
+    if G_reader_settings:isTrue("input_no_key_repeat") then
         self:toggleKeyRepeat(false)
     end
 
@@ -901,7 +901,7 @@ function Kobo:init()
 end
 
 function Kobo:exit()
-    -- Re-enable key repeats on exit, that's the default state
+    -- Re-enable key repeat on exit, that's the default state
     self:toggleKeyRepeat(true)
 
     Generic.exit(self)

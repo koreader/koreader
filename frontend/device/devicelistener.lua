@@ -319,13 +319,13 @@ end
 
 function DeviceListener:onToggleKeyRepeat(toggle)
     if toggle == true then
-        G_reader_settings:makeFalse("input_no_key_repeats")
+        G_reader_settings:makeFalse("input_no_key_repeat")
     elseif toggle == false then
-        G_reader_settings:makeTrue("input_no_key_repeats")
+        G_reader_settings:makeTrue("input_no_key_repeat")
     else
-        G_reader_settings:flipNilOrFalse("input_no_key_repeats")
+        G_reader_settings:flipNilOrFalse("input_no_key_repeat")
     end
-    Device:toggleKeyRepeat(G_reader_settings:nilOrFalse("input_no_key_repeats"))
+    Device:toggleKeyRepeat(G_reader_settings:nilOrFalse("input_no_key_repeat"))
 end
 
 function DeviceListener:onRestart()

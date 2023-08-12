@@ -240,9 +240,9 @@ function ReaderMenu:setUpdateItemTable()
         -- Mostly concern about touch related page turn stuff, which only applies to Reader; ends up in Taps & Gestures
         self.menu_items.page_turns = require("ui/elements/page_turns")
     end
-    -- While also related to page turns, this mostly concerns platform-specific features or physical keys, and applies *everywhere*
+    -- Settings > Navigation; while also related to page turns, this mostly concerns physical keys, and applies *everywhere*
     if Device:hasKeys() then
-        self.menu_items.platform_navigation_features = require("ui/elements/platform_navigation")
+        self.menu_items.physical_buttons_setup = require("ui/elements/physical_buttons")
     end
     -- insert DjVu render mode submenu just before the last entry (show advanced)
     -- this is a bit of a hack

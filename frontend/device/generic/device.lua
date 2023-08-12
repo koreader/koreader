@@ -525,9 +525,11 @@ function Device:enableCPUCores(amount) end
 function Device:getKeyRepeat() end
 -- Device specific method to disable key repeat
 function Device:disableKeyRepeat() end
--- Device specific method to restore key repeat
+-- Device specific method to restore the initial key repeat config
 function Device:restoreKeyRepeat() end
--- Device specific method to toggle key repeat (between off and a hard-coded delay/period combo)
+-- NOTE: This one is for the user-facing toggle, it *ignores* the stock delay/period combo,
+--       opting instead for a hard-coded one (as we can't guarantee that key repeat is actually setup properly or at all).
+-- Device specific method to toggle key repeat
 function Device:toggleKeyRepeat(toggle) end
 
 --[[
