@@ -108,6 +108,8 @@ local Kobo = Generic:extend{
     touch_switch_xy = true,
     -- most Kobos have also mirrored X coordinates
     touch_mirrored_x = true,
+    -- but a few mirror on the Y axis instead
+    touch_mirrored_y = false,
     -- enforce portrait mode on Kobos
     --- @note: In practice, the check that is used for in ffi/framebuffer is no longer relevant,
     ---        since, in almost every case, we enforce a hardware Portrait rotation via fbdepth on startup by default ;).
@@ -516,6 +518,7 @@ local KoboCondor = Kobo:extend{
     display_dpi = 227,
     pressure_event = C.ABS_MT_PRESSURE,
     touch_mirrored_x = false,
+    touch_mirrored_y = true,
     hasNaturalLight = yes,
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
@@ -975,7 +978,7 @@ end
 function Kobo:initEventAdjustHooks()
     -- Build a single composite hook, to avoid duplicated branches...
     local koboInputMangling
-    -- NOTE: touch_switch_xy is *always* true, but not touch_mirrored_x...
+    -- NOTE: touch_switch_xy is *always* true, but not touch_mirrored_x or touch_mirrored_y...
     if self.touch_switch_xy and self.touch_mirrored_x then
         local max_x = self.screen:getWidth() - 1
         koboInputMangling = function(this, ev)
@@ -985,7 +988,16 @@ function Kobo:initEventAdjustHooks()
                 gyroTranslation(ev)
             end
         end
-    elseif self.touch_switch_xy and not self.touch_mirrored_x then
+    elseif self.touch_switch_xy and self.touch_mirrored_y then
+        local max_y = self.screen:getHeight() - 1
+        koboInputMangling = function(this, ev)
+            if ev.type == C.EV_ABS then
+                this:adjustABS_SwitchAxesAndMirrorY(ev, max_y)
+            elseif ev.type == C.EV_MSC and ev.code == C.MSC_RAW then
+                gyroTranslation(ev)
+            end
+        end
+    elseif self.touch_switch_xy and not self.touch_mirrored_x and not self.touch_mirrored_y then
         koboInputMangling = function(this, ev)
             if ev.type == C.EV_ABS then
                 this:adjustABS_SwitchXY(ev)
