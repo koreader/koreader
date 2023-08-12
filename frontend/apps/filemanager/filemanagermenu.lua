@@ -464,9 +464,9 @@ To:
         self.menu_items[id] = common_setting
     end
 
-    -- settings > Navigation; this mostly concerns platform-specific features or physical keys, and applies *everywhere*
+    -- Settings > Navigation; this mostly concerns physical keys, and applies *everywhere*
     if Device:hasKeys() then
-        self.menu_items.platform_navigation_features = require("ui/elements/platform_navigation")
+        self.menu_items.physical_buttons_setup = require("ui/elements/physical_buttons")
     end
 
     -- settings tab - Document submenu
