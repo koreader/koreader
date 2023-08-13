@@ -64,7 +64,7 @@ local InputText = InputContainer:extend{
     for_measurement_only = nil, -- When the widget is a one-off used to compute text height
     do_select = false, -- to start text selection
     selection_start_pos = nil, -- selection start position
-    is_keyboard_hidden = false, -- to be able to show the keyboard again when it was hidden
+    is_keyboard_hidden = true, -- to be able to show the keyboard again when it was hidden. (On init, it's the caller's responsibility to call onShowKeyboard, as far as we're concerned, it's hidden)
 }
 
 -- These may be (internally) overloaded as needed, depending on Device capabilities.
@@ -132,9 +132,8 @@ local function initTouchEvents()
             if self.parent.onSwitchFocus then
                 self.parent:onSwitchFocus(self)
             else
-                if self.is_keyboard_hidden == true then
+                if self.is_keyboard_hidden then
                     self:onShowKeyboard()
-                    self.is_keyboard_hidden = false
                 end
             end
             -- zh keyboard with candidates shown here has _frame_textwidget.dimen = nil.
@@ -677,8 +676,12 @@ dbg:guard(InputText, "onTextInput",
 
 function InputText:onShowKeyboard(ignore_first_hold_release)
     Device:startTextInput()
-    self.keyboard.ignore_first_hold_release = ignore_first_hold_release
-    UIManager:show(self.keyboard)
+
+    if self.is_keyboard_hidden then
+        self.keyboard.ignore_first_hold_release = ignore_first_hold_release
+        UIManager:show(self.keyboard)
+        self.is_keyboard_hidden = false
+    end
     return true
 end
 
