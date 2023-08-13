@@ -51,6 +51,7 @@ local ReaderView = OverlapGroup:extend{
     -- Crengine view mode
     view_mode = G_defaults:readSetting("DCREREADER_VIEW_MODE"), -- default to page mode
     hinting = true,
+    emitHintPageEvent = nil,
 
     -- visible area within current viewing page
     visible_area = nil,
@@ -1107,9 +1108,10 @@ function ReaderView:getRenderModeMenuTable()
     }
 end
 
-function ReaderView:onCloseDocument()
-    -- stop any pending HintPage event
+function ReaderView:onCloseWidget()
+    -- Stop any pending HintPage event
     UIManager:unschedule(self.emitHintPageEvent)
+    self.emitHintPageEvent = nil
 end
 
 function ReaderView:onReaderReady()
