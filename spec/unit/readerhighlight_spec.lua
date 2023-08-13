@@ -12,6 +12,10 @@ describe("Readerhighlight module", function()
         UIManager = require("ui/uimanager")
     end)
 
+    teardown(function()
+        UIManager:quit()
+    end)
+
     local function highlight_single_word(pos0)
         local readerui = ReaderUI.instance
         local s = spy.on(readerui.languagesupport, "improveWordSelection")
