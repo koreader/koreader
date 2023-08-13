@@ -322,8 +322,12 @@ end
 function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     -- Just run the callback if WiFi is already up...
     if self:isWifiOn() and self:isConnected() then
-        -- Given the guards in beforeWifiAction callers, this shouldn't really ever happen...
-        callback()
+        --- @note: beforeWifiAction only guarantees isConnected, not isOnline.
+        --         In the rare cases we're isConnected but !isOnline, if we're called via a *runWhenOnline wrapper,
+        --         we don't get a callback at all to avoid infinite recursion, so we need to check it.
+        if callback then
+            callback()
+        end
         return
     end
 
