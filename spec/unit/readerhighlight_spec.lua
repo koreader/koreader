@@ -138,6 +138,7 @@ describe("Readerhighlight module", function()
             readerui = ReaderUI:new{
                 dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_pdf),
+                _testsuite = true,
             }
             readerui:handleEvent(Event:new("SetScrollMode", false))
         end)
@@ -228,6 +229,7 @@ describe("Readerhighlight module", function()
             readerui = ReaderUI:new{
                 dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_pdf),
+                _testsuite = true,
             }
             readerui:handleEvent(Event:new("SetScrollMode", true))
         end)
