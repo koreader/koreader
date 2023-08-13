@@ -1111,10 +1111,7 @@ end
 function ReaderView:onCloseWidget()
     -- Stop any pending HintPage event
     UIManager:unschedule(self.emitHintPageEvent)
-    --- @fixme: The awful readerhighlight_spec test *relies* on this pointer being left dangling...
-    if not self.ui._testsuite then
-        self.emitHintPageEvent = nil
-    end
+    self.emitHintPageEvent = nil
 end
 
 function ReaderView:onReaderReady()
