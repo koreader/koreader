@@ -932,9 +932,9 @@ function Kobo:initNetworkManager(NetworkMgr)
         end
     end
 
-    function NetworkMgr:turnOnWifi(complete_callback)
+    function NetworkMgr:turnOnWifi(complete_callback, interactive)
         koboEnableWifi(true)
-        self:reconnectOrShowNetworkMenu(complete_callback)
+        return self:reconnectOrShowNetworkMenu(complete_callback, interactive)
     end
 
     local net_if = os.getenv("INTERFACE") or "eth0"

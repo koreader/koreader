@@ -26,7 +26,7 @@ local function enableWifi()
     -- NB Normal widgets should use NetworkMgr:promptWifiOn()
     -- (or, better yet, the NetworkMgr:beforeWifiAction wrappers: NetworkMgr:runWhenOnline() & co.)
     -- This is specifically the toggle Wi-Fi action, so consent is implied.
-    NetworkMgr:enableWifi()
+    NetworkMgr:enableWifi(nil, nil, nil, true) -- flag it as interactive, though
 
     UIManager:close(toggle_im)
 end
