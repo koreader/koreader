@@ -30,20 +30,25 @@ function NetworkMgr:readNWSettings()
     self.nw_settings = LuaSettings:open(DataStorage:getSettingsDir().."/network.lua")
 end
 
+-- Common chunk of stuff we have to do when aborting a connection attempt
+function NetworkMgr:_abortWifiConnection()
+    self.wifi_was_on = false
+    G_reader_settings:makeFalse("wifi_was_on")
+    -- Murder Wi-Fi and the async script (if any) first...
+    if Device:hasWifiRestore() and not Device:isKindle() then
+        os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
+    end
+    -- We were never connected to begin with, so, no disconnecting broadcast required
+    self:turnOffWifi()
+end
+
 -- Used after restoreWifiAsync() and the turn_on beforeWifiAction to make sure we eventually send a NetworkConnected event,
 -- as quite a few things rely on it (KOSync, c.f. #5109; the network activity check, c.f., #6424).
 function NetworkMgr:connectivityCheck(iter, callback, widget)
     -- Give up after a while (restoreWifiAsync can take over 45s, so, try to cover that)...
     if iter >= 180 then
         logger.info("Failed to restore Wi-Fi (after", iter * 0.25, "seconds)!")
-        self.wifi_was_on = false
-        G_reader_settings:makeFalse("wifi_was_on")
-        -- If we abort, murder Wi-Fi and the async script (if any) first...
-        if Device:hasWifiRestore() and not Device:isKindle() then
-            os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
-        end
-        -- We were never connected to begin with, so, no disconnecting broadcast required
-        self:turnOffWifi()
+        self:_abortWifiConnection()
 
         -- Handle the UI warning if it's from a beforeWifiAction...
         if widget then
@@ -247,6 +252,7 @@ function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget, in
             self.pending_connectivity_check = false
         end
         logger.warn("NetworkMgr:enableWifi: Connection failed!")
+        self:_abortWifiConnection()
         return false
     end
 
@@ -366,6 +372,7 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     -- If turnOnWifi failed, abort early
     if status == false then
         logger.warn("NetworkMgr:turnOnWifiAndWaitForConnection: Connection failed!")
+        self:_abortWifiConnection()
         UIManager:close(info)
         return false
     end
@@ -644,10 +651,8 @@ function NetworkMgr:goOnlineToRun(callback)
     else
         -- We're not connected :(
         logger.info("Failed to connect to Wi-Fi after", iter * 0.25, "seconds, giving up!")
-        self.wifi_was_on = false
-        G_reader_settings:makeFalse("wifi_was_on")
+        self:_abortWifiConnection()
         UIManager:show(InfoMessage:new{ text = _("Error connecting to the network") })
-        self:turnOffWifi()
     end
 
     return success
