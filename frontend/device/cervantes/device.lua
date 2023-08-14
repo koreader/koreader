@@ -159,10 +159,10 @@ function Cervantes:initNetworkManager(NetworkMgr)
             complete_callback()
         end
     end
-    function NetworkMgr:turnOnWifi(complete_callback)
+    function NetworkMgr:turnOnWifi(complete_callback, interactive)
         logger.info("Cervantes: enabling Wi-Fi")
         os.execute("./enable-wifi.sh")
-        self:reconnectOrShowNetworkMenu(complete_callback)
+        return self:reconnectOrShowNetworkMenu(complete_callback, interactive)
     end
     function NetworkMgr:getNetworkInterfaceName()
         return "eth0"
