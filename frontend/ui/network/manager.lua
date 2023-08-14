@@ -10,6 +10,7 @@ local UIManager = require("ui/uimanager")
 local ffi = require("ffi")
 local ffiutil = require("ffi/util")
 local logger = require("logger")
+local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
 local C = ffi.C
@@ -522,45 +523,102 @@ function NetworkMgr:goOnlineToRun(callback)
         return true
     end
 
+    -- We'll do terrible things with this later...
+    local Input = Device.input
+
     -- In case we abort before the beforeWifiAction, we won't pass it the callback, but run it ourselves,
     -- to avoid it firing too late (or at the very least being pinned for too long).
     local info = self:beforeWifiAction()
     -- We'll basically do the same but in a blocking manner...
     UIManager:unschedule(self.connectivityCheck)
     self.pending_connectivity_check = false
+    -- Throw in a connectivity check now, for the sake of hasWifiManager platforms,
+    -- where we manage Wi-Fi ourselves, meaning turnOnWifi, and as such beforeWifiAction,
+    -- is *blocking*, so if all went well, we'll already have blocked a while,
+    -- but the connection will be up already.
+    self:queryNetworkState()
 
     local iter = 0
+    local success = true
     while not self.is_connected do
-        iter = iter + 1
-        if iter >= 120 then
-            logger.info("Failed to connect to Wi-Fi after", iter * 0.25, "seconds, giving up!")
-            self.wifi_was_on = false
-            G_reader_settings:makeFalse("wifi_was_on")
+        if iter == 0 then
+            -- Display a slightly more accurate IM while we wait...
             if info then
                 UIManager:close(info)
             end
-            UIManager:show(InfoMessage:new{ text = _("Error connecting to the network") })
-            self:turnOffWifi()
-            return false
+            info = InfoMessage:new{ text = _("Waiting for network connectivity…") }
+            UIManager:show(info)
+            UIManager:forceRePaint()
         end
-        ffiutil.usleep(250000)
+
+        iter = iter + 1
+        if iter >= 120 then
+            logger.warn("NetworkMgr:goOnlineToRun: Timed out!")
+            success = false
+            break
+        end
+
+        -- NOTE: Here be dragons! We want to be able to abort on user input, so,
+        --       handle the 250ms chunks of waiting via our actual input polling...
+        -- We don't actually let the actual UI loop tick, so this will never move,
+        -- which is good, we don't want to disturb the task queue handling.
+        -- (And we actually want a fixed 250ms select anyway).
+        -- NOTE: This *does* mean that multiple bursts of input events *will*
+        --       make this loop run for less than 120 * 250ms, as select could return early.
+        local now = UIManager:getTime()
+        local input_events = Input:waitEvent(now, now + time.ms(250))
+        if input_events then
+            for __, ev in ipairs(input_events) do
+                -- We'll want to abort on actual single taps only, in case there's extra noise from stuff like a gyro or something...
+                if ev.handler == "onGesture" then
+                    local args = unpack(ev.args, 1, ev.args.n)
+                    if args.ges == "tap" then
+                        logger.warn("NetworkMgr:goOnlineToRun: Aborted by user input!")
+                        success = false
+                        -- No need to check further args
+                        break
+                    end
+                end
+            end
+            -- Break out of the actual loop on failure
+            if not success then
+                break
+            end
+        end
+
         self:queryNetworkState()
     end
 
-    -- Close the initial "Connecting..." InfoMessage from turnOnWifiAndWaitForConnection via beforeWifiAction
+    -- To make our previous input shenanigans slightly less crazy, reset the whole input state.
+    Input:resetState()
+
+    -- Close the initial "Connecting..." InfoMessage from turnOnWifiAndWaitForConnection via beforeWifiAction,
+    -- or our own "Waiting for network connectivity" one.
     if info then
         UIManager:close(info)
     end
-    -- We're finally connected!
-    self.wifi_was_on = true
-    G_reader_settings:makeTrue("wifi_was_on")
-    logger.info("Successfully connected to Wi-Fi (after", iter * 0.25, "seconds)!")
-    callback()
-    -- Delay this so it won't fire for dead/dying instances in case we're called by a finalizer...
-    UIManager:scheduleIn(2, function()
-        UIManager:broadcastEvent(Event:new("NetworkConnected"))
-    end)
-    return true
+
+    -- Check whether we connected successfully...
+    if success then
+        -- We're finally connected!
+        logger.info("Successfully connected to Wi-Fi (after", iter * 0.25, "seconds)!")
+        self.wifi_was_on = true
+        G_reader_settings:makeTrue("wifi_was_on")
+        callback()
+        -- Delay this so it won't fire for dead/dying instances in case we're called by a finalizer...
+        UIManager:scheduleIn(2, function()
+            UIManager:broadcastEvent(Event:new("NetworkConnected"))
+        end)
+    else
+        -- We're not connected :(
+        logger.info("Failed to connect to Wi-Fi after", iter * 0.25, "seconds, giving up!")
+        self.wifi_was_on = false
+        G_reader_settings:makeFalse("wifi_was_on")
+        UIManager:show(InfoMessage:new{ text = _("Error connecting to the network") })
+        self:turnOffWifi()
+    end
+
+    return success
 end
 
 
