@@ -32,6 +32,12 @@ end
 
 -- Common chunk of stuff we have to do when aborting a connection attempt
 function NetworkMgr:_abortWifiConnection()
+    -- Cancel any pending connectivity check, because it wouldn't achieve anything
+    if self.pending_connectivity_check then
+        UIManager:unschedule(self.connectivityCheck)
+        self.pending_connectivity_check = false
+    end
+
     self.wifi_was_on = false
     G_reader_settings:makeFalse("wifi_was_on")
     -- Murder Wi-Fi and the async script (if any) first...
@@ -246,11 +252,6 @@ function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget, in
     local status = self:turnOnWifi(wifi_cb, interactive)
     -- If turnOnWifi failed, abort early
     if status == false then
-        -- And cancel any pending connectivity check, because it wouldn't achieve anything
-        if self.pending_connectivity_check then
-            UIManager:unschedule(self.connectivityCheck)
-            self.pending_connectivity_check = false
-        end
         logger.warn("NetworkMgr:enableWifi: Connection failed!")
         self:_abortWifiConnection()
         return false
@@ -328,6 +329,7 @@ function NetworkMgr:promptWifiOff(complete_callback)
     })
 end
 
+-- NOTE: Currently only has a single caller, the Menu entry, so it's always flagged as interactive
 function NetworkMgr:promptWifi(complete_callback, long_press, interactive)
     UIManager:show(MultiConfirmBox:new{
         text = _("Wi-Fi is enabled, but you're currently not connected to a network.\nHow would you like to proceed?"),
@@ -599,11 +601,12 @@ function NetworkMgr:goOnlineToRun(callback)
 
         -- NOTE: Here be dragons! We want to be able to abort on user input, so,
         --       handle the 250ms chunks of waiting via our actual input polling...
-        -- We don't actually let the actual UI loop tick, so this will never move,
+        -- We don't actually let the actual UI loop tick, so `now` will never change,
         -- which is good, we don't want to disturb the task queue handling.
         -- (And we actually want a fixed 250ms select anyway).
         -- NOTE: This *does* mean that multiple bursts of input events *will*
         --       make this loop run for less than 120 * 250ms, as select could return early.
+        --       Assuming we don't actually abort *because* of said input (e.g., not taps) ;).
         local now = UIManager:getTime()
         local input_events = Input:waitEvent(now, now + time.ms(250))
         if input_events then
@@ -619,7 +622,7 @@ function NetworkMgr:goOnlineToRun(callback)
                     end
                 end
             end
-            -- Break out of the actual loop on failure
+            -- Break out of the actual loop on abort
             if not success then
                 break
             end
@@ -953,7 +956,7 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
         -- NOTE: Also supports a disconnect_callback, should we use it for something?
         --       Tearing down Wi-Fi completely when tapping "disconnect" would feel a bit harsh, though...
         if interactive then
-            -- We don't want this for non-interactive callers, like the beforeWifiAction framework...
+            -- We don't want to display the AP list for non-interactive callers (e.g., beforeWifiAction framework)...
             UIManager:show(require("ui/widget/networksetting"):new{
                 network_list = network_list,
                 connect_callback = complete_callback,
