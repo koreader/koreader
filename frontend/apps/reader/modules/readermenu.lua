@@ -237,7 +237,7 @@ function ReaderMenu:setUpdateItemTable()
     end
 
     if Device:isTouchDevice() then
-        -- Mostly concern about touch related page turn stuff, which only applies to Reader; ends up in Taps & Gestures
+        -- Settings > Taps & Gestures; mostly concerns touch related page turn stuff, and only applies to Reader
         self.menu_items.page_turns = require("ui/elements/page_turns")
     end
     -- Settings > Navigation; while also related to page turns, this mostly concerns physical keys, and applies *everywhere*
