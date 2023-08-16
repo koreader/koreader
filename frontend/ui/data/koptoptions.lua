@@ -491,6 +491,12 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 args =   {0.8, 1.0, 1.5, 2.0, 4.0, 6.0, 10.0, 50.0},
                 labels = {0.8, 1.0, 1.5, 2.0, 4.0, 6.0, 10.0, 50.0},
                 name_text_hold_callback = optionsutil.showValues,
+                more_options = true,
+                more_options_param = {
+                    value_step = 0.1, value_hold_step = 1,
+                    value_min = 0.8, value_max = 50,
+                    precision = "%.1f",
+                },
             },
             {
                 name = "page_opt",
