@@ -23,7 +23,6 @@ local UIManager = {
         G_reader_settings:isTrue("night_mode") and G_reader_settings:readSetting("night_full_refresh_count") or G_reader_settings:readSetting("full_refresh_count") or DEFAULT_FULL_REFRESH_COUNT,
     refresh_count = 0,
     currently_scrolling = false,
-    lastPaintTime = 0,
 
     -- How long to wait between ZMQ wakeups: 50ms.
     ZMQ_TIMEOUT = 50 * 1000,
@@ -1291,7 +1290,6 @@ function UIManager:_repaint()
     -- Don't trigger afterPaint if we did not, in fact, paint anything
     if dirty then
         Screen:afterPaint()
-        self:storeTimeOfLastPaint()
     end
 
     self._refresh_stack = {}
@@ -1306,14 +1304,6 @@ end
 function UIManager:avoidFlashOnNextRepaint()
     -- Avoid going through the "partial" to "full" refresh promotion: pretend we already checked that.
     self.refresh_counted = true
-end
-
-function UIManager:storeTimeOfLastPaint()
-    self.lastPaintTime = self:getElapsedTimeSinceBoot()
-end
-
-function UIManager:secondsSinceLastPaint()
-    return time.to_s(self:getElapsedTimeSinceBoot() - self.lastPaintTime)
 end
 
 --[[--

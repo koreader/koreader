@@ -200,16 +200,6 @@ function AutoSuspend:init()
         self:_schedule_standby()
     end
 
-    if Device:isSunxi() then
-        self.secondsSinceLastPaint = function()
-            return UIManager:secondsSinceLastPaint()
-        end
-    else
-        self.secondsSinceLastPaint = function()
-            return math.huge
-        end
-    end
-
     -- Make sure we only have an AllowStandby handler when we actually want one...
     self:toggleStandbyHandler(self:_enabledStandby())
 
@@ -632,10 +622,7 @@ function AutoSuspend:AllowStandbyHandler()
         wake_in = math.huge
     end
 
-    local secondsSinceLastPaint = UIManager:secondsSinceLastPaint()
-
-    if wake_in >= 1 and secondsSinceLastPaint >= 3 then
-        -- Go into standby, if scheduled wakeup is in less than 1 secs and no recent paints to screen.
+    if wake_in >= 1 then -- Don't go into standby, if scheduled wakeup is in less than 1 second.
         logger.dbg("AutoSuspend: entering standby with a wakeup alarm in", wake_in, "s")
 
         -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
@@ -661,8 +648,6 @@ function AutoSuspend:AllowStandbyHandler()
         -- When we exit this method, we are sure that the input polling deadline is zero (consumeInputEarly).
         -- UIManager will check newly scheduled tasks before going to input polling again (with a new deadline).
         self:_start_standby() -- Schedule the next standby check in the future.
-    elseif secondsSinceLastPaint < 3 then
-        self:_start_standby(3.1 - secondsSinceLastPaint) -- 3.1s after last paint to screen
     else
         -- When we exit this method, we are sure that the input polling deadline is approximately `wake_in`.
         -- So it is safe to schedule another task a bit later.

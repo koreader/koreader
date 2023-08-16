@@ -1177,7 +1177,10 @@ function Kobo:standby(max_duration)
     local standby_time = time.boottime_or_realtime_coarse()
 
     -- The odd Sunxi needs some time to settle before entering standby.
-    ffiUtil.usleep(110000) -- sleep 0.11s
+    -- This will avoid the screen puzzling effect documented in
+    -- https://github.com/koreader/koreader/pull/10306#issue-1659242042 not only for
+    -- WiFi toggle, but (almost) everywhere.
+    ffiUtil.usleep(90000) -- sleep 0.09s (0.08s would also work)
 
     local ret = ffiUtil.writeToSysfs("standby", "/sys/power/state")
 
