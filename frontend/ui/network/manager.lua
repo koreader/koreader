@@ -266,7 +266,7 @@ function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget, in
     return true
 end
 
-function NetworkMgr:disableWifi(cb)
+function NetworkMgr:disableWifi(cb, interactive)
     local complete_callback = function()
         UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
         if cb then
@@ -275,6 +275,11 @@ function NetworkMgr:disableWifi(cb)
     end
     UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
     self:turnOffWifi(complete_callback)
+
+    if interactive then
+        self.wifi_was_on = false
+        G_reader_settings:makeFalse("wifi_was_on")
+    end
 end
 
 function NetworkMgr:toggleWifiOn(complete_callback, long_press, interactive)
@@ -284,8 +289,6 @@ function NetworkMgr:toggleWifiOn(complete_callback, long_press, interactive)
     UIManager:show(toggle_im)
     UIManager:forceRePaint()
 
-    self.wifi_was_on = true
-    G_reader_settings:makeTrue("wifi_was_on")
     self.wifi_toggle_long_press = long_press
 
     self:enableWifi(complete_callback, nil, nil, interactive)
@@ -293,17 +296,14 @@ function NetworkMgr:toggleWifiOn(complete_callback, long_press, interactive)
     UIManager:close(toggle_im)
 end
 
-function NetworkMgr:toggleWifiOff(complete_callback)
+function NetworkMgr:toggleWifiOff(complete_callback, interactive)
     local toggle_im = InfoMessage:new{
         text = _("Turning off Wi-Fi…"),
     }
     UIManager:show(toggle_im)
     UIManager:forceRePaint()
 
-    self.wifi_was_on = false
-    G_reader_settings:makeFalse("wifi_was_on")
-
-    self:disableWifi(complete_callback)
+    self:disableWifi(complete_callback, interactive)
 
     UIManager:close(toggle_im)
 end
@@ -335,7 +335,7 @@ function NetworkMgr:promptWifi(complete_callback, long_press, interactive)
         text = _("Wi-Fi is enabled, but you're currently not connected to a network.\nHow would you like to proceed?"),
         choice1_text = _("Turn Wi-Fi off"),
         choice1_callback = function()
-            self:toggleWifiOff(complete_callback)
+            self:toggleWifiOff(complete_callback, interactive)
         end,
         choice2_text = _("Connect"),
         choice2_callback = function()
@@ -683,7 +683,7 @@ function NetworkMgr:getWifiToggleMenuTable()
             touchmenu_instance:updateItems()
         end -- complete_callback()
         if fully_connected then
-            self:toggleWifiOff(complete_callback)
+            self:toggleWifiOff(complete_callback, true)
         elseif self.is_wifi_on and not self.is_connected then
             -- ask whether user wants to connect or turn off wifi
             self:promptWifi(complete_callback, long_press, true)
