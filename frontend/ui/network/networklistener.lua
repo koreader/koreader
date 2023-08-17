@@ -205,8 +205,8 @@ function NetworkListener:onSuspend()
     logger.dbg("NetworkListener: onSuspend")
 
     -- If we haven't already (e.g., via Generic's onPowerEvent), kill Wi-Fi.
-    -- Except on Android, where turnOnWifi/turnOffWifi are *interactive*... :/
-    if Device:hasWifiToggle() and NetworkMgr:isWifiOn() and not Device:isAndroid() then
+    -- Do so only on devices where we have explicit management of Wi-Fi: assume the host system does things properly elsewhere.
+    if Device:hasWifiManager() and NetworkMgr:isWifiOn() then
         NetworkMgr:disableWifi()
     end
 
