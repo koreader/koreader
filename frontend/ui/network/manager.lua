@@ -757,7 +757,8 @@ end
 function NetworkMgr:getRestoreMenuTable()
     return {
         text = _("Restore Wi-Fi connection on resume"),
-        help_text = _([[This will attempt to automatically and silently re-connect to Wi-Fi on startup or on resume if Wi-Fi used to be enabled the last time you used KOReader.]]),
+        -- i.e., *everything* flips wifi_was_on true, but only direct user interaction (i.e., Menu & Gestures) will flip it off.
+        help_text = _([[This will attempt to automatically and silently re-connect to Wi-Fi on startup or on resume if Wi-Fi used to be enabled the last time you used KOReader, and you did not explicitly disable it.]]),
         checked_func = function() return G_reader_settings:isTrue("auto_restore_wifi") end,
         enabled_func = function() return Device:hasWifiRestore() end,
         callback = function() G_reader_settings:flipNilOrFalse("auto_restore_wifi") end,
