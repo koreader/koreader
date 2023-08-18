@@ -255,6 +255,7 @@ function CoverMenu:updateItems(select_number)
                     -- If no bookinfo (yet) about this file, or it's a directory, let the original dialog be
                     return true
                 end
+                bookinfo.title_from_filename = bookinfo.has_meta == 'T'
 
                 -- Remember some of this original ButtonDialog properties
                 local orig_title = self.file_dialog.title
