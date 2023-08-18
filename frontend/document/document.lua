@@ -221,11 +221,12 @@ function Document:getProps()
         return str
     end
     local props = self:getDocumentProps()
-    local title, authors, series, series_index, language, keywords, description
-    title = makeNilIfEmpty(props.title or props.Title)
-    if not title then -- file name without extension
+    local title, title_from_filename, authors, series, series_index, language, keywords, description
+    title = props.title or props.Title
+    if title == nil or title == "" then -- file name without extension
         local _, _, docname = self.file:find(".*/(.*)")
         title = (docname or self.file):match("(.*)%.")
+        title_from_filename = true
     end
     authors = makeNilIfEmpty(props.authors or props.author or props.Author)
     series = makeNilIfEmpty(props.series or props.Series)
@@ -248,13 +249,14 @@ function Document:getProps()
     keywords = makeNilIfEmpty(props.keywords or props.Keywords)
     description = makeNilIfEmpty(props.description or props.Description or props.subject)
     return {
-        title        = title,
-        authors      = authors,
-        series       = series,
-        series_index = series_index,
-        language     = language,
-        keywords     = keywords,
-        description  = description,
+        title               = title,
+        title_from_filename = title_from_filename,
+        authors             = authors,
+        series              = series,
+        series_index        = series_index,
+        language            = language,
+        keywords            = keywords,
+        description         = description,
     }
 end
 
