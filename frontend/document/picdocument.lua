@@ -42,12 +42,8 @@ function PicDocument:getUsedBBox(pageno)
     return { x0 = 0, y0 = 0, x1 = self._document.width, y1 = self._document.height }
 end
 
-function PicDocument:getProps()
-    local _, _, docname = self.file:find(".*/(.*)")
-    docname = docname or self.file
-    return {
-        title = docname:match("(.*)%."),
-    }
+function PicDocument:getDocumentProps()
+    return {}
 end
 
 function PicDocument:getCoverPageImage()
