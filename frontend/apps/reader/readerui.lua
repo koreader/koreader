@@ -657,13 +657,7 @@ function ReaderUI:doShowReader(file, provider, seamless)
     }
 
     local title = reader.doc_settings:readSetting("doc_props").title
-
-    if title ~= "" then
-        Screen:setWindowTitle(title)
-    else
-        local _, filename = util.splitFilePathName(file)
-        Screen:setWindowTitle(filename)
-    end
+    Screen:setWindowTitle(title)
     Device:notifyBookState(title, document)
 
     -- This is mostly for the few callers that bypass the coroutine shenanigans and call doShowReader directly,
