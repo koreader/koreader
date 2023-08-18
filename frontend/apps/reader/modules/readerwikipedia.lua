@@ -370,8 +370,8 @@ function ReaderWikipedia:initLanguages(word)
             end
         end
         -- use book and UI languages
-        if self.view then
-            addLanguage(self.view.document:getProps().language)
+        if self.ui.doc_settings then
+            addLanguage(self.ui.doc_settings:readSetting("doc_props").language)
         end
         addLanguage(G_reader_settings:readSetting("language"))
         if #self.wiki_languages == 0 and word then
@@ -428,12 +428,6 @@ function ReaderWikipedia:lookupWikipedia(word, is_sane, box, get_fullpage, force
 
     if not self.disable_history then
         local book_title = self.ui.doc_settings and self.ui.doc_settings:readSetting("doc_props").title or _("Wikipedia lookup")
-        if book_title == "" then -- no or empty metadata title
-            if self.ui.document and self.ui.document.file then
-                local directory, filename = util.splitFilePathName(self.ui.document.file) -- luacheck: no unused
-                book_title = util.splitFileNameSuffix(filename)
-            end
-        end
         wikipedia_history:addTableItem("wikipedia_history", {
             book_title = book_title,
             time = os.time(),
