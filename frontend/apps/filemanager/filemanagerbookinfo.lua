@@ -73,7 +73,7 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
         if prop == nil or prop == "" then
             prop = _("N/A")
         elseif prop_key == "title" then
-            prop = BD.auto(prop)
+            prop = book_props.title_from_filename and _("N/A") or BD.auto(prop)
         elseif prop_key == "authors" or prop_key == "keywords" then
             if prop:find("\n") then -- BD auto isolate each entry
                 prop = util.splitToArray(prop, "\n")
