@@ -629,7 +629,7 @@ function MosaicMenuItem:update()
                         bookinfo.series = BD.auto(bookinfo.series)
                     end
                     if series_mode == "append_series_to_title" then
-                        if bookinfo.title then
+                        if bookinfo.title and bookinfo.has_meta ~= 'T' then
                             title_add = " - " .. bookinfo.series
                         else
                             title_add = bookinfo.series
@@ -661,7 +661,7 @@ function MosaicMenuItem:update()
                         height = dimen.h,
                         bordersize = border_size,
                         filename = self.text,
-                        title = not bookinfo.ignore_meta and bookinfo.title,
+                        title = not bookinfo.ignore_meta and bookinfo.has_meta ~= 'T' and bookinfo.title,
                         authors = not bookinfo.ignore_meta and bookinfo.authors,
                         title_add = not bookinfo.ignore_meta and title_add,
                         authors_add = not bookinfo.ignore_meta and authors_add,
