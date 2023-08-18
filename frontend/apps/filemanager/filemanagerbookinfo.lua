@@ -84,16 +84,8 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
             else
                 prop = BD.auto(prop)
             end
-        elseif prop_key == "series" then
-            -- If we were fed a BookInfo book_props (e.g., covermenu), series index is in a separate field
-            if book_props.series_index then
-                -- Here, we're assured that series_index is a Lua number, so round integers are automatically
-                -- displayed without decimals
-                prop = prop .. " #" .. book_props.series_index
-            else
-                -- But here, if we have a plain doc_props series with an index, drop empty decimals from round integers.
-                prop = prop:gsub("(#%d+)%.0+$", "%1")
-            end
+        elseif prop_key == "series" and book_props.series_index then
+            prop = prop .. " #" .. book_props.series_index
         elseif prop_key == "language" then
             -- Get a chance to have title, authors... rendered with alternate
             -- glyphs for the book language (e.g. japanese book in chinese UI)
