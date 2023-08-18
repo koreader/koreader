@@ -539,7 +539,7 @@ function FileManager:tapPlus()
                                 self.cutfile = false
                                 for file in pairs(self.selected_files) do
                                     self.clipboard = file
-                                    self:pasteHere(self.file_chooser.path)
+                                    self:pasteHere()
                                 end
                                 self:onToggleSelectMode()
                             end,
@@ -568,7 +568,7 @@ function FileManager:tapPlus()
                                 self.cutfile = true
                                 for file in pairs(self.selected_files) do
                                     self.clipboard = file
-                                    self:pasteHere(self.file_chooser.path)
+                                    self:pasteHere()
                                 end
                                 self:onToggleSelectMode()
                             end,
@@ -665,7 +665,7 @@ function FileManager:tapPlus()
                     enabled = self.clipboard and true or false,
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        self:pasteHere(self.file_chooser.path)
+                        self:pasteHere()
                     end,
                 },
             },
@@ -842,6 +842,9 @@ function FileManager:setHome(path)
         ok_text = _("Set as HOME"),
         ok_callback = function()
             G_reader_settings:saveSetting("home_dir", path)
+            if G_reader_settings:isTrue("lock_home_folder") then
+                self:onRefresh()
+            end
         end,
     })
     return true
@@ -883,7 +886,7 @@ end
 function FileManager:pasteHere(file)
     local orig_file = BaseUtil.realpath(self.clipboard)
     local orig_name = BaseUtil.basename(self.clipboard)
-    local dest_path = BaseUtil.realpath(file)
+    local dest_path = BaseUtil.realpath(file or self.file_chooser.path)
     dest_path = lfs.attributes(dest_path, "mode") == "directory" and dest_path or dest_path:match("(.*/)")
     local dest_file = BaseUtil.joinPath(dest_path, orig_name)
     local is_file = lfs.attributes(orig_file, "mode") == "file"
@@ -1270,7 +1273,8 @@ function FileManager:showSelectedFilesList()
     local selected_files = {}
     for file in pairs(self.selected_files) do
         table.insert(selected_files, {
-            text = file,
+            text = filemanagerutil.abbreviate(file),
+            filepath = file,
             bidi_wrap_func = BD.filepath,
         })
     end
@@ -1294,7 +1298,7 @@ function FileManager:showSelectedFilesList()
         show_parent = menu_container,
         onMenuSelect = function(_, item)
             UIManager:close(menu_container)
-            self.file_chooser:changeToPath(util.splitFilePathName(item.text), item.text)
+            self.file_chooser:changeToPath(util.splitFilePathName(item.filepath), item.filepath)
         end,
         close_callback = function()
             UIManager:close(menu_container)
