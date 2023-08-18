@@ -154,6 +154,7 @@ function Screensaver:expandSpecial(message, fallback)
     local time_left_chapter = _("N/A")
     local time_left_document = _("N/A")
     local batt_lvl = _("N/A")
+    local props
 
     local ReaderUI = require("apps/reader/readerui")
     local ui = ReaderUI.instance
@@ -173,12 +174,7 @@ function Screensaver:expandSpecial(message, fallback)
             time_left_document = self:_calcAverageTimeForPages(doc:getTotalPagesLeft(currentpage))
         end
         percent = Math.round((currentpage * 100) / totalpages)
-        local props = doc:getProps()
-        if props then
-            title = props.title and props.title ~= "" and props.title or title
-            authors = props.authors and props.authors ~= "" and props.authors or authors
-            series = props.series and props.series ~= "" and props.series or series
-        end
+        props = doc:getProps()
     elseif DocSettings:hasSidecarFile(lastfile) then
         -- If there's no ReaderUI instance, but the file has sidecar data, use that
         local doc_settings = DocSettings:open(lastfile)
@@ -186,13 +182,20 @@ function Screensaver:expandSpecial(message, fallback)
         percent = doc_settings:readSetting("percent_finished") or percent
         currentpage = Math.round(percent * totalpages)
         percent = Math.round(percent * 100)
-        local doc_props = doc_settings:readSetting("doc_props")
-        if doc_props then
-            title = doc_props.title and doc_props.title ~= "" and doc_props.title or title
-            authors = doc_props.authors and doc_props.authors ~= "" and doc_props.authors or authors
-            series = doc_props.series and doc_props.series ~= "" and doc_props.series or series
-        end
+        props = doc_settings:readSetting("doc_props")
         -- Unable to set time_left_chapter and time_left_document without ReaderUI, so leave N/A
+    end
+    if props then
+        title = props.title
+        if props.authors then
+            authors = props.authors
+        end
+        if props.series then
+            series = props.series
+            if props.series_index then
+                series = series .. " #" .. props.series_index
+            end
+        end
     end
     if Device:hasBattery() then
         local powerd = Device:getPowerDevice()
