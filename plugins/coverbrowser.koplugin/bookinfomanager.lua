@@ -37,7 +37,7 @@ local BOOKINFO_DB_SCHEMA = [[
         in_progress         INTEGER,  -- 0 (done), >0 : nb of tries (to avoid retrying failed extractions forever)
         unsupported         TEXT,     -- NULL if supported / reason for being unsupported
         cover_fetched       TEXT,     -- NULL / 'Y' = we tried to fetch a cover (but we may not have gotten one)
-        has_meta            TEXT,     -- NULL / 'Y' = has metadata (title, authors...)
+        has_meta            TEXT,     -- NULL / 'Y'('T') = has metadata (title, authors...) ('T' title from filename)
         has_cover           TEXT,     -- NULL / 'Y' = has cover image (cover_*)
         cover_sizetag       TEXT,     -- 'M' (Medium, MosaicMenuItem) / 's' (small, ListMenuItem)
 
@@ -493,7 +493,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
         if loaded then
             dbrow.pages = pages
             local props = document:getProps()
-            dbrow.has_meta = 'Y' -- title always exists
+            dbrow.has_meta = props.title_from_filename and 'T' or 'Y'
             for k, v in pairs(props) do
                 dbrow[k] = v
             end
