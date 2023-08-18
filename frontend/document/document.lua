@@ -207,8 +207,55 @@ function Document:getNativePageDimensions(pageno)
     return page_size
 end
 
+function Document:getDocumentProps()
+    -- pdfdocument, djvudocument
+    return self._document:getMetadata()
+    -- credocument, picdocument - overridden by a document implementation
+end
+
 function Document:getProps()
-    return self._document:getDocumentProps()
+    local function makeNilIfEmpty(str)
+        if str == "" then
+            return nil
+        end
+        return str
+    end
+    local props = self:getDocumentProps()
+    local title, authors, series, series_index, language, keywords, description
+    title = makeNilIfEmpty(props.title or props.Title)
+    if not title then -- file name without extension
+        local _, _, docname = self.file:find(".*/(.*)")
+        title = (docname or self.file):match("(.*)%.")
+    end
+    authors = makeNilIfEmpty(props.authors or props.author or props.Author)
+    series = makeNilIfEmpty(props.series or props.Series)
+    if series and string.find(series, "#") then
+        -- If there's a series index in there, split it off to series_index, and only store the name in series.
+        -- This property is currently only set by:
+        --   * DjVu, for which I couldn't find a real standard for metadata fields
+        --     (we currently use Series for this field, c.f., https://exiftool.org/TagNames/DjVu.html).
+        --   * CRe, which could offer us a split getSeriesName & getSeriesNumber...
+        --     except getSeriesNumber does an atoi, so it'd murder decimal values.
+        --     So, instead, parse how it formats the whole thing as a string ;).
+        local series_name
+        series_name, series_index = series:match("(.*) #(%d+%.?%d-)$")
+        if series_index then
+            series = series_name
+            series_index = tonumber(series_index)
+        end
+    end
+    language = makeNilIfEmpty(props.language or props.Language)
+    keywords = makeNilIfEmpty(props.keywords or props.Keywords)
+    description = makeNilIfEmpty(props.description or props.Description or props.subject)
+    return {
+        title        = title,
+        authors      = authors,
+        series       = series,
+        series_index = series_index,
+        language     = language,
+        keywords     = keywords,
+        description  = description,
+    }
 end
 
 function Document:_readMetadata()
