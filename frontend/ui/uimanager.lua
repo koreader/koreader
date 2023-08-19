@@ -39,6 +39,7 @@ local UIManager = {
     _refresh_func_stack = {},
     _entered_poweroff_stage = false,
     _exit_code = nil,
+    _gated_quit = nil,
     _prevent_standby_count = 0,
     _prev_prevent_standby_count = 0,
 
@@ -1448,9 +1449,9 @@ function UIManager:handleInput()
 
         -- stop when we have no window to show
         if not self._window_stack[1] then
-            logger.info("no dialog left to show")
+            logger.info("UIManager: No dialogs left to show")
             if self:_gated_quit() ~= false then
-                return nil
+                return
             end
         end
 
