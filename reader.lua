@@ -292,11 +292,8 @@ end
 
 -- Exit
 local function exitReader()
-    -- Shutdown hardware abstraction
+    -- Shutdown hardware abstraction (it'll also flush G_reader_settings to disk)
     Device:exit()
-
-    -- Flush settings to disk
-    G_reader_settings:close()
 
     if Profiler then Profiler.stop() end
 

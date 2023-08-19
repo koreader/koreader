@@ -545,8 +545,13 @@ function Device:exit()
     -- Restore initial HW inversion state
     self.screen:setHWNightmode(self.orig_hw_nightmode)
 
-    -- I/O teardown
+    -- Tear down the fb backend
     self.screen:close()
+
+    -- Flush settings to disk
+    G_reader_settings:close()
+
+    -- I/O teardown
     require("ffi/input"):closeAll()
 end
 
