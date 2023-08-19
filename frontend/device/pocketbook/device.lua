@@ -257,18 +257,18 @@ function PocketBook:init()
 end
 
 function PocketBook:exit()
-    Generic.exit(self)
-
     -- Exit code can be shoddy on some devices due to broken library dtors calling _exit(0) from os.exit(N)
     local ko_exit = os.getenv("KO_EXIT_CODE")
     if ko_exit then
-        local fo = io.open(ko_exit, "w+")
-        if fo then
+        local f = io.open(ko_exit, "w+")
+        if f then
             -- As returned by UIManager:run() in reader.lua
-            fo:write(tostring(UIManager._exit_code))
-            fo:close()
+            f:write(tostring(UIManager._exit_code))
+            f:close()
         end
     end
+
+    Generic.exit(self)
 end
 
 function PocketBook:notifyBookState(title, document)
