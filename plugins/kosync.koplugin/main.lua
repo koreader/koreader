@@ -637,8 +637,10 @@ function KOSync:updateProgress(ensure_networking, interactive, refresh_on_succes
         return
     end
 
+    local last_push = self.push_timestamp
     local now = UIManager:getElapsedTimeSinceBoot()
-    if not interactive and now - self.push_timestamp <= API_CALL_DEBOUNCE_DELAY then
+    self.push_timestamp = now
+    if not interactive and now - last_push <= API_CALL_DEBOUNCE_DELAY then
         logger.dbg("KOSync: We've already pushed progress less than 25s ago!")
         return
     end
@@ -695,8 +697,6 @@ function KOSync:updateProgress(ensure_networking, interactive, refresh_on_succes
             end
         end
     end
-
-    self.push_timestamp = now
 end
 
 function KOSync:getProgress(ensure_networking, interactive)
@@ -707,8 +707,10 @@ function KOSync:getProgress(ensure_networking, interactive)
         return
     end
 
+    local last_pull = self.pull_timestamp
     local now = UIManager:getElapsedTimeSinceBoot()
-    if not interactive and now - self.pull_timestamp <= API_CALL_DEBOUNCE_DELAY then
+    self.pull_timestamp = now
+    if not interactive and now - last_pull <= API_CALL_DEBOUNCE_DELAY then
         logger.dbg("KOSync: We've already pulled progress less than 25s ago!")
         return
     end
@@ -825,8 +827,6 @@ function KOSync:getProgress(ensure_networking, interactive)
         if interactive then showSyncError() end
         if err then logger.dbg("err:", err) end
     end
-
-    self.pull_timestamp = now
 end
 
 function KOSync:_onCloseDocument()
