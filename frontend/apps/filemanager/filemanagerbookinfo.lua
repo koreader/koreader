@@ -5,6 +5,7 @@ This module provides a way to display book information (filename and book metada
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local DocSettings = require("docsettings")
+local Document = require("document/document")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
@@ -17,6 +18,15 @@ local _ = require("gettext")
 local Screen = require("device").screen
 
 local BookInfo = WidgetContainer:extend{
+    props = {
+        "title",
+        "authors",
+        "series",
+        "series_index",
+        "language",
+        "keywords",
+        "description",
+    },
 }
 
 function BookInfo:init()
@@ -34,6 +44,7 @@ function BookInfo:addToMainMenu(menu_items)
     }
 end
 
+-- Shows book information.
 function BookInfo:show(file, book_props, metadata_updated_caller_callback)
     self.updated = nil
     local kv_pairs = {}
@@ -55,20 +66,20 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
     -- book_props may be provided if caller already has them available
     -- but it may lack "pages", that we may get from sidecar file
     if not book_props or not book_props.pages then
-        book_props = self:getBookProps(file, book_props)
+        book_props = BookInfo.getDocProps(nil, file, book_props)
     end
     local values_lang
-    local props = {
-        { _("Title:"), "title" },
-        { _("Authors:"), "authors" },
-        { _("Series:"), "series" },
-        { _("Pages:"), "pages" },
-        { _("Language:"), "language" },
-        { _("Keywords:"), "keywords" },
-        { _("Description:"), "description" },
+    local prop_text = {
+        title        = _("Title:"),
+        authors      = _("Authors:"),
+        series       = _("Series:"),
+        series_index = _("Series index:"),
+        pages        = _("Pages:"), -- not in document metadata
+        language     = _("Language:"),
+        keywords     = _("Keywords:"),
+        description  = _("Description:"),
     }
-    for _i, v in ipairs(props) do
-        local prop_text, prop_key = unpack(v)
+    for _i, prop_key in ipairs(self.props) do
         local prop = book_props[prop_key]
         if prop == nil or prop == "" then
             prop = _("N/A")
@@ -84,16 +95,6 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
             else
                 prop = BD.auto(prop)
             end
-        elseif prop_key == "series" then
-            -- If we were fed a BookInfo book_props (e.g., covermenu), series index is in a separate field
-            if book_props.series_index then
-                -- Here, we're assured that series_index is a Lua number, so round integers are automatically
-                -- displayed without decimals
-                prop = prop .. " #" .. book_props.series_index
-            else
-                -- But here, if we have a plain doc_props series with an index, drop empty decimals from round integers.
-                prop = prop:gsub("(#%d+)%.0+$", "%1")
-            end
         elseif prop_key == "language" then
             -- Get a chance to have title, authors... rendered with alternate
             -- glyphs for the book language (e.g. japanese book in chinese UI)
@@ -102,7 +103,10 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
             -- Description may (often in EPUB, but not always) or may not (rarely in PDF) be HTML
             prop = util.htmlToPlainTextIfHtml(prop)
         end
-        table.insert(kv_pairs, { prop_text, prop })
+        table.insert(kv_pairs, { prop_text[prop_key], prop })
+        if prop_key == "series_index" then
+            table.insert(kv_pairs, { prop_text["pages"], book_props["pages"] or _("N/A") })
+        end
     end
     -- cover image
     local is_doc = self.document and true or false
@@ -150,7 +154,7 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
                     local ReaderUI = require("apps/reader/readerui")
                     ui = ReaderUI.instance
                 end
-                if ui and ui.coverbrowser then
+                if ui and ui.coverbrowser then -- refresh cache db
                     ui.coverbrowser:deleteBookInfo(file)
                 end
                 if fm_ui then
@@ -169,7 +173,38 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
     UIManager:show(self.kvp_widget)
 end
 
-function BookInfo:getBookProps(file, book_props, no_open_document)
+-- Returns customized metadata.
+function BookInfo.customizeProps(original_props) -- , filepath)
+    local custom_props = {} -- stub
+    original_props = original_props or {}
+
+    local props = {}
+    for _i, prop_key in ipairs(BookInfo.props) do
+        props[prop_key] = custom_props[prop_key] or original_props[prop_key]
+    end
+    return props
+end
+
+-- Returns document metadata (opened document or book (file) metadata or custom metadata).
+function BookInfo.getDocProps(ui, file, book_props, no_open_document, no_customize)
+    local original_props, filepath, display_title
+    if ui then -- currently opened document
+        original_props = ui.doc_settings:readSetting("doc_props")
+        filepath = ui.document.file
+        -- if original title is empty, generate it as filename without extension
+        display_title = original_props.title or filemanagerutil.splitFileNameType(filepath)
+    else -- from file
+        original_props = BookInfo.getBookProps(file, book_props, no_open_document)
+        filepath = file
+    end
+
+    local props = no_customize and original_props or BookInfo.customizeProps(original_props, filepath)
+    props.display_title = display_title
+    return props
+end
+
+-- Returns book (file) metadata, including number of pages.
+function BookInfo.getBookProps(file, book_props, no_open_document)
     if DocSettings:hasSidecarFile(file) then
         local doc_settings = DocSettings:open(file)
         if not book_props then
@@ -184,9 +219,8 @@ function BookInfo:getBookProps(file, book_props, no_open_document)
             -- the fact that stats.page = 0)
             local stats = doc_settings:readSetting("stats")
             if stats and stats.pages ~= 0 then
-                -- Let's use them as is (which was what was done before), even if
-                -- incomplete, to avoid expensive book opening
-                book_props = stats
+                -- title, authors, series, series_index, language
+                book_props = Document:getProps(stats)
             end
         end
         -- Files opened after 20170701 have an accurate "doc_pages" setting.
@@ -229,26 +263,20 @@ function BookInfo:getBookProps(file, book_props, no_open_document)
     return book_props or {}
 end
 
+-- Shows book information for currently opened document.
 function BookInfo:onShowBookInfo()
-    if not self.document then return end
-    -- Get them directly from ReaderUI's doc_settings
-    local doc_props = self.ui.doc_settings:readSetting("doc_props")
-    -- Make a copy, so we don't add "pages" to the original doc_props
-    -- that will be saved at some point by ReaderUI.
-    local book_props = { pages = self.ui.doc_settings:readSetting("doc_pages") }
-    for k, v in pairs(doc_props) do
-        book_props[k] = v
+    if self.document then
+        self.ui.doc_props.pages = self.ui.doc_settings:readSetting("doc_pages")
+        self:show(self.document.file, self.ui.doc_props)
     end
-    self:show(self.document.file, book_props)
 end
 
 function BookInfo:onShowBookDescription(description, file)
     if not description then
         if file then
-            description = self:getBookProps(file).description
-        elseif self.document then
-            description = self.ui.doc_settings:readSetting("doc_props").description
-                       or self.document:getProps().description
+            description = BookInfo.getDocProps(nil, file).description
+        elseif self.document then -- currently opened document
+            description = self.ui.doc_props.description
         end
     end
     if description and description ~= "" then
