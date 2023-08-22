@@ -33,7 +33,8 @@ function filemanagerutil.abbreviate(path)
     return path
 end
 
-function filemanagerutil.splitFileNameType(filename)
+function filemanagerutil.splitFileNameType(filepath)
+    local _, filename = util.splitFilePathName(filepath)
     local filename_without_suffix, filetype = util.splitFileNameSuffix(filename)
     filetype = filetype:lower()
     if filetype == "zip" then
