@@ -937,13 +937,7 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
         return
     end
 
-    local book_title = self.ui.doc_settings and self.ui.doc_settings:readSetting("doc_props").title or _("Dictionary lookup")
-    if book_title == "" then -- no or empty metadata title
-        if self.ui.document and self.ui.document.file then
-            local directory, filename = util.splitFilePathName(self.ui.document.file) -- luacheck: no unused
-            book_title = util.splitFileNameSuffix(filename)
-        end
-    end
+    local book_title = self.ui.doc_props and self.ui.doc_props.display_title or _("Dictionary lookup")
 
     -- Event for plugin to catch lookup with book title
     self.ui:handleEvent(Event:new("WordLookedUp", word, book_title))
