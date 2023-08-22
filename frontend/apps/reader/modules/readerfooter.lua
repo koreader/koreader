@@ -384,24 +384,19 @@ local footerTextGeneratorMap = {
         end
     end,
     book_title = function(footer)
-        local doc_info = footer.ui.document:getProps()
-        if doc_info and doc_info.title then
-            local title = doc_info.title:gsub(" ", "\u{00A0}") -- replace space with no-break-space
-            local title_widget = TextWidget:new{
-                text = title,
-                max_width = footer._saved_screen_width * footer.settings.book_title_max_width_pct * (1/100),
-                face = Font:getFace(footer.text_font_face, footer.settings.text_font_size),
-                bold = footer.settings.text_font_bold,
-            }
-            local fitted_title_text, add_ellipsis = title_widget:getFittedText()
-            title_widget:free()
-            if add_ellipsis then
-                fitted_title_text = fitted_title_text .. "…"
-            end
-            return BD.auto(fitted_title_text)
-        else
-            return ""
+        local title = footer.ui.doc_props.display_title:gsub(" ", "\u{00A0}") -- replace space with no-break-space
+        local title_widget = TextWidget:new{
+            text = title,
+            max_width = footer._saved_screen_width * footer.settings.book_title_max_width_pct * (1/100),
+            face = Font:getFace(footer.text_font_face, footer.settings.text_font_size),
+            bold = footer.settings.text_font_bold,
+        }
+        local fitted_title_text, add_ellipsis = title_widget:getFittedText()
+        title_widget:free()
+        if add_ellipsis then
+            fitted_title_text = fitted_title_text .. "…"
         end
+        return BD.auto(fitted_title_text)
     end,
     book_chapter = function(footer)
         local chapter_title = footer.ui.toc:getTocTitleByPage(footer.pageno)
