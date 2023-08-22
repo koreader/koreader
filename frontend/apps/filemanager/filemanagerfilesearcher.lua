@@ -1,4 +1,4 @@
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local DocumentRegistry = require("document/documentregistry")
@@ -247,8 +247,6 @@ function FileSearcher:showSearchResults(results)
         dimen = Screen:getSize(),
     }
     self.search_menu = Menu:new{
-        width = Screen:getWidth(),
-        height = Screen:getHeight(),
         is_borderless = true,
         is_popout = false,
         show_parent = menu_container,
@@ -307,7 +305,7 @@ function FileSearcher:onMenuSelect(item)
             end,
         },
     })
-    dialog = ButtonDialogTitle:new{
+    dialog = ButtonDialog:new{
         title = item.path,
         buttons = buttons,
     }
