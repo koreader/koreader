@@ -51,7 +51,7 @@ function socketutil:set_timeout(block_timeout, total_timeout)
 
     -- Also update the actual LuaSocket & LuaSec constants, because:
     -- 1. LuaSocket's `open` does a `settimeout` *after* create with this constant
-    -- 2. KOSync updates it to a stupidly low value
+    -- 2. Rogue code might be attempting to enforce them
     http.TIMEOUT = self.block_timeout
     https.TIMEOUT = self.block_timeout
 end
