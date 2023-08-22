@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
 local Device = require("device")
 local Event = require("ui/event")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
@@ -776,7 +777,8 @@ end
 function ReaderTypography:onPreRenderDocument(config)
     -- This is called after the document has been loaded,
     -- when we know and can access the document language.
-    local doc_language = self.ui.document:getProps().language
+    local props = self.ui.document:getProps()
+    local doc_language = FileManagerBookInfo.customizeProps(props, self.ui.document.file).language
     self.book_lang_tag = self:fixLangTag(doc_language)
 
     local is_known_lang_tag = self.book_lang_tag and LANG_TAG_TO_LANG_NAME[self.book_lang_tag] ~= nil
