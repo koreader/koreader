@@ -2,6 +2,11 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local socketutil = require("socketutil")
 
+-- Push/Pull
+local PROGRESS_TIMEOUTS = { 2,  5 }
+-- Login/Register
+local AUTH_TIMEOUTS     = { 5, 10 }
+
 local KOSyncClient = {
     service_spec = nil,
     custom_url = nil,
@@ -61,12 +66,14 @@ function KOSyncClient:register(username, password)
     self.client:reset_middlewares()
     self.client:enable("Format.JSON")
     self.client:enable("GinClient")
+    socketutil:set_timeout(AUTH_TIMEOUTS[1], AUTH_TIMEOUTS[2])
     local ok, res = pcall(function()
         return self.client:register({
             username = username,
             password = password,
         })
     end)
+    socketutil:reset_timeout()
     if ok then
         return res.status == 201, res.body
     else
@@ -83,9 +90,11 @@ function KOSyncClient:authorize(username, password)
         username = username,
         userkey = password,
     })
+    socketutil:set_timeout(AUTH_TIMEOUTS[1], AUTH_TIMEOUTS[2])
     local ok, res = pcall(function()
         return self.client:authorize()
     end)
+    socketutil:reset_timeout()
     if ok then
         return res.status == 200, res.body
     else
@@ -111,7 +120,7 @@ function KOSyncClient:update_progress(
         userkey = password,
     })
     -- Set *very* tight timeouts to avoid blocking for too long...
-    socketutil:set_timeout(2, 5)
+    socketutil:set_timeout(PROGRESS_TIMEOUTS[1], PROGRESS_TIMEOUTS[2])
     local co = coroutine.create(function()
         local ok, res = pcall(function()
             return self.client:update_progress({
@@ -147,7 +156,7 @@ function KOSyncClient:get_progress(
         username = username,
         userkey = password,
     })
-    socketutil:set_timeout(2, 5)
+    socketutil:set_timeout(PROGRESS_TIMEOUTS[1], PROGRESS_TIMEOUTS[2])
     local co = coroutine.create(function()
         local ok, res = pcall(function()
             return self.client:get_progress({
