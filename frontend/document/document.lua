@@ -213,14 +213,14 @@ function Document:getDocumentProps()
     -- credocument, picdocument - overridden by a document implementation
 end
 
-function Document:getProps(props)
+function Document:getProps(cached_doc_metadata)
     local function makeNilIfEmpty(str)
         if str == "" then
             return nil
         end
         return str
     end
-    props = props or self:getDocumentProps()
+    local props = cached_doc_metadata or self:getDocumentProps()
     local title = makeNilIfEmpty(props.title or props.Title)
     local authors = makeNilIfEmpty(props.authors or props.author or props.Author)
     local series = makeNilIfEmpty(props.series or props.Series)
