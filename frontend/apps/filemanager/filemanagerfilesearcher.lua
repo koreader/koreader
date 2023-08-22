@@ -182,14 +182,6 @@ function FileSearcher:getList()
 end
 
 function FileSearcher:isFileMatch(filename, fullpath, keywords, is_file)
-    local metadata_keys = {
-        "authors",
-        "title",
-        "series",
-        "description",
-        "keywords",
-        "language",
-    }
     if keywords == "*" then
         return true
     end
@@ -201,11 +193,14 @@ function FileSearcher:isFileMatch(filename, fullpath, keywords, is_file)
     end
     if self.include_metadata and is_file and DocumentRegistry:hasProvider(fullpath) then
         local book_props = self.ui.coverbrowser:getBookInfo(fullpath) or
-                           FileManagerBookInfo:getBookProps(fullpath, nil, true)
+                           FileManagerBookInfo.getDocProps(nil, fullpath, nil, true)
         if next(book_props) ~= nil then
-            for _, key in ipairs(metadata_keys) do
+            for _, key in ipairs(FileManagerBookInfo.props) do
                 local prop = book_props[key]
                 if prop and prop ~= "" then
+                    if key == "series_index" then
+                        prop = tostring(prop)
+                    end
                     if not self.case_sensitive then
                         prop = Utf8Proc.lowercase(util.fixUtf8(prop, "?"))
                     end
