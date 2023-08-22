@@ -2677,7 +2677,7 @@ function ReaderStatistics:onReadingResumed()
 end
 
 function ReaderStatistics:onReadSettings(config)
-    self.data = config.data.stats or {}
+    self.data = config:readSetting("stats", {})
 end
 
 function ReaderStatistics:onReaderReady()
