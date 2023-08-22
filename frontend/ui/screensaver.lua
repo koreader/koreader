@@ -23,6 +23,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local datetime = require("datetime")
 local ffiUtil = require("ffi/util")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -154,6 +155,7 @@ function Screensaver:expandSpecial(message, fallback)
     local time_left_chapter = _("N/A")
     local time_left_document = _("N/A")
     local batt_lvl = _("N/A")
+    local props
 
     local ReaderUI = require("apps/reader/readerui")
     local ui = ReaderUI.instance
@@ -173,12 +175,7 @@ function Screensaver:expandSpecial(message, fallback)
             time_left_document = self:_calcAverageTimeForPages(doc:getTotalPagesLeft(currentpage))
         end
         percent = Math.round((currentpage * 100) / totalpages)
-        local props = doc:getProps()
-        if props then
-            title = props.title and props.title ~= "" and props.title or title
-            authors = props.authors and props.authors ~= "" and props.authors or authors
-            series = props.series and props.series ~= "" and props.series or series
-        end
+        props = ui.doc_props
     elseif DocSettings:hasSidecarFile(lastfile) then
         -- If there's no ReaderUI instance, but the file has sidecar data, use that
         local doc_settings = DocSettings:open(lastfile)
@@ -186,13 +183,23 @@ function Screensaver:expandSpecial(message, fallback)
         percent = doc_settings:readSetting("percent_finished") or percent
         currentpage = Math.round(percent * totalpages)
         percent = Math.round(percent * 100)
-        local doc_props = doc_settings:readSetting("doc_props")
-        if doc_props then
-            title = doc_props.title and doc_props.title ~= "" and doc_props.title or title
-            authors = doc_props.authors and doc_props.authors ~= "" and doc_props.authors or authors
-            series = doc_props.series and doc_props.series ~= "" and doc_props.series or series
+        props = FileManagerBookInfo.customizeProps(doc_settings:readSetting("doc_props"), lastfile)
+        if props then
+            props.title = props.title or filemanagerutil.splitFileNameType(lastfile)
         end
         -- Unable to set time_left_chapter and time_left_document without ReaderUI, so leave N/A
+    end
+    if props then
+        title = props.title
+        if props.authors then
+            authors = props.authors
+        end
+        if props.series then
+            series = props.series
+            if props.series_index then
+                series = series .. " #" .. props.series_index
+            end
+        end
     end
     if Device:hasBattery() then
         local powerd = Device:getPowerDevice()
@@ -644,7 +651,7 @@ function Screensaver:show()
         local doc_settings = ui.doc_settings
         widget = BookStatusWidget:new{
             thumbnail = FileManagerBookInfo:getCoverImage(doc),
-            props = doc:getProps(),
+            props = ui.doc_props,
             document = doc,
             settings = doc_settings,
             ui = ui,
