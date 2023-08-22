@@ -1,5 +1,5 @@
 local UIManager = require("ui/uimanager")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local socketutil = require("socketutil")
 
 local KOSyncClient = {
@@ -70,7 +70,7 @@ function KOSyncClient:register(username, password)
     if ok then
         return res.status == 201, res.body
     else
-        DEBUG(ok, res)
+        logger.dbg("KOSyncClient:register failure:", res)
         return false, res.body
     end
 end
@@ -89,7 +89,7 @@ function KOSyncClient:authorize(username, password)
     if ok then
         return res.status == 200, res.body
     else
-        DEBUG("err:", res)
+        logger.dbg("KOSyncClient:authorize failure:", res)
         return false, res.body
     end
 end
@@ -125,7 +125,7 @@ function KOSyncClient:update_progress(
         if ok then
             callback(res.status == 200, res.body)
         else
-            DEBUG("err:", res)
+            logger.dbg("KOSyncClient:update_progress failure:", res)
             callback(false, res.body)
         end
     end)
@@ -157,7 +157,7 @@ function KOSyncClient:get_progress(
         if ok then
             callback(res.status == 200, res.body)
         else
-            DEBUG("err:", res)
+            logger.dbg("KOSyncClient:get_progress failure:", res)
             callback(false, res.body)
         end
     end)
