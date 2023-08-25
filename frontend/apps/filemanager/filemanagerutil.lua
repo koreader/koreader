@@ -103,7 +103,7 @@ function filemanagerutil.setStatus(file, status)
     doc_settings:flush()
 end
 
-function filemanagerutil.getStatusText(status)
+function filemanagerutil.statusToString(status)
     local status_to_text = {
         new       = _("Unread"),
         reading   = _("Reading"),
@@ -119,7 +119,7 @@ function filemanagerutil.genStatusButtonsRow(file, caller_callback, current_stat
     local status = current_status or filemanagerutil.getStatus(file)
     local function genStatusButton(to_status)
         return {
-            text = filemanagerutil.getStatusText(to_status) .. (status == to_status and "  ✓" or ""),
+            text = filemanagerutil.statusToString(to_status) .. (status == to_status and "  ✓" or ""),
             id = to_status, -- used by covermenu
             enabled = status ~= to_status,
             callback = function()
