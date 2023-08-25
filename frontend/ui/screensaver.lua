@@ -184,13 +184,10 @@ function Screensaver:expandSpecial(message, fallback)
         currentpage = Math.round(percent * totalpages)
         percent = Math.round(percent * 100)
         props = FileManagerBookInfo.customizeProps(doc_settings:readSetting("doc_props"), lastfile)
-        if props then
-            props.title = props.title or filemanagerutil.splitFileNameType(lastfile)
-        end
         -- Unable to set time_left_chapter and time_left_document without ReaderUI, so leave N/A
     end
     if props then
-        title = props.title
+        title = props.display_title
         if props.authors then
             authors = props.authors
         end
