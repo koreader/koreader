@@ -187,19 +187,20 @@ end
 
 -- Returns document metadata (opened document or book (file) metadata or custom metadata).
 function BookInfo.getDocProps(ui, file, book_props, no_open_document, no_customize)
-    local original_props, filepath, display_title
+    local original_props, filepath
     if ui then -- currently opened document
         original_props = ui.doc_settings:readSetting("doc_props")
         filepath = ui.document.file
-        -- if original title is empty, generate it as filename without extension
-        display_title = original_props.title or filemanagerutil.splitFileNameType(filepath)
     else -- from file
         original_props = BookInfo.getBookProps(file, book_props, no_open_document)
         filepath = file
     end
 
     local props = no_customize and original_props or BookInfo.customizeProps(original_props, filepath)
-    props.display_title = display_title
+    if ui then
+        -- if original title is empty, generate it as filename without extension
+        props.display_title = props.title or filemanagerutil.splitFileNameType(filepath)
+    end
     return props
 end
 
