@@ -276,14 +276,8 @@ function CalibreSearch:onMenuHold(item)
     local thumbnail = FileManagerBookInfo:getCoverImage(nil, item.path)
     local thumbwidth = math.min(300, Screen:getWidth()/3)
     local status = FileManagerUtil.getStatus(item.path)
-    local status_text = {
-        new       = _("Unread"),
-        reading   = _("Reading"),
-        abandoned = _("On hold"),
-        complete  = _("Finished"),
-    }
     UIManager:show(InfoMessage:new{
-        text = item.info .. "\nStatus: " .. status_text[status],
+        text = item.info .. "\nStatus: " .. FileManagerUtil.statusToText[status],
         image = thumbnail,
         image_width = thumbwidth,
         image_height = thumbwidth/2*3

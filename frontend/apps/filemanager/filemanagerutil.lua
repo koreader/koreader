@@ -103,17 +103,19 @@ function filemanagerutil.setStatus(file, status)
     doc_settings:flush()
 end
 
+filemanagerutil.statusToText = {
+    new       = _("Unread"),
+    reading   = _("Reading"),
+    abandoned = _("On hold"),
+    complete  = _("Finished"),
+}
+
 -- Generate all book status file dialog buttons in a row
 function filemanagerutil.genStatusButtonsRow(file, caller_callback, current_status)
     local status = current_status or filemanagerutil.getStatus(file)
     local function genStatusButton(to_status)
-        local status_text = {
-            reading   = _("Reading"),
-            abandoned = _("On hold"),
-            complete  = _("Finished"),
-        }
         return {
-            text = status_text[to_status] .. (status == to_status and "  ✓" or ""),
+            text = filemanagerutil.statusToText[to_status] .. (status == to_status and "  ✓" or ""),
             id = to_status, -- used by covermenu
             enabled = status ~= to_status,
             callback = function()
