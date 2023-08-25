@@ -277,7 +277,7 @@ function CalibreSearch:onMenuHold(item)
     local thumbwidth = math.min(300, Screen:getWidth()/3)
     local status = FileManagerUtil.getStatus(item.path)
     UIManager:show(InfoMessage:new{
-        text = item.info .. "\nStatus: " .. FileManagerUtil.statusToText[status],
+        text = item.info .. "\nStatus: " .. FileManagerUtil.getStatusText(status),
         image = thumbnail,
         image_width = thumbwidth,
         image_height = thumbwidth/2*3
