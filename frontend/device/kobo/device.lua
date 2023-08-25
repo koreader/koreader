@@ -648,7 +648,7 @@ function Kobo:init()
     -- So far, MTK kernels do not export a per-request inversion flag
     if self:isMTK() then
         --- @fixme: Apparently, that doesn't quite work, at least on the Elipsa 2E, so, disable HW inversion...
-        ---         c.f., c.f., https://github.com/koreader/koreader/pull/10719#issuecomment-1693425726
+        ---         c.f., https://github.com/koreader/koreader/pull/10719#issuecomment-1693425726
         self.canHWInvert = no
         --[[
         -- Instead, there's a global flag that we can *set* (but not *get*) via a procfs knob...
