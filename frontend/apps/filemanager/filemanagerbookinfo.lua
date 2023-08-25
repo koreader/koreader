@@ -174,7 +174,7 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
 end
 
 -- Returns customized metadata.
-function BookInfo.customizeProps(original_props) -- , filepath)
+function BookInfo.customizeProps(original_props, filepath)
     local custom_props = {} -- stub
     original_props = original_props or {}
 
@@ -182,6 +182,8 @@ function BookInfo.customizeProps(original_props) -- , filepath)
     for _i, prop_key in ipairs(BookInfo.props) do
         props[prop_key] = custom_props[prop_key] or original_props[prop_key]
     end
+    -- if original title is empty, generate it as filename without extension
+    props.display_title = props.title or filemanagerutil.splitFileNameType(filepath)
     return props
 end
 
@@ -195,13 +197,7 @@ function BookInfo.getDocProps(ui, file, book_props, no_open_document, no_customi
         original_props = BookInfo.getBookProps(file, book_props, no_open_document)
         filepath = file
     end
-
-    local props = no_customize and original_props or BookInfo.customizeProps(original_props, filepath)
-    if ui then
-        -- if original title is empty, generate it as filename without extension
-        props.display_title = props.title or filemanagerutil.splitFileNameType(filepath)
-    end
-    return props
+    return no_customize and original_props or BookInfo.customizeProps(original_props, filepath)
 end
 
 -- Returns book (file) metadata, including number of pages.
