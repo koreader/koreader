@@ -7,6 +7,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
+local FileManagerUtil = require("apps/filemanager/filemanagerutil")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
@@ -273,9 +274,16 @@ end
 function CalibreSearch:onMenuHold(item)
     if not item.info or item.info:len() <= 0 then return end
     local thumbnail = FileManagerBookInfo:getCoverImage(nil, item.path)
-    local thumbwidth = math.min(240, Screen:getWidth()/3)
+    local thumbwidth = math.min(300, Screen:getWidth()/3)
+    local status = FileManagerUtil.getStatus(item.path)
+    local status_text = {
+        new       = _("Unread"),
+        reading   = _("Reading"),
+        abandoned = _("On hold"),
+        complete  = _("Finished"),
+    }
     UIManager:show(InfoMessage:new{
-        text = item.info,
+        text = item.info .. "\nStatus: " .. status_text[status],
         image = thumbnail,
         image_width = thumbwidth,
         image_height = thumbwidth/2*3
