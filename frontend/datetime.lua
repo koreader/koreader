@@ -150,7 +150,7 @@ function datetime.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, 
                 if compact then
                     return T(C_("Time", "%1s"), string.format("%d", seconds))
                 else
-                    return T(C_("Time", "%1m\u{2009}%2s"), "0", string.format("%d", seconds)) -- use a thin space
+                    return T(C_("Time", "%1m\xE2\x80\x89%2s"), "0", string.format("%d", seconds)) -- use a thin space
                 end
             else
                 if compact then
