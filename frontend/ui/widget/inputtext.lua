@@ -34,6 +34,7 @@ local InputText = InputContainer:extend{
     edit_callback = nil, -- called with true when text modified, false on init or text re-set
     scroll_callback = nil, -- called with (low, high) when view is scrolled (cf ScrollTextWidget)
     scroll_by_pan = false, -- allow scrolling by lines with Pan (needs scroll=true)
+    manage_keyboard_state = true, -- manage keyboard hidden/shown state
 
     width = nil,
     height = nil, -- when nil, will be set to original text height (possibly
@@ -132,7 +133,7 @@ local function initTouchEvents()
             if self.parent.onSwitchFocus then
                 self.parent:onSwitchFocus(self)
             else
-                if self.is_keyboard_hidden then
+                if self.is_keyboard_hidden and self.manage_keyboard_state then
                     self:onShowKeyboard()
                 end
             end
@@ -677,7 +678,7 @@ dbg:guard(InputText, "onTextInput",
 function InputText:onShowKeyboard(ignore_first_hold_release)
     Device:startTextInput()
 
-    if self.is_keyboard_hidden then
+    if self.is_keyboard_hidden or not self.manage_keyboard_state then
         self.keyboard.ignore_first_hold_release = ignore_first_hold_release
         UIManager:show(self.keyboard)
         self.is_keyboard_hidden = false
@@ -688,7 +689,7 @@ end
 function InputText:onCloseKeyboard()
     Device:stopTextInput()
 
-    if not self.is_keyboard_hidden then
+    if not self.is_keyboard_hidden or not self.manage_keyboard_state then
         UIManager:close(self.keyboard)
         self.is_keyboard_hidden = true
     end
