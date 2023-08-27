@@ -34,7 +34,6 @@ local InputText = InputContainer:extend{
     edit_callback = nil, -- called with true when text modified, false on init or text re-set
     scroll_callback = nil, -- called with (low, high) when view is scrolled (cf ScrollTextWidget)
     scroll_by_pan = false, -- allow scrolling by lines with Pan (needs scroll=true)
-    manage_keyboard_state = true, -- manage keyboard hidden/shown state
 
     width = nil,
     height = nil, -- when nil, will be set to original text height (possibly
@@ -54,7 +53,10 @@ local InputText = InputContainer:extend{
     auto_para_direction = false,
     alignment_strict = false,
 
+    readonly = nil, -- without a VirtualKeyboard if true
+
     -- for internal use
+    keyboard = nil, -- Keyboard widget (either VirtualKeyboard or PhysicalKeyboard)
     text_widget = nil, -- Text Widget for cursor movement, possibly a ScrollTextWidget
     charlist = nil, -- table of individual chars from input string
     charpos = nil, -- position of the cursor, where a new char would be inserted
@@ -65,7 +67,6 @@ local InputText = InputContainer:extend{
     for_measurement_only = nil, -- When the widget is a one-off used to compute text height
     do_select = false, -- to start text selection
     selection_start_pos = nil, -- selection start position
-    is_keyboard_hidden = true, -- to be able to show the keyboard again when it was hidden. (On init, it's the caller's responsibility to call onShowKeyboard, as far as we're concerned, it's hidden)
 }
 
 -- These may be (internally) overloaded as needed, depending on Device capabilities.
@@ -133,8 +134,8 @@ local function initTouchEvents()
             if self.parent.onSwitchFocus then
                 self.parent:onSwitchFocus(self)
             else
-                if self.is_keyboard_hidden and self.manage_keyboard_state then
-                    self:onShowKeyboard()
+                if self.keyboard then
+                    self.keyboard:showKeyboard()
                 end
             end
             -- zh keyboard with candidates shown here has _frame_textwidget.dimen = nil.
@@ -678,10 +679,8 @@ dbg:guard(InputText, "onTextInput",
 function InputText:onShowKeyboard(ignore_first_hold_release)
     Device:startTextInput()
 
-    if self.is_keyboard_hidden or not self.manage_keyboard_state then
-        self.keyboard.ignore_first_hold_release = ignore_first_hold_release
-        UIManager:show(self.keyboard)
-        self.is_keyboard_hidden = false
+    if self.keyboard then
+        self.keyboard:showKeyboard(ignore_first_hold_release)
     end
     return true
 end
@@ -689,14 +688,14 @@ end
 function InputText:onCloseKeyboard()
     Device:stopTextInput()
 
-    if not self.is_keyboard_hidden or not self.manage_keyboard_state then
-        UIManager:close(self.keyboard)
-        self.is_keyboard_hidden = true
+    if self.keyboard then
+        self.keyboard:hideKeyboard()
     end
 end
 
 function InputText:onCloseWidget()
     if self.keyboard then
+        self.keyboard:onClose()
         self.keyboard:free()
     end
     self:free()
