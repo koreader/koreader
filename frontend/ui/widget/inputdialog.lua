@@ -471,12 +471,11 @@ function InputDialog:getAddedWidgetAvailableWidth()
 end
 
 function InputDialog:onTap()
+    -- This is slightly more fine-grained than VK's own visibility lock, hence the duplication...
     if self.deny_keyboard_hiding then
         return
     end
-    if self._input_widget.onCloseKeyboard then
-        self._input_widget:onCloseKeyboard()
-    end
+    self:onCloseKeyboard()
 end
 
 function InputDialog:getInputText()
@@ -540,17 +539,27 @@ function InputDialog:lockKeyboard(toggle)
     return self._input_widget:lockKeyboard(toggle)
 end
 
-function InputDialog:toggleKeyboard(force_hide)
-    if force_hide and not self:isKeyboardVisible() then return end
+function InputDialog:toggleKeyboard(force_toggle)
     -- Remember the *current* visibility, as the following close will reset it
     local visible = self:isKeyboardVisible()
+
+    if force_toggle == false and not visible then
+        -- Already hidden, bye!
+        return
+    end
 
     self.input = self:getInputText() -- re-init with up-to-date text
     self:onClose() -- will close keyboard and save view position
     self:free()
 
     -- Init needs to know the keyboard's visibility state *before* the widget actually exists...
-    self.keyboard_visible = not visible
+    if force_toggle == true then
+        self.keyboard_visible = true
+    elseif force_toggle == false then
+        self.keyboard_visible = false
+    else
+        self.keyboard_visible = not visible
+    end
     self:init()
 
     if self.keyboard_visible then
@@ -605,7 +614,7 @@ function InputDialog:onClose()
         -- Give back top line num and cursor position
         self.view_pos_callback(self._top_line_num, self._charpos)
     end
-    self._input_widget:onCloseKeyboard()
+    self:onCloseKeyboard()
 end
 
 function InputDialog:refreshButtons()
@@ -801,7 +810,7 @@ function InputDialog:_addScrollButtons(nav_bar)
             table.insert(row, {
                 text = _("Find"),
                 callback = function()
-                    self:toggleKeyboard(true) -- hide text editor keyboard
+                    self:toggleKeyboard(false) -- hide text editor keyboard
                     local input_dialog
                     input_dialog = InputDialog:new{
                         title = _("Enter text to search for"),
@@ -852,7 +861,7 @@ function InputDialog:_addScrollButtons(nav_bar)
             table.insert(row, {
                 text = _("Go"),
                 callback = function()
-                    self:toggleKeyboard(true) -- hide text editor keyboard
+                    self:toggleKeyboard(false) -- hide text editor keyboard
                     local cur_line_num, last_line_num = self._input_widget:getLineNums()
                     local input_dialog
                     input_dialog = InputDialog:new{
