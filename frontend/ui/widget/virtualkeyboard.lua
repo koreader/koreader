@@ -951,8 +951,10 @@ function VirtualKeyboard:setVisibility(toggle)
 
     if toggle then
         UIManager:show(self)
+        Device:startTextInput()
     else
         self:onClose()
+        Device:stopTextInput()
     end
 end
 

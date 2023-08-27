@@ -682,8 +682,6 @@ dbg:guard(InputText, "onTextInput",
     end)
 
 function InputText:onShowKeyboard(ignore_first_hold_release)
-    Device:startTextInput()
-
     if self.keyboard then
         self.keyboard:showKeyboard(ignore_first_hold_release)
     end
@@ -691,8 +689,6 @@ function InputText:onShowKeyboard(ignore_first_hold_release)
 end
 
 function InputText:onCloseKeyboard()
-    Device:stopTextInput()
-
     if self.keyboard then
         self.keyboard:hideKeyboard()
     end
