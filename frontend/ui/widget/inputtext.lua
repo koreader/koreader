@@ -18,6 +18,8 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
+local logger = require("logger")
+
 local Keyboard -- Conditional instantiation
 local FocusManagerInstance -- Delayed instantiation
 
@@ -694,6 +696,7 @@ function InputText:onCloseKeyboard()
 end
 
 function InputText:isKeyboardVisible()
+    logger.info("InputText:isKeyboardVisible")
     if self.keyboard then
         return self.keyboard:isVisible()
     end

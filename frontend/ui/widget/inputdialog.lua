@@ -120,6 +120,8 @@ local T = require("ffi/util").template
 local util = require("util")
 local _ = require("gettext")
 
+local logger = require("logger")
+
 local InputDialog = FocusManager:extend{
     is_always_active = true,
     title = "",
@@ -189,6 +191,7 @@ local InputDialog = FocusManager:extend{
     alignment_strict = false,
 
     -- for internal use
+    _keyboard_was_visible = nil, -- previous kb visibility state
     _text_modified = false, -- previous known modified status
     _top_line_num = nil,
     _charpos = nil,
@@ -522,7 +525,7 @@ end
 function InputDialog:onShowKeyboard(ignore_first_hold_release)
     self._input_widget:onShowKeyboard(ignore_first_hold_release)
     -- There's a bit of a chicken or egg issue in init where we would like to check the actual keyboard's visibility state,
-    -- but the widget might not exist yet, so we'll just have to keep this in sync...
+    -- but the widget might not exist or be shown yet, so we'll just have to keep this in sync...
     self.keyboard_visible = self._input_widget:isKeyboardVisible()
 end
 
@@ -540,8 +543,19 @@ function InputDialog:lockKeyboard(toggle)
 end
 
 function InputDialog:toggleKeyboard(force_toggle)
+    logger.info("InputDialog:toggleKeyboard", force_toggle)
     -- Remember the *current* visibility, as the following close will reset it
     local visible = self:isKeyboardVisible()
+    logger.info("visible", visible)
+    logger.info("was visible", self._keyboard_was_visible)
+    print(debug.traceback())
+
+    -- When we forcibly close the keyboard, remember its current visiblity state, so that we can properly restore it later.
+    -- (This is used by some buttons in fullscreen mode, where we might want to keep the original keyboard hidden when popping up a new one for another InputDialog).
+    if force_toggle == false then
+        -- NOTE: visible will be nil between init and show, which is precisely what happens when the *hide* the keyboard.
+        self._keyboard_was_visible = visible == true
+    end
 
     self.input = self:getInputText() -- re-init with up-to-date text
     self:onClose() -- will close keyboard and save view position
@@ -552,11 +566,14 @@ function InputDialog:toggleKeyboard(force_toggle)
         return
     end
 
-    -- Init needs to know the keyboard's visibility state *before* the widget actually exists...
+    -- Init needs to know the keyboard's visibility state *before* the widget is actually shown...
     if force_toggle == true then
         self.keyboard_visible = true
     elseif force_toggle == false then
         self.keyboard_visible = false
+    elseif self._keyboard_was_visible ~= nil then
+        self.keyboard_visible = self._keyboard_was_visible
+        self._keyboard_was_visible = nil
     else
         self.keyboard_visible = not visible
     end
