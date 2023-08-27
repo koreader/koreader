@@ -545,6 +545,7 @@ function InputDialog:lockKeyboard(toggle)
 end
 
 -- NOTE: Only called by fullscreen and/or add_nav_bar codepaths
+--       We do not currently have !fullscreen add_nav_bar callers...
 function InputDialog:toggleKeyboard(force_toggle)
     -- Remember the *current* visibility, as the following close will reset it
     local visible = self:isKeyboardVisible()
@@ -578,6 +579,7 @@ function InputDialog:toggleKeyboard(force_toggle)
     end
     self:init()
 
+    -- NOTE: If we ever have non-fullscreen add_nav_bar callers, it might make sense *not* to lock the keyboard there?
     if self.keyboard_visible then
         self:lockKeyboard(false)
         self:onShowKeyboard()
