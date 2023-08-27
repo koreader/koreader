@@ -699,6 +699,12 @@ function InputText:isKeyboardVisible()
     end
 end
 
+function InputText:lockKeyboard(toggle)
+    if self.keyboard then
+        return self.keyboard:lockVisibility(toggle)
+    end
+end
+
 function InputText:onCloseWidget()
     if self.keyboard then
         self.keyboard:onClose()

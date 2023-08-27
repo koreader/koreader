@@ -536,6 +536,10 @@ function InputDialog:isKeyboardVisible()
     return self._input_widget:isKeyboardVisible()
 end
 
+function InputDialog:lockKeyboard(toggle)
+    return self._input_widget:lockKeyboard(toggle)
+end
+
 function InputDialog:toggleKeyboard(force_hide)
     if force_hide and not self:isKeyboardVisible() then return end
     -- Remember the *current* visibility, as the following close will reset it
@@ -550,11 +554,12 @@ function InputDialog:toggleKeyboard(force_hide)
     self:init()
 
     if self.keyboard_visible then
+        self:lockKeyboard(false)
         self:onShowKeyboard()
     else
         self:onCloseKeyboard()
         -- Prevent InputText:onTapTextBox from opening the keyboard back up on top of our buttons
-        self.
+        self:lockKeyboard(true)
     end
 end
 

@@ -756,6 +756,7 @@ end
 local VirtualKeyboard = FocusManager:extend{
     name = "VirtualKeyboard",
     visible = nil,
+    lock_visibility = false,
     covers_footer = true,
     modal = true,
     disable_double_tap = true,
@@ -939,7 +940,15 @@ function VirtualKeyboard:onCloseWidget()
     self.visible = false
 end
 
+function VirtualKeyboard:lockVisibility(toggle)
+    self.lock_visibility = toggle
+end
+
 function VirtualKeyboard:setVisibility(toggle)
+    if self.lock_visibility then
+        return
+    end
+
     if toggle then
         UIManager:show(self)
     else
