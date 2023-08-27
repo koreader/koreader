@@ -120,6 +120,8 @@ local T = require("ffi/util").template
 local util = require("util")
 local _ = require("gettext")
 
+local logger = require("logger")
+
 local InputDialog = FocusManager:extend{
     is_always_active = true,
     title = "",
@@ -333,6 +335,7 @@ function InputDialog:init()
         -- (will work in case of re-init as these are saved by onClose()
         self._top_line_num, self._charpos = self.view_pos_callback()
     end
+     logger.info("InputDialog:init @", self._top_line_num, self._charpos)
     self._input_widget = self.inputtext_class:new{
         text = self.input,
         hint = self.input_hint,
@@ -512,12 +515,16 @@ function InputDialog:isTextEdited()
 end
 
 function InputDialog:onShow()
+    logger.info("InputDialog:onShow")
+    print(debug.traceback())
     UIManager:setDirty(self, function()
         return "ui", self.dialog_frame.dimen
     end)
 end
 
 function InputDialog:onCloseWidget()
+    logger.info("InputDialog:onCloseWidget")
+    print(debug.traceback())
     self:onClose()
     UIManager:setDirty(nil, self.fullscreen and "full" or function()
         return "ui", self.dialog_frame.dimen
@@ -588,6 +595,9 @@ function InputDialog:toggleKeyboard(force_toggle)
         -- Prevent InputText:onTapTextBox from opening the keyboard back up on top of our buttons
         self:lockKeyboard(true)
     end
+
+    -- Make sure we refresh the nav bar, as it will have moved, and it belongs to us, not to VK or our Input widget...
+    self:refreshButtons()
 end
 
 function InputDialog:onKeyboardHeightChanged()
@@ -625,9 +635,14 @@ function InputDialog:onCloseDialog()
 end
 
 function InputDialog:onClose()
+    logger.info("InputDialog:onClose @", self._top_line_num, self._charpos)
+    -- Make sure we'll pickup up to date values from our widget
+    self._charpos, self._top_line_num = self._input_widget.text_widget:getCharPos()
+    --self._input_widget.text_widget:scrollViewToCharPos()
     -- Remember current view & position in case of re-init
-    self._top_line_num = self._input_widget.top_line_num
-    self._charpos = self._input_widget.charpos
+    --self._top_line_num = self._input_widget.top_line_num
+    --self._charpos = self._input_widget.charpos
+    logger.info("InputDialog:onClose @", self._top_line_num, self._charpos)
     if self.view_pos_callback then
         -- Give back top line num and cursor position
         self.view_pos_callback(self._top_line_num, self._charpos)
@@ -636,6 +651,8 @@ function InputDialog:onClose()
 end
 
 function InputDialog:refreshButtons()
+    logger.info("InputDialog:refreshButtons")
+    print(debug.traceback())
     -- Using what ought to be enough:
     --   return "ui", self.button_table.dimen
     -- causes 2 non-intersecting refreshes (because if our buttons

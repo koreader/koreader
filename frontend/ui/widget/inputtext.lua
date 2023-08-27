@@ -18,6 +18,8 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
+local logger = require("logger")
+
 local Keyboard -- Conditional instantiation
 local FocusManagerInstance -- Delayed instantiation
 
@@ -538,6 +540,7 @@ function InputText:initTextBox(text, char_added)
     --- @fixme self.parent is not always in the widget stack (BookStatusWidget)
     -- Don't even try to refresh dummy widgets used for text height computations...
     if not self.for_measurement_only then
+        logger.info("InputText:initTextBox")
         UIManager:setDirty(self.parent, function()
             return "ui", self.dimen
         end)
