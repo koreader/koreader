@@ -707,7 +707,6 @@ end
 
 function InputText:onCloseWidget()
     if self.keyboard then
-        self.keyboard:onClose()
         self.keyboard:free()
     end
     self:free()
