@@ -932,12 +932,14 @@ end
 function VirtualKeyboard:onShow()
     self:_refresh(true)
     self.visible = true
+    Device:startTextInput()
     return true
 end
 
 function VirtualKeyboard:onCloseWidget()
     self:_refresh(true)
     self.visible = false
+    Device:stopTextInput()
 end
 
 function VirtualKeyboard:lockVisibility(toggle)
@@ -951,10 +953,8 @@ function VirtualKeyboard:setVisibility(toggle)
 
     if toggle then
         UIManager:show(self)
-        Device:startTextInput()
     else
         self:onClose()
-        Device:stopTextInput()
     end
 end
 
