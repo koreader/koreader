@@ -53,7 +53,7 @@ local InputText = InputContainer:extend{
     auto_para_direction = false,
     alignment_strict = false,
 
-    readonly = nil, -- without a VirtualKeyboard if true
+    readonly = nil, -- will not support a Keyboard widget if true
 
     -- for internal use
     keyboard = nil, -- Keyboard widget (either VirtualKeyboard or PhysicalKeyboard)
