@@ -930,15 +930,12 @@ function VirtualKeyboard:_refresh(want_flash, fullscreen)
 end
 
 function VirtualKeyboard:onShow()
-    logger.info("VirtualKeyboard:onShow", tostring(self))
     self:_refresh(true)
     self.visible = true
     return true
 end
 
 function VirtualKeyboard:onCloseWidget()
-    logger.info("VirtualKeyboard:onCloseWidget", tostring(self))
-    print(debug.traceback())
     self:_refresh(true)
     self.visible = false
 end
@@ -960,7 +957,6 @@ function VirtualKeyboard:setVisibility(toggle)
 end
 
 function VirtualKeyboard:isVisible()
-    logger.info("VirtualKeyboard:isVisible", tostring(self), self.visible)
     return self.visible
 end
 

@@ -120,8 +120,6 @@ local T = require("ffi/util").template
 local util = require("util")
 local _ = require("gettext")
 
-local logger = require("logger")
-
 local InputDialog = FocusManager:extend{
     is_always_active = true,
     title = "",
@@ -543,17 +541,13 @@ function InputDialog:lockKeyboard(toggle)
 end
 
 function InputDialog:toggleKeyboard(force_toggle)
-    logger.info("InputDialog:toggleKeyboard", force_toggle)
     -- Remember the *current* visibility, as the following close will reset it
     local visible = self:isKeyboardVisible()
-    logger.info("visible", visible)
-    logger.info("was visible", self._keyboard_was_visible)
-    print(debug.traceback())
 
     -- When we forcibly close the keyboard, remember its current visiblity state, so that we can properly restore it later.
     -- (This is used by some buttons in fullscreen mode, where we might want to keep the original keyboard hidden when popping up a new one for another InputDialog).
     if force_toggle == false then
-        -- NOTE: visible will be nil between init and show, which is precisely what happens when the *hide* the keyboard.
+        -- NOTE: visible will be nil between our own init and a show of the keyboard, which is precisely what happens when the *hide* the keyboard.
         self._keyboard_was_visible = visible == true
     end
 
