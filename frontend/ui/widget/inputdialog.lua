@@ -475,6 +475,7 @@ function InputDialog:getAddedWidgetAvailableWidth()
     return self._input_widget.width
 end
 
+-- Close the keyboard if we tap anywhere outside of the keyboard (that isn't an input field, where it would be caught via InputText:onTapTextBox)
 function InputDialog:onTap()
     -- This is slightly more fine-grained than VK's own visibility lock, hence the duplication...
     if self.deny_keyboard_hiding then
