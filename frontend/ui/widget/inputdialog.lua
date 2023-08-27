@@ -366,7 +366,6 @@ function InputDialog:init()
         scroll_by_pan = self.scroll_by_pan,
         cursor_at_end = self.cursor_at_end,
         readonly = self.readonly,
-        manage_keyboard_state = not self.add_nav_bar, -- we handle keyboard toggle ourselve if nav_bar
         parent = self,
         is_text_edited = self._text_modified,
         top_line_num = self._top_line_num,
