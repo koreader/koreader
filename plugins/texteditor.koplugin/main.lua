@@ -545,7 +545,7 @@ function TextEditor:editFile(file_path, readonly)
         cursor_at_end = false,
         readonly = readonly,
         add_nav_bar = true,
-        keyboard_hidden = not self.show_keyboard_on_start,
+        keyboard_visible = self.show_keyboard_on_start,
         scroll_by_pan = true,
         buttons = {buttons_first_row},
         -- Set/save view and cursor position callback
@@ -641,7 +641,9 @@ Do you want to keep this file as empty, or do you prefer to delete it?
 
     }
     UIManager:show(input)
-    input:onShowKeyboard()
+    if self.show_keyboard_on_start then
+        input:onShowKeyboard()
+    end
     -- Note about self.readonly:
     -- We might have liked to still show keyboard even if readonly, just
     -- to use the arrow keys for line by line scrolling with cursor.
