@@ -643,9 +643,6 @@ Do you want to keep this file as empty, or do you prefer to delete it?
     UIManager:show(input)
     if self.show_keyboard_on_start then
         input:onShowKeyboard()
-    else
-        -- Should only be shown via the dedicated button
-        input:lockKeyboard(true)
     end
     -- Note about self.readonly:
     -- We might have liked to still show keyboard even if readonly, just

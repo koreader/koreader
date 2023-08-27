@@ -445,6 +445,11 @@ function InputDialog:init()
             self:addWidget(widget, true)
         end
     end
+
+    -- If we're fullscreen without a keyboard, make sure only the toggle button can show the keyboard...
+    if self.fullscreen and not self.keyboard_visible then
+        self:lockKeyboard(true)
+    end
 end
 
 function InputDialog:addWidget(widget, re_init)
@@ -539,6 +544,7 @@ function InputDialog:lockKeyboard(toggle)
     return self._input_widget:lockKeyboard(toggle)
 end
 
+-- NOTE: Only called by fullscreen and/or add_nav_bar codepaths
 function InputDialog:toggleKeyboard(force_toggle)
     -- Remember the *current* visibility, as the following close will reset it
     local visible = self:isKeyboardVisible()
