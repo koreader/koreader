@@ -543,14 +543,14 @@ function InputDialog:toggleKeyboard(force_toggle)
     -- Remember the *current* visibility, as the following close will reset it
     local visible = self:isKeyboardVisible()
 
+    self.input = self:getInputText() -- re-init with up-to-date text
+    self:onClose() -- will close keyboard and save view position
+    self:free()
+
     if force_toggle == false and not visible then
         -- Already hidden, bye!
         return
     end
-
-    self.input = self:getInputText() -- re-init with up-to-date text
-    self:onClose() -- will close keyboard and save view position
-    self:free()
 
     -- Init needs to know the keyboard's visibility state *before* the widget actually exists...
     if force_toggle == true then
