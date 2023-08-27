@@ -544,12 +544,17 @@ function InputDialog:toggleKeyboard(force_hide)
     self.input = self:getInputText() -- re-init with up-to-date text
     self:onClose() -- will close keyboard and save view position
     self:free()
+
+    -- Init needs to know the keyboard's visibility state *before* the widget actually exists...
+    self.keyboard_visible = not visible
     self:init()
 
-    if visible then
-        self:onCloseKeyboard()
-    else
+    if self.keyboard_visible then
         self:onShowKeyboard()
+    else
+        self:onCloseKeyboard()
+        -- Prevent InputText:onTapTextBox from opening the keyboard back up on top of our buttons
+        self.
     end
 end
 
@@ -567,8 +572,11 @@ function InputDialog:onKeyboardHeightChanged()
     self:free()
     -- Restore original text_height (or reset it if none to force recomputing it)
     self.text_height = self.orig_text_height or nil
+
+    -- Same deal as in toggleKeyboard...
+    self.keyboard_visible = visible
     self:init()
-    if visible then
+    if self.keyboard_visible then
         self:onShowKeyboard()
     end
     -- Our position on screen has probably changed, so have the full screen refreshed
