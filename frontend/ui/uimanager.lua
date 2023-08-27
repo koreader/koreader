@@ -543,8 +543,6 @@ UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen e
 @bool refreshdither `true` if widget requires dithering (optional)
 ]]
 function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
-    logger.info("UIManager:setDirty", tostring(widget), refreshtype, refreshregion, refreshdither)
-    print(debug.traceback())
     local widget_name
     if widget then
         widget_name = widget.name or widget.id or tostring(widget)

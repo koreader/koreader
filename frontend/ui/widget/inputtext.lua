@@ -18,8 +18,6 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local logger = require("logger")
-
 local Keyboard -- Conditional instantiation
 local FocusManagerInstance -- Delayed instantiation
 
@@ -34,7 +32,7 @@ local InputText = InputContainer:extend{
     focused = true,
     parent = nil, -- parent dialog that will be set dirty
     edit_callback = nil, -- called with true when text modified, false on init or text re-set
-    scroll_callback = nil, -- called with (low, high) when view is scrolled (cf ScrollTextWidget)
+    scroll_callback = nil, -- called with (low, high) when view is scrolled (c.f., ScrollTextWidget)
     scroll_by_pan = false, -- allow scrolling by lines with Pan (needs scroll=true)
 
     width = nil,
@@ -75,6 +73,11 @@ local InputText = InputContainer:extend{
 function InputText:initEventListener() end
 function InputText:onFocus() end
 function InputText:onUnfocus() end
+
+-- Resync our position state with our text widget's actual state
+function InputText:resyncPos()
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+end
 
 local function initTouchEvents()
     if Device:isTouchDevice() then
@@ -147,7 +150,7 @@ local function initTouchEvents()
                 local x = ges.pos.x - self._frame_textwidget.dimen.x - textwidget_offset
                 local y = ges.pos.y - self._frame_textwidget.dimen.y - textwidget_offset
                 self.text_widget:moveCursorToXY(x, y, true) -- restrict_to_view=true
-                self.charpos, self.top_line_num = self.text_widget:getCharPos()
+                self:resyncPos()
             end
             return true
         end
@@ -515,7 +518,7 @@ function InputText:initTextBox(text, char_added)
         }
     end
     -- Get back possibly modified charpos and virtual_line_num
-    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+    self:resyncPos()
 
     self._frame_textwidget = FrameContainer:new{
         bordersize = self.bordersize,
@@ -540,7 +543,6 @@ function InputText:initTextBox(text, char_added)
     --- @fixme self.parent is not always in the widget stack (BookStatusWidget)
     -- Don't even try to refresh dummy widgets used for text height computations...
     if not self.for_measurement_only then
-        logger.info("InputText:initTextBox")
         UIManager:setDirty(self.parent, function()
             return "ui", self.dimen
         end)
@@ -886,71 +888,71 @@ end
 function InputText:leftChar()
     if self.charpos == 1 then return end
     self.text_widget:moveCursorLeft()
-    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+    self:resyncPos()
 end
 
 function InputText:rightChar()
     if self.charpos > #self.charlist then return end
     self.text_widget:moveCursorRight()
-    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+    self:resyncPos()
 end
 
 function InputText:goToStartOfLine()
     local new_pos = select(1, self:getStringPos({"\n", "\r"}, {"\n", "\r"}))
     self.text_widget:moveCursorToCharPos(new_pos)
-    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+    self:resyncPos()
 end
 
 function InputText:goToEndOfLine()
     local new_pos = select(2, self:getStringPos({"\n", "\r"}, {"\n", "\r"})) + 1
     self.text_widget:moveCursorToCharPos(new_pos)
-    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+    self:resyncPos()
 end
 
 function InputText:goToHome()
     self.text_widget:moveCursorHome()
-    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+    self:resyncPos()
 end
 
 function InputText:goToEnd()
     self.text_widget:moveCursorEnd()
-    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+    self:resyncPos()
 end
 
 function InputText:moveCursorToCharPos(char_pos)
     self.text_widget:moveCursorToCharPos(char_pos)
-    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+    self:resyncPos()
 end
 
 function InputText:upLine()
     self.text_widget:moveCursorUp()
-    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+    self:resyncPos()
 end
 
 function InputText:downLine()
     if #self.charlist == 0 then return end -- Avoid cursor moving within a hint.
     self.text_widget:moveCursorDown()
-    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+    self:resyncPos()
 end
 
 function InputText:scrollDown()
     self.text_widget:scrollDown()
-    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+    self:resyncPos()
 end
 
 function InputText:scrollUp()
     self.text_widget:scrollUp()
-    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+    self:resyncPos()
 end
 
 function InputText:scrollToTop()
     self.text_widget:scrollToTop()
-    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+    self:resyncPos()
 end
 
 function InputText:scrollToBottom()
     self.text_widget:scrollToBottom()
-    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+    self:resyncPos()
 end
 
 function InputText:clear()
