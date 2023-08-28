@@ -1004,8 +1004,8 @@ function Device:_UIManagerReady(uimgr)
     -- NOTE: We keep forwarding the uimgr reference because some implementations don't actually have a module-local UIManager ref to update
     self:_setEventHandlers(uimgr)
 
-    -- Returns a self-debouncing scheduling call (3s to give some leeway to the kernel, and debounce to deal with potential chattering)
-    self._updateChargingLED = UIManager:debounce(3, false, function() self:setupChargingLED() end)
+    -- Returns a self-debouncing scheduling call (~4s to give some leeway to the kernel, and debounce to deal with potential chattering)
+    self._updateChargingLED = UIManager:debounce(4, false, function() self:setupChargingLED() end)
 end
 -- In case implementations *also* need a reference to UIManager, *this* is the one to implement!
 function Device:UIManagerReady(uimgr) end
@@ -1109,12 +1109,15 @@ end
 
 -- The common operations that should be performed when the device is plugged to a power source.
 function Device:_beforeCharging()
+    -- Invalidate the capacity cache to make sure we poll up-to-date values for the LED check
+    self.powerd:invalidateCapacityCache()
     self:_updateChargingLED()
     UIManager:broadcastEvent(Event:new("Charging"))
 end
 
 -- The common operations that should be performed when the device is unplugged from a power source.
 function Device:_afterNotCharging()
+    self.powerd:invalidateCapacityCache()
     self:_updateChargingLED()
     UIManager:broadcastEvent(Event:new("NotCharging"))
 end
