@@ -640,7 +640,7 @@ function InputDialog:onClose()
     self._top_line_num = self._input_widget.top_line_num
     self._charpos = self._input_widget.charpos
     if self.view_pos_callback then
-        -- Let the widget store the current top line num and cursor position
+        -- This lets the caller store/process the current top line num and cursor position via this callback
         self.view_pos_callback(self._top_line_num, self._charpos)
     end
     self:onCloseKeyboard()
