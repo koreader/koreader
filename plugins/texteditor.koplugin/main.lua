@@ -548,10 +548,10 @@ function TextEditor:editFile(file_path, readonly)
         keyboard_visible = self.show_keyboard_on_start,
         scroll_by_pan = true,
         buttons = {buttons_first_row},
-        -- Set/save view and cursor position callback
+        -- Store/retrieve view and cursor position callback
         view_pos_callback = function(top_line_num, charpos)
-            -- This same callback is called with no argument to get initial position,
-            -- and with arguments to give back final position when closed.
+            -- This same callback is called with no arguments on init to retrieve the stored initial position,
+            -- and with arguments to store the final position on close.
             if top_line_num and charpos then
                 self.last_view_pos[file_path] = {top_line_num, charpos}
             else

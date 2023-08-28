@@ -162,8 +162,8 @@ local InputDialog = FocusManager:extend{
     edited_callback = nil,  -- Called on each text modification
 
     -- For use by TextEditor plugin:
-    view_pos_callback = nil, -- Called with no arg to get initial top_line_num/charpos,
-                             -- called with (top_line_num, charpos) to give back position on close.
+    view_pos_callback = nil, -- Called with no args on init to retrieve top_line_num/charpos (however the caller chooses to do so, e.g., some will store it in a LuaSettings),
+                             -- called with (top_line_num, charpos) on close to let the widget do its thing so that the no args branch spits back useful data..
 
     -- Set to false if movable gestures conflicts with subwidgets gestures
     is_movable = true,
@@ -329,9 +329,14 @@ function InputDialog:init()
         end
     end
     if self.view_pos_callback then
-        -- Get initial cursor and top line num from callback
-        -- (will work in case of re-init as these are saved by onClose()
-        self._top_line_num, self._charpos = self.view_pos_callback()
+        -- Retrieve cursor position and top line num from our callback.
+        -- Mainly used for runtime re-inits.
+        -- c.f., our onClose handler for the other end of this.
+        -- *May* return nils, in which case, we do *not* want to override our caller's values!
+        local top_line_num, charpos = self.view_pos_callback()
+        if top_line_num and charpos then
+            self._top_line_num, self._charpos = top_line_num, charpos
+        end
     end
     self._input_widget = self.inputtext_class:new{
         text = self.input,
@@ -635,7 +640,7 @@ function InputDialog:onClose()
     self._top_line_num = self._input_widget.top_line_num
     self._charpos = self._input_widget.charpos
     if self.view_pos_callback then
-        -- Give back top line num and cursor position
+        -- Let the widget store the current top line num and cursor position
         self.view_pos_callback(self._top_line_num, self._charpos)
     end
     self:onCloseKeyboard()
