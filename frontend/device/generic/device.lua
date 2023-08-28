@@ -284,9 +284,6 @@ function Device:init()
             self.screen:toggleSWDithering(true)
         end
     end
-
-    -- Returns a self-debouncing scheduling call (2s to give some leeway to the kernel, and debounce to deal with potential chattering)
-    self._updateChargingLED = UIManager:debounce(2, false, function() self:setupChargingLED() end)
 end
 
 function Device:setScreenDPI(dpi_override)
@@ -1006,6 +1003,9 @@ function Device:_UIManagerReady(uimgr)
     -- Setup PM event handlers
     -- NOTE: We keep forwarding the uimgr reference because some implementations don't actually have a module-local UIManager ref to update
     self:_setEventHandlers(uimgr)
+
+    -- Returns a self-debouncing scheduling call (2s to give some leeway to the kernel, and debounce to deal with potential chattering)
+    self._updateChargingLED = UIManager:debounce(2, false, function() self:setupChargingLED() end)
 end
 -- In case implementations *also* need a reference to UIManager, *this* is the one to implement!
 function Device:UIManagerReady(uimgr) end
