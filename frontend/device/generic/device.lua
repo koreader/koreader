@@ -72,6 +72,7 @@ local Device = {
     isGSensorLocked = no,
     canToggleMassStorage = no,
     canToggleChargingLED = no,
+    _updateChargingLED = nil,
     canUseWAL = yes, -- requires mmap'ed I/O on the target FS
     canRestart = yes,
     canSuspend = no,
@@ -283,6 +284,9 @@ function Device:init()
             self.screen:toggleSWDithering(true)
         end
     end
+
+    -- Returns a self-debouncing scheduling call (2s to give some leeway to the kernel, and debounce to deal with potential chattering)
+    self._updateChargingLED = UIManager:debounce(2, false, function() self:setupChargingLED() end)
 end
 
 function Device:setScreenDPI(dpi_override)
@@ -1105,15 +1109,13 @@ end
 
 -- The common operations that should be performed when the device is plugged to a power source.
 function Device:_beforeCharging()
-    -- Leave the kernel some time to figure it out ;o).
-    UIManager:scheduleIn(1, function() self:setupChargingLED() end)
+    self:_updateChargingLED()
     UIManager:broadcastEvent(Event:new("Charging"))
 end
 
 -- The common operations that should be performed when the device is unplugged from a power source.
 function Device:_afterNotCharging()
-    -- Leave the kernel some time to figure it out ;o).
-    UIManager:scheduleIn(1, function() self:setupChargingLED() end)
+    self:_updateChargingLED()
     UIManager:broadcastEvent(Event:new("NotCharging"))
 end
 
