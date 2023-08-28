@@ -163,7 +163,7 @@ local InputDialog = FocusManager:extend{
 
     -- For use by TextEditor plugin:
     view_pos_callback = nil, -- Called with no args on init to retrieve top_line_num/charpos (however the caller chooses to do so, e.g., some will store it in a LuaSettings),
-                             -- called with (top_line_num, charpos) on close to let the widget do its thing so that the no args branch spits back useful data..
+                             -- called with (top_line_num, charpos) on close to let the callback do its thing so that the no args branch spits back useful data..
 
     -- Set to false if movable gestures conflicts with subwidgets gestures
     is_movable = true,
