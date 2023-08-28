@@ -182,6 +182,7 @@ function BookInfo.customizeProps(original_props, filepath)
     for _i, prop_key in ipairs(BookInfo.props) do
         props[prop_key] = custom_props[prop_key] or original_props[prop_key]
     end
+    props.pages = original_props.pages
     -- if original title is empty, generate it as filename without extension
     props.display_title = props.title or filemanagerutil.splitFileNameType(filepath)
     return props
