@@ -193,7 +193,7 @@ function FileSearcher:isFileMatch(filename, fullpath, keywords, is_file)
     end
     if self.include_metadata and is_file and DocumentRegistry:hasProvider(fullpath) then
         local book_props = self.ui.coverbrowser:getBookInfo(fullpath) or
-                           FileManagerBookInfo.getDocProps(nil, fullpath, nil, true)
+                           FileManagerBookInfo.getDocProps(fullpath, nil, true) -- do not open the document
         if next(book_props) ~= nil then
             for _, key in ipairs(FileManagerBookInfo.props) do
                 local prop = book_props[key]
