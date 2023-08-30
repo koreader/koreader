@@ -83,7 +83,7 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
     end
     -- metadata
     local custom_props
-    local custom_metadata_file = DocSettings.getCustomMetadataFile(file)
+    local custom_metadata_file = DocSettings:getCustomMetadataFile(file)
     if custom_metadata_file then
         self.custom_doc_settings = DocSettings:openCustomMetadata(custom_metadata_file)
         custom_props = self.custom_doc_settings:readSetting("custom_props")
@@ -128,7 +128,7 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
     end
     -- cover image
     local is_doc = self.document and true or false
-    self.custom_book_cover = DocSettings.findCoverFile(file)
+    self.custom_book_cover = DocSettings:findCoverFile(file)
     key_text = self.prop_text["cover"]
     if self.custom_book_cover then
         key_text = "\u{F040} " .. key_text
@@ -188,7 +188,7 @@ end
 
 -- Returns customized metadata.
 function BookInfo.customizeProps(original_props, filepath)
-    local custom_metadata_file = DocSettings.getCustomMetadataFile(filepath)
+    local custom_metadata_file = DocSettings:getCustomMetadataFile(filepath)
     local custom_props = custom_metadata_file
         and DocSettings:openCustomMetadata(custom_metadata_file):readSetting("custom_props") or {}
     original_props = original_props or {}
@@ -233,7 +233,7 @@ function BookInfo.getDocProps(file, book_props, no_open_document, no_customize)
     -- If still no book_props (book never opened or empty "stats"),
     -- but custom metadata exists, it has a copy of original doc_props
     if not book_props then
-        local custom_metadata_file = DocSettings.getCustomMetadataFile(file)
+        local custom_metadata_file = DocSettings:getCustomMetadataFile(file)
         if custom_metadata_file then
             book_props = DocSettings:openCustomMetadata(custom_metadata_file):readSetting("doc_props")
         end
@@ -327,7 +327,7 @@ function BookInfo:getCoverImage(doc, file, force_orig)
     local cover_bb
     -- check for a custom cover (orig cover is forcibly requested in "Book information" only)
     if not force_orig then
-        local custom_cover = DocSettings.findCoverFile(file or (doc and doc.file))
+        local custom_cover = DocSettings:findCoverFile(file or (doc and doc.file))
         if custom_cover then
             local cover_doc = DocumentRegistry:openDocument(custom_cover)
             if cover_doc then
@@ -366,7 +366,7 @@ end
 function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
     if self.custom_book_cover then -- reset custom cover
         if os.remove(self.custom_book_cover) then
-            DocSettings.removeSidecarDir(file, util.splitFilePathName(self.custom_book_cover))
+            DocSettings:removeSidecarDir(file, util.splitFilePathName(self.custom_book_cover))
             self:updateBookInfo(file, book_props, metadata_updated_caller_callback, true)
         end
     else -- choose an image and set custom cover
@@ -377,7 +377,7 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
                 return DocumentRegistry:isImageFile(filename)
             end,
             onConfirm = function(image_file)
-                if DocSettings.flushCustomCover(file, image_file) then
+                if DocSettings:flushCustomCover(file, image_file) then
                     self:updateBookInfo(file, book_props, metadata_updated_caller_callback, true)
                 end
             end,
@@ -402,7 +402,7 @@ function BookInfo:setCustomMetadata(file, book_props, metadata_updated_caller_ca
     custom_props[prop_key] = prop_value -- nil when resetting a custom prop
     if next(custom_props) == nil then -- no more custom metadata
         os.remove(custom_doc_settings.custom_metadata_file)
-        DocSettings.removeSidecarDir(file, util.splitFilePathName(custom_doc_settings.custom_metadata_file))
+        DocSettings:removeSidecarDir(file, util.splitFilePathName(custom_doc_settings.custom_metadata_file))
     else
         custom_doc_settings:saveSetting("custom_props", custom_props)
         custom_doc_settings:flushCustomMetadata(file)
