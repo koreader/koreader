@@ -558,6 +558,7 @@ function NetworkMgr:goOnlineToRun(callback)
     end
 
     -- If we don't have seamless wifi toggling, we're screwed as we won't be able to block sanely.
+    -- FIXME: If enforcing turn_on actually works, we can just drop the turn_on requirement from KOSync?
     if not Device:hasSeamlessWifiToggle() then
         logger.warn("NetworkMgr:goOnlineToRun: Cannot run callback because device is offline and cannot toggle wifi sanely")
     end
