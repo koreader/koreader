@@ -106,6 +106,7 @@ local NetworkItem = InputContainer:extend{
     icon_size = Screen:scaleBySize(32),
     width = nil,
     info = nil,
+    decoded_ssid = nil,
     background = Blitbuffer.COLOR_WHITE,
 }
 
@@ -114,6 +115,7 @@ function NetworkItem:init()
     if not self.info.ssid then
         self.info.ssid = "[hidden]"
     end
+    self.decoded_ssid = NetworkMgr.decodeSSID(self.info.ssid)
 
     local wifi_icon
     if string.find(self.info.flags, "WPA") then
@@ -149,7 +151,7 @@ function NetworkItem:init()
                 },
                 horizontal_space,
                 TextWidget:new{
-                    text = self.info.ssid,
+                    text = self.decoded_ssid,
                     face = Font:getFace("cfont"),
                 },
             },
@@ -283,7 +285,7 @@ end
 function NetworkItem:onEditNetwork()
     local password_input
     password_input = InputDialog:new{
-        title = self.info.ssid,
+        title = self.decoded_ssid,
         input = self.info.password,
         input_hint = _("password (leave empty for open networks)"),
         input_type = "text",
@@ -326,7 +328,7 @@ end
 function NetworkItem:onAddNetwork()
     local password_input
     password_input = InputDialog:new{
-        title = self.info.ssid,
+        title = self.decoded_ssid,
         input = "",
         input_hint = _("password (leave empty for open networks)"),
         input_type = "text",
@@ -488,7 +490,7 @@ function NetworkSetting:init()
                 UIManager:close(self, "ui", self.dimen)
             end
             UIManager:show(InfoMessage:new{
-                text = T(_("Connected to network %1"), BD.wrap(connected_item.info.ssid)),
+                text = T(_("Connected to network %1"), BD.wrap(connected_item.decoded_ssid)),
                 timeout = 3,
             })
             if self.connect_callback then
