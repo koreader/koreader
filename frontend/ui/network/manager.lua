@@ -567,6 +567,8 @@ function NetworkMgr:goOnlineToRun(callback)
 
     -- In case we abort before the beforeWifiAction, we won't pass it the callback, but run it ourselves,
     -- to avoid it firing too late (or at the very least being pinned for too long).
+    -- NOTE: We also enforce "turn_on" behavior, as we *cannot* use prompt here.
+    --       Err, can't we?
     local info = self:beforeWifiAction()
 
     -- We'll basically do the same but in a blocking manner...
