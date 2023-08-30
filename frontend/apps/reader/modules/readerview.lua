@@ -22,6 +22,7 @@ local logger = require("logger")
 local optionsutil = require("ui/data/optionsutil")
 local Size = require("ui/size")
 local time = require("ui/time")
+local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
@@ -636,7 +637,7 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, draw_note_mark)
         else
             local note_mark_pos_x
             if self.ui.paging or
-                    (self.ui.document:getVisiblePageCount() == 1) or -- one-page mode
+                    (self.document:getVisiblePageCount() == 1) or -- one-page mode
                     (x < Screen:getWidth() / 2) then -- page 1 in two-page mode
                 note_mark_pos_x = self.note_mark_pos_x1
             else
@@ -1247,17 +1248,17 @@ function ReaderView:setupNoteMarkPosition()
                 self.note_mark_pos_x1 = screen_w - sign_gap - sign_w
             end
         else
-            local doc_margins = self.ui.document:getPageMargins()
+            local doc_margins = self.document:getPageMargins()
             local pos_x_r = screen_w - doc_margins["right"] + sign_gap -- mark in the right margin
             local pos_x_l = doc_margins["left"] - sign_gap - sign_w -- mark in the left margin
-            if self.ui.document:getVisiblePageCount() == 1 then
+            if self.document:getVisiblePageCount() == 1 then
                 if BD.mirroredUILayout() then
                     self.note_mark_pos_x1 = pos_x_l
                 else
                     self.note_mark_pos_x1 = pos_x_r
                 end
             else -- two-page mode
-                local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage(true)+1)
+                local page2_x = self.document:getPageOffsetX(self.document:getCurrentPage(true)+1)
                 if BD.mirroredUILayout() then
                     self.note_mark_pos_x1 = pos_x_l
                     self.note_mark_pos_x2 = pos_x_l + page2_x
@@ -1268,6 +1269,43 @@ function ReaderView:setupNoteMarkPosition()
             end
         end
     end
+end
+
+function ReaderView:getCurrentPageLineWordCounts()
+    local lines_nb, words_nb = 0, 0
+    if self.ui.rolling then
+        local res = self.document:getTextFromPositions({x = 0, y = 0},
+            {x = Screen:getWidth(), y = Screen:getHeight()}, true) -- do not highlight
+        if res then
+            lines_nb = #self.document:getScreenBoxesFromPositions(res.pos0, res.pos1, true)
+            for word in util.gsplit(res.text, "[%s%p]+", false) do
+                if util.hasCJKChar(word) then
+                    for char in util.gsplit(word, "[\192-\255][\128-\191]+", true) do
+                        words_nb = words_nb + 1
+                    end
+                else
+                    words_nb = words_nb + 1
+                end
+            end
+        end
+    else
+        local page_boxes = self.document:getTextBoxes(self.ui:getCurrentPage())
+        if page_boxes and page_boxes[1][1].word then
+            lines_nb = #page_boxes
+            for _, line in ipairs(page_boxes) do
+                if #line == 1 and line[1].word == "" then -- empty line
+                    lines_nb = lines_nb - 1
+                else
+                    words_nb = words_nb + #line
+                    local last_word = line[#line].word
+                    if last_word:sub(-1) == "-" and last_word ~= "-" then -- hyphenated
+                        words_nb = words_nb - 1
+                    end
+                end
+            end
+        end
+    end
+    return lines_nb, words_nb
 end
 
 return ReaderView
