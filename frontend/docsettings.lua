@@ -276,7 +276,7 @@ function DocSettings:flush(data, no_custom_metadata)
                     end
                 end
                 -- custom metadata
-                metadata_file = self:getCustomMetadataFile(self.data.doc_path)
+                metadata_file = self:getCustomMetadataFile()
                 if metadata_file then
                     filepath, filename = util.splitFilePathName(metadata_file)
                     if filepath ~= sidecar_dir .. "/" then
@@ -319,7 +319,7 @@ function DocSettings:purge(sidecar_to_keep)
             custom_metadata_purged = true
         end
         -- custom metadata
-        metadata_file = self:getCustomMetadataFile(self.data.doc_path)
+        metadata_file = self:getCustomMetadataFile()
         if metadata_file then
             os.remove(metadata_file)
             custom_metadata_purged = true
@@ -403,6 +403,7 @@ end
 
 --- Returns path to book custom cover file if it exists, or nil.
 function DocSettings:findCoverFile(doc_path)
+    doc_path = doc_path or self.data.doc_path
     local location = G_reader_settings:readSetting("document_metadata_folder", "doc")
     local sidecar_dir = self:getSidecarDir(doc_path, location)
     local cover_file = DocSettings._findCoverFileInDir(sidecar_dir)
@@ -430,7 +431,7 @@ function DocSettings:getCoverFile(reset_cache)
         self.cover_file = nil
     else
         if self.cover_file == nil then -- fill empty cache
-            self.cover_file = self:findCoverFile(self.data.doc_path) or false
+            self.cover_file = self:findCoverFile() or false
         end
         return self.cover_file
     end
@@ -467,6 +468,7 @@ end
 
 --- Returns path to book custom metadata file if it exists, or nil.
 function DocSettings:getCustomMetadataFile(doc_path)
+    doc_path = doc_path or self.data.doc_path
     for _, mode in ipairs({"doc", "dir"}) do
         local file = self:getSidecarDir(doc_path, mode) .. custom_metadata_filename
         if lfs.attributes(file, "mode") == "file" then
