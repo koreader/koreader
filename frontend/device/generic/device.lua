@@ -46,6 +46,7 @@ local Device = {
     hasExitOptions = yes,
     hasFewKeys = no,
     hasWifiToggle = yes,
+    hasSeamlessWifiToggle = yes, -- Can toggle Wi-Fi without focus loss and extra user interaction (i.e., not Android)
     hasWifiManager = no,
     hasWifiRestore = no,
     isDefaultFullscreen = yes,

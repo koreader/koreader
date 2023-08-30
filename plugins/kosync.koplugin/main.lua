@@ -50,9 +50,6 @@ local CHECKSUM_METHOD = {
 -- Debounce push/pull attempts
 local API_CALL_DEBOUNCE_DELAY = time.s(25)
 
--- Android shouldn't really be flagged hasWifiToggle, as it happens *outside* of KOReader, requiring a focus switch *and* user interaction...
-local hasSaneWifiToggle = Device:hasWifiToggle() and not Device:isAndroid()
-
 -- NOTE: This is used in a migration script by ui/data/onetime_migration,
 --       which is why it's public.
 KOSync.default_settings = {
@@ -87,7 +84,7 @@ function KOSync:init()
     self.device_id = G_reader_settings:readSetting("device_id")
 
     -- Disable auto-sync if beforeWifiAction was reset to "prompt" behind our back...
-    if self.settings.auto_sync and hasSaneWifiToggle and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
+    if self.settings.auto_sync and Device:hasSeamlessWifiToggle() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
         self.settings.auto_sync = false
         logger.warn("KOSync: Automatic sync has been disabled because wifi_enable_action is *not* turn_on")
     end
@@ -232,7 +229,7 @@ function KOSync:addToMainMenu(menu_items)
                 help_text = _([[This may lead to nagging about toggling WiFi on document close and suspend/resume, depending on the device's connectivity.]]),
                 callback = function()
                     -- Actively recommend switching the before wifi action to "turn_on" instead of prompt, as prompt will just not be practical (or even plain usable) here.
-                    if hasSaneWifiToggle and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" and not self.settings.auto_sync then
+                    if Device:hasSeamlessWifiToggle() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" and not self.settings.auto_sync then
                         UIManager:show(InfoMessage:new{ text = _("You will have to switch the 'Action when Wi-Fi is off' Network setting to 'turn on' to be able to enable this feature!") })
                         return
                     end
