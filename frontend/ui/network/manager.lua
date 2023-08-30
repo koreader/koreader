@@ -567,9 +567,10 @@ function NetworkMgr:goOnlineToRun(callback)
 
     -- In case we abort before the beforeWifiAction, we won't pass it the callback, but run it ourselves,
     -- to avoid it firing too late (or at the very least being pinned for too long).
-    -- NOTE: We also enforce "turn_on" behavior, as we *cannot* use prompt here.
-    --       Err, can't we?
-    local info = self:beforeWifiAction()
+    -- NOTE: We also enforce "turn_on" behavior, as we *cannot* use prompt here,
+    --       as we'll block before handling the popup input...
+    self:setBeforeActionFlag()
+    local info = self:turnOnWifiAndWaitForConnection()
 
     -- We'll basically do the same but in a blocking manner...
     UIManager:unschedule(self.connectivityCheck)
