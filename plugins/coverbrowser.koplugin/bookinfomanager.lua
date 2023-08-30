@@ -492,37 +492,13 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
         end
         if loaded then
             dbrow.pages = pages
-            local props = document:getProps()
+            local props = FileManagerBookInfo.customizeProps(document:getProps(), filepath)
             if next(props) then -- there's at least one item
                 dbrow.has_meta = 'Y'
             end
-            if props.title and props.title ~= "" then dbrow.title = props.title end
-            if props.authors and props.authors ~= "" then dbrow.authors = props.authors end
-            if props.series and props.series ~= "" then
-                -- NOTE: If there's a series index in there, split it off to series_index, and only store the name in series.
-                --       This property is currently only set by:
-                --         * DjVu, for which I couldn't find a real standard for metadata fields
-                --           (we currently use Series for this field, c.f., https://exiftool.org/TagNames/DjVu.html).
-                --         * CRe, which could offer us a split getSeriesName & getSeriesNumber...
-                --           except getSeriesNumber does an atoi, so it'd murder decimal values.
-                --           So, instead, parse how it formats the whole thing as a string ;).
-                if string.find(props.series, "#") then
-                    dbrow.series, dbrow.series_index = props.series:match("(.*) #(%d+%.?%d-)$")
-                    if dbrow.series_index then
-                        -- We're inserting via a bind method, so make sure we feed it a Lua number, because it's a REAL in the db.
-                        dbrow.series_index = tonumber(dbrow.series_index)
-                    else
-                        -- If the index pattern didn't match (e.g., nothing after the octothorp, or a string),
-                        -- restore the full thing as the series name.
-                        dbrow.series = props.series
-                    end
-                else
-                    dbrow.series = props.series
-                end
+            for k, v in pairs(props) do
+                dbrow[k] = v
             end
-            if props.language and props.language ~= "" then dbrow.language = props.language end
-            if props.keywords and props.keywords ~= "" then dbrow.keywords = props.keywords end
-            if props.description and props.description ~= "" then dbrow.description = props.description end
             if cover_specs then
                 local spec_sizetag = cover_specs.sizetag
                 local spec_max_cover_w = cover_specs.max_cover_w

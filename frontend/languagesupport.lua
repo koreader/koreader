@@ -194,7 +194,7 @@ function LanguageSupport:improveWordSelection(selection)
         return
     end
 
-    local language_code = self.document:getProps().language or "unknown"
+    local language_code = self.ui.doc_props.language or "unknown"
     logger.dbg("language support: improving", language_code, "selection", selection)
 
     -- Rather than requiring each language plugin to use document: methods
@@ -250,7 +250,7 @@ end
 function LanguageSupport:extraDictionaryFormCandidates(text)
     if not self:hasActiveLanguagePlugins() then return end -- nothing to do
 
-    local language_code = self.document and self.document:getProps().language or "unknown"
+    local language_code = (self.ui.doc_props and self.ui.doc_props.language) or "unknown"
     logger.dbg("language support: convert", text, "to dictionary form (marked as", language_code..")")
 
     return self:_findAndCallPlugin(

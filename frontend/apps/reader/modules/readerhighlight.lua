@@ -1436,15 +1436,6 @@ dbg:guard(ReaderHighlight, "translate",
             "translate must not be called with nil selected_text!")
     end)
 
-function ReaderHighlight:getDocumentLanguage()
-    local doc_props = self.ui.doc_settings:readSetting("doc_props")
-    local doc_lang = doc_props and doc_props.language
-    if doc_lang == "" then
-        doc_lang = nil
-    end
-    return doc_lang
-end
-
 function ReaderHighlight:onTranslateText(text, page, index)
     Translator:showTranslation(text, true, nil, nil, true, page, index)
 end
@@ -1473,7 +1464,7 @@ function ReaderHighlight:onTranslateCurrentPage()
         self.ui.document.configurable.text_wrap = is_reflow
     end
     if res and res.text then
-        Translator:showTranslation(res.text, false, self:getDocumentLanguage())
+        Translator:showTranslation(res.text, false, self.ui.doc_props.language)
     end
 end
 

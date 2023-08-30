@@ -174,23 +174,18 @@ function ReaderStatistics:initData()
     if not self.data then
         self.data = { performance_in_pages= {} }
     end
-    local book_properties = self:getBookProperties()
-    self.data.title = book_properties.title
-    if self.data.title == nil or self.data.title == "" then
-        self.data.title = self.document.file:match("^.+/(.+)$")
+    local book_properties = self.ui.doc_props
+    self.data.title = book_properties.display_title
+    self.data.authors = book_properties.authors or "N/A"
+    self.data.language = book_properties.language or "N/A"
+    local series
+    if book_properties.series then
+        series = book_properties.series
+        if book_properties.series_index then
+            series = series .. " #" .. book_properties.series_index
+        end
     end
-    self.data.authors = book_properties.authors
-    if self.data.authors == nil or self.data.authors == "" then
-        self.data.authors = "N/A"
-    end
-    self.data.language = book_properties.language
-    if self.data.language == nil or self.data.language == "" then
-        self.data.language = "N/A"
-    end
-    self.data.series = book_properties.series
-    if self.data.series == nil or self.data.series == "" then
-        self.data.series = "N/A"
-    end
+    self.data.series = series or "N/A"
 
     self.data.pages = self.view.document:getPageCount()
     if not self.data.md5 then
@@ -919,15 +914,6 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
         total_time = 0
     end
     return total_pages, total_time
-end
-
-function ReaderStatistics:getBookProperties()
-    local props = self.view.document:getProps()
-    if props.title == "No document" or props.title == "" then
-        --- @fixme Sometimes crengine returns "No document", try one more time.
-        props = self.view.document:getProps()
-    end
-    return props
 end
 
 function ReaderStatistics:getStatisticEnabledMenuItem()
@@ -2691,7 +2677,7 @@ function ReaderStatistics:onReadingResumed()
 end
 
 function ReaderStatistics:onReadSettings(config)
-    self.data = config.data.stats or {}
+    self.data = config:readSetting("stats", {})
 end
 
 function ReaderStatistics:onReaderReady()

@@ -213,6 +213,10 @@ function CreDocument:getDocumentFormat()
     return self._document:getDocumentFormat()
 end
 
+function CreDocument:getDocumentProps()
+    return self._document:getDocumentProps()
+end
+
 function CreDocument:setupDefaultView()
     if self.loaded then
         -- Don't apply defaults if the document has already been loaded

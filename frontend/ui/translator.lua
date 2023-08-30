@@ -308,14 +308,10 @@ end
 
 function Translator:getDocumentLanguage()
     local ui = require("apps/reader/readerui").instance
-    if not ui or not ui.document then
+    local lang = ui and ui.doc_props and ui.doc_props.language
+    if not lang then
         return
     end
-    local props = ui.document:getProps()
-    if not props or not props.language or props.language == "" then
-        return
-    end
-    local lang = props.language
     lang = lang:match("(.*)-") or lang
     lang = lang:lower()
     local name, supported = self:getLanguageName(lang, "")

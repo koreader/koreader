@@ -457,6 +457,8 @@ function ReaderUI:init()
     -- (so that filemanager can use it from sideCar file to display
     -- Book information).
     self.doc_settings:saveSetting("doc_props", self.document:getProps())
+    -- And have an extended and customized copy in memory for quick access.
+    self.doc_props = FileManagerBookInfo.getDocProps(self)
 
     -- Set "reading" status if there is no status.
     local summary = self.doc_settings:readSetting("summary")
@@ -656,15 +658,8 @@ function ReaderUI:doShowReader(file, provider, seamless)
         document = document,
     }
 
-    local title = reader.doc_settings:readSetting("doc_props").title
-
-    if title ~= "" then
-        Screen:setWindowTitle(title)
-    else
-        local _, filename = util.splitFilePathName(file)
-        Screen:setWindowTitle(filename)
-    end
-    Device:notifyBookState(title, document)
+    Screen:setWindowTitle(reader.doc_props.display_title)
+    Device:notifyBookState(reader.doc_props.display_title, document)
 
     -- This is mostly for the few callers that bypass the coroutine shenanigans and call doShowReader directly,
     -- instead of showReader...

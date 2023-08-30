@@ -299,16 +299,13 @@ function BookStatusWidget:genBookInfoGroup()
 
     -- Get a chance to have title and authors rendered with alternate
     -- glyphs for the book language
-    local lang = nil
-    if self.props.language and self.props.language ~= "" then
-        lang = self.props.language
-    end
+    local lang = self.props.language
     -- title
     local book_meta_info_group = VerticalGroup:new{
         align = "center",
         VerticalSpan:new{ width = height * 0.2 },
         TextBoxWidget:new{
-            text = self.props.title,
+            text = self.props.display_title,
             lang = lang,
             width = width,
             face = self.medium_font_face,

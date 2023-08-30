@@ -313,24 +313,6 @@ function PdfDocument:close()
     Document.close(self)
 end
 
-function PdfDocument:getProps()
-    local props = self._document:getMetadata()
-    if props.title == "" then
-        local startPos = util.lastIndexOf(self.file, "%/")
-        if startPos > 0  then
-            props.title = string.sub(self.file, startPos + 1, -5) --remove extension .pdf
-        else
-            props.title = string.sub(self.file, 0, -5)
-        end
-    end
-    props.authors = props.author
-    props.series = ""
-    props.language = ""
-    props.keywords = props.keywords
-    props.description = props.subject
-    return props
-end
-
 function PdfDocument:getLinkFromPosition(pageno, pos)
     return self.koptinterface:getLinkFromPosition(self, pageno, pos)
 end
