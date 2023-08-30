@@ -276,7 +276,7 @@ function DocSettings:flush(data, no_custom_metadata)
                     end
                 end
                 -- custom metadata
-                metadata_file = DocSettings.getCustomMetadataFile(self.data.doc_path)
+                metadata_file = self:getCustomMetadataFile(self.data.doc_path)
                 if metadata_file then
                     filepath, filename = util.splitFilePathName(metadata_file)
                     if filepath ~= sidecar_dir .. "/" then
@@ -319,7 +319,7 @@ function DocSettings:purge(sidecar_to_keep)
             custom_metadata_purged = true
         end
         -- custom metadata
-        metadata_file = DocSettings.getCustomMetadataFile(self.data.doc_path)
+        metadata_file = self:getCustomMetadataFile(self.data.doc_path)
         if metadata_file then
             os.remove(metadata_file)
             custom_metadata_purged = true
@@ -337,8 +337,8 @@ function DocSettings:purge(sidecar_to_keep)
 end
 
 --- Removes empty sidecar dir.
-function DocSettings.removeSidecarDir(doc_path, sidecar_dir)
-    if sidecar_dir == DocSettings:getSidecarDir(doc_path, "doc") then
+function DocSettings:removeSidecarDir(doc_path, sidecar_dir)
+    if sidecar_dir == self:getSidecarDir(doc_path, "doc") then
         os.remove(sidecar_dir)
     else
         util.removePath(sidecar_dir)
@@ -380,7 +380,7 @@ function DocSettings:updateLocation(doc_path, new_doc_path, copy)
             ffiutil.copyFile(cover_file, new_sidecar_dir .. "/" .. filename)
         end
         -- custom metadata
-        local metadata_file = DocSettings.getCustomMetadataFile(doc_path)
+        local metadata_file = self:getCustomMetadataFile(doc_path)
         if metadata_file then
             if not new_sidecar_dir then
                 new_sidecar_dir = DocSettings:getSidecarDir(new_doc_path)
@@ -402,13 +402,13 @@ end
 -- custom cover
 
 --- Returns path to book custom cover file if it exists, or nil.
-function DocSettings.findCoverFile(doc_path)
+function DocSettings:findCoverFile(doc_path)
     local location = G_reader_settings:readSetting("document_metadata_folder", "doc")
-    local sidecar_dir = DocSettings:getSidecarDir(doc_path, location)
+    local sidecar_dir = self:getSidecarDir(doc_path, location)
     local cover_file = DocSettings._findCoverFileInDir(sidecar_dir)
     if not cover_file then
         location = location == "doc" and "dir" or "doc"
-        sidecar_dir = DocSettings:getSidecarDir(doc_path, location)
+        sidecar_dir = self:getSidecarDir(doc_path, location)
         cover_file = DocSettings._findCoverFileInDir(sidecar_dir)
     end
     return cover_file
@@ -430,29 +430,29 @@ function DocSettings:getCoverFile(reset_cache)
         self.cover_file = nil
     else
         if self.cover_file == nil then -- fill empty cache
-            self.cover_file = DocSettings.findCoverFile(self.data.doc_path) or false
+            self.cover_file = self:findCoverFile(self.data.doc_path) or false
         end
         return self.cover_file
     end
 end
 
-function DocSettings.getCustomCandidateSidecarDirs(doc_path)
-    local sidecar_file = DocSettings:hasSidecarFile(doc_path, true) -- new locations only
+function DocSettings:getCustomCandidateSidecarDirs(doc_path)
+    local sidecar_file = self:hasSidecarFile(doc_path, true) -- new locations only
     if sidecar_file then -- book was opened, write custom metadata to its sidecar dir
         local sidecar_dir = util.splitFilePathName(sidecar_file):sub(1, -2)
         return { sidecar_dir }
     end
     -- new book, create sidecar dir in accordance with sdr location setting
-    local dir_sidecar_dir = DocSettings:getSidecarDir(doc_path, "dir")
+    local dir_sidecar_dir = self:getSidecarDir(doc_path, "dir")
     if G_reader_settings:readSetting("document_metadata_folder", "doc") == "doc" then
-        local doc_sidecar_dir = DocSettings:getSidecarDir(doc_path, "doc")
+        local doc_sidecar_dir = self:getSidecarDir(doc_path, "doc")
         return { doc_sidecar_dir, dir_sidecar_dir } -- fallback in case of readonly book storage
     end
     return { dir_sidecar_dir }
 end
 
-function DocSettings.flushCustomCover(doc_path, image_file)
-    local sidecar_dirs = DocSettings.getCustomCandidateSidecarDirs(doc_path)
+function DocSettings:flushCustomCover(doc_path, image_file)
+    local sidecar_dirs = self:getCustomCandidateSidecarDirs(doc_path)
     local new_cover_filename = "/cover." .. util.getFileNameSuffix(image_file):lower()
     for _, sidecar_dir in ipairs(sidecar_dirs) do
         util.makePath(sidecar_dir)
@@ -466,9 +466,9 @@ end
 -- custom metadata
 
 --- Returns path to book custom metadata file if it exists, or nil.
-function DocSettings.getCustomMetadataFile(doc_path)
+function DocSettings:getCustomMetadataFile(doc_path)
     for _, mode in ipairs({"doc", "dir"}) do
-        local file = DocSettings:getSidecarDir(doc_path, mode) .. custom_metadata_filename
+        local file = self:getSidecarDir(doc_path, mode) .. custom_metadata_filename
         if lfs.attributes(file, "mode") == "file" then
             return file
         end
@@ -491,7 +491,7 @@ function DocSettings:openCustomMetadata(custom_metadata_file)
 end
 
 function DocSettings:flushCustomMetadata(doc_path)
-    local sidecar_dirs = DocSettings.getCustomCandidateSidecarDirs(doc_path)
+    local sidecar_dirs = self:getCustomCandidateSidecarDirs(doc_path)
     local new_sidecar_dir
     local s_out = dump(self.data, nil, true)
     for _, sidecar_dir in ipairs(sidecar_dirs) do
@@ -508,7 +508,7 @@ function DocSettings:flushCustomMetadata(doc_path)
         local old_sidecar_dir = util.splitFilePathName(self.custom_metadata_file)
         if old_sidecar_dir ~= new_sidecar_dir then
             os.remove(self.custom_metadata_file)
-            DocSettings.removeSidecarDir(doc_path, old_sidecar_dir)
+            self:removeSidecarDir(doc_path, old_sidecar_dir)
         end
     end
 end
