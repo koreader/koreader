@@ -943,7 +943,7 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
             end
             UIManager:show(InfoMessage:new{
                 tag = "NetworkMgr", -- for crazy KOSync purposes
-                text = T(_("Connected to network %1"), BD.wrap(ssid)),
+                text = T(_("Connected to network %1"), BD.wrap(util.decodeSsid(ssid))),
                 timeout = 3,
             })
         else

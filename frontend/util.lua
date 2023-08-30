@@ -1195,6 +1195,23 @@ function util.htmlEscape(text)
     })
 end
 
+function util.decodeSsid(text)
+    local decode = function(b)
+        local c = string.char(tonumber(b, 16))
+        -- This is a hack that allows us to make sure that any decoded backslash
+        -- does not get replaced in the step that replaces double backslashes.
+        if c == "\\" then
+            return "\\\\"
+        else
+            return c
+        end
+    end
+
+    local decoded = text:gsub("%f[\\]\\x(%x%x)", decode)
+    decoded = decoded:gsub("\\\\", "\\")
+    return util.fixUtf8(decoded, "�")
+end
+
 --- Prettify a CSS stylesheet
 -- Not perfect, but enough to make some ugly CSS readable.
 -- By default, each selector and each property is put on its own line.

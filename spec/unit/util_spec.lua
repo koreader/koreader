@@ -365,6 +365,28 @@ describe("util module", function()
         end)
     end)
 
+    describe("decodeSsid()", function()
+        it("should correctly unescape emoji", function()
+            assert.is_equal("📚", util.decodeSsid("\\xf0\\x9f\\x93\\x9a"))
+        end)
+
+        it("should correctly unescape multiple characters", function()
+            assert.is_equal("神舟五号", util.decodeSsid("\\xe7\\xa5\\x9e\\xe8\\x88\\x9f\\xe4\\xba\\x94\\xe5\\x8f\\xb7"))
+        end)
+
+        it("should ignore escaped backslashes", function()
+            assert.is_equal("\\x61", util.decodeSsid("\\\\x61"))
+        end)
+
+        it("should not remove encoded backslashes", function()
+            assert.is_equal("\\\\", util.decodeSsid("\\x5c\\"))
+        end)
+
+        it("should deal with invalid UTF-8 (relatively) gracefully", function()
+            assert.is_equal("��", util.decodeSsid("\\xe2\\x82"))
+        end)
+    end)
+
     describe("splitToArray()", function()
         it("should split input to array", function()
             assert.are_same({"100", "abc", "", "def", "ghi200"},
