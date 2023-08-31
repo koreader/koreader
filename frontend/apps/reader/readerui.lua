@@ -459,7 +459,7 @@ function ReaderUI:init()
     local props = self.document:getProps()
     self.doc_settings:saveSetting("doc_props", props)
     -- And have an extended and customized copy in memory for quick access.
-    self.doc_props = FileManagerBookInfo.customizeProps(props, self.document.file)
+    self.doc_props = FileManagerBookInfo.extendProps(props, self.document.file)
 
     -- Set "reading" status if there is no status.
     local summary = self.doc_settings:readSetting("summary")
