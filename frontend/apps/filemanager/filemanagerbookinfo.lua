@@ -30,15 +30,15 @@ local BookInfo = WidgetContainer:extend{
         "description",
     },
     prop_text = {
+        cover        = _("Cover image:"),
         title        = _("Title:"),
         authors      = _("Authors:"),
         series       = _("Series:"),
         series_index = _("Series index:"),
-        pages        = _("Pages:"),
         language     = _("Language:"),
         keywords     = _("Keywords:"),
         description  = _("Description:"),
-        cover        = _("Cover image:"),
+        pages        = _("Pages:"),
     },
 }
 
@@ -81,6 +81,21 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
     if not book_props or not book_props.pages then
         book_props = BookInfo.getDocProps(file, book_props)
     end
+    -- cover image
+    self.custom_book_cover = DocSettings:findCoverFile(file)
+    key_text = self.prop_text["cover"]
+    if self.custom_book_cover then
+        key_text = "\u{F040} " .. key_text
+    end
+    table.insert(kv_pairs, { key_text, _("Tap to display"),
+        callback = function()
+            self:onShowBookCover(file)
+        end,
+        hold_callback = function()
+            self:showCustomDialog(file, book_props, metadata_updated_caller_callback)
+        end,
+        separator = true,
+    })
     -- metadata
     local custom_props
     local custom_metadata_file = DocSettings:getCustomMetadataFile(file)
@@ -122,26 +137,10 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
                 self:showCustomDialog(file, book_props, metadata_updated_caller_callback, prop_key)
             end,
         })
-        if prop_key == "series_index" then
-            table.insert(kv_pairs, { self.prop_text["pages"], book_props["pages"] or _("N/A") })
-        end
     end
-    -- cover image
+    -- pages
     local is_doc = self.document and true or false
-    self.custom_book_cover = DocSettings:findCoverFile(file)
-    key_text = self.prop_text["cover"]
-    if self.custom_book_cover then
-        key_text = "\u{F040} " .. key_text
-    end
-    table.insert(kv_pairs, { key_text, _("Tap to display"),
-        callback = function()
-            self:onShowBookCover(file)
-        end,
-        hold_callback = function()
-            self:showCustomDialog(file, book_props, metadata_updated_caller_callback)
-        end,
-        separator = is_doc,
-    })
+    table.insert(kv_pairs, { self.prop_text["pages"], book_props["pages"] or _("N/A"), separator = is_doc })
 
     -- Page section
     if is_doc then
@@ -188,8 +187,8 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
     UIManager:show(self.kvp_widget)
 end
 
--- Returns customized metadata.
-function BookInfo.customizeProps(original_props, filepath)
+-- Returns extended and customized metadata.
+function BookInfo.extendProps(original_props, filepath)
     local custom_metadata_file = DocSettings:getCustomMetadataFile(filepath)
     local custom_props = custom_metadata_file
         and DocSettings:openCustomMetadata(custom_metadata_file):readSetting("custom_props") or {}
@@ -270,7 +269,7 @@ function BookInfo.getDocProps(file, book_props, no_open_document, no_customize)
         end
     end
 
-    return no_customize and (book_props or {}) or BookInfo.customizeProps(book_props, file)
+    return no_customize and (book_props or {}) or BookInfo.extendProps(book_props, file)
 end
 
 -- Shows book information for currently opened document.
@@ -425,7 +424,7 @@ end
 function BookInfo:showCustomEditDialog(file, book_props, metadata_updated_caller_callback, prop_key)
     local input_dialog
     input_dialog = InputDialog:new{
-        title = _("Edit book property: ") .. self.prop_text[prop_key]:sub(1, -2),
+        title = _("Edit book property:") .. " " .. self.prop_text[prop_key]:gsub(":", ""),
         input = book_props[prop_key],
         input_type = prop_key == "series_index" and "number",
         allow_newline = prop_key == "authors" or prop_key == "keywords" or prop_key == "description",
@@ -532,7 +531,7 @@ function BookInfo:showCustomDialog(file, book_props, metadata_updated_caller_cal
         },
     }
     button_dialog = ButtonDialog:new{
-        title = _("Book property: ") .. self.prop_text[prop_key]:sub(1, -2),
+        title = _("Book property:") .. " " .. self.prop_text[prop_key]:gsub(":", ""),
         title_align = "center",
         buttons = buttons,
     }
