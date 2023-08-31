@@ -16,7 +16,7 @@ local DocSettings = LuaSettings:extend{}
 
 local HISTORY_DIR = DataStorage:getHistoryDir()
 local DOCSETTINGS_DIR = DataStorage:getDocSettingsDir()
-local custom_metadata_filename = "/custom_metadata.lua"
+local custom_metadata_filename = "custom_metadata.lua"
 
 local function buildCandidates(list)
     local candidates = {}
@@ -386,7 +386,7 @@ function DocSettings:updateLocation(doc_path, new_doc_path, copy)
                 new_sidecar_dir = DocSettings:getSidecarDir(new_doc_path)
                 util.makePath(new_sidecar_dir)
             end
-            ffiutil.copyFile(metadata_file, new_sidecar_dir .. custom_metadata_filename)
+            ffiutil.copyFile(metadata_file, new_sidecar_dir .. "/" .. custom_metadata_filename)
         end
     end
 
@@ -470,7 +470,7 @@ end
 function DocSettings:getCustomMetadataFile(doc_path)
     doc_path = doc_path or self.data.doc_path
     for _, mode in ipairs({"doc", "dir"}) do
-        local file = self:getSidecarDir(doc_path, mode) .. custom_metadata_filename
+        local file = self:getSidecarDir(doc_path, mode) .. "/" .. custom_metadata_filename
         if lfs.attributes(file, "mode") == "file" then
             return file
         end
@@ -498,7 +498,7 @@ function DocSettings:flushCustomMetadata(doc_path)
     local s_out = dump(self.data, nil, true)
     for _, sidecar_dir in ipairs(sidecar_dirs) do
         util.makePath(sidecar_dir)
-        local f_out = io.open(sidecar_dir .. custom_metadata_filename, "w")
+        local f_out = io.open(sidecar_dir .. "/" .. custom_metadata_filename, "w")
         if f_out ~= nil then
             DocSettings.writeFile(f_out, s_out)
             new_sidecar_dir = sidecar_dir .. "/"
