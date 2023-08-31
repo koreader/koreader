@@ -492,7 +492,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
         end
         if loaded then
             dbrow.pages = pages
-            local props = FileManagerBookInfo.customizeProps(document:getProps(), filepath)
+            local props = FileManagerBookInfo.extendProps(document:getProps(), filepath)
             if next(props) then -- there's at least one item
                 dbrow.has_meta = 'Y'
             end
