@@ -83,7 +83,7 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
     end
     -- cover image
     self.custom_book_cover = DocSettings:findCoverFile(file)
-    key_text = self.prop_text["cover"]
+    local key_text = self.prop_text["cover"]
     if self.custom_book_cover then
         key_text = "\u{F040} " .. key_text
     end
@@ -103,7 +103,7 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
         self.custom_doc_settings = DocSettings:openCustomMetadata(custom_metadata_file)
         custom_props = self.custom_doc_settings:readSetting("custom_props")
     end
-    local values_lang, key_text
+    local values_lang
     for _i, prop_key in ipairs(self.props) do
         local prop = book_props[prop_key]
         if prop == nil or prop == "" then
