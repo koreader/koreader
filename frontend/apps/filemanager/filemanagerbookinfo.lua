@@ -205,7 +205,7 @@ function BookInfo.extendProps(original_props, filepath)
 end
 
 -- Returns customized document metadata, including number of pages.
-function BookInfo.getDocProps(file, book_props, no_open_document, no_customize)
+function BookInfo.getDocProps(file, book_props, no_open_document)
     if DocSettings:hasSidecarFile(file) then
         local doc_settings = DocSettings:open(file)
         if not book_props then
@@ -269,7 +269,7 @@ function BookInfo.getDocProps(file, book_props, no_open_document, no_customize)
         end
     end
 
-    return no_customize and (book_props or {}) or BookInfo.extendProps(book_props, file)
+    return BookInfo.extendProps(book_props, file)
 end
 
 -- Shows book information for currently opened document.
