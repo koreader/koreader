@@ -59,7 +59,7 @@ end
 
 -- Shows book information.
 function BookInfo:show(file, book_props, metadata_updated_caller_callback)
-    self.updated = nil
+    self.prop_updated = nil
     local kv_pairs = {}
 
     -- File section
@@ -163,10 +163,12 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
         close_callback = function()
             self.custom_doc_settings = nil
             self.custom_book_cover = nil
-            if self.updated then
+            if self.prop_updated then
                 local ui, fm_ui
                 if self.ui then
-                    self.ui.view.footer:updateFooterText() -- in case the title changed
+                    if self.prop_updated == "title" then
+                        self.ui.view.footer:updateFooterText() -- in case the title changed
+                    end
                 else
                     fm_ui = require("apps/filemanager/filemanager").instance
                 end
@@ -354,11 +356,11 @@ function BookInfo:getCoverImage(doc, file, force_orig)
     return cover_bb
 end
 
-function BookInfo:updateBookInfo(file, book_props, metadata_updated_caller_callback, cover_updated)
-    if cover_updated and self.ui then
+function BookInfo:updateBookInfo(file, book_props, metadata_updated_caller_callback, prop_updated)
+    if prop_updated == "cover" and self.ui then
         self.ui.doc_settings:getCoverFile(true) -- reset cover file cache
     end
-    self.updated = true
+    self.prop_updated = prop_updated
     self.kvp_widget:onClose()
     self:show(file, book_props, metadata_updated_caller_callback)
 end
@@ -367,7 +369,7 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
     if self.custom_book_cover then -- reset custom cover
         if os.remove(self.custom_book_cover) then
             DocSettings:removeSidecarDir(file, util.splitFilePathName(self.custom_book_cover))
-            self:updateBookInfo(file, book_props, metadata_updated_caller_callback, true)
+            self:updateBookInfo(file, book_props, metadata_updated_caller_callback, "cover")
         end
     else -- choose an image and set custom cover
         local PathChooser = require("ui/widget/pathchooser")
@@ -378,7 +380,7 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
             end,
             onConfirm = function(image_file)
                 if DocSettings:flushCustomCover(file, image_file) then
-                    self:updateBookInfo(file, book_props, metadata_updated_caller_callback, true)
+                    self:updateBookInfo(file, book_props, metadata_updated_caller_callback, "cover")
                 end
             end,
         }
@@ -417,7 +419,7 @@ function BookInfo:setCustomMetadata(file, book_props, metadata_updated_caller_ca
             self.ui.doc_props.display_title = prop_value or filemanagerutil.splitFileNameType(file)
         end
     end
-    self:updateBookInfo(file, book_props, metadata_updated_caller_callback)
+    self:updateBookInfo(file, book_props, metadata_updated_caller_callback, prop_key)
 end
 
 function BookInfo:showCustomEditDialog(file, book_props, metadata_updated_caller_callback, prop_key)
