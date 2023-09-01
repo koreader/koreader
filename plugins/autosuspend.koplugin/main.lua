@@ -20,6 +20,7 @@ local T = require("ffi/util").template
 local default_autoshutdown_timeout_seconds = 3*24*60*60 -- three days
 local default_auto_suspend_timeout_seconds = 15*60 -- 15 minutes
 local default_auto_standby_timeout_seconds = 4 -- 4 seconds; should be safe on Kobo/Sage
+local default_standby_timeout_after_resume_seconds = 4 -- 4 seconds; should be safe on Kobo/Sage, not customizable
 local default_kindle_t1_timeout_reset_seconds = 5*60 -- 5 minutes (i.e., half of the standard t1 timeout).
 
 local AutoSuspend = WidgetContainer:extend{
@@ -366,7 +367,11 @@ function AutoSuspend:onResume()
     self:_start()
     self:_start_kindle()
     self:_unschedule_standby()
-    self:_start_standby()
+    -- Use a default value for first scheduled standby after a suspend here.
+    -- This avoids screen glitches after a full suspend
+    -- and avoids broken refreshes after aborted suspend (when standby_time is 1s).
+    -- (And we like 1s for power saving reasons!)
+    self:_start_standby(default_standby_timeout_after_resume_seconds)
 end
 
 function AutoSuspend:onUnexpectedWakeupLimit()
@@ -590,7 +595,7 @@ Upon user input, the device needs a certain amount of time to wake up. Generally
                 self:pickTimeoutValue(touchmenu_instance,
                     _("Timeout for autostandby"), _("Enter time in minutes and seconds."),
                     "auto_standby_timeout_seconds", default_auto_standby_timeout_seconds,
-                    {3, 15*60}, 0)
+                    {1, 15*60}, 0)
             end,
         }
     end
@@ -617,7 +622,7 @@ function AutoSuspend:AllowStandbyHandler()
         wake_in = math.huge
     end
 
-    if wake_in >= 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
+    if wake_in >= 1 then -- Don't go into standby, if scheduled wakeup is in less than 1 second.
         logger.dbg("AutoSuspend: entering standby with a wakeup alarm in", wake_in, "s")
 
         -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
@@ -679,7 +684,7 @@ function AutoSuspend:onNetworkDisconnected()
     self:_start_standby()
 end
 
---[[ -- not necessary right now
+--[[-- not necessary right now
 function AutoSuspend:onNetworkDisconnecting()
     logger.dbg("AutoSuspend: onNetworkDisconnecting")
 end
