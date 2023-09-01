@@ -4,18 +4,20 @@ This module provides a way to display book information (filename and book metada
 
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
+local ConfirmBox = require("ui/widget/confirmbox")
+local Device = require("device")
 local DocSettings = require("docsettings")
 local Document = require("document/document")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
+local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local ffiutil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
-local Screen = require("device").screen
 
 local BookInfo = WidgetContainer:extend{
     props = {
@@ -26,6 +28,17 @@ local BookInfo = WidgetContainer:extend{
         "language",
         "keywords",
         "description",
+    },
+    prop_text = {
+        cover        = _("Cover image:"),
+        title        = _("Title:"),
+        authors      = _("Authors:"),
+        series       = _("Series:"),
+        series_index = _("Series index:"),
+        language     = _("Language:"),
+        keywords     = _("Keywords:"),
+        description  = _("Description:"),
+        pages        = _("Pages:"),
     },
 }
 
@@ -46,7 +59,7 @@ end
 
 -- Shows book information.
 function BookInfo:show(file, book_props, metadata_updated_caller_callback)
-    self.updated = nil
+    self.prop_updated = nil
     local kv_pairs = {}
 
     -- File section
@@ -66,19 +79,31 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
     -- book_props may be provided if caller already has them available
     -- but it may lack "pages", that we may get from sidecar file
     if not book_props or not book_props.pages then
-        book_props = BookInfo.getDocProps(nil, file, book_props)
+        book_props = BookInfo.getDocProps(file, book_props)
+    end
+    -- cover image
+    self.custom_book_cover = DocSettings:findCoverFile(file)
+    local key_text = self.prop_text["cover"]
+    if self.custom_book_cover then
+        key_text = "\u{F040} " .. key_text
+    end
+    table.insert(kv_pairs, { key_text, _("Tap to display"),
+        callback = function()
+            self:onShowBookCover(file)
+        end,
+        hold_callback = function()
+            self:showCustomDialog(file, book_props, metadata_updated_caller_callback)
+        end,
+        separator = true,
+    })
+    -- metadata
+    local custom_props
+    local custom_metadata_file = DocSettings:getCustomMetadataFile(file)
+    if custom_metadata_file then
+        self.custom_doc_settings = DocSettings:openCustomMetadata(custom_metadata_file)
+        custom_props = self.custom_doc_settings:readSetting("custom_props")
     end
     local values_lang
-    local prop_text = {
-        title        = _("Title:"),
-        authors      = _("Authors:"),
-        series       = _("Series:"),
-        series_index = _("Series index:"),
-        pages        = _("Pages:"), -- not in document metadata
-        language     = _("Language:"),
-        keywords     = _("Keywords:"),
-        description  = _("Description:"),
-    }
     for _i, prop_key in ipairs(self.props) do
         local prop = book_props[prop_key]
         if prop == nil or prop == "" then
@@ -103,33 +128,23 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
             -- Description may (often in EPUB, but not always) or may not (rarely in PDF) be HTML
             prop = util.htmlToPlainTextIfHtml(prop)
         end
-        table.insert(kv_pairs, { prop_text[prop_key], prop })
-        if prop_key == "series_index" then
-            table.insert(kv_pairs, { prop_text["pages"], book_props["pages"] or _("N/A") })
+        key_text = self.prop_text[prop_key]
+        if custom_props and custom_props[prop_key] then -- customized
+            key_text = "\u{F040} " .. key_text
         end
-    end
-    -- cover image
-    local is_doc = self.document and true or false
-    self.custom_book_cover = DocSettings:findCoverFile(file)
-    table.insert(kv_pairs, {
-        _("Cover image:"),
-        _("Tap to display"),
-        callback = function() self:onShowBookCover(file, true) end,
-        separator = is_doc and not self.custom_book_cover,
-    })
-    -- custom cover image
-    if self.custom_book_cover then
-        table.insert(kv_pairs, {
-            _("Custom cover image:"),
-            _("Tap to display"),
-            callback = function() self:onShowBookCover(file) end,
-            separator = is_doc,
+        table.insert(kv_pairs, { key_text, prop,
+            hold_callback = function()
+                self:showCustomDialog(file, book_props, metadata_updated_caller_callback, prop_key)
+            end,
         })
     end
+    -- pages
+    local is_doc = self.document and true or false
+    table.insert(kv_pairs, { self.prop_text["pages"], book_props["pages"] or _("N/A"), separator = is_doc })
 
     -- Page section
     if is_doc then
-        local lines_nb, words_nb = self:getCurrentPageLineWordCounts()
+        local lines_nb, words_nb = self.ui.view:getCurrentPageLineWordCounts()
         if lines_nb == 0 then
             lines_nb = _("N/A")
             words_nb = _("N/A")
@@ -145,16 +160,19 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
         kv_pairs = kv_pairs,
         values_lang = values_lang,
         close_callback = function()
+            self.custom_doc_settings = nil
             self.custom_book_cover = nil
-            if self.updated then
-                local FileManager = require("apps/filemanager/filemanager")
-                local fm_ui = FileManager.instance
-                local ui = self.ui or fm_ui
-                if not ui then
-                    local ReaderUI = require("apps/reader/readerui")
-                    ui = ReaderUI.instance
+            if self.prop_updated then
+                local ui, fm_ui
+                if self.ui then
+                    if self.prop_updated == "title" then
+                        self.ui.view.footer:updateFooterText() -- in case the title changed
+                    end
+                else
+                    fm_ui = require("apps/filemanager/filemanager").instance
                 end
-                if ui and ui.coverbrowser then -- refresh cache db
+                ui = self.ui or fm_ui
+                if ui.coverbrowser then -- refresh cache db
                     ui.coverbrowser:deleteBookInfo(file)
                 end
                 if fm_ui then
@@ -165,21 +183,19 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
                 end
             end
         end,
-        title_bar_left_icon = "appbar.menu",
-        title_bar_left_icon_tap_callback = function()
-            self:showCustomMenu(file, book_props, metadata_updated_caller_callback)
-        end,
     }
     UIManager:show(self.kvp_widget)
 end
 
--- Returns customized metadata.
-function BookInfo.customizeProps(original_props, filepath)
-    local custom_props = {} -- stub
+-- Returns extended and customized metadata.
+function BookInfo.extendProps(original_props, filepath)
+    local custom_metadata_file = DocSettings:getCustomMetadataFile(filepath)
+    local custom_props = custom_metadata_file
+        and DocSettings:openCustomMetadata(custom_metadata_file):readSetting("custom_props") or {}
     original_props = original_props or {}
 
     local props = {}
-    for _i, prop_key in ipairs(BookInfo.props) do
+    for _, prop_key in ipairs(BookInfo.props) do
         props[prop_key] = custom_props[prop_key] or original_props[prop_key]
     end
     props.pages = original_props.pages
@@ -188,21 +204,8 @@ function BookInfo.customizeProps(original_props, filepath)
     return props
 end
 
--- Returns document metadata (opened document or book (file) metadata or custom metadata).
-function BookInfo.getDocProps(ui, file, book_props, no_open_document, no_customize)
-    local original_props, filepath
-    if ui then -- currently opened document
-        original_props = ui.doc_settings:readSetting("doc_props")
-        filepath = ui.document.file
-    else -- from file
-        original_props = BookInfo.getBookProps(file, book_props, no_open_document)
-        filepath = file
-    end
-    return no_customize and original_props or BookInfo.customizeProps(original_props, filepath)
-end
-
--- Returns book (file) metadata, including number of pages.
-function BookInfo.getBookProps(file, book_props, no_open_document)
+-- Returns customized document metadata, including number of pages.
+function BookInfo.getDocProps(file, book_props, no_open_document)
     if DocSettings:hasSidecarFile(file) then
         local doc_settings = DocSettings:open(file)
         if not book_props then
@@ -228,7 +231,16 @@ function BookInfo.getBookProps(file, book_props, no_open_document)
         end
     end
 
-    -- If still no book_props (book never opened or empty "stats"), open the document to get them
+    -- If still no book_props (book never opened or empty "stats"),
+    -- but custom metadata exists, it has a copy of original doc_props
+    if not book_props then
+        local custom_metadata_file = DocSettings:getCustomMetadataFile(file)
+        if custom_metadata_file then
+            book_props = DocSettings:openCustomMetadata(custom_metadata_file):readSetting("doc_props")
+        end
+    end
+
+    -- If still no book_props, open the document to get them
     if not book_props and not no_open_document then
         local document = DocumentRegistry:openDocument(file)
         if document then
@@ -257,8 +269,7 @@ function BookInfo.getBookProps(file, book_props, no_open_document)
         end
     end
 
-    -- If still no book_props, fall back to empty ones
-    return book_props or {}
+    return BookInfo.extendProps(book_props, file)
 end
 
 -- Shows book information for currently opened document.
@@ -269,23 +280,26 @@ function BookInfo:onShowBookInfo()
     end
 end
 
+function BookInfo:showBookProp(prop_key, prop_text)
+    if prop_key == "description" then
+        prop_text = util.htmlToPlainTextIfHtml(prop_text)
+    end
+    UIManager:show(TextViewer:new{
+        title = self.prop_text[prop_key],
+        text = prop_text,
+    })
+end
+
 function BookInfo:onShowBookDescription(description, file)
     if not description then
         if file then
-            description = BookInfo.getDocProps(nil, file).description
+            description = BookInfo.getDocProps(file).description
         elseif self.document then -- currently opened document
             description = self.ui.doc_props.description
         end
     end
-    if description and description ~= "" then
-        -- Description may (often in EPUB, but not always) or may not (rarely
-        -- in PDF) be HTML.
-        description = util.htmlToPlainTextIfHtml(description)
-        local TextViewer = require("ui/widget/textviewer")
-        UIManager:show(TextViewer:new{
-            title = _("Description:"),
-            text = description,
-        })
+    if description then
+        self:showBookProp("description", description)
     else
         UIManager:show(InfoMessage:new{
             text = _("No book description available."),
@@ -341,28 +355,21 @@ function BookInfo:getCoverImage(doc, file, force_orig)
     return cover_bb
 end
 
-function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
-    local function kvp_update()
-        if self.ui then
-            self.ui.doc_settings:getCoverFile(true) -- reset cover file cache
-        end
-        self.updated = true
-        self.kvp_widget:onClose()
-        self:show(file, book_props, metadata_updated_caller_callback)
+function BookInfo:updateBookInfo(file, book_props, metadata_updated_caller_callback, prop_updated)
+    if prop_updated == "cover" and self.ui then
+        self.ui.doc_settings:getCoverFile(true) -- reset cover file cache
     end
+    self.prop_updated = prop_updated
+    self.kvp_widget:onClose()
+    self:show(file, book_props, metadata_updated_caller_callback)
+end
+
+function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
     if self.custom_book_cover then -- reset custom cover
-        local ConfirmBox = require("ui/widget/confirmbox")
-        local confirm_box = ConfirmBox:new{
-            text = _("Reset custom cover?\nImage file will be deleted."),
-            ok_text = _("Reset"),
-            ok_callback = function()
-                if os.remove(self.custom_book_cover) then
-                    DocSettings:removeSidecarDir(file, util.splitFilePathName(self.custom_book_cover))
-                    kvp_update()
-                end
-            end,
-        }
-        UIManager:show(confirm_box)
+        if os.remove(self.custom_book_cover) then
+            DocSettings:removeSidecarDir(file, util.splitFilePathName(self.custom_book_cover))
+            self:updateBookInfo(file, book_props, metadata_updated_caller_callback, "cover")
+        end
     else -- choose an image and set custom cover
         local PathChooser = require("ui/widget/pathchooser")
         local path_chooser = PathChooser:new{
@@ -371,22 +378,8 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
                 return DocumentRegistry:isImageFile(filename)
             end,
             onConfirm = function(image_file)
-                local sidecar_dir
-                local sidecar_file = DocSettings:findCoverFile(file) -- existing cover file
-                if sidecar_file then
-                    os.remove(sidecar_file)
-                else -- no existing cover, get metadata file path
-                    sidecar_file = DocSettings:hasSidecarFile(file, true) -- new sdr locations only
-                end
-                if sidecar_file then
-                    sidecar_dir = util.splitFilePathName(sidecar_file)
-                else -- no sdr folder, create new
-                    sidecar_dir = DocSettings:getSidecarDir(file) .. "/"
-                    util.makePath(sidecar_dir)
-                end
-                local new_cover_file = sidecar_dir .. "cover." .. util.getFileNameSuffix(image_file):lower()
-                if ffiutil.copyFile(image_file, new_cover_file) == nil then
-                    kvp_update()
+                if DocSettings:flushCustomCover(file, image_file) then
+                    self:updateBookInfo(file, book_props, metadata_updated_caller_callback, "cover")
                 end
             end,
         }
@@ -394,61 +387,153 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
     end
 end
 
-function BookInfo:getCurrentPageLineWordCounts()
-    local lines_nb, words_nb = 0, 0
-    if self.ui.rolling then
-        local res = self.ui.document:getTextFromPositions({x = 0, y = 0},
-            {x = Screen:getWidth(), y = Screen:getHeight()}, true) -- do not highlight
-        if res then
-            lines_nb = #self.ui.document:getScreenBoxesFromPositions(res.pos0, res.pos1, true)
-            for word in util.gsplit(res.text, "[%s%p]+", false) do
-                if util.hasCJKChar(word) then
-                    for char in util.gsplit(word, "[\192-\255][\128-\191]+", true) do
-                        words_nb = words_nb + 1
-                    end
-                else
-                    words_nb = words_nb + 1
-                end
-            end
-        end
+function BookInfo:setCustomMetadata(file, book_props, metadata_updated_caller_callback, prop_key, prop_value)
+    -- in file
+    local custom_doc_settings, custom_props, display_title
+    if self.custom_doc_settings then
+        custom_doc_settings = self.custom_doc_settings
+        custom_props = custom_doc_settings:readSetting("custom_props")
+    else -- no custom metadata file, create new
+        custom_doc_settings = DocSettings:openCustomMetadata()
+        custom_props = {}
+        display_title = book_props.display_title -- backup
+        book_props.display_title = nil
+        custom_doc_settings:saveSetting("doc_props", book_props) -- save a copy of original props
+    end
+    custom_props[prop_key] = prop_value -- nil when resetting a custom prop
+    if next(custom_props) == nil then -- no more custom metadata
+        os.remove(custom_doc_settings.custom_metadata_file)
+        DocSettings:removeSidecarDir(file, util.splitFilePathName(custom_doc_settings.custom_metadata_file))
     else
-        local page_boxes = self.ui.document:getTextBoxes(self.ui:getCurrentPage())
-        if page_boxes and page_boxes[1][1].word then
-            lines_nb = #page_boxes
-            for _, line in ipairs(page_boxes) do
-                if #line == 1 and line[1].word == "" then -- empty line
-                    lines_nb = lines_nb - 1
-                else
-                    words_nb = words_nb + #line
-                    local last_word = line[#line].word
-                    if last_word:sub(-1) == "-" and last_word ~= "-" then -- hyphenated
-                        words_nb = words_nb - 1
-                    end
-                end
-            end
+        custom_doc_settings:saveSetting("custom_props", custom_props)
+        custom_doc_settings:flushCustomMetadata(file)
+    end
+    book_props.display_title = book_props.display_title or display_title -- restore
+    -- in memory
+    prop_value = prop_value or custom_doc_settings:readSetting("doc_props")[prop_key] -- set custom or restore original
+    book_props[prop_key] = prop_value
+    if self.ui then -- currently opened document
+        self.ui.doc_props[prop_key] = prop_value
+        if prop_key == "title" then -- generate if original is empty
+            self.ui.doc_props.display_title = prop_value or filemanagerutil.splitFileNameType(file)
         end
     end
-    return lines_nb, words_nb
+    self:updateBookInfo(file, book_props, metadata_updated_caller_callback, prop_key)
 end
 
-function BookInfo:showCustomMenu(file, book_props, metadata_updated_caller_callback)
-    local button_dialog
-    local buttons = {{
-        {
-            text = self.custom_book_cover and _("Reset cover image") or _("Set cover image"),
-            align = "left",
-            callback = function()
-                UIManager:close(button_dialog)
-                self:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
-            end,
+function BookInfo:showCustomEditDialog(file, book_props, metadata_updated_caller_callback, prop_key)
+    local input_dialog
+    input_dialog = InputDialog:new{
+        title = _("Edit book property:") .. " " .. self.prop_text[prop_key]:gsub(":", ""),
+        input = book_props[prop_key],
+        input_type = prop_key == "series_index" and "number",
+        allow_newline = prop_key == "authors" or prop_key == "keywords" or prop_key == "description",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(input_dialog)
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    callback = function()
+                        local prop_value = input_dialog:getInputValue()
+                        if prop_value and prop_value ~= "" then
+                            UIManager:close(input_dialog)
+                            self:setCustomMetadata(file, book_props, metadata_updated_caller_callback, prop_key, prop_value)
+                        end
+                    end,
+                },
+            },
         },
-    }}
+    }
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
+end
+
+function BookInfo:showCustomDialog(file, book_props, metadata_updated_caller_callback, prop_key)
+    local original_prop, custom_prop, prop_is_cover
+    if prop_key then -- metadata
+        if self.custom_doc_settings then
+            original_prop = self.custom_doc_settings:readSetting("doc_props")[prop_key]
+            custom_prop = self.custom_doc_settings:readSetting("custom_props")[prop_key]
+        else
+            original_prop = book_props[prop_key]
+        end
+        if original_prop and prop_key == "description" then
+            original_prop = util.htmlToPlainTextIfHtml(original_prop)
+        end
+        prop_is_cover = false
+    else -- cover
+        prop_key = "cover"
+        prop_is_cover = true
+    end
+
+    local button_dialog
+    local buttons = {
+        {
+            {
+                text = _("Copy original"),
+                enabled = original_prop ~= nil and Device:hasClipboard(),
+                callback = function()
+                    UIManager:close(button_dialog)
+                    Device.input.setClipboardText(original_prop)
+                end,
+            },
+            {
+                text = _("View original"),
+                enabled = original_prop ~= nil or prop_is_cover,
+                callback = function()
+                    if prop_is_cover then
+                        self:onShowBookCover(file, true)
+                    else
+                        self:showBookProp(prop_key, original_prop)
+                    end
+                end,
+            },
+        },
+        {
+            {
+                text = _("Reset custom"),
+                enabled = custom_prop ~= nil or (prop_is_cover and self.custom_book_cover ~= nil),
+                callback = function()
+                    local confirm_box = ConfirmBox:new{
+                        text = prop_is_cover and _("Reset custom cover?\nImage file will be deleted.")
+                                              or _("Reset custom book property?"),
+                        ok_text = _("Reset"),
+                        ok_callback = function()
+                            UIManager:close(button_dialog)
+                            if prop_is_cover then
+                                self:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
+                            else
+                                self:setCustomMetadata(file, book_props, metadata_updated_caller_callback, prop_key)
+                            end
+                        end,
+                    }
+                    UIManager:show(confirm_box)
+                end,
+            },
+            {
+                text = _("Set custom"),
+                enabled = not prop_is_cover or (prop_is_cover and self.custom_book_cover == nil),
+                callback = function()
+                    UIManager:close(button_dialog)
+                    if prop_is_cover then
+                        self:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
+                    else
+                        self:showCustomEditDialog(file, book_props, metadata_updated_caller_callback, prop_key)
+                    end
+                end,
+            },
+        },
+    }
     button_dialog = ButtonDialog:new{
-        shrink_unneeded_width = true,
+        title = _("Book property:") .. " " .. self.prop_text[prop_key]:gsub(":", ""),
+        title_align = "center",
         buttons = buttons,
-        anchor = function()
-            return self.kvp_widget.title_bar.left_button.image.dimen
-        end,
     }
     UIManager:show(button_dialog)
 end

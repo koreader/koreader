@@ -456,9 +456,10 @@ function ReaderUI:init()
     -- Now that document is loaded, store book metadata in settings
     -- (so that filemanager can use it from sideCar file to display
     -- Book information).
-    self.doc_settings:saveSetting("doc_props", self.document:getProps())
+    local props = self.document:getProps()
+    self.doc_settings:saveSetting("doc_props", props)
     -- And have an extended and customized copy in memory for quick access.
-    self.doc_props = FileManagerBookInfo.getDocProps(self)
+    self.doc_props = FileManagerBookInfo.extendProps(props, self.document.file)
 
     -- Set "reading" status if there is no status.
     local summary = self.doc_settings:readSetting("summary")
