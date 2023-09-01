@@ -130,14 +130,14 @@ end
 
 -- Generate "Reset" file dialog button
 function filemanagerutil.genResetSettingsButton(file, caller_callback, button_disabled)
-    file = ffiutil.realpath(file)
-    local sidecar_file = DocSettings:hasSidecarFile(file)
+    file = ffiutil.realpath(file) or file
+    local has_sidecar_file = DocSettings:hasSidecarFile(file) and true or false
     local custom_cover_file = DocSettings:findCoverFile(file)
     local custom_metadata_file = DocSettings:getCustomMetadataFile(file)
     return {
         text = _("Reset"),
         id = "reset", -- used by covermenu
-        enabled = (not button_disabled and (sidecar_file or custom_metadata_file or custom_cover_file)) and true or false,
+        enabled = (not button_disabled and (has_sidecar_file or custom_metadata_file or custom_cover_file)) and true or false,
         callback = function()
             local CheckButton = require("ui/widget/checkbutton")
             local ConfirmBox = require("ui/widget/confirmbox")
@@ -169,8 +169,8 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
             }
             check_button_settings = CheckButton:new{
                 text = _("document settings, progress, bookmarks, highlights, notes"),
-                checked = sidecar_file and true or false,
-                enabled = sidecar_file and true or false,
+                checked = has_sidecar_file,
+                enabled = has_sidecar_file,
                 parent = confirmbox,
             }
             confirmbox:addWidget(check_button_settings)
