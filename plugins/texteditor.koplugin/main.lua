@@ -641,7 +641,7 @@ Do you want to keep this file as empty, or do you prefer to delete it?
 
     }
     UIManager:show(input)
-    if self.show_keyboard_on_start then
+    if self.show_keyboard_on_start and not self.readonly then
         input:onShowKeyboard()
     end
     -- Note about self.readonly:
