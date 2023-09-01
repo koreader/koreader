@@ -225,12 +225,12 @@ function DocSettings:open(doc_path)
     return new
 end
 
-function DocSettings.writeFile(f_out, s_out)
-    f_out:write("-- we can read Lua syntax here!\nreturn ")
-    f_out:write(s_out)
-    f_out:write("\n")
-    ffiutil.fsyncOpenedFile(f_out) -- force flush to the storage device
-    f_out:close()
+local function writeToFile(data, file)
+    file:write("-- we can read Lua syntax here!\nreturn ")
+    file:write(data)
+    file:write("\n")
+    ffiutil.fsyncOpenedFile(file) -- force flush to the storage device
+    file:close()
 end
 
 --- Serializes settings and writes them to `metadata.lua`.
@@ -262,7 +262,7 @@ function DocSettings:flush(data, no_custom_metadata)
         logger.dbg("DocSettings: Writing to", sidecar_file)
         local f_out = io.open(sidecar_file, "w")
         if f_out ~= nil then
-            DocSettings.writeFile(f_out, s_out)
+            writeToFile(s_out, f_out)
 
             if directory_updated then
                 -- Ensure the file renaming is flushed to storage device
@@ -413,21 +413,7 @@ end
 
 -- custom cover
 
---- Returns path to book custom cover file if it exists, or nil.
-function DocSettings:findCoverFile(doc_path)
-    doc_path = doc_path or self.data.doc_path
-    local location = G_reader_settings:readSetting("document_metadata_folder", "doc")
-    local sidecar_dir = self:getSidecarDir(doc_path, location)
-    local cover_file = DocSettings._findCoverFileInDir(sidecar_dir)
-    if not cover_file then
-        location = location == "doc" and "dir" or "doc"
-        sidecar_dir = self:getSidecarDir(doc_path, location)
-        cover_file = DocSettings._findCoverFileInDir(sidecar_dir)
-    end
-    return cover_file
-end
-
-function DocSettings._findCoverFileInDir(dir)
+local function findCoverFileInDir(dir)
     local ok, iter, dir_obj = pcall(lfs.dir, dir)
     if ok then
         for f in iter, dir_obj do
@@ -436,6 +422,20 @@ function DocSettings._findCoverFileInDir(dir)
             end
         end
     end
+end
+
+--- Returns path to book custom cover file if it exists, or nil.
+function DocSettings:findCoverFile(doc_path)
+    doc_path = doc_path or self.data.doc_path
+    local location = G_reader_settings:readSetting("document_metadata_folder", "doc")
+    local sidecar_dir = self:getSidecarDir(doc_path, location)
+    local cover_file = findCoverFileInDir(sidecar_dir)
+    if not cover_file then
+        location = location == "doc" and "dir" or "doc"
+        sidecar_dir = self:getSidecarDir(doc_path, location)
+        cover_file = findCoverFileInDir(sidecar_dir)
+    end
+    return cover_file
 end
 
 function DocSettings:getCoverFile(reset_cache)
@@ -512,7 +512,7 @@ function DocSettings:flushCustomMetadata(doc_path)
         util.makePath(sidecar_dir)
         local f_out = io.open(sidecar_dir .. "/" .. custom_metadata_filename, "w")
         if f_out ~= nil then
-            DocSettings.writeFile(f_out, s_out)
+            writeToFile(s_out, f_out)
             new_sidecar_dir = sidecar_dir .. "/"
             break
         end
