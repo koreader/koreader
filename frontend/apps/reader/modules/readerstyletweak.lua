@@ -920,10 +920,10 @@ function ReaderStyleTweak:editBookTweak(touchmenu_instance)
                 end
             end
         end,
-        -- Set/save view and cursor position callback
+        -- Store/retrieve view and cursor position callback
         view_pos_callback = function(top_line_num, charpos)
-            -- This same callback is called with no argument to get initial position,
-            -- and with arguments to give back final position when closed.
+            -- This same callback is called with no arguments on init to retrieve the stored initial position,
+            -- and with arguments to store the final position on close.
             if top_line_num and charpos then
                 self.book_style_tweak_last_edit_pos = {top_line_num, charpos}
             else

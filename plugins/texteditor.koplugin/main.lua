@@ -545,13 +545,13 @@ function TextEditor:editFile(file_path, readonly)
         cursor_at_end = false,
         readonly = readonly,
         add_nav_bar = true,
-        keyboard_hidden = not self.show_keyboard_on_start,
+        keyboard_visible = self.show_keyboard_on_start, -- InputDialog will enforce false if readonly
         scroll_by_pan = true,
         buttons = {buttons_first_row},
-        -- Set/save view and cursor position callback
+        -- Store/retrieve view and cursor position callback
         view_pos_callback = function(top_line_num, charpos)
-            -- This same callback is called with no argument to get initial position,
-            -- and with arguments to give back final position when closed.
+            -- This same callback is called with no arguments on init to retrieve the stored initial position,
+            -- and with arguments to store the final position on close.
             if top_line_num and charpos then
                 self.last_view_pos[file_path] = {top_line_num, charpos}
             else
@@ -572,7 +572,7 @@ function TextEditor:editFile(file_path, readonly)
         end,
         -- File saving callback
         save_callback = function(content, closing) -- Will add Save/Close buttons
-            if self.readonly then
+            if readonly then
                 -- We shouldn't be called if read-only, but just in case
                 return false, _("File is read only")
             end
@@ -641,8 +641,10 @@ Do you want to keep this file as empty, or do you prefer to delete it?
 
     }
     UIManager:show(input)
-    input:onShowKeyboard()
-    -- Note about self.readonly:
+    if self.show_keyboard_on_start and not readonly then
+        input:onShowKeyboard()
+    end
+    -- Note about readonly:
     -- We might have liked to still show keyboard even if readonly, just
     -- to use the arrow keys for line by line scrolling with cursor.
     -- But it's easier to just let InputDialog and InputText do their

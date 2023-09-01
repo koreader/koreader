@@ -218,7 +218,9 @@ end
 function MultiInputDialog:onSwitchFocus(inputbox)
     -- unfocus current inputbox
     self._input_widget:unfocus()
-    self._input_widget:onCloseKeyboard()
+    -- and close its existing keyboard (via InputDialog's thin wrapper around _input_widget's own method)
+    self:onCloseKeyboard()
+
     UIManager:setDirty(nil, function()
         return "ui", self.dialog_frame.dimen
     end)
@@ -226,7 +228,9 @@ function MultiInputDialog:onSwitchFocus(inputbox)
     -- focus new inputbox
     self._input_widget = inputbox
     self._input_widget:focus()
-    self._input_widget:onShowKeyboard()
+
+    -- Make sure we have a (new) visible keyboard
+    self:onShowKeyboard()
 end
 
 return MultiInputDialog

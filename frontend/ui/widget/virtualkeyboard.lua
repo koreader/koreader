@@ -755,6 +755,8 @@ end
 
 local VirtualKeyboard = FocusManager:extend{
     name = "VirtualKeyboard",
+    visible = nil,
+    lock_visibility = false,
     covers_footer = true,
     modal = true,
     disable_double_tap = true,
@@ -929,11 +931,53 @@ end
 
 function VirtualKeyboard:onShow()
     self:_refresh(true)
+    self.visible = true
+    Device:startTextInput()
     return true
 end
 
 function VirtualKeyboard:onCloseWidget()
     self:_refresh(true)
+    self.visible = false
+    -- NOTE: This effectively stops SDL text input when a keyboard is hidden (... but navigational stuff still works).
+    --       If you instead wanted it to be enabled as long as an input dialog is displayed, regardless of VK's state,
+    --       this could be moved to InputDialog's onShow/onCloseWidget handlers (but, it would allow input on unfocused fields).
+    -- NOTE: But something more complex, possibly based on an in-class ref count would have to be implemented in order to be able to deal
+    --       with multiple InputDialogs being shown and closed in asymmetric fashion... Ugh.
+    Device:stopTextInput()
+end
+
+function VirtualKeyboard:lockVisibility(toggle)
+    self.lock_visibility = toggle
+end
+
+function VirtualKeyboard:setVisibility(toggle)
+    if self.lock_visibility then
+        return
+    end
+
+    if toggle then
+        UIManager:show(self)
+    else
+        self:onClose()
+    end
+end
+
+function VirtualKeyboard:isVisible()
+    return self.visible
+end
+
+function VirtualKeyboard:showKeyboard(ignore_first_hold_release)
+    if not self:isVisible() then
+        self.ignore_first_hold_release = ignore_first_hold_release
+        self:setVisibility(true)
+    end
+end
+
+function VirtualKeyboard:hideKeyboard()
+    if self:isVisible() then
+        self:setVisibility(false)
+    end
 end
 
 function VirtualKeyboard:initLayer(layer)
