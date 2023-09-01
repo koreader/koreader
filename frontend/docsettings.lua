@@ -294,9 +294,22 @@ function DocSettings:flush(data, no_custom_metadata)
 end
 
 --- Purges (removes) sidecar directory.
-function DocSettings:purge(sidecar_to_keep)
+function DocSettings:purge(sidecar_to_keep, data_to_purge)
+    local custom_cover_file, custom_metadata_file
+    if sidecar_to_keep == nil then
+        custom_cover_file    = self:getCoverFile()
+        custom_metadata_file = self:getCustomMetadataFile()
+    end
+    if data_to_purge == nil then
+        data_to_purge = {
+            doc_settings         = true,
+            custom_cover_file    = custom_cover_file,
+            custom_metadata_file = custom_metadata_file,
+        }
+    end
+
     -- Remove any of the old ones we may consider as candidates in DocSettings:open()
-    if self.candidates then
+    if data_to_purge.doc_settings and self.candidates then
         for _, t in ipairs(self.candidates) do
             local candidate_path = t.path
             if lfs.attributes(candidate_path, "mode") == "file" then
@@ -309,31 +322,22 @@ function DocSettings:purge(sidecar_to_keep)
         end
     end
 
-    local custom_metadata_purged
-    if not sidecar_to_keep then
-        -- custom cover
-        local metadata_file = self:getCoverFile()
-        if metadata_file then
-            os.remove(metadata_file)
-            self:getCoverFile(true) -- reset cache
-            custom_metadata_purged = true
-        end
-        -- custom metadata
-        metadata_file = self:getCustomMetadataFile()
-        if metadata_file then
-            os.remove(metadata_file)
-            custom_metadata_purged = true
-        end
+    if data_to_purge.custom_cover_file then
+        os.remove(data_to_purge.custom_cover_file)
+        self:getCoverFile(true) -- reset cache
+    end
+    if data_to_purge.custom_metadata_file then
+        os.remove(data_to_purge.custom_metadata_file)
     end
 
-    if lfs.attributes(self.doc_sidecar_dir, "mode") == "directory" then
-        os.remove(self.doc_sidecar_dir) -- keep parent folders
+    if data_to_purge.doc_settings or data_to_purge.custom_cover_file or data_to_purge.custom_metadata_file then
+        if lfs.attributes(self.doc_sidecar_dir, "mode") == "directory" then
+            os.remove(self.doc_sidecar_dir) -- keep parent folders
+        end
+        if lfs.attributes(self.dir_sidecar_dir, "mode") == "directory" then
+            util.removePath(self.dir_sidecar_dir) -- remove empty parent folders
+        end
     end
-    if lfs.attributes(self.dir_sidecar_dir, "mode") == "directory" then
-        util.removePath(self.dir_sidecar_dir) -- remove empty parent folders
-    end
-
-    return custom_metadata_purged
 end
 
 --- Removes empty sidecar dir.
