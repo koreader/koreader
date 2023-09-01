@@ -572,7 +572,7 @@ function TextEditor:editFile(file_path, readonly)
         end,
         -- File saving callback
         save_callback = function(content, closing) -- Will add Save/Close buttons
-            if self.readonly then
+            if readonly then
                 -- We shouldn't be called if read-only, but just in case
                 return false, _("File is read only")
             end
