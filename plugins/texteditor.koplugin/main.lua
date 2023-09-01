@@ -641,10 +641,10 @@ Do you want to keep this file as empty, or do you prefer to delete it?
 
     }
     UIManager:show(input)
-    if self.show_keyboard_on_start and not self.readonly then
+    if self.show_keyboard_on_start and not readonly then
         input:onShowKeyboard()
     end
-    -- Note about self.readonly:
+    -- Note about readonly:
     -- We might have liked to still show keyboard even if readonly, just
     -- to use the arrow keys for line by line scrolling with cursor.
     -- But it's easier to just let InputDialog and InputText do their
