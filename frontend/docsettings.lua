@@ -331,6 +331,7 @@ function DocSettings:purge(sidecar_to_keep, data_to_purge)
     end
 
     if data_to_purge.doc_settings or data_to_purge.custom_cover_file or data_to_purge.custom_metadata_file then
+        -- remove sidecar dirs iff empty
         if lfs.attributes(self.doc_sidecar_dir, "mode") == "directory" then
             os.remove(self.doc_sidecar_dir) -- keep parent folders
         end
