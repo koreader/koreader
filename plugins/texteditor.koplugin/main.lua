@@ -545,7 +545,7 @@ function TextEditor:editFile(file_path, readonly)
         cursor_at_end = false,
         readonly = readonly,
         add_nav_bar = true,
-        keyboard_visible = self.show_keyboard_on_start,
+        keyboard_visible = self.show_keyboard_on_start, -- InputDialog will enforce false if readonly
         scroll_by_pan = true,
         buttons = {buttons_first_row},
         -- Store/retrieve view and cursor position callback
