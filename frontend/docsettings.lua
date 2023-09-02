@@ -90,11 +90,18 @@ function DocSettings:getSidecarFile(doc_path, force_location)
     return self:getSidecarDir(doc_path, force_location) .. "/metadata." .. suffix .. ".lua"
 end
 
+--- Returns `true` if there is a `metadata.lua` file.
+-- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
+-- @treturn bool
+function DocSettings:hasSidecarFile(doc_path)
+    return self:getDocSidecarFile(doc_path) and true or false
+end
+
 --- Returns path of `metadata.lua` file if it exists, or nil.
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
 -- @bool no_legacy set to true to skip check of the legacy history file
 -- @treturn string
-function DocSettings:hasSidecarFile(doc_path, no_legacy)
+function DocSettings:getDocSidecarFile(doc_path, no_legacy)
     local sidecar_file = self:getSidecarFile(doc_path, "doc")
     if lfs.attributes(sidecar_file, "mode") == "file" then
         return sidecar_file
@@ -443,7 +450,7 @@ function DocSettings:getCoverFile(reset_cache)
 end
 
 function DocSettings:getCustomCandidateSidecarDirs(doc_path)
-    local sidecar_file = self:hasSidecarFile(doc_path, true) -- new locations only
+    local sidecar_file = self:getDocSidecarFile(doc_path, true) -- new locations only
     if sidecar_file then -- book was opened, write custom metadata to its sidecar dir
         local sidecar_dir = util.splitFilePathName(sidecar_file):sub(1, -2)
         return { sidecar_dir }
