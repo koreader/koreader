@@ -226,7 +226,7 @@ local settingsList = {
     kopt_font_fine_tune = {category="string", paging=true},
     kopt_word_spacing = {category="configurable", paging=true},
     kopt_text_wrap = {category="string", paging=true},
-    kopt_contrast = {category="absolutenumber", paging=true},
+    kopt_contrast = {category="string", paging=true},
     kopt_page_opt = {category="configurable", paging=true},
     kopt_hw_dithering = {category="configurable", paging=true, condition=Device:hasEinkScreen() and Device:canHWDither()},
     kopt_sw_dithering = {category="configurable", paging=true, condition=Device:hasEinkScreen() and not Device:canHWDither() and Device.screen.fb_bpp == 8},

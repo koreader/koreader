@@ -862,7 +862,10 @@ function ReaderView:onReadSettings(config)
     if self.ui.paging then
         self.document:setTileCacheValidity(config:readSetting("tile_cache_validity_ts"))
         self.render_mode = config:readSetting("render_mode") or 0
-        self.state.gamma = config:readSetting("gamma") or 1.0
+        if config:has("gamma") then -- old doc contrast setting
+            config:saveSetting("kopt_contrast", config:readSetting("gamma"))
+            config:delSetting("gamma")
+        end
     end
     local rotation_mode = nil
     local locked = G_reader_settings:isTrue("lock_rotation")
@@ -996,7 +999,7 @@ function ReaderView:onGammaUpdate(gamma)
     if self.page_scroll then
         self.ui:handleEvent(Event:new("UpdateScrollPageGamma", gamma))
     end
-    Notification:notify(T(_("Font gamma set to: %1."), gamma))
+    Notification:notify(T(_("Contrast set to: %1."), gamma))
 end
 
 -- For ReaderKOptListener
@@ -1073,7 +1076,6 @@ function ReaderView:onSaveSettings()
         end
         self.ui.doc_settings:saveSetting("tile_cache_validity_ts", self.document:getTileCacheValidity())
         self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
-        self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
     end
     -- Don't etch the current rotation in stone when sticky rotation is enabled
     local locked = G_reader_settings:isTrue("lock_rotation")

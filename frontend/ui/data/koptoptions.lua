@@ -483,7 +483,7 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 buttonprogress = true,
                 -- See https://github.com/koreader/koreader/issues/1299#issuecomment-65183895
                 -- For pdf reflowing mode (kopt_contrast):
-                values = {1/0.8, 1/1.0, 1/1.5, 1/2.0, 1/4.0, 1/6.0, 1/10.0, 1/50.0},
+                values = {0.8, 1.0, 1.5, 2.0, 4.0, 6.0, 10.0, 50.0},
                 default_pos = 2,
                 default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_CONTRAST"),
                 event = "GammaUpdate",
@@ -491,6 +491,12 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 args =   {0.8, 1.0, 1.5, 2.0, 4.0, 6.0, 10.0, 50.0},
                 labels = {0.8, 1.0, 1.5, 2.0, 4.0, 6.0, 10.0, 50.0},
                 name_text_hold_callback = optionsutil.showValues,
+                more_options = true,
+                more_options_param = {
+                    value_step = 0.1, value_hold_step = 1,
+                    value_min = 0.8, value_max = 50,
+                    precision = "%.1f",
+                },
             },
             {
                 name = "page_opt",
