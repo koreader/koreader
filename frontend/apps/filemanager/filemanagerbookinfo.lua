@@ -9,6 +9,7 @@ local Device = require("device")
 local DocSettings = require("docsettings")
 local Document = require("document/document")
 local DocumentRegistry = require("document/documentregistry")
+local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local TextViewer = require("ui/widget/textviewer")
@@ -58,7 +59,7 @@ function BookInfo:addToMainMenu(menu_items)
 end
 
 -- Shows book information.
-function BookInfo:show(file, book_props, metadata_updated_caller_callback)
+function BookInfo:show(file, book_props)
     self.prop_updated = nil
     local kv_pairs = {}
 
@@ -92,7 +93,7 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
             self:onShowBookCover(file)
         end,
         hold_callback = function()
-            self:showCustomDialog(file, book_props, metadata_updated_caller_callback)
+            self:showCustomDialog(file, book_props)
         end,
         separator = true,
     })
@@ -134,7 +135,7 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
         end
         table.insert(kv_pairs, { key_text, prop,
             hold_callback = function()
-                self:showCustomDialog(file, book_props, metadata_updated_caller_callback, prop_key)
+                self:showCustomDialog(file, book_props, prop_key)
             end,
         })
     end
@@ -163,24 +164,11 @@ function BookInfo:show(file, book_props, metadata_updated_caller_callback)
             self.custom_doc_settings = nil
             self.custom_book_cover = nil
             if self.prop_updated then
-                local ui, fm_ui
-                if self.ui then
-                    if self.prop_updated == "title" then
-                        self.ui.view.footer:updateFooterText() -- in case the title changed
-                    end
-                else
-                    fm_ui = require("apps/filemanager/filemanager").instance
-                end
-                ui = self.ui or fm_ui
+                local ui = self.ui or require("apps/filemanager/filemanager").instance
                 if ui.coverbrowser then -- refresh cache db
                     ui.coverbrowser:deleteBookInfo(file)
                 end
-                if fm_ui then
-                    fm_ui:onRefresh()
-                end
-                if metadata_updated_caller_callback then
-                    metadata_updated_caller_callback()
-                end
+                UIManager:broadcastEvent(Event:new("BookMetadataChanged", self.prop_updated))
             end
         end,
     }
@@ -355,20 +343,20 @@ function BookInfo:getCoverImage(doc, file, force_orig)
     return cover_bb
 end
 
-function BookInfo:updateBookInfo(file, book_props, metadata_updated_caller_callback, prop_updated)
+function BookInfo:updateBookInfo(file, book_props, prop_updated)
     if prop_updated == "cover" and self.ui then
         self.ui.doc_settings:getCoverFile(true) -- reset cover file cache
     end
     self.prop_updated = prop_updated
     self.kvp_widget:onClose()
-    self:show(file, book_props, metadata_updated_caller_callback)
+    self:show(file, book_props)
 end
 
-function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
+function BookInfo:setCustomBookCover(file, book_props)
     if self.custom_book_cover then -- reset custom cover
         if os.remove(self.custom_book_cover) then
             DocSettings:removeSidecarDir(file, util.splitFilePathName(self.custom_book_cover))
-            self:updateBookInfo(file, book_props, metadata_updated_caller_callback, "cover")
+            self:updateBookInfo(file, book_props, "cover")
         end
     else -- choose an image and set custom cover
         local PathChooser = require("ui/widget/pathchooser")
@@ -379,7 +367,7 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
             end,
             onConfirm = function(image_file)
                 if DocSettings:flushCustomCover(file, image_file) then
-                    self:updateBookInfo(file, book_props, metadata_updated_caller_callback, "cover")
+                    self:updateBookInfo(file, book_props, "cover")
                 end
             end,
         }
@@ -387,7 +375,7 @@ function BookInfo:setCustomBookCover(file, book_props, metadata_updated_caller_c
     end
 end
 
-function BookInfo:setCustomMetadata(file, book_props, metadata_updated_caller_callback, prop_key, prop_value)
+function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
     -- in file
     local custom_doc_settings, custom_props, display_title
     if self.custom_doc_settings then
@@ -418,10 +406,10 @@ function BookInfo:setCustomMetadata(file, book_props, metadata_updated_caller_ca
             self.ui.doc_props.display_title = prop_value or filemanagerutil.splitFileNameType(file)
         end
     end
-    self:updateBookInfo(file, book_props, metadata_updated_caller_callback, prop_key)
+    self:updateBookInfo(file, book_props, prop_key)
 end
 
-function BookInfo:showCustomEditDialog(file, book_props, metadata_updated_caller_callback, prop_key)
+function BookInfo:showCustomEditDialog(file, book_props, prop_key)
     local input_dialog
     input_dialog = InputDialog:new{
         title = _("Edit book property:") .. " " .. self.prop_text[prop_key]:gsub(":", ""),
@@ -443,7 +431,7 @@ function BookInfo:showCustomEditDialog(file, book_props, metadata_updated_caller
                         local prop_value = input_dialog:getInputValue()
                         if prop_value and prop_value ~= "" then
                             UIManager:close(input_dialog)
-                            self:setCustomMetadata(file, book_props, metadata_updated_caller_callback, prop_key, prop_value)
+                            self:setCustomMetadata(file, book_props, prop_key, prop_value)
                         end
                     end,
                 },
@@ -454,7 +442,7 @@ function BookInfo:showCustomEditDialog(file, book_props, metadata_updated_caller
     input_dialog:onShowKeyboard()
 end
 
-function BookInfo:showCustomDialog(file, book_props, metadata_updated_caller_callback, prop_key)
+function BookInfo:showCustomDialog(file, book_props, prop_key)
     local original_prop, custom_prop, prop_is_cover
     if prop_key then -- metadata
         if self.custom_doc_settings then
@@ -507,9 +495,9 @@ function BookInfo:showCustomDialog(file, book_props, metadata_updated_caller_cal
                         ok_callback = function()
                             UIManager:close(button_dialog)
                             if prop_is_cover then
-                                self:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
+                                self:setCustomBookCover(file, book_props)
                             else
-                                self:setCustomMetadata(file, book_props, metadata_updated_caller_callback, prop_key)
+                                self:setCustomMetadata(file, book_props, prop_key)
                             end
                         end,
                     }
@@ -522,9 +510,9 @@ function BookInfo:showCustomDialog(file, book_props, metadata_updated_caller_cal
                 callback = function()
                     UIManager:close(button_dialog)
                     if prop_is_cover then
-                        self:setCustomBookCover(file, book_props, metadata_updated_caller_callback)
+                        self:setCustomBookCover(file, book_props)
                     else
-                        self:showCustomEditDialog(file, book_props, metadata_updated_caller_callback, prop_key)
+                        self:showCustomEditDialog(file, book_props, prop_key)
                     end
                 end,
             },
