@@ -2514,6 +2514,12 @@ function ReaderFooter:onTimeFormatChanged()
     self:refreshFooter(true, true)
 end
 
+function ReaderFooter:onBookMetadataChanged(prop)
+    if prop == "title" then
+        self:updateFooterText()
+    end
+end
+
 function ReaderFooter:onCloseWidget()
     self:free()
 end
