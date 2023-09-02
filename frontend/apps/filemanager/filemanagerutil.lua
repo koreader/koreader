@@ -131,13 +131,15 @@ end
 -- Generate "Reset" file dialog button
 function filemanagerutil.genResetSettingsButton(file, caller_callback, button_disabled)
     file = ffiutil.realpath(file) or file
-    local has_sidecar_file = DocSettings:hasSidecarFile(file) and true or false
+    local has_sidecar_file = DocSettings:hasSidecarFile(file)
     local custom_cover_file = DocSettings:findCoverFile(file)
+    local has_custom_cover_file = custom_cover_file and true or false
     local custom_metadata_file = DocSettings:getCustomMetadataFile(file)
+    local has_custom_metadata_file = custom_metadata_file and true or false
     return {
         text = _("Reset"),
         id = "reset", -- used by covermenu
-        enabled = (not button_disabled and (has_sidecar_file or custom_metadata_file or custom_cover_file)) and true or false,
+        enabled = not button_disabled and (has_sidecar_file or has_custom_metadata_file or has_custom_cover_file),
         callback = function()
             local CheckButton = require("ui/widget/checkbutton")
             local ConfirmBox = require("ui/widget/confirmbox")
@@ -176,15 +178,15 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
             confirmbox:addWidget(check_button_settings)
             check_button_cover = CheckButton:new{
                 text = _("custom cover image"),
-                checked = custom_cover_file and true or false,
-                enabled = custom_cover_file and true or false,
+                checked = has_custom_cover_file,
+                enabled = has_custom_cover_file,
                 parent = confirmbox,
             }
             confirmbox:addWidget(check_button_cover)
             check_button_metadata = CheckButton:new{
                 text = _("custom book properties"),
-                checked = custom_metadata_file and true or false,
-                enabled = custom_metadata_file and true or false,
+                checked = has_custom_metadata_file,
+                enabled = has_custom_metadata_file,
                 parent = confirmbox,
             }
             confirmbox:addWidget(check_button_metadata)
