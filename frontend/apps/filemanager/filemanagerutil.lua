@@ -184,7 +184,7 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
             }
             confirmbox:addWidget(check_button_cover)
             check_button_metadata = CheckButton:new{
-                text = _("custom book properties"),
+                text = _("custom book metadata"),
                 checked = has_custom_metadata_file,
                 enabled = has_custom_metadata_file,
                 parent = confirmbox,
