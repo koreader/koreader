@@ -343,11 +343,16 @@ function BookInfo:getCoverImage(doc, file, force_orig)
     return cover_bb
 end
 
-function BookInfo:updateBookInfo(file, book_props, prop_updated)
+function BookInfo:updateBookInfo(file, book_props, prop_updated, prop_value_old)
     if prop_updated == "cover" and self.ui then
         self.ui.doc_settings:getCoverFile(true) -- reset cover file cache
     end
-    self.prop_updated = prop_updated
+    self.prop_updated = {
+        file = file,
+        doc_props = book_props,
+        prop = prop_updated,
+        prop_value_old = prop_value_old,
+    }
     self.kvp_widget:onClose()
     self:show(file, book_props)
 end
@@ -388,6 +393,7 @@ function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
         book_props.display_title = nil
         custom_doc_settings:saveSetting("doc_props", book_props) -- save a copy of original props
     end
+    local prop_value_old = custom_props[prop_key]
     custom_props[prop_key] = prop_value -- nil when resetting a custom prop
     if next(custom_props) == nil then -- no more custom metadata
         os.remove(custom_doc_settings.custom_metadata_file)
@@ -406,13 +412,13 @@ function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
             self.ui.doc_props.display_title = prop_value or filemanagerutil.splitFileNameType(file)
         end
     end
-    self:updateBookInfo(file, book_props, prop_key)
+    self:updateBookInfo(file, book_props, prop_key, prop_value_old)
 end
 
 function BookInfo:showCustomEditDialog(file, book_props, prop_key)
     local input_dialog
     input_dialog = InputDialog:new{
-        title = _("Edit book property:") .. " " .. self.prop_text[prop_key]:gsub(":", ""),
+        title = _("Edit book metadata:") .. " " .. self.prop_text[prop_key]:gsub(":", ""),
         input = book_props[prop_key],
         input_type = prop_key == "series_index" and "number",
         allow_newline = prop_key == "authors" or prop_key == "keywords" or prop_key == "description",
@@ -490,7 +496,7 @@ function BookInfo:showCustomDialog(file, book_props, prop_key)
                 callback = function()
                     local confirm_box = ConfirmBox:new{
                         text = prop_is_cover and _("Reset custom cover?\nImage file will be deleted.")
-                                              or _("Reset custom book property?"),
+                                              or _("Reset custom book metadata field?"),
                         ok_text = _("Reset"),
                         ok_callback = function()
                             UIManager:close(button_dialog)
@@ -519,7 +525,7 @@ function BookInfo:showCustomDialog(file, book_props, prop_key)
         },
     }
     button_dialog = ButtonDialog:new{
-        title = _("Book property:") .. " " .. self.prop_text[prop_key]:gsub(":", ""),
+        title = _("Book metadata:") .. " " .. self.prop_text[prop_key]:gsub(":", ""),
         title_align = "center",
         buttons = buttons,
     }
