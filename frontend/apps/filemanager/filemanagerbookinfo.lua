@@ -348,10 +348,11 @@ function BookInfo:updateBookInfo(file, book_props, prop_updated, prop_value_old)
         self.ui.doc_settings:getCoverFile(true) -- reset cover file cache
     end
     self.prop_updated = {
-        file = file,
+        filepath = file,
         doc_props = book_props,
-        prop = prop_updated,
-        prop_value_old = prop_value_old,
+        metadata_key_updated = prop_updated,
+        metadata_value_old = prop_value_old,
+        metadata_value_new = book_props[prop_updated],
     }
     self.kvp_widget:onClose()
     self:show(file, book_props)
@@ -393,7 +394,7 @@ function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
         book_props.display_title = nil
         custom_doc_settings:saveSetting("doc_props", book_props) -- save a copy of original props
     end
-    local prop_value_old = custom_props[prop_key]
+    local prop_value_old = custom_props[prop_key] or book_props[prop_key]
     custom_props[prop_key] = prop_value -- nil when resetting a custom prop
     if next(custom_props) == nil then -- no more custom metadata
         os.remove(custom_doc_settings.custom_metadata_file)
