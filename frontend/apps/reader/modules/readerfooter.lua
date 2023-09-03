@@ -2514,8 +2514,8 @@ function ReaderFooter:onTimeFormatChanged()
     self:refreshFooter(true, true)
 end
 
-function ReaderFooter:onBookMetadataChanged(prop)
-    if prop == "title" then
+function ReaderFooter:onBookMetadataChanged(prop_updated)
+    if prop_updated.prop == "title" then
         self:updateFooterText()
     end
 end
