@@ -115,9 +115,9 @@ function MyClipping:parseTitleFromPath(line)
     elseif extensions[line:sub(-5):lower()] then
         line = line:sub(1, -6)
     end
-    local __, __, title, author = line:find("(.-)%s*%((.*)%)")
+    local __, ___, title, author = line:find("(.-)%s*%((.*)%)")
     if not author then
-        __, __, title, author = line:find("(.-)%s*-%s*(.*)")
+        __, ___, title, author = line:find("(.-)%s*-%s*(.*)")
     end
     title = title or line:match("^%s*(.-)%s*$")
     return isEmpty(title) and _("Unknown Book") or title,
