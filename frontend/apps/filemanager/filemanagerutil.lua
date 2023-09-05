@@ -48,14 +48,6 @@ function filemanagerutil.splitFileNameType(filepath)
     return filename_without_suffix, filetype
 end
 
--- Purge doc settings in sidecar directory
-function filemanagerutil.purgeSettings(file)
-    local file_abs_path = ffiutil.realpath(file)
-    if file_abs_path then
-        return DocSettings:open(file_abs_path):purge()
-    end
-end
-
 -- Purge doc settings except kept
 function filemanagerutil.resetDocumentSettings(file)
     local settings_to_keep = {
@@ -138,34 +130,66 @@ end
 
 -- Generate "Reset" file dialog button
 function filemanagerutil.genResetSettingsButton(file, caller_callback, button_disabled)
+    file = ffiutil.realpath(file) or file
+    local has_sidecar_file = DocSettings:hasSidecarFile(file)
+    local custom_cover_file = DocSettings:findCoverFile(file)
+    local has_custom_cover_file = custom_cover_file and true or false
+    local custom_metadata_file = DocSettings:getCustomMetadataFile(file)
+    local has_custom_metadata_file = custom_metadata_file and true or false
     return {
         text = _("Reset"),
         id = "reset", -- used by covermenu
-        enabled = (not button_disabled and DocSettings:hasSidecarFile(ffiutil.realpath(file))) and true or false,
+        enabled = not button_disabled and (has_sidecar_file or has_custom_metadata_file or has_custom_cover_file),
         callback = function()
+            local CheckButton = require("ui/widget/checkbutton")
             local ConfirmBox = require("ui/widget/confirmbox")
+            local check_button_settings, check_button_cover, check_button_metadata
             local confirmbox = ConfirmBox:new{
                 text = T(_("Reset this document?") .. "\n\n%1\n\n" ..
-                    _("Document progress, settings, bookmarks, highlights, notes and custom cover image will be permanently lost."),
+                         _("Resetted information will be permanently lost."),
                     BD.filepath(file)),
                 ok_text = _("Reset"),
                 ok_callback = function()
-                    local custom_metadata_purged = filemanagerutil.purgeSettings(file)
-                    if custom_metadata_purged then -- refresh coverbrowser cached book info
-                        local FileManager = require("apps/filemanager/filemanager")
-                        local ui = FileManager.instance
-                        if not ui then
-                            local ReaderUI = require("apps/reader/readerui")
-                            ui = ReaderUI.instance
-                        end
+                    local data_to_purge = {
+                        doc_settings         = check_button_settings.checked,
+                        custom_cover_file    = check_button_cover.checked and custom_cover_file,
+                        custom_metadata_file = check_button_metadata.checked and custom_metadata_file,
+                    }
+                    DocSettings:open(file):purge(nil, data_to_purge)
+                    if data_to_purge.custom_cover_file or data_to_purge.custom_metadata_file then
+                        local ui = require("apps/filemanager/filemanager").instance
+                                or require("apps/reader/readerui").instance
                         if ui and ui.coverbrowser then
-                            ui.coverbrowser:deleteBookInfo(file)
+                            ui.coverbrowser:deleteBookInfo(file) -- refresh coverbrowser cached book info
                         end
                     end
-                    require("readhistory"):fileSettingsPurged(file)
+                    if data_to_purge.doc_settings then
+                        require("readhistory"):fileSettingsPurged(file)
+                    end
                     caller_callback()
                 end,
             }
+            check_button_settings = CheckButton:new{
+                text = _("document settings, progress, bookmarks, highlights, notes"),
+                checked = has_sidecar_file,
+                enabled = has_sidecar_file,
+                parent = confirmbox,
+            }
+            confirmbox:addWidget(check_button_settings)
+            check_button_cover = CheckButton:new{
+                text = _("custom cover image"),
+                checked = has_custom_cover_file,
+                enabled = has_custom_cover_file,
+                parent = confirmbox,
+            }
+            confirmbox:addWidget(check_button_cover)
+            check_button_metadata = CheckButton:new{
+                text = _("custom book metadata"),
+                checked = has_custom_metadata_file,
+                enabled = has_custom_metadata_file,
+                parent = confirmbox,
+            }
+            confirmbox:addWidget(check_button_metadata)
             UIManager:show(confirmbox)
         end,
     }
