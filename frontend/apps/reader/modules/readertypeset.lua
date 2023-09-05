@@ -92,10 +92,10 @@ function ReaderTypeset:onReadSettings(config)
     self:toggleTxtPreFormatted(self.txt_preformatted)
 
     -- default to disable smooth scaling
-    self:toggleImageScaling(self.configurable.smooth_scaling == 1)
+    self.ui.document:setImageScaling(self.configurable.smooth_scaling == 1)
 
     -- default to automagic nightmode-friendly handling of images
-    self:toggleNightmodeImages(self.configurable.nightmode_images == 1)
+    self.ui.document:setNightmodeImages(self.configurable.nightmode_images == 1)
 end
 
 function ReaderTypeset:onSaveSettings()
@@ -104,24 +104,40 @@ function ReaderTypeset:onSaveSettings()
 end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
-    self.configurable.embedded_css = toggle and 1 or 0
-    self:toggleEmbeddedStyleSheet(self.configurable.embedded_css)
-    local text = toggle and _("Enabled embedded styles.") or _("Disabled embedded styles.")
+    local text
+    if toggle then
+        self.configurable.embedded_css = 1
+        text = _("Enabled embedded styles.")
+    else
+        self.configurable.embedded_css = 0
+        text = _("Disabled embedded styles.")
+        self:setStyleSheet(self.ui.document.default_css)
+    end
+    self.ui.document:setEmbeddedStyleSheet(self.configurable.embedded_css)
+    self.ui:handleEvent(Event:new("UpdatePos"))
     Notification:notify(text)
     return true
 end
 
 function ReaderTypeset:onToggleEmbeddedFonts(toggle)
-    self.configurable.embedded_fonts = toggle and 1 or 0
-    self:toggleEmbeddedFonts(self.configurable.embedded_fonts)
-    local text = toggle and _("Enabled embedded fonts.") or _("Disabled embedded fonts.")
+    local text
+    if toggle then
+        self.configurable.embedded_fonts = 1
+        text = _("Enabled embedded fonts.")
+    else
+        self.configurable.embedded_fonts = 0
+        text = _("Disabled embedded fonts.")
+    end
+    self.ui.document:setEmbeddedFonts(self.configurable.embedded_fonts)
+    self.ui:handleEvent(Event:new("UpdatePos"))
     Notification:notify(text)
     return true
 end
 
 function ReaderTypeset:onToggleImageScaling(toggle)
     self.configurable.smooth_scaling = toggle and 1 or 0
-    self:toggleImageScaling(toggle)
+    self.ui.document:setImageScaling(toggle)
+    self.ui:handleEvent(Event:new("UpdatePos"))
     local text = T(_("Image scaling set to: %1"), optionsutil:getOptionText("ToggleImageScaling", toggle))
     Notification:notify(text)
     return true
@@ -129,7 +145,8 @@ end
 
 function ReaderTypeset:onToggleNightmodeImages(toggle)
     self.configurable.nightmode_images = toggle and 1 or 0
-    self:toggleNightmodeImages(toggle)
+    self.ui.document:setNightmodeImages(toggle)
+    self.ui:handleEvent(Event:new("UpdatePos"))
     return true
 end
 
@@ -273,19 +290,6 @@ function ReaderTypeset:setEmbededStyleSheetOnly()
     end
 end
 
-function ReaderTypeset:toggleEmbeddedStyleSheet(toggle)
-    if toggle == 0 then
-        self:setStyleSheet(self.ui.document.default_css)
-    end
-    self.ui.document:setEmbeddedStyleSheet(toggle)
-    self.ui:handleEvent(Event:new("UpdatePos"))
-end
-
-function ReaderTypeset:toggleEmbeddedFonts(toggle)
-    self.ui.document:setEmbeddedFonts(toggle)
-    self.ui:handleEvent(Event:new("UpdatePos"))
-end
-
 -- crengine enhanced block rendering feature/flags (see crengine/include/lvrend.h):
 --                                               legacy flat book web
 -- ENHANCED                           0x00000001          x    x   x
@@ -355,16 +359,6 @@ function ReaderTypeset:ensureSanerBlockRenderingFlags(mode)
     -- asking us to unset some of the flags set previously.
     self.ensure_saner_block_rendering_flags = true
     self:setBlockRenderingMode(self.block_rendering_mode)
-end
-
-function ReaderTypeset:toggleImageScaling(toggle)
-    self.ui.document:setImageScaling(toggle)
-    self.ui:handleEvent(Event:new("UpdatePos"))
-end
-
-function ReaderTypeset:toggleNightmodeImages(toggle)
-    self.ui.document:setNightmodeImages(toggle)
-    self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
 function ReaderTypeset:toggleTxtPreFormatted(toggle)
