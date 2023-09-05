@@ -1,5 +1,6 @@
 local DocumentRegistry = require("document/documentregistry")
 local DocSettings = require("docsettings")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local ffiutil = require("ffi/util")
 local md5 = require("ffi/sha2").md5
 local util = require("util")
@@ -99,6 +100,10 @@ local extensions = {
     [".doc"] = true,
 }
 
+local function isEmpty(s)
+    return s == nil or s == ""
+end
+
 -- first attempt to parse from document metadata
 -- remove file extensions added by former KOReader
 -- extract author name in "Title(Author)" format
@@ -110,12 +115,14 @@ function MyClipping:parseTitleFromPath(line)
     elseif extensions[line:sub(-5):lower()] then
         line = line:sub(1, -6)
     end
-    local _, _, title, author = line:find("(.-)%s*%((.*)%)")
+    local dummy, title, author
+    dummy, dummy, title, author = line:find("(.-)%s*%((.*)%)")
     if not author then
-        _, _, title, author = line:find("(.-)%s*-%s*(.*)")
+        dummy, dummy, title, author = line:find("(.-)%s*-%s*(.*)")
     end
-    if not title then title = line end
-    return title:match("^%s*(.-)%s*$"), author
+    title = title or line:match("^%s*(.-)%s*$")
+    return isEmpty(title) and _("Unknown Book") or title,
+           isEmpty(author) and _("Unknown Author") or author
 end
 
 local keywords = {
@@ -300,22 +307,27 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
     end
 end
 
+function MyClipping:getTitleAuthor(filepath, props)
+    local _, _, doc_name = filepath:find(".*/(.*)")
+    local parsed_title, parsed_author = self:parseTitleFromPath(doc_name)
+    return isEmpty(props.title) and parsed_title or props.title,
+           isEmpty(props.authors) and parsed_author or props.authors
+end
+
 function MyClipping:getClippingsFromBook(clippings, doc_path)
     local doc_settings = DocSettings:open(doc_path)
     local highlights = doc_settings:readSetting("highlight")
     if not highlights then return end
     local bookmarks = doc_settings:readSetting("bookmarks")
     local props = doc_settings:readSetting("doc_props")
-    local title = props.title
-    local author = props.authors
-    local _, doc_name = util.splitFilePathName(doc_path)
-    local parsed_title, parsed_author = self:parseTitleFromPath(util.splitFileNameSuffix(doc_name))
-    clippings[parsed_title] = {
+    props = FileManagerBookInfo.extendProps(props, doc_path)
+    local title, author = self:getTitleAuthor(doc_path, props)
+    clippings[title] = {
         file = doc_path,
-        title = title or parsed_title,
-        author = author or parsed_author,
+        title = title,
+        author = author,
     }
-    self:parseHighlight(highlights, bookmarks, clippings[parsed_title])
+    self:parseHighlight(highlights, bookmarks, clippings[title])
 end
 
 function MyClipping:parseHistory()
@@ -338,37 +350,18 @@ function MyClipping:parseFiles(files)
     return clippings
 end
 
-local function isEmpty(s)
-    return s == nil or s == ""
-end
-
-function MyClipping:getDocMeta(view)
-    local props = view.ui.doc_settings:readSetting("doc_props")
-    local title = props.title
-    local author = props.authors
-    local _, _, docname = view.document.file:find(".*/(.*)")
-    local parsed_title, parsed_author = self:parseTitleFromPath(docname)
-    if isEmpty(title) then
-        title = isEmpty(parsed_title) and "Unknown Book" or parsed_title
-    end
-    if isEmpty(author) then
-        author = isEmpty(parsed_author) and "Unknown Author" or parsed_author
-    end
-    return {
-        title = title,
-        -- Replaces characters that are invalid in filenames.
-        output_filename = util.getSafeFilename(title),
-        author = author,
-        number_of_pages = view.document.info.number_of_pages,
-        file = view.document.file,
-    }
-end
-
 function MyClipping:parseCurrentDoc(view)
     local clippings = {}
-    local meta = self:getDocMeta(view)
-    clippings[meta.title] = meta
-    self:parseHighlight(view.highlight.saved, view.ui.bookmark.bookmarks, clippings[meta.title])
+    local title, author = self:getTitleAuthor(view.document.file, view.ui.doc_props)
+    clippings[title] = {
+        file = view.document.file,
+        title = title,
+        author = author,
+        -- Replaces characters that are invalid in filenames.
+        output_filename = util.getSafeFilename(title),
+        number_of_pages = view.document.info.number_of_pages,
+    }
+    self:parseHighlight(view.highlight.saved, view.ui.bookmark.bookmarks, clippings[title])
     return clippings
 end
 
