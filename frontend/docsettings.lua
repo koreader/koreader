@@ -90,11 +90,18 @@ function DocSettings:getSidecarFile(doc_path, force_location)
     return self:getSidecarDir(doc_path, force_location) .. "/metadata." .. suffix .. ".lua"
 end
 
+--- Returns `true` if there is a `metadata.lua` file.
+-- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
+-- @treturn bool
+function DocSettings:hasSidecarFile(doc_path)
+    return self:getDocSidecarFile(doc_path) and true or false
+end
+
 --- Returns path of `metadata.lua` file if it exists, or nil.
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
 -- @bool no_legacy set to true to skip check of the legacy history file
 -- @treturn string
-function DocSettings:hasSidecarFile(doc_path, no_legacy)
+function DocSettings:getDocSidecarFile(doc_path, no_legacy)
     local sidecar_file = self:getSidecarFile(doc_path, "doc")
     if lfs.attributes(sidecar_file, "mode") == "file" then
         return sidecar_file
@@ -294,9 +301,22 @@ function DocSettings:flush(data, no_custom_metadata)
 end
 
 --- Purges (removes) sidecar directory.
-function DocSettings:purge(sidecar_to_keep)
+function DocSettings:purge(sidecar_to_keep, data_to_purge)
+    local custom_cover_file, custom_metadata_file
+    if sidecar_to_keep == nil then
+        custom_cover_file    = self:getCoverFile()
+        custom_metadata_file = self:getCustomMetadataFile()
+    end
+    if data_to_purge == nil then
+        data_to_purge = {
+            doc_settings         = true,
+            custom_cover_file    = custom_cover_file,
+            custom_metadata_file = custom_metadata_file,
+        }
+    end
+
     -- Remove any of the old ones we may consider as candidates in DocSettings:open()
-    if self.candidates then
+    if data_to_purge.doc_settings and self.candidates then
         for _, t in ipairs(self.candidates) do
             local candidate_path = t.path
             if lfs.attributes(candidate_path, "mode") == "file" then
@@ -309,31 +329,23 @@ function DocSettings:purge(sidecar_to_keep)
         end
     end
 
-    local custom_metadata_purged
-    if not sidecar_to_keep then
-        -- custom cover
-        local metadata_file = self:getCoverFile()
-        if metadata_file then
-            os.remove(metadata_file)
-            self:getCoverFile(true) -- reset cache
-            custom_metadata_purged = true
-        end
-        -- custom metadata
-        metadata_file = self:getCustomMetadataFile()
-        if metadata_file then
-            os.remove(metadata_file)
-            custom_metadata_purged = true
-        end
+    if data_to_purge.custom_cover_file then
+        os.remove(data_to_purge.custom_cover_file)
+        self:getCoverFile(true) -- reset cache
+    end
+    if data_to_purge.custom_metadata_file then
+        os.remove(data_to_purge.custom_metadata_file)
     end
 
-    if lfs.attributes(self.doc_sidecar_dir, "mode") == "directory" then
-        os.remove(self.doc_sidecar_dir) -- keep parent folders
+    if data_to_purge.doc_settings or data_to_purge.custom_cover_file or data_to_purge.custom_metadata_file then
+        -- remove sidecar dirs iff empty
+        if lfs.attributes(self.doc_sidecar_dir, "mode") == "directory" then
+            os.remove(self.doc_sidecar_dir) -- keep parent folders
+        end
+        if lfs.attributes(self.dir_sidecar_dir, "mode") == "directory" then
+            util.removePath(self.dir_sidecar_dir) -- remove empty parent folders
+        end
     end
-    if lfs.attributes(self.dir_sidecar_dir, "mode") == "directory" then
-        util.removePath(self.dir_sidecar_dir) -- remove empty parent folders
-    end
-
-    return custom_metadata_purged
 end
 
 --- Removes empty sidecar dir.
@@ -438,7 +450,7 @@ function DocSettings:getCoverFile(reset_cache)
 end
 
 function DocSettings:getCustomCandidateSidecarDirs(doc_path)
-    local sidecar_file = self:hasSidecarFile(doc_path, true) -- new locations only
+    local sidecar_file = self:getDocSidecarFile(doc_path, true) -- new locations only
     if sidecar_file then -- book was opened, write custom metadata to its sidecar dir
         local sidecar_dir = util.splitFilePathName(sidecar_file):sub(1, -2)
         return { sidecar_dir }

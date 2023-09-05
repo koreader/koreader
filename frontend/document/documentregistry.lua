@@ -49,7 +49,7 @@ function DocumentRegistry:getRandomFile(dir, opened, extension)
     if ok then
         for entry in iter, dir_obj do
             local file = dir .. entry
-            local file_opened = DocSettings:hasSidecarFile(file) and true or false
+            local file_opened = DocSettings:hasSidecarFile(file)
             if lfs.attributes(file, "mode") == "file" and self:hasProvider(file)
                 and (opened == nil or file_opened == opened)
                 and (extension == nil or extension[util.getFileNameSuffix(entry)]) then

@@ -159,13 +159,13 @@ function FileChooser:getListItem(f, filename, attributes, collate)
     }
     if collate then -- file
         if G_reader_settings:readSetting("show_file_in_bold") ~= false then
-            item.opened = DocSettings:hasSidecarFile(filename) and true or false
+            item.opened = DocSettings:hasSidecarFile(filename)
         end
         if collate == "type" then
             item.suffix = util.getFileNameSuffix(f)
         elseif collate == "percent_unopened_first" or collate == "percent_unopened_last" then
             local percent_finished
-            item.opened = DocSettings:hasSidecarFile(filename) and true or false
+            item.opened = DocSettings:hasSidecarFile(filename)
             if item.opened then
                 local doc_settings = DocSettings:open(filename)
                 percent_finished = doc_settings:readSetting("percent_finished")

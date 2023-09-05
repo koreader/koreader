@@ -316,6 +316,7 @@ function Profiles:getProfileFromCurrentDocument(new_name)
             "embedded_css",
             "embedded_fonts",
             "smooth_scaling",
+            "nightmode_images",
         }
     else
         document_settings = {
@@ -338,11 +339,16 @@ function Profiles:getProfileFromCurrentDocument(new_name)
         }
     end
     local setting_needs_arg = {
-        ["view_mode"]            = true,
-        ["kopt_trim_page"]       = true,
-        ["kopt_zoom_mode_genus"] = true,
-        ["kopt_zoom_mode_type"]  = true,
-        ["kopt_page_scroll"]     = true,
+        ["sync_t_b_page_margins"] = true,
+        ["view_mode"]             = true,
+        ["embedded_css"]          = true,
+        ["embedded_fonts"]        = true,
+        ["smooth_scaling"]        = true,
+        ["nightmode_images"]      = true,
+        ["kopt_trim_page"]        = true,
+        ["kopt_zoom_mode_genus"]  = true,
+        ["kopt_zoom_mode_type"]   = true,
+        ["kopt_page_scroll"]      = true,
     }
 
     local profile = { settings = { name = new_name, order = document_settings } }
@@ -355,11 +361,7 @@ function Profiles:getProfileFromCurrentDocument(new_name)
         profile[v] = value
     end
     if self.ui.rolling then
-        profile["set_font"] = self.ui.font.font_face
-        profile["sync_t_b_page_margins"] = self.ui.typeset.sync_t_b_page_margins
-        profile["embedded_css"] = self.ui.typeset.embedded_css
-        profile["embedded_fonts"] = self.ui.typeset.embedded_fonts
-        profile["smooth_scaling"] = self.ui.typeset.smooth_scaling
+        profile["set_font"] = self.ui.font.font_face -- not in configurable settings
     end
     return profile
 end
