@@ -32,33 +32,14 @@ function ReaderTypeset:onReadSettings(config)
     local tweaks_css = self.ui.styletweak:getCssText()
     self.ui.document:setStyleSheet(self.css, tweaks_css)
 
-    if config:has("embedded_fonts") then
-        self.embedded_fonts = config:isTrue("embedded_fonts")
-    else
-        -- default to enable embedded fonts
-        -- note that it's a bit confusing here:
-        -- global settins store 0/1, while document settings store false/true
-        -- we leave it that way for now to maintain backwards compatibility
-        local global = G_reader_settings:readSetting("copt_embedded_fonts")
-        self.embedded_fonts = (global == nil or global == 1) and true or false
-    end
+    -- default to enable embedded fonts
     -- As this is new, call it only when embedded_fonts are explicitely disabled
-    -- self.ui.document:setEmbeddedFonts(self.embedded_fonts and 1 or 0)
-    if not self.embedded_fonts then
+    if self.configurable.embedded_fonts == 0 then
         self.ui.document:setEmbeddedFonts(0)
     end
 
-    if config:has("embedded_css") then
-        self.embedded_css = config:isTrue("embedded_css")
-    else
-        -- default to enable embedded CSS
-        -- note that it's a bit confusing here:
-        -- global settings store 0/1, while document settings store false/true
-        -- we leave it that way for now to maintain backwards compatibility
-        local global = G_reader_settings:readSetting("copt_embedded_css")
-        self.embedded_css = (global == nil or global == 1) and true or false
-    end
-    self.ui.document:setEmbeddedStyleSheet(self.embedded_css and 1 or 0)
+    -- default to enable embedded CSS
+    self.ui.document:setEmbeddedStyleSheet(self.configurable.embedded_css)
 
     -- Block rendering mode: stay with legacy rendering for books
     -- previously opened so bookmarks and highlights stay valid.
@@ -119,35 +100,30 @@ end
 
 function ReaderTypeset:onSaveSettings()
     self.ui.doc_settings:saveSetting("css", self.css)
-    self.ui.doc_settings:saveSetting("embedded_css", self.embedded_css)
-    self.ui.doc_settings:saveSetting("embedded_fonts", self.embedded_fonts)
     self.ui.doc_settings:saveSetting("render_dpi", self.render_dpi)
 end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
-    self:toggleEmbeddedStyleSheet(toggle)
-    if toggle then
-        Notification:notify(_("Enabled embedded styles."))
-    else
-        Notification:notify(_("Disabled embedded styles."))
-    end
+    self.configurable.embedded_css = toggle and 1 or 0
+    self:toggleEmbeddedStyleSheet(self.configurable.embedded_css)
+    local text = toggle and _("Enabled embedded styles.") or _("Disabled embedded styles.")
+    Notification:notify(text)
     return true
 end
 
 function ReaderTypeset:onToggleEmbeddedFonts(toggle)
-    self:toggleEmbeddedFonts(toggle)
-    if toggle then
-        Notification:notify(_("Enabled embedded fonts."))
-    else
-        Notification:notify(_("Disabled embedded fonts."))
-    end
+    self.configurable.embedded_fonts = toggle and 1 or 0
+    self:toggleEmbeddedFonts(self.configurable.embedded_fonts)
+    local text = toggle and _("Enabled embedded fonts.") or _("Disabled embedded fonts.")
+    Notification:notify(text)
     return true
 end
 
 function ReaderTypeset:onToggleImageScaling(toggle)
     self.configurable.smooth_scaling = toggle and 1 or 0
     self:toggleImageScaling(toggle)
-    Notification:notify(T( _("Image scaling set to: %1"), optionsutil:getOptionText("ToggleImageScaling", toggle)))
+    local text = T(_("Image scaling set to: %1"), optionsutil:getOptionText("ToggleImageScaling", toggle))
+    Notification:notify(text)
     return true
 end
 
@@ -298,26 +274,15 @@ function ReaderTypeset:setEmbededStyleSheetOnly()
 end
 
 function ReaderTypeset:toggleEmbeddedStyleSheet(toggle)
-    if not toggle then
-        self.embedded_css = false
+    if toggle == 0 then
         self:setStyleSheet(self.ui.document.default_css)
-        self.ui.document:setEmbeddedStyleSheet(0)
-    else
-        self.embedded_css = true
-        --self:setStyleSheet(self.ui.document.default_css)
-        self.ui.document:setEmbeddedStyleSheet(1)
     end
+    self.ui.document:setEmbeddedStyleSheet(toggle)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
 function ReaderTypeset:toggleEmbeddedFonts(toggle)
-    if not toggle then
-        self.embedded_fonts = false
-        self.ui.document:setEmbeddedFonts(0)
-    else
-        self.embedded_fonts = true
-        self.ui.document:setEmbeddedFonts(1)
-    end
+    self.ui.document:setEmbeddedFonts(toggle)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
