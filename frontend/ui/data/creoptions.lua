@@ -51,7 +51,7 @@ local CreOptions = {
     {
         icon = "appbar.rotation",
         options = {
-            {
+            {   -- ReaderView
                 name = "rotation_mode",
                 name_text = _("Rotation"),
                 item_icons_func = function()
@@ -99,7 +99,7 @@ local CreOptions = {
                 event = "SetRotationMode",
                 name_text_hold_callback = optionsutil.showValues,
             },
-            {
+            {   -- ReaderRolling
                 name = "visible_pages",
                 name_text = _("Two Columns"),
                 toggle = {_("off"), _("on")},
@@ -131,7 +131,7 @@ This is disabled in scroll mode. Switching from page mode with two columns to sc
     {
         icon = "appbar.crop",
         options = {
-            {
+            {   -- ReaderTypeset
                 name = "h_page_margins",
                 name_text = _("L/R Margins"),
                 buttonprogress = true,
@@ -176,7 +176,7 @@ This is disabled in scroll mode. Switching from page mode with two columns to sc
                     right_hold_step = 5,
                 },
             },
-            {
+            {   -- ReaderTypeset
                 name = "sync_t_b_page_margins",
                 name_text = _("Sync T/B Margins"),
                 toggle = {_("off"), _("on")},
@@ -193,7 +193,7 @@ This is disabled in scroll mode. Switching from page mode with two columns to sc
 
 In the top menu → Settings → Status bar, you can choose whether the bottom margin applies from the bottom of the screen, or from above the status bar.]]),
             },
-            {
+            {   -- ReaderTypeset
                 name = "t_page_margin",
                 name_text = _("Top Margin"),
                 buttonprogress = true,
@@ -247,7 +247,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                     right_hold_step = 5,
                 },
             },
-            {
+            {   -- ReaderTypeset
                 name = "b_page_margin",
                 name_text = _("Bottom Margin"),
                 buttonprogress = true,
@@ -305,7 +305,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
     {
         icon = "appbar.pageview",
         options = {
-            {
+            {   -- ReaderView
                 name = "view_mode",
                 name_text = _("View Mode"),
                 toggle = {_("page"), _("continuous")},
@@ -318,7 +318,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 help_text = _([[- 'page' mode splits the text into pages, at the most acceptable places (page numbers and the number of pages may change when you change fonts, margins, styles, etc.).
 - 'continuous' mode allows you to scroll the text like you would in a web browser (the 'Page Overlap' setting is only available in this mode).]]),
             },
-            {
+            {   -- ReaderTypeset
                 name = "block_rendering_mode",
                 name_text = _("Render Mode"),
                 toggle = {_("legacy"), _("flat"), _("book"), _("web")},
@@ -334,7 +334,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
 - 'book' additionally allows floats, but limits style support to avoid blank spaces and overflows.
 - 'web' renders as web browsers do, allowing negative margins and possible page overflow.]]),
             },
-            {
+            {   -- ReaderTypeset
                 name = "render_dpi",
                 name_text = _("Zoom (dpi)"),
                 more_options = true,
@@ -363,7 +363,7 @@ Note that your selected font size is not affected by this setting.]]),
                 end,
 
             },
-            {
+            {   -- ReaderFont
                 name = "line_spacing",
                 name_text = _("Line Spacing"),
                 buttonprogress = true,
@@ -418,7 +418,7 @@ Note that your selected font size is not affected by this setting.]]),
     {
         icon = "appbar.textsize",
         options = {
-            {
+            {   -- ReaderFont
                 name = "font_size",
                 alt_name_text = _("Font Size"),
                 item_text = tableOfNumbersToTableOfStrings(G_defaults:readSetting("DCREREADER_CONFIG_FONT_SIZES")),
@@ -430,7 +430,7 @@ Note that your selected font size is not affected by this setting.]]),
                 args = G_defaults:readSetting("DCREREADER_CONFIG_FONT_SIZES"),
                 event = "SetFontSize",
             },
-            {
+            {   -- ReaderFont
                 name = "font_fine_tune",
                 name_text = _("Font Size"),
                 toggle = Device:isTouchDevice() and {_("decrease"), _("increase")} or nil,
@@ -458,7 +458,7 @@ Note that your selected font size is not affected by this setting.]]),
                     optionsutil.showValues(configurable, opt, prefix, nil, "pt")
                 end,
             },
-            {
+            {   -- ReaderFont
                 name = "word_spacing",
                 name_text = _("Word Spacing"),
                 more_options = true,
@@ -501,7 +501,7 @@ Note that your selected font size is not affected by this setting.]]),
                     return string.format("%d\u{202F}%%, %d\u{202F}%%", val[1], val[2]) -- use Narrow Now-Break space here
                 end,
             },
-            {
+            {   -- ReaderFont
                 name = "word_expansion",
                 name_text = _("Word Expansion"),
                 more_options = true,
@@ -540,7 +540,7 @@ Note that your selected font size is not affected by this setting.]]),
                     return string.format("%d\u{202F}%%", val) -- use Narrow No-Break space here
                 end,
             },
-            {
+            {   -- ReaderFont
                 -- This option is not shown in the bottom menu, but its fine tuning is made
                 -- available via the other_button in Word Expansion's fine tuning widget.
                 -- We still need to define it as an option here for it to be known and
@@ -572,7 +572,7 @@ Note that your selected font size is not affected by this setting.]]),
     {
         icon = "appbar.contrast",
         options = {
-            {
+            {   -- ReaderFont
                 name = "font_gamma",
                 name_text = _("Contrast"),
                 buttonprogress = true,
@@ -597,7 +597,7 @@ Note that your selected font size is not affected by this setting.]]),
                     value_table_shift = 1,
                 },
             },
-            {
+            {   -- ReaderFont
                 name = "font_base_weight",
                 name_text = _("Font Weight"),
                 toggle = { "-1", "-½", "0", "+½", "+1", "+1½", "+3" },
@@ -631,7 +631,7 @@ If a font variation is not available, as well as for fractional adjustments, it 
                     return weightClassToString(400+val*100)
                 end,
             },
-            {
+            {   -- ReaderFont
                 name = "font_hinting",
                 name_text = _("Font Hinting"),
                 toggle = {C_("Font hinting", "off"), C_("Font hinting", "native"), C_("Font hinting", "auto")},
@@ -646,7 +646,7 @@ If a font variation is not available, as well as for fractional adjustments, it 
 - native: use the font internal hinting instructions.
 - auto: use FreeType's hinting algorithm, ignoring font instructions.]]),
             },
-            {
+            {   -- ReaderFont
                 name = "font_kerning",
                 name_text = _("Font Kerning"),
                 toggle = {_("off"), _("fast"), _("good"), _("best")},
@@ -669,7 +669,7 @@ If a font variation is not available, as well as for fractional adjustments, it 
     {
         icon = "appbar.settings",
         options = {
-            {
+            {   -- ReaderRolling
                 name = "status_line",
                 name_text = _("Alt Status Bar"),
                 toggle = {_("off"), _("on")},
@@ -683,7 +683,7 @@ If a font variation is not available, as well as for fractional adjustments, it 
 
 Whether enabled or disabled, KOReader's own status bar at the bottom of the screen can be toggled by tapping.]]),
             },
-            {
+            {   -- ReaderTypeset
                 name = "embedded_css",
                 name_text = _("Embedded Style"),
                 toggle = {_("off"), _("on")},
@@ -696,7 +696,7 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                 help_text = _([[Enable or disable publisher stylesheets embedded in the book.
 (Note that less radical changes can be achieved via Style Tweaks in the main menu.)]]),
             },
-            {
+            {   -- ReaderTypeset
                 name = "embedded_fonts",
                 name_text = _("Embedded Fonts"),
                 toggle = {_("off"), _("on")},
@@ -724,7 +724,7 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                     end
                 end,
             },
-            {
+            {   -- ReaderTypeset
                 name = "smooth_scaling",
                 name_text = _("Image Scaling"),
                 toggle = {_("fast"), _("best")},
@@ -737,7 +737,7 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                 help_text = _([[- 'fast' uses a fast but inaccurate scaling algorithm when scaling images.
 - 'best' switches to a more costly but vastly more pleasing and accurate algorithm.]]),
             },
-            {
+            {   -- ReaderTypeset
                 name = "nightmode_images",
                 name_text = _("Invert Images"),
                 toggle = {_("on"), _("off")},
