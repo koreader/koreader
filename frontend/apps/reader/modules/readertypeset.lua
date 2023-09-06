@@ -33,10 +33,7 @@ function ReaderTypeset:onReadSettings(config)
     self.ui.document:setStyleSheet(self.css, tweaks_css)
 
     -- default to enable embedded fonts
-    -- As this is new, call it only when embedded_fonts are explicitely disabled
-    if self.configurable.embedded_fonts == 0 then
-        self.ui.document:setEmbeddedFonts(0)
-    end
+    self.ui.document:setEmbeddedFonts(self.configurable.embedded_fonts)
 
     -- default to enable embedded CSS
     self.ui.document:setEmbeddedStyleSheet(self.configurable.embedded_css)
