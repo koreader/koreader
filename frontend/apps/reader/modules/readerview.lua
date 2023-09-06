@@ -867,20 +867,12 @@ function ReaderView:onReadSettings(config)
             config:delSetting("gamma")
         end
     end
-    local rotation_mode = nil
-    local locked = G_reader_settings:isTrue("lock_rotation")
-    -- Keep current rotation by doing nothing when sticky rota is enabled.
-    if not locked then
-        -- Honor docsettings's rotation
-        if config:has("rotation_mode") then
-            rotation_mode = config:readSetting("rotation_mode") -- Doc's
-        else
-            -- No doc specific rotation, pickup global defaults for the doc type
-            local setting_name = self.ui.paging and "kopt_rotation_mode" or "copt_rotation_mode"
-            rotation_mode = G_reader_settings:readSetting(setting_name) or Screen.DEVICE_ROTATED_UPRIGHT
-        end
-    end
-    if rotation_mode then
+    if G_reader_settings:nilOrFalse("lock_rotation") then
+        local setting_name = self.ui.paging and "kopt_rotation_mode" or "copt_rotation_mode"
+        -- document.configurable.rotation_mode is not ready yet
+        local rotation_mode = config:readSetting(setting_name)
+                           or G_reader_settings:readSetting(setting_name)
+                           or Screen.DEVICE_ROTATED_UPRIGHT
         self:onSetRotationMode(rotation_mode)
     end
     local full_screen = config:readSetting("kopt_full_screen") or self.document.configurable.full_screen
@@ -1077,11 +1069,7 @@ function ReaderView:onSaveSettings()
         self.ui.doc_settings:saveSetting("tile_cache_validity_ts", self.document:getTileCacheValidity())
         self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
     end
-    -- Don't etch the current rotation in stone when sticky rotation is enabled
-    local locked = G_reader_settings:isTrue("lock_rotation")
-    if not locked then
-        self.ui.doc_settings:saveSetting("rotation_mode", Screen:getRotationMode())
-    end
+    self.document.configurable.rotation_mode = Screen:getRotationMode() -- will be saved by ReaderConfig
     self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.page_overlap_enable)
