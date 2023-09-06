@@ -146,7 +146,7 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
             local check_button_settings, check_button_cover, check_button_metadata
             local confirmbox = ConfirmBox:new{
                 text = T(_("Reset this document?") .. "\n\n%1\n\n" ..
-                         _("Resetted information will be permanently lost."),
+                         _("Information will be permanently lost."),
                     BD.filepath(file)),
                 ok_text = _("Reset"),
                 ok_callback = function()

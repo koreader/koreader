@@ -1204,6 +1204,10 @@ function FileManager:onRefreshContent()
     self:onRefresh()
 end
 
+function FileManager:onBookMetadataChanged()
+    self:onRefresh()
+end
+
 function FileManager:onShowFolderMenu()
     local button_dialog
     local function genButton(button_text, button_path)

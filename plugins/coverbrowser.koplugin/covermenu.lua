@@ -466,11 +466,8 @@ function CoverMenu:onHistoryMenuHold(item)
 
     -- Replace the "Book information" button callback to use directly our bookinfo
     button = self.histfile_dialog:getButtonById("book_information")
-    local function when_updated_callback()
-        self:updateItems()
-    end
     button.callback = function()
-        FileManagerBookInfo:show(file, bookinfo, when_updated_callback)
+        FileManagerBookInfo:show(file, bookinfo)
         UIManager:close(self.histfile_dialog)
     end
 
@@ -589,11 +586,8 @@ function CoverMenu:onCollectionsMenuHold(item)
 
     -- Replace the "Book information" button callback to use directly our bookinfo
     button = self.collfile_dialog:getButtonById("book_information")
-    local function when_updated_callback()
-        self:updateItems()
-    end
     button.callback = function()
-        FileManagerBookInfo:show(file, bookinfo, when_updated_callback)
+        FileManagerBookInfo:show(file, bookinfo)
         UIManager:close(self.collfile_dialog)
     end
 

@@ -259,4 +259,10 @@ function FileManagerHistory:showHistDialog()
     UIManager:show(hist_dialog)
 end
 
+function FileManagerHistory:onBookMetadataChanged()
+    if self.hist_menu then
+        self.hist_menu:updateItems()
+    end
+end
+
 return FileManagerHistory

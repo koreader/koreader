@@ -208,4 +208,10 @@ function FileManagerCollection:sortCollection()
     UIManager:show(sort_widget)
 end
 
+function FileManagerCollection:onBookMetadataChanged()
+    if self.coll_menu then
+        self.coll_menu:updateItems()
+    end
+end
+
 return FileManagerCollection
