@@ -32,33 +32,11 @@ function ReaderTypeset:onReadSettings(config)
     local tweaks_css = self.ui.styletweak:getCssText()
     self.ui.document:setStyleSheet(self.css, tweaks_css)
 
-    if config:has("embedded_fonts") then
-        self.embedded_fonts = config:isTrue("embedded_fonts")
-    else
-        -- default to enable embedded fonts
-        -- note that it's a bit confusing here:
-        -- global settins store 0/1, while document settings store false/true
-        -- we leave it that way for now to maintain backwards compatibility
-        local global = G_reader_settings:readSetting("copt_embedded_fonts")
-        self.embedded_fonts = (global == nil or global == 1) and true or false
-    end
-    -- As this is new, call it only when embedded_fonts are explicitely disabled
-    -- self.ui.document:setEmbeddedFonts(self.embedded_fonts and 1 or 0)
-    if not self.embedded_fonts then
-        self.ui.document:setEmbeddedFonts(0)
-    end
+    -- default to enable embedded fonts
+    self.ui.document:setEmbeddedFonts(self.configurable.embedded_fonts)
 
-    if config:has("embedded_css") then
-        self.embedded_css = config:isTrue("embedded_css")
-    else
-        -- default to enable embedded CSS
-        -- note that it's a bit confusing here:
-        -- global settings store 0/1, while document settings store false/true
-        -- we leave it that way for now to maintain backwards compatibility
-        local global = G_reader_settings:readSetting("copt_embedded_css")
-        self.embedded_css = (global == nil or global == 1) and true or false
-    end
-    self.ui.document:setEmbeddedStyleSheet(self.embedded_css and 1 or 0)
+    -- default to enable embedded CSS
+    self.ui.document:setEmbeddedStyleSheet(self.configurable.embedded_css)
 
     -- Block rendering mode: stay with legacy rendering for books
     -- previously opened so bookmarks and highlights stay valid.
@@ -111,49 +89,61 @@ function ReaderTypeset:onReadSettings(config)
     self:toggleTxtPreFormatted(self.txt_preformatted)
 
     -- default to disable smooth scaling
-    self:toggleImageScaling(self.configurable.smooth_scaling == 1)
+    self.ui.document:setImageScaling(self.configurable.smooth_scaling == 1)
 
     -- default to automagic nightmode-friendly handling of images
-    self:toggleNightmodeImages(self.configurable.nightmode_images == 1)
+    self.ui.document:setNightmodeImages(self.configurable.nightmode_images == 1)
 end
 
 function ReaderTypeset:onSaveSettings()
     self.ui.doc_settings:saveSetting("css", self.css)
-    self.ui.doc_settings:saveSetting("embedded_css", self.embedded_css)
-    self.ui.doc_settings:saveSetting("embedded_fonts", self.embedded_fonts)
     self.ui.doc_settings:saveSetting("render_dpi", self.render_dpi)
 end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
-    self:toggleEmbeddedStyleSheet(toggle)
+    local text
     if toggle then
-        Notification:notify(_("Enabled embedded styles."))
+        self.configurable.embedded_css = 1
+        text = _("Enabled embedded styles.")
     else
-        Notification:notify(_("Disabled embedded styles."))
+        self.configurable.embedded_css = 0
+        text = _("Disabled embedded styles.")
+        self:setStyleSheet(self.ui.document.default_css)
     end
+    self.ui.document:setEmbeddedStyleSheet(self.configurable.embedded_css)
+    self.ui:handleEvent(Event:new("UpdatePos"))
+    Notification:notify(text)
     return true
 end
 
 function ReaderTypeset:onToggleEmbeddedFonts(toggle)
-    self:toggleEmbeddedFonts(toggle)
+    local text
     if toggle then
-        Notification:notify(_("Enabled embedded fonts."))
+        self.configurable.embedded_fonts = 1
+        text = _("Enabled embedded fonts.")
     else
-        Notification:notify(_("Disabled embedded fonts."))
+        self.configurable.embedded_fonts = 0
+        text = _("Disabled embedded fonts.")
     end
+    self.ui.document:setEmbeddedFonts(self.configurable.embedded_fonts)
+    self.ui:handleEvent(Event:new("UpdatePos"))
+    Notification:notify(text)
     return true
 end
 
 function ReaderTypeset:onToggleImageScaling(toggle)
     self.configurable.smooth_scaling = toggle and 1 or 0
-    self:toggleImageScaling(toggle)
-    Notification:notify(T( _("Image scaling set to: %1"), optionsutil:getOptionText("ToggleImageScaling", toggle)))
+    self.ui.document:setImageScaling(toggle)
+    self.ui:handleEvent(Event:new("UpdatePos"))
+    local text = T(_("Image scaling set to: %1"), optionsutil:getOptionText("ToggleImageScaling", toggle))
+    Notification:notify(text)
     return true
 end
 
 function ReaderTypeset:onToggleNightmodeImages(toggle)
     self.configurable.nightmode_images = toggle and 1 or 0
-    self:toggleNightmodeImages(toggle)
+    self.ui.document:setNightmodeImages(toggle)
+    self.ui:handleEvent(Event:new("UpdatePos"))
     return true
 end
 
@@ -297,30 +287,6 @@ function ReaderTypeset:setEmbededStyleSheetOnly()
     end
 end
 
-function ReaderTypeset:toggleEmbeddedStyleSheet(toggle)
-    if not toggle then
-        self.embedded_css = false
-        self:setStyleSheet(self.ui.document.default_css)
-        self.ui.document:setEmbeddedStyleSheet(0)
-    else
-        self.embedded_css = true
-        --self:setStyleSheet(self.ui.document.default_css)
-        self.ui.document:setEmbeddedStyleSheet(1)
-    end
-    self.ui:handleEvent(Event:new("UpdatePos"))
-end
-
-function ReaderTypeset:toggleEmbeddedFonts(toggle)
-    if not toggle then
-        self.embedded_fonts = false
-        self.ui.document:setEmbeddedFonts(0)
-    else
-        self.embedded_fonts = true
-        self.ui.document:setEmbeddedFonts(1)
-    end
-    self.ui:handleEvent(Event:new("UpdatePos"))
-end
-
 -- crengine enhanced block rendering feature/flags (see crengine/include/lvrend.h):
 --                                               legacy flat book web
 -- ENHANCED                           0x00000001          x    x   x
@@ -390,16 +356,6 @@ function ReaderTypeset:ensureSanerBlockRenderingFlags(mode)
     -- asking us to unset some of the flags set previously.
     self.ensure_saner_block_rendering_flags = true
     self:setBlockRenderingMode(self.block_rendering_mode)
-end
-
-function ReaderTypeset:toggleImageScaling(toggle)
-    self.ui.document:setImageScaling(toggle)
-    self.ui:handleEvent(Event:new("UpdatePos"))
-end
-
-function ReaderTypeset:toggleNightmodeImages(toggle)
-    self.ui.document:setNightmodeImages(toggle)
-    self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
 function ReaderTypeset:toggleTxtPreFormatted(toggle)
