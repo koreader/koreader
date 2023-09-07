@@ -1069,7 +1069,10 @@ function ReaderView:onSaveSettings()
         self.ui.doc_settings:saveSetting("tile_cache_validity_ts", self.document:getTileCacheValidity())
         self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
     end
-    self.document.configurable.rotation_mode = Screen:getRotationMode() -- will be saved by ReaderConfig
+    -- Don't etch the current rotation in stone when sticky rotation is enabled
+    if G_reader_settings:nilOrFalse("lock_rotation") then
+        self.document.configurable.rotation_mode = Screen:getRotationMode() -- will be saved by ReaderConfig
+    end
     self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.page_overlap_enable)
