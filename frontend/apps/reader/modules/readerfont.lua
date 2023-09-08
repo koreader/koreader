@@ -23,7 +23,6 @@ local optionsutil = require("ui/data/optionsutil")
 
 local ReaderFont = InputContainer:extend{
     font_face = nil,
-    font_size = nil,
     font_menu_title = _("Font"),
     face_table = nil,
     -- default gamma from crengine's lvfntman.cpp
@@ -179,11 +178,7 @@ function ReaderFont:onReadSettings(config)
                          or self.ui.document.header_font
     self.ui.document:setHeaderFont(self.header_font_face)
 
-    self.font_size = config:readSetting("font_size")
-                  or G_reader_settings:readSetting("copt_font_size")
-                  or G_defaults:readSetting("DCREREADER_CONFIG_DEFAULT_FONT_SIZE")
-                  or 22
-    self.ui.document:setFontSize(Screen:scaleBySize(self.font_size))
+    self.ui.document:setFontSize(Screen:scaleBySize(self.configurable.font_size))
 
     self.font_base_weight = config:readSetting("font_base_weight")
                       or G_reader_settings:readSetting("copt_font_base_weight")
@@ -266,19 +261,16 @@ end
     UpdatePos event is used to tell ReaderRolling to update pos.
 --]]
 function ReaderFont:onChangeSize(delta)
-    self.font_size = self.font_size + delta
-    self.ui:handleEvent(Event:new("SetFontSize", self.font_size))
+    self:onSetFontSize(self.configurable.font_size + delta)
     return true
 end
 
-function ReaderFont:onSetFontSize(new_size)
-    if new_size > 255 then new_size = 255 end
-    if new_size < 12 then new_size = 12 end
-
-    self.font_size = new_size
-    self.ui.document:setFontSize(Screen:scaleBySize(new_size))
+function ReaderFont:onSetFontSize(size)
+    size = math.max(12, math.min(size, 255))
+    self.configurable.font_size = size
+    self.ui.document:setFontSize(Screen:scaleBySize(size))
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Font size set to: %1."), self.font_size))
+    Notification:notify(T(_("Font size set to: %1."), size))
     return true
 end
 
@@ -351,7 +343,6 @@ end
 function ReaderFont:onSaveSettings()
     self.ui.doc_settings:saveSetting("font_face", self.font_face)
     self.ui.doc_settings:saveSetting("header_font_face", self.header_font_face)
-    self.ui.doc_settings:saveSetting("font_size", self.font_size)
     self.ui.doc_settings:saveSetting("font_base_weight", self.font_base_weight)
     self.ui.doc_settings:saveSetting("font_hinting", self.font_hinting)
     self.ui.doc_settings:saveSetting("font_kerning", self.font_kerning)
