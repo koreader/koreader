@@ -557,8 +557,15 @@ function NetworkMgr:goOnlineToRun(callback)
         return true
     end
 
+    -- If beforeWifiAction isn't turn_on, we're done.
+    -- We don't want to go behind thhe user's back by enforcing "turn_on" behavior,
+    -- and as we *cannot* use prompt, as we'll block before handling the popup input...
+    if G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
+        logger.warn("NetworkMgr:goOnlineToRun: Cannot run callback because device is offline and wifi_enable_action is not turn_on")
+    end
+
     -- If we don't have seamless wifi toggling, we're screwed as we won't be able to block sanely.
-    -- FIXME: If enforcing turn_on actually works, we can just drop the turn_on requirement from KOSync?
+    -- FIXME: Check if that actually behaves properly on Android, we kinda want to keep turn_on viable there...
     if not Device:hasSeamlessWifiToggle() then
         logger.warn("NetworkMgr:goOnlineToRun: Cannot run callback because device is offline and cannot toggle wifi sanely")
     end
@@ -568,10 +575,7 @@ function NetworkMgr:goOnlineToRun(callback)
 
     -- In case we abort before the beforeWifiAction, we won't pass it the callback, but run it ourselves,
     -- to avoid it firing too late (or at the very least being pinned for too long).
-    -- NOTE: We also enforce "turn_on" behavior, as we *cannot* use prompt here,
-    --       as we'll block before handling the popup input...
-    self:setBeforeActionFlag()
-    local info = self:turnOnWifiAndWaitForConnection()
+    local info = self:beforeWifiAction()
 
     -- We'll basically do the same but in a blocking manner...
     UIManager:unschedule(self.connectivityCheck)
