@@ -401,7 +401,7 @@ If any of the other Swipe to follow link options is enabled, this will work only
     -- less visual feedback on PDF document of what is a link, or that we just
     -- followed a link, than on EPUB, it's safer to not use them on PDF documents
     -- even if the user enabled these features for EPUB documents).
-    if not self.document.info.has_pages then
+    if self.ui.rolling then
         -- Tap section
         table.insert(menu_items.follow_links.sub_item_table, 2, {
             text = _("Allow larger tap area around links"),
@@ -564,7 +564,7 @@ end
 -- `Document:getLinkFromPosition()` behaves differently depending on
 -- document type, so this function provides a wrapper.
 function ReaderLink:getLinkFromGes(ges)
-    if self.document.info.has_pages then
+    if self.ui.paging then
         local pos = self.view:screenToPageTransform(ges.pos)
         if pos then
             -- link box in native page
@@ -634,9 +634,8 @@ end
 
 function ReaderLink:onTap(_, ges)
     if not isTapToFollowLinksOn() then return end
-    if self.document.info.has_pages then
-        -- (footnote popup and larger tap area are for not
-        -- not supported with non-CreDocuments)
+    if self.ui.paging then
+        -- (footnote popup and larger tap area are not supported with non-CreDocuments)
         local link = self:getLinkFromGes(ges)
         if link then
             if link.link and link.link.uri and isTapIgnoreExternalLinksEnabled() then
@@ -679,13 +678,8 @@ function ReaderLink:onTap(_, ges)
 end
 
 function ReaderLink:getCurrentLocation()
-    local location
-    if self.document.info.has_pages then
-        location = self.ui.paging:getBookLocation()
-    else
-        location = {xpointer = self.ui.rolling:getBookLocation(),}
-    end
-    return location
+    return self.ui.paging and self.ui.paging:getBookLocation()
+                           or {xpointer = self.ui.rolling:getBookLocation()}
 end
 
 -- Returns true, current_location if the current location is the same as the
@@ -752,7 +746,7 @@ end
 -- they should not provide allow_footnote_popup=true)
 function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_popup)
     local link_url
-    if self.document.info.has_pages then
+    if self.ui.paging then
         -- internal pdf links have a "page" attribute, while external ones have an "uri" attribute
         if link.page then -- Internal link
             logger.dbg("ReaderLink:onGotoLink: Internal link:", link)
@@ -964,7 +958,7 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
     local selected_link, selected_distance2
     -- We use squared distances throughout the computations,
     -- no need to math.sqrt() anything for comparisons.
-    if self.document.info.has_pages then
+    if self.ui.paging then
         local pos = self.view:screenToPageTransform(ges.pos)
         if not pos then
             return
@@ -1169,7 +1163,7 @@ function ReaderLink:onSelectPrevPageLink()
 end
 
 function ReaderLink:selectRelPageLink(rel)
-    if self.document.info.has_pages then
+    if self.ui.paging then
         -- not implemented for now (see at doing like in showLinkBox()
         -- to highlight the link before jumping to it)
         return
@@ -1258,7 +1252,7 @@ end
 function ReaderLink:onGoToLatestBookmark(ges)
     local latest_bookmark = self.ui.bookmark:getLatestBookmark()
     if latest_bookmark then
-        if self.document.info.has_pages then
+        if self.ui.paging then
             -- self:onGotoLink() needs something with a page attribute.
             -- we need to substract 1 to bookmark page, as links start from 0
             -- and onGotoLink will add 1 - we need a fake_link (with a single
@@ -1285,7 +1279,7 @@ function ReaderLink:onGoToLatestBookmark(ges)
 end
 
 function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
-    if self.document.info.has_pages then
+    if self.ui.paging then
         return false -- not supported
     end
 
