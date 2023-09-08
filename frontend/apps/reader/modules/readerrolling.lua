@@ -1556,7 +1556,6 @@ function ReaderRolling:checkXPointersAndProposeDOMVersionUpgrade()
             g_block_rendering_mode = 3 -- default in ReaderTypeset:onReadSettings()
         end
         if g_block_rendering_mode ~= 0 then -- default is not "legacy"
-            -- This setting is actually saved by self.ui.document.configurable
             local block_rendering_mode = self.configurable.block_rendering_mode
             if block_rendering_mode == 0 then
                 self.configurable.block_rendering_mode = g_block_rendering_mode
