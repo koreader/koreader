@@ -384,6 +384,18 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     return info
 end
 
+-- This is only used on Android, the intent being we assume the system will eventually turn on WiFi on its own in the background...
+function NetworkMgr:doNothingAndWaitForConnection(callback)
+    if self:isWifiOn() and self:isConnected() then
+        if callback then
+            callback()
+        end
+        return
+    end
+
+    self:scheduleConnectivityCheck(callback)
+end
+
 --- This quirky internal flag is used for the rare beforeWifiAction -> afterWifiAction brackets.
 function NetworkMgr:clearBeforeActionFlag()
     self._before_action_tripped = nil
@@ -407,6 +419,8 @@ function NetworkMgr:beforeWifiAction(callback)
     local wifi_enable_action = G_reader_settings:readSetting("wifi_enable_action")
     if wifi_enable_action == "turn_on" then
         return self:turnOnWifiAndWaitForConnection(callback)
+    elseif wifi_enable_action == "ignore" then
+        return self:doNothingAndWaitForConnection(callback)
     else
         return self:promptWifiOn(callback)
     end
@@ -795,6 +809,9 @@ function NetworkMgr:getBeforeWifiActionMenuTable()
         turn_on = {_("turn on"), _("Turn on")},
         prompt = {_("prompt"), _("Prompt")},
     }
+    if Device:isAndroid() then
+        wifi_enable_actions.ignore = {_("ignore"), _("Ignore")}
+    end
     local action_table = function(wifi_enable_action)
     return {
         text = wifi_enable_actions[wifi_enable_action][2],
@@ -807,7 +824,8 @@ function NetworkMgr:getBeforeWifiActionMenuTable()
         end,
     }
     end
-    return {
+
+    local t = {
         text_func = function()
             return T(_("Action when Wi-Fi is off: %1"),
                 wifi_enable_actions[wifi_enable_action_setting][1]
@@ -818,6 +836,11 @@ function NetworkMgr:getBeforeWifiActionMenuTable()
             action_table("prompt"),
         }
     }
+    if Device:isAndroid() then
+        table.insert(t.sub_item_table, action_table("ignore"))
+    end
+
+    return t
 end
 
 function NetworkMgr:getAfterWifiActionMenuTable()
