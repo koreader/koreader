@@ -13,14 +13,11 @@ local ReaderCoptListener = EventListener:extend{}
 local CRE_HEADER_DEFAULT_SIZE = 20
 
 function ReaderCoptListener:onReadSettings(config)
-    local view_mode = config:readSetting("copt_view_mode")
-                   or G_reader_settings:readSetting("copt_view_mode")
-                   or 0 -- default to "page" mode
-    local view_mode_name = view_mode == 0 and "page" or "scroll"
+    local view_mode_name = self.document.configurable.view_mode == 0 and "page" or "scroll"
     -- Let crengine know of the view mode before rendering, as it can
     -- cause a rendering change (2-pages would become 1-page in
     -- scroll mode).
-    self.ui.document:setViewMode(view_mode_name)
+    self.document:setViewMode(view_mode_name)
     -- ReaderView is the holder of the view_mode state
     self.view.view_mode = view_mode_name
 
@@ -35,20 +32,19 @@ function ReaderCoptListener:onReadSettings(config)
     self.battery_percent = G_reader_settings:readSetting("cre_header_battery_percent", 0)
     self.chapter_marks = G_reader_settings:readSetting("cre_header_chapter_marks", 1)
 
-    self.ui.document._document:setIntProperty("window.status.title", self.title)
-    self.ui.document._document:setIntProperty("window.status.clock", self.clock)
-    self.ui.document._document:setIntProperty("window.status.pos.page.number", self.page_number)
-    self.ui.document._document:setIntProperty("window.status.pos.page.count", self.page_count)
-    self.ui.document._document:setIntProperty("crengine.page.header.chapter.marks", self.chapter_marks)
-    self.ui.document._document:setIntProperty("window.status.battery", self.battery)
-    self.ui.document._document:setIntProperty("window.status.battery.percent", self.battery_percent)
-    self.ui.document._document:setIntProperty("window.status.pos.percent", self.reading_percent)
+    self.document._document:setIntProperty("window.status.title", self.title)
+    self.document._document:setIntProperty("window.status.clock", self.clock)
+    self.document._document:setIntProperty("window.status.pos.page.number", self.page_number)
+    self.document._document:setIntProperty("window.status.pos.page.count", self.page_count)
+    self.document._document:setIntProperty("crengine.page.header.chapter.marks", self.chapter_marks)
+    self.document._document:setIntProperty("window.status.battery", self.battery)
+    self.document._document:setIntProperty("window.status.battery.percent", self.battery_percent)
+    self.document._document:setIntProperty("window.status.pos.percent", self.reading_percent)
 
     self:onTimeFormatChanged()
 
     -- Enable or disable crengine header status line (note that for crengine, 0=header enabled, 1=header disabled)
-    local status_line = config:readSetting("copt_status_line") or G_reader_settings:readSetting("copt_status_line", 1)
-    self.ui:handleEvent(Event:new("SetStatusLine", status_line))
+    self.ui:handleEvent(Event:new("SetStatusLine", self.document.configurable.status_line))
 
     self.old_battery_level = self.ui.rolling:updateBatteryState()
 
@@ -87,7 +83,7 @@ end
 ReaderCoptListener.onNotCharging = ReaderCoptListener.onCharging
 
 function ReaderCoptListener:onTimeFormatChanged()
-    self.ui.document._document:setIntProperty("window.status.clock.12hours", G_reader_settings:isTrue("twelve_hour_clock") and 1 or 0)
+    self.document._document:setIntProperty("window.status.clock.12hours", G_reader_settings:isTrue("twelve_hour_clock") and 1 or 0)
 end
 
 function ReaderCoptListener:shouldHeaderBeRepainted()
@@ -107,14 +103,14 @@ end
 
 function ReaderCoptListener:updateHeader()
     -- Have crengine display accurate time and battery on its next drawing
-    self.ui.document:resetBufferCache() -- be sure next repaint is a redrawing
+    self.document:resetBufferCache() -- be sure next repaint is a redrawing
     -- Force a refresh if we're not hidden behind another widget
     if self:shouldHeaderBeRepainted() then
         UIManager:setDirty(self.view.dialog, "ui",
             Geom:new{
                 x = 0, y = 0,
                 w = Device.screen:getWidth(),
-                h = self.ui.document:getHeaderHeight(),
+                h = self.document:getHeaderHeight(),
             }
         )
     end
@@ -176,7 +172,7 @@ ReaderCoptListener.onCloseDocument = ReaderCoptListener.unscheduleHeaderRefresh
 ReaderCoptListener.onSuspend = ReaderCoptListener.unscheduleHeaderRefresh
 
 function ReaderCoptListener:setAndSave(setting, property, value)
-    self.ui.document._document:setIntProperty(property, value)
+    self.document._document:setIntProperty(property, value)
     G_reader_settings:saveSetting(setting, value)
     -- Have crengine redraw it (even if hidden by the menu at this time)
     self.ui.rolling:updateBatteryState()

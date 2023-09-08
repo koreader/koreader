@@ -317,6 +317,7 @@ function Profiles:getProfileFromCurrentDocument(new_name)
             "embedded_fonts",
             "smooth_scaling",
             "nightmode_images",
+            "status_line",
         }
     else
         document_settings = {

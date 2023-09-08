@@ -52,41 +52,27 @@ function ReaderTypeset:onReadSettings(config)
                                      or 3 -- default to 'web' mode
         end
         -- Let ConfigDialog know so it can update it on screen and have it saved on quit
-        self.ui.document.configurable.block_rendering_mode = self.block_rendering_mode
+        self.configurable.block_rendering_mode = self.block_rendering_mode
     end
     self:setBlockRenderingMode(self.block_rendering_mode)
 
-    -- set render DPI
-    self.render_dpi = config:readSetting("render_dpi")
-                   or G_reader_settings:readSetting("copt_render_dpi")
-                   or 96
-    self:setRenderDPI(self.render_dpi)
+    -- default to 96 dpi
+    self.ui.document:setRenderDPI(self.configurable.render_dpi)
 
     -- uncomment if we want font size to follow DPI changes
     -- self.ui.document:setRenderScaleFontWithDPI(1)
 
     -- set page margins
-    local h_margins = config:readSetting("copt_h_page_margins")
-                   or G_reader_settings:readSetting("copt_h_page_margins")
-                   or G_defaults:readSetting("DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM")
-    local t_margin = config:readSetting("copt_t_page_margin")
-                  or G_reader_settings:readSetting("copt_t_page_margin")
-                  or G_defaults:readSetting("DCREREADER_CONFIG_T_MARGIN_SIZES_LARGE")
-    local b_margin = config:readSetting("copt_b_page_margin")
-                  or G_reader_settings:readSetting("copt_b_page_margin")
-                  or G_defaults:readSetting("DCREREADER_CONFIG_B_MARGIN_SIZES_LARGE")
-    self.unscaled_margins = { h_margins[1], t_margin, h_margins[2], b_margin }
+    self.unscaled_margins = { self.configurable.h_page_margins[1], self.configurable.t_page_margin,
+                              self.configurable.h_page_margins[2], self.configurable.b_page_margin }
     self:onSetPageMargins(self.unscaled_margins)
-    self.sync_t_b_page_margins = config:readSetting("copt_sync_t_b_page_margins")
-                              or G_reader_settings:readSetting("copt_sync_t_b_page_margins")
-                              or 0
-    self.sync_t_b_page_margins = self.sync_t_b_page_margins == 1 and true or false
+    self.sync_t_b_page_margins = self.configurable.sync_t_b_page_margins == 1 and true or false
 
-    -- default to disable TXT formatting as it does more harm than good
+    -- default to disable TXT formatting as it does more harm than good (the setting is not in UI)
     self.txt_preformatted = config:readSetting("txt_preformatted")
                          or G_reader_settings:readSetting("txt_preformatted")
                          or 1
-    self:toggleTxtPreFormatted(self.txt_preformatted)
+    self.ui.document:setTxtPreFormatted(self.txt_preformatted)
 
     -- default to disable smooth scaling
     self.ui.document:setImageScaling(self.configurable.smooth_scaling == 1)
@@ -97,7 +83,6 @@ end
 
 function ReaderTypeset:onSaveSettings()
     self.ui.doc_settings:saveSetting("css", self.css)
-    self.ui.doc_settings:saveSetting("render_dpi", self.render_dpi)
 end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
@@ -149,7 +134,17 @@ end
 
 function ReaderTypeset:onSetBlockRenderingMode(mode)
     self:setBlockRenderingMode(mode)
-    Notification:notify(T( _("Render mode set to: %1"), optionsutil:getOptionText("SetBlockRenderingMode", mode)))
+    local text = T(_("Render mode set to: %1"), optionsutil:getOptionText("SetBlockRenderingMode", mode))
+    Notification:notify(text)
+    return true
+end
+
+function ReaderTypeset:onSetRenderDPI(dpi)
+    self.configurable.render_dpi = dpi
+    self.ui.document:setRenderDPI(dpi)
+    self.ui:handleEvent(Event:new("UpdatePos"))
+    local text = T(_("Zoom set to: %1"), optionsutil:getOptionText("SetRenderDPI", dpi))
+    Notification:notify(text)
     return true
 end
 
@@ -168,12 +163,6 @@ local OBSOLETED_CSS = {
     "rtf.css",
     "txt.css",
 }
-
-function ReaderTypeset:onSetRenderDPI(dpi)
-    self:setRenderDPI(dpi)
-    Notification:notify(T( _("Zoom set to: %1"), optionsutil:getOptionText("SetRenderDPI", dpi)))
-    return true
-end
 
 function ReaderTypeset:genStyleSheetMenu()
     local getStyleMenuItem = function(text, css_file, separator)
@@ -358,17 +347,6 @@ function ReaderTypeset:ensureSanerBlockRenderingFlags(mode)
     self:setBlockRenderingMode(self.block_rendering_mode)
 end
 
-function ReaderTypeset:toggleTxtPreFormatted(toggle)
-    self.ui.document:setTxtPreFormatted(toggle)
-    self.ui:handleEvent(Event:new("UpdatePos"))
-end
-
-function ReaderTypeset:setRenderDPI(dpi)
-    self.render_dpi = dpi
-    self.ui.document:setRenderDPI(dpi)
-    self.ui:handleEvent(Event:new("UpdatePos"))
-end
-
 function ReaderTypeset:addToMainMenu(menu_items)
     -- insert table to main reader menu
     menu_items.set_render_style = {
@@ -379,7 +357,7 @@ end
 
 function ReaderTypeset:makeDefaultStyleSheet(css, text, touchmenu_instance)
     UIManager:show(ConfirmBox:new{
-        text = T( _("Set default style to %1?"), BD.filename(text)),
+        text = T(_("Set default style to %1?"), BD.filename(text)),
         ok_callback = function()
             G_reader_settings:saveSetting("copt_css", css)
             if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -397,7 +375,7 @@ function ReaderTypeset:onSetPageTopMargin(t_margin, when_applied_callback)
     if self.sync_t_b_page_margins then
         self.unscaled_margins[4] = t_margin
         -- Let ConfigDialog know so it can update it on screen and have it saved on quit
-        self.ui.document.configurable.b_page_margin = t_margin
+        self.configurable.b_page_margin = t_margin
     end
     self.ui:handleEvent(Event:new("SetPageMargins", self.unscaled_margins, when_applied_callback))
 end
@@ -407,7 +385,7 @@ function ReaderTypeset:onSetPageBottomMargin(b_margin, when_applied_callback)
     if self.sync_t_b_page_margins then
         self.unscaled_margins[2] = b_margin
         -- Let ConfigDialog know so it can update it on screen and have it saved on quit
-        self.ui.document.configurable.t_page_margin = b_margin
+        self.configurable.t_page_margin = b_margin
     end
     self.ui:handleEvent(Event:new("SetPageMargins", self.unscaled_margins, when_applied_callback))
 end
@@ -418,7 +396,7 @@ function ReaderTypeset:onSetPageTopAndBottomMargin(t_b_margins, when_applied_cal
     if t_margin ~= b_margin then
         -- Set Sync T/B Margins toggle to off, as user explicitly made them differ
         self.sync_t_b_page_margins = false
-        self.ui.document.configurable.sync_t_b_page_margins = 0
+        self.configurable.sync_t_b_page_margins = 0
     end
     self.ui:handleEvent(Event:new("SetPageMargins", self.unscaled_margins, when_applied_callback))
 end
@@ -435,8 +413,8 @@ function ReaderTypeset:onSyncPageTopBottomMargins(toggle, when_applied_callback)
             -- and later scaled, the end result could still be different.
             -- So just take the mean and make them equal.
             local mean_margin = Math.round((self.unscaled_margins[2] + self.unscaled_margins[4]) / 2)
-            self.ui.document.configurable.t_page_margin = mean_margin
-            self.ui.document.configurable.b_page_margin = mean_margin
+            self.configurable.t_page_margin = mean_margin
+            self.configurable.b_page_margin = mean_margin
             self.unscaled_margins = { self.unscaled_margins[1], mean_margin, self.unscaled_margins[3], mean_margin }
             self.ui:handleEvent(Event:new("SetPageMargins", self.unscaled_margins, when_applied_callback))
             when_applied_callback = nil
