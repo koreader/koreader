@@ -87,9 +87,7 @@ function ReaderPageMap:resetLayout()
 end
 
 function ReaderPageMap:onReadSettings(config)
-    local h_margins = config:readSetting("copt_h_page_margins")
-                   or G_reader_settings:readSetting("copt_h_page_margins")
-                   or G_defaults:readSetting("DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM")
+    local h_margins = self.ui.document.configurable.h_page_margins
     self.max_left_label_width = Screen:scaleBySize(h_margins[1])
     self.max_right_label_width = Screen:scaleBySize(h_margins[2])
 
