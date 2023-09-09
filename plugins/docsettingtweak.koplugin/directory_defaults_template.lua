@@ -20,11 +20,11 @@ return {--do NOT change this line
         ["inverse_reading_order"] = true
     },
     ["/mnt/onboard/smalltext"] = {
-        ["font_size"] = 34,
+        ["copt_font_size"] = 34,
         ["copt_line_spacing"] = 130,
     },
     ["/sdcard/Books/smalltext"] = {
-        ["font_size"] = 34,
+        ["copt_font_size"] = 34,
         ["copt_line_spacing"] = 130,
     },
 --]]

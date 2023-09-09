@@ -73,10 +73,6 @@ function ReaderCoptListener:onConfigChange(option_name, option_value)
     return true
 end
 
-function ReaderCoptListener:onSetFontSize(font_size)
-    self.document.configurable.font_size = font_size
-end
-
 function ReaderCoptListener:onCharging()
     self:headerRefresh()
 end
