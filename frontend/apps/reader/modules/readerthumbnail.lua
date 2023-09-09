@@ -421,7 +421,7 @@ function ReaderThumbnail:_getPageImage(page)
         -- will be croped out after drawing), we will show them just as rendered.
         self.ui.rolling.rendering_state = nil -- Remove any partial rerendering icon
         self.ui.view:onSetViewMode("page") -- Get out of scroll mode
-        if self.ui.font.gamma_index < 30 then  -- Increase font gamma (if not already increased),
+        if self.ui.document.configurable.font_gamma < 30 then  -- Increase font gamma (if not already increased),
             self.ui.document:setGammaIndex(30) -- as downscaling will make text grayer
         end
         self.ui.document:setImageScaling(false) -- No need for smooth scaling as all will be downscaled
