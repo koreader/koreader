@@ -25,8 +25,6 @@ local ReaderFont = InputContainer:extend{
     font_face = nil,
     font_menu_title = _("Font"),
     face_table = nil,
-    -- default gamma from crengine's lvfntman.cpp
-    gamma_index = nil,
     steps = {0,1,1,1,1,1,2,2,2,3,3,3,4,4,5},
 }
 
@@ -179,43 +177,14 @@ function ReaderFont:onReadSettings(config)
     self.ui.document:setHeaderFont(self.header_font_face)
 
     self.ui.document:setFontSize(Screen:scaleBySize(self.configurable.font_size))
-
-    self.font_base_weight = config:readSetting("font_base_weight")
-                      or G_reader_settings:readSetting("copt_font_base_weight")
-                      or 0
-    self.ui.document:setFontBaseWeight(self.font_base_weight)
-
-    self.font_hinting = config:readSetting("font_hinting")
-                     or G_reader_settings:readSetting("copt_font_hinting")
-                     or 2 -- auto (default in cre.cpp)
-    self.ui.document:setFontHinting(self.font_hinting)
-
-    self.font_kerning = config:readSetting("font_kerning")
-                     or G_reader_settings:readSetting("copt_font_kerning")
-                     or 3 -- harfbuzz (slower, but needed for proper arabic)
-    self.ui.document:setFontKerning(self.font_kerning)
-
-    self.word_spacing = config:readSetting("word_spacing")
-                     or G_reader_settings:readSetting("copt_word_spacing")
-                     or {95, 75}
-    self.ui.document:setWordSpacing(self.word_spacing)
-
-    self.word_expansion = config:readSetting("word_expansion")
-                       or G_reader_settings:readSetting("copt_word_expansion")
-                       or 0
-    self.ui.document:setWordExpansion(self.word_expansion)
-
-    self.cjk_width_scaling = config:readSetting("cjk_width_scaling")
-                       or G_reader_settings:readSetting("copt_cjk_width_scaling")
-                       or 100
-    self.ui.document:setCJKWidthScaling(self.cjk_width_scaling)
-
+    self.ui.document:setFontBaseWeight(self.configurable.font_base_weight)
+    self.ui.document:setFontHinting(self.configurable.font_hinting)
+    self.ui.document:setFontKerning(self.configurable.font_kerning)
+    self.ui.document:setWordSpacing(self.configurable.word_spacing)
+    self.ui.document:setWordExpansion(self.configurable.word_expansion)
+    self.ui.document:setCJKWidthScaling(self.configurable.cjk_width_scaling)
     self.ui.document:setInterlineSpacePercent(self.configurable.line_spacing)
-
-    self.gamma_index = config:readSetting("gamma_index")
-                    or G_reader_settings:readSetting("copt_font_gamma")
-                    or 15 -- gamma = 1.0
-    self.ui.document:setGammaIndex(self.gamma_index)
+    self.ui.document:setGammaIndex(self.configurable.font_gamma)
 
     self.font_family_fonts = config:readSetting("font_family_fonts") or {}
     self:updateFontFamilyFonts()
@@ -284,7 +253,7 @@ function ReaderFont:onSetLineSpace(space)
 end
 
 function ReaderFont:onSetFontBaseWeight(weight)
-    self.font_base_weight = weight
+    self.configurable.font_base_weight = weight
     self.ui.document:setFontBaseWeight(weight)
     self.ui:handleEvent(Event:new("UpdatePos"))
     Notification:notify(T(_("Font weight set to: %1."), optionsutil:getOptionText("SetFontBaseWeight", weight)))
@@ -292,7 +261,7 @@ function ReaderFont:onSetFontBaseWeight(weight)
 end
 
 function ReaderFont:onSetFontHinting(mode)
-    self.font_hinting = mode
+    self.configurable.font_hinting = mode
     self.ui.document:setFontHinting(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
     Notification:notify(T(_("Font hinting set to: %1"), optionsutil:getOptionText("SetFontHinting", mode)))
@@ -300,7 +269,7 @@ function ReaderFont:onSetFontHinting(mode)
 end
 
 function ReaderFont:onSetFontKerning(mode)
-    self.font_kerning = mode
+    self.configurable.font_kerning = mode
     self.ui.document:setFontKerning(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
     Notification:notify(T(_("Font kerning set to: %1"), optionsutil:getOptionText("SetFontKerning", mode)))
@@ -308,7 +277,7 @@ function ReaderFont:onSetFontKerning(mode)
 end
 
 function ReaderFont:onSetWordSpacing(values)
-    self.word_spacing = values
+    self.configurable.word_spacing = values
     self.ui.document:setWordSpacing(values)
     self.ui:handleEvent(Event:new("UpdatePos"))
     Notification:notify(T(_("Word spacing set to: %1%, %2%"), values[1], values[2]))
@@ -316,7 +285,7 @@ function ReaderFont:onSetWordSpacing(values)
 end
 
 function ReaderFont:onSetWordExpansion(value)
-    self.word_expansion = value
+    self.configurable.word_expansion = value
     self.ui.document:setWordExpansion(value)
     self.ui:handleEvent(Event:new("UpdatePos"))
     Notification:notify(T(_("Word expansion set to: %1%."), value))
@@ -324,7 +293,7 @@ function ReaderFont:onSetWordExpansion(value)
 end
 
 function ReaderFont:onSetCJKWidthScaling(value)
-    self.cjk_width_scaling = value
+    self.configurable.cjk_width_scaling = value
     self.ui.document:setCJKWidthScaling(value)
     self.ui:handleEvent(Event:new("UpdatePos"))
     Notification:notify(T(_("CJK width scaling set to: %1%."), value))
@@ -332,8 +301,8 @@ function ReaderFont:onSetCJKWidthScaling(value)
 end
 
 function ReaderFont:onSetFontGamma(gamma)
-    self.gamma_index = gamma
-    self.ui.document:setGammaIndex(self.gamma_index)
+    self.configurable.font_gamma = gamma
+    self.ui.document:setGammaIndex(gamma)
     local gamma_level = self.ui.document:getGammaLevel()
     self.ui:handleEvent(Event:new("RedrawCurrentView"))
     Notification:notify(T(_("Font gamma set to: %1."), gamma_level))
@@ -343,13 +312,6 @@ end
 function ReaderFont:onSaveSettings()
     self.ui.doc_settings:saveSetting("font_face", self.font_face)
     self.ui.doc_settings:saveSetting("header_font_face", self.header_font_face)
-    self.ui.doc_settings:saveSetting("font_base_weight", self.font_base_weight)
-    self.ui.doc_settings:saveSetting("font_hinting", self.font_hinting)
-    self.ui.doc_settings:saveSetting("font_kerning", self.font_kerning)
-    self.ui.doc_settings:saveSetting("word_spacing", self.word_spacing)
-    self.ui.doc_settings:saveSetting("word_expansion", self.word_expansion)
-    self.ui.doc_settings:saveSetting("cjk_width_scaling", self.cjk_width_scaling)
-    self.ui.doc_settings:saveSetting("gamma_index", self.gamma_index)
     self.ui.doc_settings:saveSetting("font_family_fonts", self.font_family_fonts)
 end
 

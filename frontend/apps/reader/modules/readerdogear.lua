@@ -56,16 +56,9 @@ end
 function ReaderDogear:onReadSettings(config)
     if self.ui.rolling then
         -- Adjust to CreDocument margins (as done in ReaderTypeset)
-        local h_margins = config:readSetting("copt_h_page_margins")
-                       or G_reader_settings:readSetting("copt_h_page_margins")
-                       or G_defaults:readSetting("DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM")
-        local t_margin = config:readSetting("copt_t_page_margin")
-                      or G_reader_settings:readSetting("copt_t_page_margin")
-                      or G_defaults:readSetting("DCREREADER_CONFIG_T_MARGIN_SIZES_LARGE")
-        local b_margin = config:readSetting("copt_b_page_margin")
-                      or G_reader_settings:readSetting("copt_b_page_margin")
-                      or G_defaults:readSetting("DCREREADER_CONFIG_B_MARGIN_SIZES_LARGE")
-        local margins = { h_margins[1], t_margin, h_margins[2], b_margin }
+        local configurable = self.ui.document.configurable
+        local margins = { configurable.h_page_margins[1], configurable.t_page_margin,
+                          configurable.h_page_margins[2], configurable.b_page_margin }
         self:onSetPageMargins(margins)
     end
 end

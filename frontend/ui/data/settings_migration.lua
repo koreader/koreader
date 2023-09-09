@@ -43,11 +43,6 @@ function SettingsMigration:migrateSettings(config)
         local space_condensing = config:readSetting("copt_space_condensing")
         logger.info("Migrating old", cfg_class, "CRe space condensing:", space_condensing)
         config:saveSetting("copt_word_spacing", { 100, space_condensing })
-        if cfg_class == "book" then
-            -- a bit messy that some settings are saved twice in DocSettings, with
-            -- and without a copt_ prefix, and they must be in sync
-            config:saveSetting("word_spacing", { 100, space_condensing })
-        end
     end
 
 end
