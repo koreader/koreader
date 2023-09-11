@@ -417,13 +417,13 @@ function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
     -- in memory
     prop_value = prop_value or custom_doc_settings:readSetting("doc_props")[prop_key] -- set custom or restore original
     book_props[prop_key] = prop_value
-    if book_props.title == nil then -- generate when resetting the customized title and original is empty
-        book_props.display_title = filemanagerutil.splitFileNameType(file)
+    if prop_key == "title" then -- generate when resetting the customized title and original is empty
+        book_props.display_title = book_props.title or filemanagerutil.splitFileNameType(file)
     end
     local ui = self.ui or require("apps/reader/readerui").instance
     if ui and ui.document and ui.document.file == file then -- currently opened document
         ui.doc_props[prop_key] = prop_value
-        if ui.doc_props.title == nil then
+        if prop_key == "title" then
             ui.doc_props.display_title = book_props.display_title
         end
     end
