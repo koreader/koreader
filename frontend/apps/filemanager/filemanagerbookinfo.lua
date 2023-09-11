@@ -402,7 +402,7 @@ function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
         os.remove(custom_doc_settings.custom_metadata_file)
         DocSettings:removeSidecarDir(file, util.splitFilePathName(custom_doc_settings.custom_metadata_file))
     else
-        if book_props.pages then
+        if book_props.pages then -- update a copy of original 'pages' if number of pages changed
             local original_props = custom_doc_settings:readSetting("doc_props")
             if original_props.pages ~= book_props.pages then
                 original_props.pages = book_props.pages
@@ -416,11 +416,13 @@ function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
     -- in memory
     prop_value = prop_value or custom_doc_settings:readSetting("doc_props")[prop_key] -- set custom or restore original
     book_props[prop_key] = prop_value
+    if prop_key == "title" then -- generate if original is empty
+        book_props.display_title = prop_value or filemanagerutil.splitFileNameType(file)
+    end
     local ui = self.ui or require("apps/reader/readerui").instance
     if ui and ui.document and ui.document.file == file then -- currently opened document
         ui.doc_props[prop_key] = prop_value
-        if prop_key == "title" then -- generate if original is empty
-            book_props.display_title = prop_value or filemanagerutil.splitFileNameType(file)
+        if prop_key == "title" then
             ui.doc_props.display_title = book_props.display_title
         end
     end
