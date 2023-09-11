@@ -179,6 +179,7 @@ end
 
 -- Returns extended and customized metadata.
 function BookInfo.extendProps(original_props, filepath)
+    -- do not customize if filepath is not passed (eg from covermenu)
     local custom_metadata_file = filepath and DocSettings:getCustomMetadataFile(filepath)
     local custom_props = custom_metadata_file
         and DocSettings:openCustomMetadata(custom_metadata_file):readSetting("custom_props") or {}
@@ -416,13 +417,13 @@ function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
     -- in memory
     prop_value = prop_value or custom_doc_settings:readSetting("doc_props")[prop_key] -- set custom or restore original
     book_props[prop_key] = prop_value
-    if prop_key == "title" then -- generate if original is empty
-        book_props.display_title = prop_value or filemanagerutil.splitFileNameType(file)
+    if book_props.title == nil then -- generate when resetting the customized title and original is empty
+        book_props.display_title = filemanagerutil.splitFileNameType(file)
     end
     local ui = self.ui or require("apps/reader/readerui").instance
     if ui and ui.document and ui.document.file == file then -- currently opened document
         ui.doc_props[prop_key] = prop_value
-        if prop_key == "title" then
+        if ui.doc_props.title == nil then
             ui.doc_props.display_title = book_props.display_title
         end
     end
