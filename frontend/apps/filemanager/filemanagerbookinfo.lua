@@ -164,7 +164,9 @@ function BookInfo:show(file, book_props)
             self.custom_doc_settings = nil
             self.custom_book_cover = nil
             if self.prop_updated then
-                local ui = self.ui or require("apps/filemanager/filemanager").instance
+                local ui = self.ui -- Reader
+                        or require("apps/filemanager/filemanager").instance -- FM, Hist/Coll over FM
+                        or require("apps/reader/readerui").instance -- Hist/Coll over Reader
                 if ui.coverbrowser then -- refresh cache db
                     ui.coverbrowser:deleteBookInfo(file)
                 end
@@ -177,7 +179,8 @@ end
 
 -- Returns extended and customized metadata.
 function BookInfo.extendProps(original_props, filepath)
-    local custom_metadata_file = DocSettings:getCustomMetadataFile(filepath)
+    -- do not customize if filepath is not passed (eg from covermenu)
+    local custom_metadata_file = filepath and DocSettings:getCustomMetadataFile(filepath)
     local custom_props = custom_metadata_file
         and DocSettings:openCustomMetadata(custom_metadata_file):readSetting("custom_props") or {}
     original_props = original_props or {}
@@ -400,6 +403,10 @@ function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
         os.remove(custom_doc_settings.custom_metadata_file)
         DocSettings:removeSidecarDir(file, util.splitFilePathName(custom_doc_settings.custom_metadata_file))
     else
+        if book_props.pages then -- keep a copy of original 'pages' up to date
+            local original_props = custom_doc_settings:readSetting("doc_props")
+            original_props.pages = book_props.pages
+        end
         custom_doc_settings:saveSetting("custom_props", custom_props)
         custom_doc_settings:flushCustomMetadata(file)
     end
@@ -407,10 +414,14 @@ function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
     -- in memory
     prop_value = prop_value or custom_doc_settings:readSetting("doc_props")[prop_key] -- set custom or restore original
     book_props[prop_key] = prop_value
-    if self.ui then -- currently opened document
-        self.ui.doc_props[prop_key] = prop_value
-        if prop_key == "title" then -- generate if original is empty
-            self.ui.doc_props.display_title = prop_value or filemanagerutil.splitFileNameType(file)
+    if prop_key == "title" then -- generate when resetting the customized title and original is empty
+        book_props.display_title = book_props.title or filemanagerutil.splitFileNameType(file)
+    end
+    local ui = self.ui or require("apps/reader/readerui").instance
+    if ui and ui.document and ui.document.file == file then -- currently opened document
+        ui.doc_props[prop_key] = prop_value
+        if prop_key == "title" then
+            ui.doc_props.display_title = book_props.display_title
         end
     end
     self:updateBookInfo(file, book_props, prop_key, prop_value_old)

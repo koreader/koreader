@@ -340,7 +340,7 @@ function CoverMenu:updateItems(select_number)
                 -- Replace the "Book information" button callback to use directly our bookinfo
                 button = self.file_dialog:getButtonById("book_information")
                 button.callback = function()
-                    FileManagerBookInfo:show(file, bookinfo)
+                    FileManagerBookInfo:show(file, FileManagerBookInfo.extendProps(bookinfo))
                     UIManager:close(self.file_dialog)
                 end
 
@@ -467,7 +467,7 @@ function CoverMenu:onHistoryMenuHold(item)
     -- Replace the "Book information" button callback to use directly our bookinfo
     button = self.histfile_dialog:getButtonById("book_information")
     button.callback = function()
-        FileManagerBookInfo:show(file, bookinfo)
+        FileManagerBookInfo:show(file, FileManagerBookInfo.extendProps(bookinfo))
         UIManager:close(self.histfile_dialog)
     end
 
@@ -587,7 +587,7 @@ function CoverMenu:onCollectionsMenuHold(item)
     -- Replace the "Book information" button callback to use directly our bookinfo
     button = self.collfile_dialog:getButtonById("book_information")
     button.callback = function()
-        FileManagerBookInfo:show(file, bookinfo)
+        FileManagerBookInfo:show(file, FileManagerBookInfo.extendProps(bookinfo))
         UIManager:close(self.collfile_dialog)
     end
 
