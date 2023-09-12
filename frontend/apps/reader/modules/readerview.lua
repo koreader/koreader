@@ -48,9 +48,9 @@ local ReaderView = OverlapGroup:extend{
     -- properties of the gap drawn between each page in scroll mode:
     page_gap = nil, -- table
     -- DjVu page rendering mode (used in djvu.c:drawPage())
-    render_mode = 0, -- default to COLOR, will be set in onReadSettings()
+    render_mode = nil, -- default to COLOR, will be set in onReadSettings()
     -- Crengine view mode
-    view_mode = "page", -- default to page mode, will be set in ReaderCoptListener:onReadSettings()
+    view_mode = G_defaults:readSetting("DCREREADER_VIEW_MODE"), -- default to page mode
     hinting = true,
     emitHintPageEvent = nil,
 
