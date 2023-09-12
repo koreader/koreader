@@ -149,6 +149,11 @@ function FileManagerMenu:setUpdateItemTable()
         text = _("Settings"),
         sub_item_table = {
             {
+                text = _("Show finished books"),
+                checked_func = function() return self.ui.file_chooser.show_finished end,
+                callback = function() self.ui:toggleFinishedBooks() end,
+            },
+            {
                 text = _("Show hidden files"),
                 checked_func = function() return self.ui.file_chooser.show_hidden end,
                 callback = function() self.ui:toggleHiddenFiles() end,

@@ -4,6 +4,7 @@ local datetime = require("datetime")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local Menu = require("ui/widget/menu")
 local OpenWithDialog = require("ui/widget/openwithdialog")
 local UIManager = require("ui/uimanager")
@@ -88,11 +89,13 @@ function FileChooser:show_dir(dirname)
     return true
 end
 
-function FileChooser:show_file(filename)
+function FileChooser:show_file(filename, fullpath)
     for _, pattern in ipairs(self.exclude_files) do
         if filename:match(pattern) then return false end
     end
-    return self.show_unsupported or self.file_filter == nil or self.file_filter(filename)
+    if not self.show_unsupported and self.file_filter ~= nil and not self.file_filter(filename) then return false end
+    if not self.show_finished and filemanagerutil.getStatus(fullpath) == "complete" then return false end
+    return true
 end
 
 function FileChooser:init()
@@ -123,7 +126,7 @@ function FileChooser:getList(path, collate)
                         end
                     -- Always ignore macOS resource forks.
                     elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") then
-                        if self:show_file(f) then
+                        if self:show_file(f, filename) then
                             if collate then -- when collate == nil count only to display in folder mandatory
                                 item = self:getListItem(f, filename, attributes, collate)
                             end
@@ -448,6 +451,11 @@ function FileChooser:changePageToPath(path)
             break
         end
     end
+end
+
+function FileChooser:toggleFinishedBooks()
+    self.show_finished = not self.show_finished
+    self:refreshPath()
 end
 
 function FileChooser:toggleHiddenFiles()
