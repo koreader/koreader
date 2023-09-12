@@ -898,7 +898,7 @@ function ReaderStatistics:onBookMetadataChanged(prop_updated)
               AND  md5 = ?;
         ]]
         local stmt = conn:prepare(sql_stmt)
-        result = stmt:reset():bind(db_title, db_authors, db_md5):step()
+        local result = stmt:reset():bind(db_title, db_authors, db_md5):step()
         if not result and db_authors_legacy then
             logger.dbg(log_prefix, "book not present, trying with fallback empty authors")
             result = stmt:reset():bind(db_title, db_authors_legacy, db_md5):step()
@@ -906,7 +906,7 @@ function ReaderStatistics:onBookMetadataChanged(prop_updated)
         stmt:close()
         if not result then
             -- Book not present in statistics
-            logger.info(log_prefix, "book not present", db_title, db_authors, md5)
+            logger.info(log_prefix, "book not present", db_title, db_authors, db_md5)
             conn:close()
             return
         end
@@ -915,7 +915,7 @@ function ReaderStatistics:onBookMetadataChanged(prop_updated)
     end
     logger.info(log_prefix, "updating book", id_book, updated_field, "with:", updated_value)
 
-    sql_stmt = [[
+    local sql_stmt = [[
         UPDATE book
         SET    ]]..updated_field..[[ = ?
         WHERE  id = ?;
