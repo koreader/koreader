@@ -38,9 +38,6 @@ function Configurable:loadDefaults(config_options)
             local settings_key = prefix..key
             local default = G_reader_settings:readSetting(settings_key)
             self[key] = default or options[j].default_value
-            if not self[key] then
-                self[key] = options[j].default_arg
-            end
         end
     end
 end
