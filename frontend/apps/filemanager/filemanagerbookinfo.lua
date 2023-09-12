@@ -165,8 +165,8 @@ function BookInfo:show(file, book_props)
             self.custom_book_cover = nil
             if self.prop_updated then
                 local ui = self.ui -- Reader
-                        or require("apps/reader/readerui").instance -- Hist/Coll over Reader
                         or require("apps/filemanager/filemanager").instance -- FM, Hist/Coll over FM
+                        or require("apps/reader/readerui").instance -- Hist/Coll over Reader
                 if ui.coverbrowser then -- refresh cache db
                     ui.coverbrowser:deleteBookInfo(file)
                 end
@@ -403,12 +403,9 @@ function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
         os.remove(custom_doc_settings.custom_metadata_file)
         DocSettings:removeSidecarDir(file, util.splitFilePathName(custom_doc_settings.custom_metadata_file))
     else
-        if book_props.pages then -- update a copy of original 'pages' if number of pages changed
+        if book_props.pages then -- keep a copy of original 'pages' up to date
             local original_props = custom_doc_settings:readSetting("doc_props")
-            if original_props.pages ~= book_props.pages then
-                original_props.pages = book_props.pages
-                custom_doc_settings:saveSetting("doc_props", original_props)
-            end
+            original_props.pages = book_props.pages
         end
         custom_doc_settings:saveSetting("custom_props", custom_props)
         custom_doc_settings:flushCustomMetadata(file)
