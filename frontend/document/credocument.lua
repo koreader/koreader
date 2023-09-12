@@ -168,6 +168,7 @@ function CreDocument:init()
         self.default_css = "./data/fb2.css"
     end
 
+    -- This mode must be the same as the default one set as ReaderView.view_mode
     self._view_mode = G_defaults:readSetting("DCREREADER_VIEW_MODE") == "scroll" and self.SCROLL_VIEW_MODE or self.PAGE_VIEW_MODE
 
     local ok
