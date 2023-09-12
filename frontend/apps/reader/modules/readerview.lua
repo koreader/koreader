@@ -50,7 +50,7 @@ local ReaderView = OverlapGroup:extend{
     -- DjVu page rendering mode (used in djvu.c:drawPage())
     render_mode = 0, -- default to COLOR, will be set in onReadSettings()
     -- Crengine view mode
-    view_mode = nil, -- default to page mode, will be set in ReaderCoptListener:onReadSettings()
+    view_mode = "page", -- default to page mode, will be set in ReaderCoptListener:onReadSettings()
     hinting = true,
     emitHintPageEvent = nil,
 
