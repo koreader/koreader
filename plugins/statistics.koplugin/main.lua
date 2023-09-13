@@ -807,6 +807,139 @@ function ReaderStatistics:getIdBookDB()
     return tonumber(id_book)
 end
 
+function ReaderStatistics:onBookMetadataChanged(prop_updated)
+    local log_prefix = "Statistics metadata update:"
+    logger.dbg(log_prefix, "got", prop_updated)
+    -- Some metadata of a book (that we may or may not know about) has been modified
+    local filepath = prop_updated.filepath
+    local metadata_key_updated = prop_updated.metadata_key_updated
+    local doc_props = prop_updated.doc_props -- contains up to date metadata
+
+    local updated_field, updated_value
+    if metadata_key_updated == "title" then
+        updated_field = "title"
+        updated_value = doc_props.display_title
+    elseif metadata_key_updated == "authors" then
+        updated_field = "authors"
+        updated_value = doc_props.authors or "N/A"
+    elseif metadata_key_updated == "language" then
+        updated_field = "language"
+        updated_value = doc_props.language or "N/A"
+    elseif metadata_key_updated == "series" or metadata_key_updated == "series_index" then
+        updated_field = "series"
+        updated_value = "N/A"
+        if doc_props.series then
+            updated_value = doc_props.series
+            if doc_props.series_index then
+                updated_value = updated_value .. " #" .. doc_props.series_index
+            end
+        end
+    else
+        -- Updated metadata is one we do not store: nothing to do
+        logger.dbg(log_prefix, "not a metadata we care about:", metadata_key_updated)
+        return
+    end
+
+    local conn = SQ3.open(db_location)
+    local id_book
+
+    if self.ui.document and self.ui.document.file == filepath then
+        -- Current document is the one updated: we have its id readily available
+        id_book = self.id_curr_book
+        logger.dbg(log_prefix, "got book id from opened document:", id_book)
+        -- Update self.data with new value
+        self.data[updated_field] = updated_value
+    else
+        -- Not the current document: we have to find its id in the db, from the (old) title/authors/md5
+        local db_md5, db_title, db_authors, db_authors_legacy
+        if DocSettings:hasSidecarFile(filepath) then
+            local doc_settings = DocSettings:open(filepath)
+            local stats = doc_settings:readSetting("stats")
+            if stats then
+                db_md5 = stats.md5
+                -- Note: stats.title and stats.authors may be osbolete, if the metadata
+                -- has previously been updated and the document never re-opened since.
+                logger.dbg(log_prefix, "got md5 from docsettings:", db_md5)
+            end
+        end
+        if not db_md5 then
+            db_md5 = self:partialMd5(filepath)
+            logger.dbg(log_prefix, "computed md5:", db_md5)
+        end
+
+        if metadata_key_updated == "title" then
+            db_title = prop_updated.metadata_value_old
+            if not db_title then -- empty title
+                -- Build what display_title would have been
+                local filemanagerutil = require("apps/filemanager/filemanagerutil")
+                db_title = filemanagerutil.splitFileNameType(filepath)
+            end
+        else
+            db_title = doc_props.display_title
+        end
+
+        if metadata_key_updated == "authors" then
+            db_authors = prop_updated.metadata_value_old
+        else
+            db_authors = doc_props.authors
+        end
+        if not db_authors then -- empty authors (we get nil)
+            db_authors = "N/A"
+            -- Before Jun 2021 (#7868), we used to store "" for empty authors.
+            -- If book not found with authors="N/A", we'll have to look again with "".
+            db_authors_legacy = ""
+        end
+
+        local sql_stmt = [[
+            SELECT id
+            FROM   book
+            WHERE  title = ?
+              AND  authors = ?
+              AND  md5 = ?;
+        ]]
+        local stmt = conn:prepare(sql_stmt)
+        local result = stmt:reset():bind(db_title, db_authors, db_md5):step()
+        if not result and db_authors_legacy then
+            logger.dbg(log_prefix, "book not present, trying with fallback empty authors")
+            result = stmt:reset():bind(db_title, db_authors_legacy, db_md5):step()
+        end
+        stmt:close()
+        if not result then
+            -- Book not present in statistics
+            logger.info(log_prefix, "book not present", db_title, db_authors, db_md5)
+            conn:close()
+            return
+        end
+        id_book = tonumber(result[1])
+        logger.dbg(log_prefix, "found book id in db:", id_book)
+    end
+    logger.info(log_prefix, "updating book", id_book, updated_field, "with:", updated_value)
+
+    local sql_stmt = [[
+        UPDATE book
+        SET    ]]..updated_field..[[ = ?
+        WHERE  id = ?;
+    ]]
+    local stmt = conn:prepare(sql_stmt)
+    local ok, err = pcall(function()
+        stmt:reset():bind(updated_value, id_book):step()
+    end)
+    if not ok and err then
+        -- Let it be known if "UNIQUE constraint failed: book.title, book.authors, book.md5"
+        err = err:gsub("\n.*", "") -- remove stacktrace
+        logger.err(log_prefix, "updating book failed:", err)
+    end
+
+    sql_stmt = [[
+        SELECT changes();
+    ]]
+    local nb_updated = conn:rowexec(sql_stmt)
+    nb_updated = nb_updated and tonumber(nb_updated) or 0
+    logger.dbg(log_prefix, nb_updated, "book updated.")
+    stmt:close()
+    conn:close()
+end
+
 function ReaderStatistics:insertDB(updated_pagecount)
     if not self.id_curr_book then
         return
