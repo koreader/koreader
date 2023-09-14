@@ -77,7 +77,6 @@ function SkimToWidget:init()
     local button_minus = Button:new{
         text = "-1",
         radius = 0,
-        enabled = true,
         width = button_width,
         show_parent = self,
         vsync = true,
@@ -88,7 +87,6 @@ function SkimToWidget:init()
     local button_minus_ten = Button:new{
         text = "-10",
         radius = 0,
-        enabled = true,
         width = button_width,
         show_parent = self,
         vsync = true,
@@ -99,7 +97,6 @@ function SkimToWidget:init()
     local button_plus = Button:new{
         text = "+1",
         radius = 0,
-        enabled = true,
         width = button_width,
         show_parent = self,
         vsync = true,
@@ -110,7 +107,6 @@ function SkimToWidget:init()
     local button_plus_ten = Button:new{
         text = "+10",
         radius = 0,
-        enabled = true,
         width = button_width,
         show_parent = self,
         vsync = true,
@@ -129,7 +125,6 @@ function SkimToWidget:init()
         radius = 0,
         padding = 0,
         bordersize = 0,
-        enabled = true,
         width = button_width,
         show_parent = self,
         callback = function()
@@ -151,7 +146,6 @@ function SkimToWidget:init()
     local button_chapter_next = Button:new{
         text = chapter_next_text,
         radius = 0,
-        enabled = true,
         width = button_width,
         show_parent = self,
         vsync = true,
@@ -168,7 +162,6 @@ function SkimToWidget:init()
     local button_chapter_prev = Button:new{
         text = chapter_prev_text,
         radius = 0,
-        enabled = true,
         width = button_width,
         show_parent = self,
         vsync = true,
@@ -185,7 +178,6 @@ function SkimToWidget:init()
     local button_bookmark_next = Button:new{
         text = bookmark_next_text,
         radius = 0,
-        enabled = true,
         width = button_width,
         show_parent = self,
         vsync = true,
@@ -193,14 +185,12 @@ function SkimToWidget:init()
             self:goToByEvent("GotoNextBookmarkFromPage")
         end,
         hold_callback = function()
-            local page = self.ui.bookmark:getLastBookmarkedPageFromPage(self.ui:getCurrentPage())
-            self:goToBookmark(page)
+            self:goToByEvent("GotoLastBookmark")
         end,
     }
     local button_bookmark_prev = Button:new{
         text = bookmark_prev_text,
         radius = 0,
-        enabled = true,
         width = button_width,
         show_parent = self,
         vsync = true,
@@ -208,8 +198,7 @@ function SkimToWidget:init()
             self:goToByEvent("GotoPreviousBookmarkFromPage")
         end,
         hold_callback = function()
-            local page = self.ui.bookmark:getFirstBookmarkedPageFromPage(self.ui:getCurrentPage())
-            self:goToBookmark(page)
+            self:goToByEvent("GotoFirstBookmark")
         end,
     }
     self.button_bookmark_toggle = Button:new{
@@ -217,7 +206,6 @@ function SkimToWidget:init()
             return self.ui.view.dogear_visible and bookmark_enabled_text or bookmark_disabled_text
         end,
         radius = 0,
-        enabled = true,
         width = button_width,
         show_parent = self,
         callback = function()
@@ -353,23 +341,12 @@ function SkimToWidget:goToPage(page)
     self:update()
 end
 
-function SkimToWidget:goToBookmark(page)
-    if page then
-        self:addOriginToLocationStack()
-        self.ui.bookmark:gotoBookmark(page)
-        self.curr_page = self.ui:getCurrentPage()
-        self:update()
-    end
-end
-
 function SkimToWidget:goToByEvent(event_name)
-    if event_name then
-        self:addOriginToLocationStack()
-        self.ui:handleEvent(Event:new(event_name, false))
-            -- add_current_location_to_stack=false, as we handled it here
-        self.curr_page = self.ui:getCurrentPage()
-        self:update()
-    end
+    self:addOriginToLocationStack()
+    self.ui:handleEvent(Event:new(event_name, false))
+        -- add_current_location_to_stack=false, as we handled it here
+    self.curr_page = self.ui:getCurrentPage()
+    self:update()
 end
 
 function SkimToWidget:onFirstRowKeyPress(percent)
