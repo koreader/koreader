@@ -1,6 +1,7 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local CanvasContext = require("document/canvascontext")
 local DataStorage = require("datastorage")
+local DocSettings = require("docsettings")
 local Document = require("document/document")
 local FontList = require("fontlist")
 local Geom = require("ui/geometry")
@@ -67,6 +68,7 @@ local CreDocument = Document:extend{
     flows = nil, -- table
     page_in_flow = nil, -- table
     last_linear_page = nil,
+    custom_pages = nil,
 }
 
 -- NuPogodi, 20.05.12: inspect the zipfile content
@@ -384,6 +386,14 @@ end
 
 -- Whether the document has any non-linear flow to care about
 function CreDocument:hasNonLinearFlows()
+    local custom_metadata_file = DocSettings:getCustomMetadataFile(self.file)
+    if custom_metadata_file then
+        local custom_doc_settings = DocSettings:openCustomMetadata(custom_metadata_file)
+        self.custom_pages = custom_doc_settings:readSetting("custom_props").pages
+        if self.custom_pages then
+            return true
+        end
+    end
     return self._document:hasNonLinearFlows()
 end
 
@@ -464,6 +474,9 @@ function CreDocument:getPageFlow(page)
     -- Only report non-linear pages if "hide_nonlinear_flows" is enabled, and in 1-page mode,
     -- otherwise all pages are linear (flow 0)
     if self.hide_nonlinear_flows and self._view_mode == self.PAGE_VIEW_MODE and self:getVisiblePageCount() == 1 then
+        if self.custom_pages then
+            return page > self.custom_pages and 1 or 0
+        end
         return self._document:getPageFlow(page)
     else
         return 0
