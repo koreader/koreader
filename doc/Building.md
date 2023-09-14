@@ -23,7 +23,7 @@ Install the prerequisites using APT:
 ```
 sudo apt-get install build-essential git patch wget unzip \
 gettext autoconf automake cmake libtool libtool-bin nasm ragel luarocks lua5.1 libsdl2-dev \
-libssl-dev libffi-dev libc6-dev-i386 xutils-dev linux-libc-dev:i386 zlib1g:i386
+libssl-dev libffi-dev libsdl2-dev libc6-dev-i386 xutils-dev linux-libc-dev:i386 zlib1g:i386
 ```
 
 ### Fedora/Red Hat
