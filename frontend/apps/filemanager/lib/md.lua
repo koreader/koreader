@@ -67,8 +67,8 @@ end
 local lineDelimiters = {'`', '__', '**', '_', '*', '~~'}
 local function findDelim(str, start, max)
     local delim = nil
-    local min = 1/0
-    local finish = 1/0
+    local min = math.huge
+    local finish = math.huge
     max = max or #str
     for i = 1, #lineDelimiters do
         local pos, fin = find(str, lineDelimiters[i], start, true)
