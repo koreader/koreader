@@ -369,7 +369,7 @@ end
 
 function FocusManager:_verticalStep(dy)
     local x = self.selected.x
-    if type(self.layout[self.selected.y + dy]) ~= "table" or self.layout[self.selected.y + dy] == {} then
+    if type(self.layout[self.selected.y + dy]) ~= "table" or next(self.layout[self.selected.y + dy]) == nil then
         logger.err("[FocusManager] : Malformed layout")
         return false
     end
