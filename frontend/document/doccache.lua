@@ -38,7 +38,7 @@ local function computeCacheSlots()
 
     --- ...otherwise, effectively disable the cache by making it single slot...
     if mb_size < 8 then
-        logger.dbg(string.format("Setting up a minimal single slot global document cache"))
+        logger.dbg("Setting up a minimal single slot global document cache")
         return 1
     else
         return nil
