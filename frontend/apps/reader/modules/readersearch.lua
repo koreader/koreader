@@ -287,12 +287,12 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                 self.wait_button.movable:setMovedOffset(self.search_dialog.movable:getMovedOffset())
                 UIManager:show(self.wait_button)
                 UIManager:tickAfterNext(function()
-                    do_search(func, pattern, param, regex, case_insensitive)()
+                    do_search(func, pattern, param)()
                     UIManager:close(self.wait_button)
                 end)
             end
         else
-            return do_search(func, pattern, param, regex, case_insensitive)
+            return do_search(func, pattern, param)
         end
     end
     self.search_dialog = ButtonDialog:new{
@@ -342,14 +342,14 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
         -- initial position: center of the screen
         UIManager:show(self.wait_button)
         UIManager:tickAfterNext(function()
-            do_search(self.searchFromCurrent, text, direction, regex, case_insensitive)()
+            do_search(self.searchFromCurrent, text, direction)()
             UIManager:close(self.wait_button)
             UIManager:show(self.search_dialog)
             --- @todo regional
             UIManager:setDirty(self.dialog, "partial")
         end)
     else
-        do_search(self.searchFromCurrent, text, direction, regex, case_insensitive)()
+        do_search(self.searchFromCurrent, text, direction)()
         UIManager:show(self.search_dialog)
         --- @todo regional
         UIManager:setDirty(self.dialog, "partial")
