@@ -470,8 +470,6 @@ function ReaderBookmark:onShowBookmark(match_table)
         item_table = item_table,
         is_borderless = true,
         is_popout = false,
-        width = Screen:getWidth(),
-        height = Screen:getHeight(),
         items_per_page = items_per_page,
         items_font_size = items_font_size,
         multilines_show_more_text = multilines_show_more_text,
@@ -1327,6 +1325,22 @@ function ReaderBookmark:onGotoPreviousBookmarkFromPage(add_current_location_to_s
         self.ui.link:addCurrentLocationToStack()
     end
     self:gotoBookmark(self:getPreviousBookmarkedPageFromPage(self.ui:getCurrentPage()))
+    return true
+end
+
+function ReaderBookmark:onGotoFirstBookmark(add_current_location_to_stack)
+    if add_current_location_to_stack ~= false then -- nil or true
+        self.ui.link:addCurrentLocationToStack()
+    end
+    self:gotoBookmark(self:getFirstBookmarkedPageFromPage(self.ui:getCurrentPage()))
+    return true
+end
+
+function ReaderBookmark:onGotoLastBookmark(add_current_location_to_stack)
+    if add_current_location_to_stack ~= false then -- nil or true
+        self.ui.link:addCurrentLocationToStack()
+    end
+    self:gotoBookmark(self:getLastBookmarkedPageFromPage(self.ui:getCurrentPage()))
     return true
 end
 
