@@ -39,7 +39,8 @@ local genFallbackCandidates = function()
         local fontinfo = FontList.fontinfo[font_path] -- (NotoColorEmoji.tff happens to get no fontinfo)
         if fontinfo and #fontinfo == 1 then -- Ignore font files with multiple faces
             fontinfo = fontinfo[1]
-            if util.stringStartsWith(fontinfo.name, "Noto Sans ") and
+            if (util.stringStartsWith(fontinfo.name, "Noto Sans ") or
+                        fontinfo.name == "Noto Emoji") and
                         not fontinfo.bold and not fontinfo.italic and
                         not fontinfo.serif and not fontinfo.mono then
                 fallback_candidates[fontinfo.name] = fontinfo
