@@ -572,16 +572,11 @@ function NetworkMgr:goOnlineToRun(callback)
     end
 
     -- If beforeWifiAction isn't turn_on, we're done.
-    -- We don't want to go behind thhe user's back by enforcing "turn_on" behavior,
-    -- and as we *cannot* use prompt, as we'll block before handling the popup input...
+    -- We don't want to go behind the user's back by enforcing "turn_on" behavior,
+    -- and we *cannot* use prompt, as we'll block before handling the popup input...
     if G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
         logger.warn("NetworkMgr:goOnlineToRun: Cannot run callback because device is offline and wifi_enable_action is not turn_on")
-    end
-
-    -- If we don't have seamless wifi toggling, we're screwed as we won't be able to block sanely.
-    -- FIXME: Check if that actually behaves properly on Android, we kinda want to keep turn_on viable there...
-    if not Device:hasSeamlessWifiToggle() then
-        logger.warn("NetworkMgr:goOnlineToRun: Cannot run callback because device is offline and cannot toggle wifi sanely")
+        return false
     end
 
     -- We'll do terrible things with this later...
