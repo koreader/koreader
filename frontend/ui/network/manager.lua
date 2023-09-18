@@ -45,7 +45,10 @@ function NetworkMgr:_abortWifiConnection()
         os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
     end
     -- We were never connected to begin with, so, no disconnecting broadcast required
-    self:turnOffWifi()
+    if Device:hasSeamlessWifiToggle() then
+        -- We only want to actually kill the WiFi on platforms where we can do that seamlessly.
+        self:turnOffWifi()
+    end
 end
 
 -- Used after restoreWifiAsync() and the turn_on beforeWifiAction to make sure we eventually send a NetworkConnected event,
