@@ -46,7 +46,7 @@ local TextViewer = InputContainer:extend{
     -- When used to display more technical text (HTML, CSS,
     -- application logs...), it's best to reset them to false.
     alignment = "left",
-    justified = true,
+    justified = nil,
     lang = nil,
     para_direction_rtl = nil,
     auto_para_direction = true,
@@ -55,7 +55,9 @@ local TextViewer = InputContainer:extend{
     title_face = nil, -- use default from TitleBar
     title_multilines = nil, -- see TitleBar for details
     title_shrink_font_to_fit = nil, -- see TitleBar for details
-    text_face = Font:getFace("x_smallinfofont"),
+
+    text_font_face = nil, -- default "x_smallinfofont"
+    text_font_size = nil,
     fgcolor = Blitbuffer.COLOR_BLACK,
     text_padding = Size.padding.large,
     text_margin = Size.margin.small,
@@ -76,6 +78,16 @@ function TextViewer:init()
     }
     self.width = self.width or Screen:getWidth() - Screen:scaleBySize(30)
     self.height = self.height or Screen:getHeight() - Screen:scaleBySize(30)
+
+    if self.justified == nil then
+        self.justified = G_reader_settings:nilOrTrue("dict_justify")
+    end
+    if self.text_font_face == nil then
+        self.text_font_face = "x_smallinfofont"
+        if self.text_font_size == nil then
+            self.text_font_size = G_reader_settings:readSetting("dict_font_size")
+        end
+    end
 
     self._find_next = false
     self._find_next_button = false
@@ -247,7 +259,7 @@ function TextViewer:init()
 
     self.scroll_text_w = ScrollTextWidget:new{
         text = self.text,
-        face = self.text_face,
+        face = Font:getFace(self.text_font_face, self.text_font_size),
         fgcolor = self.fgcolor,
         width = self.width - 2*self.text_padding - 2*self.text_margin,
         height = textw_height - 2*self.text_padding -2*self.text_margin,
