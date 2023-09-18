@@ -287,7 +287,16 @@ end
 
 function Device:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback)
+        logger.dbg("NetworkMgr:turnOnWifi")
         android.openWifiSettings()
+        logger.dbg("android.openWifiSettings returned")
+
+        --[[
+        -- If we're still not connected once openWifiSettings returns, abort.
+        if not NetworkMgr:isConnected() then
+            return false
+        end
+        --]]
     end
     function NetworkMgr:turnOffWifi(complete_callback)
         android.openWifiSettings()
