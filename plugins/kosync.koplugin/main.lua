@@ -831,6 +831,10 @@ end
 
 function KOSync:_onCloseDocument()
     logger.dbg("KOSync: onCloseDocument")
+    -- NOTE: Because everything is terrible, on Android, opening the system settings to enable WiFi means we lose focus,
+    --       and we handle those system focus events via... Suspend & Resume events, so we need to neuter those handlers early.
+    self.onResume = nil
+    self.onSuspend = nil
     -- NOTE: Because we'll lose the document instance on return, we need to *block* until the connection is actually up here,
     --       we cannot rely on willRerunWhenOnline, because if we're not currently online,
     --       it *will* return early, and that means the actual callback *will* run *after* teardown of the document instance
