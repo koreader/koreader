@@ -23,6 +23,7 @@ local NetworkMgr = {
     is_wifi_on = false,
     is_connected = false,
     pending_connectivity_check = false,
+    pending_connection = false,
     interface = nil,
 }
 
@@ -49,6 +50,20 @@ function NetworkMgr:_abortWifiConnection()
         -- We only want to actually kill the WiFi on platforms where we can do that seamlessly.
         self:turnOffWifi()
     end
+    -- We're obviously done with this connection attempt
+    self.pending_connection = false
+end
+
+-- Attempt to deal with platforms that don't gurantee isConnected when turnOnWifi returns,
+-- so that we only attempt to connect to WiFi *once* when using the beforeWifiAction framework...
+function NetworkMgr:requestToTurnOnWifi(wifi_cb, interactive)
+    if self.pending_connection then
+        -- We've already enabled WiFi, don't try again until the earlier attempt succeeds or fails...
+        return C.EAGAIN
+    end
+
+    self.pending_connection = true
+    return self:turnOnWifi(wifi_cb, interactive)
 end
 
 -- Used after restoreWifiAsync() and the turn_on beforeWifiAction to make sure we eventually send a NetworkConnected event,
@@ -92,6 +107,8 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
             end
         end
         self.pending_connectivity_check = false
+        -- We're done, so we can stop blocking concurrent connection attempts
+        self.pending_connection = false
     else
         UIManager:scheduleIn(0.25, self.connectivityCheck, self, iter + 1, callback, widget)
     end
@@ -252,18 +269,23 @@ end
 function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget, interactive)
     -- Connecting will take a few seconds, broadcast that information so affected modules/plugins can react.
     UIManager:broadcastEvent(Event:new("NetworkConnecting"))
-    local status = self:turnOnWifi(wifi_cb, interactive)
+    local status = self:requestToTurnOnWifi(wifi_cb, interactive)
     -- If turnOnWifi failed, abort early
     if status == false then
         logger.warn("NetworkMgr:enableWifi: Connection failed!")
         self:_abortWifiConnection()
         return false
-    end
-
-    -- Some turnOnWifi implementations may already have fired a connectivity check...
-    if not self.pending_connectivity_check then
-        -- This will handle sending the proper Event, manage wifi_was_on, as well as tearing down Wi-Fi in case of failures.
+    elseif status == C.EAGAIN then
+        logger.warn("NetworkMgr:enableWifi: WiFi is already in the process of being enabled")
+        -- We warn, but do keep going on with scheduling the callback
+        -- Unlike the next branch, turnOnWifi was *not* called, so we don't need the extra checks.
         self:scheduleConnectivityCheck(connectivity_cb, connectivity_widget)
+    else
+        -- Some turnOnWifi implementations may already have fired a connectivity check...
+        if not self.pending_connectivity_check then
+            -- This will handle sending the proper Event, manage wifi_was_on, as well as tearing down Wi-Fi in case of failures.
+            self:scheduleConnectivityCheck(connectivity_cb, connectivity_widget)
+        end
     end
 
     return true
@@ -367,20 +389,23 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     -- This is a slightly tweaked variant of enableWifi, because of our peculiar connectivityCheck usage...
     UIManager:broadcastEvent(Event:new("NetworkConnecting"))
     -- Some implementations (usually, hasWifiManager) can report whether they were successfull
-    local status = self:turnOnWifi()
-    -- Some implementations may fire a connectivity check,
-    -- but we *need* our own, because of the callback & widget passing.
-    if self.pending_connectivity_check then
-        UIManager:unschedule(self.connectivityCheck)
-        self.pending_connectivity_check = false
-    end
-
+    local status = self:requestToTurnOnWifi()
     -- If turnOnWifi failed, abort early
     if status == false then
         logger.warn("NetworkMgr:turnOnWifiAndWaitForConnection: Connection failed!")
         self:_abortWifiConnection()
         UIManager:close(info)
         return false
+    elseif status == C.EAGAIN then
+        logger.warn("NetworkMgr:turnOnWifiAndWaitForConnection: A previous connection attempt is still ongoing!")
+        -- FIXME: Actually return without scheduling to avoid infinite recursion?
+    else
+        -- Some turnOnWifi implementations may fire a connectivity check,
+        -- but we *need* our own, because of the callback & widget passing.
+        if self.pending_connectivity_check then
+            UIManager:unschedule(self.connectivityCheck)
+            self.pending_connectivity_check = false
+        end
     end
 
     self:scheduleConnectivityCheck(callback, info)
@@ -678,6 +703,8 @@ function NetworkMgr:goOnlineToRun(callback)
         UIManager:scheduleIn(2, function()
             UIManager:broadcastEvent(Event:new("NetworkConnected"))
         end)
+        -- We're done, reset the pending connection flag
+        self.pending_connection = false
     else
         -- We're not connected :(
         logger.info("Failed to connect to Wi-Fi after", iter * 0.25, "seconds, giving up!")
