@@ -276,7 +276,7 @@ function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget, in
         self:_abortWifiConnection()
         return false
     elseif status == C.EAGAIN then
-        logger.warn("NetworkMgr:enableWifi: WiFi is already in the process of being enabled")
+        logger.warn("NetworkMgr:enableWifi: A previous connection attempt is still ongoing!")
         -- We warn, but do keep going on with scheduling the callback
         -- Unlike the next branch, turnOnWifi was *not* called, so we don't need the extra checks.
         self:scheduleConnectivityCheck(connectivity_cb, connectivity_widget)
@@ -398,7 +398,12 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
         return false
     elseif status == C.EAGAIN then
         logger.warn("NetworkMgr:turnOnWifiAndWaitForConnection: A previous connection attempt is still ongoing!")
-        -- FIXME: Actually return without scheduling to avoid infinite recursion?
+        -- We might lose a callback in case the previous attempt wasn't from the same action,
+        -- but it's just plain saner to just abort here, at worse we'd risk calling the same thing over and over,
+        -- at best we just delay the final tick of the original connectivity check,
+        -- and as such the reset of the connection pending flag...
+        UIManager:close(info)
+        return false
     else
         -- Some turnOnWifi implementations may fire a connectivity check,
         -- but we *need* our own, because of the callback & widget passing.
