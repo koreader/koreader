@@ -1097,8 +1097,10 @@ end
 -- The common operations that should be performed after resuming the device.
 function Device:_afterResume(inhibit)
     if inhibit ~= false then
-        -- Restore key repeat
-        self:restoreKeyRepeat()
+        -- Restore key repeat if it's not disabled
+        if G_reader_settings:nilOrFalse("input_no_key_repeat") then
+            self:restoreKeyRepeat()
+        end
 
         -- Restore full input handling
         self.input:inhibitInput(false)
