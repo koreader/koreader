@@ -621,8 +621,18 @@ function NetworkMgr:goOnlineToRun(callback)
     -- In case we abort before the beforeWifiAction, we won't pass it the callback, but run it ourselves,
     -- to avoid it firing too late (or at the very least being pinned for too long).
     local info = self:beforeWifiAction()
+    -- NOTE: Unlike turnOnWifiAndWaitForConnection, we're not reentrant,
+    --       so if there's already a connection attempt pending,
+    --       we can afford to *try* to wait for its success,
+    --       especially since we can be cancelled.
+    --       The following call *will* murder any and all pending callbacks though,
+    --       which is a *slightly* different behavior than turnOnWifiAndWaitForConnection,
+    --       but a necessity to ensure sane lifecycles...
 
     -- We'll basically do the same but in a blocking manner...
+    -- NOTE: Since UIManager won't tick, they wouldn't really have a chance to run anyway...
+    --       Given the constraints of our callers, they would very likely affect dead/dying objects anyway,
+    --       so it's much saner to just drop them.
     self:unscheduleConnectivityCheck()
 
     -- If connecting just plain failed, we're done
