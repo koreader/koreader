@@ -283,9 +283,13 @@ function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget, in
         return false
     elseif status == EBUSY then
         logger.warn("NetworkMgr:enableWifi: A previous connection attempt is still ongoing!")
-        -- We warn, but do keep going on with scheduling the callback
-        -- Unlike the next branch, turnOnWifi was *not* called, so we don't need the extra checks.
-        self:scheduleConnectivityCheck(connectivity_cb, connectivity_widget)
+        -- We warn, but do keep going on with scheduling the callback iff it was interactive.
+        -- If it wasn't, it might have been from a beforeWifiAction, and, much like in turnOnWifiAndWaitForConnection,
+        -- we don't want to risk rescheduling the same thing over and over again.
+        if interactive then
+            -- Unlike the next branch, turnOnWifi was *not* called, so we don't need the extra checks.
+            self:scheduleConnectivityCheck(connectivity_cb, connectivity_widget)
+        end
         return
     else
         -- Some turnOnWifi implementations may already have fired a connectivity check...
