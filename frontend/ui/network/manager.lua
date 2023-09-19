@@ -121,10 +121,6 @@ end
 function NetworkMgr:unscheduleConnectivityCheck()
     UIManager:unschedule(self.connectivityCheck)
     self.pending_connectivity_check = false
-
-    -- As the connectivity check is the only thing that will actually reset that flag sanely,
-    -- we unfortunately have to do it here as well as we've effectively killed *all* pending connectivity checks...
-    self.pending_connection = false
 end
 
 function NetworkMgr:init()
@@ -622,6 +618,8 @@ function NetworkMgr:goOnlineToRun(callback)
     -- We'll do terrible things with this later...
     local Input = Device.input
 
+    -- FIXME/ Skip if pending connection
+
     -- In case we abort before the beforeWifiAction, we won't pass it the callback, but run it ourselves,
     -- to avoid it firing too late (or at the very least being pinned for too long).
     local info = self:beforeWifiAction()
@@ -712,14 +710,14 @@ function NetworkMgr:goOnlineToRun(callback)
         UIManager:scheduleIn(2, function()
             UIManager:broadcastEvent(Event:new("NetworkConnected"))
         end)
-        -- We're done, reset the pending connection flag
-        self.pending_connection = false
     else
         -- We're not connected :(
         logger.info("Failed to connect to Wi-Fi after", iter * 0.25, "seconds, giving up!")
         self:_abortWifiConnection()
         UIManager:show(InfoMessage:new{ text = _("Error connecting to the network") })
     end
+    -- We're done, reset the pending connection flag
+    self.pending_connection = false
 
     return success
 end
