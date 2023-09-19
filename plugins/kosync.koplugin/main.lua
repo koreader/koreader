@@ -180,7 +180,8 @@ function KOSync:onReaderReady()
         end)
     end
     -- NOTE: Keep in mind that, on Android, turning on WiFi requires a focus switch, which will trip a Suspend/Resume pair.
-    --       If wifi_enable_action is set to prompt, NetworkMgr will attempt to hide the damage to avoid stacking three prompts on top of each other...
+    --       NetworkMgr will attempt to hide the damage to avoid a useless pull -> push -> pull dance instead of the single pull requested.
+    --       Plus, if wifi_enable_action is set to prompt, that also avoids stacking three prompts on top of each other...
     self:registerEvents()
     self:onDispatcherRegisterActions()
 
