@@ -289,6 +289,10 @@ function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget, in
         if interactive then
             -- Unlike the next branch, turnOnWifi was *not* called, so we don't need the extra checks.
             self:scheduleConnectivityCheck(connectivity_cb, connectivity_widget)
+        else
+            if connectivity_widget then
+                UIManager:close(connectivity_widget)
+            end
         end
         return
     else
