@@ -448,6 +448,8 @@ end
 --- @note: The callback will only run *after* a *succesful* network connection.
 ---        The only guarantee it provides is isConnected (i.e., an IP & a local gateway),
 ---        *NOT* isOnline (i.e., WAN), se be careful with recursive callbacks!
+---        Should only return false on *explicit* failures,
+---        in which case the backend will already have called _abortWifiConnection
 function NetworkMgr:beforeWifiAction(callback)
     -- Remember that we ran, for afterWifiAction...
     self:setBeforeActionFlag()
@@ -611,6 +613,7 @@ function NetworkMgr:goOnlineToRun(callback)
     -- If beforeWifiAction isn't turn_on, we're done.
     -- We don't want to go behind the user's back by enforcing "turn_on" behavior,
     -- and we *cannot* use prompt, as we'll block before handling the popup input...
+    -- FIXME: Allowing ignore probably makes sense, though?
     if G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
         logger.warn("NetworkMgr:goOnlineToRun: Cannot run callback because device is offline and wifi_enable_action is not turn_on")
         return false
