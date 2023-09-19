@@ -406,7 +406,6 @@ function NetworkMgr:promptWifi(complete_callback, long_press, interactive)
 end
 
 function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
-    logger.dbg("NetworkMgr:turnOnWifiAndWaitForConnection")
     -- Just run the callback if WiFi is already up...
     if self:isWifiOn() and self:isConnected() then
         --- @note: beforeWifiAction only guarantees isConnected, not isOnline.
@@ -609,7 +608,6 @@ end
 --       it will just attempt to re-connect, *without* running the callback.
 -- c.f., ReaderWikipedia:lookupWikipedia @ frontend/apps/reader/modules/readerwikipedia.lua
 function NetworkMgr:willRerunWhenOnline(callback)
-    logger.dbg("NetworkMgr:willRerunWhenOnline")
     if not self:isOnline() then
         --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
         if not self:isConnected() then
