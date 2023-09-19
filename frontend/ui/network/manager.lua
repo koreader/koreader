@@ -64,7 +64,10 @@ function NetworkMgr:requestToTurnOnWifi(wifi_cb, interactive)
         return EBUSY
     end
 
+    -- Connecting will take a few seconds, broadcast that information so affected modules/plugins can react.
+    UIManager:broadcastEvent(Event:new("NetworkConnecting"))
     self.pending_connection = true
+
     return self:turnOnWifi(wifi_cb, interactive)
 end
 
@@ -273,8 +276,6 @@ end
 
 -- Wrappers around turnOnWifi & turnOffWifi with proper Event signaling
 function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget, interactive)
-    -- Connecting will take a few seconds, broadcast that information so affected modules/plugins can react.
-    UIManager:broadcastEvent(Event:new("NetworkConnecting"))
     local status = self:requestToTurnOnWifi(wifi_cb, interactive)
     -- If turnOnWifi failed, abort early
     if status == false then
@@ -421,8 +422,7 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     UIManager:show(info)
     UIManager:forceRePaint()
 
-    -- This is a slightly tweaked variant of enableWifi, because of our peculiar connectivityCheck usage...
-    UIManager:broadcastEvent(Event:new("NetworkConnecting"))
+    -- NOTE: This is a slightly tweaked variant of enableWifi, because of our peculiar connectivityCheck usage...
     -- Some implementations (usually, hasWifiManager) can report whether they were successfull
     local status = self:requestToTurnOnWifi()
     -- If turnOnWifi failed, abort early
