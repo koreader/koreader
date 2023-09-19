@@ -25,9 +25,11 @@ local EBUSY = 16
 local NetworkMgr = {
     is_wifi_on = false,
     is_connected = false,
+    interface = nil,
+
     pending_connectivity_check = false,
     pending_connection = false,
-    interface = nil,
+    _before_action_tripped = nil,
 }
 
 function NetworkMgr:readNWSettings()
