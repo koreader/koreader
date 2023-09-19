@@ -305,8 +305,19 @@ function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget, in
             self:unscheduleConnectivityCheck()
         end
 
+        -- Most of the platforms that use a connectivity check in turnOnWifi do it to handle wifi_cb,
+        -- so we'll want to preserve it by wrapping both possible callbacks in a single function...
+        local wrapped_cb = function()
+            if wifi_cb then
+                wifi_cb()
+            end
+            if connectivity_cb then
+                connectivity_cb()
+            end
+        end
+
         -- This will handle sending the proper Event, manage wifi_was_on, as well as tearing down Wi-Fi in case of failures.
-        self:scheduleConnectivityCheck(connectivity_cb, connectivity_widget)
+        self:scheduleConnectivityCheck(wrapped_cb, connectivity_widget)
     end
 
     return true
