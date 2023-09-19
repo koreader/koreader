@@ -714,7 +714,7 @@ function NetworkMgr:goOnlineToRun(callback)
         self:_abortWifiConnection()
         UIManager:show(InfoMessage:new{ text = _("Error connecting to the network") })
     end
-    -- We're done, reset the pending connection flag
+    -- We're done, reset the pending connection flag, as we don't have any scheduled connectivity check to do it for us.
     self.pending_connection = false
 
     return success
