@@ -37,9 +37,7 @@ end
 -- Common chunk of stuff we have to do when aborting a connection attempt
 function NetworkMgr:_abortWifiConnection()
     -- Cancel any pending connectivity check, because it wouldn't achieve anything
-    if self.pending_connectivity_check then
-        self:unscheduleConnectivityCheck()
-    end
+    self:unscheduleConnectivityCheck()
 
     self.wifi_was_on = false
     G_reader_settings:makeFalse("wifi_was_on")
@@ -56,7 +54,7 @@ function NetworkMgr:_abortWifiConnection()
     self.pending_connection = false
 end
 
--- Attempt to deal with platforms that don't gurantee isConnected when turnOnWifi returns,
+-- Attempt to deal with platforms that don't guarantee isConnected when turnOnWifi returns,
 -- so that we only attempt to connect to WiFi *once* when using the beforeWifiAction framework...
 function NetworkMgr:requestToTurnOnWifi(wifi_cb, interactive)
     if self.pending_connection then
@@ -81,7 +79,6 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
             UIManager:close(widget)
             UIManager:show(InfoMessage:new{ text = _("Error connecting to the network") })
         end
-        self.pending_connectivity_check = false
         return
     end
 
