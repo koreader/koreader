@@ -197,11 +197,11 @@ When the book's language tag is not among our presets, no specific features will
             -- Text might be too long for InfoMessage
             local status_text = table.concat(lang_infos, "\n")
             local TextViewer = require("ui/widget/textviewer")
-            local Font = require("ui/font")
             UIManager:show(TextViewer:new{
                 title = _("Language tags (and hyphenation dictionaries) used since start up"),
                 text = status_text,
-                text_face = Font:getFace("smallinfont"),
+                text_font_face = "smallinfont",
+                justified = false,
                 height = math.floor(Screen:getHeight() * 0.8),
             })
         end,

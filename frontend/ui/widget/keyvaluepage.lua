@@ -268,7 +268,6 @@ function KeyValueItem:onShowKeyValue()
         title = self.key,
         title_multilines = true, -- in case it's key/title that is too long
         text = self.value,
-        text_face = Font:getFace("x_smallinfofont", self.font_size),
         lang = self.value_lang,
         width = self.textviewer_width,
         height = self.textviewer_height,

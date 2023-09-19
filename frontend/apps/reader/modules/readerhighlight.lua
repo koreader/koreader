@@ -891,7 +891,6 @@ function ReaderHighlight:showHighlightNoteOrDialog(page, index, bookmark_note)
             text = bookmark_note,
             width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.8),
             height = math.floor(math.max(Screen:getWidth(), Screen:getHeight()) * 0.4),
-            justified = G_reader_settings:nilOrTrue("dict_justify"),
             buttons_table = {
                 {
                     {

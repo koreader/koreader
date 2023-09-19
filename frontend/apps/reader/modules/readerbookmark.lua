@@ -526,7 +526,6 @@ function ReaderBookmark:onShowBookmark(match_table)
         textviewer = TextViewer:new{
             title = _("Bookmark details"),
             text = bm_view,
-            justified = G_reader_settings:nilOrTrue("dict_justify"),
             buttons_table = {
                 {
                     {
