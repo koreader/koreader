@@ -618,8 +618,6 @@ function NetworkMgr:goOnlineToRun(callback)
     -- We'll do terrible things with this later...
     local Input = Device.input
 
-    -- FIXME/ Skip if pending connection
-
     -- In case we abort before the beforeWifiAction, we won't pass it the callback, but run it ourselves,
     -- to avoid it firing too late (or at the very least being pinned for too long).
     local info = self:beforeWifiAction()
