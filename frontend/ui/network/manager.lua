@@ -610,12 +610,14 @@ function NetworkMgr:goOnlineToRun(callback)
         return true
     end
 
-    -- If beforeWifiAction isn't turn_on, we're done.
+    -- If beforeWifiAction isn't turn_on or ignore, we're done.
     -- We don't want to go behind the user's back by enforcing "turn_on" behavior,
     -- and we *cannot* use prompt, as we'll block before handling the popup input...
-    -- FIXME: Allowing ignore probably makes sense, though?
-    if G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
-        logger.warn("NetworkMgr:goOnlineToRun: Cannot run callback because device is offline and wifi_enable_action is not turn_on")
+    -- NOTE: With ignore, unlike doNothingAndWaitForConnection, we *will* display an InfoMessage
+    --       (and block/wait for input as usual). The only difference with turn_on is the fact that we won't call turnOnWifi.
+    --       This might be actively annoying, dunno. But at least it works.
+    if G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" and G_reader_settings:readSetting("wifi_enable_action") ~= "ignore" then
+        logger.warn("NetworkMgr:goOnlineToRun: Cannot run callback because device is offline and wifi_enable_action is not turn_on or ignore")
         return false
     end
 
