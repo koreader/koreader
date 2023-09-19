@@ -290,17 +290,23 @@ function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget, in
             -- Unlike the next branch, turnOnWifi was *not* called, so we don't need the extra checks.
             self:scheduleConnectivityCheck(connectivity_cb, connectivity_widget)
         else
+            -- No connectivity check to handle that for us, so close the widget *now*
             if connectivity_widget then
                 UIManager:close(connectivity_widget)
             end
         end
         return
     else
-        -- Some turnOnWifi implementations may already have fired a connectivity check...
-        if not self.pending_connectivity_check then
-            -- This will handle sending the proper Event, manage wifi_was_on, as well as tearing down Wi-Fi in case of failures.
-            self:scheduleConnectivityCheck(connectivity_cb, connectivity_widget)
+        -- Some turnOnWifi implementations may fire a connectivity check,
+        -- but we *need* our own, because of the callback & widget passing.
+        -- NOTE: We *could* arguably have multiple connectivity checks running concurrently,
+        --       but only having a single one running make things somewhat easier to follow...
+        if self.pending_connectivity_check then
+            self:unscheduleConnectivityCheck()
         end
+
+        -- This will handle sending the proper Event, manage wifi_was_on, as well as tearing down Wi-Fi in case of failures.
+        self:scheduleConnectivityCheck(connectivity_cb, connectivity_widget)
     end
 
     return true
