@@ -299,7 +299,8 @@ function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget, in
         return
     else
         -- Some turnOnWifi implementations may fire a connectivity check,
-        -- but we *need* our own, because of the callback & widget passing.
+        -- but we *need* our own, because of the callback & widget passing,
+        -- as we might have been called by the "prompt" beforeWifiAction...
         -- NOTE: We *could* arguably have multiple connectivity checks running concurrently,
         --       but only having a single one running makes things somewhat easier to follow...
         -- NOTE: Also, most of the platforms that use a connectivity check in turnOnWifi do it to handle wifi_cb,
