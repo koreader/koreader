@@ -399,9 +399,7 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     elseif status == C.EAGAIN then
         logger.warn("NetworkMgr:turnOnWifiAndWaitForConnection: A previous connection attempt is still ongoing!")
         -- We might lose a callback in case the previous attempt wasn't from the same action,
-        -- but it's just plain saner to just abort here, at worse we'd risk calling the same thing over and over,
-        -- at best we just delay the final tick of the original connectivity check,
-        -- and as such the reset of the connection pending flag...
+        -- but it's just plain saner to just abort here, as we'd risk calling the same thing over and over...
         UIManager:close(info)
         return false
     else
