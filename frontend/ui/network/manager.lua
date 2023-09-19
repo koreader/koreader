@@ -372,12 +372,21 @@ function NetworkMgr:toggleWifiOff(complete_callback, interactive)
 end
 
 -- NOTE: Only used by the beforeWifiAction framework, so, can never be flagged as "interactive" ;).
-function NetworkMgr:promptWifiOn(complete_callback, long_press)
+function NetworkMgr:promptWifiOn(complete_callback)
+    -- If there's already an ongoing connection attempt, don't even display the ConfirmBox,
+    -- as that's just confusing, especially on Android, because you might have seen the one you tapped "Turn on" on disappear,
+    -- and be surprised by new ones that popped up out of focus while the system settings were opened...
+    if self.pending_connection then
+        -- Like other beforeWifiAction backends, the callback is forfeit anyway
+        logger.warn("NetworkMgr:promptWifiOn: A previous connection attempt is still ongoing!")
+        return
+    end
+
     UIManager:show(ConfirmBox:new{
         text = _("Do you want to turn on Wi-Fi?"),
         ok_text = _("Turn on"),
         ok_callback = function()
-            self:toggleWifiOn(complete_callback, long_press)
+            self:toggleWifiOn(complete_callback)
         end,
     })
 end

@@ -179,8 +179,8 @@ function KOSync:onReaderReady()
             self:getProgress(true, false)
         end)
     end
-    -- NOTE: Keep in mind that, on Android, turning on wifi requires a focus switch, which will trip a Suspend/Resume pair,
-    --       so, if you happen to have beforeWifiAction set to prompt, you'll get *three* prompts on startup... -_-".
+    -- NOTE: Keep in mind that, on Android, turning on wifi requires a focus switch, which will trip a Suspend/Resume pair.
+    --       NetworkMgr will attempt to hide the damage to avoid stacking three prompts on top of each other...
     self:registerEvents()
     self:onDispatcherRegisterActions()
 
