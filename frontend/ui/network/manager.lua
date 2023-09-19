@@ -35,8 +35,7 @@ end
 function NetworkMgr:_abortWifiConnection()
     -- Cancel any pending connectivity check, because it wouldn't achieve anything
     if self.pending_connectivity_check then
-        UIManager:unschedule(self.connectivityCheck)
-        self.pending_connectivity_check = false
+        self:unscheduleConnectivityCheck()
     end
 
     self.wifi_was_on = false
@@ -117,6 +116,15 @@ end
 function NetworkMgr:scheduleConnectivityCheck(callback, widget)
     self.pending_connectivity_check = true
     UIManager:scheduleIn(0.25, self.connectivityCheck, self, 1, callback, widget)
+end
+
+function NetworkMgr:unscheduleConnectivityCheck()
+    UIManager:unschedule(self.connectivityCheck)
+    self.pending_connectivity_check = false
+
+    -- As the connectivity check is the only thing that will actually reset that flag sanely,
+    -- we unfortunately have to do it here as well as we've effectively killed *all* pending connectivity checks...
+    self.pending_connection = false
 end
 
 function NetworkMgr:init()
@@ -406,8 +414,7 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
         -- Some turnOnWifi implementations may fire a connectivity check,
         -- but we *need* our own, because of the callback & widget passing.
         if self.pending_connectivity_check then
-            UIManager:unschedule(self.connectivityCheck)
-            self.pending_connectivity_check = false
+            self:unscheduleConnectivityCheck()
         end
     end
 
@@ -620,8 +627,7 @@ function NetworkMgr:goOnlineToRun(callback)
     local info = self:beforeWifiAction()
 
     -- We'll basically do the same but in a blocking manner...
-    UIManager:unschedule(self.connectivityCheck)
-    self.pending_connectivity_check = false
+    self:unscheduleConnectivityCheck()
 
     -- If connecting just plain failed, we're done
     if info == false then
