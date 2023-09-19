@@ -284,6 +284,7 @@ function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget, in
         -- We warn, but do keep going on with scheduling the callback
         -- Unlike the next branch, turnOnWifi was *not* called, so we don't need the extra checks.
         self:scheduleConnectivityCheck(connectivity_cb, connectivity_widget)
+        return
     else
         -- Some turnOnWifi implementations may already have fired a connectivity check...
         if not self.pending_connectivity_check then
@@ -405,7 +406,7 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
         -- We might lose a callback in case the previous attempt wasn't from the same action,
         -- but it's just plain saner to just abort here, as we'd risk calling the same thing over and over...
         UIManager:close(info)
-        return false
+        return
     else
         -- Some turnOnWifi implementations may fire a connectivity check,
         -- but we *need* our own, because of the callback & widget passing.
