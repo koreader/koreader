@@ -19,6 +19,9 @@ local T = ffiutil.template
 -- We'll need a bunch of stuff for getifaddrs in NetworkMgr:ifHasAnAddress
 require("ffi/posix_h")
 
+-- We unfortunately don't have that one in ffi/posix_h :/
+local EBUSY = 16
+
 local NetworkMgr = {
     is_wifi_on = false,
     is_connected = false,
@@ -58,7 +61,7 @@ end
 function NetworkMgr:requestToTurnOnWifi(wifi_cb, interactive)
     if self.pending_connection then
         -- We've already enabled WiFi, don't try again until the earlier attempt succeeds or fails...
-        return C.EAGAIN
+        return EBUSY
     end
 
     self.pending_connection = true
@@ -279,7 +282,7 @@ function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget, in
         logger.warn("NetworkMgr:enableWifi: Connection failed!")
         self:_abortWifiConnection()
         return false
-    elseif status == C.EAGAIN then
+    elseif status == EBUSY then
         logger.warn("NetworkMgr:enableWifi: A previous connection attempt is still ongoing!")
         -- We warn, but do keep going on with scheduling the callback
         -- Unlike the next branch, turnOnWifi was *not* called, so we don't need the extra checks.
@@ -400,7 +403,7 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
         self:_abortWifiConnection()
         UIManager:close(info)
         return false
-    elseif status == C.EAGAIN then
+    elseif status == EBUSY then
         logger.warn("NetworkMgr:turnOnWifiAndWaitForConnection: A previous connection attempt is still ongoing!")
         -- We might lose a callback in case the previous attempt wasn't from the same action,
         -- but it's just plain saner to just abort here, as we'd risk calling the same thing over and over...
