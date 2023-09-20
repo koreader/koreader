@@ -777,8 +777,8 @@ end
 function ReaderTypography:onPreRenderDocument(config)
     -- This is called after the document has been loaded,
     -- when we know and can access the document language.
-    local props = self.ui.document:getProps()
-    local doc_language = FileManagerBookInfo.extendProps(props, self.ui.document.file).language
+    local doc_language = FileManagerBookInfo.getCustomProp("language", self.ui.document.file)
+                      or self.ui.document:getProps().language
     self.book_lang_tag = self:fixLangTag(doc_language)
 
     local is_known_lang_tag = self.book_lang_tag and LANG_TAG_TO_LANG_NAME[self.book_lang_tag] ~= nil
