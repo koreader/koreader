@@ -75,6 +75,8 @@ function DocSettings:getSidecarDir(doc_path, force_location)
     local location = force_location or G_reader_settings:readSetting("document_metadata_folder", "doc")
     if location == "dir" then
         path = DOCSETTINGS_DIR..path
+    elseif location == "hash" then
+        path = DOCSETTINGS_DIR..'/'..DocSettings:partialMd5(doc_path)
     end
     return path..".sdr"
 end
@@ -154,6 +156,54 @@ function DocSettings:getFileFromHistory(hist_name)
     end
 end
 
+
+-- TODO copied from main.lua, relocate that plugin code to common place and use instead
+function DocSettings:partialMd5(file)
+    if not file or file == '' then
+        logger.warn("file was nil")
+        return nil
+    end
+    local bit = require("bit")
+    local md5 = require("ffi/sha2").md5
+    local lshift = bit.lshift
+    local step, size = 1024, 1024
+    local update = md5()
+    local file_handle = io.open(file, 'rb')
+    for i = -1, 10 do
+        file_handle:seek("set", lshift(step, 2*i))
+        local sample = file_handle:read(size)
+        if sample then
+            update(sample)
+        else
+            break
+        end
+    end
+    file_handle:close()
+
+    return update()
+end
+
+function DocSettings:getSidecarHashFile(doc_path)
+    -- Getting PDF ID from trailer via mupdf has not been implemented - everything uses partial MD5
+    local new = DocSettings:extend{}
+    -- local partial_md5 = new:partialMd5(doc_path)
+    -- local hash_dir = "docsettings/"  -- same as "dir" option storage path
+    -- local path = DataStorage:getDocSettingsDir()..'/'
+    local path = DocSettings:getSidecarDir(doc_path, "hash")..'/'
+    local filetype = doc_path:match(".+%.(%w+)$")
+    local hash_file = "metadata."..filetype..".lua"
+    local hash_filepath = path..hash_file
+    return hash_filepath
+
+    -- Example hash: 839136353a953a538b122b297bb2fe92
+    -- TODO check if either docsettings dir or file exists based on 839136353a953a538b122b297bb2fe92.sdr/ and verify within 839136353a953a538b122b297bb2fe92.filetype.lua.
+
+    -- if exists, check filetype compatibility. If wrong, warning but return it? mirror choice in other logic
+
+    -- future TODO, could this also rely on author or title as fallback identifications if hash changes/not found? But can't slow down things for every unidentified hash
+end
+
+
 --- Opens a document's individual settings (font, margin, dictionary, etc.)
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
 -- @treturn DocSettings object
@@ -176,8 +226,15 @@ function DocSettings:open(doc_path)
     end
     local history_file = new:getHistoryPath(doc_path)
 
+    new.hash_sidecar_dir = new:getSidecarDir(doc_path, "hash")
+    new.hash_sidecar_file = new:getSidecarHashFile(doc_path)
+
     -- Candidates list, in order of priority:
     local candidates_list = {
+        -- Hash or PDF fingerprint-based sidecar file lookup
+        new.hash_sidecar_file or "",
+        -- Backup file of hash or PDF fingerprint-based sidecar file lookup
+        new.hash_sidecar_file and (new.hash_sidecar_file..".old") or "",
         -- New sidecar file in doc folder
         doc_sidecar_file or "",
         -- Backup file of new sidecar file in doc folder
@@ -225,6 +282,7 @@ function DocSettings:open(doc_path)
     return new
 end
 
+
 local function writeToFile(data, file)
     file:write("-- we can read Lua syntax here!\nreturn ")
     file:write(data)
@@ -237,10 +295,19 @@ end
 function DocSettings:flush(data, no_custom_metadata)
     -- Depending on the settings, doc_settings are saved to the book folder or
     -- to koreader/docsettings folder. The latter is also a fallback for read-only book storage.
-    local serials = G_reader_settings:readSetting("document_metadata_folder", "doc") == "doc"
-        and { {self.doc_sidecar_dir, self.doc_sidecar_file},
+    local serials
+    local preferred_metdata_storage = G_reader_settings:readSetting("document_metadata_folder", "doc")
+    if preferred_metdata_storage == "doc" then
+        serials = { {self.doc_sidecar_dir, self.doc_sidecar_file},
               {self.dir_sidecar_dir, self.dir_sidecar_file}, }
-         or { {self.dir_sidecar_dir, self.dir_sidecar_file}, }
+    elseif preferred_metdata_storage == "dir" then
+         serials = { {self.dir_sidecar_dir, self.dir_sidecar_file}, }
+    elseif preferred_metdata_storage == "hash" then
+         serials = { {self.hash_sidecar_dir, self.hash_sidecar_file}, }
+    else
+        logger.warn("Unrecognized document_metadata_folder setting", preferred_metdata_storage)
+         serials = { {self.dir_sidecar_dir, self.dir_sidecar_file}, }
+    end
 
     local s_out = dump(data or self.data, nil, true)
     for _, s in ipairs(serials) do
@@ -457,11 +524,16 @@ function DocSettings:getCustomCandidateSidecarDirs(doc_path)
     end
     -- new book, create sidecar dir in accordance with sdr location setting
     local dir_sidecar_dir = self:getSidecarDir(doc_path, "dir")
-    if G_reader_settings:readSetting("document_metadata_folder", "doc") == "doc" then
+    local preferred_metadata_storage = G_reader_settings:readSetting("document_metadata_folder", "doc")
+    if preferred_metadata_storage == "doc" then
         local doc_sidecar_dir = self:getSidecarDir(doc_path, "doc")
         return { doc_sidecar_dir, dir_sidecar_dir } -- fallback in case of readonly book storage
+    elseif preferred_metadata_storage == "hash" then
+        local hash_sidecar_dir = self:getSidecarDir(doc_path, "hash")
+        return { hash_sidecar_dir }
+    else
+        return { dir_sidecar_dir }
     end
-    return { dir_sidecar_dir }
 end
 
 function DocSettings:flushCustomCover(doc_path, image_file)
