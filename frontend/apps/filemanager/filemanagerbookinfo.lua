@@ -177,6 +177,12 @@ function BookInfo:show(file, book_props)
     UIManager:show(self.kvp_widget)
 end
 
+function BookInfo.getCustomProp(prop_key, filepath)
+    local custom_metadata_file = DocSettings:getCustomMetadataFile(filepath)
+    return custom_metadata_file
+        and DocSettings:openCustomMetadata(custom_metadata_file):readSetting("custom_props")[prop_key]
+end
+
 -- Returns extended and customized metadata.
 function BookInfo.extendProps(original_props, filepath)
     -- do not customize if filepath is not passed (eg from covermenu)
@@ -355,7 +361,6 @@ function BookInfo:updateBookInfo(file, book_props, prop_updated, prop_value_old)
         doc_props = book_props,
         metadata_key_updated = prop_updated,
         metadata_value_old = prop_value_old,
-        metadata_value_new = book_props[prop_updated],
     }
     self.kvp_widget:onClose()
     self:show(file, book_props)
@@ -428,10 +433,14 @@ function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
 end
 
 function BookInfo:showCustomEditDialog(file, book_props, prop_key)
+    local prop = book_props[prop_key]
+    if prop and prop_key == "description" then
+        prop = util.htmlToPlainTextIfHtml(prop)
+    end
     local input_dialog
     input_dialog = InputDialog:new{
         title = _("Edit book metadata:") .. " " .. self.prop_text[prop_key]:gsub(":", ""),
-        input = book_props[prop_key],
+        input = prop,
         input_type = prop_key == "series_index" and "number",
         allow_newline = prop_key == "authors" or prop_key == "keywords" or prop_key == "description",
         buttons = {
