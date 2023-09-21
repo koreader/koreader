@@ -74,6 +74,7 @@ local Device = Generic:extend{
     model = android.prop.product,
     hasKeys = yes,
     hasDPad = no,
+    hasSeamlessWifiToggle = no, -- Requires losing focus to the sytem's network settings and user interaction
     hasExitOptions = no,
     hasEinkScreen = function() return android.isEink() end,
     hasColorScreen = android.isColorScreen,
