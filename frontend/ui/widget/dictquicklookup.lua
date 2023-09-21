@@ -543,8 +543,6 @@ function DictQuickLookup:init()
     local buttons_width = inner_width - 2*buttons_padding
     self.button_table = ButtonTable:new{
         width = buttons_width,
-        button_font_face = "cfont",
-        button_font_size = 20,
         buttons = buttons,
         zero_sep = true,
         show_parent = self,
