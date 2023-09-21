@@ -91,8 +91,6 @@ function MultiConfirmBox:init()
 
     local button_table = ButtonTable:new{
         width = content:getSize().w,
-        button_font_face = "cfont",
-        button_font_size = 20,
         buttons = {
             {
                 {
