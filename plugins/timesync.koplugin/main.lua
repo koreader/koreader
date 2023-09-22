@@ -1,13 +1,15 @@
 local Device = require("device")
 local lfs = require("libs/libkoreader-lfs")
 
-local command
---- @todo (hzj-jie): Does pocketbook provide ntpdate?
-if Device:isKobo() then
-    command = "ntpd -q -n -p pool.ntp.org"
-elseif Device:isCervantes() or Device:isKindle() or Device:isPocketBook() then
-    command = "ntpdate pool.ntp.org"
-else
+local ntpd_cmd, ntpdate_cmd
+if os.execute("command -v ntpd >/dev/null") == 0 then
+    ntpd_cmd = "ntpd -q -n -p pool.ntp.org"
+end
+if os.execute("command -v ntpdate >/dev/null") == 0 then
+    ntpdate_cmd = "ntpdate pool.ntp.org"
+end
+-- We need at least ntpdate
+if not ntpdate_cmd then
     return { disabled = true, }
 end
 
@@ -41,7 +43,7 @@ local function syncNTP()
     UIManager:show(info)
     UIManager:forceRePaint()
     local txt
-    if os.execute(command) ~= 0 then
+    if os.execute(ntpdate_cmd) ~= 0 then
         txt = _("Failed to retrieve time from server. Please check your network configuration.")
     else
         txt = currentTime()
@@ -51,6 +53,9 @@ local function syncNTP()
         if Device:isKindle() and lfs.attributes("/usr/sbin/setdate", "mode") == "file" then
             os.execute(string.format("/usr/sbin/setdate '%d'", os.time()))
         end
+
+        -- If available, also start ntpd
+        os.execute(ntpd_cmd)
     end
     UIManager:close(info)
     UIManager:show(InfoMessage:new{
