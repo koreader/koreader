@@ -78,6 +78,10 @@ local ReaderRolling = InputContainer:extend{
         RELOADING_DOCUMENT = 4,
         DO_RELOAD_DOCUMENT = 5,
     },
+
+    mark_func = nil,
+    unmark_func = nil,
+    _stepRerenderingAutomation = nil,
 }
 
 function ReaderRolling:init()
@@ -313,6 +317,12 @@ end
 -- we cannot do it in onSaveSettings() because getLastPercent() uses self.ui.document
 function ReaderRolling:onCloseDocument()
     self:tearDownRerenderingAutomation()
+    -- Unschedule anything that might still somehow be...
+    UIManager:unschedule(self.mark_func)
+    UIManager:unschedule(self.unmark_func)
+    UIManager:unschedule(self.onCheckDomStyleCoherence)
+    UIManager:unschedule(self.onUpdatePos)
+
     self.current_header_height = nil -- show unload progress bar at top
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
 
@@ -349,7 +359,7 @@ function ReaderRolling:onCheckDomStyleCoherence()
             ok_callback = function()
                 -- Allow for ConfirmBox to be closed before showing
                 -- "Opening file" InfoMessage
-                UIManager:scheduleIn(0.5, function ()
+                UIManager:scheduleIn(0.5, function()
                     -- And check we haven't quit reader in these 0.5s
                     if self.ui.document then
                         self.ui:reloadDocument()
@@ -1005,9 +1015,7 @@ function ReaderRolling:onBatchedUpdateDone()
         self.batched_update_count = 0
         -- Be sure any Notification gets a chance to be painted before
         -- a blocking rerendering
-        UIManager:nextTick(function()
-            self:onUpdatePos()
-        end)
+        UIManager:nextTick(self.onUpdatePos, self)
     end
 end
 
@@ -1036,7 +1044,10 @@ function ReaderRolling:onUpdatePos(force)
     -- Calling this now ensures the re-rendering is done by crengine
     -- so updatePos() has good info and can reposition
     -- the previous xpointer accurately:
-    self.ui.document:getCurrentPos()
+    if self.ui.document then
+        -- This can be racy with CloseDocument, as it's scheduled by onBatchedUpdateDone, guard it
+        self.ui.document:getCurrentPos()
+    end
 
     -- Otherwise, _readMetadata() would do that, but the positioning
     -- would not work as expected, for some reason (it worked
@@ -1087,9 +1098,7 @@ function ReaderRolling:updatePos(force)
     -- Allow for the new rendering to be shown before possibly showing
     -- the "Styles have changed..." ConfirmBox so the user can decide
     -- if it is really needed
-    UIManager:scheduleIn(0.1, function ()
-        self:onCheckDomStyleCoherence()
-    end)
+    UIManager:scheduleIn(0.1, self.onCheckDomStyleCoherence, self)
 end
 
 function ReaderRolling:onChangeViewMode()
@@ -1619,7 +1628,7 @@ Note that %1 (out of %2) xpaths from your bookmarks and highlights have been nor
         ok_text = _("Upgrade now"),
         ok_callback = function()
             -- Allow for ConfirmBox to be closed before migrating
-            UIManager:scheduleIn(0.5, function ()
+            UIManager:scheduleIn(0.5, function()
                 -- And check we haven't quit reader in these 0.5s
                 if self.ui.document then
                     -- We'd rather not have any painting between the upgrade
