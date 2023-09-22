@@ -208,8 +208,6 @@ function ImageViewer:init()
     }
     self.button_table = ButtonTable:new{
         width = self.width - 2*self.button_padding,
-        button_font_face = "cfont",
-        button_font_size = 20,
         buttons = buttons,
         zero_sep = true,
         show_parent = self,

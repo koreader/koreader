@@ -57,8 +57,6 @@ function ReaderCropping:onPageCrop(mode)
     -- prepare bottom buttons so we know the size available for the page above it
     local button_table = ButtonTable:new{
         width = Screen:getWidth(),
-        button_font_face = "cfont",
-        button_font_size = 20,
         buttons = {{
             {
                 text = _("Cancel"),
