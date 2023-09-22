@@ -1,4 +1,5 @@
 local Device = require("device")
+local lfs = require("libs/libkoreader-lfs")
 
 local command
 --- @todo (hzj-jie): Does pocketbook provide ntpdate?
@@ -44,8 +45,13 @@ local function syncNTP()
         txt = _("Failed to retrieve time from server. Please check your network configuration.")
     else
         txt = currentTime()
+        os.execute("hwclock -u -w")
+
+        -- On Kindle, do it the native way, too..
+        if Device:isKindle() and lfs.attributes("/usr/sbin/setdate", "mode") == "file" then
+            os.execute(string.format("/usr/sbin/setdate '%d'", os.time()))
+        end
     end
-    os.execute("hwclock -u -w")
     UIManager:close(info)
     UIManager:show(InfoMessage:new{
         text = txt,
