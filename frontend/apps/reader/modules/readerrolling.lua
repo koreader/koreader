@@ -318,8 +318,12 @@ end
 function ReaderRolling:onCloseDocument()
     self:tearDownRerenderingAutomation()
     -- Unschedule anything that might still somehow be...
-    UIManager:unschedule(self.mark_func)
-    UIManager:unschedule(self.unmark_func)
+    if self.mark_func then
+        UIManager:unschedule(self.mark_func)
+    end
+    if self.unmark_func then
+        UIManager:unschedule(self.unmark_func)
+    end
     UIManager:unschedule(self.onCheckDomStyleCoherence)
     UIManager:unschedule(self.onUpdatePos)
 
@@ -811,7 +815,7 @@ end
 
 function ReaderRolling:onGotoXPointer(xp, marker_xp)
     if self.mark_func then
-        -- unschedule previous marker as it's no more accurate
+        -- unschedule previous marker as it's no longer accurate
         UIManager:unschedule(self.mark_func)
         self.mark_func = nil
     end
