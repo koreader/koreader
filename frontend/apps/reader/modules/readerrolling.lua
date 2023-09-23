@@ -815,7 +815,7 @@ end
 
 function ReaderRolling:onGotoXPointer(xp, marker_xp)
     if self.mark_func then
-        -- unschedule previous marker as it's no longer accurate
+        -- Unschedule previous marker as it's no longer accurate.
         UIManager:unschedule(self.mark_func)
         self.mark_func = nil
     end
