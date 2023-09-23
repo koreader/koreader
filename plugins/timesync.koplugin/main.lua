@@ -1,6 +1,14 @@
 local Device = require("device")
 local lfs = require("libs/libkoreader-lfs")
 
+local ffi = require("ffi")
+local C = ffi.C
+require("ffi/posix_h")
+-- We need to be root to be able to set the time (CAP_SYS_TIME)
+if C.getuid() ~= 0 then
+    return { disabled = true, }
+end
+
 local ntp_cmd
 -- Check if we have access to ntpd or ntpdate
 if os.execute("command -v ntpd >/dev/null") == 0 then
