@@ -53,6 +53,10 @@ function DataStorage:getDocSettingsDir()
     return self:getDataDir() .. "/docsettings"
 end
 
+function DataStorage:getDocSettingsHashDir()
+    return self:getDataDir() .. "/hashdocsettings"
+end
+
 function DataStorage:getFullDataDir()
     if full_data_dir then return full_data_dir end
 

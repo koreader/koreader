@@ -16,6 +16,7 @@ local DocSettings = LuaSettings:extend{}
 
 local HISTORY_DIR = DataStorage:getHistoryDir()
 local DOCSETTINGS_DIR = DataStorage:getDocSettingsDir()
+local DOCSETTINGS_HASH_DIR = DataStorage:getDocSettingsHashDir()
 local custom_metadata_filename = "custom_metadata.lua"
 
 local function buildCandidates(list)
@@ -76,7 +77,11 @@ function DocSettings:getSidecarDir(doc_path, force_location)
     if location == "dir" then
         path = DOCSETTINGS_DIR..path
     elseif location == "hash" then
-        path = DOCSETTINGS_DIR..'/'..DocSettings:partialMd5(doc_path)
+        local hsh = self:partialMd5(doc_path)
+        if not hsh then
+            return ''
+        end
+        path = DOCSETTINGS_HASH_DIR..'/'..hsh
     end
     return path..".sdr"
 end
@@ -104,6 +109,13 @@ end
 -- @bool no_legacy set to true to skip check of the legacy history file
 -- @treturn string
 function DocSettings:getDocSidecarFile(doc_path, no_legacy)
+    -- Calculate partial hash and check for hash-based files only if files exist to check
+
+    local _, hash_sidecar_file = self:maybeGetSidecarHashDirAndFilepath(doc_path)
+    if lfs.attributes(hash_sidecar_file, "mode") == "file" then
+        return hash_sidecar_file
+    end
+
     local sidecar_file = self:getSidecarFile(doc_path, "doc")
     if lfs.attributes(sidecar_file, "mode") == "file" then
         return sidecar_file
@@ -156,9 +168,37 @@ function DocSettings:getFileFromHistory(hist_name)
     end
 end
 
+--- Returns the directory and full filepath of a hash-ID-based sidecar metadata store
+-- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
+function DocSettings:getSidecarHashDirAndFilepath(doc_path)
+    -- Getting PDF ID from trailer via mupdf has not been implemented - everything uses partial MD5
+    local path = self:getSidecarDir(doc_path, "hash")..'/' -- could this be cached somehow?
+    local filetype = doc_path:match(".+%.(%w+)$")
+    if not filetype or filetype == '' then
+        return '', ''
+    end
+    local hash_file = "metadata."..filetype..".lua"
+    local hash_filepath = path..hash_file
+    logger.warn("getSidecarHashDirAndFilepath:", path, hash_filepath)
+    return path, hash_filepath
+end
+
+--- For optimal performance, only gets the sidecar hash filepath/directory if there are already 
+-- existing hash files
+-- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
+function DocSettings:maybeGetSidecarHashDirAndFilepath(doc_path)
+    if lfs.attributes(DOCSETTINGS_HASH_DIR, "mode") == "directory" and
+        not util.isEmptyDir(DOCSETTINGS_HASH_DIR) then
+        return self:getSidecarHashDirAndFilepath(doc_path)
+    end
+    return '', ''
+end
+
+
 
 -- TODO copied from main.lua, relocate that plugin code to common place and use instead
 function DocSettings:partialMd5(file)
+    logger.warn("partialMD5", file)
     if not file or file == '' then
         logger.warn("file was nil")
         return nil
@@ -169,6 +209,9 @@ function DocSettings:partialMd5(file)
     local step, size = 1024, 1024
     local update = md5()
     local file_handle = io.open(file, 'rb')
+    if not file_handle then
+        return nil
+    end
     for i = -1, 10 do
         file_handle:seek("set", lshift(step, 2*i))
         local sample = file_handle:read(size)
@@ -182,27 +225,6 @@ function DocSettings:partialMd5(file)
 
     return update()
 end
-
-function DocSettings:getSidecarHashFile(doc_path)
-    -- Getting PDF ID from trailer via mupdf has not been implemented - everything uses partial MD5
-    local new = DocSettings:extend{}
-    -- local partial_md5 = new:partialMd5(doc_path)
-    -- local hash_dir = "docsettings/"  -- same as "dir" option storage path
-    -- local path = DataStorage:getDocSettingsDir()..'/'
-    local path = DocSettings:getSidecarDir(doc_path, "hash")..'/'
-    local filetype = doc_path:match(".+%.(%w+)$")
-    local hash_file = "metadata."..filetype..".lua"
-    local hash_filepath = path..hash_file
-    return hash_filepath
-
-    -- Example hash: 839136353a953a538b122b297bb2fe92
-    -- TODO check if either docsettings dir or file exists based on 839136353a953a538b122b297bb2fe92.sdr/ and verify within 839136353a953a538b122b297bb2fe92.filetype.lua.
-
-    -- if exists, check filetype compatibility. If wrong, warning but return it? mirror choice in other logic
-
-    -- future TODO, could this also rely on author or title as fallback identifications if hash changes/not found? But can't slow down things for every unidentified hash
-end
-
 
 --- Opens a document's individual settings (font, margin, dictionary, etc.)
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
@@ -226,8 +248,8 @@ function DocSettings:open(doc_path)
     end
     local history_file = new:getHistoryPath(doc_path)
 
-    new.hash_sidecar_dir = new:getSidecarDir(doc_path, "hash")
-    new.hash_sidecar_file = new:getSidecarHashFile(doc_path)
+    new.hash_sidecar_dir, new.hash_sidecar_file =
+            new:maybeGetSidecarHashDirAndFilepath(doc_path)
 
     -- Candidates list, in order of priority:
     local candidates_list = {
@@ -301,9 +323,9 @@ function DocSettings:flush(data, no_custom_metadata)
         serials = { {self.doc_sidecar_dir, self.doc_sidecar_file},
               {self.dir_sidecar_dir, self.dir_sidecar_file}, }
     elseif preferred_metdata_storage == "dir" then
-         serials = { {self.dir_sidecar_dir, self.dir_sidecar_file}, }
+        serials = { {self.dir_sidecar_dir, self.dir_sidecar_file}, }
     elseif preferred_metdata_storage == "hash" then
-         serials = { {self.hash_sidecar_dir, self.hash_sidecar_file}, }
+        serials = { table.pack(self:getSidecarHashDirAndFilepath(self.data.doc_path)) }
     else
         logger.warn("Unrecognized document_metadata_folder setting", preferred_metdata_storage)
          serials = { {self.dir_sidecar_dir, self.dir_sidecar_file}, }
