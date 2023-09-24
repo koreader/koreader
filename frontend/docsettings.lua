@@ -10,6 +10,7 @@ local dump = require("dump")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local document = require("document.document")
 local util = require("util")
 
 local DocSettings = LuaSettings:extend{}
@@ -77,10 +78,12 @@ function DocSettings:getSidecarDir(doc_path, force_location)
     if location == "dir" then
         path = DOCSETTINGS_DIR..path
     elseif location == "hash" then
-        local hsh = self:partialMd5(doc_path)
-        if not hsh then
-            return ''
-        end
+        -- local doc = document:extend()
+        local file = io.open(doc_path, 'rb')
+        if not file then return '' end
+        local hsh = document:extend():partialMD5(file)
+        -- local hsh = doc:partialMD5(file)
+        file:close()
         -- converts b3fb8f4f8448160365087d6ca05c7fa2 to b3/fb/ to avoid too many files in one dir
         local subpath = string.format("/%s/%s/", hsh:sub(1, 2), hsh:sub(3, 4)) --, hsh:sub(5, 6)) -- 3=overkill?
         path = DOCSETTINGS_HASH_DIR..subpath..hsh
@@ -183,38 +186,7 @@ function DocSettings:getSidecarHashDirAndFilepath(doc_path)
     end
     local hash_file = "metadata."..filetype..".lua"
     local hash_filepath = path..hash_file
-    logger.warn("getSidecarHashDirAndFilepath:", path, hash_filepath)
     return path, hash_filepath
-end
-
--- TODO copied from main.lua, relocate that plugin code to common place and use instead
-function DocSettings:partialMd5(file)
-    logger.warn("partialMD5", file)
-    if not file or file == '' then
-        logger.warn("file was nil")
-        return nil
-    end
-    local bit = require("bit")
-    local md5 = require("ffi/sha2").md5
-    local lshift = bit.lshift
-    local step, size = 1024, 1024
-    local update = md5()
-    local file_handle = io.open(file, 'rb')
-    if not file_handle then
-        return nil
-    end
-    for i = -1, 10 do
-        file_handle:seek("set", lshift(step, 2*i))
-        local sample = file_handle:read(size)
-        if sample then
-            update(sample)
-        else
-            break
-        end
-    end
-    file_handle:close()
-
-    return update()
 end
 
 --- Opens a document's individual settings (font, margin, dictionary, etc.)
@@ -432,7 +404,8 @@ end
 
 --- Removes empty sidecar dir.
 function DocSettings:removeSidecarDir(doc_path, sidecar_dir)
-    if sidecar_dir == self:getSidecarDir(doc_path, "doc") then
+    if sidecar_dir == self:getSidecarDir(doc_path, "doc") or
+        sidecar_dir == self:getSidecarDir(doc_path, "hash") then
         os.remove(sidecar_dir)
     else
         util.removePath(sidecar_dir)
