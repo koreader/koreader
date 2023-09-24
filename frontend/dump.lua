@@ -52,7 +52,7 @@ local function _serialize(what, outt, indent, max_lv, history, pairs_func)
     elseif datatype == "boolean" then
         insert(outt, tostring(what))
     elseif datatype == "function" then
-        insert(outt, tostring(what))
+        error("cannot dump functions")
     elseif datatype == "nil" then
         insert(outt, "nil")
     end
