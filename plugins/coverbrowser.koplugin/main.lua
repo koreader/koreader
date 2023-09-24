@@ -191,6 +191,46 @@ function CoverBrowser:addToMainMenu(menu_items)
                 end,
             },
             {
+                text = _("Progress"),
+                sub_item_table = {
+                    {
+                        text = _("Show progress"),
+                        checked_func = function() return
+                            not BookInfoManager:getSetting("hide_page_info")
+                        end,
+                        callback = function()
+                            BookInfoManager:toggleSetting("hide_page_info")
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    {
+                        text = _("Show progress % in mosaic mode"),
+                        checked_func = function() return BookInfoManager:getSetting("show_progress_in_mosaic") end,
+                        callback = function()
+                            BookInfoManager:toggleSetting("show_progress_in_mosaic")
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    {
+                        text = _("Show number of pages read instead of progress %"),
+                        checked_func = function() return BookInfoManager:getSetting("show_pages_read_as_progress") end,
+                        callback = function()
+                            BookInfoManager:toggleSetting("show_pages_read_as_progress")
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    {
+                        text = _("Show number of pages left to read"),
+                        checked_func = function() return BookInfoManager:getSetting("show_pages_left_in_progress") end,
+                        callback = function()
+                            BookInfoManager:toggleSetting("show_pages_left_in_progress")
+                            self:refreshFileManagerInstance()
+                        end,
+                        separator = true,
+                    },
+                },
+            },
+            {
                 text = _("Display hints"),
                 sub_item_table = {
                     {
@@ -265,29 +305,14 @@ function CoverBrowser:addToMainMenu(menu_items)
                 separator = true
             },
             {
-                text = _("Show progress % in mosaic mode"),
-                checked_func = function() return BookInfoManager:getSetting("show_progress_in_mosaic") end,
+                text = _("Show file properties"),
+                checked_func = function()
+                    return not BookInfoManager:getSetting("hide_file_info")
+                end,
                 callback = function()
-                    BookInfoManager:toggleSetting("show_progress_in_mosaic")
+                    BookInfoManager:toggleSetting("hide_file_info")
                     self:refreshFileManagerInstance()
                 end,
-            },
-            {
-                text = _("Show number of pages read instead of progress %"),
-                checked_func = function() return BookInfoManager:getSetting("show_pages_read_as_progress") end,
-                callback = function()
-                    BookInfoManager:toggleSetting("show_pages_read_as_progress")
-                    self:refreshFileManagerInstance()
-                end,
-            },
-            {
-                text = _("Show number of pages left to read"),
-                checked_func = function() return BookInfoManager:getSetting("show_pages_left_in_progress") end,
-                callback = function()
-                    BookInfoManager:toggleSetting("show_pages_left_in_progress")
-                    self:refreshFileManagerInstance()
-                end,
-                separator = true,
             },
             {
                 text = _("Book info cache management"),
