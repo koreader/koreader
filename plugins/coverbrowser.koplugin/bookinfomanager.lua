@@ -143,8 +143,6 @@ function BookInfoManager:init()
     -- 300 seconds should be more than enough to open and get info from 9-10 books
     -- Whether to use former blitbuffer:scale() (default to using MuPDF)
     self.use_legacy_image_scaling = G_reader_settings:isTrue("legacy_image_scaling")
-    -- We will use a temporary directory for crengine cache while indexing
-    self.tmpcr3cache = DataStorage:getDataDir() .. "/cache/tmpcr3cache"
 end
 
 -- DB management
@@ -398,24 +396,6 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
 end
 
 function BookInfoManager:extractBookInfo(filepath, cover_specs)
-    -- This will be run in a subprocess
-    -- We use a temporary directory for cre cache (that will not affect parent process),
-    -- so we don't fill the main cache with books we're not actually reading
-    if not self.cre_cache_overriden then
-        -- We need to init engine (if no crengine book has yet been opened),
-        -- so it does not reset our temporary cache dir when we first open
-        -- a crengine book for extraction.
-        local cre = require("document/credocument"):engineInit()
-        -- If we wanted to disallow caching completely:
-        -- cre.initCache("", 1024*1024*32) -- empty path = no cache
-        -- But it's best to use a cache for quicker and less memory
-        -- usage when opening big books:
-        local default_cre_storage_size_factor = 20 -- note: keep in sync with the one in credocument.lua
-        cre.initCache(self.tmpcr3cache, 0, -- 0 = previous book caches are removed when opening a book
-            true, G_reader_settings:readSetting("cre_storage_size_factor") or default_cre_storage_size_factor)
-        self.cre_cache_overriden = true
-    end
-
     local directory, filename = util.splitFilePathName(filepath)
 
     -- Initialize the new row that we will INSERT
@@ -639,13 +619,6 @@ function BookInfoManager:collectSubprocesses()
                 self:terminateBackgroundJobs()
                 -- we'll collect them next time we're run
             end
-        else
-            if self.delayed_cleanup then
-                self.delayed_cleanup = false
-                -- No more subprocesses = no more crengine indexing, we can remove our
-                -- temporary cache directory
-                self:cleanUp()
-            end
         end
     end
 
@@ -690,8 +663,6 @@ function BookInfoManager:extractInBackground(files)
         logger.dbg("  BG extraction done")
     end
 
-    self.cleanup_needed = true -- so we will remove temporary cache directory created by subprocess
-
     -- If it's the first subprocess we're launching, enable 2 CPU cores
     if #self.subprocesses_pids == 0 then
         Device:enableCPUCores(2)
@@ -722,20 +693,6 @@ function BookInfoManager:extractInBackground(files)
         )
     end
     return true
-end
-
-function BookInfoManager:cleanUp()
-    if #self.subprocesses_pids > 0 then
-        -- Some background extraction may still use our tmpcr3cache,
-        -- cleanup will be dealt with by BookInfoManager:collectSubprocesses()
-        self.delayed_cleanup = true
-        return
-    end
-    if self.cleanup_needed then
-        logger.dbg("Removing directory", self.tmpcr3cache)
-        FFIUtil.purgeDir(self.tmpcr3cache)
-        self.cleanup_needed = false
-    end
 end
 
 local function findFilesInDir(path, recursive)
