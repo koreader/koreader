@@ -515,6 +515,7 @@ local PocketBook618 = PocketBook:extend{
     hasFewKeys = yes,
     hasFrontlight = yes,
 }
+
 -- PocketBook Touch (622)
 local PocketBook622 = PocketBook:extend{
     model = "PBTouch",
@@ -606,6 +607,7 @@ local PocketBook633 = PocketBook:extend{
     isAlwaysPortrait = yes,
     usingForcedRotation = landscape_ccw,
 }
+
 -- PocketBook Verse Pro (634)
 local PocketBook634 = PocketBook:extend{
     model = "PB634",
