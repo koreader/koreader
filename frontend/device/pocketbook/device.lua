@@ -506,6 +506,15 @@ local PocketBook617 = PocketBook:extend{
     hasNaturalLight = yes,
 }
 
+-- PocketBook Basic Lux 4 (618)
+local PocketBook618 = PocketBook:extend{
+    model = "PB618",
+    display_dpi = 212,
+    isTouchDevice = yes,
+    hasDPad = no,
+    hasFewKeys = yes,
+    hasFrontlight = yes,
+}
 -- PocketBook Touch (622)
 local PocketBook622 = PocketBook:extend{
     model = "PBTouch",
@@ -555,6 +564,14 @@ local PocketBook628 = PocketBook:extend{
     hasNaturalLight = yes,
 }
 
+-- PocketBook Verse (629)
+local PocketBook629 = PocketBook:extend{
+    model = "PB629",
+    display_dpi = 212,
+    isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
+}
+
 -- PocketBook Sense / Sense 2 (630)
 local PocketBook630 = PocketBook:extend{
     model = "PBSense",
@@ -588,6 +605,13 @@ local PocketBook633 = PocketBook:extend{
     canUseCBB = no, -- 24bpp
     isAlwaysPortrait = yes,
     usingForcedRotation = landscape_ccw,
+}
+-- PocketBook Verse Pro (634)
+local PocketBook634 = PocketBook:extend{
+    model = "PB634",
+    display_dpi = 300,
+    isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
 }
 
 -- PocketBook Aqua (640)
@@ -753,6 +777,8 @@ elseif codename == "PB616" or codename == "PB616W" or
     return PocketBook616
 elseif codename == "PB617" or codename == "PocketBook 617" then
     return PocketBook617
+elseif codename == "PB618" or codename == "PocketBook 618" then
+    return PocketBook618
 elseif codename == "PocketBook 622" then
     return PocketBook622
 elseif codename == "PocketBook 623" then
@@ -768,6 +794,8 @@ elseif codename == "PB627" then
     return PocketBook627
 elseif codename == "PB628" then
     return PocketBook628
+elseif codename == "PB629" then
+    return PocketBook629
 elseif codename == "PocketBook 630" then
     return PocketBook630
 elseif codename == "PB631" or codename == "PocketBook 631" then
@@ -776,6 +804,8 @@ elseif codename == "PB632" then
     return PocketBook632
 elseif codename == "PB633" then
     return PocketBook633
+elseif codename == "PB634" then
+    return PocketBook634
 elseif codename == "PB640" or codename == "PocketBook 640" then
     return PocketBook640
 elseif codename == "PB641" then
