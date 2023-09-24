@@ -423,35 +423,39 @@ function ListMenuItem:update()
 
             local fontsize_info = _fontSize(14, 18)
 
-            local wfileinfo = TextWidget:new{
-                text = fileinfo_str,
-                face = Font:getFace("cfont", fontsize_info),
-                fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
-            }
-            local wpageinfo = TextWidget:new{
-                text = pages_str,
-                face = Font:getFace("cfont", fontsize_info),
-                fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
-            }
+            local wright_items = {align = "right"}
+            local wright_right_padding = 0
+            local wright_width = 0
+            local wright
 
-            local wright_width = math.max(wfileinfo:getSize().w, wpageinfo:getSize().w)
-            local wright_right_padding = Screen:scaleBySize(10)
-
-            -- We just built two string to be put one on top of the other, and we want
-            -- the combo centered. Given the nature of our strings (numbers,
-            -- uppercase MB/KB on top text, number and lowercase "page" on bottom text),
-            -- we get the annoying feeling it's not centered but shifted towards top.
-            -- Let's add a small VerticalSpan at top to give a better visual
-            -- feeling of centering.
-            local wright = CenterContainer:new{
-                dimen = Geom:new{ w = wright_width, h = dimen.h },
-                VerticalGroup:new{
-                    align = "right",
-                    VerticalSpan:new{ width = Screen:scaleBySize(2) },
-                    wfileinfo,
-                    wpageinfo,
+            if not BookInfoManager:getSetting("hide_file_info") then
+                local wfileinfo = TextWidget:new{
+                    text = fileinfo_str,
+                    face = Font:getFace("cfont", fontsize_info),
+                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
                 }
-            }
+                table.insert(wright_items, wfileinfo)
+            end
+
+            if not BookInfoManager:getSetting("hide_page_info") then
+                local wpageinfo = TextWidget:new{
+                    text = pages_str,
+                    face = Font:getFace("cfont", fontsize_info),
+                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                }
+                table.insert(wright_items, wpageinfo)
+            end
+
+            if #wright_items > 0 then
+                for i, w in ipairs(wright_items) do
+                    wright_width = math.max(wright_width, w:getSize().w)
+                end
+                wright = CenterContainer:new{
+                    dimen = Geom:new{ w = wright_width, h = dimen.h },
+                    VerticalGroup:new(wright_items),
+                }
+                wright_right_padding = Screen:scaleBySize(10)
+            end
 
             -- Create or replace corner_mark if needed
             local mark_size = math.floor(dimen.h * (1/6))
@@ -678,13 +682,15 @@ function ListMenuItem:update()
                     wmain
                 })
             -- add right widget
-            table.insert(widget, RightContainer:new{
+            if wright then
+                table.insert(widget, RightContainer:new{
                     dimen = dimen,
                     HorizontalGroup:new{
                         wright,
                         HorizontalSpan:new{ width = wright_right_padding },
                     },
                 })
+            end
 
         else -- bookinfo not found
             if self.init_done then
