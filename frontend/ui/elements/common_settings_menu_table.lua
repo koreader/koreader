@@ -2,6 +2,7 @@ local DateTimeWidget = require("ui/widget/datetimewidget")
 local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
+local DataStorage = require("datastorage")
 local Language = require("ui/language")
 local NetworkMgr = require("ui/network/manager")
 local PowerD = Device:getPowerDevice()
@@ -541,7 +542,7 @@ common_settings.document = {
 local metadata_folder_str = {
     ["doc"] = _("book folder"),
     ["dir"] = "koreader/docsettings/",
-    ["hash"] = "(hash) koreader/docsettings/"
+    ["hash"] = "(hash) koreader/hashdocsettings/"
 }
 
 local metadata_folder_help_text = _([[
@@ -550,7 +551,7 @@ Book view settings, reading progress, highlights, bookmarks and notes (collectiv
 You can decide between two locations where these will be saved:
 - alongside the book file itself (the long time default): these sdr folders will be visible when you browse your library directories with another file browser or from your computer, which may clutter your vision of your library. But this allows you to move them along when you reorganize your library, and also survives any renaming of parent directories. Also, if you perform directory synchronization or backups, your settings will be part of them.
 - all inside koreader/docsettings/: these sdr folders will only be visible and used by KOReader, and won't clutter your vision of your library directories with another file browser or from your computer. But any reorganisation of your library (directories or filename moves and renamings) may result in KOReader not finding your previous settings for these books. These settings won't be part of any synchronization or backups of your library.
-- inside koreader/docsettings/ as hashes: sdr folders are identified not based on the filepath and filename of each, but by their partial MD5 hash. This allows you to rename, move, and copy documents at will, and as long as they are unmodified KOReader will link them to their metadata. However, file modifications such as writing highlights into PDFs will result in metadata being unlinked from the file.]])
+- inside koreader/hashdocsettings/ as hashes: sdr folders are identified not based on the filepath and filename of each, but by their partial MD5 hash. This allows you to rename, move, and copy documents at will and and KOReader will link them to their metadata. However, any file modifications such as writing highlights into PDFs will result in metadata being unlinked from the file, and calculating file hashes may impact loading speed.]])
 
 local function genMetadataFolderMenuItem(value)
     return {

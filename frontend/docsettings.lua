@@ -81,7 +81,9 @@ function DocSettings:getSidecarDir(doc_path, force_location)
         if not hsh then
             return ''
         end
-        path = DOCSETTINGS_HASH_DIR..'/'..hsh
+        -- converts b3fb8f4f8448160365087d6ca05c7fa2 to b3/fb/ to avoid too many files in one dir
+        local subpath = string.format("/%s/%s/", hsh:sub(1, 2), hsh:sub(3, 4)) --, hsh:sub(5, 6)) -- 3=overkill?
+        path = DOCSETTINGS_HASH_DIR..subpath..hsh
     end
     return path..".sdr"
 end
@@ -111,11 +113,6 @@ end
 function DocSettings:getDocSidecarFile(doc_path, no_legacy)
     -- Calculate partial hash and check for hash-based files only if files exist to check
 
-    local _, hash_sidecar_file = self:maybeGetSidecarHashDirAndFilepath(doc_path)
-    if lfs.attributes(hash_sidecar_file, "mode") == "file" then
-        return hash_sidecar_file
-    end
-
     local sidecar_file = self:getSidecarFile(doc_path, "doc")
     if lfs.attributes(sidecar_file, "mode") == "file" then
         return sidecar_file
@@ -128,6 +125,13 @@ function DocSettings:getDocSidecarFile(doc_path, no_legacy)
         sidecar_file = self:getHistoryPath(doc_path)
         if lfs.attributes(sidecar_file, "mode") == "file" then
             return sidecar_file
+        end
+    end
+
+    if lfs.attributes(DOCSETTINGS_HASH_DIR, "mode") == "directory" then
+        local _, hash_sidecar_file = self:getSidecarHashDirAndFilepath(doc_path)
+        if lfs.attributes(hash_sidecar_file, "mode") == "file" then
+            return hash_sidecar_file
         end
     end
 end
@@ -183,19 +187,6 @@ function DocSettings:getSidecarHashDirAndFilepath(doc_path)
     return path, hash_filepath
 end
 
---- For optimal performance, only gets the sidecar hash filepath/directory if there are already 
--- existing hash files
--- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
-function DocSettings:maybeGetSidecarHashDirAndFilepath(doc_path)
-    if lfs.attributes(DOCSETTINGS_HASH_DIR, "mode") == "directory" and
-        not util.isEmptyDir(DOCSETTINGS_HASH_DIR) then
-        return self:getSidecarHashDirAndFilepath(doc_path)
-    end
-    return '', ''
-end
-
-
-
 -- TODO copied from main.lua, relocate that plugin code to common place and use instead
 function DocSettings:partialMd5(file)
     logger.warn("partialMD5", file)
@@ -248,8 +239,10 @@ function DocSettings:open(doc_path)
     end
     local history_file = new:getHistoryPath(doc_path)
 
-    new.hash_sidecar_dir, new.hash_sidecar_file =
-            new:maybeGetSidecarHashDirAndFilepath(doc_path)
+    if lfs.attributes(DOCSETTINGS_HASH_DIR, "mode") == "directory" then
+        new.hash_sidecar_dir, new.hash_sidecar_file =
+                new:getSidecarHashDirAndFilepath(doc_path)
+    end
 
     -- Candidates list, in order of priority:
     local candidates_list = {
