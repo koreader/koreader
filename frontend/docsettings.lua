@@ -18,6 +18,7 @@ local HISTORY_DIR = DataStorage:getHistoryDir()
 local DOCSETTINGS_DIR = DataStorage:getDocSettingsDir()
 local DOCSETTINGS_HASH_DIR = DataStorage:getDocSettingsHashDir()
 local custom_metadata_filename = "custom_metadata.lua"
+local sdr_hash_dir_exists = lfs.attributes(DOCSETTINGS_HASH_DIR, "mode") == "directory"
 
 local function buildCandidates(list)
     local candidates = {}
@@ -210,7 +211,8 @@ function DocSettings:open(doc_path)
     end
     local history_file = new:getHistoryPath(doc_path)
 
-    if lfs.attributes(DOCSETTINGS_HASH_DIR, "mode") == "directory" then
+    -- requires app restart if the preferred storage location changed
+    if sdr_hash_dir_exists then
         new.hash_sidecar_dir, new.hash_sidecar_file =
                 new:getSidecarHashDirAndFilepath(doc_path)
     end
@@ -485,9 +487,9 @@ function DocSettings:findCoverFile(doc_path)
     local cover_file = findCoverFileInDir(sidecar_dir)
     if cover_file then return cover_file end
     for _, mode in ipairs({"doc", "dir", "hash"}) do
-        if mode ~= location then 
-            local sidecar_dir = self:getSidecarDir(doc_path, mode)
-            local cover_file = findCoverFileInDir(sidecar_dir)
+        if mode ~= location then
+            sidecar_dir = self:getSidecarDir(doc_path, mode)
+            cover_file = findCoverFileInDir(sidecar_dir)
             if cover_file then return cover_file end
         end
     end
