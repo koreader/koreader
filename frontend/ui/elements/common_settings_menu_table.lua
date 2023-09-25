@@ -563,7 +563,7 @@ local function genMetadataFolderMenuItem(value)
         end,
         callback = function()
             if value == "hash" and G_reader_settings:readSetting("save_document") == "always" then
-                UIManager.show(InfoMessage:new{text = pdf_annotations_saved_into_file_warn, })
+                UIManager:show(InfoMessage:new{text = pdf_annotations_saved_into_file_warn, })
             end
             G_reader_settings:saveSetting("document_metadata_folder", value)
         end,

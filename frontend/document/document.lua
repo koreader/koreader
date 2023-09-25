@@ -9,6 +9,7 @@ local Math = require("optmath")
 local TileCacheItem = require("document/tilecacheitem")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("frontend.util")
 
 --[[
 This is an abstract interface to a document
@@ -157,7 +158,7 @@ function Document:fastDigest(docsettings)
         local result = docsettings:readSetting("partial_md5_checksum")
         if not result then
             logger.dbg("computing and storing partial_md5_checksum")
-            result = self:partialMD5(file)
+            result = util.partialMD5(file)
             docsettings:saveSetting("partial_md5_checksum", result)
         end
         if tmp_docsettings then
@@ -168,32 +169,6 @@ function Document:fastDigest(docsettings)
     end
 end
 
--- calculate partial digest of an open file. To the calculating mechanism itself,
--- since only PDF documents could be modified by KOReader by appending data
--- at the end of the files when highlighting, we use a non-even sampling
--- algorithm which samples with larger weight at file head and much smaller
--- weight at file tail, thus reduces the probability that appended data may change
--- the digest value.
--- Note that if PDF file size is around 1024, 4096, 16384, 65536, 262144
--- 1048576, 4194304, 16777216, 67108864, 268435456 or 1073741824, appending data
--- by highlighting in KOReader may change the digest value.
-function Document:partialMD5(file)
-    local bit = require("bit")
-    local md5 = require("ffi/sha2").md5
-    local lshift = bit.lshift
-    local step, size = 1024, 1024
-    local update = md5()
-    for i = -1, 10 do
-        file:seek("set", lshift(step, 2*i))
-        local sample = file:read(size)
-        if sample then
-            update(sample)
-        else
-            break
-        end
-    end
-    return update()
-end
 
 -- this might be overridden by a document implementation
 function Document:getNativePageDimensions(pageno)

@@ -81,7 +81,7 @@ function DocSettings:getSidecarDir(doc_path, force_location)
         -- local doc = document:extend()
         local file = io.open(doc_path, 'rb')
         if not file then return '' end
-        local hsh = document:extend():partialMD5(file)
+        local hsh = util.partialMD5(file)
         -- local hsh = doc:partialMD5(file)
         file:close()
         -- converts b3fb8f4f8448160365087d6ca05c7fa2 to b3/fb/ to avoid too many files in one dir
@@ -132,9 +132,9 @@ function DocSettings:getDocSidecarFile(doc_path, no_legacy)
     end
 
     if lfs.attributes(DOCSETTINGS_HASH_DIR, "mode") == "directory" then
-        local _, hash_sidecar_file = self:getSidecarHashDirAndFilepath(doc_path)
-        if lfs.attributes(hash_sidecar_file, "mode") == "file" then
-            return hash_sidecar_file
+        sidecar_file = self:getSidecarFile(doc_path, "hash")
+        if lfs.attributes(sidecar_file, "mode") == "file" then
+            return sidecar_file
         end
     end
 end
@@ -290,10 +290,7 @@ function DocSettings:flush(data, no_custom_metadata)
     elseif preferred_metdata_storage == "dir" then
         serials = { {self.dir_sidecar_dir, self.dir_sidecar_file}, }
     elseif preferred_metdata_storage == "hash" then
-        serials = { table.pack(self:getSidecarHashDirAndFilepath(self.data.doc_path)) }
-    else
-        logger.warn("Unrecognized document_metadata_folder setting", preferred_metdata_storage)
-         serials = { {self.dir_sidecar_dir, self.dir_sidecar_file}, }
+        serials = { {self.hash_sidecar_dir, self.hash_sidecar_file } }
     end
 
     local s_out = dump(data or self.data, nil, true)
@@ -399,13 +396,15 @@ function DocSettings:purge(sidecar_to_keep, data_to_purge)
         if lfs.attributes(self.dir_sidecar_dir, "mode") == "directory" then
             util.removePath(self.dir_sidecar_dir) -- remove empty parent folders
         end
+        if lfs.attributes(self.hash_sidecar_dir, "mode") == "directory" then
+            util.removePath(self.hash_sidecar_dir) -- remove empty parent folders
+        end
     end
 end
 
 --- Removes empty sidecar dir.
 function DocSettings:removeSidecarDir(doc_path, sidecar_dir)
-    if sidecar_dir == self:getSidecarDir(doc_path, "doc") or
-        sidecar_dir == self:getSidecarDir(doc_path, "hash") then
+    if sidecar_dir == self:getSidecarDir(doc_path, "doc") then
         os.remove(sidecar_dir)
     else
         util.removePath(sidecar_dir)
@@ -519,8 +518,6 @@ function DocSettings:getCustomCandidateSidecarDirs(doc_path)
     elseif preferred_metadata_storage == "hash" then
         local hash_sidecar_dir = self:getSidecarDir(doc_path, "hash")
         return { hash_sidecar_dir }
-    else
-        return { dir_sidecar_dir }
     end
 end
 
@@ -541,7 +538,7 @@ end
 --- Returns path to book custom metadata file if it exists, or nil.
 function DocSettings:getCustomMetadataFile(doc_path)
     doc_path = doc_path or self.data.doc_path
-    for _, mode in ipairs({"doc", "dir"}) do
+    for _, mode in ipairs({"doc", "dir", "hash"}) do
         local file = self:getSidecarDir(doc_path, mode) .. "/" .. custom_metadata_filename
         if lfs.attributes(file, "mode") == "file" then
             return file
