@@ -555,6 +555,14 @@ local PocketBook628 = PocketBook:extend{
     hasNaturalLight = yes,
 }
 
+-- PocketBook Verse (629)
+local PocketBook629 = PocketBook:extend{
+    model = "PB629",
+    display_dpi = 212,
+    isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
+}
+
 -- PocketBook Sense / Sense 2 (630)
 local PocketBook630 = PocketBook:extend{
     model = "PBSense",
@@ -588,6 +596,14 @@ local PocketBook633 = PocketBook:extend{
     canUseCBB = no, -- 24bpp
     isAlwaysPortrait = yes,
     usingForcedRotation = landscape_ccw,
+}
+
+-- PocketBook Verse Pro (634)
+local PocketBook634 = PocketBook:extend{
+    model = "PB634",
+    display_dpi = 300,
+    isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
 }
 
 -- PocketBook Aqua (640)
@@ -768,6 +784,8 @@ elseif codename == "PB627" then
     return PocketBook627
 elseif codename == "PB628" then
     return PocketBook628
+elseif codename == "PB629" then
+    return PocketBook629
 elseif codename == "PocketBook 630" then
     return PocketBook630
 elseif codename == "PB631" or codename == "PocketBook 631" then
@@ -776,6 +794,8 @@ elseif codename == "PB632" then
     return PocketBook632
 elseif codename == "PB633" then
     return PocketBook633
+elseif codename == "PB634" then
+    return PocketBook634
 elseif codename == "PB640" or codename == "PocketBook 640" then
     return PocketBook640
 elseif codename == "PB641" then
