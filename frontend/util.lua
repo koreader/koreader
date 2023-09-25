@@ -1480,11 +1480,11 @@ end
 function util.partialMD5(file)
     local bit = require("bit")
     local md5 = require("ffi/sha2").md5
-    local lshift = bit.lshift
+    local leftshift = bit.lshift
     local step, size = 1024, 1024
     local update = md5()
     for i = -1, 10 do
-        file:seek("set", lshift(step, 2*i))
+        file:seek("set", leftshift(step, 2*i))
         local sample = file:read(size)
         if sample then
             update(sample)

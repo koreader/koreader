@@ -10,7 +10,6 @@ local dump = require("dump")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local document = require("document.document")
 local util = require("util")
 
 local DocSettings = LuaSettings:extend{}
@@ -484,12 +483,14 @@ function DocSettings:findCoverFile(doc_path)
     local location = G_reader_settings:readSetting("document_metadata_folder", "doc")
     local sidecar_dir = self:getSidecarDir(doc_path, location)
     local cover_file = findCoverFileInDir(sidecar_dir)
-    if not cover_file then
-        location = location == "doc" and "dir" or "doc"
-        sidecar_dir = self:getSidecarDir(doc_path, location)
-        cover_file = findCoverFileInDir(sidecar_dir)
+    if cover_file then return cover_file end
+    for _, mode in ipairs({"doc", "dir", "hash"}) do
+        if mode ~= location then 
+            local sidecar_dir = self:getSidecarDir(doc_path, mode)
+            local cover_file = findCoverFileInDir(sidecar_dir)
+            if cover_file then return cover_file end
+        end
     end
-    return cover_file
 end
 
 function DocSettings:getCoverFile(reset_cache)
