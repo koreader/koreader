@@ -3226,6 +3226,7 @@ function ReaderStatistics.onSync(local_path, cached_path, income_path)
             INNER JOIN book_id_map as map
             ON id_book = map.iid
             WHERE map.mid IS NOT null
+            ORDER BY start_time
         ON CONFLICT(id_book, page, start_time) DO UPDATE SET
         duration = MAX(duration, excluded.duration);
 
