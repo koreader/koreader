@@ -53,7 +53,9 @@ function OPDSParser:createFlatXTable(xlex, curr_element)
                     end
                     table.insert(curr_element[txt], tab)
                 elseif type(curr_element) == "table" then
-                    curr_element[txt] = tab
+                    if curr_element[txt] == nil then
+                        curr_element[txt] = tab
+                    end
                 end
             end
         elseif event == luxl.EVENT_ATTR_NAME then
