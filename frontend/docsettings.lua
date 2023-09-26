@@ -18,7 +18,6 @@ local HISTORY_DIR = DataStorage:getHistoryDir()
 local DOCSETTINGS_DIR = DataStorage:getDocSettingsDir()
 local DOCSETTINGS_HASH_DIR = DataStorage:getDocSettingsHashDir()
 local custom_metadata_filename = "custom_metadata.lua"
-local sdr_hash_dir_exists = lfs.attributes(DOCSETTINGS_HASH_DIR, "mode") == "directory"
 
 local function buildCandidates(list)
     local candidates = {}
@@ -114,8 +113,6 @@ end
 -- @bool no_legacy set to true to skip check of the legacy history file
 -- @treturn string
 function DocSettings:getDocSidecarFile(doc_path, no_legacy)
-    -- Calculate partial hash and check for hash-based files only if files exist to check
-
     local sidecar_file = self:getSidecarFile(doc_path, "doc")
     if lfs.attributes(sidecar_file, "mode") == "file" then
         return sidecar_file
@@ -131,7 +128,9 @@ function DocSettings:getDocSidecarFile(doc_path, no_legacy)
         end
     end
 
-    if lfs.attributes(DOCSETTINGS_HASH_DIR, "mode") == "directory" then
+    -- Calculate partial hash and check for hash-based files only if there are files to check
+    if G_reader_settings:isTrue("document_metadata_hash_enabled") and
+        lfs.attributes(DOCSETTINGS_HASH_DIR, "mode") == "directory" then
         sidecar_file = self:getSidecarFile(doc_path, "hash")
         if lfs.attributes(sidecar_file, "mode") == "file" then
             return sidecar_file
@@ -211,8 +210,7 @@ function DocSettings:open(doc_path)
     end
     local history_file = new:getHistoryPath(doc_path)
 
-    -- requires app restart if the preferred storage location changed
-    if sdr_hash_dir_exists then
+    if G_reader_settings:isTrue("document_metadata_hash_enabled") then
         new.hash_sidecar_dir, new.hash_sidecar_file =
                 new:getSidecarHashDirAndFilepath(doc_path)
     end

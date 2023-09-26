@@ -542,7 +542,7 @@ common_settings.document = {
 local metadata_folder_str = {
     ["doc"] = _("book folder"),
     ["dir"] = "koreader/docsettings/",
-    ["hash"] = "(hash) koreader/hashdocsettings/"
+    ["hash"] = "koreader/hashdocsettings/"
 }
 
 local metadata_folder_help_text = _([[
@@ -551,23 +551,24 @@ Book view settings, reading progress, highlights, bookmarks and notes (collectiv
 You can decide between two locations where these will be saved:
 - alongside the book file itself (the long time default): these sdr folders will be visible when you browse your library directories with another file browser or from your computer, which may clutter your vision of your library. But this allows you to move them along when you reorganize your library, and also survives any renaming of parent directories. Also, if you perform directory synchronization or backups, your settings will be part of them.
 - all inside koreader/docsettings/: these sdr folders will only be visible and used by KOReader, and won't clutter your vision of your library directories with another file browser or from your computer. But any reorganisation of your library (directories or filename moves and renamings) may result in KOReader not finding your previous settings for these books. These settings won't be part of any synchronization or backups of your library.
-- inside koreader/hashdocsettings/ as hashes: sdr folders are identified not based on the filepath and filename of each, but by partial MD5 hash. This allows you to rename, move, and copy documents at will and and KOReader will link them to their metadata. However, any file modifications such as writing highlights into PDFs will change the hash, resulting in metadata being unlinked from the file, and calculating file hashes may impact loading speeds.]])
+- all inside koreader/hashdocsettings/ as hashes: sdr folders are identified not by filepath and filename but by partial MD5 hash. This allows you to rename, move, and copy documents at will and and KOReader will link them to their metadata. However, any file modifications such as writing highlights into PDFs or downloading from Calibre may change the hash, resulting in metadata being unlinked from the file. Calculating file hashes may also impact loading times.]])
 
-local pdf_annotations_saved_into_file_warn = _([[Warning! Annotations are currently set to always be saved into the PDF file while hash-based metadata storage is enabled. Any modification to the PDF file will result in the metadata being unlinked from the file causing your highlights, bookmarks, and progress to be unlinked and lost. If you want to keep your annotations, please disable embedding PDF annotations (Cog -> Document -> Save Document (write highlights into PDF)).]])
+local hash_filemod_warn = _([[Warning: This requires calculating partial file hashes of documents which may impact loading times. Any file modifications (such as embedding annotations into PDF files or downloading from Calibre) may change its partial hash, resulting in the metadata being unlinked from the file and thereby losing its highlights, bookmarks, and progress. Embedding PDF annotations is currently set to "%s" and can be disabled at (Cog -> Document -> Save Document (write highlights into PDF)).]])
 
 local function genMetadataFolderMenuItem(value)
     return {
         text = metadata_folder_str[value],
+        enabled_func = function()
+            return value ~= "hash" or G_reader_settings:isTrue("document_metadata_hash_enabled")
+        end,
         checked_func = function()
             return G_reader_settings:readSetting("document_metadata_folder") == value
         end,
         callback = function()
-            if value == "hash" and G_reader_settings:readSetting("save_document") == "always" then
-                UIManager:show(InfoMessage:new{text = pdf_annotations_saved_into_file_warn, })
-                UIManager:askForRestart("Hash-based metadata storage requires an app restart")
-            end
             G_reader_settings:saveSetting("document_metadata_folder", value)
         end,
+        radio = true,
+        separator = value == "hash",
     }
 end
 
@@ -589,6 +590,22 @@ common_settings.document_metadata_location = {
         genMetadataFolderMenuItem("doc"),
         genMetadataFolderMenuItem("dir"),
         genMetadataFolderMenuItem("hash"),
+        {
+            text = _("Enable hash-based metadata scanning"),
+            enabled_func = function()
+                return G_reader_settings:readSetting("document_metadata_folder") ~= "hash"
+            end,
+            checked_func = function()
+                return G_reader_settings:isTrue("document_metadata_hash_enabled")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("document_metadata_hash_enabled")
+                if G_reader_settings:isTrue("document_metadata_hash_enabled") then
+                    local doc_save = G_reader_settings:readSetting("save_document")
+                    UIManager:show(InfoMessage:new{ text = string.format(hash_filemod_warn, doc_save)})
+                end
+            end,
+        },
     },
 }
 
@@ -633,8 +650,7 @@ common_settings.document_save = {
             callback = function()
                 logger.warn("testing!")
                 if G_reader_settings:readSetting("document_metadata_folder") == "hash" then
-                    UIManager.show(InfoMessage:new{text = pdf_annotations_saved_into_file_warn})
-                    logger.warn("testing! in")
+                    UIManager:show(InfoMessage:new{ text = "Warning: Book metadata location is set to hash-based storage. Writing highlights into a PDF modifies the file which may change the partial hash, resulting in its metadata (e.g., highlights and progress) being unlinked and lost.", })
                 end
                 G_reader_settings:saveSetting("save_document", "always")
             end,
