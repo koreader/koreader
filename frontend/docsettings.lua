@@ -395,7 +395,7 @@ function DocSettings:purge(sidecar_to_keep, data_to_purge)
         if lfs.attributes(self.dir_sidecar_dir, "mode") == "directory" then
             util.removePath(self.dir_sidecar_dir) -- remove empty parent folders
         end
-        if lfs.attributes(self.hash_sidecar_dir, "mode") == "directory" then
+        if self.hash_sidecar_dir and lfs.attributes(self.hash_sidecar_dir, "mode") == "directory" then
             util.removePath(self.hash_sidecar_dir) -- remove empty parent folders
         end
     end
