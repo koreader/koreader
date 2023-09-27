@@ -648,9 +648,8 @@ common_settings.document_save = {
                 return G_reader_settings:readSetting("save_document") == "always"
             end,
             callback = function()
-                logger.warn("testing!")
                 if G_reader_settings:readSetting("document_metadata_folder") == "hash" then
-                    UIManager:show(InfoMessage:new{ text = "Warning: Book metadata location is set to hash-based storage. Writing highlights into a PDF modifies the file which may change the partial hash, resulting in its metadata (e.g., highlights and progress) being unlinked and lost.", })
+                    UIManager:show(InfoMessage:new{ text = _("Warning: Book metadata location is set to hash-based storage. Writing highlights into a PDF modifies the file which may change the partial hash, resulting in its metadata (e.g., highlights and progress) being unlinked and lost."), })
                 end
                 G_reader_settings:saveSetting("save_document", "always")
             end,

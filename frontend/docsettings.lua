@@ -178,13 +178,13 @@ end
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
 function DocSettings:getSidecarHashDirAndFilepath(doc_path)
     -- Getting PDF ID from trailer via mupdf has not been implemented - everything uses partial MD5
-    local path = self:getSidecarDir(doc_path, "hash")..'/' -- could this be cached somehow?
+    local path = self:getSidecarDir(doc_path, "hash") -- could this be cached somehow?
     local filetype = doc_path:match(".+%.(%w+)$")
     if not filetype or filetype == '' then
         return '', ''
     end
     local hash_file = "metadata."..filetype..".lua"
-    local hash_filepath = path..hash_file
+    local hash_filepath = path..'/'..hash_file
     return path, hash_filepath
 end
 
@@ -493,6 +493,19 @@ function DocSettings:findCoverFile(doc_path)
     end
 end
 
+function DocSettings:findCoverFile(doc_path)
+    doc_path = doc_path or self.data.doc_path
+    local location = G_reader_settings:readSetting("document_metadata_folder", "doc")
+    local sidecar_dir = self:getSidecarDir(doc_path, location)
+    local cover_file = findCoverFileInDir(sidecar_dir)
+    if not cover_file then
+        location = location == "doc" and "dir" or "doc"
+        sidecar_dir = self:getSidecarDir(doc_path, location)
+        cover_file = findCoverFileInDir(sidecar_dir)
+    end
+    return cover_file
+end
+
 function DocSettings:getCoverFile(reset_cache)
     if reset_cache then
         self.cover_file = nil
@@ -539,7 +552,12 @@ end
 --- Returns path to book custom metadata file if it exists, or nil.
 function DocSettings:getCustomMetadataFile(doc_path)
     doc_path = doc_path or self.data.doc_path
-    for _, mode in ipairs({"doc", "dir", "hash"}) do
+
+    local candidates = {"doc", "dir"}
+    if G_reader_settings:isTrue("document_metadata_hash_enabled") then
+        table.insert(candidates, "hash")
+    end
+    for _, mode in ipairs(candidates) do
         local file = self:getSidecarDir(doc_path, mode) .. "/" .. custom_metadata_filename
         if lfs.attributes(file, "mode") == "file" then
             return file
