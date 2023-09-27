@@ -89,10 +89,9 @@ end
 function filemanagerutil.setStatus(file, status)
     -- In case the book doesn't have a sidecar file, this'll create it
     local doc_settings = DocSettings:open(file)
-    local summary = doc_settings:readSetting("summary") or {}
+    local summary = doc_settings:readSetting("summary", {})
     summary.status = status
     summary.modified = os.date("%Y-%m-%d", os.time())
-    doc_settings:saveSetting("summary", summary)
     doc_settings:flush()
 end
 
