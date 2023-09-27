@@ -12,7 +12,6 @@ local C_ = _.pgettext
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local logger = require("logger")
 local common_settings = {}
 
 if Device:isCervantes() then
