@@ -484,26 +484,17 @@ function DocSettings:findCoverFile(doc_path)
     local sidecar_dir = self:getSidecarDir(doc_path, location)
     local cover_file = findCoverFileInDir(sidecar_dir)
     if cover_file then return cover_file end
-    for _, mode in ipairs({"doc", "dir", "hash"}) do
+    local candidates = {"doc", "dir"}
+    if G_reader_settings:isTrue("document_metadata_hash_enabled") then
+        table.insert(candidates, "hash")
+    end
+    for _, mode in ipairs(candidates) do
         if mode ~= location then
             sidecar_dir = self:getSidecarDir(doc_path, mode)
             cover_file = findCoverFileInDir(sidecar_dir)
             if cover_file then return cover_file end
         end
     end
-end
-
-function DocSettings:findCoverFile(doc_path)
-    doc_path = doc_path or self.data.doc_path
-    local location = G_reader_settings:readSetting("document_metadata_folder", "doc")
-    local sidecar_dir = self:getSidecarDir(doc_path, location)
-    local cover_file = findCoverFileInDir(sidecar_dir)
-    if not cover_file then
-        location = location == "doc" and "dir" or "doc"
-        sidecar_dir = self:getSidecarDir(doc_path, location)
-        cover_file = findCoverFileInDir(sidecar_dir)
-    end
-    return cover_file
 end
 
 function DocSettings:getCoverFile(reset_cache)
