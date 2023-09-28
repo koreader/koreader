@@ -197,11 +197,11 @@ When the book's language tag is not among our presets, no specific features will
             -- Text might be too long for InfoMessage
             local status_text = table.concat(lang_infos, "\n")
             local TextViewer = require("ui/widget/textviewer")
-            local Font = require("ui/font")
             UIManager:show(TextViewer:new{
                 title = _("Language tags (and hyphenation dictionaries) used since start up"),
                 text = status_text,
-                text_face = Font:getFace("smallinfont"),
+                text_font_face = "smallinfont",
+                justified = false,
                 height = math.floor(Screen:getHeight() * 0.8),
             })
         end,
@@ -777,8 +777,8 @@ end
 function ReaderTypography:onPreRenderDocument(config)
     -- This is called after the document has been loaded,
     -- when we know and can access the document language.
-    local props = self.ui.document:getProps()
-    local doc_language = FileManagerBookInfo.extendProps(props, self.ui.document.file).language
+    local doc_language = FileManagerBookInfo.getCustomProp("language", self.ui.document.file)
+                      or self.ui.document:getProps().language
     self.book_lang_tag = self:fixLangTag(doc_language)
 
     local is_known_lang_tag = self.book_lang_tag and LANG_TAG_TO_LANG_NAME[self.book_lang_tag] ~= nil

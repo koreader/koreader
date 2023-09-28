@@ -687,7 +687,6 @@ function Translator:_showTranslation(text, detailed_view, source_lang, target_la
             -- it quite long and wrapped, taking valuable vertical spacing
         text = text_all,
         height = height,
-        justified = G_reader_settings:nilOrTrue("dict_justify"),
         add_default_buttons = true,
         buttons_table = buttons_table,
         close_callback = close_callback,

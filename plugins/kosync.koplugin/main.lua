@@ -84,7 +84,7 @@ function KOSync:init()
     self.device_id = G_reader_settings:readSetting("device_id")
 
     -- Disable auto-sync if beforeWifiAction was reset to "prompt" behind our back...
-    if self.settings.auto_sync and Device:hasWifiToggle() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
+    if self.settings.auto_sync and Device:hasSeamlessWifiToggle() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
         self.settings.auto_sync = false
         logger.warn("KOSync: Automatic sync has been disabled because wifi_enable_action is *not* turn_on")
     end
@@ -179,6 +179,9 @@ function KOSync:onReaderReady()
             self:getProgress(true, false)
         end)
     end
+    -- NOTE: Keep in mind that, on Android, turning on WiFi requires a focus switch, which will trip a Suspend/Resume pair.
+    --       NetworkMgr will attempt to hide the damage to avoid a useless pull -> push -> pull dance instead of the single pull requested.
+    --       Plus, if wifi_enable_action is set to prompt, that also avoids stacking three prompts on top of each other...
     self:registerEvents()
     self:onDispatcherRegisterActions()
 
@@ -229,7 +232,7 @@ function KOSync:addToMainMenu(menu_items)
                 help_text = _([[This may lead to nagging about toggling WiFi on document close and suspend/resume, depending on the device's connectivity.]]),
                 callback = function()
                     -- Actively recommend switching the before wifi action to "turn_on" instead of prompt, as prompt will just not be practical (or even plain usable) here.
-                    if Device:hasWifiToggle() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" and not self.settings.auto_sync then
+                    if Device:hasSeamlessWifiToggle() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" and not self.settings.auto_sync then
                         UIManager:show(InfoMessage:new{ text = _("You will have to switch the 'Action when Wi-Fi is off' Network setting to 'turn on' to be able to enable this feature!") })
                         return
                     end
@@ -831,6 +834,10 @@ end
 
 function KOSync:_onCloseDocument()
     logger.dbg("KOSync: onCloseDocument")
+    -- NOTE: Because everything is terrible, on Android, opening the system settings to enable WiFi means we lose focus,
+    --       and we handle those system focus events via... Suspend & Resume events, so we need to neuter those handlers early.
+    self.onResume = nil
+    self.onSuspend = nil
     -- NOTE: Because we'll lose the document instance on return, we need to *block* until the connection is actually up here,
     --       we cannot rely on willRerunWhenOnline, because if we're not currently online,
     --       it *will* return early, and that means the actual callback *will* run *after* teardown of the document instance

@@ -28,12 +28,7 @@ function ReaderGoto:addToMainMenu(menu_items)
 end
 
 function ReaderGoto:onShowGotoDialog()
-    local curr_page
-    if self.document.info.has_pages then
-        curr_page = self.ui.paging.current_page
-    else
-        curr_page = self.document:getCurrentPage()
-    end
+    local curr_page = self.ui:getCurrentPage()
     local input_hint
     if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
         input_hint = T("@%1 (%2 - %3)", self.ui.pagemap:getCurrentPageLabel(true),
@@ -58,16 +53,7 @@ x for an absolute page number
                     text = _("Skim"),
                     callback = function()
                         self:close()
-                        self.skimto = SkimToWidget:new{
-                            document = self.document,
-                            ui = self.ui,
-                            callback_switch_to_goto = function()
-                                UIManager:close(self.skimto)
-                                self:onShowGotoDialog()
-                            end,
-                        }
-                        UIManager:show(self.skimto)
-
+                        self:onShowSkimtoDialog()
                     end,
                 },
                 {

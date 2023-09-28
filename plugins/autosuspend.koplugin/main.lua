@@ -673,7 +673,10 @@ end
 function AutoSuspend:onNetworkConnecting()
     logger.dbg("AutoSuspend: onNetworkConnecting")
     self:_unschedule_standby()
-    -- Schedule the next check in 60s. If something goes wrong, the subsequent checks are in `self.auto_standby_timeout_seconds`.
+    -- Schedule the next check in 60s, which should account for the full duration of NetworkMgr's connectivity check (it times out at 45s),
+    -- with some extra breathing room.
+    -- If the connection attempt fails (in which case we get neither a NetworkConnected nor a NetworkDisconnected event),
+    -- the subsequent checks are in the usual `self.auto_standby_timeout_seconds`.
     self:_start_standby(time.s(60))
 end
 

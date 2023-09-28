@@ -102,7 +102,7 @@ function PatchManagement:getSubMenu(priority)
                                 _("Patches might have changed. Current set of patches will be applied on next restart."))
                         end
                         self.ui.texteditor:quickEditFile(patch_fullpath, done_callback, false)
-                    else -- fallback to show only the first lines
+                    else
                         local file = io.open(patch_fullpath, "rb")
                         if not file then
                             return ""
@@ -114,6 +114,7 @@ function PatchManagement:getSubMenu(priority)
                         textviewer = TextViewer:new{
                             title = patch,
                             text = patch_content,
+                            justified = false,
                         }
                         UIManager:show(textviewer)
                     end

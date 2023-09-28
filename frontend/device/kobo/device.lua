@@ -647,10 +647,6 @@ function Kobo:init()
 
     -- So far, MTK kernels do not export a per-request inversion flag
     if self:isMTK() then
-        --- @fixme: Apparently, that doesn't quite work, at least on the Elipsa 2E, so, disable HW inversion...
-        ---         c.f., https://github.com/koreader/koreader/pull/10719#issuecomment-1693425726
-        self.canHWInvert = no
-        --[[
         -- Instead, there's a global flag that we can *set* (but not *get*) via a procfs knob...
         -- Overload the HWNightMode stuff to implement that properly, like we do on Kindle
         function self.screen:setHWNightmode(toggle)
@@ -665,7 +661,6 @@ function Kobo:init()
             -- (We want to disable this on exit, always, as it will never be used by Nickel, which does SW inversion).
             return self.hw_night_mode == true
         end
-        --]]
     end
 
     -- Automagic sysfs discovery
