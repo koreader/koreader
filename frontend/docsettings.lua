@@ -477,7 +477,7 @@ local function findCoverFileInDir(dir)
     end
 end
 
---- Returns path to book custom cover file if it exists, or nil.
+--- Returns path to book custom cover file if it exists, or nil
 function DocSettings:findCoverFile(doc_path)
     doc_path = doc_path or self.data.doc_path
     local location = G_reader_settings:readSetting("document_metadata_folder", "doc")
