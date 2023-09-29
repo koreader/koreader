@@ -169,7 +169,6 @@ function Document:fastDigest(docsettings)
     end
 end
 
-
 -- this might be overridden by a document implementation
 function Document:getNativePageDimensions(pageno)
     local hash = "pgdim|"..self.file.."|"..pageno

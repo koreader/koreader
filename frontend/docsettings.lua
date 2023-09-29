@@ -77,14 +77,12 @@ function DocSettings:getSidecarDir(doc_path, force_location)
     if location == "dir" then
         path = DOCSETTINGS_DIR..path
     elseif location == "hash" then
-        -- local doc = document:extend()
         local file = io.open(doc_path, 'rb')
-        if not file then return '' end
+        if not file then return "" end
         local hsh = util.partialMD5(file)
-        -- local hsh = doc:partialMD5(file)
         file:close()
-        -- converts b3fb8f4f8448160365087d6ca05c7fa2 to b3/fb/ to avoid too many files in one dir
-        local subpath = string.format("/%s/%s/", hsh:sub(1, 2), hsh:sub(3, 4)) --, hsh:sub(5, 6)) -- 3=overkill?
+        -- converts b3fb8f4f8448160365087d6ca05c7fa2 to b3/ to avoid too many files in one dir
+        local subpath = string.format("/%s/", hsh:sub(1, 2))
         path = DOCSETTINGS_HASH_DIR..subpath..hsh
     end
     return path..".sdr"
@@ -180,8 +178,8 @@ function DocSettings:getSidecarHashDirAndFilepath(doc_path)
     -- Getting PDF ID from trailer via mupdf has not been implemented - everything uses partial MD5
     local path = self:getSidecarDir(doc_path, "hash") -- could this be cached somehow?
     local filetype = doc_path:match(".+%.(%w+)$")
-    if not filetype or filetype == '' then
-        return '', ''
+    if not filetype or filetype == "" then
+        return "",""
     end
     local hash_file = "metadata."..filetype..".lua"
     local hash_filepath = path..'/'..hash_file
@@ -217,10 +215,6 @@ function DocSettings:open(doc_path)
 
     -- Candidates list, in order of priority:
     local candidates_list = {
-        -- Hash or PDF fingerprint-based sidecar file lookup
-        new.hash_sidecar_file or "",
-        -- Backup file of hash or PDF fingerprint-based sidecar file lookup
-        new.hash_sidecar_file and (new.hash_sidecar_file..".old") or "",
         -- New sidecar file in doc folder
         doc_sidecar_file or "",
         -- Backup file of new sidecar file in doc folder
@@ -231,6 +225,10 @@ function DocSettings:open(doc_path)
         dir_sidecar_file or "",
         -- Backup file of new sidecar file in docsettings folder
         dir_sidecar_file and (dir_sidecar_file..".old") or "",
+        -- Hash or PDF fingerprint-based sidecar file lookup
+        new.hash_sidecar_file or "",
+        -- Backup file of hash or PDF fingerprint-based sidecar file lookup
+        new.hash_sidecar_file and (new.hash_sidecar_file..".old") or "",
         -- Legacy history folder
         history_file,
         -- Backup file in legacy history folder
