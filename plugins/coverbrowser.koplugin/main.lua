@@ -672,8 +672,9 @@ function CoverBrowser:getBookInfo(file)
     return BookInfoManager:getBookInfo(file)
 end
 
-function CoverBrowser:deleteBookInfo(file)
+function CoverBrowser:onDeleteBookInfo(file)
     BookInfoManager:deleteBookInfo(file)
+    return true
 end
 
 function CoverBrowser:extractBooksInDirectory(path)
