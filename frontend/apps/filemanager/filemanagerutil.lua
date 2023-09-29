@@ -89,10 +89,9 @@ end
 function filemanagerutil.setStatus(file, status)
     -- In case the book doesn't have a sidecar file, this'll create it
     local doc_settings = DocSettings:open(file)
-    local summary = doc_settings:readSetting("summary") or {}
+    local summary = doc_settings:readSetting("summary", {})
     summary.status = status
     summary.modified = os.date("%Y-%m-%d", os.time())
-    doc_settings:saveSetting("summary", summary)
     doc_settings:flush()
 end
 
@@ -108,15 +107,25 @@ function filemanagerutil.statusToString(status)
 end
 
 -- Generate all book status file dialog buttons in a row
-function filemanagerutil.genStatusButtonsRow(file, caller_callback, current_status)
-    local status = current_status or filemanagerutil.getStatus(file)
+function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callback)
+    local summary, status
+    if type(doc_settings_or_file) == "table" then -- currently opened file
+        summary = doc_settings_or_file:readSetting("summary")
+        status = summary.status
+    else
+        status = filemanagerutil.getStatus(doc_settings_or_file)
+    end
     local function genStatusButton(to_status)
         return {
             text = filemanagerutil.statusToString(to_status) .. (status == to_status and "  ✓" or ""),
             id = to_status, -- used by covermenu
             enabled = status ~= to_status,
             callback = function()
-                filemanagerutil.setStatus(file, to_status)
+                if summary then -- currently opened file
+                    summary.status = to_status
+                else
+                    filemanagerutil.setStatus(doc_settings_or_file, to_status)
+                end
                 caller_callback()
             end,
         }

@@ -56,8 +56,9 @@ function FileManagerCollection:onMenuHold(item)
     local is_currently_opened = item.file == (self.ui.document and self.ui.document.file)
 
     local buttons = {}
-    if not (item.dim or is_currently_opened) then
-        table.insert(buttons, filemanagerutil.genStatusButtonsRow(item.file, status_button_callback))
+    if not item.dim then
+        local doc_settings_or_file = is_currently_opened and self.ui.doc_settings or item.file
+        table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, status_button_callback))
         table.insert(buttons, {}) -- separator
     end
     table.insert(buttons, {
