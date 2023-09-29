@@ -556,14 +556,10 @@ function ListMenuItem:update()
             end
             -- Build title and authors texts with decreasing font size
             -- till it fits in the space available
-            while true do
-                -- Free previously made widgets to avoid memory leaks
+            local build_title = function(height)
                 if wtitle then
                     wtitle:free(true)
-                end
-                if wauthors then
-                    wauthors:free(true)
-                    wauthors = nil
+                    wtitle = nil
                 end
                 -- BookInfoManager:extractBookInfo() made sure
                 -- to save as nil (NULL) metadata that were an empty string
@@ -574,33 +570,73 @@ function ListMenuItem:update()
                     lang = bookinfo.language,
                     face = Font:getFace(fontname_title, fontsize_title),
                     width = wmain_width,
+                    height = height,
+                    height_adjust = true,
+                    height_overflow_show_ellipsis = true,
                     alignment = "left",
                     bold = true,
                     fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
                 }
+            end
+            local build_authors = function(height)
+                if wauthors then
+                    wauthors:free(true)
+                    wauthors = nil
+                end
+                wauthors = TextBoxWidget:new{
+                    text = authors,
+                    lang = bookinfo.language,
+                    face = Font:getFace(fontname_authors, fontsize_authors),
+                    width = wmain_width,
+                    height = height,
+                    height_adjust = true,
+                    height_overflow_show_ellipsis = true,
+                    alignment = "left",
+                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                }
+            end
+            while true do
+                build_title()
                 local height = wtitle:getSize().h
                 if authors then
-                    wauthors = TextBoxWidget:new{
-                        text = authors,
-                        lang = bookinfo.language,
-                        face = Font:getFace(fontname_authors, fontsize_authors),
-                        width = wmain_width,
-                        alignment = "left",
-                        fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
-                    }
+                    build_authors()
                     height = height + wauthors:getSize().h
                 end
-                if height < dimen.h then -- we fit !
+                if height <= dimen.h then
+                    -- We fit!
+                    break
+                end
+                -- Don't go too low, and get out of this loop.
+                if fontsize_title <= 12 or fontsize_authors <= 10 then
+                    local title_height = wtitle:getSize().h
+                    local title_line_height = wtitle:getLineHeight()
+                    local title_min_height = 2 * title_line_height -- unscaled_size_check: ignore
+                    local authors_height = authors and wauthors:getSize().h or 0
+                    local authors_line_height = authors and wauthors:getLineHeight() or 0
+                    local authors_min_height = 2 * authors_line_height -- unscaled_size_check: ignore
+                    -- Chop lines, starting with authors, until
+                    -- both labels fit in the allocated space.
+                    while title_height + authors_height > dimen.h do
+                        if authors_height > authors_min_height then
+                            authors_height = authors_height - authors_line_height
+                        elseif title_height > title_min_height then
+                            title_height = title_height - title_line_height
+                        else
+                            break
+                        end
+                    end
+                    if title_height < wtitle:getSize().h then
+                        build_title(title_height)
+                    end
+                    if authors and authors_height < wauthors:getSize().h then
+                        build_authors(authors_height)
+                    end
                     break
                 end
                 -- If we don't fit, decrease both font sizes
                 fontsize_title = fontsize_title - fontsize_dec_step
                 fontsize_authors = fontsize_authors - fontsize_dec_step
                 logger.dbg(title, "recalculate title/author with", fontsize_title)
-                -- Don't go too low, and get out of this loop
-                if fontsize_title < 3 or fontsize_authors < 3 then
-                    break
-                end
             end
 
             local wmain = LeftContainer:new{
