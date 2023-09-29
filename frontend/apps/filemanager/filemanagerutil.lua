@@ -5,6 +5,7 @@ This module contains miscellaneous helper functions for FileManager
 local BD = require("ui/bidi")
 local Device = require("device")
 local DocSettings = require("docsettings")
+local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
 local util = require("util")
@@ -166,11 +167,7 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
                     }
                     DocSettings:open(file):purge(nil, data_to_purge)
                     if data_to_purge.custom_cover_file or data_to_purge.custom_metadata_file then
-                        local ui = require("apps/filemanager/filemanager").instance
-                                or require("apps/reader/readerui").instance
-                        if ui and ui.coverbrowser then
-                            ui.coverbrowser:deleteBookInfo(file) -- refresh coverbrowser cached book info
-                        end
+                        UIManager:broadcastEvent(Event:new("DeleteBookInfo", file)) -- refresh coverbrowser cache db
                     end
                     if data_to_purge.doc_settings then
                         require("readhistory"):fileSettingsPurged(file)
