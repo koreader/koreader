@@ -555,9 +555,9 @@ You can decide between two locations where these will be saved:
 
 
 local hash_filemod_warn = _([[Warning: /koreader/hashdocsettings requires calculating partial file hashes of documents which may impact file browser loading times. Any file modifications (such as embedding annotations into PDF files or downloading from Calibre) may change its partial hash, resulting in the metadata being unlinked from the file and thereby losing its highlights, bookmarks, and progress. Embedding PDF annotations is currently set to "%s" and can be disabled at (Cog -> Document -> Save Document (write highlights into PDF)).]])
-local leaving_hash_sdr_warn = T(_("Warning: You currently have %s documents with hash-based metadata. Until this metadata is moved by opening those documents, or deleted, file browsing load times may remain slower."))
+local leaving_hash_sdr_warn = T(_("Warning: You currently have documents with hash-based metadata. Until this metadata is moved by opening those documents, or deleted, file browser browsing times may remain slower."))
 local hash_metadata_file_list_header = _([[
-Hash-based metadata has been saved in koreader/hashdocsettings/ for the following documents. Hash-based storage may slow down file browser loading times for large directories. Thus, if not using hash-based metadata storage, it is recommended to open the associated documents in KOReader to automatically migrate their metadata to the preferred storage location, or to delete koreader/hashdocsettings/, which will improve file browser loading times.
+Hash-based metadata has been saved in koreader/hashdocsettings/ for the following documents. Hash-based storage may slow down file browser browsing times for large directories. Thus, if not using hash-based metadata storage, it is recommended to open the associated documents in KOReader to automatically migrate their metadata to the preferred storage location, or to delete koreader/hashdocsettings/, which will improve file browser browsing times.
 ]])
 
 local function genMetadataFolderMenuItem(value)
@@ -571,13 +571,11 @@ local function genMetadataFolderMenuItem(value)
             G_reader_settings:saveSetting("document_metadata_folder", value)
             -- allow/disallow scanning of hash-based metadata after setting change
             DocSettings.resetIsHashLocationEnabled()
-
             if value == "hash" and old_value ~= value then
                 UIManager:show(InfoMessage:new{ text = string.format(hash_filemod_warn, G_reader_settings:readSetting("save_document"))})
             end
-            local hash_sdr_count = #DocSettings.getHashDirSdrInfos()
-            if old_value == "hash" and value ~= old_value and hash_sdr_count > 0 then
-                UIManager:show(InfoMessage:new{ text = string.format(leaving_hash_sdr_warn, hash_sdr_count), })
+            if old_value == "hash" and value ~= old_value and DocSettings.isHashLocationEnabled() then
+                UIManager:show(InfoMessage:new{ text = leaving_hash_sdr_warn })
             end
         end,
         radio = true,
@@ -604,20 +602,20 @@ common_settings.document_metadata_location = {
         genMetadataFolderMenuItem("dir"),
         genMetadataFolderMenuItem("hash"),
         { -- hash-based metadata count / TextViewer
-            text = (function()  -- seems like this is running whenever the root menu is opened, not just sdr storage?
-                local hash_file_infos = DocSettings.getHashDirSdrInfos()
-                local text = T(_("Show %1 documents with hash-based metadata"), #hash_file_infos)
-                if #hash_file_infos == 0 then
-                    return T(_("No documents with hash-based metadata"), #hash_file_infos)
+            text_func = function()
+                local hash_text = _("Find 1+ documents with hash-based metadata")
+                local no_hash_text = _("No documents with hash-based metadata")
+                if G_reader_settings:readSetting("document_metadata_folder") == "hash" then
+                    if DocSettings.isHashLocationEnabled() then return hash_text end
+                    -- displays if the hash location setting is selected but no hash-based metadata is found
+                    return no_hash_text
                 end
-                if G_reader_settings:readSetting("document_metadata_folder") ~= "hash" then
-                    return "⚠ "..text  -- I'm not sure how to instantly update this after changing to another storage method radio bullet
-                end
-                return text
-            end)(),
+                if DocSettings.isHashLocationEnabled() then return  "⚠ "..hash_text end
+                return no_hash_text
+            end,
             keep_menu_open = true,
             enabled_func = function()
-                return #DocSettings.getHashDirSdrInfos() ~= 0
+                return DocSettings.isHashLocationEnabled()
             end,
             callback = function()
                 local hash_file_infos = DocSettings.getHashDirSdrInfos()
@@ -626,7 +624,7 @@ common_settings.document_metadata_location = {
                     book_info_list = book_info_list.."\n"..i..". "..file_info
                 end
                 UIManager:show(require("ui/widget/textviewer"):new{
-                    title = #hash_file_infos.." documents with hash-based metadata",
+                    title = T(_("%1 documents with hash-based metadata"), #hash_file_infos),
                     title_multilines = true,
                     justified = false,
                     text = hash_metadata_file_list_header..book_info_list,
