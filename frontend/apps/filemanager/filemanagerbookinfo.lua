@@ -164,7 +164,7 @@ function BookInfo:show(file, book_props)
             self.custom_doc_settings = nil
             self.custom_book_cover = nil
             if self.prop_updated then
-                UIManager:broadcastEvent(Event:new("DeleteBookInfo", file)) -- refresh coverbrowser cache db
+                UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
                 UIManager:broadcastEvent(Event:new("BookMetadataChanged", self.prop_updated))
             end
         end,
