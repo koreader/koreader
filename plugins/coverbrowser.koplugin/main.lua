@@ -672,7 +672,7 @@ function CoverBrowser:getBookInfo(file)
     return BookInfoManager:getBookInfo(file)
 end
 
-function CoverBrowser:onDeleteBookInfo(file)
+function CoverBrowser:onInvalidateMetadataCache(file)
     BookInfoManager:deleteBookInfo(file)
     return true
 end
