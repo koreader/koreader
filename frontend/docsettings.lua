@@ -28,7 +28,7 @@ local function isHashLocationEnabled()
     return is_hash_location_enabled
 end
 
--- When switching SDR storage settings to/from 'hash', this lets us avoid an app restart by allowing a 
+-- When switching SDR storage settings to/from 'hash', this lets us avoid an app restart by allowing a
 -- a recheck if the hash docsettings directory exists
 function DocSettings.resetIsHashLocationEnabled()
     is_hash_location_enabled = nil
