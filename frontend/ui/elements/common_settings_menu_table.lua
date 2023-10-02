@@ -603,7 +603,7 @@ common_settings.document_metadata_location = {
         genMetadataFolderMenuItem("hash"),
         { -- hash-based metadata count / TextViewer
             text_func = function()
-                local hash_text = _("Find 1+ documents with hash-based metadata")
+                local hash_text = _("Show documents with hash-based metadata")
                 local no_hash_text = _("No documents with hash-based metadata")
                 if G_reader_settings:readSetting("document_metadata_folder") == "hash" then
                     if DocSettings.isHashLocationEnabled() then return hash_text end
