@@ -19,6 +19,21 @@ local DOCSETTINGS_DIR = DataStorage:getDocSettingsDir()
 local DOCSETTINGS_HASH_DIR = DataStorage:getDocSettingsHashDir()
 local custom_metadata_filename = "custom_metadata.lua"
 
+local is_hash_location_enabled
+
+local function isHashLocationEnabled()
+    if is_hash_location_enabled == nil then
+        is_hash_location_enabled = lfs.attributes(DOCSETTINGS_HASH_DIR, "mode") == "directory"
+    end
+    return is_hash_location_enabled
+end
+
+-- When switching SDR storage settings to/from 'hash', this lets us avoid an app restart by allowing a 
+-- a recheck if the hash docsettings directory exists
+function DocSettings.resetIsHashLocationEnabled()
+    is_hash_location_enabled = nil
+end
+
 local function buildCandidates(list)
     local candidates = {}
     local previous_entry_exists = false
@@ -127,7 +142,7 @@ function DocSettings:getDocSidecarFile(doc_path, no_legacy)
     end
 
     -- Calculate partial hash and check for hash-based files only if there are files to check
-    if G_reader_settings:isTrue("document_metadata_hash_enabled") and
+    if isHashLocationEnabled() and
         lfs.attributes(DOCSETTINGS_HASH_DIR, "mode") == "directory" then
         sidecar_file = self:getSidecarFile(doc_path, "hash")
         if lfs.attributes(sidecar_file, "mode") == "file" then
@@ -208,7 +223,7 @@ function DocSettings:open(doc_path)
     end
     local history_file = new:getHistoryPath(doc_path)
 
-    if G_reader_settings:isTrue("document_metadata_hash_enabled") then
+    if isHashLocationEnabled() then
         new.hash_sidecar_dir, new.hash_sidecar_file =
                 new:getSidecarHashDirAndFilepath(doc_path)
     end
@@ -261,7 +276,9 @@ function DocSettings:open(doc_path)
     else
         new.data = {}
     end
-    new.data.doc_path = doc_path
+    if new.data.doc_path ~= "<ignore>" then
+        new.data.doc_path = doc_path
+    end
 
     return new
 end
@@ -483,7 +500,7 @@ function DocSettings:findCoverFile(doc_path)
     local cover_file = findCoverFileInDir(sidecar_dir)
     if cover_file then return cover_file end
     local candidates = {"doc", "dir"}
-    if G_reader_settings:isTrue("document_metadata_hash_enabled") then
+    if isHashLocationEnabled() then
         table.insert(candidates, "hash")
     end
     for _, mode in ipairs(candidates) do
@@ -543,7 +560,7 @@ function DocSettings:getCustomMetadataFile(doc_path)
     doc_path = doc_path or self.data.doc_path
 
     local candidates = {"doc", "dir"}
-    if G_reader_settings:isTrue("document_metadata_hash_enabled") then
+    if isHashLocationEnabled() then
         table.insert(candidates, "hash")
     end
     for _, mode in ipairs(candidates) do
@@ -590,6 +607,67 @@ function DocSettings:flushCustomMetadata(doc_path)
             self:removeSidecarDir(doc_path, old_sidecar_dir)
         end
     end
+end
+
+-- hash-based SDR storage
+
+local function getSdrsInDir(path)
+    -- Get all the metadata.filetype.lua files under directory path.
+    -- Derived from readerdictionary.getIfosInDir()
+    local sdrs = {}
+    local ok, iter, dir_obj = pcall(lfs.dir, path)
+    if ok then
+        for name in iter, dir_obj do
+            if name ~= "." and name ~= ".." then
+                local fullpath = path.."/"..name
+                local attributes = lfs.attributes(fullpath)
+                if attributes ~= nil then
+                    if attributes.mode == "directory" then
+                        local dirifos = getSdrsInDir(fullpath) -- recurse
+                        for _, ifo in pairs(dirifos) do
+                            table.insert(sdrs, ifo)
+                        end
+                    elseif fullpath:match("metadata%..+%.lua$") then
+                        table.insert(sdrs, fullpath)
+                    end
+                end
+            end
+        end
+    end
+    return sdrs
+end
+
+
+function DocSettings.getHashDirSdrInfos()
+   local sdrs = getSdrsInDir(DOCSETTINGS_HASH_DIR)
+   local title_author_strs = {}
+   for _, sdr in ipairs(sdrs) do
+    -- Ignore empty files
+    if lfs.attributes(sdr, "size") > 0 then
+        local ok, stored
+        ok, stored = pcall(dofile, sdr)
+        -- Ignore empty tables
+        if ok and next(stored) ~= nil then
+            local m = DocSettings:extend{}
+            m.data = stored
+            local info_str = stored.stats.title ..
+                 ", author: " .. stored.stats.authors
+            if stored.stats.highlights > 0 then
+                info_str = info_str .. ", highlights: " .. stored.stats.highlights
+            end
+            if stored.stats.notes > 0 then
+                info_str = info_str .. ", notes: " .. stored.stats.notes
+            end
+            info_str = info_str .. ", partial hash: " .. stored.stats.md5
+            table.insert(title_author_strs, info_str)
+        else
+            table.insert(title_author_strs, "error "..sdr)
+        end
+    else
+            table.insert(title_author_strs, "zero-size file "..sdr)
+    end
+   end
+   return title_author_strs
 end
 
 return DocSettings
