@@ -571,7 +571,7 @@ local function genMetadataFolderMenuItem(value)
             G_reader_settings:saveSetting("document_metadata_folder", value)
             -- allow/disallow scanning of hash-based metadata after setting change
             DocSettings.resetIsHashLocationEnabled()
- 
+
             if value == "hash" and old_value ~= value then
                 UIManager:show(InfoMessage:new{ text = string.format(hash_filemod_warn, G_reader_settings:readSetting("save_document"))})
             end
