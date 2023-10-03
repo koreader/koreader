@@ -25,6 +25,7 @@ local FileChooser = Menu:extend{
     show_hidden = false, -- set to true to show folders/files starting with "."
     file_filter = nil, -- function defined in the caller, returns true for files to be shown
     show_unsupported = false, -- set to true to ignore file_filter
+    show_finished = true, -- show all books
     -- NOTE: Input is *always* a relative entry name
     exclude_dirs = { -- const
         -- KOReader / Kindle
