@@ -106,7 +106,6 @@ function CoverBrowser:addToMainMenu(menu_items)
                     self:setupCollectionDisplayMode(mode)
                 end
             end,
-            separator = i == #modes,
         })
         table.insert(history_sub_item_table, {
             text = text,
@@ -127,6 +126,7 @@ function CoverBrowser:addToMainMenu(menu_items)
             end,
         })
     end
+    sub_item_table[#modes].separator = true
     table.insert(sub_item_table, {
         text = _("Use this mode everywhere"),
         checked_func = function()
@@ -671,8 +671,9 @@ function CoverBrowser:getBookInfo(file)
     return BookInfoManager:getBookInfo(file)
 end
 
-function CoverBrowser:deleteBookInfo(file)
+function CoverBrowser:onInvalidateMetadataCache(file)
     BookInfoManager:deleteBookInfo(file)
+    return true
 end
 
 function CoverBrowser:extractBooksInDirectory(path)

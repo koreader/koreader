@@ -164,12 +164,7 @@ function BookInfo:show(file, book_props)
             self.custom_doc_settings = nil
             self.custom_book_cover = nil
             if self.prop_updated then
-                local ui = self.ui -- Reader
-                        or require("apps/filemanager/filemanager").instance -- FM, Hist/Coll over FM
-                        or require("apps/reader/readerui").instance -- Hist/Coll over Reader
-                if ui.coverbrowser then -- refresh cache db
-                    ui.coverbrowser:deleteBookInfo(file)
-                end
+                UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
                 UIManager:broadcastEvent(Event:new("BookMetadataChanged", self.prop_updated))
             end
         end,
