@@ -360,6 +360,7 @@ function KoboPowerD:turnOffFrontlightHW(done_callback)
             self:_stopFrontlightRamp()
             -- NOTE: For devices with a ramp_off_delay, we only ramp if we start from > 2%,
             --       otherwise you just see a single delayed step (1%) or two stuttery ones (2%) ;).
+            --       FWIW, modern devices with a different PWM controller deal well with our 2% ramp.
             if self.device.frontlight_settings.ramp_off_delay > 0.0 and self.fl_intensity <= 2 then
                 UIManager:scheduleIn(self.device.frontlight_settings.ramp_delay, self._endRampDown, self, self.fl_min, done_callback)
             else
