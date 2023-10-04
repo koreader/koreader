@@ -84,7 +84,7 @@ end
 --- Returns path to sidecar directory (`filename.sdr`).
 -- Sidecar directory is the file without _last_ suffix.
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
--- @string force_location prefer "hash" or "dir" location over standard "doc", if available
+-- @string force_location prefer e.g., "hash" or "dir" location over standard "doc", if available
 -- @treturn string path to the sidecar directory (e.g., `/foo/bar.sdr`)
 function DocSettings:getSidecarDir(doc_path, force_location)
     if doc_path == nil or doc_path == "" then return "" end
@@ -418,7 +418,7 @@ function DocSettings:purge(sidecar_to_keep, data_to_purge)
             util.removePath(self.hash_sidecar_dir) -- remove empty parent folders
         end
     end
-    DocSettings.setIsHashLocationEnabled() -- reset this in case last hash book is purged
+    DocSettings.setIsHashLocationEnabled(nil) -- reset this in case last hash book is purged
 end
 
 --- Removes empty sidecar dir.
@@ -544,6 +544,7 @@ function DocSettings:getCustomCandidateSidecarDirs(doc_path)
         local hash_sidecar_dir = self:getSidecarDir(doc_path, "hash")
         return { hash_sidecar_dir }
     end
+    return { dir_sidecar_dir }
 end
 
 function DocSettings:flushCustomCover(doc_path, image_file)
@@ -653,15 +654,23 @@ function DocSettings.getHashDirSdrInfos()
             ok, stored = pcall(dofile, sdr)
             -- Ignore empty tables
             if ok and next(stored) ~= nil then
-                local info_str = stored.stats.title ..
-                     ", author: " .. stored.stats.authors
-                if stored.stats.highlights > 0 then
-                    info_str = info_str .. ", highlights: " .. stored.stats.highlights
+                local info_str = stored.doc_props.title
+                if not info_str then info_str = stored.stats.title end
+                if not info_str then info_str = "untitled document" end
+                if stored.doc_props.authors then
+                     info_str = info_str .. ", author: " .. stored.doc_props.authors
+                elseif stored.stats.author then
+                     info_str = info_str .. ", author: " .. stored.stats.author
                 end
-                if stored.stats.notes > 0 then
-                    info_str = info_str .. ", notes: " .. stored.stats.notes
+                if stored.stats then
+                    if stored.stats.highlights > 0 then
+                        info_str = info_str .. ", highlights: " .. stored.stats.highlights
+                    end
+                    if stored.stats.notes > 0 then
+                        info_str = info_str .. ", notes: " .. stored.stats.notes
+                    end
                 end
-                info_str = info_str .. ", partial hash: " .. stored.stats.md5
+                info_str = info_str .. ", partial hash: " .. stored.partial_md5_checksum
                 table.insert(title_author_strs, info_str)
             else
                 table.insert(title_author_strs, "error "..sdr)
