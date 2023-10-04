@@ -20,6 +20,7 @@ local DOCSETTINGS_HASH_DIR = DataStorage:getDocSettingsHashDir()
 local custom_metadata_filename = "custom_metadata.lua"
 
 local is_hash_location_enabled
+local hash_path_cache = {}
 
 function DocSettings.isHashLocationEnabled()
     if is_hash_location_enabled == nil then
@@ -28,11 +29,10 @@ function DocSettings.isHashLocationEnabled()
     return is_hash_location_enabled
 end
 
--- When switching SDR storage settings to/from 'hash', this lets us avoid an app restart by allowing a
--- a recheck if the hash docsettings directory exists
-function DocSettings.resetIsHashLocationEnabled()
-    is_hash_location_enabled = nil
+function DocSettings.setIsHashLocationEnabled(value)
+    is_hash_location_enabled = value
 end
+
 
 local function buildCandidates(list)
     local candidates = {}
@@ -84,6 +84,7 @@ end
 --- Returns path to sidecar directory (`filename.sdr`).
 -- Sidecar directory is the file without _last_ suffix.
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
+-- @string force_location prefer "hash" or "dir" location over standard "doc", if available
 -- @treturn string path to the sidecar directory (e.g., `/foo/bar.sdr`)
 function DocSettings:getSidecarDir(doc_path, force_location)
     if doc_path == nil or doc_path == "" then return "" end
@@ -92,10 +93,17 @@ function DocSettings:getSidecarDir(doc_path, force_location)
     if location == "dir" then
         path = DOCSETTINGS_DIR..path
     elseif location == "hash" then
-        local file = io.open(doc_path, 'rb')
-        if not file then return "" end
-        local hsh = util.partialMD5(file)
-        file:close()
+        local hsh = hash_path_cache[doc_path]
+        if not hsh then
+            local file = io.open(doc_path, 'rb')
+            if not file then return path end
+            hsh = util.partialMD5(file)
+            file:close()
+            hash_path_cache[doc_path] = hsh
+            logger.dbg("DocSettings: Caching new partial MD5 hash for", doc_path, "as", hsh)
+        else
+            logger.dbg("DocSettings: Using cached partial MD5 hash for", doc_path, "as", hsh)
+        end
         -- converts b3fb8f4f8448160365087d6ca05c7fa2 to b3/ to avoid too many files in one dir
         local subpath = string.format("/%s/", hsh:sub(1, 2))
         path = DOCSETTINGS_HASH_DIR..subpath..hsh
@@ -134,17 +142,15 @@ function DocSettings:getDocSidecarFile(doc_path, no_legacy)
     if lfs.attributes(sidecar_file, "mode") == "file" then
         return sidecar_file
     end
-    if not no_legacy then
-        sidecar_file = self:getHistoryPath(doc_path)
+    -- Calculate partial hash and check for hash-based files only if there are files to check
+    if DocSettings.isHashLocationEnabled() then
+        sidecar_file = self:getSidecarFile(doc_path, "hash")
         if lfs.attributes(sidecar_file, "mode") == "file" then
             return sidecar_file
         end
     end
-
-    -- Calculate partial hash and check for hash-based files only if there are files to check
-    if DocSettings.isHashLocationEnabled() and
-        lfs.attributes(DOCSETTINGS_HASH_DIR, "mode") == "directory" then
-        sidecar_file = self:getSidecarFile(doc_path, "hash")
+    if not no_legacy then
+        sidecar_file = self:getHistoryPath(doc_path)
         if lfs.attributes(sidecar_file, "mode") == "file" then
             return sidecar_file
         end
@@ -412,6 +418,7 @@ function DocSettings:purge(sidecar_to_keep, data_to_purge)
             util.removePath(self.hash_sidecar_dir) -- remove empty parent folders
         end
     end
+    DocSettings.setIsHashLocationEnabled() -- reset this in case last hash book is purged
 end
 
 --- Removes empty sidecar dir.

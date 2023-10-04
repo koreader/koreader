@@ -568,14 +568,20 @@ local function genMetadataFolderMenuItem(value)
         end,
         callback = function()
             local old_value = G_reader_settings:readSetting("document_metadata_folder")
-            G_reader_settings:saveSetting("document_metadata_folder", value)
-            -- allow/disallow scanning of hash-based metadata after setting change
-            DocSettings.resetIsHashLocationEnabled()
-            if value == "hash" and old_value ~= value then
-                UIManager:show(InfoMessage:new{ text = string.format(hash_filemod_warn, G_reader_settings:readSetting("save_document"))})
-            end
-            if old_value == "hash" and value ~= old_value and DocSettings.isHashLocationEnabled() then
-                UIManager:show(InfoMessage:new{ text = leaving_hash_sdr_warn })
+            if value ~= old_value then
+                G_reader_settings:saveSetting("document_metadata_folder", value)
+                if value == "hash" then
+                    DocSettings.setIsHashLocationEnabled(true)
+                    local save_document_setting = G_reader_settings:readSetting("save_document")
+                    if save_document_setting ~= "disable" then
+                        UIManager:show(InfoMessage:new{ text = string.format(hash_filemod_warn, save_document_setting) })
+                    end
+                else
+                    DocSettings.setIsHashLocationEnabled()  -- setting to nil will let it reset itself appropriately
+                    if DocSettings.isHashLocationEnabled() then
+                        UIManager:show(InfoMessage:new{ text = leaving_hash_sdr_warn })
+                    end
+                end
             end
         end,
         radio = true,
@@ -605,12 +611,12 @@ common_settings.document_metadata_location = {
             text_func = function()
                 local hash_text = _("Show documents with hash-based metadata")
                 local no_hash_text = _("No documents with hash-based metadata")
-                if G_reader_settings:readSetting("document_metadata_folder") == "hash" then
-                    if DocSettings.isHashLocationEnabled() then return hash_text end
-                    -- displays if the hash location setting is selected but no hash-based metadata is found
-                    return no_hash_text
+                if DocSettings.isHashLocationEnabled() then
+                    if G_reader_settings:readSetting("document_metadata_folder") ~= "hash" then
+                        return  "⚠ "..hash_text
+                    end
+                    return  hash_text
                 end
-                if DocSettings.isHashLocationEnabled() then return  "⚠ "..hash_text end
                 return no_hash_text
             end,
             keep_menu_open = true,
@@ -619,15 +625,16 @@ common_settings.document_metadata_location = {
             end,
             callback = function()
                 local hash_file_infos = DocSettings.getHashDirSdrInfos()
-                local book_info_list = ""
+                local book_info_items = {}
                 for i, file_info in ipairs(hash_file_infos) do
-                    book_info_list = book_info_list.."\n"..i..". "..file_info
+                    table.insert(book_info_items, table.concat({"\n", i, ". ", file_info}))
                 end
+                local book_info_str = table.concat(book_info_items)
                 UIManager:show(require("ui/widget/textviewer"):new{
                     title = T(_("%1 documents with hash-based metadata"), #hash_file_infos),
                     title_multilines = true,
                     justified = false,
-                    text = hash_metadata_file_list_header..book_info_list,
+                    text = hash_metadata_file_list_header..book_info_str,
                 })
             end,
         },
