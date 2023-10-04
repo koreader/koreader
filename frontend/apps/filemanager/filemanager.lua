@@ -128,6 +128,7 @@ function FileManager:setupLayout()
         right_icon_hold_callback = false, -- propagate long-press to dispatcher
     }
 
+    local show_finished = G_reader_settings:nilOrTrue("show_finished")
     local show_hidden = G_reader_settings:isTrue("show_hidden") or G_defaults:readSetting("DSHOWHIDDENFILES")
     local show_unsupported = G_reader_settings:isTrue("show_unsupported")
     local file_chooser = FileChooser:new{
@@ -138,6 +139,7 @@ function FileManager:setupLayout()
         height = Screen:getHeight() - self.title_bar:getHeight(),
         is_popout = false,
         is_borderless = true,
+        show_finished = show_finished,
         show_hidden = show_hidden,
         show_unsupported = show_unsupported,
         file_filter = function(filename)
@@ -778,6 +780,11 @@ end
 
 function FileManager:getCurrentDir()
     return FileManager.instance and FileManager.instance.file_chooser.path
+end
+
+function FileManager:toggleFinishedBooks()
+    self.file_chooser:toggleFinishedBooks()
+    G_reader_settings:saveSetting("show_finished", self.file_chooser.show_finished)
 end
 
 function FileManager:toggleHiddenFiles()
