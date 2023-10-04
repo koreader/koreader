@@ -272,6 +272,15 @@ function FileManagerMenu:setUpdateItemTable()
                             G_reader_settings:flipNilOrFalse("history_datetime_short")
                             require("readhistory"):reload(true)
                         end,
+                    },
+                    {
+                        text = _("Preserve finished books timestamp"),
+                        checked_func = function()
+                            return G_reader_settings:isTrue("history_preserve_finished_books")
+                        end,
+                        callback = function()
+                            G_reader_settings:flipNilOrFalse("history_preserve_finished_books")
+                        end,
                         separator = true,
                     },
                     {
