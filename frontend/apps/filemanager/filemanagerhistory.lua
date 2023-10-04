@@ -38,13 +38,18 @@ end
 
 function FileManagerHistory:fetchStatuses(count)
     for _, v in ipairs(require("readhistory").hist) do
-        v.status = v.dim and "deleted" or filemanagerutil.getStatus(v.file)
-        if v.status == "new" and v.file == (self.ui.document and self.ui.document.file) then
-            v.status = "reading" -- file currently opened for the first time
+        local status
+        if v.dim then -- deleted file
+            status = "deleted"
+        elseif v.file == (self.ui.document and self.ui.document.file) then -- currently opened file
+            status = self.ui.doc_settings:readSetting("summary").status
+        else
+            status = filemanagerutil.getStatus(v.file)
         end
         if count then
-            self.count[v.status] = self.count[v.status] + 1
+            self.count[status] = self.count[status] + 1
         end
+        v.status = status
     end
     self.statuses_fetched = true
 end
@@ -103,8 +108,9 @@ function FileManagerHistory:onMenuHold(item)
     local is_currently_opened = item.file == (self.ui.document and self.ui.document.file)
 
     local buttons = {}
-    if not (item.dim or is_currently_opened) then
-        table.insert(buttons, filemanagerutil.genStatusButtonsRow(item.file, status_button_callback))
+    if not item.dim then
+        local doc_settings_or_file = is_currently_opened and self.ui.doc_settings or item.file
+        table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, status_button_callback))
         table.insert(buttons, {}) -- separator
     end
     table.insert(buttons, {

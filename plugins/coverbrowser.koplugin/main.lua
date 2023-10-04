@@ -106,7 +106,6 @@ function CoverBrowser:addToMainMenu(menu_items)
                     self:setupCollectionDisplayMode(mode)
                 end
             end,
-            separator = i == #modes,
         })
         table.insert(history_sub_item_table, {
             text = text,
@@ -127,15 +126,14 @@ function CoverBrowser:addToMainMenu(menu_items)
             end,
         })
     end
+    sub_item_table[#modes].separator = true
     table.insert(sub_item_table, {
         text = _("Use this mode everywhere"),
         checked_func = function()
             return BookInfoManager:getSetting("unified_display_mode")
         end,
         callback = function()
-            local do_sync = not BookInfoManager:getSetting("unified_display_mode")
-            BookInfoManager:saveSetting("unified_display_mode", do_sync)
-            if do_sync then
+            if BookInfoManager:toggleSetting("unified_display_mode") then
                 self:setupHistoryDisplayMode(filemanager_display_mode)
                 self:setupCollectionDisplayMode(filemanager_display_mode)
             end
@@ -193,17 +191,53 @@ function CoverBrowser:addToMainMenu(menu_items)
                 end,
             },
             {
+                text = _("Progress"),
+                sub_item_table = {
+                    {
+                        text = _("Show progress"),
+                        checked_func = function() return
+                            not BookInfoManager:getSetting("hide_page_info")
+                        end,
+                        callback = function()
+                            BookInfoManager:toggleSetting("hide_page_info")
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    {
+                        text = _("Show progress % in mosaic mode"),
+                        checked_func = function() return BookInfoManager:getSetting("show_progress_in_mosaic") end,
+                        callback = function()
+                            BookInfoManager:toggleSetting("show_progress_in_mosaic")
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    {
+                        text = _("Show number of pages read instead of progress %"),
+                        checked_func = function() return BookInfoManager:getSetting("show_pages_read_as_progress") end,
+                        callback = function()
+                            BookInfoManager:toggleSetting("show_pages_read_as_progress")
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    {
+                        text = _("Show number of pages left to read"),
+                        checked_func = function() return BookInfoManager:getSetting("show_pages_left_in_progress") end,
+                        callback = function()
+                            BookInfoManager:toggleSetting("show_pages_left_in_progress")
+                            self:refreshFileManagerInstance()
+                        end,
+                        separator = true,
+                    },
+                },
+            },
+            {
                 text = _("Display hints"),
                 sub_item_table = {
                     {
                         text = _("Show hint for books with description"),
                         checked_func = function() return not BookInfoManager:getSetting("no_hint_description") end,
                         callback = function()
-                            if BookInfoManager:getSetting("no_hint_description") then
-                                BookInfoManager:saveSetting("no_hint_description", false)
-                            else
-                                BookInfoManager:saveSetting("no_hint_description", true)
-                            end
+                            BookInfoManager:toggleSetting("no_hint_description")
                             self:refreshFileManagerInstance()
                         end,
                     },
@@ -211,11 +245,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         text = _("Show hint for book status in history"),
                         checked_func = function() return BookInfoManager:getSetting("history_hint_opened") end,
                         callback = function()
-                            if BookInfoManager:getSetting("history_hint_opened") then
-                                BookInfoManager:saveSetting("history_hint_opened", false)
-                            else
-                                BookInfoManager:saveSetting("history_hint_opened", true)
-                            end
+                            BookInfoManager:toggleSetting("history_hint_opened")
                             self:refreshFileManagerInstance()
                         end,
                     },
@@ -223,11 +253,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         text = _("Show hint for book status in favorites"),
                         checked_func = function() return BookInfoManager:getSetting("collections_hint_opened") end,
                         callback = function()
-                            if BookInfoManager:getSetting("collections_hint_opened") then
-                                BookInfoManager:saveSetting("collections_hint_opened", false)
-                            else
-                                BookInfoManager:saveSetting("collections_hint_opened", true)
-                            end
+                            BookInfoManager:toggleSetting("collections_hint_opened")
                             self:refreshFileManagerInstance()
                         end,
                     }
@@ -279,41 +305,14 @@ function CoverBrowser:addToMainMenu(menu_items)
                 separator = true
             },
             {
-                text = _("Show progress % in mosaic mode"),
-                checked_func = function() return BookInfoManager:getSetting("show_progress_in_mosaic") end,
+                text = _("Show file properties"),
+                checked_func = function()
+                    return not BookInfoManager:getSetting("hide_file_info")
+                end,
                 callback = function()
-                    if BookInfoManager:getSetting("show_progress_in_mosaic") then
-                        BookInfoManager:saveSetting("show_progress_in_mosaic", false)
-                    else
-                        BookInfoManager:saveSetting("show_progress_in_mosaic", true)
-                    end
+                    BookInfoManager:toggleSetting("hide_file_info")
                     self:refreshFileManagerInstance()
                 end,
-            },
-            {
-                text = _("Show number of pages read instead of progress %"),
-                checked_func = function() return BookInfoManager:getSetting("show_pages_read_as_progress") end,
-                callback = function()
-                    if BookInfoManager:getSetting("show_pages_read_as_progress") then
-                        BookInfoManager:saveSetting("show_pages_read_as_progress", false)
-                    else
-                        BookInfoManager:saveSetting("show_pages_read_as_progress", true)
-                    end
-                    self:refreshFileManagerInstance()
-                end,
-            },
-            {
-                text = _("Show number of pages left to read"),
-                checked_func = function() return BookInfoManager:getSetting("show_pages_left_in_progress") end,
-                callback = function()
-                    if BookInfoManager:getSetting("show_pages_left_in_progress") then
-                        BookInfoManager:saveSetting("show_pages_left_in_progress", false)
-                    else
-                        BookInfoManager:saveSetting("show_pages_left_in_progress", true)
-                    end
-                    self:refreshFileManagerInstance()
-                end,
-                separator = true,
             },
             {
                 text = _("Book info cache management"),
@@ -672,8 +671,9 @@ function CoverBrowser:getBookInfo(file)
     return BookInfoManager:getBookInfo(file)
 end
 
-function CoverBrowser:deleteBookInfo(file)
+function CoverBrowser:onInvalidateMetadataCache(file)
     BookInfoManager:deleteBookInfo(file)
+    return true
 end
 
 function CoverBrowser:extractBooksInDirectory(path)

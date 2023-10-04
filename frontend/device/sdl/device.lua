@@ -272,6 +272,9 @@ function Device:init()
                     FileManager.instance:reinit(FileManager.instance.path,
                         FileManager.instance.focused_file)
                 end
+
+                -- make sure dialogs are displayed
+                UIManager:setDirty("all", "ui")
             elseif ev.code == SDL_WINDOWEVENT_MOVED then
                 self.window.left = ev.value.data1
                 self.window.top = ev.value.data2

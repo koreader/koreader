@@ -1353,7 +1353,7 @@ function ReaderHighlight:lookup(selected_text, selected_link)
     end
 
     -- if we extracted text directly
-    if selected_text.text and self.hold_pos then
+    if #selected_text.text > 0 and self.hold_pos then
         self.ui:handleEvent(Event:new("LookupWord", selected_text.text, false, word_boxes, self, selected_link))
     -- or we will do OCR
     elseif selected_text.sboxes and self.hold_pos then
@@ -1414,7 +1414,7 @@ function ReaderHighlight:translate(selected_text, page, index)
             selected_text = extended_text
         end
     end
-    if selected_text.text ~= "" then
+    if #selected_text.text > 0 then
         self:onTranslateText(selected_text.text, page, index)
     -- or we will do OCR
     elseif self.hold_pos then

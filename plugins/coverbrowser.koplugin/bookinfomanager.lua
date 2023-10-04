@@ -315,6 +315,12 @@ function BookInfoManager:saveSetting(key, value, db_conn, skip_reload)
     end
 end
 
+function BookInfoManager:toggleSetting(key)
+    local value = not self:getSetting(key)
+    self:saveSetting(key, value)
+    return value
+end
+
 -- Bookinfo management
 function BookInfoManager:getBookInfo(filepath, get_cover)
     local directory, filename = util.splitFilePathName(filepath)
