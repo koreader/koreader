@@ -77,8 +77,10 @@ local ReaderStatistics = Widget:extend{
     data = nil, -- table
 }
 
-function ReaderStatistics:isDocless()
+function ReaderStatistics:isDocless(preserve_finished_books)
     return self.ui == nil or self.ui.document == nil or self.ui.document.is_pic == true
+        or (preserve_finished_books and self.settings.preserve_finished_books
+            and self.ui.doc_settings:readSetting("summary").status == "complete")
 end
 
 -- NOTE: This is used in a migration script by ui/data/onetime_migration,
@@ -86,6 +88,7 @@ end
 ReaderStatistics.default_settings = {
     min_sec = DEFAULT_MIN_READ_SEC,
     max_sec = DEFAULT_MAX_READ_SEC,
+    preserve_finished_books = false,
     is_enabled = true,
     convert_to_db = nil,
     calendar_start_day_of_week = DEFAULT_CALENDAR_START_DAY_OF_WEEK,
@@ -1055,7 +1058,7 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
         checked_func = function() return self.settings.is_enabled end,
         callback = function()
             -- if was enabled, have to save data to file
-            if self.settings.is_enabled and not self:isDocless() then
+            if self.settings.is_enabled and not self:isDocless(true) then
                 self:insertDB()
                 self.ui.doc_settings:saveSetting("stats", self.data)
             end
@@ -1123,6 +1126,13 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                             UIManager:show(durations_widget)
                         end,
                         keep_menu_open = true,
+                    },
+                    {
+                        text = _("Preserve finished books statistics"),
+                        checked_func = function() return self.settings.preserve_finished_books end,
+                        callback = function()
+                            self.settings.preserve_finished_books = not self.settings.preserve_finished_books
+                        end,
                         separator = true,
                     },
                     {
@@ -2624,7 +2634,7 @@ function ReaderStatistics:onPosUpdate(pos, pageno)
 end
 
 function ReaderStatistics:onPageUpdate(pageno)
-    if self:isDocless() or not self.settings.is_enabled then
+    if self:isDocless(true) or not self.settings.is_enabled then
         return
     end
 
@@ -2729,7 +2739,7 @@ function ReaderStatistics:importFromFile(base_path, item)
 end
 
 function ReaderStatistics:onCloseDocument()
-    if not self:isDocless() and self.settings.is_enabled then
+    if not self:isDocless(true) and self.settings.is_enabled then
         self.ui.doc_settings:saveSetting("stats", self.data)
         self:onPageUpdate(false) -- update current page duration
         self:insertDB()
@@ -2762,7 +2772,7 @@ end
 
 -- Triggered by auto_save_settings_interval_minutes
 function ReaderStatistics:onSaveSettings()
-    if not self:isDocless() then
+    if not self:isDocless(true) then
         self.ui.doc_settings:saveSetting("stats", self.data)
         self:insertDB()
     end
@@ -2770,7 +2780,7 @@ end
 
 -- in case when screensaver starts
 function ReaderStatistics:onSuspend()
-    if not self:isDocless() then
+    if not self:isDocless(true) then
         self.ui.doc_settings:saveSetting("stats", self.data)
         self:insertDB()
         self:onReadingPaused()
@@ -2784,7 +2794,7 @@ function ReaderStatistics:onResume()
 end
 
 function ReaderStatistics:onReadingPaused()
-    if self:isDocless() or not self.settings.is_enabled then
+    if self:isDocless(true) or not self.settings.is_enabled then
         return
     end
     if not self._reading_paused_ts then
@@ -2793,7 +2803,7 @@ function ReaderStatistics:onReadingPaused()
 end
 
 function ReaderStatistics:onReadingResumed()
-    if self:isDocless() or not self.settings.is_enabled then
+    if self:isDocless(true) or not self.settings.is_enabled then
         self._reading_paused_ts = nil
         return
     end
@@ -3058,7 +3068,9 @@ end
 
 function ReaderStatistics:getCurrentBookReadPages()
     if self:isDocless() or not self.settings.is_enabled then return end
-    self:insertDB()
+    if not self:isDocless(true) then
+        self:insertDB()
+    end
     local sql_stmt = [[
         SELECT
           page,
