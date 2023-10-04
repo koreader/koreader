@@ -356,9 +356,18 @@ function KoboPowerD:turnOffFrontlightHW(done_callback)
     if UIManager then
         -- We've got nothing to do if we're already ramping down
         if not self.fl_ramp_down_running then
-            self:_stopFrontlightRamp()
-            self:turnOffFrontlightRamp(self.fl_intensity, self.fl_min, done_callback)
-            self.fl_ramp_down_running = true
+            -- NOTE: For devices with a ramp_off_delay, only ramp if we start from > 2%,
+            --       otherwise you just see a single delayed step (1%) or two stuttery ones (2%) ;).
+            if self.fl_intensity > 2 then
+                self:_stopFrontlightRamp()
+                self:turnOffFrontlightRamp(self.fl_intensity, self.fl_min, done_callback)
+                self.fl_ramp_down_running = true
+            else
+                self:setIntensityHW(self.fl_min)
+                if done_callback then
+                    done_callback()
+                end
+            end
         end
     else
         -- If UIManager is not initialized yet, just turn it off immediately
@@ -405,9 +414,17 @@ function KoboPowerD:turnOnFrontlightHW(done_callback)
     if UIManager then
         -- We've got nothing to do if we're already ramping up
         if not self.fl_ramp_up_running then
-            self:_stopFrontlightRamp()
-            self:turnOnFrontlightRamp(self.fl_min, self.fl_intensity, done_callback)
-            self.fl_ramp_up_running = true
+            -- Same as when ramping off
+            if self.fl_intensity > 2 then
+                self:_stopFrontlightRamp()
+                self:turnOnFrontlightRamp(self.fl_min, self.fl_intensity, done_callback)
+                self.fl_ramp_up_running = true
+            else
+                self:setIntensityHW(self.fl_intensity)
+                if done_callback then
+                    done_callback()
+                end
+            end
         end
     else
         -- If UIManager is not initialized yet, just turn it on immediately
