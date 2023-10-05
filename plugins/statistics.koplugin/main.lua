@@ -99,7 +99,7 @@ function ReaderStatistics:onDispatcherRegisterActions()
 end
 
 function ReaderStatistics:init()
-    if self.ui.document and self.ui.document.is_pic then
+    if self.document and self.document.is_pic then
         return -- disable in PIC documents
     end
 
@@ -184,7 +184,7 @@ function ReaderStatistics:initData()
     end
     self.data.series = series or "N/A"
 
-    self.data.pages = self.view.document:getPageCount()
+    self.data.pages = self.document:getPageCount()
     if not self.data.md5 then
         self.data.md5 = self:partialMd5(self.document.file)
     end
@@ -236,7 +236,7 @@ function ReaderStatistics:onDocumentRerendered()
     --   - we only then update self.data.pages=254 as the new page count
     -- - 5 minutes later, on the next insertDB(), (153, now-5mn, 42, 254) will be inserted in DB
 
-    local new_pagecount = self.view.document:getPageCount()
+    local new_pagecount = self.document:getPageCount()
 
     if new_pagecount ~= self.data.pages then
         logger.dbg("ReaderStatistics: Pagecount change, flushing volatile book statistics")
@@ -335,7 +335,7 @@ Do you want to create an empty database?
                     self:createDB(conn_new)
                     conn_new:close()
                     UIManager:show(InfoMessage:new{text =_("A new empty database has been created."), timeout = 3 })
-                    if self.ui.document then
+                    if self.document then
                         self:initData()
                     end
                 end,
@@ -720,7 +720,7 @@ function ReaderStatistics:migrateToDB(conn)
     self:createDB(conn)
     local nr_of_conv_books = 0
     local exclude_titles = {}
-    for _, v in pairs(ReadHistory.hist) do
+    for _, v in ipairs(ReadHistory.hist) do
         local book_stats = DocSettings:open(v.file):readSetting("stats")
         if book_stats and book_stats.title == "" then
             book_stats.title = v.file:match("^.+/(.+)$")
@@ -846,7 +846,7 @@ function ReaderStatistics:onBookMetadataChanged(prop_updated)
     local conn = SQ3.open(db_location)
     local id_book
 
-    if self.ui.document and self.ui.document.file == filepath then
+    if self.document and self.document.file == filepath then
         -- Current document is the one updated: we have its id readily available
         id_book = self.id_curr_book
         logger.dbg(log_prefix, "got book id from opened document:", id_book)
@@ -1131,9 +1131,9 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         text = _("Freeze finished books statistics"),
                         checked_func = function() return self.settings.freeze_finished_books end,
                         callback = function()
-                            self.settings.freeze_finished_books = not self.settings.freeze_finished_books
                             self.is_doc_not_freezed = self.is_doc
-                                and (self.is_doc_not_finished or not self.settings.freeze_finished_books)
+                                and (self.is_doc_not_finished or self.settings.freeze_finished_books)
+                            self.settings.freeze_finished_books = not self.settings.freeze_finished_books
                         end,
                         separator = true,
                     },
@@ -1641,7 +1641,7 @@ function ReaderStatistics:getCurrentStat()
     if first_open == nil then
         first_open = now_ts
     end
-    self.data.pages = self.view.document:getPageCount()
+    self.data.pages = self.document:getPageCount()
     total_time_book = tonumber(total_time_book)
     total_read_pages = tonumber(total_read_pages)
 
@@ -1649,10 +1649,10 @@ function ReaderStatistics:getCurrentStat()
     local total_pages
     local page_progress_string
     local percent_read
-    if (self.view.document:hasHiddenFlows()) then
-        local flow = self.view.document:getPageFlow(self.view.state.page)
-        current_page = self.view.document:getPageNumberInFlow(self.view.state.page)
-        total_pages = self.view.document:getTotalPagesInFlow(flow)
+    if (self.document:hasHiddenFlows()) then
+        local flow = self.document:getPageFlow(self.view.state.page)
+        current_page = self.document:getPageNumberInFlow(self.view.state.page)
+        total_pages = self.document:getTotalPagesInFlow(flow)
         percent_read = Math.round(100*current_page/total_pages)
         if flow == 0 then
             page_progress_string = ("%d // %d (%d%%)"):format(current_page, total_pages, percent_read)
