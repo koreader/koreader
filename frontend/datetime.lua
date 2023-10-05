@@ -307,4 +307,23 @@ function datetime.secondsToDateTime(seconds, twelve_hour_clock, use_locale)
     return message_text
 end
 
+--- Converts a date+time string to seconds
+---- @string "YYYY-MM-DD HH:MM:SS", time may be absent
+---- @treturn seconds
+function datetime.stringToSeconds(datetime_string)
+    if not datetime_string:match("%d+:%d+:%d+") then
+        datetime_string = datetime_string .. " 00:00:00"
+    end
+    local year, month, day, hour, min, sec = datetime_string:match("(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)")
+    local dateTimeTable = {
+        year  = year,
+        month = month,
+        day   = day,
+        hour  = hour,
+        min   = min,
+        sec   = sec,
+    }
+    return os.time(dateTimeTable)
+end
+
 return datetime
