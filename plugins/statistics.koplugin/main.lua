@@ -1131,9 +1131,9 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         text = _("Freeze finished books statistics"),
                         checked_func = function() return self.settings.freeze_finished_books end,
                         callback = function()
-                            self.is_doc_not_freezed = self.is_doc
-                                and (self.is_doc_not_finished or self.settings.freeze_finished_books)
                             self.settings.freeze_finished_books = not self.settings.freeze_finished_books
+                            self.is_doc_not_freezed = self.is_doc
+                                and (self.is_doc_not_finished or not self.settings.freeze_finished_books)
                         end,
                         separator = true,
                     },
@@ -1689,6 +1689,19 @@ function ReaderStatistics:getCurrentStat()
         })
     end
 
+    -- Replace estimates for finished/frozen books
+    local estimated_time_left, estimated_finish_date
+    if self.is_doc_not_freezed then
+        estimated_time_left = { _("Estimated reading time left") .. " ⓘ", time_to_read_string, callback = estimated_popup }
+        estimated_finish_date = { _("Estimated finish date") .. " ⓘ", estimates_valid and T(N_("(in 1 day) %2", "(in %1 days) %2", estimate_days_to_read), estimate_days_to_read, estimate_end_of_read_date) or _("N/A"), callback = estimated_popup }
+    else
+        estimated_time_left = { _("Book marked as finished"), _("statistics frozen") }
+        local mark_date = self.ui.doc_settings:readSetting("summary").modified
+        estimated_finish_date = { _("Book marked as finished"), datetime.secondsToDate(datetime.stringToSeconds(mark_date), true) }
+    end
+    estimated_time_left.separator = true
+    estimated_finish_date.separator = true
+
     return {
         -- Global statistics (may consider other books than current book)
 
@@ -1715,7 +1728,7 @@ function ReaderStatistics:getCurrentStat()
         -- capped to self.settings.max_sec per distinct page
         { _("Time spent reading"), datetime.secondsToClockDuration(user_duration_format, book_read_time, false) },
         -- estimation, from current page to end of book
-        { _("Estimated reading time left") .. " ⓘ", time_to_read_string, callback = estimated_popup, separator = true },
+        estimated_time_left,
 
         -- Day-focused book stats
         { _("Days reading this book") .. " " .. more_arrow, tonumber(total_days),
@@ -1739,7 +1752,7 @@ function ReaderStatistics:getCurrentStat()
 
         -- Date-focused book stats
         { _("Book start date"), T(N_("(1 day ago) %2", "(%1 days ago) %2", first_open_days_ago), first_open_days_ago, datetime.secondsToDate(tonumber(first_open), true)) },
-        { _("Estimated finish date") .. " ⓘ", estimates_valid and T(N_("(in 1 day) %2", "(in %1 days) %2", estimate_days_to_read), estimate_days_to_read, estimate_end_of_read_date) or _("N/A"), callback = estimated_popup, separator = true },
+        estimated_finish_date,
 
         -- Page-focused book stats
         { _("Current page/Total pages"), page_progress_string },
