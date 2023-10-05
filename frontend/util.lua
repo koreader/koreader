@@ -1092,6 +1092,8 @@ local HTML_ENTITIES_TO_UTF8 = {
     {"&lt;", "<"},
     {"&gt;", ">"},
     {"&quot;", '"'},
+    {"&rsquo;", '’'},
+    {"&mdash;", '—'},
     {"&apos;", "'"},
     {"&nbsp;", "\u{00A0}"},
     {"&#(%d+);", function(x) return util.unicodeCodepointToUtf8(tonumber(x)) end},
