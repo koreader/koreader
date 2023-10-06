@@ -260,7 +260,7 @@ function ReadHistory:addItem(file, ts, no_flush)
             if ts and self.hist[index].time == ts then
                 return -- legacy item already added
             end
-            if not ts and G_reader_settings:isTrue("history_preserve_finished_books")
+            if not ts and G_reader_settings:isTrue("history_freeze_finished_books")
                       and filemanagerutil.getStatus(file) == "complete" then
                 return -- book marked as finished, do not update timestamps of item and file
             end
