@@ -277,13 +277,13 @@ end
 
 function Document:getNextPage(page)
     local new_page = page + 1
-    return (new_page > 0 and new_page < self.info.number_of_pages) and new_page or 0
+    return (new_page > 0 and new_page <= self.info.number_of_pages) and new_page or 0
 end
 
 function Document:getPrevPage(page)
     if page == 0 then return self.info.number_of_pages end
     local new_page = page - 1
-    return (new_page > 0 and new_page < self.info.number_of_pages) and new_page or 0
+    return (new_page > 0 and new_page <= self.info.number_of_pages) and new_page or 0
 end
 
 function Document:getTotalPagesLeft(page)
