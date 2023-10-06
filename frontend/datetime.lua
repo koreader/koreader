@@ -311,19 +311,9 @@ end
 ---- @string "YYYY-MM-DD HH:MM:SS", time may be absent
 ---- @treturn seconds
 function datetime.stringToSeconds(datetime_string)
-    if not datetime_string:match("%d+:%d+:%d+") then
-        datetime_string = datetime_string .. " 00:00:00"
-    end
-    local year, month, day, hour, min, sec = datetime_string:match("(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)")
-    local dateTimeTable = {
-        year  = year,
-        month = month,
-        day   = day,
-        hour  = hour,
-        min   = min,
-        sec   = sec,
-    }
-    return os.time(dateTimeTable)
+    local year, month, day = datetime_string:match("(%d+)-(%d+)-(%d+)")
+    local hour, min, sec   = datetime_string:match("(%d+):(%d+):(%d+)")
+    return os.time({ year = year, month = month, day = day, hour = hour or 0, min = min or 0, sec = sec or 0 })
 end
 
 return datetime
