@@ -104,7 +104,7 @@ function ReaderStatistics:init()
     end
 
     self.is_doc = false
-    self.is_doc_not_freezed = false -- freeze finished books statistics
+    self.is_doc_not_frozen = false -- freeze finished books statistics
 
     -- Placeholder until onReaderReady
     self.data = {
@@ -168,7 +168,7 @@ end
 function ReaderStatistics:initData()
     self.is_doc = true
     self.is_doc_not_finished = self.ui.doc_settings:readSetting("summary").status ~= "complete"
-    self.is_doc_not_freezed = self.is_doc_not_finished or not self.settings.freeze_finished_books
+    self.is_doc_not_frozen = self.is_doc_not_finished or not self.settings.freeze_finished_books
 
     -- first execution
     local book_properties = self.ui.doc_props
@@ -205,8 +205,8 @@ function ReaderStatistics:isEnabled()
     return self.settings.is_enabled and self.is_doc
 end
 
-function ReaderStatistics:isEnabledNotFreezed()
-    return self.settings.is_enabled and self.is_doc_not_freezed
+function ReaderStatistics:isEnabledAndNotFrozen()
+    return self.settings.is_enabled and self.is_doc_not_frozen
 end
 
 -- Reset the (volatile) stats on page count changes (e.g., after a font size update)
@@ -944,7 +944,7 @@ function ReaderStatistics:onBookMetadataChanged(prop_updated)
 end
 
 function ReaderStatistics:insertDB(updated_pagecount)
-    if not self.id_curr_book then
+    if not (self.id_curr_book and self.is_doc_not_frozen) then
         return
     end
     local id_book = self.id_curr_book
@@ -1058,7 +1058,7 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
         checked_func = function() return self.settings.is_enabled end,
         callback = function()
             -- if was enabled, have to save data to file
-            if self:isEnabledNotFreezed() then
+            if self.settings.is_enabled then
                 self:insertDB()
             end
 
@@ -1128,11 +1128,11 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         keep_menu_open = true,
                     },
                     {
-                        text = _("Freeze finished books statistics"),
+                        text = _("Freeze statistics of finished books"),
                         checked_func = function() return self.settings.freeze_finished_books end,
                         callback = function()
                             self.settings.freeze_finished_books = not self.settings.freeze_finished_books
-                            self.is_doc_not_freezed = self.is_doc
+                            self.is_doc_not_frozen = self.is_doc
                                 and (self.is_doc_not_finished or not self.settings.freeze_finished_books)
                         end,
                         separator = true,
@@ -1175,6 +1175,7 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                                 value = self.settings.calendar_nb_book_spans,
                                 value_min = 1,
                                 value_max = 5,
+                                default_value  = DEFAULT_CALENDAR_NB_BOOK_SPANS,
                                 ok_text = _("Set"),
                                 title_text =  _("Books per calendar day"),
                                 info_text = _("Set the max number of book spans to show for a day"),
@@ -1182,11 +1183,6 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                                     self.settings.calendar_nb_book_spans = spin.value
                                     touchmenu_instance:updateItems()
                                 end,
-                                extra_text = _("Use default"),
-                                extra_callback = function()
-                                    self.settings.calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS
-                                    touchmenu_instance:updateItems()
-                                end
                             })
                         end,
                         keep_menu_open = true,
@@ -1691,11 +1687,11 @@ function ReaderStatistics:getCurrentStat()
 
     -- Replace estimates for finished/frozen books
     local estimated_time_left, estimated_finish_date
-    if self.is_doc_not_freezed then
+    if self.is_doc_not_frozen then
         estimated_time_left = { _("Estimated reading time left") .. " ⓘ", time_to_read_string, callback = estimated_popup }
         estimated_finish_date = { _("Estimated finish date") .. " ⓘ", estimates_valid and T(N_("(in 1 day) %2", "(in %1 days) %2", estimate_days_to_read), estimate_days_to_read, estimate_end_of_read_date) or _("N/A"), callback = estimated_popup }
     else
-        estimated_time_left = { _("Book marked as finished"), _("statistics frozen") }
+        estimated_time_left = { _("Estimated reading time left"), _("finished") }
         local mark_date = self.ui.doc_settings:readSetting("summary").modified
         estimated_finish_date = { _("Book marked as finished"), datetime.secondsToDate(datetime.stringToSeconds(mark_date), true) }
     end
@@ -2649,7 +2645,7 @@ function ReaderStatistics:onPosUpdate(pos, pageno)
 end
 
 function ReaderStatistics:onPageUpdate(pageno)
-    if not self:isEnabledNotFreezed() then
+    if not self:isEnabledAndNotFrozen() then
         return
     end
 
@@ -2754,10 +2750,8 @@ function ReaderStatistics:importFromFile(base_path, item)
 end
 
 function ReaderStatistics:onCloseDocument()
-    if self:isEnabledNotFreezed() then
-        self:onPageUpdate(false) -- update current page duration
-        self:insertDB()
-    end
+    self:onPageUpdate(false) -- update current page duration
+    self:insertDB()
 end
 
 function ReaderStatistics:onAddHighlight()
@@ -2786,17 +2780,13 @@ end
 
 -- Triggered by auto_save_settings_interval_minutes
 function ReaderStatistics:onSaveSettings()
-    if self.is_doc_not_freezed then
-        self:insertDB()
-    end
+    self:insertDB()
 end
 
 -- in case when screensaver starts
 function ReaderStatistics:onSuspend()
-    if self.is_doc_not_freezed then
-        self:insertDB()
-        self:onReadingPaused()
-    end
+    self:insertDB()
+    self:onReadingPaused()
 end
 
 -- screensaver off
@@ -2806,7 +2796,7 @@ function ReaderStatistics:onResume()
 end
 
 function ReaderStatistics:onReadingPaused()
-    if self:isEnabledNotFreezed() then
+    if self:isEnabledAndNotFrozen() then
         if not self._reading_paused_ts then
             self._reading_paused_ts = os.time()
         end
@@ -2814,7 +2804,7 @@ function ReaderStatistics:onReadingPaused()
 end
 
 function ReaderStatistics:onReadingResumed()
-    if self:isEnabledNotFreezed() then
+    if self:isEnabledAndNotFrozen() then
         if self._reading_paused_ts then
             -- Just add the pause duration to the current page start_time
             local pause_duration = os.time() - self._reading_paused_ts
@@ -2829,7 +2819,7 @@ function ReaderStatistics:onReadingResumed()
 end
 
 function ReaderStatistics:onReadSettings(config)
-    self.data = config:readSetting("stats", { performance_in_pages= {} })
+    self.data = config:readSetting("stats", { performance_in_pages = {} })
 end
 
 function ReaderStatistics:onReaderReady()
@@ -3078,9 +3068,7 @@ end
 
 function ReaderStatistics:getCurrentBookReadPages()
     if not self:isEnabled() then return end
-    if self.is_doc_not_freezed then
-        self:insertDB()
-    end
+    self:insertDB()
     local sql_stmt = [[
         SELECT
           page,
