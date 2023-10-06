@@ -151,7 +151,7 @@ local settingsList = {
     book_map_overview = {category="none", event="ShowBookMap", arg=true, title=_("Book map (overview)"), reader=true, condition=Device:isTouchDevice()},
     page_browser = {category="none", event="ShowPageBrowser", title=_("Page browser"), reader=true, condition=Device:isTouchDevice()},
     bookmarks = {category="none", event="ShowBookmark", title=_("Bookmarks"), reader=true},
-    bookmark_search = {category="none", event="SearchBookmark", title=_("Bookmark search"), reader=true},
+    bookmark_search = {category="none", event="SearchBookmark", title=_("Bookmark search"), reader=true, separator=true},
 
     book_status = {category="none", event="ShowBookStatus", title=_("Book status"), reader=true},
     book_info = {category="none", event="ShowBookInfo", title=_("Book information"), reader=true},
@@ -177,7 +177,10 @@ local settingsList = {
     zoom_factor_change = {category="none", event="ZoomFactorChange", title=_("Change zoom factor"), paging=true, separator=true},
     --
 
-    toggle_inverse_reading_order = {category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), reader=true, separator=true},
+    toggle_inverse_reading_order = {category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), reader=true},
+    toggle_handmade_toc = {category="none", event="ToggleHandmadeToc", title=_("Toggle custom TOC"), reader=true},
+    toggle_handmade_flows = {category="none", event="ToggleHandmadeFlows", title=_("Toggle custom hidden flows"), reader=true, separator=true},
+
     set_highlight_action = {category="string", event="SetHighlightAction", title=_("Set highlight action"), args_func=ReaderHighlight.getHighlightActions, reader=true},
     cycle_highlight_action = {category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), reader=true},
     cycle_highlight_style = {category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), reader=true, separator=true},
@@ -375,6 +378,8 @@ local dispatcher_menu_order = {
     "toggle_bookmark_flipping",
     "toggle_reflow",
     "toggle_inverse_reading_order",
+    "toggle_handmade_toc",
+    "toggle_handmade_flows",
     "zoom",
     "zoom_factor_change",
     "set_highlight_action",
