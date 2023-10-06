@@ -639,6 +639,12 @@ function BookMapWidget:init()
                     range = self.dimen,
                 }
             },
+            Pan = { -- (for mousewheel scrolling support)
+                GestureRange:new{
+                    ges = "pan",
+                    range = self.dimen,
+                }
+            },
             Tap = {
                 GestureRange:new{
                     ges = "tap",
@@ -1605,6 +1611,16 @@ function BookMapWidget:onSwipe(arg, ges)
         -- a long diagonal swipe may also be used for taking a screenshot,
         -- so let it propagate
         return false
+    end
+end
+
+function BookMapWidget:onPan(arg, ges)
+    if ges.mousewheel_direction then
+        if ges.direction == "north" then
+            return self:onScrollRowDown()
+        elseif ges.direction == "south" then
+            return self:onScrollRowUp()
+        end
     end
 end
 
