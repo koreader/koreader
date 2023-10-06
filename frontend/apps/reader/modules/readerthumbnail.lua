@@ -420,7 +420,13 @@ function ReaderThumbnail:_getPageImage(page)
         -- CRE documents: pages all have the aspect ratio of our screen (alt top status bar
         -- will be croped out after drawing), we will show them just as rendered.
         self.ui.rolling.rendering_state = nil -- Remove any partial rerendering icon
-        self.ui.view:onSetViewMode("page") -- Get out of scroll mode
+        if self.ui.view.view_mode == "scroll" then
+            -- Get out of scroll mode, and be sure we'll be in one-page mode as that
+            -- is what is shown in scroll mode (needs to do the following in that
+            -- order to avoid rendering hash change)
+            self.ui.rolling:onSetVisiblePages(1)
+            self.ui.view:onSetViewMode("page")
+        end
         if self.ui.document.configurable.font_gamma < 30 then  -- Increase font gamma (if not already increased),
             self.ui.document:setGammaIndex(30) -- as downscaling will make text grayer
         end
