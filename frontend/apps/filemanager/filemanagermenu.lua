@@ -274,12 +274,12 @@ function FileManagerMenu:setUpdateItemTable()
                         end,
                     },
                     {
-                        text = _("Preserve finished books timestamp"),
+                        text = _("Freeze last read date of finished books"),
                         checked_func = function()
-                            return G_reader_settings:isTrue("history_preserve_finished_books")
+                            return G_reader_settings:isTrue("history_freeze_finished_books")
                         end,
                         callback = function()
-                            G_reader_settings:flipNilOrFalse("history_preserve_finished_books")
+                            G_reader_settings:flipNilOrFalse("history_freeze_finished_books")
                         end,
                         separator = true,
                     },
