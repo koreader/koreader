@@ -311,7 +311,7 @@ function KoboPowerD:isChargedHW()
     return false
 end
 
-function KoboPowerD:_postponedSetIntensityHW(end_intensity, done_callback)
+function KoboPowerD:_endRampDown(end_intensity, done_callback)
     self:_setIntensityHW(end_intensity)
     self.fl_ramp_down_running = false
 
@@ -325,7 +325,8 @@ function KoboPowerD:_stopFrontlightRamp()
         -- Make sure we have no other ramp running.
         UIManager:unschedule(self.turnOffFrontlightRamp)
         UIManager:unschedule(self.turnOnFrontlightRamp)
-        UIManager:unschedule(self._postponedSetIntensityHW)
+        UIManager:unschedule(self._endRampDown)
+        UIManager:unschedule(self._endRampUp)
         self.fl_ramp_up_running = false
         self.fl_ramp_down_running = false
     end
@@ -343,7 +344,7 @@ function KoboPowerD:turnOffFrontlightRamp(curr_ramp_intensity, end_intensity, do
         UIManager:scheduleIn(self.device.frontlight_settings.ramp_delay, self.turnOffFrontlightRamp, self, curr_ramp_intensity, end_intensity, done_callback)
     else
         -- Some devices require delaying the final step, to prevent them from jumping straight to zero and messing up the ramp.
-        UIManager:scheduleIn(self.device.frontlight_settings.ramp_off_delay, self._postponedSetIntensityHW, self, end_intensity, done_callback)
+        UIManager:scheduleIn(self.device.frontlight_settings.ramp_off_delay, self._endRampDown, self, end_intensity, done_callback)
         -- no reschedule here, as we are done
     end
 end
@@ -357,8 +358,16 @@ function KoboPowerD:turnOffFrontlightHW(done_callback)
         -- We've got nothing to do if we're already ramping down
         if not self.fl_ramp_down_running then
             self:_stopFrontlightRamp()
-            self:turnOffFrontlightRamp(self.fl_intensity, self.fl_min, done_callback)
-            self.fl_ramp_down_running = true
+            -- NOTE: For devices with a ramp_off_delay, we only ramp if we start from > 2%,
+            --       otherwise you just see a single delayed step (1%) or two stuttery ones (2%) ;).
+            -- FWIW, modern devices with a different PWM controller (i.e., with no controller-specific ramp_off_delay workarounds)
+            -- deal with our 2% ramp without stuttering.
+            if self.device.frontlight_settings.ramp_off_delay > 0.0 and self.fl_intensity <= 2 then
+                UIManager:scheduleIn(self.device.frontlight_settings.ramp_delay, self._endRampDown, self, self.fl_min, done_callback)
+            else
+                self:turnOffFrontlightRamp(self.fl_intensity, self.fl_min, done_callback)
+                self.fl_ramp_down_running = true
+            end
         end
     else
         -- If UIManager is not initialized yet, just turn it off immediately
@@ -367,6 +376,15 @@ function KoboPowerD:turnOffFrontlightHW(done_callback)
 
     -- We consume done_callback ourselves, make sure Generic's PowerD gets the memo
     return true
+end
+
+function KoboPowerD:_endRampUp(end_intensity, done_callback)
+    self:_setIntensityHW(end_intensity)
+    self.fl_ramp_up_running = false
+
+    if done_callback then
+        done_callback()
+    end
 end
 
 -- Similar functionality as `Kobo:turnOnFrontlightHW`, but the other way around ;).
@@ -381,12 +399,7 @@ function KoboPowerD:turnOnFrontlightRamp(curr_ramp_intensity, end_intensity, don
         self:_setIntensityHW(curr_ramp_intensity)
         UIManager:scheduleIn(self.device.frontlight_settings.ramp_delay, self.turnOnFrontlightRamp, self, curr_ramp_intensity, end_intensity, done_callback)
     else
-        self:_setIntensityHW(end_intensity)
-        self.fl_ramp_up_running = false
-
-        if done_callback then
-            done_callback()
-        end
+        UIManager:scheduleIn(self.device.frontlight_settings.ramp_delay, self._endRampUp, self, end_intensity, done_callback)
         -- no reschedule here, as we are done
     end
 end
@@ -406,8 +419,13 @@ function KoboPowerD:turnOnFrontlightHW(done_callback)
         -- We've got nothing to do if we're already ramping up
         if not self.fl_ramp_up_running then
             self:_stopFrontlightRamp()
-            self:turnOnFrontlightRamp(self.fl_min, self.fl_intensity, done_callback)
-            self.fl_ramp_up_running = true
+            if self.device.frontlight_settings.ramp_off_delay > 0.0 and self.fl_intensity <= 2 then
+                -- NOTE: Match the ramp down behavior on devices with a ramp_off_delay: jump straight to 1 or 2% intensity.
+                UIManager:scheduleIn(self.device.frontlight_settings.ramp_delay, self._endRampUp, self, self.fl_intensity, done_callback)
+            else
+                self:turnOnFrontlightRamp(self.fl_min, self.fl_intensity, done_callback)
+                self.fl_ramp_up_running = true
+            end
         end
     else
         -- If UIManager is not initialized yet, just turn it on immediately
