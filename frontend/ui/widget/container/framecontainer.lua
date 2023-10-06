@@ -43,6 +43,11 @@ local FrameContainer = WidgetContainer:extend{
     focusable = false,
     focus_border_size = Size.border.window * 2,
     focus_border_color = Blitbuffer.COLOR_BLACK,
+    -- paint hatched background if provided
+    stripe_color = nil,
+    stripe_width = nil,
+    stripe_over = nil, -- draw stripes *after* content is drawn
+    stripe_over_alpha = 1,
 }
 
 function FrameContainer:getSize()
@@ -107,6 +112,12 @@ function FrameContainer:paintTo(bb, x, y)
                             container_width, container_height,
                             self.background, self.radius)
     end
+    if self.stripe_width and self.stripe_color and not self.stripe_over then
+        -- (No support for radius when hatched/stripe)
+        bb:hatchRect(x, y,
+                        container_width, container_height,
+                        self.stripe_width, self.stripe_color)
+    end
     if self.inner_bordersize > 0 then
         --- @warning This doesn't actually support radius, it'll always be a square.
         bb:paintInnerBorder(x + self.margin, y + self.margin,
@@ -124,6 +135,14 @@ function FrameContainer:paintTo(bb, x, y)
         self[1]:paintTo(bb,
             x + self.margin + self.bordersize + self._padding_left + shift_x,
             y + self.margin + self.bordersize + self._padding_top)
+    end
+    if self.stripe_width and self.stripe_color and self.stripe_over then
+        -- (No support for radius when hatched/stripe)
+        -- We don't want to draw the stripes over any border
+        local pad = self.margin + math.max(self.bordersize, self.inner_bordersize)
+        bb:hatchRect(x + pad, y + pad,
+                        container_width - pad * 2, container_height - pad * 2,
+                        self.stripe_width, self.stripe_color, self.stripe_over_alpha)
     end
     if self.invert then
         bb:invertRect(x + self.bordersize, y + self.bordersize,
