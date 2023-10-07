@@ -91,12 +91,12 @@ function DocSettings:getSidecarDir(doc_path, force_location)
     local path = doc_path:match("(.*)%.") or doc_path -- file path without the last suffix
     local location = force_location or G_reader_settings:readSetting("document_metadata_folder", "doc")
     if location == "dir" then
-        path = DOCSETTINGS_DIR..path
+        path = DOCSETTINGS_DIR .. path
     elseif location == "hash" then
         local hsh = hash_path_cache[doc_path]
         if not hsh then
             local file = io.open(doc_path, 'rb')
-            if not file then return path end
+            if not file then return path .. ".sdr" end
             hsh = util.partialMD5(file)
             file:close()
             hash_path_cache[doc_path] = hsh
@@ -106,9 +106,9 @@ function DocSettings:getSidecarDir(doc_path, force_location)
         end
         -- converts b3fb8f4f8448160365087d6ca05c7fa2 to b3/ to avoid too many files in one dir
         local subpath = string.format("/%s/", hsh:sub(1, 2))
-        path = DOCSETTINGS_HASH_DIR..subpath..hsh
+        path = DOCSETTINGS_HASH_DIR .. subpath .. hsh
     end
-    return path..".sdr"
+    return path .. ".sdr"
 end
 
 --- Returns path to `metadata.lua` file.
@@ -197,13 +197,13 @@ end
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
 function DocSettings:getSidecarHashDirAndFilepath(doc_path)
     -- Getting PDF ID from trailer via mupdf has not been implemented - everything uses partial MD5
-    local path = self:getSidecarDir(doc_path, "hash") -- could this be cached somehow?
+    local path = self:getSidecarDir(doc_path, "hash")
     local filetype = doc_path:match(".+%.(%w+)$")
     if not filetype or filetype == "" then
-        return "",""
+        return "", ""
     end
-    local hash_file = "metadata."..filetype..".lua"
-    local hash_filepath = path..'/'..hash_file
+    local hash_file = "metadata." .. filetype .. ".lua"
+    local hash_filepath = path .. '/' .. hash_file
     return path, hash_filepath
 end
 
@@ -219,7 +219,7 @@ function DocSettings:open(doc_path)
     local doc_sidecar_file, legacy_sidecar_file
     if lfs.attributes(new.doc_sidecar_dir, "mode") == "directory" then
         doc_sidecar_file = new.doc_sidecar_file
-        legacy_sidecar_file = new.doc_sidecar_dir.."/"..ffiutil.basename(doc_path)..".lua"
+        legacy_sidecar_file = new.doc_sidecar_dir .. "/" .. ffiutil.basename(doc_path) .. ".lua"
     end
     new.dir_sidecar_dir = new:getSidecarDir(doc_path, "dir")
     new.dir_sidecar_file = new:getSidecarFile(doc_path, "dir")
@@ -308,6 +308,10 @@ function DocSettings:flush(data, no_custom_metadata)
     elseif preferred_metdata_storage == "dir" then
         serials = { {self.dir_sidecar_dir, self.dir_sidecar_file}, }
     elseif preferred_metdata_storage == "hash" then
+        if self.hash_sidecar_dir == nil or self.hash_sidecar_file == nil then
+            self.hash_sidecar_dir, self.hash_sidecar_file =
+                    self:getSidecarHashDirAndFilepath(self.data.doc_path)
+        end
         serials = { {self.hash_sidecar_dir, self.hash_sidecar_file } }
     end
 
@@ -625,7 +629,7 @@ local function getSdrsInDir(path)
     if ok then
         for name in iter, dir_obj do
             if name ~= "." and name ~= ".." then
-                local fullpath = path.."/"..name
+                local fullpath = path .. "/" .. name
                 local attributes = lfs.attributes(fullpath)
                 if attributes ~= nil then
                     if attributes.mode == "directory" then
@@ -633,7 +637,7 @@ local function getSdrsInDir(path)
                         for _, ifo in pairs(dirifos) do
                             table.insert(sdrs, ifo)
                         end
-                    elseif fullpath:match("metadata%..+%.lua$") then
+                    elseif name:match("metadata%..+%.lua$") then
                         table.insert(sdrs, fullpath)
                     end
                 end
@@ -642,7 +646,6 @@ local function getSdrsInDir(path)
     end
     return sdrs
 end
-
 
 function DocSettings.getHashDirSdrInfos()
     local sdrs = getSdrsInDir(DOCSETTINGS_HASH_DIR)
@@ -655,12 +658,9 @@ function DocSettings.getHashDirSdrInfos()
             -- Ignore empty tables
             if ok and next(stored) ~= nil then
                 local info_str = stored.doc_props.title
-                if not info_str then info_str = stored.stats.title end
                 if not info_str then info_str = "untitled document" end
                 if stored.doc_props.authors then
                      info_str = info_str .. ", author: " .. stored.doc_props.authors
-                elseif stored.stats.author then
-                     info_str = info_str .. ", author: " .. stored.stats.author
                 end
                 if stored.stats then
                     if stored.stats.highlights > 0 then
@@ -670,13 +670,15 @@ function DocSettings.getHashDirSdrInfos()
                         info_str = info_str .. ", notes: " .. stored.stats.notes
                     end
                 end
-                info_str = info_str .. ", partial hash: " .. stored.partial_md5_checksum
+                if stored.partial_md5_checksum then
+                    info_str = info_str .. ", partial hash: " .. stored.partial_md5_checksum
+                end
                 table.insert(title_author_strs, info_str)
             else
-                table.insert(title_author_strs, "error "..sdr)
+                table.insert(title_author_strs, "error " .. sdr)
             end
         else
-            table.insert(title_author_strs, "zero-size file "..sdr)
+            table.insert(title_author_strs, "zero-size file " .. sdr)
         end
     end
     return title_author_strs
