@@ -670,9 +670,7 @@ function DocSettings.getHashDirSdrInfos()
                         info_str = info_str .. ", notes: " .. stored.stats.notes
                     end
                 end
-                if stored.partial_md5_checksum then
-                    info_str = info_str .. ", partial hash: " .. stored.partial_md5_checksum
-                end
+                info_str = info_str .. ", path: " .. sdr:sub(sdr:find("/", 3) + 1)
                 table.insert(title_author_strs, info_str)
             else
                 table.insert(title_author_strs, "error " .. sdr)
