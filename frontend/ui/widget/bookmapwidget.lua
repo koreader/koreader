@@ -760,16 +760,34 @@ function BookMapWidget:init()
     -- on some events (ie. TocUpdated, PageUpdate, AddHhighlight...)
     -- Get some info that shouldn't change across calls to update()
     self.nb_pages = self.ui.document:getPageCount()
-    self.ui.toc:fillToc()
     self.cur_page = self.ui.toc.pageno
-    self.max_toc_depth = self.ui.toc.toc_depth
-    -- Get bookmarks and highlights from ReaderBookmark
-    self.bookmarked_pages = self.ui.bookmark:getBookmarkedPages()
     -- Get read page from the statistics plugin if enabled
     self.statistics_enabled = self.ui.statistics and self.ui.statistics:isEnabled()
     self.read_pages = self.ui.statistics and self.ui.statistics:getCurrentBookReadPages()
     self.current_session_duration = self.ui.statistics and (os.time() - self.ui.statistics.start_current_period)
-    -- Hidden flows, for first page display, and to draw them gray
+    -- Reference page numbers, for first row page display
+    self.page_labels = nil
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+        self.page_labels = self.ui.document:getPageMap()
+    end
+    -- Location stack
+    self.previous_locations = self.ui.link:getPreviousLocationPages()
+
+    -- Update stuff that may be updated by the user while in PageBrowser
+    self:updateEditableStuff()
+    self.editable_stuff_edited = false -- reset this
+
+    -- Compute settings-dependant sizes and options, and build the inner widgets
+    self:update()
+end
+
+function BookMapWidget:updateEditableStuff(update_view)
+    -- Toc, bookmarks and hidden flows may be edited
+    self.ui.toc:fillToc()
+    self.max_toc_depth = self.ui.toc.toc_depth
+    -- Get bookmarks and highlights from ReaderBookmark
+    self.bookmarked_pages = self.ui.bookmark:getBookmarkedPages()
+    self.hidden_flows = nil
     self.has_hidden_flows = self.ui.document:hasHiddenFlows()
     if self.has_hidden_flows and #self.ui.document.flows > 0 then
         self.hidden_flows = {}
@@ -779,16 +797,13 @@ function BookMapWidget:init()
             table.insert(self.hidden_flows, { tab[1], tab[1]+tab[2]-1 })
         end
     end
-    -- Reference page numbers, for first row page display
-    self.page_labels = nil
-    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
-        self.page_labels = self.ui.document:getPageMap()
+    -- Keep a flag so we can propagate the fact that editable stuff
+    -- has been updated to our parent/launcher when we will close,
+    -- so they can update themselves too.
+    self.editable_stuff_edited = true
+    if update_view then
+        self:update()
     end
-    -- Location stack
-    self.previous_locations = self.ui.link:getPreviousLocationPages()
-
-    -- Compute settings-dependant sizes and options, and build the inner widgets
-    self:update()
 end
 
 function BookMapWidget:update()
@@ -1362,6 +1377,9 @@ function BookMapWidget:onClose(close_all_parents)
             -- will do the cleanup below.
             self.launcher:onClose(true)
         else
+            if self.editable_stuff_edited then
+                self.launcher:updateEditableStuff(true)
+            end
             UIManager:setDirty(self.launcher, "ui")
         end
     else
@@ -1377,8 +1395,9 @@ function BookMapWidget:onClose(close_all_parents)
             collectgarbage()
             collectgarbage()
         end)
-        -- As we're getting back to Reader, do a full flashing refresh to remove
-        -- any ghost trace of thumbnails or black page slots
+        -- As we're getting back to Reader, update the footer and do a full flashing
+        -- refresh to remove any ghost trace of thumbnails or black page slots
+        UIManager:broadcastEvent(Event:new("UpdateFooter"))
         UIManager:setDirty(self.ui.dialog, "full")
     end
     return true
