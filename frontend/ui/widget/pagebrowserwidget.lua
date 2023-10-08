@@ -76,6 +76,12 @@ function PageBrowserWidget:init()
                     range = self.dimen,
                 }
             },
+            Pan = { -- (for mousewheel scrolling support)
+                GestureRange:new{
+                    ges = "pan",
+                    range = self.dimen,
+                }
+            },
             Tap = {
                 GestureRange:new{
                     ges = "tap",
@@ -1174,6 +1180,17 @@ function PageBrowserWidget:onSwipe(arg, ges)
         -- so let it propagate
         return false
     end
+end
+
+function PageBrowserWidget:onPan(arg, ges)
+    if ges.mousewheel_direction then
+        if ges.direction == "north" then
+            self:onScrollRowDown()
+        elseif ges.direction == "south" then
+            self:onScrollRowUp()
+        end
+    end
+    return true
 end
 
 function PageBrowserWidget:onPinch(arg, ges)

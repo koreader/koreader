@@ -230,12 +230,12 @@ function Device:init()
                 local fake_release_ev = Event:new("Gesture", fake_ges_release)
                 if scrolled_y == down then
                     fake_ges.direction = "north"
-                    UIManager:broadcastEvent(fake_pan_ev)
-                    UIManager:broadcastEvent(fake_release_ev)
+                    UIManager:sendEvent(fake_pan_ev)
+                    UIManager:sendEvent(fake_release_ev)
                 elseif scrolled_y == up then
                     fake_ges.direction = "south"
-                    UIManager:broadcastEvent(fake_pan_ev)
-                    UIManager:broadcastEvent(fake_release_ev)
+                    UIManager:sendEvent(fake_pan_ev)
+                    UIManager:sendEvent(fake_release_ev)
                 end
             elseif ev.code == SDL_MULTIGESTURE then
                 -- no-op for now
