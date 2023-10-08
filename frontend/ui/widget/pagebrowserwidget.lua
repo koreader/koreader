@@ -217,6 +217,12 @@ function PageBrowserWidget:updateLayout()
     -- We start with showing all toc levels (we could use book_map_toc_depth,
     -- but we might want to have it different here).
     self.nb_toc_spans = self.ui.doc_settings:readSetting("page_browser_toc_depth") or self.max_toc_depth
+    if self.ui.handmade:isHandmadeTocEnabled() then
+        -- We can switch from a custom TOC (max depth of 1) to the regular TOC
+        -- (larger depth possible), so we'd rather not replace with 1 the depth
+        -- set and saved for a regular TOC. So, use a dedicated setting for each.
+        self.nb_toc_spans = self.ui.doc_settings:readSetting("page_browser_toc_depth_handmade_toc") or self.max_toc_depth
+    end
 
     -- Row will contain: nb_toc_spans + page slots + spacing (+ some borders)
     local statistics_enabled = self.ui.statistics and self.ui.statistics:isEnabled()
@@ -1117,7 +1123,11 @@ function PageBrowserWidget:saveSettings(reset)
         self.nb_rows = nil
         self.nb_cols = nil
     end
-    self.ui.doc_settings:saveSetting("page_browser_toc_depth", self.nb_toc_spans)
+    if self.ui.handmade:isHandmadeTocEnabled() then
+        self.ui.doc_settings:saveSetting("page_browser_toc_depth_handmade_toc", self.nb_toc_spans)
+    else
+        self.ui.doc_settings:saveSetting("page_browser_toc_depth", self.nb_toc_spans)
+    end
     self.ui.doc_settings:saveSetting("page_browser_nb_rows", self.nb_rows)
     self.ui.doc_settings:saveSetting("page_browser_nb_cols", self.nb_cols)
     self.ui.doc_settings:saveSetting("page_browser_thumbnails_pagenums", self.thumbnails_pagenums)
@@ -1503,14 +1513,74 @@ function PageBrowserWidget:onHold(arg, ges)
                 -- bookmark for a page while its thumbnail is being generated:
                 -- we may get (and cache) a thumbnail showing the wrong
                 -- bookmark state...
-                self.ui.bookmark:toggleBookmark(page)
-                self:updateEditableStuff(true)
+                self:onThumbnailHold(page, ges)
                 return true
             end
             break
         end
     end
     return true
+end
+
+function PageBrowserWidget:onThumbnailHold(page, ges)
+    local handmade_toc_edit_enabled = self.ui.handmade:isHandmadeTocEnabled() and self.ui.handmade:isHandmadeTocEditEnabled()
+    local handmade_hidden_flows_edit_enabled = self.ui.handmade:isHandmadeHiddenFlowsEnabled() and self.ui.handmade:isHandmadeHiddenFlowsEditEnabled()
+    if not handmade_toc_edit_enabled and not handmade_hidden_flows_edit_enabled then
+        -- No other feature enabled: we can toggle bookmark directly
+        self.ui.bookmark:toggleBookmark(page)
+        self:updateEditableStuff(true)
+        return
+    end
+    local button_dialog
+    local buttons = {
+        {{
+            text = _("Toggle page bookmark"),
+            align = "left",
+            callback = function()
+                UIManager:close(button_dialog)
+                self.ui.bookmark:toggleBookmark(page)
+                self:updateEditableStuff(true)
+            end,
+        }},
+    }
+    if handmade_toc_edit_enabled then
+        local has_toc_item = self.ui.handmade:hasPageTocItem(page)
+        table.insert(buttons, {{
+            -- Note: we may have multiple chapters on a same page: we will show the first, which
+            -- would need to be removed to access the second... We may want to show as many
+            -- buttons as there are chapters, with the start of the chapter title as its text.
+            text = (has_toc_item and _("Edit or remove TOC chapter")
+                                  or _("Start TOC chapter here")) .. " " .. self.ui.handmade.custom_toc_symbol,
+            align = "left",
+            callback = function()
+                UIManager:close(button_dialog)
+                self.ui.handmade:addOrEditPageTocItem(page, function()
+                    self:updateEditableStuff(true)
+                end)
+            end,
+        }})
+    end
+    if handmade_hidden_flows_edit_enabled then
+        local is_in_hidden_flow = self.ui.handmade:isInHiddenFlow(page)
+        table.insert(buttons, {{
+            text = is_in_hidden_flow and _("Restart regular flow here")
+                                      or _("Start hidden flow here"),
+            align = "left",
+            callback = function()
+                UIManager:close(button_dialog)
+                self.ui.handmade:toggleHiddenFlow(page)
+                self:updateEditableStuff(true)
+            end,
+        }})
+    end
+    button_dialog = ButtonDialog:new{
+        shrink_unneeded_width = true,
+        buttons = buttons,
+        anchor = function()
+            return ges.pos, true
+        end
+    }
+    UIManager:show(button_dialog)
 end
 
 return PageBrowserWidget

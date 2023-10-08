@@ -33,6 +33,7 @@ local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderFont = require("apps/reader/modules/readerfont")
 local ReaderGoto = require("apps/reader/modules/readergoto")
+local ReaderHandMade = require("apps/reader/modules/readerhandmade")
 local ReaderHinting = require("apps/reader/modules/readerhinting")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local ReaderScrolling = require("apps/reader/modules/readerscrolling")
@@ -161,6 +162,13 @@ function ReaderUI:init()
         dialog = self.dialog,
         view = self.view,
         ui = self
+    })
+    -- Handmade/custom ToC and hidden flows
+    self:registerModule("handmade", ReaderHandMade:new{
+        dialog = self.dialog,
+        view = self.view,
+        ui = self,
+        document = self.document,
     })
     -- Table of content controller
     self:registerModule("toc", ReaderToc:new{
