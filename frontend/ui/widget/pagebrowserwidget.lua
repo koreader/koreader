@@ -768,6 +768,11 @@ function PageBrowserWidget:showTile(grid_idx, page, tile, do_refresh)
             UIManager:waitForVSync()
         end
         UIManager:setDirty(self, function()
+            if not thumb_frame.dimen then
+                -- No dimen if not painted, which may happen if we get covered
+                -- by a BookMap launched from the ribbon: don't refresh.
+                return
+            end
             if page_num_widget then
                 return "ui", thumb_frame.dimen:combine(page_num_widget.dimen)
             end
@@ -1385,17 +1390,14 @@ function PageBrowserWidget:onTap(arg, ges)
     for idx=1, self.nb_grid_items do
         if ges.pos:intersectWith(self.grid[idx].dimen) then
             local page = self.grid[idx].page_idx
-            if page and self.grid[idx][1][1].is_page_thumbnail then
-                -- Only allow tap on fully displayed thumbnails.
-                -- Also, a thumbnail might be smaller than the original grid
-                -- item dimension. Be sure the tap is on it (otherwise, it's
-                -- a tap in the inter thumbnail margin, that we'd rather not
-                -- handle)
-                local thumb_frame = self.grid[idx][1][1]
-                if ges.pos:intersectWith(thumb_frame.dimen) then
-                    -- On PDF documents, jumping to a page may block for a few
-                    -- seconds while the page is rendered. So, make the border
-                    -- bigger so the user knows his tap is being processed.
+            if page then
+                if self.grid[idx][1][1].is_page_thumbnail then
+                    -- If the thumbnail for this page is displayed, show some
+                    -- visual feedback for the tap (on PDF documents, jumping
+                    -- to a page may block for a few seconds while the page
+                    -- is rendered): make the border bigger so the user knows
+                    -- his tap is being processed).
+                    local thumb_frame = self.grid[idx][1][1]
                     local orig_bordersize = thumb_frame.bordersize
                     thumb_frame.bordersize = Size.border.thick * 2
                     local b_inc = thumb_frame.bordersize - orig_bordersize
@@ -1404,16 +1406,18 @@ function PageBrowserWidget:onTap(arg, ges)
                         -- (refresh "fast" will make gray drawn black and may make the
                         -- thumbnail a little uglier - but this enhances the effect
                         -- of "being processed"!)
-                    -- Close the BookMapWidget that launched this PageBrowser
-                    -- and all their ancestors up to Reader
-                    self:onClose(true)
-                    self.ui.link:addCurrentLocationToStack()
-                    self.ui:handleEvent(Event:new("GotoPage", page))
-                        -- Note: with ReaderPaging, if we tap on the thumbnail for the current
-                        -- page, nothing would be refreshed. Our :onClose(true) will have the
-                        -- last ancestor issue a full refresh that will ensure it is painted.
-                    return true
                 end
+                -- (If no thumbnail yet displayed, go on directly: the user
+                -- must be in a hurry if he can't wait for the thumbnail!)
+                -- Close the BookMapWidget that launched this PageBrowser
+                -- and all their ancestors up to Reader
+                self:onClose(true)
+                self.ui.link:addCurrentLocationToStack()
+                self.ui:handleEvent(Event:new("GotoPage", page))
+                    -- Note: with ReaderPaging, if we tap on the thumbnail for the current
+                    -- page, nothing would be refreshed. Our :onClose(true) will have the
+                    -- last ancestor issue a full refresh that will ensure it is painted.
+                return true
             end
             break
         end
@@ -1457,20 +1461,17 @@ function PageBrowserWidget:onHold(arg, ges)
     for idx=1, self.nb_grid_items do
         if ges.pos:intersectWith(self.grid[idx].dimen) then
             local page = self.grid[idx].page_idx
-            if page and self.grid[idx][1][1].is_page_thumbnail then
-                -- Only allow hold on fully displayed thumbnails.
-                -- Also, a thumbnail might be smaller than the original grid
-                -- item dimension. Be sure the hold is on it (otherwise, it's
-                -- a hold in the inter thumbnail margin, that we'd rather not
-                -- handle)
-                local thumb_frame = self.grid[idx][1][1]
-                if ges.pos:intersectWith(thumb_frame.dimen) then
-                    self.ui.bookmark:toggleBookmark(page)
-                    -- Update our cached bookmarks info and ensure the bottom ribbon is redrawn
-                    self.bookmarked_pages = self.ui.bookmark:getBookmarkedPages()
-                    self:updateLayout()
-                    return true
-                end
+            if page then
+                -- We allow that even if the thumbnail is not yet displayed.
+                -- Note: there could be some race condition when toggling
+                -- bookmark for a page while its thumbnail is being generated:
+                -- we may get (and cache) a thumbnail showing the wrong
+                -- bookmark state...
+                self.ui.bookmark:toggleBookmark(page)
+                -- Update our cached bookmarks info and ensure the bottom ribbon is redrawn
+                self.bookmarked_pages = self.ui.bookmark:getBookmarkedPages()
+                self:updateLayout()
+                return true
             end
             break
         end
