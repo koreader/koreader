@@ -437,6 +437,19 @@ end
 --- Updates sdr location for file rename/copy/move/delete operations.
 function DocSettings:updateLocation(doc_path, new_doc_path, copy)
     local doc_settings, new_sidecar_dir
+    
+    if G_reader_settings:readSetting("document_metadata_folder") == "hash" then
+        -- none of these operations (except delete) changes the hash -> no location change
+        if not new_doc_path then
+            doc_settings = DocSettings:open(doc_path)
+            local cover_file = doc_settings:getCoverFile()
+            doc_settings:purge()
+            if cover_file then -- after purge because purge uses cover file cache
+                doc_settings:getCoverFile(true) -- reset cache
+            end
+        end
+        return
+    end
 
     -- update metadata
     if DocSettings:hasSidecarFile(doc_path) then
@@ -657,9 +670,20 @@ function DocSettings.getHashDirSdrInfos()
             ok, stored = pcall(dofile, sdr)
             -- Ignore empty tables
             if ok and next(stored) ~= nil then
-                local info_str = stored.doc_props.title
+                local info_str, custom_authors
+                local sdr_path = sdr:sub(1, sdr:match(".*/()") - 1) -- SDR path
+                local custom_metadata_file = sdr_path .. "custom_metadata.lua"
+                if custom_metadata_file then
+                    local custom = DocSettings:openCustomMetadata(custom_metadata_file)
+                    local custom_props = custom:readSetting("custom_props")
+                    if custom_props.title then info_str = custom_props.title end
+                    if custom_props.authors then custom_authors = custom_props.authors end
+                end
+                if not info_str then info_str = stored.doc_props.title end
                 if not info_str then info_str = "untitled document" end
-                if stored.doc_props.authors then
+                if custom_authors then
+                    info_str = info_str .. ", author: " .. custom_authors
+                elseif stored.doc_props.authors then
                      info_str = info_str .. ", author: " .. stored.doc_props.authors
                 end
                 if stored.stats then
