@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
+local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -1296,7 +1297,7 @@ Time is in hours and minutes.]]),
                                 end
                             }
                             local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
-                            dialogue = require("ui/widget/buttondialogtitle"):new{
+                            dialogue = ButtonDialog:new{
                                 title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nSet up the same cloud folder on each device to sync across your devices."),
                                              server.name.." "..type, SyncService.getReadablePath(server)),
                                 buttons = {
