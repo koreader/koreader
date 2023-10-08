@@ -380,10 +380,14 @@ function PageBrowserWidget:update()
     end
 
     -- Extended separators below the baseline for pages starting thumbnail rows
+    -- No longer needed, as we now use view_finder_row_lines that will extend
+    -- a bit below the baseline.
+    --[[
     local extended_sep_pages = {}
     for p=grid_page_start+self.nb_cols, grid_page_end, self.nb_cols do
         extended_sep_pages[p] = BookMapRow.extended_marker.LARGE
     end
+    ]]--
 
     -- Show the page number or label at the bottom page slot every N slots, with N
     -- the nb of thumbnails so we get at least one page label in our viewport.
@@ -541,6 +545,7 @@ function PageBrowserWidget:update()
     if blank_page_slots_before_start > 0 then
         left_spacing = BookMapRow:getLeftSpacingForNumberOfPageSlots(blank_page_slots_before_start, self.pages_per_row, self.row_width)
     end
+
     local row = BookMapRow:new{
         height = self.row_height,
         width = self.row_width,
@@ -562,26 +567,49 @@ function PageBrowserWidget:update()
         read_pages = self.read_pages,
         current_session_duration = self.current_session_duration,
         page_texts = page_texts,
-        extended_sep_pages = extended_sep_pages,
+        -- extended_sep_pages = extended_sep_pages,
     }
     self.row[1] = row
+
+    local bd_mirrored_left_spacing = 0
+    if BD.mirroredUILayout() and blank_page_slots_after_end > 0 then
+        bd_mirrored_left_spacing = BookMapRow:getLeftSpacingForNumberOfPageSlots(blank_page_slots_after_end,
+                                                                        self.pages_per_row, self.row_width)
+                                   + row.pages_frame_border -- (needed, but not sure why it is needed...)
+    end
 
     if BD.mirroredUILayout() then
         self.view_finder_x = row:getPageX(grid_page_end)
         self.view_finder_w = row:getPageX(grid_page_start, true) - self.view_finder_x
-        if blank_page_slots_after_end > 0 then
-            self.view_finder_x = self.view_finder_x
-                + BookMapRow:getLeftSpacingForNumberOfPageSlots(blank_page_slots_after_end, self.pages_per_row, self.row_width)
-                + row.pages_frame_border -- (needed, but not sure why it is needed...)
-        end
+        self.view_finder_x = self.view_finder_x + bd_mirrored_left_spacing
+        -- No need to adjust anything, unlike when not mirrored
     else
         self.view_finder_x = row:getPageX(grid_page_start)
         self.view_finder_w = row:getPageX(grid_page_end, true) - self.view_finder_x
         self.view_finder_x = self.view_finder_x + left_spacing
+        -- we requested with_page_sep, so leave these blank spaces between page slots outside the viewfinder
+        self.view_finder_x = self.view_finder_x + 1
+        self.view_finder_w = self.view_finder_w - 1
     end
-    -- we requested with_page_sep, so leave these blank spaces between page slots outside the viewfinder
-    self.view_finder_x = self.view_finder_x + 1
-    self.view_finder_w = self.view_finder_w - 1
+
+    -- Have a thin gray vertical line in the view finder to separate each thumbnail row
+    self.view_finder_row_lines = {}
+    for i=1, self.nb_rows - 1 do
+        local x
+        if BD.mirroredUILayout() then
+            x = row:getPageX(grid_page_end - i*self.nb_cols) + bd_mirrored_left_spacing - 1
+        else
+            x = row:getPageX(grid_page_start + i*self.nb_cols) + left_spacing
+        end
+        local h = self.row_height - self.span_height -- down to baseline
+        h = h + math.ceil(self.span_height * 1/2) -- have it extend out below the baseline
+        table.insert(self.view_finder_row_lines, {
+            x = x,
+            y = self.view_finder_y,
+            w = 1, -- our with_page_sep makes a 1px space: let's be there
+            h = h,
+        })
+    end
 
     for idx=1, self.nb_grid_items do
         local p = grid_page_start + idx - 1
@@ -619,6 +647,18 @@ end
 function PageBrowserWidget:paintTo(bb, x, y)
     -- Paint regular sub widgets the classic way
     InputContainer.paintTo(self, bb, x, y)
+
+    for _, r in ipairs(self.view_finder_row_lines) do
+        -- If we would want them fully solid/opaque:
+        -- bb:paintRect(r.x, r.y, r.w, r.h, Blitbuffer.COLOR_GRAY_5)
+        -- But we prefer them translucent, so we can draw them over chapter spans
+        -- without getting bothered too much by them (alpha=0.3 feels fine).
+        -- Only hatchRect() currently supports paiting with alpha,
+        -- so use it to fill our rectangle by using a larger stripe_width
+        -- so it is fully filled.
+        bb:hatchRect(r.x, r.y, r.w, r.h, r.h, Blitbuffer.COLOR_BLACK, 0.3)
+    end
+
     -- If we would prefer to see the BookMapRow top border always take the full width
     -- so it acts as a separator from the thumbnail grid, add this:
     -- bb:paintRect(0, self.dimen.h - self.row_height, self.dimen.w, BookMapRow.pages_frame_border, Blitbuffer.COLOR_BLACK)
