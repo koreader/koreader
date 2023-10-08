@@ -543,78 +543,54 @@ function ReaderToc:isChapterEnd(cur_pageno)
 end
 
 function ReaderToc:getChapterPageCount(pageno)
-    if self.ui.document:hasHiddenFlows() then
-        -- Count pages until new chapter, starting by going backwards to the beginning of the current chapter if necessary
-        local page_count = 1
-        if not self:isChapterStart(pageno) then
-            local test_page = self.ui.document:getPrevPage(pageno)
-            while test_page > 0 do
-                page_count = page_count + 1
-                if self:isChapterStart(test_page) then
-                    break
-                end
-                test_page = self.ui.document:getPrevPage(test_page)
+    local next_chapter = self:getNextChapter(pageno) or self.ui.document:getPageCount() + 1
+    local previous_chapter = self:isChapterStart(pageno) and pageno or self:getPreviousChapter(pageno) or 1
+    local page_count = next_chapter - previous_chapter
+    if self.ui.document:hasHiddenFlows() and self.ui.document:getPageFlow(pageno) == 0 then
+        -- If current page in a hidden flow, return the full amount of pages in this chapter.
+        -- Otherwise, count only pages in the main flow
+        for page = previous_chapter, next_chapter - 1 do
+            if self.ui.document:getPageFlow(page) ~= 0 then
+                page_count = page_count - 1
             end
         end
-
-        -- Then forward
-        local test_page = self.ui.document:getNextPage(pageno)
-        while test_page > 0 do
-            page_count = page_count + 1
-            if self:isChapterStart(test_page) then
-                return page_count - 1
-            end
-            test_page = self.ui.document:getNextPage(test_page)
-        end
-    else
-        local next_chapter = self:getNextChapter(pageno) or self.ui.document:getPageCount() + 1
-        local previous_chapter = self:isChapterStart(pageno) and pageno or self:getPreviousChapter(pageno) or 1
-        local page_count = next_chapter - previous_chapter
-        return page_count
     end
+    return page_count
 end
 
 function ReaderToc:getChapterPagesLeft(pageno)
-    if self.ui.document:hasHiddenFlows() then
-        -- Count pages until new chapter
-        local pages_left = 0
-        local test_page = self.ui.document:getNextPage(pageno)
-        while test_page > 0 do
-            pages_left = pages_left + 1
-            if self:isChapterStart(test_page) then
-                return pages_left - 1
-            end
-            test_page = self.ui.document:getNextPage(test_page)
-        end
-    else
-        local next_chapter = self:getNextChapter(pageno)
-        if next_chapter then
-            next_chapter = next_chapter - pageno - 1
-        end
-        return next_chapter
+    local next_chapter = self:getNextChapter(pageno)
+    if not next_chapter then
+        -- (ReaderFooter deals itself with nil and pageno in last chapter)
+        return
     end
+    local pages_left = next_chapter - pageno - 1
+    if self.ui.document:hasHiddenFlows() and self.ui.document:getPageFlow(pageno) == 0 then
+        for page = pageno, next_chapter - 1 do
+            if self.ui.document:getPageFlow(page) ~= 0 then
+                pages_left = pages_left - 1
+            end
+        end
+    end
+    return pages_left
 end
 
 function ReaderToc:getChapterPagesDone(pageno)
     if self:isChapterStart(pageno) then return 0 end
-    if self.ui.document:hasHiddenFlows() then
-        -- Count pages until chapter start
-        local pages_done = 0
-        local test_page = self.ui.document:getPrevPage(pageno)
-        while test_page > 0 do
-            pages_done = pages_done + 1
-            if self:isChapterStart(test_page) then
-                return pages_done
-            end
-            test_page = self.ui.document:getPrevPage(test_page)
-        end
-    else
-        local previous_chapter = self:getPreviousChapter(pageno)
-        if previous_chapter then
-            previous_chapter = pageno - previous_chapter
-        end
-        return previous_chapter
+    local previous_chapter = self:getPreviousChapter(pageno)
+    if not previous_chapter then
+        -- (ReaderFooter deals itself with nil and pageno not yet in first chapter)
+        return
     end
+    local pages_done = pageno - previous_chapter
+    if self.ui.document:hasHiddenFlows() and self.ui.document:getPageFlow(pageno) == 0 then
+        for page = previous_chapter, pageno - 1 do
+            if self.ui.document:getPageFlow(page) ~= 0 then
+                pages_done = pages_done - 1
+            end
+        end
+    end
+    return pages_done
 end
 
 function ReaderToc:updateCurrentNode()
