@@ -180,8 +180,10 @@ function ReaderToc:validateAndFixToc()
     local has_bogus
     local cur_page = 0
     local max_depth = 0
+    local cur_seq_by_level = {}
     for i = first, last do
-        local page = toc[i].page
+        local item = toc[i]
+        local page = item.page
         if page < cur_page then
             has_bogus = true
             break
@@ -189,9 +191,15 @@ function ReaderToc:validateAndFixToc()
         cur_page = page
         -- Use this loop to compute max_depth here (if has_bogus,
         -- we will recompute it in the loop below)
-        if toc[i].depth > max_depth then
-            max_depth = toc[i].depth
+        local depth = item.depth
+        if depth > max_depth then
+            max_depth = depth
         end
+        -- Also use this loop to compute seq_in_level for each
+        -- item, needed by BookMap with alternative theme
+        local seq = (cur_seq_by_level[depth] or 0) + 1
+        item.seq_in_level = seq
+        cur_seq_by_level[depth] = seq
     end
     if not has_bogus then -- no TOC items, or all are valid
         logger.dbg("validateAndFixToc(): TOC is fine")
@@ -203,6 +211,7 @@ function ReaderToc:validateAndFixToc()
     -- Bad ordering previously noticed: try to fix the wrong items' page
     -- by setting it to the previous or next good item page.
     max_depth = 0 -- recompute this
+    cur_seq_by_level = {}
     local nb_bogus = 0
     local nb_fixed_pages = 0
     -- We fix only one bogus item per loop, taking the option that
@@ -215,10 +224,17 @@ function ReaderToc:validateAndFixToc()
     -- (These cases are met in the following code with cur_page=57 and page=6)
     cur_page = 0
     for i = first, last do
-        if toc[i].depth > max_depth then
-            max_depth = toc[i].depth
+        local item = toc[i]
+        -- Recompute max_depth and item's seq_in_level
+        local depth = item.depth
+        if depth > max_depth then
+            max_depth = depth
         end
-        local page = toc[i].fixed_page or toc[i].page
+        local seq = (cur_seq_by_level[depth] or 0) + 1
+        item.seq_in_level = seq
+        cur_seq_by_level[depth] = seq
+        -- Look for bogus page
+        local page = item.fixed_page or item.page
         if page >= cur_page then
             cur_page = page
         else
@@ -272,7 +288,7 @@ function ReaderToc:validateAndFixToc()
                     logger.dbg("  fix next", j, toc[j].page, "=>", fixed_page)
                 end
             end
-            cur_page = toc[i].fixed_page or toc[i].page
+            cur_page = item.fixed_page or item.page
         end
     end
     if nb_bogus > 0 then

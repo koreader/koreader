@@ -497,7 +497,6 @@ function PageBrowserWidget:update()
 
     -- We need to rebuilt the full set of toc spans that will be shown
     -- Similar (but simplified) to what is done in BookMapWidget.
-    self.toc_depth = self.nb_toc_spans
     local toc = self.ui.toc.toc
     local cur_toc_items = {}
     local row_toc_items = {}
@@ -508,9 +507,9 @@ function PageBrowserWidget:update()
         if item.page > p_end then
             break
         end
-        if item.depth <= self.toc_depth then -- ignore lower levels we won't show
+        if item.depth <= self.nb_toc_spans then -- ignore lower levels we won't show
             -- An item at level N closes all previous items at level >= N
-            for lvl = item.depth, self.toc_depth do
+            for lvl = item.depth, self.nb_toc_spans do
                 local done_toc_item = cur_toc_items[lvl]
                 cur_toc_items[lvl] = nil
                 if done_toc_item then
@@ -533,6 +532,7 @@ function PageBrowserWidget:update()
                 title = item.title,
                 p_start = item.page,
                 p_end = nil,
+                seq_in_level = item.seq_in_level,
             }
         end
         toc_idx = toc_idx + 1
@@ -572,6 +572,7 @@ function PageBrowserWidget:update()
         nb_toc_spans = self.nb_toc_spans,
         span_height = self.span_height,
         font_face = self.toc_span_face,
+        alt_theme = G_reader_settings:isTrue("book_map_alt_theme"),
         start_page_text = "",
         start_page = p_start,
         end_page = p_end,
@@ -747,6 +748,19 @@ function PageBrowserWidget:showTile(grid_idx, page, tile, do_refresh)
     item_container[1] = thumb_frame
         -- thumb_frame will overflow its CenterContainer because of the added borders,
         -- but CenterContainer handles that well. We will refresh the outer dimensions.
+
+    if self.has_hidden_flows and self.ui.document:getPageFlow(page) ~= 0 then
+        -- We want to distinguish pages part of hidden flow.
+        -- Using a uniform gray background may not be enough on scanned PDF
+        -- gray pages non-dewatermarked, so we use diagonal gray stripes.
+        -- We use a gray background similar to how it appears on hidden flows
+        -- in the BookMapRow, where they are COLOR_LIGHT_GRAY (0xCC).
+        -- To achieve the same color, we can use COLOR_BLACK with alpha = 0.2.
+        thumb_frame.stripe_width = math.ceil(math.min(self.grid_item_width, self.grid_item_height) / 2)
+        thumb_frame.stripe_color = Blitbuffer.COLOR_BLACK
+        thumb_frame.stripe_over = true
+        thumb_frame.stripe_over_alpha = 0.2
+    end
 
     local page_num_widget
     if item_frame.show_pagenum and self.pagenum_page_texts[page] then
