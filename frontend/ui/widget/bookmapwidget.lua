@@ -232,12 +232,21 @@ function BookMapRow:init()
                         text_widget = nil
                     end
                 end
+                -- Different style depending on alt_theme
+                local bgcolor = Blitbuffer.COLOR_WHITE
+                if self.alt_theme then
+                    if item.seq_in_level % 2 == 0 then -- alternate background color
+                        bgcolor = Blitbuffer.COLOR_GRAY_E
+                    else
+                        bgcolor = Blitbuffer.COLOR_GRAY_B
+                    end
+                end
                 local span_w = FrameContainer:new{
                     overlap_offset = {offset_x, offset_y},
                     margin = 0,
                     padding = 0,
                     bordersize = self.toc_span_border,
-                    background = Blitbuffer.COLOR_WHITE,
+                    background = bgcolor,
                     CenterContainer:new{
                         dimen = Geom:new{
                             w = width - 2 * self.toc_span_border,
@@ -312,7 +321,9 @@ function BookMapRow:init()
                 table.insert(self.background_fillers, {
                     x = x, y = 0,
                     w = w, h = self.pages_frame_height,
-                    color = Blitbuffer.COLOR_LIGHT_GRAY,
+                    -- Different style depending on alt_theme
+                    color = self.alt_theme and Blitbuffer.COLOR_GRAY or Blitbuffer.COLOR_LIGHT_GRAY,
+                    stripe_width = self.alt_theme and math.ceil(self.span_height / 10) or nil,
                 })
             end
         end
@@ -526,7 +537,11 @@ end
 function BookMapRow:paintTo(bb, x, y)
     -- Paint background fillers (which are not subwidgets) first
     for _, filler in ipairs(self.background_fillers) do
-        bb:paintRect(x + self.pages_frame_offset_x + filler.x, y + filler.y, filler.w, filler.h, filler.color)
+        if filler.stripe_width then
+            bb:hatchRect(x + self.pages_frame_offset_x + filler.x, y + filler.y, filler.w, filler.h, filler.stripe_width, filler.color)
+        else
+            bb:paintRect(x + self.pages_frame_offset_x + filler.x, y + filler.y, filler.w, filler.h, filler.color)
+        end
     end
     -- Paint regular sub widgets the classic way
     InputContainer.paintTo(self, bb, x, y)
@@ -828,6 +843,8 @@ function BookMapWidget:update()
     self.vgroup:clear()
     self.cropping_widget:reset()
 
+    self.alt_theme = G_reader_settings:isTrue("book_map_alt_theme")
+
     -- Flat book map has each TOC item on a new line, and pages graph underneath.
     -- Non-flat book map shows a grid with TOC items following each others.
     self.flat_map = self.ui.doc_settings:readSetting("book_map_flat", false)
@@ -987,6 +1004,7 @@ function BookMapWidget:update()
                         title = item.title,
                         p_start = item.page,
                         p_end = nil,
+                        seq_in_level = item.seq_in_level,
                     }
                 end
             end
@@ -1090,6 +1108,7 @@ function BookMapWidget:update()
             nb_toc_spans = self.nb_toc_spans,
             span_height = self.span_height,
             font_face = self.toc_span_face,
+            alt_theme = self.alt_theme,
             start_page_text = start_page_text,
             start_page = p_start,
             end_page = p_end,
@@ -1195,6 +1214,31 @@ function BookMapWidget:showMenu()
                 local b = button_dialog:getButtonById("tap_to_page_browser")
                 b:setText(b.text_func(true), b.width)
                 b:refresh()
+            end,
+        }},
+        {{
+            text_func = function(no_size_trick)
+                local text = _("Alternative theme")
+                if G_reader_settings:isTrue("book_map_alt_theme") then
+                    text = text .. "  \u{2713}" -- checkmark
+                else
+                    if not no_size_trick then
+                        -- Initial call, make it wide enough so the checkmark text will fit
+                        text = text .. "  \u{2003}" -- wide em space
+                    end
+                    -- Otherwise, keep it small without the checkmark, which will fit
+                end
+                return text
+            end,
+            id = "alt_theme",
+            align = "left",
+            callback = function()
+                G_reader_settings:flipTrue("book_map_alt_theme")
+                local b = button_dialog:getButtonById("alt_theme")
+                b:setText(b.text_func(true), b.width)
+                b:refresh()
+                self.editable_stuff_edited = true -- have this change reflected on any lower bookmap & pagebrowser
+                self:update()
             end,
         }},
         not self.overview_mode and {{
