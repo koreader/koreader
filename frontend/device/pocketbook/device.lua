@@ -508,7 +508,7 @@ local PocketBook617 = PocketBook:extend{
 
 -- PocketBook Basic Lux 4 (618)
 local PocketBook618 = PocketBook:extend{
-    model = "PB618",
+    model = "PBBLux4",
     display_dpi = 212,
     isTouchDevice = yes,
     hasDPad = no,
