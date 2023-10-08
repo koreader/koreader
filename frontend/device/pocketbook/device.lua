@@ -510,10 +510,6 @@ local PocketBook617 = PocketBook:extend{
 local PocketBook618 = PocketBook:extend{
     model = "PBBLux4",
     display_dpi = 212,
-    isTouchDevice = yes,
-    hasDPad = no,
-    hasFewKeys = yes,
-    hasFrontlight = yes,
 }
 
 -- PocketBook Touch (622)
