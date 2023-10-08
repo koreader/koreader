@@ -611,6 +611,9 @@ function PageBrowserWidget:update()
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
+    if G_reader_settings:isTrue("page_browser_preload_thumbnails") then
+        self:preloadNextPrevScreenThumbnails()
+    end
 end
 
 function PageBrowserWidget:paintTo(bb, x, y)
@@ -733,6 +736,57 @@ function PageBrowserWidget:showTile(grid_idx, page, tile, do_refresh)
     end
 end
 
+function PageBrowserWidget:preloadNextPrevScreenThumbnails()
+    -- We're here with the page painted - and possibly some thumbnails
+    -- not yet there and being generated and going to be updated.
+    -- self.ui.thumbnail takes care of serializing tile requests, and
+    -- cancelling scheduled ones when new requests come.
+    -- So, we can just launch many getPageThumbnail() for the next and
+    -- previous PageBrowser views (which will be nearly no-op if the
+    -- thumbnail is already cached).
+    -- We first preload the next and prev rows, before preloading the
+    -- remaining thumbnails of the next and prev pages - so users
+    -- browsing per-row can have them before.
+
+    -- Pre-generate the thumbnails for the next row
+    local next_grid_page_start = self.focus_page - self.focus_page_shift + self.nb_grid_items
+    for idx=1, self.nb_cols do
+        local p = next_grid_page_start + idx - 1
+        if p >= 1 or p < self.nb_pages then
+            logger.dbg("preload next line", p)
+            -- We provide a dummy callback as we don't care about the tile
+            self.ui.thumbnail:getPageThumbnail(p, self.grid_item_width, self.grid_item_height, self.requests_batch_id, function() end)
+        end
+    end
+    -- Pre-generate the thumbnails for the prev row
+    local prev_line_page_start = self.focus_page - self.focus_page_shift - self.nb_cols
+    for idx=1, self.nb_cols do
+        local p = prev_line_page_start + idx - 1
+        if p >= 1 or p < self.nb_pages then
+            logger.dbg("preload prev line", p)
+            self.ui.thumbnail:getPageThumbnail(p, self.grid_item_width, self.grid_item_height, self.requests_batch_id, function() end)
+        end
+    end
+    -- Pre-generate the thumbnails for the next page (minus its top row, already done)
+    for idx=self.nb_cols+1, self.nb_grid_items do
+        local p = next_grid_page_start + idx - 1
+        if p >= 1 or p < self.nb_pages then
+            logger.dbg("preload next page remainings", p)
+            -- We provide a dummy callback as we don't care about the tile
+            self.ui.thumbnail:getPageThumbnail(p, self.grid_item_width, self.grid_item_height, self.requests_batch_id, function() end)
+        end
+    end
+    -- Pre-generate the thumbnails for the prev page (minus its bottom row, already done)
+    local prev_grid_page_start = self.focus_page - self.focus_page_shift - self.nb_grid_items
+    for idx=self.nb_grid_items - self.nb_cols, 1, -1 do
+        local p = prev_grid_page_start + idx - 1
+        if p >= 1 or p < self.nb_pages then
+            logger.dbg("preload prev page remainings", p)
+            self.ui.thumbnail:getPageThumbnail(p, self.grid_item_width, self.grid_item_height, self.requests_batch_id, function() end)
+        end
+    end
+end
+
 function PageBrowserWidget:showMenu()
     local button_dialog
     -- Width of our -/+ buttons, so it looks fine with Button's default font size of 20
@@ -750,6 +804,36 @@ function PageBrowserWidget:showMenu()
             align = "left",
             callback = function()
                 self:showGestures()
+            end,
+        }},
+        {{
+            text_func = function(no_size_trick)
+                -- A bit tricky to update the text in the callback, as this button,
+                -- being sized by ButtonTable, can't be rebuilt. We will update its
+                -- text, and we want to be sure it will fit in the initial width,
+                -- which may be with the checkmark or not.
+                local text = _("Preload next/prev thumbnails")
+                if G_reader_settings:isTrue("page_browser_preload_thumbnails") then
+                    text = text .. "  \u{2713}" -- checkmark
+                else
+                    if not no_size_trick then
+                        -- Initial call, make it wide enough so the checkmark text will fit
+                        text = text .. "  \u{2003}" -- wide em space
+                    end
+                    -- Otherwise, keep it small without the checkmark, which will fit
+                end
+                return text
+            end,
+            id = "preload_thumbnails",
+            align = "left",
+            callback = function()
+                G_reader_settings:flipTrue("page_browser_preload_thumbnails")
+                local b = button_dialog:getButtonById("preload_thumbnails")
+                b:setText(b.text_func(true), b.width)
+                b:refresh()
+                if G_reader_settings:isTrue("page_browser_preload_thumbnails") then
+                    self:preloadNextPrevScreenThumbnails()
+                end
             end,
         }},
         {
