@@ -500,10 +500,17 @@ function InputDialog:getInputValue()
     end
 end
 
-function InputDialog:setInputText(text, edited_state)
+function InputDialog:setInputText(text, edited_state, cursor_at_start_or_end)
     self._input_widget:setText(text)
     if edited_state ~= nil and self._buttons_edit_callback then
         self._buttons_edit_callback(edited_state)
+    end
+    if cursor_at_start_or_end ~= nil then -- true=start, false=end
+        if cursor_at_start_or_end then
+            self._input_widget:scrollToTop()
+        else
+            self._input_widget:scrollToBottom()
+        end
     end
 end
 
