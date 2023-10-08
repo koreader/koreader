@@ -691,7 +691,9 @@ function ReaderPaging:onInitScrollPageStates(orig_mode)
                 blank_area.h = blank_area.h - self.view.page_gap.height
             end
             if blank_area.h > 0 then
-                self:_gotoPage(self.current_page + 1, "scrolling")
+                local next_page = self.ui.document:getNextPage(self.current_page)
+                if next_page == 0 then break end -- end of document reached
+                self:_gotoPage(next_page, "scrolling")
             end
         end
         self:_gotoPage(self.orig_page, "scrolling")
@@ -773,7 +775,7 @@ function ReaderPaging:updateTopPageState(state, blank_area, offset)
         w = blank_area.w,
         h = blank_area.h,
     }
-    if state.page == self.number_of_pages then
+    if self.ui.document:getNextPage(state.page) == 0 then -- last page
         visible_area:offsetWithin(state.page_area, offset.x, offset.y)
     else
         visible_area = visible_area:shrinkInside(state.page_area, offset.x, offset.y)
@@ -790,7 +792,7 @@ function ReaderPaging:updateBottomPageState(state, blank_area, offset)
         w = blank_area.w,
         h = blank_area.h,
     }
-    if state.page == 1 then
+    if self.ui.document:getPrevPage(state.page) == 0 then -- first page
         visible_area:offsetWithin(state.page_area, offset.x, offset.y)
     else
         visible_area = visible_area:shrinkInside(state.page_area, offset.x, offset.y)
@@ -818,9 +820,9 @@ function ReaderPaging:genPageStatesFromTop(top_page_state, blank_area, offset)
     while blank_area.h > 0 do
         blank_area.h = blank_area.h - self.view.page_gap.height
         if blank_area.h > 0 then
-            if current_page == self.number_of_pages then break end
-            self:_gotoPage(current_page + 1, "scrolling")
-            current_page = current_page + 1
+            current_page = self.ui.document:getNextPage(current_page)
+            if current_page == 0 then break end -- end of document reached
+            self:_gotoPage(current_page, "scrolling")
             state = self:getNextPageState(blank_area, Geom:new{})
             table.insert(page_states, state)
         end
@@ -843,12 +845,22 @@ function ReaderPaging:genPageStatesFromBottom(bottom_page_state, blank_area, off
     while blank_area.h > 0 do
         blank_area.h = blank_area.h - self.view.page_gap.height
         if blank_area.h > 0 then
-            if current_page == 1 then break end
-            self:_gotoPage(current_page - 1, "scrolling")
-            current_page = current_page - 1
+            current_page = self.ui.document:getPrevPage(current_page)
+            if current_page == 0 then break end -- start of document reached
+            self:_gotoPage(current_page, "scrolling")
             state = self:getPrevPageState(blank_area, Geom:new{})
             table.insert(page_states, 1, state)
         end
+    end
+    if current_page == 0 then
+        -- We reached the start of document: we may have truncated too much
+        -- of the bottom page while scrolling up.
+        -- Re-generate everything with first page starting at top
+        offset = Geom:new{x = 0, y = 0}
+        blank_area:setSizeTo(self.view.visible_area)
+        local first_page_state = page_states[1]
+        first_page_state.visible_area.y = 0 -- anchor first page at top
+        return self:genPageStatesFromTop(first_page_state, blank_area, offset)
     end
     return page_states
 end
@@ -894,7 +906,7 @@ function ReaderPaging:onScrollPageRel(page_diff)
         -- page down, last page should be moved to top
         local last_page_state = table.remove(self.view.page_states)
         local last_visible_area = last_page_state.visible_area
-        if last_page_state.page == self.number_of_pages and
+        if self.ui.document:getNextPage(last_page_state.page) == 0 and
                 last_visible_area.y + last_visible_area.h >= last_page_state.page_area.h then
             table.insert(self.view.page_states, last_page_state)
             self.ui:handleEvent(Event:new("EndOfBook"))
@@ -991,7 +1003,27 @@ function ReaderPaging:onGotoPageRel(diff)
         goto_end(x, -x_diff)
     end
     local function goto_next_page()
-        local new_page = self.current_page + diff
+        local new_page
+        if self.ui.document:hasHiddenFlows() then
+            local forward = diff > 0
+            local pdiff = forward and math.ceil(diff) or math.ceil(-diff)
+            new_page = self.current_page
+            for i=1, pdiff do
+                local test_page = forward and self.ui.document:getNextPage(new_page)
+                                           or self.ui.document:getPrevPage(new_page)
+                if test_page == 0 then -- start or end of document reached
+                    if forward then
+                        new_page = self.number_of_pages + 1 -- to trigger EndOfBook below
+                    else
+                        new_page = 0
+                    end
+                    break
+                end
+                new_page = test_page
+            end
+        else
+            new_page = self.current_page + diff
+        end
         if new_page > self.number_of_pages then
             self.ui:handleEvent(Event:new("EndOfBook"))
             goto_end(y)
@@ -1107,7 +1139,18 @@ function ReaderPaging:onGotoPage(number, pos)
 end
 
 function ReaderPaging:onGotoRelativePage(number)
-    self:_gotoPage(self.current_page + number)
+    local new_page = self.current_page
+    local test_page = new_page
+    local forward = number > 0
+    for i=1, math.abs(number) do
+        test_page = forward and self.ui.document:getNextPage(test_page)
+                             or self.ui.document:getPrevPage(test_page)
+        if test_page == 0 then -- start or end of document reached
+            break
+        end
+        new_page = test_page
+    end
+    self:_gotoPage(new_page)
     return true
 end
 
