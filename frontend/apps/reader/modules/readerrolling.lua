@@ -466,7 +466,9 @@ function ReaderRolling:addToMainMenu(menu_items)
         menu_items.hide_nonlinear_flows = {
             text = _("Hide non-linear fragments"),
             enabled_func = function()
+                -- Custom hidden flows have precedence over publisher hidden non-linear fragments
                 return self.view.view_mode == "page" and self.ui.document:getVisiblePageCount() == 1
+                                                     and not self.ui.handmade:isHandmadeHiddenFlowsEnabled()
             end,
             checked_func = function() return self.hide_nonlinear_flows end,
             callback = function()

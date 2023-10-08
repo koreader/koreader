@@ -29,9 +29,8 @@ local ReaderToc = InputContainer:extend{
     collapsed_toc = nil, -- table
     collapse_depth = 2,
     expanded_nodes = nil, -- table
-    toc_menu_title = _("Table of contents"),
-    alt_toc_menu_title = _("Table of contents *"),
     toc_items_per_page_default = 14,
+    alt_toc_symbol = "\u{E298}" -- two-folders in circle (custom toc uses a pen in square symbol)
 }
 
 function ReaderToc:init()
@@ -64,6 +63,17 @@ function ReaderToc:registerKeyEvents()
     if Device:hasKeyboard() then
         self.key_events.ShowToc = { { "T" } }
     end
+end
+
+function ReaderToc:getTitle()
+    local title = _("Table of contents")
+    -- Handmade ToC has precedence over alternative ToC
+    if self.ui.handmade:isHandmadeTocEnabled() then
+        title = title .. " " .. self.ui.handmade.custom_toc_symbol
+    elseif self.ui.document:isTocAlternativeToc() then
+        title = title .. " " .. self.alt_toc_symbol
+    end
+    return title
 end
 
 ReaderToc.onPhysicalKeyboardConnected = ReaderToc.registerKeyEvents
@@ -756,7 +766,7 @@ function ReaderToc:onShowToc()
     --       This yields *slightly* better alignment between state & mandatory (in terms of effective margins).
     local button_size = self.expand_button:getSize()
     local toc_menu = Menu:new{
-        title = _("Table of Contents"),
+        title = self:getTitle(),
         item_table = self.collapsed_toc,
         state_w = can_collapse and button_size.w or 0,
         ui = self.ui,
@@ -938,7 +948,7 @@ function ReaderToc:addToMainMenu(menu_items)
     -- insert table to main reader menu
     menu_items.table_of_contents = {
         text_func = function()
-            return self.ui.document:isTocAlternativeToc() and self.alt_toc_menu_title or self.toc_menu_title
+            return self:getTitle()
         end,
         callback = function()
             self:onShowToc()
@@ -951,13 +961,22 @@ function ReaderToc:addToMainMenu(menu_items)
     -- Alternative ToC (only available with CRE documents)
     if self.ui.document:canHaveAlternativeToc() then
         menu_items.toc_alt_toc = {
-            text = _("Alternative table of contents"),
-            help_text = _([[
+            text = _("Alternative table of contents") .. " " .. self.alt_toc_symbol,
+            help_text_func = function()
+                local help_text = _([[
 An alternative table of contents can be built from document headings <H1> to <H6>.
 If the document contains no headings, or all are ignored, the alternative ToC will be built from document fragments and will point to the start of each individual HTML file in the EPUB.
 
 Some of the headings can be ignored, and hints can be set to other non-heading elements in a user style tweak, so they can be used as ToC items.
-See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
+See Style tweaks → Miscellaneous → Alternative ToC hints.]])
+                if self.ui.handmade:isHandmadeTocEnabled() then
+                    help_text = _([[To use the alternative ToC, disable your custom table of contents first.]]) .. "\n\n" .. help_text
+                end
+                return help_text
+            end,
+            enabled_func = function()
+                return not self.ui.handmade:isHandmadeTocEnabled()
+            end,
             checked_func = function()
                 return self.ui.document:isTocAlternativeToc()
             end,

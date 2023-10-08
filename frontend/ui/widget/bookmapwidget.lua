@@ -848,11 +848,22 @@ function BookMapWidget:update()
     -- Flat book map has each TOC item on a new line, and pages graph underneath.
     -- Non-flat book map shows a grid with TOC items following each others.
     self.flat_map = self.ui.doc_settings:readSetting("book_map_flat", false)
-    self.toc_depth = self.ui.doc_settings:readSetting("book_map_toc_depth", self.max_toc_depth)
+    if self.ui.handmade:isHandmadeTocEnabled() then
+        -- We can switch from a custom TOC (max depth of 1) to the regular TOC
+        -- (larger depth possible), so we'd rather not replace with 1 the depth
+        -- set and saved for a regular TOC. So, use a dedicated setting for each.
+        self.toc_depth = self.ui.doc_settings:readSetting("book_map_toc_depth_handmade_toc") or self.max_toc_depth
+    else
+        self.toc_depth = self.ui.doc_settings:readSetting("book_map_toc_depth", self.max_toc_depth)
+    end
     if self.overview_mode then
         -- Restricted to grid mode, fitting on the screen. Only toc depth can be adjusted.
         self.flat_map = false
-        self.toc_depth = self.ui.doc_settings:readSetting("book_map_overview_toc_depth", self.max_toc_depth)
+        if self.ui.handmade:isHandmadeTocEnabled() then
+            self.toc_depth = self.ui.doc_settings:readSetting("book_map_overview_toc_depth_handmade_toc") or self.max_toc_depth
+        else
+            self.toc_depth = self.ui.doc_settings:readSetting("book_map_overview_toc_depth", self.max_toc_depth)
+        end
     end
     if self.flat_map then
         self.nb_toc_spans = 0 -- no span shown in grid
@@ -1530,11 +1541,19 @@ function BookMapWidget:saveSettings(reset)
         self.pages_per_row = nil
     end
     if self.overview_mode then
-        self.ui.doc_settings:saveSetting("book_map_overview_toc_depth", self.toc_depth)
+        if self.ui.handmade:isHandmadeTocEnabled() then
+            self.ui.doc_settings:saveSetting("book_map_overview_toc_depth_handmade_toc", self.toc_depth)
+        else
+            self.ui.doc_settings:saveSetting("book_map_overview_toc_depth", self.toc_depth)
+        end
         return
     end
+    if self.ui.handmade:isHandmadeTocEnabled() then
+        self.ui.doc_settings:saveSetting("book_map_toc_depth_handmade_toc", self.toc_depth)
+    else
+        self.ui.doc_settings:saveSetting("book_map_toc_depth", self.toc_depth)
+    end
     self.ui.doc_settings:saveSetting("book_map_flat", self.flat_map)
-    self.ui.doc_settings:saveSetting("book_map_toc_depth", self.toc_depth)
     self.ui.doc_settings:saveSetting("book_map_pages_per_row", self.pages_per_row)
 end
 
