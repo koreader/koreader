@@ -3056,15 +3056,14 @@ function ReaderStatistics:onShowReaderProgress()
 end
 
 function ReaderStatistics:onShowBookStats()
-    if self:isEnabled() then
-        self.kv = KeyValuePage:new{
-            title = _("Current statistics"),
-            kv_pairs = self:getCurrentStat(),
-            value_align = "right",
-            single_page = true,
-        }
-        UIManager:show(self.kv)
-    end
+    if not self:isEnabled() then return end
+    self.kv = KeyValuePage:new{
+        title = _("Current statistics"),
+        kv_pairs = self:getCurrentStat(),
+        value_align = "right",
+        single_page = true,
+    }
+    UIManager:show(self.kv)
 end
 
 function ReaderStatistics:getCurrentBookReadPages()
