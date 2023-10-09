@@ -436,64 +436,61 @@ end
 
 --- Updates sdr location for file rename/copy/move/delete operations.
 function DocSettings:updateLocation(doc_path, new_doc_path, copy)
-    local doc_settings, new_sidecar_dir
-    
+    local doc_settings, new_sidecar_dir, cover_file
     if G_reader_settings:readSetting("document_metadata_folder") == "hash" then
         -- none of these operations (except delete) changes the hash -> no location change
         if not new_doc_path then
-            doc_settings = DocSettings:open(doc_path)
-            local cover_file = doc_settings:getCoverFile()
-            doc_settings:purge()
-            if cover_file then -- after purge because purge uses cover file cache
-                doc_settings:getCoverFile(true) -- reset cache
-            end
-        end
-        return
-    end
-
-    -- update metadata
-    if DocSettings:hasSidecarFile(doc_path) then
-        doc_settings = DocSettings:open(doc_path)
-        if new_doc_path then
-            local new_doc_settings = DocSettings:open(new_doc_path)
-            -- save doc settings to the new location, no custom metadata yet
-            new_sidecar_dir = new_doc_settings:flush(doc_settings.data, true)
-        else
             local cache_file_path = doc_settings:readSetting("cache_file_path")
-            if cache_file_path then
-                os.remove(cache_file_path)
+            if cache_file_path then os.remove(cache_file_path) end
+            doc_settings = DocSettings:open(doc_path)
+            cover_file = doc_settings:getCoverFile()
+            doc_settings:purge()
+        end
+    else
+        -- update metadata
+        if DocSettings:hasSidecarFile(doc_path) then
+            doc_settings = DocSettings:open(doc_path)
+            if new_doc_path then
+                local new_doc_settings = DocSettings:open(new_doc_path)
+                -- save doc settings to the new location, no custom metadata yet
+                new_sidecar_dir = new_doc_settings:flush(doc_settings.data, true)
+            else
+                local cache_file_path = doc_settings:readSetting("cache_file_path")
+                if cache_file_path then
+                    os.remove(cache_file_path)
+                end
             end
         end
-    end
 
-    -- update custom metadata
-    if not doc_settings then
-        doc_settings = DocSettings:open(doc_path)
-    end
-    local cover_file = doc_settings:getCoverFile()
-    if new_doc_path then
-        -- custom cover
-        if cover_file then
-            if not new_sidecar_dir then
-                new_sidecar_dir = DocSettings:getSidecarDir(new_doc_path)
-                util.makePath(new_sidecar_dir)
-            end
-            local _, filename = util.splitFilePathName(cover_file)
-            ffiutil.copyFile(cover_file, new_sidecar_dir .. "/" .. filename)
+        -- update custom metadata
+        if not doc_settings then
+            doc_settings = DocSettings:open(doc_path)
         end
-        -- custom metadata
-        local metadata_file = self:getCustomMetadataFile(doc_path)
-        if metadata_file then
-            if not new_sidecar_dir then
-                new_sidecar_dir = DocSettings:getSidecarDir(new_doc_path)
-                util.makePath(new_sidecar_dir)
+        cover_file = doc_settings:getCoverFile()
+        if new_doc_path then
+            -- custom cover
+            if cover_file then
+                if not new_sidecar_dir then
+                    new_sidecar_dir = DocSettings:getSidecarDir(new_doc_path)
+                    util.makePath(new_sidecar_dir)
+                end
+                local _, filename = util.splitFilePathName(cover_file)
+                ffiutil.copyFile(cover_file, new_sidecar_dir .. "/" .. filename)
             end
-            ffiutil.copyFile(metadata_file, new_sidecar_dir .. "/" .. custom_metadata_filename)
+            -- custom metadata
+            local metadata_file = self:getCustomMetadataFile(doc_path)
+            if metadata_file then
+                if not new_sidecar_dir then
+                    new_sidecar_dir = DocSettings:getSidecarDir(new_doc_path)
+                    util.makePath(new_sidecar_dir)
+                end
+                ffiutil.copyFile(metadata_file, new_sidecar_dir .. "/" .. custom_metadata_filename)
+            end
         end
-    end
 
-    if not copy then
-        doc_settings:purge()
+        if not copy then
+            doc_settings:purge()
+        end
     end
 
     if cover_file then -- after purge because purge uses cover file cache
@@ -676,8 +673,10 @@ function DocSettings.getHashDirSdrInfos()
                 if custom_metadata_file then
                     local custom = DocSettings:openCustomMetadata(custom_metadata_file)
                     local custom_props = custom:readSetting("custom_props")
-                    if custom_props.title then info_str = custom_props.title end
-                    if custom_props.authors then custom_authors = custom_props.authors end
+                    if custom_props then
+                        if custom_props.title then info_str = custom_props.title end
+                        if custom_props.authors then custom_authors = custom_props.authors end
+                    end
                 end
                 if not info_str then info_str = stored.doc_props.title end
                 if not info_str then info_str = "untitled document" end
