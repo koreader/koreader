@@ -136,7 +136,7 @@ function MemosExporter:createHighlights(booknotes)
                 highlight = highlight .. clipping.note .. "\n\n"
             end
             highlight =  highlight .. booknotes.title .. " (page: " .. clipping.page .. "）\n\n #" .. booknotes.title .. " #koreader"
-            local result, err = makeRequest("POST", { content = highlight }, self.settings.api,self.settings.token)
+            local result, err = makeRequest("POST", { content = highlight }, self.settings.api, self.settings.token)
             if not result then
                 logger.warn("error creating highlights", err)
                 error_number = error_number + 1
