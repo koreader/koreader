@@ -3,6 +3,7 @@ local DocSettings = require("docsettings")
 local datetime = require("datetime")
 local dump = require("dump")
 local ffiutil = require("ffi/util")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("util")
 local joinPath = ffiutil.joinPath
 local lfs = require("libs/libkoreader-lfs")
@@ -255,8 +256,14 @@ end
 function ReadHistory:addItem(file, ts, no_flush)
     if file ~= nil and lfs.attributes(file, "mode") == "file" then
         local index = self:getIndexByFile(realpath(file))
-        if ts and index and self.hist[index].time == ts then
-            return -- this legacy item is in the history already
+        if index then -- book is in the history already
+            if ts and self.hist[index].time == ts then
+                return -- legacy item already added
+            end
+            if not ts and G_reader_settings:isTrue("history_freeze_finished_books")
+                      and filemanagerutil.getStatus(file) == "complete" then
+                return -- book marked as finished, do not update timestamps of item and file
+            end
         end
         local now = ts or os.time()
         local mtime = lfs.attributes(file, "modification")

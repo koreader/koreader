@@ -277,6 +277,15 @@ function FileManagerMenu:setUpdateItemTable()
                             G_reader_settings:flipNilOrFalse("history_datetime_short")
                             require("readhistory"):reload(true)
                         end,
+                    },
+                    {
+                        text = _("Freeze last read date of finished books"),
+                        checked_func = function()
+                            return G_reader_settings:isTrue("history_freeze_finished_books")
+                        end,
+                        callback = function()
+                            G_reader_settings:flipNilOrFalse("history_freeze_finished_books")
+                        end,
                         separator = true,
                     },
                     {
