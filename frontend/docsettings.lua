@@ -440,9 +440,9 @@ function DocSettings:updateLocation(doc_path, new_doc_path, copy)
     if G_reader_settings:readSetting("document_metadata_folder") == "hash" then
         -- none of these operations (except delete) changes the hash -> no location change
         if not new_doc_path then
+            doc_settings = DocSettings:open(doc_path)
             local cache_file_path = doc_settings:readSetting("cache_file_path")
             if cache_file_path then os.remove(cache_file_path) end
-            doc_settings = DocSettings:open(doc_path)
             cover_file = doc_settings:getCoverFile()
             doc_settings:purge()
         end
