@@ -548,7 +548,7 @@ local metadata_folder_str = {
 
 local metadata_folder_help_header = T(_([[Book view settings, reading progress, highlights, bookmarks and notes (collectively known as metadata) are stored in a separate folder named <book-filename>.sdr (".sdr" meaning "sidecar").
 
-You can decide between three locations/methods where these will be saved: ]]))
+You can decide between three locations/methods where these will be saved:]]))
 local metadata_folder_help_doc = T(_(" - alongside the book file itself (the long time default): sdr folders will be visible when you browse your library directories with another file browser or from your computer, which may clutter your vision of your library. But this allows you to move them along when you reorganize your library, and also survives any renaming of parent directories. Also, if you perform directory synchronization or backups, your settings will be part of them."))
 local metadata_folder_help_dir = T(_(" - all in %1: sdr folders will only be visible and used by KOReader, and won't clutter your vision of your library directories with another file browser or from your computer. But any reorganisation of your library (directories or filename moves and renamings) may result in KOReader not finding your previous settings for these books. These settings won't be part of any synchronization or backups of your library."), DataStorage:getDocSettingsDir())
 local metadata_folder_help_hash = T(_(" - all inside %1 as hashes: sdr folders are identified not by filepath/filename but by partial MD5 hash, allowing you to rename, move, and copy documents outside of KOReader without sdr folder clutter while keeping them linked to their metadata. However, any file modifications such as writing highlights into PDFs or downloading from Calibre may change the hash, and thus lose their linked metadata. Calculating file hashes may also slow down file browser navigation. This option may suit users with multiple copies of documents across different devices and directories."), DataStorage:getDocSettingsHashDir())
@@ -679,7 +679,7 @@ common_settings.document_save = {
             end,
             callback = function()
                 if G_reader_settings:readSetting("document_metadata_folder") == "hash" then
-                    UIManager:show(InfoMessage:new{ text = _("Warning: Book metadata location is set to hash-based storage. Writing highlights into a PDF modifies the file which may change the partial hash, resulting in its metadata (e.g., highlights and progress) being unlinked and lost."), })
+                    UIManager:show(InfoMessage:new{ text = _("Warning: Book metadata location is set to hash-based storage. Writing highlights into a PDF modifies the file which may change the partial hash, resulting in its metadata (e.g., highlights and progress) being unlinked and lost."), icon = "notice-warning"  })
                 end
                 G_reader_settings:saveSetting("save_document", "always")
             end,
