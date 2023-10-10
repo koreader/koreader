@@ -229,9 +229,12 @@ function DocSettings:open(doc_path)
     end
     local history_file = new:getHistoryPath(doc_path)
 
+    local hash_sidecar_dir, hash_sidecar_file
     if DocSettings.isHashLocationEnabled() then
-        new.hash_sidecar_dir, new.hash_sidecar_file =
+        hash_sidecar_dir, hash_sidecar_file =
                 new:getSidecarHashDirAndFilepath(doc_path)
+        new.hash_sidecar_dir = hash_sidecar_dir
+        new.hash_sidecar_file = hash_sidecar_file
     end
 
     -- Candidates list, in order of priority:
@@ -247,9 +250,9 @@ function DocSettings:open(doc_path)
         -- Backup file of new sidecar file in docsettings folder
         dir_sidecar_file and (dir_sidecar_file..".old") or "",
         -- Hash or PDF fingerprint-based sidecar file lookup
-        new.hash_sidecar_file or "",
+        hash_sidecar_file or "",
         -- Backup file of hash or PDF fingerprint-based sidecar file lookup
-        new.hash_sidecar_file and (new.hash_sidecar_file..".old") or "",
+        hash_sidecar_file and (new.hash_sidecar_file..".old") or "",
         -- Legacy history folder
         history_file,
         -- Backup file in legacy history folder
@@ -286,7 +289,6 @@ function DocSettings:open(doc_path)
 
     return new
 end
-
 
 local function writeToFile(data, file)
     file:write("-- we can read Lua syntax here!\nreturn ")
@@ -630,7 +632,6 @@ function DocSettings:flushCustomMetadata(doc_path)
 end
 
 -- hash-based SDR storage
-
 local function getSdrsInDir(path)
     -- Get all the metadata.filetype.lua files under directory path.
     -- Derived from readerdictionary.getIfosInDir()
