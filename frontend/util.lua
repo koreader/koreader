@@ -1005,6 +1005,34 @@ function util.getFormattedSize(size)
     return s
 end
 
+--- Calculate partial digest of an open file. To the calculating mechanism itself,
+-- since only PDF documents could be modified by KOReader by appending data
+-- at the end of the files when highlighting, we use a non-even sampling
+-- algorithm which samples with larger weight at file head and much smaller
+-- weight at file tail, thus reduces the probability that appended data may change
+-- the digest value.
+-- Note that if PDF file size is around 1024, 4096, 16384, 65536, 262144
+-- 1048576, 4194304, 16777216, 67108864, 268435456 or 1073741824, appending data
+-- by highlighting in KOReader may change the digest value.
+function util.partialMD5(file)
+    local bit = require("bit")
+    local md5 = require("ffi/sha2").md5
+    local leftshift = bit.lshift
+    local step, size = 1024, 1024
+    local update = md5()
+    for i = -1, 10 do
+        file:seek("set", leftshift(step, 2*i))
+        local sample = file:read(size)
+        if sample then
+            update(sample)
+        else
+            break
+        end
+    end
+    return update()
+end
+
+
 --[[--
 Replaces invalid UTF-8 characters with a replacement string.
 
@@ -1466,33 +1494,6 @@ function util.wrapMethod(target_table, target_field_name, new_func, before_callb
     }, WrappedFunction_mt)
     target_table[target_field_name] = wrapped
     return wrapped
-end
-
---- Calculate partial digest of an open file. To the calculating mechanism itself,
--- since only PDF documents could be modified by KOReader by appending data
--- at the end of the files when highlighting, we use a non-even sampling
--- algorithm which samples with larger weight at file head and much smaller
--- weight at file tail, thus reduces the probability that appended data may change
--- the digest value.
--- Note that if PDF file size is around 1024, 4096, 16384, 65536, 262144
--- 1048576, 4194304, 16777216, 67108864, 268435456 or 1073741824, appending data
--- by highlighting in KOReader may change the digest value.
-function util.partialMD5(file)
-    local bit = require("bit")
-    local md5 = require("ffi/sha2").md5
-    local leftshift = bit.lshift
-    local step, size = 1024, 1024
-    local update = md5()
-    for i = -1, 10 do
-        file:seek("set", leftshift(step, 2*i))
-        local sample = file:read(size)
-        if sample then
-            update(sample)
-        else
-            break
-        end
-    end
-    return update()
 end
 
 return util

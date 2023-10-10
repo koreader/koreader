@@ -203,7 +203,7 @@ function DocSettings:getSidecarHashDirAndFilepath(doc_path)
         return "", ""
     end
     local hash_file = "metadata." .. filetype .. ".lua"
-    local hash_filepath = path .. '/' .. hash_file
+    local hash_filepath = path .. "/" .. hash_file
     return path, hash_filepath
 end
 
@@ -242,23 +242,23 @@ function DocSettings:open(doc_path)
         -- New sidecar file in doc folder
         doc_sidecar_file or "",
         -- Backup file of new sidecar file in doc folder
-        doc_sidecar_file and (doc_sidecar_file..".old") or "",
+        doc_sidecar_file and (doc_sidecar_file .. ".old") or "",
         -- Legacy sidecar file
         legacy_sidecar_file or "",
         -- New sidecar file in docsettings folder
         dir_sidecar_file or "",
         -- Backup file of new sidecar file in docsettings folder
-        dir_sidecar_file and (dir_sidecar_file..".old") or "",
+        dir_sidecar_file and (dir_sidecar_file .. ".old") or "",
         -- Hash or PDF fingerprint-based sidecar file lookup
         hash_sidecar_file or "",
         -- Backup file of hash or PDF fingerprint-based sidecar file lookup
-        hash_sidecar_file and (new.hash_sidecar_file..".old") or "",
+        hash_sidecar_file and (new.hash_sidecar_file .. ".old") or "",
         -- Legacy history folder
         history_file,
         -- Backup file in legacy history folder
-        history_file..".old",
+        history_file .. ".old",
         -- Legacy kpdfview setting
-        doc_path..".kpdfview.lua",
+        doc_path .. ".kpdfview.lua",
     }
     -- We get back an array of tables for *existing* candidates, sorted MRU first (insertion order breaks ties).
     local candidates = buildCandidates(candidates_list)
@@ -396,7 +396,7 @@ function DocSettings:purge(sidecar_to_keep, data_to_purge)
             local candidate_path = t.path
             if lfs.attributes(candidate_path, "mode") == "file" then
                 if (not sidecar_to_keep)
-                        or (candidate_path ~= sidecar_to_keep and candidate_path ~= sidecar_to_keep..".old") then
+                        or (candidate_path ~= sidecar_to_keep and candidate_path ~= sidecar_to_keep .. ".old") then
                     os.remove(candidate_path)
                     logger.dbg("DocSettings: purged:", candidate_path)
                 end
@@ -513,7 +513,7 @@ local function findCoverFileInDir(dir)
     end
 end
 
---- Returns path to book custom cover file if it exists, or nil
+--- Returns path to book custom cover file if it exists, or nil.
 function DocSettings:findCoverFile(doc_path)
     doc_path = doc_path or self.data.doc_path
     local location = G_reader_settings:readSetting("document_metadata_folder", "doc")
