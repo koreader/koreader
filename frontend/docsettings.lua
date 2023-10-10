@@ -670,7 +670,7 @@ function DocSettings.getHashDirSdrInfos()
             if ok and next(stored) ~= nil then
                 local info_str, custom_authors
                 local sdr_path = sdr:sub(1, sdr:match(".*/()") - 1) -- SDR path
-                local custom_metadata_file = sdr_path .. "custom_metadata.lua"
+                local custom_metadata_file = sdr_path .. custom_metadata_filename
                 if custom_metadata_file then
                     local custom = DocSettings:openCustomMetadata(custom_metadata_file)
                     local custom_props = custom:readSetting("custom_props")
