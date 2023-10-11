@@ -1,21 +1,24 @@
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local ConfirmBox = require("ui/widget/confirmbox")
+local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local FileChooser = require("ui/widget/filechooser")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
+local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local BaseUtil = require("ffi/util")
 local Utf8Proc = require("ffi/utf8proc")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
 local Screen = require("device").screen
-local T = BaseUtil.template
+local T = require("ffi/util").template
 
 local FileSearcher = WidgetContainer:extend{
     case_sensitive = false,
@@ -27,6 +30,7 @@ function FileSearcher:init()
 end
 
 function FileSearcher:onShowFileSearch(search_string)
+    if not self.ui.file_chooser then return end -- FM only
     local search_dialog
     local check_button_case, check_button_subfolders, check_button_metadata
     search_dialog = InputDialog:new{
@@ -53,20 +57,19 @@ function FileSearcher:onShowFileSearch(search_string)
                     end,
                 },
                 {
-                    text = self.ui.file_chooser and _("Current folder") or _("Book folder"),
+                    text = _("Current folder"),
                     is_enter_default = true,
                     callback = function()
                         self.search_value = search_dialog:getInputText()
                         if self.search_value == "" then return end
                         UIManager:close(search_dialog)
-                        self.path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile()
+                        self.path = self.ui.file_chooser.path or self.ui:getLastDirFile()
                         self:doSearch()
                     end,
                 },
             },
         },
     }
-
     check_button_case = CheckButton:new{
         text = _("Case sensitive"),
         checked = self.case_sensitive,
@@ -96,20 +99,13 @@ function FileSearcher:onShowFileSearch(search_string)
         }
         search_dialog:addWidget(check_button_metadata)
     end
-
     UIManager:show(search_dialog)
     search_dialog:onShowKeyboard()
 end
 
 function FileSearcher:doSearch()
-    local results
     local dirs, files = self:getList()
-    -- If we have a FileChooser instance, use it, to be able to make use of its natsort cache
-    if self.ui.file_chooser then
-        results = self.ui.file_chooser:genItemTable(dirs, files)
-    else
-        results = FileChooser:genItemTable(dirs, files)
-    end
+    local results = self.ui.file_chooser:genItemTable(dirs, files)
     if #results > 0 then
         self:showSearchResults(results)
     else
@@ -124,8 +120,6 @@ function FileSearcher:getList()
         ["/proc"] = true,
         ["/sys"] = true,
     }
-    local show_hidden = G_reader_settings:isTrue("show_hidden")
-    local show_unsupported = G_reader_settings:isTrue("show_unsupported")
     local collate = G_reader_settings:readSetting("collate")
     local keywords = self.search_value
     if keywords ~= "*" then -- one * to show all files
@@ -157,20 +151,20 @@ function FileSearcher:getList()
                     local attributes = lfs.attributes(fullpath) or {}
                     -- Don't traverse hidden folders if we're not showing them
                     if attributes.mode == "directory" and f ~= "." and f ~= ".."
-                            and (show_hidden or not util.stringStartsWith(f, "."))
+                            and (FileChooser.show_hidden or not util.stringStartsWith(f, "."))
                             and FileChooser:show_dir(f) then
                         if self.include_subfolders and not sys_folders[fullpath] then
                             table.insert(new_dirs, fullpath)
                         end
                         if self:isFileMatch(f, fullpath, keywords) then
-                            table.insert(dirs, FileChooser:getListItem(f, fullpath, attributes))
+                            table.insert(dirs, FileChooser.getListItem(f, fullpath, attributes))
                         end
                     -- Always ignore macOS resource forks, too.
                     elseif attributes.mode == "file" and not util.stringStartsWith(f, "._")
-                            and (show_unsupported or DocumentRegistry:hasProvider(fullpath))
+                            and (FileChooser.show_unsupported or DocumentRegistry:hasProvider(fullpath))
                             and FileChooser:show_file(f) then
                         if self:isFileMatch(f, fullpath, keywords, true) then
-                            table.insert(files, FileChooser:getListItem(f, fullpath, attributes, collate))
+                            table.insert(files, FileChooser.getListItem(f, fullpath, attributes, collate))
                         end
                     end
                 end
@@ -221,14 +215,12 @@ end
 function FileSearcher:showSearchResultsMessage(no_results)
     local text = no_results and T(_("No results for '%1'."), self.search_value)
     if self.no_metadata_count == 0 then
-        local InfoMessage = require("ui/widget/infomessage")
         UIManager:show(InfoMessage:new{ text = text })
     else
         local txt = T(N_("1 book has been skipped.", "%1 books have been skipped.",
             self.no_metadata_count), self.no_metadata_count) .. "\n" ..
             _("Not all books metadata extracted yet.\nExtract metadata now?")
         text = no_results and text .. "\n\n" .. txt or txt
-        local ConfirmBox = require("ui/widget/confirmbox")
         UIManager:show(ConfirmBox:new{
             text = text,
             ok_text = _("Extract"),
@@ -258,6 +250,7 @@ function FileSearcher:showSearchResults(results)
     table.insert(menu_container, self.search_menu)
     self.search_menu.close_callback = function()
         UIManager:close(menu_container)
+        self.ui.file_chooser:refreshPath()
     end
     self.search_menu:switchItemTable(T(_("Search results (%1)"), #results), results)
     UIManager:show(menu_container)
@@ -267,46 +260,61 @@ function FileSearcher:showSearchResults(results)
 end
 
 function FileSearcher:onMenuSelect(item)
+    local file = item.path
+    local has_provider = false
     local dialog
+    local function close_dialog_callback()
+        UIManager:close(dialog)
+    end
+    local function close_dialog_menu_callback()
+        UIManager:close(dialog)
+        self.close_callback()
+    end
     local buttons = {}
     if item.is_file then
+        has_provider = DocumentRegistry:hasProvider(file)
+        if has_provider or DocSettings:hasSidecarFile(file) then
+            table.insert(buttons, filemanagerutil.genStatusButtonsRow(file, close_dialog_callback))
+            table.insert(buttons, {}) -- separator
+            table.insert(buttons, {
+                filemanagerutil.genResetSettingsButton(file, close_dialog_callback),
+                filemanagerutil.genAddRemoveFavoritesButton(file, close_dialog_callback),
+            })
+        end
         table.insert(buttons, {
             {
-                text = _("Book information"),
+                text = _("Delete"),
                 callback = function()
-                    UIManager:close(dialog)
-                    FileManagerBookInfo:show(item.path)
+                    local function post_delete_callback()
+                        UIManager:close(dialog)
+                        for i, menu_item in ipairs(self.item_table) do
+                            if menu_item.path == file then
+                                table.remove(self.item_table, i)
+                                break
+                            end
+                            self:switchItemTable(T(_("Search results (%1)"), #self.item_table), self.item_table)
+                        end
+                    end
+                    self._manager.ui:showDeleteFileDialog(file, post_delete_callback)
                 end,
             },
-            {
-                text = _("Open"),
-                enabled = DocumentRegistry:hasProvider(item.path),
-                callback = function()
-                    UIManager:close(dialog)
-                    self.close_callback()
-                    require("apps/reader/readerui"):showReader(item.path)
-                end,
-            },
+            filemanagerutil.genBookInformationButton(file, close_dialog_callback),
         })
     end
     table.insert(buttons, {
+        filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback),
         {
-            text = _("Cancel"),
+            text = _("Open"),
+            enabled = has_provider,
             callback = function()
-                UIManager:close(dialog)
-            end,
-        },
-        {
-            text = _("Show folder"),
-            callback = function()
-                UIManager:close(dialog)
-                self.close_callback()
-                self._manager:showFolder(item.path)
+                close_dialog_menu_callback()
+                local ReaderUI = require("apps/reader/readerui")
+                ReaderUI:showReader(file)
             end,
         },
     })
     dialog = ButtonDialog:new{
-        title = item.path,
+        title = file,
         buttons = buttons,
     }
     UIManager:show(dialog)
@@ -316,23 +324,15 @@ function FileSearcher:onMenuHold(item)
     if item.is_file then
         if DocumentRegistry:hasProvider(item.path) then
             self.close_callback()
-            require("apps/reader/readerui"):showReader(item.path)
+            local ReaderUI = require("apps/reader/readerui")
+            ReaderUI:showReader(item.path)
         end
     else
         self.close_callback()
-        self._manager:showFolder(item.path)
+        local pathname = util.splitFilePathName(item.path)
+        self._manager.ui.file_chooser:changeToPath(pathname, item.path)
     end
     return true
-end
-
-function FileSearcher:showFolder(path)
-    if self.ui.file_chooser then
-        local pathname = util.splitFilePathName(path)
-        self.ui.file_chooser:changeToPath(pathname, path)
-    else -- called from Reader
-        self.ui:onClose()
-        self.ui:showFileManager(path)
-    end
 end
 
 return FileSearcher
