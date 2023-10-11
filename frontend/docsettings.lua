@@ -16,7 +16,23 @@ local DocSettings = LuaSettings:extend{}
 
 local HISTORY_DIR = DataStorage:getHistoryDir()
 local DOCSETTINGS_DIR = DataStorage:getDocSettingsDir()
+local DOCSETTINGS_HASH_DIR = DataStorage:getDocSettingsHashDir()
 local custom_metadata_filename = "custom_metadata.lua"
+
+local is_hash_location_enabled
+local hash_path_cache = {}
+
+function DocSettings.isHashLocationEnabled()
+    if is_hash_location_enabled == nil then
+        is_hash_location_enabled = lfs.attributes(DOCSETTINGS_HASH_DIR, "mode") == "directory"
+    end
+    return is_hash_location_enabled
+end
+
+function DocSettings.setIsHashLocationEnabled(value)
+    is_hash_location_enabled = value
+end
+
 
 local function buildCandidates(list)
     local candidates = {}
@@ -68,15 +84,31 @@ end
 --- Returns path to sidecar directory (`filename.sdr`).
 -- Sidecar directory is the file without _last_ suffix.
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
+-- @string force_location prefer e.g., "hash" or "dir" location over standard "doc", if available
 -- @treturn string path to the sidecar directory (e.g., `/foo/bar.sdr`)
 function DocSettings:getSidecarDir(doc_path, force_location)
     if doc_path == nil or doc_path == "" then return "" end
     local path = doc_path:match("(.*)%.") or doc_path -- file path without the last suffix
     local location = force_location or G_reader_settings:readSetting("document_metadata_folder", "doc")
     if location == "dir" then
-        path = DOCSETTINGS_DIR..path
+        path = DOCSETTINGS_DIR .. path
+    elseif location == "hash" then
+        local hsh = hash_path_cache[doc_path]
+        if not hsh then
+            local file = io.open(doc_path, 'rb')
+            if not file then return path .. ".sdr" end
+            hsh = util.partialMD5(file)
+            file:close()
+            hash_path_cache[doc_path] = hsh
+            logger.dbg("DocSettings: Caching new partial MD5 hash for", doc_path, "as", hsh)
+        else
+            logger.dbg("DocSettings: Using cached partial MD5 hash for", doc_path, "as", hsh)
+        end
+        -- converts b3fb8f4f8448160365087d6ca05c7fa2 to b3/ to avoid too many files in one dir
+        local subpath = string.format("/%s/", hsh:sub(1, 2))
+        path = DOCSETTINGS_HASH_DIR .. subpath .. hsh
     end
-    return path..".sdr"
+    return path .. ".sdr"
 end
 
 --- Returns path to `metadata.lua` file.
@@ -109,6 +141,13 @@ function DocSettings:getDocSidecarFile(doc_path, no_legacy)
     sidecar_file = self:getSidecarFile(doc_path, "dir")
     if lfs.attributes(sidecar_file, "mode") == "file" then
         return sidecar_file
+    end
+    -- Calculate partial hash and check for hash-based files only if there are files to check
+    if DocSettings.isHashLocationEnabled() then
+        sidecar_file = self:getSidecarFile(doc_path, "hash")
+        if lfs.attributes(sidecar_file, "mode") == "file" then
+            return sidecar_file
+        end
     end
     if not no_legacy then
         sidecar_file = self:getHistoryPath(doc_path)
@@ -154,6 +193,20 @@ function DocSettings:getFileFromHistory(hist_name)
     end
 end
 
+--- Returns the directory and full filepath of a hash-ID-based sidecar metadata store
+-- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
+function DocSettings:getSidecarHashDirAndFilepath(doc_path)
+    -- Getting PDF ID from trailer via mupdf has not been implemented - everything uses partial MD5
+    local path = self:getSidecarDir(doc_path, "hash")
+    local filetype = doc_path:match(".+%.(%w+)$")
+    if not filetype or filetype == "" then
+        return "", ""
+    end
+    local hash_file = "metadata." .. filetype .. ".lua"
+    local hash_filepath = path .. "/" .. hash_file
+    return path, hash_filepath
+end
+
 --- Opens a document's individual settings (font, margin, dictionary, etc.)
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
 -- @treturn DocSettings object
@@ -166,7 +219,7 @@ function DocSettings:open(doc_path)
     local doc_sidecar_file, legacy_sidecar_file
     if lfs.attributes(new.doc_sidecar_dir, "mode") == "directory" then
         doc_sidecar_file = new.doc_sidecar_file
-        legacy_sidecar_file = new.doc_sidecar_dir.."/"..ffiutil.basename(doc_path)..".lua"
+        legacy_sidecar_file = new.doc_sidecar_dir .. "/" .. ffiutil.basename(doc_path) .. ".lua"
     end
     new.dir_sidecar_dir = new:getSidecarDir(doc_path, "dir")
     new.dir_sidecar_file = new:getSidecarFile(doc_path, "dir")
@@ -176,24 +229,36 @@ function DocSettings:open(doc_path)
     end
     local history_file = new:getHistoryPath(doc_path)
 
+    local hash_sidecar_dir, hash_sidecar_file
+    if DocSettings.isHashLocationEnabled() then
+        hash_sidecar_dir, hash_sidecar_file =
+                new:getSidecarHashDirAndFilepath(doc_path)
+        new.hash_sidecar_dir = hash_sidecar_dir
+        new.hash_sidecar_file = hash_sidecar_file
+    end
+
     -- Candidates list, in order of priority:
     local candidates_list = {
         -- New sidecar file in doc folder
         doc_sidecar_file or "",
         -- Backup file of new sidecar file in doc folder
-        doc_sidecar_file and (doc_sidecar_file..".old") or "",
+        doc_sidecar_file and (doc_sidecar_file .. ".old") or "",
         -- Legacy sidecar file
         legacy_sidecar_file or "",
         -- New sidecar file in docsettings folder
         dir_sidecar_file or "",
         -- Backup file of new sidecar file in docsettings folder
-        dir_sidecar_file and (dir_sidecar_file..".old") or "",
+        dir_sidecar_file and (dir_sidecar_file .. ".old") or "",
+        -- Hash or PDF fingerprint-based sidecar file lookup
+        hash_sidecar_file or "",
+        -- Backup file of hash or PDF fingerprint-based sidecar file lookup
+        hash_sidecar_file and (new.hash_sidecar_file .. ".old") or "",
         -- Legacy history folder
         history_file,
         -- Backup file in legacy history folder
-        history_file..".old",
+        history_file .. ".old",
         -- Legacy kpdfview setting
-        doc_path..".kpdfview.lua",
+        doc_path .. ".kpdfview.lua",
     }
     -- We get back an array of tables for *existing* candidates, sorted MRU first (insertion order breaks ties).
     local candidates = buildCandidates(candidates_list)
@@ -237,10 +302,20 @@ end
 function DocSettings:flush(data, no_custom_metadata)
     -- Depending on the settings, doc_settings are saved to the book folder or
     -- to koreader/docsettings folder. The latter is also a fallback for read-only book storage.
-    local serials = G_reader_settings:readSetting("document_metadata_folder", "doc") == "doc"
-        and { {self.doc_sidecar_dir, self.doc_sidecar_file},
+    local serials
+    local preferred_metdata_storage = G_reader_settings:readSetting("document_metadata_folder", "doc")
+    if preferred_metdata_storage == "doc" then
+        serials = { {self.doc_sidecar_dir, self.doc_sidecar_file},
               {self.dir_sidecar_dir, self.dir_sidecar_file}, }
-         or { {self.dir_sidecar_dir, self.dir_sidecar_file}, }
+    elseif preferred_metdata_storage == "dir" then
+        serials = { {self.dir_sidecar_dir, self.dir_sidecar_file}, }
+    elseif preferred_metdata_storage == "hash" then
+        if self.hash_sidecar_dir == nil or self.hash_sidecar_file == nil then
+            self.hash_sidecar_dir, self.hash_sidecar_file =
+                    self:getSidecarHashDirAndFilepath(self.data.doc_path)
+        end
+        serials = { {self.hash_sidecar_dir, self.hash_sidecar_file } }
+    end
 
     local s_out = dump(data or self.data, nil, true)
     for _, s in ipairs(serials) do
@@ -321,7 +396,7 @@ function DocSettings:purge(sidecar_to_keep, data_to_purge)
             local candidate_path = t.path
             if lfs.attributes(candidate_path, "mode") == "file" then
                 if (not sidecar_to_keep)
-                        or (candidate_path ~= sidecar_to_keep and candidate_path ~= sidecar_to_keep..".old") then
+                        or (candidate_path ~= sidecar_to_keep and candidate_path ~= sidecar_to_keep .. ".old") then
                     os.remove(candidate_path)
                     logger.dbg("DocSettings: purged:", candidate_path)
                 end
@@ -345,7 +420,11 @@ function DocSettings:purge(sidecar_to_keep, data_to_purge)
         if lfs.attributes(self.dir_sidecar_dir, "mode") == "directory" then
             util.removePath(self.dir_sidecar_dir) -- remove empty parent folders
         end
+        if self.hash_sidecar_dir and lfs.attributes(self.hash_sidecar_dir, "mode") == "directory" then
+            util.removePath(self.hash_sidecar_dir) -- remove empty parent folders
+        end
     end
+    DocSettings.setIsHashLocationEnabled(nil) -- reset this in case last hash book is purged
 end
 
 --- Removes empty sidecar dir.
@@ -359,51 +438,61 @@ end
 
 --- Updates sdr location for file rename/copy/move/delete operations.
 function DocSettings:updateLocation(doc_path, new_doc_path, copy)
-    local doc_settings, new_sidecar_dir
-
-    -- update metadata
-    if DocSettings:hasSidecarFile(doc_path) then
-        doc_settings = DocSettings:open(doc_path)
-        if new_doc_path then
-            local new_doc_settings = DocSettings:open(new_doc_path)
-            -- save doc settings to the new location, no custom metadata yet
-            new_sidecar_dir = new_doc_settings:flush(doc_settings.data, true)
-        else
+    local doc_settings, new_sidecar_dir, cover_file
+    if G_reader_settings:readSetting("document_metadata_folder") == "hash" then
+        -- none of these operations (except delete) changes the hash -> no location change
+        if not new_doc_path then
+            doc_settings = DocSettings:open(doc_path)
             local cache_file_path = doc_settings:readSetting("cache_file_path")
-            if cache_file_path then
-                os.remove(cache_file_path)
+            if cache_file_path then os.remove(cache_file_path) end
+            cover_file = doc_settings:getCoverFile()
+            doc_settings:purge()
+        end
+    else
+        -- update metadata
+        if DocSettings:hasSidecarFile(doc_path) then
+            doc_settings = DocSettings:open(doc_path)
+            if new_doc_path then
+                local new_doc_settings = DocSettings:open(new_doc_path)
+                -- save doc settings to the new location, no custom metadata yet
+                new_sidecar_dir = new_doc_settings:flush(doc_settings.data, true)
+            else
+                local cache_file_path = doc_settings:readSetting("cache_file_path")
+                if cache_file_path then
+                    os.remove(cache_file_path)
+                end
             end
         end
-    end
 
-    -- update custom metadata
-    if not doc_settings then
-        doc_settings = DocSettings:open(doc_path)
-    end
-    local cover_file = doc_settings:getCoverFile()
-    if new_doc_path then
-        -- custom cover
-        if cover_file then
-            if not new_sidecar_dir then
-                new_sidecar_dir = DocSettings:getSidecarDir(new_doc_path)
-                util.makePath(new_sidecar_dir)
-            end
-            local _, filename = util.splitFilePathName(cover_file)
-            ffiutil.copyFile(cover_file, new_sidecar_dir .. "/" .. filename)
+        -- update custom metadata
+        if not doc_settings then
+            doc_settings = DocSettings:open(doc_path)
         end
-        -- custom metadata
-        local metadata_file = self:getCustomMetadataFile(doc_path)
-        if metadata_file then
-            if not new_sidecar_dir then
-                new_sidecar_dir = DocSettings:getSidecarDir(new_doc_path)
-                util.makePath(new_sidecar_dir)
+        cover_file = doc_settings:getCoverFile()
+        if new_doc_path then
+            -- custom cover
+            if cover_file then
+                if not new_sidecar_dir then
+                    new_sidecar_dir = DocSettings:getSidecarDir(new_doc_path)
+                    util.makePath(new_sidecar_dir)
+                end
+                local _, filename = util.splitFilePathName(cover_file)
+                ffiutil.copyFile(cover_file, new_sidecar_dir .. "/" .. filename)
             end
-            ffiutil.copyFile(metadata_file, new_sidecar_dir .. "/" .. custom_metadata_filename)
+            -- custom metadata
+            local metadata_file = self:getCustomMetadataFile(doc_path)
+            if metadata_file then
+                if not new_sidecar_dir then
+                    new_sidecar_dir = DocSettings:getSidecarDir(new_doc_path)
+                    util.makePath(new_sidecar_dir)
+                end
+                ffiutil.copyFile(metadata_file, new_sidecar_dir .. "/" .. custom_metadata_filename)
+            end
         end
-    end
 
-    if not copy then
-        doc_settings:purge()
+        if not copy then
+            doc_settings:purge()
+        end
     end
 
     if cover_file then -- after purge because purge uses cover file cache
@@ -430,12 +519,18 @@ function DocSettings:findCoverFile(doc_path)
     local location = G_reader_settings:readSetting("document_metadata_folder", "doc")
     local sidecar_dir = self:getSidecarDir(doc_path, location)
     local cover_file = findCoverFileInDir(sidecar_dir)
-    if not cover_file then
-        location = location == "doc" and "dir" or "doc"
-        sidecar_dir = self:getSidecarDir(doc_path, location)
-        cover_file = findCoverFileInDir(sidecar_dir)
+    if cover_file then return cover_file end
+    local candidates = {"doc", "dir"}
+    if DocSettings.isHashLocationEnabled() then
+        table.insert(candidates, "hash")
     end
-    return cover_file
+    for _, mode in ipairs(candidates) do
+        if mode ~= location then
+            sidecar_dir = self:getSidecarDir(doc_path, mode)
+            cover_file = findCoverFileInDir(sidecar_dir)
+            if cover_file then return cover_file end
+        end
+    end
 end
 
 function DocSettings:getCoverFile(reset_cache)
@@ -457,9 +552,13 @@ function DocSettings:getCustomCandidateSidecarDirs(doc_path)
     end
     -- new book, create sidecar dir in accordance with sdr location setting
     local dir_sidecar_dir = self:getSidecarDir(doc_path, "dir")
-    if G_reader_settings:readSetting("document_metadata_folder", "doc") == "doc" then
+    local preferred_metadata_storage = G_reader_settings:readSetting("document_metadata_folder", "doc")
+    if preferred_metadata_storage == "doc" then
         local doc_sidecar_dir = self:getSidecarDir(doc_path, "doc")
         return { doc_sidecar_dir, dir_sidecar_dir } -- fallback in case of readonly book storage
+    elseif preferred_metadata_storage == "hash" then
+        local hash_sidecar_dir = self:getSidecarDir(doc_path, "hash")
+        return { hash_sidecar_dir }
     end
     return { dir_sidecar_dir }
 end
@@ -481,7 +580,12 @@ end
 --- Returns path to book custom metadata file if it exists, or nil.
 function DocSettings:getCustomMetadataFile(doc_path)
     doc_path = doc_path or self.data.doc_path
-    for _, mode in ipairs({"doc", "dir"}) do
+
+    local candidates = {"doc", "dir"}
+    if DocSettings.isHashLocationEnabled() then
+        table.insert(candidates, "hash")
+    end
+    for _, mode in ipairs(candidates) do
         local file = self:getSidecarDir(doc_path, mode) .. "/" .. custom_metadata_filename
         if lfs.attributes(file, "mode") == "file" then
             return file
@@ -525,6 +629,81 @@ function DocSettings:flushCustomMetadata(doc_path)
             self:removeSidecarDir(doc_path, old_sidecar_dir)
         end
     end
+end
+
+-- hash-based SDR storage
+local function getSdrsInDir(path)
+    -- Get all the metadata.filetype.lua files under directory path.
+    -- Derived from readerdictionary.getIfosInDir()
+    local sdrs = {}
+    local ok, iter, dir_obj = pcall(lfs.dir, path)
+    if ok then
+        for name in iter, dir_obj do
+            if name ~= "." and name ~= ".." then
+                local fullpath = path .. "/" .. name
+                local attributes = lfs.attributes(fullpath)
+                if attributes ~= nil then
+                    if attributes.mode == "directory" then
+                        local dirifos = getSdrsInDir(fullpath) -- recurse
+                        for _, ifo in pairs(dirifos) do
+                            table.insert(sdrs, ifo)
+                        end
+                    elseif name:match("metadata%..+%.lua$") then
+                        table.insert(sdrs, fullpath)
+                    end
+                end
+            end
+        end
+    end
+    return sdrs
+end
+
+function DocSettings.getHashDirSdrInfos()
+    local sdrs = getSdrsInDir(DOCSETTINGS_HASH_DIR)
+    local title_author_strs = {}
+    for _, sdr in ipairs(sdrs) do
+        -- Ignore empty files
+        if lfs.attributes(sdr, "size") > 0 then
+            local ok, stored
+            ok, stored = pcall(dofile, sdr)
+            -- Ignore empty tables
+            if ok and next(stored) ~= nil then
+                local info_str, custom_authors
+                local sdr_path = sdr:sub(1, sdr:match(".*/()") - 1) -- SDR path
+                local custom_metadata_file = sdr_path .. custom_metadata_filename
+                if custom_metadata_file then
+                    local custom = DocSettings:openCustomMetadata(custom_metadata_file)
+                    local custom_props = custom:readSetting("custom_props")
+                    if custom_props then
+                        if custom_props.title then info_str = custom_props.title end
+                        if custom_props.authors then custom_authors = custom_props.authors end
+                    end
+                end
+                if not info_str then info_str = stored.doc_props.title end
+                if not info_str then info_str = "untitled document" end
+                if custom_authors then
+                    info_str = info_str .. ", author: " .. custom_authors
+                elseif stored.doc_props.authors then
+                     info_str = info_str .. ", author: " .. stored.doc_props.authors
+                end
+                if stored.stats then
+                    if stored.stats.highlights > 0 then
+                        info_str = info_str .. ", highlights: " .. stored.stats.highlights
+                    end
+                    if stored.stats.notes > 0 then
+                        info_str = info_str .. ", notes: " .. stored.stats.notes
+                    end
+                end
+                info_str = info_str .. ", path: " .. sdr:sub(sdr:find("/", 3) + 1)
+                table.insert(title_author_strs, info_str)
+            else
+                table.insert(title_author_strs, "error " .. sdr)
+            end
+        else
+            table.insert(title_author_strs, "zero-size file " .. sdr)
+        end
+    end
+    return title_author_strs
 end
 
 return DocSettings
