@@ -316,12 +316,14 @@ function CoverMenu:updateItems(select_number)
 
                 -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
                 local button = self.file_dialog:getButtonById("reset")
-                local orig_purge_callback = button.callback
-                button.callback = function()
-                    -- Wipe the cache
-                    self:updateCache(file)
-                    -- And then purge the sidecar folder as expected
-                    orig_purge_callback()
+                if button then
+                    local orig_purge_callback = button.callback
+                    button.callback = function()
+                        -- Wipe the cache
+                        self:updateCache(file)
+                        -- And then purge the sidecar folder as expected
+                        orig_purge_callback()
+                    end
                 end
 
                 -- Fudge the status change button callbacks to also update the cover_info_cache
@@ -345,18 +347,20 @@ function CoverMenu:updateItems(select_number)
                 end
 
                 button = self.file_dialog:getButtonById("book_cover")
-                if not bookinfo.has_cover then
+                if button and not bookinfo.has_cover then
                     button:disable()
                 end
 
                 button = self.file_dialog:getButtonById("book_description")
-                if bookinfo.description then
-                    button.callback = function()
-                        UIManager:close(self.file_dialog)
-                        FileManagerBookInfo:onShowBookDescription(bookinfo.description)
+                if button then
+                    if bookinfo.description then
+                        button.callback = function()
+                            UIManager:close(self.file_dialog)
+                            FileManagerBookInfo:onShowBookDescription(bookinfo.description)
+                        end
+                    else
+                        button:disable()
                     end
-                else
-                    button:disable()
                 end
 
                 UIManager:show(self.file_dialog)
@@ -443,12 +447,14 @@ function CoverMenu:onHistoryMenuHold(item)
 
     -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
     local button = self.histfile_dialog:getButtonById("reset")
-    local orig_purge_callback = button.callback
-    button.callback = function()
-        -- Wipe the cache
-        self:updateCache(file)
-        -- And then purge the sidecar folder as expected
-        orig_purge_callback()
+    if button then
+        local orig_purge_callback = button.callback
+        button.callback = function()
+            -- Wipe the cache
+            self:updateCache(file)
+            -- And then purge the sidecar folder as expected
+            orig_purge_callback()
+        end
     end
 
     -- Fudge the status change button callbacks to also update the cover_info_cache
@@ -472,18 +478,20 @@ function CoverMenu:onHistoryMenuHold(item)
     end
 
     button = self.histfile_dialog:getButtonById("book_cover")
-    if not bookinfo.has_cover then
+    if button and not bookinfo.has_cover then
         button:disable()
     end
 
     button = self.histfile_dialog:getButtonById("book_description")
-    if bookinfo.description then
-        button.callback = function()
-            UIManager:close(self.histfile_dialog)
-            FileManagerBookInfo:onShowBookDescription(bookinfo.description)
+    if button then
+        if bookinfo.description then
+            button.callback = function()
+                UIManager:close(self.histfile_dialog)
+                FileManagerBookInfo:onShowBookDescription(bookinfo.description)
+            end
+        else
+            button:disable()
         end
-    else
-        button:disable()
     end
 
     UIManager:show(self.histfile_dialog)
@@ -563,12 +571,14 @@ function CoverMenu:onCollectionsMenuHold(item)
 
     -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
     local button = self.collfile_dialog:getButtonById("reset")
-    local orig_purge_callback = button.callback
-    button.callback = function()
-        -- Wipe the cache
-        self:updateCache(file)
-        -- And then purge the sidecar folder as expected
-        orig_purge_callback()
+    if button then
+        local orig_purge_callback = button.callback
+        button.callback = function()
+            -- Wipe the cache
+            self:updateCache(file)
+            -- And then purge the sidecar folder as expected
+            orig_purge_callback()
+        end
     end
 
     -- Fudge the status change button callbacks to also update the cover_info_cache
@@ -592,18 +602,20 @@ function CoverMenu:onCollectionsMenuHold(item)
     end
 
     button = self.collfile_dialog:getButtonById("book_cover")
-    if not bookinfo.has_cover then
+    if button and not bookinfo.has_cover then
         button:disable()
     end
 
     button = self.collfile_dialog:getButtonById("book_description")
-    if bookinfo.description then
-        button.callback = function()
-            UIManager:close(self.collfile_dialog)
-            FileManagerBookInfo:onShowBookDescription(bookinfo.description)
+    if button then
+        if bookinfo.description then
+            button.callback = function()
+                UIManager:close(self.collfile_dialog)
+                FileManagerBookInfo:onShowBookDescription(bookinfo.description)
+            end
+        else
+            button:disable()
         end
-    else
-        button:disable()
     end
 
     UIManager:show(self.collfile_dialog)
