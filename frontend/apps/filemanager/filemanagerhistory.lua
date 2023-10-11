@@ -65,6 +65,9 @@ function FileManagerHistory:updateItemTable()
     local item_table = {}
     for _, v in ipairs(require("readhistory").hist) do
         if self.filter == "all" or v.status == self.filter then
+            if self.is_frozen and v.status == "complete" then
+                v.mandatory_dim = true
+            end
             table.insert(item_table, v)
         end
         if self.statuses_fetched then
@@ -190,7 +193,8 @@ function FileManagerHistory:onShowHist()
     }
 
     self.filter = G_reader_settings:readSetting("history_filter", "all")
-    if self.filter ~= "all" then
+    self.is_frozen = G_reader_settings:isTrue("history_freeze_finished_books")
+    if self.filter ~= "all" or self.is_frozen then
         self:fetchStatuses(false)
     end
     self:updateItemTable()
