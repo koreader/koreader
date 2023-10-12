@@ -2108,7 +2108,7 @@ function ReaderHighlight:onHighlightPress()
                 self:onStopHighlightIndicator(true) -- need_clear_selection=true
             end
         else
-            self:onHoldRelease()
+            self:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
             self:onStopHighlightIndicator()
         end
         return true
