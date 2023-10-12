@@ -1,6 +1,5 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Device = require("device")
 local Event = require("ui/event")
 local FileChooser = require("ui/widget/filechooser")
@@ -36,9 +35,11 @@ function PathChooser:init()
             self.title = _("Long-press to choose")
         end
     end
-    self.show_hidden = G_reader_settings:isTrue("show_hidden")
     if not self.show_files then
         self.file_filter = function() return false end -- filter out regular files
+    end
+    if self.file_filter then
+        self.show_unsupported = false -- honour file_filter
     end
     if self.select_directory then
         -- Let FileChooser display "Long-press to choose current folder"
@@ -127,7 +128,7 @@ function PathChooser:onMenuHold(item)
         title = T(_("Choose this path?\n\n%1"), BD.path(path))
     end
     local onConfirm = self.onConfirm
-    self.button_dialog = ButtonDialogTitle:new{
+    self.button_dialog = ButtonDialog:new{
         title = title,
         buttons = {
             {

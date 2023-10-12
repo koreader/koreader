@@ -128,9 +128,6 @@ function FileManager:setupLayout()
         right_icon_hold_callback = false, -- propagate long-press to dispatcher
     }
 
-    local show_finished = G_reader_settings:nilOrTrue("show_finished")
-    local show_hidden = G_reader_settings:isTrue("show_hidden") or G_defaults:readSetting("DSHOWHIDDENFILES")
-    local show_unsupported = G_reader_settings:isTrue("show_unsupported")
     local file_chooser = FileChooser:new{
         -- remember to adjust the height when new item is added to the group
         path = self.root_path,
@@ -139,14 +136,7 @@ function FileManager:setupLayout()
         height = Screen:getHeight() - self.title_bar:getHeight(),
         is_popout = false,
         is_borderless = true,
-        show_finished = show_finished,
-        show_hidden = show_hidden,
-        show_unsupported = show_unsupported,
-        file_filter = function(filename)
-            if DocumentRegistry:hasProvider(filename) then
-                return true
-            end
-        end,
+        file_filter = function(filename) return DocumentRegistry:hasProvider(filename) end,
         close_callback = function() return self:onClose() end,
         -- allow left bottom tap gesture, otherwise it is eaten by hidden return button
         return_arrow_propagation = true,
@@ -262,15 +252,15 @@ function FileManager:setupLayout()
                 UIManager:close(self.file_dialog)
                 self:refreshPath() -- sidecar folder may be created/deleted
             end
-            local has_provider = DocumentRegistry:getProviders(file) ~= nil
+            local has_provider = DocumentRegistry:hasProvider(file)
             if has_provider or DocSettings:hasSidecarFile(file) then
                 table.insert(buttons, filemanagerutil.genStatusButtonsRow(file, status_button_callback))
                 table.insert(buttons, {}) -- separator
+                table.insert(buttons, {
+                    filemanagerutil.genResetSettingsButton(file, status_button_callback),
+                    filemanagerutil.genAddRemoveFavoritesButton(file, close_dialog_callback),
+                })
             end
-            table.insert(buttons, {
-                filemanagerutil.genResetSettingsButton(file, status_button_callback),
-                filemanagerutil.genAddRemoveFavoritesButton(file, close_dialog_callback, not has_provider),
-            })
             table.insert(buttons, {
                 {
                     text = _("Open with…"),
@@ -317,10 +307,12 @@ function FileManager:setupLayout()
                 },
                 filemanagerutil.genBookInformationButton(file, close_dialog_callback),
             })
-            table.insert(buttons, {
-                filemanagerutil.genBookCoverButton(file, close_dialog_callback),
-                filemanagerutil.genBookDescriptionButton(file, close_dialog_callback),
-            })
+            if has_provider then
+                table.insert(buttons, {
+                    filemanagerutil.genBookCoverButton(file, close_dialog_callback),
+                    filemanagerutil.genBookDescriptionButton(file, close_dialog_callback),
+                })
+            end
             if Device:canExecuteScript(file) then
                 table.insert(buttons, {
                     filemanagerutil.genExecuteScriptButton(file, close_dialog_callback),
@@ -780,21 +772,6 @@ end
 
 function FileManager:getCurrentDir()
     return FileManager.instance and FileManager.instance.file_chooser.path
-end
-
-function FileManager:toggleFinishedBooks()
-    self.file_chooser:toggleFinishedBooks()
-    G_reader_settings:saveSetting("show_finished", self.file_chooser.show_finished)
-end
-
-function FileManager:toggleHiddenFiles()
-    self.file_chooser:toggleHiddenFiles()
-    G_reader_settings:saveSetting("show_hidden", self.file_chooser.show_hidden)
-end
-
-function FileManager:toggleUnsupportedFiles()
-    self.file_chooser:toggleUnsupportedFiles()
-    G_reader_settings:saveSetting("show_unsupported", self.file_chooser.show_unsupported)
 end
 
 function FileManager:onClose()

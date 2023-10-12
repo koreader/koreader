@@ -143,6 +143,7 @@ function FileManagerMenu:onOpenLastDoc()
 end
 
 function FileManagerMenu:setUpdateItemTable()
+    local FileChooser = self.ui.file_chooser
 
     -- setting tab
     self.menu_items.filebrowser_settings = {
@@ -150,18 +151,18 @@ function FileManagerMenu:setUpdateItemTable()
         sub_item_table = {
             {
                 text = _("Show finished books"),
-                checked_func = function() return self.ui.file_chooser.show_finished end,
-                callback = function() self.ui:toggleFinishedBooks() end,
+                checked_func = function() return FileChooser.show_finished end,
+                callback = function() FileChooser:toggleShowFilesMode("show_finished") end,
             },
             {
                 text = _("Show hidden files"),
-                checked_func = function() return self.ui.file_chooser.show_hidden end,
-                callback = function() self.ui:toggleHiddenFiles() end,
+                checked_func = function() return FileChooser.show_hidden end,
+                callback = function() FileChooser:toggleShowFilesMode("show_hidden") end,
             },
             {
                 text = _("Show unsupported files"),
-                checked_func = function() return self.ui.file_chooser.show_unsupported end,
-                callback = function() self.ui:toggleUnsupportedFiles() end,
+                checked_func = function() return FileChooser.show_unsupported end,
+                callback = function() FileChooser:toggleShowFilesMode("show_unsupported") end,
                 separator = true,
             },
             {
@@ -439,7 +440,7 @@ To:
         end,
         callback = function()
             G_reader_settings:flipNilOrFalse("reverse_collate")
-            self.ui.file_chooser:refreshPath()
+            FileChooser:refreshPath()
         end,
     }
     self.menu_items.sort_mixed = {
@@ -461,7 +462,7 @@ To:
         end,
         callback = function()
             G_reader_settings:flipNilOrFalse("collate_mixed")
-            self.ui.file_chooser:refreshPath()
+            FileChooser:refreshPath()
         end,
     }
     self.menu_items.start_with = self:getStartWithMenuTable()

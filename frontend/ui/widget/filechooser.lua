@@ -22,10 +22,10 @@ local FileChooser = Menu:extend{
     path = lfs.currentdir(),
     show_path = true,
     parent = nil,
-    show_hidden = false, -- set to true to show folders/files starting with "."
+    show_finished    = G_reader_settings:readSetting("show_finished", true), -- books marked as finished
+    show_hidden      = G_reader_settings:readSetting("show_hidden", false), -- folders/files starting with "."
+    show_unsupported = G_reader_settings:readSetting("show_unsupported", false), -- set to true to ignore file_filter
     file_filter = nil, -- function defined in the caller, returns true for files to be shown
-    show_unsupported = false, -- set to true to ignore file_filter
-    show_finished = true, -- show all books
     -- NOTE: Input is *always* a relative entry name
     exclude_dirs = { -- const
         -- KOReader / Kindle
@@ -101,7 +101,6 @@ end
 
 function FileChooser:init()
     self.path_items = {}
-    self.width = Screen:getWidth()
     self.item_table = self:genItemTableFromPath(self.path)
     Menu.init(self) -- call parent's init()
 end
@@ -121,7 +120,7 @@ function FileChooser:getList(path, collate)
                     if attributes.mode == "directory" and f ~= "." and f ~= ".." then
                         if self:show_dir(f) then
                             if collate then -- when collate == nil count only to display in folder mandatory
-                                item = self:getListItem(f, filename, attributes)
+                                item = FileChooser.getListItem(f, filename, attributes)
                             end
                             table.insert(dirs, item)
                         end
@@ -129,7 +128,7 @@ function FileChooser:getList(path, collate)
                     elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") then
                         if self:show_file(f, filename) then
                             if collate then -- when collate == nil count only to display in folder mandatory
-                                item = self:getListItem(f, filename, attributes, collate)
+                                item = FileChooser.getListItem(f, filename, attributes, collate)
                             end
                             table.insert(files, item)
                         end
@@ -140,7 +139,7 @@ function FileChooser:getList(path, collate)
     else -- error, probably "permission denied"
         if unreadable_dir_content[path] then
             -- Add this dummy item that will be replaced with a message by genItemTable()
-            table.insert(dirs, self:getListItem("./.", path, lfs.attributes(path)))
+            table.insert(dirs, FileChooser.getListItem("./.", path, lfs.attributes(path)))
             -- If we knew about some content (if we had come up from them
             -- to this directory), have them shown
             for k, v in pairs(unreadable_dir_content[path]) do
@@ -155,7 +154,7 @@ function FileChooser:getList(path, collate)
     return dirs, files
 end
 
-function FileChooser:getListItem(f, filename, attributes, collate)
+function FileChooser.getListItem(f, filename, attributes, collate)
     local item = {
         text = f,
         fullpath = filename,
@@ -454,18 +453,10 @@ function FileChooser:changePageToPath(path)
     end
 end
 
-function FileChooser:toggleFinishedBooks()
-    self.show_finished = not self.show_finished
-    self:refreshPath()
-end
-
-function FileChooser:toggleHiddenFiles()
-    self.show_hidden = not self.show_hidden
-    self:refreshPath()
-end
-
-function FileChooser:toggleUnsupportedFiles()
-    self.show_unsupported = not self.show_unsupported
+function FileChooser:toggleShowFilesMode(mode)
+    -- modes: "show_finished", "show_hidden", "show_unsupported"
+    FileChooser[mode] = not FileChooser[mode]
+    G_reader_settings:saveSetting(mode, FileChooser[mode])
     self:refreshPath()
 end
 
