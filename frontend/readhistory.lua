@@ -202,6 +202,7 @@ end
 
 --- Updates the history list after renaming/moving a folder.
 function ReadHistory:updateItemsByPath(old_path, new_path)
+    old_path = "^"..old_path
     local history_updated
     for i, v in ipairs(self.hist) do
         local file, count = v.file:gsub(old_path, new_path)
