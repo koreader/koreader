@@ -47,6 +47,10 @@ end
 
 function WakeupMgr:init()
     self._task_queue = {}
+
+    -- Propagate rtc quirks to the RTC backend
+    self.rtc.dev_rtc = self.dev_rtc
+    self.rtc.dodgy_rtc = self.dodgy_rtc
 end
 
 -- This is a dummy task we use when working around i.MX5 RTC issues.
