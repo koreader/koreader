@@ -9,12 +9,12 @@ local socketutil = require("socketutil")
 local _ = require("gettext")
 
 -- readwise exporter
-local MemosExporter = require("base"):new {
-    name = "memos",
+local FlomoExporter = require("base"):new {
+    name = "flomo",
     is_remote = true,
 }
 
-local function makeRequest(method, request_body, api, token)
+local function makeRequest(method, request_body, api)
     local sink = {}
     local request_body_json = json.encode(request_body)
     local source = ltn12.source.string(request_body_json)
@@ -25,15 +25,14 @@ local function makeRequest(method, request_body, api, token)
         sink    = ltn12.sink.table(sink),
         source  = source,
         headers = {
-            ["Content-Type"] = "application/json",
-            ["Authorization"] = "Bearer " .. token
+            ["Content-Type"] = "application/json"
         },
     }
     local code, headers, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
 
     if code ~= 200 then
-        logger.warn("Memos: HTTP response code <> 200. Response status:", status or code or "network unreachable")
+        logger.warn("Flomo: HTTP response code <> 200. Response status:", status or code or "network unreachable")
         logger.dbg("Response headers:", headers)
         return nil, status
     end
@@ -42,23 +41,23 @@ local function makeRequest(method, request_body, api, token)
     return response
 end
 
-function MemosExporter:isReadyToExport()
-    if self.settings.api and self.settings.token then return true end
+function FlomoExporter:isReadyToExport()
+    if self.settings.api then return true end
     return false
 end
 
-function MemosExporter:getMenuTable()
+function FlomoExporter:getMenuTable()
     return {
-        text = _("Memos"),
+        text = _("Flomo"),
         checked_func = function() return self:isEnabled() end,
         sub_item_table = {
             {
-                text = _("Set Memos API URL"),
+                text = _("Set Flomo API URL"),
                 keep_menu_open = true,
                 callback = function()
                     local auth_dialog
                     auth_dialog = InputDialog:new {
-                        title = _("Set API URL for Memos"),
+                        title = _("Set API URL for Flomo"),
                         input = self.settings.api,
                         buttons = {
                             {
@@ -85,39 +84,7 @@ function MemosExporter:getMenuTable()
                 end
             },
             {
-                text = _("Set Memos Token"),
-                keep_menu_open = true,
-                callback = function()
-                    local token_dialog
-                    token_dialog = InputDialog:new {
-                        title = _("Set Token for Memos"),
-                        input = self.settings.token,
-                        buttons = {
-                            {
-                                {
-                                    text = _("Cancel"),
-                                    id = "close",
-                                    callback = function()
-                                        UIManager:close(token_dialog)
-                                    end
-                                },
-                                {
-                                    text = _("Set Token"),
-                                    callback = function()
-                                        self.settings.token = token_dialog:getInputText()
-                                        self:saveSettings()
-                                        UIManager:close(token_dialog)
-                                    end
-                                }
-                            }
-                        }
-                    }
-                    UIManager:show(token_dialog)
-                    token_dialog:onShowKeyboard()
-                end
-            },
-            {
-                text = _("Export to Memos"),
+                text = _("Export to Flomo"),
                 checked_func = function() return self:isEnabled() end,
                 callback = function() self:toggleEnabled() end,
             },
@@ -126,7 +93,7 @@ function MemosExporter:getMenuTable()
     }
 end
 
-function MemosExporter:createHighlights(booknotes)
+function FlomoExporter:createHighlights(booknotes)
     local number = 0
     local error_number = 0
     for _, chapter in ipairs(booknotes) do
@@ -136,7 +103,7 @@ function MemosExporter:createHighlights(booknotes)
                 highlight = highlight .. clipping.note .. "\n\n"
             end
             highlight =  highlight .. booknotes.title .. " (page: " .. clipping.page .. "）\n\n #" .. booknotes.title .. " #koreader"
-            local result, err = makeRequest("POST", { content = highlight }, self.settings.api, self.settings.token)
+            local result, err = makeRequest("POST", { content = highlight }, self.settings.api)
             if not result then
                 logger.warn("error creating highlights", err)
                 error_number = error_number + 1
@@ -149,7 +116,7 @@ function MemosExporter:createHighlights(booknotes)
     return true
 end
 
-function MemosExporter:export(t)
+function FlomoExporter:export(t)
     if not self:isReadyToExport() then return false end
 
     for _, booknotes in ipairs(t) do
@@ -159,4 +126,4 @@ function MemosExporter:export(t)
     return true
 end
 
-return MemosExporter
+return FlomoExporter
