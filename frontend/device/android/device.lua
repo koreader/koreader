@@ -516,7 +516,6 @@ function Device:_showLightDialog()
     elseif action == C.ALIGHTS_DIALOG_CANCEL then
         logger.dbg("Dialog Cancel, brightness: " .. self.powerd.fl_intensity)
         self.powerd:setIntensityHW(self.powerd.fl_intensity)
-        self.powerd:_decideFrontlightState()
         if android.isWarmthDevice() then
             logger.dbg("Dialog Cancel, warmth: " .. self.powerd.fl_warmth)
             self.powerd:setWarmth(self.powerd.fl_warmth)
