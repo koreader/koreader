@@ -26,19 +26,6 @@ If you want to use your own installed tools please make sure that you have the *
 
 Cross compile toolchains are available for Ubuntu users through these commands:
 
-##### Ubuntu Touch
-
-```
-sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
-```
-
-**NOTE 1:** The packages `pkg-config-arm-linux-gnueabihf` and `pkg-config-arm-linux-gnueabi` may
-block you from building. Remove them if you get the following ld error
-
-```
-/usr/lib/gcc-cross/arm-linux-gnueabihf/4.8/../../../../arm-linux-gnueabihf/bin/ld: cannot find -lglib-2.0
-```
-
 ##### e-Ink devices (e.g., Kindle, Kobo, Cervantes, reMarkable, PocketBook)
 
 **NOTE:** While, for some targets (specifically, Cervantes, Kindle & Kobo), we make *some* effort to support Linaro/Ubuntu TCs,
@@ -68,20 +55,6 @@ sudo apt-get install openjdk-8-jdk p7zip-full
 #### for Debian
 
 Building a debian package requires the `dpkg-deb` tool. It should be already installed if you're on a Debian/Ubuntu based distribution.
-
-#### for Ubuntu Touch
-
-Building for Ubuntu Touch requires the `click` package management tool.
-
-Ubuntu users can install it with:
-
-```
-sudo apt-get install click
-```
-
-**NOTE**: The Ubuntu Touch build won't start anymore, and none of the currently active developers have any physical devices. Please visit [#4960](https://github.com/koreader/koreader/issues/4960) if you want to help.
-
-The Ubuntu Touch builds are therefore no longer published under releases on GitHub, but they are still available from [the nightly build server](http://build.koreader.rocks/download/nightly/).
 
 ## Building 
 
@@ -165,14 +138,6 @@ See [Building](https://github.com/koreader/koreader/blob/master/doc/Building.md)
 
 ```
 ./kodev release remarkable
-```
-
-### Embedded Linux devices
-
-#### Ubuntu Touch
-
-```
-./kodev release ubuntu-touch
 ```
 
 ## Porting to a new target.
