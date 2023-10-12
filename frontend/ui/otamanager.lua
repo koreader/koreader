@@ -83,7 +83,7 @@ function OTAManager:getOTAModel()
             return "android-arm64"
         elseif arch == "x86" then
             return "android-x86"
-        elseif arch == "x86_64" then
+        elseif arch == "x64" then
             return "android-x86_64"
         end
         return "android"
