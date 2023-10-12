@@ -455,10 +455,8 @@ end
 
 function FileChooser:toggleShowFilesMode(mode)
     -- modes: "show_finished", "show_hidden", "show_unsupported"
-    local setting = not self[mode]
-    self[mode] = setting
-    FileChooser[mode] = setting
-    G_reader_settings:saveSetting(mode, setting)
+    FileChooser[mode] = not FileChooser[mode]
+    G_reader_settings:saveSetting(mode, FileChooser[mode])
     self:refreshPath()
 end
 
