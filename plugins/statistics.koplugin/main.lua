@@ -76,6 +76,7 @@ local ReaderStatistics = Widget:extend{
     avg_time = nil,
     page_stat = nil, -- Dictionary, indexed by page (hash), contains a list (array) of { timestamp, duration } tuples.
     data = nil, -- table
+    doc_md5 = nil,
 }
 
 -- NOTE: This is used in a migration script by ui/data/onetime_migration,
@@ -618,10 +619,11 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
         local result = stmt:reset():bind(self.data.title, self.data.authors, self.doc_md5):step()
         local nr_id = tonumber(result[1])
         if nr_id == 0 then
+            local partial_md5 = util.partialMD5(book_stats.file)
             stmt = conn:prepare("INSERT INTO book VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);")
             stmt:reset():bind(book_stats.title, book_stats.authors, book_stats.notes,
                 last_open_book, book_stats.highlights, book_stats.pages,
-                book_stats.series, book_stats.language, util.partialMD5(book_stats.file), total_read_time, total_read_pages) :step()
+                book_stats.series, book_stats.language, partial_md5, total_read_time, total_read_pages) :step()
             sql_stmt = [[
                 SELECT last_insert_rowid() AS num;
             ]]
