@@ -1020,7 +1020,6 @@ function Device:_setEventHandlers(uimgr)
                 text = message_text or _("Are you sure you want to reboot the device?"),
                 ok_text = _("Reboot"),
                 ok_callback = function()
-                    UIManager:broadcastEvent(Event:new("Reboot"))
                     UIManager:nextTick(UIManager.reboot_action)
                 end,
             })
@@ -1036,7 +1035,6 @@ function Device:_setEventHandlers(uimgr)
                 text = message_text or _("Are you sure you want to power off the device?"),
                 ok_text = _("Power off"),
                 ok_callback = function()
-                    UIManager:broadcastEvent(Event:new("PowerOff"))
                     UIManager:nextTick(UIManager.poweroff_action)
                 end,
             })
