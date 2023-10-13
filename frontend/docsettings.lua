@@ -95,10 +95,10 @@ function DocSettings:getSidecarDir(doc_path, force_location)
     elseif location == "hash" then
         local hsh = hash_path_cache[doc_path]
         if not hsh then
-            local file = io.open(doc_path, 'rb')
-            if not file then return path .. ".sdr" end
-            hsh = util.partialMD5(file)
-            file:close()
+            hsh = util.partialMD5(doc_path)
+            if not hsh then -- fallback to "doc"
+                return path .. ".sdr"
+            end
             hash_path_cache[doc_path] = hsh
             logger.dbg("DocSettings: Caching new partial MD5 hash for", doc_path, "as", hsh)
         else
@@ -286,6 +286,7 @@ function DocSettings:open(doc_path)
         new.data = {}
     end
     new.data.doc_path = doc_path
+    new.data.partial_md5_checksum = hash_path_cache[doc_path]
 
     return new
 end
