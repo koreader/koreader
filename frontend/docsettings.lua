@@ -20,7 +20,7 @@ local DOCSETTINGS_HASH_DIR = DataStorage:getDocSettingsHashDir()
 local custom_metadata_filename = "custom_metadata.lua"
 
 local is_hash_location_enabled
-local hash_path_cache = {}
+local doc_hash_cache = {}
 
 function DocSettings.isHashLocationEnabled()
     if is_hash_location_enabled == nil then
@@ -93,13 +93,13 @@ function DocSettings:getSidecarDir(doc_path, force_location)
     if location == "dir" then
         path = DOCSETTINGS_DIR .. path
     elseif location == "hash" then
-        local hsh = hash_path_cache[doc_path]
+        local hsh = doc_hash_cache[doc_path]
         if not hsh then
             hsh = util.partialMD5(doc_path)
             if not hsh then -- fallback to "doc"
                 return path .. ".sdr"
             end
-            hash_path_cache[doc_path] = hsh
+            doc_hash_cache[doc_path] = hsh
             logger.dbg("DocSettings: Caching new partial MD5 hash for", doc_path, "as", hsh)
         else
             logger.dbg("DocSettings: Using cached partial MD5 hash for", doc_path, "as", hsh)
@@ -286,7 +286,6 @@ function DocSettings:open(doc_path)
         new.data = {}
     end
     new.data.doc_path = doc_path
-    new.data.partial_md5_checksum = hash_path_cache[doc_path]
 
     return new
 end
