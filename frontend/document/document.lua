@@ -144,31 +144,6 @@ function Document:discardChange()
     self.is_edited = false
 end
 
--- calculate partial digest of the document and store in its docsettings to avoid document saving
--- feature to change its checksum.
-function Document:fastDigest(docsettings)
-    if not self.file then return end
-    local file = io.open(self.file, 'rb')
-    if file then
-        local tmp_docsettings = false
-        if not docsettings then -- if not provided, open/create it
-            docsettings = require("docsettings"):open(self.file)
-            tmp_docsettings = true
-        end
-        local result = docsettings:readSetting("partial_md5_checksum")
-        if not result then
-            logger.dbg("computing and storing partial_md5_checksum")
-            result = util.partialMD5(file)
-            docsettings:saveSetting("partial_md5_checksum", result)
-        end
-        if tmp_docsettings then
-            docsettings:close()
-        end
-        file:close()
-        return result
-    end
-end
-
 -- this might be overridden by a document implementation
 function Document:getNativePageDimensions(pageno)
     local hash = "pgdim|"..self.file.."|"..pageno
