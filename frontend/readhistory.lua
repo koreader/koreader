@@ -189,6 +189,7 @@ function ReadHistory:getFileByDirectory(directory, recursive)
     end
 end
 
+--- Updates the history list after renaming/moving a file.
 function ReadHistory:updateItemByPath(old_path, new_path)
     local index = self:getIndexByFile(old_path)
     if index then
@@ -196,6 +197,22 @@ function ReadHistory:updateItemByPath(old_path, new_path)
         self.hist[index].text = new_path:gsub(".*/", "")
         self:_flush()
         self:reload(true)
+    end
+end
+
+--- Updates the history list after renaming/moving a folder.
+function ReadHistory:updateItemsByPath(old_path, new_path)
+    old_path = "^"..old_path
+    local history_updated
+    for i, v in ipairs(self.hist) do
+        local file, count = v.file:gsub(old_path, new_path)
+        if count == 1 then
+            self.hist[i].file = file
+            history_updated = true
+        end
+    end
+    if history_updated then
+        self:_flush()
     end
 end
 

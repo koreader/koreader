@@ -28,6 +28,7 @@ local ReadCollection = require("readcollection")
 local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
+local ReadHistory = require("readhistory")
 local Screenshoter = require("ui/widget/screenshoter")
 local TitleBar = require("ui/widget/titlebar")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -893,7 +894,9 @@ function FileManager:pasteHere(file)
         if self:moveFile(orig_file, dest_path) then
             if is_file then
                 DocSettings:updateLocation(orig_file, dest_file)
-                require("readhistory"):updateItemByPath(orig_file, dest_file) -- (will update "lastfile" if needed)
+                ReadHistory:updateItemByPath(orig_file, dest_file) -- (will update "lastfile" if needed)
+            else
+                ReadHistory:updateItemsByPath(orig_file, dest_file)
             end
             ReadCollection:updateItemByPath(orig_file, dest_file)
             return true
@@ -1016,7 +1019,7 @@ function FileManager:deleteFile(file, is_file)
     if ok and not err then
         if is_file then
             DocSettings:updateLocation(file)
-            require("readhistory"):fileDeleted(file)
+            ReadHistory:fileDeleted(file)
         end
         ReadCollection:removeItemByPath(file, not is_file)
         return true
@@ -1065,7 +1068,9 @@ function FileManager:renameFile(file, basename, is_file)
         if self:moveFile(file, dest) then
             if is_file then
                 DocSettings:updateLocation(file, dest)
-                require("readhistory"):updateItemByPath(file, dest) -- (will update "lastfile" if needed)
+                ReadHistory:updateItemByPath(file, dest) -- (will update "lastfile" if needed)
+            else
+                ReadHistory:updateItemsByPath(file, dest)
             end
             ReadCollection:updateItemByPath(file, dest)
             self:onRefresh()
