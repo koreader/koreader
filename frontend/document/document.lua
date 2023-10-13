@@ -9,7 +9,6 @@ local Math = require("optmath")
 local TileCacheItem = require("document/tilecacheitem")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local util = require("util")
 
 --[[
 This is an abstract interface to a document
