@@ -77,7 +77,7 @@ local function resetButtonOnLookupWindow()
                 text = _("Add to vocabulary builder"),
                 font_bold = false,
                 callback = function()
-                    local book_title = obj.ui.doc_props.display_title or _("Dictionary lookup")
+                    local book_title = (obj.ui.doc_props and obj.ui.doc_props.display_title) or _("Dictionary lookup")
                     obj.ui:handleEvent(Event:new("WordLookedUp", obj.word, book_title, true)) -- is_manual: true
                     local button = obj.button_table.button_by_id["vocabulary"]
                     if button then
