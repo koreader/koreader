@@ -1017,7 +1017,7 @@ end
 -- by highlighting in KOReader may change the digest value.
 function util.partialMD5(filepath)
     if not filepath then return end
-    local file = io.open(filepath, 'rb')
+    local file = io.open(filepath, "rb")
     if not file then return end
     local step, size = 1024, 1024
     local update = md5()
