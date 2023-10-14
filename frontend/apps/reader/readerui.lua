@@ -465,11 +465,8 @@ function ReaderUI:init()
     self.postInitCallback = nil
 
     -- Now that document is loaded, store book metadata in settings.
-    local props = self.doc_settings:readSetting("doc_props")
-    if props == nil then
-        props = self.document:getProps()
-        self.doc_settings:saveSetting("doc_props", props)
-    end
+    local props = self.document:getProps()
+    self.doc_settings:saveSetting("doc_props", props)
     -- And have an extended and customized copy in memory for quick access.
     self.doc_props = FileManagerBookInfo.extendProps(props, self.document.file)
 
