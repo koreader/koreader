@@ -270,7 +270,7 @@ end
 function LuaSettings:flush()
     if not self.file then return end
     local directory_updated = self:backup()
-    util.writeToFile(dump(self.data, nil, true), self.file, directory_updated)
+    util.writeToFile(dump(self.data, nil, true), self.file, true, directory_updated)
     return self
 end
 
