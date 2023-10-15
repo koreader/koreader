@@ -464,23 +464,23 @@ function ReaderUI:init()
     end
     self.postInitCallback = nil
 
-    -- Now that document is loaded, store book metadata in settings
-    -- (so that filemanager can use it from sideCar file to display
-    -- Book information).
+    -- Now that document is loaded, store book metadata in settings.
     local props = self.document:getProps()
     self.doc_settings:saveSetting("doc_props", props)
     -- And have an extended and customized copy in memory for quick access.
     self.doc_props = FileManagerBookInfo.extendProps(props, self.document.file)
 
     -- Set "reading" status if there is no status.
-    local summary = self.doc_settings:readSetting("summary")
-    if not (summary and summary.status) then
-        if not summary then
-            summary = {}
-        end
+    local summary = self.doc_settings:readSetting("summary", {})
+    if summary.status == nil then
         summary.status = "reading"
         summary.modified = os.date("%Y-%m-%d", os.time())
-        self.doc_settings:saveSetting("summary", summary)
+    end
+
+    local md5 = self.doc_settings:readSetting("partial_md5_checksum")
+    if md5 == nil then
+        md5 = util.partialMD5(self.document.file)
+        self.doc_settings:saveSetting("partial_md5_checksum", md5)
     end
 
     require("readhistory"):addItem(self.document.file) -- (will update "lastfile")

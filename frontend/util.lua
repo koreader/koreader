@@ -5,6 +5,7 @@ This module contains miscellaneous helper functions for the KOReader frontend.
 local BaseUtil = require("ffi/util")
 local Utf8Proc = require("ffi/utf8proc")
 local lfs = require("libs/libkoreader-lfs")
+local md5 = require("ffi/sha2").md5
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = BaseUtil.template
@@ -1014,14 +1015,14 @@ end
 -- Note that if PDF file size is around 1024, 4096, 16384, 65536, 262144
 -- 1048576, 4194304, 16777216, 67108864, 268435456 or 1073741824, appending data
 -- by highlighting in KOReader may change the digest value.
-function util.partialMD5(file)
-    local bit = require("bit")
-    local md5 = require("ffi/sha2").md5
-    local leftshift = bit.lshift
+function util.partialMD5(filepath)
+    if not filepath then return end
+    local file = io.open(filepath, "rb")
+    if not file then return end
     local step, size = 1024, 1024
     local update = md5()
     for i = -1, 10 do
-        file:seek("set", leftshift(step, 2*i))
+        file:seek("set", lshift(step, 2*i))
         local sample = file:read(size)
         if sample then
             update(sample)
@@ -1029,6 +1030,7 @@ function util.partialMD5(file)
             break
         end
     end
+    file:close()
     return update()
 end
 

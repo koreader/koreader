@@ -76,6 +76,7 @@ local ReaderStatistics = Widget:extend{
     avg_time = nil,
     page_stat = nil, -- Dictionary, indexed by page (hash), contains a list (array) of { timestamp, duration } tuples.
     data = nil, -- table
+    doc_md5 = nil,
 }
 
 -- NOTE: This is used in a migration script by ui/data/onetime_migration,
@@ -118,7 +119,6 @@ function ReaderStatistics:init()
         highlights = 0,
         notes = 0,
         pages = 0,
-        md5 = nil,
     }
 
     self.start_current_period = os.time()
@@ -186,9 +186,6 @@ function ReaderStatistics:initData()
     self.data.series = series or "N/A"
 
     self.data.pages = self.document:getPageCount()
-    if not self.data.md5 then
-        self.data.md5 = self:partialMd5(self.document.file)
-    end
     -- Update these numbers to what's actually stored in the settings
     self.data.highlights, self.data.notes = self.ui.bookmark:getNumberOfHighlightsAndNotes()
     self.id_curr_book = self:getIdBookDB()
@@ -430,29 +427,6 @@ Please wait…
     conn:close()
 end
 
-function ReaderStatistics:partialMd5(file)
-    if file == nil then
-        return nil
-    end
-    local bit = require("bit")
-    local md5 = require("ffi/sha2").md5
-    local lshift = bit.lshift
-    local step, size = 1024, 1024
-    local update = md5()
-    local file_handle = io.open(file, 'rb')
-    for i = -1, 10 do
-        file_handle:seek("set", lshift(step, 2*i))
-        local sample = file_handle:read(size)
-        if sample then
-            update(sample)
-        else
-            break
-        end
-    end
-    file_handle:close()
-    return update()
-end
-
 -- Mainly so we don't duplicate the schema twice between the creation/upgrade codepaths
 local STATISTICS_DB_PAGE_STAT_DATA_SCHEMA = [[
     CREATE TABLE IF NOT EXISTS page_stat_data
@@ -642,13 +616,14 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
                 AND    md5 = ?;
         ]]
         local stmt = conn:prepare(sql_stmt)
-        local result = stmt:reset():bind(self.data.title, self.data.authors, self.data.md5):step()
+        local result = stmt:reset():bind(self.data.title, self.data.authors, self.doc_md5):step()
         local nr_id = tonumber(result[1])
         if nr_id == 0 then
+            local partial_md5 = util.partialMD5(book_stats.file)
             stmt = conn:prepare("INSERT INTO book VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);")
             stmt:reset():bind(book_stats.title, book_stats.authors, book_stats.notes,
                 last_open_book, book_stats.highlights, book_stats.pages,
-                book_stats.series, book_stats.language, self:partialMd5(book_stats.file), total_read_time, total_read_pages) :step()
+                book_stats.series, book_stats.language, partial_md5, total_read_time, total_read_pages) :step()
             sql_stmt = [[
                 SELECT last_insert_rowid() AS num;
             ]]
@@ -662,7 +637,7 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
                     AND md5 = ?;
             ]]
             stmt = conn:prepare(sql_stmt)
-            result = stmt:reset():bind(self.data.title, self.data.authors, self.data.md5):step()
+            result = stmt:reset():bind(self.data.title, self.data.authors, self.doc_md5):step()
             id_book = result[1]
 
         end
@@ -781,14 +756,14 @@ function ReaderStatistics:getIdBookDB()
             AND md5 = ?;
     ]]
     local stmt = conn:prepare(sql_stmt)
-    local result = stmt:reset():bind(self.data.title, self.data.authors, self.data.md5):step()
+    local result = stmt:reset():bind(self.data.title, self.data.authors, self.doc_md5):step()
     local nr_id = tonumber(result[1])
     if nr_id == 0 then
         -- Not in the DB yet, initialize it
         stmt = conn:prepare("INSERT INTO book VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);")
         stmt:reset():bind(self.data.title, self.data.authors, self.data.notes,
             os.time(), self.data.highlights, self.data.pages,
-            self.data.series, self.data.language, self.data.md5, 0, 0):step()
+            self.data.series, self.data.language, self.doc_md5, 0, 0):step()
         sql_stmt = [[
             SELECT last_insert_rowid() AS num;
         ]]
@@ -802,7 +777,7 @@ function ReaderStatistics:getIdBookDB()
                 AND    md5 = ?;
         ]]
         stmt = conn:prepare(sql_stmt)
-        result = stmt:reset():bind(self.data.title, self.data.authors, self.data.md5):step()
+        result = stmt:reset():bind(self.data.title, self.data.authors, self.doc_md5):step()
         id_book = result[1]
     end
     stmt:close()
@@ -857,17 +832,13 @@ function ReaderStatistics:onBookMetadataChanged(prop_updated)
         -- Not the current document: we have to find its id in the db, from the (old) title/authors/md5
         local db_md5, db_title, db_authors, db_authors_legacy
         if DocSettings:hasSidecarFile(filepath) then
-            local doc_settings = DocSettings:open(filepath)
-            local stats = doc_settings:readSetting("stats")
-            if stats then
-                db_md5 = stats.md5
-                -- Note: stats.title and stats.authors may be osbolete, if the metadata
-                -- has previously been updated and the document never re-opened since.
-                logger.dbg(log_prefix, "got md5 from docsettings:", db_md5)
-            end
+            db_md5 = DocSettings:open(filepath):readSetting("partial_md5_checksum")
+            -- Note: stats.title and stats.authors may be osbolete, if the metadata
+            -- has previously been updated and the document never re-opened since.
+            logger.dbg(log_prefix, "got md5 from docsettings:", db_md5)
         end
         if not db_md5 then
-            db_md5 = self:partialMd5(filepath)
+            db_md5 = util.partialMD5(filepath)
             logger.dbg(log_prefix, "computed md5:", db_md5)
         end
 
@@ -2819,11 +2790,9 @@ function ReaderStatistics:onReadingResumed()
     self._reading_paused_ts = nil
 end
 
-function ReaderStatistics:onReadSettings(config)
+function ReaderStatistics:onReaderReady(config)
     self.data = config:readSetting("stats", { performance_in_pages = {} })
-end
-
-function ReaderStatistics:onReaderReady()
+    self.doc_md5 = config:readSetting("partial_md5_checksum")
     -- we have correct page count now, do the actual initialization work
     self:initData()
     self.view.footer:onUpdateFooter()
