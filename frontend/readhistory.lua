@@ -94,7 +94,7 @@ function ReadHistory:_flush()
             file = v.file
         })
     end
-    util.writeToFile(dump(content), history_file, true)
+    util.writeToFile(dump(content), history_file, true, true)
     self:ensureLastFile()
 end
 
