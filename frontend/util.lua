@@ -1034,24 +1034,25 @@ function util.partialMD5(filepath)
     return update()
 end
 
-function util.writeToFile(data, filepath, is_lua, directory_updated)
+function util.writeToFile(data, filepath, force_flush, lua_dofile_ready, directory_updated)
     if not filepath then return end
-    if is_lua then
+    if lua_dofile_ready then
         local t = { "-- ", filepath, "\nreturn ", data, "\n" }
         data = table.concat(t)
     end
-    local ok
-    local file = io.open(filepath, "w")
-    if file ~= nil then
-        file:write(data)
-        BaseUtil.fsyncOpenedFile(file) -- force flush to the storage device
-        file:close()
-        ok = true
+    local file, err = io.open(filepath, "wb")
+    if not file then
+        return nil, err
     end
+    file:write(data)
+    if force_flush then
+        BaseUtil.fsyncOpenedFile(file)
+    end
+    file:close()
     if directory_updated then
         BaseUtil.fsyncDirectory(filepath)
     end
-    return ok
+    return true
 end
 
 --[[--
