@@ -11,7 +11,7 @@
 [![Weblate Status][badge-weblate]][link-weblate]
 
 [Download](https://github.com/koreader/koreader/releases) •
-[User guide](http://koreader.rocks/koreader-user-guide.pdf) •
+[User guide](http://koreader.rocks/user_guide/) •
 [Wiki](https://github.com/koreader/koreader/wiki) •
 [Developer docs](http://koreader.rocks/doc/)
 
@@ -33,7 +33,7 @@
 
 * **and much more**: look up words with StarDict dictionaries / Wikipedia, add your own online OPDS catalogs and RSS feeds, over-the-air software updates, an FTP client, an SSH server, …
 
-Please check the [user guide](http://koreader.rocks/koreader-user-guide.pdf) and the [wiki][link-wiki] to discover more features and to help us document them.
+Please check the [user guide](http://koreader.rocks/user_guide/) and the [wiki][link-wiki] to discover more features and to help us document them.
 
 ## Screenshots
 
