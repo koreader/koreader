@@ -315,7 +315,7 @@ function DocSettings:flush(data, no_custom_metadata)
         util.makePath(sidecar_dir)
         logger.dbg("DocSettings: Writing to", sidecar_file)
         local directory_updated = LuaSettings:backup(sidecar_file)
-        if util.writeToFile(s_out, sidecar_file, true, directory_updated) then
+        if util.writeToFile(s_out, sidecar_file, true, true, directory_updated) then
             -- move custom cover file and custom metadata file to the metadata file location
             if not no_custom_metadata then
                 local metadata_file, filepath, filename
@@ -586,7 +586,7 @@ function DocSettings:flushCustomMetadata(doc_path)
     local s_out = dump(self.data, nil, true)
     for _, sidecar_dir in ipairs(sidecar_dirs) do
         util.makePath(sidecar_dir)
-        if util.writeToFile(s_out, sidecar_dir .. "/" .. custom_metadata_filename, true) then
+        if util.writeToFile(s_out, sidecar_dir .. "/" .. custom_metadata_filename, true, true) then
             new_sidecar_dir = sidecar_dir .. "/"
             break
         end
