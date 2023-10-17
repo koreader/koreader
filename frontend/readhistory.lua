@@ -94,12 +94,7 @@ function ReadHistory:_flush()
             file = v.file
         })
     end
-    local f = io.open(history_file, "w")
-    if f then
-        f:write("return " .. dump(content) .. "\n")
-        ffiutil.fsyncOpenedFile(f) -- force flush to the storage device
-        f:close()
-    end
+    util.writeToFile(dump(content), history_file, true, true)
     self:ensureLastFile()
 end
 

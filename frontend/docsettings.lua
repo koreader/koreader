@@ -290,14 +290,6 @@ function DocSettings:open(doc_path)
     return new
 end
 
-local function writeToFile(data, file)
-    file:write("-- we can read Lua syntax here!\nreturn ")
-    file:write(data)
-    file:write("\n")
-    ffiutil.fsyncOpenedFile(file) -- force flush to the storage device
-    file:close()
-end
-
 --- Serializes settings and writes them to `metadata.lua`.
 function DocSettings:flush(data, no_custom_metadata)
     -- Depending on the settings, doc_settings are saved to the book folder or
@@ -321,29 +313,9 @@ function DocSettings:flush(data, no_custom_metadata)
     for _, s in ipairs(serials) do
         local sidecar_dir, sidecar_file = unpack(s)
         util.makePath(sidecar_dir)
-        local directory_updated = false
-        if lfs.attributes(sidecar_file, "mode") == "file" then
-            -- As an additional safety measure (to the ffiutil.fsync* calls used below),
-            -- we only backup the file to .old when it has not been modified in the last 60 seconds.
-            -- This should ensure in the case the fsync calls are not supported
-            -- that the OS may have itself sync'ed that file content in the meantime.
-            local mtime = lfs.attributes(sidecar_file, "modification")
-            if mtime < os.time() - 60 then
-                logger.dbg("DocSettings: Renamed", sidecar_file, "to", sidecar_file .. ".old")
-                os.rename(sidecar_file, sidecar_file .. ".old")
-                directory_updated = true -- fsync directory content too below
-            end
-        end
         logger.dbg("DocSettings: Writing to", sidecar_file)
-        local f_out = io.open(sidecar_file, "w")
-        if f_out ~= nil then
-            writeToFile(s_out, f_out)
-
-            if directory_updated then
-                -- Ensure the file renaming is flushed to storage device
-                ffiutil.fsyncDirectory(sidecar_file)
-            end
-
+        local directory_updated = LuaSettings:backup(sidecar_file)
+        if util.writeToFile(s_out, sidecar_file, true, true, directory_updated) then
             -- move custom cover file and custom metadata file to the metadata file location
             if not no_custom_metadata then
                 local metadata_file, filepath, filename
@@ -614,9 +586,7 @@ function DocSettings:flushCustomMetadata(doc_path)
     local s_out = dump(self.data, nil, true)
     for _, sidecar_dir in ipairs(sidecar_dirs) do
         util.makePath(sidecar_dir)
-        local f_out = io.open(sidecar_dir .. "/" .. custom_metadata_filename, "w")
-        if f_out ~= nil then
-            writeToFile(s_out, f_out)
+        if util.writeToFile(s_out, sidecar_dir .. "/" .. custom_metadata_filename, true, true) then
             new_sidecar_dir = sidecar_dir .. "/"
             break
         end

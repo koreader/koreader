@@ -1034,6 +1034,26 @@ function util.partialMD5(filepath)
     return update()
 end
 
+function util.writeToFile(data, filepath, force_flush, lua_dofile_ready, directory_updated)
+    if not filepath then return end
+    if lua_dofile_ready then
+        local t = { "-- ", filepath, "\nreturn ", data, "\n" }
+        data = table.concat(t)
+    end
+    local file, err = io.open(filepath, "wb")
+    if not file then
+        return nil, err
+    end
+    file:write(data)
+    if force_flush then
+        BaseUtil.fsyncOpenedFile(file)
+    end
+    file:close()
+    if directory_updated then
+        BaseUtil.fsyncDirectory(filepath)
+    end
+    return true
+end
 
 --[[--
 Replaces invalid UTF-8 characters with a replacement string.

@@ -3,9 +3,9 @@ This module handles generic settings as well as KOReader's global settings syste
 ]]
 
 local dump = require("dump")
-local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 
 local LuaSettings = {}
 
@@ -249,33 +249,28 @@ function LuaSettings:reset(table)
     return self
 end
 
---- Writes settings to disk.
-function LuaSettings:flush()
-    if not self.file then return end
-    local directory_updated = false
-    if lfs.attributes(self.file, "mode") == "file" then
-        -- As an additional safety measure (to the ffiutil.fsync* calls used below),
+function LuaSettings:backup(file)
+    file = file or self.file
+    local directory_updated
+    if lfs.attributes(file, "mode") == "file" then
+        -- As an additional safety measure (to the ffiutil.fsync* calls used in util.writeToFile),
         -- we only backup the file to .old when it has not been modified in the last 60 seconds.
         -- This should ensure in the case the fsync calls are not supported
         -- that the OS may have itself sync'ed that file content in the meantime.
-        local mtime = lfs.attributes(self.file, "modification")
+        local mtime = lfs.attributes(file, "modification")
         if mtime < os.time() - 60 then
-            os.rename(self.file, self.file .. ".old")
-            directory_updated = true -- fsync directory content too below
+            os.rename(file, file .. ".old")
+            directory_updated = true -- fsync directory content
         end
     end
-    local f_out = io.open(self.file, "w")
-    if f_out ~= nil then
-        f_out:write("-- we can read Lua syntax here!\nreturn ")
-        f_out:write(dump(self.data, nil, true))
-        f_out:write("\n")
-        ffiutil.fsyncOpenedFile(f_out) -- force flush to the storage device
-        f_out:close()
-    end
-    if directory_updated then
-        -- Ensure the file renaming is flushed to storage device
-        ffiutil.fsyncDirectory(self.file)
-    end
+    return directory_updated
+end
+
+--- Writes settings to disk.
+function LuaSettings:flush()
+    if not self.file then return end
+    local directory_updated = self:backup()
+    util.writeToFile(dump(self.data, nil, true), self.file, true, true, directory_updated)
     return self
 end
 

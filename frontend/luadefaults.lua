@@ -5,7 +5,6 @@ Subclass of LuaSettings dedicated to handling the legacy global constants.
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
 local dump = require("dump")
-local ffiutil = require("ffi/util")
 local util = require("util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -153,30 +152,8 @@ function LuaDefaults:reset() end
 --- Writes settings to disk.
 function LuaDefaults:flush()
     if not self.file then return end
-    local directory_updated = false
-    if lfs.attributes(self.file, "mode") == "file" then
-        -- As an additional safety measure (to the ffiutil.fsync* calls used below),
-        -- we only backup the file to .old when it has not been modified in the last 60 seconds.
-        -- This should ensure in the case the fsync calls are not supported
-        -- that the OS may have itself sync'ed that file content in the meantime.
-        local mtime = lfs.attributes(self.file, "modification")
-        if mtime < os.time() - 60 then
-            os.rename(self.file, self.file .. ".old")
-            directory_updated = true -- fsync directory content too below
-        end
-    end
-    local f_out = io.open(self.file, "w")
-    if f_out ~= nil then
-        f_out:write("-- we can read Lua syntax here!\nreturn ")
-        f_out:write(dump(self.rw, nil, true))
-        f_out:write("\n")
-        ffiutil.fsyncOpenedFile(f_out) -- force flush to the storage device
-        f_out:close()
-    end
-    if directory_updated then
-        -- Ensure the file renaming is flushed to storage device
-        ffiutil.fsyncDirectory(self.file)
-    end
+    local directory_updated = self:backup() -- LuaSettings
+    util.writeToFile(dump(self.rw, nil, true), self.file, true, true, directory_updated)
     return self
 end
 
