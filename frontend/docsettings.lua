@@ -311,6 +311,7 @@ end
 
 --- Serializes settings and writes them to `metadata.lua`.
 function DocSettings:flush(data, no_custom_metadata)
+    data = data or self.data
     local sidecar_dirs
     local preferred_location = G_reader_settings:readSetting("document_metadata_folder", "doc")
     if preferred_location == "doc" then
@@ -319,12 +320,12 @@ function DocSettings:flush(data, no_custom_metadata)
         sidecar_dirs = { self.dir_sidecar_dir }
     elseif preferred_location == "hash" then
         if self.hash_sidecar_dir == nil then
-            self.hash_sidecar_dir = self:getSidecarDir(doc_path, "hash")
+            self.hash_sidecar_dir = self:getSidecarDir(data.doc_path, "hash")
         end
         sidecar_dirs = { self.hash_sidecar_dir }
     end
 
-    local ser_data = dump(data or self.data, nil, true)
+    local ser_data = dump(data, nil, true)
     for _, sidecar_dir in ipairs(sidecar_dirs) do
         local sidecar_dir_slash = sidecar_dir .. "/"
         local sidecar_file = sidecar_dir_slash .. self.sidecar_filename
