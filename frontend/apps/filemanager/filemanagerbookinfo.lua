@@ -595,7 +595,6 @@ function BookInfo:moveBookMetadata()
             local books_to_move = scanPath()
             local books_to_move_nb = #books_to_move
             if books_to_move_nb == 0 then
-                local InfoMessage = require("ui/widget/infomessage")
                 UIManager:show(InfoMessage:new{
                     text = _("No books with metadata not in your preferred location found."),
                 })
