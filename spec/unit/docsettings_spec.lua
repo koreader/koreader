@@ -34,19 +34,19 @@ describe("docsettings module", function()
     it("should generate sidecar metadata file (book folder)", function()
         G_reader_settings:saveSetting("document_metadata_folder", "doc")
         assert.Equals("../../foo.sdr/metadata.pdf.lua",
-                      docsettings:getSidecarFile("../../foo.pdf"))
+                      docsettings:getSidecarDir("../../foo.pdf").."/"..docsettings.getSidecarFilename("../../foo.pdf"))
         assert.Equals("/foo/bar.sdr/metadata.pdf.lua",
-                      docsettings:getSidecarFile("/foo/bar.pdf"))
+                      docsettings:getSidecarDir("/foo/bar.pdf").."/"..docsettings.getSidecarFilename("/foo/bar.pdf"))
         assert.Equals("baz.sdr/metadata.epub.lua",
-                      docsettings:getSidecarFile("baz.epub"))
+                      docsettings:getSidecarDir("baz.epub").."/"..docsettings.getSidecarFilename("baz.epub"))
     end)
 
     it("should generate sidecar metadata file (docsettings folder)", function()
         G_reader_settings:saveSetting("document_metadata_folder", "dir")
         assert.Equals(docsettings_dir.."/foo/bar.sdr/metadata.pdf.lua",
-                      docsettings:getSidecarFile("/foo/bar.pdf"))
+                      docsettings:getSidecarDir("/foo/bar.pdf").."/"..docsettings.getSidecarFilename("/foo/bar.pdf"))
         assert.Equals(docsettings_dir.."baz.sdr/metadata.epub.lua",
-                      docsettings:getSidecarFile("baz.epub"))
+                      docsettings:getSidecarDir("baz.epub").."/"..docsettings.getSidecarFilename("baz.epub"))
     end)
 
     it("should read legacy history file", function()
