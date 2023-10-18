@@ -1,5 +1,8 @@
 describe("docsettings module", function()
     local DataStorage, docsettings, docsettings_dir, ffiutil, lfs
+    local getSidecarFile = function(doc_path)
+        return docsettings:getSidecarDir(doc_path).."/"..docsettings.getSidecarFilename(doc_path)
+    end
 
     setup(function()
         require("commonrequire")
@@ -33,20 +36,15 @@ describe("docsettings module", function()
 
     it("should generate sidecar metadata file (book folder)", function()
         G_reader_settings:saveSetting("document_metadata_folder", "doc")
-        assert.Equals("../../foo.sdr/metadata.pdf.lua",
-                      docsettings:getSidecarDir("../../foo.pdf").."/"..docsettings.getSidecarFilename("../../foo.pdf"))
-        assert.Equals("/foo/bar.sdr/metadata.pdf.lua",
-                      docsettings:getSidecarDir("/foo/bar.pdf").."/"..docsettings.getSidecarFilename("/foo/bar.pdf"))
-        assert.Equals("baz.sdr/metadata.epub.lua",
-                      docsettings:getSidecarDir("baz.epub").."/"..docsettings.getSidecarFilename("baz.epub"))
+        assert.Equals("../../foo.sdr/metadata.pdf.lua", getSidecarFile("../../foo.pdf"))
+        assert.Equals("/foo/bar.sdr/metadata.pdf.lua", getSidecarFile("/foo/bar.pdf"))
+        assert.Equals("baz.sdr/metadata.epub.lua", getSidecarFile("baz.epub"))
     end)
 
     it("should generate sidecar metadata file (docsettings folder)", function()
         G_reader_settings:saveSetting("document_metadata_folder", "dir")
-        assert.Equals(docsettings_dir.."/foo/bar.sdr/metadata.pdf.lua",
-                      docsettings:getSidecarDir("/foo/bar.pdf").."/"..docsettings.getSidecarFilename("/foo/bar.pdf"))
-        assert.Equals(docsettings_dir.."baz.sdr/metadata.epub.lua",
-                      docsettings:getSidecarDir("baz.epub").."/"..docsettings.getSidecarFilename("baz.epub"))
+        assert.Equals(docsettings_dir.."/foo/bar.sdr/metadata.pdf.lua", getSidecarFile("/foo/bar.pdf"))
+        assert.Equals(docsettings_dir.."baz.sdr/metadata.epub.lua", getSidecarFile("baz.epub"))
     end)
 
     it("should read legacy history file", function()
