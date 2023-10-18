@@ -10,6 +10,7 @@ local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local FileChooser = require("ui/widget/filechooser")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local FileManagerCollection = require("apps/filemanager/filemanagercollection")
 local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
 local FileManagerFileSearcher = require("apps/filemanager/filemanagerfilesearcher")
@@ -415,6 +416,7 @@ function FileManager:init()
 
     self:registerModule("menu", self.menu)
     self:registerModule("history", FileManagerHistory:new{ ui = self })
+    self:registerModule("bookinfo", FileManagerBookInfo:new{ ui = self })
     self:registerModule("collections", FileManagerCollection:new{ ui = self })
     self:registerModule("filesearcher", FileManagerFileSearcher:new{ ui = self })
     self:registerModule("folder_shortcuts", FileManagerShortcuts:new{ ui = self })
@@ -879,7 +881,7 @@ function FileManager:pasteHere(file)
     local function infoCopyFile()
         if self:copyRecursive(orig_file, dest_path) then
             if is_file then
-                DocSettings:updateLocation(orig_file, dest_file, true)
+                DocSettings.updateLocation(orig_file, dest_file, true)
             end
             return true
         else
@@ -893,7 +895,7 @@ function FileManager:pasteHere(file)
     local function infoMoveFile()
         if self:moveFile(orig_file, dest_path) then
             if is_file then
-                DocSettings:updateLocation(orig_file, dest_file)
+                DocSettings.updateLocation(orig_file, dest_file)
                 ReadHistory:updateItemByPath(orig_file, dest_file) -- (will update "lastfile" if needed)
             else
                 ReadHistory:updateItemsByPath(orig_file, dest_file)
@@ -1018,7 +1020,7 @@ function FileManager:deleteFile(file, is_file)
     end
     if ok and not err then
         if is_file then
-            DocSettings:updateLocation(file)
+            DocSettings.updateLocation(file)
             ReadHistory:fileDeleted(file)
         end
         ReadCollection:removeItemByPath(file, not is_file)
@@ -1067,7 +1069,7 @@ function FileManager:renameFile(file, basename, is_file)
     local function doRenameFile()
         if self:moveFile(file, dest) then
             if is_file then
-                DocSettings:updateLocation(file, dest)
+                DocSettings.updateLocation(file, dest)
                 ReadHistory:updateItemByPath(file, dest) -- (will update "lastfile" if needed)
             else
                 ReadHistory:updateItemsByPath(file, dest)
