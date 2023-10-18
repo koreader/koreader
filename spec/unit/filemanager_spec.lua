@@ -47,7 +47,7 @@ describe("FileManager module", function()
 
         local tmp_sidecar = docsettings:getSidecarDir(util.realpath(tmp_fn))
         lfs.mkdir(tmp_sidecar)
-        local tmp_sidecar_file = docsettings:getSidecarFile(util.realpath(tmp_fn))
+        local tmp_sidecar_file = docsettings:getSidecarDir(util.realpath(tmp_fn)).."/"..docsettings.getSidecarFilename(util.realpath(tmp_fn))
         local tmp_sidecar_file_foo = tmp_sidecar_file .. ".foo" -- non-docsettings file
         local tmpsf = io.open(tmp_sidecar_file, "w")
         tmpsf:write("{}")
@@ -85,7 +85,7 @@ describe("FileManager module", function()
 
         local tmp_sidecar = docsettings:getSidecarDir(util.realpath(tmp_fn))
         lfs.mkdir(tmp_sidecar)
-        local tmp_sidecar_file = docsettings:getSidecarFile(util.realpath(tmp_fn))
+        local tmp_sidecar_file = docsettings:getSidecarDir(util.realpath(tmp_fn)).."/"..docsettings.getSidecarFilename(util.realpath(tmp_fn))
         local tmpsf = io.open(tmp_sidecar_file, "w")
         tmpsf:write("{}")
         tmpsf:close()
