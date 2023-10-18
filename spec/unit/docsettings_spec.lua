@@ -65,9 +65,9 @@ describe("docsettings module", function()
         }
 
         for _, f in ipairs(legacy_files) do
-            assert.False(os.rename(d.doc_sidecar_file, f) == nil)
+            assert.False(os.rename(d.doc_sidecar_dir.."/"..d.sidecar_filename, f) == nil)
             d = docsettings:open(file)
-            assert.True(os.remove(d.doc_sidecar_file) == nil)
+            assert.True(os.remove(d.doc_sidecar_dir.."/"..d.sidecar_filename) == nil)
             -- Legacy history files should not be removed before flush has been
             -- called.
             assert.Equals(lfs.attributes(f, "mode"), "file")
@@ -80,7 +80,7 @@ describe("docsettings module", function()
             assert.True(os.remove(f) == nil)
         end
 
-        assert.False(os.remove(d.doc_sidecar_file) == nil)
+        assert.False(os.remove(d.doc_sidecar_dir.."/"..d.sidecar_filename) == nil)
         d:purge()
     end)
 
@@ -98,7 +98,7 @@ describe("docsettings module", function()
         for i, v in ipairs(legacy_files) do
             d:saveSetting("a", i)
             d:flush()
-            assert.False(os.rename(d.doc_sidecar_file, v.."1") == nil)
+            assert.False(os.rename(d.doc_sidecar_dir.."/"..d.sidecar_filename, v.."1") == nil)
         end
 
         d:close()
@@ -127,33 +127,33 @@ describe("docsettings module", function()
         d:saveSetting("a", "a")
         d:flush()
         -- metadata.pdf.lua should be generated.
-        assert.Equals("file", lfs.attributes(d.doc_sidecar_file, "mode"))
+        assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename, "mode"))
         d:flush()
         -- metadata.pdf.lua.old should not yet be generated.
-        assert.are.not_equal("file", lfs.attributes(d.doc_sidecar_file .. ".old", "mode"))
+        assert.are.not_equal("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename .. ".old", "mode"))
         -- make metadata.pdf.lua older to bypass 60s age needed for .old rotation
         local minutes_ago = os.time() - 120
-        lfs.touch(d.doc_sidecar_file, minutes_ago)
+        lfs.touch(d.doc_sidecar_dir.."/"..d.sidecar_filename, minutes_ago)
         d:close()
         -- metadata.pdf.lua and metadata.pdf.lua.old should be generated.
-        assert.Equals("file", lfs.attributes(d.doc_sidecar_file, "mode"))
-        assert.Equals("file", lfs.attributes(d.doc_sidecar_file .. ".old", "mode"))
+        assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename, "mode"))
+        assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename .. ".old", "mode"))
 
         -- write some garbage to sidecar-file.
-        local f_out = io.open(d.doc_sidecar_file, "w")
+        local f_out = io.open(d.doc_sidecar_dir.."/"..d.sidecar_filename, "w")
         f_out:write("bla bla bla")
         f_out:close()
 
         d = docsettings:open(file)
         -- metadata.pdf.lua should be removed.
-        assert.are.not_equal("file", lfs.attributes(d.doc_sidecar_file, "mode"))
-        assert.Equals("file", lfs.attributes(d.doc_sidecar_file .. ".old", "mode"))
+        assert.are.not_equal("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename, "mode"))
+        assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename .. ".old", "mode"))
         assert.Equals("a", d:readSetting("a"))
         d:saveSetting("a", "b")
         d:close()
         -- metadata.pdf.lua should be generated.
-        assert.Equals("file", lfs.attributes(d.doc_sidecar_file, "mode"))
-        assert.Equals("file", lfs.attributes(d.doc_sidecar_file .. ".old", "mode"))
+        assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename, "mode"))
+        assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename .. ".old", "mode"))
         -- The contents in sidecar_file and sidecar_file.old are different.
         -- a:b v.s. a:a
 
@@ -161,21 +161,21 @@ describe("docsettings module", function()
         -- The content should come from sidecar_file.
         assert.Equals("b", d:readSetting("a"))
         -- write some garbage to sidecar-file.
-        f_out = io.open(d.doc_sidecar_file, "w")
+        f_out = io.open(d.doc_sidecar_dir.."/"..d.sidecar_filename, "w")
         f_out:write("bla bla bla")
         f_out:close()
 
         -- do not flush the result, open docsettings again.
         d = docsettings:open(file)
         -- metadata.pdf.lua should be removed.
-        assert.are.not_equal("file", lfs.attributes(d.doc_sidecar_file, "mode"))
-        assert.Equals("file", lfs.attributes(d.doc_sidecar_file .. ".old", "mode"))
+        assert.are.not_equal("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename, "mode"))
+        assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename .. ".old", "mode"))
         -- The content should come from sidecar_file.old.
         assert.Equals("a", d:readSetting("a"))
         d:close()
         -- metadata.pdf.lua should be generated.
-        assert.Equals("file", lfs.attributes(d.doc_sidecar_file, "mode"))
-        assert.Equals("file", lfs.attributes(d.doc_sidecar_file .. ".old", "mode"))
+        assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename, "mode"))
+        assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename .. ".old", "mode"))
     end)
 
     describe("ignore empty sidecar file", function()
@@ -186,29 +186,29 @@ describe("docsettings module", function()
             d:saveSetting("a", "a")
             d:flush()
             -- metadata.pdf.lua should be generated.
-            assert.Equals("file", lfs.attributes(d.doc_sidecar_file, "mode"))
+            assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename, "mode"))
             -- make metadata.pdf.lua older to bypass 60s age needed for .old rotation
             local minutes_ago = os.time() - 120
-            lfs.touch(d.doc_sidecar_file, minutes_ago)
+            lfs.touch(d.doc_sidecar_dir.."/"..d.sidecar_filename, minutes_ago)
             d:close()
             -- metadata.pdf.lua and metadata.pdf.lua.old should be generated.
-            assert.Equals("file", lfs.attributes(d.doc_sidecar_file, "mode"))
-            assert.Equals("file", lfs.attributes(d.doc_sidecar_file .. ".old", "mode"))
+            assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename, "mode"))
+            assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename .. ".old", "mode"))
 
             -- reset the sidecar_file to an empty file.
-            local f_out = io.open(d.doc_sidecar_file, "w")
+            local f_out = io.open(d.doc_sidecar_dir.."/"..d.sidecar_filename, "w")
             f_out:close()
 
             d = docsettings:open(file)
             -- metadata.pdf.lua should be removed.
-            assert.are.not_equal("file", lfs.attributes(d.doc_sidecar_file, "mode"))
-            assert.Equals("file", lfs.attributes(d.doc_sidecar_file .. ".old", "mode"))
+            assert.are.not_equal("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename, "mode"))
+            assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename .. ".old", "mode"))
             assert.Equals("a", d:readSetting("a"))
             d:saveSetting("a", "b")
             d:close()
             -- metadata.pdf.lua should be generated.
-            assert.Equals("file", lfs.attributes(d.doc_sidecar_file, "mode"))
-            assert.Equals("file", lfs.attributes(d.doc_sidecar_file .. ".old", "mode"))
+            assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename, "mode"))
+            assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename .. ".old", "mode"))
             -- The contents in sidecar_file and sidecar_file.old are different.
             -- a:b v.s. a:a
         end)
@@ -220,30 +220,30 @@ describe("docsettings module", function()
             d:saveSetting("a", "a")
             d:flush()
             -- metadata.pdf.lua should be generated.
-            assert.Equals("file", lfs.attributes(d.doc_sidecar_file, "mode"))
+            assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename, "mode"))
             -- make metadata.pdf.lua older to bypass 60s age needed for .old rotation
             local minutes_ago = os.time() - 120
-            lfs.touch(d.doc_sidecar_file, minutes_ago)
+            lfs.touch(d.doc_sidecar_dir.."/"..d.sidecar_filename, minutes_ago)
             d:close()
             -- metadata.pdf.lua and metadata.pdf.lua.old should be generated.
-            assert.Equals("file", lfs.attributes(d.doc_sidecar_file, "mode"))
-            assert.Equals("file", lfs.attributes(d.doc_sidecar_file .. ".old", "mode"))
+            assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename, "mode"))
+            assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename .. ".old", "mode"))
 
             -- reset the sidecar_file to an empty file.
-            local f_out = io.open(d.doc_sidecar_file, "w")
+            local f_out = io.open(d.doc_sidecar_dir.."/"..d.sidecar_filename, "w")
             f_out:write("{                               }                 ")
             f_out:close()
 
             d = docsettings:open(file)
             -- metadata.pdf.lua should be removed.
-            assert.are.not_equal("file", lfs.attributes(d.doc_sidecar_file, "mode"))
-            assert.Equals("file", lfs.attributes(d.doc_sidecar_file .. ".old", "mode"))
+            assert.are.not_equal("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename, "mode"))
+            assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename .. ".old", "mode"))
             assert.Equals("a", d:readSetting("a"))
             d:saveSetting("a", "b")
             d:close()
             -- metadata.pdf.lua should be generated.
-            assert.Equals("file", lfs.attributes(d.doc_sidecar_file, "mode"))
-            assert.Equals("file", lfs.attributes(d.doc_sidecar_file .. ".old", "mode"))
+            assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename, "mode"))
+            assert.Equals("file", lfs.attributes(d.doc_sidecar_dir.."/"..d.sidecar_filename .. ".old", "mode"))
             -- The contents in sidecar_file and sidecar_file.old are different.
             -- a:b v.s. a:a
         end)
