@@ -142,9 +142,9 @@ end
 function filemanagerutil.genResetSettingsButton(file, caller_callback, button_disabled)
     file = ffiutil.realpath(file) or file
     local has_sidecar_file = DocSettings:hasSidecarFile(file)
-    local custom_cover_file = DocSettings:findCoverFile(file)
+    local custom_cover_file = DocSettings:findCustomCoverFile(file)
     local has_custom_cover_file = custom_cover_file and true or false
-    local custom_metadata_file = DocSettings:getCustomMetadataFile(file)
+    local custom_metadata_file = DocSettings:findCustomMetadataFile(file)
     local has_custom_metadata_file = custom_metadata_file and true or false
     return {
         text = _("Reset"),
