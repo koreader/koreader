@@ -292,9 +292,10 @@ function DocSettings:open(doc_path)
     return new
 end
 
---- Light version of open().
--- Returned object cannot be used with flush(). Can be used with flushCustomMetadata().
-function DocSettings.openSidecarFile(sidecar_file)
+--- Light version of open(). Opens a sidecar file or a custom metadata file.
+-- Returned object cannot be used to save changes to the sidecar file (flush()).
+-- Must be used to save changes to the custom metadata file (flushCustomMetadata()).
+function DocSettings.openSettingsFile(sidecar_file)
     local new = DocSettings:extend{}
     local ok, stored
     if sidecar_file then
