@@ -84,21 +84,9 @@ function WebDav:config(item, callback)
 This can point to a sub-directory of the WebDAV server.
 The start folder is appended to the server path.]])
 
-    local hint_name = _("Server display name")
-    local text_name = ""
-    local hint_address = _("WebDAV address, for example https://example.com/dav")
-    local text_address = ""
-    local hint_username = _("Username")
-    local text_username = ""
-    local hint_password = _("Password")
-    local text_password = ""
-    local hint_folder = _("Start folder")
-    local text_folder = ""
-    local title
-    local text_button_ok = _("Add")
+    local title, text_name, text_address, text_username, text_password, text_folder
     if item then
         title = _("Edit WebDAV account")
-        text_button_ok = _("Apply")
         text_name = item.text
         text_address = item.address
         text_username = item.username
@@ -112,29 +100,24 @@ The start folder is appended to the server path.]])
         fields = {
             {
                 text = text_name,
-                input_type = "string",
-                hint = hint_name ,
+                hint = _("Server display name"),
             },
             {
                 text = text_address,
-                input_type = "string",
-                hint = hint_address ,
+                hint = _("WebDAV address, for example https://example.com/dav"),
             },
             {
                 text = text_username,
-                input_type = "string",
-                hint = hint_username,
+                hint = _("Username"),
             },
             {
                 text = text_password,
-                input_type = "string",
                 text_type = "password",
-                hint = hint_password,
+                hint = _("Password"),
             },
             {
                 text = text_folder,
-                input_type = "string",
-                hint = hint_folder,
+                hint = _("Start folder, for example /books"),
             },
         },
         buttons = {
@@ -154,18 +137,17 @@ The start folder is appended to the server path.]])
                     end
                 },
                 {
-                    text = text_button_ok,
+                    text = _("Save"),
                     callback = function()
                         local fields = self.settings_dialog:getFields()
-
-                        -- make sure the URL is a valid path
-                        if fields[5] ~= "" then
-                            if string.sub(fields[5], 1, 1) ~= '/' then
-                                fields[5] = '/' .. fields[5]
-                            end
-                        end
-
                         if fields[1] ~= "" and fields[2] ~= "" then
+                            -- make sure the URL is a valid path
+                            if fields[5] ~= "" then
+                                if not fields[5]:match('^/') then
+                                    fields[5] = '/' .. fields[5]
+                                end
+                                fields[5] = fields[5]:gsub("/$", "")
+                            end
                             if item then
                                 -- edit
                                 callback(item, fields)
@@ -184,11 +166,9 @@ The start folder is appended to the server path.]])
                 },
             },
         },
-        input_type = "text",
     }
     UIManager:show(self.settings_dialog)
     self.settings_dialog:onShowKeyboard()
-
 end
 
 function WebDav:info(item)
