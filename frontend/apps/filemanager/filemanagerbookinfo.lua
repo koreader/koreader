@@ -103,7 +103,7 @@ function BookInfo:show(file, book_props)
     local custom_props
     local custom_metadata_file = DocSettings:findCustomMetadataFile(file)
     if custom_metadata_file then
-        self.custom_doc_settings = DocSettings.openSidecarFile(custom_metadata_file)
+        self.custom_doc_settings = DocSettings.openSettingsFile(custom_metadata_file)
         custom_props = self.custom_doc_settings:readSetting("custom_props")
     end
     local values_lang
@@ -177,7 +177,7 @@ end
 function BookInfo.getCustomProp(prop_key, filepath)
     local custom_metadata_file = DocSettings:findCustomMetadataFile(filepath)
     return custom_metadata_file
-        and DocSettings.openSidecarFile(custom_metadata_file):readSetting("custom_props")[prop_key]
+        and DocSettings.openSettingsFile(custom_metadata_file):readSetting("custom_props")[prop_key]
 end
 
 -- Returns extended and customized metadata.
@@ -185,7 +185,7 @@ function BookInfo.extendProps(original_props, filepath)
     -- do not customize if filepath is not passed (eg from covermenu)
     local custom_metadata_file = filepath and DocSettings:findCustomMetadataFile(filepath)
     local custom_props = custom_metadata_file
-        and DocSettings.openSidecarFile(custom_metadata_file):readSetting("custom_props") or {}
+        and DocSettings.openSettingsFile(custom_metadata_file):readSetting("custom_props") or {}
     original_props = original_props or {}
 
     local props = {}
@@ -230,7 +230,7 @@ function BookInfo.getDocProps(file, book_props, no_open_document)
     if not book_props then
         local custom_metadata_file = DocSettings:findCustomMetadataFile(file)
         if custom_metadata_file then
-            book_props = DocSettings.openSidecarFile(custom_metadata_file):readSetting("doc_props")
+            book_props = DocSettings.openSettingsFile(custom_metadata_file):readSetting("doc_props")
         end
     end
 
@@ -392,7 +392,7 @@ function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
     if self.custom_doc_settings then
         custom_doc_settings = self.custom_doc_settings
     else -- no custom metadata file, create new
-        custom_doc_settings = DocSettings.openSidecarFile()
+        custom_doc_settings = DocSettings.openSettingsFile()
         display_title = book_props.display_title -- backup
         book_props.display_title = nil
         custom_doc_settings:saveSetting("doc_props", book_props) -- save a copy of original props
@@ -621,19 +621,14 @@ end
 function BookInfo.showBooksWithHashBasedMetadata()
     local header = T(_("Hash-based metadata has been saved in %1 for the following documents. Hash-based storage may slow down file browser navigation in large directories. Thus, if not using hash-based metadata storage, it is recommended to open the associated documents in KOReader to automatically migrate their metadata to the preferred storage location, or to delete %1, which will speed up file browser navigation."),
         DocSettings.getSidecarStorage("hash"))
-    local sdrs = DocSettings.findSidecarFilesInHashLocation()
     local file_info = { header .. "\n" }
+    local sdrs = DocSettings.findSidecarFilesInHashLocation()
     for i, sdr in ipairs(sdrs) do
         local sidecar_file, custom_metadata_file = unpack(sdr)
-        local doc_settings = DocSettings.openSidecarFile(sidecar_file)
+        local doc_settings = DocSettings.openSettingsFile(sidecar_file)
         local doc_props = doc_settings:readSetting("doc_props")
-        local custom_props
-        if custom_metadata_file then
-            local custom_settings = DocSettings.openSidecarFile(custom_metadata_file)
-            custom_props = custom_settings:readSetting("custom_props")
-        else
-            custom_props = {}
-        end
+        local custom_props = custom_metadata_file
+            and DocSettings.openSettingsFile(custom_metadata_file):readSetting("custom_props") or {}
         local doc_path = doc_settings:readSetting("doc_path")
         local title = custom_props.title or doc_props.title or filemanagerutil.splitFileNameType(doc_path)
         local author = custom_props.authors or doc_props.authors or _("N/A")
