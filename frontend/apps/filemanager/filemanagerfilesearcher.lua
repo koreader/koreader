@@ -252,7 +252,6 @@ function FileSearcher:showSearchResults(results)
         onMenuSelect = self.onMenuSelect,
         onMenuHold = self.onMenuHold,
         handle_hold_on_hold_release = true,
-        _manager = self,
     }
     table.insert(menu_container, self.search_menu)
     self.search_menu.close_callback = function()
