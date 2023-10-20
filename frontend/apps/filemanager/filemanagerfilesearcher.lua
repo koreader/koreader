@@ -30,7 +30,6 @@ function FileSearcher:init()
 end
 
 function FileSearcher:onShowFileSearch(search_string)
-    if not self.ui.file_chooser then return end -- FM only
     local search_dialog
     local check_button_case, check_button_subfolders, check_button_metadata
     search_dialog = InputDialog:new{
@@ -57,13 +56,13 @@ function FileSearcher:onShowFileSearch(search_string)
                     end,
                 },
                 {
-                    text = _("Current folder"),
+                    text = self.ui.file_chooser and _("Current folder") or _("Book folder"),
                     is_enter_default = true,
                     callback = function()
                         self.search_value = search_dialog:getInputText()
                         if self.search_value == "" then return end
                         UIManager:close(search_dialog)
-                        self.path = self.ui.file_chooser.path or self.ui:getLastDirFile()
+                        self.path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile()
                         self:doSearch()
                     end,
                 },
@@ -104,8 +103,14 @@ function FileSearcher:onShowFileSearch(search_string)
 end
 
 function FileSearcher:doSearch()
+    local results
     local dirs, files = self:getList()
-    local results = self.ui.file_chooser:genItemTable(dirs, files)
+    -- If we have a FileChooser instance, use it, to be able to make use of its natsort cache
+    if self.ui.file_chooser then
+        results = self.ui.file_chooser:genItemTable(dirs, files)
+    else
+        results = FileChooser:genItemTable(dirs, files)
+    end
     if #results > 0 then
         self:showSearchResults(results)
     else
@@ -239,18 +244,21 @@ function FileSearcher:showSearchResults(results)
         dimen = Screen:getSize(),
     }
     self.search_menu = Menu:new{
+        ui = self.ui,
+        covers_fullscreen = true, -- hint for UIManager:_repaint()
         is_borderless = true,
         is_popout = false,
         show_parent = menu_container,
         onMenuSelect = self.onMenuSelect,
         onMenuHold = self.onMenuHold,
         handle_hold_on_hold_release = true,
-        _manager = self,
     }
     table.insert(menu_container, self.search_menu)
     self.search_menu.close_callback = function()
         UIManager:close(menu_container)
-        self.ui.file_chooser:refreshPath()
+        if self.ui.file_chooser then
+            self.ui.file_chooser:refreshPath()
+        end
     end
     self.search_menu:switchItemTable(T(_("Search results (%1)"), #results), results)
     UIManager:show(menu_container)
@@ -272,18 +280,21 @@ function FileSearcher:onMenuSelect(item)
     end
     local buttons = {}
     if item.is_file then
+        local is_currently_opened = self.ui.document and self.ui.document.file == file
         has_provider = DocumentRegistry:hasProvider(file)
         if has_provider or DocSettings:hasSidecarFile(file) then
-            table.insert(buttons, filemanagerutil.genStatusButtonsRow(file, close_dialog_callback))
+            local doc_settings_or_file = is_currently_opened and self.ui.doc_settings or file
+            table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_callback))
             table.insert(buttons, {}) -- separator
             table.insert(buttons, {
-                filemanagerutil.genResetSettingsButton(file, close_dialog_callback),
+                filemanagerutil.genResetSettingsButton(file, close_dialog_callback, is_currently_opened),
                 filemanagerutil.genAddRemoveFavoritesButton(file, close_dialog_callback),
             })
         end
         table.insert(buttons, {
             {
                 text = _("Delete"),
+                enabled = not is_currently_opened,
                 callback = function()
                     local function post_delete_callback()
                         UIManager:close(dialog)
@@ -295,7 +306,8 @@ function FileSearcher:onMenuSelect(item)
                             self:switchItemTable(T(_("Search results (%1)"), #self.item_table), self.item_table)
                         end
                     end
-                    self._manager.ui:showDeleteFileDialog(file, post_delete_callback)
+                    local FileManager = require("apps/filemanager/filemanager")
+                    FileManager:showDeleteFileDialog(file, post_delete_callback)
                 end,
             },
             filemanagerutil.genBookInformationButton(file, close_dialog_callback),
@@ -329,8 +341,13 @@ function FileSearcher:onMenuHold(item)
         end
     else
         self.close_callback()
-        local pathname = util.splitFilePathName(item.path)
-        self._manager.ui.file_chooser:changeToPath(pathname, item.path)
+        if self.ui.file_chooser then
+            local pathname = util.splitFilePathName(item.path)
+            self.ui.file_chooser:changeToPath(pathname, item.path)
+        else -- called from Reader
+            self.ui:onClose()
+            self.ui:showFileManager(item.path)
+        end
     end
     return true
 end
