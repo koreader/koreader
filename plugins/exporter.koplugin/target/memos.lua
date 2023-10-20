@@ -85,12 +85,12 @@ function MemosExporter:getMenuTable()
                 end
             },
             {
-                text = _("Set Memos Token"),
+                text = _("Set Memos token"),
                 keep_menu_open = true,
                 callback = function()
                     local token_dialog
                     token_dialog = InputDialog:new {
-                        title = _("Set Token for Memos"),
+                        title = _("Memos token"),
                         input = self.settings.token,
                         buttons = {
                             {
@@ -102,7 +102,7 @@ function MemosExporter:getMenuTable()
                                     end
                                 },
                                 {
-                                    text = _("Set Token"),
+                                    text = _("Set token"),
                                     callback = function()
                                         self.settings.token = token_dialog:getInputText()
                                         self:saveSettings()
