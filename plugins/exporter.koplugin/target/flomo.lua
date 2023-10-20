@@ -48,6 +48,7 @@ end
 
 function FlomoExporter:getMenuTable()
     return {
+        -- @translators Flomo is a note taking app. The name probably doesn't need to be translated.
         text = _("Flomo"),
         checked_func = function() return self:isEnabled() end,
         sub_item_table = {
