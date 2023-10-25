@@ -162,8 +162,8 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
                 ok_callback = function()
                     local data_to_purge = {
                         doc_settings         = check_button_settings.checked,
-                        custom_cover_file    = check_button_cover.checked,
-                        custom_metadata_file = check_button_metadata.checked,
+                        custom_cover_file    = check_button_cover.checked and custom_cover_file,
+                        custom_metadata_file = check_button_metadata.checked and custom_metadata_file,
                     }
                     DocSettings:open(file):purge(nil, data_to_purge)
                     if data_to_purge.custom_cover_file or data_to_purge.custom_metadata_file then
