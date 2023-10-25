@@ -1021,13 +1021,12 @@ end
 function Dispatcher:isActionEnabled(action)
     local disabled = true
     if action and (action.condition == nil or action.condition == true) then
-        local for_fm_only = action["filemanager"] and not action["reader"]
         local ui = require("apps/reader/readerui").instance
         local context = ui and (ui.paging and "paging" or "rolling")
         if context == "paging" then
-            disabled = action["rolling"] or for_fm_only
+            disabled = action["rolling"]
         elseif context == "rolling" then
-            disabled = action["paging"] or for_fm_only
+            disabled = action["paging"]
         else -- FM
             disabled = (action["reader"] or action["rolling"] or action["paging"]) and not action["filemanager"]
         end
