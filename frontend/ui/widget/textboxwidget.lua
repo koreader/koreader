@@ -12,6 +12,7 @@ Example:
 
 ]]
 
+local ffi = require("ffi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local Font = require("ui/font")
@@ -790,6 +791,8 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     if self._bb then self._bb:free() end
     local bbtype = nil
     if self.line_num_to_image and self.line_num_to_image[start_row_idx] then
+        bbtype = Screen:isColorEnabled() and Blitbuffer.TYPE_BBRGB32 or Blitbuffer.TYPE_BB8
+    elseif ffi.istype(Blitbuffer.ColorRGB32, self.fgcolor) or ffi.istype(Blitbuffer.ColorRGB32, self.bgcolor) then
         bbtype = Screen:isColorEnabled() and Blitbuffer.TYPE_BBRGB32 or Blitbuffer.TYPE_BB8
     end
     self._bb = Blitbuffer.new(self.width, h, bbtype)
