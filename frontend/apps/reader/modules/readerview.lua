@@ -41,6 +41,15 @@ local ReaderView = OverlapGroup:extend{
     note_mark_sign = nil,
     note_mark_pos_x1 = nil, -- page 1
     note_mark_pos_x2 = nil, -- page 2 in two-page mode
+    highlight_colors = {
+        ["red"]    = "#fe4400",
+        ["orange"] = "#ff8800",
+        ["yellow"] = "#fdff32",
+        ["green"]  = "#00ad65",
+        ["blue"]   = "#00f2ff",
+        ["purple"] = "#ee00ff",
+        ["gray"]   = "#808080",
+    },
     -- PDF/DjVu continuous paging
     page_scroll = nil,
     page_bgcolor = Blitbuffer.gray(G_defaults:readSetting("DBACKGROUND_COLOR") * (1/15)),
@@ -89,8 +98,10 @@ function ReaderView:init()
         lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
         note_mark = G_reader_settings:readSetting("highlight_note_marker"),
         temp_drawer = "invert",
+        temp_color = "yellow",
         temp = {},
         saved_drawer = "lighten",
+        saved_color = "yellow",
         saved = {},
         indicator = nil, -- geom: non-touch highlight position indicator: {x = 50, y=50}
     }
@@ -482,6 +493,16 @@ function ReaderView:drawScrollView(bb, x, y)
         self.state.pos)
 end
 
+--- Converts a color name into a color struct
+function ReaderView:lookupHighlightColor(color_name)
+    if Screen:isColorEnabled() then
+        local color = self.highlight_colors[color_name]
+        return Blitbuffer.colorFromString(color or "#ffff00")
+    else
+        return Blitbuffer.COLOR_GRAY
+    end
+end
+
 function ReaderView:drawHighlightIndicator(bb, x, y)
     local rect = self.highlight.indicator
     -- paint big cross line +
@@ -504,7 +525,7 @@ function ReaderView:drawTempHighlight(bb, x, y)
         for i = 1, #boxes do
             local rect = self:pageToScreenTransform(page, boxes[i])
             if rect then
-                self:drawHighlightRect(bb, x, y, rect, self.highlight.temp_drawer)
+                self:drawHighlightRect(bb, x, y, rect, self.highlight.temp_drawer, self.highlight.temp_color)
             end
         end
     end
@@ -551,12 +572,13 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
             local boxes = self.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
             if boxes then
                 local drawer = item.drawer or self.highlight.saved_drawer
+                local color = self:lookupHighlightColor(item.color or self.highlight.saved_color)
                 local draw_note_mark = self.highlight.note_mark and
                     self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
                 for _, box in ipairs(boxes) do
                     local rect = self:pageToScreenTransform(page, box)
                     if rect then
-                        self:drawHighlightRect(bb, x, y, rect, drawer, draw_note_mark)
+                        self:drawHighlightRect(bb, x, y, rect, drawer, color, draw_note_mark)
                         if draw_note_mark and self.highlight.note_mark == "sidemark" then
                             draw_note_mark = false -- side mark in the first line only
                         end
@@ -599,11 +621,12 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
                     local boxes = self.document:getScreenBoxesFromPositions(pos0, pos1, true) -- get_segments=true
                     if boxes then
                         local drawer = item.drawer or self.highlight.saved_drawer
+                        local color = self:lookupHighlightColor(item.color or self.highlight.saved_color)
                         local draw_note_mark = self.highlight.note_mark and
                             self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
                         for _, box in ipairs(boxes) do
                             if box.h ~= 0 then
-                                self:drawHighlightRect(bb, x, y, box, drawer, draw_note_mark)
+                                self:drawHighlightRect(bb, x, y, box, drawer, color, draw_note_mark)
                                 if draw_note_mark and self.highlight.note_mark == "sidemark" then
                                     draw_note_mark = false -- side mark in the first line only
                                 end
@@ -616,18 +639,23 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
     end -- end for all saved highlight
 end
 
-function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, draw_note_mark)
+function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note_mark)
     local x, y, w, h = rect.x, rect.y, rect.w, rect.h
+    color = color or Blitbuffer.COLOR_GRAY
     if drawer == "lighten" then
-        bb:lightenRect(x, y, w, h, self.highlight.lighten_factor)
+        local alpha = 0xFF*(self.highlight.lighten_factor or 0.5)
+        if not Screen:isColorEnabled() then
+            color = Blitbuffer.Color8A(0, alpha)
+        end
+        bb:lightenRect(x, y, w, h, color)
     elseif drawer == "underscore" then
-        bb:paintRect(x, y + h - 1, w, Size.line.medium, Blitbuffer.COLOR_GRAY)
+        bb:paintRect(x, y + h - 1, w, Size.line.medium, color)
     elseif drawer == "strikeout" then
         local line_y = y + math.floor(h / 2) + 1
         if self.ui.paging then
             line_y = line_y + 2
         end
-        bb:paintRect(x, line_y, w, Size.line.medium, Blitbuffer.COLOR_BLACK)
+        bb:paintRect(x, line_y, w, Size.line.medium, color)
     elseif drawer == "invert" then
         bb:invertRect(x, y, w, h)
     end
