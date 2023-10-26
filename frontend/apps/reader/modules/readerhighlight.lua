@@ -332,6 +332,16 @@ local highlight_style = {
     {_("Invert"), "invert"},
 }
 
+local highlight_color = {
+    {_("Red"), "#fe4400"},
+    {_("Orange"), "#ff8800"},
+    {_("Yellow"), "#fdff32"},
+    {_("Green"), "#00ad65"},
+    {_("Blue"), "#00f2ff"},
+    {_("Purple"), "#ee00ff"},
+    {_("Gray"), "#808080"},
+}
+
 local note_mark = {
     {_("None"), "none"},
     {_("Underline"), "underline"},
@@ -390,6 +400,44 @@ function ReaderHighlight:addToMainMenu(menu_items)
             separator = i == #highlight_style,
         })
     end
+    table.insert(menu_items.highlight_options.sub_item_table, {
+        text_func = function()
+            local saved_color = self.view.highlight.saved_color or "#fdff32"
+            for __, v in ipairs(highlight_color) do
+                if v[2] == saved_color then
+                    return T(_("Highlight color: %1"), string.lower(v[1]))
+                end
+            end
+        end,
+        enabled_func = function()
+            return Screen:isColorScreen() and self.view.highlight.saved_drawer ~= "invert"
+        end,
+        callback = function(touchmenu_instance)
+            local saved_color = self.view.highlight.saved_color or "#fdff32"
+            local radio_buttons = {}
+            for _, v in ipairs(highlight_color) do
+                table.insert(radio_buttons, {
+                    {
+                        text = v[1],
+                        checked = v[2] == saved_color,
+                        provider = v[2],
+                    },
+                })
+            end
+            UIManager:show(require("ui/widget/radiobuttonwidget"):new{
+                title_text = _("Highlight color"),
+                width_factor = 0.5,
+                keep_shown_on_apply = false,
+                radio_buttons = radio_buttons,
+                callback = function(radio)
+                    G_reader_settings:saveSetting("highlight_color", radio.provider)
+                    self.view.highlight.saved_color = radio.provider
+                    UIManager:setDirty(self.dialog, "ui")
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+            })
+        end,
+    })
     table.insert(menu_items.highlight_options.sub_item_table, {
         text_func = function()
             return T(_("Highlight opacity: %1"), G_reader_settings:readSetting("highlight_lighten_factor", 0.2))
@@ -930,6 +978,14 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
                 text = C_("Highlight", "Style"),
                 callback = function()
                     self:editHighlightStyle(page, index)
+                    UIManager:close(self.edit_highlight_dialog)
+                    self.edit_highlight_dialog = nil
+                end,
+            },
+            {
+                text = _("Highlight color"),
+                callback = function()
+                    self:editHighlightColor(page, index)
                     UIManager:close(self.edit_highlight_dialog)
                     self.edit_highlight_dialog = nil
                 end,
@@ -1721,6 +1777,7 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             pboxes = self.selected_text.pboxes,
             ext = self.selected_text.ext,
             drawer = self.view.highlight.saved_drawer,
+            color = self.view.highlight.saved_color,
             chapter = chapter_name,
         }
         table.insert(self.view.highlight.saved[page], hl_item)
@@ -1874,6 +1931,28 @@ function ReaderHighlight:editHighlightStyle(page, i)
     self:showHighlightStyleDialog(apply_drawer, item.drawer)
 end
 
+function ReaderHighlight:editHighlightColor(page, i)
+    local item = self.view.highlight.saved[page][i]
+    local apply_color = function(color)
+        self:writePdfAnnotation("delete", page, item)
+        item.color = color
+        if self.ui.paging then
+            self:writePdfAnnotation("save", page, item)
+            local bm_note = self.ui.bookmark:getBookmarkNote(item)
+            if bm_note then
+                self:writePdfAnnotation("content", page, item, bm_note)
+            end
+        end
+        UIManager:setDirty(self.dialog, "ui")
+        self.ui:handleEvent(Event:new("BookmarkUpdated",
+                self.ui.bookmark:getBookmarkForHighlight({
+                    page = self.ui.paging and page or item.pos0,
+                    datetime = item.datetime,
+                })))
+    end
+    self:showHighlightColorDialog(apply_color, item.color)
+end
+
 function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer)
     local default_drawer, keep_shown_on_apply
     if item_drawer then -- called from editHighlightStyle
@@ -1898,6 +1977,36 @@ function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer)
         keep_shown_on_apply = keep_shown_on_apply,
         radio_buttons = radio_buttons,
         default_provider = default_drawer,
+        callback = function(radio)
+            caller_callback(radio.provider)
+        end,
+    })
+end
+
+function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color)
+    local default_color, keep_shown_on_apply
+    if item_color then -- called from editHighlightColor
+        default_color = self.view.highlight.saved_color or
+            G_reader_settings:readSetting("highlight_color", "#fdff32")
+        keep_shown_on_apply = true
+    end
+    local radio_buttons = {}
+    for _, v in ipairs(highlight_color) do
+        table.insert(radio_buttons, {
+            {
+                text = v[1],
+                checked = item_color == v[2],
+                provider = v[2],
+            },
+        })
+    end
+    local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
+    UIManager:show(RadioButtonWidget:new{
+        title_text = _("Highlight color"),
+        width_factor = 0.5,
+        keep_shown_on_apply = keep_shown_on_apply,
+        radio_buttons = radio_buttons,
+        default_provider = default_color,
         callback = function(radio)
             caller_callback(radio.provider)
         end,
@@ -2030,6 +2139,7 @@ function ReaderHighlight:getSavedExtendedHighlightPage(hl_or_bm, page, index)
     local item = {}
     item.datetime = highlight.datetime
     item.drawer = highlight.drawer
+    item.color = highlight.color
     item.pos0 = highlight.ext[page].pos0
     item.pos0.zoom = highlight.pos0.zoom
     item.pos0.rotation = highlight.pos0.rotation
@@ -2044,6 +2154,8 @@ end
 function ReaderHighlight:onReadSettings(config)
     self.view.highlight.saved_drawer = config:readSetting("highlight_drawer")
         or G_reader_settings:readSetting("highlight_drawing_style") or self.view.highlight.saved_drawer
+    self.view.highlight.saved_color = config:readSetting("highlight_color")
+        or self.view.highlight.saved_color
     self.view.highlight.disabled = G_reader_settings:has("default_highlight_action")
         and G_reader_settings:readSetting("default_highlight_action") == "nothing"
 
@@ -2071,6 +2183,7 @@ end
 
 function ReaderHighlight:onSaveSettings()
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
+    self.ui.doc_settings:saveSetting("highlight_color", self.view.highlight.saved_color)
     self.ui.doc_settings:saveSetting("panel_zoom_enabled", self.panel_zoom_enabled)
 end
 
