@@ -332,6 +332,16 @@ local highlight_style = {
     {_("Invert"), "invert"},
 }
 
+local highlight_color = {
+    {_("Red"), "#fe4400"},
+    {_("Orange"), "#ff8800"},
+    {_("Yellow"), "#fdff32"},
+    {_("Green"), "#00ad65"},
+    {_("Blue"), "#00f2ff"},
+    {_("Purple"), "#ee00ff"},
+    {_("Gray"), "#808080"},
+}
+
 local note_mark = {
     {_("None"), "none"},
     {_("Underline"), "underline"},
@@ -390,6 +400,41 @@ function ReaderHighlight:addToMainMenu(menu_items)
             separator = i == #highlight_style,
         })
     end
+    table.insert(menu_items.highlight_options.sub_item_table, {
+        text_func = function()
+            local highlightcolor = self.view.highlight.highlight_color or "#fdff32"
+            for __, v in ipairs(highlight_color) do
+                if v[2] == highlightcolor then
+                    return T(_("Highlight color: %1"), string.lower(v[1]))
+                end
+            end
+        end,
+        callback = function(touchmenu_instance)
+            local highlightcolor = self.view.highlight.highlight_color or "#fdff32"
+            local radio_buttons = {}
+            for _, v in ipairs(highlight_color) do
+                table.insert(radio_buttons, {
+                    {
+                        text = v[1],
+                        checked = v[2] == highlightcolor,
+                        provider = v[2],
+                    },
+                })
+            end
+            UIManager:show(require("ui/widget/radiobuttonwidget"):new{
+                title_text = _("Highlight color"),
+                width_factor = 0.5,
+                keep_shown_on_apply = true,
+                radio_buttons = radio_buttons,
+                callback = function(radio)
+                    G_reader_settings:saveSetting("highlight_color", radio.provider)
+                    self.view.highlight.highlight_color = radio.provider
+                    UIManager:setDirty(self.dialog, "ui")
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+            })
+        end,
+    })
     table.insert(menu_items.highlight_options.sub_item_table, {
         text_func = function()
             return T(_("Highlight opacity: %1"), G_reader_settings:readSetting("highlight_lighten_factor", 0.2))

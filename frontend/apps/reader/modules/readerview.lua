@@ -73,6 +73,39 @@ local ReaderView = OverlapGroup:extend{
     currently_scrolling = false,
 }
 
+--- Returns color struct from a hex color string
+function parseColor(value)
+    value = value:gsub('#','')
+    value = value:gsub('0x','')
+    -- #rrggbbaa
+    if(string.len(value) == 8) then
+        return Blitbuffer.ColorRGB32(
+            tonumber(value:sub(1,2), 16),
+            tonumber(value:sub(3,4), 16),
+            tonumber(value:sub(5,6), 16),
+            tonumber(value:sub(7,8), 16)
+        )
+    -- #rrggbb
+    elseif(string.len(value) == 6) then
+        return Blitbuffer.ColorRGB32(
+            tonumber(value:sub(1,2), 16),
+            tonumber(value:sub(3,4), 16),
+            tonumber(value:sub(5,6), 16),
+            0xFF
+        )
+    -- #vv
+    elseif(string.len(value) == 2) then
+        return Blitbuffer.ColorRGB32(
+            tonumber(value:sub(1,2), 16),
+            tonumber(value:sub(1,2), 16),
+            tonumber(value:sub(1,2), 16),
+            0xFF
+        )
+    else
+        return Blitbuffer.ColorRGB32(0, 0, 0, 0xFF)
+    end
+end
+
 function ReaderView:init()
     self.view_modules = {}
 
@@ -87,6 +120,7 @@ function ReaderView:init()
     }
     self.highlight = {
         lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
+        highlight_color = G_reader_settings:readSetting("highlight_color", "#fdff32"),
         note_mark = G_reader_settings:readSetting("highlight_note_marker"),
         temp_drawer = "invert",
         temp = {},
@@ -619,15 +653,31 @@ end
 function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, draw_note_mark)
     local x, y, w, h = rect.x, rect.y, rect.w, rect.h
     if drawer == "lighten" then
-        bb:lightenRect(x, y, w, h, self.highlight.lighten_factor)
+        local alpha = 0xFF*(self.highlight.lighten_factor or 0.5)
+        local color = Blitbuffer.Color8A(0, alpha)
+        if Screen:isColorEnabled() then
+            color = parseColor(self.highlight.highlight_color)
+            color.alpha = alpha
+        end
+        bb:lightenRect(x, y, w, h, color)
     elseif drawer == "underscore" then
-        bb:paintRect(x, y + h - 1, w, Size.line.medium, Blitbuffer.COLOR_GRAY)
+        local color = Blitbuffer.COLOR_GRAY
+        if Screen:isColorEnabled() then
+            color = parseColor(self.highlight.highlight_color)
+            color.alpha = 0xFF
+        end
+        bb:paintRect(x, y + h - 1, w, Size.line.medium, color)
     elseif drawer == "strikeout" then
         local line_y = y + math.floor(h / 2) + 1
         if self.ui.paging then
             line_y = line_y + 2
         end
-        bb:paintRect(x, line_y, w, Size.line.medium, Blitbuffer.COLOR_BLACK)
+        local color = Blitbuffer.COLOR_GRAY
+        if Screen:isColorEnabled() then
+            color = parseColor(self.highlight.highlight_color)
+            color.alpha = 0xFF
+        end
+        bb:paintRect(x, line_y, w, Size.line.medium, color)
     elseif drawer == "invert" then
         bb:invertRect(x, y, w, h)
     end
