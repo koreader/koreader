@@ -619,6 +619,23 @@ local KindleBasic4 = Kindle:extend{
     canDoSwipeAnimation = yes,
 }
 
+local KindleScribe = Kindle:extend{
+    model = "KindleScribe",
+    isMTK = yes,
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    hasNaturalLight = yes,
+    -- NOTE: We *can* technically control both LEDs independently,
+    --       but the mix is device-specific, we don't have access to the LUT for the mix powerd is using,
+    --       and the widget is designed for the Kobo Aura One anyway, so, hahaha, nope.
+    hasNaturalLightMixer = yes,
+    display_dpi = 300,
+    touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event",
+    -- NOTE: While hardware dithering (via MDP) should be a thing, it doesn't appear to do anything right now :/.
+    canHWDither = no,
+    canDoSwipeAnimation = yes,
+}
+
 function Kindle2:init()
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
@@ -1241,6 +1258,27 @@ function KindleBasic4:init()
     self.input.open("fake_events")
 end
 
+function KindleScribe:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/fp9966-bl1/brightness",
+        warmth_intensity_file = "/sys/class/backlight/fp9966-bl0/brightness",
+        batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
+        is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
+        hall_file = "/sys/devices/platform/eink_hall/hall_enable",
+    }
+
+    -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
+    self.screen:_MTK_ToggleFastMode(true)
+
+    Kindle.init(self)
+
+    self.input.open(self.touch_dev)
+    self.input.open("fake_events")
+end
+
 function KindleTouch:exit()
     if self:isMTK() then
         -- Disable the so-called "fast" mode
@@ -1283,6 +1321,7 @@ KindleBasic3.exit = KindleTouch.exit
 KindleOasis3.exit = KindleTouch.exit
 KindlePaperWhite5.exit = KindleTouch.exit
 KindleBasic4.exit = KindleTouch.exit
+KindleScribe.exit = KindleTouch.exit
 
 function Kindle3:exit()
     -- send double menu key press events to trigger screen refresh
@@ -1338,6 +1377,7 @@ local kt4_set = Set { "10L", "0WF", "0WG", "0WH", "0WJ", "0VB" }
 local koa3_set = Set { "11L", "0WQ", "0WP", "0WN", "0WM", "0WL" }
 local pw5_set = Set { "1LG", "1Q0", "1PX", "1VD", "219", "21A", "2BH", "2BJ", "2DK" }
 local kt5_set = Set { "22D", "25T", "23A", "2AQ", "2AP", "1XH", "22C" }
+local ks_set = Set { "27J", "2BL", "263", "227", "2BM", "23L", "23M", "270" }
 
 if kindle_sn_lead == "B" or kindle_sn_lead == "9" then
     local kindle_devcode = string.sub(kindle_sn, 3, 4)
@@ -1384,6 +1424,8 @@ else
         return KindlePaperWhite5
     elseif kt5_set[kindle_devcode_v2] then
         return KindleBasic4
+    elseif ks_set[kindle_devcode_v2] then
+        return KindleScribe
     end
 end
 
