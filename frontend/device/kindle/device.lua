@@ -631,7 +631,7 @@ local KindleScribe = Kindle:extend{
     hasNaturalLightMixer = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event",
-    -- NOTE: While hardware dithering (via MDP) should be a thing, it doesn't appear to do anything right now :/.
+    -- NOTE: TBC whether dithering actually works on Bellatrix3...
     canHWDither = no,
     canDoSwipeAnimation = yes,
 }
