@@ -1234,13 +1234,32 @@ function KindlePaperWhite5:init()
 
     Kindle.init(self)
 
-    -- Some HW/FW variants have their input device at /dev/input/by-path/platform-10019000.i2c-platform-gpio-keys.7.auto-event
-    if util.pathExists("/dev/input/by-path/platform-10019000.i2c-platform-gpio-keys.7.auto-event") then
-        self.touch_dev = "/dev/input/by-path/platform-10019000.i2c-platform-gpio-keys.7.auto-event"
-    else
+    -- Some HW/FW variants stash their input device without a by-path symlink...
+    if util.pathExists("/dev/input/by-path/platform-1001e000.i2c-event") then
         self.touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event"
+        self.input.open(self.touch_dev)
+    else
+        -- Walk /sys/class/input and pick up any evdev input device with EV_ABS capabilities
+        for evdev in lfs.dir("/sys/class/input/") do
+            if evdev:match("event.*") then
+                local abs_cap = "/sys/class/input/" .. evdev .. "/device/capabilities/abs"
+                local f = io.open(abs_cap, "r")
+                if f then
+                    local bitmap_str = f:read("l")
+                    if bitmap_str ~= "0" then
+                        logger.info("Potential input device found at", evdev, "because of ABS caps:", bitmap_str)
+                        -- Allow multiple matches, but only remember the first as touch_dev
+                        local touch = "/dev/input/" .. evdev
+                        self.input.open(touch)
+                        if not self.touch_dev then
+                            self.touch_dev = touch
+                        end
+                    end
+                    f:close()
+                end
+            end
+        end
     end
-    self.input.open(self.touch_dev)
     self.input.open("fake_events")
 end
 
