@@ -605,7 +605,7 @@ local KindlePaperWhite5 = Kindle:extend{
     -- NOTE: While hardware dithering (via MDP) should be a thing, it doesn't appear to do anything right now :/.
     canHWDither = no,
     canDoSwipeAnimation = yes,
-    -- NOTE: The Signature Edition has its input device at another path, see KindlePaperWhite5:init
+    -- NOTE: Input device path is variable, see KindlePaperWhite5:init
 }
 
 local KindleBasic4 = Kindle:extend{
@@ -1234,7 +1234,7 @@ function KindlePaperWhite5:init()
 
     Kindle.init(self)
 
-    -- The SE has its input device at /dev/input/by-path/platform-10019000.i2c-platform-gpio-keys.7.auto-event
+    -- Some HW/FW variants have their input device at /dev/input/by-path/platform-10019000.i2c-platform-gpio-keys.7.auto-event
     if util.pathExists("/dev/input/by-path/platform-10019000.i2c-platform-gpio-keys.7.auto-event") then
         self.touch_dev = "/dev/input/by-path/platform-10019000.i2c-platform-gpio-keys.7.auto-event"
     else
