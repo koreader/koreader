@@ -1240,24 +1240,26 @@ function KindlePaperWhite5:init()
         self.input.open(self.touch_dev)
     else
         -- Walk /sys/class/input and pick up any evdev input device with EV_ABS capabilities
+        -- NOTE: Run self.input.open *outside* of the loop, as the backend code assumes fd numbers are opened in increasing order...
+        local devices = {}
         for evdev in lfs.dir("/sys/class/input/") do
             if evdev:match("event.*") then
                 local abs_cap = "/sys/class/input/" .. evdev .. "/device/capabilities/abs"
                 local f = io.open(abs_cap, "r")
                 if f then
                     local bitmap_str = f:read("l")
+                    f:close()
                     if bitmap_str ~= "0" then
                         logger.info("Potential input device found at", evdev, "because of ABS caps:", bitmap_str)
-                        -- Allow multiple matches, but only remember the first as touch_dev
-                        local touch = "/dev/input/" .. evdev
-                        self.input.open(touch)
-                        if not self.touch_dev then
-                            self.touch_dev = touch
-                        end
+                        table.insert(devices, "/dev/input/" .. evdev)
                     end
-                    f:close()
                 end
             end
+        end
+        for _, touch in ipairs(devices) do
+            -- There should only be one match on the PW5 anyway...
+            self.touch_dev = touch
+            self.input.open(touch)
         end
     end
     self.input.open("fake_events")
