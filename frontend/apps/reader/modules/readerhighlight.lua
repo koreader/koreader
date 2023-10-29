@@ -894,9 +894,10 @@ function ReaderHighlight:showHighlightNoteOrDialog(page, index, bookmark_note)
             buttons_table = {
                 {
                     {
-                        text = _("Close"),
+                        text = _("Delete highlight"),
                         callback = function()
                             UIManager:close(textviewer)
+                            self:deleteHighlight(page, index)
                         end,
                     },
                     {
