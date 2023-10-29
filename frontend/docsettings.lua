@@ -587,35 +587,17 @@ end
 -- Returns the list of pairs {sidecar_file, custom_metadata_file}.
 function DocSettings.findSidecarFilesInHashLocation()
     local res = {}
-    local function find_sdr(path)
-        local sdrs = {}
-        local ok, iter, dir_obj = pcall(lfs.dir, path)
-        if ok then
-            for name in iter, dir_obj do
-                if name ~= "." and name ~= ".." then
-                    local fullpath = path .. "/" .. name
-                    local attributes = lfs.attributes(fullpath)
-                    if attributes ~= nil then
-                        if attributes.mode == "directory" then
-                            local dirobjs = find_sdr(fullpath) -- recurse
-                            for _, obj in pairs(dirobjs) do
-                                table.insert(sdrs, obj)
-                            end
-                        elseif name:match("metadata%..+%.lua$") then
-                            local sdr = { fullpath }
-                            local custom_metadata_file = path .. "/" .. custom_metadata_filename
-                            if isFile(custom_metadata_file) then
-                                table.insert(sdr, custom_metadata_file)
-                            end
-                            table.insert(res, sdr)
-                        end
-                    end
-                end
+    local callback = function(fullpath, name)
+        if name:match("metadata%..+%.lua$") then
+            local sdr = { fullpath }
+            local custom_metadata_file = fullpath:gsub(name, custom_metadata_filename)
+            if isFile(custom_metadata_file) then
+                table.insert(sdr, custom_metadata_file)
             end
+            table.insert(res, sdr)
         end
-        return sdrs
     end
-    find_sdr(DOCSETTINGS_HASH_DIR)
+    util.findFiles(DOCSETTINGS_HASH_DIR, callback)
     return res
 end
 
