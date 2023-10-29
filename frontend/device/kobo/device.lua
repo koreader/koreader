@@ -150,7 +150,7 @@ local Kobo = Generic:extend{
     isSMP = no,
     -- Device supports "eclipse" waveform modes (i.e., optimized for nightmode).
     hasEclipseWfm = no,
-    -- Device ships with various hardware revisions under the same device code, requirign automatic hardware detection...
+    -- Device ships with various hardware revisions under the same device code, requiring automatic hardware detection...
     automagic_sysfs = false,
 
     unexpected_wakeup_count = 0,

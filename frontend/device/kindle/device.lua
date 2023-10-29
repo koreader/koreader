@@ -3,6 +3,7 @@ local UIManager
 local time = require("ui/time")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 
 -- We're going to need a few <linux/fb.h> & <linux/input.h> constants...
 local ffi = require("ffi")
@@ -161,7 +162,7 @@ local Kindle = Generic:extend{
     canHWDither = no,
     -- The time the device went into suspend
     suspend_time = 0,
-    framework_lipc_handle = frameworkStopped()
+    framework_lipc_handle = frameworkStopped(),
 }
 
 function Kindle:initNetworkManager(NetworkMgr)
@@ -601,10 +602,10 @@ local KindlePaperWhite5 = Kindle:extend{
     --       and the widget is designed for the Kobo Aura One anyway, so, hahaha, nope.
     hasNaturalLightMixer = yes,
     display_dpi = 300,
-    touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event",
     -- NOTE: While hardware dithering (via MDP) should be a thing, it doesn't appear to do anything right now :/.
     canHWDither = no,
     canDoSwipeAnimation = yes,
+    -- NOTE: The Signature Edition has its input device at another path, see KindlePaperWhite5:init
 }
 
 local KindleBasic4 = Kindle:extend{
@@ -1233,6 +1234,12 @@ function KindlePaperWhite5:init()
 
     Kindle.init(self)
 
+    -- The SE has its input device at /dev/input/by-path/platform-10019000.i2c-platform-gpio-keys.7.auto-event
+    if util.pathExists("/dev/input/by-path/platform-10019000.i2c-platform-gpio-keys.7.auto-event") then
+        self.touch_dev = "/dev/input/by-path/platform-10019000.i2c-platform-gpio-keys.7.auto-event"
+    else
+        self.touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event"
+    end
     self.input.open(self.touch_dev)
     self.input.open("fake_events")
 end
