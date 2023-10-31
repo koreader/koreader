@@ -4,7 +4,6 @@ This is a registry for document providers
 
 local DocSettings = require("docsettings")
 local logger = require("logger")
-local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 
 local DocumentRegistry = {
@@ -153,9 +152,10 @@ function DocumentRegistry:getAssociatedProviderKey(file, all)
     end
 
     -- provider for this file
+    local provider_key
     if all ~= true then
         if DocSettings:hasSidecarFile(file) then
-            local provider_key = DocSettings:open(file):readSetting("provider")
+            provider_key = DocSettings:open(file):readSetting("provider")
             if provider_key or all == false then
                 return provider_key
             end
