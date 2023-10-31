@@ -46,7 +46,8 @@ local Screen = Device.screen
 
 local InfoMessage = InputContainer:extend{
     modal = true,
-    face = Font:getFace("infofont"),
+    face = nil,
+    monospace_font = false,
     text = "",
     timeout = nil, -- in seconds
     width = nil,  -- The width of the InfoMessage. Keep it nil to use default value.
@@ -77,6 +78,8 @@ local InfoMessage = InputContainer:extend{
 }
 
 function InfoMessage:init()
+    self.face = Font:getFace(self.monospace_font and "infont" or "infofont")
+
     if self.dismissable then
         if Device:hasKeys() then
             self.key_events.AnyKeyPressed = { { Input.group.Any } }
