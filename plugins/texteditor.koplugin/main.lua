@@ -8,6 +8,7 @@ local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Dispatcher = require("dispatcher")
+local DocumentRegistry = require("document/documentregistry")
 local Font = require("ui/font")
 local QRMessage = require("ui/widget/qrmessage")
 local InfoMessage = require("ui/widget/infomessage")
@@ -46,6 +47,7 @@ end
 function TextEditor:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
+    self:registerDocumentRegistryAuxProvider()
 end
 
 function TextEditor:loadSettings()
@@ -670,6 +672,22 @@ function TextEditor:quickEditFile(file_path, done_callback, possible_new_file)
         self.whenDoneFunc = done_callback
     end
     self:checkEditFile(file_path, possible_new_file or false)
+end
+
+function TextEditor:registerDocumentRegistryAuxProvider()
+    DocumentRegistry:addAuxProvider({
+        provider_name = _("Text editor"),
+        provider = "texteditor",
+        order = 30, -- order in OpenWith dialog
+        enabled_func = function(file)
+            return true -- all files
+        end,
+        callback = function(file)
+            self:checkEditFile(file)
+        end,
+        disable_file = true,
+        disable_type = false,
+    })
 end
 
 return TextEditor
