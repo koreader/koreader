@@ -161,7 +161,7 @@ function FileManagerCollection:showCollDialog()
                     path = G_reader_settings:readSetting("home_dir"),
                     select_directory = false,
                     file_filter = function(file)
-                        return DocumentRegistry:getProviders(file) ~= nil
+                        return DocumentRegistry:hasProvider(file)
                     end,
                     onConfirm = function(file)
                         if not ReadCollection:checkItemExist(file) then
