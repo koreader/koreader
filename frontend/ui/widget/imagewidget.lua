@@ -22,7 +22,6 @@ Show image from memory example:
 
 local Blitbuffer = require("ffi/blitbuffer")
 local Cache = require("cache")
-local DocumentRegistry = require("document/documentregistry")
 local Geom = require("ui/geometry")
 local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
@@ -131,6 +130,7 @@ function ImageWidget:_loadimage()
 end
 
 function ImageWidget:_loadfile()
+    local DocumentRegistry = require("document/documentregistry")
     if DocumentRegistry:isImageFile(self.file) then
         -- In our use cases for files (icons), we either provide width and height,
         -- or just scale_for_dpi, and scale_factor should stay nil.
