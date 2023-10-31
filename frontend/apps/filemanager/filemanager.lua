@@ -1304,15 +1304,23 @@ function FileManager:showOpenWithDialog(file)
         table.insert(buttons, {{
             text = _("View defaults for file types"),
             callback = function()
+                local max_len = 0 -- align extensions
+                for extension in pairs(associated_providers) do
+                    if max_len < #extension then
+                        max_len = #extension
+                    end
+                end
                 local t = {}
                 for extension, provider_key in BaseUtil.orderedPairs(associated_providers) do
                     local provider = DocumentRegistry:getProviderFromKey(provider_key)
                     if provider then
-                        table.insert(t, T("%1:   %2", extension, provider.provider_name))
+                        local space = string.rep(" ", max_len - #extension)
+                        table.insert(t, T("%1%2: %3", extension, space, provider.provider_name))
                     end
                 end
                 UIManager:show(InfoMessage:new{
                     text = table.concat(t, "\n"),
+                    monospace_font = true,
                 })
             end,
         }})
