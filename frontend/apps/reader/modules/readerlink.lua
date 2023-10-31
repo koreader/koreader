@@ -6,6 +6,7 @@ local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -822,9 +823,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
     linked_filename  = ffiutil.joinPath(self.document_dir, linked_filename) -- get full path
     linked_filename = ffiutil.realpath(linked_filename) -- clean full path from ./ or ../
     if linked_filename and lfs.attributes(linked_filename, "mode") == "file" then
-        local DocumentRegistry = require("document/documentregistry")
-        local provider = DocumentRegistry:getProvider(linked_filename)
-        if provider then
+        if DocumentRegistry:hasProvider(linked_filename) then
             -- Display filename with anchor or query string, so the user gets
             -- this information and can manually go to the appropriate place
             local display_filename = linked_filename
