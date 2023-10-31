@@ -32,11 +32,14 @@ function OpenWithDialog:init()
         scroll = false,
         parent = self,
         button_select_callback = function(btn)
-            if btn.provider.one_time_provider then
+            if btn.provider.disable_file then
                 self._check_file_button:disable()
-                self._check_global_button:disable()
             else
                 self._check_file_button:enable()
+            end
+            if btn.provider.disable_type then
+                self._check_global_button:disable()
+            else
                 self._check_global_button:enable()
             end
         end
@@ -83,11 +86,13 @@ function OpenWithDialog:init()
 
     self._check_file_button = self._check_file_button or CheckButton:new{
         text = _("Always use this engine for this file"),
+        enabled = not self.radio_button_table.checked_button.provider.disable_file,
         parent = self,
     }
     self:addWidget(self._check_file_button)
     self._check_global_button = self._check_global_button or CheckButton:new{
         text = _("Always use this engine for file type"),
+        enabled = not self.radio_button_table.checked_button.provider.disable_type,
         parent = self,
     }
     self:addWidget(self._check_global_button)
