@@ -8,6 +8,7 @@ local DocSettings = require("docsettings")
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
+local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
 local T = ffiutil.template
@@ -47,6 +48,26 @@ function filemanagerutil.splitFileNameType(filepath)
         end
     end
     return filename_without_suffix, filetype
+end
+
+function filemanagerutil.getRandomFile(dir, match_func)
+    if not dir:match("/$") then
+        dir = dir .. "/"
+    end
+    local files = {}
+    local ok, iter, dir_obj = pcall(lfs.dir, dir)
+    if ok then
+        for entry in iter, dir_obj do
+            local file = dir .. entry
+            if lfs.attributes(file, "mode") == "file" and match_func(file) then
+                table.insert(files, entry)
+            end
+        end
+        if #files > 0 then
+            math.randomseed(os.time())
+            return dir .. files[math.random(#files)]
+        end
+    end
 end
 
 -- Purge doc settings except kept
