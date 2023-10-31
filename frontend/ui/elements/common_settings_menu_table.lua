@@ -1,13 +1,13 @@
-local DataStorage = require("datastorage")
 local DateTimeWidget = require("ui/widget/datetimewidget")
 local Device = require("device")
+local DocSettings = require("docsettings")
 local Event = require("ui/event")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InfoMessage = require("ui/widget/infomessage")
 local Language = require("ui/language")
 local NetworkMgr = require("ui/network/manager")
 local PowerD = Device:getPowerDevice()
 local UIManager = require("ui/uimanager")
-local DocSettings = require("docsettings")
 local _ = require("gettext")
 local N_ = _.ngettext
 local C_ = _.pgettext
@@ -541,23 +541,23 @@ common_settings.document = {
 }
 
 local metadata_folder_str = {
-    ["doc"] = _("book folder"),
-    ["dir"] = DataStorage:getDocSettingsDir(),
-    ["hash"] = DataStorage:getDocSettingsHashDir()
+    ["doc"]  = _("book folder"),
+    ["dir"]  = DocSettings.getSidecarStorage("dir"),
+    ["hash"] = DocSettings.getSidecarStorage("hash"),
 }
 
-local metadata_folder_help_header = T(_([[Book view settings, reading progress, highlights, bookmarks and notes (collectively known as metadata) are stored in a separate folder named <book-filename>.sdr (".sdr" meaning "sidecar").
+local metadata_folder_help_table = {
+      _("Book view settings, reading progress, highlights, bookmarks and notes (collectively known as metadata) are stored in a separate folder named <book-filename>.sdr (\".sdr\" meaning \"sidecar\")."),
+        "",
+      _("You can decide between three locations/methods where these will be saved:"),
+      _(" - alongside the book file itself (the long time default): sdr folders will be visible when you browse your library directories with another file browser or from your computer, which may clutter your vision of your library. But this allows you to move them along when you reorganize your library, and also survives any renaming of parent directories. Also, if you perform directory synchronization or backups, your settings will be part of them."),
+    T(_(" - all in %1: sdr folders will only be visible and used by KOReader, and won't clutter your vision of your library directories with another file browser or from your computer. But any reorganisation of your library (directories or filename moves and renamings) may result in KOReader not finding your previous settings for these books. These settings won't be part of any synchronization or backups of your library."), metadata_folder_str.dir),
+    T(_(" - all inside %1 as hashes: sdr folders are identified not by filepath/filename but by partial MD5 hash, allowing you to rename, move, and copy documents outside of KOReader without sdr folder clutter while keeping them linked to their metadata. However, any file modifications such as writing highlights into PDFs or downloading from calibre may change the hash, and thus lose their linked metadata. Calculating file hashes may also slow down file browser navigation. This option may suit users with multiple copies of documents across different devices and directories."), metadata_folder_str.hash),
+}
+local metadata_folder_help_text = table.concat(metadata_folder_help_table, "\n")
 
-You can decide between three locations/methods where these will be saved:]]))
-local metadata_folder_help_doc = T(_(" - alongside the book file itself (the long time default): sdr folders will be visible when you browse your library directories with another file browser or from your computer, which may clutter your vision of your library. But this allows you to move them along when you reorganize your library, and also survives any renaming of parent directories. Also, if you perform directory synchronization or backups, your settings will be part of them."))
-local metadata_folder_help_dir = T(_(" - all in %1: sdr folders will only be visible and used by KOReader, and won't clutter your vision of your library directories with another file browser or from your computer. But any reorganisation of your library (directories or filename moves and renamings) may result in KOReader not finding your previous settings for these books. These settings won't be part of any synchronization or backups of your library."), DataStorage:getDocSettingsDir())
-local metadata_folder_help_hash = T(_(" - all inside %1 as hashes: sdr folders are identified not by filepath/filename but by partial MD5 hash, allowing you to rename, move, and copy documents outside of KOReader without sdr folder clutter while keeping them linked to their metadata. However, any file modifications such as writing highlights into PDFs or downloading from calibre may change the hash, and thus lose their linked metadata. Calculating file hashes may also slow down file browser navigation. This option may suit users with multiple copies of documents across different devices and directories."), DataStorage:getDocSettingsHashDir())
-local metadata_folder_help_text = metadata_folder_help_header .. "\n" .. metadata_folder_help_doc .. "\n" .. metadata_folder_help_dir .. "\n" .. metadata_folder_help_hash
-
-local hash_filemod_warn = T(_([[%1 requires calculating partial file hashes of documents which may slow down file browser navigation. Any file modifications (such as embedding annotations into PDF files or downloading from calibre) may change the partial hash, thereby losing track of any highlights, bookmarks, and progress data. Embedding PDF annotations is currently set to "%s" and can be disabled at (⚙ → Document → Save Document (write highlights into PDF)).]]), DataStorage:getDocSettingsHashDir())
-local leaving_hash_sdr_warn = T(_("Warning: You currently have documents with hash-based metadata. Until this metadata is moved by opening those documents, or deleted, file browser navigation may remain slower."))
-local hash_metadata_file_list_header = T(_([[
-Hash-based metadata has been saved in %1 for the following documents. Hash-based storage may slow down file browser navigation in large directories. Thus, if not using hash-based metadata storage, it is recommended to open the associated documents in KOReader to automatically migrate their metadata to the preferred storage location, or to delete %1, which will speed up file browser navigation.]]), DataStorage:getDocSettingsHashDir())
+local hash_filemod_warn = T(_("%1 requires calculating partial file hashes of documents which may slow down file browser navigation. Any file modifications (such as embedding annotations into PDF files or downloading from calibre) may change the partial hash, thereby losing track of any highlights, bookmarks, and progress data. Embedding PDF annotations is currently set to \"%s\" and can be disabled at (⚙ → Document → Save Document (write highlights into PDF))."), metadata_folder_str.hash)
+local leaving_hash_sdr_warn = _("Warning: You currently have documents with hash-based metadata. Until this metadata is moved by opening those documents, or deleted, file browser navigation may remain slower.")
 
 local function genMetadataFolderMenuItem(value)
     return {
@@ -574,7 +574,7 @@ local function genMetadataFolderMenuItem(value)
                     local save_document_setting = G_reader_settings:readSetting("save_document")
                     UIManager:show(InfoMessage:new{ text = string.format(hash_filemod_warn, save_document_setting), icon = "notice-warning" })
                 else
-                    DocSettings.setIsHashLocationEnabled(nil)  -- setting to nil will let it reset itself appropriately
+                    DocSettings.setIsHashLocationEnabled(nil) -- reset
                     if DocSettings.isHashLocationEnabled() then
                         UIManager:show(InfoMessage:new{ text = leaving_hash_sdr_warn, icon = "notice-warning" })
                     end
@@ -604,7 +604,7 @@ common_settings.document_metadata_location = {
         genMetadataFolderMenuItem("doc"),
         genMetadataFolderMenuItem("dir"),
         genMetadataFolderMenuItem("hash"),
-        { -- hash-based metadata count / TextViewer
+        {
             text_func = function()
                 local hash_text = _("Show documents with hash-based metadata")
                 local no_hash_text = _("No documents with hash-based metadata")
@@ -621,18 +621,7 @@ common_settings.document_metadata_location = {
                 return DocSettings.isHashLocationEnabled()
             end,
             callback = function()
-                local hash_file_infos = DocSettings.getHashDirSdrInfos()
-                local book_info_items = {}
-                for i, file_info in ipairs(hash_file_infos) do
-                    table.insert(book_info_items, table.concat({"\n", i, ". ", file_info}))
-                end
-                local book_info_str = table.concat(book_info_items)
-                UIManager:show(require("ui/widget/textviewer"):new{
-                    title = T(N_("1 document with hash-based metadata", "%1 documents with hash-based metadata", #hash_file_infos), #hash_file_infos),
-                    title_multilines = true,
-                    justified = false,
-                    text = hash_metadata_file_list_header .. book_info_str,
-                })
+                FileManagerBookInfo.showBooksWithHashBasedMetadata()
             end,
         },
     },

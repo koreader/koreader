@@ -149,7 +149,7 @@ function CreDocument:init()
     self.flows = {}
     self.page_in_flow = {}
 
-    local file_type = string.lower(string.match(self.file, ".+%.([^.]+)"))
+    local file_type = string.lower(string.match(self.file, ".+%.([^.]+)") or "")
     if file_type == "zip" then
         -- NuPogodi, 20.05.12: read the content of zip-file
         -- and return extention of the 1st file

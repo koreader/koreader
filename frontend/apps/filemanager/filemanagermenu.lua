@@ -15,7 +15,6 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util  = require("util")
 local _ = require("gettext")
-local N_ = _.ngettext
 local T = FFIUtil.template
 
 local FileManagerMenu = InputContainer:extend{
@@ -489,7 +488,7 @@ To:
         text = _("Move book metadata"),
         keep_menu_open = true,
         callback = function()
-            self:moveBookMetadata()
+            self.ui.bookinfo:moveBookMetadata()
         end,
     }
 
@@ -928,74 +927,6 @@ function FileManagerMenu:getStartWithMenuTable()
         end,
         sub_item_table = sub_item_table,
     }
-end
-
-function FileManagerMenu:moveBookMetadata()
-    local DocSettings = require("docsettings")
-    local FileChooser = self.ui.file_chooser
-    local function scanPath()
-        local sys_folders = { -- do not scan sys_folders
-            ["/dev"]  = true,
-            ["/proc"] = true,
-            ["/sys"]  = true,
-        }
-        local books_to_move = {}
-        local dirs = {FileChooser.path}
-        while #dirs ~= 0 do
-            local new_dirs = {}
-            for _, d in ipairs(dirs) do
-                local ok, iter, dir_obj = pcall(lfs.dir, d)
-                if ok then
-                    for f in iter, dir_obj do
-                        local fullpath = "/" .. f
-                        if d ~= "/" then
-                            fullpath = d .. fullpath
-                        end
-                        local attributes = lfs.attributes(fullpath) or {}
-                        if attributes.mode == "directory" and f ~= "." and f ~= ".."
-                                and FileChooser:show_dir(f) and not sys_folders[fullpath] then
-                            table.insert(new_dirs, fullpath)
-                        elseif attributes.mode == "file" and not util.stringStartsWith(f, "._")
-                                and FileChooser:show_file(f) and DocSettings:hasSidecarFile(fullpath)
-                                and lfs.attributes(DocSettings:getSidecarFile(fullpath), "mode") ~= "file" then
-                            table.insert(books_to_move, fullpath)
-                        end
-                    end
-                end
-            end
-            dirs = new_dirs
-        end
-        return books_to_move
-    end
-    UIManager:show(ConfirmBox:new{
-        text = _("Scan books in current folder and subfolders for their metadata location?"),
-        ok_text = _("Scan"),
-        ok_callback = function()
-            local books_to_move = scanPath()
-            local books_to_move_nb = #books_to_move
-            if books_to_move_nb == 0 then
-                local InfoMessage = require("ui/widget/infomessage")
-                UIManager:show(InfoMessage:new{
-                    text = _("No books with metadata not in your preferred location found."),
-                })
-            else
-                UIManager:show(ConfirmBox:new{
-                    text = T(N_("1 book with metadata not in your preferred location found.",
-                              "%1 books with metadata not in your preferred location found.",
-                              books_to_move_nb), books_to_move_nb) .. "\n" ..
-                              _("Move book metadata to your preferred location?"),
-                    ok_text = _("Move"),
-                    ok_callback = function()
-                        UIManager:close(self.menu_container)
-                        for _, book in ipairs(books_to_move) do
-                            DocSettings:updateLocation(book, book)
-                        end
-                        FileChooser:refreshPath()
-                    end,
-                })
-            end
-        end,
-    })
 end
 
 function FileManagerMenu:exitOrRestart(callback, force)
