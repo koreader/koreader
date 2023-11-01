@@ -87,11 +87,25 @@ function AutoWarmth:init()
     end
 
     -- Fix entries not in ascending order (only happens by manual editing of settings.reader.lua)
-    for i = 1, #self.scheduler_times - 1 do
-        if self.scheduler_times[i] > self.scheduler_times[i + 1] then
-            self.scheduler_times[i + 1] = self.scheduler_times[i]
+    local i = 1
+    -- Find first not disabled entry.
+    while i < #self.scheduler_times and not self.scheduler_times[i] do
+        i = i + 1
+    end
+    while i < #self.scheduler_times do
+        local j = i + 1
+        -- Find next not disabled entry
+        while j <= #self.scheduler_times and not self.scheduler_times[j] do
+            j = j + 1
+        end
+        -- Fix the found the next not disabled entry if necessary.
+        if j < #self.scheduler_times and self.scheduler_times[j] and
+            self.scheduler_times[i] > self.scheduler_times[j] then
+
+            self.scheduler_times[j] = self.scheduler_times[i]
             logger.warn("AutoWarmth: scheduling times fixed.")
         end
+        i = j
     end
 
     -- schedule recalculation shortly afer midnight
