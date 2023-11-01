@@ -99,7 +99,7 @@ function AutoWarmth:init()
             j = j + 1
         end
         -- Fix the found the next not disabled entry if necessary.
-        if j < #self.scheduler_times and self.scheduler_times[j] and
+        if j <= #self.scheduler_times and self.scheduler_times[j] and
             self.scheduler_times[i] > self.scheduler_times[j] then
 
             self.scheduler_times[j] = self.scheduler_times[i]
