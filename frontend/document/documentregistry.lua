@@ -9,7 +9,7 @@ local util = require("util")
 local DocumentRegistry = {
     registry = {},
     providers = {},
-    providers_hash = {}, -- hash table of registered providers { provider_key = provider }
+    known_providers = {}, -- hash table of registered providers { provider_key = provider }
     filetype_provider = {},
     mimetype_ext = {},
     image_ext = {
@@ -41,13 +41,13 @@ function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
     -- Provided we order the calls to addProvider() correctly,
     -- that means epub instead of epub3, etc.
     self.mimetype_ext[mimetype] = self.mimetype_ext[mimetype] or extension
-    if self.providers_hash[provider.provider] == nil then
-        self.providers_hash[provider.provider] = provider
+    if self.known_providers[provider.provider] == nil then
+        self.known_providers[provider.provider] = provider
     end
 end
 
 function DocumentRegistry:addAuxProvider(provider)
-    self.providers_hash[provider.provider] = provider
+    self.known_providers[provider.provider] = provider
 end
 
 --- Returns true if file has provider.
@@ -67,7 +67,7 @@ function DocumentRegistry:hasProvider(file, mimetype, include_aux)
     end
     -- associated document or auxiliary provider for file type
     local filetype_provider_key = G_reader_settings:readSetting("provider", {})[filename_suffix]
-    local provider = filetype_provider_key and self.providers_hash[filetype_provider_key]
+    local provider = filetype_provider_key and self.known_providers[filetype_provider_key]
     if provider and (not provider.order or include_aux) then -- excluding auxiliary by default
         return true
     end
@@ -86,7 +86,7 @@ function DocumentRegistry:getProvider(file)
     if providers then
         -- associated provider
         local provider_key = DocumentRegistry:getAssociatedProviderKey(file)
-        local provider = provider_key and self.providers_hash[provider_key]
+        local provider = provider_key and self.known_providers[provider_key]
         if provider and not provider.order then -- excluding auxiliary
             return provider
         end
@@ -133,7 +133,7 @@ function DocumentRegistry:getProviders(file)
 end
 
 function DocumentRegistry:getProviderFromKey(provider_key)
-    return self.providers_hash[provider_key]
+    return self.known_providers[provider_key]
 end
 
 function DocumentRegistry:getFallbackProvider()
@@ -166,7 +166,7 @@ function DocumentRegistry:getAssociatedProviderKey(file, all)
     -- provider for file type
     local providers = G_reader_settings:readSetting("provider")
     provider_key = providers and providers[getSuffix(file)]
-    if provider_key and self.providers_hash[provider_key] then
+    if provider_key and self.known_providers[provider_key] then
         return provider_key
     end
 end
@@ -174,7 +174,7 @@ end
 -- Returns array: registered auxiliary providers sorted by order.
 function DocumentRegistry:getAuxProviders()
     local providers = {}
-    for _, provider in pairs(self.providers_hash) do
+    for _, provider in pairs(self.known_providers) do
         if provider.order then -- aux
             table.insert(providers, provider)
         end
