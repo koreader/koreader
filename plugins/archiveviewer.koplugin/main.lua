@@ -15,6 +15,8 @@ local Screen = require("device").screen
 local T = ffiUtil.template
 
 local ArchiveViewer = WidgetContainer:extend{
+    name = "archiveviewer",
+    fullname = _("Archive viewer"),
     arc_file = nil, -- archive
     -- list_table is a flat table containing archive files and folders
     -- key - a full path of the folder ("/" for root), for all folders and subfolders of any level
@@ -40,6 +42,16 @@ end
 
 function ArchiveViewer:init()
     self:registerDocumentRegistryAuxProvider()
+end
+
+function ArchiveViewer:registerDocumentRegistryAuxProvider()
+    DocumentRegistry:addAuxProvider({
+        provider_name = self.fullname,
+        provider = self.name,
+        order = 40, -- order in OpenWith dialog
+        disable_file = true,
+        disable_type = false,
+    })
 end
 
 function ArchiveViewer:isFileTypeSupported(file)
@@ -286,22 +298,6 @@ function ArchiveViewer:extractContent(filepath)
     else
         return
     end
-end
-
-function ArchiveViewer:registerDocumentRegistryAuxProvider()
-    DocumentRegistry:addAuxProvider({
-        provider_name = _("Archive viewer"),
-        provider = "archiveviewer",
-        order = 40, -- order in OpenWith dialog
-        enabled_func = function(file)
-            return self:isFileTypeSupported(file)
-        end,
-        callback = function(file)
-            self:openFile(file)
-        end,
-        disable_file = true,
-        disable_type = false,
-    })
 end
 
 return ArchiveViewer
