@@ -539,9 +539,7 @@ function TextViewer:register(registry)
         enabled_func = function()
             return true -- all files
         end,
-        callback = function(file)
-            TextViewer.openFile(file)
-        end,
+        callback = TextViewer.openFile,
         disable_file = true,
         disable_type = false,
     })
