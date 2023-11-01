@@ -319,7 +319,7 @@ function FileSearcher:onMenuSelect(item)
             callback = function()
                 close_dialog_callback()
                 local FileManager = require("apps/filemanager/filemanager")
-                FileManager.openFile(file, nil, self.close_callback)
+                FileManager.openFile(self.ui, file, nil, self.close_callback)
             end,
         },
     })
@@ -334,7 +334,7 @@ function FileSearcher:onMenuHold(item)
     if item.is_file then
         if DocumentRegistry:hasProvider(item.path, nil, true) then
             local FileManager = require("apps/filemanager/filemanager")
-            FileManager.openFile(item.path, nil, self.close_callback)
+            FileManager.openFile(self.ui, item.path, nil, self.close_callback)
         end
     else
         self.close_callback()
