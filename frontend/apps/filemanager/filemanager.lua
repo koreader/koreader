@@ -166,7 +166,7 @@ function FileManager:setupLayout()
             end
             self:refreshPath()
         else
-            FileManager.openFile(file)
+            file_manager:openFile(file)
         end
         return true
     end
@@ -1267,7 +1267,13 @@ function FileManager:showOpenWithDialog(file)
         table.insert(radio_buttons, genRadioButton(provider, true))
     end
     for _, provider in ipairs(DocumentRegistry:getAuxProviders()) do -- auxiliary providers
-        if provider.enabled_func(file) then
+        local is_filetype_supported
+        if provider.enabled_func then -- module
+            is_filetype_supported = provider.enabled_func(file)
+        else -- plugin
+            is_filetype_supported = self[provider.provider]:isFileTypeSupported(file)
+        end
+        if is_filetype_supported then
             table.insert(radio_buttons, genRadioButton(provider))
         end
     end
@@ -1344,7 +1350,7 @@ function FileManager:showOpenWithDialog(file)
                         ok_text = _("Always"),
                         ok_callback = function()
                             DocumentRegistry:setProvider(file, provider, false)
-                            FileManager.openFile(file, provider)
+                            self:openFile(file, provider)
                             UIManager:close(dialog)
                         end,
                     })
@@ -1354,12 +1360,12 @@ function FileManager:showOpenWithDialog(file)
                         ok_text = _("Always"),
                         ok_callback = function()
                             DocumentRegistry:setProvider(file, provider, true)
-                            FileManager.openFile(file, provider)
+                            self:openFile(file, provider)
                             UIManager:close(dialog)
                         end,
                     })
                 else -- open just once
-                    FileManager.openFile(file, provider)
+                    self:openFile(file, provider)
                     UIManager:close(dialog)
                 end
             end,
@@ -1375,17 +1381,19 @@ function FileManager:showOpenWithDialog(file)
     UIManager:show(dialog)
 end
 
-function FileManager.openFile(file, provider, doc_caller_callback, aux_caller_callback)
+function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_callback)
     if not provider then -- check associated
         local provider_key = DocumentRegistry:getAssociatedProviderKey(file)
         provider = provider_key and DocumentRegistry:getProviderFromKey(provider_key)
     end
     if provider and provider.order then -- auxiliary
-        if provider.enabled_func(file) then
-            if aux_caller_callback then
-                aux_caller_callback()
-            end
+        if aux_caller_callback then
+            aux_caller_callback()
+        end
+        if provider.callback then -- module
             provider.callback(file)
+        else -- plugin
+            self[provider.provider]:openFile(file)
         end
     else -- document
         if doc_caller_callback then
