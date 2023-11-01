@@ -70,6 +70,7 @@ local Device = Generic:extend{
     hasKeys = yes,
     hasDPad = yes,
     hasWifiToggle = no,
+    hasSeamlessWifiToggle = no,
     isTouchDevice = yes,
     isDefaultFullscreen = no,
     needsScreenRefreshAfterResume = no,
