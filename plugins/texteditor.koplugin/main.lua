@@ -29,6 +29,7 @@ local T = ffiutil.template
 
 local TextEditor = WidgetContainer:extend{
     name = "texteditor",
+    fullname = _("Text editor"),
     settings_file = DataStorage:getSettingsDir() .. "/text_editor.lua",
     settings = nil, -- loaded only when needed
     -- how many to display in menu (10x3 pages minus our 3 default menu items):
@@ -48,6 +49,24 @@ function TextEditor:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
     self:registerDocumentRegistryAuxProvider()
+end
+
+function TextEditor:registerDocumentRegistryAuxProvider()
+    DocumentRegistry:addAuxProvider({
+        provider_name = self.fullname,
+        provider = self.name,
+        order = 30, -- order in OpenWith dialog
+        disable_file = true,
+        disable_type = false,
+    })
+end
+
+function TextEditor:isFileTypeSupported(file)
+    return true
+end
+
+function TextEditor:openFile(file)
+    self:checkEditFile(file)
 end
 
 function TextEditor:loadSettings()
@@ -96,7 +115,7 @@ end
 
 function TextEditor:addToMainMenu(menu_items)
     menu_items.text_editor = {
-        text = _("Text editor"),
+        text = self.fullname,
         sub_item_table_func = function()
             return self:getSubMenuItems()
         end,
@@ -672,22 +691,6 @@ function TextEditor:quickEditFile(file_path, done_callback, possible_new_file)
         self.whenDoneFunc = done_callback
     end
     self:checkEditFile(file_path, possible_new_file or false)
-end
-
-function TextEditor:registerDocumentRegistryAuxProvider()
-    DocumentRegistry:addAuxProvider({
-        provider_name = _("Text editor"),
-        provider = "texteditor",
-        order = 30, -- order in OpenWith dialog
-        enabled_func = function(file)
-            return true -- all files
-        end,
-        callback = function(file)
-            self:checkEditFile(file)
-        end,
-        disable_file = true,
-        disable_type = false,
-    })
 end
 
 return TextEditor
