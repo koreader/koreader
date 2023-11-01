@@ -87,11 +87,26 @@ function AutoWarmth:init()
     end
 
     -- Fix entries not in ascending order (only happens by manual editing of settings.reader.lua)
-    for i = 1, #self.scheduler_times - 1 do
-        if self.scheduler_times[i] > self.scheduler_times[i + 1] then
-            self.scheduler_times[i + 1] = self.scheduler_times[i]
+    local i = 1
+
+    -- Find first not disabled entry. (`<` is OK here.)
+    while i < midnight_index and not self.scheduler_times[i] do
+        i = i + 1
+    end
+    while i < midnight_index do
+        local j = i + 1
+        -- Find next not disabled entry
+        while j <= midnight_index and not self.scheduler_times[j] do
+            j = j + 1
+        end
+        -- Fix the found the next not disabled entry if necessary.
+        if j <= midnight_index and self.scheduler_times[j] and
+            self.scheduler_times[i] > self.scheduler_times[j] then
+
+            self.scheduler_times[j] = self.scheduler_times[i]
             logger.warn("AutoWarmth: scheduling times fixed.")
         end
+        i = j
     end
 
     -- schedule recalculation shortly afer midnight
@@ -378,13 +393,15 @@ function AutoWarmth:scheduleToggleFrontlight(now_s)
     end
     -- Reset user fl toggles at sunset or sunrise with offset, as `scheduleNextWarmthChange` gets called only
     -- on scheduled warmth changes.
-    local sunset_in_s = self.current_times_h[7] * 3600 - self.fl_off_during_day_offset_s - now_s
+    local ss = self.current_times_h[7]
+    local sunset_in_s =  ss and (ss * 3600 - self.fl_off_during_day_offset_s - now_s) or -1
     if sunset_in_s >= 0 then -- first check if we are before sunset
         UIManager:scheduleIn(sunset_in_s, self.setFrontlight, self, true, false)
-        local sunrise_in_s = self.current_times_h[5] * 3600 + self.fl_off_during_day_offset_s - now_s
-        if sunrise_in_s >= 0 then -- second check if we are before sunrise
-            UIManager:scheduleIn(sunrise_in_s, self.setFrontlight, self, false, false)
-        end
+    end
+    local sr = self.current_times_h[5]
+    local sunrise_in_s = sr and (sr * 3600 + self.fl_off_during_day_offset_s - now_s) or -1
+    if sunrise_in_s >= 0 then -- second check if we are before sunrise
+        UIManager:scheduleIn(sunrise_in_s, self.setFrontlight, self, false, false)
     end
 end
 
@@ -418,8 +435,10 @@ function AutoWarmth:toggleFrontlight(now_s)
     end
 
     now_s = now_s or SunTime:getTimeInSec()
-    local sunrise_in_s = self.current_times_h[5] * 3600 + self.fl_off_during_day_offset_s - now_s
-    local sunset_in_s = self.current_times_h[7] * 3600 - self.fl_off_during_day_offset_s - now_s
+    local sr = self.current_times_h[5]
+    local ss = self.current_times_h[7]
+    local sunrise_in_s = sr and (sr * 3600 + self.fl_off_during_day_offset_s - now_s) or 0
+    local sunset_in_s = sr and (ss * 3600 - self.fl_off_during_day_offset_s - now_s) or 0
 
     self:setFrontlight(sunrise_in_s > 0 or sunset_in_s < 0)
 end
@@ -1233,8 +1252,8 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
             add_line(0, "", not self.fl_off_during_day) ..
             add_line(0, _("Toggle frontlight off between"), not self.fl_off_during_day) ..
             add_line(4, T(_("%1 and %2"),
-                        self:hoursToClock(times[5] + self.fl_off_during_day_offset_s * (1/3600)),
-                        self:hoursToClock(times[7] - self.fl_off_during_day_offset_s * (1/3600))),
+                times[5] and self:hoursToClock(times[5] + self.fl_off_during_day_offset_s * (1/3600)) or "",
+                times[7] and self:hoursToClock(times[7] - self.fl_off_during_day_offset_s * (1/3600)) or ""),
                     not self.fl_off_during_day),
     })
 end
