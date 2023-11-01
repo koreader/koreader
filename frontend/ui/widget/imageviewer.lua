@@ -860,9 +860,7 @@ function ImageViewer:register(registry)
         enabled_func = function(file)
             return registry:isImageFile(file)
         end,
-        callback = function(file)
-            ImageViewer.openFile(file)
-        end,
+        callback = ImageViewer.openFile,
         disable_file = true,
         disable_type = false,
     })
