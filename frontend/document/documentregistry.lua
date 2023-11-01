@@ -47,9 +47,11 @@ function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
 end
 
 -- Register an auxiliary (non-document) provider.
--- It does not implement the Document API, the hash table value
--- does not contain file handler, but only a provider_key (provider.provider)
--- to call the corresponding module/plugin in FileManager:openFile().
+-- Aux providers are modules (eg TextViewer) or plugins (eg TextEditor).
+-- It does not implement the Document API.
+-- For plugins the hash table value does not contain file handler,
+-- but only a provider_key (provider.provider) to call the corresponding
+-- plugin in FileManager:openFile().
 function DocumentRegistry:addAuxProvider(provider)
     self.known_providers[provider.provider] = provider
 end
