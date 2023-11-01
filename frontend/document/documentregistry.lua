@@ -46,6 +46,10 @@ function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
     end
 end
 
+-- Register an auxiliary (non-document) provider.
+-- It does not implement the Document API, the hash table value
+-- does not contain file handler, but only a provider_key (provider.provider)
+-- to call the corresponding module/plugin in FileManager:openFile().
 function DocumentRegistry:addAuxProvider(provider)
     self.known_providers[provider.provider] = provider
 end
@@ -282,7 +286,7 @@ require("document/credocument"):register(DocumentRegistry)
 require("document/pdfdocument"):register(DocumentRegistry)
 require("document/djvudocument"):register(DocumentRegistry)
 require("document/picdocument"):register(DocumentRegistry)
--- auxuliary built-in
+-- auxiliary built-in
 require("ui/widget/imageviewer"):register(DocumentRegistry)
 require("ui/widget/textviewer"):register(DocumentRegistry)
 -- auxiliary from plugins
