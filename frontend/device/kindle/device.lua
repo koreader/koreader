@@ -605,7 +605,7 @@ local KindlePaperWhite5 = Kindle:extend{
     -- NOTE: While hardware dithering (via MDP) should be a thing, it doesn't appear to do anything right now :/.
     canHWDither = no,
     canDoSwipeAnimation = yes,
-    -- NOTE: Input device path is variable, see KindlePaperWhite5:init
+    -- NOTE: Input device path is variable, see findInputDevices
 }
 
 local KindleBasic4 = Kindle:extend{
@@ -614,10 +614,9 @@ local KindleBasic4 = Kindle:extend{
     isTouchDevice = yes,
     hasFrontlight = yes,
     display_dpi = 300,
-    -- TBD
-    touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event",
     canHWDither = no,
     canDoSwipeAnimation = yes,
+    -- NOTE: Like the PW5, input device path is variable, see findInputDevices
 }
 
 local KindleScribe = Kindle:extend{
@@ -1217,6 +1216,27 @@ function KindleBasic3:init()
     self.input.open("fake_events")
 end
 
+local function findInputDevices()
+    -- Walk /sys/class/input and pick up any evdev input device with *any* EV_ABS capabilities
+    local devices = {}
+    for evdev in lfs.dir("/sys/class/input/") do
+        if evdev:match("event.*") then
+            local abs_cap = "/sys/class/input/" .. evdev .. "/device/capabilities/abs"
+            local f = io.open(abs_cap, "r")
+            if f then
+                local bitmap_str = f:read("l")
+                f:close()
+                if bitmap_str ~= "0" then
+                    logger.info("Potential input device found at", evdev, "because of ABS caps:", bitmap_str)
+                    table.insert(devices, "/dev/input/" .. evdev)
+                end
+            end
+        end
+    end
+
+    return devices
+end
+
 function KindlePaperWhite5:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
@@ -1239,23 +1259,7 @@ function KindlePaperWhite5:init()
         self.touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event"
         self.input.open(self.touch_dev)
     else
-        -- Walk /sys/class/input and pick up any evdev input device with EV_ABS capabilities
-        -- NOTE: Run self.input.open *outside* of the loop, as the backend code assumes fd numbers are opened in increasing order...
-        local devices = {}
-        for evdev in lfs.dir("/sys/class/input/") do
-            if evdev:match("event.*") then
-                local abs_cap = "/sys/class/input/" .. evdev .. "/device/capabilities/abs"
-                local f = io.open(abs_cap, "r")
-                if f then
-                    local bitmap_str = f:read("l")
-                    f:close()
-                    if bitmap_str ~= "0" then
-                        logger.info("Potential input device found at", evdev, "because of ABS caps:", bitmap_str)
-                        table.insert(devices, "/dev/input/" .. evdev)
-                    end
-                end
-            end
-        end
+        local devices = findInputDevices()
         for _, touch in ipairs(devices) do
             -- There should only be one match on the PW5 anyway...
             self.touch_dev = touch
@@ -1282,7 +1286,18 @@ function KindleBasic4:init()
 
     Kindle.init(self)
 
-    self.input.open(self.touch_dev)
+    -- Some HW/FW variants stash their input device without a by-path symlink...
+    if util.pathExists("/dev/input/by-path/platform-1001e000.i2c-event") then
+        self.touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event"
+        self.input.open(self.touch_dev)
+    else
+        local devices = findInputDevices()
+        for _, touch in ipairs(devices) do
+            -- There should only be one match on the PW5 anyway...
+            self.touch_dev = touch
+            self.input.open(touch)
+        end
+    end
     self.input.open("fake_events")
 end
 
