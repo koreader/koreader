@@ -463,6 +463,7 @@ local PocketBook613 = PocketBook:extend{
     display_dpi = 167,
     isTouchDevice = no,
     hasWifiToggle = no,
+    hasSeamlessWifiToggle = no,
     hasFrontlight = no,
     hasDPad = yes,
     hasFewKeys = yes,

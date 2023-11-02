@@ -285,6 +285,11 @@ function Device:init()
             self.screen:toggleSWDithering(true)
         end
     end
+
+    -- Can't be seamless if you can't do it at all ;)
+    if not self:hasWifiToggle() then
+        self.hasSeamlessWifiToggle = no
+    end
 end
 
 function Device:setScreenDPI(dpi_override)
