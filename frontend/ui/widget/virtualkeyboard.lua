@@ -422,8 +422,9 @@ function VirtualKey:onHoldSelect()
 end
 
 function VirtualKey:onSwipeKey(arg, ges)
+    if G_reader_settings:isFalse("keyboard_swipes_enabled") then return true end
     Device:performHapticFeedback("KEYBOARD_TAP")
-    if self.flash_keyboard and not self.skipswipe then
+    if self.flash_keyboard then
         self:invert(true)
         UIManager:forceRePaint()
         UIManager:yieldToEPDC()
