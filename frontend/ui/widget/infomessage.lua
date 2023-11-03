@@ -78,7 +78,7 @@ local InfoMessage = InputContainer:extend{
 }
 
 function InfoMessage:init()
-    if not self.font_adjusted then
+    if not self.face then
         self.face = Font:getFace(self.monospace_font and "infont" or "infofont")
     end
 
@@ -192,7 +192,6 @@ function InfoMessage:init()
                     end
                 end
                 -- re-init this widget
-                self.font_adjusted = true
                 self:free()
                 self:init()
             end
