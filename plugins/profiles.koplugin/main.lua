@@ -154,7 +154,6 @@ function Profiles:getSubMenuItems()
                 callback = function(touchmenu_instance)
                     if v.settings.registered then
                         dispatcherUnregisterProfile(k)
-                        self:updateGestures(self.prefix..k)
                         self:updateProfiles(self.prefix..k)
                         self.data[k].settings.registered = nil
                     else
@@ -184,7 +183,6 @@ function Profiles:getSubMenuItems()
                         if v.settings.registered then
                             dispatcherUnregisterProfile(k)
                             dispatcherRegisterProfile(new_name)
-                            self:updateGestures(self.prefix..k, self.prefix..new_name)
                             self:updateProfiles(self.prefix..k, self.prefix..new_name)
                         end
                         self.data[k] = nil
@@ -226,7 +224,6 @@ function Profiles:getSubMenuItems()
                             self:updateAutostart(k)
                             if v.settings.registered then
                                 dispatcherUnregisterProfile(k)
-                                self:updateGestures(self.prefix..k)
                                 self:updateProfiles(self.prefix..k)
                             end
                             self.data[k] = nil
@@ -367,54 +364,6 @@ function Profiles:getProfileFromCurrentDocument(new_name)
     return profile
 end
 
-function Profiles:updateGestures(action_old_name, action_new_name)
-    local gestures_path = FFIUtil.joinPath(DataStorage:getSettingsDir(), "gestures.lua")
-    local all_gestures = LuaSettings:open(gestures_path) -- in file
-    if not all_gestures then return end
-    local updated = false
-    for section, gestures in pairs(all_gestures.data) do -- custom_multiswipes, fm, reader sections
-        for gesture_name, gesture in pairs(gestures) do
-            if gesture[action_old_name] then
-                local gesture_loaded = self.ui.gestures.gestures[gesture_name] -- in memory
-                if gesture.settings and gesture.settings.order then
-                    for i, action in ipairs(gesture.settings.order) do
-                        if action == action_old_name then
-                            if action_new_name then
-                                gesture.settings.order[i] = action_new_name
-                                gesture_loaded.settings.order[i] = action_new_name
-                            else
-                                table.remove(gesture.settings.order, i)
-                                table.remove(gesture_loaded.settings.order, i)
-                                if #gesture.settings.order == 0 then
-                                    gesture.settings.order = nil
-                                    if next(gesture.settings) == nil then
-                                        gesture.settings = nil
-                                    end
-                                end
-                            end
-                            break
-                        end
-                    end
-                end
-                gesture[action_old_name] = nil
-                gesture_loaded[action_old_name] = nil
-                if action_new_name then
-                    gesture[action_new_name] = true
-                    gesture_loaded[action_new_name] = true
-                else
-                    if next(gesture) == nil then
-                        all_gestures.data[section][gesture_name] = nil
-                    end
-                end
-                updated = true
-            end
-        end
-    end
-    if updated then
-        all_gestures:flush()
-    end
-end
-
 function Profiles:updateProfiles(action_old_name, action_new_name)
     for _, profile in pairs(self.data) do
         if profile[action_old_name] then
@@ -439,6 +388,9 @@ function Profiles:updateProfiles(action_old_name, action_new_name)
             end
             self.updated = true
         end
+    end
+    if self.ui.gestures then -- search and update the profile action in assigned gestures
+        self.ui.gestures:updateProfiles(action_old_name, action_new_name)
     end
 end
 
