@@ -269,7 +269,6 @@ end
 
 function FileSearcher:onMenuSelect(item)
     local file = item.path
-    local has_provider = false
     local dialog
     local function close_dialog_callback()
         UIManager:close(dialog)
@@ -281,8 +280,7 @@ function FileSearcher:onMenuSelect(item)
     local buttons = {}
     if item.is_file then
         local is_currently_opened = self.ui.document and self.ui.document.file == file
-        has_provider = DocumentRegistry:hasProvider(file)
-        if has_provider or DocSettings:hasSidecarFile(file) then
+        if DocumentRegistry:hasProvider(file) or DocSettings:hasSidecarFile(file) then
             local doc_settings_or_file = is_currently_opened and self.ui.doc_settings or file
             table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_callback))
             table.insert(buttons, {}) -- separator
@@ -317,11 +315,11 @@ function FileSearcher:onMenuSelect(item)
         filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback),
         {
             text = _("Open"),
-            enabled = has_provider,
+            enabled = DocumentRegistry:hasProvider(file, nil, true), -- allow auxiliary providers
             callback = function()
-                close_dialog_menu_callback()
-                local ReaderUI = require("apps/reader/readerui")
-                ReaderUI:showReader(file)
+                close_dialog_callback()
+                local FileManager = require("apps/filemanager/filemanager")
+                FileManager.openFile(self.ui, file, nil, self.close_callback)
             end,
         },
     })
@@ -334,10 +332,9 @@ end
 
 function FileSearcher:onMenuHold(item)
     if item.is_file then
-        if DocumentRegistry:hasProvider(item.path) then
-            self.close_callback()
-            local ReaderUI = require("apps/reader/readerui")
-            ReaderUI:showReader(item.path)
+        if DocumentRegistry:hasProvider(item.path, nil, true) then
+            local FileManager = require("apps/filemanager/filemanager")
+            FileManager.openFile(self.ui, item.path, nil, self.close_callback)
         end
     else
         self.close_callback()

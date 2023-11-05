@@ -851,4 +851,27 @@ function ImageViewer:onCloseWidget()
     end)
 end
 
+-- Register DocumentRegistry auxiliary provider.
+function ImageViewer:register(registry)
+    registry:addAuxProvider({
+        provider_name = _("Image viewer"),
+        provider = "imageviewer",
+        order = 10, -- order in OpenWith dialog
+        enabled_func = function(file)
+            return registry:isImageFile(file)
+        end,
+        callback = ImageViewer.openFile,
+        disable_file = true,
+        disable_type = false,
+    })
+end
+
+function ImageViewer.openFile(file)
+    UIManager:show(ImageViewer:new{
+        file = file,
+        fullscreen = true,
+        with_title_bar = false,
+    })
+end
+
 return ImageViewer

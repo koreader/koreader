@@ -29,6 +29,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local T = require("ffi/util").template
+local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -431,7 +432,6 @@ function TextViewer:onForwardingPanRelease(arg, ges)
     return self.movable:onMovablePanRelease(arg, ges)
 end
 
-
 function TextViewer:findDialog()
     local input_dialog
     input_dialog = InputDialog:new{
@@ -527,6 +527,52 @@ function TextViewer:handleTextSelection(text, hold_duration, start_idx, end_idx,
             text = start_idx == end_idx and _("Word copied to clipboard.")
                                          or _("Selection copied to clipboard."),
         })
+    end
+end
+
+-- Register DocumentRegistry auxiliary provider.
+function TextViewer:register(registry)
+    registry:addAuxProvider({
+        provider_name = _("Text viewer"),
+        provider = "textviewer",
+        order = 20, -- order in OpenWith dialog
+        enabled_func = function()
+            return true -- all files
+        end,
+        callback = TextViewer.openFile,
+        disable_file = true,
+        disable_type = false,
+    })
+end
+
+function TextViewer.openFile(file)
+    local function _openFile(file_path)
+        local file_handle = io.open(file_path, "rb")
+        if not file_handle then return end
+        local file_content = file_handle:read("*all")
+        file_handle:close()
+        UIManager:show(TextViewer:new{
+            title = file_path,
+            title_multilines = true,
+            justified = false,
+            text = file_content,
+        })
+    end
+    local attr = lfs.attributes(file)
+    if attr then
+        if attr.size > 400000 then
+            local ConfirmBox = require("ui/widget/confirmbox")
+            UIManager:show(ConfirmBox:new{
+                text = T(_("This file is %2:\n\n%1\n\nAre you sure you want to open it?\n\nOpening big files may take some time."),
+                    BD.filepath(file), util.getFriendlySize(attr.size)),
+                ok_text = _("Open"),
+                ok_callback = function()
+                    _openFile(file)
+                end,
+            })
+        else
+            _openFile(file)
+        end
     end
 end
 

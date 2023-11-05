@@ -166,8 +166,7 @@ function FileManager:setupLayout()
             end
             self:refreshPath()
         else
-            local ReaderUI = require("apps/reader/readerui")
-            ReaderUI:showReader(file)
+            file_manager:openFile(file)
         end
         return true
     end
@@ -268,43 +267,7 @@ function FileManager:setupLayout()
                     text = _("Open with…"),
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        local one_time_providers = {}
-                        if DocumentRegistry:isImageFile(file) then
-                            table.insert(one_time_providers, {
-                                provider_name = _("Image viewer"),
-                                callback = function()
-                                    local ImageViewer = require("ui/widget/imageviewer")
-                                    UIManager:show(ImageViewer:new{
-                                        file = file,
-                                        fullscreen = true,
-                                        with_title_bar = false,
-                                    })
-                                end,
-                            })
-                        end
-                        table.insert(one_time_providers, {
-                            provider_name = _("Text viewer"),
-                            callback = function()
-                                file_manager:openTextViewer(file)
-                            end,
-                        })
-                        if file_manager.texteditor then
-                            table.insert(one_time_providers, {
-                                provider_name = _("Text editor"),
-                                callback = function()
-                                    file_manager.texteditor:checkEditFile(file)
-                                end,
-                            })
-                        end
-                        if file_manager.archiveviewer and file_manager.archiveviewer:isSupported(file) then
-                            table.insert(one_time_providers, {
-                                provider_name = _("Archive viewer"),
-                                callback = function()
-                                    file_manager.archiveviewer:openArchiveViewer(file)
-                                end,
-                            })
-                        end
-                        self:showSetProviderButtons(file, one_time_providers)
+                        file_manager:showOpenWithDialog(file)
                     end,
                 },
                 filemanagerutil.genBookInformationButton(file, close_dialog_callback),
@@ -410,7 +373,7 @@ function FileManager:init()
     self.active_widgets = {}
 
     self:registerModule("screenshot", Screenshoter:new{
-        prefix = 'FileManager',
+        prefix = "FileManager",
         ui = self,
     }, true)
 
@@ -838,7 +801,10 @@ function FileManager:setHome(path)
 end
 
 function FileManager:openRandomFile(dir)
-    local random_file = DocumentRegistry:getRandomFile(dir, false)
+    local match_func = function(file) -- documents, not yet opened
+        return DocumentRegistry:hasProvider(file) and not DocSettings:hasSidecarFile(file)
+    end
+    local random_file = filemanagerutil.getRandomFile(dir, match_func)
     if random_file then
         UIManager:show(MultiConfirmBox:new{
             text = T(_("Do you want to open %1?"), BD.filename(BaseUtil.basename(random_file))),
@@ -1139,36 +1105,6 @@ function FileManager:showFiles(path, focused_file)
     UIManager:show(file_manager)
 end
 
-function FileManager:openTextViewer(file_path)
-    local function _openTextViewer(filepath)
-        local file = io.open(filepath, "rb")
-        if not file then return end
-        local file_content = file:read("*all")
-        file:close()
-        UIManager:show(require("ui/widget/textviewer"):new{
-            title = filepath,
-            title_multilines = true,
-            justified = false,
-            text = file_content,
-        })
-    end
-    local attr = lfs.attributes(file_path)
-    if attr then
-        if attr.size > 400000 then
-            UIManager:show(ConfirmBox:new{
-                text = T(_("This file is %2:\n\n%1\n\nAre you sure you want to open it?\n\nOpening big files may take some time."),
-                    BD.filepath(file_path), util.getFriendlySize(attr.size)),
-                ok_text = _("Open"),
-                ok_callback = function()
-                    _openTextViewer(file_path)
-                end,
-            })
-        else
-            _openTextViewer(file_path)
-        end
-    end
-end
-
 --- A shortcut to execute mv.
 -- @treturn boolean result of mv command
 function FileManager:moveFile(from, to)
@@ -1302,6 +1238,170 @@ function FileManager:showSelectedFilesList()
     table.insert(menu_container, menu)
     menu:switchItemTable(T(_("Selected files (%1)"), #selected_files), selected_files)
     UIManager:show(menu_container)
+end
+
+function FileManager:showOpenWithDialog(file)
+    local file_associated_provider_key = DocumentRegistry:getAssociatedProviderKey(file, false)
+    local type_associated_provider_key = DocumentRegistry:getAssociatedProviderKey(file, true)
+    local file_provider_key = file_associated_provider_key
+                           or type_associated_provider_key
+                           or DocumentRegistry:getProvider(file).provider
+
+    -- radio buttons (all providers)
+    local function genRadioButton(provider, is_unsupported)
+        return {{
+            -- @translators %1 is the provider name, such as Cool Reader Engine or MuPDF.
+            text = is_unsupported and T(_("%1 ~Unsupported"), provider.provider_name) or provider.provider_name,
+            checked = provider.provider == file_provider_key,
+            provider = provider,
+        }}
+    end
+    local radio_buttons = {}
+    local providers = DocumentRegistry:getProviders(file) -- document providers
+    if providers then
+        for _, provider in ipairs(providers) do
+            table.insert(radio_buttons, genRadioButton(provider.provider))
+        end
+    else
+        local provider = DocumentRegistry:getFallbackProvider()
+        table.insert(radio_buttons, genRadioButton(provider, true))
+    end
+    for _, provider in ipairs(DocumentRegistry:getAuxProviders()) do -- auxiliary providers
+        local is_filetype_supported
+        if provider.enabled_func then -- module
+            is_filetype_supported = provider.enabled_func(file)
+        else -- plugin
+            is_filetype_supported = self[provider.provider]:isFileTypeSupported(file)
+        end
+        if is_filetype_supported then
+            table.insert(radio_buttons, genRadioButton(provider))
+        end
+    end
+
+    -- buttons
+    local __, filename_pure = util.splitFilePathName(file)
+    filename_pure = BD.filename(filename_pure)
+    local filename_suffix = util.getFileNameSuffix(file):lower()
+    local dialog
+    local buttons = {}
+    -- row: wide button
+    if file_associated_provider_key then
+        table.insert(buttons, {{
+            text = _("Reset default for this file"),
+            callback = function()
+                DocumentRegistry:setProvider(file, nil, false)
+                UIManager:close(dialog)
+            end,
+        }})
+    end
+    -- row: wide button
+    if type_associated_provider_key then
+        table.insert(buttons, {{
+            text = T(_("Reset default for %1 files"), filename_suffix),
+            callback = function()
+                DocumentRegistry:setProvider(file, nil, true)
+                UIManager:close(dialog)
+            end,
+        }})
+    end
+    -- row: wide button
+    local associated_providers = DocumentRegistry:getAssociatedProviderKey() -- hash table
+    if next(associated_providers) ~= nil then
+        table.insert(buttons, {{
+            text = _("View defaults for file types"),
+            callback = function()
+                local max_len = 0 -- align extensions
+                for extension in pairs(associated_providers) do
+                    if max_len < #extension then
+                        max_len = #extension
+                    end
+                end
+                local t = {}
+                for extension, provider_key in BaseUtil.orderedPairs(associated_providers) do
+                    local provider = DocumentRegistry:getProviderFromKey(provider_key)
+                    if provider then
+                        local space = string.rep(" ", max_len - #extension)
+                        table.insert(t, T("%1%2: %3", extension, space, provider.provider_name))
+                    end
+                end
+                UIManager:show(InfoMessage:new{
+                    text = table.concat(t, "\n"),
+                    monospace_font = true,
+                })
+            end,
+        }})
+    end
+    -- row: 2 buttons
+    table.insert(buttons, {
+        {
+            text = _("Cancel"),
+            callback = function()
+                UIManager:close(dialog)
+            end,
+        },
+        {
+            text = _("Open"),
+            is_enter_default = true,
+            callback = function()
+                local provider = dialog.radio_button_table.checked_button.provider
+                if dialog._check_file_button.checked then -- set this file associated provider
+                    UIManager:show(ConfirmBox:new{
+                        text = T(_("Always open '%2' with %1?"), provider.provider_name, filename_pure),
+                        ok_text = _("Always"),
+                        ok_callback = function()
+                            DocumentRegistry:setProvider(file, provider, false)
+                            self:openFile(file, provider)
+                            UIManager:close(dialog)
+                        end,
+                    })
+                elseif dialog._check_global_button.checked then -- set file type associated provider
+                    UIManager:show(ConfirmBox:new{
+                        text = T(_("Always open %2 files with %1?"), provider.provider_name, filename_suffix),
+                        ok_text = _("Always"),
+                        ok_callback = function()
+                            DocumentRegistry:setProvider(file, provider, true)
+                            self:openFile(file, provider)
+                            UIManager:close(dialog)
+                        end,
+                    })
+                else -- open just once
+                    self:openFile(file, provider)
+                    UIManager:close(dialog)
+                end
+            end,
+        },
+    })
+
+    local OpenWithDialog = require("ui/widget/openwithdialog")
+    dialog = OpenWithDialog:new{
+        title = T(_("Open %1 with:"), filename_pure),
+        radio_buttons = radio_buttons,
+        buttons = buttons,
+    }
+    UIManager:show(dialog)
+end
+
+function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_callback)
+    if not provider then -- check associated
+        local provider_key = DocumentRegistry:getAssociatedProviderKey(file)
+        provider = provider_key and DocumentRegistry:getProviderFromKey(provider_key)
+    end
+    if provider and provider.order then -- auxiliary
+        if aux_caller_callback then
+            aux_caller_callback()
+        end
+        if provider.callback then -- module
+            provider.callback(file)
+        else -- plugin
+            self[provider.provider]:openFile(file)
+        end
+    else -- document
+        if doc_caller_callback then
+            doc_caller_callback()
+        end
+        local ReaderUI = require("apps/reader/readerui")
+        ReaderUI:showReader(file, provider)
+    end
 end
 
 return FileManager

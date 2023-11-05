@@ -2,8 +2,10 @@ local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local DocumentRegistry = require("document/documentregistry")
-local InfoMessage = require("ui/widget/infomessage")
+local ImageViewer = require("ui/widget/imageviewer")
 local Menu = require("ui/widget/menu")
+local RenderImage = require("ui/renderimage")
+local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
@@ -13,6 +15,9 @@ local Screen = require("device").screen
 local T = ffiUtil.template
 
 local ArchiveViewer = WidgetContainer:extend{
+    name = "archiveviewer",
+    fullname = _("Archive viewer"),
+    arc_file = nil, -- archive
     -- list_table is a flat table containing archive files and folders
     -- key - a full path of the folder ("/" for root), for all folders and subfolders of any level
     -- value - a subtable of subfolders and files in the folder
@@ -27,21 +32,44 @@ local ArchiveViewer = WidgetContainer:extend{
     },
 }
 
-function ArchiveViewer:isSupported(file)
-    return self.arc_ext[util.getFileNameSuffix(file):lower()] and true or false
+local ZIP_LIST            = "unzip -qql \"%1\""
+local ZIP_EXTRACT_CONTENT = "unzip -qqp \"%1\" \"%2\""
+local ZIP_EXTRACT_FILE    = "unzip -qqo \"%1\" \"%2\" -d \"%3\"" -- overwrite
+
+local function getSuffix(file)
+    return util.getFileNameSuffix(file):lower()
 end
 
-function ArchiveViewer:openArchiveViewer(file)
+function ArchiveViewer:init()
+    self:registerDocumentRegistryAuxProvider()
+end
+
+function ArchiveViewer:registerDocumentRegistryAuxProvider()
+    DocumentRegistry:addAuxProvider({
+        provider_name = self.fullname,
+        provider = self.name,
+        order = 40, -- order in OpenWith dialog
+        disable_file = true,
+        disable_type = false,
+    })
+end
+
+function ArchiveViewer:isFileTypeSupported(file)
+    return self.arc_ext[getSuffix(file)] and true or false
+end
+
+function ArchiveViewer:openFile(file)
     local _, filename = util.splitFilePathName(file)
-    local fileext = util.getFileNameSuffix(file):lower()
+    local fileext = getSuffix(filename)
     if fileext == "cbz" or fileext == "epub" or fileext == "zip" then
         self.arc_type = "zip"
     end
+    self.arc_file = file
 
     self.fm_updated = nil
     self.list_table = {}
     if self.arc_type == "zip" then
-        self:getZipListTable(file)
+        self:getZipListTable()
     else -- add other archivers here
         return
     end
@@ -50,17 +78,17 @@ function ArchiveViewer:openArchiveViewer(file)
     local menu_container = CenterContainer:new{
         dimen = Screen:getSize(),
     }
-    local menu = Menu:new{
+    self.menu = Menu:new{
         is_borderless = true,
         is_popout = false,
         title_multilines = true,
         show_parent = menu_container,
         onMenuSelect = function(self_menu, item)
-            if item.text:sub(-1) == "/" then -- folder
+            if item.is_file then
+                self:showFileDialog(item.path)
+            else
                 local title = item.path == "" and filename or filename.."/"..item.path
                 self_menu:switchItemTable(title, self:getItemTable(item.path))
-            else
-                self:showFileDialog(file, item.path)
             end
         end,
         close_callback = function()
@@ -70,12 +98,12 @@ function ArchiveViewer:openArchiveViewer(file)
             end
         end,
     }
-    table.insert(menu_container, menu)
-    menu:switchItemTable(filename, item_table)
+    table.insert(menu_container, self.menu)
+    self.menu:switchItemTable(filename, item_table)
     UIManager:show(menu_container)
 end
 
-function ArchiveViewer:getZipListTable(file)
+function ArchiveViewer:getZipListTable()
     local function parse_path(filepath, filesize)
         if not filepath then return end
         local path, name = util.splitFilePathName(filepath)
@@ -97,7 +125,7 @@ function ArchiveViewer:getZipListTable(file)
         end
     end
 
-    local std_out = io.popen("unzip ".."-qql \""..file.."\"")
+    local std_out = io.popen(T(ZIP_LIST, self.arc_file))
     if std_out then
         for line in std_out:lines() do
             -- entry datetime not used so far
@@ -129,6 +157,7 @@ function ArchiveViewer:getItemTable(path)
         if v then -- file
             table.insert(files, {
                 text = name,
+                is_file = true,
                 bidi_wrap_func = BD.filename,
                 path = prefix..name,
                 mandatory = util.getFriendlySize(tonumber(v)),
@@ -173,7 +202,7 @@ function ArchiveViewer:getItemDirMandatory(name)
     return text
 end
 
-function ArchiveViewer:showFileDialog(arcfile, filepath)
+function ArchiveViewer:showFileDialog(filepath)
     local dialog
     local buttons = {
         {
@@ -181,14 +210,14 @@ function ArchiveViewer:showFileDialog(arcfile, filepath)
                 text = _("Extract"),
                 callback = function()
                     UIManager:close(dialog)
-                    self:extractFile(arcfile, filepath)
+                    self:extractFile(filepath)
                 end,
             },
             {
                 text = _("View"),
                 callback = function()
                     UIManager:close(dialog)
-                    self:viewFile(arcfile, filepath)
+                    self:viewFile(filepath)
                 end,
             },
         },
@@ -201,47 +230,53 @@ function ArchiveViewer:showFileDialog(arcfile, filepath)
     UIManager:show(dialog)
 end
 
-function ArchiveViewer:viewFile(arcfile, filepath)
-    local content
-    if self.arc_type == "zip" then
-        local std_out = io.popen("unzip ".."-qp \""..arcfile.."\"".." ".."\""..filepath.."\"")
-        if std_out then
-            content = std_out:read("*all")
-            std_out:close()
-        else
-            UIManager:show(InfoMessage:new{
-                text = _("Cannot extract file content."),
-                icon = "notice-warning",
-            })
-            return
-        end
-    else
-        return
-    end
-
+function ArchiveViewer:viewFile(filepath)
     if DocumentRegistry:isImageFile(filepath) then
-        local RenderImage = require("ui/renderimage")
-        local ImageViewer = require("ui/widget/imageviewer")
-        UIManager:show(ImageViewer:new{
-            image = RenderImage:renderImageData(content, #content),
+        local index = 0
+        local curr_index
+        local images_list = {}
+        for i, item in ipairs(self.menu.item_table) do
+            local item_path = item.path
+            if item.is_file and DocumentRegistry:isImageFile(item_path) then
+                table.insert(images_list, item_path)
+                if not curr_index then
+                    index = index + 1
+                    if item_path == filepath then
+                        curr_index = index
+                    end
+                end
+            end
+        end
+        local image_table = { image_disposable = true }
+        setmetatable(image_table, {__index = function (_, key)
+                local content = self:extractContent(images_list[key])
+                if content then
+                    return RenderImage:renderImageData(content, #content)
+                end
+            end
+        })
+        local viewer = ImageViewer:new{
+            image = image_table,
+            images_list_nb = #images_list,
             fullscreen = true,
             with_title_bar = false,
-        })
+            image_disposable = false,
+        }
+        UIManager:show(viewer)
+        viewer:switchToImageNum(curr_index)
     else
-        local TextViewer = require("ui/widget/textviewer")
         UIManager:show(TextViewer:new{
             title = filepath,
             title_multilines = true,
-            text = content,
+            text = self:extractContent(filepath),
             justified = false,
         })
     end
 end
 
-function ArchiveViewer:extractFile(arcfile, filepath)
+function ArchiveViewer:extractFile(filepath)
     if self.arc_type == "zip" then
-        local std_out = io.popen("unzip ".."-qo \""..arcfile.."\"".." ".."\""..filepath.."\""..
-                                 " -d ".."\""..util.splitFilePathName(arcfile).."\"")
+        local std_out = io.popen(T(ZIP_EXTRACT_FILE, self.arc_file, filepath, util.splitFilePathName(self.arc_file)))
         if std_out then
             std_out:close()
         end
@@ -249,6 +284,20 @@ function ArchiveViewer:extractFile(arcfile, filepath)
         return
     end
     self.fm_updated = true
+end
+
+function ArchiveViewer:extractContent(filepath)
+    local content
+    if self.arc_type == "zip" then
+        local std_out = io.popen(T(ZIP_EXTRACT_CONTENT, self.arc_file, filepath))
+        if std_out then
+            content = std_out:read("*all")
+            std_out:close()
+            return content
+        end
+    else
+        return
+    end
 end
 
 return ArchiveViewer

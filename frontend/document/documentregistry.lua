@@ -4,12 +4,12 @@ This is a registry for document providers
 
 local DocSettings = require("docsettings")
 local logger = require("logger")
-local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 
 local DocumentRegistry = {
     registry = {},
     providers = {},
+    known_providers = {}, -- hash table of registered providers { provider_key = provider }
     filetype_provider = {},
     mimetype_ext = {},
     image_ext = {
@@ -24,6 +24,10 @@ local DocumentRegistry = {
     },
 }
 
+local function getSuffix(file)
+    return util.getFileNameSuffix(file):lower()
+end
+
 function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
     extension = string.lower(extension)
     table.insert(self.providers, {
@@ -37,97 +41,65 @@ function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
     -- Provided we order the calls to addProvider() correctly,
     -- that means epub instead of epub3, etc.
     self.mimetype_ext[mimetype] = self.mimetype_ext[mimetype] or extension
+    if self.known_providers[provider.provider] == nil then
+        self.known_providers[provider.provider] = provider
+    end
 end
 
-function DocumentRegistry:getRandomFile(dir, opened, extension)
-    if dir:sub(-1) ~= "/" then
-        dir = dir .. "/"
-    end
-    local files = {}
-    local i = 0
-    local ok, iter, dir_obj = pcall(lfs.dir, dir)
-    if ok then
-        for entry in iter, dir_obj do
-            local file = dir .. entry
-            local file_opened = DocSettings:hasSidecarFile(file)
-            if lfs.attributes(file, "mode") == "file" and self:hasProvider(file)
-                and (opened == nil or file_opened == opened)
-                and (extension == nil or extension[util.getFileNameSuffix(entry)]) then
-                i = i + 1
-                files[i] = entry
-            end
-        end
-        if i == 0 then
-            return nil
-        end
-    else
-        return nil
-    end
-    math.randomseed(os.time())
-    return dir .. files[math.random(i)]
+-- Register an auxiliary (non-document) provider.
+-- Aux providers are modules (eg TextViewer) or plugins (eg TextEditor).
+-- It does not implement the Document API.
+-- For plugins the hash table value does not contain file handler,
+-- but only a provider_key (provider.provider) to call the corresponding
+-- plugin in FileManager:openFile().
+function DocumentRegistry:addAuxProvider(provider)
+    self.known_providers[provider.provider] = provider
 end
 
 --- Returns true if file has provider.
 -- @string file
+-- @bool include_aux include auxiliary (non-document) providers
 -- @treturn boolean
-function DocumentRegistry:hasProvider(file, mimetype)
+function DocumentRegistry:hasProvider(file, mimetype, include_aux)
     if mimetype and self.mimetype_ext[mimetype] then
         return true
     end
     if not file then return false end
 
-    local filename_suffix = string.lower(util.getFileNameSuffix(file))
-
-    local filetype_provider = G_reader_settings:readSetting("provider") or {}
-    if self.filetype_provider[filename_suffix] or filetype_provider[filename_suffix] then
+    -- registered document provider
+    local filename_suffix = getSuffix(file)
+    if self.filetype_provider[filename_suffix] then
         return true
     end
+    -- associated document or auxiliary provider for file type
+    local filetype_provider_key = G_reader_settings:readSetting("provider", {})[filename_suffix]
+    local provider = filetype_provider_key and self.known_providers[filetype_provider_key]
+    if provider and (not provider.order or include_aux) then -- excluding auxiliary by default
+        return true
+    end
+    -- associated document provider for this file
     if DocSettings:hasSidecarFile(file) then
         return DocSettings:open(file):has("provider")
     end
     return false
 end
 
---- Returns the preferred registered document handler.
+--- Returns the preferred registered document handler or fallback provider.
 -- @string file
--- @treturn table provider, or nil
+-- @treturn table provider
 function DocumentRegistry:getProvider(file)
     local providers = self:getProviders(file)
-
     if providers then
-        -- provider for document
-        if DocSettings:hasSidecarFile(file) then
-            local doc_settings_provider = DocSettings:open(file):readSetting("provider")
-            if doc_settings_provider then
-                for _, provider in ipairs(providers) do
-                    if provider.provider.provider == doc_settings_provider then
-                        return provider.provider
-                    end
-                end
-            end
+        -- associated provider
+        local provider_key = DocumentRegistry:getAssociatedProviderKey(file)
+        local provider = provider_key and self.known_providers[provider_key]
+        if provider and not provider.order then -- excluding auxiliary
+            return provider
         end
-
-        -- global provider for filetype
-        local filename_suffix = util.getFileNameSuffix(file)
-        local g_settings_provider = G_reader_settings:readSetting("provider")
-
-        if g_settings_provider and g_settings_provider[filename_suffix] then
-            for _, provider in ipairs(providers) do
-                if provider.provider.provider == g_settings_provider[filename_suffix] then
-                    return provider.provider
-                end
-            end
-        end
-
         -- highest weighted provider
         return providers[1].provider
-    else
-        for _, provider in ipairs(self.providers) do
-            if provider.extension == "txt" then
-                return provider.provider
-            end
-        end
     end
+    return self:getFallbackProvider()
 end
 
 --- Returns the registered document handlers.
@@ -166,6 +138,59 @@ function DocumentRegistry:getProviders(file)
     end
 end
 
+function DocumentRegistry:getProviderFromKey(provider_key)
+    return self.known_providers[provider_key]
+end
+
+function DocumentRegistry:getFallbackProvider()
+    for _, provider in ipairs(self.providers) do
+        if provider.extension == "txt" then
+            return provider.provider
+        end
+    end
+end
+
+function DocumentRegistry:getAssociatedProviderKey(file, all)
+    -- all: nil - first not empty, false - this file, true - file type
+
+    if not file then -- get the full list of associated providers
+        return G_reader_settings:readSetting("provider")
+    end
+
+    -- provider for this file
+    local provider_key
+    if all ~= true then
+        if DocSettings:hasSidecarFile(file) then
+            provider_key = DocSettings:open(file):readSetting("provider")
+            if provider_key or all == false then
+                return provider_key
+            end
+        end
+        if all == false then return end
+    end
+
+    -- provider for file type
+    local providers = G_reader_settings:readSetting("provider")
+    provider_key = providers and providers[getSuffix(file)]
+    if provider_key and self.known_providers[provider_key] then
+        return provider_key
+    end
+end
+
+-- Returns array: registered auxiliary providers sorted by order.
+function DocumentRegistry:getAuxProviders()
+    local providers = {}
+    for _, provider in pairs(self.known_providers) do
+        if provider.order then -- aux
+            table.insert(providers, provider)
+        end
+    end
+    if #providers >= 1 then
+        table.sort(providers, function(a, b) return a.order < b.order end)
+        return providers
+    end
+end
+
 --- Get mapping of file extensions to providers
 -- @treturn table mapping file extensions to a list of providers
 function DocumentRegistry:getExtensions()
@@ -182,8 +207,7 @@ end
 -- @string file
 -- @bool all
 function DocumentRegistry:setProvider(file, provider, all)
-    local _, filename_suffix = util.splitFileNameSuffix(file)
-
+    provider = provider or {} -- call with nil to reset
     -- per-document
     if not all then
         local doc_settings = DocSettings:open(file)
@@ -191,9 +215,8 @@ function DocumentRegistry:setProvider(file, provider, all)
         doc_settings:flush()
     -- global
     else
-        local filetype_provider = G_reader_settings:readSetting("provider") or {}
-        filetype_provider[filename_suffix] = provider.provider
-        G_reader_settings:saveSetting("provider", filetype_provider)
+        local filetype_provider = G_reader_settings:readSetting("provider", {})
+        filetype_provider[getSuffix(file)] = provider.provider
     end
 end
 
@@ -257,7 +280,7 @@ function DocumentRegistry:getReferenceCount(file)
 end
 
 function DocumentRegistry:isImageFile(file)
-    return self.image_ext[util.getFileNameSuffix(file):lower()] and true or false
+    return self.image_ext[getSuffix(file)] and true or false
 end
 
 -- load implementations:
@@ -265,5 +288,9 @@ require("document/credocument"):register(DocumentRegistry)
 require("document/pdfdocument"):register(DocumentRegistry)
 require("document/djvudocument"):register(DocumentRegistry)
 require("document/picdocument"):register(DocumentRegistry)
+-- auxiliary built-in
+require("ui/widget/imageviewer"):register(DocumentRegistry)
+require("ui/widget/textviewer"):register(DocumentRegistry)
+-- auxiliary from plugins
 
 return DocumentRegistry

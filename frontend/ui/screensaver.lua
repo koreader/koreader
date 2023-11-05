@@ -23,6 +23,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local datetime = require("datetime")
 local ffiUtil = require("ffi/util")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -78,35 +79,12 @@ if Device:isEmulator() then
     Screensaver.default_screensaver_message = Screensaver.default_screensaver_message .. "\n" .. _("(Press F2 to resume)")
 end
 
-function Screensaver:_getRandomImage(dir)
-    if not dir then
-        return nil
+local function _getRandomImage(dir)
+    if not dir then return end
+    local match_func = function(file) -- images, ignore macOS resource forks
+        return not util.stringStartsWith(file, "._") and DocumentRegistry:isImageFile(file)
     end
-
-    if string.sub(dir, string.len(dir)) ~= "/" then
-       dir = dir .. "/"
-    end
-    local pics = {}
-    local i = 0
-    math.randomseed(os.time())
-    local ok, iter, dir_obj = pcall(lfs.dir, dir)
-    if ok then
-        for f in iter, dir_obj do
-            -- Always ignore macOS resource forks, too.
-            if lfs.attributes(dir .. f, "mode") == "file" and not util.stringStartsWith(f, "._")
-                    and DocumentRegistry:isImageFile(f) then
-                i = i + 1
-                pics[i] = f
-            end
-        end
-        if i == 0 then
-            return nil
-        end
-    else
-        return nil
-    end
-
-    return dir .. pics[math.random(i)]
+    return filemanagerutil.getRandomFile(dir, match_func)
 end
 
 -- This is implemented by the Statistics plugin
@@ -573,7 +551,7 @@ function Screensaver:setup(event, event_message)
     if self.screensaver_type == "random_image" then
         local screensaver_dir = G_reader_settings:readSetting(self.prefix .. "screensaver_dir")
                              or G_reader_settings:readSetting("screensaver_dir")
-        self.image_file = self:_getRandomImage(screensaver_dir) or "resources/koreader.png" -- Fallback image
+        self.image_file = _getRandomImage(screensaver_dir) or "resources/koreader.png" -- Fallback image
     end
 
     -- Use the right background setting depending on the effective mode, now that fallbacks have kicked in.
