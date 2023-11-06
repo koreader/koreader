@@ -5,7 +5,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local FileChooser = require("ui/widget/filechooser")
-local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
@@ -192,24 +191,10 @@ function FileSearcher:isFileMatch(filename, fullpath, keywords, is_file)
     end
     if self.include_metadata and is_file and DocumentRegistry:hasProvider(fullpath) then
         local book_props = self.ui.coverbrowser:getBookInfo(fullpath) or
-                           FileManagerBookInfo.getDocProps(fullpath, nil, true) -- do not open the document
+                           self.ui.bookinfo.getDocProps(fullpath, nil, true) -- do not open the document
         if next(book_props) ~= nil then
-            for _, key in ipairs(FileManagerBookInfo.props) do
-                local prop = book_props[key]
-                if prop and prop ~= "" then
-                    if key == "series_index" then
-                        prop = tostring(prop)
-                    end
-                    if not self.case_sensitive then
-                        prop = Utf8Proc.lowercase(util.fixUtf8(prop, "?"))
-                    end
-                    if key == "description" then
-                        prop = util.htmlToPlainTextIfHtml(prop)
-                    end
-                    if string.find(prop, keywords) then
-                        return true
-                    end
-                end
+            if self.ui.bookinfo:findInProps(book_props, keywords, self.case_sensitive) then
+                return true
             end
         else
             self.no_metadata_count = self.no_metadata_count + 1
