@@ -80,7 +80,7 @@ function FileManagerHistory:updateItemTable()
     end
     local title = self.hist_menu_title
     local filter_title
-    if self.filter_text then
+    if self.search_string then
         filter_title = _("search results")
     elseif self.filter ~= "all" then
         filter_title = filter_text[self.filter]:lower()
@@ -92,9 +92,9 @@ function FileManagerHistory:updateItemTable()
 end
 
 function FileManagerHistory:isItemMatch(item)
-    if self.filter_text then
+    if self.search_string then
         local filename = self.case_sensitive and item.text or Utf8Proc.lowercase(util.fixUtf8(item.text, "?"))
-        if not filename:find(self.filter_text) then
+        if not filename:find(self.search_string) then
             local book_props
             if self.ui.coverbrowser then
                 book_props = self.ui.coverbrowser:getBookInfo(item.file)
@@ -102,7 +102,7 @@ function FileManagerHistory:isItemMatch(item)
             if not book_props then
                 book_props = self.ui.bookinfo.getDocProps(item.file, nil, true) -- do not open the document
             end
-            if not self.ui.bookinfo:findInProps(book_props, self.filter_text, self.case_sensitive) then
+            if not self.ui.bookinfo:findInProps(book_props, self.search_string, self.case_sensitive) then
                 return false
             end
         end
@@ -214,7 +214,7 @@ function FileManagerHistory:MenuSetRotationModeHandler(rotation)
     return true
 end
 
-function FileManagerHistory:onShowHist(match_table)
+function FileManagerHistory:onShowHist(search_info)
     self.hist_menu = Menu:new{
         ui = self.ui,
         covers_fullscreen = true, -- hint for UIManager:_repaint()
@@ -228,11 +228,11 @@ function FileManagerHistory:onShowHist(match_table)
         _manager = self,
     }
 
-    if match_table then
-        self.filter_text = match_table.filter_text
-        self.case_sensitive = match_table.case_sensitive
+    if search_info then
+        self.search_string = search_info.search_string
+        self.case_sensitive = search_info.case_sensitive
     else
-        self.filter_text = nil
+        self.search_string = nil
     end
     self.filter = G_reader_settings:readSetting("history_filter", "all")
     self.is_frozen = G_reader_settings:isTrue("history_freeze_finished_books")
@@ -270,7 +270,7 @@ function FileManagerHistory:showHistDialog()
                 UIManager:close(hist_dialog)
                 self.filter = filter
                 if filter == "all" then -- reset all filters
-                    self.filter_text = nil
+                    self.search_string = nil
                 end
                 self:updateItemTable()
             end,
@@ -327,7 +327,7 @@ function FileManagerHistory:onSearchHistory()
     local search_dialog, check_button_case
     search_dialog = InputDialog:new{
         title = _("Enter text to search history for"),
-        input = self.filter_text,
+        input = self.search_string,
         buttons = {
             {
                 {
@@ -341,18 +341,18 @@ function FileManagerHistory:onSearchHistory()
                     text = _("Search"),
                     is_enter_default = true,
                     callback = function()
-                        local search_value = search_dialog:getInputText()
-                        if search_value ~= "" then
+                        local search_string = search_dialog:getInputText()
+                        if search_string ~= "" then
                             UIManager:close(search_dialog)
-                            self.filter_text = self.case_sensitive and search_value or search_value:lower()
+                            self.search_string = self.case_sensitive and search_string or search_string:lower()
                             if self.hist_menu then -- called from History
                                 self:updateItemTable()
                             else -- called by Dispatcher
-                                local match_table = {
-                                    filter_text = self.filter_text,
+                                local search_info = {
+                                    search_string = self.search_string,
                                     case_sensitive = self.case_sensitive,
                                 }
-                                self:onShowHist(match_table)
+                                self:onShowHist(search_info)
                             end
                         end
                     end,
