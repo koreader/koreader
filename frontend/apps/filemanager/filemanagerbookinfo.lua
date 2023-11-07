@@ -267,7 +267,7 @@ function BookInfo.getDocProps(file, book_props, no_open_document)
     return BookInfo.extendProps(book_props, file)
 end
 
-function BookInfo:findInProps(book_props, keywords, case_sensitive)
+function BookInfo:findInProps(book_props, search_string, case_sensitive)
     for _, key in ipairs(self.props) do
         local prop = book_props[key]
         if prop then
@@ -279,7 +279,7 @@ function BookInfo:findInProps(book_props, keywords, case_sensitive)
             if not case_sensitive then
                 prop = Utf8Proc.lowercase(util.fixUtf8(prop, "?"))
             end
-            if prop:find(keywords) then
+            if prop:find(search_string) then
                 return true
             end
         end
