@@ -1,5 +1,4 @@
 local InputDialog = require("ui/widget/inputdialog")
-local MultiInputDialog = require("ui/widget/multiinputdialog")
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 local BD = require("ui/bidi")
@@ -129,8 +128,8 @@ function XMNoteExporter:makeRequest(endpoint, method, request_body)
     end
 
     local response = json.decode(sink[1])
-    local code = response["code"]
-    if code ~= nil and code ~= 200 then
+    local api_code = response["code"]
+    if api_code ~= nil and api_code ~= 200 then
         logger.warn("XMNoteClient: response code <> 200. message: ", response["message"])
         logger.dbg("Response headers:", headers)
         return nil, status
