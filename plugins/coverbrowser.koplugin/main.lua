@@ -305,7 +305,15 @@ function CoverBrowser:addToMainMenu(menu_items)
                 separator = true
             },
             {
-                text = _("Show file properties"),
+                text = _("Show book rating"),
+                checked_func = function() return BookInfoManager:getSetting("show_rating") end,
+                callback = function()
+                    BookInfoManager:toggleSetting("show_rating")
+                    self:refreshFileManagerInstance()
+                end,
+            },
+            {
+				text = _("Show file properties"),
                 checked_func = function()
                     return not BookInfoManager:getSetting("hide_file_info")
                 end,

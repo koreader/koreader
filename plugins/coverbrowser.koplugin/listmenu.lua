@@ -361,18 +361,18 @@ function ListMenuItem:update()
             --   pages read / nb of pages (not available for crengine doc not opened)
             -- Current page / pages are available or more accurate in .sdr/metadata.lua
             -- We use a cache (cleaned at end of this browsing session) to store
-            -- page, percent read and book status from sidecar files, to avoid
+            -- page, percent read, book status and rating from sidecar files, to avoid
             -- re-parsing them when re-rendering a visited page
             if not self.menu.cover_info_cache then
                 self.menu.cover_info_cache = {}
             end
             local pages_str = ""
             local pages = bookinfo.pages -- default to those in bookinfo db
-            local percent_finished, status, has_highlight
+            local percent_finished, status, has_highlight, rating
             if DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
                 self.menu:updateCache(self.filepath, nil, true, pages) -- create new cache entry if absent
-                pages, percent_finished, status, has_highlight =
+                pages, percent_finished, status, has_highlight, rating =
                     unpack(self.menu.cover_info_cache[self.filepath], 1, self.menu.cover_info_cache[self.filepath].n)
             end
             -- right widget, first line
@@ -419,6 +419,9 @@ function ListMenuItem:update()
                 end
             end
 
+            -- right widget, third line
+            local rating_str = (rating and rating >= 1 and rating <= 5) and string.format("%s", string.rep("★", rating)) or nil
+
             -- Build the right widget
 
             local fontsize_info = _fontSize(14, 18)
@@ -446,6 +449,15 @@ function ListMenuItem:update()
                 table.insert(wright_items, wpageinfo)
             end
 
+            if BookInfoManager:getSetting("show_rating") and rating then
+                local wpageinfo = TextWidget:new{
+                    text = rating_str,
+                    face = Font:getFace("cfont", fontsize_info),
+                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                }
+                table.insert(wright_items, wpageinfo)
+            end 
+			
             if #wright_items > 0 then
                 for i, w in ipairs(wright_items) do
                     wright_width = math.max(wright_width, w:getSize().w)
