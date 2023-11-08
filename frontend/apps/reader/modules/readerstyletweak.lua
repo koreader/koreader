@@ -566,10 +566,8 @@ You can enable individual tweaks on this book with a tap, or view more details a
                             if self.tweaks_in_dispatcher[item.id] then
                                 self.tweaks_in_dispatcher[item.id] = nil
                                 dispatcherUnregisterStyleTweak(item.id)
-                                local Profiles = self.ui.profiles
-                                if Profiles then
-                                    Profiles:updateGestures(self.dispatcher_prefix..item.id)
-                                    Profiles:updateProfiles(self.dispatcher_prefix..item.id)
+                                if self.ui.profiles then
+                                    self.ui.profiles:updateProfiles(self.dispatcher_prefix..item.id)
                                 end
                             else
                                 self.tweaks_in_dispatcher[item.id] = item.title

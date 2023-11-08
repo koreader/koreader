@@ -1202,4 +1202,40 @@ function Gestures:onFlushSettings()
     end
 end
 
+function Gestures:updateProfiles(action_old_name, action_new_name)
+    for section, gestures in pairs(self.settings_data.data) do -- custom_multiswipes, gesture_fm, gesture_reader
+        for gesture_name, gesture in pairs(gestures) do
+            if gesture[action_old_name] then
+                if gesture.settings and gesture.settings.order then
+                    for i, action in ipairs(gesture.settings.order) do
+                        if action == action_old_name then
+                            if action_new_name then
+                                gesture.settings.order[i] = action_new_name
+                            else
+                                table.remove(gesture.settings.order, i)
+                                if #gesture.settings.order == 0 then
+                                    gesture.settings.order = nil
+                                    if next(gesture.settings) == nil then
+                                        gesture.settings = nil
+                                    end
+                                end
+                            end
+                            break
+                        end
+                    end
+                end
+                gesture[action_old_name] = nil
+                if action_new_name then
+                    gesture[action_new_name] = true
+                else
+                    if next(gesture) == nil then
+                        self.settings_data.data[section][gesture_name] = nil
+                    end
+                end
+                self.updated = true
+            end
+        end
+    end
+end
+
 return Gestures
