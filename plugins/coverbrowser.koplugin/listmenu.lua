@@ -420,7 +420,7 @@ function ListMenuItem:update()
             end
 
             -- right widget, third line
-            local rating_str = (rating and rating >= 1 and rating <= 5) and string.format("%s", string.rep("★", rating)) or nil
+            local rating_str = (rating and rating >= 1 and rating <= 5) and string.format("%s ", string.rep("★", rating)) or nil
 
             -- Build the right widget
 
