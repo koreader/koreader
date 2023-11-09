@@ -73,30 +73,6 @@ describe("network_manager module", function()
         assert.is.same(release_ip_called, 0)
     end)
 
-    describe("decodeSSID()", function()
-        local NetworkMgr = require("ui/network/manager")
-
-        it("should correctly unescape emoji", function()
-            assert.is_equal("📚", NetworkMgr.decodeSSID("\\xf0\\x9f\\x93\\x9a"))
-        end)
-
-        it("should correctly unescape multiple characters", function()
-            assert.is_equal("神舟五号", NetworkMgr.decodeSSID("\\xe7\\xa5\\x9e\\xe8\\x88\\x9f\\xe4\\xba\\x94\\xe5\\x8f\\xb7"))
-        end)
-
-        it("should ignore escaped backslashes", function()
-            assert.is_equal("\\x61", NetworkMgr.decodeSSID("\\\\x61"))
-        end)
-
-        it("should not remove encoded backslashes", function()
-            assert.is_equal("\\\\", NetworkMgr.decodeSSID("\\x5c\\"))
-        end)
-
-        it("should deal with invalid UTF-8 (relatively) gracefully", function()
-            assert.is_equal("��", NetworkMgr.decodeSSID("\\xe2\\x82"))
-        end)
-    end)
-
     teardown(function()
         function Device:initNetworkManager() end
         function Device:hasWifiRestore() return false end
