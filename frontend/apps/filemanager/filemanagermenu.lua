@@ -275,7 +275,7 @@ function FileManagerMenu:setUpdateItemTable()
                         end,
                         callback = function()
                             G_reader_settings:flipNilOrFalse("history_datetime_short")
-                            require("readhistory"):reload(true)
+                            require("readhistory"):updateDateTimeString()
                         end,
                     },
                     {
