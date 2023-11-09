@@ -230,11 +230,10 @@ end
 
 --- Updates the history list after deleting a folder.
 function ReadHistory:folderDeleted(path)
-    path = "^"..path
     local history_updated
     for i = #self.hist, 1, -1 do
         local file = self.hist[i].file
-        if file:match(path) then
+        if util.stringStartsWith(file, path) then
             self:fileDeleted(i)
             history_updated = true
             DocSettings.updateLocation(file) -- remove sdr if not in book location
