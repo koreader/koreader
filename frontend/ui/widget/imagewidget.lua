@@ -74,6 +74,7 @@ local ImageWidget = Widget:extend{
     dim = nil,
     alpha = false, -- honors alpha values from the image
     is_icon = false, -- set to true by sub-class IconWidget
+    original_in_nightmode = true, -- defaults to display the original image colors in nightmode
 
     -- When rotation_angle is not 0, native image is rotated by this angle
     -- before scaling.
@@ -578,7 +579,7 @@ function ImageWidget:paintTo(bb, x, y)
     ---        but we currently don't, as we don't really trickle down
     ---        a way to discriminate them from the B&W ones.
     ---        Currently, this is *only* the KOReader icon in Help, AFAIK.
-    if Screen.night_mode and not self.is_icon then
+    if Screen.night_mode and self.original_in_nightmode and not self.is_icon then
         bb:invertRect(x, y, size.w, size.h)
     end
 end

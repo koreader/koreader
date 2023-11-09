@@ -749,6 +749,7 @@ function PageBrowserWidget:showTile(grid_idx, page, tile, do_refresh)
         ImageWidget:new{
             image = tile.bb,
             image_disposable = false,
+            original_in_nightmode = false, -- we want our page thumbnail nightmode'd when in nighmtmode
         },
     }
     item_container[1] = thumb_frame
