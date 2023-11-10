@@ -250,6 +250,10 @@ end
 function ReaderThumbnail:getPageThumbnail(page, width, height, batch_id, when_generated_callback)
     self:setupCache()
     self.current_target_size_tag = string.format("w%d_h%d", width, height)
+    if self.ui.rolling and Screen.night_mode and self.ui.document.configurable.nightmode_images == 1 then
+        -- We'll get a different bb in this case: it needs its own cache hash
+        self.current_target_size_tag = self.current_target_size_tag .. "_nm"
+    end
     local hash = string.format("p%d-%s", page, self.current_target_size_tag)
     local tile = self.tile_cache and self.tile_cache:check(hash)
     if tile then
@@ -431,7 +435,7 @@ function ReaderThumbnail:_getPageImage(page)
             self.ui.document:setGammaIndex(30) -- as downscaling will make text grayer
         end
         self.ui.document:setImageScaling(false) -- No need for smooth scaling as all will be downscaled
-        self.ui.document:setNightmodeImages(false) -- We don't invert page images even if nightmode set: keep images as-is
+        -- (We keep "nighmode_images" as it was set: we may get and cache a different bb whether nightmode is on or off)
         self.ui.view.state.page = page -- Be on requested page
         self.ui.document:gotoPage(page) -- Current xpointer needs to be updated for some of what follows
         self.ui.bookmark:onPageUpdate(page) -- Update dogear state for this page
