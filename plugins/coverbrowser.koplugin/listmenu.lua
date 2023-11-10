@@ -368,14 +368,17 @@ function ListMenuItem:update()
             end
             local pages_str = ""
             local pages = bookinfo.pages -- default to those in bookinfo db
-            local percent_finished, status, has_highlight, rating, is_favorite
+            local percent_finished, status, has_highlight, rating
             if DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
                 self.menu:updateCache(self.filepath, nil, true, pages) -- create new cache entry if absent
-                pages, percent_finished, status, has_highlight, rating, is_favorite =
+                pages, percent_finished, status, has_highlight, rating =
                     unpack(self.menu.cover_info_cache[self.filepath], 1, self.menu.cover_info_cache[self.filepath].n)
             end
 
+            local ReadCollection = require("readcollection")
+            local is_favorite = ReadCollection:checkItemExist(self.filepath)
+			
             -- right widget, first line
             local directory, filename = util.splitFilePathName(self.filepath) -- luacheck: no unused
             local filename_without_suffix, filetype = filemanagerutil.splitFileNameType(filename)
