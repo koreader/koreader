@@ -7,6 +7,7 @@ local UIManager = require("ui/uimanager")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local logger = require("logger")
 local _ = require("gettext")
+local ReadCollection = require("readcollection")
 
 local BookInfoManager = require("bookinfomanager")
 
@@ -258,6 +259,8 @@ function CoverMenu:updateItems(select_number)
                     return true
                 end
 
+                local is_added = ReadCollection:checkItemExist(file)
+
                 -- Remember some of this original ButtonDialog properties
                 local orig_title = self.file_dialog.title
                 local orig_title_align = self.file_dialog.title_align
@@ -305,6 +308,23 @@ function CoverMenu:updateItems(select_number)
                             self:updateItems()
                         end,
                     },
+                })
+                
+                -- insert next to the 'Reset' button on row 6
+                table.insert(orig_buttons[6], 
+                    { -- Add/remove from favorites and update the file manager immediately 
+                        text = is_added and _("Remove from favorites") or _("Add to favorites"),
+                        enabled = true,
+                        callback = function()
+                            if is_added then
+                                ReadCollection:removeItem(file)
+                            else
+                                ReadCollection:addItem(file)
+                            end
+                            self:updateCache(file)
+                            UIManager:close(self.file_dialog)
+                            self:updateItems()
+                        end,
                 })
 
                 -- Create the new ButtonDialog, and let UIManager show it
@@ -390,6 +410,8 @@ function CoverMenu:onHistoryMenuHold(item)
         return true
     end
 
+    local is_added = ReadCollection:checkItemExist(file)
+
     -- Remember some of this original ButtonDialog properties
     local orig_title = self.histfile_dialog.title
     local orig_title_align = self.histfile_dialog.title_align
@@ -437,6 +459,25 @@ function CoverMenu:onHistoryMenuHold(item)
             end,
         },
     })
+    
+    -- insert next to the 'Reset' button on row 3
+    table.insert(orig_buttons[3], 
+        { -- Add/remove from favorites and update the file manager immediately 
+            text = is_added and _("Remove from favorites") or _("Add to favorites"),
+            enabled = true,
+            callback = function()
+                local is_added = ReadCollection:checkItemExist(file)
+                if is_added then
+                    ReadCollection:removeItem(file)
+                else
+                    ReadCollection:addItem(file)
+                end
+                self:updateCache(file)
+                UIManager:close(self.histfile_dialog)
+                self:updateItems()
+            end,
+    })
+
 
     -- Create the new ButtonDialog, and let UIManager show it
     -- (all button callback replacement must be done after this block to stick)

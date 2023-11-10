@@ -269,6 +269,7 @@ end
 
 function FileSearcher:onMenuSelect(item)
     local file = item.path
+    local has_provider = false
     local dialog
     local function close_dialog_callback()
         UIManager:close(dialog)
@@ -280,13 +281,14 @@ function FileSearcher:onMenuSelect(item)
     local buttons = {}
     if item.is_file then
         local is_currently_opened = self.ui.document and self.ui.document.file == file
-        if DocumentRegistry:hasProvider(file) or DocSettings:hasSidecarFile(file) then
+        has_provider = DocumentRegistry:hasProvider(file)
+        if has_provider or DocSettings:hasSidecarFile(file) then
             local doc_settings_or_file = is_currently_opened and self.ui.doc_settings or file
             table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_callback))
             table.insert(buttons, {}) -- separator
             table.insert(buttons, {
                 filemanagerutil.genResetSettingsButton(file, close_dialog_callback, is_currently_opened),
-                filemanagerutil.genAddRemoveFavoritesButton(file, close_dialog_callback),
+                --filemanagerutil.genAddRemoveFavoritesButton(file, close_dialog_callback),
             })
         end
         table.insert(buttons, {
@@ -315,11 +317,11 @@ function FileSearcher:onMenuSelect(item)
         filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback),
         {
             text = _("Open"),
-            enabled = DocumentRegistry:hasProvider(file, nil, true), -- allow auxiliary providers
+            enabled = has_provider,
             callback = function()
-                close_dialog_callback()
-                local FileManager = require("apps/filemanager/filemanager")
-                FileManager.openFile(self.ui, file, nil, self.close_callback)
+                close_dialog_menu_callback()
+                local ReaderUI = require("apps/reader/readerui")
+                ReaderUI:showReader(file)
             end,
         },
     })
@@ -332,9 +334,10 @@ end
 
 function FileSearcher:onMenuHold(item)
     if item.is_file then
-        if DocumentRegistry:hasProvider(item.path, nil, true) then
-            local FileManager = require("apps/filemanager/filemanager")
-            FileManager.openFile(self.ui, item.path, nil, self.close_callback)
+        if DocumentRegistry:hasProvider(item.path) then
+            self.close_callback()
+            local ReaderUI = require("apps/reader/readerui")
+            ReaderUI:showReader(item.path)
         end
     else
         self.close_callback()
