@@ -5,7 +5,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local FileChooser = require("ui/widget/filechooser")
-local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
@@ -34,7 +33,7 @@ function FileSearcher:onShowFileSearch(search_string)
     local check_button_case, check_button_subfolders, check_button_metadata
     search_dialog = InputDialog:new{
         title = _("Enter text to search for in filename"),
-        input = search_string or self.search_value,
+        input = search_string or self.search_string,
         buttons = {
             {
                 {
@@ -48,8 +47,8 @@ function FileSearcher:onShowFileSearch(search_string)
                     text = _("Home folder"),
                     enabled = G_reader_settings:has("home_dir"),
                     callback = function()
-                        self.search_value = search_dialog:getInputText()
-                        if self.search_value == "" then return end
+                        self.search_string = search_dialog:getInputText()
+                        if self.search_string == "" then return end
                         UIManager:close(search_dialog)
                         self.path = G_reader_settings:readSetting("home_dir")
                         self:doSearch()
@@ -59,8 +58,8 @@ function FileSearcher:onShowFileSearch(search_string)
                     text = self.ui.file_chooser and _("Current folder") or _("Book folder"),
                     is_enter_default = true,
                     callback = function()
-                        self.search_value = search_dialog:getInputText()
-                        if self.search_value == "" then return end
+                        self.search_string = search_dialog:getInputText()
+                        if self.search_string == "" then return end
                         UIManager:close(search_dialog)
                         self.path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile()
                         self:doSearch()
@@ -126,17 +125,17 @@ function FileSearcher:getList()
         ["/sys"] = true,
     }
     local collate = G_reader_settings:readSetting("collate")
-    local keywords = self.search_value
-    if keywords ~= "*" then -- one * to show all files
+    local search_string = self.search_string
+    if search_string ~= "*" then -- one * to show all files
         if not self.case_sensitive then
-            keywords = Utf8Proc.lowercase(util.fixUtf8(keywords, "?"))
+            search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
         end
         -- replace '.' with '%.'
-        keywords = keywords:gsub("%.","%%%.")
+        search_string = search_string:gsub("%.","%%%.")
         -- replace '*' with '.*'
-        keywords = keywords:gsub("%*","%.%*")
+        search_string = search_string:gsub("%*","%.%*")
         -- replace '?' with '.'
-        keywords = keywords:gsub("%?","%.")
+        search_string = search_string:gsub("%?","%.")
     end
 
     local dirs, files = {}, {}
@@ -161,14 +160,14 @@ function FileSearcher:getList()
                         if self.include_subfolders and not sys_folders[fullpath] then
                             table.insert(new_dirs, fullpath)
                         end
-                        if self:isFileMatch(f, fullpath, keywords) then
+                        if self:isFileMatch(f, fullpath, search_string) then
                             table.insert(dirs, FileChooser.getListItem(f, fullpath, attributes))
                         end
                     -- Always ignore macOS resource forks, too.
                     elseif attributes.mode == "file" and not util.stringStartsWith(f, "._")
                             and (FileChooser.show_unsupported or DocumentRegistry:hasProvider(fullpath))
                             and FileChooser:show_file(f) then
-                        if self:isFileMatch(f, fullpath, keywords, true) then
+                        if self:isFileMatch(f, fullpath, search_string, true) then
                             table.insert(files, FileChooser.getListItem(f, fullpath, attributes, collate))
                         end
                     end
@@ -180,36 +179,22 @@ function FileSearcher:getList()
     return dirs, files
 end
 
-function FileSearcher:isFileMatch(filename, fullpath, keywords, is_file)
-    if keywords == "*" then
+function FileSearcher:isFileMatch(filename, fullpath, search_string, is_file)
+    if search_string == "*" then
         return true
     end
     if not self.case_sensitive then
         filename = Utf8Proc.lowercase(util.fixUtf8(filename, "?"))
     end
-    if string.find(filename, keywords) then
+    if string.find(filename, search_string) then
         return true
     end
     if self.include_metadata and is_file and DocumentRegistry:hasProvider(fullpath) then
         local book_props = self.ui.coverbrowser:getBookInfo(fullpath) or
-                           FileManagerBookInfo.getDocProps(fullpath, nil, true) -- do not open the document
+                           self.ui.bookinfo.getDocProps(fullpath, nil, true) -- do not open the document
         if next(book_props) ~= nil then
-            for _, key in ipairs(FileManagerBookInfo.props) do
-                local prop = book_props[key]
-                if prop and prop ~= "" then
-                    if key == "series_index" then
-                        prop = tostring(prop)
-                    end
-                    if not self.case_sensitive then
-                        prop = Utf8Proc.lowercase(util.fixUtf8(prop, "?"))
-                    end
-                    if key == "description" then
-                        prop = util.htmlToPlainTextIfHtml(prop)
-                    end
-                    if string.find(prop, keywords) then
-                        return true
-                    end
-                end
+            if self.ui.bookinfo:findInProps(book_props, search_string, self.case_sensitive) then
+                return true
             end
         else
             self.no_metadata_count = self.no_metadata_count + 1
@@ -218,7 +203,7 @@ function FileSearcher:isFileMatch(filename, fullpath, keywords, is_file)
 end
 
 function FileSearcher:showSearchResultsMessage(no_results)
-    local text = no_results and T(_("No results for '%1'."), self.search_value)
+    local text = no_results and T(_("No results for '%1'."), self.search_string)
     if self.no_metadata_count == 0 then
         UIManager:show(InfoMessage:new{ text = text })
     else

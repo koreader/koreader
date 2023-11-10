@@ -1020,6 +1020,8 @@ function FileManager:deleteFile(file, is_file)
         if is_file then
             DocSettings:updateLocation(file)
             ReadHistory:fileDeleted(file)
+        else
+            ReadHistory:folderDeleted(file)
         end
         ReadCollection:removeItemByPath(file, not is_file)
         return true

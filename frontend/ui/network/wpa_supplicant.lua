@@ -2,6 +2,8 @@
 WPA client helper for Kobo.
 ]]
 
+local crypto = require("ffi/crypto")
+local bin_to_hex = require("ffi/sha2").bin_to_hex
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local WpaClient = require("lj-wpaclient/wpaclient")
@@ -12,6 +14,23 @@ local T = FFIUtil.template
 local CLIENT_INIT_ERR_MSG = _("Failed to initialize network control client: %1.")
 
 local WpaSupplicant = {}
+
+local function decodeSSID(ssid)
+    local decode = function(b)
+        local c = string.char(tonumber(b, 16))
+        -- This is a hack that allows us to make sure that any decoded backslash
+        -- does not get replaced in the step that replaces double backslashes.
+        if c == "\\" then
+            return "\\\\"
+        else
+            return c
+        end
+    end
+
+    local decoded = ssid:gsub("%f[\\]\\x(%x%x)", decode)
+    decoded = decoded:gsub("\\\\", "\\")
+    return decoded
+end
 
 --- Gets network list.
 function WpaSupplicant:getNetworkList()
@@ -31,6 +50,7 @@ function WpaSupplicant:getNetworkList()
     local curr_network = self:getCurrentNetwork()
 
     for _, network in ipairs(list) do
+        network.ssid = decodeSSID(network.ssid)
         network.signal_quality = network:getSignalQuality()
         local saved_nw = saved_networks:readSetting(network.ssid)
         if saved_nw then
@@ -49,15 +69,7 @@ function WpaSupplicant:getNetworkList()
 end
 
 local function calculatePsk(ssid, pwd)
-    --- @todo calculate PSK with native function instead of shelling out
-    -- hostap's reference implementation is available at:
-    --   * /wpa_supplicant/wpa_passphrase.c
-    --   * /src/crypto/sha1-pbkdf2.c
-    -- see: <http://docs.ros.org/diamondback/api/wpa_supplicant/html/sha1-pbkdf2_8c_source.html>
-    local fp = io.popen(("wpa_passphrase %q %q"):format(ssid, pwd))
-    local out = fp:read("*a")
-    fp:close()
-    return string.match(out, "psk=([a-f0-9]+)")
+    return bin_to_hex(crypto.pbkdf2_hmac_sha1(pwd, ssid, 4096, 32))
 end
 
 --- Authenticates network.
@@ -75,7 +87,7 @@ function WpaSupplicant:authenticateNetwork(network)
     end
     local nw_id = reply
 
-    reply, err = wcli:setNetwork(nw_id, "ssid", string.format("\"%s\"", network.ssid))
+    reply, err = wcli:setNetwork(nw_id, "ssid", bin_to_hex(network.ssid))
     if reply == nil or reply == "FAIL" then
         wcli:removeNetwork(nw_id)
         return false, T("An error occurred while selecting network: %1.", err)
@@ -185,6 +197,9 @@ function WpaSupplicant:getCurrentNetwork()
     end
     local nw = wcli:getCurrentNetwork()
     wcli:close()
+    if nw ~= nil then
+        nw.ssid = decodeSSID(nw.ssid)
+    end
     return nw
 end
 

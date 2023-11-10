@@ -91,7 +91,7 @@ function ReadHistory:_flush()
     for _, v in ipairs(self.hist) do
         table.insert(content, {
             time = v.time,
-            file = v.file
+            file = v.file,
         })
     end
     util.writeToFile(dump(content), history_file, true, true)
@@ -143,14 +143,10 @@ function ReadHistory:_readLegacyHistory()
     os.remove(history_dir)
 end
 
-function ReadHistory:_init()
-    self:reload()
-end
-
 function ReadHistory:ensureLastFile()
     local last_existing_file
     for _, v in ipairs(self.hist) do
-        if lfs.attributes(v.file, "mode") == "file" then
+        if v.select_enabled then
             last_existing_file = v.file
             break
         end
@@ -167,7 +163,7 @@ function ReadHistory:getPreviousFile(current_file)
     end
     for _, v in ipairs(self.hist) do
         -- skip current document and deleted items kept in history
-        if v.file ~= current_file and lfs.attributes(v.file, "mode") == "file" then
+        if v.file ~= current_file and v.select_enabled then
             return v.file
         end
     end
@@ -191,7 +187,6 @@ function ReadHistory:updateItemByPath(old_path, new_path)
         self.hist[index].file = new_path
         self.hist[index].text = new_path:gsub(".*/", "")
         self:_flush()
-        self:reload(true)
     end
 end
 
@@ -212,14 +207,42 @@ function ReadHistory:updateItemsByPath(old_path, new_path)
 end
 
 --- Updates the history list after deleting a file.
-function ReadHistory:fileDeleted(path)
-    local index = self:getIndexByFile(path)
+function ReadHistory:fileDeleted(path_or_index)
+    local index
+    local is_single = type(path_or_index) == "string"
+    if is_single then -- deleting single file, path passed
+        index = self:getIndexByFile(path_or_index)
+    else -- deleting folder, index passed
+        index = path_or_index
+    end
     if index then
         if G_reader_settings:isTrue("autoremove_deleted_items_from_history") then
-            self:removeItem(self.hist[index], index)
+            self:removeItem(self.hist[index], index, not is_single) -- flush immediately when deleting single file only
         else
             self.hist[index].dim = true
             self.hist[index].select_enabled = false
+            if is_single then
+                self:ensureLastFile()
+            end
+        end
+    end
+end
+
+--- Updates the history list after deleting a folder.
+function ReadHistory:folderDeleted(path)
+    local history_updated
+    for i = #self.hist, 1, -1 do
+        local file = self.hist[i].file
+        if util.stringStartsWith(file, path) then
+            self:fileDeleted(i)
+            history_updated = true
+            DocSettings.updateLocation(file) -- remove sdr if not in book location
+        end
+    end
+    if history_updated then
+        if G_reader_settings:isTrue("autoremove_deleted_items_from_history") then
+            self:_flush()
+        else
             self:ensureLastFile()
         end
     end
@@ -308,6 +331,12 @@ function ReadHistory:updateLastBookTime(no_flush)
     end
 end
 
+function ReadHistory:updateDateTimeString()
+    for _, v in ipairs(self.hist) do
+        v.mandatory = getMandatory(v.time)
+    end
+end
+
 --- Reloads history from history_file and legacy history folder.
 function ReadHistory:reload(force_read)
     if self:_read(force_read) then
@@ -317,6 +346,10 @@ function ReadHistory:reload(force_read)
         end
         self:_reduce()
     end
+end
+
+function ReadHistory:_init()
+    self:reload()
 end
 
 ReadHistory:_init()

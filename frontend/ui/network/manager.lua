@@ -1067,7 +1067,7 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
             end
             UIManager:show(InfoMessage:new{
                 tag = "NetworkMgr", -- for crazy KOSync purposes
-                text = T(_("Connected to network %1"), BD.wrap(self.decodeSSID(ssid))),
+                text = T(_("Connected to network %1"), BD.wrap(util.fixUtf8(ssid, "�"))),
                 timeout = 3,
             })
         else
@@ -1117,23 +1117,6 @@ end
 
 function NetworkMgr:setWirelessBackend(name, options)
     require("ui/network/"..name).init(self, options)
-end
-
-function NetworkMgr.decodeSSID(text)
-    local decode = function(b)
-        local c = string.char(tonumber(b, 16))
-        -- This is a hack that allows us to make sure that any decoded backslash
-        -- does not get replaced in the step that replaces double backslashes.
-        if c == "\\" then
-            return "\\\\"
-        else
-            return c
-        end
-    end
-
-    local decoded = text:gsub("%f[\\]\\x(%x%x)", decode)
-    decoded = decoded:gsub("\\\\", "\\")
-    return util.fixUtf8(decoded, "�")
 end
 
 -- set network proxy if global variable G_defaults:readSetting("NETWORK_PROXY") is defined

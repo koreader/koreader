@@ -15,6 +15,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local Utf8Proc = require("ffi/utf8proc")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
@@ -264,6 +265,25 @@ function BookInfo.getDocProps(file, book_props, no_open_document)
     end
 
     return BookInfo.extendProps(book_props, file)
+end
+
+function BookInfo:findInProps(book_props, search_string, case_sensitive)
+    for _, key in ipairs(self.props) do
+        local prop = book_props[key]
+        if prop then
+            if key == "series_index" then
+                prop = tostring(prop)
+            elseif key == "description" then
+                prop = util.htmlToPlainTextIfHtml(prop)
+            end
+            if not case_sensitive then
+                prop = Utf8Proc.lowercase(util.fixUtf8(prop, "?"))
+            end
+            if prop:find(search_string) then
+                return true
+            end
+        end
+    end
 end
 
 -- Shows book information for currently opened document.
