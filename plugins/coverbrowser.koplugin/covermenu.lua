@@ -62,7 +62,11 @@ function CoverMenu:updateCache(file, status, do_create, pages)
         local highlight = doc_settings:readSetting("highlight")
         local has_highlight = highlight and next(highlight) and true
         local rating = summary.rating
-        self.cover_info_cache[file] = table.pack(pages, percent_finished, status, has_highlight, rating) -- may be a sparse array
+        
+        local ReadCollection = require("readcollection")
+        local is_favorite = ReadCollection:checkItemExist(file)
+
+        self.cover_info_cache[file] = table.pack(pages, percent_finished, status, has_highlight, rating, is_favorite) -- may be a sparse array
     else
         if self.cover_info_cache and self.cover_info_cache[file] then
             if status then

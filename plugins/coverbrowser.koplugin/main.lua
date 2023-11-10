@@ -44,6 +44,8 @@ local filemanager_display_mode = false -- not initialized yet
 local history_display_mode = false -- not initialized yet
 local collection_display_mode = false -- not initialized yet
 local series_mode = nil -- defaults to not display series
+local rating_mode = nil -- defaults to not display ratings
+local fav_mode = nil -- defaults to not display favorite indicator
 
 local CoverBrowser = WidgetContainer:extend{
     name = "coverbrowser",
@@ -72,6 +74,8 @@ function CoverBrowser:init()
     self:setupHistoryDisplayMode(BookInfoManager:getSetting("history_display_mode"))
     self:setupCollectionDisplayMode(BookInfoManager:getSetting("collection_display_mode"))
     series_mode = BookInfoManager:getSetting("series_mode")
+    rating_mode = BookInfoManager:getSetting("rating_mode")
+    fav_mode = BookInfoManager:getSetting("fav_mode")
 
     init_done = true
     BookInfoManager:closeDbConnection() -- will be re-opened if needed
@@ -302,15 +306,100 @@ function CoverBrowser:addToMainMenu(menu_items)
                         end,
                     },
                 },
-                separator = true
             },
             {
-                text = _("Show book rating"),
-                checked_func = function() return BookInfoManager:getSetting("show_rating") end,
-                callback = function()
-                    BookInfoManager:toggleSetting("show_rating")
-                    self:refreshFileManagerInstance()
-                end,
+				text = _("Display extra information in list view"),
+				sub_item_table = {
+					{
+						text = _("Show book rating (★ - ★★★★★)"),
+						sub_item_table = {
+							{
+								text = _("Book rating on new line (right widget)"),
+                                checked_func = function() return rating_mode == "show_rating_newline" end,
+                                callback = function()
+                                    if rating_mode == "show_rating_newline" then
+                                        rating_mode = nil
+                                    else
+                                        rating_mode = "show_rating_newline"
+                                    end
+                                    BookInfoManager:saveSetting("rating_mode", rating_mode)
+                                    self:refreshFileManagerInstance()
+                                end,
+							},
+							{
+								text = _("Append book rating to title"),
+                                checked_func = function() return rating_mode == "append_rating_to_title" end,
+                                callback = function()
+                                    if rating_mode == "append_rating_to_title" then
+                                        rating_mode = nil
+                                    else
+                                        rating_mode = "append_rating_to_title"
+                                    end
+                                    BookInfoManager:saveSetting("rating_mode", rating_mode)
+                                    self:refreshFileManagerInstance()
+                                end,
+							},
+							{
+								text = _("Append book rating to authors"),
+                                checked_func = function() return rating_mode == "append_rating_to_authors" end,
+                                callback = function()
+                                    if rating_mode == "append_rating_to_authors" then
+                                        rating_mode = nil
+                                    else
+                                        rating_mode = "append_rating_to_authors"
+                                    end
+                                    BookInfoManager:saveSetting("rating_mode", rating_mode)
+                                    self:refreshFileManagerInstance()
+                                end,
+							},
+						},
+					},
+                    {
+						text = _("Show favorite indicator (☆)"),
+						sub_item_table = {
+							{
+								text = _("Favorite indicator on new line (right widget)"),
+                                checked_func = function() return fav_mode == "show_fav_newline" end,
+                                callback = function()
+                                    if fav_mode == "show_fav_newline" then
+                                        fav_mode = nil
+                                    else
+                                        fav_mode = "show_fav_newline"
+                                    end
+                                    BookInfoManager:saveSetting("fav_mode", fav_mode)
+                                    self:refreshFileManagerInstance()
+                                end,
+							},
+							{
+								text = _("Append favorite indicator to title"),
+                                checked_func = function() return fav_mode == "append_fav_to_title" end,
+                                callback = function()
+                                    if fav_mode == "append_fav_to_title" then
+                                        fav_mode = nil
+                                    else
+                                        fav_mode = "append_fav_to_title"
+                                    end
+                                    BookInfoManager:saveSetting("fav_mode", fav_mode)
+                                    self:refreshFileManagerInstance()
+                                end,
+							},
+							{
+								text = _("Append favorite indicator to authors"),
+                                checked_func = function() return fav_mode == "append_fav_to_authors" end,
+                                callback = function()
+                                    if fav_mode == "append_fav_to_authors" then
+                                        fav_mode = nil
+                                    else
+                                        fav_mode = "append_fav_to_authors"
+                                    end
+                                    BookInfoManager:saveSetting("fav_mode", fav_mode)
+                                    self:refreshFileManagerInstance()
+                                end,
+							},
+						},
+					},
+				},	
+                separator = true,
             },
             {
 				text = _("Show file properties"),
