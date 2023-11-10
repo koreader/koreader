@@ -474,6 +474,7 @@ function ListMenuItem:update()
             if extrainfo_str then
                 local wpageinfo = TextWidget:new{
                     text = extrainfo_str,
+                    bold = true,
                     face = Font:getFace("cfont", fontsize_info),
                     fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
                 }
