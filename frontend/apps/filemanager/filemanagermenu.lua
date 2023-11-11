@@ -446,18 +446,11 @@ To:
         text = _("Folders and files mixed"),
         enabled_func = function()
             local collate = G_reader_settings:readSetting("collate")
-            return collate ~= "size" and
-                   collate ~= "type" and
-                   collate ~= "percent_unopened_first" and
-                   collate ~= "percent_unopened_last"
+            return not FileChooser.isCollateNotForMixed(collate)
         end,
         checked_func = function()
             local collate = G_reader_settings:readSetting("collate")
-            return G_reader_settings:isTrue("collate_mixed") and
-                   collate ~= "size" and
-                   collate ~= "type" and
-                   collate ~= "percent_unopened_first" and
-                   collate ~= "percent_unopened_last"
+            return not FileChooser.isCollateNotForMixed(collate) and G_reader_settings:isTrue("collate_mixed")
         end,
         callback = function()
             G_reader_settings:flipNilOrFalse("collate_mixed")

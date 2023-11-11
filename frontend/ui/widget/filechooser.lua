@@ -242,19 +242,21 @@ function FileChooser:genItemTableFromPath(path)
     return self:genItemTable(dirs, files, path)
 end
 
+function FileChooser.isCollateNotForMixed(collate)
+    return collate == "size" or collate == "type"
+        or collate == "percent_unopened_first" or collate == "percent_unopened_last"
+end
+
 function FileChooser:genItemTable(dirs, files, path)
     local collate = G_reader_settings:readSetting("collate")
-    local collate_not_for_mixed = collate == "size" or
-                                  collate == "type" or
-                                  collate == "percent_unopened_first" or
-                                  collate == "percent_unopened_last"
     local collate_mixed = G_reader_settings:isTrue("collate_mixed")
     local reverse_collate = G_reader_settings:isTrue("reverse_collate")
     local sorting = self:getSortingFunction(collate, reverse_collate)
+    local collate_not_for_mixed = self.isCollateNotForMixed(collate)
     if collate_not_for_mixed or not collate_mixed then
         table.sort(files, sorting)
-        if collate_not_for_mixed then
-            sorting = self:getSortingFunction("strcoll", reverse_collate)
+        if collate_not_for_mixed then -- keep folders sorted by name not reversed
+            sorting = self:getSortingFunction("strcoll")
         end
         table.sort(dirs, sorting)
     end
