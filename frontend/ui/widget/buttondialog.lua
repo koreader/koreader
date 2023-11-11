@@ -267,16 +267,18 @@ function ButtonDialog:onCloseWidget()
     end)
 end
 
-function ButtonDialog:onTapClose()
-    UIManager:close(self)
+function ButtonDialog:onClose()
     if self.tap_close_callback then
         self.tap_close_callback()
     end
+    UIManager:close(self)
     return true
 end
 
-function ButtonDialog:onClose()
-    self:onTapClose()
+function ButtonDialog:onTapClose(arg, ges)
+    if ges.pos:notIntersectWith(self.movable.dimen) then
+        self:onClose()
+    end
     return true
 end
 
