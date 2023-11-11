@@ -724,6 +724,7 @@ function Menu:init()
         {
             {
                 text = _("Cancel"),
+                id = "close",
                 callback = function()
                     self.page_info_text:closeInputDialog()
                 end,
