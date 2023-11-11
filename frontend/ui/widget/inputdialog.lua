@@ -483,7 +483,7 @@ end
 
 -- Tap outside of inputbox to hide the keyboard (inside the inputbox it is caught via InputText:onTapTextBox).
 -- If the keyboard is hidden, tap outside of the dialog to close the dialog.
-function InputDialog:onTap()
+function InputDialog:onTap(arg, ges)
     -- This is slightly more fine-grained than VK's own visibility lock, hence the duplication...
     if self.deny_keyboard_hiding then
         return
@@ -491,7 +491,9 @@ function InputDialog:onTap()
     if self:isKeyboardVisible() then
         self:onCloseKeyboard()
     else
-        self:onCloseDialog()
+        if ges.pos:notIntersectWith(self.dialog_frame.dimen) then
+            self:onCloseDialog()
+        end
     end
 end
 
