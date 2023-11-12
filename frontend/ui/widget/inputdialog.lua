@@ -436,7 +436,10 @@ function InputDialog:init()
         self.ges_events.Tap = {
             GestureRange:new{
                 ges = "tap",
-                range = self[1].dimen, -- screen above the keyboard
+                range = Geom:new{
+                    w = self.screen_width,
+                    h = self.screen_height,
+                },
             },
         }
     end
@@ -478,13 +481,20 @@ function InputDialog:getAddedWidgetAvailableWidth()
     return self._input_widget.width
 end
 
--- Close the keyboard if we tap anywhere outside of the keyboard (that isn't an input field, where it would be caught via InputText:onTapTextBox)
-function InputDialog:onTap()
+-- Tap outside of inputbox to hide the keyboard (inside the inputbox it is caught via InputText:onTapTextBox).
+-- If the keyboard is hidden, tap outside of the dialog to close the dialog.
+function InputDialog:onTap(arg, ges)
     -- This is slightly more fine-grained than VK's own visibility lock, hence the duplication...
     if self.deny_keyboard_hiding then
         return
     end
-    self:onCloseKeyboard()
+    if self:isKeyboardVisible() then
+        self:onCloseKeyboard()
+    else
+        if ges.pos:notIntersectWith(self.dialog_frame.dimen) then
+            self:onCloseDialog()
+        end
+    end
 end
 
 function InputDialog:getInputText()

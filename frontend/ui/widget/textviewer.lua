@@ -441,6 +441,7 @@ function TextViewer:findDialog()
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(input_dialog)
                     end,

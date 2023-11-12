@@ -484,6 +484,7 @@ function ReaderHandMade:addOrEditPageTocItem(pageno, when_updated_callback, sele
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(dialog)
                     end,
