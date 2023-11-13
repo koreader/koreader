@@ -154,7 +154,7 @@ function FileManagerHistory:onMenuHold(item)
     end
     table.insert(buttons, {
         filemanagerutil.genResetSettingsButton(item.file, status_button_callback, is_currently_opened),
-        filemanagerutil.genAddRemoveFavoritesButton(item.file, close_dialog_callback, item.dim),
+        --filemanagerutil.genAddRemoveFavoritesButton(item.file, close_dialog_callback, item.dim),
     })
     table.insert(buttons, {
         {

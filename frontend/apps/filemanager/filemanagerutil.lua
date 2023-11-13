@@ -8,7 +8,6 @@ local DocSettings = require("docsettings")
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
-local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
 local T = ffiutil.template
@@ -48,26 +47,6 @@ function filemanagerutil.splitFileNameType(filepath)
         end
     end
     return filename_without_suffix, filetype
-end
-
-function filemanagerutil.getRandomFile(dir, match_func)
-    if not dir:match("/$") then
-        dir = dir .. "/"
-    end
-    local files = {}
-    local ok, iter, dir_obj = pcall(lfs.dir, dir)
-    if ok then
-        for entry in iter, dir_obj do
-            local file = dir .. entry
-            if lfs.attributes(file, "mode") == "file" and match_func(file) then
-                table.insert(files, entry)
-            end
-        end
-        if #files > 0 then
-            math.randomseed(os.time())
-            return dir .. files[math.random(#files)]
-        end
-    end
 end
 
 -- Purge doc settings except kept
@@ -163,9 +142,9 @@ end
 function filemanagerutil.genResetSettingsButton(file, caller_callback, button_disabled)
     file = ffiutil.realpath(file) or file
     local has_sidecar_file = DocSettings:hasSidecarFile(file)
-    local custom_cover_file = DocSettings:findCustomCoverFile(file)
+    local custom_cover_file = DocSettings:findCoverFile(file)
     local has_custom_cover_file = custom_cover_file and true or false
-    local custom_metadata_file = DocSettings:findCustomMetadataFile(file)
+    local custom_metadata_file = DocSettings:getCustomMetadataFile(file)
     local has_custom_metadata_file = custom_metadata_file and true or false
     return {
         text = _("Reset"),
@@ -183,8 +162,8 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
                 ok_callback = function()
                     local data_to_purge = {
                         doc_settings         = check_button_settings.checked,
-                        custom_cover_file    = check_button_cover.checked and custom_cover_file,
-                        custom_metadata_file = check_button_metadata.checked and custom_metadata_file,
+                        custom_cover_file    = check_button_cover.checked,
+                        custom_metadata_file = check_button_metadata.checked,
                     }
                     DocSettings:open(file):purge(nil, data_to_purge)
                     if data_to_purge.custom_cover_file or data_to_purge.custom_metadata_file then
@@ -222,24 +201,25 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
     }
 end
 
-function filemanagerutil.genAddRemoveFavoritesButton(file, caller_callback, button_disabled)
-    local ReadCollection = require("readcollection")
-    local is_added = ReadCollection:checkItemExist(file)
-    return {
-        text_func = function()
-            return is_added and _("Remove from favorites") or _("Add to favorites")
-        end,
-        enabled = not button_disabled,
-        callback = function()
-            caller_callback()
-            if is_added then
-                ReadCollection:removeItem(file)
-            else
-                ReadCollection:addItem(file)
-            end
-        end,
-    }
-end
+-- Old function: replaced by new button in covermenu.lua so that favorite status is refreshed instantly in file manager and history
+--function filemanagerutil.genAddRemoveFavoritesButton(file, caller_callback, button_disabled)
+    --local ReadCollection = require("readcollection")
+    --local is_added = ReadCollection:checkItemExist(file)
+    --return {
+    --    text_func = function()
+    --        return is_added and _("Remove from favorites") or _("Add to favorites")
+    --    end,
+    --    enabled = not button_disabled,
+    --    callback = function()
+    --        caller_callback()
+    --        if is_added then
+    --            ReadCollection:removeItem(file)
+    --        else
+    --            ReadCollection:addItem(file)
+    --        end
+    --    end,
+    --}
+--end
 
 function filemanagerutil.genShowFolderButton(file, caller_callback, button_disabled)
     return {
@@ -295,6 +275,7 @@ function filemanagerutil.genBookDescriptionButton(file, caller_callback, button_
         end,
     }
 end
+
 
 -- Generate "Execute script" file dialog button
 function filemanagerutil.genExecuteScriptButton(file, caller_callback)

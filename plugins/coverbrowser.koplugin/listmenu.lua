@@ -361,20 +361,24 @@ function ListMenuItem:update()
             --   pages read / nb of pages (not available for crengine doc not opened)
             -- Current page / pages are available or more accurate in .sdr/metadata.lua
             -- We use a cache (cleaned at end of this browsing session) to store
-            -- page, percent read and book status from sidecar files, to avoid
+            -- page, percent read, book status and rating from sidecar files, to avoid
             -- re-parsing them when re-rendering a visited page
             if not self.menu.cover_info_cache then
                 self.menu.cover_info_cache = {}
             end
             local pages_str = ""
             local pages = bookinfo.pages -- default to those in bookinfo db
-            local percent_finished, status, has_highlight
+            local percent_finished, status, has_highlight, rating
             if DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
                 self.menu:updateCache(self.filepath, nil, true, pages) -- create new cache entry if absent
-                pages, percent_finished, status, has_highlight =
+                pages, percent_finished, status, has_highlight, rating =
                     unpack(self.menu.cover_info_cache[self.filepath], 1, self.menu.cover_info_cache[self.filepath].n)
             end
+
+            local ReadCollection = require("readcollection")
+            local is_favorite = ReadCollection:checkItemExist(self.filepath)
+			
             -- right widget, first line
             local directory, filename = util.splitFilePathName(self.filepath) -- luacheck: no unused
             local filename_without_suffix, filetype = filemanagerutil.splitFileNameType(filename)
@@ -388,6 +392,7 @@ function ListMenuItem:update()
                 local mark = has_highlight and "\u{2592}  " or "" -- "medium shade"
                 fileinfo_str = mark .. BD.wrap(filetype) .. "  " .. BD.wrap(self.mandatory)
             end
+
             -- right widget, second line
             if status == "complete" or status == "abandoned" then
                 -- Display these instead of the read %
@@ -419,6 +424,22 @@ function ListMenuItem:update()
                 end
             end
 
+            -- extra information
+            local rating_str = (rating and rating >= 1 and rating <= 5) and string.format("%s", string.rep("★", rating)) or nil
+            local fav_str = is_favorite and "☆" or nil
+            local rating_mode = BookInfoManager:getSetting("rating_mode")
+            local fav_mode = BookInfoManager:getSetting("fav_mode")
+
+            -- optional right widget new line text
+            local extrainfo_str
+            if (rating_mode == "show_rating_newline" and rating_str) and (fav_mode == "show_fav_newline" and fav_str) then
+                extrainfo_str = rating_str .. " ⸱ " .. fav_str .. " "
+            elseif (rating_mode == "show_rating_newline" and rating_str) then
+                extrainfo_str = rating_str .. " "
+            elseif (fav_mode == "show_fav_newline" and fav_str) then
+                extrainfo_str = fav_str .. " "
+            end
+            
             -- Build the right widget
 
             local fontsize_info = _fontSize(14, 18)
@@ -428,6 +449,8 @@ function ListMenuItem:update()
             local wright_width = 0
             local wright
 
+
+            -- first line
             if not BookInfoManager:getSetting("hide_file_info") then
                 local wfileinfo = TextWidget:new{
                     text = fileinfo_str,
@@ -437,6 +460,7 @@ function ListMenuItem:update()
                 table.insert(wright_items, wfileinfo)
             end
 
+            -- second line
             if not BookInfoManager:getSetting("hide_page_info") then
                 local wpageinfo = TextWidget:new{
                     text = pages_str,
@@ -446,6 +470,17 @@ function ListMenuItem:update()
                 table.insert(wright_items, wpageinfo)
             end
 
+            -- optional new line
+            if extrainfo_str then
+                local wpageinfo = TextWidget:new{
+                    text = extrainfo_str,
+                    bold = true,
+                    face = Font:getFace("cfont", fontsize_info),
+                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                }
+                table.insert(wright_items, wpageinfo)
+            end 
+			
             if #wright_items > 0 then
                 for i, w in ipairs(wright_items) do
                     wright_width = math.max(wright_width, w:getSize().w)
@@ -554,6 +589,29 @@ function ListMenuItem:update()
                     end
                 end
             end
+
+            -- add rating and favorite indicator (if specified) to title
+            if title then
+                if (rating_mode == "append_rating_to_title" and rating_str) and (fav_mode == "append_fav_to_title" and fav_str) then
+                    title = title .. " " .. rating_str .. " ⸱ " .. fav_str
+                elseif rating_mode == "append_rating_to_title" and rating_str then
+                    title = title .. " " .. rating_str
+                elseif (fav_mode == "append_fav_to_title" and fav_str) then
+                    title = title .. " " .. fav_str
+                end
+            end
+
+            -- add rating and favorite indicator (if specified) to authors
+            if authors then
+                if (rating_mode == "append_rating_to_authors" and rating_str) and (fav_mode == "append_fav_to_authors" and fav_str) then
+                    authors = authors .. " " .. rating_str .. " ⸱ " .. fav_str
+                elseif rating_mode == "append_rating_to_authors" and rating_str then
+                    authors = authors .. " " .. rating_str
+                elseif (fav_mode == "append_fav_to_authors" and fav_str) then
+                    authors = authors .. " " .. fav_str
+                end
+            end
+    
             if bookinfo.unsupported then
                 -- Let's show this fact in place of the anyway empty authors slot
                 authors = T(_("(no book information: %1)"), _(bookinfo.unsupported))
