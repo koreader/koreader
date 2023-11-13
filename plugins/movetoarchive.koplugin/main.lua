@@ -106,7 +106,7 @@ function MoveToArchive:onMoveToArchive(do_copy)
         require("readhistory"):updateItemByPath(document_full_path, dest_file) -- (will update "lastfile" if needed)
         require("readcollection"):updateItemByPath(document_full_path, dest_file)
     end
-    DocSettings:updateLocation(document_full_path, dest_file, do_copy)
+    DocSettings.updateLocation(document_full_path, dest_file, do_copy)
     UIManager:show(ConfirmBox:new{
         text = text,
         ok_callback = function()
