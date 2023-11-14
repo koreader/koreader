@@ -359,8 +359,7 @@ function FileManagerMenu:setUpdateItemTable()
                         end,
                         callback = function()
                             G_reader_settings:flipNilOrTrue("shorten_home_dir")
-                            local FileManager = require("apps/filemanager/filemanager")
-                            if FileManager.instance then FileManager.instance:reinit() end
+                            self.ui:updateTitleBarPath()
                         end,
                         help_text = _([[
 "Shorten home folder" will display the home folder itself as "Home" instead of its full path.
