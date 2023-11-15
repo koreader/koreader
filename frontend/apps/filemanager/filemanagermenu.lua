@@ -2,7 +2,6 @@ local BD = require("ui/bidi")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local PluginLoader = require("pluginloader")
@@ -785,7 +784,7 @@ The sorting order is the same as in filemanager.
 
 Tap a book in the search results to open it.]]),
         callback = function()
-            self.ui:handleEvent(Event:new("ShowFileSearch"))
+            self.ui.filesearcher:onShowFileSearch()
         end
     }
 
