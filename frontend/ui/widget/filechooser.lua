@@ -363,7 +363,7 @@ function FileChooser:getMenuItemMandatory(item, collate)
         if #sub_dirs > 0 then
             text = T("%1 \u{F114} ", #sub_dirs) .. text
         end
-        if FileManagerShortcuts:isShortcutAdded(item.fullpath) then
+        if FileManagerShortcuts:hasFolderShortcut(item.fullpath) then
             text = "☆ " .. text
         end
     end
