@@ -112,7 +112,7 @@ end
 function FileManager:updateTitleBarPath(path)
     path = path or self.file_chooser.path
     local text = BD.directory(filemanagerutil.abbreviate(path))
-    if FileManagerShortcuts:isShortcutAdded(path) then
+    if FileManagerShortcuts:hasFolderShortcut(path) then
         text = "☆ " .. text
     end
     self.title_bar:setSubTitle(text)
