@@ -43,7 +43,7 @@ function FileManagerShortcuts:_getIndex(folder)
     end
 end
 
-function FileManagerShortcuts:isShortcutAdded(folder)
+function FileManagerShortcuts:hasFolderShortcut(folder)
     return self:_getIndex(folder) and true or false
 end
 
@@ -67,10 +67,10 @@ function FileManagerShortcuts:onMenuHold(item)
     local buttons = {
         {
             {
-                text = _("Delete shortcut"),
+                text = _("Remove shortcut"),
                 callback = function()
                     UIManager:close(dialog)
-                    self._manager:deleteShortcut(item.folder)
+                    self._manager:removeShortcut(item.folder)
                 end
             },
             {
@@ -103,7 +103,7 @@ function FileManagerShortcuts:onMenuHold(item)
     return true
 end
 
-function FileManagerShortcuts:deleteShortcut(folder)
+function FileManagerShortcuts:removeShortcut(folder)
     local index = self:_getIndex(folder)
     table.remove(self.folder_shortcuts, index)
     if self.shortcuts_menu then
@@ -170,7 +170,7 @@ function FileManagerShortcuts:addShortcut()
         select_file = false,
         path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile(),
         onConfirm = function(path)
-            if self:isShortcutAdded(path) then
+            if self:hasFolderShortcut(path) then
                 UIManager:show(InfoMessage:new{
                     text = _("Shortcut already exists."),
                 })
@@ -193,12 +193,12 @@ function FileManagerShortcuts:genShowFolderShortcutsButton(pre_callback)
 end
 
 function FileManagerShortcuts:genAddRemoveShortcutButton(folder, pre_callback, post_callback)
-    if self:isShortcutAdded(folder) then
+    if self:hasFolderShortcut(folder) then
         return {
             text = _("Remove from folder shortcuts"),
             callback = function()
                 pre_callback()
-                self:deleteShortcut(folder)
+                self:removeShortcut(folder)
                 post_callback()
             end,
         }
