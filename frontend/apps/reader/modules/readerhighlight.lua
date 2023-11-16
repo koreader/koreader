@@ -361,7 +361,7 @@ local highlight_dialog_position = {
     {_("Top"), "top"},
     {_("Center"), "center"},
     {_("Bottom"), "bottom"},
-    {_("Gesture"), "gesture"},
+    {_("Gesture position"), "gesture"},
 }
 
 function ReaderHighlight:addToMainMenu(menu_items)
@@ -1100,7 +1100,7 @@ dbg:guard(ReaderHighlight, "onShowHighlightMenu",
 
 function ReaderHighlight:_getHighlightMenuAnchor()
     local position = G_reader_settings:readSetting("highlight_dialog_position", "center")
-    if position == "center" then return end
+    if position == "center" or not self.gest_pos then return end
     local dialog_box = self.highlight_dialog:getContentSize()
     local anchor_x = math.floor((self.screen_w - dialog_box.w) / 2) -- center by width
     local anchor_y, prefers_pop_down
@@ -1121,6 +1121,7 @@ function ReaderHighlight:_getHighlightMenuAnchor()
             anchor_y = text_box.y - Size.padding.small
         end
     end
+    self.gest_pos = nil
     return { x = anchor_x, y = anchor_y, h = 0, w = 0 }, prefers_pop_down
 end
 
