@@ -3,6 +3,7 @@ local datetime = require("datetime")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
+local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
@@ -361,6 +362,9 @@ function FileChooser:getMenuItemMandatory(item, collate)
         text = T("%1 \u{F016}", #dir_files)
         if #sub_dirs > 0 then
             text = T("%1 \u{F114} ", #sub_dirs) .. text
+        end
+        if FileManagerShortcuts:hasFolderShortcut(item.fullpath) then
+            text = "☆ " .. text
         end
     end
     return text

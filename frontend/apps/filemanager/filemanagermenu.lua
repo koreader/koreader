@@ -2,7 +2,6 @@ local BD = require("ui/bidi")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local PluginLoader = require("pluginloader")
@@ -359,8 +358,7 @@ function FileManagerMenu:setUpdateItemTable()
                         end,
                         callback = function()
                             G_reader_settings:flipNilOrTrue("shorten_home_dir")
-                            local FileManager = require("apps/filemanager/filemanager")
-                            if FileManager.instance then FileManager.instance:reinit() end
+                            self.ui:updateTitleBarPath()
                         end,
                         help_text = _([[
 "Shorten home folder" will display the home folder itself as "Home" instead of its full path.
@@ -786,7 +784,7 @@ The sorting order is the same as in filemanager.
 
 Tap a book in the search results to open it.]]),
         callback = function()
-            self.ui:handleEvent(Event:new("ShowFileSearch"))
+            self.ui.filesearcher:onShowFileSearch()
         end
     }
 
