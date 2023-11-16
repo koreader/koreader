@@ -1088,6 +1088,8 @@ function ReaderHighlight:onShowHighlightMenu(page, index)
         anchor = function() return self:_getHighlightMenuAnchor() end,
         tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
     }
+    -- NOTE: Disable merging for this update,
+    --       or the buggy Sage kernel may alpha-blend it into the page (with a bogus alpha value, to boot)...
     UIManager:show(self.highlight_dialog, "[ui]")
 end
 dbg:guard(ReaderHighlight, "onShowHighlightMenu",
@@ -1101,20 +1103,19 @@ function ReaderHighlight:_getHighlightMenuAnchor()
     if position == "center" then return end
     local dialog_box = self.highlight_dialog:getContentSize()
     local anchor_x = math.floor((self.screen_w - dialog_box.w) / 2) -- center by width
-    local screen_h = self.screen_h - Size.padding.small -- do not stick to the edge
     local anchor_y, prefers_pop_down
     if position == "top" then
-        anchor_y = Size.padding.small
+        anchor_y = Size.padding.small -- do not stick to the edge
         prefers_pop_down = true
     elseif position == "bottom" then
-        anchor_y = screen_h
+        anchor_y = self.screen_h - Size.padding.small
     else -- "gesture"
         local text_box = self.ui.document:getWordFromPosition(self.gest_pos).sbox
         if self.ui.paging then
             text_box = self.view:pageToScreenTransform(self.ui.paging.current_page, text_box)
         end
         anchor_y = text_box.y + text_box.h + Size.padding.small -- do not stick to the box
-        if anchor_y + dialog_box.h <= screen_h then -- enough room below box with gest_pos
+        if anchor_y + dialog_box.h <= self.screen_h - Size.padding.small then -- enough room below box with gest_pos
             prefers_pop_down = true
         else -- above box with gest_pos
             anchor_y = text_box.y - Size.padding.small
