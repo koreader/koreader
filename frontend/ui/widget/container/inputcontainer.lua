@@ -304,33 +304,41 @@ end
 --       [1] The most common implementation you'll see is a NOP for ReaderUI modules that defer gesture handling to ReaderUI.
 --           Notification also implements a simple one to dismiss notifications on any user input,
 --           which is something that doesn't impede our goal, which is why we don't need to deal with it.
-function InputContainer:onIgnoreTouchInput(toggle)
+function InputContainer:onIgnoreTouchInput(toggle, no_notify)
     local Notification = require("ui/widget/notification")
     if toggle == false then
         -- Restore the proper onGesture handler if we disabled it
         if InputContainer._onGesture then
             InputContainer.onGesture = InputContainer._onGesture
             InputContainer._onGesture = nil
-            Notification:notify("Restored touch input")
+            if not no_notify then
+                Notification:notify("Restored touch input")
+            end
         end
     elseif toggle == true then
         -- Replace the onGesture handler w/ the minimal one if that's not already the case
         if not InputContainer._onGesture then
             InputContainer._onGesture = InputContainer.onGesture
             InputContainer.onGesture = InputContainer._onGestureFiltered
-            Notification:notify("Disabled touch input")
+            if not no_notify then
+                Notification:notify("Disabled touch input")
+            end
         end
     else
         -- Toggle the current state
         if InputContainer._onGesture then
-            return self:onIgnoreTouchInput(false)
+            return self:onIgnoreTouchInput(false, no_notify)
         else
-            return self:onIgnoreTouchInput(true)
+            return self:onIgnoreTouchInput(true, no_notify)
         end
     end
 
     -- We only affect the base class, once is enough ;).
     return true
+end
+
+function InputContainer:isTouchInputDisabled()
+    return InputContainer._onGesture and true or false
 end
 
 function InputContainer:onResume()
