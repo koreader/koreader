@@ -32,6 +32,7 @@ local CreOptions = require("ui/data/creoptions")
 local KoptOptions = require("ui/data/koptoptions")
 local Device = require("device")
 local Event = require("ui/event")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local Notification = require("ui/widget/notification")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
@@ -1061,6 +1062,9 @@ function Dispatcher:_showAsMenu(settings, exec_props)
             font_size = 22,
             font_bold = false,
             callback = function()
+                if quickmenu.is_touch_input_disabled then
+                    InputContainer:onIgnoreTouchInput(true, true)
+                end
                 UIManager:close(quickmenu)
                 Dispatcher:execute({[v.key] = settings[v.key]})
             end,
@@ -1082,6 +1086,10 @@ function Dispatcher:_showAsMenu(settings, exec_props)
         buttons = buttons,
         anchor = exec_props and exec_props.qm_anchor,
     }
+    if InputContainer:isTouchInputDisabled() then
+        quickmenu.is_touch_input_disabled = true
+        InputContainer:onIgnoreTouchInput(false, true)
+    end
     UIManager:show(quickmenu)
 end
 
