@@ -43,18 +43,25 @@ function MassStorage:getActionsMenuTable()
         text = _("Start USB storage"),
         enabled_func = function() return self:isEnabled() end,
         callback = function()
-            self:start(true)
+            self:start(false)
         end,
     }
 end
 
 -- exit KOReader and start mass storage mode.
-function MassStorage:start(never_ask)
+function MassStorage:start(with_confirmation)
     if not Device:canToggleMassStorage() or not self:isEnabled() then
         return
     end
 
-    if not never_ask and self:requireConfirmation() then
+    local ask
+    if with_confirmation ~= nil then
+        ask = with_confirmation
+    else
+        ask = self:requireConfirmation()
+    end
+
+    if ask then
         local ConfirmBox = require("ui/widget/confirmbox")
         self.usbms_widget = ConfirmBox:new{
             text = _("Share storage via USB?"),
