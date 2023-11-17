@@ -1081,7 +1081,6 @@ function Dispatcher:_showAsMenu(settings, exec_props)
         use_info_style = false,
         buttons = buttons,
         anchor = exec_props and exec_props.qm_anchor,
-        modal = true,
     }
     UIManager:show(quickmenu)
 end
