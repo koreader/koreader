@@ -5,6 +5,7 @@ This module manages widgets.
 local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
+local InputContainer
 local dbg = require("dbg")
 local logger = require("logger")
 local ffiUtil = require("ffi/util")
@@ -42,6 +43,7 @@ local UIManager = {
     _gated_quit = nil,
     _prevent_standby_count = 0,
     _prev_prevent_standby_count = 0,
+    _prevent_ignore_input_count = 0,
 
     event_hook = require("ui/hook_container"):new()
 }
@@ -105,6 +107,8 @@ function UIManager:init()
         end)
     end
 
+    -- Lazy load InputContainer to avoid circular dependencies
+    InputContainer = require("ui/widget/container/inputcontainer")
     -- Tell Device that we're now available, so that it can setup PM event handlers
     Device:_UIManagerReady(self)
 
@@ -165,6 +169,14 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     Input.disable_double_tap = widget.disable_double_tap ~= false
     -- a widget may override tap interval (when it doesn't, nil restores the default)
     Input.tap_interval_override = widget.tap_interval_override
+    -- If input was disabled, re-enable it while this widget is shown so we can actually interact with it.
+    -- The only thing that could actually call show in this state is something automatic, so we need to be able to deal with it.
+    if InputContainer:isTouchInputDisabled() then
+        InputContainer:onIgnoreTouchInput(false)
+        widget._prevent_ignore_input = true
+        self._prevent_ignore_input_count = self._prevent_ignore_input_count + 1
+        logger.dbg("Gestures were disabled, re-enabling them to allow interaction with widget")
+    end
 end
 
 --[[--
@@ -244,6 +256,13 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
             self:setDirty(self._window_stack[i].widget)
         end
         self:_refresh(refreshtype, refreshregion, refreshdither)
+    end
+    if widget._prevent_ignore_input then
+        self._prevent_ignore_input_count = self._prevent_ignore_input_count - 1
+        if self._prevent_ignore_input_count == 0 then
+            InputContainer:onIgnoreTouchInput(true)
+            logger.dbg("Widget is gone, disabling gestures again")
+        end
     end
 end
 
