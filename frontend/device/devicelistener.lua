@@ -331,7 +331,7 @@ end
 function DeviceListener:onRequestUSBMS()
     local MassStorage = require("ui/elements/mass_storage")
     -- It already takes care of the canToggleMassStorage cap check for us
-    MassStorage:start(true) -- Always request confirmation
+    MassStorage:start(false) -- Never request confirmation, after all, there's already stuff like exit in there...
 end
 
 function DeviceListener:onRestart()
