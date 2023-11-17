@@ -111,6 +111,7 @@ function ReaderStatus:onEndOfBook()
             title = _("You've reached the end of the document.\nWhat would you like to do?"),
             title_align = "center",
             buttons = buttons,
+            modal = true,
         }
         UIManager:show(button_dialog)
     elseif settings == "book_status" then

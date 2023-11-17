@@ -44,6 +44,8 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Screen = Device.screen
 local _ = require("gettext")
 
+local logger = require("logger")
+
 local InputContainer = WidgetContainer:extend{
     vertical_align = "top",
 }
@@ -249,6 +251,7 @@ function InputContainer:onKeyRepeat(key)
 end
 
 function InputContainer:onGesture(ev)
+    logger.info("InputContainer:onGesture on", tostring(self), "with ev", ev)
     for _, tzone in ipairs(self._ordered_touch_zones) do
         if tzone.gs_range:match(ev) and tzone.handler(ev) then
             return true
@@ -282,6 +285,12 @@ InputContainer.isGestureAlwaysActive = InputContainer._isGestureAlwaysActive
 -- Filtered variant that only lets specific touch zones marked as "always active" through.
 -- (This is used by the "toggle_touch_input" Dispatcher action).
 function InputContainer:_onGestureFiltered(ev)
+    logger.info("InputContainer:_onGestureFiltered on", tostring(self), "with ev", ev)
+    -- Never block modals & toasts (FIXME: Except we need to account for *children* of modals & toasts; but this at least allows dismissing them)
+    if self.modal or self.toast then
+        return InputContainer._onGesture(self, ev)
+    end
+
     for _, tzone in ipairs(self._ordered_touch_zones) do
         if self:isGestureAlwaysActive(tzone.def.id, ev.multiswipe_directions) and tzone.gs_range:match(ev) and tzone.handler(ev) then
             return true
@@ -289,6 +298,7 @@ function InputContainer:_onGestureFiltered(ev)
     end
     -- No ges_events at all, although if the need ever arises, we could also support an "always active" marker for those ;).
     if self.stop_events_propagation then
+        logger.info(tostring(self), "stopped event propagation")
         return true
     end
 end
@@ -331,6 +341,10 @@ function InputContainer:onIgnoreTouchInput(toggle)
 
     -- We only affect the base class, once is enough ;).
     return true
+end
+
+function InputContainer:isTouchInputDisabled()
+    return InputContainer._onGesture and true or false
 end
 
 function InputContainer:onResume()
