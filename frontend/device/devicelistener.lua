@@ -328,6 +328,12 @@ function DeviceListener:onToggleKeyRepeat(toggle)
     Device:toggleKeyRepeat(G_reader_settings:nilOrFalse("input_no_key_repeat"))
 end
 
+function DeviceListener:onRequestUSBMS()
+    local MassStorage = require("ui/elements/mass_storage")
+    -- It already takes care of the canToggleMassStorage cap check for us
+    MassStorage:start(true)
+end
+
 function DeviceListener:onRestart()
     self.ui.menu:exitOrRestart(function() UIManager:restartKOReader() end)
 end
