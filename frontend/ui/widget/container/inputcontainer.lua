@@ -47,10 +47,6 @@ local _ = require("gettext")
 
 local InputContainer = WidgetContainer:extend{
     vertical_align = "top",
-    -- NOTE: This reflects whether InputContainer *thinks* gestures are disabled,
-    --       as opposed to UIManager._input_gestures_disabled, which matches the *actual* state.
-    --       This allows UIManager to temporarily flip the state without affecting the "expected" state.
-    _gestures_disabled = false,
 }
 
 function InputContainer:_init()
@@ -341,25 +337,18 @@ end
 
 -- Public handler that obeys the *expected* state
 function InputContainer:onIgnoreTouchInput(toggle)
-    logger.dbg("InputContainer:onIgnoreTouchInput", toggle)
     local Notification = require("ui/widget/notification")
     if toggle == true then
-        if not InputContainer._gestures_disabled then
-            if self:setIgnoreTouchInput(true) then
-                Notification:notify("Disabled touch input")
-                InputContainer._gestures_disabled = true
-            end
+        if self:setIgnoreTouchInput(true) then
+            Notification:notify("Disabled touch input")
         end
     elseif toggle == false then
-        if InputContainer._gestures_disabled then
-            if self:setIgnoreTouchInput(false) then
-                Notification:notify("Restored touch input")
-                InputContainer._gestures_disabled = false
-            end
+        if self:setIgnoreTouchInput(false) then
+            Notification:notify("Restored touch input")
         end
     else
         -- Toggle the current state
-        return self:onIgnoreTouchInput(not InputContainer._gestures_disabled)
+        return self:onIgnoreTouchInput(not UIManager._input_gestures_disabled)
     end
 
     -- We only affect the base class, once is enough ;).
