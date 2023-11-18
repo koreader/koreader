@@ -50,6 +50,7 @@ local InfoMessage = InputContainer:extend{
     monospace_font = false,
     text = "",
     timeout = nil, -- in seconds
+    _timeout_func = nil,
     width = nil,  -- The width of the InfoMessage. Keep it nil to use default value.
     height = nil,  -- The height of the InfoMessage. If this field is set, a scrollbar may be shown.
     -- The image shows at the left of the InfoMessage. Image data will be freed
@@ -220,6 +221,11 @@ function InfoMessage:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "ui", self.movable.dimen
     end)
+
+    -- If we were closed early, drop the scheduled timeout
+    if self._timeout_func then
+        UIManager:unschedule(self._timeout_func)
+    end
 end
 
 function InfoMessage:onShow()
@@ -242,16 +248,18 @@ function InfoMessage:onShow()
         -- Discard queued and upcoming input events to avoid accidental dismissal
         Input:inhibitInputUntil(true)
     end
-    -- schedule us to close ourself if timeout provided
+    -- schedule a close on timeout, if any
     if self.timeout then
-        UIManager:scheduleIn(self.timeout, function()
+        self._timeout_func = function()
+            self._timeout_func = nil
             -- In case we're provided with dismiss_callback, also call it on timeout
             if self.dismiss_callback then
                 self.dismiss_callback()
                 self.dismiss_callback = nil
             end
             UIManager:close(self)
-        end)
+        end
+        UIManager:scheduleIn(self.timeout, self._timeout_func)
     end
     return true
 end
