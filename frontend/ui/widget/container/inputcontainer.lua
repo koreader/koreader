@@ -335,7 +335,7 @@ function InputContainer:setIgnoreTouchInput(state)
     return false
 end
 
--- Public handler that obeys the *expected* state
+-- And the matching Event handler
 function InputContainer:onIgnoreTouchInput(toggle)
     local Notification = require("ui/widget/notification")
     if toggle == true then

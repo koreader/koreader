@@ -114,7 +114,7 @@ function UIManager:init()
     self:unsetRunForeverMode()
 end
 
--- Crappy wrappers because of circular dependencies
+-- Crappy wrapper because of circular dependencies
 function UIManager:setIgnoreTouchInput(state)
     local InputContainer = require("ui/widget/container/inputcontainer")
     InputContainer:setIgnoreTouchInput(state)
