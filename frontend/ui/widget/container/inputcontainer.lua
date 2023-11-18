@@ -41,11 +41,16 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local logger = require("logger")
 local Screen = Device.screen
 local _ = require("gettext")
 
 local InputContainer = WidgetContainer:extend{
     vertical_align = "top",
+    -- NOTE: This reflects whether InputContainer *thinks* gestures are disabled,
+    --       as opposed to UIManager._input_gestures_disabled, which matches the *actual* state.
+    --       This allows UIManager to temporarily flip the state without affecting the "expected" state.
+    _gestures_disabled = false,
 }
 
 function InputContainer:_init()
@@ -304,32 +309,57 @@ end
 --       [1] The most common implementation you'll see is a NOP for ReaderUI modules that defer gesture handling to ReaderUI.
 --           Notification also implements a simple one to dismiss notifications on any user input,
 --           which is something that doesn't impede our goal, which is why we don't need to deal with it.
-function InputContainer:onIgnoreTouchInput(toggle)
-    local Notification = require("ui/widget/notification")
-    if toggle == false then
-        -- Restore the proper onGesture handler if we disabled it
-        if InputContainer._onGesture then
-            InputContainer.onGesture = InputContainer._onGesture
-            InputContainer._onGesture = nil
-            Notification:notify("Restored touch input")
-            UIManager._input_gestures_disabled = false
-        end
-    elseif toggle == true then
+function InputContainer:setIgnoreTouchInput(state)
+    logger.dbg("InputContainer:setIgnoreTouchInput", state)
+    if state == true then
         -- Replace the onGesture handler w/ the minimal one if that's not already the case
         if not InputContainer._onGesture then
             InputContainer._onGesture = InputContainer.onGesture
             InputContainer.onGesture = InputContainer._onGestureFiltered
-            Notification:notify("Disabled touch input")
             -- Notify UIManager so it knows what to do if a random popup shows up
             UIManager._input_gestures_disabled = true
+            logger.dbg("Disabled InputContainer gesture handler")
+
+            -- Notify our caller that the state changed
+            return true
+        end
+    elseif state == false then
+        -- Restore the proper onGesture handler if we disabled it
+        if InputContainer._onGesture then
+            InputContainer.onGesture = InputContainer._onGesture
+            InputContainer._onGesture = nil
+            UIManager._input_gestures_disabled = false
+            logger.dbg("Restored InputContainer gesture handler")
+
+            return true
+        end
+    end
+
+    -- We did not actually change the state
+    return false
+end
+
+-- Public handler that obeys the *expected* state
+function InputContainer:onIgnoreTouchInput(toggle)
+    logger.dbg("InputContainer:onIgnoreTouchInput", toggle)
+    local Notification = require("ui/widget/notification")
+    if toggle == true then
+        if not InputContainer._gestures_disabled then
+            if self:setIgnoreTouchInput(true) then
+                Notification:notify("Disabled touch input")
+                InputContainer._gestures_disabled = true
+            end
+        end
+    elseif toggle == false then
+        if InputContainer._gestures_disabled then
+            if self:setIgnoreTouchInput(false) then
+                Notification:notify("Restored touch input")
+                InputContainer._gestures_disabled = false
+            end
         end
     else
         -- Toggle the current state
-        if InputContainer._onGesture then
-            return self:onIgnoreTouchInput(false)
-        else
-            return self:onIgnoreTouchInput(true)
-        end
+        return self:onIgnoreTouchInput(not InputContainer._gestures_disabled)
     end
 
     -- We only affect the base class, once is enough ;).

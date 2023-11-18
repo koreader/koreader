@@ -114,10 +114,14 @@ function UIManager:init()
     self:unsetRunForeverMode()
 end
 
--- Crappy wrapper because of circular dependencies
-function UIManager:setIgnoreTouchInput(toggle)
+-- Crappy wrappers because of circular dependencies
+function UIManager:enableTouchInput()
     local InputContainer = require("ui/widget/container/inputcontainer")
-    InputContainer:onIgnoreTouchInput(toggle)
+    InputContainer:setIgnoreTouchInput(false)
+end
+function UIManager:resetTouchInputState()
+    local InputContainer = require("ui/widget/container/inputcontainer")
+    InputContainer:setIgnoreTouchInput(InputContainer._gestures_disabled)
 end
 
 --[[--
@@ -175,9 +179,9 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     -- If input was disabled, re-enable it while this widget is shown so we can actually interact with it.
     -- The only thing that could actually call show in this state is something automatic, so we need to be able to deal with it.
     if self._input_gestures_disabled then
-        self:setIgnoreTouchInput(false)
-        widget._restored_input_gestures = true
         logger.dbg("Gestures were disabled, temporarily re-enabling them to allow interaction with widget")
+        self:enableTouchInput()
+        widget._restored_input_gestures = true
     end
 end
 
@@ -260,8 +264,9 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
         self:_refresh(refreshtype, refreshregion, refreshdither)
     end
     if widget._restored_input_gestures then
-        self:setIgnoreTouchInput(true)
-        logger.dbg("Widget is gone, disabling gestures again")
+        logger.dbg("Widget is gone, restoring expected gesture handling state")
+        -- Reset to the state InputContainer thinks it ought to be in (which might not be `false`, in case said widget affected it)
+        self:resetTouchInputState()
     end
 end
 
