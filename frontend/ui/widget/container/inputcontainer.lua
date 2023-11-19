@@ -355,12 +355,6 @@ function InputContainer:onIgnoreTouchInput(toggle)
     return true
 end
 
-function InputContainer:onResume()
-    -- Always restore touch input on resume, to avoid confusion for scatter-brained users ;).
-    -- It's also helpful when the IgnoreTouchInput event is emitted by Dispatcher through other means than Gestures.
-    self:onIgnoreTouchInput(false)
-end
-
 function InputContainer:onInput(input, ignore_first_hold_release)
     local InputDialog = require("ui/widget/inputdialog")
     self.input_dialog = InputDialog:new{
