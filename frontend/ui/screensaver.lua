@@ -763,6 +763,8 @@ function Screensaver:show()
         self.screensaver_widget.dithered = true
 
         UIManager:show(self.screensaver_widget, "full")
+        -- NOTE: Prevent UIManager from disabling InputContainer gestures when this widget goes away
+        self.screensaver_widget._restored_input_gestures = nil
     end
 
     -- Setup the gesture lock through an additional invisible widget, so that it works regardless of the configuration.
@@ -771,6 +773,8 @@ function Screensaver:show()
 
         -- It's flagged as modal, so it'll stay on top
         UIManager:show(self.screensaver_lock_widget)
+        -- NOTE: Prevent UIManager from disabling InputContainer gestures when this widget goes away
+        self.screensaver_lock_widget._restored_input_gestures = nil
     end
 end
 
