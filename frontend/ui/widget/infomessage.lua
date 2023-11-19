@@ -217,6 +217,7 @@ function InfoMessage:onCloseWidget()
     -- If we were closed early, drop the scheduled timeout
     if self._timeout_func then
         UIManager:unschedule(self._timeout_func)
+        self._timeout_func = nil
     end
     if self.invisible then
         -- Still invisible, no setDirty needed

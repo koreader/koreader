@@ -204,6 +204,7 @@ function Notification:onCloseWidget()
     -- If we were closed early, drop the scheduled timeout
     if self._timeout_func then
         UIManager:unschedule(self._timeout_func)
+        self._timeout_func = nil
     end
 end
 
