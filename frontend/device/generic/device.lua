@@ -1096,12 +1096,6 @@ function Device:_beforeSuspend(inhibit)
         -- Disable key repeat to avoid useless chatter (especially where Sleep Covers are concerned...)
         self:disableKeyRepeat()
     end
-
-    -- We'll also take this opportunity to restore Gestures handling in InputContainer, to avoid confusion for scatter-brained users ;).
-    -- It's also helpful when the IgnoreTouchInput event is emitted by Dispatcher through other means than Gestures.
-    -- NOTE: This needs to happen *before* ScreenSaver kicks in, as it's a new shown widget,
-    --       so it'd attempt to *temporarily* re-enable gestures, but disable them again on resume, when closing the screensaver...
-    UIManager:setIgnoreTouchInput(false)
 end
 
 -- The common operations that should be performed after resuming the device.
