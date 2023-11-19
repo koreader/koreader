@@ -340,11 +340,11 @@ function InputContainer:onIgnoreTouchInput(toggle)
     local Notification = require("ui/widget/notification")
     if toggle == true then
         if self:setIgnoreTouchInput(true) then
-            Notification:notify("Disabled touch input")
+            Notification:notify(_("Disabled touch input"))
         end
     elseif toggle == false then
         if self:setIgnoreTouchInput(false) then
-            Notification:notify("Restored touch input")
+            Notification:notify(_("Restored touch input"))
         end
     else
         -- Toggle the current state
