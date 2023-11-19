@@ -206,6 +206,12 @@ function InfoMessage:init()
 end
 
 function InfoMessage:onCloseWidget()
+    -- If we were closed early, drop the scheduled timeout
+    if self._timeout_func then
+        UIManager:unschedule(self._timeout_func)
+        self._timeout_func = nil
+    end
+
     if self._delayed_show_action then
         UIManager:unschedule(self._delayed_show_action)
         self._delayed_show_action = nil
@@ -214,11 +220,7 @@ function InfoMessage:onCloseWidget()
         self.dismiss_callback()
         self.dismiss_callback = nil
     end
-    -- If we were closed early, drop the scheduled timeout
-    if self._timeout_func then
-        UIManager:unschedule(self._timeout_func)
-        self._timeout_func = nil
-    end
+
     if self.invisible then
         -- Still invisible, no setDirty needed
         return
