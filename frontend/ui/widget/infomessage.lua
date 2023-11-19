@@ -210,6 +210,14 @@ function InfoMessage:onCloseWidget()
         UIManager:unschedule(self._delayed_show_action)
         self._delayed_show_action = nil
     end
+    if self.dismiss_callback then
+        self.dismiss_callback()
+        self.dismiss_callback = nil
+    end
+    -- If we were closed early, drop the scheduled timeout
+    if self._timeout_func then
+        UIManager:unschedule(self._timeout_func)
+    end
     if self.invisible then
         -- Still invisible, no setDirty needed
         return
@@ -221,11 +229,6 @@ function InfoMessage:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "ui", self.movable.dimen
     end)
-
-    -- If we were closed early, drop the scheduled timeout
-    if self._timeout_func then
-        UIManager:unschedule(self._timeout_func)
-    end
 end
 
 function InfoMessage:onShow()
@@ -252,11 +255,6 @@ function InfoMessage:onShow()
     if self.timeout then
         self._timeout_func = function()
             self._timeout_func = nil
-            -- In case we're provided with dismiss_callback, also call it on timeout
-            if self.dismiss_callback then
-                self.dismiss_callback()
-                self.dismiss_callback = nil
-            end
             UIManager:close(self)
         end
         UIManager:scheduleIn(self.timeout, self._timeout_func)
@@ -277,20 +275,8 @@ function InfoMessage:paintTo(bb, x, y)
     InputContainer.paintTo(self, bb, x, y)
 end
 
-function InfoMessage:dismiss()
-    if self._delayed_show_action then
-        UIManager:unschedule(self._delayed_show_action)
-        self._delayed_show_action = nil
-    end
-    if self.dismiss_callback then
-        self.dismiss_callback()
-        self.dismiss_callback = nil
-    end
-    UIManager:close(self)
-end
-
 function InfoMessage:onTapClose()
-    self:dismiss()
+    UIManager:close(self)
     if self.readonly ~= true then
         return true
     end
