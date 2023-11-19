@@ -37,7 +37,7 @@ local QRMessage = InputContainer:extend{
     text = nil,  -- The text to encode.
     width = nil,  -- The width. Keep it nil to use original width.
     height = nil,  -- The height. Keep it nil to use original height.
-    dismiss_callback = function() end,
+    dismiss_callback = nil,
     alpha = nil,
     scale_factor = 1,
 }
@@ -88,6 +88,10 @@ function QRMessage:onCloseWidget()
     if self._timeout_func then
         UIManager:unschedule(self._timeout_func)
     end
+
+    if self.dismiss_callback then
+        self.dismiss_callback()
+    end
 end
 
 function QRMessage:onShow()
@@ -106,7 +110,6 @@ function QRMessage:onShow()
 end
 
 function QRMessage:onTapClose()
-    self.dismiss_callback()
     UIManager:close(self)
 end
 QRMessage.onAnyKeyPressed = QRMessage.onTapClose
