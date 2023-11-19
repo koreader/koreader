@@ -18,7 +18,7 @@ local ffiUtil = require("ffi/util")
 local time = require("ui/time")
 local _ = require("gettext")
 local C_ = _.pgettext
-local T = require("ffi/util").template
+local T = ffiUtil.template
 local Screen = Device.screen
 
 local ReaderHighlight = InputContainer:extend{}
@@ -47,6 +47,8 @@ local function cleanupSelectedText(text)
 end
 
 function ReaderHighlight:init()
+    self.screen_w = Screen:getWidth()
+    self.screen_h = Screen:getHeight()
     self.select_mode = false -- extended highlighting
     self._start_indicator_highlight = false
     self._current_indicator_pos = nil
@@ -219,6 +221,10 @@ function ReaderHighlight:init()
     self.ges_events = nil
 end
 
+function ReaderHighlight:onSetDimensions(dimen)
+    self.screen_w, self.screen_h = dimen.w, dimen.h
+end
+
 function ReaderHighlight:onGesture() end
 
 function ReaderHighlight:registerKeyEvents()
@@ -349,6 +355,13 @@ local long_press_action = {
     {_("Wikipedia"), "wikipedia"},
     {_("Dictionary"), "dictionary"},
     {_("Fulltext search"), "search"},
+}
+
+local highlight_dialog_position = {
+    {_("Top"), "top"},
+    {_("Center"), "center"},
+    {_("Bottom"), "bottom"},
+    {_("Gesture position"), "gesture"},
 }
 
 function ReaderHighlight:addToMainMenu(menu_items)
@@ -488,6 +501,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
             },
         },
     }
+    -- actions
     for i, v in ipairs(long_press_action) do
         table.insert(menu_items.long_press.sub_item_table, {
             text = v[1],
@@ -500,6 +514,31 @@ function ReaderHighlight:addToMainMenu(menu_items)
             end,
         })
     end
+    -- highlight dialog position
+    local sub_item_table = {}
+    for i, v in ipairs(highlight_dialog_position) do
+        table.insert(sub_item_table, {
+            text = v[1],
+            checked_func = function()
+                return G_reader_settings:readSetting("highlight_dialog_position", "center") == v[2]
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("highlight_dialog_position", v[2])
+            end,
+        })
+    end
+    table.insert(menu_items.long_press.sub_item_table, {
+        text_func = function()
+            local position = G_reader_settings:readSetting("highlight_dialog_position", "center")
+            for __, v in ipairs(highlight_dialog_position) do
+                if v[2] == position then
+                    return T(_("Highlight dialog position: %1"), v[1]:lower())
+                end
+            end
+        end,
+        sub_item_table = sub_item_table,
+    })
+    -- highlight very-long-press interval
     table.insert(menu_items.long_press.sub_item_table, {
         text_func = function()
             return T(_("Highlight very-long-press interval: %1 s"),
@@ -511,7 +550,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
             local items = SpinWidget:new{
                 title_text = _("Highlight very-long-press interval"),
                 info_text = _("If a long-press is not released in this interval, it is considered a very-long-press. On document text, single word selection will not be triggered."),
-                width = math.floor(Screen:getWidth() * 0.75),
+                width = math.floor(self.screen_w * 0.75),
                 value = G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3),
                 value_min = 2.5,
                 value_max = 20,
@@ -840,7 +879,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
                 -- containing new_end. So, we scroll so that new_end
                 -- is at 2/3 of the screen.
                 local end_y = self.ui.document:getPosFromXPointer(new_end)
-                local top_y = end_y - math.floor(Screen:getHeight() * 2/3)
+                local top_y = end_y - math.floor(self.screen_h * 2/3)
                 self.ui.rolling:_gotoPos(top_y)
             end
         end
@@ -889,8 +928,8 @@ function ReaderHighlight:showHighlightNoteOrDialog(page, index, bookmark_note)
         textviewer = TextViewer:new{
             title = _("Note"),
             text = bookmark_note,
-            width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.8),
-            height = math.floor(math.max(Screen:getWidth(), Screen:getHeight()) * 0.4),
+            width = math.floor(math.min(self.screen_w, self.screen_h) * 0.8),
+            height = math.floor(math.max(self.screen_w, self.screen_h) * 0.4),
             buttons_table = {
                 {
                     {
@@ -1046,6 +1085,7 @@ function ReaderHighlight:onShowHighlightMenu(page, index)
 
     self.highlight_dialog = ButtonDialog:new{
         buttons = highlight_buttons,
+        anchor = function() return self:_getHighlightMenuAnchor() end,
         tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
     }
     -- NOTE: Disable merging for this update,
@@ -1057,6 +1097,33 @@ dbg:guard(ReaderHighlight, "onShowHighlightMenu",
         assert(self.selected_text ~= nil,
             "onShowHighlightMenu must not be called with nil self.selected_text!")
     end)
+
+function ReaderHighlight:_getHighlightMenuAnchor()
+    local position = G_reader_settings:readSetting("highlight_dialog_position", "center")
+    if position == "center" or not self.gest_pos then return end
+    local dialog_box = self.highlight_dialog:getContentSize()
+    local anchor_x = math.floor((self.screen_w - dialog_box.w) / 2) -- center by width
+    local anchor_y, prefers_pop_down
+    if position == "top" then
+        anchor_y = Size.padding.small -- do not stick to the edge
+        prefers_pop_down = true
+    elseif position == "bottom" then
+        anchor_y = self.screen_h - Size.padding.small
+    else -- "gesture"
+        local text_box = self.ui.document:getWordFromPosition(self.gest_pos).sbox
+        if self.ui.paging then
+            text_box = self.view:pageToScreenTransform(self.ui.paging.current_page, text_box)
+        end
+        anchor_y = text_box.y + text_box.h + Size.padding.small -- do not stick to the box
+        if anchor_y + dialog_box.h <= self.screen_h - Size.padding.small then -- enough room below box with gest_pos
+            prefers_pop_down = true
+        else -- above box with gest_pos
+            anchor_y = text_box.y - Size.padding.small
+        end
+    end
+    self.gest_pos = nil
+    return { x = anchor_x, y = anchor_y, h = 0, w = 0 }, prefers_pop_down
+end
 
 function ReaderHighlight:_resetHoldTimer(clear)
     if clear then
@@ -1106,13 +1173,13 @@ function ReaderHighlight:onHold(arg, ges)
     end
 
     self:clear() -- clear previous highlight (delayed clear may not have done it yet)
-    self.hold_ges_pos = ges.pos -- remember hold original gesture position
     self.hold_pos = self.view:screenToPageTransform(ges.pos)
     logger.dbg("hold position in page", self.hold_pos)
     if not self.hold_pos then
         logger.dbg("not inside page area")
         return false
     end
+    self.gest_pos = self.hold_pos
 
     -- check if we were holding on an image
     -- we provide want_frames=true, so we get a list of images for
@@ -1220,18 +1287,18 @@ function ReaderHighlight:onHoldPan(_, ges)
             -- Note: this might not be really usable, as crengine native selection
             -- is not adapted to RTL text
             -- top right corner
-            is_in_prev_page_corner = self.holdpan_pos.y < 1/8*Screen:getHeight()
-                                      and self.holdpan_pos.x > 7/8*Screen:getWidth()
+            is_in_prev_page_corner = self.holdpan_pos.y < 1/8*self.screen_h
+                                      and self.holdpan_pos.x > 7/8*self.screen_w
             -- bottom left corner
-            is_in_next_page_corner = self.holdpan_pos.y > 7/8*Screen:getHeight()
-                                          and self.holdpan_pos.x < 1/8*Screen:getWidth()
+            is_in_next_page_corner = self.holdpan_pos.y > 7/8*self.screen_h
+                                          and self.holdpan_pos.x < 1/8*self.screen_w
         else -- default in LTR UI with no inverse_reading_order
             -- top left corner
-            is_in_prev_page_corner = self.holdpan_pos.y < 1/8*Screen:getHeight()
-                                      and self.holdpan_pos.x < 1/8*Screen:getWidth()
+            is_in_prev_page_corner = self.holdpan_pos.y < 1/8*self.screen_h
+                                      and self.holdpan_pos.x < 1/8*self.screen_w
             -- bottom right corner
-            is_in_next_page_corner = self.holdpan_pos.y > 7/8*Screen:getHeight()
-                                      and self.holdpan_pos.x > 7/8*Screen:getWidth()
+            is_in_next_page_corner = self.holdpan_pos.y > 7/8*self.screen_h
+                                      and self.holdpan_pos.x > 7/8*self.screen_w
         end
         if is_in_prev_page_corner or is_in_next_page_corner then
             self:_resetHoldTimer()
@@ -1254,7 +1321,7 @@ function ReaderHighlight:onHoldPan(_, ges)
                     self.ui:handleEvent(Event:new("SetViewMode", "scroll"))
                 end
                 -- (using rolling:onGotoViewRel(1/3) has some strange side effects)
-                local scroll_distance = math.floor(Screen:getHeight() * 1/3)
+                local scroll_distance = math.floor(self.screen_h * 1/3)
                 local move_y = is_in_next_page_corner and scroll_distance or -scroll_distance
                 self.ui.rolling:_gotoPos(self.ui.document:getCurrentPos() + move_y)
                 local new_y = self.ui.document:getScreenPositionFromXPointer(self.selected_text_start_xpointer)
@@ -1277,7 +1344,7 @@ function ReaderHighlight:onHoldPan(_, ges)
                 -- Also, we are not able to move hold_pos.x out of screen,
                 -- so if we started on the right page, ignore top left corner,
                 -- and if we started on the left page, ignore bottom right corner.
-                local screen_half_width = math.floor(Screen:getWidth() * 0.5)
+                local screen_half_width = math.floor(self.screen_w * 0.5)
                 if self.hold_pos.x >= screen_half_width and is_in_prev_page_corner then
                     return true
                 elseif self.hold_pos.x <= screen_half_width and is_in_next_page_corner then
@@ -1309,6 +1376,7 @@ function ReaderHighlight:onHoldPan(_, ges)
 
     local old_text = self.selected_text and self.selected_text.text
     self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.holdpan_pos)
+    self.gest_pos = self.holdpan_pos
     self.is_word_selection = false
 
     if self.selected_text and self.selected_text.pos0 then
@@ -1445,8 +1513,8 @@ function ReaderHighlight:onTranslateCurrentPage()
     if self.ui.rolling then
         x0 = 0
         y0 = 0
-        x1 = Screen:getWidth()
-        y1 = Screen:getHeight()
+        x1 = self.screen_w
+        y1 = self.screen_h
     else
         page = self.ui:getCurrentPage()
         is_reflow = self.ui.document.configurable.text_wrap
