@@ -218,7 +218,10 @@ function InfoMessage:onCloseWidget()
     end
     if self.dismiss_callback then
         self.dismiss_callback()
-        self.dismiss_callback = nil
+        -- NOTE: Dirty hack for Trapper, which needs to pull a Lazarus on dead widgets while preserving the callback's integrity ;).
+        if not self.is_infomessage then
+            self.dismiss_callback = nil
+        end
     end
 
     if self.invisible then
