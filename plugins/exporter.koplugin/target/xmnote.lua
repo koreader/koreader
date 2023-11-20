@@ -79,6 +79,7 @@ end
 function XMNoteExporter:createRequestBody(booknotes)
     local book = {
         title = booknotes.title or "",
+        author = booknotes.author or "",
         type = 1,
         locationUnit = 1,
     }
@@ -151,10 +152,13 @@ end
 
 
 function XMNoteExporter:isReadyToExport()
-    return true
+    if self.settings.ip then return true end
+    return false
 end
 
 function XMNoteExporter:export(t)
+    if not self:isReadyToExport() then return false end
+
     for _, booknotes in ipairs(t) do
         local ok = self:createHighlights(booknotes)
         if not ok then return false end
