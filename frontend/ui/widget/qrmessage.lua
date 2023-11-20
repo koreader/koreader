@@ -92,6 +92,7 @@ function QRMessage:onCloseWidget()
 
     if self.dismiss_callback then
         self.dismiss_callback()
+        self.dismiss_callback = nil
     end
 end
 
