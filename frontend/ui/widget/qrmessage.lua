@@ -33,10 +33,11 @@ local Size = require("ui/size")
 local QRMessage = InputContainer:extend{
     modal = true,
     timeout = nil, -- in seconds
+    _timeout_func = nil,
     text = nil,  -- The text to encode.
     width = nil,  -- The width. Keep it nil to use original width.
     height = nil,  -- The height. Keep it nil to use original height.
-    dismiss_callback = function() end,
+    dismiss_callback = nil,
     alpha = nil,
     scale_factor = 1,
 }
@@ -83,6 +84,16 @@ function QRMessage:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "ui", self[1][1].dimen -- i.e., frame
     end)
+    -- If we were closed early, drop the scheduled timeout
+    if self._timeout_func then
+        UIManager:unschedule(self._timeout_func)
+        self._timeout_func = nil
+    end
+
+    if self.dismiss_callback then
+        self.dismiss_callback()
+        self.dismiss_callback = nil
+    end
 end
 
 function QRMessage:onShow()
@@ -91,13 +102,16 @@ function QRMessage:onShow()
         return "ui", self[1][1].dimen
     end)
     if self.timeout then
-        UIManager:scheduleIn(self.timeout, function() UIManager:close(self) end)
+        self._timeout_func = function()
+            self._timeout_func = nil
+            UIManager:close(self)
+        end
+        UIManager:scheduleIn(self.timeout, self._timeout_func)
     end
     return true
 end
 
 function QRMessage:onTapClose()
-    self.dismiss_callback()
     UIManager:close(self)
 end
 QRMessage.onAnyKeyPressed = QRMessage.onTapClose

@@ -50,6 +50,7 @@ local InfoMessage = InputContainer:extend{
     monospace_font = false,
     text = "",
     timeout = nil, -- in seconds
+    _timeout_func = nil,
     width = nil,  -- The width of the InfoMessage. Keep it nil to use default value.
     height = nil,  -- The height of the InfoMessage. If this field is set, a scrollbar may be shown.
     -- The image shows at the left of the InfoMessage. Image data will be freed
@@ -205,10 +206,24 @@ function InfoMessage:init()
 end
 
 function InfoMessage:onCloseWidget()
+    -- If we were closed early, drop the scheduled timeout
+    if self._timeout_func then
+        UIManager:unschedule(self._timeout_func)
+        self._timeout_func = nil
+    end
+
     if self._delayed_show_action then
         UIManager:unschedule(self._delayed_show_action)
         self._delayed_show_action = nil
     end
+    if self.dismiss_callback then
+        self.dismiss_callback()
+        -- NOTE: Dirty hack for Trapper, which needs to pull a Lazarus on dead widgets while preserving the callback's integrity ;).
+        if not self.is_infomessage then
+            self.dismiss_callback = nil
+        end
+    end
+
     if self.invisible then
         -- Still invisible, no setDirty needed
         return
@@ -242,16 +257,13 @@ function InfoMessage:onShow()
         -- Discard queued and upcoming input events to avoid accidental dismissal
         Input:inhibitInputUntil(true)
     end
-    -- schedule us to close ourself if timeout provided
+    -- schedule a close on timeout, if any
     if self.timeout then
-        UIManager:scheduleIn(self.timeout, function()
-            -- In case we're provided with dismiss_callback, also call it on timeout
-            if self.dismiss_callback then
-                self.dismiss_callback()
-                self.dismiss_callback = nil
-            end
+        self._timeout_func = function()
+            self._timeout_func = nil
             UIManager:close(self)
-        end)
+        end
+        UIManager:scheduleIn(self.timeout, self._timeout_func)
     end
     return true
 end
@@ -269,20 +281,8 @@ function InfoMessage:paintTo(bb, x, y)
     InputContainer.paintTo(self, bb, x, y)
 end
 
-function InfoMessage:dismiss()
-    if self._delayed_show_action then
-        UIManager:unschedule(self._delayed_show_action)
-        self._delayed_show_action = nil
-    end
-    if self.dismiss_callback then
-        self.dismiss_callback()
-        self.dismiss_callback = nil
-    end
-    UIManager:close(self)
-end
-
 function InfoMessage:onTapClose()
-    self:dismiss()
+    UIManager:close(self)
     if self.readonly ~= true then
         return true
     end

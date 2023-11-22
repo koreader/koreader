@@ -57,6 +57,7 @@ local Notification = InputContainer:extend{
     margin = Size.margin.default,
     padding = Size.padding.default,
     timeout = 2, -- default to 2 seconds
+    _timeout_func = nil,
     toast = true, -- closed on any event, and let the event propagate to next top widget
 
     _shown_list = {}, -- actual static class member, array of stacked notifications (value is show (well, init) time or false).
@@ -200,6 +201,11 @@ function Notification:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "ui", self.frame.dimen
     end)
+    -- If we were closed early, drop the scheduled timeout
+    if self._timeout_func then
+        UIManager:unschedule(self._timeout_func)
+        self._timeout_func = nil
+    end
 end
 
 function Notification:onShow()
@@ -207,7 +213,11 @@ function Notification:onShow()
         return "ui", self.frame.dimen
     end)
     if self.timeout then
-        UIManager:scheduleIn(self.timeout, function() UIManager:close(self) end)
+        self._timeout_func = function()
+            self._timeout_func = nil
+            UIManager:close(self)
+        end
+        UIManager:scheduleIn(self.timeout, self._timeout_func)
     end
 
     if #self._past_messages >= MAX_NB_PAST_MESSAGES then

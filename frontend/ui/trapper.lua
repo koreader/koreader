@@ -179,8 +179,10 @@ function Trapper:info(text, fast_refresh)
                 return false
             end
             if self.current_widget then
-                -- Re-show current widget that was dismissed
-                -- (this is fine for our simple InfoMessage)
+                -- Resurect a dead widget. This should only be performed by trained Necromancers.
+                -- Do NOT do this at home, kids.
+                -- Some state *might* be lost, but the basics should survive...
+                self.current_widget:init()
                 UIManager:show(self.current_widget)
             end
             UIManager:forceRePaint()
