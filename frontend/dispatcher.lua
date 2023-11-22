@@ -66,6 +66,7 @@ local settingsList = {
 
     -- Device
     exit_screensaver = {category="none", event="ExitScreensaver", title=_("Exit screensaver"), device=true},
+    start_usbms = {category="none", event="RequestUSBMS", title=_("Start USB storage"), device=true, condition=Device:canToggleMassStorage()},
     suspend = {category="none", event="RequestSuspend", title=_("Suspend"), device=true, condition=Device:canSuspend()},
     restart = {category="none", event="Restart", title=_("Restart KOReader"), device=true, condition=Device:canRestart()},
     reboot = {category="none", event="RequestReboot", title=_("Reboot the device"), device=true, condition=Device:canReboot()},
@@ -281,6 +282,7 @@ local dispatcher_menu_order = {
 
     -- Device
     "exit_screensaver",
+    "start_usbms",
     "suspend",
     "restart",
     "reboot",
