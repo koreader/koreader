@@ -42,6 +42,7 @@ local UIManager = {
     _gated_quit = nil,
     _prevent_standby_count = 0,
     _prev_prevent_standby_count = 0,
+    _input_gestures_disabled = false,
 
     event_hook = require("ui/hook_container"):new()
 }
@@ -113,6 +114,12 @@ function UIManager:init()
     self:unsetRunForeverMode()
 end
 
+-- Crappy wrapper because of circular dependencies
+function UIManager:setIgnoreTouchInput(state)
+    local InputContainer = require("ui/widget/container/inputcontainer")
+    InputContainer:setIgnoreTouchInput(state)
+end
+
 --[[--
 Registers and shows a widget.
 
@@ -165,6 +172,13 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     Input.disable_double_tap = widget.disable_double_tap ~= false
     -- a widget may override tap interval (when it doesn't, nil restores the default)
     Input.tap_interval_override = widget.tap_interval_override
+    -- If input was disabled, re-enable it while this widget is shown so we can actually interact with it.
+    -- The only thing that could actually call show in this state is something automatic, so we need to be able to deal with it.
+    if UIManager._input_gestures_disabled then
+        logger.dbg("Gestures were disabled, temporarily re-enabling them to allow interaction with widget")
+        self:setIgnoreTouchInput(false)
+        widget._restored_input_gestures = true
+    end
 end
 
 --[[--
@@ -244,6 +258,10 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
             self:setDirty(self._window_stack[i].widget)
         end
         self:_refresh(refreshtype, refreshregion, refreshdither)
+    end
+    if widget._restored_input_gestures then
+        logger.dbg("Widget is gone, disabling gesture handling again")
+        self:setIgnoreTouchInput(true)
     end
 end
 

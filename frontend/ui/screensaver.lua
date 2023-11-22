@@ -753,6 +753,9 @@ function Screensaver:show()
         widget = addOverlayMessage(widget, message_height, self.overlay_message)
     end
 
+    -- NOTE: Make sure InputContainer gestures are not disabled, to prevent stupid interactions with UIManager on close.
+    UIManager:setIgnoreTouchInput(false)
+
     if widget then
         self.screensaver_widget = ScreenSaverWidget:new{
             widget = widget,

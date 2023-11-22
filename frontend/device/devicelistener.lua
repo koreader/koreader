@@ -355,4 +355,10 @@ function DeviceListener:onFullRefresh()
     UIManager:setDirty(nil, "full")
 end
 
+-- On resume, make sure we restore Gestures handling in InputContainer, to avoid confusion for scatter-brained users ;).
+-- It's also helpful when the IgnoreTouchInput event is emitted by Dispatcher through other means than Gestures.
+function DeviceListener:onResume()
+    UIManager:setIgnoreTouchInput(false)
+end
+
 return DeviceListener
