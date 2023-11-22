@@ -1020,7 +1020,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
         end,
     })
     table.insert(menu, {
-        text = _("Keep QuickMenu open on apply"),
+        text = _("Keep QuickMenu open"),
         checked_func = function()
             return location[settings] ~= nil
             and location[settings].settings ~= nil
@@ -1091,7 +1091,7 @@ function Dispatcher:_showAsMenu(settings, exec_props)
             callback = function()
                 UIManager:close(quickmenu)
                 Dispatcher:execute({[v.key] = settings[v.key]})
-                if keep_open_on_apply then
+                if keep_open_on_apply and not util.stringStartsWith(v.key, "touch_input") then
                     quickmenu:setTitle(title)
                     UIManager:show(quickmenu)
                 end
