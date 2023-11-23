@@ -254,7 +254,7 @@ function FileChooser:getList(path, collate)
                     if attributes.mode == "directory" and f ~= "." and f ~= ".." then
                         if self:show_dir(f) then
                             if collate then -- when collate == nil count only to display in folder mandatory
-                                item = FileChooser.getListItem(f, filename, attributes)
+                                item = FileChooser.getListItem(f, filename, attributes, collate)
                             end
                             table.insert(dirs, item)
                         end
@@ -294,7 +294,11 @@ function FileChooser.getListItem(f, filename, attributes, collate)
         fullpath = filename,
         attr = attributes,
     }
-    if collate then -- file
+    if collate.can_collate_mixed and attributes.mode == "directory" then
+        if collate.item_func ~= nil then
+            item = collate.item_func(item)
+        end
+    elseif attributes.mode == "file" then
         if G_reader_settings:readSetting("show_file_in_bold") ~= false then
             item.opened = DocSettings:hasSidecarFile(filename)
         end
@@ -348,64 +352,67 @@ function FileChooser:genItemTable(dirs, files, path)
     local collate_mixed = G_reader_settings:isTrue("collate_mixed")
     local reverse_collate = G_reader_settings:isTrue("reverse_collate")
     local sorting = self:getSortingFunction(collate, reverse_collate)
-    if not collate.can_collate_mixed or not collate_mixed then
+
+    local items = {}
+    if collate.can_collate_mixed and collate_mixed then
+        table.move(dirs, 1, #dirs, 1, items)
+        table.move(files, 1, #files, #items + 1, items)
+        table.sort(items, sorting)
+    else
         table.sort(files, sorting)
         if not collate.can_collate_mixed then -- keep folders sorted by name not reversed
             sorting = self:getSortingFunction(self.collates.strcoll)
         end
         table.sort(dirs, sorting)
+        table.move(dirs, 1, #dirs, 1, items)
+        table.move(files, 1, #files, #items + 1, items)
     end
 
     local item_table = {}
-
-    for i, dir in ipairs(dirs) do
-        local text, bidi_wrap_func, mandatory
-        if dir.text == "./." then -- added as content of an unreadable directory
-            text = _("Current folder not readable. Some content may not be shown.")
-        else
-            text = dir.text.."/"
-            bidi_wrap_func = BD.directory
-            if path then -- file browser or PathChooser
-                mandatory = self:getMenuItemMandatory(dir)
-            end
-        end
-        table.insert(item_table, {
-            text = text,
-            attr = dir.attr,
-            bidi_wrap_func = bidi_wrap_func,
-            mandatory = mandatory,
-            path = dir.fullpath,
-        })
-    end
 
     -- set to false to show all files in regular font
     -- set to "opened" to show opened files in bold
     -- otherwise, show new files in bold
     local show_file_in_bold = G_reader_settings:readSetting("show_file_in_bold")
 
-    for i, file in ipairs(files) do
-        local file_item = {
-            text = file.text,
-            attr = file.attr,
-            bidi_wrap_func = BD.filename,
-            mandatory = self:getMenuItemMandatory(file, collate),
-            path = file.fullpath,
-            is_file = true,
-        }
-        if show_file_in_bold ~= false then
-            file_item.bold = file.opened
-            if show_file_in_bold ~= "opened" then
-                file_item.bold = not file_item.bold
+    for i, item in ipairs(items) do
+        local text, bidi_wrap_func, mandatory, is_file, bold, dim
+        if item.attr.mode == "file" then
+            text = item.text
+            bidi_wrap_func = BD.filename
+            mandatory = self:getMenuItemMandatory(item, collate)
+            is_file = true
+            if show_file_in_bold ~= false then
+                bold = item.opened
+                if show_file_in_bold ~= "opened" then
+                    bold = not bold
+                end
+            end
+            if self.filemanager and self.filemanager.selected_files and self.filemanager.selected_files[item.fullpath] then
+                dim = true
+            end
+        else -- folder
+            if item.text == "./." then -- added as content of an unreadable directory
+                text = _("Current folder not readable. Some content may not be shown.")
+            else
+                text = item.text.."/"
+                bidi_wrap_func = BD.directory
+                if path then -- file browser or PathChooser
+                    mandatory = self:getMenuItemMandatory(item)
+                end
             end
         end
-        if self.filemanager and self.filemanager.selected_files and self.filemanager.selected_files[file.fullpath] then
-            file_item.dim = true
-        end
-        table.insert(item_table, file_item)
-    end
 
-    if collate.can_collate_mixed and collate_mixed then
-        table.sort(item_table, sorting)
+        table.insert(item_table, {
+            text = text,
+            attr = item.attr,
+            bidi_wrap_func = bidi_wrap_func,
+            mandatory = mandatory,
+            path = item.fullpath,
+            is_file = is_file,
+            bold = bold,
+            dim = dim,
+        })
     end
 
     if path then -- file browser or PathChooser
