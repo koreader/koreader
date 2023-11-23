@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local Collate = require("apps/filemanager/filemanagercollate")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local FFIUtil = require("ffi/util")
@@ -443,12 +444,12 @@ To:
     self.menu_items.sort_mixed = {
         text = _("Folders and files mixed"),
         enabled_func = function()
-            local collate = G_reader_settings:readSetting("collate")
-            return not FileChooser.isCollateNotForMixed(collate)
+            local collate = Collate:getCurrentCollate()
+            return collate.can_collate_mixed
         end,
         checked_func = function()
-            local collate = G_reader_settings:readSetting("collate")
-            return not FileChooser.isCollateNotForMixed(collate) and G_reader_settings:isTrue("collate_mixed")
+            local collate = Collate:getCurrentCollate()
+            return collate.can_collate_mixed and G_reader_settings:isTrue("collate_mixed")
         end,
         callback = function()
             G_reader_settings:flipNilOrFalse("collate_mixed")
@@ -851,37 +852,26 @@ dbg:guard(FileManagerMenu, 'setUpdateItemTable',
     end)
 
 function FileManagerMenu:getSortingMenuTable()
-    local collates = {
-        { _("name"), "strcoll" },
-        { _("name (natural sorting)"), "natural" },
-        { _("last read date"), "access" },
-        { _("date modified"), "date" },
-        { _("size"), "size" },
-        { _("type"), "type" },
-        { _("percent – unopened first"), "percent_unopened_first" },
-        { _("percent – unopened last"), "percent_unopened_last" },
-    }
+    local collates = Collate.getCollates()
     local sub_item_table = {}
     for i, v in ipairs(collates) do
         table.insert(sub_item_table, {
-            text = v[1],
+            text = v.text,
             checked_func = function()
-                return v[2] == G_reader_settings:readSetting("collate", "strcoll")
+                local _, current_collate_id = Collate:getCurrentCollate()
+                return v.id == current_collate_id
             end,
             callback = function()
-                G_reader_settings:saveSetting("collate", v[2])
+                G_reader_settings:saveSetting("collate", v.id)
+                self.ui.file_chooser:clearSortingCache()
                 self.ui.file_chooser:refreshPath()
             end,
         })
     end
     return {
         text_func = function()
-            local collate = G_reader_settings:readSetting("collate")
-            for i, v in ipairs(collates) do
-                if v[2] == collate then
-                    return T(_("Sort by: %1"), v[1])
-                end
-            end
+            local current_collate = Collate:getCurrentCollate()
+            return T(_("Sort by: %1"), current_collate.text)
         end,
         sub_item_table = sub_item_table,
     }

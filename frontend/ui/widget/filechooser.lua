@@ -1,8 +1,8 @@
 local BD = require("ui/bidi")
-local datetime = require("datetime")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
+local FileManagerCollate = require("apps/filemanager/filemanagercollate")
 local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local Menu = require("ui/widget/menu")
@@ -10,7 +10,6 @@ local UIManager = require("ui/uimanager")
 local ffi = require("ffi")
 local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
-local sort = require("sort")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -163,16 +162,8 @@ function FileChooser.getListItem(f, filename, attributes, collate)
         if G_reader_settings:readSetting("show_file_in_bold") ~= false then
             item.opened = DocSettings:hasSidecarFile(filename)
         end
-        if collate == "type" then
-            item.suffix = util.getFileNameSuffix(f)
-        elseif collate == "percent_unopened_first" or collate == "percent_unopened_last" then
-            local percent_finished
-            item.opened = DocSettings:hasSidecarFile(filename)
-            if item.opened then
-                local doc_settings = DocSettings:open(filename)
-                percent_finished = doc_settings:readSetting("percent_finished")
-            end
-            item.percent_finished = percent_finished or 0
+        if collate.item_func ~= nil then
+            item = collate.item_func(item)
         end
     end
     return item
@@ -180,53 +171,10 @@ end
 
 function FileChooser:getSortingFunction(collate, reverse_collate)
     local sorting
-    if collate == "strcoll" then
-        sorting = function(a, b)
-            return ffiUtil.strcoll(a.text, b.text)
-        end
-    elseif collate == "natural" then
-        local natsort
-        -- Only keep the cache if we're an *instance* of FileChooser
-        if self ~= FileChooser then
-            natsort, self.natsort_cache = sort.natsort_cmp(self.natsort_cache)
-        else
-            natsort = sort.natsort_cmp()
-        end
-        sorting = function(a, b)
-            return natsort(a.text, b.text)
-        end
-    elseif collate == "access" then
-        sorting = function(a, b)
-            return a.attr.access > b.attr.access
-        end
-    elseif collate == "date" then
-        sorting = function(a, b)
-            return a.attr.modification > b.attr.modification
-        end
-    elseif collate == "size" then
-        sorting = function(a, b)
-            return a.attr.size < b.attr.size
-        end
-    elseif collate == "type" then
-        sorting = function(a, b)
-            if (a.suffix or b.suffix) and a.suffix ~= b.suffix then
-                return ffiUtil.strcoll(a.suffix, b.suffix)
-            end
-            return ffiUtil.strcoll(a.text, b.text)
-        end
-    else -- collate == "percent_unopened_first" or collate == "percent_unopened_last"
-        sorting = function(a, b)
-            if a.opened == b.opened then
-                if a.opened then
-                    return a.percent_finished < b.percent_finished
-                end
-                return ffiUtil.strcoll(a.text, b.text)
-            end
-            if collate == "percent_unopened_first" then
-                return b.opened
-            end
-            return a.opened
-        end
+    if self ~= FileChooser then
+        sorting, self.sort_cache = collate.init_sort_func(self.sort_cache)
+    else
+        sorting = collate.init_sort_func()
     end
 
     if reverse_collate then
@@ -237,27 +185,25 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
     return sorting
 end
 
+function FileChooser:clearSortingCache()
+    self.sort_cache = nil
+end
+
 function FileChooser:genItemTableFromPath(path)
-    local collate = G_reader_settings:readSetting("collate", "strcoll")
+    local collate = FileManagerCollate:getCurrentCollate()
     local dirs, files = self:getList(path, collate)
     return self:genItemTable(dirs, files, path)
 end
 
-function FileChooser.isCollateNotForMixed(collate)
-    return collate == "size" or collate == "type"
-        or collate == "percent_unopened_first" or collate == "percent_unopened_last"
-end
-
 function FileChooser:genItemTable(dirs, files, path)
-    local collate = G_reader_settings:readSetting("collate")
+    local collate = FileManagerCollate:getCurrentCollate()
     local collate_mixed = G_reader_settings:isTrue("collate_mixed")
     local reverse_collate = G_reader_settings:isTrue("reverse_collate")
     local sorting = self:getSortingFunction(collate, reverse_collate)
-    local collate_not_for_mixed = self.isCollateNotForMixed(collate)
-    if collate_not_for_mixed or not collate_mixed then
+    if not collate.can_collate_mixed or not collate_mixed then
         table.sort(files, sorting)
-        if collate_not_for_mixed then -- keep folders sorted by name not reversed
-            sorting = self:getSortingFunction("strcoll")
+        if not collate.can_collate_mixed then -- keep folders sorted by name not reversed
+            sorting = self:getSortingFunction(FileManagerCollate:getCollateById("strcoll"))
         end
         table.sort(dirs, sorting)
     end
@@ -310,7 +256,7 @@ function FileChooser:genItemTable(dirs, files, path)
         table.insert(item_table, file_item)
     end
 
-    if not collate_not_for_mixed and collate_mixed then
+    if collate.can_collate_mixed and collate_mixed then
         table.sort(item_table, sorting)
     end
 
@@ -347,13 +293,8 @@ end
 function FileChooser:getMenuItemMandatory(item, collate)
     local text
     if collate then -- file
-        -- display the sorting parameter in mandatory
-        if collate == "access" then
-            text = datetime.secondsToDateTime(item.attr.access)
-        elseif collate == "date" then
-            text = datetime.secondsToDateTime(item.attr.modification)
-        elseif collate == "percent_unopened_first" or collate == "percent_unopened_last" then
-            text = item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
+        if collate.mandatory_func ~= nil then
+            text = collate.mandatory_func(item)
         else
             text = util.getFriendlySize(item.attr.size or 0)
         end
