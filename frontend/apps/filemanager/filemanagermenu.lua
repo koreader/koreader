@@ -443,12 +443,12 @@ To:
     self.menu_items.sort_mixed = {
         text = _("Folders and files mixed"),
         enabled_func = function()
-            local collate = G_reader_settings:readSetting("collate")
-            return not FileChooser.isCollateNotForMixed(collate)
+            local collate = FileChooser:getCollate()
+            return collate.can_collate_mixed
         end,
         checked_func = function()
-            local collate = G_reader_settings:readSetting("collate")
-            return not FileChooser.isCollateNotForMixed(collate) and G_reader_settings:isTrue("collate_mixed")
+            local collate = FileChooser:getCollate()
+            return collate.can_collate_mixed and G_reader_settings:isTrue("collate_mixed")
         end,
         callback = function()
             G_reader_settings:flipNilOrFalse("collate_mixed")
@@ -851,37 +851,27 @@ dbg:guard(FileManagerMenu, 'setUpdateItemTable',
     end)
 
 function FileManagerMenu:getSortingMenuTable()
-    local collates = {
-        { _("name"), "strcoll" },
-        { _("name (natural sorting)"), "natural" },
-        { _("last read date"), "access" },
-        { _("date modified"), "date" },
-        { _("size"), "size" },
-        { _("type"), "type" },
-        { _("percent – unopened first"), "percent_unopened_first" },
-        { _("percent – unopened last"), "percent_unopened_last" },
-    }
     local sub_item_table = {}
-    for i, v in ipairs(collates) do
+    for k, v in pairs(self.ui.file_chooser.collates) do
         table.insert(sub_item_table, {
-            text = v[1],
+            text = v.text,
+            menu_order = v.menu_order,
             checked_func = function()
-                return v[2] == G_reader_settings:readSetting("collate", "strcoll")
+                local _, id = self.ui.file_chooser:getCollate()
+                return k == id
             end,
             callback = function()
-                G_reader_settings:saveSetting("collate", v[2])
+                G_reader_settings:saveSetting("collate", k)
+                self.ui.file_chooser:clearSortingCache()
                 self.ui.file_chooser:refreshPath()
             end,
         })
     end
+    table.sort(sub_item_table, function(a, b) return a.menu_order < b.menu_order end)
     return {
         text_func = function()
-            local collate = G_reader_settings:readSetting("collate")
-            for i, v in ipairs(collates) do
-                if v[2] == collate then
-                    return T(_("Sort by: %1"), v[1])
-                end
-            end
+            local collate = self.ui.file_chooser:getCollate()
+            return T(_("Sort by: %1"), collate.text)
         end,
         sub_item_table = sub_item_table,
     }

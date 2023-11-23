@@ -124,7 +124,7 @@ function FileSearcher:getList()
         ["/proc"] = true,
         ["/sys"] = true,
     }
-    local collate = G_reader_settings:readSetting("collate")
+    local collate = FileChooser:getCollate()
     local search_string = self.search_string
     if search_string ~= "*" then -- one * to show all files
         if not self.case_sensitive then
