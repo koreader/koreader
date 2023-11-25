@@ -18,6 +18,7 @@ end
 function SDLPowerD:setIntensityHW(intensity)
     require("logger").info("set brightness to", intensity)
     self.hw_intensity = intensity or self.hw_intensity
+    self:_decideFrontlightState()
 end
 
 function SDLPowerD:frontlightWarmthHW()

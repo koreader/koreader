@@ -43,6 +43,7 @@ function BasePowerD:new(o)
 end
 
 function BasePowerD:init() end
+--- @note: This should *always* call self:_decideFrontlightState() in its coda (unless you have a custom isFrontlightOn implementation)!
 function BasePowerD:setIntensityHW(intensity) end
 --- @note: Unlike the "public" setWarmth, this one takes a value in the *native* scale!
 function BasePowerD:setWarmthHW(warmth) end
@@ -207,7 +208,6 @@ function BasePowerD:setIntensity(intensity)
     if not self.device:hasFrontlight() then return false end
     if intensity == self:frontlightIntensity() then return false end
     self.fl_intensity = self:normalizeIntensity(intensity)
-    self:_decideFrontlightState()
     logger.dbg("set light intensity", self.fl_intensity)
     self:setIntensityHW(self.fl_intensity)
     self:stateChanged()
