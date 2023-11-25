@@ -2724,6 +2724,14 @@ local dictionaries = {
         url = "https://khoicandev.github.io/ovdp-mirror/en-vi.tar.gz"
     },
     {
+        name = "English-Persian dictionary",
+        lang_in = "eng",
+        lang_out = "fas",
+        entries = 145075,
+        license = "MIT, https://github.com/hossein1376/English-Persian-Kindle-Custom-Dictionary",
+        url = "https://github.com/Monirzadeh/English-Persian-Kindle-Custom-Dictionary/raw/koreader/English Persian Dictionary.tar.gz"
+    },
+    {
         name = "Vietnamese-English dictionary",
         lang_in = "vie",
         lang_out = "eng",
