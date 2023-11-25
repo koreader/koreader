@@ -1326,15 +1326,8 @@ function KindleScribe:init()
         end
     end
 
-    -- Get accelerometer device by looking for EV=9
-    local std_out = io.popen("grep -e 'Handlers\\|EV=' /proc/bus/input/devices | grep -B1 'EV=9' | grep -o 'event[0-9]\\{1,2\\}'", "r")
-    if std_out then
-        local rotation_dev = std_out:read("*line")
-        std_out:close()
-        if rotation_dev then
-            self.input.open("/dev/input/"..rotation_dev)
-        end
-    end
+    -- Get accelerometer device
+    self.input.open("/dev/input/by-path/platform-11007000.i2c-event-joystick")
 
     self.input.open(self.touch_dev)
     self.input.open("fake_events")
