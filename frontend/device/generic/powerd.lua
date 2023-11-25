@@ -44,7 +44,9 @@ end
 
 function BasePowerD:init() end
 --- @note: This should *always* call self:_decideFrontlightState() in its coda (unless you have a custom isFrontlightOn implementation)!
-function BasePowerD:setIntensityHW(intensity) end
+function BasePowerD:setIntensityHW(intensity)
+    self:_decideFrontlightState()
+end
 --- @note: Unlike the "public" setWarmth, this one takes a value in the *native* scale!
 function BasePowerD:setWarmthHW(warmth) end
 function BasePowerD:getCapacityHW() return 0 end
