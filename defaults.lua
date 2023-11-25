@@ -69,6 +69,10 @@ DTAP_ZONE_BOTTOM_LEFT = {x = 0, y = 7/8, w = 1/8, h = 1/8},
 DTAP_ZONE_BOTTOM_RIGHT = {x = 7/8, y = 7/8, w = 1/8, h = 1/8},
 DDOUBLE_TAP_ZONE_NEXT_CHAPTER = {x = 1/4, y = 0, w = 3/4, h = 1},
 DDOUBLE_TAP_ZONE_PREV_CHAPTER = {x = 0, y = 0, w = 1/4, h = 1},
+DSWIPE_ZONE_LEFT_EDGE = { x = 0, y = 0, w = 1/8, h = 1},
+DSWIPE_ZONE_RIGHT_EDGE = { x = 7/8, y = 0, w = 1/8, h = 1},
+DSWIPE_ZONE_TOP_EDGE = { x = 0, y = 0, w = 1, h = 1/8},
+DSWIPE_ZONE_BOTTOM_EDGE = { x = 0, y = 7/8, w = 1, h = 1/8},
 
 -- koptreader config defaults
 DKOPTREADER_CONFIG_FONT_SIZE = 1.0,        -- range from 0.1 to 3.0
