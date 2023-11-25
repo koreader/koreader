@@ -629,6 +629,7 @@ local KindleScribe = Kindle:extend{
     --       but the mix is device-specific, we don't have access to the LUT for the mix powerd is using,
     --       and the widget is designed for the Kobo Aura One anyway, so, hahaha, nope.
     hasNaturalLightMixer = yes,
+    hasGSensor = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event",
     -- NOTE: TBC whether dithering actually works on Bellatrix3...
@@ -1317,6 +1318,23 @@ function KindleScribe:init()
     self.screen:_MTK_ToggleFastMode(true)
 
     Kindle.init(self)
+
+    self.input:registerEventAdjustHook(ZeldaGyroTranslation)
+    self.input.handleMiscEv = function(this, ev)
+        if ev.code == C.MSC_GYRO then
+            return this:handleGyroEv(ev)
+        end
+    end
+
+    -- Get accelerometer device by looking for EV=9
+    local std_out = io.popen("grep -e 'Handlers\\|EV=' /proc/bus/input/devices | grep -B1 'EV=9' | grep -o 'event[0-9]\\{1,2\\}'", "r")
+    if std_out then
+        local rotation_dev = std_out:read("*line")
+        std_out:close()
+        if rotation_dev then
+            self.input.open("/dev/input/"..rotation_dev)
+        end
+    end
 
     self.input.open(self.touch_dev)
     self.input.open("fake_events")
