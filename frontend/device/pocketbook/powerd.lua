@@ -41,6 +41,9 @@ function PocketBookPowerD:setIntensityHW(intensity)
     else
         inkview.SetFrontlightState(intensity)
     end
+
+    -- We have a custom isFrontlightOn implementation, so this is redundant
+    self:_decideFrontlightState()
 end
 
 function PocketBookPowerD:isFrontlightOn()
