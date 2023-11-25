@@ -965,8 +965,10 @@ function KindleOasis:init()
 end
 
 -- HAL for gyro orientation switches (EV_ABS:ABS_PRESSURE (?!) w/ custom values to EV_MSC:MSC_GYRO w/ our own custom values)
-local function ZeldaGyroTranslation(this, ev)
-    -- c.f., drivers/input/misc/accel/bma2x2.c
+local function ZeldaBellatrixGyroTranslation(this, ev)
+    -- See source code:
+    -- c.f., drivers/input/misc/accel/bma2x2.c for KOA2/KOA3
+    -- c.f., drivers/input/misc/kx132/kx132.h for KS
     local UPWARD_PORTRAIT_UP_INTERRUPT_HAPPENED     = 15
     local UPWARD_PORTRAIT_DOWN_INTERRUPT_HAPPENED   = 16
     local UPWARD_LANDSCAPE_LEFT_INTERRUPT_HAPPENED  = 17
@@ -1054,7 +1056,7 @@ function KindleOasis2:init()
 
     Kindle.init(self)
 
-    self.input:registerEventAdjustHook(ZeldaGyroTranslation)
+    self.input:registerEventAdjustHook(ZeldaBellatrixGyroTranslation)
     self.input.handleMiscEv = function(this, ev)
         if ev.code == C.MSC_GYRO then
             return this:handleGyroEv(ev)
@@ -1130,7 +1132,7 @@ function KindleOasis3:init()
 
     Kindle.init(self)
 
-    self.input:registerEventAdjustHook(ZeldaGyroTranslation)
+    self.input:registerEventAdjustHook(ZeldaBellatrixGyroTranslation)
     self.input.handleMiscEv = function(this, ev)
         if ev.code == C.MSC_GYRO then
             return this:handleGyroEv(ev)
@@ -1319,7 +1321,7 @@ function KindleScribe:init()
 
     Kindle.init(self)
 
-    self.input:registerEventAdjustHook(ZeldaGyroTranslation)
+    self.input:registerEventAdjustHook(ZeldaBellatrixGyroTranslation)
     self.input.handleMiscEv = function(this, ev)
         if ev.code == C.MSC_GYRO then
             return this:handleGyroEv(ev)
