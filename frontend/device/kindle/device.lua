@@ -1331,6 +1331,9 @@ function KindleScribe:init()
 
     self.input.open(self.touch_dev)
     self.input.open("fake_events")
+
+    self.input.wacom_protocol = true
+    self.input.open("/dev/input/event4")
 end
 
 function KindleTouch:exit()
