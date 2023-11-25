@@ -114,8 +114,8 @@ local settingsList = {
     toggle_flash_on_chapter_boundaries = {category="none", event="ToggleFlashOnChapterBoundaries", title=_("Toggle flashing on chapter boundaries"), screen=true, condition=Device:hasEinkScreen()},
     set_no_flash_on_second_chapter_page = {category="string", event="SetNoFlashOnSecondChapterPage", title=_("Never flash on chapter's 2nd page"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("on"), _("off")}},
     toggle_no_flash_on_second_chapter_page = {category="none", event="ToggleNoFlashOnSecondChapterPage", title=_("Toggle flashing on chapter's 2nd page"), screen=true, condition=Device:hasEinkScreen()},
-    set_flash_on_pages_with_images = {category="string", event="SetFlashOnPagesWithImages", title=_("Always flash around pages with images"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("on"), _("off")}},
-    toggle_flash_on_pages_with_images = {category="none", event="ToggleFlashOnPagesWithImages", title=_("Toggle flashing around pages with images"), screen=true, condition=Device:hasEinkScreen(), separator=true},
+    set_flash_on_pages_with_images = {category="string", event="SetFlashOnPagesWithImages", title=_("Always flash on pages with images"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("on"), _("off")}},
+    toggle_flash_on_pages_with_images = {category="none", event="ToggleFlashOnPagesWithImages", title=_("Toggle flashing on pages with images"), screen=true, condition=Device:hasEinkScreen(), separator=true},
     ----
 
     -- File browser
