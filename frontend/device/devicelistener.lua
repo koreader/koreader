@@ -187,7 +187,7 @@ if Device:hasFrontlight() then
     function DeviceListener:onToggleFrontlight()
         local powerd = Device:getPowerDevice()
         local new_text
-        if powerd.is_fl_on then
+        if powerd:isFrontlightOn() then
             new_text = _("Frontlight disabled.")
         else
             new_text = _("Frontlight enabled.")
