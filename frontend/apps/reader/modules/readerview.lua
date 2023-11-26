@@ -71,6 +71,10 @@ local ReaderView = OverlapGroup:extend{
     -- might be directly updated by readerpaging/readerrolling when
     -- they handle some panning/scrolling, to request "fast" refreshes
     currently_scrolling = false,
+
+    -- image content stats of the current page, if supported by the Document engine
+    img_count = nil,
+    img_coverage = nil,
 }
 
 function ReaderView:init()
@@ -102,6 +106,10 @@ function ReaderView:init()
     self.visible_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
     self.page_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
     self.dim_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
+
+    -- Zero-init for sanity
+    self.img_count = 0
+    self.img_coverage = 0
 
     self:addWidgets()
     self.emitHintPageEvent = function()
@@ -258,8 +266,11 @@ function ReaderView:paintTo(bb, x, y)
         -- Whereas for CRe,
         -- If we're attempting to show a large enough amount of image data, request dithering (without triggering another repaint ;)).
         local img_count, img_coverage = self.document:getDrawnImagesStatistics()
-        -- With some nil guards because this may not be implemented in every engine ;).
-        if img_count and img_count > 0 and img_coverage and img_coverage >= 0.075 then
+        -- We also want to deal with paging *away* from image content, which would have adverse effect on ghosting.
+        local coverage_diff = math.abs(img_coverage - self.img_coverage)
+        -- Which is why we remember the stats of the *previous* page.
+        self.img_count, self.img_coverage = img_count, img_coverage
+        if img_coverage >= 0.075 or coverage_diff >= 0.075 then
             self.dialog.dithered = true
             -- Request a flashing update while we're at it, but only if it's the first time we're painting it
             if self.state.drawn == false and G_reader_settings:nilOrTrue("refresh_on_pages_with_images") then

@@ -23,6 +23,7 @@ describe("Frontlight function in PowerD", function()
         end
         PowerD.setIntensityHW = function(self, intensity)
             self.frontlight = intensity
+            self:_decideFrontlightState()
         end
     end)
 

@@ -244,6 +244,7 @@ function Gestures:genMenu(ges)
         end,
     })
     Dispatcher:addSubMenu(self, sub_items, self.gestures, ges)
+    sub_items.max_per_page = nil -- restore default, settings in page 2
     table.insert(sub_items, {
         text = _("Anchor QuickMenu to gesture position"),
         checked_func = function()
@@ -784,21 +785,33 @@ function Gestures:setupGesture(ges)
         ratio_w = 1, ratio_h = 1,
     }
 
+    local dswipe_zone_left_edge = G_defaults:readSetting("DSWIPE_ZONE_LEFT_EDGE")
     local zone_left_edge = {
-        ratio_x = 0, ratio_y = 0,
-        ratio_w = 1/8, ratio_h = 1,
+        ratio_x = dswipe_zone_left_edge.x,
+        ratio_y = dswipe_zone_left_edge.y,
+        ratio_w = dswipe_zone_left_edge.w,
+        ratio_h = dswipe_zone_left_edge.h,
     }
+    local dswipe_zone_right_edge = G_defaults:readSetting("DSWIPE_ZONE_RIGHT_EDGE")
     local zone_right_edge = {
-        ratio_x = 7/8, ratio_y = 0,
-        ratio_w = 1/8, ratio_h = 1,
+        ratio_x = dswipe_zone_right_edge.x,
+        ratio_y = dswipe_zone_right_edge.y,
+        ratio_w = dswipe_zone_right_edge.w,
+        ratio_h = dswipe_zone_right_edge.h,
     }
+    local dswipe_zone_top_edge = G_defaults:readSetting("DSWIPE_ZONE_TOP_EDGE")
     local zone_top_edge = {
-        ratio_x = 0, ratio_y = 0,
-        ratio_w = 1, ratio_h = 1/8,
+        ratio_x = dswipe_zone_top_edge.x,
+        ratio_y = dswipe_zone_top_edge.y,
+        ratio_w = dswipe_zone_top_edge.w,
+        ratio_h = dswipe_zone_top_edge.h,
     }
+    local dswipe_zone_bottom_edge = G_defaults:readSetting("DSWIPE_ZONE_BOTTOM_EDGE")
     local zone_bottom_edge = {
-        ratio_x = 0, ratio_y = 7/8,
-        ratio_w = 1, ratio_h = 1/8,
+        ratio_x = dswipe_zone_bottom_edge.x,
+        ratio_y = dswipe_zone_bottom_edge.y,
+        ratio_w = dswipe_zone_bottom_edge.w,
+        ratio_h = dswipe_zone_bottom_edge.h,
     }
 
     local dtap_zone_top_left = G_defaults:readSetting("DTAP_ZONE_TOP_LEFT")
