@@ -1321,7 +1321,7 @@ function KindleScribe:init()
 
     Kindle.init(self)
 
-    -- Setup accelerometer input drivers
+    -- Setup accelerometer rotation input
     self.input:registerEventAdjustHook(KindleGyroTransform)
     self.input.handleMiscEv = function(this, ev)
         if ev.code == C.MSC_GYRO then
@@ -1334,7 +1334,7 @@ function KindleScribe:init()
     self.input.open(self.touch_dev)
     self.input.open("fake_events")
 
-    -- Setup input drivers for pen
+    -- Setup pen input
     self.input.wacom_protocol = true
     self.input.open("/dev/input/event4")
 end
