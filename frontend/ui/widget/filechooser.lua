@@ -168,9 +168,9 @@ local FileChooser = Menu:extend{
             end,
             item_func = function(item)
                 local percent_finished
-                item.opened = DocSettings:hasSidecarFile(item.fullpath)
+                item.opened = DocSettings:hasSidecarFile(item.path)
                 if item.opened then
-                    local doc_settings = DocSettings:open(item.fullpath)
+                    local doc_settings = DocSettings:open(item.path)
                     percent_finished = doc_settings:readSetting("percent_finished")
                 end
                 item.percent_finished = percent_finished or 0
@@ -197,9 +197,9 @@ local FileChooser = Menu:extend{
             end,
             item_func = function(item)
                 local percent_finished
-                item.opened = DocSettings:hasSidecarFile(item.fullpath)
+                item.opened = DocSettings:hasSidecarFile(item.path)
                 if item.opened then
-                    local doc_settings = DocSettings:open(item.fullpath)
+                    local doc_settings = DocSettings:open(item.path)
                     percent_finished = doc_settings:readSetting("percent_finished")
                 end
                 item.percent_finished = percent_finished or 0
@@ -247,33 +247,29 @@ function FileChooser:getList(path, collate)
         unreadable_dir_content[path] = nil
         for f in iter, dir_obj do
             if self.show_hidden or not util.stringStartsWith(f, ".") then
-                local filename = path.."/"..f
-                local attributes = lfs.attributes(filename)
-                if attributes ~= nil then
-                    local item = true
-                    if attributes.mode == "directory" and f ~= "." and f ~= ".." then
-                        if self:show_dir(f) then
-                            if collate then -- when collate == nil count only to display in folder mandatory
-                                item = FileChooser.getListItem(f, filename, attributes, collate)
-                            end
-                            table.insert(dirs, item)
-                        end
-                    -- Always ignore macOS resource forks.
-                    elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") then
-                        if self:show_file(f, filename) then
-                            if collate then -- when collate == nil count only to display in folder mandatory
-                                item = FileChooser.getListItem(f, filename, attributes, collate)
-                            end
-                            table.insert(files, item)
-                        end
+                local fullpath = path.."/"..f
+                local attributes = lfs.attributes(fullpath) or {}
+                local item = true
+                if attributes.mode == "directory" and f ~= "." and f ~= ".."
+                        and self:show_dir(f) then
+                    if collate then -- when collate == nil count only to display in folder mandatory
+                        item = self:getListItem(path, f, fullpath, attributes, collate)
                     end
+                    table.insert(dirs, item)
+                -- Always ignore macOS resource forks.
+                elseif attributes.mode == "file" and not util.stringStartsWith(f, "._")
+                        and self:show_file(f, fullpath) then
+                    if collate then -- when collate == nil count only to display in folder mandatory
+                        item = self:getListItem(path, f, fullpath, attributes, collate)
+                    end
+                    table.insert(files, item)
                 end
             end
         end
     else -- error, probably "permission denied"
         if unreadable_dir_content[path] then
             -- Add this dummy item that will be replaced with a message by genItemTable()
-            table.insert(dirs, FileChooser.getListItem("./.", path, lfs.attributes(path)))
+            table.insert(dirs, FileChooser.getListItem(path, "./.", path, lfs.attributes(path)))
             -- If we knew about some content (if we had come up from them
             -- to this directory), have them shown
             for k, v in pairs(unreadable_dir_content[path]) do
@@ -288,22 +284,44 @@ function FileChooser:getList(path, collate)
     return dirs, files
 end
 
-function FileChooser.getListItem(f, filename, attributes, collate)
+function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
     local item = {
         text = f,
-        fullpath = filename,
+        path = fullpath,
         attr = attributes,
     }
-    if collate.can_collate_mixed and attributes.mode == "directory" then
+    if attributes.mode == "file" then
+        -- set to false to show all files in regular font
+        -- set to "opened" to show opened files in bold
+        -- otherwise, show new files in bold
+        local show_file_in_bold = G_reader_settings:readSetting("show_file_in_bold")
+        item.bidi_wrap_func = BD.filename
+        item.is_file = true
+        if show_file_in_bold ~= false then
+            item.opened = DocSettings:hasSidecarFile(fullpath)
+            item.bold = item.opened
+            if show_file_in_bold ~= "opened" then
+                item.bold = not item.bold
+            end
+        end
+        item.dim = self.filemanager and self.filemanager.selected_files
+                   and self.filemanager.selected_files[item.path]
         if collate.item_func ~= nil then
             item = collate.item_func(item)
         end
-    elseif attributes.mode == "file" then
-        if G_reader_settings:readSetting("show_file_in_bold") ~= false then
-            item.opened = DocSettings:hasSidecarFile(filename)
-        end
-        if collate.item_func ~= nil then
-            item = collate.item_func(item)
+        item.mandatory = self:getMenuItemMandatory(item, collate)
+    else -- folder
+        if item.text == "./." then -- added as content of an unreadable directory
+            item.text = _("Current folder not readable. Some content may not be shown.")
+        else
+            item.text = item.text.."/"
+            item.bidi_wrap_func = BD.directory
+            if collate.can_collate_mixed and collate.item_func ~= nil then
+                item = collate.item_func(item)
+            end
+            if dirpath then -- file browser or PathChooser
+                item.mandatory = self:getMenuItemMandatory(item)
+            end
         end
     end
     return item
@@ -353,66 +371,19 @@ function FileChooser:genItemTable(dirs, files, path)
     local reverse_collate = G_reader_settings:isTrue("reverse_collate")
     local sorting = self:getSortingFunction(collate, reverse_collate)
 
-    local items = {}
+    local item_table = {}
     if collate.can_collate_mixed and collate_mixed then
-        table.move(dirs, 1, #dirs, 1, items)
-        table.move(files, 1, #files, #items + 1, items)
-        table.sort(items, sorting)
+        table.move(dirs, 1, #dirs, 1, item_table)
+        table.move(files, 1, #files, #item_table + 1, item_table)
+        table.sort(item_table, sorting)
     else
         table.sort(files, sorting)
         if not collate.can_collate_mixed then -- keep folders sorted by name not reversed
             sorting = self:getSortingFunction(self.collates.strcoll)
         end
         table.sort(dirs, sorting)
-        table.move(dirs, 1, #dirs, 1, items)
-        table.move(files, 1, #files, #items + 1, items)
-    end
-
-    local item_table = {}
-
-    -- set to false to show all files in regular font
-    -- set to "opened" to show opened files in bold
-    -- otherwise, show new files in bold
-    local show_file_in_bold = G_reader_settings:readSetting("show_file_in_bold")
-
-    for i, item in ipairs(items) do
-        local text, bidi_wrap_func, mandatory, is_file, bold, dim
-        if item.attr.mode == "file" then
-            text = item.text
-            bidi_wrap_func = BD.filename
-            mandatory = self:getMenuItemMandatory(item, collate)
-            is_file = true
-            if show_file_in_bold ~= false then
-                bold = item.opened
-                if show_file_in_bold ~= "opened" then
-                    bold = not bold
-                end
-            end
-            if self.filemanager and self.filemanager.selected_files and self.filemanager.selected_files[item.fullpath] then
-                dim = true
-            end
-        else -- folder
-            if item.text == "./." then -- added as content of an unreadable directory
-                text = _("Current folder not readable. Some content may not be shown.")
-            else
-                text = item.text.."/"
-                bidi_wrap_func = BD.directory
-                if path then -- file browser or PathChooser
-                    mandatory = self:getMenuItemMandatory(item)
-                end
-            end
-        end
-
-        table.insert(item_table, {
-            text = text,
-            attr = item.attr,
-            bidi_wrap_func = bidi_wrap_func,
-            mandatory = mandatory,
-            path = item.fullpath,
-            is_file = is_file,
-            bold = bold,
-            dim = dim,
-        })
+        table.move(dirs, 1, #dirs, 1, item_table)
+        table.move(files, 1, #files, #item_table + 1, item_table)
     end
 
     if path then -- file browser or PathChooser
@@ -454,12 +425,12 @@ function FileChooser:getMenuItemMandatory(item, collate)
             text = util.getFriendlySize(item.attr.size or 0)
         end
     else -- folder, count number of folders and files inside it
-        local sub_dirs, dir_files = self:getList(item.fullpath)
+        local sub_dirs, dir_files = self:getList(item.path)
         text = T("%1 \u{F016}", #dir_files)
         if #sub_dirs > 0 then
             text = T("%1 \u{F114} ", #sub_dirs) .. text
         end
-        if FileManagerShortcuts:hasFolderShortcut(item.fullpath) then
+        if FileManagerShortcuts:hasFolderShortcut(item.path) then
             text = "☆ " .. text
         end
     end
@@ -504,7 +475,7 @@ function FileChooser:changeToPath(path, focused_path)
         if not unreadable_dir_content[path][focused_path] then
             unreadable_dir_content[path][focused_path] = {
                 text = focused_path:sub(#path > 1 and #path+2 or 2),
-                fullpath = focused_path,
+                path = focused_path,
                 attr = lfs.attributes(focused_path),
             }
         end
