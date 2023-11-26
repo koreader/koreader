@@ -2729,7 +2729,7 @@ local dictionaries = {
         lang_out = "fas",
         entries = 145075,
         license = "MIT, https://github.com/hossein1376/English-Persian-Kindle-Custom-Dictionary",
-        url = "https://github.com/Monirzadeh/English-Persian-Kindle-Custom-Dictionary/raw/koreader/English Persian Dictionary.tar.gz"
+        url = "https://github.com/hossein1376/English-Persian-Kindle-Custom-Dictionary/raw/main/English%20Persian%20Dictionary.tar.gz"
     },
     {
         name = "Vietnamese-English dictionary",
