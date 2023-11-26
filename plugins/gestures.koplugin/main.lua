@@ -244,6 +244,7 @@ function Gestures:genMenu(ges)
         end,
     })
     Dispatcher:addSubMenu(self, sub_items, self.gestures, ges)
+    sub_items.max_per_page = nil -- restore default, settings in page 2
     table.insert(sub_items, {
         text = _("Anchor QuickMenu to gesture position"),
         checked_func = function()
