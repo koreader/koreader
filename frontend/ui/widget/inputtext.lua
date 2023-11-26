@@ -175,12 +175,14 @@ local function initTouchEvents()
                         })
                         self.selection_start_pos = nil
                         self.do_select = false
+                        self._hold_handled = true
                         return true
                     else -- select start
                         self.selection_start_pos = self.charpos
                         UIManager:show(Notification:new{
-                            text = _("Set cursor to end of selection, then hold."),
+                            text = _("Set cursor to end of selection, then hold in the text box."),
                         })
+                        self._hold_handled = true
                         return true
                     end
                 end
@@ -243,7 +245,7 @@ local function initTouchEvents()
                                 callback = function()
                                     UIManager:close(clipboard_dialog)
                                     UIManager:show(Notification:new{
-                                        text = _("Set cursor to start of selection, then hold."),
+                                        text = _("Set cursor to start of selection, then hold in the text box."),
                                     })
                                     self.do_select = true
                                 end,
