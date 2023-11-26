@@ -965,7 +965,7 @@ function KindleOasis:init()
 end
 
 -- HAL for gyro orientation switches (EV_ABS:ABS_PRESSURE (?!) w/ custom values to EV_MSC:MSC_GYRO w/ our own custom values)
-local function ZeldaBellatrixGyroTranslation(this, ev)
+local function KindleGyroTransform(this, ev)
     -- See source code:
     -- c.f., drivers/input/misc/accel/bma2x2.c for KOA2/KOA3
     -- c.f., drivers/input/misc/kx132/kx132.h for KS
@@ -1056,7 +1056,7 @@ function KindleOasis2:init()
 
     Kindle.init(self)
 
-    self.input:registerEventAdjustHook(ZeldaBellatrixGyroTranslation)
+    self.input:registerEventAdjustHook(KindleGyroTransform)
     self.input.handleMiscEv = function(this, ev)
         if ev.code == C.MSC_GYRO then
             return this:handleGyroEv(ev)
@@ -1132,7 +1132,7 @@ function KindleOasis3:init()
 
     Kindle.init(self)
 
-    self.input:registerEventAdjustHook(ZeldaBellatrixGyroTranslation)
+    self.input:registerEventAdjustHook(KindleGyroTransform)
     self.input.handleMiscEv = function(this, ev)
         if ev.code == C.MSC_GYRO then
             return this:handleGyroEv(ev)
@@ -1321,19 +1321,20 @@ function KindleScribe:init()
 
     Kindle.init(self)
 
-    self.input:registerEventAdjustHook(ZeldaBellatrixGyroTranslation)
+    -- Setup accelerometer input drivers
+    self.input:registerEventAdjustHook(KindleGyroTransform)
     self.input.handleMiscEv = function(this, ev)
         if ev.code == C.MSC_GYRO then
             return this:handleGyroEv(ev)
         end
     end
-
     -- Get accelerometer device
     self.input.open("/dev/input/by-path/platform-11007000.i2c-event-joystick")
 
     self.input.open(self.touch_dev)
     self.input.open("fake_events")
 
+    -- Setup input drivers for pen
     self.input.wacom_protocol = true
     self.input.open("/dev/input/event4")
 end
