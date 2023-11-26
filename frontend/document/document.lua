@@ -40,6 +40,9 @@ local Document = {
     -- bb type needed by engine for color rendering
     color_bb_type = Blitbuffer.TYPE_BBRGB32,
 
+    -- image content stats, if supported by the engine
+    _drawn_images_count = nil,
+    _drawn_images_surface_ratio = nil,
 }
 
 function Document:extend(subclass_prototype)
@@ -92,6 +95,10 @@ function Document:_init()
     self.hw_dithering = false
     -- Whether SW dithering is enabled
     self.sw_dithering = false
+
+    -- Zero-init those to be able to drop the nil guards at runtime
+    self._drawn_images_count = 0
+    self._drawn_images_surface_ratio = 0
 end
 
 -- override this method to open a document
@@ -522,6 +529,7 @@ end
 
 function Document:getDrawnImagesStatistics()
     -- For now, only set by CreDocument in CreDocument:drawCurrentView()
+    -- Returns 0, 0 (as per Document:init) otherwise.
     return self._drawn_images_count, self._drawn_images_surface_ratio
 end
 
