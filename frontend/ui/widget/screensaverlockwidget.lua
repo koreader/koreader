@@ -129,10 +129,14 @@ end
 -- NOTE: We duplicate this bit of logic from ScreenSaverWidget, because not every Screensaver config will spawn one...
 function ScreenSaverLockWidget:onResume()
     Device.screen_saver_lock = true
+    -- Show the not-a-widget InfoMessage
+    self:showWaitForGestureMessage()
 end
 
 function ScreenSaverLockWidget:onSuspend()
     Device.screen_saver_lock = false
+    -- Drop the not-a-widget InfoMessage
+    UIManager:setDirty("all", "full")
 end
 
 return ScreenSaverLockWidget
