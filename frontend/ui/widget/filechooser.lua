@@ -148,7 +148,6 @@ local FileChooser = Menu:extend{
             end,
             item_func = function(item)
                 item.suffix = util.getFileNameSuffix(item.text)
-                return item
             end,
         },
         percent_unopened_first = {
@@ -174,7 +173,6 @@ local FileChooser = Menu:extend{
                     percent_finished = doc_settings:readSetting("percent_finished")
                 end
                 item.percent_finished = percent_finished or 0
-                return item
             end,
             mandatory_func = function(item)
                 return item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
@@ -203,7 +201,6 @@ local FileChooser = Menu:extend{
                     percent_finished = doc_settings:readSetting("percent_finished")
                 end
                 item.percent_finished = percent_finished or 0
-                return item
             end,
             mandatory_func = function(item)
                 return item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
@@ -269,7 +266,7 @@ function FileChooser:getList(path, collate)
     else -- error, probably "permission denied"
         if unreadable_dir_content[path] then
             -- Add this dummy item that will be replaced with a message by genItemTable()
-            table.insert(dirs, FileChooser.getListItem(path, "./.", path, lfs.attributes(path)))
+            table.insert(dirs, FileChooser:getListItem(path, "./.", path, lfs.attributes(path)), collate)
             -- If we knew about some content (if we had come up from them
             -- to this directory), have them shown
             for k, v in pairs(unreadable_dir_content[path]) do
@@ -307,7 +304,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         item.dim = self.filemanager and self.filemanager.selected_files
                    and self.filemanager.selected_files[item.path]
         if collate.item_func ~= nil then
-            item = collate.item_func(item)
+            collate.item_func(item)
         end
         item.mandatory = self:getMenuItemMandatory(item, collate)
     else -- folder
@@ -317,7 +314,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
             item.text = item.text.."/"
             item.bidi_wrap_func = BD.directory
             if collate.can_collate_mixed and collate.item_func ~= nil then
-                item = collate.item_func(item)
+                collate.item_func(item)
             end
             if dirpath then -- file browser or PathChooser
                 item.mandatory = self:getMenuItemMandatory(item)
