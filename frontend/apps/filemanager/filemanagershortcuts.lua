@@ -235,7 +235,6 @@ end
 function FileManagerShortcuts:onShowFolderShortcutsDialog(select_callback)
     self.shortcuts_menu = Menu:new{
         title = self.title,
-        show_parent = self.ui,
         covers_fullscreen = true,
         is_borderless = true,
         is_popout = false,
