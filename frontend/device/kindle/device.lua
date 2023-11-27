@@ -1307,7 +1307,7 @@ end
 function KindleScribe:init()
     -- temporarily wake up awesome
     if os.getenv("AWESOME_STOPPED") == "yes" then
-        os.execute("killall -CONT awesome") 
+        os.execute("killall -CONT awesome")
     end
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
