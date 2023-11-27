@@ -161,7 +161,7 @@ function FileSearcher:getList()
                             table.insert(new_dirs, fullpath)
                         end
                         if self:isFileMatch(f, fullpath, search_string) then
-                            table.insert(dirs, FileChooser:getListItem(nil, f, fullpath, attributes))
+                            table.insert(dirs, FileChooser:getListItem(nil, f, fullpath, attributes, collate))
                         end
                     -- Always ignore macOS resource forks, too.
                     elseif attributes.mode == "file" and not util.stringStartsWith(f, "._")
