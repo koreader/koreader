@@ -1323,7 +1323,7 @@ function KindleScribe:init()
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
     self.screen:_MTK_ToggleFastMode(true)
 
-    -- @fixme The same quirks as on the Oasis 2 and 3 apply ;).
+    --- @fixme The same quirks as on the Oasis 2 and 3 apply ;).
     -- in regular mode, awesome is woken up for a brief moment. In no-framework mode, this works as is.
     local haslipc, lipc = pcall(require, "liblipclua")
     if haslipc and lipc then
