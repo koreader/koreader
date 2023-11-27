@@ -1305,6 +1305,10 @@ function KindleBasic4:init()
 end
 
 function KindleScribe:init()
+    -- temporarily wake up awesome
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -CONT awesome") 
+    end
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -1318,6 +1322,40 @@ function KindleScribe:init()
 
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
     self.screen:_MTK_ToggleFastMode(true)
+
+    -- @fixme The same quirks as on the Oasis 2 and 3 apply ;).
+    -- in regular mode, awesome is woken up for a brief moment. In no-framework mode, this works as is.
+    local haslipc, lipc = pcall(require, "liblipclua")
+    if haslipc and lipc then
+        local lipc_handle = lipc.init("com.github.koreader.screen")
+        if lipc_handle then
+            local orientation_code = lipc_handle:get_string_property(
+                "com.lab126.winmgr", "accelerometer")
+            logger.dbg("orientation_code = ", orientation_code)
+            local rotation_mode = 0
+            if orientation_code then
+                if orientation_code == "U" then
+                    rotation_mode = self.screen.DEVICE_ROTATED_UPRIGHT
+                elseif orientation_code == "R" then
+                    rotation_mode = self.screen.DEVICE_ROTATED_CLOCKWISE
+                elseif orientation_code == "D" then
+                    rotation_mode = self.screen.DEVICE_ROTATED_UPSIDE_DOWN
+                elseif orientation_code == "L" then
+                    rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
+                end
+            end
+            logger.dbg("rotation_mode = ", rotation_mode)
+            if rotation_mode > 0 then
+                self.screen.native_rotation_mode = rotation_mode
+                self.screen.cur_rotation_mode = rotation_mode
+            end
+            lipc_handle:close()
+        end
+    end
+    -- put awesome back to sleep
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -STOP awesome")
+    end
 
     Kindle.init(self)
 
