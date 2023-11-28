@@ -1216,7 +1216,7 @@ function Gestures:onFlushSettings()
 end
 
 function Gestures:updateProfiles(action_old_name, action_new_name)
-    for _, section in ipairs({ "gesture_fm", "gesture_reader" }) do 
+    for _, section in ipairs({ "gesture_fm", "gesture_reader" }) do
         local gestures = self.settings_data.data[section]
         for gesture_name, gesture in pairs(gestures) do
             if gesture[action_old_name] then
