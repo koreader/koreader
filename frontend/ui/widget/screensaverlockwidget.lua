@@ -29,6 +29,8 @@ function ScreenSaverLockWidget:init()
             self.ges_events.Tap = { GestureRange:new{ ges = "tap", range = range } }
         end
     end
+
+    self.is_infomessage_visible = false
 end
 
 function ScreenSaverLockWidget:setupGestureEvents()
@@ -100,6 +102,9 @@ function ScreenSaverLockWidget:showWaitForGestureMessage()
     infomsg:paintTo(Screen.bb, 0, 0)
     infomsg:onShow() -- get the screen refreshed
     infomsg:free()
+
+    -- Notify our Resume/Suspend handlers that this is visible, so they know what to do
+    self.is_infomessage_visible = true
 end
 
 function ScreenSaverLockWidget:onClose()
@@ -129,10 +134,21 @@ end
 -- NOTE: We duplicate this bit of logic from ScreenSaverWidget, because not every Screensaver config will spawn one...
 function ScreenSaverLockWidget:onResume()
     Device.screen_saver_lock = true
+
+    -- Show the not-a-widget InfoMessage, if it isn't already visible
+    if not self.is_infomessage_visible then
+        self:showWaitForGestureMessage()
+    end
 end
 
 function ScreenSaverLockWidget:onSuspend()
     Device.screen_saver_lock = false
+
+    -- Drop the not-a-widget InfoMessage, if any
+    if self.is_infomessage_visible then
+        UIManager:setDirty("all", "full")
+        self.is_infomessage_visible = false
+    end
 end
 
 return ScreenSaverLockWidget

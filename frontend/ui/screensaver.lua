@@ -801,9 +801,8 @@ function Screensaver:close()
         --       that we've actually closed the widget *right now*.
         return true
     elseif screensaver_delay == "gesture" then
-        if self.screensaver_lock_widget then
-            self.screensaver_lock_widget:showWaitForGestureMessage()
-        end
+        -- ScreenSaverLockWidget's onResume handler should now paint the not-a-widget InfoMessage
+        logger.dbg("waiting for screensaver unlock gesture")
     else
         logger.dbg("tap to exit from screensaver")
     end

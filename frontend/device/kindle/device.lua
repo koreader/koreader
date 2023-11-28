@@ -297,9 +297,9 @@ function Kindle:intoScreenSaver()
             -- so that we do the right thing on resume ;).
             self.screen_saver_mode = true
         end
-
-        self.powerd:beforeSuspend()
     end
+
+    self.powerd:beforeSuspend()
 end
 
 function Kindle:outofScreenSaver()
@@ -350,9 +350,9 @@ function Kindle:outofScreenSaver()
             -- Flip the switch again
             self.screen_saver_mode = false
         end
-
-        self.powerd:afterResume()
     end
+
+    self.powerd:afterResume()
 end
 
 function Kindle:usbPlugOut()
