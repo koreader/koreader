@@ -629,6 +629,7 @@ local KindleScribe = Kindle:extend{
     --       but the mix is device-specific, we don't have access to the LUT for the mix powerd is using,
     --       and the widget is designed for the Kobo Aura One anyway, so, hahaha, nope.
     hasNaturalLightMixer = yes,
+    hasGSensor = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event",
     -- NOTE: TBC whether dithering actually works on Bellatrix3...
@@ -964,8 +965,10 @@ function KindleOasis:init()
 end
 
 -- HAL for gyro orientation switches (EV_ABS:ABS_PRESSURE (?!) w/ custom values to EV_MSC:MSC_GYRO w/ our own custom values)
-local function ZeldaGyroTranslation(this, ev)
-    -- c.f., drivers/input/misc/accel/bma2x2.c
+local function KindleGyroTransform(this, ev)
+    -- See source code:
+    -- c.f., drivers/input/misc/accel/bma2x2.c for KOA2/KOA3
+    -- c.f., drivers/input/misc/kx132/kx132.h for KS
     local UPWARD_PORTRAIT_UP_INTERRUPT_HAPPENED     = 15
     local UPWARD_PORTRAIT_DOWN_INTERRUPT_HAPPENED   = 16
     local UPWARD_LANDSCAPE_LEFT_INTERRUPT_HAPPENED  = 17
@@ -1053,7 +1056,7 @@ function KindleOasis2:init()
 
     Kindle.init(self)
 
-    self.input:registerEventAdjustHook(ZeldaGyroTranslation)
+    self.input:registerEventAdjustHook(KindleGyroTransform)
     self.input.handleMiscEv = function(this, ev)
         if ev.code == C.MSC_GYRO then
             return this:handleGyroEv(ev)
@@ -1129,7 +1132,7 @@ function KindleOasis3:init()
 
     Kindle.init(self)
 
-    self.input:registerEventAdjustHook(ZeldaGyroTranslation)
+    self.input:registerEventAdjustHook(KindleGyroTransform)
     self.input.handleMiscEv = function(this, ev)
         if ev.code == C.MSC_GYRO then
             return this:handleGyroEv(ev)
@@ -1302,6 +1305,10 @@ function KindleBasic4:init()
 end
 
 function KindleScribe:init()
+    -- temporarily wake up awesome
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -CONT awesome")
+    end
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -1316,10 +1323,58 @@ function KindleScribe:init()
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
     self.screen:_MTK_ToggleFastMode(true)
 
+    --- @fixme The same quirks as on the Oasis 2 and 3 apply ;).
+    -- in regular mode, awesome is woken up for a brief moment. In no-framework mode, this works as is.
+    local haslipc, lipc = pcall(require, "liblipclua")
+    if haslipc and lipc then
+        local lipc_handle = lipc.init("com.github.koreader.screen")
+        if lipc_handle then
+            local orientation_code = lipc_handle:get_string_property(
+                "com.lab126.winmgr", "accelerometer")
+            logger.dbg("orientation_code = ", orientation_code)
+            local rotation_mode = 0
+            if orientation_code then
+                if orientation_code == "U" then
+                    rotation_mode = self.screen.DEVICE_ROTATED_UPRIGHT
+                elseif orientation_code == "R" then
+                    rotation_mode = self.screen.DEVICE_ROTATED_CLOCKWISE
+                elseif orientation_code == "D" then
+                    rotation_mode = self.screen.DEVICE_ROTATED_UPSIDE_DOWN
+                elseif orientation_code == "L" then
+                    rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
+                end
+            end
+            logger.dbg("rotation_mode = ", rotation_mode)
+            if rotation_mode > 0 then
+                self.screen.native_rotation_mode = rotation_mode
+                self.screen.cur_rotation_mode = rotation_mode
+            end
+            lipc_handle:close()
+        end
+    end
+    -- put awesome back to sleep
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -STOP awesome")
+    end
+
     Kindle.init(self)
+
+    -- Setup accelerometer rotation input
+    self.input:registerEventAdjustHook(KindleGyroTransform)
+    self.input.handleMiscEv = function(this, ev)
+        if ev.code == C.MSC_GYRO then
+            return this:handleGyroEv(ev)
+        end
+    end
+    -- Get accelerometer device
+    self.input.open("/dev/input/by-path/platform-11007000.i2c-event-joystick")
 
     self.input.open(self.touch_dev)
     self.input.open("fake_events")
+
+    -- Setup pen input
+    self.input.wacom_protocol = true
+    self.input.open("/dev/input/event4")
 end
 
 function KindleTouch:exit()
