@@ -1020,7 +1020,7 @@ function FileManager:createFolder()
 end
 
 function FileManager:showDeleteFileDialog(filepath, post_delete_callback, pre_delete_callback)
-    file = BaseUtil.realpath(filepath)
+    local file = BaseUtil.realpath(filepath)
     if file == nil then
         UIManager:show(InfoMessage:new{
             text = T(_("File not found:\n%1"), BD.filepath(filepath)),
