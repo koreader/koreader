@@ -57,6 +57,10 @@ local FileManager = InputContainer:extend{
     cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp",
 }
 
+local function isFile(file)
+    return lfs.attributes(file, "mode") == "file"
+end
+
 function FileManager:onSetRotationMode(rotation)
     if rotation ~= nil and rotation ~= Screen:getRotationMode() then
         Screen:setRotationMode(rotation)
@@ -190,7 +194,7 @@ function FileManager:setupLayout()
     end
 
     function file_chooser:showFileDialog(file)  -- luacheck: ignore
-        local is_file = lfs.attributes(file, "mode") == "file"
+        local is_file = isFile(file)
         local is_folder = lfs.attributes(file, "mode") == "directory"
         local is_not_parent_folder = BaseUtil.basename(file) ~= ".."
 
@@ -220,7 +224,7 @@ function FileManager:setupLayout()
                     enabled = file_manager.clipboard and true or false,
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        file_manager:pasteHere(file)
+                        file_manager:pasteFileFromClipboard(file)
                     end,
                 },
                 {
@@ -514,20 +518,9 @@ function FileManager:tapPlus()
                     text = _("Copy"),
                     enabled = actions_enabled,
                     callback = function()
-                        UIManager:show(ConfirmBox:new{
-                            text = _("Copy selected files to the current folder?"),
-                            ok_text = _("Copy"),
-                            ok_callback = function()
-                                UIManager:close(self.file_dialog)
-                                self.cutfile = false
-                                for file in pairs(self.selected_files) do
-                                    self.clipboard = file
-                                    self:pasteHere()
-                                end
-                                self:onToggleSelectMode()
-                            end,
-                        })
-                    end
+                        self.cutfile = false
+                        self:showCopyMoveSelectedFilesDialog(close_dialog_callback)
+                    end,
                 },
             },
             {
@@ -543,20 +536,9 @@ function FileManager:tapPlus()
                     text = _("Move"),
                     enabled = actions_enabled,
                     callback = function()
-                        UIManager:show(ConfirmBox:new{
-                            text = _("Move selected files to the current folder?"),
-                            ok_text = _("Move"),
-                            ok_callback = function()
-                                UIManager:close(self.file_dialog)
-                                self.cutfile = true
-                                for file in pairs(self.selected_files) do
-                                    self.clipboard = file
-                                    self:pasteHere()
-                                end
-                                self:onToggleSelectMode()
-                            end,
-                        })
-                    end
+                        self.cutfile = true
+                        self:showCopyMoveSelectedFilesDialog(close_dialog_callback)
+                    end,
                 },
             },
             {
@@ -565,7 +547,9 @@ function FileManager:tapPlus()
                     enabled = actions_enabled,
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        self.selected_files = {}
+                        for file in pairs (self.selected_files) do
+                            self.selected_files[file] = nil
+                        end
                         self:onRefresh()
                     end,
                 },
@@ -578,10 +562,7 @@ function FileManager:tapPlus()
                             ok_text = _("Delete"),
                             ok_callback = function()
                                 UIManager:close(self.file_dialog)
-                                for file in pairs(self.selected_files) do
-                                    self:deleteFile(file, true) -- only files can be selected
-                                end
-                                self:onToggleSelectMode()
+                                self:deleteSelectedFiles()
                             end,
                         })
                     end,
@@ -642,7 +623,7 @@ function FileManager:tapPlus()
                     enabled = self.clipboard and true or false,
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        self:pasteHere()
+                        self:pasteFileFromClipboard()
                     end,
                 },
             },
@@ -651,7 +632,7 @@ function FileManager:tapPlus()
                     text = _("Set as HOME folder"),
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        self:setHome(self.file_chooser.path)
+                        self:setHome()
                     end
                 },
             },
@@ -850,66 +831,143 @@ function FileManager:cutFile(file)
     self.clipboard = file
 end
 
-function FileManager:pasteHere(file)
+function FileManager:pasteFileFromClipboard(file)
     local orig_file = BaseUtil.realpath(self.clipboard)
-    local orig_name = BaseUtil.basename(self.clipboard)
+    local orig_name = BaseUtil.basename(orig_file)
     local dest_path = BaseUtil.realpath(file or self.file_chooser.path)
-    dest_path = lfs.attributes(dest_path, "mode") == "directory" and dest_path or dest_path:match("(.*/)")
+    dest_path = isFile(dest_path) and dest_path:match("(.*/)") or dest_path
     local dest_file = BaseUtil.joinPath(dest_path, orig_name)
-    local is_file = lfs.attributes(orig_file, "mode") == "file"
-
-    local function infoCopyFile()
-        if self:copyRecursive(orig_file, dest_path) then
-            if is_file then
-                DocSettings.updateLocation(orig_file, dest_file, true)
-            end
-            return true
-        else
-            UIManager:show(InfoMessage:new{
-                text = T(_("Failed to copy:\n%1\nto:\n%2"), BD.filepath(orig_name), BD.dirpath(dest_path)),
-                icon = "notice-warning",
-            })
-        end
-    end
-
-    local function infoMoveFile()
-        if self:moveFile(orig_file, dest_path) then
-            if is_file then
-                DocSettings.updateLocation(orig_file, dest_file)
-                ReadHistory:updateItemByPath(orig_file, dest_file) -- (will update "lastfile" if needed)
-            else
-                ReadHistory:updateItemsByPath(orig_file, dest_file)
-            end
-            ReadCollection:updateItemByPath(orig_file, dest_file)
-            return true
-        else
-            UIManager:show(InfoMessage:new{
-                text = T(_("Failed to move:\n%1\nto:\n%2"), BD.filepath(orig_name), BD.dirpath(dest_path)),
-                icon = "notice-warning",
-            })
-        end
-    end
+    local is_file = isFile(orig_file)
 
     local function doPaste()
-        local ok = self.cutfile and infoMoveFile() or infoCopyFile()
+        local ok
+        if self.cutfile then
+            ok = self:moveFile(orig_file, dest_path)
+        else
+            ok = self:copyRecursive(orig_file, dest_path)
+        end
         if ok then
-            self:onRefresh()
+            if is_file then -- move or copy sdr
+                DocSettings.updateLocation(orig_file, dest_file, not self.cutfile)
+            end
+            if self.cutfile then -- for move only
+                if is_file then
+                    ReadHistory:updateItem(orig_file, dest_file)
+                    ReadCollection:updateItem(orig_file, dest_file)
+                else
+                    ReadHistory:updateItemsByPath(orig_file, dest_file)
+                    ReadCollection:updateItemsByPath(orig_file, dest_file)
+                end
+            end
             self.clipboard = nil
+            self:onRefresh()
+        else
+            local text = self.cutfile and "Failed to move:\n%1\nto:\n%2"
+                                       or "Failed to copy:\n%1\nto:\n%2"
+            UIManager:show(InfoMessage:new{
+                text = T(_(text), BD.filepath(orig_name), BD.dirpath(dest_path)),
+                icon = "notice-warning",
+            })
         end
     end
 
-    local mode = lfs.attributes(dest_file, "mode")
-    if mode then
-        UIManager:show(ConfirmBox:new{
-            text = mode == "file" and T(_("File already exists:\n%1\nOverwrite file?"), BD.filename(orig_name))
-                                   or T(_("Folder already exists:\n%1\nOverwrite folder?"), BD.directory(orig_name)),
-            ok_text = _("Overwrite"),
-            ok_callback = function()
-                doPaste()
-            end,
-        })
+    local mode_dest = lfs.attributes(dest_file, "mode")
+    if mode_dest then -- file or folder with target name already exists
+        local can_overwrite = (mode_dest == "file") == is_file
+        local text = can_overwrite == is_file and T(_("File already exists:\n%1"), BD.filename(orig_name))
+                                               or T(_("Folder already exists:\n%1"), BD.directory(orig_name))
+        if can_overwrite then
+            UIManager:show(ConfirmBox:new{
+                text = text,
+                ok_text = _("Overwrite"),
+                ok_callback = function()
+                    doPaste()
+                end,
+            })
+        else
+            UIManager:show(InfoMessage:new{
+                text = text,
+                icon = "notice-warning",
+            })
+        end
     else
         doPaste()
+    end
+end
+
+function FileManager:showCopyMoveSelectedFilesDialog(close_callback)
+    local text, ok_text
+    if self.cutfile then
+        text = _("Move selected files to the current folder?")
+        ok_text = _("Move")
+    else
+        text = _("Copy selected files to the current folder?")
+        ok_text = _("Copy")
+    end
+    local confirmbox, check_button_overwrite
+    confirmbox = ConfirmBox:new{
+        text = text,
+        ok_text = ok_text,
+        ok_callback = function()
+            close_callback()
+            self:pasteSelectedFiles(check_button_overwrite.checked)
+        end,
+    }
+    check_button_overwrite = CheckButton:new{
+        text = _("overwrite existing files"),
+        checked = true,
+        parent = confirmbox,
+    }
+    confirmbox:addWidget(check_button_overwrite)
+    UIManager:show(confirmbox)
+end
+
+function FileManager:pasteSelectedFiles(overwrite)
+    local dest_path = BaseUtil.realpath(self.file_chooser.path)
+    local ok_files = {}
+    for orig_file in pairs(self.selected_files) do
+        local orig_name = BaseUtil.basename(orig_file)
+        local dest_file = BaseUtil.joinPath(dest_path, orig_name)
+        local ok
+        local dest_mode = lfs.attributes(dest_file, "mode")
+        if not dest_mode or (dest_mode == "file" and overwrite) then
+            if self.cutfile then
+                ok = self:moveFile(orig_file, dest_path)
+            else
+                ok = self:copyRecursive(orig_file, dest_path)
+            end
+        end
+        if ok then
+            DocSettings.updateLocation(orig_file, dest_file, not self.cutfile)
+            ok_files[orig_file] = true
+            self.selected_files[orig_file] = nil
+        end
+    end
+    local skipped_nb = util.tableSize(self.selected_files)
+    if util.tableSize(ok_files) > 0 then
+        if self.cutfile then -- for move only
+            ReadHistory:updateItems(ok_files, dest_path)
+            ReadCollection:updateItems(ok_files, dest_path)
+        end
+        if skipped_nb > 0 then
+            self:onRefresh()
+        end
+    end
+    if skipped_nb > 0 then -- keep select mode on
+        local text1, text2
+        if self.cutfile then
+            text1 = "1 file was not moved"
+            text2 = "%1 files were not moved"
+        else
+            text1 = "1 file was not copied"
+            text2 = "%1 files were not copied"
+        end
+        UIManager:show(InfoMessage:new{
+            text = T(N_(text1, text2, skipped_nb), skipped_nb),
+            icon = "notice-warning",
+        })
+    else
+        self:onToggleSelectMode()
     end
 end
 
@@ -962,10 +1020,17 @@ function FileManager:createFolder()
 end
 
 function FileManager:showDeleteFileDialog(file, post_delete_callback, pre_delete_callback)
-    local file_abs_path = BaseUtil.realpath(file)
-    local is_file = lfs.attributes(file_abs_path, "mode") == "file"
+    file = BaseUtil.realpath(file)
+    if file == nil then
+        UIManager:show(InfoMessage:new{
+            text = T(_("File not found:\n%1"), BD.filepath(file)),
+            icon = "notice-warning",
+        })
+        return
+    end
+    local is_file = isFile(file)
     local text = (is_file and _("Delete file permanently?") or _("Delete folder permanently?")) .. "\n\n" .. BD.filepath(file)
-    if is_file and DocSettings:hasSidecarFile(file_abs_path) then
+    if is_file and DocSettings:hasSidecarFile(file) then
         text = text .. "\n\n" .. _("Book settings, highlights and notes will be deleted.")
     end
     UIManager:show(ConfirmBox:new{
@@ -983,35 +1048,54 @@ function FileManager:showDeleteFileDialog(file, post_delete_callback, pre_delete
 end
 
 function FileManager:deleteFile(file, is_file)
-    local file_abs_path = BaseUtil.realpath(file)
-    if file_abs_path == nil then
-        UIManager:show(InfoMessage:new{
-            text = T(_("File not found:\n%1"), BD.filepath(file)),
-            icon = "notice-warning",
-        })
-        return
-    end
-
-    local ok, err
     if is_file then
-        ok, err = os.remove(file_abs_path)
-    else
-        ok, err = BaseUtil.purgeDir(file_abs_path)
-    end
-    if ok and not err then
-        if is_file then
-            DocSettings.updateLocation(file)
+        local ok = os.remove(file)
+        if ok then
+            DocSettings.updateLocation(file) -- delete sdr
             ReadHistory:fileDeleted(file)
-        else
-            ReadHistory:folderDeleted(file)
+            ReadCollection:removeItem(file)
+            return true
         end
-        ReadCollection:removeItemByPath(file, not is_file)
-        return true
     else
+        local ok = BaseUtil.purgeDir(file)
+        if ok then
+            ReadHistory:folderDeleted(file) -- will delete sdr
+            ReadCollection:removeItemsByPath(file)
+            return true
+        end
+    end
+    UIManager:show(InfoMessage:new{
+        text = T(_("Failed to delete:\n%1"), BD.filepath(file)),
+        icon = "notice-warning",
+    })
+end
+
+function FileManager:deleteSelectedFiles()
+    local ok_files = {}
+    for orig_file in pairs(self.selected_files) do
+        local file_abs_path = BaseUtil.realpath(orig_file)
+        local ok = file_abs_path and os.remove(file_abs_path)
+        if ok then
+            DocSettings.updateLocation(file_abs_path) -- delete sdr
+            ok_files[orig_file] = true
+            self.selected_files[orig_file] = nil
+        end
+    end
+    local skipped_nb = util.tableSize(self.selected_files)
+    if util.tableSize(ok_files) > 0 then
+        ReadHistory:removeItems(ok_files)
+        ReadCollection:removeItems(ok_files)
+        if skipped_nb > 0 then
+            self:onRefresh()
+        end
+    end
+    if skipped_nb > 0 then -- keep select mode on
         UIManager:show(InfoMessage:new{
-            text = T(_("Failed to delete:\n%1"), BD.filepath(file)),
+            text = T(N_("Failed to delete 1 file.", "Failed to delete %1 files.", skipped_nb), skipped_nb),
             icon = "notice-warning",
         })
+    else
+        self:onToggleSelectMode()
     end
 end
 
@@ -1052,11 +1136,12 @@ function FileManager:renameFile(file, basename, is_file)
         if self:moveFile(file, dest) then
             if is_file then
                 DocSettings.updateLocation(file, dest)
-                ReadHistory:updateItemByPath(file, dest) -- (will update "lastfile" if needed)
+                ReadHistory:updateItem(file, dest) -- (will update "lastfile" if needed)
+                ReadCollection:updateItem(file, dest)
             else
                 ReadHistory:updateItemsByPath(file, dest)
+                ReadCollection:updateItemsByPath(file, dest)
             end
-            ReadCollection:updateItemByPath(file, dest)
             self:onRefresh()
         else
             UIManager:show(InfoMessage:new{
