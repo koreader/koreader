@@ -35,9 +35,12 @@ function ReadCollection:_read()
         if collection_file_modification_time <= self.last_read_time then return end
         self.last_read_time = collection_file_modification_time
     end
-    self.coll = {}
     local collections = LuaSettings:open(collection_file)
+    if collections:hasNot(self.default_collection_name) then
+        collections:saveSetting(self.default_collection_name, {})
+    end
     logger.dbg("ReadCollection: reading from collection file")
+    self.coll = {}
     for coll_name, collection in pairs(collections.data) do
         local coll = {}
         for _, v in ipairs(collection) do
@@ -76,7 +79,7 @@ function ReadCollection:getFileCollectionName(file, collection_name)
     end
 end
 
-function ReadCollection:isAdded(file, collection_name)
+function ReadCollection:hasFile(file, collection_name)
     local coll_name = self:getFileCollectionName(file, collection_name)
     return coll_name and true or false
 end
@@ -120,12 +123,18 @@ function ReadCollection:addItems(files, collection_name) -- files = { filepath =
     collection_name = collection_name or self.default_collection_name
     local coll = self.coll[collection_name]
     local max_order = self:getCollectionMaxOrder(collection_name)
+    local do_write
     for file in pairs(files) do
-        max_order = max_order + 1
-        local item = buildEntry(file, max_order)
-        coll[item.file] = item
+        if not self:hasFile(file) then
+            max_order = max_order + 1
+            local item = buildEntry(file, max_order)
+            coll[item.file] = item
+            do_write = true
+        end
     end
-    self:write(collection_name)
+    if do_write then
+        self:write(collection_name)
+    end
 end
 
 function ReadCollection:removeItem(file, collection_name, no_write)
