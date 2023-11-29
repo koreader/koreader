@@ -1019,11 +1019,11 @@ function FileManager:createFolder()
     input_dialog:onShowKeyboard()
 end
 
-function FileManager:showDeleteFileDialog(file, post_delete_callback, pre_delete_callback)
-    file = BaseUtil.realpath(file)
+function FileManager:showDeleteFileDialog(filepath, post_delete_callback, pre_delete_callback)
+    file = BaseUtil.realpath(filepath)
     if file == nil then
         UIManager:show(InfoMessage:new{
-            text = T(_("File not found:\n%1"), BD.filepath(file)),
+            text = T(_("File not found:\n%1"), BD.filepath(filepath)),
             icon = "notice-warning",
         })
         return
