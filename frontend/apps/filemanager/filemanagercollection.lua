@@ -170,7 +170,7 @@ function FileManagerCollection:showCollDialog()
                         return DocumentRegistry:hasProvider(file)
                     end,
                     onConfirm = function(file)
-                        if not ReadCollection:isAdded(file) then
+                        if not ReadCollection:hasFile(file) then
                             ReadCollection:addItem(file, self.coll_menu.collection_name)
                             self:updateItemTable()
                         end
@@ -181,14 +181,14 @@ function FileManagerCollection:showCollDialog()
         }},
     }
     if self.ui.document then
-        local is_added = ReadCollection:isAdded(self.ui.document.file)
+        local has_file = ReadCollection:hasFile(self.ui.document.file)
         table.insert(buttons, {{
             text_func = function()
-                return is_added and _("Remove current book from favorites") or _("Add current book to favorites")
+                return has_file and _("Remove current book from favorites") or _("Add current book to favorites")
             end,
             callback = function()
                 UIManager:close(coll_dialog)
-                if is_added then
+                if has_file then
                     ReadCollection:removeItem(self.ui.document.file)
                 else
                     ReadCollection:addItem(self.ui.document.file, self.coll_menu.collection_name)
