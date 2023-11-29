@@ -954,16 +954,10 @@ function FileManager:pasteSelectedFiles(overwrite)
         end
     end
     if skipped_nb > 0 then -- keep select mode on
-        local text1, text2
-        if self.cutfile then
-            text1 = "1 file was not moved"
-            text2 = "%1 files were not moved"
-        else
-            text1 = "1 file was not copied"
-            text2 = "%1 files were not copied"
-        end
+        local text = self.cutfile and T(N_("1 file was not moved", "%1 files were not moved", skipped_nb), skipped_nb)
+                                   or T(N_("1 file was not copied", "%1 files were not copied", skipped_nb), skipped_nb)
         UIManager:show(InfoMessage:new{
-            text = T(N_(text1, text2, skipped_nb), skipped_nb),
+            text = text,
             icon = "notice-warning",
         })
     else
