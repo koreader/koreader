@@ -181,11 +181,27 @@ function ReadHistory:getFileByDirectory(directory, recursive)
 end
 
 --- Updates the history list after renaming/moving a file.
-function ReadHistory:updateItemByPath(old_path, new_path)
-    local index = self:getIndexByFile(old_path)
+function ReadHistory:updateItem(file, new_filepath)
+    local index = self:getIndexByFile(file)
     if index then
-        self.hist[index].file = new_path
-        self.hist[index].text = new_path:gsub(".*/", "")
+        local item = self.hist[index]
+        item.file = new_filepath
+        item.text = new_filepath:gsub(".*/", "")
+        self:_flush()
+    end
+end
+
+function ReadHistory:updateItems(files, new_path) -- files = { filepath = true, }
+    local history_updated
+    for file in pairs(files) do
+        local index = self:getIndexByFile(file)
+        if index then
+            local item = self.hist[index]
+            item.file = new_path .. "/" .. item.text
+            history_updated = true
+        end
+    end
+    if history_updated then
         self:_flush()
     end
 end
@@ -237,6 +253,24 @@ function ReadHistory:folderDeleted(path)
             self:fileDeleted(i)
             history_updated = true
             DocSettings.updateLocation(file) -- remove sdr if not in book location
+        end
+    end
+    if history_updated then
+        if G_reader_settings:isTrue("autoremove_deleted_items_from_history") then
+            self:_flush()
+        else
+            self:ensureLastFile()
+        end
+    end
+end
+
+function ReadHistory:removeItems(files) -- files = { filepath = true, }
+    local history_updated
+    for file in pairs(files) do
+        local index = self:getIndexByFile(file)
+        if index then
+            self:fileDeleted(index)
+            history_updated = true
         end
     end
     if history_updated then
