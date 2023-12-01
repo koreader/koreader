@@ -8,6 +8,7 @@ local util = require("util")
 local joinPath = ffiutil.joinPath
 local lfs = require("libs/libkoreader-lfs")
 local realpath = ffiutil.realpath
+local C_ = require("gettext").pgettext
 
 local history_file = joinPath(DataStorage:getDataDir(), "history.lua")
 
@@ -19,7 +20,7 @@ local ReadHistory = {
 
 local function getMandatory(date_time)
     return G_reader_settings:isTrue("history_datetime_short")
-        and datetime.secondsToDate(date_time):sub(3) or datetime.secondsToDateTime(date_time)
+        and os.date(C_("Date string", "%y-%m-%d"), date_time) or datetime.secondsToDateTime(date_time)
 end
 
 local function buildEntry(input_time, input_file)
