@@ -234,6 +234,7 @@ local function initTouchEvents()
                         {
                             {
                                 text = _("Delete all"),
+                                enabled = #self.charlist > 0,
                                 callback = function()
                                     UIManager:close(clipboard_dialog)
                                     self:delAll()
