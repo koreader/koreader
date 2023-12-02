@@ -50,6 +50,9 @@ function FileManagerHistory:fetchStatuses(count)
         else
             status = filemanagerutil.getStatus(v.file)
         end
+        if not filter_text[status] then
+            status = "reading"
+        end
         if count then
             self.count[status] = self.count[status] + 1
         end
