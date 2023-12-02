@@ -786,9 +786,9 @@ local CSS_SUGGESTIONS = {
     { "-cr-hint: footnote-inpage;", _("When set on a block element containing the target id of a href, this block element will be shown as an in-page footnote.")},
     { "-cr-hint: non-linear-combining;", _("Can be set on some specific DocFragments (ie. DocFragment[id*=16]) to ignore them in the linear pages flow.")},
     { "-cr-hint: toc-level1;", _("When set on an element, its text can be used to build the alternative table of contents.")},
-    { "display: run-in !important,", _("When set on a block element, this element content will be inlined with the next block element.")},
-    { "font-size: 1rem !important;", _("1rem will enforce your main font size")},
-    { "hyphens: none !important", _("Disables hyphenation inside the targeted elements.")},
+    { "display: run-in !important;", _("When set on a block element, this element content will be inlined with the next block element.")},
+    { "font-size: 1rem !important;", _("1rem will enforce your main font size.")},
+    { "hyphens: none !important;", _("Disables hyphenation inside the targeted elements.")},
     { "text-indent: 1.2em !important;", _("1.2em is our default text indentation.")},
 }
 
