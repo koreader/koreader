@@ -1,0 +1,6 @@
+-- Tweak these numbers of rows and columns for Mosaic mode in History/Favorites and Filemanager.
+local FileChooser = require("ui/widget/filechooser")
+FileChooser.nb_cols_portrait = 4
+FileChooser.nb_rows_portrait = 5
+FileChooser.nb_cols_landscape = 5
+FileChooser.nb_rows_landscape = 4
