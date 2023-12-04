@@ -139,7 +139,7 @@ function GestureDetector:newContact(slot)
         state = Contact.initialState, -- Current state function
         slot = slot, -- Current ABS_MT_SLOT value (also its key in the active_contacts hash)
         id = -1, -- Current ABS_MT_TRACKING_ID value
-        initial_tev = nil, -- Copy of the input event table at first contact (i.e., at contact down)
+        initial_tev = nil, -- Copy of the input event table at first contact (i.e., at contact down [iff the platform is sane, might be a copy of current_tev otherwise])
         current_tev = nil, -- Pointer to the current input event table, ref is *stable*, c.f., NOTE in feedEvent below
         down = false, -- Contact is down (as opposed to up, i.e., lifted). Only really happens for double-tap handling, in every other case the Contact object is destroyed on lift.
         pending_double_tap_timer = false, -- Contact is pending a double_tap timer
@@ -379,6 +379,17 @@ function Contact:switchState(state_func, func_arg)
     return state_func(self, func_arg)
 end
 
+-- Unlike switchState, we don't *call* the new state, and we ensure that initial_tev is set,
+-- in case initialState never ran on a contact down because the platform screwed up (e.g., PB with broken MT).
+-- The rest of the code, in particular the buddy system, assumes initial_tev is always set (and supposedly sane).
+function Contact:setState(state_func)
+    -- NOTE: Safety net for broken platforms that might screw up slot order...
+    if not self.initial_tev then
+        self.initial_tev = deepCopyEv(self.current_tev)
+    end
+    self.state = state_func
+end
+
 function Contact:initialState()
     local tev = self.current_tev
 
@@ -483,7 +494,7 @@ function Contact:tapState(new_tap)
                 -- Mark that slot
                 self.mt_gesture = "tap"
                 -- Neuter its buddy
-                buddy_contact.state = Contact.voidState
+                buddy_contact:setState(Contact.voidState)
                 buddy_contact.mt_gesture = "tap"
 
                 local pos0 = Geom:new{
@@ -513,7 +524,7 @@ function Contact:tapState(new_tap)
                 logger.dbg("Contact:tapState: Two-contact tap failed to pass the two_finger_tap constraints -> single tap @", tev.x, tev.y)
                 -- We blew the gesture position/time constraints,
                 -- neuter buddy and send a single tap on this slot.
-                buddy_contact.state = Contact.voidState
+                buddy_contact:setState(Contact.voidState)
                 gesture_detector:dropContact(self)
 
                 return {
@@ -714,7 +725,7 @@ function Contact:panState(keep_contact)
                 else
                     buddy_contact.mt_gesture = "swipe"
                 end
-                buddy_contact.state = Contact.voidState
+                buddy_contact:setState(Contact.voidState)
 
                 local ges_ev = self:handleTwoFingerPan(buddy_contact)
                 if ges_ev then
@@ -818,8 +829,8 @@ function Contact:voidState()
                     -- and if it lifts even later, we'd have to deal with spurious moves first, probably leading into a tap...
                     -- If the gesture *succeeds*, the buddy contact will be dropped whenever it's actually lifted,
                     -- thanks to the temporary tracking id switcheroo & voidState...
-                    buddy_contact.state = Contact.voidState
                     buddy_contact.current_tev.id = buddy_tid
+                    buddy_contact:setState(Contact.voidState)
                 end
                 -- Regardless of whether we detected a gesture, this is a contact lift, so it's curtains for us!
                 gesture_detector:dropContact(self)
@@ -942,7 +953,7 @@ function Contact:handlePan()
         else
             buddy_contact.mt_gesture = "pan"
         end
-        buddy_contact.state = Contact.voidState
+        buddy_contact:setState(Contact.voidState)
 
         return self:handleTwoFingerPan(buddy_contact)
     elseif self.down then
@@ -1166,7 +1177,7 @@ function Contact:handlePanRelease(keep_contact)
         -- Both main contacts are actives and we are down, mark that slot
         self.mt_gesture = "pan_release"
         -- Neuter its buddy
-        buddy_contact.state = Contact.voidState
+        buddy_contact:setState(Contact.voidState)
         buddy_contact.mt_gesture = "pan_release"
 
         logger.dbg("Contact:handlePanRelease: two_finger_pan_release detected")
@@ -1212,7 +1223,7 @@ function Contact:holdState(new_hold)
             -- Both main contacts are actives and we are down, mark that slot
             self.mt_gesture = "hold"
             -- Neuter its buddy
-            buddy_contact.state = Contact.voidState
+            buddy_contact:setState(Contact.voidState)
             buddy_contact.mt_gesture = "hold"
 
             local pos0 = Geom:new{
@@ -1269,7 +1280,7 @@ function Contact:holdState(new_hold)
                     end
                 end
                 -- Regardless of whether this panned out (pun intended), this is a lift, so we'll defer to voidState next.
-                buddy_contact.state = Contact.voidState
+                buddy_contact:setState(Contact.voidState)
                 gesture_detector:dropContact(self)
                 return ges_ev
             elseif self.mt_gesture == "hold_pan" or self.mt_gesture == "pan" then
@@ -1280,7 +1291,7 @@ function Contact:holdState(new_hold)
                 buddy_contact.mt_gesture = "hold_release"
             end
             -- Neuter its buddy
-            buddy_contact.state = Contact.voidState
+            buddy_contact:setState(Contact.voidState)
 
             -- Don't drop buddy, voidState will handle it
             gesture_detector:dropContact(self)
