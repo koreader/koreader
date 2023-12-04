@@ -175,14 +175,14 @@ local function initTouchEvents()
                         })
                         self.selection_start_pos = nil
                         self.do_select = false
-                        return true
                     else -- select start
                         self.selection_start_pos = self.charpos
                         UIManager:show(Notification:new{
-                            text = _("Set cursor to end of selection, then hold."),
+                            text = _("Set cursor to end of selection, then long-press in text box."),
                         })
-                        return true
                     end
+                    self._hold_handled = true
+                    return true
                 end
                 local clipboard_value = Device.input.getClipboardText()
                 local is_clipboard_empty = clipboard_value == ""
@@ -233,9 +233,11 @@ local function initTouchEvents()
                         },
                         {
                             {
-                                text = _("Cancel"),
+                                text = _("Delete all"),
+                                enabled = #self.charlist > 0,
                                 callback = function()
                                     UIManager:close(clipboard_dialog)
+                                    self:delAll()
                                 end,
                             },
                             {
@@ -243,7 +245,7 @@ local function initTouchEvents()
                                 callback = function()
                                     UIManager:close(clipboard_dialog)
                                     UIManager:show(Notification:new{
-                                        text = _("Set cursor to start of selection, then hold."),
+                                        text = _("Set cursor to start of selection, then long-press in text box."),
                                     })
                                     self.do_select = true
                                 end,
@@ -877,6 +879,15 @@ function InputText:delToStartOfLine()
     end
     self.is_text_edited = true
     self:initTextBox(table.concat(self.charlist))
+end
+
+function InputText:delAll()
+    if self.readonly or not self:isTextEditable(true) then
+        return
+    end
+    if #self.charlist == 0 then return end
+    self.is_text_edited = true
+    self:initTextBox("")
 end
 
 -- For the following cursor/scroll methods, the text_widget deals
