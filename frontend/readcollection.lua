@@ -208,12 +208,12 @@ function ReadCollection:updateItems(files, new_path) -- files = { filepath = tru
 end
 
 function ReadCollection:updateItemsByPath(path, new_path)
-    local l = #path
+    local len = #path
     local do_write
     for coll_name, coll in pairs(self.coll) do
         for file_name in pairs(coll) do
-            if file_name:sub(1, l) == path then
-                self:_updateItem(coll_name, file_name, new_path .. file_name:sub(l + 1))
+            if file_name:sub(1, len) == path then
+                self:_updateItem(coll_name, file_name, new_path .. file_name:sub(len + 1))
                 do_write = true
             end
         end
