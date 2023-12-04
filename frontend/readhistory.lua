@@ -209,11 +209,11 @@ end
 
 --- Updates the history list after renaming/moving a folder.
 function ReadHistory:updateItemsByPath(old_path, new_path)
-    local l = #old_path
+    local len = #old_path
     local history_updated
     for i, v in ipairs(self.hist) do
-        if v.file:sub(1, l) == old_path then
-            self.hist[i].file = new_path .. v.file:sub(l + 1)
+        if v.file:sub(1, len) == old_path then
+            self.hist[i].file = new_path .. v.file:sub(len + 1)
             history_updated = true
         end
     end
