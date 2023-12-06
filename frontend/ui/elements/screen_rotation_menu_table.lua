@@ -85,6 +85,43 @@ When unchecked, the default rotation of the file browser and the default/saved r
             table.insert(rotation_table, genMenuItem(C_("Rotation", "↓ 180°"), Screen.DEVICE_ROTATED_UPSIDE_DOWN))
         end
 
+        rotation_table[#rotation_table].separator = true
+        table.insert(rotation_table, {
+            text = _("Image viewer rotation"),
+            sub_item_table = {
+                {
+                    text = _("Clockwise (when in portrait)") .. "  \u{EB67}",
+                    radio = true,
+                    checked_func = function()
+                        return G_reader_settings:nilOrTrue("imageviewer_rotate_clockwise")
+                    end,
+                    callback = function()
+                        G_reader_settings:makeTrue("imageviewer_rotate_clockwise")
+                    end,
+                },
+                {
+                    text = _("Counter-clockwise (when in portrait)") .. "  \u{EB65}",
+                    radio = true,
+                    checked_func = function()
+                        return G_reader_settings:isFalse("imageviewer_rotate_clockwise")
+                    end,
+                    callback = function()
+                        G_reader_settings:makeFalse("imageviewer_rotate_clockwise")
+                    end,
+                    separator = true,
+                },
+                {
+                    text = _("Auto-rotate for best fit"),
+                    help_text = _("Auto-rotate the image to best match screen and image aspect ratios on image viewer launch (ie. if in portrait mode, a landscape image will be rotated).");
+                    checked_func = function()
+                        return G_reader_settings:isTrue("imageviewer_rotate_auto_for_best_fit")
+                    end,
+                    callback = function()
+                        G_reader_settings:flipTrue("imageviewer_rotate_auto_for_best_fit")
+                    end,
+                }
+            }
+        })
         return rotation_table
     end,
 }

@@ -156,6 +156,10 @@ function ImageViewer:init()
         self.image = self._scaled_image_func(1) -- native image size, that we need to know
     end
 
+    if G_reader_settings:isTrue("imageviewer_rotate_auto_for_best_fit") then
+        self.rotated = (Screen:getWidth() > Screen:getHeight()) ~= (self.image:getWidth() > self.image:getHeight())
+    end
+
     -- Widget layout
     if self._scale_to_fit == nil then -- initialize our toggle
         self._scale_to_fit = self.scale_factor == 0
@@ -398,16 +402,15 @@ function ImageViewer:_new_image_wg()
 
     local rotation_angle = 0
     if self.rotated then
-        -- in portrait mode, rotate according to this global setting so we are
-        -- like in landscape mode
-        -- NOTE: This is the sole user of this legacy global left!
-        local rotate_clockwise = G_defaults:readSetting("DLANDSCAPE_CLOCKWISE_ROTATION")
+        -- The default is to rotate clockwise when in portrait mode, so right handed users
+        -- get to hold the device's bottom in their right hand.
+        local rotate_clockwise = G_reader_settings:nilOrTrue("imageviewer_rotate_clockwise")
         if Screen:getWidth() > Screen:getHeight() then
-            -- in landscape mode, counter-rotate landscape rotation so we are
+            -- in landscape mode, counter-rotate this rotation so we are
             -- back like in portrait mode
             rotate_clockwise = not rotate_clockwise
         end
-        rotation_angle = rotate_clockwise and 90 or 270
+        rotation_angle = rotate_clockwise and 270 or 90
     end
 
     if self._scaled_image_func then
