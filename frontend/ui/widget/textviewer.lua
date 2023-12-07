@@ -57,6 +57,7 @@ local TextViewer = InputContainer:extend{
     title_multilines = nil, -- see TitleBar for details
     title_shrink_font_to_fit = nil, -- see TitleBar for details
 
+    no_set_font = false, -- set to true to hide titlebar left icon
     text_font_face = nil, -- default "x_smallinfofont"
     text_font_size = nil,
     fgcolor = Blitbuffer.COLOR_BLACK,
@@ -81,12 +82,12 @@ function TextViewer:init()
     self.height = self.height or Screen:getHeight() - Screen:scaleBySize(30)
 
     if self.justified == nil then
-        self.justified = G_reader_settings:nilOrTrue("dict_justify")
+        self.justified = G_reader_settings:nilOrTrue("textviewer_justify")
     end
     if self.text_font_face == nil then
         self.text_font_face = "x_smallinfofont"
         if self.text_font_size == nil then
-            self.text_font_size = G_reader_settings:readSetting("dict_font_size")
+            self.text_font_size = G_reader_settings:readSetting("textviewer_font_size")
         end
     end
 
@@ -161,6 +162,8 @@ function TextViewer:init()
         title_face = self.title_face,
         title_multilines = self.title_multilines,
         title_shrink_font_to_fit = self.title_shrink_font_to_fit,
+        left_icon = not self.no_set_font and "appbar.menu",
+        left_icon_tap_callback = function() self:setFontSize() end,
         close_callback = function() self:onClose() end,
         show_parent = self,
     }
@@ -529,6 +532,40 @@ function TextViewer:handleTextSelection(text, hold_duration, start_idx, end_idx,
                                          or _("Selection copied to clipboard."),
         })
     end
+end
+
+function TextViewer:setFontSize()
+    local function refresh_text()
+        local ratio = self.scroll_text_w:getCurrentRatio() -- try to keep position
+        self:init()
+        self:onShow()
+        self.scroll_text_w:scrollToRatio(ratio)
+    end
+    local default_value = 20 -- x_smallinfofont
+    local current_value = G_reader_settings:readSetting("textviewer_font_size") or default_value
+    local SpinWidget = require("ui/widget/spinwidget")
+    local widget = SpinWidget:new{
+        title_text = _("Font size"),
+        value = current_value,
+        value_min = 12,
+        value_max = 30,
+        default_value = default_value,
+        keep_shown_on_apply = true,
+        callback = function(spin)
+            self.text_font_size = spin.value
+            G_reader_settings:saveSetting("textviewer_font_size", self.text_font_size)
+            refresh_text()
+        end,
+        option_text_func = function()
+            return self.justified and _("Unjustify text") or _("Justify text")
+        end,
+        option_callback = function()
+            self.justified = not self.justified
+            G_reader_settings:saveSetting("textviewer_justify", self.justified)
+            refresh_text()
+        end,
+    }
+    UIManager:show(widget)
 end
 
 -- Register DocumentRegistry auxiliary provider.
