@@ -148,6 +148,11 @@ function ScrollTextWidget:getCharPosAtXY(x, y)
     return self.text_widget:getCharPosAtXY(x, y)
 end
 
+function ScrollTextWidget:getCurrentRatio()
+    local char_nb = #self.text_widget.charlist
+    return char_nb ~= 0 and self.text_widget:getCharPosAtXY(0, 0) / char_nb or 0
+end
+
 function ScrollTextWidget:getCharPosLineNum(charpos)
     local _, _, line_num = self.text_widget:_getXYForCharPos(charpos)
     return line_num -- screen line number
