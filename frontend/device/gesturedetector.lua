@@ -118,6 +118,16 @@ function GestureDetector:init()
     self.MULTISWIPE_THRESHOLD = self.DOUBLE_TAP_DISTANCE
 end
 
+local function deepCopyEv(tev)
+    return {
+        x = tev.x,
+        y = tev.y,
+        id = tev.id,
+        slot = tev.slot,
+        timev = tev.timev, -- A ref is enough for this table, it's re-assigned to a new object on every SYN_REPORT
+    }
+end
+
 -- Contact object, it'll keep track of everything we need for a single contact across its lifetime
 -- i.e., from this contact's down to up (or its *effective* up for double-taps, e.g., when the tap or double_tap is emitted).
 -- We'll identify contacts by their slot numbers, and store 'em in GestureDetector's active_contacts table (hash).
@@ -157,6 +167,12 @@ function GestureDetector:newContact(slot)
     -- If we have a buddy contact, point its own buddy ref to us
     if buddy_contact then
         buddy_contact.buddy_contact = self.active_contacts[slot]
+
+        -- And make sure it has an initial_tev recorded, for misbehaving platforms...
+        if not buddy_contact.initial_tev then
+            buddy_contact.initial_tev = deepCopyEv(buddy_contact.current_tev)
+            logger.warn("GestureDetector:newContact recorded an initial_tev out of order for buddy slot", buddy_contact.slot)
+        end
     end
 
     return self.active_contacts[slot]
@@ -228,16 +244,6 @@ function GestureDetector:feedEvent(tevs)
         end
     end
     return gestures
-end
-
-local function deepCopyEv(tev)
-    return {
-        x = tev.x,
-        y = tev.y,
-        id = tev.id,
-        slot = tev.slot,
-        timev = tev.timev, -- A ref is enough for this table, it's re-assigned to a new object on every SYN_REPORT
-    }
 end
 
 --[[
@@ -386,6 +392,7 @@ function Contact:setState(state_func)
     -- NOTE: Safety net for broken platforms that might screw up slot order...
     if not self.initial_tev then
         self.initial_tev = deepCopyEv(self.current_tev)
+        logger.warn("Contact:setState recorded an initial_tev out of order for slot", self.slot)
     end
     self.state = state_func
 end
