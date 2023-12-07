@@ -541,15 +541,13 @@ function TextViewer:setFontSize()
         self:onShow()
         self.scroll_text_w:scrollToRatio(ratio)
     end
-    local default_value = 20 -- x_smallinfofont
-    local current_value = G_reader_settings:readSetting("textviewer_font_size") or default_value
     local SpinWidget = require("ui/widget/spinwidget")
     local widget = SpinWidget:new{
         title_text = _("Font size"),
-        value = current_value,
+        value = self.text_font_size or 20,
         value_min = 12,
         value_max = 30,
-        default_value = default_value,
+        default_value = 20, -- x_smallinfofont
         keep_shown_on_apply = true,
         callback = function(spin)
             self.text_font_size = spin.value
