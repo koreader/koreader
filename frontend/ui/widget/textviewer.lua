@@ -10,6 +10,7 @@ Displays some text in a scrollable view.
 ]]
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
+local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
@@ -57,9 +58,10 @@ local TextViewer = InputContainer:extend{
     title_multilines = nil, -- see TitleBar for details
     title_shrink_font_to_fit = nil, -- see TitleBar for details
 
-    no_set_font = false, -- set to true to hide titlebar left icon
+    show_menu = true, -- titlebar left icon
     text_font_face = nil, -- default "x_smallinfofont"
     text_font_size = nil,
+    monospace_font = nil, -- "infont"
     fgcolor = Blitbuffer.COLOR_BLACK,
     text_padding = Size.padding.large,
     text_margin = Size.margin.small,
@@ -70,25 +72,30 @@ local TextViewer = InputContainer:extend{
     find_centered_lines_count = 5, -- line with find results to be not far from the center
 }
 
-function TextViewer:init()
-    -- calculate window dimension
+function TextViewer:init(reinit)
+    local screen_w = Screen:getWidth()
+    local screen_h = Screen:getHeight()
+
     self.align = "center"
     self.region = Geom:new{
-        x = 0, y = 0,
-        w = Screen:getWidth(),
-        h = Screen:getHeight(),
+        w = screen_w,
+        h = screen_h,
     }
-    self.width = self.width or Screen:getWidth() - Screen:scaleBySize(30)
-    self.height = self.height or Screen:getHeight() - Screen:scaleBySize(30)
+    self.width = self.width or screen_w - Screen:scaleBySize(30)
+    self.height = self.height or screen_h - Screen:scaleBySize(30)
 
     if self.justified == nil then
         self.justified = G_reader_settings:nilOrTrue("textviewer_justify")
     end
     if self.text_font_face == nil then
-        self.text_font_face = "x_smallinfofont"
-        if self.text_font_size == nil then
-            self.text_font_size = G_reader_settings:readSetting("textviewer_font_size")
+        if self.monospace_font == nil then
+            self.monospace_font = G_reader_settings:isTrue("textviewer_monospace_font")
         end
+        self.text_font_face = self.monospace_font and "infont" or "x_smallinfofont"
+        self.text_font_size = G_reader_settings:readSetting("textviewer_font_size")
+    end
+    if self.text_font_size == nil then
+        self.text_font_size = Font:getFace(self.text_font_face).orig_size
     end
 
     self._find_next = false
@@ -101,9 +108,8 @@ function TextViewer:init()
 
     if Device:isTouchDevice() then
         local range = Geom:new{
-            x = 0, y = 0,
-            w = Screen:getWidth(),
-            h = Screen:getHeight(),
+            w = screen_w,
+            h = screen_h,
         }
         self.ges_events = {
             TapClose = {
@@ -154,7 +160,7 @@ function TextViewer:init()
         }
     end
 
-    local titlebar = TitleBar:new{
+    self.titlebar = TitleBar:new{
         width = self.width,
         align = "left",
         with_bottom_line = true,
@@ -162,8 +168,8 @@ function TextViewer:init()
         title_face = self.title_face,
         title_multilines = self.title_multilines,
         title_shrink_font_to_fit = self.title_shrink_font_to_fit,
-        left_icon = not self.no_set_font and "appbar.menu",
-        left_icon_tap_callback = function() self:setFontSize() end,
+        left_icon = self.show_menu and "appbar.menu",
+        left_icon_tap_callback = function() self:showMenu() end,
         close_callback = function() self:onClose() end,
         show_parent = self,
     }
@@ -249,7 +255,7 @@ function TextViewer:init()
             },
         }
     local buttons = self.buttons_table or {}
-    if self.add_default_buttons or not self.buttons_table then
+    if (self.add_default_buttons and not reinit) or not self.buttons_table then
         table.insert(buttons, default_buttons)
     end
     self.button_table = ButtonTable:new{
@@ -259,7 +265,7 @@ function TextViewer:init()
         show_parent = self,
     }
 
-    local textw_height = self.height - titlebar:getHeight() - self.button_table:getSize().h
+    local textw_height = self.height - self.titlebar:getHeight() - self.button_table:getSize().h
 
     self.scroll_text_w = ScrollTextWidget:new{
         text = self.text,
@@ -289,7 +295,7 @@ function TextViewer:init()
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
-            titlebar,
+            self.titlebar,
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.width,
@@ -534,36 +540,88 @@ function TextViewer:handleTextSelection(text, hold_duration, start_idx, end_idx,
     end
 end
 
-function TextViewer:setFontSize()
-    local function refresh_text()
-        local ratio = self.scroll_text_w:getCurrentRatio() -- try to keep position
-        self:init()
-        self:onShow()
-        self.scroll_text_w:scrollToRatio(ratio)
-    end
-    local SpinWidget = require("ui/widget/spinwidget")
-    local widget = SpinWidget:new{
-        title_text = _("Font size"),
-        value = self.text_font_size or 20,
-        value_min = 12,
-        value_max = 30,
-        default_value = 20, -- x_smallinfofont
-        keep_shown_on_apply = true,
-        callback = function(spin)
-            self.text_font_size = spin.value
-            G_reader_settings:saveSetting("textviewer_font_size", self.text_font_size)
-            refresh_text()
-        end,
-        option_text_func = function()
-            return self.justified and _("Unjustify text") or _("Justify text")
-        end,
-        option_callback = function()
-            self.justified = not self.justified
-            G_reader_settings:saveSetting("textviewer_justify", self.justified)
-            refresh_text()
+function TextViewer:reinit()
+    local low, high = self.scroll_text_w.text_widget:getVisibleHeightRatios() -- try to keep position
+    local ratio = low == 0 and 0 or (low + high) / 2 -- if we are at the beginning, keep the first line visible
+    self:init(true) -- do not add default buttons once more
+    self:onShow()
+    self.scroll_text_w:scrollToRatio(ratio, ratio == 0)
+end
+
+function TextViewer.saveSetting(setting, value)
+    G_reader_settings:saveSetting(setting, value)
+    UIManager:show(Notification:new{
+        text = _("Text viewer setting saved as default."),
+    })
+end
+
+function TextViewer:showMenu()
+    local dialog
+    local buttons = {
+        {{
+            text_func = function()
+                return T(_("Font size: %1"), self.text_font_size)
+            end,
+            align = "left",
+            callback = function()
+                UIManager:close(dialog)
+                local SpinWidget = require("ui/widget/spinwidget")
+                local widget = SpinWidget:new{
+                    title_text = _("Font size"),
+                    value = self.text_font_size,
+                    value_min = 12,
+                    value_max = 30,
+                    default_value = 20, -- x_smallinfofont
+                    keep_shown_on_apply = true,
+                    callback = function(spin)
+                        self.text_font_size = spin.value
+                        self:reinit()
+                    end,
+                }
+                UIManager:show(widget)
+            end,
+            hold_callback = function()
+                TextViewer.saveSetting("textviewer_font_size", self.text_font_size)
+            end,
+        }},
+        {{
+            text_func = function()
+                return _("Monospace font") .. (self.monospace_font and "  \u{2713}" or "  \u{2003}")
+            end,
+            align = "left",
+            callback = function()
+                UIManager:close(dialog)
+                self.text_font_face = nil
+                self.monospace_font = not self.monospace_font
+                self:reinit()
+            end,
+            hold_callback = function()
+                TextViewer.saveSetting("textviewer_monospace_font", self.monospace_font)
+            end,
+        }},
+        {{
+            text_func = function()
+                return _("Justify") .. (self.justified and "  \u{2713}" or "  \u{2003}")
+            end,
+            align = "left",
+            callback = function()
+                UIManager:close(dialog)
+                self.justified = not self.justified
+                self:reinit()
+            end,
+            hold_callback = function()
+                TextViewer.saveSetting("textviewer_justify", self.justified)
+            end,
+        }},
+    }
+    dialog = ButtonDialog:new{
+        shrink_unneeded_width = true,
+        buttons = buttons,
+        anchor = function()
+            return self.titlebar.left_button.image.dimen
         end,
     }
-    UIManager:show(widget)
+    UIManager:show(dialog)
 end
 
 -- Register DocumentRegistry auxiliary provider.
@@ -590,7 +648,6 @@ function TextViewer.openFile(file)
         UIManager:show(TextViewer:new{
             title = file_path,
             title_multilines = true,
-            justified = false,
             text = file_content,
         })
     end
