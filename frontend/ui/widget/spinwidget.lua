@@ -173,24 +173,22 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         end,
     }
     local option_button = {
-        text = self.option_text_func and self.option_text_func() or self.option_text,
+        text = self.option_text,
         callback = function()
             if self.option_callback then
                 self.value, self.value_index = value_widget:getValue()
                 self.option_callback(self)
             end
-            if self.keep_shown_on_apply then
-                self:update()
-            else
+            if not self.keep_shown_on_apply then -- assume option wants it same as ok
                 self:onClose()
             end
         end,
     }
     if self.extra_text and not self.option_text then
         table.insert(buttons, {extra_button})
-    elseif (self.option_text or self.option_text_func) and not self.extra_text then
+    elseif self.option_text and not self.extra_text then
         table.insert(buttons, {option_button})
-    elseif self.extra_text and (self.option_text or self.option_text_func) then
+    elseif self.extra_text and self.option_text then
         table.insert(buttons, {extra_button, option_button})
     end
     table.insert(buttons, {
