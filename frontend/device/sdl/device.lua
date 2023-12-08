@@ -109,7 +109,6 @@ local Device = Generic:extend{
 
 local AppImage = Device:extend{
     model = "AppImage",
-    hasMultitouch = no,
     hasOTAUpdates = yes,
     isDesktop = yes,
 }
