@@ -268,6 +268,7 @@ function Button:setIcon(icon, width)
 end
 
 function Button:setCheckMark()
+    -- add a checkmark sign or reserve the space with "wide em space"
     self.text = self.text_orig .. (self.checked_func() and "  \u{2713}" or "  \u{2003}")
 end
 
