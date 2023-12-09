@@ -61,7 +61,7 @@ local TextViewer = InputContainer:extend{
     show_menu = true, -- titlebar left icon
     text_font_face = nil, -- default "x_smallinfofont"
     text_font_size = nil,
-    monospace_font = nil, -- "infont"
+    monospace_font = nil, -- set to true to use "infont"
     fgcolor = Blitbuffer.COLOR_BLACK,
     text_padding = Size.padding.large,
     text_margin = Size.margin.small,
@@ -585,12 +585,12 @@ function TextViewer:showMenu()
             end,
         }},
         {{
-            text_func = function()
-                return _("Monospace font") .. (self.monospace_font and "  \u{2713}" or "  \u{2003}")
+            text = _("Monospace font"),
+            checked_func = function()
+                return self.monospace_font
             end,
             align = "left",
             callback = function()
-                UIManager:close(dialog)
                 self.text_font_face = nil
                 self.monospace_font = not self.monospace_font
                 self:reinit()
@@ -600,12 +600,12 @@ function TextViewer:showMenu()
             end,
         }},
         {{
-            text_func = function()
-                return _("Justify") .. (self.justified and "  \u{2713}" or "  \u{2003}")
+            text = _("Justify"),
+            checked_func = function()
+                return self.justified
             end,
             align = "left",
             callback = function()
-                UIManager:close(dialog)
                 self.justified = not self.justified
                 self:reinit()
             end,
