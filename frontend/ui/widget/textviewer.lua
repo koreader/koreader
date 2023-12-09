@@ -92,7 +92,9 @@ function TextViewer:init(reinit)
             self.monospace_font = G_reader_settings:isTrue("textviewer_monospace_font")
         end
         self.text_font_face = self.monospace_font and "infont" or "x_smallinfofont"
-        self.text_font_size = G_reader_settings:readSetting("textviewer_font_size")
+        if self.text_font_size == nil then
+            self.text_font_size = G_reader_settings:readSetting("textviewer_font_size")
+        end
     end
     if self.text_font_size == nil then
         self.text_font_size = Font:getFace(self.text_font_face).orig_size
