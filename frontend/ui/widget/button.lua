@@ -37,6 +37,7 @@ local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
 local Button = InputContainer:extend{
     text = nil, -- mandatory (unless icon is provided)
     text_func = nil,
+    checked_func = nil, -- checkmark appended to text
     lang = nil,
     icon = nil,
     icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
@@ -70,6 +71,10 @@ function Button:init()
     -- Prefer an optional text_func over text
     if self.text_func and type(self.text_func) == "function" then
         self.text = self.text_func()
+    end
+    if self.checked_func then
+        self.text_orig = self.text_orig or self.text
+        self:setCheckMark()
     end
 
     -- Point tap_input to hold_input if requested
@@ -260,6 +265,10 @@ function Button:setIcon(icon, width)
         self.label_widget:free()
         self:init()
     end
+end
+
+function Button:setCheckMark()
+    self.text = self.text_orig .. (self.checked_func() and "  \u{2713}" or "  \u{2003}")
 end
 
 function Button:onFocus()
@@ -471,6 +480,11 @@ function Button:onTapSelectButton()
                     self:_undoFeedbackHighlight(is_translucent)
                     UIManager:forceRePaint()
                 end
+            end
+            if self.checked_func then
+                self:setCheckMark()
+                self.label_widget:setText(self.text)
+                self:refresh()
             end
         elseif self.tap_input then
             self:onInput(self.tap_input)
