@@ -891,30 +891,13 @@ function PageBrowserWidget:showMenu()
             end,
         }},
         {{
-            text_func = function(no_size_trick)
-                -- A bit tricky to update the text in the callback, as this button,
-                -- being sized by ButtonTable, can't be rebuilt. We will update its
-                -- text, and we want to be sure it will fit in the initial width,
-                -- which may be with the checkmark or not.
-                local text = _("Preload next/prev thumbnails")
-                if G_reader_settings:isTrue("page_browser_preload_thumbnails") then
-                    text = text .. "  \u{2713}" -- checkmark
-                else
-                    if not no_size_trick then
-                        -- Initial call, make it wide enough so the checkmark text will fit
-                        text = text .. "  \u{2003}" -- wide em space
-                    end
-                    -- Otherwise, keep it small without the checkmark, which will fit
-                end
-                return text
+            text = _("Preload next/prev thumbnails"),
+            checked_func = function()
+                return G_reader_settings:isTrue("page_browser_preload_thumbnails")
             end,
-            id = "preload_thumbnails",
             align = "left",
             callback = function()
                 G_reader_settings:flipTrue("page_browser_preload_thumbnails")
-                local b = button_dialog:getButtonById("preload_thumbnails")
-                b:setText(b.text_func(true), b.width)
-                b:refresh()
                 if G_reader_settings:isTrue("page_browser_preload_thumbnails") then
                     self:preloadNextPrevScreenThumbnails()
                 end
