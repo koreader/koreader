@@ -404,11 +404,18 @@ function ImageViewer:_new_image_wg()
     if self.rotated then
         -- The default is to rotate clockwise when in portrait mode, so right handed users
         -- get to hold the device's bottom in their right hand.
-        local rotate_clockwise = G_reader_settings:nilOrTrue("imageviewer_rotate_clockwise")
-        if Screen:getWidth() > Screen:getHeight() then
-            -- in landscape mode, counter-rotate this rotation so we are
-            -- back like in portrait mode
-            rotate_clockwise = not rotate_clockwise
+        local rotate_clockwise
+        if Screen:getWidth() <= Screen:getHeight() then
+            -- In portrait mode, the default if unset is to rotate clockwise, which is probably
+            -- more practical for right handed users.
+            rotate_clockwise = G_reader_settings:nilOrTrue("imageviewer_portrait_rotate_clockwise")
+        else
+            -- In landscape mode, the default if unset is to rotate the image counterclockwise,
+            -- which is probably more practical for right handed users (if when in landscape they
+            -- prefer to have the device's bottom in their right hand, this rotation will bring
+            -- the image bottom to the device's bottom, so they get to turn the device in its
+            -- original orientation to look at the rotated image).
+            rotate_clockwise = G_reader_settings:isTrue("imageviewer_landscape_rotate_clockwise")
         end
         rotation_angle = rotate_clockwise and 270 or 90
     end

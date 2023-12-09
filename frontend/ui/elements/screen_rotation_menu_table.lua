@@ -90,23 +90,48 @@ When unchecked, the default rotation of the file browser and the default/saved r
             text = _("Image viewer rotation"),
             sub_item_table = {
                 {
-                    text = _("Clockwise (when in portrait)") .. "  \u{EB67}",
+                    -- The default if unset, probably more practical for right handed users.
+                    text = _("Rotate image \u{2938} when in portrait mode"),
                     radio = true,
                     checked_func = function()
-                        return G_reader_settings:nilOrTrue("imageviewer_rotate_clockwise")
+                        return G_reader_settings:nilOrTrue("imageviewer_portrait_rotate_clockwise")
                     end,
                     callback = function()
-                        G_reader_settings:makeTrue("imageviewer_rotate_clockwise")
+                        G_reader_settings:makeTrue("imageviewer_portrait_rotate_clockwise")
                     end,
                 },
                 {
-                    text = _("Counter-clockwise (when in portrait)") .. "  \u{EB65}",
+                    text = _("Rotate image \u{2939} when in portrait mode"),
                     radio = true,
                     checked_func = function()
-                        return G_reader_settings:isFalse("imageviewer_rotate_clockwise")
+                        return G_reader_settings:isFalse("imageviewer_portrait_rotate_clockwise")
                     end,
                     callback = function()
-                        G_reader_settings:makeFalse("imageviewer_rotate_clockwise")
+                        G_reader_settings:makeFalse("imageviewer_portrait_rotate_clockwise")
+                    end,
+                    separator = true,
+                },
+                {
+                    text = _("Rotate image \u{2938} when in landscape mode"),
+                    radio = true,
+                    checked_func = function()
+                        return G_reader_settings:isTrue("imageviewer_landscape_rotate_clockwise")
+                    end,
+                    callback = function()
+                        G_reader_settings:makeTrue("imageviewer_landscape_rotate_clockwise")
+                    end,
+                },
+                {
+                    -- The default if unset, probably more practical for right handed users (if they prefer
+                    -- to have the device's bottom in their right hand, this rotation will bring the image
+                    -- bottom to the device's bottom).
+                    text = _("Rotate image \u{2939} when in landscape mode"),
+                    radio = true,
+                    checked_func = function()
+                        return G_reader_settings:nilOrFalse("imageviewer_landscape_rotate_clockwise")
+                    end,
+                    callback = function()
+                        G_reader_settings:makeFalse("imageviewer_landscape_rotate_clockwise")
                     end,
                     separator = true,
                 },
