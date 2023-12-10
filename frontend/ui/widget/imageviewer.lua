@@ -402,22 +402,24 @@ function ImageViewer:_new_image_wg()
 
     local rotation_angle = 0
     if self.rotated then
-        -- The default is to rotate clockwise when in portrait mode, so right handed users
-        -- get to hold the device's bottom in their right hand.
         local rotate_clockwise
         if Screen:getWidth() <= Screen:getHeight() then
-            -- In portrait mode, the default if unset is to rotate clockwise, which is probably
-            -- more practical for right handed users.
-            rotate_clockwise = G_reader_settings:nilOrTrue("imageviewer_portrait_rotate_clockwise")
+            -- In portraite mode, the default is to rotate the image counterclockwise, so devices
+            -- with hardware buttons on their thick right side get to be rotated clockwise
+            -- with that thicker side at the bottom in the hand of the user.
+            rotate_clockwise = false
+            if G_reader_settings:isTrue("imageviewer_rotation_portrait_invert") then
+                rotate_clockwise = true
+            end
         else
-            -- In landscape mode, the default if unset is to rotate the image counterclockwise,
-            -- which is probably more practical for right handed users (if when in landscape they
-            -- prefer to have the device's bottom in their right hand, this rotation will bring
-            -- the image bottom to the device's bottom, so they get to turn the device in its
-            -- original orientation to look at the rotated image).
-            rotate_clockwise = G_reader_settings:isTrue("imageviewer_landscape_rotate_clockwise")
+            -- In landscape mode, the default is to rotate the image clockwise, so such devices
+            -- (see above) get back to their original orientation with their thick side on the right.
+            rotate_clockwise = true
+            if G_reader_settings:isTrue("imageviewer_rotation_landscape_invert") then
+                rotate_clockwise = false
+            end
         end
-        rotation_angle = rotate_clockwise and 270 or 90
+        rotation_angle = rotate_clockwise and 270 or 90 -- (unintuitive, but this does it)
     end
 
     if self._scaled_image_func then
