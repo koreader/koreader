@@ -32,7 +32,7 @@ describe("FileManager module", function()
             assert.Equals(w.text, "File not found:\n"..tmp_fn)
         end
         assert.is_nil(lfs.attributes(tmp_fn))
-        filemanager:deleteFile(tmp_fn, true)
+        filemanager:showDeleteFileDialog(tmp_fn)
         UIManager.show = old_show
         filemanager:onClose()
     end)

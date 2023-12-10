@@ -10,7 +10,7 @@ local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local _ = require("gettext")
 
 local FileManagerCollection = WidgetContainer:extend{
-    coll_menu_title = _("Favorites"),
+    title = _("Favorites"),
 }
 
 function FileManagerCollection:init()
@@ -19,28 +19,36 @@ end
 
 function FileManagerCollection:addToMainMenu(menu_items)
     menu_items.collections = {
-        text = self.coll_menu_title,
+        text = self.title,
         callback = function()
-            self:onShowColl("favorites")
+            self:onShowColl()
         end,
     }
 end
 
 function FileManagerCollection:updateItemTable()
-    -- Try to stay on current page.
-    local select_number = nil
-    if self.coll_menu.page and self.coll_menu.perpage then
-        select_number = (self.coll_menu.page - 1) * self.coll_menu.perpage + 1
+    local item_table = {}
+    for _, item in pairs(ReadCollection.coll[self.coll_menu.collection_name]) do
+        table.insert(item_table, item)
     end
-    self.coll_menu:switchItemTable(self.coll_menu_title,
-        ReadCollection:prepareList(self.coll_menu.collection), select_number)
+    table.sort(item_table, function(v1, v2) return v1.order < v2.order end)
+    self.coll_menu:switchItemTable(self.title, item_table, -1)
 end
 
 function FileManagerCollection:onMenuChoice(item)
-    require("apps/reader/readerui"):showReader(item.file)
+    local file = item.file
+    if self.ui.document then
+        if self.ui.document.file ~= file then
+            self.ui:switchDocument(file)
+        end
+    else
+        local ReaderUI = require("apps/reader/readerui")
+        ReaderUI:showReader(file)
+    end
 end
 
 function FileManagerCollection:onMenuHold(item)
+    local file = item.file
     self.collfile_dialog = nil
     local function close_dialog_callback()
         UIManager:close(self.collfile_dialog)
@@ -49,46 +57,45 @@ function FileManagerCollection:onMenuHold(item)
         UIManager:close(self.collfile_dialog)
         self._manager.coll_menu.close_callback()
     end
-    local function status_button_callback()
+    local function close_dialog_update_callback()
         UIManager:close(self.collfile_dialog)
         self._manager:updateItemTable()
+        self._manager.files_updated = true
     end
-    local is_currently_opened = item.file == (self.ui.document and self.ui.document.file)
+    local is_currently_opened = file == (self.ui.document and self.ui.document.file)
 
     local buttons = {}
-    if not item.dim then
-        local doc_settings_or_file = is_currently_opened and self.ui.doc_settings or item.file
-        table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, status_button_callback))
-        table.insert(buttons, {}) -- separator
-    end
+    local doc_settings_or_file = is_currently_opened and self.ui.doc_settings or file
+    table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_update_callback))
+    table.insert(buttons, {}) -- separator
     table.insert(buttons, {
-        filemanagerutil.genResetSettingsButton(item.file, status_button_callback, is_currently_opened),
+        filemanagerutil.genResetSettingsButton(file, close_dialog_update_callback, is_currently_opened),
         {
             text = _("Remove from favorites"),
             callback = function()
                 UIManager:close(self.collfile_dialog)
-                ReadCollection:removeItem(item.file, self._manager.coll_menu.collection)
+                ReadCollection:removeItem(file, self.collection_name)
                 self._manager:updateItemTable()
             end,
         },
     })
     table.insert(buttons, {
-        filemanagerutil.genShowFolderButton(item.file, close_dialog_menu_callback, item.dim),
-        filemanagerutil.genBookInformationButton(item.file, close_dialog_callback, item.dim),
+        filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback),
+        filemanagerutil.genBookInformationButton(file, close_dialog_callback),
     })
     table.insert(buttons, {
-        filemanagerutil.genBookCoverButton(item.file, close_dialog_callback, item.dim),
-        filemanagerutil.genBookDescriptionButton(item.file, close_dialog_callback, item.dim),
+        filemanagerutil.genBookCoverButton(file, close_dialog_callback),
+        filemanagerutil.genBookDescriptionButton(file, close_dialog_callback),
     })
 
-    if Device:canExecuteScript(item.file) then
+    if Device:canExecuteScript(file) then
         table.insert(buttons, {
-            filemanagerutil.genExecuteScriptButton(item.file, close_dialog_menu_callback)
+            filemanagerutil.genExecuteScriptButton(file, close_dialog_menu_callback)
         })
     end
 
     self.collfile_dialog = ButtonDialog:new{
-        title = item.text:match("([^/]+)$"),
+        title = item.text,
         title_align = "center",
         buttons = buttons,
     }
@@ -111,7 +118,8 @@ function FileManagerCollection:MenuSetRotationModeHandler(rotation)
     return true
 end
 
-function FileManagerCollection:onShowColl(collection)
+function FileManagerCollection:onShowColl(collection_name)
+    collection_name = collection_name or ReadCollection.default_collection_name
     self.coll_menu = Menu:new{
         ui = self.ui,
         covers_fullscreen = true, -- hint for UIManager:_repaint()
@@ -123,33 +131,31 @@ function FileManagerCollection:onShowColl(collection)
         onMenuHold = self.onMenuHold,
         onSetRotationMode = self.MenuSetRotationModeHandler,
         _manager = self,
-        collection = collection,
+        collection_name = collection_name,
     }
-    self:updateItemTable()
     self.coll_menu.close_callback = function()
+        if self.files_updated then
+            if self.ui.file_chooser then
+                self.ui.file_chooser:refreshPath()
+            end
+            self.files_updated = nil
+        end
         UIManager:close(self.coll_menu)
+        self.coll_menu = nil
     end
+    self:updateItemTable()
     UIManager:show(self.coll_menu)
     return true
 end
 
 function FileManagerCollection:showCollDialog()
     local coll_dialog
-    local is_added = self.ui.document and ReadCollection:checkItemExist(self.ui.document.file)
     local buttons = {
         {{
-            text_func = function()
-                return is_added and _("Remove current book from favorites") or _("Add current book to favorites")
-            end,
-            enabled = self.ui.document and true or false,
+            text = _("Sort favorites"),
             callback = function()
                 UIManager:close(coll_dialog)
-                if is_added then
-                    ReadCollection:removeItem(self.ui.document.file)
-                else
-                    ReadCollection:addItem(self.ui.document.file)
-                end
-                self:updateItemTable()
+                self:sortCollection()
             end,
         }},
         {{
@@ -164,8 +170,8 @@ function FileManagerCollection:showCollDialog()
                         return DocumentRegistry:hasProvider(file)
                     end,
                     onConfirm = function(file)
-                        if not ReadCollection:checkItemExist(file) then
-                            ReadCollection:addItem(file)
+                        if not ReadCollection:hasFile(file) then
+                            ReadCollection:addItem(file, self.coll_menu.collection_name)
                             self:updateItemTable()
                         end
                     end,
@@ -173,14 +179,24 @@ function FileManagerCollection:showCollDialog()
                 UIManager:show(path_chooser)
             end,
         }},
-        {{
-            text = _("Sort favorites"),
+    }
+    if self.ui.document then
+        local has_file = ReadCollection:hasFile(self.ui.document.file)
+        table.insert(buttons, {{
+            text_func = function()
+                return has_file and _("Remove current book from favorites") or _("Add current book to favorites")
+            end,
             callback = function()
                 UIManager:close(coll_dialog)
-                self:sortCollection()
+                if has_file then
+                    ReadCollection:removeItem(self.ui.document.file)
+                else
+                    ReadCollection:addItem(self.ui.document.file, self.coll_menu.collection_name)
+                end
+                self:updateItemTable()
             end,
-        }},
-    }
+        }})
+    end
     coll_dialog = ButtonDialog:new{
         buttons = buttons,
     }
@@ -188,21 +204,14 @@ function FileManagerCollection:showCollDialog()
 end
 
 function FileManagerCollection:sortCollection()
-    local item_table = {}
-    for _, v in ipairs(self.coll_menu.item_table) do
-        table.insert(item_table, { text = v.text, label = v.file })
-    end
+    local item_table = ReadCollection:getOrderedCollection(self.coll_menu.collection_name)
     local SortWidget = require("ui/widget/sortwidget")
     local sort_widget
     sort_widget = SortWidget:new{
         title = _("Sort favorites"),
         item_table = item_table,
         callback = function()
-            local new_order_table = {}
-            for i, v in ipairs(sort_widget.item_table) do
-                table.insert(new_order_table, { file = v.label, order = i })
-            end
-            ReadCollection:writeCollection(new_order_table, self.coll_menu.collection)
+            ReadCollection:updateCollectionOrder(self.coll_menu.collection_name, sort_widget.item_table)
             self:updateItemTable()
         end
     }

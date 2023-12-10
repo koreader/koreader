@@ -88,7 +88,7 @@ function FileManagerShortcuts:onMenuHold(item)
                 text = _("Paste to folder"),
                 callback = function()
                     UIManager:close(dialog)
-                    self._manager.ui:pasteHere(item.folder)
+                    self._manager.ui:pasteFileFromClipboard(item.folder)
                 end
             },
         })

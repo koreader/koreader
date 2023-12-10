@@ -8,6 +8,7 @@ local util = require("util")
 local joinPath = ffiutil.joinPath
 local lfs = require("libs/libkoreader-lfs")
 local realpath = ffiutil.realpath
+local C_ = require("gettext").pgettext
 
 local history_file = joinPath(DataStorage:getDataDir(), "history.lua")
 
@@ -19,7 +20,7 @@ local ReadHistory = {
 
 local function getMandatory(date_time)
     return G_reader_settings:isTrue("history_datetime_short")
-        and datetime.secondsToDate(date_time):sub(3) or datetime.secondsToDateTime(date_time)
+        and os.date(C_("Date string", "%y-%m-%d"), date_time) or datetime.secondsToDateTime(date_time)
 end
 
 local function buildEntry(input_time, input_file)
@@ -181,23 +182,38 @@ function ReadHistory:getFileByDirectory(directory, recursive)
 end
 
 --- Updates the history list after renaming/moving a file.
-function ReadHistory:updateItemByPath(old_path, new_path)
-    local index = self:getIndexByFile(old_path)
+function ReadHistory:updateItem(file, new_filepath)
+    local index = self:getIndexByFile(file)
     if index then
-        self.hist[index].file = new_path
-        self.hist[index].text = new_path:gsub(".*/", "")
+        local item = self.hist[index]
+        item.file = new_filepath
+        item.text = new_filepath:gsub(".*/", "")
+        self:_flush()
+    end
+end
+
+function ReadHistory:updateItems(files, new_path) -- files = { filepath = true, }
+    local history_updated
+    for file in pairs(files) do
+        local index = self:getIndexByFile(file)
+        if index then
+            local item = self.hist[index]
+            item.file = new_path .. "/" .. item.text
+            history_updated = true
+        end
+    end
+    if history_updated then
         self:_flush()
     end
 end
 
 --- Updates the history list after renaming/moving a folder.
 function ReadHistory:updateItemsByPath(old_path, new_path)
-    old_path = "^"..old_path
+    local len = #old_path
     local history_updated
     for i, v in ipairs(self.hist) do
-        local file, count = v.file:gsub(old_path, new_path)
-        if count == 1 then
-            self.hist[i].file = file
+        if v.file:sub(1, len) == old_path then
+            self.hist[i].file = new_path .. v.file:sub(len + 1)
             history_updated = true
         end
     end
@@ -237,6 +253,24 @@ function ReadHistory:folderDeleted(path)
             self:fileDeleted(i)
             history_updated = true
             DocSettings.updateLocation(file) -- remove sdr if not in book location
+        end
+    end
+    if history_updated then
+        if G_reader_settings:isTrue("autoremove_deleted_items_from_history") then
+            self:_flush()
+        else
+            self:ensureLastFile()
+        end
+    end
+end
+
+function ReadHistory:removeItems(files) -- files = { filepath = true, }
+    local history_updated
+    for file in pairs(files) do
+        local index = self:getIndexByFile(file)
+        if index then
+            self:fileDeleted(index)
+            history_updated = true
         end
     end
     if history_updated then
