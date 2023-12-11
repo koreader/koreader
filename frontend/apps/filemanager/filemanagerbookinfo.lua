@@ -406,6 +406,19 @@ function BookInfo:setCustomCover(file, book_props)
     end
 end
 
+function BookInfo:setCustomCoverFromImage(file, image_file)
+    local custom_book_cover = DocSettings:findCustomCoverFile(file)
+    if custom_book_cover then
+        os.remove(custom_book_cover)
+    end
+    DocSettings:flushCustomCover(file, image_file)
+    if self.ui.doc_settings then
+        self.ui.doc_settings:getCustomCoverFile(true) -- reset cover file cache
+    end
+    UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
+    UIManager:broadcastEvent(Event:new("BookMetadataChanged"))
+end
+
 function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
     -- in file
     local custom_doc_settings, custom_props, display_title, no_custom_metadata
