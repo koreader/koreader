@@ -48,7 +48,6 @@ local TextViewer = InputContainer:extend{
     -- When used to display more technical text (HTML, CSS,
     -- application logs...), it's best to reset them to false.
     alignment = "left",
-    justified = nil,
     lang = nil,
     para_direction_rtl = nil,
     auto_para_direction = true,
@@ -59,9 +58,11 @@ local TextViewer = InputContainer:extend{
     title_shrink_font_to_fit = nil, -- see TitleBar for details
 
     show_menu = true, -- titlebar left icon
-    text_font_face = nil, -- default "x_smallinfofont"
-    text_font_size = nil,
-    monospace_font = nil, -- set to true to use "infont"
+    text_category = "general",
+    monospace_font = nil, -- internal
+    text_font_size = nil, -- internal
+    justified = nil, -- internal
+
     fgcolor = Blitbuffer.COLOR_BLACK,
     text_padding = Size.padding.large,
     text_margin = Size.margin.small,
@@ -70,6 +71,15 @@ local TextViewer = InputContainer:extend{
     add_default_buttons = nil,
     default_hold_callback = nil, -- on each default button
     find_centered_lines_count = 5, -- line with find results to be not far from the center
+}
+
+local text_categories = {
+    general      = { monospace_font = false, font_size = 20, justified = false },
+    file_content = { monospace_font = false, font_size = 20, justified = false },
+    book_info    = { monospace_font = false, font_size = 20, justified =  true },
+    bookmark     = { monospace_font = false, font_size = 20, justified =  true },
+    dictionary   = { monospace_font = false, font_size = 20, justified = false },
+    code         = { monospace_font =  true, font_size = 16, justified = false },
 }
 
 function TextViewer:init(reinit)
@@ -84,21 +94,14 @@ function TextViewer:init(reinit)
     self.width = self.width or screen_w - Screen:scaleBySize(30)
     self.height = self.height or screen_h - Screen:scaleBySize(30)
 
-    if self.justified == nil then
-        self.justified = G_reader_settings:nilOrTrue("textviewer_justify")
+    if not reinit then
+        local categories = G_reader_settings:readSetting("textviewer_categories")
+        local text_settings = (categories and categories[self.text_category]) or text_categories[self.text_category]
+        self.monospace_font = text_settings.monospace_font
+        self.text_font_size = text_settings.font_size
+        self.justified      = text_settings.justified
     end
-    if self.text_font_face == nil then
-        if self.monospace_font == nil then
-            self.monospace_font = G_reader_settings:isTrue("textviewer_monospace_font")
-        end
-        self.text_font_face = self.monospace_font and "infont" or "x_smallinfofont"
-        if self.text_font_size == nil then
-            self.text_font_size = G_reader_settings:readSetting("textviewer_font_size")
-        end
-    end
-    if self.text_font_size == nil then
-        self.text_font_size = Font:getFace(self.text_font_face).orig_size
-    end
+    local text_font_face = self.monospace_font and "smallinfont" or "x_smallinfofont"
 
     self._find_next = false
     self._find_next_button = false
@@ -271,7 +274,7 @@ function TextViewer:init(reinit)
 
     self.scroll_text_w = ScrollTextWidget:new{
         text = self.text,
-        face = Font:getFace(self.text_font_face, self.text_font_size),
+        face = Font:getFace(text_font_face, self.text_font_size),
         fgcolor = self.fgcolor,
         width = self.width - 2*self.text_padding - 2*self.text_margin,
         height = textw_height - 2*self.text_padding -2*self.text_margin,
@@ -543,19 +546,15 @@ function TextViewer:handleTextSelection(text, hold_duration, start_idx, end_idx,
 end
 
 function TextViewer:reinit()
+    local text_settings = G_reader_settings:readSetting("textviewer_categories", {})
+    text_settings[self.text_category] =
+        { monospace_font = self.monospace_font, font_size = self.text_font_size, justified = self.justified }
     local low, high = self.scroll_text_w.text_widget:getVisibleHeightRatios() -- try to keep position
     local ratio = low == 0 and 0 or (low + high) / 2 -- if we are at the beginning, keep the first line visible
     UIManager:setDirty(nil, "partial", self.frame.dimen)
     self:init(true) -- do not add default buttons once more
     self:onShow()
     self.scroll_text_w:scrollToRatio(ratio, ratio == 0)
-end
-
-function TextViewer.saveSetting(setting, value)
-    G_reader_settings:saveSetting(setting, value)
-    UIManager:show(Notification:new{
-        text = _("Text viewer setting saved as default."),
-    })
 end
 
 function TextViewer:showMenu()
@@ -574,7 +573,7 @@ function TextViewer:showMenu()
                     value = self.text_font_size,
                     value_min = 12,
                     value_max = 30,
-                    default_value = 20, -- x_smallinfofont
+                    default_value = self.monospace_font and 16 or 20,
                     keep_shown_on_apply = true,
                     callback = function(spin)
                         self.text_font_size = spin.value
@@ -582,9 +581,6 @@ function TextViewer:showMenu()
                     end,
                 }
                 UIManager:show(widget)
-            end,
-            hold_callback = function()
-                TextViewer.saveSetting("textviewer_font_size", self.text_font_size)
             end,
         }},
         {{
@@ -595,13 +591,9 @@ function TextViewer:showMenu()
             align = "left",
             callback = function()
                 UIManager:close(dialog)
-                self.text_font_face = nil
                 self.monospace_font = not self.monospace_font
                 self:reinit()
                 UIManager:show(dialog)
-            end,
-            hold_callback = function()
-                TextViewer.saveSetting("textviewer_monospace_font", self.monospace_font)
             end,
         }},
         {{
@@ -613,9 +605,6 @@ function TextViewer:showMenu()
             callback = function()
                 self.justified = not self.justified
                 self:reinit()
-            end,
-            hold_callback = function()
-                TextViewer.saveSetting("textviewer_justify", self.justified)
             end,
         }},
     }
