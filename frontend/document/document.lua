@@ -152,7 +152,7 @@ end
 
 -- this might be overridden by a document implementation
 function Document:getNativePageDimensions(pageno)
-    local hash = "pgdim|"..self.file.."|"..pageno
+    local hash = "pgdim|"..self.file.."|"..self.mod_time.."|"..pageno
     local cached = DocCache:check(hash)
     if cached then
         return cached[1]
