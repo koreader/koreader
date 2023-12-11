@@ -32,6 +32,7 @@ local MyClipping = require("clip")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local T = require("ffi/util").template
 local logger = require("logger")
 local _ = require("gettext")
@@ -308,40 +309,17 @@ function Exporter:addToMainMenu(menu_items)
 end
 
 function Exporter:chooseFolder()
-    local function set_targets_clipping_dir(dir)
-        for k in pairs(self.targets) do
-            self.targets[k].clipping_dir = dir
+    local settings = G_reader_settings:readSetting("exporter", {})
+    local title_header = _("Current export folder:")
+    local current_path = settings.clipping_dir
+    local default_path = DataStorage:getFullDataDir() .. "/clipboard"
+    local caller_callback = function(path)
+        settings.clipping_dir = path
+        for _, target in pairs(self.targets) do
+            target.clipping_dir = path
         end
     end
-    local clipping_dir_default = DataStorage:getFullDataDir() .. "/clipboard"
-    local settings = G_reader_settings:readSetting("exporter") or {}
-    local clipping_dir = settings.clipping_dir or clipping_dir_default
-    local MultiConfirmBox = require("ui/widget/multiconfirmbox")
-    local confirm_box = MultiConfirmBox:new{
-        text = T(_("Export folder is set to:\n%1\n\nChoose new export folder?"), clipping_dir),
-        choice1_text = _("Use default"),
-        choice1_callback = function()
-            settings.clipping_dir = nil
-            G_reader_settings:saveSetting("exporter", settings)
-            set_targets_clipping_dir(clipping_dir_default)
-        end,
-        choice2_text = _("Choose folder"),
-        choice2_callback = function()
-            local PathChooser = require("ui/widget/pathchooser")
-            local path_chooser = PathChooser:new{
-                select_file = false,
-                show_files = false,
-                path = clipping_dir,
-                onConfirm = function(new_path)
-                    settings.clipping_dir = new_path
-                    G_reader_settings:saveSetting("exporter", settings)
-                    set_targets_clipping_dir(new_path)
-                end
-            }
-            UIManager:show(path_chooser)
-        end,
-    }
-    UIManager:show(confirm_box)
+    filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, default_path)
 end
 
 return Exporter
