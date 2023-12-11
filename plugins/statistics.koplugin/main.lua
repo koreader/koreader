@@ -787,6 +787,7 @@ function ReaderStatistics:getIdBookDB()
 end
 
 function ReaderStatistics:onBookMetadataChanged(prop_updated)
+    if not prop_updated then return end
     local log_prefix = "Statistics metadata update:"
     logger.dbg(log_prefix, "got", prop_updated)
     -- Some metadata of a book (that we may or may not know about) has been modified
