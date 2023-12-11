@@ -590,8 +590,8 @@ function TextViewer:showMenu()
             end,
             align = "left",
             callback = function()
-                UIManager:close(dialog)
                 self.monospace_font = not self.monospace_font
+                UIManager:close(dialog)
                 self:reinit()
                 UIManager:show(dialog)
             end,
@@ -643,6 +643,7 @@ function TextViewer.openFile(file)
             title = file_path,
             title_multilines = true,
             text = file_content,
+            text_category = "file_content",
         })
     end
     local attr = lfs.attributes(file)
