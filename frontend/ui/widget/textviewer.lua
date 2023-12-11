@@ -551,7 +551,7 @@ function TextViewer:reinit()
         { monospace_font = self.monospace_font, font_size = self.text_font_size, justified = self.justified }
     local low, high = self.scroll_text_w.text_widget:getVisibleHeightRatios() -- try to keep position
     local ratio = low == 0 and 0 or (low + high) / 2 -- if we are at the beginning, keep the first line visible
-    UIManager:setDirty(nil, "partial", self.frame.dimen)
+    UIManager:setDirty("all", "partial", self.frame.dimen)
     self:init(true) -- do not add default buttons once more
     self:onShow()
     self.scroll_text_w:scrollToRatio(ratio, ratio == 0)
@@ -591,9 +591,7 @@ function TextViewer:showMenu()
             align = "left",
             callback = function()
                 self.monospace_font = not self.monospace_font
-                UIManager:close(dialog)
                 self:reinit()
-                UIManager:show(dialog)
             end,
         }},
         {{
