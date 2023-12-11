@@ -82,7 +82,6 @@ local TextViewer = InputContainer:extend{
     },
 }
 
-
 function TextViewer:init(reinit)
     local screen_w = Screen:getWidth()
     local screen_h = Screen:getHeight()
