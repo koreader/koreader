@@ -72,10 +72,6 @@ function Button:init()
     if self.text_func and type(self.text_func) == "function" then
         self.text = self.text_func()
     end
-    if self.checked_func then
-        self.text_orig = self.text_orig or self.text
-        self:setCheckMark()
-    end
 
     -- Point tap_input to hold_input if requested
     if self.call_hold_input_on_tap then
@@ -103,12 +99,13 @@ function Button:init()
     -- TextWidget or TextBoxWidget in that height (hopefully no ink will overflow)
     local reference_height
     if self.text then
+        local text = self.checked_func == nil and self.text or self:getDisplayText()
         local max_width = self.max_width or self.width
         if max_width then
             max_width = max_width - outer_pad_width
         end
         self.label_widget = TextWidget:new{
-            text = self.text,
+            text = text,
             lang = self.lang,
             max_width = max_width,
             fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
@@ -129,7 +126,7 @@ function Button:init()
                     -- Switch to a 2-lines TextBoxWidget
                     self.label_widget:free(true)
                     self.label_widget = TextBoxWidget:new{
-                        text = self.text,
+                        text = text,
                         lang = self.lang,
                         line_height = 0,
                         alignment = self.align,
@@ -152,7 +149,7 @@ function Button:init()
                 end
                 self.label_widget:free(true)
                 self.label_widget = TextWidget:new{
-                    text = self.text,
+                    text = text,
                     lang = self.lang,
                     max_width = max_width,
                     fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
@@ -267,9 +264,9 @@ function Button:setIcon(icon, width)
     end
 end
 
-function Button:setCheckMark()
+function Button:getDisplayText()
     -- add a checkmark sign or reserve the space with "wide em space"
-    self.text = self.text_orig .. (self.checked_func() and "  \u{2713}" or "  \u{2003}")
+    return self.text .. (self.checked_func() and "  \u{2713}" or "  \u{2003}")
 end
 
 function Button:onFocus()
@@ -483,8 +480,8 @@ function Button:onTapSelectButton()
                 end
             end
             if self.checked_func then
-                self:setCheckMark()
-                self.label_widget:setText(self.text)
+                local text = self:getDisplayText()
+                self.label_widget:setText(text)
                 self:refresh()
             end
         elseif self.tap_input then
