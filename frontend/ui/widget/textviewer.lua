@@ -58,7 +58,6 @@ local TextViewer = InputContainer:extend{
     title_shrink_font_to_fit = nil, -- see TitleBar for details
 
     show_menu = true, -- titlebar left icon
-    text_category = "general",
     monospace_font = nil, -- internal
     text_font_size = nil, -- internal
     justified = nil, -- internal
@@ -71,16 +70,18 @@ local TextViewer = InputContainer:extend{
     add_default_buttons = nil,
     default_hold_callback = nil, -- on each default button
     find_centered_lines_count = 5, -- line with find results to be not far from the center
+
+    text_category = "general",
+    text_categories = {
+        general      = { monospace_font = false, font_size = 20, justified = false },
+        file_content = { monospace_font = false, font_size = 20, justified = false },
+        book_info    = { monospace_font = false, font_size = 20, justified =  true },
+        bookmark     = { monospace_font = false, font_size = 20, justified =  true },
+        dictionary   = { monospace_font = false, font_size = 20, justified = false },
+        code         = { monospace_font =  true, font_size = 16, justified = false },
+    },
 }
 
-local text_categories = {
-    general      = { monospace_font = false, font_size = 20, justified = false },
-    file_content = { monospace_font = false, font_size = 20, justified = false },
-    book_info    = { monospace_font = false, font_size = 20, justified =  true },
-    bookmark     = { monospace_font = false, font_size = 20, justified =  true },
-    dictionary   = { monospace_font = false, font_size = 20, justified = false },
-    code         = { monospace_font =  true, font_size = 16, justified = false },
-}
 
 function TextViewer:init(reinit)
     local screen_w = Screen:getWidth()
@@ -96,7 +97,7 @@ function TextViewer:init(reinit)
 
     if not reinit then
         local categories = G_reader_settings:readSetting("textviewer_categories")
-        local text_settings = (categories and categories[self.text_category]) or text_categories[self.text_category]
+        local text_settings = categories and categories[self.text_category] or self.text_categories[self.text_category]
         self.monospace_font = text_settings.monospace_font
         self.text_font_size = text_settings.font_size
         self.justified      = text_settings.justified
@@ -547,13 +548,11 @@ end
 
 function TextViewer:reinit()
     local text_settings = G_reader_settings:readSetting("textviewer_categories", {})
-    text_settings[self.text_category] =
-        { monospace_font = self.monospace_font, font_size = self.text_font_size, justified = self.justified }
+    text_settings[self.text_category] = { monospace_font = self.monospace_font, font_size = self.text_font_size, justified = self.justified }
     local low, high = self.scroll_text_w.text_widget:getVisibleHeightRatios() -- try to keep position
     local ratio = low == 0 and 0 or (low + high) / 2 -- if we are at the beginning, keep the first line visible
-    UIManager:setDirty("all", "partial", self.frame.dimen)
     self:init(true) -- do not add default buttons once more
-    self:onShow()
+    UIManager:setDirty("all", "partial", self.frame.dimen)
     self.scroll_text_w:scrollToRatio(ratio, ratio == 0)
 end
 
