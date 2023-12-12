@@ -85,6 +85,41 @@ When unchecked, the default rotation of the file browser and the default/saved r
             table.insert(rotation_table, genMenuItem(C_("Rotation", "↓ 180°"), Screen.DEVICE_ROTATED_UPSIDE_DOWN))
         end
 
+        rotation_table[#rotation_table].separator = true
+        table.insert(rotation_table, {
+            text = _("Image viewer rotation"),
+            sub_item_table = {
+                {
+                    text = _("Invert default rotation in portrait mode"),
+                    checked_func = function()
+                        return G_reader_settings:isTrue("imageviewer_rotation_portrait_invert")
+                    end,
+                    callback = function()
+                        G_reader_settings:flipNilOrFalse("imageviewer_rotation_portrait_invert")
+                    end,
+                },
+                {
+                    text = _("Invert default rotation in landscape mode"),
+                    checked_func = function()
+                        return G_reader_settings:isTrue("imageviewer_rotation_landscape_invert")
+                    end,
+                    callback = function()
+                        G_reader_settings:flipNilOrFalse("imageviewer_rotation_landscape_invert")
+                    end,
+                    separator = true,
+                },
+                {
+                    text = _("Auto-rotate for best fit"),
+                    help_text = _("Auto-rotate the image to best match screen and image aspect ratios on image viewer launch (ie. if in portrait mode, a landscape image will be rotated).");
+                    checked_func = function()
+                        return G_reader_settings:isTrue("imageviewer_rotate_auto_for_best_fit")
+                    end,
+                    callback = function()
+                        G_reader_settings:flipTrue("imageviewer_rotate_auto_for_best_fit")
+                    end,
+                }
+            }
+        })
         return rotation_table
     end,
 }
