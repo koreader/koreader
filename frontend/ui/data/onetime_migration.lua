@@ -638,9 +638,10 @@ if last_migration_date < 20231212 then
 
     local shortcuts = G_reader_settings:readSetting("folder_shortcuts")
     if shortcuts and shortcuts[1] ~= nil then
+        local now = os.time()
         local new_shortcuts = {}
-        for _, item in ipairs(shortcuts) do
-            new_shortcuts[item.folder] = { text = item.text }
+        for i, item in ipairs(shortcuts) do
+            new_shortcuts[item.folder] = { text = item.text, time = now + i }
         end
         G_reader_settings:saveSetting("folder_shortcuts", new_shortcuts)
     end
