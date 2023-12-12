@@ -120,7 +120,7 @@ function FileManagerShortcuts:editShortcut(folder, post_callback)
                     if item then
                         item.text = new_name
                     else
-                        self.folder_shortcuts[folder] = { text = new_name }
+                        self.folder_shortcuts[folder] = { text = new_name, time = os.time() }
                         if post_callback then
                             post_callback()
                         end
