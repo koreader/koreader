@@ -686,6 +686,7 @@ function Translator:_showTranslation(text, detailed_view, source_lang, target_la
             -- Showing the translation target language in this title may make
             -- it quite long and wrapped, taking valuable vertical spacing
         text = text_all,
+        text_type = "lookup",
         height = height,
         add_default_buttons = true,
         buttons_table = buttons_table,
