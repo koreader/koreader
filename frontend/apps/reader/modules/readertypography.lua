@@ -200,7 +200,7 @@ When the book's language tag is not among our presets, no specific features will
             UIManager:show(TextViewer:new{
                 title = _("Language tags (and hyphenation dictionaries) used since start up"),
                 text = status_text,
-                text_category = "code",
+                text_type = "code",
                 height = math.floor(Screen:getHeight() * 0.8),
             })
         end,
