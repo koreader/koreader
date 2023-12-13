@@ -71,13 +71,13 @@ local TextViewer = InputContainer:extend{
     default_hold_callback = nil, -- on each default button
     find_centered_lines_count = 5, -- line with find results to be not far from the center
 
-    text_category = "general",
-    text_categories = {
+    text_type = "general",
+    text_types = {
         general      = { monospace_font = false, font_size = 20, justified = false },
         file_content = { monospace_font = false, font_size = 20, justified = false },
         book_info    = { monospace_font = false, font_size = 20, justified =  true },
         bookmark     = { monospace_font = false, font_size = 20, justified =  true },
-        dictionary   = { monospace_font = false, font_size = 20, justified = false },
+        lookup       = { monospace_font = false, font_size = 20, justified = false },
         code         = { monospace_font =  true, font_size = 16, justified = false },
     },
 }
@@ -95,8 +95,8 @@ function TextViewer:init(reinit)
     self.height = self.height or screen_h - Screen:scaleBySize(30)
 
     if not reinit then
-        local categories = G_reader_settings:readSetting("textviewer_categories")
-        local text_settings = categories and categories[self.text_category] or self.text_categories[self.text_category]
+        local categories = G_reader_settings:readSetting("textviewer_text_types")
+        local text_settings = categories and categories[self.text_type] or self.text_types[self.text_type]
         self.monospace_font = text_settings.monospace_font
         self.text_font_size = text_settings.font_size
         self.justified      = text_settings.justified
@@ -447,7 +447,7 @@ function TextViewer:onForwardingPanRelease(arg, ges)
 end
 
 function TextViewer:findDialog()
-    local input_dialog
+    local input_dialog, check_button_case
     input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
         input = self.search_value,
@@ -478,15 +478,15 @@ function TextViewer:findDialog()
             },
         },
     }
-    self.check_button_case = CheckButton:new{
+    check_button_case = CheckButton:new{
         text = _("Case sensitive"),
         checked = self.case_sensitive,
         parent = input_dialog,
         callback = function()
-            self.case_sensitive = self.check_button_case.checked
+            self.case_sensitive = check_button_case.checked
         end,
     }
-    input_dialog:addWidget(self.check_button_case)
+    input_dialog:addWidget(check_button_case)
 
     UIManager:show(input_dialog)
     input_dialog:onShowKeyboard(true)
@@ -546,8 +546,8 @@ function TextViewer:handleTextSelection(text, hold_duration, start_idx, end_idx,
 end
 
 function TextViewer:reinit()
-    local text_settings = G_reader_settings:readSetting("textviewer_categories", {})
-    text_settings[self.text_category] = { monospace_font = self.monospace_font, font_size = self.text_font_size, justified = self.justified }
+    local text_settings = G_reader_settings:readSetting("textviewer_text_types", {})
+    text_settings[self.text_type] = { monospace_font = self.monospace_font, font_size = self.text_font_size, justified = self.justified }
     local low, high = self.scroll_text_w.text_widget:getVisibleHeightRatios() -- try to keep position
     local ratio = low == 0 and 0 or (low + high) / 2 -- if we are at the beginning, keep the first line visible
     self:init(true) -- do not add default buttons once more
@@ -639,7 +639,7 @@ function TextViewer.openFile(file)
             title = file_path,
             title_multilines = true,
             text = file_content,
-            text_category = "file_content",
+            text_type = "file_content",
         })
     end
     local attr = lfs.attributes(file)
