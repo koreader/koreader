@@ -123,7 +123,7 @@ function ViewHtml:_viewSelectionHTML(document, selected_text, view, with_css_fil
                     cssviewer = TextViewer:new{
                         title = css_files[i],
                         text = css_text or _("Failed getting CSS content"),
-                        text_category = "code",
+                        text_type = "code",
                         para_direction_rtl = false,
                         auto_para_direction = false,
                         add_default_buttons = true,
@@ -136,7 +136,7 @@ function ViewHtml:_viewSelectionHTML(document, selected_text, view, with_css_fil
                                     UIManager:show(TextViewer:new{
                                         title = css_files[i],
                                         text = util.prettifyCSS(css_text),
-                                        text_category = "code",
+                                        text_type = "code",
                                         para_direction_rtl = false,
                                         auto_para_direction = false,
                                     })
@@ -182,7 +182,7 @@ function ViewHtml:_viewSelectionHTML(document, selected_text, view, with_css_fil
     textviewer = TextViewer:new{
         title = _("Selection HTML"),
         text = html,
-        text_category = "code",
+        text_type = "code",
         para_direction_rtl = false,
         auto_para_direction = false,
         add_default_buttons = true,
@@ -416,7 +416,7 @@ function ViewHtml:_showMatchingSelectors(document, ancestors, show_all_ancestors
     cssviewer = TextViewer:new{
         title = title,
         text = css_text or _("No matching rulesets"),
-        text_category = "code",
+        text_type = "code",
         para_direction_rtl = false,
         auto_para_direction = false,
         add_default_buttons = true,
@@ -429,7 +429,7 @@ function ViewHtml:_showMatchingSelectors(document, ancestors, show_all_ancestors
                     UIManager:show(TextViewer:new{
                         title = title,
                         text = util.prettifyCSS(css_text),
-                        text_category = "code",
+                        text_type = "code",
                         para_direction_rtl = false,
                         auto_para_direction = false,
                     })
