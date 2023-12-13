@@ -1,6 +1,5 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
-local CenterContainer = require("ui/widget/container/centercontainer")
 local DocumentRegistry = require("document/documentregistry")
 local ImageViewer = require("ui/widget/imageviewer")
 local Menu = require("ui/widget/menu")
@@ -11,7 +10,6 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
 local util = require("util")
 local _ = require("gettext")
-local Screen = require("device").screen
 local T = ffiUtil.template
 
 local ArchiveViewer = WidgetContainer:extend{
