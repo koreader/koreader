@@ -139,8 +139,7 @@ function KoboPowerD:init()
         --- @note: Newer devices appear to block slightly longer on FL ioctls/sysfs, so we only really need a delay on older devices.
         self.device.frontlight_settings.ramp_delay = self.device.frontlight_settings.ramp_delay or (self.device:hasNaturalLight() and 0.0 or 0.025)
 
-        -- If this device has natural light (currently only KA1 & Forma)
-        -- Use the SysFS interface, and ioctl otherwise.
+        -- If this device has natural light, use the sysfs interface, and ioctl otherwise.
         -- NOTE: On the Forma, nickel still appears to prefer using ntx_io to handle the FL,
         --       but it does use sysfs for the NL...
         if self.device:hasNaturalLight() then
