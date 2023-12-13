@@ -159,7 +159,7 @@ if Device:hasFrontlight() then
 
         direction, delta_int = calculateGestureDelta(ges, direction, powerd.fl_warmth_min, powerd.fl_warmth_max)
 
-        local warmth = math.floor(powerd.fl_warmth + direction * delta_int * 100 / powerd.fl_warmth_max)
+        local warmth = util.true_round(powerd.fl_warmth + direction * delta_int * 100 / powerd.fl_warmth_max)
         self:onSetFlWarmth(warmth)
         self:onShowWarmth()
         return true
