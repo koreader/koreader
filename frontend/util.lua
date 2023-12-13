@@ -1523,4 +1523,18 @@ function util.wrapMethod(target_table, target_field_name, new_func, before_callb
     return wrapped
 end
 
+-- a function to select the same rounding effect when dealing with opposite-sign directions
+-- specifically designed so that frontlight warmth gesture can increment in 5% when set at unit "1"
+function util.true_round(num)
+    under = math.floor(num)
+    upper = math.floor(num) + 1
+    underV = -(under - num)
+    upperV = upper - num
+    if (upperV > underV) then
+        return upper
+    else
+        return under
+    end
+end
+
 return util
