@@ -51,10 +51,13 @@ function CervantesPowerD:init()
         if self.device:hasNaturalLight() then
             local nl_config = G_reader_settings:readSetting("natural_light_config")
             if nl_config then
-                for key,val in pairs(nl_config) do
+                for key, val in pairs(nl_config) do
                     self.device.frontlight_settings[key] = val
                 end
             end
+            -- Does this device's NaturalLight use a custom scale?
+            self.fl_warmth_min = self.device.frontlight_settings.nl_min or self.fl_warmth_min
+            self.fl_warmth_max = self.device.frontlight_settings.nl_max or self.fl_warmth_max
             -- If this device has a mixer, we can use the ioctl for brightness control, as it's much lower latency.
             if self.device:hasNaturalLightMixer() then
                 local kobolight = require("ffi/kobolight")
