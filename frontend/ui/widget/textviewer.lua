@@ -95,8 +95,8 @@ function TextViewer:init(reinit)
     self.height = self.height or screen_h - Screen:scaleBySize(30)
 
     if not reinit then
-        local categories = G_reader_settings:readSetting("textviewer_text_types")
-        local text_settings = categories and categories[self.text_type] or self.text_types[self.text_type]
+        local text_types = G_reader_settings:readSetting("textviewer_text_types")
+        local text_settings = text_types and text_types[self.text_type] or self.text_types[self.text_type]
         self.monospace_font = text_settings.monospace_font
         self.text_font_size = text_settings.font_size
         self.justified      = text_settings.justified
