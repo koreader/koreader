@@ -295,12 +295,15 @@ function BookInfo:onShowBookInfo()
 end
 
 function BookInfo:showBookProp(prop_key, prop_text)
+    local text_type
     if prop_key == "description" then
         prop_text = util.htmlToPlainTextIfHtml(prop_text)
+        text_type = "book_info"
     end
     UIManager:show(TextViewer:new{
         title = self.prop_text[prop_key],
         text = prop_text,
+        text_type = text_type,
     })
 end
 
@@ -673,7 +676,6 @@ function BookInfo.showBooksWithHashBasedMetadata()
     UIManager:show(TextViewer:new{
         title = T(N_("1 document with hash-based metadata", "%1 documents with hash-based metadata", doc_nb), doc_nb),
         title_multilines = true,
-        justified = false,
         text = table.concat(file_info, "\n"),
     })
 end
