@@ -42,19 +42,16 @@ function DeviceListener:onShowIntensity()
     return true
 end
 
-function DeviceListener:onShowWarmth(value)
+function DeviceListener:onShowWarmth()
+    if not Device:hasNaturalLight() then return true end
+    -- Display it in the native scale, like FrontLightWidget
     local powerd = Device:getPowerDevice()
-    if powerd.fl_warmth ~= nil then
-        -- powerd.fl_warmth holds the warmth-value in the internal koreader scale [0,100]
-        -- powerd.fl_warmth_max is the maximum value the hardware accepts
-        Notification:notify(T(_("Warmth set to %1%."), math.floor(powerd.fl_warmth)))
-    end
+    Notification:notify(T(_("Warmth set to %1."), powerd:toNativeWarmth(powerd:frontlightWarmth())))
     return true
 end
 
 -- frontlight controller
 if Device:hasFrontlight() then
-
     local function calculateGestureDelta(ges, direction, min, max)
         local delta_int
         if type(ges) == "table" then
@@ -63,6 +60,7 @@ if Device:hasFrontlight() then
             --           original scale maybe tuned by hand
             -- small scale is for lower dynamic ranges (e.g. warmth from 1..10)
             --           scale entries are calculated by math.round(1*sqrt(2)^n)
+            --- @fixme: An intermediary scale is probably necessary for Kindle, which goes from 0 to 24...
             local steps_fl_big_scale = { 0.1, 0.1, 0.2, 0.4, 0.7, 1.1, 1.6, 2.2, 2.9, 3.7, 4.6, 5.6, 6.7, 7.9, 9.2, 10.6, }
             local steps_fl_small_scale = { 1.0, 1.0, 2.0, 3.0, 4.0, 6.0, 8.1, 11.3 }
             local steps_fl = steps_fl_big_scale
@@ -116,13 +114,10 @@ if Device:hasFrontlight() then
     function DeviceListener:onChangeFlIntensity(ges, direction)
         local powerd = Device:getPowerDevice()
         local delta_int
-        --received gesture
-
         direction, delta_int = calculateGestureDelta(ges, direction, powerd.fl_min, powerd.fl_max)
 
-        local new_intensity = powerd.fl_intensity + direction * delta_int
-        if new_intensity == nil then return true end
-        -- when new_intensity <=0, toggle light off
+        local new_intensity = powerd:frontlightIntensity() + direction * delta_int
+        -- when new_intensity <= 0, toggle light off
         self:onSetFlIntensity(new_intensity)
         self:onShowIntensity()
         return true
@@ -151,15 +146,21 @@ if Device:hasFrontlight() then
     -- direction +1 - increase frontlight warmth
     -- direction -1 - decrease frontlight warmth
     function DeviceListener:onChangeFlWarmth(ges, direction)
+        if not Device:hasNaturalLight() then return true end
+
         local powerd = Device:getPowerDevice()
-        if powerd.fl_warmth == nil then return false end
-
         local delta_int
-        --received gesture
-
         direction, delta_int = calculateGestureDelta(ges, direction, powerd.fl_warmth_min, powerd.fl_warmth_max)
 
-        local warmth = math.floor(powerd.fl_warmth + direction * delta_int * 100 / powerd.fl_warmth_max)
+        local warmth
+        if type(ges) == "table" then
+            -- received a gesture, scale the gesture delta to the API range
+            warmth = powerd:frontlightWarmth() + powerd:fromNativeWarmth(direction * delta_int)
+        else
+            -- received an absolute increment, use it as-is in the native scale
+            warmth = powerd:fromNativeWarmth(powerd:toNativeWarmth(powerd:frontlightWarmth()) + ges)
+        end
+
         self:onSetFlWarmth(warmth)
         self:onShowWarmth()
         return true
