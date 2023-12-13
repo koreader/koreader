@@ -25,6 +25,7 @@ local Screen = Device.screen
 local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
+local C_ = _.pgettext
 
 local SortItemWidget = InputContainer:extend{
     item = nil,
@@ -408,7 +409,8 @@ function SortWidget:_populateItems()
             item
         )
     end
-    self.footer_page:setText(T(_("Page %1 of %2"), self.show_page, self.pages), self.footer_center_width)
+    -- NOTE: We forgo our usual "Page x of y" wording because of space constraints given the way the widget is currently built
+    self.footer_page:setText(T(C_("Pagination", "%1 / %2"), self.show_page, self.pages), self.footer_center_width)
     if self.pages > 1 then
         self.footer_page:enable()
     else
