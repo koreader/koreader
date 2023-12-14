@@ -353,14 +353,11 @@ function DictQuickLookup:init()
                         local dir
                         if G_reader_settings:isTrue("wikipedia_save_in_book_dir") and not self:isDocless() then
                             local last_file = G_reader_settings:readSetting("lastfile")
-                            if last_file then
-                                dir = last_file:match("(.*)/")
-                            end
-                        else
-                            dir = G_reader_settings:readSetting("wikipedia_save_dir") or DictQuickLookup.getWikiSaveEpubDefaultDir()
-                            if not util.pathExists(dir) then
-                                lfs.mkdir(dir)
-                            end
+                            dir = last_file and last_file:match("(.*)/")
+                        end
+                        dir = dir or G_reader_settings:readSetting("wikipedia_save_dir") or DictQuickLookup.getWikiSaveEpubDefaultDir()
+                        if not util.pathExists(dir) then
+                            lfs.mkdir(dir)
                         end
                         -- Just to be safe (none of the invalid chars, except ':' for uninteresting
                         -- Portal: or File: wikipedia pages, should be in lookupword)
