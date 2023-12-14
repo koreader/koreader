@@ -189,6 +189,7 @@ local function initTouchEvents()
                 local clipboard_dialog
                 clipboard_dialog = require("ui/widget/textviewer"):new{
                     title = _("Clipboard"),
+                    show_menu = false,
                     text = is_clipboard_empty and _("(empty)") or clipboard_value,
                     fgcolor = is_clipboard_empty and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK,
                     width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.8),

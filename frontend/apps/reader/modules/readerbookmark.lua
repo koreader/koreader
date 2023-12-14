@@ -526,6 +526,7 @@ function ReaderBookmark:onShowBookmark(match_table)
         textviewer = TextViewer:new{
             title = _("Bookmark details"),
             text = bm_view,
+            text_type = "bookmark",
             buttons_table = {
                 {
                     {

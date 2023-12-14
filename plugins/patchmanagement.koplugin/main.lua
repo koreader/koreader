@@ -114,7 +114,7 @@ function PatchManagement:getSubMenu(priority)
                         textviewer = TextViewer:new{
                             title = patch,
                             text = patch_content,
-                            justified = false,
+                            text_type = "code",
                         }
                         UIManager:show(textviewer)
                     end

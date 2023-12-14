@@ -1201,53 +1201,23 @@ function BookMapWidget:showMenu()
             end,
         }},
         {{
-            text_func = function(no_size_trick)
-                -- A bit tricky to update the text in the callback, as this button,
-                -- being sized by ButtonTable, can't be rebuilt. We will update its
-                -- text, and we want to be sure it will fit in the initial width,
-                -- which may be with the checkmark or not.
-                local text = _("Page browser on tap")
-                if G_reader_settings:nilOrTrue("book_map_tap_to_page_browser") then
-                    text = text .. "  \u{2713}" -- checkmark
-                else
-                    if not no_size_trick then
-                        -- Initial call, make it wide enough so the checkmark text will fit
-                        text = text .. "  \u{2003}" -- wide em space
-                    end
-                    -- Otherwise, keep it small without the checkmark, which will fit
-                end
-                return text
+            text = _("Page browser on tap"),
+            checked_func = function()
+                return G_reader_settings:nilOrTrue("book_map_tap_to_page_browser")
             end,
-            id = "tap_to_page_browser",
             align = "left",
             callback = function()
                 G_reader_settings:flipNilOrTrue("book_map_tap_to_page_browser")
-                local b = button_dialog:getButtonById("tap_to_page_browser")
-                b:setText(b.text_func(true), b.width)
-                b:refresh()
             end,
         }},
         {{
-            text_func = function(no_size_trick)
-                local text = _("Alternative theme")
-                if G_reader_settings:isTrue("book_map_alt_theme") then
-                    text = text .. "  \u{2713}" -- checkmark
-                else
-                    if not no_size_trick then
-                        -- Initial call, make it wide enough so the checkmark text will fit
-                        text = text .. "  \u{2003}" -- wide em space
-                    end
-                    -- Otherwise, keep it small without the checkmark, which will fit
-                end
-                return text
+            text = _("Alternative theme"),
+            checked_func = function()
+                return G_reader_settings:isTrue("book_map_alt_theme")
             end,
-            id = "alt_theme",
             align = "left",
             callback = function()
                 G_reader_settings:flipTrue("book_map_alt_theme")
-                local b = button_dialog:getButtonById("alt_theme")
-                b:setText(b.text_func(true), b.width)
-                b:refresh()
                 self.editable_stuff_edited = true -- have this change reflected on any lower bookmap & pagebrowser
                 self:update()
             end,

@@ -37,6 +37,8 @@ local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
 local Button = InputContainer:extend{
     text = nil, -- mandatory (unless icon is provided)
     text_func = nil,
+    checked_func = nil, -- checkmark appended to text
+    checkmark = "  \u{2713}",
     lang = nil,
     icon = nil,
     icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
@@ -98,21 +100,33 @@ function Button:init()
     -- TextWidget or TextBoxWidget in that height (hopefully no ink will overflow)
     local reference_height
     if self.text then
+        local text = self.checked_func == nil and self.text or self:getDisplayText()
+        local fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY
+        local face = Font:getFace(self.text_font_face, self.text_font_size)
         local max_width = self.max_width or self.width
         if max_width then
             max_width = max_width - outer_pad_width
         end
         self.label_widget = TextWidget:new{
-            text = self.text,
+            text = text,
             lang = self.lang,
             max_width = max_width,
-            fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
+            fgcolor = fgcolor,
             bold = self.text_font_bold,
-            face = Font:getFace(self.text_font_face, self.text_font_size)
+            face = face,
         }
         reference_height = self.label_widget:getSize().h
         if not self.label_widget:isTruncated() then
-            self._min_needed_width = self.label_widget:getSize().w + outer_pad_width
+            local checkmark_width = 0
+            if self.checked_func and not self.checked_func() then
+                local tmp = TextWidget:new{
+                    text = self.checkmark,
+                    face = face,
+                }
+                checkmark_width = tmp:getSize().w
+                tmp:free()
+            end
+            self._min_needed_width = self.label_widget:getSize().w + checkmark_width + outer_pad_width
         end
         self.did_truncation_tweaks = false
         if self.avoid_text_truncation and self.label_widget:isTruncated() then
@@ -124,7 +138,7 @@ function Button:init()
                     -- Switch to a 2-lines TextBoxWidget
                     self.label_widget:free(true)
                     self.label_widget = TextBoxWidget:new{
-                        text = self.text,
+                        text = text,
                         lang = self.lang,
                         line_height = 0,
                         alignment = self.align,
@@ -132,9 +146,9 @@ function Button:init()
                         height = reference_height,
                         height_adjust = true,
                         height_overflow_show_ellipsis = true,
-                        fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
+                        fgcolor = fgcolor,
                         bold = self.text_font_bold,
-                        face = Font:getFace(self.text_font_face, new_size)
+                        face = Font:getFace(self.text_font_face, new_size),
                     }
                     if not self.label_widget.has_split_inside_word then
                         break
@@ -147,12 +161,12 @@ function Button:init()
                 end
                 self.label_widget:free(true)
                 self.label_widget = TextWidget:new{
-                    text = self.text,
+                    text = text,
                     lang = self.lang,
                     max_width = max_width,
-                    fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
+                    fgcolor = fgcolor,
                     bold = self.text_font_bold,
-                    face = Font:getFace(self.text_font_face, new_size)
+                    face = Font:getFace(self.text_font_face, new_size),
                 }
             end
         end
@@ -260,6 +274,10 @@ function Button:setIcon(icon, width)
         self.label_widget:free()
         self:init()
     end
+end
+
+function Button:getDisplayText()
+    return self.checked_func() and self.text .. self.checkmark or self.text
 end
 
 function Button:onFocus()
@@ -471,6 +489,11 @@ function Button:onTapSelectButton()
                     self:_undoFeedbackHighlight(is_translucent)
                     UIManager:forceRePaint()
                 end
+            end
+            if self.checked_func then
+                local text = self:getDisplayText()
+                self.label_widget:setText(text)
+                self:refresh()
             end
         elseif self.tap_input then
             self:onInput(self.tap_input)
