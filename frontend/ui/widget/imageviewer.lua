@@ -6,15 +6,14 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local DataStorage = require("datastorage")
 local Device = require("device")
-local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local ProgressWidget = require("ui/widget/progresswidget")
+local Screenshoter = require("ui/widget/screenshoter")
 local Size = require("ui/size")
 local TitleBar = require("ui/widget/titlebar")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -811,9 +810,8 @@ function ImageViewer:onSaveImageView()
         self:update()
         UIManager:forceRePaint()
     end
-    local screenshots_dir = G_reader_settings:readSetting("screenshot_dir") or DataStorage:getDataDir() .. "/screenshots/"
-    local screenshot_name = os.date(screenshots_dir .. "ImageViewer" .. "_%Y-%m-%d_%H%M%S.png")
-    UIManager:sendEvent(Event:new("Screenshot", screenshot_name, restore_settings_func))
+    local screenshot_name = os.date(Screenshoter:getScreenshotDir() .. "/ImageViewer_%Y-%m-%d_%H%M%S.png")
+    Screenshoter:onScreenshot(screenshot_name, restore_settings_func)
     return true
 end
 
