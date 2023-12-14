@@ -33,11 +33,14 @@ function Screenshoter:init()
     }
 end
 
-function Screenshoter:onScreenshot(screenshot_name, caller_callback)
+function Screenshoter:getScreenshotDir()
     local screenshot_dir = G_reader_settings:readSetting("screenshot_dir")
-    screenshot_dir = screenshot_dir and screenshot_dir:gsub("/$", "") or self.default_dir
+    return screenshot_dir and screenshot_dir:gsub("/$", "") or self.default_dir
+end
+
+function Screenshoter:onScreenshot(screenshot_name, caller_callback)
     if not screenshot_name then
-        screenshot_name = os.date(screenshot_dir .. "/" .. self.prefix .. "_%Y-%m-%d_%H%M%S.png")
+        screenshot_name = os.date(self:getScreenshotDir() .. "/" .. self.prefix .. "_%Y-%m-%d_%H%M%S.png")
     end
     Screen:shot(screenshot_name)
     local file = self.ui and self.ui.document and self.ui.document.file
@@ -93,8 +96,10 @@ function Screenshoter:onScreenshot(screenshot_name, caller_callback)
             if caller_callback then
                 caller_callback()
             end
-            if self.ui.file_chooser and self.ui.file_chooser.path == screenshot_dir then
-                self.ui.file_chooser:refreshPath()
+            local FileManager = require("apps/filemanager/filemanager")
+            local ui = FileManager.instance
+            if ui and ui.file_chooser and ui.file_chooser.path .. "/" == screenshot_name:match(".*/") then
+                ui.file_chooser:refreshPath()
             end
         end,
     }
