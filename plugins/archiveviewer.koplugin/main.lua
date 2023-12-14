@@ -1,6 +1,5 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
-local CenterContainer = require("ui/widget/container/centercontainer")
 local DocumentRegistry = require("document/documentregistry")
 local ImageViewer = require("ui/widget/imageviewer")
 local Menu = require("ui/widget/menu")
@@ -11,7 +10,6 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
 local util = require("util")
 local _ = require("gettext")
-local Screen = require("device").screen
 local T = ffiUtil.template
 
 local ArchiveViewer = WidgetContainer:extend{
@@ -74,15 +72,13 @@ function ArchiveViewer:openFile(file)
         return
     end
 
-    local item_table = self:getItemTable() -- root
-    local menu_container = CenterContainer:new{
-        dimen = Screen:getSize(),
-    }
     self.menu = Menu:new{
+        title = filename,
+        item_table = self:getItemTable(),
+        covers_fullscreen = true,
         is_borderless = true,
         is_popout = false,
         title_multilines = true,
-        show_parent = menu_container,
         onMenuSelect = function(self_menu, item)
             if item.is_file then
                 self:showFileDialog(item.path)
@@ -92,15 +88,13 @@ function ArchiveViewer:openFile(file)
             end
         end,
         close_callback = function()
-            UIManager:close(menu_container)
+            UIManager:close(self.menu)
             if self.fm_updated then
                 self.ui:onRefresh()
             end
         end,
     }
-    table.insert(menu_container, self.menu)
-    self.menu:switchItemTable(filename, item_table)
-    UIManager:show(menu_container)
+    UIManager:show(self.menu)
 end
 
 function ArchiveViewer:getZipListTable()
@@ -177,12 +171,8 @@ function ArchiveViewer:getItemTable(path)
     end
     table.sort(dirs, sorting)
     table.sort(files, sorting)
-    for _, v in ipairs(dirs) do
-        table.insert(item_table, v)
-    end
-    for _, v in ipairs(files) do
-        table.insert(item_table, v)
-    end
+    table.move(dirs, 1, #dirs, #item_table + 1, item_table)
+    table.move(files, 1, #files, #item_table + 1, item_table)
     return item_table
 end
 
@@ -265,12 +255,13 @@ function ArchiveViewer:viewFile(filepath)
         UIManager:show(viewer)
         viewer:switchToImageNum(curr_index)
     else
-        UIManager:show(TextViewer:new{
+        local viewer = TextViewer:new{
             title = filepath,
             title_multilines = true,
             text = self:extractContent(filepath),
-            justified = false,
-        })
+            text_type = "file_content",
+        }
+        UIManager:show(viewer)
     end
 end
 

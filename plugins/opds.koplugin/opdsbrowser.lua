@@ -687,6 +687,7 @@ function OPDSBrowser:showDownloads(item)
                     title = item.text,
                     title_multilines = true,
                     text = util.htmlToPlainTextIfHtml(item.content),
+                    text_type = "book_info",
                 })
             end,
         },

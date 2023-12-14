@@ -66,6 +66,7 @@ function ButtonTable:init()
             local button = Button:new{
                 text = btn_entry.text,
                 text_func = btn_entry.text_func,
+                checked_func = btn_entry.checked_func,
                 lang = btn_entry.lang,
                 icon = btn_entry.icon,
                 icon_width = btn_entry.icon_width,

@@ -927,6 +927,7 @@ function ReaderHighlight:showHighlightNoteOrDialog(page, index, bookmark_note)
         local textviewer
         textviewer = TextViewer:new{
             title = _("Note"),
+            show_menu = false,
             text = bookmark_note,
             width = math.floor(math.min(self.screen_w, self.screen_h) * 0.8),
             height = math.floor(math.max(self.screen_w, self.screen_h) * 0.4),
