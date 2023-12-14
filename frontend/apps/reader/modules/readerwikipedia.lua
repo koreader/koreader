@@ -1,5 +1,3 @@
-local BD = require("ui/bidi")
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
