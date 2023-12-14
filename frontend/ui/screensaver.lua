@@ -1,6 +1,4 @@
-local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
-local ButtonDialog = require("ui/widget/buttondialog")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Device = require("device")
@@ -29,7 +27,6 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
-local T = ffiUtil.template
 
 -- Default settings
 if G_reader_settings:hasNot("screensaver_show_message") then
