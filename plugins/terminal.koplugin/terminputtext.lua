@@ -151,7 +151,7 @@ end
 
 function TermInputText:restoreBuffer(buffer)
     local former_buffer = table.remove(self[buffer])
-    if type(former_buffer[1]) == "table" then
+    if former_buffer and type(former_buffer[1]) == "table" then
         self.charlist,
         self.charpos,
         self.store_pos_dec,
