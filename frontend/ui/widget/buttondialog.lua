@@ -80,7 +80,6 @@ local ButtonDialog = InputContainer:extend{
     info_padding = Size.padding.default,
     info_margin = Size.margin.default,
     dismissable = true, -- set to false if any button callback is required
-    flush_events_on_show = false, -- see ConfirmBox for details
 }
 
 function ButtonDialog:init()
@@ -264,9 +263,6 @@ function ButtonDialog:onShow()
     UIManager:setDirty(self, function()
         return "ui", self.movable.dimen
     end)
-    if self.flush_events_on_show then
-        Device.input:inhibitInputUntil(true)
-    end
 end
 
 function ButtonDialog:onCloseWidget()
