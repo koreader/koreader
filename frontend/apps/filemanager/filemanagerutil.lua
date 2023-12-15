@@ -385,7 +385,7 @@ function filemanagerutil.showChooseDialog(title_header, caller_callback, current
                               or _("not set")
     local ButtonDialog = require("ui/widget/buttondialog")
     dialog = ButtonDialog:new{
-        title = title_header .. "\n" .. title_value,
+        title = title_header .. "\n\n" .. title_value .. "\n",
         buttons = buttons,
     }
     UIManager:show(dialog)
