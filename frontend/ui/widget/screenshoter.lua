@@ -43,7 +43,7 @@ function Screenshoter:onScreenshot(screenshot_name, caller_callback)
         screenshot_name = os.date(self:getScreenshotDir() .. "/" .. self.prefix .. "_%Y-%m-%d_%H%M%S.png")
     end
     Screen:shot(screenshot_name)
-    local file = self.ui and self.ui.document and self.ui.document.file
+    local file = self.ui and self.ui.document and self.ui.document.file -- currently opened book
     local dialog
     local buttons = {
         {
@@ -89,17 +89,15 @@ function Screenshoter:onScreenshot(screenshot_name, caller_callback)
         },
     }
     dialog = ButtonDialog:new{
-        title = _("Screenshot saved to:") .. "\n" .. BD.filepath(screenshot_name),
+        title = _("Screenshot saved to:") .. "\n\n" .. BD.filepath(screenshot_name) .. "\n",
         buttons = buttons,
-        flush_events_on_show = true,
         tap_close_callback = function()
             if caller_callback then
                 caller_callback()
             end
-            local FileManager = require("apps/filemanager/filemanager")
-            local ui = FileManager.instance
-            if ui and ui.file_chooser and ui.file_chooser.path .. "/" == screenshot_name:match(".*/") then
-                ui.file_chooser:refreshPath()
+            local current_path = self.ui and self.ui.file_chooser and self.ui.file_chooser.path
+            if current_path and current_path .. "/" == screenshot_name:match(".*/") then
+                self.ui.file_chooser:refreshPath()
             end
         end,
     }
