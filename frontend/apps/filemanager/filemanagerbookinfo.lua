@@ -295,12 +295,15 @@ function BookInfo:onShowBookInfo()
 end
 
 function BookInfo:showBookProp(prop_key, prop_text)
+    local text_type
     if prop_key == "description" then
         prop_text = util.htmlToPlainTextIfHtml(prop_text)
+        text_type = "book_info"
     end
     UIManager:show(TextViewer:new{
         title = self.prop_text[prop_key],
         text = prop_text,
+        text_type = text_type,
     })
 end
 
@@ -404,6 +407,19 @@ function BookInfo:setCustomCover(file, book_props)
         }
         UIManager:show(path_chooser)
     end
+end
+
+function BookInfo:setCustomCoverFromImage(file, image_file)
+    local custom_book_cover = DocSettings:findCustomCoverFile(file)
+    if custom_book_cover then
+        os.remove(custom_book_cover)
+    end
+    DocSettings:flushCustomCover(file, image_file)
+    if self.ui.doc_settings then
+        self.ui.doc_settings:getCustomCoverFile(true) -- reset cover file cache
+    end
+    UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
+    UIManager:broadcastEvent(Event:new("BookMetadataChanged"))
 end
 
 function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
@@ -660,7 +676,6 @@ function BookInfo.showBooksWithHashBasedMetadata()
     UIManager:show(TextViewer:new{
         title = T(N_("1 document with hash-based metadata", "%1 documents with hash-based metadata", doc_nb), doc_nb),
         title_multilines = true,
-        justified = false,
         text = table.concat(file_info, "\n"),
     })
 end

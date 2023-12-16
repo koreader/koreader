@@ -1,6 +1,4 @@
-local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
-local ButtonDialog = require("ui/widget/buttondialog")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Device = require("device")
@@ -29,7 +27,6 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
-local T = ffiUtil.template
 
 -- Default settings
 if G_reader_settings:hasNot("screensaver_show_message") then
@@ -256,99 +253,36 @@ local function addOverlayMessage(widget, widget_height, text)
 end
 
 function Screensaver:chooseFolder()
-    local buttons = {}
-    local choose_dialog
-    table.insert(buttons, {
-        {
-            text = _("Choose screensaver folder"),
-            callback = function()
-                UIManager:close(choose_dialog)
-                require("ui/downloadmgr"):new{
-                    onConfirm = function(path)
-                        logger.dbg("set screensaver directory to", path)
-                        G_reader_settings:saveSetting("screensaver_dir", path)
-                        UIManager:show(InfoMessage:new{
-                            text = T(_("Screensaver folder set to:\n%1"), BD.dirpath(path)),
-                            timeout = 3,
-                        })
-                    end,
-                }:chooseDir()
-            end,
-        }
-    })
-    table.insert(buttons, {
-        {
-            text = _("Close"),
-            callback = function()
-                UIManager:close(choose_dialog)
-            end,
-        }
-    })
-    local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
-                         or _("N/A")
-    choose_dialog = ButtonDialog:new{
-        title = T(_("Current screensaver image folder:\n%1"), BD.dirpath(screensaver_dir)),
-        buttons = buttons
-    }
-    UIManager:show(choose_dialog)
+    local title_header = _("Current screensaver folder:")
+    local current_path = G_reader_settings:readSetting("screensaver_dir")
+    local caller_callback = function(path)
+        G_reader_settings:saveSetting("screensaver_dir", path)
+    end
+    filemanagerutil.showChooseDialog(title_header, caller_callback, current_path)
 end
 
 function Screensaver:chooseFile(document_cover)
-    local text = document_cover and _("Choose document cover") or _("Choose screensaver image")
-    local buttons = {}
-    local choose_dialog
-    table.insert(buttons, {
-        {
-            text = text,
-            callback = function()
-                UIManager:close(choose_dialog)
-                local PathChooser = require("ui/widget/pathchooser")
-                local path_chooser = PathChooser:new{
-                    select_directory = false,
-                    file_filter = function(filename)
-                        return document_cover and DocumentRegistry:hasProvider(filename)
-                                               or DocumentRegistry:isImageFile(filename)
-                    end,
-                    path = self.root_path,
-                    onConfirm = function(file_path)
-                        if document_cover then
-                            G_reader_settings:saveSetting("screensaver_document_cover", file_path)
-                            UIManager:show(InfoMessage:new{
-                                text = T(_("Screensaver document cover set to:\n%1"), BD.filepath(file_path)),
-                                timeout = 3,
-                            })
-                        else
-                            G_reader_settings:saveSetting("screensaver_image", file_path)
-                            UIManager:show(InfoMessage:new{
-                                text = T(_("Screensaver image set to:\n%1"), BD.filepath(file_path)),
-                                timeout = 3,
-                            })
-                        end
-                    end
-                }
-                UIManager:show(path_chooser)
-            end,
-        }
-    })
-    table.insert(buttons, {
-        {
-            text = _("Close"),
-            callback = function()
-                UIManager:close(choose_dialog)
-            end,
-        }
-    })
-    local screensaver_image = G_reader_settings:readSetting("screensaver_image")
-                           or _("N/A")
-    local screensaver_document_cover = G_reader_settings:readSetting("screensaver_document_cover")
-                                    or _("N/A")
-    local title = document_cover and T(_("Current screensaver document cover:\n%1"), BD.filepath(screensaver_document_cover))
-        or T(_("Current screensaver image:\n%1"), BD.filepath(screensaver_image))
-    choose_dialog = ButtonDialog:new{
-        title = title,
-        buttons = buttons
-    }
-    UIManager:show(choose_dialog)
+    local title_header, current_path, file_filter, caller_callback
+    if document_cover then
+        title_header = _("Current screensaver document cover:")
+        current_path = G_reader_settings:readSetting("screensaver_document_cover")
+        file_filter = function(filename)
+            return DocumentRegistry:hasProvider(filename)
+        end
+        caller_callback = function(path)
+            G_reader_settings:saveSetting("screensaver_document_cover", path)
+        end
+    else
+        title_header = _("Current screensaver image:")
+        current_path = G_reader_settings:readSetting("screensaver_image")
+        file_filter = function(filename)
+            return DocumentRegistry:isImageFile(filename)
+        end
+        caller_callback = function(path)
+            G_reader_settings:saveSetting("screensaver_image", path)
+        end
+    end
+    filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, nil, file_filter)
 end
 
 function Screensaver:isExcluded()

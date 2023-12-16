@@ -9,6 +9,7 @@ local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -326,29 +327,14 @@ function FileManagerMenu:setUpdateItemTable()
                     {
                         text = _("Set home folder"),
                         callback = function()
-                            local text
-                            local home_dir = G_reader_settings:readSetting("home_dir")
-                            if home_dir then
-                                text = T(_("Home folder is set to:\n%1"), home_dir)
-                            else
-                                text = _("Home folder is not set.")
-                                home_dir = Device.home_dir
+                            local title_header = _("Current home folder:")
+                            local current_path = G_reader_settings:readSetting("home_dir")
+                            local default_path = filemanagerutil.getDefaultDir()
+                            local caller_callback = function(path)
+                                G_reader_settings:saveSetting("home_dir", path)
+                                self.ui:updateTitleBarPath()
                             end
-                            UIManager:show(ConfirmBox:new{
-                                text = text .. "\n" .. _("Choose new folder to set as home?"),
-                                ok_text = _("Choose folder"),
-                                ok_callback = function()
-                                    local path_chooser = require("ui/widget/pathchooser"):new{
-                                        select_file = false,
-                                        show_files = false,
-                                        path = home_dir,
-                                        onConfirm = function(new_path)
-                                            G_reader_settings:saveSetting("home_dir", new_path)
-                                        end
-                                    }
-                                    UIManager:show(path_chooser)
-                                end,
-                            })
+                            filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, default_path)
                         end,
                     },
                     {

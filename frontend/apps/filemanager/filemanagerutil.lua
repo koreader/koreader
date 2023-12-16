@@ -335,4 +335,60 @@ function filemanagerutil.genExecuteScriptButton(file, caller_callback)
     }
 end
 
+function filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, default_path, file_filter)
+    local is_file = file_filter and true or false
+    local path = current_path or default_path
+    local dialog
+    local buttons = {
+        {
+            {
+                text = is_file and _("Choose file") or _("Choose folder"),
+                callback = function()
+                    UIManager:close(dialog)
+                    if path then
+                        if is_file then
+                            path = path:match("(.*/)")
+                        end
+                        if lfs.attributes(path, "mode") ~= "directory" then
+                            path = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+                        end
+                    end
+                    local PathChooser = require("ui/widget/pathchooser")
+                    local path_chooser = PathChooser:new{
+                        select_directory = not is_file,
+                        select_file = is_file,
+                        show_files = is_file,
+                        file_filter = file_filter,
+                        path = path,
+                        onConfirm = function(new_path)
+                            caller_callback(new_path)
+                        end,
+                    }
+                    UIManager:show(path_chooser)
+                end,
+            },
+        }
+    }
+    if default_path then
+        table.insert(buttons, {
+            {
+                text = _("Use default"),
+                enabled = path ~= default_path,
+                callback = function()
+                    UIManager:close(dialog)
+                    caller_callback(default_path)
+                end,
+            },
+        })
+    end
+    local title_value = path and (is_file and BD.filepath(path) or BD.dirpath(path))
+                              or _("not set")
+    local ButtonDialog = require("ui/widget/buttondialog")
+    dialog = ButtonDialog:new{
+        title = title_header .. "\n\n" .. title_value .. "\n",
+        buttons = buttons,
+    }
+    UIManager:show(dialog)
+end
+
 return filemanagerutil

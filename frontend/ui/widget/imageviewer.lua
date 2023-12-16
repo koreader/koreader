@@ -6,7 +6,6 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local DataStorage = require("datastorage")
 local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
@@ -15,6 +14,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local ProgressWidget = require("ui/widget/progresswidget")
+local Screenshoter = require("ui/widget/screenshoter")
 local Size = require("ui/size")
 local TitleBar = require("ui/widget/titlebar")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -156,7 +156,7 @@ function ImageViewer:init()
         self.image = self._scaled_image_func(1) -- native image size, that we need to know
     end
 
-    if G_reader_settings:isTrue("imageviewer_rotate_auto_for_best_fit") then
+    if self.image and G_reader_settings:isTrue("imageviewer_rotate_auto_for_best_fit") then
         self.rotated = (Screen:getWidth() > Screen:getHeight()) ~= (self.image:getWidth() > self.image:getHeight())
     end
 
@@ -811,8 +811,8 @@ function ImageViewer:onSaveImageView()
         self:update()
         UIManager:forceRePaint()
     end
-    local screenshots_dir = G_reader_settings:readSetting("screenshot_dir") or DataStorage:getDataDir() .. "/screenshots/"
-    local screenshot_name = os.date(screenshots_dir .. "ImageViewer" .. "_%Y-%m-%d_%H%M%S.png")
+    local screenshot_dir = Screenshoter:getScreenshotDir()
+    local screenshot_name = os.date(screenshot_dir .. "/ImageViewer_%Y-%m-%d_%H%M%S.png")
     UIManager:sendEvent(Event:new("Screenshot", screenshot_name, restore_settings_func))
     return true
 end

@@ -25,6 +25,8 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -67,6 +69,14 @@ local highlight_strings = {
     highlight =_("Highlight"),
     unhighlight = _("Unhighlight"),
 }
+
+function DictQuickLookup.getWikiSaveEpubDefaultDir()
+    local dir = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+    if dir:sub(-1) ~= "/" then
+        dir = dir .. "/"
+    end
+    return dir .. "Wikipedia"
+end
 
 function DictQuickLookup:canSearch()
     if self.is_wiki then
@@ -343,18 +353,11 @@ function DictQuickLookup:init()
                         local dir
                         if G_reader_settings:isTrue("wikipedia_save_in_book_dir") and not self:isDocless() then
                             local last_file = G_reader_settings:readSetting("lastfile")
-                            if last_file then
-                                dir = last_file:match("(.*)/")
-                            end
+                            dir = last_file and last_file:match("(.*)/")
                         end
-                        if not dir then dir = G_reader_settings:readSetting("wikipedia_save_dir")
-                                           or G_reader_settings:readSetting("home_dir")
-                                           or require("apps/filemanager/filemanagerutil").getDefaultDir() end
-                        if not dir or not util.pathExists(dir) then
-                            UIManager:show(InfoMessage:new{
-                                text = _("No folder to save article to could be found."),
-                            })
-                            return
+                        dir = dir or G_reader_settings:readSetting("wikipedia_save_dir") or DictQuickLookup.getWikiSaveEpubDefaultDir()
+                        if not util.pathExists(dir) then
+                            lfs.mkdir(dir)
                         end
                         -- Just to be safe (none of the invalid chars, except ':' for uninteresting
                         -- Portal: or File: wikipedia pages, should be in lookupword)

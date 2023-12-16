@@ -1,5 +1,3 @@
-local BD = require("ui/bidi")
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
@@ -13,6 +11,7 @@ local Trapper = require("ui/trapper")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
 local Wikipedia = require("ui/wikipedia")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util  = require("util")
@@ -175,109 +174,21 @@ function ReaderWikipedia:addToMainMenu(menu_items)
             { -- setting used by dictquicklookup
                 text = _("Set Wikipedia 'Save as EPUB' folder"),
                 keep_menu_open = true,
-                callback = function()
-                    local choose_directory = function()
-                        -- Default directory as chosen by DictQuickLookup
-                        local default_dir = G_reader_settings:readSetting("wikipedia_save_dir")
-                                         or G_reader_settings:readSetting("home_dir")
-                                         or require("apps/filemanager/filemanagerutil").getDefaultDir()
-                        local dialog
-                        dialog = ButtonDialogTitle:new{
-                            title = T(_("Current Wikipedia 'Save as EPUB' folder:\n\n%1\n"), BD.dirpath(default_dir)),
-                            buttons = {
-                                {
-                                    {
-                                        text = _("Keep this folder"),
-                                        callback = function()
-                                            UIManager:close(dialog)
-                                        end,
-                                    },
-                                },
-                                {
-                                    {
-                                    text = _("Choose other folder"),
-                                    callback = function()
-                                        UIManager:close(dialog)
-                                        -- Use currently read book's directory as starting point,
-                                        -- so a user reading a wikipedia article can quickly select
-                                        -- it to save related new articles in the same directory
-                                        local dir = G_reader_settings:readSetting("wikipedia_save_dir")
-                                                 or G_reader_settings:readSetting("home_dir")
-                                                 or require("apps/filemanager/filemanagerutil").getDefaultDir()
-                                                 or "/"
-                                        -- If this directory has no subdirectory, we would be displaying
-                                        -- a single "..", so use parent directory in that case.
-                                        local has_subdirectory = false
-                                        for f in lfs.dir(dir) do
-                                            local attributes = lfs.attributes(dir.."/"..f)
-                                            if attributes and attributes.mode == "directory" then
-                                                if f ~= "." and f ~= ".." and f:sub(-4) ~= ".sdr"then
-                                                    has_subdirectory = true
-                                                    break
-                                                end
-                                            end
-                                        end
-                                        if not has_subdirectory then
-                                            dir = dir:match("(.*)/")
-                                        end
-                                        local PathChooser = require("ui/widget/pathchooser")
-                                        local path_chooser = PathChooser:new{
-                                            select_directory = true,
-                                            select_file = false,
-                                            path = dir,
-                                            onConfirm = function(path)
-                                                G_reader_settings:saveSetting("wikipedia_save_dir", path)
-                                                UIManager:show(InfoMessage:new{
-                                                    text = T(_("Wikipedia 'Save as EPUB' folder set to:\n%1"), BD.dirpath(path)),
-                                                })
-                                            end
-                                        }
-                                        UIManager:show(path_chooser)
-                                    end,
-                                    },
-                                },
-                            },
-                        }
-                        UIManager:show(dialog)
-                    end
-                    -- If wikipedia_save_dir has not yet been set, propose to use
-                    -- home_dir/Wikipedia/
-                    if not G_reader_settings:readSetting("wikipedia_save_dir") then
-                        local home_dir = G_reader_settings:readSetting("home_dir")
-                        if not home_dir or lfs.attributes(home_dir, "mode") ~= "directory" then
-                            home_dir = require("apps/filemanager/filemanagerutil").getDefaultDir()
-                        end
-                        home_dir = home_dir:gsub("^(.-)/*$", "%1") -- remove trailing slash
-                        if home_dir and lfs.attributes(home_dir, "mode") == "directory" then
-                            local wikipedia_dir = home_dir.."/Wikipedia"
-                            local text = _([[
+                help_text = _([[
 Wikipedia articles can be saved as an EPUB for more comfortable reading.
 
-You can choose an existing folder, or use a default folder named "Wikipedia" in your reader's home folder.
-
-Where do you want them saved?]])
-                            UIManager:show(ConfirmBox:new{
-                                text = text,
-                                ok_text = _("Use ~/Wikipedia/"),
-                                ok_callback = function()
-                                    if not util.pathExists(wikipedia_dir) then
-                                        lfs.mkdir(wikipedia_dir)
-                                    end
-                                    G_reader_settings:saveSetting("wikipedia_save_dir", wikipedia_dir)
-                                    UIManager:show(InfoMessage:new{
-                                        text = T(_("Wikipedia 'Save as EPUB' folder set to:\n%1"), BD.dirpath(wikipedia_dir)),
-                                    })
-                                end,
-                                cancel_text = _("Choose folder"),
-                                cancel_callback = function()
-                                    choose_directory()
-                                end,
-                            })
-                            return
+You can choose an existing folder, or use a default folder named "Wikipedia" in your reader's home folder.]]),
+                callback = function()
+                    local title_header = _("Current Wikipedia 'Save as EPUB' folder:")
+                    local current_path = G_reader_settings:readSetting("wikipedia_save_dir")
+                    local default_path = DictQuickLookup.getWikiSaveEpubDefaultDir()
+                    local caller_callback = function(path)
+                        G_reader_settings:saveSetting("wikipedia_save_dir", path)
+                        if not util.pathExists(path) then
+                            lfs.mkdir(path)
                         end
                     end
-                    -- If setting exists, or no home_dir found, let user choose directory
-                    choose_directory()
+                    filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, default_path)
                 end,
             },
             { -- setting used by dictquicklookup

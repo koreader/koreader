@@ -2515,7 +2515,7 @@ function ReaderFooter:onTimeFormatChanged()
 end
 
 function ReaderFooter:onBookMetadataChanged(prop_updated)
-    if prop_updated.metadata_key_updated == "title" then
+    if prop_updated and prop_updated.metadata_key_updated == "title" then
         self:updateFooterText()
     end
 end
