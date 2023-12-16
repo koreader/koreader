@@ -170,7 +170,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                 text_func = function()
                     local nb_cols_portrait = tonumber(BookInfoManager:getSetting("nb_cols_portrait") or 3)
                     local nb_rows_portrait = tonumber(BookInfoManager:getSetting("nb_rows_portrait") or 3)
-                    return T(_("Items per page in mosaic portrait mode: %1 x %2"), nb_cols_portrait, nb_rows_portrait)
+                    return T(_("Items per page in mosaic portrait mode: %1 × %2"), nb_cols_portrait, nb_rows_portrait)
                 end,
                 -- Best to not "keep_menu_open = true", to see how this apply on the full view
                 callback = function(touchmenu_instance)
@@ -192,6 +192,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         right_max = 5,
                         right_default = 3,
                         right_precision = "%01d",
+                        keep_shown_on_apply = true,
                         callback = function(left_value, right_value)
                             BookInfoManager:saveSetting("nb_cols_portrait", left_value)
                             BookInfoManager:saveSetting("nb_rows_portrait", right_value)
@@ -206,7 +207,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                 text_func = function()
                     local nb_cols_landscape = tonumber(BookInfoManager:getSetting("nb_cols_landscape") or 4)
                     local nb_rows_landscape = tonumber(BookInfoManager:getSetting("nb_rows_landscape") or 2)
-                    return T(_("Items per page in mosaic landscape mode: %1 x %2"), nb_cols_landscape, nb_rows_landscape)
+                    return T(_("Items per page in mosaic landscape mode: %1 × %2"), nb_cols_landscape, nb_rows_landscape)
                 end,
                 callback = function(touchmenu_instance)
                     local nb_cols_landscape = tonumber(BookInfoManager:getSetting("nb_cols_landscape") or 4)
@@ -227,6 +228,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         right_max = 4,
                         right_default = 2,
                         right_precision = "%01d",
+                        keep_shown_on_apply = true,
                         callback = function(left_value, right_value)
                             BookInfoManager:saveSetting("nb_cols_landscape", left_value)
                             BookInfoManager:saveSetting("nb_rows_landscape", right_value)
