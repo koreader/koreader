@@ -1523,4 +1523,14 @@ function util.wrapMethod(target_table, target_field_name, new_func, before_callb
     return wrapped
 end
 
+-- This function calculates reasonable large number of items based on screen properties
+-- px is the screen_height or screen_width
+-- 72 is used because there are 72 points per inch (in printing press)
+-- limit is points (pt), i.e., what is minimum number of points to make this item readable
+-- Items might be number of lines in the list (pt = 20), of mosaic grid cover size (pt = 75)
+function util.maxItemsNorm(px, dpi, limit)
+    local maxItemsNorm = math.floor(px / dpi * 72 / limit + 0.5)
+    return maxItemsNorm
+end
+
 return util
