@@ -69,7 +69,10 @@ local KeyValueItem = InputContainer:extend{
 }
 
 function KeyValueItem:init()
-    self.dimen = Geom:new{ x = 0, y = 0, w = self.width, h = self.height }
+    self.dimen = Geom:new{
+        w = self.width,
+        h = self.height,
+    }
 
     -- self.value may contain some control characters (\n \t...) that would
     -- be rendered as a square. Replace them with a shorter and nicer '|'.
@@ -300,8 +303,6 @@ function KeyValuePage:init()
     self.show_parent = self.show_parent or self
     self.kv_pairs = self.kv_pairs or {}
     self.dimen = Geom:new{
-        x = 0,
-        y = 0,
         w = self.width or Screen:getWidth(),
         h = self.height or Screen:getHeight(),
     }
@@ -467,14 +468,10 @@ function KeyValuePage:init()
                          - 2*Size.line.thick
                             -- account for possibly 2 separator lines added
 
-    local force_items_per_page
-    if self.single_page then
-        force_items_per_page = math.max(#self.kv_pairs,
-            G_reader_settings:readSetting("keyvalues_per_page") or self:getDefaultKeyValuesPerPage())
+    self.items_per_page = G_reader_settings:readSetting("keyvalues_per_page") or self.getDefaultItemsPerPage()
+    if self.single_page and self.items_per_page < #self.kv_pairs then
+        self.items_per_page = #self.kv_pairs
     end
-
-    self.items_per_page = force_items_per_page or
-        G_reader_settings:readSetting("keyvalues_per_page") or self:getDefaultKeyValuesPerPage()
     self.item_height = math.floor(available_height / self.items_per_page)
     -- Put half of the pixels lost by floor'ing between title and content
     local content_height = self.items_per_page * self.item_height
@@ -522,7 +519,7 @@ function KeyValuePage:init()
     }
 end
 
-function KeyValuePage:getDefaultKeyValuesPerPage()
+function KeyValuePage.getDefaultItemsPerPage()
     -- Get a default according to Screen DPI (roughly following
     -- the former implementation building logic)
     local default_item_height = Size.item.height_default * 1.5 -- we were adding 1/2 as margin
@@ -685,7 +682,7 @@ function KeyValuePage:_populateItems()
                     background = Blitbuffer.COLOR_LIGHT_GRAY,
                     dimen = Geom:new{
                         w = self.item_width,
-                        h = Size.line.thick
+                        h = Size.line.thick,
                     },
                     style = "solid",
                 })
@@ -699,7 +696,7 @@ function KeyValuePage:_populateItems()
                     background = Blitbuffer.COLOR_LIGHT_GRAY,
                     dimen = Geom:new{
                         w = self.item_width,
-                        h = Size.line.thick
+                        h = Size.line.thick,
                     },
                     style = "solid",
                 })
