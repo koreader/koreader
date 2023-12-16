@@ -385,10 +385,11 @@ To:
                     local KeyValuePage = require("ui/widget/keyvaluepage")
                     local default_perpage = KeyValuePage:getDefaultKeyValuesPerPage()
                     local curr_perpage = G_reader_settings:readSetting("keyvalues_per_page") or default_perpage
+                    local maxItemsNorm_ItemsPerPage = util.maxItemsNorm(Screen:getHeight(), Device.display_dpi, 20)
                     local items = SpinWidget:new{
                         value = curr_perpage,
                         value_min = 10,
-                        value_max = 24,
+                        value_max = maxItemsNorm_ItemsPerPage,
                         default_value = default_perpage,
                         title_text =  _("Info lists items per page"),
                         callback = function(spin)
