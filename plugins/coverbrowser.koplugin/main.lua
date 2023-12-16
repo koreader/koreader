@@ -190,7 +190,6 @@ function CoverBrowser:addToMainMenu(menu_items)
                         right_min = 2,
                         right_max = 5,
                         right_default = 3,
-                        keep_shown_on_apply = true,
                         callback = function(left_value, right_value)
                             BookInfoManager:saveSetting("nb_cols_portrait", left_value)
                             BookInfoManager:saveSetting("nb_rows_portrait", right_value)
@@ -224,7 +223,6 @@ function CoverBrowser:addToMainMenu(menu_items)
                         right_min = 2,
                         right_max = 4,
                         right_default = 2,
-                        keep_shown_on_apply = true,
                         callback = function(left_value, right_value)
                             BookInfoManager:saveSetting("nb_cols_landscape", left_value)
                             BookInfoManager:saveSetting("nb_rows_landscape", right_value)
