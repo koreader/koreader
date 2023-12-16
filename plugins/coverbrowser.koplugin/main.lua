@@ -185,11 +185,13 @@ function CoverBrowser:addToMainMenu(menu_items)
                         left_min = 2,
                         left_max = 5,
                         left_default = 3,
+                        left_precision = "%01d",
                         right_text = _("Rows"),
                         right_value = nb_rows_portrait,
                         right_min = 2,
                         right_max = 5,
                         right_default = 3,
+                        right_precision = "%01d",
                         callback = function(left_value, right_value)
                             BookInfoManager:saveSetting("nb_cols_portrait", left_value)
                             BookInfoManager:saveSetting("nb_rows_portrait", right_value)
@@ -218,11 +220,13 @@ function CoverBrowser:addToMainMenu(menu_items)
                         left_min = 2,
                         left_max = 6,
                         left_default = 4,
+                        left_precision = "%01d",
                         right_text = _("Rows"),
                         right_value = nb_rows_landscape,
                         right_min = 2,
                         right_max = 4,
                         right_default = 2,
+                        right_precision = "%01d",
                         callback = function(left_value, right_value)
                             BookInfoManager:saveSetting("nb_cols_landscape", left_value)
                             BookInfoManager:saveSetting("nb_rows_landscape", right_value)
