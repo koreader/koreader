@@ -179,10 +179,11 @@ function FileManagerMenu:setUpdateItemTable()
                             local Menu = require("ui/widget/menu")
                             local default_perpage = Menu.items_per_page_default
                             local curr_perpage = G_reader_settings:readSetting("items_per_page") or default_perpage
+                            local maxItemsNorm_ItemsPerPage = util.maxItemsNorm(Screen:getHeight(), Device.display_dpi, 20)
                             local items = SpinWidget:new{
                                 value = curr_perpage,
                                 value_min = 6,
-                                value_max = 24,
+                                value_max = maxItemsNorm_ItemsPerPage,
                                 default_value = default_perpage,
                                 title_text =  _("Items per page"),
                                 keep_shown_on_apply = true,
