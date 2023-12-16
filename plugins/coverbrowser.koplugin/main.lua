@@ -2,6 +2,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
+local T = require("ffi/util").template
 local BookInfoManager = require("bookinfomanager")
 
 --[[
@@ -161,58 +162,130 @@ function CoverBrowser:addToMainMenu(menu_items)
     -- add Mosaic / Detailed list mode settings to File browser Settings submenu
     -- next to Classic mode settings
     if menu_items.filebrowser_settings == nil then return end
-    table.insert (menu_items.filebrowser_settings.sub_item_table, 4, {
+    table.insert (menu_items.filebrowser_settings.sub_item_table, 5, {
         text = _("Mosaic and detailed list settings"),
         separator = true,
         sub_item_table = {
             {
-                text = _("Items per page"),
-                help_text = _([[This sets the number of files and folders per page in display modes other than classic.]]),
+                text_func = function()
+                    local nb_cols_portrait = tonumber(BookInfoManager:getSetting("nb_cols_portrait") or 3)
+                    local nb_rows_portrait = tonumber(BookInfoManager:getSetting("nb_rows_portrait") or 3)
+                    return T(_("Items per page in mosaic portrait mode: %1 x %2"), nb_cols_portrait, nb_rows_portrait)
+                end,
                 -- Best to not "keep_menu_open = true", to see how this apply on the full view
-                callback = function()
+                callback = function(touchmenu_instance)
+                    local nb_cols_portrait = tonumber(BookInfoManager:getSetting("nb_cols_portrait") or 3)
+                    local nb_rows_portrait = tonumber(BookInfoManager:getSetting("nb_rows_portrait") or 3)
+                    local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
+                    local widget = DoubleSpinWidget:new{
+                        title_text = _("Mosaic portrait mode"),
+                        width_factor = 0.6,
+                        left_text = _("Columns"),
+                        left_value = nb_cols_portrait,
+                        left_min = 2,
+                        left_max = 5,
+                        left_default = 3,
+                        right_text = _("Rows"),
+                        right_value = nb_rows_portrait,
+                        right_min = 2,
+                        right_max = 5,
+                        right_default = 3,
+                        keep_shown_on_apply = true,
+                        callback = function(left_value, right_value)
+                            BookInfoManager:saveSetting("nb_cols_portrait", left_value)
+                            BookInfoManager:saveSetting("nb_rows_portrait", right_value)
+                            self.ui:onRefresh()
+                            touchmenu_instance:updateItems()
+                        end,
+                    }
+                    UIManager:show(widget)
+                end,
+            },
+            {
+                text_func = function()
+                    local nb_cols_landscape = tonumber(BookInfoManager:getSetting("nb_cols_landscape") or 4)
+                    local nb_rows_landscape = tonumber(BookInfoManager:getSetting("nb_rows_landscape") or 2)
+                    return T(_("Items per page in mosaic landscape mode: %1 x %2"), nb_cols_landscape, nb_rows_landscape)
+                end,
+                callback = function(touchmenu_instance)
+                    local nb_cols_landscape = tonumber(BookInfoManager:getSetting("nb_cols_landscape") or 4)
+                    local nb_rows_landscape = tonumber(BookInfoManager:getSetting("nb_rows_landscape") or 2)
+                    local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
+                    local widget = DoubleSpinWidget:new{
+                        title_text = _("Mosaic landscape mode"),
+                        width_factor = 0.6,
+                        left_text = _("Columns"),
+                        left_value = nb_cols_landscape,
+                        left_min = 2,
+                        left_max = 6,
+                        left_default = 4,
+                        right_text = _("Rows"),
+                        right_value = nb_rows_landscape,
+                        right_min = 2,
+                        right_max = 4,
+                        right_default = 2,
+                        keep_shown_on_apply = true,
+                        callback = function(left_value, right_value)
+                            BookInfoManager:saveSetting("nb_cols_landscape", left_value)
+                            BookInfoManager:saveSetting("nb_rows_landscape", right_value)
+                            self.ui:onRefresh()
+                            touchmenu_instance:updateItems()
+                        end,
+                    }
+                    UIManager:show(widget)
+                end,
+            },
+            {
+                text_func = function()
+                    local curr_items = tonumber(BookInfoManager:getSetting("files_per_page") or 10)
+                    return T(_("Items per page in detailed list mode: %1"), curr_items)
+                end,
+                callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
                     -- "files_per_page" should have been saved with an adequate value
                     -- the first time Detailed list was shown. Fallback to a start
                     -- value of 10 if it hasn't.
                     local curr_items = BookInfoManager:getSetting("files_per_page") or 10
                     local items = SpinWidget:new{
+                        title_text = _("Detailed list mode"),
                         value = curr_items,
                         value_min = 4,
                         value_max = 20,
                         default_value = 10,
                         keep_shown_on_apply = true,
-                        title_text =  _("Items per page"),
                         callback = function(spin)
                             BookInfoManager:saveSetting("files_per_page", spin.value)
                             self.ui:onRefresh()
+                            touchmenu_instance:updateItems()
                         end
                     }
                     UIManager:show(items)
                 end,
+                separator = true,
             },
             {
                 text = _("Progress"),
                 sub_item_table = {
                     {
-                        text = _("Show progress"),
-                        checked_func = function() return
-                            not BookInfoManager:getSetting("hide_page_info")
+                        text = _("Show progress in mosaic mode"),
+                        checked_func = function() return BookInfoManager:getSetting("show_progress_in_mosaic") end,
+                        callback = function()
+                            BookInfoManager:toggleSetting("show_progress_in_mosaic")
+                            self:refreshFileManagerInstance()
                         end,
+                        separator = true,
+                    },
+                    {
+                        text = _("Show progress in detailed list mode"),
+                        checked_func = function() return not BookInfoManager:getSetting("hide_page_info") end,
                         callback = function()
                             BookInfoManager:toggleSetting("hide_page_info")
                             self:refreshFileManagerInstance()
                         end,
                     },
                     {
-                        text = _("Show progress % in mosaic mode"),
-                        checked_func = function() return BookInfoManager:getSetting("show_progress_in_mosaic") end,
-                        callback = function()
-                            BookInfoManager:toggleSetting("show_progress_in_mosaic")
-                            self:refreshFileManagerInstance()
-                        end,
-                    },
-                    {
                         text = _("Show number of pages read instead of progress %"),
+                        enabled_func = function() return not BookInfoManager:getSetting("hide_page_info") end,
                         checked_func = function() return BookInfoManager:getSetting("show_pages_read_as_progress") end,
                         callback = function()
                             BookInfoManager:toggleSetting("show_pages_read_as_progress")
@@ -221,12 +294,12 @@ function CoverBrowser:addToMainMenu(menu_items)
                     },
                     {
                         text = _("Show number of pages left to read"),
+                        enabled_func = function() return not BookInfoManager:getSetting("hide_page_info") end,
                         checked_func = function() return BookInfoManager:getSetting("show_pages_left_in_progress") end,
                         callback = function()
                             BookInfoManager:toggleSetting("show_pages_left_in_progress")
                             self:refreshFileManagerInstance()
                         end,
-                        separator = true,
                     },
                 },
             },
@@ -302,7 +375,6 @@ function CoverBrowser:addToMainMenu(menu_items)
                         end,
                     },
                 },
-                separator = true
             },
             {
                 text = _("Show file properties"),
@@ -313,6 +385,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     BookInfoManager:toggleSetting("hide_file_info")
                     self:refreshFileManagerInstance()
                 end,
+                separator = true,
             },
             {
                 text = _("Book info cache management"),
@@ -470,12 +543,6 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser._do_hint_opened = true -- dogear at bottom
         -- Don't have "../" centered in empty directories
         FileChooser._do_center_partial_rows = false
-        -- One could override default 3x3 grid here (put that as settings ?)
-        -- FileChooser.nb_cols_portrait = 4
-        -- FileChooser.nb_rows_portrait = 4
-        -- FileChooser.nb_cols_landscape = 6
-        -- FileChooser.nb_rows_landscape = 3
-
     elseif display_mode == "list_image_meta" or display_mode == "list_only_meta" or
                                      display_mode == "list_image_filename" then -- list modes
         -- Replace some other original methods with those from our ListMenu
@@ -487,7 +554,6 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser._do_filename_only = display_mode == "list_image_filename"
         FileChooser._do_hint_opened = true -- dogear at bottom
     end
-
 
     -- Replace this FileManager method with the one from CoverMenu
     -- (but first, make the original method saved here as local available
@@ -505,7 +571,6 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
             self:refreshFileManagerInstance(false, true)
         end)
     end
-
 end
 
 local function _FileManagerHistory_updateItemTable(self)
