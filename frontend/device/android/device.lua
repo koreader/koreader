@@ -102,7 +102,7 @@ local Device = Generic:extend{
     importFile = function(path) android.importFile(path) end,
     canShareText = yes,
     doShareText = function(self, text, reason, title, mimetype)
-        android.sendText(text, reason, title, mimetype)
+        android.sendText(text, reason, title or "", mimetype)
     end,
 
     canExternalDictLookup = yes,
