@@ -28,6 +28,16 @@ defaults, please take a second to consider:
 local dbg = require("dbg")
 local Screen = require("device").screen
 
+-- This function calculates reasonable large number of items based on screen properties
+-- px is the screen_height or screen_width
+-- 72 is used because there are 72 points per inch (in printing press)
+-- limit is points (pt), i.e., what is minimum number of points to make this item readable
+-- Items might be number of lines in the list (pt = 20), of mosaic grid cover size (pt = 75)
+function maxItemsNorm(px, dpi, limit)
+    local maxItemsNorm = math.floor(px / dpi * 72 / limit + 0.5)
+    return maxItemsNorm
+end
+
 local Size = {
     border = {
         default = Screen:scaleBySize(1),
@@ -76,6 +86,11 @@ local Size = {
         horizontal_small = Screen:scaleBySize(5),
         vertical_default = Screen:scaleBySize(2),
         vertical_large = Screen:scaleBySize(5),
+    },
+    maxItemsNorm = {
+        info_list = maxItemsNorm(Screen:getHeight(), Device.display_dpi, 20),
+        mosaic_h = maxItemsNorm(Screen:getHeight(), Device.display_dpi, 75),
+        mosaic_w = maxItemsNorm(Screen:getWidth(), Device.display_dpi, 75),
     },
 }
 
