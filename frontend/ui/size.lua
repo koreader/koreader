@@ -26,8 +26,8 @@ defaults, please take a second to consider:
 ]]
 
 local dbg = require("dbg")
-local Screen = require("device").screen
 local Device = require("device")
+local Screen = Device.screen
 
 -- This function calculates reasonable large number of items based on screen properties
 -- px is the screen_height or screen_width
