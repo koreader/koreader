@@ -83,7 +83,7 @@ function CoverBrowser:addToMainMenu(menu_items)
     if self.ui.view then -- Reader
         return
     end
-    local FileChooser = self.ui.file_chooser
+    local file_chooser = self.ui.file_chooser
 
     local modes = {
         { _("Classic (filename only)") },
@@ -198,15 +198,15 @@ function CoverBrowser:addToMainMenu(menu_items)
                             BookInfoManager:saveSetting("nb_cols_portrait", left_value)
                             BookInfoManager:saveSetting("nb_rows_portrait", right_value)
                             self.layout_updated = left_value ~= nb_cols_portrait or right_value ~= nb_rows_portrait
-                            FileChooser.refresh_covers = false
-                            FileChooser:refreshPath()
+                            file_chooser.refresh_covers = false
+                            file_chooser:refreshPath()
                             touchmenu_instance:updateItems()
                         end,
                         close_callback = function()
                             if self.layout_updated then
                                 self.layout_updated = nil
-                                FileChooser.refresh_covers = true
-                                FileChooser:refreshPath()
+                                file_chooser.refresh_covers = true
+                                file_chooser:refreshPath()
                             end
                         end,
                     }
