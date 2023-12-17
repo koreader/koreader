@@ -35,8 +35,8 @@ local Screen = Device.screen
 -- 72 is used because there are 72 points per inch (in printing press).
 -- limit is points (pt), i.e., what is minimum number of points to make this item readable.
 -- Items might be number of lines in the list (pt = 20), of mosaic grid cover size (pt = 75)
-local function maxItems(px, dpi, limit)
-    local max_items = math.floor(px / dpi * 72 / limit + 0.5)
+local function maxItems(px, screen_dpi, limit)
+    local max_items = math.floor(px / screen_dpi * 72 / limit + 0.5)
     return max_items
 end
 
