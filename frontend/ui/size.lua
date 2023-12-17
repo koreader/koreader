@@ -79,9 +79,10 @@ local Size = {
         vertical_large = Screen:scaleBySize(5),
     },
     maxItemsNorm = {
-        -- These are reasonably large number of items based on screen properties:
+        -- These are reasonably large size for items based on screen properties:
         -- screen height or screen width, and screen dpi.
-        -- 72 is used because there are 72 points per inch (in printing press)
+        -- It is then used to calcuate how many such items can fit in a screen.
+        -- 72 is used because there are 72 points per inch (in printing press).
         -- Then divided by a limit in points (pt), i.e., what is minimum number of points to make this item readable.
         -- Items might be a number of lines in the list (pt = 20), of mosaic grid cover size (pt = 75)
         info_list = math.floor(Screen:getHeight() / Device.display_dpi * 72 / 20 + 0.5),
