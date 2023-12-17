@@ -29,16 +29,6 @@ local dbg = require("dbg")
 local Device = require("device")
 local Screen = Device.screen
 
--- This function calculates reasonable large number of items based on screen properties
--- px is the screen_height or screen_width
--- 72 is used because there are 72 points per inch (in printing press)
--- limit is points (pt), i.e., what is minimum number of points to make this item readable
--- Items might be number of lines in the list (pt = 20), of mosaic grid cover size (pt = 75)
-function SizeMaxItemsNorm(px, dpi, limit)
-    local maxItemsNorm = math.floor(px / dpi * 72 / limit + 0.5)
-    return maxItemsNorm
-end
-
 local Size = {
     border = {
         default = Screen:scaleBySize(1),
@@ -89,9 +79,14 @@ local Size = {
         vertical_large = Screen:scaleBySize(5),
     },
     maxItemsNorm = {
-        info_list = SizeMaxItemsNorm(Screen:getHeight(), Device.display_dpi, 20),
-        mosaic_h = SizeMaxItemsNorm(Screen:getHeight(), Device.display_dpi, 75),
-        mosaic_w = SizeMaxItemsNorm(Screen:getWidth(), Device.display_dpi, 75),
+        -- These are reasonably large number of items based on screen properties:
+        -- screen height or screen width, and screen dpi.
+        -- 72 is used because there are 72 points per inch (in printing press)
+        -- Then divided by a limit in points (pt), i.e., what is minimum number of points to make this item readable.
+        -- Items might be a number of lines in the list (pt = 20), of mosaic grid cover size (pt = 75)
+        info_list = math.floor(Screen:getHeight() / Device.display_dpi * 72 / 20 + 0.5),
+        mosaic_h = math.floor(Screen:getHeight() / Device.display_dpi * 72 / 75 + 0.5),
+        mosaic_w = math.floor(Screen:getWidth() / Device.display_dpi * 72 / 75 + 0.5),
     },
 }
 
