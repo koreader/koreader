@@ -447,7 +447,7 @@ function MosaicMenuItem:update()
     local max_img_w = dimen.w - 2*border_size
     local max_img_h = dimen.h - 2*border_size
     local cover_specs = {
-        sizetag = "M",
+        sizetag = max_img_w .. max_img_h,
         max_cover_w = max_img_w,
         max_cover_h = max_img_h,
     }
@@ -540,7 +540,7 @@ function MosaicMenuItem:update()
         local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.do_cover_image)
         if bookinfo and self.do_cover_image and not bookinfo.ignore_cover then
             if bookinfo.cover_fetched then
-                if bookinfo.has_cover and bookinfo.cover_sizetag ~= "M" then
+                if bookinfo.has_cover and self.menu.refresh_covers and bookinfo.cover_sizetag ~= max_img_w .. max_img_h then
                     -- there is a cover, but it's a small one (made by ListMenuItem),
                     -- and it would be ugly if scaled up to MosaicMenuItem size:
                     -- do as if not found to force a new extraction with our size
