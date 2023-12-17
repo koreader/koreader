@@ -35,9 +35,9 @@ local Screen = Device.screen
 -- 72 is used because there are 72 points per inch (in printing press).
 -- limit is points (pt), i.e., what is minimum number of points to make this item readable.
 -- Items might be number of lines in the list (pt = 20), of mosaic grid cover size (pt = 75)
-local function size_max_items_norm(px, dpi, limit)
-    local maxItemsNorm = math.floor(px / dpi * 72 / limit + 0.5)
-    return maxItemsNorm
+local function sizeMaxItemsNormalized(px, dpi, limit)
+    local max_items_normalized = math.floor(px / dpi * 72 / limit + 0.5)
+    return max_items_normalized
 end
 
 local Size = {
@@ -89,10 +89,10 @@ local Size = {
         vertical_default = Screen:scaleBySize(2),
         vertical_large = Screen:scaleBySize(5),
     },
-    maxItemsNorm = {
-        info_list = size_max_items_norm(Screen:getHeight(), Device.display_dpi, 20),
-        mosaic_h = size_max_items_norm(Screen:getHeight(), Device.display_dpi, 75),
-        mosaic_w = size_max_items_norm(Screen:getWidth(), Device.display_dpi, 75),
+    max_items_normalized = {
+        info_list = sizeMaxItemsNormalized(Screen:getHeight(), Device.display_dpi, 20),
+        mosaic_h = sizeMaxItemsNormalized(Screen:getHeight(), Device.display_dpi, 75),
+        mosaic_w = sizeMaxItemsNormalized(Screen:getWidth(), Device.display_dpi, 75),
     },
 }
 
