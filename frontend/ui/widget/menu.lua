@@ -562,6 +562,7 @@ local Menu = FocusManager:extend{
     show_parent = nil,
 
     title = "No Title",
+    subtitle = nil,
     -- default width and height
     width = nil,
     -- height will be calculated according to item number if not given
@@ -596,6 +597,7 @@ local Menu = FocusManager:extend{
     -- if you want to embed the menu widget into another widget, set
     -- this to false
     is_popout = true,
+    title_bar_fm_style = nil, -- set to true to build increased title bar like in FM
     -- set icon to add title bar left button
     title_bar_left_icon = nil,
     -- close_callback is a function, which is executed when menu is closed
@@ -616,7 +618,10 @@ function Menu:_recalculateDimen()
             + 2 * Size.padding.button
     end
     if self.title_bar and not self.no_title then
-        top_height = self.title_bar:getHeight() + self.header_padding
+        top_height = self.title_bar:getHeight()
+        if not self.title_bar_fm_style then
+            top_height = top_height + self.header_padding
+        end
     end
     height_dim = self.inner_dimen.h - bottom_height - top_height
     local item_height = math.floor(height_dim / self.perpage)
@@ -666,12 +671,16 @@ function Menu:init()
         title_face = self.title_face,
         title_multilines = self.title_multilines,
         title_shrink_font_to_fit = self.title_shrink_font_to_fit,
-        subtitle = self.show_path and BD.directory(filemanagerutil.abbreviate(self.path)),
+        subtitle = self.title_bar_fm_style and "" or (self.show_path and BD.directory(filemanagerutil.abbreviate(self.path))),
         subtitle_truncate_left = self.show_path,
         subtitle_fullwidth = self.show_path,
+        title_top_padding = self.title_bar_fm_style and Screen:scaleBySize(6),
+        button_padding = self.title_bar_fm_style and Screen:scaleBySize(5),
         left_icon = self.title_bar_left_icon,
+        left_icon_size_ratio = self.title_bar_fm_style and 1,
         left_icon_tap_callback = function() self:onLeftButtonTap() end,
         left_icon_hold_callback = function() self:onLeftButtonHold() end,
+        right_icon_size_ratio = self.title_bar_fm_style and 1,
         close_callback = function() self:onClose() end,
         show_parent = self.show_parent or self,
     }
@@ -1127,9 +1136,14 @@ end
     and the page number will be the page containing the first item for
     which item.key = value
 --]]
-function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch)
-    if self.title_bar and new_title then
-        self.title_bar:setTitle(new_title)
+function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch, new_subtitle)
+    if self.title_bar then
+        if new_title then
+            self.title_bar:setTitle(new_title, true)
+        end
+        if new_subtitle then
+            self.title_bar:setSubTitle(new_subtitle, true)
+        end
     end
 
     if itemnumber == nil then
