@@ -182,7 +182,7 @@ function FileManagerMenu:setUpdateItemTable()
                             local items = SpinWidget:new{
                                 value = curr_perpage,
                                 value_min = 6,
-                                value_max = Size.max_items_normalized.info_list,
+                                value_max = Size.max_items.info_list,
                                 default_value = default_perpage,
                                 title_text =  _("Items per page"),
                                 keep_shown_on_apply = true,
@@ -388,7 +388,7 @@ To:
                     local items = SpinWidget:new{
                         value = curr_perpage,
                         value_min = 10,
-                        value_max = Size.max_items_normalized.info_list,
+                        value_max = Size.max_items.info_list,
                         default_value = default_perpage,
                         title_text =  _("Info lists items per page"),
                         callback = function(spin)
