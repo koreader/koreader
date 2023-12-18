@@ -30,11 +30,8 @@ local Device = require("device")
 local Screen = Device.screen
 
 -- This one is required for Size.max_items below,
--- because generic device does not have Device.display_dpi (it is nil).
-local scr_dpi = Device.display_dpi
-if scr_dpi == nil then
-    scr_dpi = 1
-end
+-- because generic device does not have Device:getDeviceScreenDPI() (it is nil).
+local scr_dpi = Device:getDeviceScreenDPI() or 1
 
 local Size = {
     border = {
