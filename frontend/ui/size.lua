@@ -29,6 +29,10 @@ local dbg = require("dbg")
 local Device = require("device")
 local Screen = Device.screen
 
+if Device.display_dpi == nil then
+    Device.display_dpi = 1
+end
+
 local Size = {
     border = {
         default = Screen:scaleBySize(1),
@@ -79,9 +83,9 @@ local Size = {
         vertical_large = Screen:scaleBySize(5),
     },
     max_items_normalized = {
-        info_list = math.floor(Screen:getHeight() / Screen:getDPI() * 72 / 20 + 0.5),
-        mosaic_h = math.floor(Screen:getHeight() / Screen:getDPI() * 72 / 75 + 0.5),
-        mosaic_w = math.floor(Screen:getWidth() / Screen:getDPI() * 72 / 75 + 0.5),
+        info_list = math.floor(Screen:getHeight() / Device.display_dpi * 72 / 20 + 0.5),
+        mosaic_h = math.floor(Screen:getHeight() / Device.display_dpi * 72 / 75 + 0.5),
+        mosaic_w = math.floor(Screen:getWidth() / Device.display_dpi * 72 / 75 + 0.5),
     },
 }
 
