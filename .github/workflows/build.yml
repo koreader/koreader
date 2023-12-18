@@ -41,7 +41,7 @@ jobs:
           ./kodev release macos
 
       - name: Uploading artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: koreader-macos
           path: '*.7z'
