@@ -87,10 +87,10 @@ local Size = {
     max_items = {
         -- This function calculates reasonably large smallest size for items based on screen properties:
         -- number_of_items = math.floor(px / display_dpi * 72 / pt_limit + 0.5)
-        -- px is the screen_height or screen_width, display_dpi is the hardware dpi.        
+        -- px is the screen_height or screen_width, display_dpi is the hardware dpi.
         -- The function is then used to calculate how many such items can fit in the screen.
         -- pt_limit is in points (pt), i.e., what is the minimum number of points needed to make this item readable.
-        -- 72 is used because there are 72 points per inch (in printing press).        
+        -- 72 is used because there are 72 points per inch (in printing press).
         -- Items might be number of lines in the list (pt = 20), of mosaic grid cover size (pt = 75)
         info_list = math.floor(Screen:getHeight() / Device.display_dpi * 72 / 20 + 0.5),
         mosaic_h = math.floor(Screen:getHeight() / Device.display_dpi * 72 / 75 + 0.5),
