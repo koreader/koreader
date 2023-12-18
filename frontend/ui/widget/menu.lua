@@ -562,7 +562,7 @@ local Menu = FocusManager:extend{
     show_parent = nil,
 
     no_title = false,
-    title = nil,
+    title = "",
     subtitle = nil,
     show_path = nil, -- path in titlebar subtitle
     -- default width and height
@@ -619,7 +619,7 @@ function Menu:_recalculateDimen()
         bottom_height = math.max(self.page_return_arrow:getSize().h, self.page_info_text:getSize().h)
             + 2 * Size.padding.button
     end
-    if not self.no_title then
+    if self.show_path or not self.no_title then
         top_height = self.title_bar:getHeight()
         if not self.title_bar_fm_style then
             top_height = top_height + self.header_padding
