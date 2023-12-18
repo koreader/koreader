@@ -561,8 +561,10 @@ Widget that displays menu
 local Menu = FocusManager:extend{
     show_parent = nil,
 
-    title = "No Title",
+    no_title = false,
+    title = nil,
     subtitle = nil,
+    show_path = nil, -- path in titlebar subtitle
     -- default width and height
     width = nil,
     -- height will be calculated according to item number if not given
@@ -597,7 +599,7 @@ local Menu = FocusManager:extend{
     -- if you want to embed the menu widget into another widget, set
     -- this to false
     is_popout = true,
-    title_bar_fm_style = nil, -- set to true to build increased title bar like in FM
+    title_bar_fm_style = nil, -- set to true to build increased title bar like in FileManager
     -- set icon to add title bar left button
     title_bar_left_icon = nil,
     -- close_callback is a function, which is executed when menu is closed
@@ -617,7 +619,7 @@ function Menu:_recalculateDimen()
         bottom_height = math.max(self.page_return_arrow:getSize().h, self.page_info_text:getSize().h)
             + 2 * Size.padding.button
     end
-    if self.title_bar and not self.no_title then
+    if not self.no_title then
         top_height = self.title_bar:getHeight()
         if not self.title_bar_fm_style then
             top_height = top_height + self.header_padding
@@ -660,30 +662,39 @@ function Menu:init()
     -----------------------------------
     -- start to set up widget layout --
     -----------------------------------
-    self.title_bar = TitleBar:new{
-        width = self.dimen.w,
-        fullscreen = "true",
-        align = "center",
-        with_bottom_line = self.with_bottom_line,
-        bottom_line_color = self.bottom_line_color,
-        bottom_line_h_padding = self.bottom_line_h_padding,
-        title = self.title,
-        title_face = self.title_face,
-        title_multilines = self.title_multilines,
-        title_shrink_font_to_fit = self.title_shrink_font_to_fit,
-        subtitle = self.title_bar_fm_style and "" or (self.show_path and BD.directory(filemanagerutil.abbreviate(self.path))),
-        subtitle_truncate_left = self.show_path,
-        subtitle_fullwidth = self.show_path,
-        title_top_padding = self.title_bar_fm_style and Screen:scaleBySize(6),
-        button_padding = self.title_bar_fm_style and Screen:scaleBySize(5),
-        left_icon = self.title_bar_left_icon,
-        left_icon_size_ratio = self.title_bar_fm_style and 1,
-        left_icon_tap_callback = function() self:onLeftButtonTap() end,
-        left_icon_hold_callback = function() self:onLeftButtonHold() end,
-        right_icon_size_ratio = self.title_bar_fm_style and 1,
-        close_callback = function() self:onClose() end,
-        show_parent = self.show_parent or self,
-    }
+    if self.show_path or not self.no_title then
+        if self.subtitle == nil then
+            if self.show_path then
+                self.subtitle = BD.directory(filemanagerutil.abbreviate(self.path))
+            elseif self.title_bar_fm_style then
+                self.subtitle = ""
+            end
+        end
+        self.title_bar = TitleBar:new{
+            width = self.dimen.w,
+            fullscreen = "true",
+            align = "center",
+            with_bottom_line = self.with_bottom_line,
+            bottom_line_color = self.bottom_line_color,
+            bottom_line_h_padding = self.bottom_line_h_padding,
+            title = self.title,
+            title_face = self.title_face,
+            title_multilines = self.title_multilines,
+            title_shrink_font_to_fit = self.title_shrink_font_to_fit,
+            subtitle = self.subtitle,
+            subtitle_truncate_left = self.show_path,
+            subtitle_fullwidth = self.show_path,
+            title_top_padding = self.title_bar_fm_style and Screen:scaleBySize(6),
+            button_padding = self.title_bar_fm_style and Screen:scaleBySize(5),
+            left_icon = self.title_bar_left_icon,
+            left_icon_size_ratio = self.title_bar_fm_style and 1,
+            left_icon_tap_callback = function() self:onLeftButtonTap() end,
+            left_icon_hold_callback = function() self:onLeftButtonHold() end,
+            right_icon_size_ratio = self.title_bar_fm_style and 1,
+            close_callback = function() self:onClose() end,
+            show_parent = self.show_parent or self,
+        }
+    end
 
     -- group for items
     self.item_group = VerticalGroup:new{}
