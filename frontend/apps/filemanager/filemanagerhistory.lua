@@ -81,17 +81,13 @@ function FileManagerHistory:updateItemTable()
             self.count[v.status] = self.count[v.status] + 1
         end
     end
-    local title = self.hist_menu_title
-    local filter_title
+    local subtitle
     if self.search_string then
-        filter_title = _("search results")
+        subtitle = T("Search results (%1)", #item_table)
     elseif self.filter ~= "all" then
-        filter_title = filter_text[self.filter]:lower()
+        subtitle = T("Status: %1 (%2)", filter_text[self.filter]:lower(), #item_table)
     end
-    if filter_title then
-        title = title .. T(" (%1: %2)", filter_title, #item_table)
-    end
-    self.hist_menu:switchItemTable(title, item_table, select_number)
+    self.hist_menu:switchItemTable(nil, item_table, select_number, nil, subtitle or "")
 end
 
 function FileManagerHistory:isItemMatch(item)
@@ -223,6 +219,8 @@ function FileManagerHistory:onShowHist(search_info)
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         is_borderless = true,
         is_popout = false,
+        title = self.hist_menu_title,
+        title_bar_fm_style = true,
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showHistDialog() end,
         onMenuChoice = self.onMenuChoice,
