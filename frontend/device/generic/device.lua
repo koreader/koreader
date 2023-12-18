@@ -299,6 +299,9 @@ function Device:setScreenDPI(dpi_override)
 end
 
 function Device:getDeviceScreenDPI()
+    if self.display_dpi == nil then
+        self.display_dpi = 1
+    end
     return self.display_dpi
 end
 
