@@ -125,6 +125,7 @@ function FileManagerCollection:onShowColl(collection_name)
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         is_borderless = true,
         is_popout = false,
+        title_bar_fm_style = true,
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showCollDialog() end,
         onMenuChoice = self.onMenuChoice,
