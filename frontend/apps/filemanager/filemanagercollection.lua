@@ -125,6 +125,8 @@ function FileManagerCollection:onShowColl(collection_name)
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         is_borderless = true,
         is_popout = false,
+        -- item and book cover thumbnail dimensions in Mosaic and Detailed list display modes
+        -- are equal in File manager, History and Collection windows
         title_bar_fm_style = true,
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showCollDialog() end,
