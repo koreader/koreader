@@ -220,6 +220,8 @@ function FileManagerHistory:onShowHist(search_info)
         is_borderless = true,
         is_popout = false,
         title = self.hist_menu_title,
+        -- item and book cover thumbnail dimensions in Mosaic and Detailed list display modes
+        -- are equal in File manager, History and Collection windows
         title_bar_fm_style = true,
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showHistDialog() end,
