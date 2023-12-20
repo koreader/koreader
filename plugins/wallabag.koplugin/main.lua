@@ -9,6 +9,7 @@ local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
+local FFIUtf8Proc = require("ffi/utf8proc")
 local FileManager = require("apps/filemanager/filemanager")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -52,6 +53,7 @@ function Wallabag:init()
     self.is_delete_read = false
     self.is_auto_delete = false
     self.is_sync_remote_delete = false
+    self.is_sync_annotations = false
     self.is_archiving_deleted = true
     self.send_review_as_tags = false
     self.filter_tag = ""
@@ -82,6 +84,9 @@ function Wallabag:init()
     end
     if self.wb_settings.data.wallabag.is_sync_remote_delete ~= nil then
         self.is_sync_remote_delete = self.wb_settings.data.wallabag.is_sync_remote_delete
+    end
+    if self.wb_settings.data.wallabag.is_sync_annotations ~= nil then
+        self.is_sync_annotations = self.wb_settings.data.wallabag.is_sync_annotations
     end
     if self.wb_settings.data.wallabag.is_archiving_deleted ~= nil then
         self.is_archiving_deleted = self.wb_settings.data.wallabag.is_archiving_deleted
@@ -151,6 +156,15 @@ function Wallabag:addToMainMenu(menu_items)
                 end,
                 enabled_func = function()
                     return self.is_delete_finished or self.is_delete_read
+                end,
+            },
+            {
+                text = _("Send annotations of current file"),
+                enabled_func = function()
+                    return self:isAbleToSendAnnotations()
+                end,
+                callback = function()
+                    self:sendAnnotations(self.ui.document.file)
                 end,
             },
             {
@@ -314,6 +328,14 @@ function Wallabag:addToMainMenu(menu_items)
                         end,
                         callback = function()
                             self.send_review_as_tags = not self.send_review_as_tags
+                            self:saveSettings()
+                        end,
+                    },
+                    {
+                        text = _("Synchronize annotations"),
+                        checked_func = function() return self.is_sync_annotations end,
+                        callback = function()
+                            self.is_sync_annotations = not self.is_sync_annotations
                             self:saveSettings()
                         end,
                     },
@@ -883,11 +905,113 @@ function Wallabag:addTags(path)
     end
 end
 
+function Wallabag:isAbleToSendAnnotations()
+    return self.ui and self.ui.document and self.view and
+            self.directory == string.sub(self.ui.document.file, 1, string.len(self.directory)) or
+            false
+end
+
+function Wallabag:sendAnnotations(filepath)
+    if self.ui.doc_settings then
+        self.ui.doc_settings:flush()
+    end
+    logger.dbg("Wallabag: sending annotations for article ", filepath)
+    local document = DocumentRegistry:openDocument(filepath)
+    document:loadDocument() -- wait is this done async, do we need to wait for this?
+    local article_id = self:getArticleID(filepath)
+    if article_id and self:getBearerToken() and document._loaded then
+        local remote_annotations = self:getRemoteAnnotations(article_id)
+        local remote_ann_ids = remote_annotations and self:getAnnotationIds(remote_annotations)
+        logger.dbg(remote_ann_ids)
+        local docfrag = "/DocFragment%[3%]/body"
+        local doc_settings = DocSettings:open(filepath)
+        local bookmarks = doc_settings:readSetting("bookmarks")
+        local ui_bookmarks = self.ui.doc_settings and self.ui.doc_settings:readSetting("bookmarks")
+        for index, bookmark in ipairs(bookmarks) do
+            -- We're only interested in bookmarks in this main /DocFragment[3] section.
+            -- Index of 3 is guaranteed by wallabag epub generation method.
+            if string.find(bookmark.pos0, docfrag) then
+                local body = self:generateAnnotationRequestBody(bookmark, document)
+                local bodyJSON = JSON.encode(body)
+                local headers = {
+                    ["Content-type"] = "application/json",
+                    ["Accept"] = "application/json, */*",
+                    ["Content-Length"] = tostring(#bodyJSON),
+                    ["Authorization"] = "Bearer " .. self.access_token,
+                }
+                if bookmark.wallabag_id == nil then
+                    local result = self:callAPI("POST", "/api/annotations/" .. article_id .. ".json", headers, bodyJSON, "")
+                    bookmark.wallabag_id = result and result["id"]
+                    if ui_bookmarks then
+                        ui_bookmarks[index].wallabag_id = result and result["id"]
+                    end
+                else
+                    local result = self:callAPI("PUT", "/api/annotations/" .. bookmark.wallabag_id .. ".json", headers, bodyJSON, "")
+                end
+            end
+        end
+        doc_settings:flush()
+        document:close()
+    end
+end
+
+function Wallabag:generateAnnotationRequestBody(bookmark, document)
+    local body = {
+        ranges = self:getRangeForBookmark(bookmark, document),
+        quote = bookmark.notes,
+        text = bookmark.text
+    }
+
+    if bookmark.wallabagid then
+        body.wallabagId = bookmark.wallabag_id
+    end
+    return body
+end
+
+function Wallabag:getRangeForBookmark(bookmark, document)
+    local textfrag = "/text%(%)"
+    require("mobdebug").start()
+    local _, startxpointloc = string.find(bookmark.pos0, "%.")
+    local startxpoint = string.sub(bookmark.pos0, startxpointloc+1)
+    local startoffset = startxpoint == "0" and 0 or FFIUtf8Proc.count(document:getTextFromXPointers(string.sub(bookmark.pos0, 0, startxpointloc) .. ".0", bookmark.pos0))
+    local _, endxpointloc = string.find(bookmark.pos1, "%.")
+    local endxpoint = string.sub(bookmark.pos1, endxpointloc+1)
+    local endoffset = endxpoint == "0" and 0 or FFIUtf8Proc.count(document:getTextFromXPointers(string.sub(bookmark.pos1, 0, endxpointloc) .. ".0", bookmark.pos1))
+    return { {
+            ["start"] = string.sub(bookmark.pos0, 26, string.find(bookmark.pos0, textfrag)-1),
+            ["startOffset"] = startoffset,
+            ["end"] = string.sub(bookmark.pos1, 26, string.find(bookmark.pos1, textfrag)-1),
+            ["endOffset"] = endoffset,
+        } }
+end
+
+function Wallabag:getAnnotationIds(annotations)
+    local ids = {}
+    for _, ann in pairs(annotations.rows) do
+        table.insert(ids, ann.id)
+    end
+    return ids
+end
+
+function Wallabag:getRemoteAnnotations(article_id)
+    local headers = {
+        ["Content-type"] = "application/json",
+        ["Accept"] = "application/json, */*",
+        ["Content-Length"] = 0,
+        ["Authorization"] = "Bearer " .. self.access_token,
+    }
+    local result = self:callAPI("GET", "/api/annotations/" .. article_id .. ".json", headers, "", "")
+    return result
+end
+
 function Wallabag:removeArticle(path)
     logger.dbg("Wallabag: removing article ", path)
     local id = self:getArticleID(path)
     if id then
         if self.is_archiving_deleted then
+            if self.is_sync_annotations then
+                self:sendAnnotations(path)
+            end
             local body = {
                 archive = 1
             }
@@ -1135,6 +1259,7 @@ function Wallabag:saveSettings()
         is_archiving_deleted  = self.is_archiving_deleted,
         is_auto_delete        = self.is_auto_delete,
         is_sync_remote_delete = self.is_sync_remote_delete,
+        is_sync_annotations   = self.is_sync_annotations,
         articles_per_sync     = self.articles_per_sync,
         send_review_as_tags   = self.send_review_as_tags,
         remove_finished_from_history = self.remove_finished_from_history,
