@@ -209,7 +209,6 @@ function ListMenuItem:update()
     local max_img_w = dimen.h - 2*border_size -- width = height, squared
     local max_img_h = dimen.h - 2*border_size
     local cover_specs = {
-        sizetag = self.menu.cover_sizetag,
         max_cover_w = max_img_w,
         max_cover_h = max_img_h,
     }
@@ -267,24 +266,26 @@ function ListMenuItem:update()
         -- File
 
         local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.do_cover_image)
+
         if bookinfo and self.do_cover_image and not bookinfo.ignore_cover then
             if bookinfo.cover_fetched then
-                -- trigger recalculation of thumbnail if size changed
-                if bookinfo.has_cover and bookinfo.cover_sizetag ~= "M" and bookinfo.cover_sizetag ~= cover_specs.sizetag then
-                    if bookinfo.cover_bb then
-                        bookinfo.cover_bb:free()
+                if bookinfo.has_cover and not self.menu.no_refresh_covers then
+                    if BookInfoManager.isCachedCoverInvalid(bookinfo, cover_specs) then
+                        -- there is a cover, but it's smaller than is needed for new grid dimensions,
+                        -- and it would be ugly if scaled up to the required size:
+                        -- do as if not found to force a new extraction with our size
+                        if bookinfo.cover_bb then
+                            bookinfo.cover_bb:free()
+                        end
+                        bookinfo = nil
                     end
-                    bookinfo = nil
                 end
+                -- if not has_cover, book has no cover, no need to try again
             else
                 -- cover was not fetched previously, do as if not found
                 -- to force a new extraction
                 bookinfo = nil
             end
-            -- If there's already a cover and it's a "M" size (MosaicMenuItem),
-            -- we'll use it and scale it down (it may slow a bit rendering,
-            -- but "M" size may be useful in another view (FileBrowser/History),
-            -- so we don't replace it).
         end
 
         if bookinfo then -- This book is known
@@ -301,7 +302,7 @@ function ListMenuItem:update()
                 if bookinfo.has_cover and not bookinfo.ignore_cover then
                     cover_bb_used = true
                     -- Let ImageWidget do the scaling and give us the final size
-                    local scale_factor = math.min(max_img_w / bookinfo.cover_w, max_img_h / bookinfo.cover_h)
+                    local _, _, scale_factor = BookInfoManager.getCachedCoverSize(bookinfo.cover_w, bookinfo.cover_h, max_img_w, max_img_h)
                     local wimage = ImageWidget:new{
                         image = bookinfo.cover_bb,
                         scale_factor = scale_factor,
