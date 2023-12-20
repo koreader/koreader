@@ -51,7 +51,9 @@ local CoverBrowser = WidgetContainer:extend{
 }
 
 function CoverBrowser:init()
-    self.ui.menu:registerToMainMenu(self)
+    if self.ui.file_chooser then -- FileManager menu only
+        self.ui.menu:registerToMainMenu(self)
+    end
 
     if init_done then -- things already patched according to current modes
         return
@@ -79,12 +81,6 @@ function CoverBrowser:init()
 end
 
 function CoverBrowser:addToMainMenu(menu_items)
-    -- We add it only to FileManager menu
-    if self.ui.view then -- Reader
-        return
-    end
-    local file_chooser = self.ui.file_chooser
-
     local modes = {
         { _("Classic (filename only)") },
         { _("Mosaic with cover images"), "mosaic_image" },
@@ -96,7 +92,7 @@ function CoverBrowser:addToMainMenu(menu_items)
     local sub_item_table, history_sub_item_table, collection_sub_item_table = {}, {}, {}
     for i, v in ipairs(modes) do
         local text, mode = unpack(v)
-        table.insert(sub_item_table, {
+        sub_item_table[i] = {
             text = text,
             checked_func = function()
                 return mode == filemanager_display_mode
@@ -108,8 +104,8 @@ function CoverBrowser:addToMainMenu(menu_items)
                     self:setupCollectionDisplayMode(mode)
                 end
             end,
-        })
-        table.insert(history_sub_item_table, {
+        }
+        history_sub_item_table[i] = {
             text = text,
             checked_func = function()
                 return mode == history_display_mode
@@ -117,8 +113,8 @@ function CoverBrowser:addToMainMenu(menu_items)
             callback = function()
                 self:setupHistoryDisplayMode(mode)
             end,
-        })
-        table.insert(collection_sub_item_table, {
+        }
+        collection_sub_item_table[i] = {
             text = text,
             checked_func = function()
                 return mode == collection_display_mode
@@ -126,7 +122,7 @@ function CoverBrowser:addToMainMenu(menu_items)
             callback = function()
                 self:setupCollectionDisplayMode(mode)
             end,
-        })
+        }
     end
     sub_item_table[#modes].separator = true
     table.insert(sub_item_table, {
@@ -184,13 +180,13 @@ function CoverBrowser:addToMainMenu(menu_items)
                         left_text = _("Columns"),
                         left_value = nb_cols_portrait,
                         left_min = 2,
-                        left_max = 5,
+                        left_max = 8,
                         left_default = 3,
                         left_precision = "%01d",
                         right_text = _("Rows"),
                         right_value = nb_rows_portrait,
                         right_min = 2,
-                        right_max = 5,
+                        right_max = 8,
                         right_default = 3,
                         right_precision = "%01d",
                         keep_shown_on_apply = true,
@@ -198,15 +194,15 @@ function CoverBrowser:addToMainMenu(menu_items)
                             BookInfoManager:saveSetting("nb_cols_portrait", left_value)
                             BookInfoManager:saveSetting("nb_rows_portrait", right_value)
                             self.layout_updated = left_value ~= nb_cols_portrait or right_value ~= nb_rows_portrait
-                            file_chooser.refresh_covers = false
-                            file_chooser:refreshPath()
+                            self.ui.file_chooser.no_refresh_covers = true
+                            self:refreshFileManagerInstance()
                             touchmenu_instance:updateItems()
                         end,
                         close_callback = function()
                             if self.layout_updated then
                                 self.layout_updated = nil
-                                file_chooser.refresh_covers = true
-                                file_chooser:refreshPath()
+                                self.ui.file_chooser.no_refresh_covers = nil
+                                self:refreshFileManagerInstance()
                             end
                         end,
                     }
@@ -229,21 +225,30 @@ function CoverBrowser:addToMainMenu(menu_items)
                         left_text = _("Columns"),
                         left_value = nb_cols_landscape,
                         left_min = 2,
-                        left_max = 6,
+                        left_max = 8,
                         left_default = 4,
                         left_precision = "%01d",
                         right_text = _("Rows"),
                         right_value = nb_rows_landscape,
                         right_min = 2,
-                        right_max = 4,
+                        right_max = 8,
                         right_default = 2,
                         right_precision = "%01d",
                         keep_shown_on_apply = true,
                         callback = function(left_value, right_value)
                             BookInfoManager:saveSetting("nb_cols_landscape", left_value)
                             BookInfoManager:saveSetting("nb_rows_landscape", right_value)
-                            self.ui:onRefresh()
+                            self.layout_updated = left_value ~= nb_cols_landscape or right_value ~= nb_rows_landscape
+                            self.ui.file_chooser.no_refresh_covers = true
+                            self:refreshFileManagerInstance()
                             touchmenu_instance:updateItems()
+                        end,
+                        close_callback = function()
+                            if self.layout_updated then
+                                self.layout_updated = nil
+                                self.ui.file_chooser.no_refresh_covers = nil
+                                self:refreshFileManagerInstance()
+                            end
                         end,
                     }
                     UIManager:show(widget)
@@ -255,12 +260,9 @@ function CoverBrowser:addToMainMenu(menu_items)
                     return T(_("Items per page in detailed list mode: %1"), curr_items)
                 end,
                 callback = function(touchmenu_instance)
+                    local curr_items = tonumber(BookInfoManager:getSetting("files_per_page") or 10)
                     local SpinWidget = require("ui/widget/spinwidget")
-                    -- "files_per_page" should have been saved with an adequate value
-                    -- the first time Detailed list was shown. Fallback to a start
-                    -- value of 10 if it hasn't.
-                    local curr_items = BookInfoManager:getSetting("files_per_page") or 10
-                    local items = SpinWidget:new{
+                    local widget = SpinWidget:new{
                         title_text = _("Detailed list mode"),
                         value = curr_items,
                         value_min = 4,
@@ -269,11 +271,20 @@ function CoverBrowser:addToMainMenu(menu_items)
                         keep_shown_on_apply = true,
                         callback = function(spin)
                             BookInfoManager:saveSetting("files_per_page", spin.value)
-                            self.ui:onRefresh()
+                            self.layout_updated = spin.value ~= curr_items
+                            self.ui.file_chooser.no_refresh_covers = true
+                            self:refreshFileManagerInstance()
                             touchmenu_instance:updateItems()
-                        end
+                        end,
+                        close_callback = function()
+                            if self.layout_updated then
+                                self.layout_updated = nil
+                                self.ui.file_chooser.no_refresh_covers = nil
+                                self:refreshFileManagerInstance()
+                            end
+                        end,
                     }
-                    UIManager:show(items)
+                    UIManager:show(widget)
                 end,
                 separator = true,
             },
