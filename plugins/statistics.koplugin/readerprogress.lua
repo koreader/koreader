@@ -45,9 +45,20 @@ function ReaderProgress:init()
         self.header_span = 0
         self.stats_span = 10
     end
-    UIManager:setDirty(self, function()
-        return "ui", self.dimen
-    end)
+
+    self.covers_fullscreen = true -- hint for UIManager:_repaint()
+    self[1] = FrameContainer:new{
+        width = self.screen_width,
+        height = self.screen_height,
+        background = Blitbuffer.COLOR_WHITE,
+        bordersize = 0,
+        padding = 0,
+        self:getStatusContent(self.screen_width),
+    }
+    -- We're full-screen, and the widget is built in a funky way, ensure dimen actually matches the full-screen,
+    -- instead of only the content's effective area...
+    self.dimen = Geom:new{ x = 0, y = 0, w = self.screen_width, h = self.screen_height }
+
     if Device:hasKeys() then
         -- don't get locked in on non touch devices
         self.key_events.AnyKeyPressed = { { Device.input.group.Any } }
@@ -66,15 +77,10 @@ function ReaderProgress:init()
             }
         }
     end
-    self.covers_fullscreen = true -- hint for UIManager:_repaint()
-    self[1] = FrameContainer:new{
-        width = self.width,
-        height = self.height,
-        background = Blitbuffer.COLOR_WHITE,
-        bordersize = 0,
-        padding = 0,
-        self:getStatusContent(self.screen_width),
-    }
+
+    UIManager:setDirty(self, function()
+        return "ui", self.dimen
+    end)
 end
 
 function ReaderProgress:getTotalStats(stats_day)

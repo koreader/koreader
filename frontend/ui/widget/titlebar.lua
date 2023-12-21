@@ -434,21 +434,22 @@ function TitleBar:setTitle(title, no_refresh)
             self.inner_title_group:resetLayout()
         end
         self.title_group:resetLayout()
-        if no_refresh then
-            return
+        if not no_refresh then
+            UIManager:setDirty(self.show_parent, "ui", self.dimen)
         end
-        UIManager:setDirty(self.show_parent, "ui", self.dimen)
     end
 end
 
-function TitleBar:setSubTitle(subtitle)
+function TitleBar:setSubTitle(subtitle, no_refresh)
     if self.subtitle_widget and not self.subtitle_multilines then -- no TextBoxWidget:setText() available
         self.subtitle_widget:setText(subtitle)
         if self.inner_subtitle_group then
             self.inner_subtitle_group:resetLayout()
         end
         self.title_group:resetLayout()
-        UIManager:setDirty(self.show_parent, "ui", self.dimen)
+        if not no_refresh then
+            UIManager:setDirty(self.show_parent, "ui", self.dimen)
+        end
     end
 end
 

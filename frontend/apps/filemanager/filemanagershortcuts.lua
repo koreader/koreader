@@ -16,35 +16,21 @@ local FileManagerShortcuts = WidgetContainer:extend{
 
 function FileManagerShortcuts:updateItemTable()
     local item_table = {}
-    for _, item in ipairs(self.folder_shortcuts) do
+    for folder, item in pairs(self.folder_shortcuts) do
         table.insert(item_table, {
-            text = string.format("%s (%s)", item.text, item.folder),
-            folder = item.folder,
+            text = string.format("%s (%s)", item.text, folder),
+            folder = folder,
             name = item.text,
         })
     end
     table.sort(item_table, function(l, r)
         return l.text < r.text
     end)
-
-    -- try to stay on current page
-    local select_number
-    if self.shortcuts_menu.page and self.shortcuts_menu.perpage and self.shortcuts_menu.page > 0 then
-        select_number = (self.shortcuts_menu.page - 1) * self.shortcuts_menu.perpage + 1
-    end
-    self.shortcuts_menu:switchItemTable(nil, item_table, select_number)
-end
-
-function FileManagerShortcuts:_getIndex(folder)
-    for i, v in ipairs(self.folder_shortcuts) do
-        if v.folder == folder then
-            return i
-        end
-    end
+    self.shortcuts_menu:switchItemTable(nil, item_table, -1)
 end
 
 function FileManagerShortcuts:hasFolderShortcut(folder)
-    return self:_getIndex(folder) and true or false
+    return self.folder_shortcuts[folder] and true or false
 end
 
 function FileManagerShortcuts:onMenuChoice(item)
@@ -81,9 +67,7 @@ function FileManagerShortcuts:onMenuHold(item)
                 end
             },
         },
-    }
-    if self._manager.ui.file_chooser and self._manager.ui.clipboard then
-        table.insert(buttons, {
+        self._manager.ui.file_chooser and self._manager.ui.clipboard and {
             {
                 text = _("Paste to folder"),
                 callback = function()
@@ -91,9 +75,8 @@ function FileManagerShortcuts:onMenuHold(item)
                     self._manager.ui:pasteFileFromClipboard(item.folder)
                 end
             },
-        })
-    end
-
+        },
+    }
     dialog = ButtonDialog:new{
         title = item.name .. "\n" .. BD.dirpath(item.folder),
         title_align = "center",
@@ -104,8 +87,7 @@ function FileManagerShortcuts:onMenuHold(item)
 end
 
 function FileManagerShortcuts:removeShortcut(folder)
-    local index = self:_getIndex(folder)
-    table.remove(self.folder_shortcuts, index)
+    self.folder_shortcuts[folder] = nil
     if self.shortcuts_menu then
         self.fm_updated = true
         self:updateItemTable()
@@ -113,13 +95,8 @@ function FileManagerShortcuts:removeShortcut(folder)
 end
 
 function FileManagerShortcuts:editShortcut(folder, post_callback)
-    local index = self:_getIndex(folder)
-    local item, name
-    if index then -- rename
-        item = self.folder_shortcuts[index]
-        name = item.text
-    end
-
+    local item = self.folder_shortcuts[folder]
+    local name = item and item.text -- rename
     local input_dialog
     input_dialog = InputDialog:new {
         title = _("Enter folder shortcut name"),
@@ -143,10 +120,7 @@ function FileManagerShortcuts:editShortcut(folder, post_callback)
                     if item then
                         item.text = new_name
                     else
-                        table.insert(self.folder_shortcuts, {
-                            text = new_name,
-                            folder = folder,
-                        })
+                        self.folder_shortcuts[folder] = { text = new_name, time = os.time() }
                         if post_callback then
                             post_callback()
                         end

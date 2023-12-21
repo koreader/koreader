@@ -10,7 +10,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20230901
+local CURRENT_MIGRATION_DATE = 20231217
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -629,6 +629,21 @@ if last_migration_date < 20230901 then
     local contrast = G_reader_settings:readSetting("kopt_contrast")
     if contrast then
         G_reader_settings:saveSetting("kopt_contrast", 1 / contrast)
+    end
+end
+
+-- 20231217, change folder_shortcuts setting from array to hash table
+if last_migration_date < 20231217 then
+    logger.info("Performing one-time migration for 20231217")
+
+    local shortcuts = G_reader_settings:readSetting("folder_shortcuts")
+    if shortcuts and shortcuts[1] ~= nil then
+        local now = os.time()
+        local new_shortcuts = {}
+        for i, item in ipairs(shortcuts) do
+            new_shortcuts[item.folder] = { text = item.text, time = now + i }
+        end
+        G_reader_settings:saveSetting("folder_shortcuts", new_shortcuts)
     end
 end
 

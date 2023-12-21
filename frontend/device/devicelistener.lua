@@ -42,87 +42,68 @@ function DeviceListener:onShowIntensity()
     return true
 end
 
-function DeviceListener:onShowWarmth(value)
+function DeviceListener:onShowWarmth()
+    if not Device:hasNaturalLight() then return true end
+    -- Display it in the native scale, like FrontLightWidget
     local powerd = Device:getPowerDevice()
-    if powerd.fl_warmth ~= nil then
-        -- powerd.fl_warmth holds the warmth-value in the internal koreader scale [0,100]
-        -- powerd.fl_warmth_max is the maximum value the hardware accepts
-        Notification:notify(T(_("Warmth set to %1%."), math.floor(powerd.fl_warmth)))
-    end
+    Notification:notify(T(_("Warmth set to %1."), powerd:toNativeWarmth(powerd:frontlightWarmth())))
     return true
 end
 
 -- frontlight controller
 if Device:hasFrontlight() then
-
     local function calculateGestureDelta(ges, direction, min, max)
         local delta_int
         if type(ges) == "table" then
-            -- here we are using just two scales
-            -- big scale is for high dynamic ranges (e.g. brightness from 1..100)
-            --           original scale maybe tuned by hand
-            -- small scale is for lower dynamic ranges (e.g. warmth from 1..10)
-            --           scale entries are calculated by math.round(1*sqrt(2)^n)
-            local steps_fl_big_scale = { 0.1, 0.1, 0.2, 0.4, 0.7, 1.1, 1.6, 2.2, 2.9, 3.7, 4.6, 5.6, 6.7, 7.9, 9.2, 10.6, }
-            local steps_fl_small_scale = { 1.0, 1.0, 2.0, 3.0, 4.0, 6.0, 8.1, 11.3 }
-            local steps_fl = steps_fl_big_scale
-            if (max - min) < 50  then
-                steps_fl = steps_fl_small_scale
-            end
-            local gestureScale
-            local scale_multiplier
+            local gesture_multiplier
             if ges.ges == "two_finger_swipe" or ges.ges == "swipe" then
-                scale_multiplier = 0.8
+                gesture_multiplier = 0.8
             else
-                scale_multiplier = 1
+                gesture_multiplier = 1
             end
 
+            local gestureScale
             if ges.direction == "south" or ges.direction == "north" then
-                gestureScale = Screen:getHeight() * scale_multiplier
+                gestureScale = Screen:getHeight() * gesture_multiplier
             elseif ges.direction == "west" or ges.direction == "east" then
-                gestureScale = Screen:getWidth() * scale_multiplier
+                gestureScale = Screen:getWidth() * gesture_multiplier
             else
                 local width = Screen:getWidth()
                 local height = Screen:getHeight()
                 -- diagonal
-                gestureScale = math.sqrt(width * width + height * height) * scale_multiplier
+                gestureScale = math.sqrt(width^2 + height^2) * gesture_multiplier
             end
 
-            local steps_tbl = {}
-            local scale = (max - min) / steps_fl[#steps_fl] / 2 -- full swipe gives half scale
-            for i = 1, #steps_fl, 1 do
-                steps_tbl[i] = math.ceil(steps_fl[i] * scale)
-            end
-
+            -- In case we're passed a gesture that doesn't imply movement (e.g., tap or hold)
             if ges.distance == nil then
                 ges.distance = 1
             end
 
-            local step = math.ceil(#steps_tbl * ges.distance / gestureScale)
-            delta_int = steps_tbl[step] or steps_tbl[#steps_tbl]
+            -- delta_int is calculated by a function f(x) = coeff * x^2
+            -- *) f(x) has the boundary condition: f(1) = max/2;
+            -- *) x is roughly the swipe distance as a fraction of the screen geometry,
+            --    clamped between 0 and 1
+            local x = math.min(1, ges.distance / gestureScale)
+            delta_int = math.ceil(1/2 * max * x^2)
         else
-            -- received amount to change
+            -- The ges arg passed by our caller wasn't a gesture, but an absolute integer increment
             delta_int = ges
         end
         if direction ~= -1 and direction ~= 1 then
-            -- set default value (increase frontlight)
+            -- If the caller didn't specify, opt to *increase* by default
             direction = 1
         end
-        return direction, delta_int
+        return direction * delta_int
     end
 
     -- direction +1 - increase frontlight
     -- direction -1 - decrease frontlight
     function DeviceListener:onChangeFlIntensity(ges, direction)
         local powerd = Device:getPowerDevice()
-        local delta_int
-        --received gesture
+        local delta = calculateGestureDelta(ges, direction, powerd.fl_min, powerd.fl_max)
 
-        direction, delta_int = calculateGestureDelta(ges, direction, powerd.fl_min, powerd.fl_max)
-
-        local new_intensity = powerd.fl_intensity + direction * delta_int
-        if new_intensity == nil then return true end
-        -- when new_intensity <=0, toggle light off
+        local new_intensity = powerd:frontlightIntensity() + delta
+        -- when new_intensity <= 0, toggle light off
         self:onSetFlIntensity(new_intensity)
         self:onShowIntensity()
         return true
@@ -151,15 +132,17 @@ if Device:hasFrontlight() then
     -- direction +1 - increase frontlight warmth
     -- direction -1 - decrease frontlight warmth
     function DeviceListener:onChangeFlWarmth(ges, direction)
+        if not Device:hasNaturalLight() then return true end
+
         local powerd = Device:getPowerDevice()
-        if powerd.fl_warmth == nil then return false end
+        local delta = calculateGestureDelta(ges, direction, powerd.fl_warmth_min, powerd.fl_warmth_max)
 
-        local delta_int
-        --received gesture
+        -- Given that the native warmth ranges are usually pretty restrictive (e.g., [0, 10] or [0, 24]),
+        -- do the computations in the native scale, to ensure we always actually *change* something,
+        -- in case both the old and new value would round to the same native step,
+        -- despite being different in the API scale, which is stupidly fixed at [0, 100]...
+        local warmth = powerd:fromNativeWarmth(powerd:toNativeWarmth(powerd:frontlightWarmth()) + delta)
 
-        direction, delta_int = calculateGestureDelta(ges, direction, powerd.fl_warmth_min, powerd.fl_warmth_max)
-
-        local warmth = math.floor(powerd.fl_warmth + direction * delta_int * 100 / powerd.fl_warmth_max)
         self:onSetFlWarmth(warmth)
         self:onShowWarmth()
         return true
