@@ -67,6 +67,7 @@ function CoverBrowser:init()
             logger.info("CoverBrowser: setting default display modes")
             BookInfoManager:saveSetting("filemanager_display_mode", "list_image_meta")
             BookInfoManager:saveSetting("history_display_mode", "mosaic_image")
+            BookInfoManager:saveSetting("collection_display_mode", "mosaic_image")
         end
         G_reader_settings:makeTrue("coverbrowser_initial_default_setup_done")
     end
@@ -75,7 +76,6 @@ function CoverBrowser:init()
     self:setupHistoryDisplayMode(BookInfoManager:getSetting("history_display_mode"))
     self:setupCollectionDisplayMode(BookInfoManager:getSetting("collection_display_mode"))
     series_mode = BookInfoManager:getSetting("series_mode")
-
     init_done = true
     BookInfoManager:closeDbConnection() -- will be re-opened if needed
 end
@@ -165,44 +165,47 @@ function CoverBrowser:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text_func = function()
-                    local nb_cols_portrait = tonumber(BookInfoManager:getSetting("nb_cols_portrait") or 3)
-                    local nb_rows_portrait = tonumber(BookInfoManager:getSetting("nb_rows_portrait") or 3)
-                    return T(_("Items per page in mosaic portrait mode: %1 × %2"), nb_cols_portrait, nb_rows_portrait)
+                    local fc = self.ui.file_chooser
+                    return T(_("Items per page in portrait mosaic mode: %1 × %2"), fc.nb_cols_portrait, fc.nb_rows_portrait)
                 end,
                 -- Best to not "keep_menu_open = true", to see how this apply on the full view
-                callback = function(touchmenu_instance)
-                    local nb_cols_portrait = tonumber(BookInfoManager:getSetting("nb_cols_portrait") or 3)
-                    local nb_rows_portrait = tonumber(BookInfoManager:getSetting("nb_rows_portrait") or 3)
+                callback = function()
+                    local fc = self.ui.file_chooser
+                    local nb_cols = fc.nb_cols_portrait
+                    local nb_rows = fc.nb_rows_portrait
                     local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
                     local widget = DoubleSpinWidget:new{
-                        title_text = _("Mosaic portrait mode"),
+                        title_text = _("Portrait mosaic mode"),
                         width_factor = 0.6,
                         left_text = _("Columns"),
-                        left_value = nb_cols_portrait,
+                        left_value = nb_cols,
                         left_min = 2,
                         left_max = 8,
                         left_default = 3,
                         left_precision = "%01d",
                         right_text = _("Rows"),
-                        right_value = nb_rows_portrait,
+                        right_value = nb_rows,
                         right_min = 2,
                         right_max = 8,
                         right_default = 3,
                         right_precision = "%01d",
                         keep_shown_on_apply = true,
                         callback = function(left_value, right_value)
-                            BookInfoManager:saveSetting("nb_cols_portrait", left_value)
-                            BookInfoManager:saveSetting("nb_rows_portrait", right_value)
-                            self.layout_updated = left_value ~= nb_cols_portrait or right_value ~= nb_rows_portrait
-                            self.ui.file_chooser.no_refresh_covers = true
-                            self:refreshFileManagerInstance()
-                            touchmenu_instance:updateItems()
+                            fc.nb_cols_portrait = left_value
+                            fc.nb_rows_portrait = right_value
+                            if fc.display_mode_type == "mosaic" and fc.portrait_mode then
+                                fc.no_refresh_covers = true
+                                self:refreshFileManagerInstance()
+                            end
                         end,
                         close_callback = function()
-                            if self.layout_updated then
-                                self.layout_updated = nil
-                                self.ui.file_chooser.no_refresh_covers = nil
-                                self:refreshFileManagerInstance()
+                            if fc.nb_cols_portrait ~= nb_cols or fc.nb_rows_portrait ~= nb_rows then
+                                BookInfoManager:saveSetting("nb_cols_portrait", fc.nb_cols_portrait)
+                                BookInfoManager:saveSetting("nb_rows_portrait", fc.nb_rows_portrait)
+                                if fc.display_mode_type == "mosaic" and fc.portrait_mode then
+                                    fc.no_refresh_covers = nil
+                                    self:refreshFileManagerInstance()
+                                end
                             end
                         end,
                     }
@@ -211,43 +214,46 @@ function CoverBrowser:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    local nb_cols_landscape = tonumber(BookInfoManager:getSetting("nb_cols_landscape") or 4)
-                    local nb_rows_landscape = tonumber(BookInfoManager:getSetting("nb_rows_landscape") or 2)
-                    return T(_("Items per page in mosaic landscape mode: %1 × %2"), nb_cols_landscape, nb_rows_landscape)
+                    local fc = self.ui.file_chooser
+                    return T(_("Items per page in landscape mosaic mode: %1 × %2"), fc.nb_cols_landscape, fc.nb_rows_landscape)
                 end,
-                callback = function(touchmenu_instance)
-                    local nb_cols_landscape = tonumber(BookInfoManager:getSetting("nb_cols_landscape") or 4)
-                    local nb_rows_landscape = tonumber(BookInfoManager:getSetting("nb_rows_landscape") or 2)
+                callback = function()
+                    local fc = self.ui.file_chooser
+                    local nb_cols = fc.nb_cols_landscape
+                    local nb_rows = fc.nb_rows_landscape
                     local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
                     local widget = DoubleSpinWidget:new{
-                        title_text = _("Mosaic landscape mode"),
+                        title_text = _("Landscape mosaic mode"),
                         width_factor = 0.6,
                         left_text = _("Columns"),
-                        left_value = nb_cols_landscape,
+                        left_value = nb_cols,
                         left_min = 2,
                         left_max = 8,
                         left_default = 4,
                         left_precision = "%01d",
                         right_text = _("Rows"),
-                        right_value = nb_rows_landscape,
+                        right_value = nb_rows,
                         right_min = 2,
                         right_max = 8,
                         right_default = 2,
                         right_precision = "%01d",
                         keep_shown_on_apply = true,
                         callback = function(left_value, right_value)
-                            BookInfoManager:saveSetting("nb_cols_landscape", left_value)
-                            BookInfoManager:saveSetting("nb_rows_landscape", right_value)
-                            self.layout_updated = left_value ~= nb_cols_landscape or right_value ~= nb_rows_landscape
-                            self.ui.file_chooser.no_refresh_covers = true
-                            self:refreshFileManagerInstance()
-                            touchmenu_instance:updateItems()
+                            fc.nb_cols_landscape = left_value
+                            fc.nb_rows_landscape = right_value
+                            if fc.display_mode_type == "mosaic" and not fc.portrait_mode then
+                                fc.no_refresh_covers = true
+                                self:refreshFileManagerInstance()
+                            end
                         end,
                         close_callback = function()
-                            if self.layout_updated then
-                                self.layout_updated = nil
-                                self.ui.file_chooser.no_refresh_covers = nil
-                                self:refreshFileManagerInstance()
+                            if fc.nb_cols_landscape ~= nb_cols or fc.nb_rows_landscape ~= nb_rows then
+                                BookInfoManager:saveSetting("nb_cols_landscape", fc.nb_cols_landscape)
+                                BookInfoManager:saveSetting("nb_rows_landscape", fc.nb_rows_landscape)
+                                if fc.display_mode_type == "mosaic" and not fc.portrait_mode then
+                                    fc.no_refresh_covers = nil
+                                    self:refreshFileManagerInstance()
+                                end
                             end
                         end,
                     }
@@ -256,31 +262,36 @@ function CoverBrowser:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    local curr_items = tonumber(BookInfoManager:getSetting("files_per_page") or 10)
-                    return T(_("Items per page in detailed list mode: %1"), curr_items)
+                    local fc = self.ui.file_chooser
+                    -- default files_per_page should be calculated by ListMenu on the first drawing,
+                    -- use 10 if ListMenu has not been drawn yet
+                    return T(_("Items per page in portrait list mode: %1"), fc.files_per_page or 10)
                 end,
-                callback = function(touchmenu_instance)
-                    local curr_items = tonumber(BookInfoManager:getSetting("files_per_page") or 10)
+                callback = function()
+                    local fc = self.ui.file_chooser
+                    local files_per_page = fc.files_per_page or 10
                     local SpinWidget = require("ui/widget/spinwidget")
                     local widget = SpinWidget:new{
-                        title_text = _("Detailed list mode"),
-                        value = curr_items,
+                        title_text = _("Portrait list mode"),
+                        value = files_per_page,
                         value_min = 4,
                         value_max = 20,
                         default_value = 10,
                         keep_shown_on_apply = true,
                         callback = function(spin)
-                            BookInfoManager:saveSetting("files_per_page", spin.value)
-                            self.layout_updated = spin.value ~= curr_items
-                            self.ui.file_chooser.no_refresh_covers = true
-                            self:refreshFileManagerInstance()
-                            touchmenu_instance:updateItems()
+                            fc.files_per_page = spin.value
+                            if fc.display_mode_type == "list" then
+                                fc.no_refresh_covers = true
+                                self:refreshFileManagerInstance()
+                            end
                         end,
                         close_callback = function()
-                            if self.layout_updated then
-                                self.layout_updated = nil
-                                self.ui.file_chooser.no_refresh_covers = nil
-                                self:refreshFileManagerInstance()
+                            if fc.files_per_page ~= files_per_page then
+                                BookInfoManager:saveSetting("files_per_page", fc.files_per_page)
+                                if fc.display_mode_type == "list" then
+                                    fc.no_refresh_covers = nil
+                                    self:refreshFileManagerInstance()
+                                end
                             end
                         end,
                     }
@@ -489,6 +500,19 @@ function CoverBrowser:addToMainMenu(menu_items)
     })
 end
 
+function CoverBrowser.initGrid(menu, display_mode)
+    if menu == nil then return end
+    if menu.nb_cols_portrait == nil then
+        menu.nb_cols_portrait  = BookInfoManager:getSetting("nb_cols_portrait") or 3
+        menu.nb_rows_portrait  = BookInfoManager:getSetting("nb_rows_portrait") or 3
+        menu.nb_cols_landscape = BookInfoManager:getSetting("nb_cols_landscape") or 4
+        menu.nb_rows_landscape = BookInfoManager:getSetting("nb_rows_landscape") or 2
+        -- initial List mode files_per_page will be calculated and saved by ListMenu on the first drawing
+        menu.files_per_page = BookInfoManager:getSetting("files_per_page")
+    end
+    menu.display_mode_type = display_mode and display_mode:gsub("_.*", "") -- "mosaic" or "list"
+end
+
 function CoverBrowser:refreshFileManagerInstance(cleanup, post_init)
     local fm = FileManager.instance
     if fm then
@@ -531,6 +555,9 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
     filemanager_display_mode = display_mode
     logger.dbg("CoverBrowser: setting FileManager display mode to:", display_mode or "classic")
 
+    -- init Mosaic and List grid dimensions (in Classic mode used in the settings menu)
+    CoverBrowser.initGrid(FileChooser, display_mode)
+
     if not init_done and not display_mode then
         return -- starting in classic mode, nothing to patch
     end
@@ -557,8 +584,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
     FileChooser.updateCache = CoverMenu.updateCache
     FileChooser.updateItems = CoverMenu.updateItems
     FileChooser.onCloseWidget = CoverMenu.onCloseWidget
-
-    if display_mode == "mosaic_image" or display_mode == "mosaic_text" then -- mosaic mode
+    if FileChooser.display_mode_type == "mosaic" then
         -- Replace some other original methods with those from our MosaicMenu
         local MosaicMenu = require("mosaicmenu")
         FileChooser._recalculateDimen = MosaicMenu._recalculateDimen
@@ -568,8 +594,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser._do_hint_opened = true -- dogear at bottom
         -- Don't have "../" centered in empty directories
         FileChooser._do_center_partial_rows = false
-    elseif display_mode == "list_image_meta" or display_mode == "list_only_meta" or
-                                     display_mode == "list_image_filename" then -- list modes
+    elseif FileChooser.display_mode_type == "list" then
         -- Replace some other original methods with those from our ListMenu
         local ListMenu = require("listmenu")
         FileChooser._recalculateDimen = ListMenu._recalculateDimen
@@ -619,7 +644,8 @@ local function _FileManagerHistory_updateItemTable(self)
         hist_menu.onMenuHold_orig = hist_menu.onMenuHold
         hist_menu.onMenuHold = CoverMenu.onHistoryMenuHold
 
-        if display_mode == "mosaic_image" or display_mode == "mosaic_text" then -- mosaic mode
+        CoverBrowser.initGrid(hist_menu, display_mode)
+        if hist_menu.display_mode_type == "mosaic" then
             -- Replace some other original methods with those from our MosaicMenu
             local MosaicMenu = require("mosaicmenu")
             hist_menu._recalculateDimen = MosaicMenu._recalculateDimen
@@ -628,8 +654,7 @@ local function _FileManagerHistory_updateItemTable(self)
             hist_menu._do_cover_images = display_mode ~= "mosaic_text"
             hist_menu._do_center_partial_rows = true -- nicer looking when few elements
 
-        elseif display_mode == "list_image_meta" or display_mode == "list_only_meta" or
-                                 display_mode == "list_image_filename" then -- list modes
+        elseif hist_menu.display_mode_type == "list" then
             -- Replace some other original methods with those from our ListMenu
             local ListMenu = require("listmenu")
             hist_menu._recalculateDimen = ListMenu._recalculateDimen
@@ -698,7 +723,8 @@ local function _FileManagerCollections_updateItemTable(self)
         coll_menu.onMenuHold_orig = coll_menu.onMenuHold
         coll_menu.onMenuHold = CoverMenu.onCollectionsMenuHold
 
-        if display_mode == "mosaic_image" or display_mode == "mosaic_text" then -- mosaic mode
+        CoverBrowser.initGrid(coll_menu, display_mode)
+        if coll_menu.display_mode_type == "mosaic" then
             -- Replace some other original methods with those from our MosaicMenu
             local MosaicMenu = require("mosaicmenu")
             coll_menu._recalculateDimen = MosaicMenu._recalculateDimen
@@ -707,8 +733,7 @@ local function _FileManagerCollections_updateItemTable(self)
             coll_menu._do_cover_images = display_mode ~= "mosaic_text"
             coll_menu._do_center_partial_rows = true -- nicer looking when few elements
 
-        elseif display_mode == "list_image_meta" or display_mode == "list_only_meta" or
-            display_mode == "list_image_filename" then -- list modes
+        elseif coll_menu.display_mode_type == "list" then
             -- Replace some other original methods with those from our ListMenu
             local ListMenu = require("listmenu")
             coll_menu._recalculateDimen = ListMenu._recalculateDimen
