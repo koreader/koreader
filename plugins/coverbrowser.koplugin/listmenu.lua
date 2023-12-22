@@ -271,7 +271,7 @@ function ListMenuItem:update()
             if bookinfo.cover_fetched then
                 if bookinfo.has_cover and not self.menu.no_refresh_covers then
                     if BookInfoManager.isCachedCoverInvalid(bookinfo, cover_specs) then
-                        -- there is a cover, but it's smaller than is needed for new grid dimensions,
+                        -- there is a thumbnail, but it's smaller than is needed for new grid dimensions,
                         -- and it would be ugly if scaled up to the required size:
                         -- do as if not found to force a new extraction with our size
                         if bookinfo.cover_bb then
@@ -902,6 +902,7 @@ end
 local ListMenu = {}
 
 function ListMenu:_recalculateDimen()
+    self.portrait_mode = Screen:getWidth() <= Screen:getHeight()
     -- Find out available height from other UI elements made in Menu
     self.others_height = 0
     if self.title_bar then -- Menu:init() has been done
@@ -928,25 +929,16 @@ function ListMenu:_recalculateDimen()
     end
     local available_height = self.inner_dimen.h - self.others_height - Size.line.thin
 
-    -- (Note: we can't assign directly to self.perpage and expect it to
-    -- be 'nil' if it was not defined, as we'll find instead the value
-    -- defined in the Menu class (14) because of inheritance.)
-    local files_per_page = BookInfoManager:getSetting("files_per_page")
-    if files_per_page then
-        self.perpage = tonumber(files_per_page)
-    else
-        -- perpage used to be static and computed from a base of 64px per ListMenuItem,
-        -- which gave 10 items both in filemanager and history on kobo glo hd.
-        -- Now that we can change the nb of items, let's start with a similar default
-        -- and save it so it's known as the initial value by the menu selection widget.
-        self.perpage = math.floor(available_height / scale_by_size / 64)
-        BookInfoManager:saveSetting("files_per_page", tostring(self.perpage))
+    if self.files_per_page == nil then -- first drawing
+        -- Default perpage is computed from a base of 64px per ListMenuItem,
+        -- which gives 10 items on kobo glo hd.
+        self.files_per_page = math.floor(available_height / scale_by_size / 64)
+        BookInfoManager:saveSetting("files_per_page", self.files_per_page)
     end
-    self.cover_sizetag = "s" .. self.perpage
-    if Screen:getWidth() > Screen:getHeight() then -- landscape mode
-        -- When in landscape mode (only possible with History), adjust
-        -- perpage so items get a chance to have about the same height
-        -- as when in portrait mode.
+    self.perpage = self.files_per_page
+    if not self.portrait_mode then
+        -- When in landscape mode, adjust perpage so items get a chance
+        -- to have about the same height as when in portrait mode.
         -- This computation is not strictly correct, as "others_height" would
         -- have a different value in portrait mode. But let's go with that.
         local portrait_available_height = Screen:getWidth() - self.others_height - Size.line.thin
