@@ -272,7 +272,7 @@ function BookInfoManager:loadSettings(db_conn)
         for i, key in ipairs(keys) do
             local value = values[i]
             if value then
-                value = tonumber(value) or value -- convert cdata<int64_t> to lua number 
+                value = tonumber(value) or value -- convert cdata<int64_t> to lua number
             end
             self.settings[key] = value
         end
