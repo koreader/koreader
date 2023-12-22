@@ -542,7 +542,7 @@ function MosaicMenuItem:update()
             if bookinfo.cover_fetched then
                 if bookinfo.has_cover and not self.menu.no_refresh_covers then
                     if BookInfoManager.isCachedCoverInvalid(bookinfo, cover_specs) then
-                        -- there is a cover, but it's smaller than is needed for new grid dimensions,
+                        -- there is a thumbnail, but it's smaller than is needed for new grid dimensions,
                         -- and it would be ugly if scaled up to the required size:
                         -- do as if not found to force a new extraction with our size
                         if bookinfo.cover_bb then
@@ -854,14 +854,13 @@ end
 local MosaicMenu = {}
 
 function MosaicMenu:_recalculateDimen()
-    local portrait_mode = Screen:getWidth() <= Screen:getHeight()
-    -- 3 x 3 grid by default if not initially provided (4 x 2 in landscape mode)
-    if portrait_mode then
-        self.nb_cols = tonumber(BookInfoManager:getSetting("nb_cols_portrait") or 3)
-        self.nb_rows = tonumber(BookInfoManager:getSetting("nb_rows_portrait") or 3)
+    self.portrait_mode = Screen:getWidth() <= Screen:getHeight()
+    if self.portrait_mode then
+        self.nb_cols = self.nb_cols_portrait
+        self.nb_rows = self.nb_rows_portrait
     else
-        self.nb_cols = tonumber(BookInfoManager:getSetting("nb_cols_landscape") or 4)
-        self.nb_rows = tonumber(BookInfoManager:getSetting("nb_rows_landscape") or 2)
+        self.nb_cols = self.nb_cols_landscape
+        self.nb_rows = self.nb_rows_landscape
     end
     self.perpage = self.nb_rows * self.nb_cols
     self.page_num = math.ceil(#self.item_table / self.perpage)
