@@ -160,6 +160,8 @@ local Kindle = Generic:extend{
     isNightModeChallenged = no,
     -- NOTE: While this ought to behave on Zelda/Rex, turns out, nope, it really doesn't work on *any* of 'em :/ (c.f., ko#5884).
     canHWDither = no,
+    -- Device has an Ambient Light Sensor
+    hasLightSensor = no,
     -- The time the device went into suspend
     suspend_time = 0,
     framework_lipc_handle = frameworkStopped(),
@@ -508,6 +510,7 @@ local KindleVoyage = Kindle:extend{
     isTouchDevice = yes,
     hasFrontlight = yes,
     canTurnFrontlightOff = no,
+    hasLightSensor = yes,
     hasKeys = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/event1",
@@ -526,6 +529,7 @@ local KindleOasis = Kindle:extend{
     model = "KindleOasis",
     isTouchDevice = yes,
     hasFrontlight = yes,
+    hasLightSensor = yes,
     hasKeys = yes,
     hasGSensor = yes,
     display_dpi = 300,
@@ -543,6 +547,7 @@ local KindleOasis2 = Kindle:extend{
     isZelda = yes,
     isTouchDevice = yes,
     hasFrontlight = yes,
+    hasLightSensor = yes,
     hasKeys = yes,
     hasGSensor = yes,
     display_dpi = 300,
@@ -556,6 +561,7 @@ local KindleOasis3 = Kindle:extend{
     hasFrontlight = yes,
     hasNaturalLight = yes,
     hasNaturalLightMixer = yes,
+    hasLightSensor = yes,
     hasKeys = yes,
     hasGSensor = yes,
     display_dpi = 300,
@@ -629,6 +635,7 @@ local KindleScribe = Kindle:extend{
     --       but the mix is device-specific, we don't have access to the LUT for the mix powerd is using,
     --       and the widget is designed for the Kobo Aura One anyway, so, hahaha, nope.
     hasNaturalLightMixer = yes,
+    hasLightSensor = yes,
     hasGSensor = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event",
