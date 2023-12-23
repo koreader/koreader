@@ -195,16 +195,18 @@ function CoverBrowser:addToMainMenu(menu_items)
                             fc.nb_rows_portrait = right_value
                             if fc.display_mode_type == "mosaic" and fc.portrait_mode then
                                 fc.no_refresh_covers = true
-                                self:refreshFileManagerInstance()
+                                fc:updateItems()
                             end
                         end,
                         close_callback = function()
                             if fc.nb_cols_portrait ~= nb_cols or fc.nb_rows_portrait ~= nb_rows then
                                 BookInfoManager:saveSetting("nb_cols_portrait", fc.nb_cols_portrait)
                                 BookInfoManager:saveSetting("nb_rows_portrait", fc.nb_rows_portrait)
+                                FileChooser.nb_cols_portrait = fc.nb_cols_portrait
+                                FileChooser.nb_rows_portrait = fc.nb_rows_portrait
                                 if fc.display_mode_type == "mosaic" and fc.portrait_mode then
                                     fc.no_refresh_covers = nil
-                                    self:refreshFileManagerInstance()
+                                    fc:updateItems()
                                 end
                             end
                         end,
@@ -243,16 +245,18 @@ function CoverBrowser:addToMainMenu(menu_items)
                             fc.nb_rows_landscape = right_value
                             if fc.display_mode_type == "mosaic" and not fc.portrait_mode then
                                 fc.no_refresh_covers = true
-                                self:refreshFileManagerInstance()
+                                fc:updateItems()
                             end
                         end,
                         close_callback = function()
                             if fc.nb_cols_landscape ~= nb_cols or fc.nb_rows_landscape ~= nb_rows then
                                 BookInfoManager:saveSetting("nb_cols_landscape", fc.nb_cols_landscape)
                                 BookInfoManager:saveSetting("nb_rows_landscape", fc.nb_rows_landscape)
+                                FileChooser.nb_cols_landscape = fc.nb_cols_landscape
+                                FileChooser.nb_rows_landscape = fc.nb_rows_landscape
                                 if fc.display_mode_type == "mosaic" and not fc.portrait_mode then
                                     fc.no_refresh_covers = nil
-                                    self:refreshFileManagerInstance()
+                                    fc:updateItems()
                                 end
                             end
                         end,
@@ -282,15 +286,16 @@ function CoverBrowser:addToMainMenu(menu_items)
                             fc.files_per_page = spin.value
                             if fc.display_mode_type == "list" then
                                 fc.no_refresh_covers = true
-                                self:refreshFileManagerInstance()
+                                fc:updateItems()
                             end
                         end,
                         close_callback = function()
                             if fc.files_per_page ~= files_per_page then
                                 BookInfoManager:saveSetting("files_per_page", fc.files_per_page)
+                                FileChooser.files_per_page = fc.files_per_page
                                 if fc.display_mode_type == "list" then
                                     fc.no_refresh_covers = nil
-                                    self:refreshFileManagerInstance()
+                                    fc:updateItems()
                                 end
                             end
                         end,
