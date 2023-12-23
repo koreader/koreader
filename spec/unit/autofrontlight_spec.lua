@@ -32,6 +32,7 @@ describe("AutoFrontlight widget tests", function()
         Device.model = "KindleVoyage"
         Device.brightness = 0
         Device.hasFrontlight = function() return true end
+        Device.hasLightSensor = function() return true end
         Device.powerd = PowerD:new{
             device = Device,
         }
