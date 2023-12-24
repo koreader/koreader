@@ -151,10 +151,8 @@ end
 Shares text with other apps
 ]]
 function BaseExporter:shareText(text, title)
-    local msg_reason = _("Share") .. " " .. self.name
-    local msg_text = type(text) == "string" and text
-    local msg_title = type(title) == "string" and title
-    Device:doShareText(msg_text, msg_reason, msg_title, self.mimetype)
+    local reason = _("Share") .. " " .. self.name
+    Device:doShareText(text, reason, title, self.mimetype)
 end
 
 return BaseExporter
