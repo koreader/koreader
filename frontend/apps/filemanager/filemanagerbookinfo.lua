@@ -24,6 +24,7 @@ local N_ = _.ngettext
 local T = require("ffi/util").template
 
 local BookInfo = WidgetContainer:extend{
+    title = _("Book information"),
     props = {
         "title",
         "authors",
@@ -54,7 +55,7 @@ end
 
 function BookInfo:addToMainMenu(menu_items)
     menu_items.book_info = {
-        text = _("Book information"),
+        text = self.title,
         callback = function()
             self:onShowBookInfo()
         end,
@@ -107,7 +108,7 @@ function BookInfo:show(file, book_props)
         self.custom_doc_settings = DocSettings.openSettingsFile(custom_metadata_file)
         custom_props = self.custom_doc_settings:readSetting("custom_props")
     end
-    local values_lang
+    local values_lang, callback
     for _i, prop_key in ipairs(self.props) do
         local prop = book_props[prop_key]
         if prop == nil or prop == "" then
@@ -131,12 +132,16 @@ function BookInfo:show(file, book_props)
         elseif prop_key == "description" then
             -- Description may (often in EPUB, but not always) or may not (rarely in PDF) be HTML
             prop = util.htmlToPlainTextIfHtml(prop)
+            callback = function() -- proper text_type in TextViewer
+                self:showBookProp("description", prop)
+            end
         end
         key_text = self.prop_text[prop_key]
         if custom_props and custom_props[prop_key] then -- customized
             key_text = "\u{F040} " .. key_text
         end
         table.insert(kv_pairs, { key_text, prop,
+            callback = callback,
             hold_callback = function()
                 self:showCustomDialog(file, book_props, prop_key)
             end,
@@ -159,7 +164,7 @@ function BookInfo:show(file, book_props)
 
     local KeyValuePage = require("ui/widget/keyvaluepage")
     self.kvp_widget = KeyValuePage:new{
-        title = _("Book information"),
+        title = self.title,
         value_overflow_align = "right",
         kv_pairs = kv_pairs,
         values_lang = values_lang,
@@ -295,15 +300,10 @@ function BookInfo:onShowBookInfo()
 end
 
 function BookInfo:showBookProp(prop_key, prop_text)
-    local text_type
-    if prop_key == "description" then
-        prop_text = util.htmlToPlainTextIfHtml(prop_text)
-        text_type = "book_info"
-    end
     UIManager:show(TextViewer:new{
         title = self.prop_text[prop_key],
         text = prop_text,
-        text_type = text_type,
+        text_type = prop_key == "description" and "book_info" or nil,
     })
 end
 
@@ -316,7 +316,7 @@ function BookInfo:onShowBookDescription(description, file)
         end
     end
     if description then
-        self:showBookProp("description", description)
+        self:showBookProp("description", util.htmlToPlainTextIfHtml(description))
     else
         UIManager:show(InfoMessage:new{
             text = _("No book description available."),
