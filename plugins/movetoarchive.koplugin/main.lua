@@ -29,14 +29,6 @@ function MoveToArchive:init()
     self.last_copied_from_dir = self.settings:readSetting("last_copied_from_dir")
 end
 
--- check if the folder exists
-local function dir_exists_v1(path)
-  if (lfs.attributes(path, "mode") == "directory") then
-    return true
-  end
-  return false
-end
-
 function MoveToArchive:addToMainMenu(menu_items)
     menu_items.move_to_archive = {
         text = _("Move to archive"),
