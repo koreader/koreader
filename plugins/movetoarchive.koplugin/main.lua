@@ -30,7 +30,7 @@ function MoveToArchive:init()
 end
 
 -- check if the folder exists
-function dir_exists_v1(path)
+local function dir_exists_v1(path)
   if (lfs.attributes(path, "mode") == "directory") then
     return true
   end
