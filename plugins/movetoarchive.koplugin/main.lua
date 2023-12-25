@@ -11,7 +11,6 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local util = require("frontend/util")
 local BaseUtil = require("ffi/util")
 local _ = require("gettext")
-local lfs = require("libs/libkoreader-lfs")
 
 local MoveToArchive = WidgetContainer:extend{
     name = "movetoarchive",
@@ -59,7 +58,7 @@ function MoveToArchive:addToMainMenu(menu_items)
             {
                 text = _("Go to archive folder"),
                 callback = function()
-                    if self.archive_dir_path and dir_exists_v1(self.archive_dir_path) then
+                    if self.archive_dir_path and util.directoryExists(self.archive_dir_path) then
                         self:openFileBrowser(self.archive_dir_path)
                     else
                         self:showNoArchiveConfirmBox()
