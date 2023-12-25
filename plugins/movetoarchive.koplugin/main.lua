@@ -29,6 +29,14 @@ function MoveToArchive:init()
     self.last_copied_from_dir = self.settings:readSetting("last_copied_from_dir")
 end
 
+-- check if the folder exists
+function dir_exists_v1(path)
+  if (lfs.attributes(path, "mode") == "directory") then
+    return true
+  end
+  return false
+end
+
 function MoveToArchive:addToMainMenu(menu_items)
     menu_items.move_to_archive = {
         text = _("Move to archive"),
@@ -50,7 +58,7 @@ function MoveToArchive:addToMainMenu(menu_items)
             {
                 text = _("Go to archive folder"),
                 callback = function()
-                    if self.archive_dir_path then
+                    if self.archive_dir_path and dir_exists_v1(self.archive_dir_path) then
                         self:openFileBrowser(self.archive_dir_path)
                     else
                         self:showNoArchiveConfirmBox()
