@@ -59,7 +59,6 @@ function AndroidPowerD:turnOffFrontlightHW()
     end
     android.setScreenBrightness(self.fl_min)
 
-    -- Devices using OnyxWarmthController also need to turn off warmth
     if android.hasStandaloneWarmth() then
         android.setScreenWarmth(self.fl_warmth_min)
     end
@@ -74,7 +73,6 @@ function AndroidPowerD:turnOnFrontlightHW(done_callback)
 
     android.setScreenBrightness(math.floor(self.fl_intensity * self.bright_diff / self.fl_max))
 
-    -- Devices using OnyxWarmthController also need to turn on warmth
     if android.hasStandaloneWarmth() then
         -- Due to AndroidPowerD:frontlightWarmthHW() above, we need to divide by self.warm_diff,
         -- otherwise self.warm_diff is too large and gets discarded by the controller.
