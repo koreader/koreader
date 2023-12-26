@@ -760,7 +760,7 @@ end
 
 --- Checks if the given directory exists.
 function util.directoryExists(path)
-  if lfs.attributes(path, "mode") == "directory" then return true end
+  return lfs.attributes(path, "mode") == "directory"
 end
 
 --- As `mkdir -p`.
