@@ -58,7 +58,7 @@ function AndroidPowerD:turnOffFrontlightHW()
         return
     end
     android.setScreenBrightness(self.fl_min)
-    
+
     -- Devices using OnyxWarmthController also need to turn off Warmth
     if android.hasStandaloneWarmth then
         android.setScreenWarmth(self.fl_warmth_min)
