@@ -169,12 +169,8 @@ function ReaderStatus:openFileBrowser()
 end
 
 function ReaderStatus:onOpenNextDocumentInFolder()
-    local FileManager = require("apps/filemanager/filemanager")
-    if not FileManager.instance then
-        self.ui:showFileManager()
-    end
-    local next_file = FileManager.instance.file_chooser:getNextFile(self.document.file)
-    FileManager.instance:onClose()
+    local FileChooser = require("ui/widget/filechooser")
+    local next_file = FileChooser:getNextFile(self.document.file)
     if next_file then
         self.ui:switchDocument(next_file)
     else
