@@ -559,14 +559,20 @@ end
 
 -- Used in ReaderStatus:onOpenNextDocumentInFolder().
 function FileChooser:getNextFile(curr_file)
+    local show_finished = self.show_finished
+    self.show_finished = true
+    local curr_path = curr_file:match(".*/"):gsub("/$", "")
+    local item_table = self:genItemTableFromPath(curr_path)
+    self.show_finished = show_finished
     local is_curr_file_found
-    for i, item in ipairs(self.item_table) do
+    for i, item in ipairs(item_table) do
         if not is_curr_file_found and item.path == curr_file then
             is_curr_file_found = true
         end
         if is_curr_file_found then
-            local next_file = self.item_table[i+1]
-            if next_file and next_file.is_file and DocumentRegistry:hasProvider(next_file.path) then
+            local next_file = item_table[i+1]
+            if next_file and next_file.is_file and DocumentRegistry:hasProvider(next_file.path)
+                    and filemanagerutil.getStatus(next_file.path) ~= "complete" then
                 return next_file.path
             end
         end
