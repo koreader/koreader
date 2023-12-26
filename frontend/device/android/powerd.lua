@@ -74,9 +74,7 @@ function AndroidPowerD:turnOnFrontlightHW(done_callback)
     android.setScreenBrightness(math.floor(self.fl_intensity * self.bright_diff / self.fl_max))
 
     if android.hasStandaloneWarmth() then
-        -- Due to AndroidPowerD:frontlightWarmthHW() above, we need to divide by self.warm_diff,
-        -- otherwise self.warm_diff is too large and gets discarded by the controller.
-        android.setScreenWarmth(math.floor(self.fl_warmth / self.warm_diff)) -- e.g. 160 out of 255
+        android.setScreenWarmth(math.floor(self.fl_warmth / self.warm_diff))
     end
     return false
 end
