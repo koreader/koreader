@@ -76,9 +76,8 @@ function AndroidPowerD:turnOnFrontlightHW(done_callback)
 
     -- Devices using OnyxWarmthController also need to turn on warmth
     if android.hasStandaloneWarmth() then
-        -- Due to AndroidPowerD:frontlightWarmthHW() above,
-        -- we need to divide by self.warm_diff,
-        -- otherwise self.warm_diff is too large is discarded by the controller.
+        -- Due to AndroidPowerD:frontlightWarmthHW() above, we need to divide by self.warm_diff,
+        -- otherwise self.warm_diff is too large and gets discarded by the controller.
         android.setScreenWarmth(math.floor(self.fl_warmth / self.warm_diff)) -- e.g. 160 out of 255
     end
     return false
