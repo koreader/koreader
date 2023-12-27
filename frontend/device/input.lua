@@ -1065,7 +1065,7 @@ function Input:setMtSlot(slot, key, val)
 end
 
 function Input:setCurrentMtSlot(key, val)
-    self:setMtSlot(self.cur_slot, key, val)
+    self.ev_slots[self.cur_slot][key] = val
 end
 
 -- Same as above, but ensures the current slot actually has a live ref first
