@@ -791,15 +791,14 @@ function Input:handleTouchEv(ev)
                 -- NOTE: We'll never get an ABS_MT_SLOT event, instead we have a slot-like ABS_MT_TRACKING_ID value...
                 --       This also means this may never be set to -1 on contact lift,
                 --       which is why we instead rely on EV_KEY:BTN_TOUCH:0 for that (c.f., handleKeyBoardEv).
+                -- NOTE: In order to more seamlessly deal with devices *mistakenly* flagged as snow_protocol,
+                --       this should only be done if ev.value >= 0, in order to prevent using -1 as an actual slot id ;).
+                --       This shouldn't really happen, but we've seen at least *one* weird Clara HD
+                --       (a device historically requiring these quirks) with sane input frames
+                --       (c.f., https://www.mobileread.com/forums/showpost.php?p=4383629&postcount=997).
                 self:setupSlotData(ev.value)
-            else
-                -- The Elan driver needlessly repeats unchanged ABS_MT_TRACKING_ID values,
-                -- which allows us to do this here instead of relying more aggressively on setCurrentMtSlotChecked.
-                if #self.MTSlots == 0 then
-                    self:addSlot(self.cur_slot)
-                end
             end
-            self:setCurrentMtSlot("id", ev.value)
+            self:setCurrentMtSlotChecked("id", ev.value)
         elseif ev.code == C.ABS_MT_TOOL_TYPE then
             -- NOTE: On the Elipsa: Finger == 0; Pen == 1
             self:setCurrentMtSlot("tool", ev.value)
@@ -1063,7 +1062,7 @@ end
 
 -- Same as above, but ensures the current slot actually has a live ref first
 function Input:setCurrentMtSlotChecked(key, val)
-    if #self.MTSlots == 0 then
+    if not self.active_slots[self.cur_slot] then
         self:addSlot(self.cur_slot)
     end
 
@@ -1114,7 +1113,7 @@ function Input:addSlotIfChanged(value)
 end
 
 function Input:setupSlotData(value)
-    if #self.MTSlots == 0 then
+    if not self.active_slots[value] then
         self:addSlot(value)
     else
         self:addSlotIfChanged(value)
