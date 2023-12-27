@@ -1629,7 +1629,7 @@ function ReaderStatistics:getCurrentStat()
             page_progress_string = ("[%d / %d]%d (%d%%)"):format(current_page, total_pages, flow, percent_read)
         end
     else
-        current_page = self.view.state.page
+        current_page = self.ui:getCurrentPage()
         total_pages = self.data.pages
         percent_read = Math.round(100*current_page/total_pages)
         page_progress_string = ("%d / %d (%d%%)"):format(current_page, total_pages, percent_read)
