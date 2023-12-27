@@ -1052,6 +1052,14 @@ function Input:initMtSlot(slot)
     end
 end
 
+function Input:getMtSlot(slot)
+    return self.ev_slots[slot]
+end
+
+function Input:getCurrentMtSlot()
+    return self.ev_slots[self.cur_slot]
+end
+
 function Input:setMtSlot(slot, key, val)
     self.ev_slots[slot][key] = val
 end
@@ -1067,14 +1075,6 @@ function Input:setCurrentMtSlotChecked(key, val)
     end
 
     self:setMtSlot(self.cur_slot, key, val)
-end
-
-function Input:getMtSlot(slot)
-    return self.ev_slots[slot]
-end
-
-function Input:getCurrentMtSlot()
-    return self:getMtSlot(self.cur_slot)
 end
 
 function Input:getCurrentMtSlotData(key)
