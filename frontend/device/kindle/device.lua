@@ -912,8 +912,6 @@ function KindleOasis:init()
         hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 
-    Kindle.init(self)
-
     self.input = require("device/input"):new{
         device = self,
 
@@ -922,7 +920,10 @@ function KindleOasis:init()
             [109] = "RPgBack",
         }
     }
-    --- @note: See comments in KindleOasis2:init() for details.
+
+    Kindle.init(self)
+
+    --- @note See comments in KindleOasis2:init() for details.
     local haslipc, lipc = pcall(require, "liblipclua")
     if haslipc and lipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
@@ -1022,8 +1023,6 @@ function KindleOasis2:init()
         batt_status_file = "/sys/class/power_supply/max77796-charger/status",
     }
 
-    Kindle.init(self)
-
     self.input = require("device/input"):new{
         device = self,
 
@@ -1033,6 +1032,8 @@ function KindleOasis2:init()
             [109] = "RPgBack",
         }
     }
+
+    Kindle.init(self)
 
     --- @note When starting KOReader with the device upside down ("D"), touch input is registered wrong
     --        (i.e., probably upside down).
@@ -1109,8 +1110,6 @@ function KindleOasis3:init()
         batt_status_file = "/sys/class/power_supply/max77796-charger/status",
     }
 
-    Kindle.init(self)
-
     self.input = require("device/input"):new{
         device = self,
 
@@ -1120,6 +1119,8 @@ function KindleOasis3:init()
             [109] = "RPgBack",
         }
     }
+
+    Kindle.init(self)
 
     --- @note The same quirks as on the Oasis 2 apply ;).
     local haslipc, lipc = pcall(require, "liblipclua")
