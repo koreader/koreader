@@ -225,8 +225,8 @@ function FileChooser:show_file(filename, fullpath)
     for _, pattern in ipairs(self.exclude_files) do
         if filename:match(pattern) then return false end
     end
-    if not self.show_unsupported and self.file_filter ~= nil and not self.file_filter(filename) then return false end
-    if not self.show_finished and fullpath ~= nil and filemanagerutil.getStatus(fullpath) == "complete" then return false end
+    if not FileChooser.show_unsupported and self.file_filter ~= nil and not self.file_filter(filename) then return false end
+    if not FileChooser.show_finished and fullpath ~= nil and filemanagerutil.getStatus(fullpath) == "complete" then return false end
     return true
 end
 
@@ -243,7 +243,7 @@ function FileChooser:getList(path, collate)
     if ok then
         unreadable_dir_content[path] = nil
         for f in iter, dir_obj do
-            if self.show_hidden or not util.stringStartsWith(f, ".") then
+            if FileChooser.show_hidden or not util.stringStartsWith(f, ".") then
                 local fullpath = path.."/"..f
                 local attributes = lfs.attributes(fullpath) or {}
                 local item = true
@@ -559,11 +559,11 @@ end
 
 -- Used in ReaderStatus:onOpenNextDocumentInFolder().
 function FileChooser:getNextFile(curr_file)
-    local show_finished = self.show_finished
-    self.show_finished = true
+    local show_finished = FileChooser.show_finished
+    FileChooser.show_finished = true
     local curr_path = curr_file:match(".*/"):gsub("/$", "")
     local item_table = self:genItemTableFromPath(curr_path)
-    self.show_finished = show_finished
+    FileChooser.show_finished = show_finished
     local is_curr_file_found
     for i, item in ipairs(item_table) do
         if not is_curr_file_found and item.path == curr_file then
