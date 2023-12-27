@@ -1327,11 +1327,14 @@ function KindleScribe:init()
         hall_file = "/sys/devices/platform/eink_hall/hall_enable",
     }
 
+    Kindle.init(self)
+
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
     self.screen:_MTK_ToggleFastMode(true)
 
-    --- @fixme The same quirks as on the Oasis 2 and 3 apply ;).
-    -- in regular mode, awesome is woken up for a brief moment. In no-framework mode, this works as is.
+    -- The same quirks as on the Oasis 2 and 3 apply ;).
+    -- In regular mode, awesome is woken up for a brief moment to help with lipc calls.
+    -- In no-framework mode, this works as is.
     local haslipc, lipc = pcall(require, "liblipclua")
     if haslipc and lipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
@@ -1354,7 +1357,7 @@ function KindleScribe:init()
             logger.dbg("rotation_mode = ", rotation_mode)
             if rotation_mode > 0 then
                 self.screen.native_rotation_mode = rotation_mode
-                self.screen.cur_rotation_mode = rotation_mode
+                self.screen:setRotationMode(rotation_mode)
             end
             lipc_handle:close()
         end
@@ -1363,8 +1366,6 @@ function KindleScribe:init()
     if os.getenv("AWESOME_STOPPED") == "yes" then
         os.execute("killall -STOP awesome")
     end
-
-    Kindle.init(self)
 
     -- Setup accelerometer rotation input
     self.input:registerEventAdjustHook(KindleGyroTransform)
