@@ -899,6 +899,10 @@ local function OasisGyroTranslation(this, ev)
 end
 
 function KindleOasis:init()
+    -- temporarily wake up awesome
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -CONT awesome")
+    end
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -908,6 +912,8 @@ function KindleOasis:init()
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
         hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
+
+    Kindle.init(self)
 
     self.input = require("device/input"):new{
         device = self,
@@ -924,6 +930,7 @@ function KindleOasis:init()
         if lipc_handle then
             local orientation_code = lipc_handle:get_string_property(
                 "com.lab126.winmgr", "accelerometer")
+            logger.dbg("orientation_code = ", orientation_code)
             local rotation_mode = 0
             if orientation_code then
                 if orientation_code == "U" then
@@ -936,17 +943,16 @@ function KindleOasis:init()
                     rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
-
-            if rotation_mode > 0 then
-                self.screen.native_rotation_mode = rotation_mode
-                self.screen.cur_rotation_mode = rotation_mode
-            end
-
+            logger.dbg("rotation_mode = ", rotation_mode)
+            if rotation_mode > 0 then self.screen.native_rotation_mode = rotation_mode end
+            self.screen:setRotationMode(rotation_mode)
             lipc_handle:close()
         end
     end
-
-    Kindle.init(self)
+    -- put awesome back to sleep
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -STOP awesome")
+    end
 
     self.input:registerEventAdjustHook(OasisGyroTranslation)
     self.input.handleMiscEv = function(this, ev)
@@ -1007,6 +1013,10 @@ local function KindleGyroTransform(this, ev)
 end
 
 function KindleOasis2:init()
+    -- temporarily wake up awesome
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -CONT awesome")
+    end
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -1015,7 +1025,9 @@ function KindleOasis2:init()
         is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
         batt_status_file = "/sys/class/power_supply/max77796-charger/status",
     }
-
+    
+    Kindle.init(self)
+    
     self.input = require("device/input"):new{
         device = self,
 
@@ -1026,11 +1038,12 @@ function KindleOasis2:init()
         }
     }
 
-    --- @fixme When starting KOReader with the device upside down ("D"), touch input is registered wrong
+    --- @note When starting KOReader with the device upside down ("D"), touch input is registered wrong
     --        (i.e., probably upside down).
     --        If it's started upright ("U"), everything's okay, and turning it upside down after that works just fine.
     --        See #2206 & #2209 for the original KOA implementation, which obviously doesn't quite cut it here...
     --        See also <https://www.mobileread.com/forums/showthread.php?t=298302&page=5>
+    --        See also #11159 for details about the solution (Kindle Scribe as an example)
     -- NOTE: It'd take some effort to actually start KOReader while in a LANDSCAPE orientation,
     --       since they're only exposed inside the stock reader, and not the Home/KUAL Booklets.
     local haslipc, lipc = pcall(require, "liblipclua")
@@ -1039,6 +1052,7 @@ function KindleOasis2:init()
         if lipc_handle then
             local orientation_code = lipc_handle:get_string_property(
                 "com.lab126.winmgr", "accelerometer")
+            logger.dbg("orientation_code = ", orientation_code)
             local rotation_mode = 0
             if orientation_code then
                 if orientation_code == "U" then
@@ -1051,17 +1065,16 @@ function KindleOasis2:init()
                     rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
-
-            if rotation_mode > 0 then
-                self.screen.native_rotation_mode = rotation_mode
-                self.screen.cur_rotation_mode = rotation_mode
-            end
-
+            logger.dbg("rotation_mode = ", rotation_mode)
+            if rotation_mode > 0 then self.screen.native_rotation_mode = rotation_mode end
+            self.screen:setRotationMode(rotation_mode)
             lipc_handle:close()
         end
     end
-
-    Kindle.init(self)
+    -- put awesome back to sleep
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -STOP awesome")
+    end
 
     self.input:registerEventAdjustHook(KindleGyroTransform)
     self.input.handleMiscEv = function(this, ev)
@@ -1087,6 +1100,10 @@ function KindleOasis2:init()
 end
 
 function KindleOasis3:init()
+    -- temporarily wake up awesome
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -CONT awesome")
+    end
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -1096,6 +1113,8 @@ function KindleOasis3:init()
         is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
         batt_status_file = "/sys/class/power_supply/max77796-charger/status",
     }
+
+    Kindle.init(self)
 
     self.input = require("device/input"):new{
         device = self,
@@ -1107,14 +1126,14 @@ function KindleOasis3:init()
         }
     }
 
-
-    --- @fixme The same quirks as on the Oasis 2 apply ;).
+    --- @note The same quirks as on the Oasis 2 apply ;).
     local haslipc, lipc = pcall(require, "liblipclua")
     if haslipc and lipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
         if lipc_handle then
             local orientation_code = lipc_handle:get_string_property(
                 "com.lab126.winmgr", "accelerometer")
+            logger.dbg("orientation_code = ", orientation_code)
             local rotation_mode = 0
             if orientation_code then
                 if orientation_code == "U" then
@@ -1127,17 +1146,16 @@ function KindleOasis3:init()
                     rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
-
-            if rotation_mode > 0 then
-                self.screen.native_rotation_mode = rotation_mode
-                self.screen.cur_rotation_mode = rotation_mode
-            end
-
+            logger.dbg("rotation_mode = ", rotation_mode)
+            if rotation_mode > 0 then self.screen.native_rotation_mode = rotation_mode end
+            self.screen:setRotationMode(rotation_mode)
             lipc_handle:close()
         end
     end
-
-    Kindle.init(self)
+    -- put awesome back to sleep
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -STOP awesome")
+    end
 
     self.input:registerEventAdjustHook(KindleGyroTransform)
     self.input.handleMiscEv = function(this, ev)
@@ -1332,9 +1350,9 @@ function KindleScribe:init()
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
     self.screen:_MTK_ToggleFastMode(true)
 
-    -- The same quirks as on the Oasis 2 and 3 apply ;).
-    -- In regular mode, awesome is woken up for a brief moment to help with lipc calls.
-    -- In no-framework mode, this works as is.
+    --- @note The same quirks as on the Oasis 2 and 3 apply ;).
+    --        In regular mode, awesome is woken up for a brief moment to help with lipc calls.
+    --        In no-framework mode, this works as is.
     local haslipc, lipc = pcall(require, "liblipclua")
     if haslipc and lipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
