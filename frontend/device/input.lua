@@ -1074,7 +1074,7 @@ function Input:setCurrentMtSlotChecked(key, val)
         self:addSlot(self.cur_slot)
     end
 
-    self:setMtSlot(self.cur_slot, key, val)
+    self.ev_slots[self.cur_slot][key] = val
 end
 
 function Input:getCurrentMtSlotData(key)
