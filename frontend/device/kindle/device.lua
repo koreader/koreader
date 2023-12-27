@@ -1025,9 +1025,9 @@ function KindleOasis2:init()
         is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
         batt_status_file = "/sys/class/power_supply/max77796-charger/status",
     }
-    
+
     Kindle.init(self)
-    
+
     self.input = require("device/input"):new{
         device = self,
 
