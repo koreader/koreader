@@ -758,6 +758,11 @@ function util.pathExists(path)
     return lfs.attributes(path, "mode") ~= nil
 end
 
+--- Checks if the given directory exists.
+function util.directoryExists(path)
+  return lfs.attributes(path, "mode") == "directory"
+end
+
 --- As `mkdir -p`.
 -- Unlike [lfs.mkdir](https://keplerproject.github.io/luafilesystem/manual.html#mkdir)(),
 -- does not error if the directory already exists, and creates intermediate directories as needed.

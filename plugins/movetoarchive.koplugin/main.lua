@@ -50,7 +50,7 @@ function MoveToArchive:addToMainMenu(menu_items)
             {
                 text = _("Go to archive folder"),
                 callback = function()
-                    if self.archive_dir_path then
+                    if self.archive_dir_path and util.directoryExists(self.archive_dir_path) then
                         self:openFileBrowser(self.archive_dir_path)
                     else
                         self:showNoArchiveConfirmBox()
