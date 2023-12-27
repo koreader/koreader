@@ -1101,22 +1101,13 @@ function Input:addSlot(value)
     self.cur_slot = value
 end
 
-function Input:addSlotIfChanged(value)
-    if self.cur_slot ~= value then
-        -- We've already seen that slot in this frame, don't insert a duplicate reference!
-        if self.active_slots[value] then
-            self.cur_slot = value
-        else
-            self:addSlot(value)
-        end
-    end
-end
-
 function Input:setupSlotData(value)
     if not self.active_slots[value] then
         self:addSlot(value)
     else
-        self:addSlotIfChanged(value)
+        -- We've already seen that slot in this frame, don't insert a duplicate reference!
+        -- NOTE: May already be set to the correct value if the driver repeats ABS_MT_SLOT (e.g., our android/PB translation layers; or ABS_MT_TRACKING_ID for snow_protocol).
+        self.cur_slot = value
     end
 end
 
