@@ -900,7 +900,9 @@ end
 
 function KindleOasis:init()
     -- temporarily wake up awesome
-    if os.getenv("AWESOME_STOPPED") == "yes" then os.execute("killall -CONT awesome") end
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -CONT awesome")
+    end
 
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
@@ -949,7 +951,9 @@ function KindleOasis:init()
         end
     end
     -- put awesome back to sleep
-    if os.getenv("AWESOME_STOPPED") == "yes" then os.execute("killall -STOP awesome") end
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -STOP awesome")
+    end
 
     self.input:registerEventAdjustHook(OasisGyroTranslation)
     self.input.handleMiscEv = function(this, ev)
@@ -1011,7 +1015,9 @@ end
 
 function KindleOasis2:init()
     -- temporarily wake up awesome
-    if os.getenv("AWESOME_STOPPED") == "yes" then os.execute("killall -CONT awesome") end
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -CONT awesome")
+    end
 
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
@@ -1069,7 +1075,9 @@ function KindleOasis2:init()
         end
     end
     -- put awesome back to sleep
-    if os.getenv("AWESOME_STOPPED") == "yes" then os.execute("killall -STOP awesome") end
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -STOP awesome")
+    end
 
     self.input:registerEventAdjustHook(KindleGyroTransform)
     self.input.handleMiscEv = function(this, ev)
@@ -1096,7 +1104,9 @@ end
 
 function KindleOasis3:init()
     -- temporarily wake up awesome
-    if os.getenv("AWESOME_STOPPED") == "yes" then os.execute("killall -CONT awesome") end
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -CONT awesome")
+    end
 
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
@@ -1146,7 +1156,9 @@ function KindleOasis3:init()
         end
     end
     -- put awesome back to sleep
-    if os.getenv("AWESOME_STOPPED") == "yes" then os.execute("killall -STOP awesome") end
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -STOP awesome")
+    end
 
     self.input:registerEventAdjustHook(KindleGyroTransform)
     self.input.handleMiscEv = function(this, ev)
@@ -1322,7 +1334,9 @@ end
 
 function KindleScribe:init()
     -- temporarily wake up awesome
-    if os.getenv("AWESOME_STOPPED") == "yes" then os.execute("killall -CONT awesome") end
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -CONT awesome")
+    end
 
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
@@ -1368,7 +1382,9 @@ function KindleScribe:init()
         end
     end
     -- put awesome back to sleep
-    if os.getenv("AWESOME_STOPPED") == "yes" then os.execute("killall -STOP awesome") end
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -STOP awesome")
+    end
 
     -- Setup accelerometer rotation input
     self.input:registerEventAdjustHook(KindleGyroTransform)
