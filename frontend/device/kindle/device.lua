@@ -899,6 +899,10 @@ local function OasisGyroTranslation(this, ev)
 end
 
 function KindleOasis:init()
+    -- temporarily wake up awesome
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -CONT awesome")
+    end
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -908,6 +912,8 @@ function KindleOasis:init()
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
         hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
+
+    Kindle.init(self)
 
     self.input = require("device/input"):new{
         device = self,
@@ -936,17 +942,15 @@ function KindleOasis:init()
                     rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
-
-            if rotation_mode > 0 then
-                self.screen.native_rotation_mode = rotation_mode
-                self.screen.cur_rotation_mode = rotation_mode
-            end
-
+            if rotation_mode > 0 then self.screen.native_rotation_mode = rotation_mode end
+            self.screen:setRotationMode(rotation_mode)
             lipc_handle:close()
         end
     end
-
-    Kindle.init(self)
+    -- put awesome back to sleep
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -STOP awesome")
+    end
 
     self.input:registerEventAdjustHook(OasisGyroTranslation)
     self.input.handleMiscEv = function(this, ev)
@@ -1007,6 +1011,10 @@ local function KindleGyroTransform(this, ev)
 end
 
 function KindleOasis2:init()
+    -- temporarily wake up awesome
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -CONT awesome")
+    end
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -1015,6 +1023,8 @@ function KindleOasis2:init()
         is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
         batt_status_file = "/sys/class/power_supply/max77796-charger/status",
     }
+
+    Kindle.init(self)
 
     self.input = require("device/input"):new{
         device = self,
@@ -1051,17 +1061,15 @@ function KindleOasis2:init()
                     rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
-
-            if rotation_mode > 0 then
-                self.screen.native_rotation_mode = rotation_mode
-                self.screen.cur_rotation_mode = rotation_mode
-            end
-
+            if rotation_mode > 0 then self.screen.native_rotation_mode = rotation_mode end
+            self.screen:setRotationMode(rotation_mode)
             lipc_handle:close()
         end
     end
-
-    Kindle.init(self)
+    -- put awesome back to sleep
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -STOP awesome")
+    end
 
     self.input:registerEventAdjustHook(KindleGyroTransform)
     self.input.handleMiscEv = function(this, ev)
@@ -1087,6 +1095,10 @@ function KindleOasis2:init()
 end
 
 function KindleOasis3:init()
+    -- temporarily wake up awesome
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -CONT awesome")
+    end
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -1097,6 +1109,8 @@ function KindleOasis3:init()
         batt_status_file = "/sys/class/power_supply/max77796-charger/status",
     }
 
+    Kindle.init(self)
+
     self.input = require("device/input"):new{
         device = self,
 
@@ -1106,7 +1120,6 @@ function KindleOasis3:init()
             [109] = "RPgBack",
         }
     }
-
 
     --- @fixme The same quirks as on the Oasis 2 apply ;).
     local haslipc, lipc = pcall(require, "liblipclua")
@@ -1127,17 +1140,15 @@ function KindleOasis3:init()
                     rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
-
-            if rotation_mode > 0 then
-                self.screen.native_rotation_mode = rotation_mode
-                self.screen.cur_rotation_mode = rotation_mode
-            end
-
+            if rotation_mode > 0 then self.screen.native_rotation_mode = rotation_mode end
+            self.screen:setRotationMode(rotation_mode)
             lipc_handle:close()
         end
     end
-
-    Kindle.init(self)
+    -- put awesome back to sleep
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -STOP awesome")
+    end
 
     self.input:registerEventAdjustHook(KindleGyroTransform)
     self.input.handleMiscEv = function(this, ev)
