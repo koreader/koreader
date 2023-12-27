@@ -930,7 +930,7 @@ function KindleOasis:init()
         if lipc_handle then
             local orientation_code = lipc_handle:get_string_property(
                 "com.lab126.winmgr", "accelerometer")
-            logger.dbg("orientation_code = ", orientation_code)
+            logger.dbg("orientation_code =", orientation_code)
             local rotation_mode = 0
             if orientation_code then
                 if orientation_code == "U" then
@@ -943,7 +943,6 @@ function KindleOasis:init()
                     rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
-            logger.dbg("rotation_mode = ", rotation_mode)
             if rotation_mode > 0 then self.screen.native_rotation_mode = rotation_mode end
             self.screen:setRotationMode(rotation_mode)
             lipc_handle:close()
@@ -1051,7 +1050,7 @@ function KindleOasis2:init()
         if lipc_handle then
             local orientation_code = lipc_handle:get_string_property(
                 "com.lab126.winmgr", "accelerometer")
-            logger.dbg("orientation_code = ", orientation_code)
+            logger.dbg("orientation_code =", orientation_code)
             local rotation_mode = 0
             if orientation_code then
                 if orientation_code == "U" then
@@ -1064,7 +1063,6 @@ function KindleOasis2:init()
                     rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
-            logger.dbg("rotation_mode = ", rotation_mode)
             if rotation_mode > 0 then self.screen.native_rotation_mode = rotation_mode end
             self.screen:setRotationMode(rotation_mode)
             lipc_handle:close()
@@ -1129,7 +1127,7 @@ function KindleOasis3:init()
         if lipc_handle then
             local orientation_code = lipc_handle:get_string_property(
                 "com.lab126.winmgr", "accelerometer")
-            logger.dbg("orientation_code = ", orientation_code)
+            logger.dbg("orientation_code =", orientation_code)
             local rotation_mode = 0
             if orientation_code then
                 if orientation_code == "U" then
@@ -1142,7 +1140,6 @@ function KindleOasis3:init()
                     rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
-            logger.dbg("rotation_mode = ", rotation_mode)
             if rotation_mode > 0 then self.screen.native_rotation_mode = rotation_mode end
             self.screen:setRotationMode(rotation_mode)
             lipc_handle:close()
@@ -1350,7 +1347,7 @@ function KindleScribe:init()
         if lipc_handle then
             local orientation_code = lipc_handle:get_string_property(
                 "com.lab126.winmgr", "accelerometer")
-            logger.dbg("orientation_code = ", orientation_code)
+            logger.dbg("orientation_code =", orientation_code)
             local rotation_mode = 0
             if orientation_code then
                 if orientation_code == "U" then
@@ -1363,7 +1360,6 @@ function KindleScribe:init()
                     rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
-            logger.dbg("rotation_mode = ", rotation_mode)
             if rotation_mode > 0 then
                 self.screen.native_rotation_mode = rotation_mode
             end
