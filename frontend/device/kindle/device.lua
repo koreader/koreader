@@ -1356,7 +1356,7 @@ function KindleScribe:init()
             end
             logger.dbg("rotation_mode = ", rotation_mode)
             if rotation_mode > 0 then
-                self.screen.native_rotation_mode = rotation_mode                
+                self.screen.native_rotation_mode = rotation_mode
             end
             self.screen:setRotationMode(rotation_mode)
             lipc_handle:close()
