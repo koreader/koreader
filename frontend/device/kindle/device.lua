@@ -900,9 +900,8 @@ end
 
 function KindleOasis:init()
     -- temporarily wake up awesome
-    if os.getenv("AWESOME_STOPPED") == "yes" then
-        os.execute("killall -CONT awesome")
-    end
+    if os.getenv("AWESOME_STOPPED") == "yes" then os.execute("killall -CONT awesome") end
+
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -923,7 +922,7 @@ function KindleOasis:init()
             [109] = "RPgBack",
         }
     }
-
+    --- @note: See comments in KindleOasis2:init() for details.
     local haslipc, lipc = pcall(require, "liblipclua")
     if haslipc and lipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
@@ -950,9 +949,7 @@ function KindleOasis:init()
         end
     end
     -- put awesome back to sleep
-    if os.getenv("AWESOME_STOPPED") == "yes" then
-        os.execute("killall -STOP awesome")
-    end
+    if os.getenv("AWESOME_STOPPED") == "yes" then os.execute("killall -STOP awesome") end
 
     self.input:registerEventAdjustHook(OasisGyroTranslation)
     self.input.handleMiscEv = function(this, ev)
@@ -1014,9 +1011,8 @@ end
 
 function KindleOasis2:init()
     -- temporarily wake up awesome
-    if os.getenv("AWESOME_STOPPED") == "yes" then
-        os.execute("killall -CONT awesome")
-    end
+    if os.getenv("AWESOME_STOPPED") == "yes" then os.execute("killall -CONT awesome") end
+
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -1044,6 +1040,8 @@ function KindleOasis2:init()
     --        See #2206 & #2209 for the original KOA implementation, which obviously doesn't quite cut it here...
     --        See also <https://www.mobileread.com/forums/showthread.php?t=298302&page=5>
     --        See also #11159 for details about the solution (Kindle Scribe as an example)
+    --        In regular mode, awesome is woken up for a brief moment for lipc calls.
+    --        In no-framework mode, this works as is.
     -- NOTE: It'd take some effort to actually start KOReader while in a LANDSCAPE orientation,
     --       since they're only exposed inside the stock reader, and not the Home/KUAL Booklets.
     local haslipc, lipc = pcall(require, "liblipclua")
@@ -1072,9 +1070,7 @@ function KindleOasis2:init()
         end
     end
     -- put awesome back to sleep
-    if os.getenv("AWESOME_STOPPED") == "yes" then
-        os.execute("killall -STOP awesome")
-    end
+    if os.getenv("AWESOME_STOPPED") == "yes" then os.execute("killall -STOP awesome") end
 
     self.input:registerEventAdjustHook(KindleGyroTransform)
     self.input.handleMiscEv = function(this, ev)
@@ -1101,9 +1097,8 @@ end
 
 function KindleOasis3:init()
     -- temporarily wake up awesome
-    if os.getenv("AWESOME_STOPPED") == "yes" then
-        os.execute("killall -CONT awesome")
-    end
+    if os.getenv("AWESOME_STOPPED") == "yes" then os.execute("killall -CONT awesome") end
+
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -1153,9 +1148,7 @@ function KindleOasis3:init()
         end
     end
     -- put awesome back to sleep
-    if os.getenv("AWESOME_STOPPED") == "yes" then
-        os.execute("killall -STOP awesome")
-    end
+    if os.getenv("AWESOME_STOPPED") == "yes" then os.execute("killall -STOP awesome") end
 
     self.input:registerEventAdjustHook(KindleGyroTransform)
     self.input.handleMiscEv = function(this, ev)
@@ -1331,9 +1324,8 @@ end
 
 function KindleScribe:init()
     -- temporarily wake up awesome
-    if os.getenv("AWESOME_STOPPED") == "yes" then
-        os.execute("killall -CONT awesome")
-    end
+    if os.getenv("AWESOME_STOPPED") == "yes" then os.execute("killall -CONT awesome") end
+
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -1351,8 +1343,6 @@ function KindleScribe:init()
     self.screen:_MTK_ToggleFastMode(true)
 
     --- @note The same quirks as on the Oasis 2 and 3 apply ;).
-    --        In regular mode, awesome is woken up for a brief moment to help with lipc calls.
-    --        In no-framework mode, this works as is.
     local haslipc, lipc = pcall(require, "liblipclua")
     if haslipc and lipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
@@ -1381,9 +1371,7 @@ function KindleScribe:init()
         end
     end
     -- put awesome back to sleep
-    if os.getenv("AWESOME_STOPPED") == "yes" then
-        os.execute("killall -STOP awesome")
-    end
+    if os.getenv("AWESOME_STOPPED") == "yes" then os.execute("killall -STOP awesome") end
 
     -- Setup accelerometer rotation input
     self.input:registerEventAdjustHook(KindleGyroTransform)
