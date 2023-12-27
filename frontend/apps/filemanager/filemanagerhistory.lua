@@ -83,9 +83,9 @@ function FileManagerHistory:updateItemTable()
     end
     local subtitle
     if self.search_string then
-        subtitle = T("Search results (%1)", #item_table)
+        subtitle = T(_("Search results (%1)"), #item_table)
     elseif self.filter ~= "all" then
-        subtitle = T("Status: %1 (%2)", filter_text[self.filter]:lower(), #item_table)
+        subtitle = T(_("Status: %1 (%2)"), filter_text[self.filter]:lower(), #item_table)
     end
     self.hist_menu:switchItemTable(nil, item_table, select_number, nil, subtitle or "")
 end
