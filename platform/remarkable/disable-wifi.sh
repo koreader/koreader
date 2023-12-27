@@ -10,6 +10,11 @@ if pidof wpa_supplicant > /dev/null; then
     wpa_cli terminate
 fi
 
+# stop dhcpcd if not enabled
+if ! systemctl is-enabled -q dhcpcd; then
+    systemctl stop dhcpcd
+fi
+
 # power down wifi interface
 ifconfig wlan0 down
 
