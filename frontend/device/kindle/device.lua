@@ -945,7 +945,9 @@ function KindleOasis:init()
                     rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
-            if rotation_mode > 0 then self.screen.native_rotation_mode = rotation_mode end
+            if rotation_mode > 0 then
+                self.screen.native_rotation_mode = rotation_mode
+            end
             self.screen:setRotationMode(rotation_mode)
             lipc_handle:close()
         end
@@ -1069,7 +1071,9 @@ function KindleOasis2:init()
                     rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
-            if rotation_mode > 0 then self.screen.native_rotation_mode = rotation_mode end
+            if rotation_mode > 0 then
+                self.screen.native_rotation_mode = rotation_mode
+            end
             self.screen:setRotationMode(rotation_mode)
             lipc_handle:close()
         end
@@ -1150,7 +1154,9 @@ function KindleOasis3:init()
                     rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
-            if rotation_mode > 0 then self.screen.native_rotation_mode = rotation_mode end
+            if rotation_mode > 0 then
+                self.screen.native_rotation_mode = rotation_mode
+            end
             self.screen:setRotationMode(rotation_mode)
             lipc_handle:close()
         end
