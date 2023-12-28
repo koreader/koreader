@@ -19,6 +19,6 @@ fi
 ifconfig wlan0 down
 
 # unload brcmfmac kernel module
-if lsmod | grep -q brcmfmac; then
+if grep -q "^brcmfmac " "/proc/modules"; then
     modprobe -r brcmfmac
 fi

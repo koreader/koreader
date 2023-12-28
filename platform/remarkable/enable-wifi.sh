@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # load brcmfmac kernel module
-if ! lsmod | grep -q brcmfmac; then
+if ! grep -q "^brcmfmac " "/proc/modules"; then
     modprobe brcmfmac
     sleep 1
 fi
