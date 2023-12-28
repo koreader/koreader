@@ -832,6 +832,7 @@ function ReaderView:onSetRotationMode(rotation)
             -- We don't need to re-layout anything, so just turn by 180°
             Screen:setRotationMode(rotation)
             UIManager:onRotation()
+            Notification:notify(T(_("Rotation mode set to: %1"), optionsutil:getOptionText("SetRotationMode", rotation)))
             return true
         end
 
