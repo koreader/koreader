@@ -640,7 +640,7 @@ local KindleScribe = Kindle:extend{
     display_dpi = 300,
     touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event",
     -- NOTE: TBC whether dithering actually works on Bellatrix3...
-    canHWDither = no,
+    canHWDither = yes,
     canDoSwipeAnimation = yes,
 }
 
