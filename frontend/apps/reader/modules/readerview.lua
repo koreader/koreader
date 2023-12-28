@@ -27,8 +27,6 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local framebuffer = require("ffi/framebuffer")
-
 local ReaderView = OverlapGroup:extend{
     document = nil,
     view_modules = nil, -- array
@@ -822,7 +820,7 @@ function ReaderView:onSetRotationMode(rotation)
         end
 
         local requested_screen_mode -- landscape or portrait
-        if rotation == framebuffer.DEVICE_ROTATED_UPRIGHT or rotation == framebuffer.ICE_ROTATED_UPSIDE_DOWN then
+        if rotation == Screen.DEVICE_ROTATED_UPRIGHT or rotation == Screen.ICE_ROTATED_UPSIDE_DOWN then
             requested_screen_mode = "portrait"
         else
             requested_screen_mode = "landscape"
