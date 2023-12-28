@@ -789,8 +789,8 @@ function Input:handleTouchEv(ev)
         elseif ev.code == C.ABS_MT_TRACKING_ID then
             if self.snow_protocol then
                 -- NOTE: We'll never get an ABS_MT_SLOT event, instead we have a slot-like ABS_MT_TRACKING_ID value...
-                --       This also means this may never be set to -1 on contact lift,
-                --       which is why we instead rely on EV_KEY:BTN_TOUCH:0 for that (c.f., handleKeyBoardEv).
+                --       This also means that, unlike on sane devices, this will *never* be set to -1 on contact lift,
+                --       which is why we instead have to rely on EV_KEY:BTN_TOUCH:0 for that (c.f., handleKeyBoardEv).
                 -- NOTE: In order to more seamlessly deal with devices *mistakenly* flagged as snow_protocol,
                 --       this should only be done if ev.value >= 0, in order to prevent using -1 as an actual slot id ;).
                 --       This shouldn't really happen, but we've seen at least *one* weird Clara HD
