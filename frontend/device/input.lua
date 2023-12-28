@@ -801,8 +801,8 @@ function Input:handleTouchEv(ev)
                     -- NOTE: Simply skipping the slot storage setup for -1 would not be enough, as it would only fix ST handling.
                     --       MT would be broken, because buddy contact detection in GestureDetector looks at slot +/- 1,
                     --       whereas we'd be having the main contact point at a stupidly large slot number
-                    --       (because it would match ABS_MT_TRACKING_ID), while the second contact would probably be at slot 1,
-                    --       because that one would have required emitting a proper ABS_MT_SLOT...
+                    --       (because it would match ABS_MT_TRACKING_ID, given the lack of ABS_MT_SLOT, at least for the first input frame),
+                    --       while the second contact would be at slot 1, because it would immediately have required emitting a proper ABS_MT_SLOT event...
                     logger.warn("Input: Disabled snow_protocol quirks because your device's hardware revision doesn't appear to need them!")
                     self.snow_protocol = false
                 else
