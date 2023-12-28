@@ -27,6 +27,8 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
+local framebuffer = require("ffi/framebuffer")
+
 local ReaderView = OverlapGroup:extend{
     document = nil,
     view_modules = nil, -- array
@@ -815,11 +817,29 @@ end
 
 function ReaderView:onSetRotationMode(rotation)
     if rotation ~= nil then
-        if rotation == Screen:getRotationMode() then
+        if rotation == Screen:getRotationMode() then -- no change
             return true
         end
+
+        local requested_screen_mode -- landscape or portrait
+        if rotation == framebuffer.DEVICE_ROTATED_UPRIGHT or rotation == framebuffer.ICE_ROTATED_UPSIDE_DOWN then
+            requested_screen_mode = "portrait"
+        else
+            requested_screen_mode = "landscape"
+        end
+
+        local old_rotation_mode = Screen:getRotationMode()
+        local old_screen_mode = Screen:getScreenMode()
+        if rotation and rotation ~= old_rotation_mode and requested_screen_mode == old_screen_mode then
+            -- Cheaper than a full SetRotationMode event, as we don't need to re-layout anything.
+            Screen:setRotationMode(rotation)
+            UIManager:onRotation()
+            return true
+        end
+
         Screen:setRotationMode(rotation)
     end
+
     UIManager:setDirty(self.dialog, "full")
     local new_screen_size = Screen:getSize()
     self.ui:handleEvent(Event:new("SetDimensions", new_screen_size))
