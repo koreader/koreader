@@ -11,7 +11,7 @@ function AndroidPowerD:frontlightIntensityHW()
 end
 
 function AndroidPowerD:setIntensityHW(intensity)
-    -- if frontlight switch was toggled of, turn it on
+    -- If the frontlight switch was off, turn it on.
     android.enableFrontlightSwitch()
 
     self.fl_intensity = intensity
@@ -58,6 +58,10 @@ function AndroidPowerD:turnOffFrontlightHW()
         return
     end
     android.setScreenBrightness(self.fl_min)
+
+    if android.hasStandaloneWarmth() then
+        android.setScreenWarmth(self.fl_warmth_min)
+    end
 end
 
 function AndroidPowerD:turnOnFrontlightHW(done_callback)
@@ -69,6 +73,9 @@ function AndroidPowerD:turnOnFrontlightHW(done_callback)
 
     android.setScreenBrightness(math.floor(self.fl_intensity * self.bright_diff / self.fl_max))
 
+    if android.hasStandaloneWarmth() then
+        android.setScreenWarmth(math.floor(self.fl_warmth / self.warm_diff))
+    end
     return false
 end
 
