@@ -6,12 +6,12 @@ if ! grep -q "^brcmfmac " "/proc/modules"; then
     sleep 1
 fi
 
-# clean stop of wpa_supplicant service, used by xochitl
+# stop wpa_supplicant service cleanly, used by xochitl
 if systemctl is-active -q wpa_supplicant; then
     systemctl stop wpa_supplicant
 fi
 
-# clean stop of non-service wpa_supplicant
+# stop non-service wpa_supplicant cleanly
 if pidof wpa_supplicant >/dev/null; then
     wpa_cli terminate
 fi
