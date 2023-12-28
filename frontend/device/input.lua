@@ -793,12 +793,13 @@ function Input:handleTouchEv(ev)
                 -- NOTE: We'll never get an ABS_MT_SLOT event, instead we have a slot-like ABS_MT_TRACKING_ID value...
                 --       This also means that, unlike on sane devices, this will *never* be set to -1 on contact lift,
                 --       which is why we instead have to rely on EV_KEY:BTN_TOUCH:0 for that (c.f., handleKeyBoardEv).
-                -- NOTE: In order to more seamlessly deal with devices *mistakenly* flagged as snow_protocol,
-                --       this should only be done if ev.value >= 0, in order to prevent using -1 as an actual slot id ;).
-                --       This shouldn't really happen, but we've seen at least *one* weird Clara HD
-                --       (a device historically requiring these quirks) with sane input frames
-                --       (c.f., https://www.mobileread.com/forums/showpost.php?p=4383629&postcount=997).
-                self:setupSlotData(ev.value)
+                if ev.value ~= -1 then
+                    -- NOTE: While *actual* snow_protocol devices will *never* emit an EV_ABS:ABS_MT_TRACKING_ID:-1 event,
+                    --       we've seen brand new revisions of snow_protocol devices shipping with sane panels instead,
+                    --       so this safety net is necessary to avoid using -1 as a slot id on these...
+                    --       (c.f., https://www.mobileread.com/forums/showpost.php?p=4383629&postcount=997).
+                    self:setupSlotData(ev.value)
+                end
             end
             self:setCurrentMtSlotChecked("id", ev.value)
         elseif ev.code == C.ABS_MT_TOOL_TYPE then
