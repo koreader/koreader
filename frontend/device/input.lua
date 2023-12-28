@@ -532,15 +532,17 @@ function Input:resetState()
 end
 
 function Input:handleKeyBoardEv(ev)
-    -- Detect loss of contact for the "snow" protocol...
-    -- NOTE: Some ST devices may also behave similarly, but we handle those via ABS_PRESSURE
+    -- Detect loss of contact for the "snow" protocol, as we *never* get EV_ABS:ABS_MT_TRACKING_ID:-1 on those...
+    -- NOTE: The same logic *could* be used on *some* ST devices to detect contact states,
+    --       but we instead prefer using EV_ABS:ABS_PRESSURE on those,
+    --       as it appears to be more common than EV_KEY:BTN_TOUCH on the devices we care about...
     if self.snow_protocol then
         if ev.code == C.BTN_TOUCH then
             if ev.value == 0 then
                 -- Kernel sends it after loss of contact for *all* slots,
                 -- only once the final contact point has been lifted.
                 if #self.MTSlots == 0 then
-                    -- Likely, since this is usually in its own event stream,
+                    -- Likely, since this is usually in its own input frame,
                     -- meaning self.MTSlots has *just* been cleared by our last EV_SYN:SYN_REPORT handler...
                     -- So, poke at the actual data to find the slots that are currently active (i.e., in the down state),
                     -- and re-populate a minimal self.MTSlots array that simply switches them to the up state ;).
@@ -553,7 +555,7 @@ function Input:handleKeyBoardEv(ev)
                 else
                     -- Unlikely, given what we mentioned above...
                     -- Note that, funnily enough, its EV_KEY:BTN_TOUCH:1 counterpart
-                    -- *can* be in the same initial event stream as the EV_ABS batch...
+                    -- *can* be in the same initial input frame as the EV_ABS batch...
                     for _, MTSlot in ipairs(self.MTSlots) do
                         self:setMtSlot(MTSlot.slot, "id", -1)
                     end
@@ -933,14 +935,15 @@ end
 
 function Input:handleTouchEvLegacy(ev)
     -- Single Touch Protocol.
-    -- Some devices emit both singletouch and multitouch events,
-    -- on those devices, the 'handleTouchEv' function may not behave as expected. Use this one instead.
+    -- Some devices emit both singletouch and multitouch events.
+    -- On those devices, `handleTouchEv` may not behave as expected. Use this one instead.
     if ev.type == C.EV_ABS then
         if ev.code == C.ABS_X then
             self:setCurrentMtSlotChecked("x", ev.value)
         elseif ev.code == C.ABS_Y then
             self:setCurrentMtSlotChecked("y", ev.value)
         elseif ev.code == C.ABS_PRESSURE then
+            -- This is the least common denominator we can use to detect contact down & lift...
             if ev.value ~= 0 then
                 self:setCurrentMtSlotChecked("id", 1)
             else
