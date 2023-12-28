@@ -793,11 +793,19 @@ function Input:handleTouchEv(ev)
                 -- NOTE: We'll never get an ABS_MT_SLOT event, instead we have a slot-like ABS_MT_TRACKING_ID value...
                 --       This also means that, unlike on sane devices, this will *never* be set to -1 on contact lift,
                 --       which is why we instead have to rely on EV_KEY:BTN_TOUCH:0 for that (c.f., handleKeyBoardEv).
-                if ev.value ~= -1 then
+                if ev.value == -1 then
                     -- NOTE: While *actual* snow_protocol devices will *never* emit an EV_ABS:ABS_MT_TRACKING_ID:-1 event,
                     --       we've seen brand new revisions of snow_protocol devices shipping with sane panels instead,
-                    --       so this safety net is necessary to avoid using -1 as a slot id on these...
+                    --       so we'll need to disable the quirks at runtime to handle these properly...
                     --       (c.f., https://www.mobileread.com/forums/showpost.php?p=4383629&postcount=997).
+                    -- NOTE: Simply skipping the slot storage setup for -1 would not be enough, as it would only fix ST handling.
+                    --       MT would be broken, because buddy contact detection in GestureDetector looks at slot +/- 1,
+                    --       whereas we'd be having the main contact point at a stupidly large slot number
+                    --       (because it would match ABS_MT_TRACKING_ID), while the second contact would probably be at slot 1,
+                    --       because that one would have required emitting a proper ABS_MT_SLOT...
+                    logger.warn("Input: Disabled snow_protocol quirks because your device's hardware revision doesn't appear to need them!")
+                    self.snow_protocol = false
+                else
                     self:setupSlotData(ev.value)
                 end
             end
