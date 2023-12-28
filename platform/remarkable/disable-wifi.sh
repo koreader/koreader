@@ -15,7 +15,7 @@ if ! systemctl is-enabled -q dhcpcd; then
     systemctl stop dhcpcd
 fi
 
-# power down wi-fi interface
+# power down wifi interface
 ifconfig wlan0 down
 
 # unload brcmfmac kernel module
