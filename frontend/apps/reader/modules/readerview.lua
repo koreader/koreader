@@ -820,7 +820,7 @@ function ReaderView:onSetRotationMode(rotation)
         end
 
         local requested_screen_mode -- landscape or portrait
-        if rotation == Screen.DEVICE_ROTATED_UPRIGHT or rotation == Screen.ICE_ROTATED_UPSIDE_DOWN then
+        if rotation == Screen.DEVICE_ROTATED_UPRIGHT or rotation == Screen.DEVICE_ROTATED_UPSIDE_DOWN then
             requested_screen_mode = "portrait"
         else
             requested_screen_mode = "landscape"
@@ -828,8 +828,8 @@ function ReaderView:onSetRotationMode(rotation)
 
         local old_rotation_mode = Screen:getRotationMode()
         local old_screen_mode = Screen:getScreenMode()
-        if rotation and rotation ~= old_rotation_mode and requested_screen_mode == old_screen_mode then
-            -- Cheaper than a full SetRotationMode event, as we don't need to re-layout anything.
+        if rotation ~= old_rotation_mode and requested_screen_mode == old_screen_mode then
+            -- We don't need to re-layout anything, so just turn by 180°
             Screen:setRotationMode(rotation)
             UIManager:onRotation()
             return true
