@@ -1,4 +1,5 @@
 local Generic = require("device/generic/device") -- <= look at this file!
+local Geom = require("ui/geometry")
 local UIManager
 local logger = require("logger")
 local ffi = require("ffi")
@@ -706,6 +707,7 @@ end
 local PocketBook743K3 = PocketBook:extend{
     model = "PBInkPadColor3",
     display_dpi = 300,
+    viewport = Geom:new{x=3, y=2, w=1395, h=1864},
     color_saturation = 1.5,
     hasColorScreen = yes,
     canHWDither = yes, -- Adjust color saturation with inkview
