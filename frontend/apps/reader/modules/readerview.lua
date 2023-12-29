@@ -815,7 +815,8 @@ end
 
 function ReaderView:onSetRotationMode(rotation)
     if rotation ~= nil then
-        if rotation == Screen:getRotationMode() then -- no change
+        local old_rotation_mode = Screen:getRotationMode()
+        if rotation == old_rotation_mode then
             return true
         end
 
@@ -826,12 +827,10 @@ function ReaderView:onSetRotationMode(rotation)
             requested_screen_mode = "landscape"
         end
 
-        local old_rotation_mode = Screen:getRotationMode()
-        local old_screen_mode = Screen:getScreenMode()
-        if rotation ~= old_rotation_mode and requested_screen_mode == old_screen_mode then
-            -- We don't need to re-layout anything, so just turn by 180°
+        if rotation ~= old_rotation_mode and requested_screen_mode == Screen:getScreenMode() then
+            -- No layout change, just rotate & repaint with a flash
             Screen:setRotationMode(rotation)
-            UIManager:onRotation()
+            UIManager:setDirty(self.dialog, "full")
             Notification:notify(T(_("Rotation mode set to: %1"), optionsutil:getOptionText("SetRotationMode", rotation)))
             return true
         end
@@ -839,7 +838,7 @@ function ReaderView:onSetRotationMode(rotation)
         Screen:setRotationMode(rotation)
     end
 
-    UIManager:setDirty(self.dialog, "full")
+    UIManager:setDirty(nil, "full") -- SetDimensions will only request a partial, we want a flash
     local new_screen_size = Screen:getSize()
     self.ui:handleEvent(Event:new("SetDimensions", new_screen_size))
     self.ui:onScreenResize(new_screen_size)

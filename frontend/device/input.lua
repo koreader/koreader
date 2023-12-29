@@ -1016,6 +1016,8 @@ function Input:handleMiscGyroEv(ev)
         end
     else
         if rotation_mode and rotation_mode ~= old_rotation_mode then
+            -- NOTE: We do *NOT* send a broadcast manually, and instead rely on the main loop's sendEvent:
+            --       this ensures that only widgets that actually know how to handle a rotation will do so ;).
             return Event:new("SetRotationMode", rotation_mode)
         end
     end
