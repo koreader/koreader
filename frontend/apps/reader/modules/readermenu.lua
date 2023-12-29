@@ -181,7 +181,6 @@ end
 
 ReaderMenu.onReaderReady = ReaderMenu.initGesListener
 
-
 function ReaderMenu:setUpdateItemTable()
     for _, widget in pairs(self.registered_widgets) do
         local ok, err = pcall(widget.addToMainMenu, widget, self.menu_items)
