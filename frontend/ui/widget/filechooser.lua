@@ -266,7 +266,7 @@ function FileChooser:getList(path, collate)
     else -- error, probably "permission denied"
         if unreadable_dir_content[path] then
             -- Add this dummy item that will be replaced with a message by genItemTable()
-            table.insert(dirs, FileChooser:getListItem(path, "./.", path, {}))
+            table.insert(dirs, self:getListItem(path, "./.", path, {}))
             -- If we knew about some content (if we had come up from them
             -- to this directory), have them shown
             for k, v in pairs(unreadable_dir_content[path]) do
