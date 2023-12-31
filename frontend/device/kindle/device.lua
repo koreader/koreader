@@ -639,7 +639,7 @@ local KindleScribe = Kindle:extend{
     hasGSensor = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/touch",
-    canHWDither = yes,
+    canHWDither = no,
     canDoSwipeAnimation = yes,
 }
 
