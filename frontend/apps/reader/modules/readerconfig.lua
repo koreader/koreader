@@ -158,6 +158,13 @@ function ReaderConfig:onSwipeShowConfigMenu(ges)
     end
 end
 
+-- For some reason, things are fine and dandy without any of this for rotations, but we need it for actual resizes...
+function ReaderConfig:onSetDimensions(dimen)
+    if self.config_dialog then
+        self.config_dialog:init()
+    end
+end
+
 function ReaderConfig:onCloseCallback()
     self.last_panel_index = self.config_dialog.panel_index
     self.config_dialog = nil
