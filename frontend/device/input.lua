@@ -984,41 +984,37 @@ end
 --- (Translation should be done via registerEventAdjustHook in Device implementations).
 --- This needs to be called *via handleGyroEv* in a handleMiscEv implementation (c.f., Kobo, Kindle or PocketBook).
 function Input:handleMiscGyroEv(ev)
-    local rotation_mode, screen_mode
+    local rotation
     if ev.value == C.DEVICE_ROTATED_UPRIGHT then
         -- i.e., UR
-        rotation_mode = framebuffer.DEVICE_ROTATED_UPRIGHT
-        screen_mode = "portrait"
+        rotation = framebuffer.DEVICE_ROTATED_UPRIGHT
     elseif ev.value == C.DEVICE_ROTATED_CLOCKWISE then
         -- i.e., CW
-        rotation_mode = framebuffer.DEVICE_ROTATED_CLOCKWISE
-        screen_mode = "landscape"
+        rotation = framebuffer.DEVICE_ROTATED_CLOCKWISE
     elseif ev.value == C.DEVICE_ROTATED_UPSIDE_DOWN then
         -- i.e., UD
-        rotation_mode = framebuffer.DEVICE_ROTATED_UPSIDE_DOWN
-        screen_mode = "portrait"
+        rotation = framebuffer.DEVICE_ROTATED_UPSIDE_DOWN
     elseif ev.value == C.DEVICE_ROTATED_COUNTER_CLOCKWISE then
         -- i.e., CCW
-        rotation_mode = framebuffer.DEVICE_ROTATED_COUNTER_CLOCKWISE
-        screen_mode = "landscape"
+        rotation = framebuffer.DEVICE_ROTATED_COUNTER_CLOCKWISE
     else
         -- Discard FRONT/BACK
         return
     end
 
-    local old_rotation_mode = self.device.screen:getRotationMode()
+    local old_rotation = self.device.screen:getRotationMode()
     if self.device:isGSensorLocked() then
-        local old_screen_mode = self.device.screen:getScreenMode()
-        if rotation_mode and rotation_mode ~= old_rotation_mode and screen_mode == old_screen_mode then
+        local matching_orientation = bit.band(rotation, 1) == bit.band(old_rotation, 1)
+        if rotation and rotation ~= old_rotation and matching_orientation then
             -- Cheaper than a full SetRotationMode event, as we don't need to re-layout anything.
-            self.device.screen:setRotationMode(rotation_mode)
+            self.device.screen:setRotationMode(rotation)
             UIManager:onRotation()
         end
     else
-        if rotation_mode and rotation_mode ~= old_rotation_mode then
+        if rotation and rotation ~= old_rotation then
             -- NOTE: We do *NOT* send a broadcast manually, and instead rely on the main loop's sendEvent:
             --       this ensures that only widgets that actually know how to handle a rotation will do so ;).
-            return Event:new("SetRotationMode", rotation_mode)
+            return Event:new("SetRotationMode", rotation)
         end
     end
 end

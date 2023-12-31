@@ -161,6 +161,7 @@ end
 -- For some reason, things are fine and dandy without any of this for rotations, but we need it for actual resizes...
 function ReaderConfig:onSetDimensions(dimen)
     if self.config_dialog then
+        -- init basically calls update & initGesListener and nothing else, which is exactly what we want.
         self.config_dialog:init()
     end
 end
