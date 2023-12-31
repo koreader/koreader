@@ -1170,7 +1170,7 @@ function UIManager:_refresh(mode, region, dither)
     end
 
     -- if no region is specified, use the screen's dimensions
-    region = region or Geom:new{w=Screen:getWidth(), h=Screen:getHeight()}
+    region = region or Geom:new{x = 0, y = 0, w = Screen:getWidth(), h = Screen:getHeight()}
 
     -- if no dithering hint was specified, don't request dithering
     dither = dither or false
