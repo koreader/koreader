@@ -815,19 +815,21 @@ end
 
 function ReaderView:onSetRotationMode(rotation)
     if rotation ~= nil then
-        local old_rotation_mode = Screen:getRotationMode()
-        if rotation == old_rotation_mode then
+        local old_rotation = Screen:getRotationMode()
+        if rotation == old_rotation then
             return true
         end
 
-        local requested_screen_mode -- landscape or portrait
-        if rotation == Screen.DEVICE_ROTATED_UPRIGHT or rotation == Screen.DEVICE_ROTATED_UPSIDE_DOWN then
-            requested_screen_mode = "portrait"
-        else
-            requested_screen_mode = "landscape"
-        end
+        -- NOTE: We cannot rely on getScreenMode, as it actually checks the screen dimensions, instead of the rotation mode.
+        --       (i.e., it returns how the screen *looks* like, not how it's oriented relative to its native layout).
+        --       This would horribly break if you started in Portrait (both rotation and visually),
+        --       then resized your window to a Landscape layout *without* changing the rotation.
+        --       If you then attempted to switch to a Landscape *rotation*, it would mistakenly think the layout hadn't changed!
+        --       So, instead, as we're concerned with *rotation* layouts, just compare the two.
+        --       We use LinuxFB-style constants, so, Portraits are even, Landscapes are odds, making this trivial.
+        local matching_orientation = bit.band(rotation, 1) == bit.band(old_rotation, 1)
 
-        if rotation ~= old_rotation_mode and requested_screen_mode == Screen:getScreenMode() then
+        if rotation ~= old_rotation and matching_orientation then
             -- No layout change, just rotate & repaint with a flash
             Screen:setRotationMode(rotation)
             UIManager:setDirty(self.dialog, "full")
