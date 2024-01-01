@@ -17,33 +17,30 @@ local function setMask(source)
     G_reader_settings:saveSetting("notification_sources_to_show_mask", source)
 end
 
-local function someEnabled()
-    return band(getMask(), Notification.SOURCE_SOME) == Notification.SOURCE_SOME
+local function isEnabled(source)
+    return band(getMask(), source) == source
 end
 
--- i.e., MORE - SOME
-local SOURCE_MORE = band(Notification.SOURCE_MORE, bnot(Notification.SOURCE_SOME))
-local function moreEnabled()
-    return band(getMask(), SOURCE_MORE) == SOURCE_MORE
+-- Helper function to avoid repeating boilerplate code, as we just flip a few bits one way or the other
+local function genMenuItem(source, label, help, separator)
+    return {
+        text = label,
+        help_text = help,
+        checked_func = function() return isEnabled(source) end,
+        callback = function()
+            if isEnabled(source) then
+                setMask(
+                    band(getMask(), bnot(source)))
+            else
+                setMask(
+                    bor(getMask(), source))
+            end
+        end,
+        separator = separator,
+    }
 end
 
-local function dispatcherEnabled()
-    return band(getMask(), Notification.SOURCE_DISPATCHER) == Notification.SOURCE_DISPATCHER
-end
-
--- i.e., ALL - DEFAULT
-local SOURCE_MISC = band(Notification.SOURCE_ALL, bnot(Notification.SOURCE_DEFAULT))
-local function miscEnabled()
-    return band(getMask(), SOURCE_MISC) == SOURCE_MISC
-end
-
---[[
-local function allEnabled()
-    return band(getMask(), Notification.SOURCE_ALL) == Notification.SOURCE_ALL
-end
---]]
-
--- NOTE: Default is MORE + DISPATCHER
+-- NOTE: Default is MORE + DISPATCHER; i.e., BOTTOM_MENU_FINE + BOTTOM_MENU_MORE + BOTTOM_MENU_PROGRESS + DISPATCHER
 return {
     text = _("Notifications"),
     help_text = _([[Notification popups may be shown at the top of screen on various occasions.
@@ -53,84 +50,13 @@ This allows selecting which to show or hide.]]),
         return  value ~= 0
     end,
     sub_item_table = {
-        {
-            text = _("Some notifications from bottom menu"),
-            help_text = _("Show notification popups for bottom menu settings with no visual feedback."),
-            checked_func = someEnabled,
-            callback = function()
-                if someEnabled() then
-                    -- Can't have more without some, so disable more in full
-                    setMask(
-                        band(getMask(), bnot(Notification.SOURCE_MORE)))
-                else
-                    setMask(
-                        bor(getMask(), Notification.SOURCE_SOME))
-                end
-            end,
-        },
-        {
-            text = _("More notifications from bottom menu"),
-            help_text = _("Show notification popups for more bottom menu settings."),
-            checked_func = moreEnabled,
-            callback = function()
-                if moreEnabled() then
-                    -- We *can* keep some without more, so only disable the diff between the two
-                    setMask(
-                        band(getMask(), bnot(SOURCE_MORE)))
-                else
-                    -- But do enable the full set
-                    setMask(
-                        bor(getMask(), Notification.SOURCE_MORE))
-                end
-            end,
-        },
-        {
-            text = _("Notifications from miscellaneous sources"),
-            help_text = _("Show notification popups for even more bottom menu settings, as well as standalone & misc notifications."),
-            checked_func = miscEnabled,
-            callback = function()
-                if miscEnabled() then
-                    setMask(
-                        band(getMask(), bnot(SOURCE_MISC)))
-                else
-                    setMask(
-                        bor(getMask(), SOURCE_MISC))
-                end
-            end,
-        },
-        {
-            text = _("Notifications from gestures and profiles"),
-            help_text = _("Show notification popups for changes from gestures and the profiles plugin."),
-            checked_func = dispatcherEnabled,
-            callback = function()
-                if dispatcherEnabled() then
-                    setMask(
-                        band(getMask(), bnot(Notification.SOURCE_DISPATCHER)))
-                else
-                    setMask(
-                        bor(getMask(), Notification.SOURCE_DISPATCHER))
-                end
-            end,
-            separator = true,
-        },
-        --[[
-        {
-            text = _("Notifications from everything"),
-            help_text = _("Show all notification popups, no matter the source. This will flip all of the above at once."),
-            checked_func = allEnabled,
-            radio = true,
-            callback = function()
-                if allEnabled() then
-                    setMask(
-                        band(getMask(), bnot(Notification.SOURCE_ALL)))
-                else
-                    setMask(
-                        bor(getMask(), Notification.SOURCE_ALL))
-                end
-            end,
-            separator = true,
-        },
-        --]]
+        genMenuItem(Notification.SOURCE_BOTTOM_MENU_ICON, _("From bottom menu icons")),
+        genMenuItem(Notification.SOURCE_BOTTOM_MENU_TOGGLE, _("From bottom menu toggles")),
+        genMenuItem(Notification.SOURCE_BOTTOM_MENU_FINE, _("From bottom menu \u{00b1} buttons")), -- Poor man's +/- w/ \u{207a}\u{2044}\u{208b} doesn't look too great because subscript minus sits on the baseline in most fonts...
+        genMenuItem(Notification.SOURCE_BOTTOM_MENU_MORE, _("From bottom menu \u{22ee} buttons")), -- vertical ellipsis
+        genMenuItem(Notification.SOURCE_BOTTOM_MENU_PROGRESS, _("From bottom menu progress bars")),
+        genMenuItem(Notification.SOURCE_DISPATCHER, _("From gestures and profiles")),
+        genMenuItem(Notification.SOURCE_OTHER, _("From all other sources"), nil, true),
         {
             text = _("Show past notifications"),
             callback = function()
