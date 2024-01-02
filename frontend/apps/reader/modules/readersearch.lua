@@ -4,6 +4,7 @@ local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
+local Menu = require("ui/widget/menu")
 local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
@@ -124,6 +125,13 @@ function ReaderSearch:onShowFulltextSearchInput()
                     id = "close",
                     callback = function()
                         UIManager:close(self.input_dialog)
+                    end,
+                },
+                {
+                    text = _("All"),
+                    enabled = self.ui.paging and true or false,
+                    callback = function()
+                        self:searchAll()
                     end,
                 },
                 {
@@ -414,6 +422,44 @@ function ReaderSearch:searchNext(pattern, direction, regex, case_insensitive)
     self.direction = direction
     self._expect_back_results = direction == 1
     return self:search(pattern, 1, regex, case_insensitive)
+end
+
+function ReaderSearch:searchAll()
+    local search_text = self.input_dialog:getInputText()
+    if search_text == "" then return end
+    UIManager:close(self.input_dialog)
+    UIManager:show(InfoMessage:new{ text = _("Searching…"), timeout = 0.1 })
+    self.last_search_text = search_text
+    search_text = Utf8Proc.normalize_NFC(search_text)
+    self.case_insensitive = not self.check_button_case.checked
+    UIManager:nextTick(function()
+        local res = self.ui.document:findTextAll(search_text, self.case_insensitive)
+        if #res > 0 then
+            self:showResultsAll(res)
+        else
+            UIManager:show(InfoMessage:new{ text = _("No results in the document") })
+        end
+    end)
+end
+
+function ReaderSearch:showResultsAll(res)
+    local menu
+    menu = Menu:new{
+        title = T(_("Search results (%1)"), #res),
+        item_table = res,
+        covers_fullscreen = true,
+        is_borderless = true,
+        is_popout = false,
+        onMenuSelect = function(self_menu, item)
+            self_menu.close_callback()
+            self.ui.link:onGotoLink({ page = item.mandatory - 1 })
+            self.view.highlight.temp[item.mandatory] = item.boxes
+        end,
+        close_callback = function()
+            UIManager:close(menu)
+        end,
+    }
+    UIManager:show(menu)
 end
 
 return ReaderSearch
