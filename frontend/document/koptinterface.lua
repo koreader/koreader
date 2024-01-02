@@ -1336,7 +1336,7 @@ function KoptInterface:nativeToPageRectTransform(doc, pageno, rect)
     end
 end
 
-local function all_matches(boxes, pattern, caseInsensitive)
+local function get_pattern_list(pattern, caseInsensitive)
     -- pattern list of single words
     local plist = {}
     -- (as in util.splitToWords(), but only splitting on spaces, keeping punctuations)
@@ -1349,6 +1349,10 @@ local function all_matches(boxes, pattern, caseInsensitive)
             table.insert(plist, caseInsensitive and Utf8Proc.lowercase(util.fixUtf8(word, "?")) or word)
         end
     end
+    return plist
+end
+
+local function all_matches(boxes, plist, caseInsensitive)
     local pnb = #plist
     -- return mached word indices from index i, j
     local function match(i, j)
@@ -1410,8 +1414,9 @@ end
 function KoptInterface:findAllMatches(doc, pattern, caseInsensitive, page)
     local text_boxes = doc:getPageTextBoxes(page)
     if not text_boxes then return end
+    local plist = get_pattern_list(pattern, caseInsensitive)
     local matches = {}
-    for indices in all_matches(text_boxes or {}, pattern, caseInsensitive) do
+    for indices in all_matches(text_boxes, plist, caseInsensitive) do
         for _, index in ipairs(indices) do
             local i, j = unpack(index)
             local word = text_boxes[i][j]
@@ -1462,6 +1467,87 @@ function KoptInterface:findText(doc, pattern, origin, reverse, caseInsensitive, 
             return matches
         end
     end
+end
+
+local function get_prev_word(text_boxes, i, j)
+    if j > 1 then -- this line, previous word
+        j = j - 1
+    else
+        if i > 1 then -- previous line, last word
+            i = i - 1
+            j = #text_boxes[i]
+        end
+    end
+    local prev_word = text_boxes[i][j]
+    if prev_word then
+        return prev_word.word, i, j
+    end
+end
+
+local function get_next_word(text_boxes, i, j)
+    if j < #text_boxes[i] then -- this line, next word
+        j = j + 1
+    else
+        if i < #text_boxes then -- next line, first word
+            i = i + 1
+            j = 1
+        end
+    end
+    local next_word = text_boxes[i][j]
+    if next_word then
+        return next_word.word, i, j
+    end
+end
+
+function KoptInterface:findTextAll(doc, pattern, caseInsensitive)
+    local plist = get_pattern_list(pattern, caseInsensitive)
+    local res = {}
+    for page = 1, doc:getPageCount() do
+        local text_boxes = doc:getPageTextBoxes(page)
+        if text_boxes then
+            for indices in all_matches(text_boxes, plist, caseInsensitive) do -- each found pattern in the page
+                local res_item = { -- item of the Menu item_table
+                    text = nil,
+                    mandatory = page,
+                    boxes = {}, -- to draw temp highlight in onMenuSelect
+                }
+                local text = { pattern }
+                for ind, index in ipairs(indices) do -- each word in the pattern
+                    local i, j = unpack(index)
+                    local word = text_boxes[i][j]
+                    local word_box = {
+                        x = word.x0, y = word.y0,
+                        w = word.x1 - word.x0,
+                        h = word.y1 - word.y0,
+                    }
+                    table.insert(res_item.boxes, self:nativeToPageRectTransform(doc, page, word_box))
+                    if ind == 1 then -- append previous words
+                        local prev_word, new_i, new_j = get_prev_word(text_boxes, i, j)
+                        if prev_word then
+                            table.insert(text, 1, prev_word)
+                            prev_word = get_prev_word(text_boxes, new_i, new_j)
+                            if prev_word then
+                                table.insert(text, 1, prev_word)
+                            end
+                        end
+                    end
+                    if ind == #indices then -- append next words
+                        local next_word, new_i, new_j = get_next_word(text_boxes, i, j)
+                        if next_word then
+                            table.insert(text, next_word)
+                            next_word = get_next_word(text_boxes, new_i, new_j)
+                            if next_word then
+                                table.insert(text, next_word)
+                            end
+                        end
+                    end
+                end
+                res_item.text = table.concat(text, " ")
+                table.insert(res, res_item)
+            end
+        end
+    end
+    return res
 end
 
 --[[--
