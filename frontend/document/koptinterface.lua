@@ -1493,40 +1493,33 @@ function KoptInterface:findTextAll(doc, pattern, caseInsensitive, nb_context_wor
                     boxes = {}, -- to draw temp highlight in onMenuSelect
                 }
                 local text = {}
+                local i_prev, j_prev, i_next, j_next
                 for ind, index in ipairs(indices) do -- each word in the pattern
                     local i, j = unpack(index)
                     local word = text_boxes[i][j]
-                    local word_box = {
+                    res_item.boxes[ind] = {
                         x = word.x0, y = word.y0,
                         w = word.x1 - word.x0,
                         h = word.y1 - word.y0,
                     }
-                    table.insert(res_item.boxes, word_box)
+                    text[ind] = word.word
                     if ind == 1 then
-                        local prev_text = get_prev_text(text_boxes, i, j, nb_context_words)
-                        if prev_text then
-                            table.insert(text, prev_text)
-                        end
-                        local wrd = "【" .. word.word
-                        if #indices == 1 then
-                            wrd = wrd .. "】"
-                        end
-                        table.insert(text, wrd)
-                    end
-                    if ind ~= 1 and ind ~= #indices then
-                        table.insert(text, word.word)
+                        i_prev, j_prev = i, j
                     end
                     if ind == #indices then
-                        if ind ~= 1 then
-                            table.insert(text, word.word .. "】")
-                        end
-                        local next_text = get_next_text(text_boxes, i, j, nb_context_words)
-                        if next_text then
-                            table.insert(text, next_text)
-                        end
+                        i_next, j_next = i, j
                     end
                 end
-                res_item.text = table.concat(text, " ")
+                text = "【" .. table.concat(text, " ") .. "】"
+                local prev_text = get_prev_text(text_boxes, i_prev, j_prev, nb_context_words)
+                if prev_text then
+                    text = prev_text .. " " .. text
+                end
+                local next_text = get_next_text(text_boxes, i_next, j_next, nb_context_words)
+                if next_text then
+                    text = text .. " " .. next_text
+                end
+                res_item.text = text
                 table.insert(res, res_item)
             end
         end
