@@ -195,6 +195,8 @@ function LanguageSupport:improveWordSelection(selection)
     end
 
     local language_code = self.ui.doc_props.language or "unknown"
+    logger.dbg("LOGG-7 self.ui.doc_props.language", self.ui.doc_props.language)
+    logger.dbg("LOGG-7 self.ui.doc_props.language", self.ui.doc_props)
     logger.dbg("language support: improving", language_code, "selection", selection)
 
     -- Rather than requiring each language plugin to use document: methods
