@@ -206,6 +206,41 @@ local FileChooser = Menu:extend{
                 return item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
             end,
         },
+        percent_natural = {
+            -- sort 90% > 50% > 0% > unopened > 100%
+            text = _("percent - unopened last natural"),
+            menu_order = 90,
+            can_collate_mixed = false,
+            init_sort_func = function(cache)
+                local natsort
+                natsort, cache = sort.natsort_cmp(cache)
+                return function(a, b)
+                    if a.percent_finished == b.percent_finished then
+                        return natsort(a.text, b.text)
+                    end
+                    if a.percent_finished == 1 then
+                        return false
+                    end
+                    if b.percent_finished == 1 then
+                        return true
+                    end
+
+                    return a.percent_finished > b.percent_finished
+                end, cache
+            end,
+            item_func = function(item)
+                local percent_finished
+                item.opened = DocSettings:hasSidecarFile(item.path)
+                if item.opened then
+                    local doc_settings = DocSettings:open(item.path)
+                    percent_finished = doc_settings:readSetting("percent_finished")
+                end
+                item.percent_finished = percent_finished or 0
+            end,
+            mandatory_func = function(item)
+                return item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
+            end,
+        },
     },
 }
 
