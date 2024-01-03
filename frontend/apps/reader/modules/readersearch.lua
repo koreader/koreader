@@ -19,6 +19,7 @@ local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
 local ReaderSearch = WidgetContainer:extend{
     direction = 0, -- 0 for search forward, 1 for search backward
     case_insensitive = true, -- default to case insensitive
+    nb_context_words = 3, -- number of words before and after the search string in All search results
 
     -- For a regex like [a-z\. ] many many hits are found, maybe the number of chars on a few pages.
     -- We don't try to catch them all as this is a reader and not a computer science playground. ;)
@@ -433,27 +434,35 @@ function ReaderSearch:searchAll()
     search_text = Utf8Proc.normalize_NFC(search_text)
     self.case_insensitive = not self.check_button_case.checked
     UIManager:nextTick(function()
-        local res = self.ui.document:findTextAll(search_text, self.case_insensitive)
-        if #res > 0 then
-            self:showResultsAll(res)
+        if self.search_text_all ~= self.last_search_text then
+            self.search_text_all = self.last_search_text
+            self.res = self.ui.document:findTextAll(search_text, self.case_insensitive, self.nb_context_words)
+        end
+        if #self.res > 0 then
+            self:showResultsAll()
         else
             UIManager:show(InfoMessage:new{ text = _("No results in the document") })
         end
     end)
 end
 
-function ReaderSearch:showResultsAll(res)
+function ReaderSearch:showResultsAll()
     local menu
     menu = Menu:new{
-        title = T(_("Search results (%1)"), #res),
-        item_table = res,
+        title = T(_("Search results (%1)"), #self.res),
+        item_table = self.res,
         covers_fullscreen = true,
         is_borderless = true,
         is_popout = false,
         onMenuSelect = function(self_menu, item)
             self_menu.close_callback()
-            self.ui.link:onGotoLink({ page = item.mandatory - 1 })
-            self.view.highlight.temp[item.mandatory] = item.boxes
+            local page = item.mandatory
+            local boxes = {}
+            for i, box in ipairs(item.boxes) do
+                boxes[i] = self.ui.document:nativeToPageRectTransform(page, box)
+            end
+            self.ui.link:onGotoLink({ page = page - 1 })
+            self.view.highlight.temp[page] = boxes
         end,
         close_callback = function()
             UIManager:close(menu)
