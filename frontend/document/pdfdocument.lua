@@ -341,8 +341,8 @@ function PdfDocument:findText(pattern, origin, reverse, caseInsensitive, page)
     return self.koptinterface:findText(self, pattern, origin, reverse, caseInsensitive, page)
 end
 
-function PdfDocument:findTextAll(pattern, caseInsensitive)
-    return self.koptinterface:findTextAll(self, pattern, caseInsensitive)
+function PdfDocument:findTextAll(pattern, caseInsensitive, nb_context_words)
+    return self.koptinterface:findTextAll(self, pattern, caseInsensitive, nb_context_words)
 end
 
 function PdfDocument:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, hinting)
