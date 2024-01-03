@@ -215,17 +215,20 @@ local FileChooser = Menu:extend{
                 local natsort
                 natsort, cache = sort.natsort_cmp(cache)
                 return function(a, b)
-                    if a.percent_finished == b.percent_finished then
+                    -- smooth 2 decmial points (0.00) instead of 16 decimal numbers
+                    local apercent = math.floor(a.percent_finished * 100) / 100
+                    local bpercent = math.floor(b.percent_finished * 100) / 100
+                    if apercent == bpercent then
                         return natsort(a.text, b.text)
                     end
-                    if a.percent_finished == 1 then
+                    if apercent == 1 then
                         return false
                     end
-                    if b.percent_finished == 1 then
+                    if bpercent == 1 then
                         return true
                     end
 
-                    return a.percent_finished > b.percent_finished
+                    return apercent > bpercent
                 end, cache
             end,
             item_func = function(item)
@@ -235,7 +238,7 @@ local FileChooser = Menu:extend{
                     local doc_settings = DocSettings:open(item.path)
                     percent_finished = doc_settings:readSetting("percent_finished")
                 end
-                item.percent_finished = percent_finished or 0
+                item.percent_finished = percent_finished or -1
             end,
             mandatory_func = function(item)
                 return item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
