@@ -911,7 +911,7 @@ Get word and word box around `pos`.
 function KoptInterface:getWordFromBoxes(boxes, pos)
     logger.dbg("LOGG-4 KI.lua getWordFromBoxes: CHECK IF THERE ARE input boxes =", boxes)
     if not pos or not boxes or #boxes == 0 then return {} end
-    local i, j = getWordBoxIndices(boxes, pos)    
+    local i, j = getWordBoxIndices(boxes, pos)
     logger.dbg("LOGG-4 KI.lua getWordFromBoxes: input boxes =", boxes)
     logger.dbg("LOGG-4 KI.lua getWordFromBoxes: input pos =", pos)
     logger.dbg("LOGG-4 KI.lua getWordFromBoxes: i =", i, "j =", j)
