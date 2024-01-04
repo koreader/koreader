@@ -1513,11 +1513,11 @@ function KoptInterface:findTextAll(doc, pattern, caseInsensitive, nb_context_wor
                 text = "【" .. table.concat(text, " ") .. "】"
                 local prev_text = get_prev_text(text_boxes, i_prev, j_prev, nb_context_words)
                 if prev_text then
-                    text = prev_text .. " " .. text
+                    text = prev_text .. text
                 end
                 local next_text = get_next_text(text_boxes, i_next, j_next, nb_context_words)
                 if next_text then
-                    text = text .. " " .. next_text
+                    text = text .. next_text
                 end
                 res_item.text = text
                 table.insert(res, res_item)
