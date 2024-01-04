@@ -129,6 +129,7 @@ function ReaderSearch:onShowFulltextSearchInput()
                     end,
                 },
                 {
+                    -- @translators Search all entries in entire document
                     text = _("All"),
                     enabled = self.ui.paging and true or false,
                     callback = function()
@@ -192,7 +193,7 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
             local no_results = true -- for notification
             local res = search_func(self, search_term, param, regex, case_insensitive)
             if res then
-                if self.ui.document.info.has_pages then
+                if self.ui.paging then
                     no_results = false
                     self.ui.link:onGotoLink({page = res.page - 1}, neglect_current_location)
                     self.view.highlight.temp[res.page] = res
