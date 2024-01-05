@@ -387,11 +387,11 @@ function ReaderSearch:search(pattern, origin, regex, case_insensitive)
     Device:setIgnoreInput(true)
     local retval, words_found = self.ui.document:findText(pattern, origin, direction, case_insensitive, page, regex, self.max_hits)
     Device:setIgnoreInput(false)
-    self:showErrorNotification(words_found, regex, self.mah_hits)
+    self:showErrorNotification(words_found, regex, self.max_hits)
     return retval
 end
 
-function ReaderSearch:showErrorNotification(words_found, regex, mah_hits)
+function ReaderSearch:showErrorNotification(words_found, regex, max_hits)
     regex = regex or self.use_regex
     max_hits = max_hits or self.max_hits_all
     local regex_retval = regex and self.ui.document:getAndClearRegexSearchError()
