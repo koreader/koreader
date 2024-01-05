@@ -1480,7 +1480,7 @@ function KoptInterface:findText(doc, pattern, origin, reverse, caseInsensitive, 
     end
 end
 
-function KoptInterface:findTextAll(doc, pattern, caseInsensitive, nb_context_words)
+function KoptInterface:findTextAll(doc, pattern, caseInsensitive, nb_context_words, max_hits)
     local plist = get_pattern_list(pattern, caseInsensitive)
     local res = {}
     for page = 1, doc:getPageCount() do
@@ -1521,6 +1521,9 @@ function KoptInterface:findTextAll(doc, pattern, caseInsensitive, nb_context_wor
                 end
                 res_item.text = text
                 table.insert(res, res_item)
+                if #res == max_hits then
+                    return res
+                end
             end
         end
     end
