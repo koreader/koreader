@@ -30,6 +30,7 @@ local ReaderSearch = WidgetContainer:extend{
     -- go with the speed of light.
     -- Setting max_hits higher, does not mean to require more memory. More hits means smaller single hits.
     max_hits = 2048, -- maximum hits for search; timinges tested on a Tolino
+    max_hits_all = 5000, -- maximum hits for All search
 
     -- internal: whether we expect results on previous pages
     -- (can be different from self.direction, if, from a page in the
@@ -105,7 +106,14 @@ function ReaderSearch:searchCallback(reverse)
         UIManager:show(InfoMessage:new{ text = error_message })
     else
         UIManager:close(self.input_dialog)
-        self:onShowSearchDialog(search_text, reverse, self.use_regex, self.case_insensitive)
+        if reverse then
+            self:onShowSearchDialog(search_text, reverse, self.use_regex, self.case_insensitive)
+        else
+            local Trapper = require("ui/trapper")
+            Trapper:wrap(function()
+                self:searchAll(search_text)
+            end)
+        end
     end
 end
 
@@ -131,9 +139,8 @@ function ReaderSearch:onShowFulltextSearchInput()
                 {
                     -- @translators Search all entries in entire document
                     text = _("All"),
-                    enabled = self.ui.paging and true or false,
                     callback = function()
-                        self:searchAll()
+                        self:searchCallback()
                     end,
                 },
                 {
@@ -380,6 +387,13 @@ function ReaderSearch:search(pattern, origin, regex, case_insensitive)
     Device:setIgnoreInput(true)
     local retval, words_found = self.ui.document:findText(pattern, origin, direction, case_insensitive, page, regex, self.max_hits)
     Device:setIgnoreInput(false)
+    self:showErrorNotification(words_found, regex, self.mah_hits)
+    return retval
+end
+
+function ReaderSearch:showErrorNotification(words_found, regex, mah_hits)
+    regex = regex or self.use_regex
+    max_hits = max_hits or self.max_hits_all
     local regex_retval = regex and self.ui.document:getAndClearRegexSearchError()
     if regex and regex_retval ~= 0 then
         local error_message
@@ -392,13 +406,12 @@ function ReaderSearch:search(pattern, origin, regex, case_insensitive)
             text = error_message,
             timeout = false,
         })
-    elseif words_found and words_found > self.max_hits then
+    elseif words_found and words_found >= max_hits then
         UIManager:show(Notification:new{
             text =_("Too many hits"),
             timeout = 4,
          })
     end
-    return retval
 end
 
 function ReaderSearch:searchFromStart(pattern, _, regex, case_insensitive)
@@ -426,50 +439,81 @@ function ReaderSearch:searchNext(pattern, direction, regex, case_insensitive)
     return self:search(pattern, 1, regex, case_insensitive)
 end
 
-function ReaderSearch:searchAll()
-    local search_text = self.input_dialog:getInputText()
-    if search_text == "" then return end
-    UIManager:close(self.input_dialog)
-    UIManager:show(InfoMessage:new{ text = _("Searching…"), timeout = 0.1 })
-    self.last_search_text = search_text
-    search_text = Utf8Proc.normalize_NFC(search_text)
-    self.case_insensitive = not self.check_button_case.checked
-    UIManager:nextTick(function()
-        if self.search_text_all ~= self.last_search_text then
-            self.search_text_all = self.last_search_text
-            self.res = self.ui.document:findTextAll(search_text, self.case_insensitive, self.nb_context_words)
-        end
-        if #self.res > 0 then
-            self:showResultsAll()
-        else
-            UIManager:show(InfoMessage:new{ text = _("No results in the document") })
-        end
-    end)
+function ReaderSearch:searchAll(search_text)
+    local last_search_hash = self.last_search_text .. tostring(self.case_insensitive) .. tostring(self.use_regex)
+    if self.last_search_hash ~= last_search_hash then
+        local Trapper = require("ui/trapper")
+        local info = InfoMessage:new{text = _("Searching… Tap to interrupt.")}
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        local completed, res = Trapper:dismissableRunInSubprocess(function()
+            return self.ui.document:findTextAll(search_text,
+                self.case_insensitive, self.nb_context_words, self.max_hits_all, self.use_regex)
+        end, info)
+        if not completed then return end
+        UIManager:close(info)
+        self.last_search_hash = last_search_hash
+        self.res_all = res
+    end
+    if self.res_all and #self.res_all > 0 then
+        self:showResultsAll()
+    else
+        UIManager:show(InfoMessage:new{ text = _("No results in the document") })
+    end
 end
 
 function ReaderSearch:showResultsAll()
+    if self.ui.rolling then
+        for _, item in ipairs(self.res_all) do
+            local text = item.word or ""
+            if item.word_prefix then
+                text = item.word_prefix .. text
+            end
+            if item.word_suffix then
+                text = text .. item.word_suffix
+            end
+            text = "【" .. text .. "】"
+            if item.prev_text then
+                text = item.prev_text .. text
+            end
+            if item.next_text then
+                text = text .. item.next_text
+            end
+            item.text = text
+            item.mandatory = self.ui.bookmark:getBookmarkPageString(item.start)
+        end
+    end
+
     local menu
     menu = Menu:new{
-        title = T(_("Search results (%1)"), #self.res),
-        item_table = self.res,
+        title = T(_("Search results (%1)"), #self.res_all),
+        subtitle = T(_("Query: %1"), self.last_search_text),
+        item_table = self.res_all,
         covers_fullscreen = true,
         is_borderless = true,
         is_popout = false,
+        title_bar_fm_style = true,
         onMenuSelect = function(self_menu, item)
             self_menu.close_callback()
-            local page = item.mandatory
-            local boxes = {}
-            for i, box in ipairs(item.boxes) do
-                boxes[i] = self.ui.document:nativeToPageRectTransform(page, box)
+            if self.ui.rolling then
+                self.ui.link:onGotoLink({ xpointer = item.start })
+                self.ui.document:getTextFromXPointers(item.start, item["end"], true) -- highlight
+            else
+                local page = item.mandatory
+                local boxes = {}
+                for i, box in ipairs(item.boxes) do
+                    boxes[i] = self.ui.document:nativeToPageRectTransform(page, box)
+                end
+                self.ui.link:onGotoLink({ page = page - 1 })
+                self.view.highlight.temp[page] = boxes
             end
-            self.ui.link:onGotoLink({ page = page - 1 })
-            self.view.highlight.temp[page] = boxes
         end,
         close_callback = function()
             UIManager:close(menu)
         end,
     }
     UIManager:show(menu)
+    self:showErrorNotification(#self.res_all)
 end
 
 return ReaderSearch
