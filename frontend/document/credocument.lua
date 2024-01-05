@@ -1389,6 +1389,12 @@ function CreDocument:findText(pattern, origin, reverse, caseInsensitive, page, r
         pattern, origin, reverse, caseInsensitive and 1 or 0, regex and 1 or 0, max_hits or 200)
 end
 
+function CreDocument:findTextAll(pattern, caseInsensitive, nb_context_words, max_hits, regex, no_words)
+    -- no_words: true - get xpointers only, false - get matched word (or part of it and prefix/suffix to build the full word)
+    return self._document:findTextAll(
+        pattern, caseInsensitive and 1 or 0, regex and 1 or 0, max_hits, no_words and 0 or 1, nb_context_words)
+end
+
 function CreDocument:enableInternalHistory(toggle)
     -- Setting this to 0 unsets crengine internal bookmarks highlighting,
     -- and as a side effect, disable internal history and the need to build
