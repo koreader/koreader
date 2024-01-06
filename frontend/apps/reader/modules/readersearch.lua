@@ -496,7 +496,8 @@ function ReaderSearch:showFindAllResults()
         onMenuSelect = function(self_menu, item)
             self_menu.close_callback()
             if self.ui.rolling then
-                self.ui.link:onGotoLink({ xpointer = item.start })
+                self.ui.link:addCurrentLocationToStack()
+                self.ui.rolling:onGotoXPointer(item.start, item.start) -- show target line marker
                 self.ui.document:getTextFromXPointers(item.start, item["end"], true) -- highlight
             else
                 local page = item.mandatory
