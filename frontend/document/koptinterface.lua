@@ -1347,23 +1347,23 @@ function KoptInterface:nativeToPageRectTransform(doc, pageno, rect)
     end
 end
 
-local function get_pattern_list(pattern, caseInsensitive)
+local function get_pattern_list(pattern, case_insensitive)
     -- pattern list of single words
     local plist = {}
     -- (as in util.splitToWords(), but only splitting on spaces, keeping punctuations)
     for word in util.gsplit(pattern, "%s+") do
         if util.hasCJKChar(word) then
             for char in util.gsplit(word, "[\192-\255][\128-\191]+", true) do
-                table.insert(plist, caseInsensitive and Utf8Proc.lowercase(util.fixUtf8(char, "?")) or char)
+                table.insert(plist, case_insensitive and Utf8Proc.lowercase(util.fixUtf8(char, "?")) or char)
             end
         else
-            table.insert(plist, caseInsensitive and Utf8Proc.lowercase(util.fixUtf8(word, "?")) or word)
+            table.insert(plist, case_insensitive and Utf8Proc.lowercase(util.fixUtf8(word, "?")) or word)
         end
     end
     return plist
 end
 
-local function all_matches(boxes, plist, caseInsensitive)
+local function all_matches(boxes, plist, case_insensitive)
     local pnb = #plist
     -- return mached word indices from index i, j
     local function match(i, j)
@@ -1377,7 +1377,7 @@ local function all_matches(boxes, plist, caseInsensitive)
             end
             if i > #boxes then break end
             local box = boxes[i][j]
-            local word = caseInsensitive and Utf8Proc.lowercase(util.fixUtf8(box.word, "?")) or box.word
+            local word = case_insensitive and Utf8Proc.lowercase(util.fixUtf8(box.word, "?")) or box.word
             local pword = plist[pindex]
             local matched
             if pnb == 1 then -- single word in plist
@@ -1422,12 +1422,12 @@ local function all_matches(boxes, plist, caseInsensitive)
     end)
 end
 
-function KoptInterface:findAllMatches(doc, pattern, caseInsensitive, page)
+function KoptInterface:findAllMatches(doc, pattern, case_insensitive, page)
     local text_boxes = doc:getPageTextBoxes(page)
     if not text_boxes then return end
-    local plist = get_pattern_list(pattern, caseInsensitive)
+    local plist = get_pattern_list(pattern, case_insensitive)
     local matches = {}
-    for indices in all_matches(text_boxes, plist, caseInsensitive) do
+    for indices in all_matches(text_boxes, plist, case_insensitive) do
         for _, index in ipairs(indices) do
             local i, j = unpack(index)
             local word = text_boxes[i][j]
@@ -1443,8 +1443,8 @@ function KoptInterface:findAllMatches(doc, pattern, caseInsensitive, page)
     return matches
 end
 
-function KoptInterface:findText(doc, pattern, origin, reverse, caseInsensitive, pageno)
-    logger.dbg("Koptinterface: find text", pattern, origin, reverse, caseInsensitive, pageno)
+function KoptInterface:findText(doc, pattern, origin, reverse, case_insensitive, pageno)
+    logger.dbg("Koptinterface: find text", pattern, origin, reverse, case_insensitive, pageno)
     local last_pageno = doc:getPageCount()
     local start_page, end_page
     if reverse == 1 then
@@ -1472,7 +1472,7 @@ function KoptInterface:findText(doc, pattern, origin, reverse, caseInsensitive, 
         end
     end
     for i = start_page, end_page, (reverse == 1) and -1 or 1 do
-        local matches = self:findAllMatches(doc, pattern, caseInsensitive, i)
+        local matches = self:findAllMatches(doc, pattern, case_insensitive, i)
         if #matches > 0 then
             matches.page = i
             return matches
@@ -1480,13 +1480,13 @@ function KoptInterface:findText(doc, pattern, origin, reverse, caseInsensitive, 
     end
 end
 
-function KoptInterface:findTextAll(doc, pattern, caseInsensitive, nb_context_words, max_hits)
-    local plist = get_pattern_list(pattern, caseInsensitive)
+function KoptInterface:findAllText(doc, pattern, case_insensitive, nb_context_words, max_hits)
+    local plist = get_pattern_list(pattern, case_insensitive)
     local res = {}
     for page = 1, doc:getPageCount() do
         local text_boxes = doc:getPageTextBoxes(page)
         if text_boxes then
-            for indices in all_matches(text_boxes, plist, caseInsensitive) do -- each found pattern in the page
+            for indices in all_matches(text_boxes, plist, case_insensitive) do -- each found pattern in the page
                 local res_item = { -- item of the Menu item_table
                     text = nil,
                     mandatory = page,
