@@ -29,8 +29,8 @@ local ReaderSearch = WidgetContainer:extend{
     -- The speed of the search depends on the regexs. Complex ones might need some time, easy ones
     -- go with the speed of light.
     -- Setting max_hits higher, does not mean to require more memory. More hits means smaller single hits.
-    max_hits = 2048, -- maximum hits for search; timinges tested on a Tolino
-    max_hits_all = 5000, -- maximum hits for All search
+    max_hits = 2048, -- maximum hits for findText search; timinges tested on a Tolino
+    findall_max_hits = 5000, -- maximum hits for findAllText search
 
     -- internal: whether we expect results on previous pages
     -- (can be different from self.direction, if, from a page in the
@@ -111,7 +111,7 @@ function ReaderSearch:searchCallback(reverse)
         else
             local Trapper = require("ui/trapper")
             Trapper:wrap(function()
-                self:searchAll(search_text)
+                self:findAllText(search_text)
             end)
         end
     end
@@ -393,7 +393,7 @@ end
 
 function ReaderSearch:showErrorNotification(words_found, regex, max_hits)
     regex = regex or self.use_regex
-    max_hits = max_hits or self.max_hits_all
+    max_hits = max_hits or self.findall_max_hits
     local regex_retval = regex and self.ui.document:getAndClearRegexSearchError()
     if regex and regex_retval ~= 0 then
         local error_message
@@ -439,32 +439,32 @@ function ReaderSearch:searchNext(pattern, direction, regex, case_insensitive)
     return self:search(pattern, 1, regex, case_insensitive)
 end
 
-function ReaderSearch:searchAll(search_text)
+function ReaderSearch:findAllText(search_text)
     local last_search_hash = self.last_search_text .. tostring(self.case_insensitive) .. tostring(self.use_regex)
     if self.last_search_hash ~= last_search_hash then
         local Trapper = require("ui/trapper")
-        local info = InfoMessage:new{text = _("Searching… Tap to interrupt.")}
+        local info = InfoMessage:new{text = _("Searching… (tap to cancel)")}
         UIManager:show(info)
         UIManager:forceRePaint()
         local completed, res = Trapper:dismissableRunInSubprocess(function()
-            return self.ui.document:findTextAll(search_text,
-                self.case_insensitive, self.nb_context_words, self.max_hits_all, self.use_regex)
+            return self.ui.document:findAllText(search_text,
+                self.case_insensitive, self.nb_context_words, self.findall_max_hits, self.use_regex)
         end, info)
         if not completed then return end
         UIManager:close(info)
         self.last_search_hash = last_search_hash
-        self.res_all = res
+        self.findall_results = res
     end
-    if self.res_all and #self.res_all > 0 then
-        self:showResultsAll()
+    if self.findall_results and #self.findall_results > 0 then
+        self:showFindAllResults()
     else
         UIManager:show(InfoMessage:new{ text = _("No results in the document") })
     end
 end
 
-function ReaderSearch:showResultsAll()
-    if self.ui.rolling then
-        for _, item in ipairs(self.res_all) do
+function ReaderSearch:showFindAllResults()
+    if self.ui.rolling then -- for ui.paging: items are built in KoptInterface:findAllText()
+        for _, item in ipairs(self.findall_results) do
             local text = item.word or ""
             if item.word_prefix then
                 text = item.word_prefix .. text
@@ -486,9 +486,9 @@ function ReaderSearch:showResultsAll()
 
     local menu
     menu = Menu:new{
-        title = T(_("Search results (%1)"), #self.res_all),
+        title = T(_("Search results (%1)"), #self.findall_results),
         subtitle = T(_("Query: %1"), self.last_search_text),
-        item_table = self.res_all,
+        item_table = self.findall_results,
         covers_fullscreen = true,
         is_borderless = true,
         is_popout = false,
@@ -513,7 +513,7 @@ function ReaderSearch:showResultsAll()
         end,
     }
     UIManager:show(menu)
-    self:showErrorNotification(#self.res_all)
+    self:showErrorNotification(#self.findall_results)
 end
 
 return ReaderSearch
