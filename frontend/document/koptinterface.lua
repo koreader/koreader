@@ -1527,7 +1527,9 @@ function KoptInterface:findAllText(doc, pattern, case_insensitive, nb_context_wo
             end
         end
     end
-    return res
+    if #res > 0 then
+        return res
+    end
 end
 
 --[[--
