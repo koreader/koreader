@@ -441,9 +441,10 @@ end
 
 function ReaderSearch:findAllText(search_text)
     local last_search_hash = self.last_search_text .. tostring(self.case_insensitive) .. tostring(self.use_regex)
-    if self.last_search_hash ~= last_search_hash then
+    local not_cached = self.last_search_hash ~= last_search_hash
+    if not_cached then
         local Trapper = require("ui/trapper")
-        local info = InfoMessage:new{text = _("Searching… (tap to cancel)")}
+        local info = InfoMessage:new{ text = _("Searching… (tap to cancel)") }
         UIManager:show(info)
         UIManager:forceRePaint()
         local completed, res = Trapper:dismissableRunInSubprocess(function()
@@ -455,15 +456,15 @@ function ReaderSearch:findAllText(search_text)
         self.last_search_hash = last_search_hash
         self.findall_results = res
     end
-    if self.findall_results and #self.findall_results > 0 then
-        self:showFindAllResults()
+    if self.findall_results then
+        self:showFindAllResults(not_cached)
     else
         UIManager:show(InfoMessage:new{ text = _("No results in the document") })
     end
 end
 
-function ReaderSearch:showFindAllResults()
-    if self.ui.rolling then -- for ui.paging: items are built in KoptInterface:findAllText()
+function ReaderSearch:showFindAllResults(not_cached)
+    if self.ui.rolling and not_cached then -- for ui.paging: items are built in KoptInterface:findAllText()
         for _, item in ipairs(self.findall_results) do
             local text = item.word or ""
             if item.word_prefix then
