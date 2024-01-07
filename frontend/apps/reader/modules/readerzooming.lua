@@ -564,8 +564,6 @@ function ReaderZooming:getZoom(pageno)
             page_size.y = temp_y
 
             self.view:onBBoxUpdate(page_size)
-            page_size = ubbox_dimen
-            self.view:onBBoxUpdate(ubbox_dimen)
         else
             self.view:onBBoxUpdate(nil)
         end
