@@ -6,7 +6,7 @@ if systemctl is-active -q wpa_supplicant; then
 fi
 
 # stop non-service wpa_supplicant cleanly
-if pidof wpa_supplicant >/dev/null; then
+if pidof wpa_supplicant; then
     wpa_cli terminate
 fi
 
