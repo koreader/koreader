@@ -1147,10 +1147,48 @@ function ReaderHighlight:_getHighlightMenuAnchor()
 end
 
 function ReaderHighlight:_resetHoldTimer(clear)
-    if clear then
-        self.hold_last_time = nil
-    else
-        self.hold_last_time = UIManager:getTime()
+    if not self.long_hold_reached_action then
+        self.long_hold_reached_action = function()
+            self.long_hold_reached = true
+            -- Have ReaderView redraw and refresh ReaderFlipping and our state icon, avoiding flashes
+            UIManager:setDirty(self.dialog, "ui", self.view.flipping.dimen)
+        end
+    end
+    -- Unschedule if already set
+    UIManager:unschedule(self.long_hold_reached_action)
+
+    if not clear then
+        -- We don't need to handle long-hold and show its icon in some configurations
+        -- where it would not change the behaviour from the normal-hold one (but we still
+        -- need to go through the checks below to clear any long_hold_reached set when in
+        -- the word->multiwords selection transition).
+        -- (It feels we don't need to care about default_highlight_action="nothing" here.)
+        local handle_long_hold = true
+        if self.is_word_selection then
+            -- Single word normal-hold defaults to dict lookup, and long-hold defaults to "ask".
+            -- If normal-hold is set to use the highlight action, and this action is still "ask",
+            -- no need to handle long-hold.
+            if G_reader_settings:isTrue("highlight_action_on_single_word") and
+                   G_reader_settings:readSetting("default_highlight_action", "ask") == "ask" then
+                handle_long_hold = false
+            end
+        else
+            -- Multi words selection uses default_highlight_action, and no need for long-hold
+            -- if it is already "ask".
+            if G_reader_settings:readSetting("default_highlight_action", "ask") == "ask" then
+                handle_long_hold = false
+            end
+        end
+        if handle_long_hold then
+            -- (Default delay is 3 seconds as in the menu items)
+            UIManager:scheduleIn(G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3), self.long_hold_reached_action)
+        end
+    end
+    -- Unset flag and icon
+    if self.long_hold_reached then
+        self.long_hold_reached = false
+        -- Have ReaderView redraw and refresh ReaderFlipping with our state icon removed
+        UIManager:setDirty(self.dialog, "ui", self.view.flipping.dimen)
     end
 end
 
@@ -1576,6 +1614,9 @@ function ReaderHighlight:onHoldRelease()
         return true
     end
 
+    local long_final_hold = self.long_hold_reached
+    self:_resetHoldTimer(true) -- clear state
+
     local default_highlight_action = G_reader_settings:readSetting("default_highlight_action", "ask")
 
     if self.select_mode then -- extended highlighting, ending fragment
@@ -1592,16 +1633,6 @@ function ReaderHighlight:onHoldRelease()
         return true
     end
 
-    local long_final_hold = false
-    if self.hold_last_time then
-        local hold_duration = time.now() - self.hold_last_time
-        local long_hold_threshold_s = G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3) -- seconds
-        if hold_duration > time.s(long_hold_threshold_s) then
-            -- We stayed 3 seconds before release without updating selection
-            long_final_hold = true
-        end
-        self.hold_last_time = nil
-    end
     if self.is_word_selection then -- single-word selection
         if long_final_hold or G_reader_settings:isTrue("highlight_action_on_single_word") then
             self.is_word_selection = false
