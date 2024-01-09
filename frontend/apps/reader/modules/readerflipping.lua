@@ -26,6 +26,12 @@ function ReaderFlipping:init()
         width = icon_size,
         height = icon_size,
     }
+    self.long_hold_widget = IconWidget:new{
+        icon = "appbar.pokeball",
+        width = icon_size,
+        height = icon_size,
+        alpha = true,
+    }
     icon_size = Screen:scaleBySize(36)
     self.select_mode_widget = IconWidget:new{
         icon = "texture-box",
@@ -93,6 +99,8 @@ function ReaderFlipping:paintTo(bb, x, y)
     elseif self.ui.highlight.select_mode then
         -- highlight select mode
         widget = self.select_mode_widget
+    elseif self.ui.highlight.long_hold_reached then
+        widget = self.long_hold_widget
     elseif self.ui.rolling and self.ui.rolling.rendering_state then
         -- epub rerendering
         widget = self:getRollingRenderingStateIconWidget()
