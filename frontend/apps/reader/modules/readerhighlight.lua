@@ -568,6 +568,26 @@ function ReaderHighlight:addToMainMenu(menu_items)
             UIManager:show(items)
         end,
     })
+
+    if self.ui.rolling then
+        table.insert(menu_items.long_press.sub_item_table, {
+            text = _("Auto-scroll when selection reaches a corner"),
+            help_text = _([[
+Auto-scroll to show part of the previous page when your text selection reaches the top left corner, or of the next page when it reaches the bottom right corner.
+Except when in two columns mode, where this is limited to showing only the previous or next column.]]),
+            checked_func = function()
+                return not self.view.highlight.disabled and G_reader_settings:nilOrTrue("highlight_corner_scroll")
+            end,
+            enabled_func = function()
+                return not self.view.highlight.disabled
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrTrue("highlight_corner_scroll")
+                self.allow_corner_scroll = G_reader_settings:nilOrTrue("highlight_corner_scroll")
+            end,
+        })
+    end
+
     -- long_press menu is under taps_and_gestures menu which is not available for non touch device
     -- Clone long_press menu and change label making much meaning for non touch devices
     if not Device:isTouchDevice() and Device:hasDPad() then
@@ -1182,6 +1202,8 @@ function ReaderHighlight:onHold(arg, ges)
     end
     self.gest_pos = self.hold_pos
 
+    self.allow_hold_pan_corner_scroll = false -- reset this, don't allow that yet
+
     -- check if we were holding on an image
     -- we provide want_frames=true, so we get a list of images for
     -- animated GIFs (supported by ImageViewer)
@@ -1275,7 +1297,7 @@ function ReaderHighlight:onHoldPan(_, ges)
     self.holdpan_pos = self.view:screenToPageTransform(ges.pos)
     logger.dbg("holdpan position in page", self.holdpan_pos)
 
-    if self.ui.rolling and self.selected_text_start_xpointer then
+    if self.ui.rolling and self.allow_corner_scroll and self.selected_text_start_xpointer then
         -- With CreDocuments, allow text selection across multiple pages
         -- by (temporarily) switching to scroll mode when panning to the
         -- top left or bottom right corners.
@@ -1301,7 +1323,15 @@ function ReaderHighlight:onHoldPan(_, ges)
             is_in_next_page_corner = self.holdpan_pos.y > 7/8*self.screen_h
                                       and self.holdpan_pos.x > 7/8*self.screen_w
         end
-        if is_in_prev_page_corner or is_in_next_page_corner then
+        if not self.allow_hold_pan_corner_scroll then
+            if not is_in_prev_page_corner and not is_in_next_page_corner then
+                -- We expect the user to come from a non-corner zone into a corner
+                -- to enable this; this allows normal highlighting without scrolling
+                -- if the selection is started in the corner: the user will have to
+                -- move out from and go back in to trigger a scroll.
+                self.allow_hold_pan_corner_scroll = true
+            end
+        elseif is_in_prev_page_corner or is_in_next_page_corner then
             self:_resetHoldTimer()
             if self.was_in_some_corner then
                 -- Do nothing, wait for the user to move his finger out of that corner
@@ -2116,6 +2146,8 @@ function ReaderHighlight:onReadSettings(config)
         or G_reader_settings:readSetting("highlight_drawing_style") or self.view.highlight.saved_drawer
     self.view.highlight.disabled = G_reader_settings:has("default_highlight_action")
         and G_reader_settings:readSetting("default_highlight_action") == "nothing"
+
+    self.allow_corner_scroll = G_reader_settings:nilOrTrue("highlight_corner_scroll")
 
     -- panel zoom settings isn't supported in EPUB
     if self.document.info.has_pages then
