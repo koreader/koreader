@@ -52,8 +52,8 @@ This allows selecting which to show or hide.]]),
     sub_item_table = {
         genMenuItem(Notification.SOURCE_BOTTOM_MENU_ICON, _("From bottom menu icons")),
         genMenuItem(Notification.SOURCE_BOTTOM_MENU_TOGGLE, _("From bottom menu toggles")),
-        genMenuItem(Notification.SOURCE_BOTTOM_MENU_FINE, _("From bottom menu \u{00b1} buttons")), -- Poor man's +/- w/ \u{207a}\u{2044}\u{208b} doesn't look too great because subscript minus sits on the baseline in most fonts...
-        genMenuItem(Notification.SOURCE_BOTTOM_MENU_MORE, _("From bottom menu \u{22ee} buttons")), -- vertical ellipsis
+        genMenuItem(Notification.SOURCE_BOTTOM_MENU_FINE, _("From bottom menu ± buttons")), -- Poor man's +/- w/ \u{207a}\u{2044}\u{208b} doesn't look too great because subscript minus sits on the baseline in most fonts...
+        genMenuItem(Notification.SOURCE_BOTTOM_MENU_MORE, _("From bottom menu ⋮ buttons")),
         genMenuItem(Notification.SOURCE_BOTTOM_MENU_PROGRESS, _("From bottom menu progress bars")),
         genMenuItem(Notification.SOURCE_DISPATCHER, _("From gestures and profiles")),
         genMenuItem(Notification.SOURCE_OTHER, _("From all other sources"), nil, true),
