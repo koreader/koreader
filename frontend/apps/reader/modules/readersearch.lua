@@ -6,6 +6,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local Notification = require("ui/widget/notification")
+local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -19,7 +20,6 @@ local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
 local ReaderSearch = WidgetContainer:extend{
     direction = 0, -- 0 for search forward, 1 for search backward
     case_insensitive = true, -- default to case insensitive
-    nb_context_words = 3, -- number of words before and after the search string in All search results
 
     -- For a regex like [a-z\. ] many many hits are found, maybe the number of chars on a few pages.
     -- We don't try to catch them all as this is a reader and not a computer science playground. ;)
@@ -31,6 +31,9 @@ local ReaderSearch = WidgetContainer:extend{
     -- Setting max_hits higher, does not mean to require more memory. More hits means smaller single hits.
     max_hits = 2048, -- maximum hits for findText search; timinges tested on a Tolino
     findall_max_hits = 5000, -- maximum hits for findAllText search
+     -- number of words before and after the search string in All search results
+    findall_nb_context_words = G_reader_settings:readSetting("fulltext_search_nb_context_words") or 3,
+    findall_results_per_page = G_reader_settings:readSetting("fulltext_search_results_per_page") or 10,
 
     -- internal: whether we expect results on previous pages
     -- (can be different from self.direction, if, from a page in the
@@ -75,6 +78,54 @@ SRELL_ERROR_CODES[111] = _("Expression too complex, some hits will not be shown.
 SRELL_ERROR_CODES[666] = _("Expression may lead to an extremely long search time.")
 
 function ReaderSearch:addToMainMenu(menu_items)
+    menu_items.fulltext_search_settings = {
+        text = _("Fulltext search settings"),
+        sub_item_table = {
+            {
+                text_func = function()
+                    return T(_("Words in context: %1"), self.findall_nb_context_words)
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local widget = SpinWidget:new{
+                        title_text =  _("Words in context"),
+                        value = self.findall_nb_context_words,
+                        value_min = 1,
+                        value_max = 20,
+                        default_value = 3,
+                        callback = function(spin)
+                            self.last_search_hash = nil
+                            self.findall_nb_context_words = spin.value
+                            G_reader_settings:saveSetting("fulltext_search_nb_context_words", spin.value)
+                            touchmenu_instance:updateItems()
+                        end,
+                    }
+                    UIManager:show(widget)
+                end,
+            },
+            {
+                text_func = function()
+                    return T(_("Results per page: %1"), self.findall_results_per_page)
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local widget = SpinWidget:new{
+                        title_text =  _("Results per page"),
+                        value = self.findall_results_per_page,
+                        value_min = 6,
+                        value_max = 24,
+                        default_value = 10,
+                        callback = function(spin)
+                            self.findall_results_per_page = spin.value
+                            G_reader_settings:saveSetting("fulltext_search_results_per_page", spin.value)
+                            touchmenu_instance:updateItems()
+                        end,
+                    }
+                    UIManager:show(widget)
+                end,
+            },
+        },
+    }
     menu_items.fulltext_search = {
         text = _("Fulltext search"),
         callback = function()
@@ -449,7 +500,7 @@ function ReaderSearch:findAllText(search_text)
         UIManager:forceRePaint()
         local completed, res = Trapper:dismissableRunInSubprocess(function()
             return self.ui.document:findAllText(search_text,
-                self.case_insensitive, self.nb_context_words, self.findall_max_hits, self.use_regex)
+                self.case_insensitive, self.findall_nb_context_words, self.findall_max_hits, self.use_regex)
         end, info)
         if not completed then return end
         UIManager:close(info)
@@ -466,12 +517,12 @@ end
 function ReaderSearch:showFindAllResults(not_cached)
     if self.ui.rolling and not_cached then -- for ui.paging: items are built in KoptInterface:findAllText()
         for _, item in ipairs(self.findall_results) do
-            local text = item.word or ""
-            if item.word_prefix then
-                text = item.word_prefix .. text
+            local text = item.matched_text or ""
+            if item.matched_word_prefix then
+                text = item.matched_word_prefix .. text
             end
-            if item.word_suffix then
-                text = text .. item.word_suffix
+            if item.matched_word_suffix then
+                text = text .. item.matched_word_suffix
             end
             text = "【" .. text .. "】"
             if item.prev_text then
@@ -490,12 +541,12 @@ function ReaderSearch:showFindAllResults(not_cached)
         title = T(_("Search results (%1)"), #self.findall_results),
         subtitle = T(_("Query: %1"), self.last_search_text),
         item_table = self.findall_results,
+        items_per_page = self.findall_results_per_page,
         covers_fullscreen = true,
         is_borderless = true,
         is_popout = false,
         title_bar_fm_style = true,
-        onMenuSelect = function(self_menu, item)
-            self_menu.close_callback()
+        onMenuChoice = function(_, item)
             if self.ui.rolling then
                 self.ui.link:addCurrentLocationToStack()
                 self.ui.rolling:onGotoXPointer(item.start, item.start) -- show target line marker
