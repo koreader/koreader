@@ -431,9 +431,8 @@ function Screensaver:setup(event, event_message)
         self.screensaver_type = "cover"
     end
     if self.screensaver_type == "cover" then
-        lastfile = lastfile ~= nil and lastfile or G_reader_settings:readSetting("lastfile")
         local excluded
-        if DocSettings:hasSidecarFile(lastfile) then
+        if lastfile and DocSettings:hasSidecarFile(lastfile) then
             local doc_settings
             if ui and ui.doc_settings then
                 doc_settings = ui.doc_settings
