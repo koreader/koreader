@@ -234,9 +234,8 @@ function OTAManager:fetchAndProcessUpdate()
             text = T(_("Device no longer supported.\n\nPlease check %1"), "https://github.com/koreader/koreader/wiki/deprecated-devices")
         })
     elseif ota_version == nil then
-        local channel = ota_channels[OTAManager:getOTAChannel()]
         UIManager:show(InfoMessage:new{
-            text = T(_("Update information not available on %1 channel."), channel),
+            text = _("Unable to contact OTA server. Try again later, or try another mirror."),
         })
     elseif ota_version then
         local update_message = T(_("Do you want to update?\nInstalled version: %1\nAvailable version: %2"),
