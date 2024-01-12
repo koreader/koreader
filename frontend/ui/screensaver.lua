@@ -529,7 +529,7 @@ function Screensaver:show()
             if self:withBackground() then
                 Screen:clear()
             end
-            Screen:refreshFull()
+            Screen:refreshFull(0, 0, Screen:getWidth(), Screen:getHeight())
 
             -- On Kobo, on sunxi SoCs with a recent kernel, wait a tiny bit more to avoid weird refresh glitches...
             if Device:isKobo() and Device:isSunxi() then
