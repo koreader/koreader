@@ -1040,9 +1040,9 @@ function Menu:updateItems(select_number)
         select_number = 1
     end
 
-    local font_size = self.items_font_size or G_reader_settings:readSetting("items_font_size")
+    self.font_size = self.items_font_size or G_reader_settings:readSetting("items_font_size")
                                      or Menu.getItemFontSize(self.perpage)
-    local infont_size = self.items_mandatory_font_size or (font_size - 4)
+    local infont_size = self.items_mandatory_font_size or (self.font_size - 4)
     local multilines_show_more_text = self.multilines_show_more_text
     if multilines_show_more_text == nil then
         multilines_show_more_text = G_reader_settings:isTrue("items_multilines_show_more_text")
@@ -1075,7 +1075,7 @@ function Menu:updateItems(select_number)
                 bold = self.item_table.current == i or self.item_table[i].bold == true,
                 dim = self.item_table[i].dim,
                 font = "smallinfofont",
-                font_size = font_size,
+                font_size = self.font_size,
                 infont = "infont",
                 infont_size = infont_size,
                 dimen = self.item_dimen:new(),

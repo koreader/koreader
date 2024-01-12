@@ -39,7 +39,7 @@ local BOOKINFO_DB_SCHEMA = [[
         cover_fetched       TEXT,     -- NULL / 'Y' = we tried to fetch a cover (but we may not have gotten one)
         has_meta            TEXT,     -- NULL / 'Y' = has metadata (title, authors...)
         has_cover           TEXT,     -- NULL / 'Y' = has cover image (cover_*)
-        cover_sizetag       TEXT,     -- 'M' (Medium, MosaicMenuItem) / 's' (small, ListMenuItem)
+        cover_sizetag       TEXT,     -- '1072x1448' (example, is the original cover image width and height)
 
         -- Other properties that can be set and returned as is (not used here)
         -- If user doesn't want to see these (wrong metadata, offending cover...)
@@ -270,7 +270,7 @@ function BookInfoManager:loadSettings(db_conn)
         local keys = res[1]
         local values = res[2]
         for i, key in ipairs(keys) do
-            self.settings[key] = values[i]
+            self.settings[key] = tonumber(values[i]) or values[i] -- TEXT db field
         end
     end
 end
@@ -506,23 +506,18 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                 dbrow[k] = v
             end
             if cover_specs then
-                local spec_sizetag = cover_specs.sizetag
                 local spec_max_cover_w = cover_specs.max_cover_w
                 local spec_max_cover_h = cover_specs.max_cover_h
-
                 dbrow.cover_fetched = 'Y' -- we had a try at getting a cover
                 local cover_bb = FileManagerBookInfo:getCoverImage(document)
                 if cover_bb then
                     dbrow.has_cover = 'Y'
-                    dbrow.cover_sizetag = spec_sizetag
                     -- we should scale down the cover to our max size
                     local cbb_w, cbb_h = cover_bb:getWidth(), cover_bb:getHeight()
-                    local scale_factor = 1
+                    dbrow.cover_sizetag = cbb_w .. "x" .. cbb_h -- store original cover size
                     if cbb_w > spec_max_cover_w or cbb_h > spec_max_cover_h then
                         -- scale down if bigger than what we will display
-                        scale_factor = math.min(spec_max_cover_w / cbb_w, spec_max_cover_h / cbb_h)
-                        cbb_w = math.min(math.floor(cbb_w * scale_factor)+1, spec_max_cover_w)
-                        cbb_h = math.min(math.floor(cbb_h * scale_factor)+1, spec_max_cover_h)
+                        cbb_w, cbb_h = BookInfoManager.getCachedCoverSize(cbb_w, cbb_h, spec_max_cover_w, spec_max_cover_h)
                         cover_bb = RenderImage:scaleBlitBuffer(cover_bb, cbb_w, cbb_h, true)
                     end
                     dbrow.cover_w = cover_bb.w
@@ -532,7 +527,8 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                     local cover_size = cover_bb.stride * cover_bb.h
                     local cover_zst_ptr, cover_zst_size = zstd.zstd_compress(cover_bb.data, cover_size)
                     dbrow.cover_bb_data = SQ3.blob(cover_zst_ptr, cover_zst_size) -- cast to blob for sqlite
-                    logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cover_bb.w, "x", cover_bb.h, ", compressed from", tonumber(cover_size), "to", tonumber(cover_zst_size))
+                    logger.dbg("cover for", filename, "scaled from", dbrow.cover_sizetag, "to", cover_bb.w, "x", cover_bb.h,
+                        ", compressed from", tonumber(cover_size), "to", tonumber(cover_zst_size))
                     -- We're done with the uncompressed bb now, and the compressed one has been managed by SQLite ;)
                     cover_bb:free()
                 end
@@ -886,10 +882,8 @@ Do you want to prune the cache of removed books?]]
                     local to_extract = not bookinfo
                     if bookinfo and cover_specs and not bookinfo.ignore_cover then
                         if bookinfo.cover_fetched then
-                            if bookinfo.has_cover and cover_specs.sizetag ~= bookinfo.cover_sizetag then
-                                if bookinfo.cover_sizetag ~= "M" then -- keep the bigger "M"
-                                    to_extract = true
-                                end
+                            if bookinfo.has_cover and BookInfoManager.isCachedCoverInvalid(bookinfo, cover_specs) then
+                                to_extract = true
                             end
                         else
                             to_extract = true
@@ -983,6 +977,35 @@ Do you want to prune the cache of removed books?]]
     UIManager:close(info)
     info = InfoMessage:new{text = T(_("Processed %1 / %2 books."), nb_done, nb_files) .. "\n" .. T(N_("One extracted successfully.", "%1 extracted successfully.", nb_success), nb_success)}
     UIManager:show(info)
+end
+
+function BookInfoManager.getCachedCoverSize(img_w, img_h, max_img_w, max_img_h)
+    local scale_factor
+    local width = math.floor(max_img_h * img_w / img_h + 0.5)
+    if max_img_w >= width then
+        max_img_w = width
+        scale_factor = max_img_w / img_w
+    else
+        max_img_h = math.floor(max_img_w * img_h / img_w + 0.5)
+        scale_factor = max_img_h / img_h
+    end
+    return max_img_w, max_img_h, scale_factor
+end
+
+function BookInfoManager.isCachedCoverInvalid(bookinfo, cover_specs)
+    local img_w, img_h = bookinfo.cover_sizetag:match("(%d+)x(%d+)") -- original image
+    if not img_w or not img_h then -- old or bad cover_sizetag
+        return true
+    end
+    img_w, img_h = tonumber(img_w), tonumber(img_h)
+    local max_img_w = cover_specs.max_cover_w
+    local max_img_h = cover_specs.max_cover_h
+    if img_w > max_img_w or img_h > max_img_h then -- original image bigger than placeholder
+        local new_cover_w, new_cover_h = BookInfoManager.getCachedCoverSize(img_w, img_h, max_img_w, max_img_h)
+        if new_cover_w > bookinfo.cover_w or new_cover_h > bookinfo.cover_h then -- bigger thumbnail needed
+            return true
+        end
+    end
 end
 
 BookInfoManager:init()
