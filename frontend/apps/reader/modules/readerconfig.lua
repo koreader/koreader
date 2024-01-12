@@ -158,11 +158,11 @@ function ReaderConfig:onSwipeShowConfigMenu(ges)
     end
 end
 
+-- For some reason, things are fine and dandy without any of this for rotations, but we need it for actual resizes...
 function ReaderConfig:onSetDimensions(dimen)
-    -- since we cannot redraw config_dialog with new size, we close
-    -- the old one on screen size change
     if self.config_dialog then
-        self.config_dialog:closeDialog()
+        -- init basically calls update & initGesListener and nothing else, which is exactly what we want.
+        self.config_dialog:init()
     end
 end
 

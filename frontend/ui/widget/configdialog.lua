@@ -897,9 +897,7 @@ function ConfigDialog:init()
     end
 end
 
-function ConfigDialog:updateConfigPanel(index)
-
-end
+function ConfigDialog:updateConfigPanel(index) end
 
 function ConfigDialog:update()
     self:moveFocusTo(1, 1) -- reset selected for re-created layout
