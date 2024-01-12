@@ -331,7 +331,7 @@ function ReaderFont:makeDefault(face, is_monospace, touchmenu_instance)
             -- to be set as a fallback font, and allow it to be set as the
             -- default monospace font.
             UIManager:show(MultiConfirmBox:new{
-                text = T(_("Would you like %1 to be used as the default font (★), or the monospace font (\u{1F13C})?"), face),
+                text = T(_("Would you like %1 to be used as the default font (★), or the monospace font (\xF0\x9F\x84\xBC)?"), face), -- U+1F13C
                 choice1_text = _("Default"),
                 choice1_callback = function()
                     G_reader_settings:saveSetting("cre_font", face)
@@ -436,8 +436,8 @@ local FONT_FAMILIES = {
     -- On 2nd page
     { "cursive", _("Cursive") },
     { "fantasy", _("Fantasy") },
-    { "emoji", _("Emoji \u{1F60A}") },
-    { "fangsong", _("Fang Song \u{4EFF}\u{5B8B}") },
+    { "emoji", _("Emoji \xF0\x9F\x98\x8A") }, -- U+1F60A
+    { "fangsong", _("Fang Song \xE4\xBB\xBF\xE5\xAE\x8B") }, -- U+4EFF U+5B8B
     { "math", _("Math") },
 }
 
