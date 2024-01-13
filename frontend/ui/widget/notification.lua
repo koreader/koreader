@@ -39,11 +39,12 @@ local SOURCE_BOTTOM_MENU = SOURCE_BOTTOM_MENU_ICON +
                            SOURCE_BOTTOM_MENU_PROGRESS
 
 -- these values can be changed here
-local SOURCE_SOME = SOURCE_BOTTOM_MENU_FINE +
-                    SOURCE_DISPATCHER
-local SOURCE_DEFAULT = SOURCE_SOME +
-                       SOURCE_BOTTOM_MENU_MORE +
-                       SOURCE_BOTTOM_MENU_PROGRESS
+local SOURCE_SOME = SOURCE_BOTTOM_MENU_FINE
+local SOURCE_MORE = SOURCE_SOME +
+                    SOURCE_BOTTOM_MENU_MORE +
+                    SOURCE_BOTTOM_MENU_PROGRESS
+local SOURCE_DEFAULT = SOURCE_MORE +
+                       SOURCE_DISPATCHER
 local SOURCE_ALL = SOURCE_BOTTOM_MENU +
                    SOURCE_DISPATCHER +
                    SOURCE_OTHER
@@ -75,6 +76,7 @@ local Notification = InputContainer:extend{
 
     SOURCE_NONE = 0,
     SOURCE_SOME = SOURCE_SOME,
+    SOURCE_MORE = SOURCE_MORE,
     SOURCE_DEFAULT = SOURCE_DEFAULT,
     SOURCE_ALL = SOURCE_ALL,
     _past_messages = {}, -- a static class member to store the N last messages text

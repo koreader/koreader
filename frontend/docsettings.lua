@@ -153,8 +153,9 @@ end
 --- Returns path of `metadata.lua` file if it exists, or nil.
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
 -- @bool no_legacy set to true to skip check of the legacy history file
--- @treturn string
+-- @treturn string (or nil on failure)
 function DocSettings:findSidecarFile(doc_path, no_legacy)
+    if doc_path == nil or doc_path == "" then return nil end
     local sidecar_filename = DocSettings.getSidecarFilename(doc_path)
     local sidecar_file
     for _, location in ipairs(getOrderedLocationCandidates()) do

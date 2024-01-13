@@ -1,19 +1,46 @@
 local Notification = require("ui/widget/notification")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
+local logger = require("logger")
 local _ = require("gettext")
 
 local band = bit.band
 local bor = bit.bor
-
-local function setMask(source)
-    G_reader_settings:saveSetting("notification_sources_to_show_mask", source)
-end
+local bnot = bit.bnot
 
 local function getMask()
     return G_reader_settings:readSetting("notification_sources_to_show_mask") or Notification.SOURCE_DEFAULT
 end
 
+local function setMask(source)
+    logger.dbg(string.format("Notification: Updating display mask from %#x to %#x", getMask(), source))
+    G_reader_settings:saveSetting("notification_sources_to_show_mask", source)
+end
+
+local function isEnabled(source)
+    return band(getMask(), source) == source
+end
+
+-- Helper function to avoid repeating boilerplate code, as we just flip a few bits one way or the other
+local function genMenuItem(source, label, help, separator)
+    return {
+        text = label,
+        help_text = help,
+        checked_func = function() return isEnabled(source) end,
+        callback = function()
+            if isEnabled(source) then
+                setMask(
+                    band(getMask(), bnot(source)))
+            else
+                setMask(
+                    bor(getMask(), source))
+            end
+        end,
+        separator = separator,
+    }
+end
+
+-- NOTE: Default is MORE + DISPATCHER; i.e., BOTTOM_MENU_FINE + BOTTOM_MENU_MORE + BOTTOM_MENU_PROGRESS + DISPATCHER
 return {
     text = _("Notifications"),
     help_text = _([[Notification popups may be shown at the top of screen on various occasions.
@@ -23,61 +50,13 @@ This allows selecting which to show or hide.]]),
         return  value ~= 0
     end,
     sub_item_table = {
-        {
-            text = _("Some notifications from bottom menu"),
-            help_text = _("Show notification popups for bottom menu settings with no visual feedback."),
-            checked_func = function()
-                return band(getMask(), Notification.SOURCE_BOTTOM_MENU) == band(Notification.SOURCE_SOME, Notification.SOURCE_BOTTOM_MENU)
-            end,
-            callback = function()
-                if band(getMask(), Notification.SOURCE_BOTTOM_MENU) == band(Notification.SOURCE_SOME, Notification.SOURCE_BOTTOM_MENU) then
-                    setMask(bor(
-                        Notification.SOURCE_NONE,
-                        band(getMask(), Notification.SOURCE_DISPATCHER)))
-                else
-                    setMask(bor(
-                        band(Notification.SOURCE_SOME, Notification.SOURCE_BOTTOM_MENU),
-                        band(getMask(), Notification.SOURCE_DISPATCHER)))
-                end
-            end,
-        },
-        {
-            text = _("More notifications from bottom menu"),
-            help_text = _("Show notification popups for more bottom menu settings."),
-            checked_func = function()
-                return band(getMask(), Notification.SOURCE_BOTTOM_MENU) == band(Notification.SOURCE_DEFAULT, Notification.SOURCE_BOTTOM_MENU)
-            end,
-            callback = function()
-                if band(getMask(), Notification.SOURCE_BOTTOM_MENU) == band(Notification.SOURCE_DEFAULT, Notification.SOURCE_BOTTOM_MENU) then
-                    setMask(bor(
-                        Notification.SOURCE_NONE,
-                        band(getMask(), Notification.SOURCE_DISPATCHER)))
-                else
-                    setMask(bor(
-                        band(Notification.SOURCE_DEFAULT, Notification.SOURCE_BOTTOM_MENU),
-                        band(getMask(), Notification.SOURCE_DISPATCHER)))
-                end
-            end,
-        },
-        {
-            text = _("Notifications from gestures and profiles"),
-            help_text = _("Show notification popups for changes from gestures and the profiles plugin."),
-            checked_func = function()
-                return band(getMask(), Notification.SOURCE_DISPATCHER) == Notification.SOURCE_DISPATCHER
-            end,
-            callback = function()
-                if band(getMask(), Notification.SOURCE_DISPATCHER) == Notification.SOURCE_DISPATCHER then
-                    setMask(bor(
-                        Notification.SOURCE_NONE,
-                        band(getMask(), Notification.SOURCE_BOTTOM_MENU)))
-                else
-                    setMask(bor(
-                        Notification.SOURCE_DISPATCHER,
-                        band(getMask(), Notification.SOURCE_BOTTOM_MENU)))
-                end
-            end,
-            separator = true,
-        },
+        genMenuItem(Notification.SOURCE_BOTTOM_MENU_ICON, _("From bottom menu icons")),
+        genMenuItem(Notification.SOURCE_BOTTOM_MENU_TOGGLE, _("From bottom menu toggles")),
+        genMenuItem(Notification.SOURCE_BOTTOM_MENU_FINE, _("From bottom menu ± buttons")), -- Poor man's +/- w/ \u{207a}\u{2044}\u{208b} doesn't look too great because subscript minus sits on the baseline in most fonts...
+        genMenuItem(Notification.SOURCE_BOTTOM_MENU_MORE, _("From bottom menu ⋮ buttons")),
+        genMenuItem(Notification.SOURCE_BOTTOM_MENU_PROGRESS, _("From bottom menu progress bars")),
+        genMenuItem(Notification.SOURCE_DISPATCHER, _("From gestures and profiles")),
+        genMenuItem(Notification.SOURCE_OTHER, _("From all other sources"), nil, true),
         {
             text = _("Show past notifications"),
             callback = function()

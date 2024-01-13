@@ -815,12 +815,32 @@ end
 
 function ReaderView:onSetRotationMode(rotation)
     if rotation ~= nil then
-        if rotation == Screen:getRotationMode() then
+        local old_rotation = Screen:getRotationMode()
+        if rotation == old_rotation then
             return true
         end
+
+        -- NOTE: We cannot rely on getScreenMode, as it actually checks the screen dimensions, instead of the rotation mode.
+        --       (i.e., it returns how the screen *looks* like, not how it's oriented relative to its native layout).
+        --       This would horribly break if you started in Portrait (both rotation and visually),
+        --       then resized your window to a Landscape layout *without* changing the rotation.
+        --       If you then attempted to switch to a Landscape *rotation*, it would mistakenly think the layout hadn't changed!
+        --       So, instead, as we're concerned with *rotation* layouts, just compare the two.
+        --       We use LinuxFB-style constants, so, Portraits are even, Landscapes are odds, making this trivial.
+        local matching_orientation = bit.band(rotation, 1) == bit.band(old_rotation, 1)
+
+        if rotation ~= old_rotation and matching_orientation then
+            -- No layout change, just rotate & repaint with a flash
+            Screen:setRotationMode(rotation)
+            UIManager:setDirty(self.dialog, "full")
+            Notification:notify(T(_("Rotation mode set to: %1"), optionsutil:getOptionText("SetRotationMode", rotation)))
+            return true
+        end
+
         Screen:setRotationMode(rotation)
     end
-    UIManager:setDirty(self.dialog, "full")
+
+    UIManager:setDirty(nil, "full") -- SetDimensions will only request a partial, we want a flash
     local new_screen_size = Screen:getSize()
     self.ui:handleEvent(Event:new("SetDimensions", new_screen_size))
     self.ui:onScreenResize(new_screen_size)

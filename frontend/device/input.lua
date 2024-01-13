@@ -532,15 +532,17 @@ function Input:resetState()
 end
 
 function Input:handleKeyBoardEv(ev)
-    -- Detect loss of contact for the "snow" protocol...
-    -- NOTE: Some ST devices may also behave similarly, but we handle those via ABS_PRESSURE
+    -- Detect loss of contact for the "snow" protocol, as we *never* get EV_ABS:ABS_MT_TRACKING_ID:-1 on those...
+    -- NOTE: The same logic *could* be used on *some* ST devices to detect contact states,
+    --       but we instead prefer using EV_ABS:ABS_PRESSURE on those,
+    --       as it appears to be more common than EV_KEY:BTN_TOUCH on the devices we care about...
     if self.snow_protocol then
         if ev.code == C.BTN_TOUCH then
             if ev.value == 0 then
                 -- Kernel sends it after loss of contact for *all* slots,
                 -- only once the final contact point has been lifted.
                 if #self.MTSlots == 0 then
-                    -- Likely, since this is usually in its own event stream,
+                    -- Likely, since this is usually in its own input frame,
                     -- meaning self.MTSlots has *just* been cleared by our last EV_SYN:SYN_REPORT handler...
                     -- So, poke at the actual data to find the slots that are currently active (i.e., in the down state),
                     -- and re-populate a minimal self.MTSlots array that simply switches them to the up state ;).
@@ -553,7 +555,7 @@ function Input:handleKeyBoardEv(ev)
                 else
                     -- Unlikely, given what we mentioned above...
                     -- Note that, funnily enough, its EV_KEY:BTN_TOUCH:1 counterpart
-                    -- *can* be in the same initial event stream as the EV_ABS batch...
+                    -- *can* be in the same initial input frame as the EV_ABS batch...
                     for _, MTSlot in ipairs(self.MTSlots) do
                         self:setMtSlot(MTSlot.slot, "id", -1)
                     end
@@ -789,17 +791,25 @@ function Input:handleTouchEv(ev)
         elseif ev.code == C.ABS_MT_TRACKING_ID then
             if self.snow_protocol then
                 -- NOTE: We'll never get an ABS_MT_SLOT event, instead we have a slot-like ABS_MT_TRACKING_ID value...
-                --       This also means this may never be set to -1 on contact lift,
-                --       which is why we instead rely on EV_KEY:BTN_TOUCH:0 for that (c.f., handleKeyBoardEv).
-                self:setupSlotData(ev.value)
-            else
-                -- The Elan driver needlessly repeats unchanged ABS_MT_TRACKING_ID values,
-                -- which allows us to do this here instead of relying more aggressively on setCurrentMtSlotChecked.
-                if #self.MTSlots == 0 then
-                    self:addSlot(self.cur_slot)
+                --       This also means that, unlike on sane devices, this will *never* be set to -1 on contact lift,
+                --       which is why we instead have to rely on EV_KEY:BTN_TOUCH:0 for that (c.f., handleKeyBoardEv).
+                if ev.value == -1 then
+                    -- NOTE: While *actual* snow_protocol devices will *never* emit an EV_ABS:ABS_MT_TRACKING_ID:-1 event,
+                    --       we've seen brand new revisions of snow_protocol devices shipping with sane panels instead,
+                    --       so we'll need to disable the quirks at runtime to handle these properly...
+                    --       (c.f., https://www.mobileread.com/forums/showpost.php?p=4383629&postcount=997).
+                    -- NOTE: Simply skipping the slot storage setup for -1 would not be enough, as it would only fix ST handling.
+                    --       MT would be broken, because buddy contact detection in GestureDetector looks at slot +/- 1,
+                    --       whereas we'd be having the main contact point at a stupidly large slot number
+                    --       (because it would match ABS_MT_TRACKING_ID, given the lack of ABS_MT_SLOT, at least for the first input frame),
+                    --       while the second contact would be at slot 1, because it would immediately have required emitting a proper ABS_MT_SLOT event...
+                    logger.warn("Input: Disabled snow_protocol quirks because your device's hardware revision doesn't appear to need them!")
+                    self.snow_protocol = false
+                else
+                    self:setupSlotData(ev.value)
                 end
             end
-            self:setCurrentMtSlot("id", ev.value)
+            self:setCurrentMtSlotChecked("id", ev.value)
         elseif ev.code == C.ABS_MT_TOOL_TYPE then
             -- NOTE: On the Elipsa: Finger == 0; Pen == 1
             self:setCurrentMtSlot("tool", ev.value)
@@ -934,14 +944,15 @@ end
 
 function Input:handleTouchEvLegacy(ev)
     -- Single Touch Protocol.
-    -- Some devices emit both singletouch and multitouch events,
-    -- on those devices, the 'handleTouchEv' function may not behave as expected. Use this one instead.
+    -- Some devices emit both singletouch and multitouch events.
+    -- On those devices, `handleTouchEv` may not behave as expected. Use this one instead.
     if ev.type == C.EV_ABS then
         if ev.code == C.ABS_X then
             self:setCurrentMtSlotChecked("x", ev.value)
         elseif ev.code == C.ABS_Y then
             self:setCurrentMtSlotChecked("y", ev.value)
         elseif ev.code == C.ABS_PRESSURE then
+            -- This is the least common denominator we can use to detect contact down & lift...
             if ev.value ~= 0 then
                 self:setCurrentMtSlotChecked("id", 1)
             else
@@ -984,39 +995,37 @@ end
 --- (Translation should be done via registerEventAdjustHook in Device implementations).
 --- This needs to be called *via handleGyroEv* in a handleMiscEv implementation (c.f., Kobo, Kindle or PocketBook).
 function Input:handleMiscGyroEv(ev)
-    local rotation_mode, screen_mode
+    local rotation
     if ev.value == C.DEVICE_ROTATED_UPRIGHT then
         -- i.e., UR
-        rotation_mode = framebuffer.DEVICE_ROTATED_UPRIGHT
-        screen_mode = "portrait"
+        rotation = framebuffer.DEVICE_ROTATED_UPRIGHT
     elseif ev.value == C.DEVICE_ROTATED_CLOCKWISE then
         -- i.e., CW
-        rotation_mode = framebuffer.DEVICE_ROTATED_CLOCKWISE
-        screen_mode = "landscape"
+        rotation = framebuffer.DEVICE_ROTATED_CLOCKWISE
     elseif ev.value == C.DEVICE_ROTATED_UPSIDE_DOWN then
         -- i.e., UD
-        rotation_mode = framebuffer.DEVICE_ROTATED_UPSIDE_DOWN
-        screen_mode = "portrait"
+        rotation = framebuffer.DEVICE_ROTATED_UPSIDE_DOWN
     elseif ev.value == C.DEVICE_ROTATED_COUNTER_CLOCKWISE then
         -- i.e., CCW
-        rotation_mode = framebuffer.DEVICE_ROTATED_COUNTER_CLOCKWISE
-        screen_mode = "landscape"
+        rotation = framebuffer.DEVICE_ROTATED_COUNTER_CLOCKWISE
     else
         -- Discard FRONT/BACK
         return
     end
 
-    local old_rotation_mode = self.device.screen:getRotationMode()
+    local old_rotation = self.device.screen:getRotationMode()
     if self.device:isGSensorLocked() then
-        local old_screen_mode = self.device.screen:getScreenMode()
-        if rotation_mode and rotation_mode ~= old_rotation_mode and screen_mode == old_screen_mode then
+        local matching_orientation = bit.band(rotation, 1) == bit.band(old_rotation, 1)
+        if rotation and rotation ~= old_rotation and matching_orientation then
             -- Cheaper than a full SetRotationMode event, as we don't need to re-layout anything.
-            self.device.screen:setRotationMode(rotation_mode)
+            self.device.screen:setRotationMode(rotation)
             UIManager:onRotation()
         end
     else
-        if rotation_mode and rotation_mode ~= old_rotation_mode then
-            return Event:new("SetRotationMode", rotation_mode)
+        if rotation and rotation ~= old_rotation then
+            -- NOTE: We do *NOT* send a broadcast manually, and instead rely on the main loop's sendEvent:
+            --       this ensures that only widgets that actually know how to handle a rotation will do so ;).
+            return Event:new("SetRotationMode", rotation)
         end
     end
 end
@@ -1053,29 +1062,29 @@ function Input:initMtSlot(slot)
     end
 end
 
-function Input:setMtSlot(slot, key, val)
-    self.ev_slots[slot][key] = val
-end
-
-function Input:setCurrentMtSlot(key, val)
-    self:setMtSlot(self.cur_slot, key, val)
-end
-
--- Same as above, but ensures the current slot actually has a live ref first
-function Input:setCurrentMtSlotChecked(key, val)
-    if #self.MTSlots == 0 then
-        self:addSlot(self.cur_slot)
-    end
-
-    self:setMtSlot(self.cur_slot, key, val)
-end
-
 function Input:getMtSlot(slot)
     return self.ev_slots[slot]
 end
 
 function Input:getCurrentMtSlot()
-    return self:getMtSlot(self.cur_slot)
+    return self.ev_slots[self.cur_slot]
+end
+
+function Input:setMtSlot(slot, key, val)
+    self.ev_slots[slot][key] = val
+end
+
+function Input:setCurrentMtSlot(key, val)
+    self.ev_slots[self.cur_slot][key] = val
+end
+
+-- Same as above, but ensures the current slot actually has a live ref first
+function Input:setCurrentMtSlotChecked(key, val)
+    if not self.active_slots[self.cur_slot] then
+        self:addSlot(self.cur_slot)
+    end
+
+    self.ev_slots[self.cur_slot][key] = val
 end
 
 function Input:getCurrentMtSlotData(key)
@@ -1102,22 +1111,13 @@ function Input:addSlot(value)
     self.cur_slot = value
 end
 
-function Input:addSlotIfChanged(value)
-    if self.cur_slot ~= value then
-        -- We've already seen that slot in this frame, don't insert a duplicate reference!
-        if self.active_slots[value] then
-            self.cur_slot = value
-        else
-            self:addSlot(value)
-        end
-    end
-end
-
 function Input:setupSlotData(value)
-    if #self.MTSlots == 0 then
+    if not self.active_slots[value] then
         self:addSlot(value)
     else
-        self:addSlotIfChanged(value)
+        -- We've already seen that slot in this frame, don't insert a duplicate reference!
+        -- NOTE: May already be set to the correct value if the driver repeats ABS_MT_SLOT (e.g., our android/PB translation layers; or ABS_MT_TRACKING_ID for snow_protocol).
+        self.cur_slot = value
     end
 end
 

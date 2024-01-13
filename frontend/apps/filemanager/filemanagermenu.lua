@@ -4,9 +4,11 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local FFIUtil = require("ffi/util")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local KeyValuePage = require("ui/widget/keyvaluepage")
 local PluginLoader = require("pluginloader")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 local Size = require("ui/size")
+local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
@@ -64,6 +66,7 @@ end
 
 FileManagerMenu.onPhysicalKeyboardConnected = FileManagerMenu.registerKeyEvents
 
+-- NOTE: FileManager emits a SetDimensions on init, it's our only caller
 function FileManagerMenu:initGesListener()
     if not Device:isTouchDevice() then return end
 
@@ -168,49 +171,49 @@ function FileManagerMenu:setUpdateItemTable()
                 text = _("Classic mode settings"),
                 sub_item_table = {
                     {
-                        text = _("Items per page"),
+                        text_func = function()
+                            return T(_("Items per page: %1"), FileChooser.perpage)
+                        end,
                         help_text = _([[This sets the number of items per page in:
 - File browser, history and favorites in 'classic' display mode
 - Search results and folder shortcuts
 - File and folder selection
 - Calibre and OPDS browsers/search results]]),
-                        callback = function()
-                            local SpinWidget = require("ui/widget/spinwidget")
-                            local Menu = require("ui/widget/menu")
-                            local default_perpage = Menu.items_per_page_default
-                            local curr_perpage = G_reader_settings:readSetting("items_per_page") or default_perpage
-                            local items = SpinWidget:new{
-                                value = curr_perpage,
-                                value_min = 6,
-                                value_max = 24,
-                                default_value = default_perpage,
+                        callback = function(touchmenu_instance)
+                            local current_value = FileChooser.perpage
+                            local default_value = FileChooser.items_per_page_default
+                            local widget = SpinWidget:new{
                                 title_text =  _("Items per page"),
+                                value = current_value,
+                                value_min = 6,
+                                value_max = 30,
+                                default_value = default_value,
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     G_reader_settings:saveSetting("items_per_page", spin.value)
-                                    self.ui:onRefresh()
-                                end
+                                    FileChooser:refreshPath()
+                                    touchmenu_instance:updateItems()
+                                end,
                             }
-                            UIManager:show(items)
+                            UIManager:show(widget)
                         end,
                     },
                     {
-                        text = _("Item font size"),
-                        callback = function()
-                            local SpinWidget = require("ui/widget/spinwidget")
-                            local Menu = require("ui/widget/menu")
-                            local curr_perpage = G_reader_settings:readSetting("items_per_page") or Menu.items_per_page_default
-                            local default_font_size = Menu.getItemFontSize(curr_perpage)
-                            local curr_font_size = G_reader_settings:readSetting("items_font_size") or default_font_size
-                            local items_font = SpinWidget:new{
-                                value = curr_font_size,
+                        text_func = function()
+                            return T(_("Item font size: %1"), FileChooser.font_size)
+                        end,
+                        callback = function(touchmenu_instance)
+                            local current_value = FileChooser.font_size
+                            local default_value = FileChooser.getItemFontSize(FileChooser.perpage)
+                            local widget = SpinWidget:new{
+                                title_text =  _("Item font size"),
+                                value = current_value,
                                 value_min = 10,
                                 value_max = 72,
-                                default_value = default_font_size,
+                                default_value = default_value,
                                 keep_shown_on_apply = true,
-                                title_text =  _("Item font size"),
                                 callback = function(spin)
-                                    if spin.value == default_font_size then
+                                    if spin.value == default_value then
                                         -- We can't know if the user has set a size or hit "Use default", but
                                         -- assume that if it is the default font size, he will prefer to have
                                         -- our default font size if he later updates per-page
@@ -218,10 +221,11 @@ function FileManagerMenu:setUpdateItemTable()
                                     else
                                         G_reader_settings:saveSetting("items_font_size", spin.value)
                                     end
-                                    self.ui:onRefresh()
-                                end
+                                    FileChooser:refreshPath()
+                                    touchmenu_instance:updateItems()
+                                end,
                             }
-                            UIManager:show(items_font)
+                            UIManager:show(widget)
                         end,
                     },
                     {
@@ -373,26 +377,28 @@ To:
                 separator = true,
             },
             {
-                text = _("Info lists items per page"),
+                text_func = function()
+                    local default_value = KeyValuePage.getDefaultItemsPerPage()
+                    local current_value = G_reader_settings:readSetting("keyvalues_per_page") or default_value
+                    return T(_("Info lists items per page: %1"), current_value)
+                end,
                 help_text = _([[This sets the number of items per page in:
 - Book information
 - Dictionary and Wikipedia lookup history
 - Reading statistics details
 - A few other plugins]]),
                 keep_menu_open = true,
-                callback = function()
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local KeyValuePage = require("ui/widget/keyvaluepage")
-                    local default_perpage = KeyValuePage:getDefaultKeyValuesPerPage()
-                    local curr_perpage = G_reader_settings:readSetting("keyvalues_per_page") or default_perpage
-                    local items = SpinWidget:new{
-                        value = curr_perpage,
+                callback = function(touchmenu_instance)
+                    local default_value = KeyValuePage.getDefaultItemsPerPage()
+                    local current_value = G_reader_settings:readSetting("keyvalues_per_page") or default_value
+                    local widget = SpinWidget:new{
+                        value = current_value,
                         value_min = 10,
-                        value_max = 24,
-                        default_value = default_perpage,
+                        value_max = 30,
+                        default_value = default_value,
                         title_text =  _("Info lists items per page"),
                         callback = function(spin)
-                            if spin.value == default_perpage then
+                            if spin.value == default_value then
                                 -- We can't know if the user has set a value or hit "Use default", but
                                 -- assume that if it is the default, he will prefer to stay with our
                                 -- default if he later changes screen DPI
@@ -400,9 +406,10 @@ To:
                             else
                                 G_reader_settings:saveSetting("keyvalues_per_page", spin.value)
                             end
+                            touchmenu_instance:updateItems()
                         end
                     }
-                    UIManager:show(items)
+                    UIManager:show(widget)
                 end,
             },
         },
@@ -962,10 +969,11 @@ function FileManagerMenu:onShowMenu(tab_index)
 end
 
 function FileManagerMenu:onCloseFileManagerMenu()
-    if not self.menu_container then return end
+    if not self.menu_container then return true end
     local last_tab_index = self.menu_container[1].last_index
     G_reader_settings:saveSetting("filemanagermenu_tab_index", last_tab_index)
     UIManager:close(self.menu_container)
+    self.menu_container = nil
     return true
 end
 
@@ -1003,11 +1011,14 @@ function FileManagerMenu:onSwipeShowMenu(ges)
 end
 
 function FileManagerMenu:onSetDimensions(dimen)
-    self:onCloseFileManagerMenu()
-    -- update listening according to new screen dimen
-    if Device:isTouchDevice() then
-        self:initGesListener()
+    -- This widget doesn't support in-place layout updates, so, close & reopen
+    if self.menu_container then
+        self:onCloseFileManagerMenu()
+        self:onShowMenu()
     end
+
+    -- update gesture zones according to new screen dimen
+    self:initGesListener()
 end
 
 function FileManagerMenu:onMenuSearch()

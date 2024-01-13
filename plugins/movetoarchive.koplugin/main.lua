@@ -103,8 +103,8 @@ function MoveToArchive:onMoveToArchive(do_copy)
     else
         text = _("Book moved.\nDo you want to open it from the archive folder?")
         FileManager:moveFile(document_full_path, self.archive_dir_path)
-        require("readhistory"):updateItemByPath(document_full_path, dest_file) -- (will update "lastfile" if needed)
-        require("readcollection"):updateItemByPath(document_full_path, dest_file)
+        require("readhistory"):updateItem(document_full_path, dest_file) -- (will update "lastfile" if needed)
+        require("readcollection"):updateItem(document_full_path, dest_file)
     end
     DocSettings.updateLocation(document_full_path, dest_file, do_copy)
     UIManager:show(ConfirmBox:new{

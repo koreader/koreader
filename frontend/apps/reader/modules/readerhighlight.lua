@@ -568,6 +568,26 @@ function ReaderHighlight:addToMainMenu(menu_items)
             UIManager:show(items)
         end,
     })
+
+    table.insert(menu_items.long_press.sub_item_table, {
+        text = _("Auto-scroll when selection reaches a corner"),
+        help_text = _([[
+Auto-scroll to show part of the previous page when your text selection reaches the top left corner, or of the next page when it reaches the bottom right corner.
+Except when in two columns mode, where this is limited to showing only the previous or next column.]]),
+        checked_func = function()
+            if self.ui.paging then return false end
+            return not self.view.highlight.disabled and G_reader_settings:nilOrTrue("highlight_corner_scroll")
+        end,
+        enabled_func = function()
+            if self.ui.paging then return false end
+            return not self.view.highlight.disabled
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrTrue("highlight_corner_scroll")
+            self.allow_corner_scroll = G_reader_settings:nilOrTrue("highlight_corner_scroll")
+        end,
+    })
+
     -- long_press menu is under taps_and_gestures menu which is not available for non touch device
     -- Clone long_press menu and change label making much meaning for non touch devices
     if not Device:isTouchDevice() and Device:hasDPad() then
@@ -1127,10 +1147,48 @@ function ReaderHighlight:_getHighlightMenuAnchor()
 end
 
 function ReaderHighlight:_resetHoldTimer(clear)
-    if clear then
-        self.hold_last_time = nil
-    else
-        self.hold_last_time = UIManager:getTime()
+    if not self.long_hold_reached_action then
+        self.long_hold_reached_action = function()
+            self.long_hold_reached = true
+            -- Have ReaderView redraw and refresh ReaderFlipping and our state icon, avoiding flashes
+            UIManager:setDirty(self.dialog, "ui", self.view.flipping.dimen)
+        end
+    end
+    -- Unschedule if already set
+    UIManager:unschedule(self.long_hold_reached_action)
+
+    if not clear then
+        -- We don't need to handle long-hold and show its icon in some configurations
+        -- where it would not change the behaviour from the normal-hold one (but we still
+        -- need to go through the checks below to clear any long_hold_reached set when in
+        -- the word->multiwords selection transition).
+        -- (It feels we don't need to care about default_highlight_action="nothing" here.)
+        local handle_long_hold = true
+        if self.is_word_selection then
+            -- Single word normal-hold defaults to dict lookup, and long-hold defaults to "ask".
+            -- If normal-hold is set to use the highlight action, and this action is still "ask",
+            -- no need to handle long-hold.
+            if G_reader_settings:isTrue("highlight_action_on_single_word") and
+                   G_reader_settings:readSetting("default_highlight_action", "ask") == "ask" then
+                handle_long_hold = false
+            end
+        else
+            -- Multi words selection uses default_highlight_action, and no need for long-hold
+            -- if it is already "ask".
+            if G_reader_settings:readSetting("default_highlight_action", "ask") == "ask" then
+                handle_long_hold = false
+            end
+        end
+        if handle_long_hold then
+            -- (Default delay is 3 seconds as in the menu items)
+            UIManager:scheduleIn(G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3), self.long_hold_reached_action)
+        end
+    end
+    -- Unset flag and icon
+    if self.long_hold_reached then
+        self.long_hold_reached = false
+        -- Have ReaderView redraw and refresh ReaderFlipping with our state icon removed
+        UIManager:setDirty(self.dialog, "ui", self.view.flipping.dimen)
     end
 end
 
@@ -1181,6 +1239,8 @@ function ReaderHighlight:onHold(arg, ges)
         return false
     end
     self.gest_pos = self.hold_pos
+
+    self.allow_hold_pan_corner_scroll = false -- reset this, don't allow that yet
 
     -- check if we were holding on an image
     -- we provide want_frames=true, so we get a list of images for
@@ -1275,7 +1335,7 @@ function ReaderHighlight:onHoldPan(_, ges)
     self.holdpan_pos = self.view:screenToPageTransform(ges.pos)
     logger.dbg("holdpan position in page", self.holdpan_pos)
 
-    if self.ui.rolling and self.selected_text_start_xpointer then
+    if self.ui.rolling and self.allow_corner_scroll and self.selected_text_start_xpointer then
         -- With CreDocuments, allow text selection across multiple pages
         -- by (temporarily) switching to scroll mode when panning to the
         -- top left or bottom right corners.
@@ -1301,7 +1361,15 @@ function ReaderHighlight:onHoldPan(_, ges)
             is_in_next_page_corner = self.holdpan_pos.y > 7/8*self.screen_h
                                       and self.holdpan_pos.x > 7/8*self.screen_w
         end
-        if is_in_prev_page_corner or is_in_next_page_corner then
+        if not self.allow_hold_pan_corner_scroll then
+            if not is_in_prev_page_corner and not is_in_next_page_corner then
+                -- We expect the user to come from a non-corner zone into a corner
+                -- to enable this; this allows normal highlighting without scrolling
+                -- if the selection is started in the corner: the user will have to
+                -- move out from and go back in to trigger a scroll.
+                self.allow_hold_pan_corner_scroll = true
+            end
+        elseif is_in_prev_page_corner or is_in_next_page_corner then
             self:_resetHoldTimer()
             if self.was_in_some_corner then
                 -- Do nothing, wait for the user to move his finger out of that corner
@@ -1546,6 +1614,9 @@ function ReaderHighlight:onHoldRelease()
         return true
     end
 
+    local long_final_hold = self.long_hold_reached
+    self:_resetHoldTimer(true) -- clear state
+
     local default_highlight_action = G_reader_settings:readSetting("default_highlight_action", "ask")
 
     if self.select_mode then -- extended highlighting, ending fragment
@@ -1562,16 +1633,6 @@ function ReaderHighlight:onHoldRelease()
         return true
     end
 
-    local long_final_hold = false
-    if self.hold_last_time then
-        local hold_duration = time.now() - self.hold_last_time
-        local long_hold_threshold_s = G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3) -- seconds
-        if hold_duration > time.s(long_hold_threshold_s) then
-            -- We stayed 3 seconds before release without updating selection
-            long_final_hold = true
-        end
-        self.hold_last_time = nil
-    end
     if self.is_word_selection then -- single-word selection
         if long_final_hold or G_reader_settings:isTrue("highlight_action_on_single_word") then
             self.is_word_selection = false
@@ -2116,6 +2177,8 @@ function ReaderHighlight:onReadSettings(config)
         or G_reader_settings:readSetting("highlight_drawing_style") or self.view.highlight.saved_drawer
     self.view.highlight.disabled = G_reader_settings:has("default_highlight_action")
         and G_reader_settings:readSetting("default_highlight_action") == "nothing"
+
+    self.allow_corner_scroll = G_reader_settings:nilOrTrue("highlight_corner_scroll")
 
     -- panel zoom settings isn't supported in EPUB
     if self.document.info.has_pages then
