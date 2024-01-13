@@ -708,6 +708,9 @@ function Input:handlePowerManagementOnlyEv(ev)
     end
 
     if self.fake_event_set[keycode] then
+        if self.complex_fake_event_set[keycode] then
+            table.insert(self.fake_event_args[keycode], ev.value)
+        end
         return keycode
     end
 

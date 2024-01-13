@@ -280,7 +280,17 @@ function Kindle:usbPlugIn()
     -- NOTE: If the device is put in USBNet mode before we even start, everything's peachy, though :).
 end
 
-function Kindle:intoScreenSaver()
+-- Hopefully, the event sources are fairly portable...
+-- c.f., https://github.com/koreader/koreader/pull/11174#issuecomment-1830064445
+local POWERD_EVENT_SOURCES = {
+    [1] = "BUTTON_WAKEUP",  -- outOfScreenSaver 1
+    [2] = "BUTTON_SUSPEND", -- goingToScreenSaver 2
+    [4] = "HALL_SUSPEND",   -- goingToScreenSaver 4
+    [6] = "HALL_WAKEUP",    -- outOfScreenSaver 6
+}
+
+function Kindle:intoScreenSaver(source)
+    logger.dbg("Kindle:intoScreenSaver via", POWERD_EVENT_SOURCES[source] or string.format("UNKNOWN_SUSPEND (%d)", source or -1))
     if not self.screen_saver_mode then
         if self:supportsScreensaver() then
             -- NOTE: Meaning this is not a SO device ;)
@@ -304,7 +314,8 @@ function Kindle:intoScreenSaver()
     self.powerd:beforeSuspend()
 end
 
-function Kindle:outofScreenSaver()
+function Kindle:outofScreenSaver(source)
+    logger.dbg("Kindle:outofScreenSaver via", POWERD_EVENT_SOURCES[source] or string.format("UNKNOWN_WAKEUP (%d)", source or -1))
     if self.screen_saver_mode then
         if self:supportsScreensaver() then
             local Screensaver = require("ui/screensaver")
@@ -382,14 +393,23 @@ function Kindle:UIManagerReady(uimgr)
 end
 
 function Kindle:setEventHandlers(uimgr)
+    -- These custom fake events *will* pass an argument...
+    self.input.complex_fake_event_set.IntoSS = true
+    self.input.fake_event_args.IntoSS = {}
+    self.input.complex_fake_event_set.OutOfSS = true
+    self.input.fake_event_args.OutOfSS = {}
+
     UIManager.event_handlers.Suspend = function()
         self.powerd:toggleSuspend()
     end
-    UIManager.event_handlers.IntoSS = function()
-        self:intoScreenSaver()
+    UIManager.event_handlers.IntoSS = function(input_event)
+        -- Retrieve the argument set by Input:handleKeyBoardEv
+        local arg = table.remove(self.input.fake_event_args[input_event])
+        self:intoScreenSaver(arg)
     end
-    UIManager.event_handlers.OutOfSS = function()
-        self:outofScreenSaver()
+    UIManager.event_handlers.OutOfSS = function(input_event)
+        local arg = table.remove(self.input.fake_event_args[input_event])
+        self:outofScreenSaver(arg)
     end
     UIManager.event_handlers.Charging = function()
         self:_beforeCharging()
