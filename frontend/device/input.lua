@@ -145,17 +145,13 @@ local Input = {
     },
 
     fake_event_set = {
-        IntoSS = true, OutOfSS = true,
+        IntoSS = true, OutOfSS = true, ExitingSS = true,
         UsbPlugIn = true, UsbPlugOut = true,
         Charging = true, NotCharging = true,
         WakeupFromSuspend = true, ReadyToSuspend = true,
         UsbDevicePlugIn = true, UsbDevicePlugOut = true,
     },
-    -- Subset of fake_event_set for events that require passing a parameter along
-    complex_fake_event_set = {
-        UsbDevicePlugIn = true, UsbDevicePlugOut = true,
-    },
-    -- Crappy FIFO to forward parameters for those events to UIManager
+    -- Crappy FIFO to forward parameters to UIManager for the subset of fake_event_set that require passing a parameter along
     fake_event_args = {
         UsbDevicePlugIn = {},
         UsbDevicePlugOut = {},
@@ -246,8 +242,9 @@ function Input:init()
     end
 
     -- set up fake event map
-    self.event_map[10000] = "IntoSS" -- go into screen saver
-    self.event_map[10001] = "OutOfSS" -- go out of screen saver
+    self.event_map[10000] = "IntoSS" -- Requested to go into screen saver
+    self.event_map[10001] = "OutOfSS" -- Requested to go out of screen saver
+    self.event_map[10002] = "ExitingSS" -- Specific to Kindle, SS *actually* closed
     self.event_map[10010] = "UsbPlugIn"
     self.event_map[10011] = "UsbPlugOut"
     self.event_map[10020] = "Charging"
@@ -618,7 +615,7 @@ function Input:handleKeyBoardEv(ev)
         -- So, we simply store it somewhere our handler can find and call it a day.
         -- And we use an array as a FIFO because we cannot guarantee that insertions and removals will interleave nicely.
         -- (This is all in the name of avoiding complexifying the common codepaths for events that should be few and far between).
-        if self.complex_fake_event_set[keycode] then
+        if self.fake_event_args[keycode] then
             table.insert(self.fake_event_args[keycode], ev.value)
         end
         return keycode
@@ -708,6 +705,9 @@ function Input:handlePowerManagementOnlyEv(ev)
     end
 
     if self.fake_event_set[keycode] then
+        if self.fake_event_args[keycode] then
+            table.insert(self.fake_event_args[keycode], ev.value)
+        end
         return keycode
     end
 
