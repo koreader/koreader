@@ -517,14 +517,16 @@ end
 function ReaderSearch:showFindAllResults(not_cached)
     if self.ui.rolling and not_cached then -- for ui.paging: items are built in KoptInterface:findAllText()
         for _, item in ipairs(self.findall_results) do
-            local text = item.matched_text or ""
+            -- PDF/Kopt shows full words when only some part matches; let's do the same with CRE
+            local word = item.matched_text or ""
             if item.matched_word_prefix then
-                text = item.matched_word_prefix .. text
+                word = item.matched_word_prefix .. word
             end
             if item.matched_word_suffix then
-                text = text .. item.matched_word_suffix
+                word = word .. item.matched_word_suffix
             end
-            text = "【" .. text .. "】"
+            -- append context before and after the word
+            local text = "【" .. word .. "】"
             if item.prev_text then
                 text = item.prev_text .. text
             end
