@@ -337,8 +337,12 @@ function PdfDocument:getCoverPageImage()
     return self.koptinterface:getCoverPageImage(self)
 end
 
-function PdfDocument:findText(pattern, origin, reverse, caseInsensitive, page)
-    return self.koptinterface:findText(self, pattern, origin, reverse, caseInsensitive, page)
+function PdfDocument:findText(pattern, origin, reverse, case_insensitive, page)
+    return self.koptinterface:findText(self, pattern, origin, reverse, case_insensitive, page)
+end
+
+function PdfDocument:findAllText(pattern, case_insensitive, nb_context_words, max_hits)
+    return self.koptinterface:findAllText(self, pattern, case_insensitive, nb_context_words, max_hits)
 end
 
 function PdfDocument:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, hinting)

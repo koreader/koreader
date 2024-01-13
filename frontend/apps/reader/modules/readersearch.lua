@@ -4,7 +4,9 @@ local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
+local Menu = require("ui/widget/menu")
 local Notification = require("ui/widget/notification")
+local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -27,7 +29,11 @@ local ReaderSearch = WidgetContainer:extend{
     -- The speed of the search depends on the regexs. Complex ones might need some time, easy ones
     -- go with the speed of light.
     -- Setting max_hits higher, does not mean to require more memory. More hits means smaller single hits.
-    max_hits = 2048, -- maximum hits for search; timinges tested on a Tolino
+    max_hits = 2048, -- maximum hits for findText search; timinges tested on a Tolino
+    findall_max_hits = 5000, -- maximum hits for findAllText search
+     -- number of words before and after the search string in All search results
+    findall_nb_context_words = G_reader_settings:readSetting("fulltext_search_nb_context_words") or 3,
+    findall_results_per_page = G_reader_settings:readSetting("fulltext_search_results_per_page") or 10,
 
     -- internal: whether we expect results on previous pages
     -- (can be different from self.direction, if, from a page in the
@@ -72,6 +78,54 @@ SRELL_ERROR_CODES[111] = _("Expression too complex, some hits will not be shown.
 SRELL_ERROR_CODES[666] = _("Expression may lead to an extremely long search time.")
 
 function ReaderSearch:addToMainMenu(menu_items)
+    menu_items.fulltext_search_settings = {
+        text = _("Fulltext search settings"),
+        sub_item_table = {
+            {
+                text_func = function()
+                    return T(_("Words in context: %1"), self.findall_nb_context_words)
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local widget = SpinWidget:new{
+                        title_text =  _("Words in context"),
+                        value = self.findall_nb_context_words,
+                        value_min = 1,
+                        value_max = 20,
+                        default_value = 3,
+                        callback = function(spin)
+                            self.last_search_hash = nil
+                            self.findall_nb_context_words = spin.value
+                            G_reader_settings:saveSetting("fulltext_search_nb_context_words", spin.value)
+                            touchmenu_instance:updateItems()
+                        end,
+                    }
+                    UIManager:show(widget)
+                end,
+            },
+            {
+                text_func = function()
+                    return T(_("Results per page: %1"), self.findall_results_per_page)
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local widget = SpinWidget:new{
+                        title_text =  _("Results per page"),
+                        value = self.findall_results_per_page,
+                        value_min = 6,
+                        value_max = 24,
+                        default_value = 10,
+                        callback = function(spin)
+                            self.findall_results_per_page = spin.value
+                            G_reader_settings:saveSetting("fulltext_search_results_per_page", spin.value)
+                            touchmenu_instance:updateItems()
+                        end,
+                    }
+                    UIManager:show(widget)
+                end,
+            },
+        },
+    }
     menu_items.fulltext_search = {
         text = _("Fulltext search"),
         callback = function()
@@ -103,7 +157,14 @@ function ReaderSearch:searchCallback(reverse)
         UIManager:show(InfoMessage:new{ text = error_message })
     else
         UIManager:close(self.input_dialog)
-        self:onShowSearchDialog(search_text, reverse, self.use_regex, self.case_insensitive)
+        if reverse then
+            self:onShowSearchDialog(search_text, reverse, self.use_regex, self.case_insensitive)
+        else
+            local Trapper = require("ui/trapper")
+            Trapper:wrap(function()
+                self:findAllText(search_text)
+            end)
+        end
     end
 end
 
@@ -124,6 +185,13 @@ function ReaderSearch:onShowFulltextSearchInput()
                     id = "close",
                     callback = function()
                         UIManager:close(self.input_dialog)
+                    end,
+                },
+                {
+                    -- @translators Search all entries in entire document
+                    text = _("All"),
+                    callback = function()
+                        self:searchCallback()
                     end,
                 },
                 {
@@ -183,7 +251,7 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
             local no_results = true -- for notification
             local res = search_func(self, search_term, param, regex, case_insensitive)
             if res then
-                if self.ui.document.info.has_pages then
+                if self.ui.paging then
                     no_results = false
                     self.ui.link:onGotoLink({page = res.page - 1}, neglect_current_location)
                     self.view.highlight.temp[res.page] = res
@@ -370,6 +438,13 @@ function ReaderSearch:search(pattern, origin, regex, case_insensitive)
     Device:setIgnoreInput(true)
     local retval, words_found = self.ui.document:findText(pattern, origin, direction, case_insensitive, page, regex, self.max_hits)
     Device:setIgnoreInput(false)
+    self:showErrorNotification(words_found, regex, self.max_hits)
+    return retval
+end
+
+function ReaderSearch:showErrorNotification(words_found, regex, max_hits)
+    regex = regex or self.use_regex
+    max_hits = max_hits or self.findall_max_hits
     local regex_retval = regex and self.ui.document:getAndClearRegexSearchError()
     if regex and regex_retval ~= 0 then
         local error_message
@@ -382,13 +457,12 @@ function ReaderSearch:search(pattern, origin, regex, case_insensitive)
             text = error_message,
             timeout = false,
         })
-    elseif words_found and words_found > self.max_hits then
+    elseif words_found and words_found >= max_hits then
         UIManager:show(Notification:new{
             text =_("Too many hits"),
             timeout = 4,
          })
     end
-    return retval
 end
 
 function ReaderSearch:searchFromStart(pattern, _, regex, case_insensitive)
@@ -414,6 +488,87 @@ function ReaderSearch:searchNext(pattern, direction, regex, case_insensitive)
     self.direction = direction
     self._expect_back_results = direction == 1
     return self:search(pattern, 1, regex, case_insensitive)
+end
+
+function ReaderSearch:findAllText(search_text)
+    local last_search_hash = self.last_search_text .. tostring(self.case_insensitive) .. tostring(self.use_regex)
+    local not_cached = self.last_search_hash ~= last_search_hash
+    if not_cached then
+        local Trapper = require("ui/trapper")
+        local info = InfoMessage:new{ text = _("Searching… (tap to cancel)") }
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        local completed, res = Trapper:dismissableRunInSubprocess(function()
+            return self.ui.document:findAllText(search_text,
+                self.case_insensitive, self.findall_nb_context_words, self.findall_max_hits, self.use_regex)
+        end, info)
+        if not completed then return end
+        UIManager:close(info)
+        self.last_search_hash = last_search_hash
+        self.findall_results = res
+    end
+    if self.findall_results then
+        self:showFindAllResults(not_cached)
+    else
+        UIManager:show(InfoMessage:new{ text = _("No results in the document") })
+    end
+end
+
+function ReaderSearch:showFindAllResults(not_cached)
+    if self.ui.rolling and not_cached then -- for ui.paging: items are built in KoptInterface:findAllText()
+        for _, item in ipairs(self.findall_results) do
+            -- PDF/Kopt shows full words when only some part matches; let's do the same with CRE
+            local word = item.matched_text or ""
+            if item.matched_word_prefix then
+                word = item.matched_word_prefix .. word
+            end
+            if item.matched_word_suffix then
+                word = word .. item.matched_word_suffix
+            end
+            -- append context before and after the word
+            local text = "【" .. word .. "】"
+            if item.prev_text then
+                text = item.prev_text .. text
+            end
+            if item.next_text then
+                text = text .. item.next_text
+            end
+            item.text = text
+            item.mandatory = self.ui.bookmark:getBookmarkPageString(item.start)
+        end
+    end
+
+    local menu
+    menu = Menu:new{
+        title = T(_("Search results (%1)"), #self.findall_results),
+        subtitle = T(_("Query: %1"), self.last_search_text),
+        item_table = self.findall_results,
+        items_per_page = self.findall_results_per_page,
+        covers_fullscreen = true,
+        is_borderless = true,
+        is_popout = false,
+        title_bar_fm_style = true,
+        onMenuChoice = function(_, item)
+            if self.ui.rolling then
+                self.ui.link:addCurrentLocationToStack()
+                self.ui.rolling:onGotoXPointer(item.start, item.start) -- show target line marker
+                self.ui.document:getTextFromXPointers(item.start, item["end"], true) -- highlight
+            else
+                local page = item.mandatory
+                local boxes = {}
+                for i, box in ipairs(item.boxes) do
+                    boxes[i] = self.ui.document:nativeToPageRectTransform(page, box)
+                end
+                self.ui.link:onGotoLink({ page = page - 1 })
+                self.view.highlight.temp[page] = boxes
+            end
+        end,
+        close_callback = function()
+            UIManager:close(menu)
+        end,
+    }
+    UIManager:show(menu)
+    self:showErrorNotification(#self.findall_results)
 end
 
 return ReaderSearch
