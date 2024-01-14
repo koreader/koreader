@@ -993,6 +993,9 @@ function BookInfoManager.getCachedCoverSize(img_w, img_h, max_img_w, max_img_h)
 end
 
 function BookInfoManager.isCachedCoverInvalid(bookinfo, cover_specs)
+    if not bookinfo.cover_w or not bookinfo.cover_h then -- no thumbnail yet
+        return true
+    end
     local img_w, img_h = bookinfo.cover_sizetag:match("(%d+)x(%d+)") -- original image
     if not img_w or not img_h then -- old or bad cover_sizetag
         return true
