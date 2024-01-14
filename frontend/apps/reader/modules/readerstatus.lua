@@ -38,7 +38,10 @@ function ReaderStatus:onEndOfBook()
     local QuickStart = require("ui/quickstart")
     local last_file = G_reader_settings:readSetting("lastfile")
     if last_file == QuickStart.quickstart_filename then
-        self:openFileBrowser()
+        -- Like onOpenNextDocumentInFolder, delay this so as not to break instance lifecycle
+        UIManager:nextTick(function()
+            self:openFileBrowser()
+        end)
         return
     end
 
@@ -59,15 +62,15 @@ function ReaderStatus:onEndOfBook()
                         return self.summary.status == "complete" and _("Mark as reading") or _("Mark as finished")
                     end,
                     callback = function()
-                        self:onMarkBook()
                         UIManager:close(button_dialog)
+                        self:onMarkBook()
                     end,
                 },
                 {
                     text = _("Book status"),
                     callback = function()
-                        self:onShowBookStatus()
                         UIManager:close(button_dialog)
+                        self:onShowBookStatus()
                     end,
                 },
 
@@ -76,16 +79,16 @@ function ReaderStatus:onEndOfBook()
                 {
                     text = _("Go to beginning"),
                     callback = function()
-                        self.ui:handleEvent(Event:new("GoToBeginning"))
                         UIManager:close(button_dialog)
+                        self.ui:handleEvent(Event:new("GoToBeginning"))
                     end,
                 },
                 {
                     text = _("Open next file"),
                     enabled = next_file_enabled,
                     callback = function()
-                        self:onOpenNextDocumentInFolder()
                         UIManager:close(button_dialog)
+                        self:onOpenNextDocumentInFolder()
                     end,
                 },
             },
@@ -93,15 +96,18 @@ function ReaderStatus:onEndOfBook()
                 {
                     text = _("Delete file"),
                     callback = function()
-                        self:deleteFile()
                         UIManager:close(button_dialog)
+                        self:deleteFile()
                     end,
                 },
                 {
                     text = _("File browser"),
                     callback = function()
-                        self:openFileBrowser()
                         UIManager:close(button_dialog)
+                        -- Ditto
+                        UIManager:nextTick(function()
+                            self:openFileBrowser()
+                        end)
                     end,
                 },
             },
@@ -123,11 +129,7 @@ function ReaderStatus:onEndOfBook()
             UIManager:show(info)
             UIManager:forceRePaint()
             UIManager:close(info)
-            -- Delay until the next tick, as this will destroy the Document instance,
-            -- but we may not be the final Event caught by said Document...
-            UIManager:nextTick(function()
-                self:onOpenNextDocumentInFolder()
-            end)
+            self:onOpenNextDocumentInFolder()
         else
             UIManager:show(InfoMessage:new{
                 text = _("Could not open next file. Sort by last read date does not support this feature."),
@@ -172,7 +174,11 @@ function ReaderStatus:onOpenNextDocumentInFolder()
     local FileChooser = require("ui/widget/filechooser")
     local next_file = FileChooser:getNextFile(self.document.file)
     if next_file then
-        self.ui:switchDocument(next_file)
+        -- Delay until the next tick, as this will destroy the Document instance,
+        -- but we may not be the final Event caught by said Document...
+        UIManager:nextTick(function()
+            self.ui:switchDocument(next_file)
+        end)
     else
         UIManager:show(InfoMessage:new{
             text = _("This is the last file in the current folder. No next file to open."),
