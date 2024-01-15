@@ -147,7 +147,7 @@ function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callba
             callback = function()
                 summary.status = to_status
                 filemanagerutil.setStatus(file, to_status)
-                UIManager:broadcastEvent(Event:new("DocSettingsChanged", file, { summary = summary }))
+                UIManager:broadcastEvent(Event:new("DocSettingsItemsChanged", file, { summary = summary })) -- for CoverBrowser
                 caller_callback()
             end,
         }
@@ -190,7 +190,7 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
                         UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
                     end
                     if data_to_purge.doc_settings then
-                        UIManager:broadcastEvent(Event:new("UpdateCoverBrowserBookCache", file))
+                        UIManager:broadcastEvent(Event:new("DocSettingsItemsChanged", file)) -- for CoverBrowser
                         require("readhistory"):fileSettingsPurged(file)
                     end
                     caller_callback()
