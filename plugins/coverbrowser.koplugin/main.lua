@@ -796,7 +796,7 @@ function CoverBrowser:onInvalidateMetadataCache(file)
     return true
 end
 
-function CoverBrowser:onDocSettingsChanged(file, doc_settings)
+function CoverBrowser:onDocSettingsItemsChanged(file, doc_settings)
     local status -- nil to wipe the covermenu book cache
     if doc_settings then
         status = doc_settings.summary and doc_settings.summary.status
