@@ -243,8 +243,7 @@ function KindlePowerD:initWakeupMgr()
     if not self.device:supportsScreensaver() then return end
     if self.lipc_handle == nil then return end
 
-    function KindlePowerD:wakeupFromSuspend()
-        logger.dbg("Kindle wakeupFromSuspend")
+    function KindlePowerD:wakeupFromSuspend(ts)
         -- Give the device a few seconds to settle.
         -- This filters out user input resumes -> device will resume to active
         -- Also the Kindle stays in Ready to suspend for 10 seconds
@@ -252,8 +251,7 @@ function KindlePowerD:initWakeupMgr()
         UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
     end
 
-    function KindlePowerD:readyToSuspend()
-        logger.dbg("Kindle readyToSuspend")
+    function KindlePowerD:readyToSuspend(delay)
         if self.device.wakeup_mgr:isWakeupAlarmScheduled() then
             local now = os.time()
             local alarm = self.device.wakeup_mgr:getWakeupAlarmEpoch()
