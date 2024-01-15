@@ -310,8 +310,8 @@ function VirtualKey:init()
     self.flash_keyboard = G_reader_settings:nilOrTrue("flash_keyboard")
 end
 
-function VirtualKey:paintTo(bb, x ,y)
-    InputContainer.paintTo(self, bb, x, y)
+function VirtualKey:paintTo(...)
+    InputContainer.paintTo(self, ...)
 
     -- Fudge self.dimen to include the padding, to make sure said padding is covered by our ges_events range...
     local padding = bit.rshift(self.keyboard.key_padding, 1) -- truncated div by 2

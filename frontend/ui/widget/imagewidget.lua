@@ -515,11 +515,19 @@ function ImageWidget:paintTo(bb, x, y)
     if self.hide then return end
     -- self:_render is called in getSize method
     local size = self:getSize()
-    self.dimen = Geom:new{
-        x = x, y = y,
-        w = size.w,
-        h = size.h
-    }
+    if not self.dimen then
+        self.dimen = Geom:new{
+            x = x, y = y,
+            w = size.w,
+            h = size.h
+        }
+    else
+        self.dimen.x = x
+        self.dimen.y = y
+        -- Possibly redundant
+        self.dimen.w = size.w
+        self.dimen.h = size.h
+    end
     logger.dbg("blitFrom", x, y, self._offset_x, self._offset_y, size.w, size.h)
     local do_alpha = false
     if self.alpha == true then
