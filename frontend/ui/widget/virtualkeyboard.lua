@@ -310,6 +310,16 @@ function VirtualKey:init()
     self.flash_keyboard = G_reader_settings:nilOrTrue("flash_keyboard")
 end
 
+function VirtualKey:paintTo(bb, x ,y)
+    InputContainer.paintTo(self, bb, x, y)
+    -- Fudge self.dimen to include the padding, to make sure said padding is covered by our ges_events range...
+    local padding = bit.rshift(self.keyboard.key_padding, 1) -- truncated div by 2
+    self.dimen.x = self.dimen.x - padding
+    self.dimen.w = self[1].dimen.w + padding
+    self.dimen.y = self.dimen.y - padding
+    self.dimen.h = self[1].dimen.h + padding
+end
+
 function VirtualKey:genKeyboardLayoutKeyChars()
     local positions = {
         "northeast",
