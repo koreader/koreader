@@ -495,7 +495,7 @@ function InputDialog:onTap(arg, ges)
         --       so we'll have to double check that it wasn't inside of the whole VK region,
         --       otherwise tapping inside a border would close the VK ;p.
         -- Poke at keyboard_frame directly, as the top-level dimen never gets updated coordinates...
-        if self._input_widget.keyboard and self._input_widget.keyboard.dimen and ges.pos:notIntersectWith(self._input_widget.keyboard[1][1].dimen) then
+        if self._input_widget.keyboard and self._input_widget.keyboard.dimen and ges.pos:notIntersectWith(self._input_widget.keyboard.dimen) then
             self:onCloseKeyboard()
         end
     else
