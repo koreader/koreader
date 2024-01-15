@@ -2208,8 +2208,10 @@ function ReaderHighlight:onSaveSettings()
 end
 
 function ReaderHighlight:onClose()
-    UIManager:close(self.highlight_dialog)
-    self.highlight_dialog = nil
+    if self.highlight_dialog then
+        UIManager:close(self.highlight_dialog)
+        self.highlight_dialog = nil
+    end
     -- clear highlighted text
     self:clear()
 end
