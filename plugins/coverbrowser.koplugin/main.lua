@@ -796,7 +796,12 @@ function CoverBrowser:onInvalidateMetadataCache(file)
     return true
 end
 
-function CoverBrowser:onUpdateCoverBrowserBookCache(file, status)
+function CoverBrowser:onDocSettingsChanged(file, doc_settings)
+    local status -- nil to wipe the covermenu book cache
+    if doc_settings then
+        status = doc_settings.summary and doc_settings.summary.status
+        if not status then return end -- changes not for us
+    end
     if self.ui.file_chooser then
         self.ui.file_chooser:updateCache(file, status)
     end
@@ -806,7 +811,6 @@ function CoverBrowser:onUpdateCoverBrowserBookCache(file, status)
     if self.ui.collections and self.ui.collections.coll_menu then
         self.ui.collections.coll_menu:updateCache(file, status)
     end
-    return true
 end
 
 function CoverBrowser:extractBooksInDirectory(path)
