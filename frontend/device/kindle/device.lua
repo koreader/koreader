@@ -376,14 +376,16 @@ function Kindle:usbPlugOut()
     -- NOTE: See usbPlugIn(), we don't have anything fancy to do here either.
 end
 
-function Kindle:wakeupFromSuspend()
-    self.powerd:wakeupFromSuspend()
+function Kindle:wakeupFromSuspend(ts)
+    logger.dbg("Kindle:wakeupFromSuspend", ts)
+    self.powerd:wakeupFromSuspend(ts)
     self.last_suspend_time = time.boottime_or_realtime_coarse() - self.suspend_time
     self.total_suspend_time = self.total_suspend_time + self.last_suspend_time
 end
 
-function Kindle:readyToSuspend()
-    self.powerd:readyToSuspend()
+function Kindle:readyToSuspend(delay)
+    logger.dbg("Kindle:readyToSuspend", delay)
+    self.powerd:readyToSuspend(delay)
     self.suspend_time = time.boottime_or_realtime_coarse()
 end
 
@@ -400,6 +402,8 @@ function Kindle:setEventHandlers(uimgr)
     -- These custom fake events *will* pass an argument...
     self.input.fake_event_args.IntoSS = {}
     self.input.fake_event_args.OutOfSS = {}
+    self.input.fake_event_args.WakeupFromSuspend = {}
+    self.input.fake_event_args.ReadyToSuspend = {}
 
     UIManager.event_handlers.Suspend = function()
         self.powerd:toggleSuspend()
@@ -424,11 +428,13 @@ function Kindle:setEventHandlers(uimgr)
         self:usbPlugOut()
         self:_afterNotCharging()
     end
-    UIManager.event_handlers.WakeupFromSuspend = function()
-        self:wakeupFromSuspend()
+    UIManager.event_handlers.WakeupFromSuspend = function(input_event)
+        local arg = table.remove(self.input.fake_event_args[input_event])
+        self:wakeupFromSuspend(arg)
     end
-    UIManager.event_handlers.ReadyToSuspend = function()
-        self:readyToSuspend()
+    UIManager.event_handlers.ReadyToSuspend = function(input_event)
+        local arg = table.remove(self.input.fake_event_args[input_event])
+        self:readyToSuspend(arg)
     end
 end
 
