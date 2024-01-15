@@ -1,14 +1,24 @@
 #!/bin/sh
 
-# disable wifi and remove modules
+# stop wpa_supplicant service cleanly, used by xochitl
+if systemctl is-active -q wpa_supplicant; then
+    systemctl stop wpa_supplicant
+fi
 
-# clean stop (if it's running) of main wpa_supplicant service, used by xochitl
-systemctl stop wpa_supplicant
-# clean stop of non-service wpa_supplicant, if running
-wpa_cli terminate 2>/dev/null
+# stop non-service wpa_supplicant cleanly
+if pidof wpa_supplicant; then
+    wpa_cli terminate
+fi
+
+# stop dhcpcd if not enabled
+if ! systemctl is-enabled -q dhcpcd; then
+    systemctl stop dhcpcd
+fi
 
 # power down wifi interface
-ifconfig wlan0 down 2>/dev/null
+ifconfig wlan0 down
 
-# remove module
-modprobe -r brcmfmac 2>/dev/null
+# unload brcmfmac kernel module
+if grep -q "^brcmfmac " "/proc/modules"; then
+    modprobe -r brcmfmac
+fi

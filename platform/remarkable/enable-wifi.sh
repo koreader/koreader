@@ -1,19 +1,27 @@
 #!/bin/sh
 
-read -r MACHINE_TYPE <"/sys/devices/soc0/machine"
-if [ "reMarkable 2.0" = "${MACHINE_TYPE}" ]; then
-    if ! lsmod | grep -q brcmfmac; then
-        modprobe brcmfmac
-    fi
+# load brcmfmac kernel module
+if ! grep -q "^brcmfmac " "/proc/modules"; then
+    modprobe brcmfmac
+    sleep 1
 fi
 
-# clean stop (if it's running) of main wpa_supplicant service, used by xochitl
-systemctl stop wpa_supplicant
+# stop wpa_supplicant service cleanly, used by xochitl
+if systemctl is-active -q wpa_supplicant; then
+    systemctl stop wpa_supplicant
+fi
 
-# clean stop of non-service wpa_supplicant, if running
-wpa_cli terminate 2>/dev/null
+# stop non-service wpa_supplicant cleanly
+if pidof wpa_supplicant; then
+    wpa_cli terminate
+fi
 
-sleep 1
-
+# power up wifi interface
 ifconfig wlan0 up
-wpa_supplicant -i wlan0 -C /var/run/wpa_supplicant -B 2>/dev/null
+
+# make sure dhcpcd is running
+if ! systemctl is-active -q dhcpcd; then
+    systemctl start dhcpcd
+fi
+
+wpa_supplicant -i wlan0 -C /var/run/wpa_supplicant -B
