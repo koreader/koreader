@@ -137,6 +137,7 @@ function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callba
         status = summary.status
     else
         file = doc_settings_or_file
+        summary = {}
         status = filemanagerutil.getStatus(file)
     end
     local function genStatusButton(to_status)
@@ -144,11 +145,9 @@ function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callba
             text = filemanagerutil.statusToString(to_status) .. (status == to_status and "  ✓" or ""),
             enabled = status ~= to_status,
             callback = function()
-                if summary then -- currently opened file
-                    summary.status = to_status
-                end
+                summary.status = to_status
                 filemanagerutil.setStatus(file, to_status)
-                UIManager:broadcastEvent(Event:new("UpdateCoverBrowserBookCache", file, to_status))
+                UIManager:broadcastEvent(Event:new("DocSettingsChanged", file, { summary = summary }))
                 caller_callback()
             end,
         }
