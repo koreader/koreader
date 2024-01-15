@@ -278,6 +278,10 @@ function ReaderThumbnail:getPageThumbnail(page, width, height, batch_id, when_ge
 end
 
 function ReaderThumbnail:ensureTileGeneration()
+    if not self._standby_prevented then
+        self._standby_prevented = true
+        UIManager:preventStandby()
+    end
     local has_pids_still_to_collect = self:collectPids()
 
     local still_in_progress = false
@@ -318,6 +322,11 @@ function ReaderThumbnail:ensureTileGeneration()
     end
     if self.req_in_progress or has_pids_still_to_collect or next(self.thumbnails_requests) then
         self._ensureTileGeneration_action()
+    else
+        if self._standby_prevented then
+            self._standby_prevented = false
+            UIManager:allowStandby()
+        end
     end
 end
 
@@ -512,6 +521,10 @@ function ReaderThumbnail:onCloseDocument()
         self:logCacheSize()
         self.tile_cache:clear()
         self.tile_cache = nil
+    end
+    if self._standby_prevented then
+        self._standby_prevented = false
+        UIManager:allowStandby()
     end
 end
 
