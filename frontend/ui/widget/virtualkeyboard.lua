@@ -310,6 +310,18 @@ function VirtualKey:init()
     self.flash_keyboard = G_reader_settings:nilOrTrue("flash_keyboard")
 end
 
+function VirtualKey:paintTo(bb, x ,y)
+    InputContainer.paintTo(self, bb, x, y)
+    -- Fudge self.dimen to include the padding, to make sure said padding is covered by our ges_events range...
+    -- Like Geom, floor coordinates & ceil dims, to fill the gaps without overlaps.
+    local coords_padding = math.floor(self.keyboard.key_padding / 2)
+    local dims_padding = self.keyboard.key_padding -- i.e., coords_padding + math.ceil(self.keyboard.key_padding / 2)
+    self.dimen.x = self.dimen.x - coords_padding
+    self.dimen.w = self[1].dimen.w + dims_padding
+    self.dimen.y = self.dimen.y - coords_padding
+    self.dimen.h = self[1].dimen.h + dims_padding
+end
+
 function VirtualKey:genKeyboardLayoutKeyChars()
     local positions = {
         "northeast",
