@@ -7,6 +7,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local Notification = require("ui/widget/notification")
 local SpinWidget = require("ui/widget/spinwidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -525,14 +526,17 @@ function ReaderSearch:showFindAllResults(not_cached)
             if item.matched_word_suffix then
                 word = word .. item.matched_word_suffix
             end
+            -- Make this word bolder, using Poor Text Formatting provided by TextBoxWidget
+            -- (we know this text ends up in a TextBoxWidget).
+            local text = TextBoxWidget.PTF_BOLD_START .. word .. TextBoxWidget.PTF_BOLD_END
             -- append context before and after the word
-            local text = "【" .. word .. "】"
             if item.prev_text then
                 text = item.prev_text .. text
             end
             if item.next_text then
                 text = text .. item.next_text
             end
+            text = TextBoxWidget.PTF_HEADER .. text -- enable handling of our bold tags
             item.text = text
             item.mandatory = self.ui.bookmark:getBookmarkPageString(item.start)
         end
