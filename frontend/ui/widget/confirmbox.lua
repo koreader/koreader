@@ -51,6 +51,7 @@ local ConfirmBox = InputContainer:extend{
     cancel_callback = function() end,
     other_buttons = nil,
     other_buttons_first = false, -- set to true to place other buttons above Cancel-OK row
+    no_ok_button = false,
     margin = Size.margin.default,
     padding = Size.padding.default,
     dismissable = true, -- set to false if any button callback is required
@@ -120,6 +121,9 @@ function ConfirmBox:init()
             end,
         },
     }}
+    if self.no_ok_button then
+        table.remove(buttons[1], 2)
+    end
 
     if self.other_buttons then -- additional rows
         local rownum = self.other_buttons_first and 0 or 1
