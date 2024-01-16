@@ -8,6 +8,7 @@ local Language = {
         en = "English",
         ca = "Catalá",
         cs = "Čeština",
+        da = "Dansk",
         de = "Deutsch",
         eo = "Esperanto",
         es = "Español",
