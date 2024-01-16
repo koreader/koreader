@@ -242,6 +242,7 @@ local order = {
         "----------------------------",
         "search_menu",
         "----------------------------",
+        "debug_logging",
         "report_bug",
         "----------------------------",
         "system_statistics",  -- if enabled (Plugin)
