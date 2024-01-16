@@ -1,7 +1,6 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
-local Event = require("ui/event")
 local FileChooser = require("ui/widget/filechooser")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
@@ -14,7 +13,6 @@ local PathChooser = FileChooser:extend{
     title = true, -- or a string
         -- if let to true, a generic title will be set in init()
     no_title = false,
-    show_path = true,
     is_popout = false,
     covers_fullscreen = true, -- set it to false if you set is_popout = true
     is_borderless = true,
@@ -117,15 +115,15 @@ function PathChooser:onMenuHold(item)
         if self.detailed_file_info then
             local filesize = util.getFormattedSize(attr.size)
             local lastmod = os.date("%Y-%m-%d %H:%M", attr.modification)
-            title = T(_("Choose this file?\n\n%1\n\nFile size: %2 bytes\nLast modified: %3"),
+            title = T(_("Choose this file?\n\n%1\n\nFile size: %2 bytes\nLast modified: %3\n"),
                         BD.filepath(path), filesize, lastmod)
         else
-            title = T(_("Choose this file?\n\n%1"), BD.filepath(path))
+            title = T(_("Choose this file?\n\n%1\n"), BD.filepath(path))
         end
     elseif attr.mode == "directory" then
-        title = T(_("Choose this folder?\n\n%1"), BD.dirpath(path))
+        title = T(_("Choose this folder?\n\n%1\n"), BD.dirpath(path))
     else -- just in case we get something else
-        title = T(_("Choose this path?\n\n%1"), BD.path(path))
+        title = T(_("Choose this path?\n\n%1\n"), BD.path(path))
     end
     local onConfirm = self.onConfirm
     self.button_dialog = ButtonDialog:new{
@@ -164,8 +162,11 @@ function PathChooser:showPlusMenu()
                     text = _("Folder shortcuts"),
                     callback = function()
                         UIManager:close(button_dialog)
-                        UIManager:broadcastEvent(Event:new("ShowFolderShortcutsDialog",
-                            function(path) self:changeToPath(path) end))
+                        local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
+                        local select_callback = function(path)
+                            self:changeToPath(path)
+                        end
+                        FileManagerShortcuts:onShowFolderShortcutsDialog(select_callback)
                     end,
                 },
             },
