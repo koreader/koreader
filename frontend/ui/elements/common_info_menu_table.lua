@@ -3,6 +3,7 @@ local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local Version = require("version")
+local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -50,6 +51,29 @@ common_info.about = {
         })
     end
 }
+common_info.debug_logging = {
+    text = _("Enable verbose debug logging"),
+    checked_func = function()
+        return G_reader_settings:isTrue("debug_verbose")
+    end,
+    callback = function()
+        -- Unlike in the dev options, we flip everything at once.
+        if G_reader_settings:isTrue("debug_verbose") then
+            dbg:setVerbose(false)
+            dbg:turnOff()
+            G_reader_settings:makeFalse("debug_verbose")
+            G_reader_settings:makeFalse("debug")
+        else
+            dbg:turnOn()
+            dbg:setVerbose(true)
+            G_reader_settings:makeTrue("debug")
+            G_reader_settings:makeTrue("debug_verbose")
+        end
+        -- Also unlike the dev options, explicitly ask for a restart,
+        -- to make sure framebuffer pulls in a logger.dbg ref that doesn't point to noop on init ;).
+        UIManager:askForRestart()
+    end,
+}
 common_info.report_bug = {
     text = _("Report a bug"),
     keep_menu_open = true,
@@ -58,7 +82,7 @@ common_info.report_bug = {
         local log_path = string.format("%s/%s", DataStorage:getDataDir(), "crash.log")
         local common_msg = T(_("Please report bugs to \nhttps://github.com/koreader/koreader/issues\n\nVersion:\n%1\n\nDetected device:\n%2"),
             Version:getCurrentRevision(), Device:info())
-        local log_msg = T(_("Attach %1 to your bug report."), log_path)
+        local log_msg = T(_("Reproduce the issue with verbose debug logging enabled, and attach %1 to your bug report."), log_path)
 
         if Device:isAndroid() then
             local android = require("android")
