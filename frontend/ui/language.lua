@@ -23,7 +23,6 @@ local Language = {
         lv = "Latviešu",
         nl_NL = "Nederlands",
         nb_NO = "Norsk bokmål",
-        no = "Norsk",
         pl = "Polski",
         pl_PL = "Polski2",
         pt_PT = "Português",

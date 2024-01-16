@@ -7,10 +7,10 @@ local keys = no_keyboard.keys
 table.insert(
   keys[1],
   {
-    {"*", alt_label = "'", north = "'", },
-    {"'", alt_label = "*", north = "*", },
-    {"/", alt_label = "÷", north = "÷", },
-    {"÷", alt_label = "/", north = "/", },
+    { "*", alt_label = "'", north = "'", },
+    { "'", alt_label = "*", north = "*", },
+    { "/", alt_label = "÷", north = "÷", },
+    { "÷", alt_label = "/", north = "/", },
   }
 )
 
@@ -20,8 +20,8 @@ table.insert(
   {
     { "Å", north = "å", },
     { "å", north = "Å", },
-    {"*", alt_label = "×", north = "×", },
-    {"×", alt_label = "*", north = "*", },
+    { "*", alt_label = "×", north = "×", },
+    { "×", alt_label = "*", north = "*", },
   }
 )
 
@@ -77,6 +77,5 @@ keys[4][10].width = 1.5 -- resize Backspace
 keys[5][4].width = 4 -- resize Spacebar
 keys[5][1].width = 1.5 -- resize Symbols
 keys[5][7].width = 1.5 -- resize Enter
-
 
 return no_keyboard
