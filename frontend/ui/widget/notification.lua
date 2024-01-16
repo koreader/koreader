@@ -30,6 +30,7 @@ local SOURCE_BOTTOM_MENU_MORE     = 0x0008 -- three dots in bottom menu
 local SOURCE_BOTTOM_MENU_PROGRESS = 0x0010 -- progress indicator on bottom menu
 local SOURCE_DISPATCHER           = 0x0020 -- dispatcher
 local SOURCE_OTHER                = 0x0040 -- all other sources (e.g. keyboard)
+local SOURCE_ALWAYS_SHOW          = 0x8000 -- display this, no matter the display preferences
 
 -- All bottom menu bits
 local SOURCE_BOTTOM_MENU = SOURCE_BOTTOM_MENU_ICON +
@@ -71,6 +72,7 @@ local Notification = InputContainer:extend{
     SOURCE_BOTTOM_MENU_PROGRESS = SOURCE_BOTTOM_MENU_PROGRESS,
     SOURCE_DISPATCHER = SOURCE_DISPATCHER,
     SOURCE_OTHER = SOURCE_OTHER,
+    SOURCE_ALWAYS_SHOW = SOURCE_ALWAYS_SHOW,
 
     SOURCE_BOTTOM_MENU = SOURCE_BOTTOM_MENU,
 
@@ -79,6 +81,7 @@ local Notification = InputContainer:extend{
     SOURCE_MORE = SOURCE_MORE,
     SOURCE_DEFAULT = SOURCE_DEFAULT,
     SOURCE_ALL = SOURCE_ALL,
+
     _past_messages = {}, -- a static class member to store the N last messages text
 }
 
@@ -148,7 +151,7 @@ function Notification:setNotifySource(source)
 end
 
 function Notification:resetNotifySource()
-    self.notify_source = Notification.SOURCE_OTHER
+    self.notify_source = SOURCE_OTHER
 end
 
 function Notification:getNotifySource()
@@ -158,8 +161,8 @@ end
 -- Display a notification popup if `source` or `self.notify_source` is not masked by the `notification_sources_to_show_mask` setting
 function Notification:notify(arg, source, refresh_after)
     source = source or self.notify_source
-    local mask = G_reader_settings:readSetting("notification_sources_to_show_mask") or self.SOURCE_DEFAULT
-    if source and band(mask, source) ~= 0 then
+    local mask = G_reader_settings:readSetting("notification_sources_to_show_mask") or SOURCE_DEFAULT
+    if source and source == SOURCE_ALWAYS_SHOW or band(mask, source) ~= 0 then
         UIManager:show(Notification:new{
             text = arg,
          })
