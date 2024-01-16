@@ -86,6 +86,13 @@ function Dbg:v(...)
     end
 end
 
+--- Conditional logging with a stable ref.
+function Dbg.log(...)
+    if Dbg.is_on then
+        return LvDEBUG(...)
+    end
+end
+
 --- Simple traceback.
 function Dbg:traceback()
     return LvDEBUG(debug.traceback())
