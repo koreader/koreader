@@ -5,57 +5,57 @@ local keys = no_keyboard.keys
 
 -- add ' key next to numeric 0
 table.insert(
-  keys[1],
-  {
-    { "*", alt_label = "'", north = "'", },
-    { "'", alt_label = "*", north = "*", },
-    { "/", alt_label = "÷", north = "÷", },
-    { "÷", alt_label = "/", north = "/", },
-  }
+    keys[1],
+    {
+        { "*", alt_label = "'", north = "'", },
+        { "'", alt_label = "*", north = "*", },
+        { "/", alt_label = "÷", north = "÷", },
+        { "÷", alt_label = "/", north = "/", },
+    }
 )
 
 -- add Å key
 table.insert(
-  keys[2],
-  {
-    { "Å", north = "å", },
-    { "å", north = "Å", },
-    { "*", alt_label = "×", north = "×", },
-    { "×", alt_label = "*", north = "*", },
-  }
+    keys[2],
+    {
+        { "Å", north = "å", },
+        { "å", north = "Å", },
+        { "*", alt_label = "×", north = "×", },
+        { "×", alt_label = "*", north = "*", },
+    }
 )
 
 -- add Æ key
 table.insert(
-  keys[3],
-  {
-    { "Æ", north = "æ", },
-    { "æ", north = "Æ", },
-    { "✗", north = "✘", west = "☐", south = "☒", },
+    keys[3],
     {
-      "⭤",
-      north = "⭡",
-      northeast = "⭧",
-      northwest = "⭦",
-      east = "⭢",
-      west = "⭠",
-      south = "⭣",
-      southeast = "⭨",
-      southwest = "⭩",
-    },
-  }
+        { "Æ", north = "æ", },
+        { "æ", north = "Æ", },
+        { "✗", north = "✘", west = "☐", south = "☒", },
+        {
+            "⭤",
+            north = "⭡",
+            northeast = "⭧",
+            northwest = "⭦",
+            east = "⭢",
+            west = "⭠",
+            south = "⭣",
+            southeast = "⭨",
+            southwest = "⭩",
+        },
+    }
 )
 
 -- add Ø key
 table.insert(
-  keys[4],
-  7,
-  {
-    { "Ø", north = "ø", },
-    { "ø", north = "Ø", },
-    { "✓", north = "✔", west = "☐", south = "☑", },
-    { "•", alt_label = "◦", north = "◦", northwest = "⁃", west = "‣", },
-  }
+    keys[4],
+    7,
+    {
+        { "Ø", north = "ø", },
+        { "ø", north = "Ø", },
+        { "✓", north = "✔", west = "☐", south = "☑", },
+        { "•", alt_label = "◦", north = "◦", northwest = "⁃", west = "‣", },
+    }
 )
 
 -- swap "Ø" and ";" / "ø" and ","
