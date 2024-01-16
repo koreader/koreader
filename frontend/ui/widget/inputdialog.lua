@@ -489,11 +489,11 @@ function InputDialog:onTap(arg, ges)
         return
     end
     if self:isKeyboardVisible() then
-        -- NOTE: If you're unlucky enough to tap inside of a border between keys,
-        --       this falls outside of the ges_events range of a VirtualKey, so it is *NOT* caught by VK.
-        --       Instead, since we're flagged is_always_active, it goes to us,
-        --       so we'll have to double check that it wasn't inside of the whole VK region,
-        --       otherwise tapping inside a border would close the VK ;p.
+        -- NOTE: While VirtualKey will attempt to cover the gap between keys in its hitbox (i.e., the grey border),
+        --       a tap *may* still fall outside of the ges_events range of a VirtualKey (e.g., on the very edges of the board's frame).
+        --       In which case, since we're flagged is_always_active, it goes to us,
+        --       so we'll have to double check that it wasn't inside of the whole VirtualKeyboard region,
+        --       otherwise we'd risk spuriously closing the keyboard ;p.
         -- Poke at keyboard_frame directly, as the top-level dimen never gets updated coordinates...
         if self._input_widget.keyboard and self._input_widget.keyboard.dimen and ges.pos:notIntersectWith(self._input_widget.keyboard.dimen) then
             self:onCloseKeyboard()
