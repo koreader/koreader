@@ -7,6 +7,7 @@ local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
+local N_ = _.ngettext
 local T = ffiutil.template
 
 local PathChooser = FileChooser:extend{
@@ -112,18 +113,17 @@ function PathChooser:onMenuHold(item)
     end
     local title
     if attr.mode == "file" then
+        title = _("Choose this file?") .. "\n\n" .. BD.filepath(path) .. "\n"
         if self.detailed_file_info then
             local filesize = util.getFormattedSize(attr.size)
             local lastmod = os.date("%Y-%m-%d %H:%M", attr.modification)
-            title = T(_("Choose this file?\n\n%1\n\nFile size: %2 bytes\nLast modified: %3\n"),
-                        BD.filepath(path), filesize, lastmod)
-        else
-            title = T(_("Choose this file?\n\n%1\n"), BD.filepath(path))
+            title = title .. "\n" .. T(N_("File size: 1 byte", "File size: %1 bytes", attr.size), filesize) ..
+                             "\n" .. T(_("Last modified: %1"), lastmod) .. "\n"
         end
     elseif attr.mode == "directory" then
-        title = T(_("Choose this folder?\n\n%1\n"), BD.dirpath(path))
+        title = _("Choose this folder?") .. "\n\n" .. BD.dirpath(path) .. "\n"
     else -- just in case we get something else
-        title = T(_("Choose this path?\n\n%1\n"), BD.path(path))
+        title = _("Choose this path?") .. "\n\n" .. BD.path(path) .. "\n"
     end
     local onConfirm = self.onConfirm
     self.button_dialog = ButtonDialog:new{
