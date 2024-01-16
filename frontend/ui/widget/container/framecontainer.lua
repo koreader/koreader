@@ -93,11 +93,18 @@ end
 
 function FrameContainer:paintTo(bb, x, y)
     local my_size = self:getSize()
-    self.dimen = Geom:new{
-        x = x, y = y,
-        w = my_size.w,
-        h = my_size.h
-    }
+    if not self.dimen then
+        self.dimen = Geom:new{
+            x = x, y = y,
+            w = my_size.w, h = my_size.h
+        }
+    else
+        self.dimen.x = x
+        self.dimen.y = y
+        -- Possibly redundant
+        self.dimen.w = my_size.w
+        self.dimen.h = my_size.h
+    end
     local container_width = self.width or my_size.w
     local container_height = self.height or my_size.h
 
