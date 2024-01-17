@@ -338,6 +338,7 @@ function FakeCover:init()
     -- As we are a FrameContainer, a border will be painted around self[1]
     self[1] = CenterContainer:new{
         dimen = Geom:new{
+            x = 0, y = 0,
             w = width,
             h = height,
         },
@@ -419,6 +420,7 @@ function MosaicMenuItem:init()
         vertical_align = "top",
         padding = 0,
         dimen = Geom:new{
+            x = 0, y = 0,
             w = self.width,
             h = self.height
         },
@@ -439,6 +441,7 @@ function MosaicMenuItem:update()
     local widget
 
     local dimen = Geom:new{
+        x = 0, y = 0,
         w = self.width,
         h = self.height - self.underline_h
     }
@@ -469,6 +472,7 @@ function MosaicMenuItem:update()
         local padding = Screen:scaleBySize(5)
         border_size = Size.border.thick -- make directories' borders larger
         local dimen_in = Geom:new{
+            x = 0, y = 0,
             w = dimen.w - (margin + padding + border_size)*2,
             h = dimen.h - (margin + padding + border_size)*2
         }
@@ -523,8 +527,8 @@ function MosaicMenuItem:update()
             radius = Screen:scaleBySize(10),
             OverlapGroup:new{
                 dimen = dimen_in,
-                CenterContainer:new{ dimen=dimen_in, directory},
-                BottomContainer:new{ dimen=dimen_in, nbitems},
+                CenterContainer:new{ dimen = dimen_in, directory},
+                BottomContainer:new{ dimen = dimen_in, nbitems},
             },
         }
     else
@@ -890,6 +894,7 @@ function MosaicMenu:_recalculateDimen()
     self.item_height = math.floor((self.inner_dimen.h - self.others_height - (1+self.nb_rows)*self.item_margin) / self.nb_rows)
     self.item_width = math.floor((self.inner_dimen.w - (1+self.nb_cols)*self.item_margin) / self.nb_cols)
     self.item_dimen = Geom:new{
+        x = 0, y = 0,
         w = self.item_width,
         h = self.item_height
     }
@@ -955,6 +960,7 @@ function MosaicMenu:_updateItemsBuildUI()
             local container = self._do_center_partial_rows and CenterContainer or LeftContainer
             table.insert(self.item_group, container:new{
                 dimen = Geom:new{
+                    x = 0, y = 0,
                     w = self.inner_dimen.w,
                     h = self.item_height
                 },

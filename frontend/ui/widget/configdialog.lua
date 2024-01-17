@@ -292,7 +292,7 @@ function ConfigOption:init()
                 local name_text_max_width = name_widget_width
                 local face = Font:getFace(name_font_face, name_font_size)
                 local option_name_container = RightContainer:new{
-                    dimen = Geom:new{ w = name_widget_width, h = option_height},
+                    dimen = Geom:new{ x = 0, y = 0, w = name_widget_width, h = option_height },
                 }
                 local option_name = Button:new{
                     text = name_text,
@@ -323,6 +323,7 @@ function ConfigOption:init()
             local option_widget_width = option_widget_outer_width - 2*default_option_hpadding
             local option_items_container = CenterContainer:new{
                 dimen = Geom:new{
+                    x = 0, y = 0,
                     w = option_widget_outer_width,
                     h = option_height
                 }
@@ -766,6 +767,7 @@ function MenuBar:init()
     local icon_sep_black = LineWidget:new{
         background = Blitbuffer.COLOR_BLACK,
         dimen = Geom:new{
+            x = 0, y = 0,
             w = icon_sep_width,
             h = bar_height,
         }
@@ -773,6 +775,7 @@ function MenuBar:init()
     local icon_sep_white = LineWidget:new{
         background = Blitbuffer.COLOR_WHITE,
         dimen = Geom:new{
+            x = 0, y = 0,
             w = icon_sep_width,
             h = bar_height,
         }
@@ -782,12 +785,14 @@ function MenuBar:init()
     }
     local spacing_line = LineWidget:new{
         dimen = Geom:new{
+            x = 0, y = 0,
             w = spacing_width,
             h = line_thickness,
         }
     }
     local sep_line = LineWidget:new{
         dimen = Geom:new{
+            x = 0, y = 0,
             w = icon_sep_width,
             h = line_thickness,
         }
@@ -805,6 +810,7 @@ function MenuBar:init()
             table.insert(line_bar, LineWidget:new{
                 background = Blitbuffer.COLOR_WHITE,
                 dimen = Geom:new{
+                    x = 0, y = 0,
                     w = self.menu_items[c]:getSize().w,
                     h = line_thickness,
                 }
@@ -817,6 +823,7 @@ function MenuBar:init()
             table.insert(menu_bar, self.menu_items[c])
             table.insert(line_bar, LineWidget:new{
                 dimen = Geom:new{
+                    x = 0, y = 0,
                     w = self.menu_items[c]:getSize().w,
                     h = line_thickness,
                 }
@@ -828,7 +835,7 @@ function MenuBar:init()
     table.insert(menu_bar, spacing)
     table.insert(line_bar, spacing_line)
 
-    self.dimen = Geom:new{ w = Screen:getWidth(), h = bar_height}
+    self.dimen = Geom:new{ x = 0, y = 0, w = Screen:getWidth(), h = bar_height }
     local vertical_menu = VerticalGroup:new{
         line_bar,
         menu_bar,

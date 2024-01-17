@@ -171,7 +171,7 @@ function MenuItem:init()
     local state_indent = self.table.indent or 0
     local state_width = state_indent + self.state_w
     local state_container = LeftContainer:new{
-        dimen = Geom:new{w = math.floor(self.content_width / 2), h = self.dimen.h},
+        dimen = Geom:new{x = 0, y = 0, w = math.floor(self.content_width / 2), h = self.dimen.h},
         HorizontalGroup:new{
             HorizontalSpan:new{
                 width = state_indent,
@@ -368,7 +368,7 @@ function MenuItem:init()
     end
 
     local text_container = LeftContainer:new{
-        dimen = Geom:new{w = self.content_width, h = self.dimen.h},
+        dimen = Geom:new{x = 0, y = 0, w = self.content_width, h = self.dimen.h},
         HorizontalGroup:new{
             HorizontalSpan:new{
                 width = state_width,
@@ -385,7 +385,7 @@ function MenuItem:init()
         }
     end
     local mandatory_container = RightContainer:new{
-        dimen = Geom:new{w = self.content_width, h = self.dimen.h},
+        dimen = Geom:new{x = 0, y = 0, w = self.content_width, h = self.dimen.h},
         mandatory_widget,
     }
 
@@ -395,13 +395,14 @@ function MenuItem:init()
         vertical_align = "center",
         padding = 0,
         dimen = Geom:new{
+            x = 0, y = 0,
             w = self.content_width,
             h = self.dimen.h
         },
         HorizontalGroup:new{
             align = "center",
             OverlapGroup:new{
-                dimen = Geom:new{w = self.content_width, h = self.dimen.h},
+                dimen = Geom:new{x = 0, y = 0, w = self.content_width, h = self.dimen.h},
                 state_container,
                 text_container,
                 mandatory_container,
@@ -633,6 +634,7 @@ function Menu:_recalculateDimen()
     local item_height = math.floor(height_dim / self.perpage)
     self.span_width = math.floor((height_dim - (self.perpage * item_height)) / 2 - 1)
     self.item_dimen = Geom:new{
+        x = 0, y = 0,
         w = self.inner_dimen.w,
         h = item_height,
     }
@@ -655,6 +657,7 @@ function Menu:init()
 
     self.border_size = self.is_borderless and 0 or Size.border.window
     self.inner_dimen = Geom:new{
+        x = 0, y = 0,
         w = self.dimen.w - 2 * self.border_size,
         h = self.dimen.h - 2 * self.border_size,
     }
@@ -864,6 +867,7 @@ function Menu:init()
         dimen = self.inner_dimen:copy(),
         WidgetContainer:new{
             dimen = Geom:new{
+                x = 0, y = 0,
                 w = self.screen_w,
                 h = self.page_return_arrow:getSize().h,
             },

@@ -187,6 +187,7 @@ function ListMenuItem:update()
 
     -- we'll add a VerticalSpan of same size as underline container for balance
     local dimen = Geom:new{
+        x = 0, y = 0,
         w = self.width,
         h = self.height - 2 * self.underline_h
     }
@@ -314,7 +315,7 @@ function ListMenuItem:update()
                     wimage:_render()
                     local image_size = wimage:getSize() -- get final widget size
                     wleft = CenterContainer:new{
-                        dimen = Geom:new{ w = wleft_width, h = wleft_height },
+                        dimen = Geom:new{ x = 0, y = 0, w = wleft_width, h = wleft_height },
                         FrameContainer:new{
                             width = image_size.w + 2*border_size,
                             height = image_size.h + 2*border_size,
@@ -332,7 +333,7 @@ function ListMenuItem:update()
                     local fake_cover_w = max_img_w * 0.6
                     local fake_cover_h = max_img_h
                     wleft = CenterContainer:new{
-                        dimen = Geom:new{ w = wleft_width, h = wleft_height },
+                        dimen = Geom:new{ x = 0, y = 0, w = wleft_width, h = wleft_height },
                         FrameContainer:new{
                             width = fake_cover_w + 2*border_size,
                             height = fake_cover_h + 2*border_size,
@@ -341,7 +342,7 @@ function ListMenuItem:update()
                             bordersize = border_size,
                             dim = self.file_deleted,
                             CenterContainer:new{
-                                dimen = Geom:new{ w = fake_cover_w, h = fake_cover_h },
+                                dimen = Geom:new{ x = 0, y = 0, w = fake_cover_w, h = fake_cover_h },
                                 TextWidget:new{
                                     text = "⛶", -- U+26F6 Square four corners
                                     face = Font:getFace("cfont",  _fontSize(20)),
@@ -456,7 +457,7 @@ function ListMenuItem:update()
                     wright_width = math.max(wright_width, w:getSize().w)
                 end
                 wright = CenterContainer:new{
-                    dimen = Geom:new{ w = wright_width, h = dimen.h },
+                    dimen = Geom:new{ x = 0, y = 0, w = wright_width, h = dimen.h },
                     VerticalGroup:new(wright_items),
                 }
                 wright_right_padding = Screen:scaleBySize(10)
@@ -735,7 +736,7 @@ function ListMenuItem:update()
                 }
                 wright_width = wfileinfo:getSize().w
                 wright = CenterContainer:new{
-                    dimen = Geom:new{ w = wright_width, h = dimen.h },
+                    dimen = Geom:new{ x = 0, y = 0, w = wright_width, h = dimen.h },
                     VerticalGroup:new{
                         align = "right",
                         VerticalSpan:new{ width = Screen:scaleBySize(2) },
@@ -959,6 +960,7 @@ function ListMenu:_recalculateDimen()
     self.item_height = math.floor(available_height / self.perpage) - Size.line.thin
     self.item_width = self.inner_dimen.w
     self.item_dimen = Geom:new{
+        x = 0, y = 0,
         w = self.item_width,
         h = self.item_height
     }
@@ -991,7 +993,7 @@ end
 function ListMenu:_updateItemsBuildUI()
     -- Build our list
     local line_widget = LineWidget:new{
-        dimen = Geom:new{ w = self.width or self.screen_w, h = Size.line.thin },
+        dimen = Geom:new{ x = 0, y = 0, w = self.width or self.screen_w, h = Size.line.thin },
         background = Blitbuffer.COLOR_DARK_GRAY,
     }
     table.insert(self.item_group, line_widget)

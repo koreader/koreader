@@ -591,7 +591,7 @@ function ReaderFooter:init()
     end
 
     self.text_container = RightContainer:new{
-        dimen = Geom:new{ w = 0, h = self.height },
+        dimen = Geom:new{ x = 0, y = 0, w = 0, h = self.height },
         self.footer_text,
     }
     self:updateFooterContainer()
@@ -691,6 +691,7 @@ function ReaderFooter:updateFooterContainer()
     if self.settings.bottom_horizontal_separator then
         self.separator_line = LineWidget:new{
             dimen = Geom:new{
+                x = 0, y = 0,
                 w = 0,
                 h = Size.line.medium,
             }
@@ -716,17 +717,17 @@ function ReaderFooter:updateFooterContainer()
 
     if self.settings.align == "left" then
         self.footer_container = LeftContainer:new{
-            dimen = Geom:new{ w = 0, h = self.height },
+            dimen = Geom:new{ x = 0, y = 0, w = 0, h = self.height },
             self.horizontal_group
         }
     elseif self.settings.align == "right" then
         self.footer_container = RightContainer:new{
-            dimen = Geom:new{ w = 0, h = self.height },
+            dimen = Geom:new{ x = 0, y = 0, w = 0, h = self.height },
             self.horizontal_group
         }
     else
         self.footer_container = CenterContainer:new{
-            dimen = Geom:new{ w = 0, h = self.height },
+            dimen = Geom:new{ x = 0, y = 0, w = 0, h = self.height },
             self.horizontal_group
         }
     end
@@ -753,7 +754,10 @@ function ReaderFooter:updateFooterContainer()
     }
 
     self.footer_positioner = BottomContainer:new{
-        dimen = Geom:new{},
+        dimen = Geom:new{
+            x = 0, y = 0,
+            w = 0, h = 0,
+        },
         self.footer_content,
     }
     self[1] = self.footer_positioner

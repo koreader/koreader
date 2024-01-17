@@ -218,6 +218,7 @@ function ImageViewer:init()
     }
     self.button_container = CenterContainer:new{
         dimen = Geom:new{
+            x = 0, y = 0,
             w = self.width,
             h = self.button_table:getSize().h,
         },
@@ -289,6 +290,7 @@ function ImageViewer:init()
         }
         self.progress_container = CenterContainer:new{
             dimen = Geom:new{
+                x = 0, y = 0,
                 w = self.width,
                 h = self.progress_bar:getSize().h + Size.padding.small,
             },
@@ -448,6 +450,7 @@ function ImageViewer:_new_image_wg()
 
     self.image_container = CenterContainer:new{
         dimen = Geom:new{
+            x = 0, y = 0,
             w = self.width,
             h = self.img_container_h,
         },
