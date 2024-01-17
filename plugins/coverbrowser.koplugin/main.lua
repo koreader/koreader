@@ -519,9 +519,8 @@ function CoverBrowser.initGrid(menu, display_mode)
 end
 
 function CoverBrowser:refreshFileManagerInstance(cleanup, post_init)
-    local fm = FileManager.instance
-    if fm then
-        local fc = fm.file_chooser
+    local fc = self.ui.file_chooser
+    if fc then
         if cleanup then -- clean instance properties we may have set
             if fc.showFileDialog_orig then
                 -- remove our showFileDialog that extended file_dialog with new buttons
@@ -574,6 +573,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser._recalculateDimen = _FileChooser__recalculateDimen_orig
         FileManager.tapPlus = _FileManager_tapPlus_orig
         -- Also clean-up what we added, even if it does not bother original code
+        FileChooser.updateCache = nil
         FileChooser._updateItemsBuildUI = nil
         FileChooser._do_cover_images = nil
         FileChooser._do_filename_only = nil
@@ -794,6 +794,23 @@ end
 function CoverBrowser:onInvalidateMetadataCache(file)
     BookInfoManager:deleteBookInfo(file)
     return true
+end
+
+function CoverBrowser:onDocSettingsItemsChanged(file, doc_settings)
+    local status -- nil to wipe the covermenu book cache
+    if doc_settings then
+        status = doc_settings.summary and doc_settings.summary.status
+        if not status then return end -- changes not for us
+    end
+    if self.ui.file_chooser then
+        self.ui.file_chooser:updateCache(file, status)
+    end
+    if self.ui.history and self.ui.history.hist_menu then
+        self.ui.history.hist_menu:updateCache(file, status)
+    end
+    if self.ui.collections and self.ui.collections.coll_menu then
+        self.ui.collections.coll_menu:updateCache(file, status)
+    end
 end
 
 function CoverBrowser:extractBooksInDirectory(path)

@@ -130,24 +130,24 @@ end
 
 -- Generate all book status file dialog buttons in a row
 function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callback)
-    local summary, status
+    local file, summary, status
     if type(doc_settings_or_file) == "table" then -- currently opened file
+        file = doc_settings_or_file:readSetting("doc_path")
         summary = doc_settings_or_file:readSetting("summary")
         status = summary.status
     else
-        status = filemanagerutil.getStatus(doc_settings_or_file)
+        file = doc_settings_or_file
+        summary = {}
+        status = filemanagerutil.getStatus(file)
     end
     local function genStatusButton(to_status)
         return {
             text = filemanagerutil.statusToString(to_status) .. (status == to_status and "  ✓" or ""),
-            id = to_status, -- used by covermenu
             enabled = status ~= to_status,
             callback = function()
-                if summary then -- currently opened file
-                    summary.status = to_status
-                else
-                    filemanagerutil.setStatus(doc_settings_or_file, to_status)
-                end
+                summary.status = to_status
+                filemanagerutil.setStatus(file, to_status)
+                UIManager:broadcastEvent(Event:new("DocSettingsItemsChanged", file, { summary = summary })) -- for CoverBrowser
                 caller_callback()
             end,
         }
@@ -169,7 +169,6 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
     local has_custom_metadata_file = custom_metadata_file and true or false
     return {
         text = _("Reset"),
-        id = "reset", -- used by covermenu
         enabled = not button_disabled and (has_sidecar_file or has_custom_metadata_file or has_custom_cover_file),
         callback = function()
             local CheckButton = require("ui/widget/checkbutton")
@@ -191,6 +190,7 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
                         UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
                     end
                     if data_to_purge.doc_settings then
+                        UIManager:broadcastEvent(Event:new("DocSettingsItemsChanged", file)) -- for CoverBrowser
                         require("readhistory"):fileSettingsPurged(file)
                     end
                     caller_callback()

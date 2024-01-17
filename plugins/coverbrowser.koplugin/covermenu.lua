@@ -40,8 +40,6 @@ local nb_drawings_since_last_collectgarbage = 0
 -- in the real Menu class or instance
 local CoverMenu = {}
 
-local book_statuses = {"reading", "abandoned", "complete"}
-
 function CoverMenu:updateCache(file, status, do_create, pages)
     if do_create then -- create new cache entry if absent
         if self.cover_info_cache[file] then return end
@@ -314,33 +312,8 @@ function CoverMenu:updateItems(select_number)
                     buttons = orig_buttons,
                 }
 
-                -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
-                local button = self.file_dialog:getButtonById("reset")
-                if button then
-                    local orig_purge_callback = button.callback
-                    button.callback = function()
-                        -- Wipe the cache
-                        self:updateCache(file)
-                        -- And then purge the sidecar folder as expected
-                        orig_purge_callback()
-                    end
-                end
-
-                -- Fudge the status change button callbacks to also update the cover_info_cache
-                for _, status in ipairs(book_statuses) do
-                    button = self.file_dialog:getButtonById(status)
-                    if not button then break end -- status buttons are not shown
-                    local orig_status_callback = button.callback
-                    button.callback = function()
-                        -- Update the cache
-                        self:updateCache(file, status)
-                        -- And then set the status on file as expected
-                        orig_status_callback()
-                    end
-                end
-
                 -- Replace the "Book information" button callback to use directly our bookinfo
-                button = self.file_dialog:getButtonById("book_information")
+                local button = self.file_dialog:getButtonById("book_information")
                 button.callback = function()
                     FileManagerBookInfo:show(file, FileManagerBookInfo.extendProps(bookinfo))
                     UIManager:close(self.file_dialog)
@@ -445,33 +418,8 @@ function CoverMenu:onHistoryMenuHold(item)
         buttons = orig_buttons,
     }
 
-    -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
-    local button = self.histfile_dialog:getButtonById("reset")
-    if button then
-        local orig_purge_callback = button.callback
-        button.callback = function()
-            -- Wipe the cache
-            self:updateCache(file)
-            -- And then purge the sidecar folder as expected
-            orig_purge_callback()
-        end
-    end
-
-    -- Fudge the status change button callbacks to also update the cover_info_cache
-    for _, status in ipairs(book_statuses) do
-        button = self.histfile_dialog:getButtonById(status)
-        if not button then break end -- status buttons are not shown
-        local orig_status_callback = button.callback
-        button.callback = function()
-            -- Update the cache
-            self:updateCache(file, status)
-            -- And then set the status on file as expected
-            orig_status_callback()
-        end
-    end
-
     -- Replace the "Book information" button callback to use directly our bookinfo
-    button = self.histfile_dialog:getButtonById("book_information")
+    local button = self.histfile_dialog:getButtonById("book_information")
     button.callback = function()
         FileManagerBookInfo:show(file, FileManagerBookInfo.extendProps(bookinfo))
         UIManager:close(self.histfile_dialog)
@@ -569,33 +517,8 @@ function CoverMenu:onCollectionsMenuHold(item)
         buttons = orig_buttons,
     }
 
-    -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
-    local button = self.collfile_dialog:getButtonById("reset")
-    if button then
-        local orig_purge_callback = button.callback
-        button.callback = function()
-            -- Wipe the cache
-            self:updateCache(file)
-            -- And then purge the sidecar folder as expected
-            orig_purge_callback()
-        end
-    end
-
-    -- Fudge the status change button callbacks to also update the cover_info_cache
-    for _, status in ipairs(book_statuses) do
-        button = self.collfile_dialog:getButtonById(status)
-        if not button then break end -- status buttons are not shown
-        local orig_status_callback = button.callback
-        button.callback = function()
-            -- Update the cache
-            self:updateCache(file, status)
-            -- And then set the status on file as expected
-            orig_status_callback()
-        end
-    end
-
     -- Replace the "Book information" button callback to use directly our bookinfo
-    button = self.collfile_dialog:getButtonById("book_information")
+    local button = self.collfile_dialog:getButtonById("book_information")
     button.callback = function()
         FileManagerBookInfo:show(file, FileManagerBookInfo.extendProps(bookinfo))
         UIManager:close(self.collfile_dialog)
