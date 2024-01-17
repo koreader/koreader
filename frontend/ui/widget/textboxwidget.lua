@@ -965,7 +965,7 @@ function TextBoxWidget:_renderImage(start_row_idx)
             margin = 0,
             padding = 0,
             RightContainer:new{
-                dimen = {
+                dimen = Geom:new{
                     w = image.width,
                     h = status_height,
                 },
@@ -1142,7 +1142,7 @@ function TextBoxWidget:getSize()
         self:_updateLayout()
     end
 
-    return Geom:new{w = self.width, h = self._bb:getHeight()}
+    return Geom:new{x = 0, y = 0, w = self.width, h = self._bb:getHeight()}
 end
 
 function TextBoxWidget:paintTo(bb, x, y)

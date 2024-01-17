@@ -959,6 +959,7 @@ function ListMenu:_recalculateDimen()
     self.item_height = math.floor(available_height / self.perpage) - Size.line.thin
     self.item_width = self.inner_dimen.w
     self.item_dimen = Geom:new{
+        x = 0, y = 0,
         w = self.item_width,
         h = self.item_height
     }
