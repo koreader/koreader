@@ -101,9 +101,6 @@ function FrameContainer:paintTo(bb, x, y)
     else
         self.dimen.x = x
         self.dimen.y = y
-        -- Possibly redundant
-        self.dimen.w = my_size.w
-        self.dimen.h = my_size.h
     end
     local container_width = self.width or my_size.w
     local container_height = self.height or my_size.h
