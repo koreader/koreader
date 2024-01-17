@@ -119,9 +119,6 @@ function ProgressWidget:paintTo(bb, x, y)
     else
         self.dimen.x = x
         self.dimen.y = y
-        -- Possibly redundant
-        self.dimen.w = my_size.w
-        self.dimen.h = my_size.h
     end
     if self.dimen.w == 0 or self.dimen.h == 0 then return end
 
