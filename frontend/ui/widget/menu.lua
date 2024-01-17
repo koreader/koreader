@@ -395,6 +395,7 @@ function MenuItem:init()
         vertical_align = "center",
         padding = 0,
         dimen = Geom:new{
+            x = 0, y = 0,
             w = self.content_width,
             h = self.dimen.h
         },
@@ -633,6 +634,7 @@ function Menu:_recalculateDimen()
     local item_height = math.floor(height_dim / self.perpage)
     self.span_width = math.floor((height_dim - (self.perpage * item_height)) / 2 - 1)
     self.item_dimen = Geom:new{
+        x = 0, y = 0,
         w = self.inner_dimen.w,
         h = item_height,
     }
@@ -864,6 +866,7 @@ function Menu:init()
         dimen = self.inner_dimen:copy(),
         WidgetContainer:new{
             dimen = Geom:new{
+                x = 0, y = 0,
                 w = self.screen_w,
                 h = self.page_return_arrow:getSize().h,
             },

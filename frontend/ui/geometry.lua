@@ -35,7 +35,12 @@ local Geom = {
 }
 
 function Geom:new(o)
-    if not o then o = {} end
+    if not o then
+        o = {
+            x = 0, y = 0,
+            w = 0, h = 0,
+        }
+    end
     setmetatable(o, self)
     self.__index = self
     return o

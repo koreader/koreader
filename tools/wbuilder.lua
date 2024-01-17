@@ -139,7 +139,8 @@ Background = InputContainer:new{
         bordersize = 0,
         dimen = Screen:getSize(),
         Widget:new{
-            dimen = {
+            dimen = Geom:new{
+                x = 0, y = 0,
                 w = Screen:getWidth(),
                 h = Screen:getHeight(),
             }
