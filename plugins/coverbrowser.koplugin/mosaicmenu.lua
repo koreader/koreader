@@ -419,6 +419,7 @@ function MosaicMenuItem:init()
         vertical_align = "top",
         padding = 0,
         dimen = Geom:new{
+            x = 0, y = 0,
             w = self.width,
             h = self.height
         },
@@ -523,8 +524,8 @@ function MosaicMenuItem:update()
             radius = Screen:scaleBySize(10),
             OverlapGroup:new{
                 dimen = dimen_in,
-                CenterContainer:new{ dimen=dimen_in, directory},
-                BottomContainer:new{ dimen=dimen_in, nbitems},
+                CenterContainer:new{ dimen = dimen_in, directory},
+                BottomContainer:new{ dimen = dimen_in, nbitems},
             },
         }
     else
@@ -890,6 +891,7 @@ function MosaicMenu:_recalculateDimen()
     self.item_height = math.floor((self.inner_dimen.h - self.others_height - (1+self.nb_rows)*self.item_margin) / self.nb_rows)
     self.item_width = math.floor((self.inner_dimen.w - (1+self.nb_cols)*self.item_margin) / self.nb_cols)
     self.item_dimen = Geom:new{
+        x = 0, y = 0,
         w = self.item_width,
         h = self.item_height
     }
