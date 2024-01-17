@@ -753,7 +753,7 @@ function ReaderFooter:updateFooterContainer()
     }
 
     self.footer_positioner = BottomContainer:new{
-        dimen = Geom:new{},
+        dimen = Geom:new(),
         self.footer_content,
     }
     self[1] = self.footer_positioner
