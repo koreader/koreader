@@ -371,14 +371,14 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
         end
         -- specific processing for cover columns
         if col == "cover_w" then
+            bookinfo["cover_w"] = tonumber(row[num])
+            bookinfo["cover_h"] = tonumber(row[num+1])
             if not get_cover then
                 -- don't bother making a blitbuffer
                 break
             end
             bookinfo["cover_bb"] = nil
             if bookinfo["has_cover"] then
-                bookinfo["cover_w"] = tonumber(row[num])
-                bookinfo["cover_h"] = tonumber(row[num+1])
                 local bbtype = tonumber(row[num+2])
                 local bbstride = tonumber(row[num+3])
                 -- This is a blob_mt table! Essentially, a (ptr, size) tuple.
