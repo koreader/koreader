@@ -194,7 +194,7 @@ function KeyValueItem:init()
         HorizontalGroup:new{
             dimen = content_dimen,
             LeftContainer:new{
-                dimen = {
+                dimen = Geom:new{
                     w = key_w,
                     h = content_dimen.h
                 },
