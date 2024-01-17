@@ -36,9 +36,6 @@ function UnderlineContainer:paintTo(bb, x, y)
     else
         self.dimen.x = x
         self.dimen.y = y
-        -- Possibly redundant
-        self.dimen.w = container_size.w
-        self.dimen.h = container_size.h
     end
     local content_size = self[1]:getSize()
     local p_y = y

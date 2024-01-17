@@ -41,7 +41,7 @@ local T = FFIUtil.template
 Widget that displays a shortcut icon for menu item.
 --]]
 local ItemShortCutIcon = WidgetContainer:extend{
-    dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
+    dimen = Geom:new{ x = 0, y = 0, w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
     key = nil,
     bordersize = Size.border.default,
     radius = 0,
@@ -74,7 +74,7 @@ function ItemShortCutIcon:init()
         bordersize = self.bordersize,
         radius = radius,
         background = background,
-        dimen = self.dimen,
+        dimen = self.dimen:copy(),
         CenterContainer:new{
             dimen = self.dimen,
             TextWidget:new{
@@ -112,10 +112,14 @@ local MenuItem = InputContainer:extend{
 
 function MenuItem:init()
     self.content_width = self.dimen.w - 2 * Size.padding.fullscreen
-    local shortcut_icon_dimen = Geom:new()
+    local icon_width = math.floor(self.dimen.h * 4/5)
+    local shortcut_icon_dimen = Geom:new{
+        x = 0,
+        y = 0,
+        w = icon_width,
+        h = icon_width,
+    }
     if self.shortcut then
-        shortcut_icon_dimen.w = math.floor(self.dimen.h * 4/5)
-        shortcut_icon_dimen.h = shortcut_icon_dimen.w
         self.content_width = self.content_width - shortcut_icon_dimen.w - Size.span.horizontal_default
     end
 
@@ -1078,7 +1082,7 @@ function Menu:updateItems(select_number)
                 font_size = self.font_size,
                 infont = "infont",
                 infont_size = infont_size,
-                dimen = self.item_dimen:new(),
+                dimen = self.item_dimen:copy(),
                 shortcut = item_shortcut,
                 shortcut_style = shortcut_style,
                 table = self.item_table[i],
