@@ -524,9 +524,6 @@ function ImageWidget:paintTo(bb, x, y)
     else
         self.dimen.x = x
         self.dimen.y = y
-        -- Possibly redundant
-        self.dimen.w = size.w
-        self.dimen.h = size.h
     end
     logger.dbg("blitFrom", x, y, self._offset_x, self._offset_y, size.w, size.h)
     local do_alpha = false
