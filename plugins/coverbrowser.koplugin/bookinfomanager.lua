@@ -363,26 +363,24 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
 
     local bookinfo = {}
     for num, col in ipairs(BOOKINFO_COLS_SET) do
-        if col == "pages" then
+        if col == "pages" or col == "cover_w" or col == "cover_h" then
             -- See http://scilua.org/ljsqlite3.html "SQLite Type Mappings"
             bookinfo[col] = tonumber(row[num]) -- convert cdata<int64_t> to lua number
         else
             bookinfo[col] = row[num] -- as is
         end
         -- specific processing for cover columns
-        if col == "cover_w" then
+        if col == "cover_bb_type" then
             if not get_cover then
                 -- don't bother making a blitbuffer
                 break
             end
             bookinfo["cover_bb"] = nil
             if bookinfo["has_cover"] then
-                bookinfo["cover_w"] = tonumber(row[num])
-                bookinfo["cover_h"] = tonumber(row[num+1])
-                local bbtype = tonumber(row[num+2])
-                local bbstride = tonumber(row[num+3])
+                local bbtype = tonumber(row[num])
+                local bbstride = tonumber(row[num+1])
                 -- This is a blob_mt table! Essentially, a (ptr, size) tuple.
-                local cover_blob = row[num+4]
+                local cover_blob = row[num+2]
                 -- The pointer returned by SQLite is only valid until the next step/reset/finalize!
                 -- (which means its memory management is entirely in the hands of SQLite)
                 local cover_data, cover_size = zstd.zstd_uncompress_ctx(cover_blob[1], cover_blob[2])
