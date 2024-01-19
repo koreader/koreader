@@ -79,7 +79,7 @@ end
 local function _getRandomImage(dir)
     if not dir then return end
     local match_func = function(file) -- images, ignore macOS resource forks
-        return not util.stringStartsWith(file, "._") and DocumentRegistry:isImageFile(file)
+        return not util.stringStartsWith(ffiUtil.basename(file), "._") and DocumentRegistry:isImageFile(file)
     end
     return filemanagerutil.getRandomFile(dir, match_func)
 end
