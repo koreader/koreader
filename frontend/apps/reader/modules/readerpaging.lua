@@ -673,10 +673,10 @@ function ReaderPaging:onInitScrollPageStates(orig_mode)
     if self.view.page_scroll and self.view.state.page then
         self.orig_page = self.current_page
         self.view.page_states = {}
-        local blank_area = Geom:new{}
+        local blank_area = Geom:new()
         blank_area:setSizeTo(self.view.visible_area)
         while blank_area.h > 0 do
-            local offset = Geom:new{}
+            local offset = Geom:new()
             -- caculate position in current page
             if self.current_page == self.orig_page then
                 local page_area = self.view:getPageArea(
@@ -823,7 +823,7 @@ function ReaderPaging:genPageStatesFromTop(top_page_state, blank_area, offset)
             current_page = self.ui.document:getNextPage(current_page)
             if current_page == 0 then break end -- end of document reached
             self:_gotoPage(current_page, "scrolling")
-            state = self:getNextPageState(blank_area, Geom:new{})
+            state = self:getNextPageState(blank_area, Geom:new())
             table.insert(page_states, state)
         end
     end
@@ -848,7 +848,7 @@ function ReaderPaging:genPageStatesFromBottom(bottom_page_state, blank_area, off
             current_page = self.ui.document:getPrevPage(current_page)
             if current_page == 0 then break end -- start of document reached
             self:_gotoPage(current_page, "scrolling")
-            state = self:getPrevPageState(blank_area, Geom:new{})
+            state = self:getPrevPageState(blank_area, Geom:new())
             table.insert(page_states, 1, state)
         end
     end
@@ -869,7 +869,7 @@ function ReaderPaging:onScrollPanRel(diff)
     if diff == 0 then return true end
     logger.dbg("pan relative height:", diff)
     local offset = Geom:new{x = 0, y = diff}
-    local blank_area = Geom:new{}
+    local blank_area = Geom:new()
     blank_area:setSizeTo(self.view.visible_area)
     local new_page_states
     if diff > 0 then
@@ -913,7 +913,7 @@ function ReaderPaging:onScrollPageRel(page_diff)
             return true
         end
 
-        local blank_area = Geom:new{}
+        local blank_area = Geom:new()
         blank_area:setSizeTo(self.view.visible_area)
         local overlap = self.overlap
         local offset = Geom:new{
@@ -923,7 +923,7 @@ function ReaderPaging:onScrollPageRel(page_diff)
         self.view.page_states = self:genPageStatesFromTop(last_page_state, blank_area, offset)
     elseif page_diff < 0 then
         -- page up, first page should be moved to bottom
-        local blank_area = Geom:new{}
+        local blank_area = Geom:new()
         blank_area:setSizeTo(self.view.visible_area)
         local overlap = self.overlap
         local first_page_state = table.remove(self.view.page_states, 1)

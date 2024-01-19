@@ -483,7 +483,7 @@ function TouchMenu:init()
     -- borders are pushed off-(screen-)width and so not visible.
     -- We'll then be similar to bottom menu ConfigDialog (where this
     -- nice effect is caused by some width calculations bug).
-    if not self.dimen then self.dimen = Geom:new{} end
+    if not self.dimen then self.dimen = Geom:new() end
     self.show_parent = self.show_parent or self
     if not self.close_callback then
         self.close_callback = function()
