@@ -133,6 +133,12 @@ function ReaderSearch:addToMainMenu(menu_items)
             self:onShowFulltextSearchInput()
         end,
     }
+    menu_items.fulltext_search_findall_results = {
+        text = _("Last fulltext search results"),
+        callback = function()
+            self:onShowFindAllResults()
+        end,
+    }
 end
 
 -- if reverse ~= 0 search backwards
@@ -142,6 +148,7 @@ function ReaderSearch:searchCallback(reverse)
     -- search_text comes from our keyboard, and may contain multiple diacritics ordered
     -- in any order: we'd rather have them normalized, and expect the book content to
     -- be proper and normalized text.
+    self.ui.doc_settings:saveSetting("fulltext_search_last_search_text", search_text)
     self.last_search_text = search_text -- if shown again, show it as it has been inputted
     search_text = Utf8Proc.normalize_NFC(search_text)
     self.use_regex = self.check_button_regex.checked
@@ -178,7 +185,7 @@ function ReaderSearch:onShowFulltextSearchInput()
     self.input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
         width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.9),
-        input = self.last_search_text,
+        input = self.last_search_text or self.ui.doc_settings:readSetting("fulltext_search_last_search_text"),
         buttons = {
             {
                 {
@@ -507,15 +514,22 @@ function ReaderSearch:findAllText(search_text)
         UIManager:close(info)
         self.last_search_hash = last_search_hash
         self.findall_results = res
+        self.findall_results_item_index = nil
     end
     if self.findall_results then
-        self:showFindAllResults(not_cached)
+        self:onShowFindAllResults(not_cached)
     else
         UIManager:show(InfoMessage:new{ text = _("No results in the document") })
     end
 end
 
-function ReaderSearch:showFindAllResults(not_cached)
+function ReaderSearch:onShowFindAllResults(not_cached)
+    if not not_cached and self.findall_results == nil then
+        -- no cached results, show input dialog
+        self:onShowFulltextSearchInput()
+        return
+    end
+
     if self.ui.rolling and not_cached then -- for ui.paging: items are built in KoptInterface:findAllText()
         for _, item in ipairs(self.findall_results) do
             -- PDF/Kopt shows full words when only some part matches; let's do the same with CRE
@@ -546,7 +560,6 @@ function ReaderSearch:showFindAllResults(not_cached)
     menu = Menu:new{
         title = T(_("Search results (%1)"), #self.findall_results),
         subtitle = T(_("Query: %1"), self.last_search_text),
-        item_table = self.findall_results,
         items_per_page = self.findall_results_per_page,
         covers_fullscreen = true,
         is_borderless = true,
@@ -568,9 +581,11 @@ function ReaderSearch:showFindAllResults(not_cached)
             end
         end,
         close_callback = function()
+            self.findall_results_item_index = menu.page * menu.perpage -- save page number to reopen
             UIManager:close(menu)
         end,
     }
+    menu:switchItemTable(nil, self.findall_results, self.findall_results_item_index)
     UIManager:show(menu)
     self:showErrorNotification(#self.findall_results)
 end
