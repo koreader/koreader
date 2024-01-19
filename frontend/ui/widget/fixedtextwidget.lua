@@ -17,7 +17,7 @@ end
 function FixedTextWidget:getSize()
     self:updateSize()
     if self._length == 0 then
-        return Geom:new{}
+        return Geom:new()
     end
     return TextWidget.getSize(self)
 end
