@@ -145,8 +145,8 @@ function TouchMenuItem:init()
 
     self._underline_container = UnderlineContainer:new{
         vertical_align = "center",
-        dimen = self.dimen,
-        self.item_frame
+        dimen = self.dimen:copy(),
+        self.item_frame,
     }
 
     self[1] = self._underline_container
