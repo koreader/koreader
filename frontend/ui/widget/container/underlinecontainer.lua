@@ -12,7 +12,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local UnderlineContainer = WidgetContainer:extend{
     linesize = Size.line.thick,
     padding = Size.padding.tiny,
-    --- @todo shouldn't this default to black instead?
+    -- We default to white to be invisible by default for FocusManager use-cases (only switching to black @ onFocus)
     color = Blitbuffer.COLOR_WHITE,
     vertical_align = "top",
 }
