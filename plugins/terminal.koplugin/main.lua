@@ -36,19 +36,19 @@ local function check_prerequisites()
 
     local ptmx = C.open("/dev/ptmx", bit.bor(C.O_RDWR, C.O_NONBLOCK, C.O_CLOEXEC))
     if ptmx == -1 then
-        logger.warn("Terminal: can not open /dev/ptmx:", ffi.string(C.strerror(ffi.errno())))
-        return false
+        logger.warn("Terminal: cannot open /dev/ptmx:", ffi.string(C.strerror(ffi.errno())))
+        error("Device doesn't meet some of the plugin's prerequisites")
     end
 
     if C.grantpt(ptmx) ~= 0 then
-        logger.warn("Terminal: can not grantpt:", ffi.string(C.strerror(ffi.errno())))
+        logger.warn("Terminal: cannot use grantpt:", ffi.string(C.strerror(ffi.errno())))
         C.close(ptmx)
-        return false
+        error("Device doesn't meet some of the plugin's prerequisites")
     end
     if C.unlockpt(ptmx) ~= 0 then
-        logger.warn("Terminal: can not unlockpt:", ffi.string(C.strerror(ffi.errno())))
+        logger.warn("Terminal: cannot use unlockpt:", ffi.string(C.strerror(ffi.errno())))
         C.close(ptmx)
-        return false
+        error("Device doesn't meet some of the plugin's prerequisites")
     end
     C.close(ptmx)
     return true
