@@ -605,22 +605,19 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
     if drawer == "lighten" then
         local alpha = 0xFF*(self.highlight.lighten_factor or 0.5)
         if not color or not Screen:isColorEnabled() then
-            color = Blitbuffer.Color8A(0, alpha)
+            bb:darkenRect(x, y, w, h, alpha)
         else
-            -- FIXME: lighten_factor and lightenRect doing the opposite of what they should mean or some such ;p.
-            -- FIXME: Do we even want a ligthen factor here?
-            color = Blitbuffer.ColorRGB32(color.r, color.g, color.b, bit.bxor(alpha, 0xFF))
+            bb:multiplyRectRGB(x, y, w, h, color)
         end
-        --- @fixme: Use something based on colorblitFrom instead?
-        --          (except basically, the invert of it, colorizing the non-covered parts of the alpha map).
-        ---         Might be tricky for non-black text, though...
-        ---         Also potentially annoying with software invert, maybe?
-        bb:lightenRect(x, y, w, h, color)
     elseif drawer == "underscore" then
         if not color or not Screen:isColorEnabled() then
             color = Blitbuffer.COLOR_GRAY_4
         end
-        bb:paintRect(x, y + h - 1, w, Size.line.thick, color)
+        if Blitbuffer.isColor8(color) then
+            bb:paintRect(x, y + h - 1, w, Size.line.thick, color)
+        else
+            bb:paintRectRGB32(x, y + h - 1, w, Size.line.thick, color)
+        end
     elseif drawer == "strikeout" then
         if not color or not Screen:isColorEnabled() then
             color = Blitbuffer.COLOR_BLACK
@@ -629,7 +626,11 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
         if self.ui.paging then
             line_y = line_y + 2
         end
-        bb:paintRect(x, line_y, w, Size.line.medium, color)
+        if Blitbuffer.isColor8(color) then
+            bb:paintRect(x, line_y, w, Size.line.medium, color)
+        else
+            bb:paintRectRGB32(x, line_y, w, Size.line.medium, color)
+        end
     elseif drawer == "invert" then
         bb:invertRect(x, y, w, h)
     end
@@ -638,7 +639,11 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
             color = Blitbuffer.COLOR_BLACK
         end
         if self.highlight.note_mark == "underline" then
-            bb:paintRect(x, y + h - 1, w, Size.line.medium, color)
+            if Blitbuffer.isColor8(color) then
+                bb:paintRect(x, y + h - 1, w, Size.line.medium, color)
+            else
+                bb:paintRectRGB32(x, y + h - 1, w, Size.line.medium, color)
+            end
         else
             local note_mark_pos_x
             if self.ui.paging or
@@ -649,7 +654,11 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
                 note_mark_pos_x = self.note_mark_pos_x2
             end
             if self.highlight.note_mark == "sideline" then
-                bb:paintRect(note_mark_pos_x, y, self.note_mark_line_w, h, color)
+                if Blitbuffer.isColor8(color) then
+                    bb:paintRect(note_mark_pos_x, y, self.note_mark_line_w, h, color)
+                else
+                    bb:paintRectRGB32(note_mark_pos_x, y, self.note_mark_line_w, h, color)
+                end
             elseif self.highlight.note_mark == "sidemark" then
                 self.note_mark_sign:paintTo(bb, note_mark_pos_x, y)
             end
