@@ -37,18 +37,18 @@ local function check_prerequisites()
     local ptmx = C.open("/dev/ptmx", bit.bor(C.O_RDWR, C.O_NONBLOCK, C.O_CLOEXEC))
     if ptmx == -1 then
         logger.warn("Terminal: cannot open /dev/ptmx:", ffi.string(C.strerror(ffi.errno())))
-        error("Device doesn't meet some of the plugin's prerequisites")
+        return false
     end
 
     if C.grantpt(ptmx) ~= 0 then
         logger.warn("Terminal: cannot use grantpt:", ffi.string(C.strerror(ffi.errno())))
         C.close(ptmx)
-        error("Device doesn't meet some of the plugin's prerequisites")
+        return false
     end
     if C.unlockpt(ptmx) ~= 0 then
         logger.warn("Terminal: cannot use unlockpt:", ffi.string(C.strerror(ffi.errno())))
         C.close(ptmx)
-        error("Device doesn't meet some of the plugin's prerequisites")
+        return false
     end
     C.close(ptmx)
     return true
@@ -58,7 +58,8 @@ end
 -- So sorry for the Tolinos with (Android 4.4.x).
 -- Maybe https://f-droid.org/de/packages/jackpal.androidterm/ could be an alternative then.
 if (Device:isAndroid() and Device.firmware_rev < 21) or not check_prerequisites() then
-    return
+    logger.warn("Terminal: Device doesn't meet some of the plugin's prerequisites")
+    return { disabled = true, }
 end
 
 local Aliases = require("aliases")
