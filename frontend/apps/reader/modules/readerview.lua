@@ -214,7 +214,8 @@ function ReaderView:paintTo(bb, x, y)
     -- mark last read area of overlapped pages
     if not self.dim_area:isEmpty() and self:isOverlapAllowed() then
         if self.page_overlap_style == "dim" then
-            bb:dimRect(self.dim_area.x, self.dim_area.y, self.dim_area.w, self.dim_area.h)
+            -- NOTE: "dim", as in make black text fainter, e.g., lighten the rect
+            bb:lightenRect(self.dim_area.x, self.dim_area.y, self.dim_area.w, self.dim_area.h)
         else
             -- Paint at the proper y origin depending on whether we paged forward (dim_area.y == 0) or backward
             local paint_y = self.dim_area.y == 0 and self.dim_area.h or self.dim_area.y

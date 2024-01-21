@@ -578,7 +578,7 @@ function ImageWidget:paintTo(bb, x, y)
     ---        This would require the *original* transparent icon, not the flattened one in the cache.
     ---        c.f., https://github.com/koreader/koreader/pull/6937#issuecomment-748372429 for a PoC
     if self.dim then
-        bb:dimRect(x, y, size.w, size.h)
+        bb:lightenRect(x, y, size.w, size.h)
     end
     -- In night mode, invert all rendered images, so the original is
     -- displayed when the whole screen is inverted by night mode.

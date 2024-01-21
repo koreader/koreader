@@ -160,7 +160,7 @@ function FrameContainer:paintTo(bb, x, y)
             container_height - 2*self.bordersize)
     end
     if self.dim then
-        bb:dimRect(x + self.bordersize, y + self.bordersize,
+        bb:lightenRect(x + self.bordersize, y + self.bordersize,
             container_width - 2*self.bordersize,
             container_height - 2*self.bordersize)
     end
