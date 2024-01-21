@@ -621,6 +621,8 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
         local alpha = 0xFF*(self.highlight.lighten_factor or 0.5)
         if not color or not Screen:isColorEnabled() then
             color = Blitbuffer.Color8A(0, alpha)
+        else
+            color = Blitbuffer.ColorRGB32(color.r, color.g, color.b, alpha)
         end
         bb:lightenRect(x, y, w, h, color)
     elseif drawer == "underscore" then
