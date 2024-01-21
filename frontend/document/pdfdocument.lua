@@ -253,6 +253,8 @@ function PdfDocument:saveHighlight(pageno, item)
     elseif item.drawer == "strikeout" then
         annot_type = C.PDF_ANNOT_STRIKE_OUT
     end
+    -- NOTE: For highlights, display style may differ compared to ReaderView:drawHighlightRect...
+    --       (e.g., we do a MUL blend, MuPDF currently appears to do an OVER blend).
     page:addMarkupAnnotation(quadpoints, n, annot_type, annot_color) -- may update/adjust quadpoints
     -- Update pboxes with the possibly adjusted coordinates (this will have it updated
     -- in self.view.highlight.saved[page])
