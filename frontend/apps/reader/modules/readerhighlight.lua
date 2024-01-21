@@ -18,6 +18,7 @@ local ffiUtil = require("ffi/util")
 local time = require("ui/time")
 local _ = require("gettext")
 local C_ = _.pgettext
+local N_ = _.ngettext
 local T = ffiUtil.template
 local Screen = Device.screen
 
