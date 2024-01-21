@@ -622,7 +622,9 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
         if not color or not Screen:isColorEnabled() then
             color = Blitbuffer.Color8A(0, alpha)
         else
-            color = Blitbuffer.ColorRGB32(color.r, color.g, color.b, alpha)
+            -- FIXME: lighten_factor and lightenRect doing the opposite of what they should mean or some such ;p.
+            -- FIXME: Do we even want a ligthen factor here?
+            color = Blitbuffer.ColorRGB32(color.r, color.g, color.b, bit.bxor(alpha, 0xFF))
         end
         --- @fixme: Use something based on colorblitFrom instead?
         --          (except basically, the invert of it, colorizing the non-covered parts of the alpha map).
