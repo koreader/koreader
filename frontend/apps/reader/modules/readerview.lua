@@ -41,15 +41,6 @@ local ReaderView = OverlapGroup:extend{
     note_mark_sign = nil,
     note_mark_pos_x1 = nil, -- page 1
     note_mark_pos_x2 = nil, -- page 2 in two-page mode
-    highlight_colors = {
-        ["red"]    = "#fe4400",
-        ["orange"] = "#ff8800",
-        ["yellow"] = "#fdff32",
-        ["green"]  = "#00ad65",
-        ["blue"]   = "#00f2ff",
-        ["purple"] = "#ee00ff",
-        ["gray"]   = "#808080",
-    },
     -- PDF/DjVu continuous paging
     page_scroll = nil,
     page_bgcolor = Blitbuffer.gray(G_defaults:readSetting("DBACKGROUND_COLOR") * (1/15)),
@@ -508,12 +499,6 @@ function ReaderView:drawScrollView(bb, x, y)
         self.state.pos)
 end
 
---- Converts a color name into a color struct
-function ReaderView:lookupHighlightColor(color_name)
-    local color = self.highlight_colors[color_name]
-    return Blitbuffer.colorFromString(color or "#ffff00")
-end
-
 function ReaderView:drawHighlightIndicator(bb, x, y)
     local rect = self.highlight.indicator
     -- paint big cross line +
@@ -558,7 +543,7 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
         for _, item in ipairs(items) do
             local boxes = self.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
             if boxes then
-                local color = self:lookupHighlightColor(item.color)
+                local color = Blitbuffer.colorFromName(item.color)
                 local draw_note_mark = item.note and self.highlight.note_mark
                 for _, box in ipairs(boxes) do
                     local rect = self:pageToScreenTransform(page, box)
