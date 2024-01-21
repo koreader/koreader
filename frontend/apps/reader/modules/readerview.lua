@@ -624,6 +624,10 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
         else
             color = Blitbuffer.ColorRGB32(color.r, color.g, color.b, alpha)
         end
+        --- @fixme: Use something based on colorblitFrom instead?
+        --          (except basically, the invert of it, colorizing the non-covered parts of the alpha map).
+        ---         Might be tricky for non-black text, though...
+        ---         Also potentially annoying with software invert, maybe?
         bb:lightenRect(x, y, w, h, color)
     elseif drawer == "underscore" then
         if not color or not Screen:isColorEnabled() then
