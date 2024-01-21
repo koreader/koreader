@@ -215,7 +215,8 @@ function ReaderView:paintTo(bb, x, y)
     -- dim last read area
     if not self.dim_area:isEmpty() and self:isOverlapAllowed() then
         if self.page_overlap_style == "dim" then
-            bb:dimRect(
+            -- NOTE: "dim", as in make black text fainter, e.g., lighten the rect
+            bb:lightenRect(
                 self.dim_area.x, self.dim_area.y,
                 self.dim_area.w, self.dim_area.h
             )
