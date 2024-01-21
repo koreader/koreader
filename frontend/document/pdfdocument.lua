@@ -1,3 +1,4 @@
+local BlitBuffer = require("ffi/blitbuffer")
 local CacheItem = require("cacheitem")
 local CanvasContext = require("document/canvascontext")
 local DocCache = require("document/doccache")
@@ -244,7 +245,7 @@ function PdfDocument:saveHighlight(pageno, item)
     local quadpoints, n = _quadpointsFromPboxes(item.pboxes)
     local page = self._document:openPage(pageno)
     local annot_type = C.PDF_ANNOT_HIGHLIGHT
-    local annot_color =  Blitbuffer.colorFromString(item.color)
+    local annot_color =  BlitBuffer.colorFromString(item.color)
     if item.drawer == "lighten" then
         annot_type = C.PDF_ANNOT_HIGHLIGHT
     elseif item.drawer == "underscore" then
