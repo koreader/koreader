@@ -474,7 +474,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
     end
     table.insert(menu_items.highlight_options.sub_item_table, {
         text_func = function()
-            return T(_("Highlight opacity: %1"), G_reader_settings:readSetting("highlight_lighten_factor", 0.2))
+            return T(_("Gray highlight opacity: %1"), G_reader_settings:readSetting("highlight_lighten_factor", 0.2))
         end,
         enabled_func = function()
             return self.view.highlight.saved_drawer == "lighten"
@@ -491,8 +491,8 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 value_hold_step = 0.25,
                 default_value = 0.2,
                 keep_shown_on_apply = true,
-                title_text =  _("Highlight opacity"),
-                info_text = _("The higher the value, the darker the highlight."),
+                title_text =  _("Gray highlight opacity"),
+                info_text = _("The higher the value, the darker the gray."),
                 callback = function(spin)
                     G_reader_settings:saveSetting("highlight_lighten_factor", spin.value)
                     self.view.highlight.lighten_factor = spin.value
@@ -2138,7 +2138,7 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color)
             {
                 text = v[1],
                 checked = item_color == v[2],
-                bgcolor = BlitBuffer.colorFromName(v[1]),
+                bgcolor = BlitBuffer.colorFromName(v[1]) or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF)),
                 provider = v[2],
             },
         })
