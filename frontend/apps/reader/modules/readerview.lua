@@ -604,9 +604,8 @@ end
 function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note_mark)
     local x, y, w, h = rect.x, rect.y, rect.w, rect.h
     if drawer == "lighten" then
-        local alpha = 0xFF*(self.highlight.lighten_factor or 0.5)
         if not color or not Screen:isColorEnabled() then
-            bb:darkenRect(x, y, w, h, alpha)
+            bb:darkenRect(x, y, w, h, self.highlight.lighten_factor or 0.2)
         else
             bb:multiplyRectRGB(x, y, w, h, color)
         end
