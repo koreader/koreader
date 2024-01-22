@@ -31,6 +31,7 @@ local ReaderHighlight = InputContainer:extend{
         {_("Yellow"), "yellow"},
         {_("Green"), "green"},
         {_("Blue"), "blue"},
+        {_("Cyan"), "cyan"},
         {_("Purple"), "purple"},
         {_("Gray"), "gray"},
     }
