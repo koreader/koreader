@@ -456,7 +456,6 @@ function ReaderHighlight:addToMainMenu(menu_items)
                     default_provider = default_color,
                     callback = function(radio)
                         self.view.highlight.saved_color = radio.provider
-                        self.ui.doc_settings:saveSetting("highlight_color", self.view.highlight.saved_color)
                         UIManager:setDirty(self.dialog, "ui")
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
@@ -1899,7 +1898,6 @@ function ReaderHighlight:onCycleHighlightStyle()
         next_style_num = 1
     end
     self.view.highlight.saved_drawer = highlight_style[next_style_num][2]
-    self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
     UIManager:show(Notification:new{
         text = T(_("Default highlight style changed to '%1'."), highlight_style[next_style_num][1]),
     })
