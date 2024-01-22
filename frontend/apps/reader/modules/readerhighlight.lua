@@ -2106,9 +2106,14 @@ function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer, 
         -- called from editHighlightStyle
         ctor.extra_text = _("Highlight color")
         ctor.extra_callback = function(this)
-            -- Close the style dialog before showing the color dialog
-            this:onClose()
-            self:editHighlightColor(page, i)
+            local item = self.view.highlight.saved[page][i]
+            if item.drawer == "invert" then
+                UIManager:show(InfoMessage:new{ text = _("Colors unavailable when highlight style is set to 'Invert'") })
+            else
+                -- Close the style dialog before showing the color dialog
+                this:onClose()
+                self:editHighlightColor(page, i)
+            end
         end
     end
     UIManager:show(RadioButtonWidget:new(ctor))
