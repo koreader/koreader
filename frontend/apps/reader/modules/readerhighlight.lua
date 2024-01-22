@@ -2175,6 +2175,7 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color)
                 text = v[1],
                 checked = item_color == v[2],
                 bgcolor = BlitBuffer.colorFromName(v[1]) or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF)),
+                --bgcolor = Screen:isColorEnabled() and (BlitBuffer.colorFromName(v[1]) or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF))) or nil,
                 provider = v[2],
             },
         })
