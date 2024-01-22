@@ -836,11 +836,15 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     h = h + self.line_glyph_extra_height
     if self._bb then self._bb:free() end
     local bbtype = nil
-    if self.line_num_to_image and self.line_num_to_image[start_row_idx] then
+    if (self.line_num_to_image and self.line_num_to_image[start_row_idx]) or not Blitbuffer.isColor8(self.bgcolor) then
         bbtype = Screen:isColorEnabled() and Blitbuffer.TYPE_BBRGB32 or Blitbuffer.TYPE_BB8
     end
     self._bb = Blitbuffer.new(self.width, h, bbtype)
-    self._bb:fill(self.bgcolor)
+    if Blitbuffer.isColor8(self.bgcolor) then
+        self._bb:fill(self.bgcolor)
+    else
+        self._bb:paintRectRGB32(0, 0, self._bb:getWidth(), self._bb:getHeight(), self.bgcolor)
+    end
 
     local y = self.line_glyph_baseline
     if self.use_xtext then

@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local BlitBuffer = require("ffi/blitbuffer")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -2136,6 +2137,7 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color)
             {
                 text = v[1],
                 checked = item_color == v[2],
+                bgcolor = BlitBuffer.colorFromName(v[1]),
                 provider = v[2],
             },
         })
