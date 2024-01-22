@@ -2072,7 +2072,7 @@ function ReaderHighlight:editHighlightColor(page, i)
                     datetime = item.datetime,
                 })))
     end
-    self:showHighlightColorDialog(apply_color, item.color)
+    self:showHighlightColorDialog(apply_color, item.color, item.drawer)
 end
 
 function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer, page, i)
@@ -2114,7 +2114,7 @@ function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer, 
     UIManager:show(RadioButtonWidget:new(ctor))
 end
 
-function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color)
+function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color, item_drawer)
     local default_color, keep_shown_on_apply
     if item_color then -- called from editHighlightColor
         default_color = self.view.highlight.saved_color or
@@ -2122,13 +2122,23 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color)
         keep_shown_on_apply = true
     end
     local radio_buttons = {}
-    for _, v in ipairs(self.highlight_colors) do
+    if item_drawer ~= "invert" then
+        for _, v in ipairs(self.highlight_colors) do
+            table.insert(radio_buttons, {
+                {
+                    text = v[1],
+                    checked = item_color == v[2],
+                    bgcolor = BlitBuffer.colorFromName(v[1]) or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF)),
+                    provider = v[2],
+                },
+            })
+        end
+    else
+        default_color = nil
         table.insert(radio_buttons, {
             {
-                text = v[1],
-                checked = item_color == v[2],
-                bgcolor = BlitBuffer.colorFromName(v[1]) or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF)),
-                provider = v[2],
+                text = _("N/A"),
+                checked = false,
             },
         })
     end
@@ -2140,7 +2150,9 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color)
         radio_buttons = radio_buttons,
         default_provider = default_color,
         callback = function(radio)
-            caller_callback(radio.provider)
+            if radio.provider then
+                caller_callback(radio.provider)
+            end
         end,
     })
 end
