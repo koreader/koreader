@@ -604,7 +604,7 @@ end
 function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note_mark)
     local x, y, w, h = rect.x, rect.y, rect.w, rect.h
     if drawer == "lighten" then
-        if not color or not Screen:isColorEnabled() then
+        if not color then
             bb:darkenRect(x, y, w, h, self.highlight.lighten_factor)
         else
             if bb:getInverse() == 1 then
@@ -619,7 +619,7 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
             end
         end
     elseif drawer == "underscore" then
-        if not color or not Screen:isColorEnabled() then
+        if not color then
             color = Blitbuffer.COLOR_GRAY_4
         end
         if Blitbuffer.isColor8(color) then
@@ -628,7 +628,7 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
             bb:paintRectRGB32(x, y + h - 1, w, Size.line.thick, color)
         end
     elseif drawer == "strikeout" then
-        if not color or not Screen:isColorEnabled() then
+        if not color then
             color = Blitbuffer.COLOR_BLACK
         end
         local line_y = y + math.floor(h / 2) + 1
@@ -644,7 +644,7 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
         bb:invertRect(x, y, w, h)
     end
     if draw_note_mark then
-        if not color or not Screen:isColorEnabled() then
+        if not color then
             color = Blitbuffer.COLOR_BLACK
         end
         if self.highlight.note_mark == "underline" then
