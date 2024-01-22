@@ -607,7 +607,15 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
         if not color or not Screen:isColorEnabled() then
             bb:darkenRect(x, y, w, h, self.highlight.lighten_factor or 0.2)
         else
-            bb:multiplyRectRGB(x, y, w, h, color)
+            if bb:getInverse() == 1 then
+                -- MUL doesn't really work on a black background, so, switch to OVER if we're in software nightmode...
+                -- NOTE: We do *not* invert the color here, which means it *will* get inverted by the blitter.
+                --       While not particularly pretty, this will (roughly) match with hardware nightmode, *and* how MuPDF renders highlights...
+                local c = Blitbuffer.ColorRGB32(color.r, color.g, color.b, 0xFF * (self.highlight.lighten_factor or 0.2))
+                bb:blendRectRGB32(x, y, w, h, c)
+            else
+                bb:multiplyRectRGB(x, y, w, h, color)
+            end
         end
     elseif drawer == "underscore" then
         if not color or not Screen:isColorEnabled() then
