@@ -605,14 +605,14 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
     local x, y, w, h = rect.x, rect.y, rect.w, rect.h
     if drawer == "lighten" then
         if not color or not Screen:isColorEnabled() then
-            bb:darkenRect(x, y, w, h, self.highlight.lighten_factor or 0.2)
+            bb:darkenRect(x, y, w, h, self.highlight.lighten_factor)
         else
             if bb:getInverse() == 1 then
                 -- MUL doesn't really work on a black background, so, switch to OVER if we're in software nightmode...
                 -- NOTE: If we do *not* invert the color here, it *will* get inverted by the blitter given that the target bb is inverted.
                 --       While not particularly pretty, this (roughly) matches with hardware nightmode, *and* how MuPDF renders highlights...
                 --       But it's *really* not pretty (https://github.com/koreader/koreader/pull/11044#issuecomment-1902886069), so we'll fix it ;p.
-                local c = Blitbuffer.ColorRGB32(color.r, color.g, color.b, 0xFF * (self.highlight.lighten_factor or 0.2)):invert()
+                local c = Blitbuffer.ColorRGB32(color.r, color.g, color.b, 0xFF * self.highlight.lighten_factor):invert()
                 bb:blendRectRGB32(x, y, w, h, c)
             else
                 bb:multiplyRectRGB(x, y, w, h, color)
