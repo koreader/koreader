@@ -67,6 +67,7 @@ function ReaderHighlight:init()
     self._current_indicator_pos = nil
     self._previous_indicator_pos = nil
     self._last_indicator_move_args = {dx = 0, dy = 0, distance = 0, time = time:now()}
+    self._fallback_color = Screen:isColorEnabled() and "yellow" or "gray"
 
     self:registerKeyEvents()
 
@@ -418,7 +419,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
     end
     table.insert(menu_items.highlight_options.sub_item_table, {
         text_func = function()
-            local saved_color = self.view.highlight.saved_color or "yellow"
+            local saved_color = self.view.highlight.saved_color or self._fallback_color
             for __, v in ipairs(self.highlight_colors) do
                 if v[2] == saved_color then
                     return T(_("Highlight color: %1"), string.lower(v[1]))
@@ -430,8 +431,8 @@ function ReaderHighlight:addToMainMenu(menu_items)
             return self.view.highlight.saved_drawer ~= "invert"
         end,
         callback = function(touchmenu_instance)
-            local default_color = G_reader_settings:readSetting("highlight_color", "yellow")
-            local saved_color = self.view.highlight.saved_color or "yellow"
+            local default_color = G_reader_settings:readSetting("highlight_color", self._fallback_color)
+            local saved_color = self.view.highlight.saved_color or self._fallback_color
             local radio_buttons = {}
             for _, v in ipairs(self.highlight_colors) do
                 table.insert(radio_buttons, {
@@ -2165,7 +2166,7 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color)
     local default_color, keep_shown_on_apply
     if item_color then -- called from editHighlightColor
         default_color = self.view.highlight.saved_color or
-            G_reader_settings:readSetting("highlight_color", "yellow")
+            G_reader_settings:readSetting("highlight_color", self._fallback_color)
         keep_shown_on_apply = true
     end
     local radio_buttons = {}
@@ -2175,7 +2176,6 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color)
                 text = v[1],
                 checked = item_color == v[2],
                 bgcolor = BlitBuffer.colorFromName(v[1]) or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF)),
-                --bgcolor = Screen:isColorEnabled() and (BlitBuffer.colorFromName(v[1]) or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF))) or nil,
                 provider = v[2],
             },
         })
