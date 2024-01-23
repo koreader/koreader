@@ -446,6 +446,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
                     {
                         text = v[1],
                         checked = v[2] == saved_color,
+                        bgcolor = BlitBuffer.colorFromName(v[2]) or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF)),
                         provider = v[2],
                     },
                 })
@@ -2133,7 +2134,7 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color)
             {
                 text = v[1],
                 checked = item_color == v[2],
-                bgcolor = BlitBuffer.colorFromName(v[1]) or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF)),
+                bgcolor = BlitBuffer.colorFromName(v[2]) or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF)),
                 provider = v[2],
             },
         })
