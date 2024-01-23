@@ -93,10 +93,9 @@ function ReaderView:init()
         lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
         note_mark = G_reader_settings:readSetting("highlight_note_marker"),
         temp_drawer = "invert",
-        temp_color = "yellow",
         temp = {},
         saved_drawer = "lighten",
-        saved_color = "yellow",
+        saved_color = Screen:isColorEnabled() and "yellow" or "gray",
         indicator = nil, -- geom: non-touch highlight position indicator: {x = 50, y=50}
     }
     self.page_states = {}
@@ -522,7 +521,7 @@ function ReaderView:drawTempHighlight(bb, x, y)
         for i = 1, #boxes do
             local rect = self:pageToScreenTransform(page, boxes[i])
             if rect then
-                self:drawHighlightRect(bb, x, y, rect, self.highlight.temp_drawer, self.highlight.temp_color)
+                self:drawHighlightRect(bb, x, y, rect, self.highlight.temp_drawer)
             end
         end
     end
