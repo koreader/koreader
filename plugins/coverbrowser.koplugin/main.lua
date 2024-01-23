@@ -802,13 +802,13 @@ function CoverBrowser:onDocSettingsItemsChanged(file, doc_settings)
         status = doc_settings.summary and doc_settings.summary.status
         if not status then return end -- changes not for us
     end
-    if self.ui.file_chooser then
+    if filemanager_display_mode and self.ui.file_chooser then
         self.ui.file_chooser:updateCache(file, status)
     end
-    if self.ui.history and self.ui.history.hist_menu then
+    if history_display_mode and self.ui.history and self.ui.history.hist_menu then
         self.ui.history.hist_menu:updateCache(file, status)
     end
-    if self.ui.collections and self.ui.collections.coll_menu then
+    if collection_display_mode and self.ui.collections and self.ui.collections.coll_menu then
         self.ui.collections.coll_menu:updateCache(file, status)
     end
 end
