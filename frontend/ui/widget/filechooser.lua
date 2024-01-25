@@ -214,19 +214,19 @@ local FileChooser = Menu:extend{
             init_sort_func = function(cache)
                 local natsort
                 natsort, cache = sort.natsort_cmp(cache)
-                return function(a, b)
+                local sortfunc =  function(a, b)
                     if a.percent_finished == b.percent_finished then
                         return natsort(a.text, b.text)
-                    end
-                    if a.percent_finished == 1 then
+                    elseif a.percent_finished == 1 then
                         return false
-                    end
-                    if b.percent_finished == 1 then
+                    elseif b.percent_finished == 1 then
                         return true
+                    else
+                        return a.percent_finished > b.percent_finished
                     end
+                end
 
-                    return a.percent_finished > b.percent_finished
-                end, cache
+                return sortfunc, cache
             end,
             item_func = function(item)
                 local percent_finished
