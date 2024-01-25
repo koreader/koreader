@@ -126,6 +126,8 @@ end
 
 function FileManagerHistory:onMenuHold(item)
     self.histfile_dialog = nil
+    self.bookinfo = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(item.file)
+
     local function close_dialog_callback()
         UIManager:close(self.histfile_dialog)
     end
@@ -180,11 +182,11 @@ function FileManagerHistory:onMenuHold(item)
     })
     table.insert(buttons, {
         filemanagerutil.genShowFolderButton(item.file, close_dialog_menu_callback, item.dim),
-        filemanagerutil.genBookInformationButton(item.file, close_dialog_callback, item.dim),
+        filemanagerutil.genBookInformationButton(item.file, self.bookinfo, close_dialog_callback, item.dim),
     })
     table.insert(buttons, {
-        filemanagerutil.genBookCoverButton(item.file, close_dialog_callback, item.dim),
-        filemanagerutil.genBookDescriptionButton(item.file, close_dialog_callback, item.dim),
+        filemanagerutil.genBookCoverButton(item.file, self.bookinfo, close_dialog_callback, item.dim),
+        filemanagerutil.genBookDescriptionButton(item.file, self.bookinfo, close_dialog_callback, item.dim),
     })
 
     self.histfile_dialog = ButtonDialog:new{
