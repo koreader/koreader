@@ -254,7 +254,7 @@ end
 
 function FileSearcher:onMenuSelect(item)
     local file = item.path
-    local dialog
+    local bookinfo, dialog
     local function close_dialog_callback()
         UIManager:close(dialog)
     end
@@ -266,6 +266,7 @@ function FileSearcher:onMenuSelect(item)
     if item.is_file then
         local is_currently_opened = self.ui.document and self.ui.document.file == file
         if DocumentRegistry:hasProvider(file) or DocSettings:hasSidecarFile(file) then
+            bookinfo = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
             local doc_settings_or_file = is_currently_opened and self.ui.doc_settings or file
             table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_callback))
             table.insert(buttons, {}) -- separator
@@ -293,7 +294,7 @@ function FileSearcher:onMenuSelect(item)
                     FileManager:showDeleteFileDialog(file, post_delete_callback)
                 end,
             },
-            filemanagerutil.genBookInformationButton(file, close_dialog_callback),
+            filemanagerutil.genBookInformationButton(file, bookinfo, close_dialog_callback),
         })
     end
     table.insert(buttons, {
@@ -308,8 +309,17 @@ function FileSearcher:onMenuSelect(item)
             end,
         },
     })
+    local title = file
+    if bookinfo then
+        if bookinfo.title then
+            title = title .. "\n\n" .. T(_("Title: %1"), bookinfo.title)
+        end
+        if bookinfo.authors then
+            title = title .. "\n" .. T(_("Authors: %1"), bookinfo.authors:gsub("[\n\t]", "|"))
+        end
+    end
     dialog = ButtonDialog:new{
-        title = file,
+        title = title .. "\n",
         buttons = buttons,
     }
     UIManager:show(dialog)
