@@ -276,7 +276,7 @@ function filemanagerutil.genBookCoverButton(file, bookinfo, caller_callback, but
     local has_cover = bookinfo and bookinfo.has_cover
     return {
         text = _("Book cover"),
-        enabled = not button_disabled and (not bookinfo or has_cover) and true or false,
+        enabled = (not button_disabled and (not bookinfo or has_cover)) and true or false,
         callback = function()
             caller_callback()
             local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
@@ -289,7 +289,8 @@ function filemanagerutil.genBookDescriptionButton(file, bookinfo, caller_callbac
     local description = bookinfo and bookinfo.description
     return {
         text = _("Book description"),
-        enabled = not (button_disabled or bookinfo) or description and true or false,
+        -- enabled for deleted books if description is kept in CoverBrowser bookinfo cache
+        enabled = (not (button_disabled or bookinfo) or description) and true or false,
         callback = function()
             caller_callback()
             local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
