@@ -50,6 +50,8 @@ end
 function FileManagerCollection:onMenuHold(item)
     local file = item.file
     self.collfile_dialog = nil
+    self.bookinfo = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
+
     local function close_dialog_callback()
         UIManager:close(self.collfile_dialog)
     end
@@ -81,11 +83,11 @@ function FileManagerCollection:onMenuHold(item)
     })
     table.insert(buttons, {
         filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback),
-        filemanagerutil.genBookInformationButton(file, close_dialog_callback),
+        filemanagerutil.genBookInformationButton(file, self.bookinfo, close_dialog_callback),
     })
     table.insert(buttons, {
-        filemanagerutil.genBookCoverButton(file, close_dialog_callback),
-        filemanagerutil.genBookDescriptionButton(file, close_dialog_callback),
+        filemanagerutil.genBookCoverButton(file, self.bookinfo, close_dialog_callback),
+        filemanagerutil.genBookDescriptionButton(file, self.bookinfo, close_dialog_callback),
     })
 
     if Device:canExecuteScript(file) then
