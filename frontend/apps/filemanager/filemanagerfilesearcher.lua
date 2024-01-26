@@ -16,7 +16,6 @@ local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
-local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local FileSearcher = WidgetContainer:extend{
@@ -24,9 +23,6 @@ local FileSearcher = WidgetContainer:extend{
     include_subfolders = true,
     include_metadata = false,
 }
-
-function FileSearcher:init()
-end
 
 function FileSearcher:onShowFileSearch(search_string)
     local search_dialog
@@ -225,28 +221,26 @@ function FileSearcher:showSearchResultsMessage(no_results)
 end
 
 function FileSearcher:showSearchResults(results)
-    local menu_container = CenterContainer:new{
-        dimen = Screen:getSize(),
-    }
     self.search_menu = Menu:new{
+        title = T(_("Search results (%1)"), #results),
+        subtitle = T(_("Query: %1"), self.search_string),
+        item_table = results,
         ui = self.ui,
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         is_borderless = true,
         is_popout = false,
-        show_parent = menu_container,
+        title_bar_fm_style = true,
         onMenuSelect = self.onMenuSelect,
         onMenuHold = self.onMenuHold,
         handle_hold_on_hold_release = true,
     }
-    table.insert(menu_container, self.search_menu)
     self.search_menu.close_callback = function()
-        UIManager:close(menu_container)
+        UIManager:close(self.search_menu)
         if self.ui.file_chooser then
             self.ui.file_chooser:refreshPath()
         end
     end
-    self.search_menu:switchItemTable(T(_("Search results (%1)"), #results), results)
-    UIManager:show(menu_container)
+    UIManager:show(self.search_menu)
     if self.no_metadata_count ~= 0 then
         self:showSearchResultsMessage()
     end
