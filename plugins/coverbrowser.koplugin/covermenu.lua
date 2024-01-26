@@ -1,6 +1,6 @@
 local BD = require("ui/bidi")
+local ButtonDialog = require("ui/widget/buttondialog")
 local DocSettings = require("docsettings")
-local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
@@ -232,8 +232,7 @@ function CoverMenu:updateItems(select_number)
     -- we replace it by ours.
     -- (FileManager may replace file_chooser.showFileDialog after we've been called once, so we need
     -- to replace it again if it is not ours)
-    if not self.showFileDialog_ours -- never replaced
-            or self.showFileDialog ~= self.showFileDialog_ours then -- it is no more ours
+    if self.showFileDialog and self.showFileDialog ~= self.showFileDialog_ours then
         -- We need to do it at nextTick, once FileManager has instantiated
         -- its FileChooser completely
         UIManager:nextTick(function()
@@ -248,7 +247,7 @@ function CoverMenu:updateItems(select_number)
                 -- and store it as self.file_dialog, and UIManager:show() it.
                 self.showFileDialog_orig(self, file)
 
-                local bookinfo = BookInfoManager:getBookInfo(file)
+                local bookinfo = self.bookinfo -- getBookInfo(file) called by FileManager
                 if not bookinfo or bookinfo._is_directory then
                     -- If no bookinfo (yet) about this file, or it's a directory, let the original dialog be
                     return true
@@ -292,7 +291,6 @@ function CoverMenu:updateItems(select_number)
                 table.insert(orig_buttons, {
                     { -- Allow a new extraction (multiple interruptions, book replaced)...
                         text = _("Refresh cached book information"),
-                        enabled = bookinfo and true or false,
                         callback = function()
                             -- Wipe the cache
                             self:updateCache(file)
@@ -304,38 +302,11 @@ function CoverMenu:updateItems(select_number)
                 })
 
                 -- Create the new ButtonDialog, and let UIManager show it
-                -- (all button callback fudging must be done after this block to stick)
-                local ButtonDialog = require("ui/widget/buttondialog")
                 self.file_dialog = ButtonDialog:new{
                     title = orig_title,
                     title_align = orig_title_align,
                     buttons = orig_buttons,
                 }
-
-                -- Replace the "Book information" button callback to use directly our bookinfo
-                local button = self.file_dialog:getButtonById("book_information")
-                button.callback = function()
-                    FileManagerBookInfo:show(file, FileManagerBookInfo.extendProps(bookinfo))
-                    UIManager:close(self.file_dialog)
-                end
-
-                button = self.file_dialog:getButtonById("book_cover")
-                if button and not bookinfo.has_cover then
-                    button:disable()
-                end
-
-                button = self.file_dialog:getButtonById("book_description")
-                if button then
-                    if bookinfo.description then
-                        button.callback = function()
-                            UIManager:close(self.file_dialog)
-                            FileManagerBookInfo:onShowBookDescription(bookinfo.description)
-                        end
-                    else
-                        button:disable()
-                    end
-                end
-
                 UIManager:show(self.file_dialog)
                 return true
             end
@@ -355,7 +326,7 @@ function CoverMenu:onHistoryMenuHold(item)
     self.onMenuHold_orig(self, item)
     local file = item.file
 
-    local bookinfo = BookInfoManager:getBookInfo(file)
+    local bookinfo = self.bookinfo -- getBookInfo(file) called by FileManagerHistory
     if not bookinfo then
         -- If no bookinfo (yet) about this file, let the original dialog be
         return true
@@ -398,7 +369,6 @@ function CoverMenu:onHistoryMenuHold(item)
     table.insert(orig_buttons, {
         { -- Allow a new extraction (multiple interruptions, book replaced)...
             text = _("Refresh cached book information"),
-            enabled = bookinfo and true or false,
             callback = function()
                 -- Wipe the cache
                 self:updateCache(file)
@@ -410,38 +380,11 @@ function CoverMenu:onHistoryMenuHold(item)
     })
 
     -- Create the new ButtonDialog, and let UIManager show it
-    -- (all button callback replacement must be done after this block to stick)
-    local ButtonDialog = require("ui/widget/buttondialog")
     self.histfile_dialog = ButtonDialog:new{
         title = orig_title,
         title_align = orig_title_align,
         buttons = orig_buttons,
     }
-
-    -- Replace the "Book information" button callback to use directly our bookinfo
-    local button = self.histfile_dialog:getButtonById("book_information")
-    button.callback = function()
-        FileManagerBookInfo:show(file, FileManagerBookInfo.extendProps(bookinfo))
-        UIManager:close(self.histfile_dialog)
-    end
-
-    button = self.histfile_dialog:getButtonById("book_cover")
-    if button and not bookinfo.has_cover then
-        button:disable()
-    end
-
-    button = self.histfile_dialog:getButtonById("book_description")
-    if button then
-        if bookinfo.description then
-            button.callback = function()
-                UIManager:close(self.histfile_dialog)
-                FileManagerBookInfo:onShowBookDescription(bookinfo.description)
-            end
-        else
-            button:disable()
-        end
-    end
-
     UIManager:show(self.histfile_dialog)
     return true
 end
@@ -454,7 +397,7 @@ function CoverMenu:onCollectionsMenuHold(item)
     self.onMenuHold_orig(self, item)
     local file = item.file
 
-    local bookinfo = BookInfoManager:getBookInfo(file)
+    local bookinfo = self.bookinfo -- getBookInfo(file) called by FileManagerCollection
     if not bookinfo then
         -- If no bookinfo (yet) about this file, let the original dialog be
         return true
@@ -497,7 +440,6 @@ function CoverMenu:onCollectionsMenuHold(item)
     table.insert(orig_buttons, {
         { -- Allow a new extraction (multiple interruptions, book replaced)...
             text = _("Refresh cached book information"),
-            enabled = bookinfo and true or false,
             callback = function()
                 -- Wipe the cache
                 self:updateCache(file)
@@ -509,38 +451,11 @@ function CoverMenu:onCollectionsMenuHold(item)
     })
 
     -- Create the new ButtonDialog, and let UIManager show it
-    -- (all button callback replacement must be done after this block to stick)
-    local ButtonDialog = require("ui/widget/buttondialog")
     self.collfile_dialog = ButtonDialog:new{
         title = orig_title,
         title_align = orig_title_align,
         buttons = orig_buttons,
     }
-
-    -- Replace the "Book information" button callback to use directly our bookinfo
-    local button = self.collfile_dialog:getButtonById("book_information")
-    button.callback = function()
-        FileManagerBookInfo:show(file, FileManagerBookInfo.extendProps(bookinfo))
-        UIManager:close(self.collfile_dialog)
-    end
-
-    button = self.collfile_dialog:getButtonById("book_cover")
-    if button and not bookinfo.has_cover then
-        button:disable()
-    end
-
-    button = self.collfile_dialog:getButtonById("book_description")
-    if button then
-        if bookinfo.description then
-            button.callback = function()
-                UIManager:close(self.collfile_dialog)
-                FileManagerBookInfo:onShowBookDescription(bookinfo.description)
-            end
-        else
-            button:disable()
-        end
-    end
-
     UIManager:show(self.collfile_dialog)
     return true
 end
@@ -616,7 +531,6 @@ function CoverMenu:tapPlus()
     })
 
     -- Create the new ButtonDialog, and let UIManager show it
-    local ButtonDialog = require("ui/widget/buttondialog")
     self.file_dialog = ButtonDialog:new{
         title = orig_title,
         title_align = orig_title_align,

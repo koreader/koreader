@@ -269,8 +269,10 @@ function FileManager:setupLayout()
         }
 
         if is_file then
+            self.bookinfo = nil
             local has_provider = DocumentRegistry:hasProvider(file)
             if has_provider or DocSettings:hasSidecarFile(file) then
+                self.bookinfo = file_manager.coverbrowser and file_manager.coverbrowser:getBookInfo(file)
                 table.insert(buttons, filemanagerutil.genStatusButtonsRow(file, close_dialog_refresh_callback))
                 table.insert(buttons, {}) -- separator
                 table.insert(buttons, {
@@ -286,12 +288,12 @@ function FileManager:setupLayout()
                         file_manager:showOpenWithDialog(file)
                     end,
                 },
-                filemanagerutil.genBookInformationButton(file, close_dialog_callback),
+                filemanagerutil.genBookInformationButton(file, self.bookinfo, close_dialog_callback),
             })
             if has_provider then
                 table.insert(buttons, {
-                    filemanagerutil.genBookCoverButton(file, close_dialog_callback),
-                    filemanagerutil.genBookDescriptionButton(file, close_dialog_callback),
+                    filemanagerutil.genBookCoverButton(file, self.bookinfo, close_dialog_callback),
+                    filemanagerutil.genBookDescriptionButton(file, self.bookinfo, close_dialog_callback),
                 })
             end
             if Device:canExecuteScript(file) then

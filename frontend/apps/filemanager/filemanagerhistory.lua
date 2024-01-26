@@ -119,13 +119,15 @@ function FileManagerHistory:onMenuChoice(item)
             self.ui:switchDocument(item.file)
         end
     else
-        local ReaderUI = require("apps/reader/readerui")
-        ReaderUI:showReader(item.file)
+        self.ui:openFile(item.file)
     end
 end
 
 function FileManagerHistory:onMenuHold(item)
+    local file = item.file
     self.histfile_dialog = nil
+    self.bookinfo = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
+
     local function close_dialog_callback()
         UIManager:close(self.histfile_dialog)
     end
@@ -133,7 +135,7 @@ function FileManagerHistory:onMenuHold(item)
         UIManager:close(self.histfile_dialog)
         self._manager.hist_menu.close_callback()
     end
-    local function status_button_callback()
+    local function close_dialog_update_callback()
         UIManager:close(self.histfile_dialog)
         if self._manager.filter ~= "all" then
             self._manager:fetchStatuses(false)
@@ -143,17 +145,17 @@ function FileManagerHistory:onMenuHold(item)
         self._manager:updateItemTable()
         self._manager.files_updated = true -- sidecar folder may be created/deleted
     end
-    local is_currently_opened = item.file == (self.ui.document and self.ui.document.file)
+    local is_currently_opened = file == (self.ui.document and self.ui.document.file)
 
     local buttons = {}
     if not item.dim then
-        local doc_settings_or_file = is_currently_opened and self.ui.doc_settings or item.file
-        table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, status_button_callback))
+        local doc_settings_or_file = is_currently_opened and self.ui.doc_settings or file
+        table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_update_callback))
         table.insert(buttons, {}) -- separator
     end
     table.insert(buttons, {
-        filemanagerutil.genResetSettingsButton(item.file, status_button_callback, is_currently_opened),
-        filemanagerutil.genAddRemoveFavoritesButton(item.file, close_dialog_callback, item.dim),
+        filemanagerutil.genResetSettingsButton(file, close_dialog_update_callback, is_currently_opened),
+        filemanagerutil.genAddRemoveFavoritesButton(file, close_dialog_callback, item.dim),
     })
     table.insert(buttons, {
         {
@@ -166,7 +168,7 @@ function FileManagerHistory:onMenuHold(item)
                     self._manager.files_updated = true
                 end
                 local FileManager = require("apps/filemanager/filemanager")
-                FileManager:showDeleteFileDialog(item.file, post_delete_callback)
+                FileManager:showDeleteFileDialog(file, post_delete_callback)
             end,
         },
         {
@@ -179,12 +181,12 @@ function FileManagerHistory:onMenuHold(item)
         },
     })
     table.insert(buttons, {
-        filemanagerutil.genShowFolderButton(item.file, close_dialog_menu_callback, item.dim),
-        filemanagerutil.genBookInformationButton(item.file, close_dialog_callback, item.dim),
+        filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback, item.dim),
+        filemanagerutil.genBookInformationButton(file, self.bookinfo, close_dialog_callback, item.dim),
     })
     table.insert(buttons, {
-        filemanagerutil.genBookCoverButton(item.file, close_dialog_callback, item.dim),
-        filemanagerutil.genBookDescriptionButton(item.file, close_dialog_callback, item.dim),
+        filemanagerutil.genBookCoverButton(file, self.bookinfo, close_dialog_callback, item.dim),
+        filemanagerutil.genBookDescriptionButton(file, self.bookinfo, close_dialog_callback, item.dim),
     })
 
     self.histfile_dialog = ButtonDialog:new{

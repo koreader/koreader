@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
@@ -36,20 +37,20 @@ function FileManagerCollection:updateItemTable()
 end
 
 function FileManagerCollection:onMenuChoice(item)
-    local file = item.file
     if self.ui.document then
-        if self.ui.document.file ~= file then
-            self.ui:switchDocument(file)
+        if self.ui.document.file ~= item.file then
+            self.ui:switchDocument(item.file)
         end
     else
-        local ReaderUI = require("apps/reader/readerui")
-        ReaderUI:showReader(file)
+        self.ui:openFile(item.file)
     end
 end
 
 function FileManagerCollection:onMenuHold(item)
     local file = item.file
     self.collfile_dialog = nil
+    self.bookinfo = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
+
     local function close_dialog_callback()
         UIManager:close(self.collfile_dialog)
     end
@@ -81,11 +82,11 @@ function FileManagerCollection:onMenuHold(item)
     })
     table.insert(buttons, {
         filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback),
-        filemanagerutil.genBookInformationButton(file, close_dialog_callback),
+        filemanagerutil.genBookInformationButton(file, self.bookinfo, close_dialog_callback),
     })
     table.insert(buttons, {
-        filemanagerutil.genBookCoverButton(file, close_dialog_callback),
-        filemanagerutil.genBookDescriptionButton(file, close_dialog_callback),
+        filemanagerutil.genBookCoverButton(file, self.bookinfo, close_dialog_callback),
+        filemanagerutil.genBookDescriptionButton(file, self.bookinfo, close_dialog_callback),
     })
 
     if Device:canExecuteScript(file) then
@@ -95,7 +96,7 @@ function FileManagerCollection:onMenuHold(item)
     end
 
     self.collfile_dialog = ButtonDialog:new{
-        title = item.text,
+        title = BD.filename(item.text),
         title_align = "center",
         buttons = buttons,
     }
