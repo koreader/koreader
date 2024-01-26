@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
@@ -36,14 +37,12 @@ function FileManagerCollection:updateItemTable()
 end
 
 function FileManagerCollection:onMenuChoice(item)
-    local file = item.file
     if self.ui.document then
-        if self.ui.document.file ~= file then
-            self.ui:switchDocument(file)
+        if self.ui.document.file ~= item.file then
+            self.ui:switchDocument(item.file)
         end
     else
-        local ReaderUI = require("apps/reader/readerui")
-        ReaderUI:showReader(file)
+        self.ui:openFile(item.file)
     end
 end
 
@@ -97,7 +96,7 @@ function FileManagerCollection:onMenuHold(item)
     end
 
     self.collfile_dialog = ButtonDialog:new{
-        title = item.text,
+        title = BD.filename(item.text),
         title_align = "center",
         buttons = buttons,
     }
