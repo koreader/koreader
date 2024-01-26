@@ -406,8 +406,8 @@ end
 function Device:install()
     local ConfirmBox = require("ui/widget/confirmbox")
     UIManager:show(ConfirmBox:new{
-        text = _("Update is ready. Install it now?"),
-        ok_text = _("Install"),
+        text = _("Update is ready. Install it?"),
+        ok_text = _("Now"),
         ok_callback = function()
             local save_quit = function()
                 self:saveSettings()
@@ -415,6 +415,13 @@ function Device:install()
             end
             UIManager:broadcastEvent(Event:new("Exit", save_quit))
         end,
+        cancel_text = _("Later"),
+        cancel_callback = function()
+            local InfoMessage = require("ui/widget/infomessage")
+            UIManager:show(InfoMessage:new{
+                text = _("The update will be applied the next time KOReader is started."),
+            })
+        end
     })
 end
 

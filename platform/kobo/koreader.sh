@@ -92,6 +92,8 @@ ko_update_check() {
     NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
     INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
     if [ -f "${NEWUPDATE}" ]; then
+        # Clear screen to delete UI leftovers
+        ./fbink --cls
         ./fbink -q -y -7 -pmh "Updating KOReader"
         # Setup the FBInk daemon
         export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
