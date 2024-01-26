@@ -294,7 +294,7 @@ This is useful:
             {
                 text_func = function()
                     local value = self:getTransServer()
-                    return T(_("Translate Server: %1"), value)
+                    return T(_("Translation server: %1"), value)
                 end,
                 sub_item_table = genServersItems("trans_server", self:getTransServer()),
                 keep_menu_open = true,
