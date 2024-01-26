@@ -1,6 +1,5 @@
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
-local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
