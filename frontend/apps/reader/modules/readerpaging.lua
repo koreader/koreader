@@ -1029,12 +1029,14 @@ function ReaderPaging:onGotoPageRel(diff)
             goto_end(y)
             goto_end(x)
         elseif new_page > 0 then
-            local previous_page = self.current_page
-            self:_gotoPage(new_page)
-            goto_end(y, -y_diff)
-            if new_page > previous_page then
-                new_va = self.visible_area:copy()
-                old_va = self.visible_area
+            -- next page
+            if y_diff == 1 then
+                goto_end(y, -y_diff)
+                self:_gotoPage(new_page)
+            -- previous page
+            else
+                self:_gotoPage(new_page)
+                goto_end(y, -y_diff)
             end
         else
             goto_end(x)
