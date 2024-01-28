@@ -168,6 +168,7 @@ function ConfirmBox:init()
     }
     self.movable = MovableContainer:new{
         frame,
+        ignore_events = self.ignore_events,
     }
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
