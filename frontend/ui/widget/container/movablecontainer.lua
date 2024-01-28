@@ -36,6 +36,10 @@ local MovableContainer = InputContainer:extend{
     -- Events to ignore (ie: ignore_events={"hold", "hold_release"})
     ignore_events = nil,
 
+    -- This can be passed if a MovableContainer should be present (as a no-op),
+    -- so we don't need to change the widget layout.
+    unmovable = nil,
+
     -- Initial position can be set related to an existing widget
     -- 'anchor' should be a Geom object (a widget's 'dimen', or a point), and
     -- can be a function returning that object
@@ -59,7 +63,7 @@ local MovableContainer = InputContainer:extend{
 }
 
 function MovableContainer:init()
-    if Device:isTouchDevice() then
+    if Device:isTouchDevice() and not self.unmovable then
         local range = Geom:new{
             x = 0, y = 0,
             w = Screen:getWidth(),
