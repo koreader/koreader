@@ -1028,13 +1028,17 @@ function ReaderPaging:onGotoPageRel(diff)
             self.ui:handleEvent(Event:new("EndOfBook"))
             goto_end(y)
             goto_end(x)
-        elseif new_page > 0 then            
-            if y_diff == 1 then -- next page
+        elseif new_page > 0 then
+            -- unbreak what goto_next_line() do
+            new_va[y] = old_va[y]
+            self:_gotoPage(new_page)
+            if y_diff == -1 and not bottom_to_top then  -- previous page normal mode
                 goto_end(y, -y_diff)
-                self:_gotoPage(new_page)            
-            else -- previous page
-                self:_gotoPage(new_page)
-                goto_end(y, -y_diff)
+            elseif y_diff == 1 and bottom_to_top then  -- previous page bottom_to_top
+                -- I need a goto_begin
+                --goto_end(y, -y_diff)
+                -- trick
+                new_va.y = 0
             end
         else
             goto_end(x)
