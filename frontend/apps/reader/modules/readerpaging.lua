@@ -1028,13 +1028,11 @@ function ReaderPaging:onGotoPageRel(diff)
             self.ui:handleEvent(Event:new("EndOfBook"))
             goto_end(y)
             goto_end(x)
-        elseif new_page > 0 then
-            -- next page
-            if y_diff == 1 then
+        elseif new_page > 0 then            
+            if y_diff == 1 then -- next page
                 goto_end(y, -y_diff)
-                self:_gotoPage(new_page)
-            -- previous page
-            else
+                self:_gotoPage(new_page)            
+            else -- previous page
                 self:_gotoPage(new_page)
                 goto_end(y, -y_diff)
             end
