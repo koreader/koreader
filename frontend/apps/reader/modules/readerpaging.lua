@@ -1029,17 +1029,11 @@ function ReaderPaging:onGotoPageRel(diff)
             goto_end(y)
             goto_end(x)
         elseif new_page > 0 then
-            -- unbreak what goto_next_line() do
-            new_va[y] = old_va[y]
             self:_gotoPage(new_page)
-            if y_diff == -1 and not bottom_to_top then  -- previous page normal mode
-                goto_end(y, -y_diff)
-            elseif y_diff == 1 and bottom_to_top then  -- previous page bottom_to_top
-                -- I need a goto_begin
-                --goto_end(y, -y_diff)
-                -- trick
-                new_va.y = 0
-            end
+            new_va = self.visible_area:copy()
+            old_va = self.visible_area
+            goto_end(y, -y_diff)
+            goto_end(x, -x_diff)
         else
             goto_end(x)
         end
