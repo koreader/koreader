@@ -169,6 +169,7 @@ function InfoMessage:init()
     }
     self.movable = MovableContainer:new{
         frame,
+        unmovable = self.unmovable,
     }
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),

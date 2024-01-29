@@ -415,6 +415,15 @@ function Device:install()
             end
             UIManager:broadcastEvent(Event:new("Exit", save_quit))
         end,
+        cancel_text = _("Later"),
+        cancel_callback = function()
+            local InfoMessage = require("ui/widget/infomessage")
+            UIManager:show(InfoMessage:new{
+                text = _("The update will be applied the next time KOReader is started."),
+                unmovable = true,
+            })
+        end,
+        unmovable = true,
     })
 end
 
