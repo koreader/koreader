@@ -188,7 +188,7 @@ end
 
 function ReaderPaging:onReadSettings(config)
     self.page_positions = config:readSetting("page_positions") or {}
-    self:_gotoPage(config:readSetting("last_page") or 1)
+    self:_gotoPage(config:readSetting("last_page") or 1, "init")
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
 end
@@ -1114,6 +1114,9 @@ function ReaderPaging:_gotoPage(number, orig_mode)
         logger.warn("page number too low: "..number.."!")
         number = 1
     end
+    if orig_mode ~= "scrolling" and orig_mode ~= "init" then
+        self.ui:handleEvent(Event:new("PageChangeAnimation", number > self.current_page))
+    end
     -- this is an event to allow other controllers to be aware of this change
     self.ui:handleEvent(Event:new("PageUpdate", number, orig_mode))
     return true
@@ -1133,6 +1136,7 @@ function ReaderPaging:onGotoPage(number, pos)
         end
     elseif number == self.current_page then
         -- gotoPage emits this event only if the page changes
+        self.ui:handleEvent(Event:new("PageChangeAnimation", true))
         self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
     end
     return true
