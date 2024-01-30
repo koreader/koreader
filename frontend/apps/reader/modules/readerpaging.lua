@@ -1139,7 +1139,7 @@ function ReaderPaging:onGotoPage(number, pos)
             self.view:PanningUpdate(rect_s.x - self.view.visible_area.x, rect_s.y - self.view.visible_area.y)
         end
     elseif isSamePage then
-        -- gotoPage emits this event only if the page changes
+        -- gotoPage emits these events only if the page changes
         self.ui:handleEvent(Event:new("PageChangeAnimation", true))
         self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
     end
