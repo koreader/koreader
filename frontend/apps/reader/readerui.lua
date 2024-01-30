@@ -458,6 +458,7 @@ function ReaderUI:init()
     self:handleEvent(Event:new("DocSettingsLoad", self.doc_settings, self.document))
     -- we only read settings after all the widgets are initialized
     self:handleEvent(Event:new("ReadSettings", self.doc_settings))
+    self:handleEvent(Event:new("PageUpdate", self.doc_settings:readSetting("last_page") or 1))
 
     for _,v in ipairs(self.postInitCallback) do
         v()
