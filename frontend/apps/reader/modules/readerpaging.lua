@@ -1062,6 +1062,9 @@ function ReaderPaging:onGotoPageRel(diff)
         -- Page number haven't changed when panning inside a page,
         -- but time may: keep the footer updated
         self.view.footer:onUpdateFooter(self.view.footer_visible)
+        -- If we're not changing the page number,
+        -- flag for the turn animation now
+        self.ui:handleEvent(Event:new("PageChangeAnimation", diff > 0))
     end
 
     -- signal panning update
