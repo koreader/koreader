@@ -577,7 +577,7 @@ function TextViewer:setTextBold(start_pos, len)
     end
     self.text = table.concat(charlist)
     self:reinit()
-    self.text = text
+    self.text = text -- restore original text
 end
 
 function TextViewer:showMenu()
