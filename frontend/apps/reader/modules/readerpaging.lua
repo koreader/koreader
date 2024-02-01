@@ -188,7 +188,7 @@ end
 
 function ReaderPaging:onReadSettings(config)
     self.page_positions = config:readSetting("page_positions") or {}
-    self:_gotoPage(config:readSetting("last_page") or 1, "init")
+    self:_gotoPage(config:readSetting("last_page") or 1)
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
 end
@@ -565,7 +565,7 @@ function ReaderPaging:onGotoPercent(percent)
     if dest > self.number_of_pages then
         dest = self.number_of_pages
     end
-    self:_gotoPage(dest)
+    self:onGotoPage(dest)
     return true
 end
 
@@ -575,6 +575,7 @@ function ReaderPaging:onGotoViewRel(diff)
     else
         self:onGotoPageRel(diff)
     end
+    self.ui:handleEvent(Event:new("PageChangeAnimation", diff > 0))
     self:setPagePosition(self:getTopPage(), self:getTopPosition())
     return true
 end
@@ -1062,9 +1063,6 @@ function ReaderPaging:onGotoPageRel(diff)
         -- Page number haven't changed when panning inside a page,
         -- but time may: keep the footer updated
         self.view.footer:onUpdateFooter(self.view.footer_visible)
-        -- If we're not changing the page number,
-        -- flag for the turn animation now
-        self.ui:handleEvent(Event:new("PageChangeAnimation", diff > 0))
     end
 
     -- signal panning update
@@ -1117,9 +1115,6 @@ function ReaderPaging:_gotoPage(number, orig_mode)
         logger.warn("page number too low: "..number.."!")
         number = 1
     end
-    if orig_mode ~= "scrolling" and orig_mode ~= "init" then
-        self.ui:handleEvent(Event:new("PageChangeAnimation", number > self.current_page))
-    end
     -- this is an event to allow other controllers to be aware of this change
     self.ui:handleEvent(Event:new("PageUpdate", number, orig_mode))
     return true
@@ -1127,8 +1122,10 @@ end
 
 function ReaderPaging:onGotoPage(number, pos)
     local same_page = number == self.current_page;
+    local animation_direction = number > self.current_page;
     self:setPagePosition(number, 0)
     self:_gotoPage(number)
+    self.ui:handleEvent(Event:new("PageChangeAnimation", animation_direction))
     if pos then
         local rect_p = Geom:new{ x = pos.x or 0, y = pos.y or 0 }
         local rect_s = Geom:new(rect_p):copy()
@@ -1139,8 +1136,7 @@ function ReaderPaging:onGotoPage(number, pos)
             self.view:PanningUpdate(rect_s.x - self.view.visible_area.x, rect_s.y - self.view.visible_area.y)
         end
     elseif same_page then
-        -- gotoPage emits these events only if the page changes
-        self.ui:handleEvent(Event:new("PageChangeAnimation", true))
+        -- gotoPage emits this event only if the page changes
         self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
     end
     return true
@@ -1158,14 +1154,14 @@ function ReaderPaging:onGotoRelativePage(number)
         end
         new_page = test_page
     end
-    self:_gotoPage(new_page)
+    self:onGotoPage(new_page)
     return true
 end
 
 function ReaderPaging:onGotoPercentage(percentage)
     if percentage < 0 then percentage = 0 end
     if percentage > 1 then percentage = 1 end
-    self:_gotoPage(math.floor(percentage*self.number_of_pages))
+    self:onGotoPage(math.floor(percentage*self.number_of_pages))
     return true
 end
 
