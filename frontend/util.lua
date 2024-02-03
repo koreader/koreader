@@ -1415,6 +1415,8 @@ end
 -- @boolean case_sensitive
 -- @number start_pos Position number in text to start search from
 -- @treturn number Position number or 0 if not found
+-- @treturn table Text char list
+-- @treturn table Search string char list
 function util.stringSearch(txt, str, case_sensitive, start_pos)
     if not case_sensitive then
         str = Utf8Proc.lowercase(util.fixUtf8(str, "?"))
@@ -1441,7 +1443,9 @@ function util.stringSearch(txt, str, case_sensitive, start_pos)
             break
         end
     end
-    return char_pos
+    -- Returned charlists are used in TextViewer find,
+    -- to avoid double call of util.splitToChars()
+    return char_pos, txt_charlist, str_charlist
 end
 
 local WrappedFunction_mt = {

@@ -25,6 +25,7 @@ local MovableContainer = require("ui/widget/container/movablecontainer")
 local Notification = require("ui/widget/notification")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -38,6 +39,7 @@ local Screen = Device.screen
 local TextViewer = InputContainer:extend{
     title = nil,
     text = nil,
+    charlist = nil, -- internal
     width = nil,
     height = nil,
     buttons_table = nil,
@@ -507,9 +509,12 @@ function TextViewer:findCallback(input_dialog)
             start_pos = (charpos or 0) + 1 -- previous search result
         end
     end
-    local char_pos = util.stringSearch(self.text, self.search_value, self.case_sensitive, start_pos)
+    local char_pos, search_charlist
+    char_pos, self.charlist, search_charlist =
+        util.stringSearch(self.charlist or self.text, self.search_value, self.case_sensitive, start_pos)
     local msg
     if char_pos > 0 then
+        self:setTextBold(char_pos, #search_charlist)
         self.scroll_text_w:moveCursorToCharPos(char_pos, self.find_centered_lines_count)
         msg = T(_("Found, screen line %1."), self.scroll_text_w:getCharPosLineNum())
         self._find_next = true
@@ -553,6 +558,26 @@ function TextViewer:reinit()
     self:init(true) -- do not add default buttons once more
     UIManager:setDirty("all", "partial", self.frame.dimen)
     self.scroll_text_w:scrollToRatio(ratio, ratio == 0)
+end
+
+function TextViewer:setTextBold(start_pos, len)
+    local end_pos = start_pos + len
+    local text = self.text
+    if self.charlist == nil then
+        self.charlist = util.splitToChars(text)
+    end
+    local charlist = { TextBoxWidget.PTF_HEADER }
+    for i, char in ipairs(self.charlist) do
+        if i == start_pos then
+            table.insert(charlist, TextBoxWidget.PTF_BOLD_START)
+        elseif i == end_pos then
+            table.insert(charlist, TextBoxWidget.PTF_BOLD_END)
+        end
+        table.insert(charlist, char)
+    end
+    self.text = table.concat(charlist)
+    self:reinit()
+    self.text = text -- restore original text
 end
 
 function TextViewer:showMenu()
