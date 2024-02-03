@@ -1443,6 +1443,8 @@ function util.stringSearch(txt, str, case_sensitive, start_pos)
             break
         end
     end
+    -- Returned charlists are used in TextViewer find,
+    -- to avoid double call of util.splitToChars()
     return char_pos, txt_charlist, str_charlist
 end
 
