@@ -240,6 +240,12 @@ function ReaderZooming:onReadSettings(config)
         zoom_mode = self.zoom_mode_label[zoom_mode] and zoom_mode or self.DEFAULT_ZOOM_MODE
     end
 
+    -- auto crop needs to be page content
+    local trim_page = config:readSetting("kopt_trim_page")
+                             or G_reader_settings:readSetting("kopt_trim_page") or G_defaults:readSetting("DKOPTREADER_CONFIG_TRIM_PAGE")
+    local temp_zoom_mode = zoom_mode:match("page(.*)")
+    zoom_mode = trim_page == 1 and temp_zoom_mode and "content"..temp_zoom_mode or zoom_mode
+
     -- Import legacy zoom_factor settings
     if config:has("zoom_factor") and config:hasNot("kopt_zoom_factor") then
         config:saveSetting("kopt_zoom_factor", config:readSetting("zoom_factor"))
