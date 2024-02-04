@@ -271,12 +271,24 @@ function FileManager:setupLayout()
         if is_file then
             self.bookinfo = nil
             local has_provider = DocumentRegistry:hasProvider(file)
-            if has_provider or DocSettings:hasSidecarFile(file) then
+            local has_sidecar = DocSettings:hasSidecarFile(file)
+            if has_provider or has_sidecar then
                 self.bookinfo = file_manager.coverbrowser and file_manager.coverbrowser:getBookInfo(file)
-                table.insert(buttons, filemanagerutil.genStatusButtonsRow(file, close_dialog_refresh_callback))
+                local doc_settings_or_file
+                if has_sidecar then
+                    doc_settings_or_file = DocSettings:open(file)
+                    if not self.bookinfo then
+                        local props = doc_settings_or_file:readSetting("doc_props")
+                        self.bookinfo = FileManagerBookInfo.extendProps(props, file)
+                        self.bookinfo.has_cover = true -- to enable "Book cover" button, we do not know if cover exists
+                    end
+                else
+                    doc_settings_or_file = file
+                end
+                table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_refresh_callback))
                 table.insert(buttons, {}) -- separator
                 table.insert(buttons, {
-                    filemanagerutil.genResetSettingsButton(file, close_dialog_refresh_callback),
+                    filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_refresh_callback),
                     filemanagerutil.genAddRemoveFavoritesButton(file, close_dialog_callback),
                 })
             end
@@ -1414,13 +1426,14 @@ function FileManager:showOpenWithDialog(file)
                     end
                 end
                 local t = {}
-                for extension, provider_key in BaseUtil.orderedPairs(associated_providers) do
+                for extension, provider_key in pairs(associated_providers) do
                     local provider = DocumentRegistry:getProviderFromKey(provider_key)
                     if provider then
                         local space = string.rep(" ", max_len - #extension)
                         table.insert(t, T("%1%2: %3", extension, space, provider.provider_name))
                     end
                 end
+                table.sort(t)
                 UIManager:show(InfoMessage:new{
                     text = table.concat(t, "\n"),
                     monospace_font = true,
@@ -1479,11 +1492,10 @@ function FileManager:showOpenWithDialog(file)
 end
 
 function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_callback)
-    if not provider then -- check associated
-        local provider_key = DocumentRegistry:getAssociatedProviderKey(file)
-        provider = provider_key and DocumentRegistry:getProviderFromKey(provider_key)
+    if provider == nil then
+        provider = DocumentRegistry:getProvider(file, true) -- include auxiliary
     end
-    if provider and provider.order then -- auxiliary
+    if provider.order then -- auxiliary
         if aux_caller_callback then
             aux_caller_callback()
         end
