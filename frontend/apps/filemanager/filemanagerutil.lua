@@ -108,9 +108,14 @@ function filemanagerutil.getStatus(file)
 end
 
 -- Set a document status ("reading", "complete", or "abandoned")
-function filemanagerutil.setStatus(file, status)
+function filemanagerutil.setStatus(doc_settings_or_file, status)
     -- In case the book doesn't have a sidecar file, this'll create it
-    local doc_settings = DocSettings:open(file)
+    local doc_settings
+    if type(doc_settings_or_file) == "table" then
+        doc_settings = doc_settings_or_file
+    else
+        doc_settings = DocSettings:open(doc_settings_or_file)
+    end
     local summary = doc_settings:readSetting("summary", {})
     summary.status = status
     summary.modified = os.date("%Y-%m-%d", os.time())
@@ -131,9 +136,9 @@ end
 -- Generate all book status file dialog buttons in a row
 function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callback)
     local file, summary, status
-    if type(doc_settings_or_file) == "table" then -- currently opened file
+    if type(doc_settings_or_file) == "table" then
         file = doc_settings_or_file:readSetting("doc_path")
-        summary = doc_settings_or_file:readSetting("summary")
+        summary = doc_settings_or_file:readSetting("summary", {})
         status = summary.status
     else
         file = doc_settings_or_file
@@ -146,7 +151,7 @@ function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callba
             enabled = status ~= to_status,
             callback = function()
                 summary.status = to_status
-                filemanagerutil.setStatus(file, to_status)
+                filemanagerutil.setStatus(doc_settings_or_file, to_status)
                 UIManager:broadcastEvent(Event:new("DocSettingsItemsChanged", file, { summary = summary })) -- for CoverBrowser
                 caller_callback()
             end,
@@ -160,9 +165,16 @@ function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callba
 end
 
 -- Generate "Reset" file dialog button
-function filemanagerutil.genResetSettingsButton(file, caller_callback, button_disabled)
-    file = ffiutil.realpath(file) or file
-    local has_sidecar_file = DocSettings:hasSidecarFile(file)
+function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_callback, button_disabled)
+    local doc_settings, file, has_sidecar_file
+    if type(doc_settings_or_file) == "table" then
+        doc_settings = doc_settings_or_file
+        file = doc_settings_or_file:readSetting("doc_path")
+        has_sidecar_file = true
+    else
+        file = ffiutil.realpath(doc_settings_or_file) or doc_settings_or_file
+        has_sidecar_file = DocSettings:hasSidecarFile(file)
+    end
     local custom_cover_file = DocSettings:findCustomCoverFile(file)
     local has_custom_cover_file = custom_cover_file and true or false
     local custom_metadata_file = DocSettings:findCustomMetadataFile(file)
@@ -185,7 +197,7 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
                         custom_cover_file    = check_button_cover.checked and custom_cover_file,
                         custom_metadata_file = check_button_metadata.checked and custom_metadata_file,
                     }
-                    DocSettings:open(file):purge(nil, data_to_purge)
+                    (doc_settings or DocSettings:open(file)):purge(nil, data_to_purge)
                     if data_to_purge.custom_cover_file or data_to_purge.custom_metadata_file then
                         UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
                     end
