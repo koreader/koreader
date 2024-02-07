@@ -272,23 +272,23 @@ function filemanagerutil.genShowFolderButton(file, caller_callback, button_disab
     }
 end
 
-function filemanagerutil.genBookInformationButton(file, bookinfo, caller_callback, button_disabled)
+function filemanagerutil.genBookInformationButton(file, book_props, caller_callback, button_disabled)
     return {
         text = _("Book information"),
         enabled = not button_disabled,
         callback = function()
             caller_callback()
             local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
-            FileManagerBookInfo:show(file, bookinfo and FileManagerBookInfo.extendProps(bookinfo))
+            FileManagerBookInfo:show(file, book_props and FileManagerBookInfo.extendProps(book_props))
         end,
     }
 end
 
-function filemanagerutil.genBookCoverButton(file, bookinfo, caller_callback, button_disabled)
-    local has_cover = bookinfo and bookinfo.has_cover
+function filemanagerutil.genBookCoverButton(file, book_props, caller_callback, button_disabled)
+    local has_cover = book_props and book_props.has_cover
     return {
         text = _("Book cover"),
-        enabled = (not button_disabled and (not bookinfo or has_cover)) and true or false,
+        enabled = (not button_disabled and (not book_props or has_cover)) and true or false,
         callback = function()
             caller_callback()
             local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
@@ -297,12 +297,12 @@ function filemanagerutil.genBookCoverButton(file, bookinfo, caller_callback, but
     }
 end
 
-function filemanagerutil.genBookDescriptionButton(file, bookinfo, caller_callback, button_disabled)
-    local description = bookinfo and bookinfo.description
+function filemanagerutil.genBookDescriptionButton(file, book_props, caller_callback, button_disabled)
+    local description = book_props and book_props.description
     return {
         text = _("Book description"),
         -- enabled for deleted books if description is kept in CoverBrowser bookinfo cache
-        enabled = (not (button_disabled or bookinfo) or description) and true or false,
+        enabled = (not (button_disabled or book_props) or description) and true or false,
         callback = function()
             caller_callback()
             local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
