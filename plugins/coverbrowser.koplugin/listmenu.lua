@@ -388,7 +388,7 @@ function ListMenuItem:update()
                 -- for unspported files: don't show extension on the right,
                 -- keep it in filename
                 filename_without_suffix = filename
-                fileinfo_str = self.mandatory
+                fileinfo_str = self.mandatory or ""
             else
                 local mark = has_highlight and "\u{2592}  " or "" -- "medium shade"
                 fileinfo_str = mark .. BD.wrap(filetype) .. "  " .. BD.wrap(self.mandatory)
