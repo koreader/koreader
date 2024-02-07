@@ -51,7 +51,7 @@ end
 function FileManagerCollection:onMenuHold(item)
     local file = item.file
     self.collfile_dialog = nil
-    self.bookinfo = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
+    self.book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
 
     local function close_dialog_callback()
         UIManager:close(self.collfile_dialog)
@@ -71,17 +71,17 @@ function FileManagerCollection:onMenuHold(item)
     local doc_settings_or_file
     if is_currently_opened then
         doc_settings_or_file = self.ui.doc_settings
-        if not self.bookinfo then
-            self.bookinfo = self.ui.doc_props
-            self.bookinfo.has_cover = true
+        if not self.book_props then
+            self.book_props = self.ui.doc_props
+            self.book_props.has_cover = true
         end
     else
         if DocSettings:hasSidecarFile(file) then
             doc_settings_or_file = DocSettings:open(file)
-            if not self.bookinfo then
+            if not self.book_props then
                 local props = doc_settings_or_file:readSetting("doc_props")
-                self.bookinfo = FileManagerBookInfo.extendProps(props, file)
-                self.bookinfo.has_cover = true
+                self.book_props = FileManagerBookInfo.extendProps(props, file)
+                self.book_props.has_cover = true
             end
         else
             doc_settings_or_file = file
@@ -102,11 +102,11 @@ function FileManagerCollection:onMenuHold(item)
     })
     table.insert(buttons, {
         filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback),
-        filemanagerutil.genBookInformationButton(file, self.bookinfo, close_dialog_callback),
+        filemanagerutil.genBookInformationButton(file, self.book_props, close_dialog_callback),
     })
     table.insert(buttons, {
-        filemanagerutil.genBookCoverButton(file, self.bookinfo, close_dialog_callback),
-        filemanagerutil.genBookDescriptionButton(file, self.bookinfo, close_dialog_callback),
+        filemanagerutil.genBookCoverButton(file, self.book_props, close_dialog_callback),
+        filemanagerutil.genBookDescriptionButton(file, self.book_props, close_dialog_callback),
     })
 
     if Device:canExecuteScript(file) then
