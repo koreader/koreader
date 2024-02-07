@@ -27,7 +27,6 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
-local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -115,7 +114,7 @@ local ListMenuItem = InputContainer:extend{
 }
 
 function ListMenuItem:init()
-    -- filepath may be provided as 'file' (history) or 'path' (filechooser)
+    -- filepath may be provided as 'file' (history, collection) or 'path' (filechooser)
     -- store it as attribute so we can use it elsewhere
     self.filepath = self.entry.file or self.entry.path
 
@@ -224,9 +223,8 @@ function ListMenuItem:update()
         self.menu.cover_specs = false
     end
 
-    local file_mode = lfs.attributes(self.filepath, "mode")
-    if file_mode == "directory" then
-        self.is_directory = true
+    self.is_directory = not (self.entry.is_file or self.entry.file)
+    if self.is_directory then
         -- nb items on the right, directory name on the left
         local wright = TextWidget:new{
             text = self.mandatory or "",
@@ -261,13 +259,9 @@ function ListMenuItem:update()
                 },
             },
         }
-    else
-        local is_file_selected = self.menu.filemanager and self.menu.filemanager.selected_files
-            and self.menu.filemanager.selected_files[self.filepath]
-        if file_mode ~= "file" or is_file_selected then
-            self.file_deleted = true -- dim file
-        end
-        -- File
+    else -- file
+        self.file_deleted = self.entry.dim -- entry with deleted file from History or selected file from FM
+        local fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil
 
         local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.do_cover_image)
 
@@ -437,7 +431,7 @@ function ListMenuItem:update()
                 local wfileinfo = TextWidget:new{
                     text = fileinfo_str,
                     face = Font:getFace("cfont", fontsize_info),
-                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                    fgcolor = fgcolor,
                 }
                 table.insert(wright_items, wfileinfo)
             end
@@ -446,7 +440,7 @@ function ListMenuItem:update()
                 local wpageinfo = TextWidget:new{
                     text = pages_str,
                     face = Font:getFace("cfont", fontsize_info),
-                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                    fgcolor = fgcolor,
                 }
                 table.insert(wright_items, wpageinfo)
             end
@@ -584,7 +578,7 @@ function ListMenuItem:update()
                     height_overflow_show_ellipsis = true,
                     alignment = "left",
                     bold = true,
-                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                    fgcolor = fgcolor,
                 }
             end
             local build_authors = function(height)
@@ -601,7 +595,7 @@ function ListMenuItem:update()
                     height_adjust = true,
                     height_overflow_show_ellipsis = true,
                     alignment = "left",
-                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                    fgcolor = fgcolor,
                 }
             end
             while true do
@@ -727,7 +721,7 @@ function ListMenuItem:update()
                 local wfileinfo = TextWidget:new{
                     text = fileinfo_str,
                     face = Font:getFace("cfont", fontsize_info),
-                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                    fgcolor = fgcolor,
                 }
                 local wpageinfo = TextWidget:new{ -- Empty but needed for similar positionning
                     text = "",
@@ -762,7 +756,7 @@ function ListMenuItem:update()
                     face = Font:getFace("cfont", fontsize_no_bookinfo),
                     width = dimen.w - 2 * Screen:scaleBySize(10) - wright_width - wright_right_padding,
                     alignment = "left",
-                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                    fgcolor = fgcolor,
                 }
                 -- reduce font size for next loop, in case text widget is too large to fit into ListMenuItem
                 fontsize_no_bookinfo = fontsize_no_bookinfo - fontsize_dec_step
