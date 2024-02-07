@@ -269,18 +269,18 @@ function FileManager:setupLayout()
         }
 
         if is_file then
-            self.bookinfo = nil
+            self.book_props = nil -- in 'self' to provide access to it in CoverBrowser
             local has_provider = DocumentRegistry:hasProvider(file)
             local has_sidecar = DocSettings:hasSidecarFile(file)
             if has_provider or has_sidecar then
-                self.bookinfo = file_manager.coverbrowser and file_manager.coverbrowser:getBookInfo(file)
+                self.book_props = file_manager.coverbrowser and file_manager.coverbrowser:getBookInfo(file)
                 local doc_settings_or_file
                 if has_sidecar then
                     doc_settings_or_file = DocSettings:open(file)
-                    if not self.bookinfo then
+                    if not self.book_props then
                         local props = doc_settings_or_file:readSetting("doc_props")
-                        self.bookinfo = FileManagerBookInfo.extendProps(props, file)
-                        self.bookinfo.has_cover = true -- to enable "Book cover" button, we do not know if cover exists
+                        self.book_props = FileManagerBookInfo.extendProps(props, file)
+                        self.book_props.has_cover = true -- to enable "Book cover" button, we do not know if cover exists
                     end
                 else
                     doc_settings_or_file = file
@@ -300,12 +300,12 @@ function FileManager:setupLayout()
                         file_manager:showOpenWithDialog(file)
                     end,
                 },
-                filemanagerutil.genBookInformationButton(file, self.bookinfo, close_dialog_callback),
+                filemanagerutil.genBookInformationButton(file, self.book_props, close_dialog_callback),
             })
             if has_provider then
                 table.insert(buttons, {
-                    filemanagerutil.genBookCoverButton(file, self.bookinfo, close_dialog_callback),
-                    filemanagerutil.genBookDescriptionButton(file, self.bookinfo, close_dialog_callback),
+                    filemanagerutil.genBookCoverButton(file, self.book_props, close_dialog_callback),
+                    filemanagerutil.genBookDescriptionButton(file, self.book_props, close_dialog_callback),
                 })
             end
             if Device:canExecuteScript(file) then
