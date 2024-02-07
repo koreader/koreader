@@ -247,7 +247,7 @@ function CoverMenu:updateItems(select_number)
                 -- and store it as self.file_dialog, and UIManager:show() it.
                 self.showFileDialog_orig(self, file)
 
-                local bookinfo = self.bookinfo -- getBookInfo(file) called by FileManager
+                local bookinfo = self.book_props -- getBookInfo(file) called by FileManager
                 if not bookinfo or bookinfo._is_directory then
                     -- If no bookinfo (yet) about this file, or it's a directory, let the original dialog be
                     return true
@@ -326,7 +326,7 @@ function CoverMenu:onHistoryMenuHold(item)
     self.onMenuHold_orig(self, item)
     local file = item.file
 
-    local bookinfo = self.bookinfo -- getBookInfo(file) called by FileManagerHistory
+    local bookinfo = self.book_props -- getBookInfo(file) called by FileManagerHistory
     if not bookinfo then
         -- If no bookinfo (yet) about this file, let the original dialog be
         return true
@@ -397,7 +397,7 @@ function CoverMenu:onCollectionsMenuHold(item)
     self.onMenuHold_orig(self, item)
     local file = item.file
 
-    local bookinfo = self.bookinfo -- getBookInfo(file) called by FileManagerCollection
+    local bookinfo = self.book_props -- getBookInfo(file) called by FileManagerCollection
     if not bookinfo then
         -- If no bookinfo (yet) about this file, let the original dialog be
         return true
