@@ -2,6 +2,8 @@ local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
+local DocSettings = require("docsettings")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
@@ -62,32 +64,25 @@ function FileManagerHistory:fetchStatuses(count)
 end
 
 function FileManagerHistory:updateItemTable()
-    -- try to stay on current page
-    local select_number = nil
-    if self.hist_menu.page and self.hist_menu.perpage and self.hist_menu.page > 0 then
-        select_number = (self.hist_menu.page - 1) * self.hist_menu.perpage + 1
-    end
     self.count = { all = #require("readhistory").hist,
         reading = 0, abandoned = 0, complete = 0, deleted = 0, new = 0, }
     local item_table = {}
     for _, v in ipairs(require("readhistory").hist) do
         if self:isItemMatch(v) then
-            if self.is_frozen and v.status == "complete" then
-                v.mandatory_dim = true
-            end
+            v.mandatory_dim = (self.is_frozen and v.status == "complete") and true or nil
             table.insert(item_table, v)
         end
         if self.statuses_fetched then
             self.count[v.status] = self.count[v.status] + 1
         end
     end
-    local subtitle
+    local subtitle = ""
     if self.search_string then
         subtitle = T(_("Search results (%1)"), #item_table)
     elseif self.filter ~= "all" then
         subtitle = T(_("Status: %1 (%2)"), filter_text[self.filter]:lower(), #item_table)
     end
-    self.hist_menu:switchItemTable(nil, item_table, select_number, nil, subtitle or "")
+    self.hist_menu:switchItemTable(nil, item_table, -1, nil, subtitle)
 end
 
 function FileManagerHistory:isItemMatch(item)
@@ -126,7 +121,7 @@ end
 function FileManagerHistory:onMenuHold(item)
     local file = item.file
     self.histfile_dialog = nil
-    self.bookinfo = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
+    self.book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
 
     local function close_dialog_callback()
         UIManager:close(self.histfile_dialog)
@@ -137,7 +132,7 @@ function FileManagerHistory:onMenuHold(item)
     end
     local function close_dialog_update_callback()
         UIManager:close(self.histfile_dialog)
-        if self._manager.filter ~= "all" then
+        if self._manager.filter ~= "all" or self._manager.is_frozen then
             self._manager:fetchStatuses(false)
         else
             self._manager.statuses_fetched = false
@@ -148,13 +143,31 @@ function FileManagerHistory:onMenuHold(item)
     local is_currently_opened = file == (self.ui.document and self.ui.document.file)
 
     local buttons = {}
+    local doc_settings_or_file
+    if is_currently_opened then
+        doc_settings_or_file = self.ui.doc_settings
+        if not self.book_props then
+            self.book_props = self.ui.doc_props
+            self.book_props.has_cover = true
+        end
+    else
+        if DocSettings:hasSidecarFile(file) then
+            doc_settings_or_file = DocSettings:open(file)
+            if not self.book_props then
+                local props = doc_settings_or_file:readSetting("doc_props")
+                self.book_props = FileManagerBookInfo.extendProps(props, file)
+                self.book_props.has_cover = true
+            end
+        else
+            doc_settings_or_file = file
+        end
+    end
     if not item.dim then
-        local doc_settings_or_file = is_currently_opened and self.ui.doc_settings or file
         table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_update_callback))
         table.insert(buttons, {}) -- separator
     end
     table.insert(buttons, {
-        filemanagerutil.genResetSettingsButton(file, close_dialog_update_callback, is_currently_opened),
+        filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_update_callback, is_currently_opened),
         filemanagerutil.genAddRemoveFavoritesButton(file, close_dialog_callback, item.dim),
     })
     table.insert(buttons, {
@@ -182,11 +195,11 @@ function FileManagerHistory:onMenuHold(item)
     })
     table.insert(buttons, {
         filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback, item.dim),
-        filemanagerutil.genBookInformationButton(file, self.bookinfo, close_dialog_callback, item.dim),
+        filemanagerutil.genBookInformationButton(file, self.book_props, close_dialog_callback, item.dim),
     })
     table.insert(buttons, {
-        filemanagerutil.genBookCoverButton(file, self.bookinfo, close_dialog_callback, item.dim),
-        filemanagerutil.genBookDescriptionButton(file, self.bookinfo, close_dialog_callback, item.dim),
+        filemanagerutil.genBookCoverButton(file, self.book_props, close_dialog_callback, item.dim),
+        filemanagerutil.genBookDescriptionButton(file, self.book_props, close_dialog_callback, item.dim),
     })
 
     self.histfile_dialog = ButtonDialog:new{

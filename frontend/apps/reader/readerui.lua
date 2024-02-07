@@ -470,20 +470,21 @@ function ReaderUI:init()
     -- And have an extended and customized copy in memory for quick access.
     self.doc_props = FileManagerBookInfo.extendProps(props, self.document.file)
 
-    -- Set "reading" status if there is no status.
-    local summary = self.doc_settings:readSetting("summary", {})
-    if summary.status == nil then
-        summary.status = "reading"
-        summary.modified = os.date("%Y-%m-%d", os.time())
-    end
-
     local md5 = self.doc_settings:readSetting("partial_md5_checksum")
     if md5 == nil then
         md5 = util.partialMD5(self.document.file)
         self.doc_settings:saveSetting("partial_md5_checksum", md5)
     end
 
-    require("readhistory"):addItem(self.document.file) -- (will update "lastfile")
+    local summary = self.doc_settings:readSetting("summary", {})
+    if summary.status == nil then
+        summary.status = "reading"
+        summary.modified = os.date("%Y-%m-%d", os.time())
+    end
+
+    if summary.status ~= "complete" or not G_reader_settings:isTrue("history_freeze_finished_books") then
+        require("readhistory"):addItem(self.document.file) -- (will update "lastfile")
+    end
 
     -- After initialisation notify that document is loaded and rendered
     -- CREngine only reports correct page count after rendering is done

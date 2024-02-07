@@ -86,14 +86,15 @@ end
 
 --- Returns the preferred registered document handler or fallback provider.
 -- @string file
+-- @bool include_aux include auxiliary (non-document) providers
 -- @treturn table provider
-function DocumentRegistry:getProvider(file)
+function DocumentRegistry:getProvider(file, include_aux)
     local providers = self:getProviders(file)
-    if providers then
+    if providers or include_aux then
         -- associated provider
         local provider_key = DocumentRegistry:getAssociatedProviderKey(file)
         local provider = provider_key and self.known_providers[provider_key]
-        if provider and not provider.order then -- excluding auxiliary
+        if provider and (not provider.order or include_aux) then -- excluding auxiliary by default
             return provider
         end
         -- highest weighted provider
