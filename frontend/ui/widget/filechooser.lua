@@ -233,7 +233,7 @@ end
 function FileChooser:init()
     self.path_items = {}
     if lfs.attributes(self.path, "mode") ~= "directory" then
-        self.path = lfs.currentdir()
+        self.path = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
     end
     self.item_table = self:genItemTableFromPath(self.path)
     Menu.init(self) -- call parent's init()
