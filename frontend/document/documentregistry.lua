@@ -98,7 +98,7 @@ function DocumentRegistry:getProvider(file, include_aux)
             return provider
         end
         -- highest weighted provider
-        return providers[1].provider
+        return providers and providers[1].provider
     end
     return self:getFallbackProvider()
 end
