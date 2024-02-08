@@ -1439,11 +1439,13 @@ end
 
 -- Process all pending events on all registered ZMQs.
 function UIManager:processZMQs()
-    if self._zeromqs[1] then
-        self.event_hook:execute("InputEvent")
-    end
+    local sent_InputEvent = false
     for _, zeromq in ipairs(self._zeromqs) do
         for input_event in zeromq.waitEvent, zeromq do
+            if not sent_InputEvent then
+                self.event_hook:execute("InputEvent")
+                sent_InputEvent = true
+            end
             self:handleInputEvent(input_event)
         end
     end
