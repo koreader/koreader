@@ -969,22 +969,22 @@ local getOrderedDispatcherActions = function()
     local settings, order
     local n = 1
     while true do
-	local name, value = debug.getupvalue(Dispatcher.init, n)
-	if not name then break end
-	if name == "settingsList" then
-	    settings = value
+        local name, value = debug.getupvalue(Dispatcher.init, n)
+        if not name then break end
+        if name == "settingsList" then
+            settings = value
             break
         end
-	n = n + 1
+        n = n + 1
     end
     while true do
-	local name, value = debug.getupvalue(Dispatcher.registerAction, n)
-	if not name then break end
-	if name == "dispatcher_menu_order" then
+        local name, value = debug.getupvalue(Dispatcher.registerAction, n)
+        if not name then break end
+        if name == "dispatcher_menu_order" then
             order = value
             break
-	end
-	n = n + 1
+        end
+        n = n + 1
     end
     -- Copied and pasted from Dispatcher (we can't reach that the same way as above)
     local section_list = {
