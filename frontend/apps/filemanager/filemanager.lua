@@ -1493,7 +1493,7 @@ function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_ca
     if provider == nil then
         provider = DocumentRegistry:getProvider(file, true) -- include auxiliary
     end
-    if provider.order then -- auxiliary
+    if provider and provider.order then -- auxiliary
         if aux_caller_callback then
             aux_caller_callback()
         end
