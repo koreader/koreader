@@ -232,6 +232,9 @@ end
 
 function FileChooser:init()
     self.path_items = {}
+    if lfs.attributes(self.path, "mode") ~= "directory" then
+        self.path = lfs.currentdir()
+    end
     self.item_table = self:genItemTableFromPath(self.path)
     Menu.init(self) -- call parent's init()
 end
@@ -540,7 +543,7 @@ function FileChooser:onMenuSelect(item)
 end
 
 function FileChooser:onMenuHold(item)
-    self:onFileHold(item.path)
+    self:onFileHold(item)
     return true
 end
 
@@ -549,7 +552,7 @@ function FileChooser:onFileSelect(file)
     return true
 end
 
-function FileChooser:onFileHold(file)
+function FileChooser:onFileHold(item)
     return true
 end
 
