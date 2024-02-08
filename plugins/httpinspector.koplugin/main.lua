@@ -312,7 +312,7 @@ end
 --   5: number: -1.2
 --   6: string: /
 --   7: string: abc
---   8: string: 
+--   8: string:
 --   9: string: d"/ef
 local getVariablesFromUri = function(uri)
     local vars = {}
@@ -431,7 +431,7 @@ local getFunctionInfo = function(func, full_code)
             f:close()
         end
     end
-    local info = {
+    info = {
         source = path,
         firstline = firstline,
         lastline = lastline,
@@ -460,7 +460,7 @@ local getFunctionInfo = function(func, full_code)
     if not full_code then
         return info
     end
-    local info = util.tableDeepCopy(info)
+    info = util.tableDeepCopy(info)
     info.lines = lines
     return info
 end
@@ -504,7 +504,7 @@ end
 
 -- Nothing below is made available to translators: we output technical details
 -- in HTML, for power users and developpers, who should be fine with english.
-HOME_CONTENT = [[
+local HOME_CONTENT = [[
 <html>
 <head><title>KOReader inspector</title></head>
 <body>
@@ -537,7 +537,7 @@ function HttpInspector:onRequest(data, request_id)
         request_id = request_id,
         fragments = {},
     }
-    local method, uri, http_version = data:match("^(%u+) ([^\n]*) HTTP/(%d%.%d)\r?\n.*")
+    local method, uri = data:match("^(%u+) ([^\n]*) HTTP/%d%.%d\r?\n.*")
     -- We only need to support GET, with our special simple URI syntax/grammar
     if method ~= "GET" then
         return self:sendResponse(reqinfo, 405, CTYPE.TEXT, "Only GET supported")
@@ -677,7 +677,7 @@ function HttpInspector:exposeObject(obj, uri, reqinfo)
                 if ok then
                     local f = io.open(tmpfile, "rb")
                     if f then
-                        data = f:read("*all")
+                        local data = f:read("*all")
                         f:close()
                         os.remove(tmpfile)
                         return self:sendResponse(reqinfo, 200, CTYPE.PNG, data)
@@ -704,7 +704,7 @@ function HttpInspector:exposeObject(obj, uri, reqinfo)
                 if ftype == "=" then
                     return self:sendResponse(reqinfo, 200, CTYPE.TEXT, T("Variable '%1' assigned with: %2", reqinfo.parsed_uri, tostring(value)))
                 else
-                    local value = tostring(value)
+                    value = tostring(value)
                     local html = {}
                     local add_html = function(h) table.insert(html, h) end
                     local html_quoted_value = value:gsub("&", "&#38;"):gsub(">", "&gt;"):gsub("<", "&lt;")
@@ -723,7 +723,7 @@ function HttpInspector:exposeObject(obj, uri, reqinfo)
             end
         end
     end
-    return self:sendResponse(reqinfo, 400, CTYPE.TEXT, "Unexepected request")
+    return self:sendResponse(reqinfo, 400, CTYPE.TEXT, "Unexepected request") -- luacheck: ignore 511
 end
 
 -- Send a HTML page describing all this object's key/values
@@ -732,7 +732,7 @@ function HttpInspector:browseObject(obj, reqinfo)
     local add_html = function(h) table.insert(html, h) end
     local get_html_snippet = function(key, value, uri)
         local href = uri .. key
-        value_type = type(value)
+        local value_type = type(value)
         if value_type == "table" then
             local pad = ""
             local classinfo = guessClassName(value)
@@ -807,7 +807,7 @@ function HttpInspector:browseObject(obj, reqinfo)
         obj = getmetatable(obj)
         if obj then
             prelude = "<hr size=1 noshade/>"
-            local classinfo = guessClassName(obj)
+            classinfo = guessClassName(obj)
             if classinfo then
                 add_html(prelude .. T("  <em>%1</em>", classinfo))
                 prelude = ""
@@ -1008,13 +1008,14 @@ local getOrderedDispatcherActions = function()
             end
         end
     end
-    -- Add a useful one 
+    -- Add a useful one
     table.insert(_dispatcher_actions, 2, { general=true, separator=true, event="Close", category="none", title="Close top most widget"})
     return _dispatcher_actions
 end
 
 function HttpInspector:exposeEvent(uri, reqinfo)
-    local ftype, fragment, uri = stepUriFragment(uri)
+    local ftype, fragment
+    ftype, fragment, uri = stepUriFragment(uri) -- luacheck: no unused
     if fragment then
         -- Event name and args provided.
         -- We may get multiple events, separated by a dummy arg /&/
@@ -1062,9 +1063,8 @@ function HttpInspector:exposeEvent(uri, reqinfo)
         elseif action.condition == false then
             -- Some bottom menu are just disabled on all devices,
             -- so just don't show any disabled action
-            do end
+            do end -- luacheck: ignore 541
         else
-            local unavailable = action.condition == false
             local active = false
             if action.general or action.device or action.screen then
                 active = true
@@ -1081,8 +1081,6 @@ function HttpInspector:exposeEvent(uri, reqinfo)
             local title = action.title
             if not active then
                 title = T("<span style='color: dimgray'>%1</span>    <small>(no effect on current application/document)</small>", title)
-            elseif unavailable then
-                title = T("<strike style='color: dimgray'>%1</strike>    <small>(unavailable on this device)</small>", title)
             end
             add_html(T("<b>%1</b>", title))
 
@@ -1099,9 +1097,9 @@ function HttpInspector:exposeEvent(uri, reqinfo)
                 end
             end
 
-            local href
             if action.category == "none" then
                 -- Shouldn't have any 'configurable'
+                local href
                 if action.arg ~= nil then
                     href = T("%1/%2", get_base_href(), tostring(action.arg))
                 else
@@ -1198,7 +1196,8 @@ end
 
 function HttpInspector:exposeBroadcastEvent(uri, reqinfo)
     -- Similar to previous one, without any list.
-    local ftype, fragment, uri = stepUriFragment(uri)
+    local ftype, fragment
+    ftype, fragment, uri = stepUriFragment(uri) -- luacheck: no unused
     if fragment then
         -- Event name and args provided.
         -- We may get multiple events, separated by a dummy arg /&/
