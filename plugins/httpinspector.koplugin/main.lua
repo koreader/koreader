@@ -452,7 +452,7 @@ local getFunctionInfo = function(func, full_code)
         if cnt > 0 then
             info.nb_args = -1
         end
-        dummy, cnt = signature:gsub(":","")
+        dummy, cnt = signature:gsub("^[^(]*:","")
         info.is_method = cnt > 0
         info.classname = signature:gsub(".-(%w+):.*","%1")
     end
@@ -503,7 +503,7 @@ local guessClassName = function(obj)
 end
 
 -- Nothing below is made available to translators: we output technical details
--- in HTML, for power users and developpers, who should be fine with english.
+-- in HTML, for power users and developers, who should be fine with english.
 local HOME_CONTENT = [[
 <html>
 <head><title>KOReader inspector</title></head>
@@ -511,7 +511,7 @@ local HOME_CONTENT = [[
 <pre wrap>
 <big>Welcome to KOReader inspector HTTP server!</big>
 
-This service is aimed at developpers, <mark>use at your own risk</mark>.
+This service is aimed at developers, <mark>use at your own risk</mark>.
 
 <big>Browse core objects:</big>
 <li><a href="ui/">ui</a>           the current application (ReaderUI or FileManager).
@@ -730,6 +730,15 @@ end
 function HttpInspector:browseObject(obj, reqinfo)
     local html = {}
     local add_html = function(h) table.insert(html, h) end
+    -- We want to display keys sorted by value kind
+    local KIND_OTHER    = 1 -- string/number/boolean/nil/cdata...
+    local KIND_TABLE    = 2 -- table/object
+    local KIND_FUNCTION = 3 -- function/method
+    local KINDS = { KIND_OTHER, KIND_TABLE, KIND_FUNCTION }
+    local html_by_obj_kind
+    local reset_html_by_obj_kind = function() html_by_obj_kind = { {}, {}, {} } end
+    local add_html_to_obj_kind = function(kind, h) table.insert(html_by_obj_kind[kind], h) end
+
     local get_html_snippet = function(key, value, uri)
         local href = uri .. key
         local value_type = type(value)
@@ -739,27 +748,34 @@ function HttpInspector:browseObject(obj, reqinfo)
             if classinfo then
                 pad = (" "):rep(32 - #(tostring(key)))
             end
-            return T("<a href='%1' title='get as JSON'>J</a>  <a href='%2/'>%3</a> %4%5", href, href, key, pad, classinfo or "")
+            return T("<a href='%1' title='get as JSON'>J</a>  <a href='%2/'>%3</a> %4%5", href, href, key, pad, classinfo or ""), KIND_TABLE
         elseif value_type == "function" then
             local pad = (" "):rep(30 - #key)
             local func_info = getFunctionInfo(value)
             local siginfo = (func_info.is_method and "M" or "f") .. " " .. (func_info.nb_args >= 0 and func_info.nb_args or "*")
-            return T("   <a href='%1?'>%2</a>() %3%4 <em>%5</em>", href, key, pad, siginfo, func_info.signature)
+            return T("   <a href='%1?'>%2</a>() %3%4 <em>%5</em>", href, key, pad, siginfo, func_info.signature), KIND_FUNCTION
         elseif value_type == "string" or value_type == "number" or value_type == "boolean" or value_type == "nil" then
             -- This is not totally fullproof (\n will be eaten by Javascript prompt(), other stuff may fail or get corrupted),
             -- but it should be ok for simple strings.
             local quoted_value
+            local html_value
             if value_type == "string" then
                 quoted_value = '\\"' .. value:gsub('"', '\\"'):gsub('\n', '\\n') .. '\\"'
+                html_value = value:gsub("&", "&amp;"):gsub('"', "&quot;"):gsub(">", "&gt;"):gsub("<", "&lt;")
+                if html_value:match("\n") then
+                    -- Newline in string: make it stand out
+                    html_value = T("<span style='display: inline-table; border: 1px dotted blue;'>%1</span>", html_value)
+                end
             else
                 quoted_value = tostring(value)
+                html_value = tostring(value)
             end
             local ondblclick = T([[ondblclick='(function(){
                     var t=prompt("Update value of property: %1", "%2");
                     if (t!=null) {document.location.href="%3?="+t}
                     else {return false;}
                   })(); return false;']], key, quoted_value, href)
-            return T("   <b>%1</b>: <span style='color: blue;' title='Double-click to assign new value' %2>%3</span>", key, ondblclick, tostring(value))
+            return T("   <b>%1</b>: <span style='color: blue;' title='Double-click to assign new value' %2>%3</span>", key, ondblclick, html_value), KIND_OTHER
         else
             if value_type == "cdata" then
                 local ok, is_bb = pcall(function() return value.writePNG ~= nil end)
@@ -767,7 +783,7 @@ function HttpInspector:browseObject(obj, reqinfo)
                     return T("   <a href='%1' title='get BB as PNG'>%2</a>  BlitBuffer %3bpp %4x%5", href, key, value.getBpp(), value.w, value.h)
                 end
             end
-            return T("   <b>%1</b>: <em>%2</em>", key, value_type)
+            return T("   <b>%1</b>: <em>%2</em>", key, value_type), KIND_OTHER
         end
     end
     -- add_html("<style>a { text-decoration:none }</style>")
@@ -787,18 +803,24 @@ function HttpInspector:browseObject(obj, reqinfo)
     local prelude = ""
     while obj do
         local has_items = false
+        reset_html_by_obj_kind()
         for key, value in ffiUtil.orderedPairs(obj) do
             local ignore = key == "__index"
             if not ignore then
-                local snippet = get_html_snippet(key, value, reqinfo.uri)
+                local snippet, kind = get_html_snippet(key, value, reqinfo.uri)
                 if seen_names[key] then
-                    add_html(prelude .. seen_prefix .. snippet .. seen_suffix)
+                    add_html_to_obj_kind(kind, prelude .. seen_prefix .. snippet .. seen_suffix)
                 else
-                    add_html(prelude .. snippet)
+                    add_html_to_obj_kind(kind, prelude .. snippet)
                 end
                 seen_names[key] = true
                 prelude = ""
                 has_items = true
+            end
+        end
+        for _, kind in ipairs(KINDS) do
+            for _, html in ipairs(html_by_obj_kind[kind]) do
+                add_html(html)
             end
         end
         if not has_items then
