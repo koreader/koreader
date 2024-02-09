@@ -780,7 +780,7 @@ function HttpInspector:browseObject(obj, reqinfo)
             if value_type == "cdata" then
                 local ok, is_bb = pcall(function() return value.writePNG ~= nil end)
                 if ok and is_bb then
-                    return T("   <a href='%1' title='get BB as PNG'>%2</a>  BlitBuffer %3bpp %4x%5", href, key, value.getBpp(), value.w, value.h)
+                    return T("   <a href='%1' title='get BB as PNG'>%2</a>  BlitBuffer %3bpp %4x%5", href, key, value.getBpp(), value.w, value.h), KIND_OTHER
                 end
             end
             return T("   <b>%1</b>: <em>%2</em>", key, value_type), KIND_OTHER
