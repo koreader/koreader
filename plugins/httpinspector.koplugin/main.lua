@@ -819,8 +819,8 @@ function HttpInspector:browseObject(obj, reqinfo)
             end
         end
         for _, kind in ipairs(KINDS) do
-            for _, html in ipairs(html_by_obj_kind[kind]) do
-                add_html(html)
+            for _, htm in ipairs(html_by_obj_kind[kind]) do
+                add_html(htm)
             end
         end
         if not has_items then
