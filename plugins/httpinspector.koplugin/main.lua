@@ -474,6 +474,8 @@ local guessClassName = function(obj)
         "getSize",
         "paintTo",
         "onReadSettings",
+        "onResume",
+        "onSuspend",
         "onMenuHold",
         "beforeSuspend",
         "initNetworkManager",
