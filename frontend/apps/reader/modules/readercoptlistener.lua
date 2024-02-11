@@ -4,6 +4,7 @@ local EventListener = require("ui/widget/eventlistener")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -62,6 +63,27 @@ function ReaderCoptListener:onReadSettings(config)
         self:rescheduleHeaderRefreshIfNeeded() -- schedule (or not) next refresh
     end
     self:rescheduleHeaderRefreshIfNeeded() -- schedule (or not) first refresh
+end
+
+function ReaderCoptListener:onReaderReady()
+    -- custom metadata support for alt status bar
+    local title = self.ui.doc_settings:readSetting("title") or filemanagerutil.splitFileNameType(self.document.file)
+    if title ~= self.ui.doc_props.title then
+        self.document:overrideDocumentProp("title", self.ui.doc_props.title)
+    end
+    local authors = self.ui.doc_settings:readSetting("authors")
+    if authors ~= self.ui.doc_props.authors then
+        self.document:overrideDocumentProp("authors", self.ui.doc_props.authors)
+    end
+end
+
+function ReaderCoptListener:onBookMetadataChanged(prop_updated)
+    -- custom metadata support for alt status bar
+    local prop_key = prop_updated and prop_updated.metadata_key_updated
+    if prop_key == "title" or prop_key == "authors" then
+        self.document:overrideDocumentProp(prop_key, prop_updated.doc_props[prop_key])
+        self:updateHeader()
+    end
 end
 
 function ReaderCoptListener:onConfigChange(option_name, option_value)
