@@ -216,6 +216,15 @@ function CreDocument:getDocumentProps()
     return self._document:getDocumentProps()
 end
 
+function CreDocument:overrideDocumentProp(prop, value)
+    logger.dbg("CreDocument: set document prop", prop, value)
+    local prop_to_cre_prop = { -- see cre lvtinydom.h
+        title = "doc.title",
+        authors = "doc.authors",
+    }
+    self._document:overrideDocumentProp(prop_to_cre_prop[prop], value or "")
+end
+
 function CreDocument:setupDefaultView()
     if self.loaded then
         -- Don't apply defaults if the document has already been loaded
