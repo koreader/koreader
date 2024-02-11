@@ -762,7 +762,7 @@ function HttpInspector:browseObject(obj, reqinfo)
             local quoted_value
             local html_value
             if value_type == "string" then
-                quoted_value = '\\"' .. value:gsub('"', '\\"'):gsub('\n', '\\n') .. '\\"'
+                quoted_value = '\\"' .. value:gsub('\\', '\\\\'):gsub('"', '&#x22;'):gsub("'", "&#x27;"):gsub('\n', '\\n'):gsub('<', '&lt;'):gsub('>', '&gt;') .. '\\"'
                 html_value = value:gsub("&", "&amp;"):gsub('"', "&quot;"):gsub(">", "&gt;"):gsub("<", "&lt;")
                 if html_value:match("\n") then
                     -- Newline in string: make it stand out
