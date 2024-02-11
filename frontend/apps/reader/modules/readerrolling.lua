@@ -8,6 +8,7 @@ local ProgressWidget = require("ui/widget/progresswidget")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local bit = require("bit")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
@@ -313,8 +314,6 @@ function ReaderRolling:onReadSettings(config)
     end)
 end
 
--- in scroll mode percent_finished must be save before close document
--- we cannot do it in onSaveSettings() because getLastPercent() uses self.ui.document
 function ReaderRolling:onCloseDocument()
     self:tearDownRerenderingAutomation()
     -- Unschedule anything that might still somehow be...
@@ -328,6 +327,7 @@ function ReaderRolling:onCloseDocument()
     UIManager:unschedule(self.onUpdatePos)
 
     self.current_header_height = nil -- show unload progress bar at top
+    -- we cannot do it in onSaveSettings() because getLastPercent() uses self.ui.document
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
 
     local cache_file_path = self.ui.document:getCacheFilePath() -- nil if no cache file
@@ -341,6 +341,18 @@ function ReaderRolling:onCloseDocument()
         if self.ui.document:isBuiltDomStale() and self.rendering_state ~= self.RENDERING_STATE.DO_RELOAD_DOCUMENT then
             logger.dbg("cre DOM may not be in sync with styles, invalidating cache file for a full reload at next opening")
             self.ui.document:invalidateCacheFile()
+        end
+        -- 'title' and 'authors' props are saved to cre cache on first document opening.
+        -- If the document has no 'title', crengine saves filename-without-extension as 'title'.
+        -- If the props have been changed before first closing the document,
+        -- restore original values to write them to the cache.
+        local title = self.ui.doc_settings:readSetting("title") or filemanagerutil.splitFileNameType(self.ui.document.file)
+        if title ~= self.ui.doc_props.title then
+            self.ui.document:overrideDocumentProp("title", title)
+        end
+        local authors = self.ui.doc_settings:readSetting("authors")
+        if authors ~= self.ui.doc_props.authors then
+            self.ui.document:overrideDocumentProp("authors", authors)
         end
     end
     logger.dbg("cre cache used:", cache_file_path or "none")
@@ -375,15 +387,8 @@ function ReaderRolling:onCheckDomStyleCoherence()
 end
 
 function ReaderRolling:onSaveSettings()
-    -- remove last_percent config since its deprecated
-    self.ui.doc_settings:delSetting("last_percent")
+    self.ui.doc_settings:delSetting("last_percent") -- deprecated
     self.ui.doc_settings:saveSetting("last_xpointer", self.xpointer)
-    -- in scrolling mode, the document may already be closed,
-    -- so we have to check the condition to avoid crash function self:getLastPercent()
-    -- that uses self.ui.document
-    if self.ui.document then
-        self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
-    end
     self.ui.doc_settings:saveSetting("hide_nonlinear_flows", self.hide_nonlinear_flows)
     self.ui.doc_settings:saveSetting("partial_rerendering", self.partial_rerendering)
 end
