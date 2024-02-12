@@ -527,43 +527,9 @@ function ReaderZooming:getZoom(pageno)
         local ubbox_dimen = self.ui.document:getUsedBBoxDimensions(pageno, 1)
         -- if bbox is larger than the native page dimension render the full page
         -- See discussion in koreader/koreader#970.
-
-        -- the artifacts from koreader/issues/11291 happens because
-        -- ubbox_dimen sizes are both greather than page_size, so removed on before commit
-        -- self.ui.document.configurable.trim_page == 1 and will fix
-
-        -- the comic image that needs be croped have just ubbox_dimen.w <= page_size.w
-        -- that's because not falls in the AND condition.
-        -- I try to use OR condition here and now I need a wise mind to validate :)
-        if (ubbox_dimen.w <= page_size.w or ubbox_dimen.h <= page_size.h) then
-
-            local temp_w = page_size.w
-            local temp_h = page_size.h
-            local temp_x = page_size.x
-            local temp_y = page_size.y
-
+        if ubbox_dimen.w <= page_size.w and ubbox_dimen.h <= page_size.h then
             page_size = ubbox_dimen
-
-            if (ubbox_dimen.w <= temp_w) then
-                temp_w = ubbox_dimen.w
-
-                -- Does x is related to w?
-                temp_x = ubbox_dimen.x
-            end
-
-            if (ubbox_dimen.h <= temp_h) then
-                temp_h = ubbox_dimen.h
-
-                -- Does y is related to h?
-                temp_y = ubbox_dimen.y
-            end
-
-            page_size.w = temp_w
-            page_size.h = temp_h
-            page_size.x = temp_x
-            page_size.y = temp_y
-
-            self.view:onBBoxUpdate(page_size)
+            self.view:onBBoxUpdate(ubbox_dimen)
         else
             self.view:onBBoxUpdate(nil)
         end
