@@ -171,7 +171,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
             left_vertical_group,
         },
         CenterContainer:new{
-            dimen = Geom:new{},
+            dimen = Geom:new(),
             separator_vertical_group,
         },
         CenterContainer:new{

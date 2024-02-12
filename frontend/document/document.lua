@@ -373,6 +373,10 @@ function Document:findText()
     return nil
 end
 
+function Document:findAllText()
+    return nil
+end
+
 function Document:updateColorRendering()
     if self.is_color_capable and CanvasContext.is_color_rendering_enabled then
         self.render_color = true

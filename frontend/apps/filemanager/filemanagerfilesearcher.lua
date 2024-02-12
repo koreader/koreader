@@ -1,6 +1,5 @@
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
-local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
@@ -16,7 +15,6 @@ local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
-local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local FileSearcher = WidgetContainer:extend{
@@ -24,9 +22,6 @@ local FileSearcher = WidgetContainer:extend{
     include_subfolders = true,
     include_metadata = false,
 }
-
-function FileSearcher:init()
-end
 
 function FileSearcher:onShowFileSearch(search_string)
     local search_dialog
@@ -225,28 +220,26 @@ function FileSearcher:showSearchResultsMessage(no_results)
 end
 
 function FileSearcher:showSearchResults(results)
-    local menu_container = CenterContainer:new{
-        dimen = Screen:getSize(),
-    }
     self.search_menu = Menu:new{
+        title = T(_("Search results (%1)"), #results),
+        subtitle = T(_("Query: %1"), self.search_string),
+        item_table = results,
         ui = self.ui,
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         is_borderless = true,
         is_popout = false,
-        show_parent = menu_container,
+        title_bar_fm_style = true,
         onMenuSelect = self.onMenuSelect,
         onMenuHold = self.onMenuHold,
         handle_hold_on_hold_release = true,
     }
-    table.insert(menu_container, self.search_menu)
     self.search_menu.close_callback = function()
-        UIManager:close(menu_container)
+        UIManager:close(self.search_menu)
         if self.ui.file_chooser then
             self.ui.file_chooser:refreshPath()
         end
     end
-    self.search_menu:switchItemTable(T(_("Search results (%1)"), #results), results)
-    UIManager:show(menu_container)
+    UIManager:show(self.search_menu)
     if self.no_metadata_count ~= 0 then
         self:showSearchResultsMessage()
     end
@@ -254,7 +247,7 @@ end
 
 function FileSearcher:onMenuSelect(item)
     local file = item.path
-    local dialog
+    local bookinfo, dialog
     local function close_dialog_callback()
         UIManager:close(dialog)
     end
@@ -266,6 +259,7 @@ function FileSearcher:onMenuSelect(item)
     if item.is_file then
         local is_currently_opened = self.ui.document and self.ui.document.file == file
         if DocumentRegistry:hasProvider(file) or DocSettings:hasSidecarFile(file) then
+            bookinfo = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
             local doc_settings_or_file = is_currently_opened and self.ui.doc_settings or file
             table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_callback))
             table.insert(buttons, {}) -- separator
@@ -293,7 +287,7 @@ function FileSearcher:onMenuSelect(item)
                     FileManager:showDeleteFileDialog(file, post_delete_callback)
                 end,
             },
-            filemanagerutil.genBookInformationButton(file, close_dialog_callback),
+            filemanagerutil.genBookInformationButton(file, bookinfo, close_dialog_callback),
         })
     end
     table.insert(buttons, {
@@ -308,8 +302,17 @@ function FileSearcher:onMenuSelect(item)
             end,
         },
     })
+    local title = file
+    if bookinfo then
+        if bookinfo.title then
+            title = title .. "\n\n" .. T(_("Title: %1"), bookinfo.title)
+        end
+        if bookinfo.authors then
+            title = title .. "\n" .. T(_("Authors: %1"), bookinfo.authors:gsub("[\n\t]", "|"))
+        end
+    end
     dialog = ButtonDialog:new{
-        title = file,
+        title = title .. "\n",
         buttons = buttons,
     }
     UIManager:show(dialog)

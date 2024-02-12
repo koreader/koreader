@@ -108,9 +108,14 @@ function filemanagerutil.getStatus(file)
 end
 
 -- Set a document status ("reading", "complete", or "abandoned")
-function filemanagerutil.setStatus(file, status)
+function filemanagerutil.setStatus(doc_settings_or_file, status)
     -- In case the book doesn't have a sidecar file, this'll create it
-    local doc_settings = DocSettings:open(file)
+    local doc_settings
+    if type(doc_settings_or_file) == "table" then
+        doc_settings = doc_settings_or_file
+    else
+        doc_settings = DocSettings:open(doc_settings_or_file)
+    end
     local summary = doc_settings:readSetting("summary", {})
     summary.status = status
     summary.modified = os.date("%Y-%m-%d", os.time())
@@ -130,24 +135,24 @@ end
 
 -- Generate all book status file dialog buttons in a row
 function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callback)
-    local summary, status
-    if type(doc_settings_or_file) == "table" then -- currently opened file
-        summary = doc_settings_or_file:readSetting("summary")
+    local file, summary, status
+    if type(doc_settings_or_file) == "table" then
+        file = doc_settings_or_file:readSetting("doc_path")
+        summary = doc_settings_or_file:readSetting("summary", {})
         status = summary.status
     else
-        status = filemanagerutil.getStatus(doc_settings_or_file)
+        file = doc_settings_or_file
+        summary = {}
+        status = filemanagerutil.getStatus(file)
     end
     local function genStatusButton(to_status)
         return {
             text = filemanagerutil.statusToString(to_status) .. (status == to_status and "  ✓" or ""),
-            id = to_status, -- used by covermenu
             enabled = status ~= to_status,
             callback = function()
-                if summary then -- currently opened file
-                    summary.status = to_status
-                else
-                    filemanagerutil.setStatus(doc_settings_or_file, to_status)
-                end
+                summary.status = to_status
+                filemanagerutil.setStatus(doc_settings_or_file, to_status)
+                UIManager:broadcastEvent(Event:new("DocSettingsItemsChanged", file, { summary = summary })) -- for CoverBrowser
                 caller_callback()
             end,
         }
@@ -160,16 +165,22 @@ function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callba
 end
 
 -- Generate "Reset" file dialog button
-function filemanagerutil.genResetSettingsButton(file, caller_callback, button_disabled)
-    file = ffiutil.realpath(file) or file
-    local has_sidecar_file = DocSettings:hasSidecarFile(file)
+function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_callback, button_disabled)
+    local doc_settings, file, has_sidecar_file
+    if type(doc_settings_or_file) == "table" then
+        doc_settings = doc_settings_or_file
+        file = doc_settings_or_file:readSetting("doc_path")
+        has_sidecar_file = true
+    else
+        file = ffiutil.realpath(doc_settings_or_file) or doc_settings_or_file
+        has_sidecar_file = DocSettings:hasSidecarFile(file)
+    end
     local custom_cover_file = DocSettings:findCustomCoverFile(file)
     local has_custom_cover_file = custom_cover_file and true or false
     local custom_metadata_file = DocSettings:findCustomMetadataFile(file)
     local has_custom_metadata_file = custom_metadata_file and true or false
     return {
         text = _("Reset"),
-        id = "reset", -- used by covermenu
         enabled = not button_disabled and (has_sidecar_file or has_custom_metadata_file or has_custom_cover_file),
         callback = function()
             local CheckButton = require("ui/widget/checkbutton")
@@ -186,11 +197,12 @@ function filemanagerutil.genResetSettingsButton(file, caller_callback, button_di
                         custom_cover_file    = check_button_cover.checked and custom_cover_file,
                         custom_metadata_file = check_button_metadata.checked and custom_metadata_file,
                     }
-                    DocSettings:open(file):purge(nil, data_to_purge)
+                    (doc_settings or DocSettings:open(file)):purge(nil, data_to_purge)
                     if data_to_purge.custom_cover_file or data_to_purge.custom_metadata_file then
                         UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
                     end
                     if data_to_purge.doc_settings then
+                        UIManager:broadcastEvent(Event:new("DocSettingsItemsChanged", file)) -- for CoverBrowser
                         require("readhistory"):fileSettingsPurged(file)
                     end
                     caller_callback()
@@ -260,38 +272,41 @@ function filemanagerutil.genShowFolderButton(file, caller_callback, button_disab
     }
 end
 
-function filemanagerutil.genBookInformationButton(file, caller_callback, button_disabled)
+function filemanagerutil.genBookInformationButton(file, book_props, caller_callback, button_disabled)
     return {
         text = _("Book information"),
-        id = "book_information", -- used by covermenu
         enabled = not button_disabled,
         callback = function()
             caller_callback()
-            require("apps/filemanager/filemanagerbookinfo"):show(file)
+            local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
+            FileManagerBookInfo:show(file, book_props and FileManagerBookInfo.extendProps(book_props))
         end,
     }
 end
 
-function filemanagerutil.genBookCoverButton(file, caller_callback, button_disabled)
+function filemanagerutil.genBookCoverButton(file, book_props, caller_callback, button_disabled)
+    local has_cover = book_props and book_props.has_cover
     return {
         text = _("Book cover"),
-        id = "book_cover", -- used by covermenu
-        enabled = not button_disabled,
+        enabled = (not button_disabled and (not book_props or has_cover)) and true or false,
         callback = function()
             caller_callback()
-            require("apps/filemanager/filemanagerbookinfo"):onShowBookCover(file)
+            local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
+            FileManagerBookInfo:onShowBookCover(file)
         end,
     }
 end
 
-function filemanagerutil.genBookDescriptionButton(file, caller_callback, button_disabled)
+function filemanagerutil.genBookDescriptionButton(file, book_props, caller_callback, button_disabled)
+    local description = book_props and book_props.description
     return {
         text = _("Book description"),
-        id = "book_description", -- used by covermenu
-        enabled = not button_disabled,
+        -- enabled for deleted books if description is kept in CoverBrowser bookinfo cache
+        enabled = (not (button_disabled or book_props) or description) and true or false,
         callback = function()
             caller_callback()
-            require("apps/filemanager/filemanagerbookinfo"):onShowBookDescription(nil, file)
+            local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
+            FileManagerBookInfo:onShowBookDescription(description, file)
         end,
     }
 end

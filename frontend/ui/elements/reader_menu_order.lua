@@ -211,12 +211,15 @@ local order = {
         "----------------------------",
         "find_book_in_calibre_catalog",
         "fulltext_search",
+        "fulltext_search_findall_results",
         "bookmark_search",
     },
     search_settings = {
         "dictionary_settings",
         "wikipedia_settings",
         "translation_settings",
+        "----------------------------",
+        "fulltext_search_settings",
     },
     filemanager = {},
     main = {

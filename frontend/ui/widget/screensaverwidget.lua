@@ -87,9 +87,7 @@ function ScreenSaverWidget:onCloseWidget()
     end
 
     -- Make it full-screen (self.main_frame.dimen might be in a different orientation, and it's already full-screen anyway...)
-    UIManager:setDirty(nil, function()
-        return "full"
-    end)
+    UIManager:setDirty(nil, "full")
 
     -- Will come after the Resume event, iff screensaver_delay is set.
     -- Comes *before* it otherwise.

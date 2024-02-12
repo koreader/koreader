@@ -157,6 +157,7 @@ local settingsList = {
     clear_location_history = {category="none", event="ClearLocationStack", arg=true, title=_("Clear location history"), reader=true, separator=true},
     ----
     fulltext_search = {category="none", event="ShowFulltextSearchInput", title=_("Fulltext search"), reader=true},
+    fulltext_search_findall_results = {category="none", event="ShowFindAllResults", title=_("Last fulltext search results"), reader=true},
     toc = {category="none", event="ShowToc", title=_("Table of contents"), reader=true},
     book_map = {category="none", event="ShowBookMap", title=_("Book map"), reader=true, condition=Device:isTouchDevice()},
     book_map_overview = {category="none", event="ShowBookMap", arg=true, title=_("Book map (overview)"), reader=true, condition=Device:isTouchDevice()},
@@ -374,6 +375,7 @@ local dispatcher_menu_order = {
     "clear_location_history",
     ----
     "fulltext_search",
+    "fulltext_search_findall_results",
     "toc",
     "book_map",
     "book_map_overview",

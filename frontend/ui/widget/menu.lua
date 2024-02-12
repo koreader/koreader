@@ -41,7 +41,7 @@ local T = FFIUtil.template
 Widget that displays a shortcut icon for menu item.
 --]]
 local ItemShortCutIcon = WidgetContainer:extend{
-    dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
+    dimen = Geom:new{ x = 0, y = 0, w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
     key = nil,
     bordersize = Size.border.default,
     radius = 0,
@@ -74,7 +74,7 @@ function ItemShortCutIcon:init()
         bordersize = self.bordersize,
         radius = radius,
         background = background,
-        dimen = self.dimen,
+        dimen = self.dimen:copy(),
         CenterContainer:new{
             dimen = self.dimen,
             TextWidget:new{
@@ -112,10 +112,14 @@ local MenuItem = InputContainer:extend{
 
 function MenuItem:init()
     self.content_width = self.dimen.w - 2 * Size.padding.fullscreen
-    local shortcut_icon_dimen = Geom:new()
+    local icon_width = math.floor(self.dimen.h * 4/5)
+    local shortcut_icon_dimen = Geom:new{
+        x = 0,
+        y = 0,
+        w = icon_width,
+        h = icon_width,
+    }
     if self.shortcut then
-        shortcut_icon_dimen.w = math.floor(self.dimen.h * 4/5)
-        shortcut_icon_dimen.h = shortcut_icon_dimen.w
         self.content_width = self.content_width - shortcut_icon_dimen.w - Size.span.horizontal_default
     end
 
@@ -391,6 +395,7 @@ function MenuItem:init()
         vertical_align = "center",
         padding = 0,
         dimen = Geom:new{
+            x = 0, y = 0,
             w = self.content_width,
             h = self.dimen.h
         },
@@ -629,6 +634,7 @@ function Menu:_recalculateDimen()
     local item_height = math.floor(height_dim / self.perpage)
     self.span_width = math.floor((height_dim - (self.perpage * item_height)) / 2 - 1)
     self.item_dimen = Geom:new{
+        x = 0, y = 0,
         w = self.inner_dimen.w,
         h = item_height,
     }
@@ -860,6 +866,7 @@ function Menu:init()
         dimen = self.inner_dimen:copy(),
         WidgetContainer:new{
             dimen = Geom:new{
+                x = 0, y = 0,
                 w = self.screen_w,
                 h = self.page_return_arrow:getSize().h,
             },
@@ -1040,9 +1047,9 @@ function Menu:updateItems(select_number)
         select_number = 1
     end
 
-    local font_size = self.items_font_size or G_reader_settings:readSetting("items_font_size")
+    self.font_size = self.items_font_size or G_reader_settings:readSetting("items_font_size")
                                      or Menu.getItemFontSize(self.perpage)
-    local infont_size = self.items_mandatory_font_size or (font_size - 4)
+    local infont_size = self.items_mandatory_font_size or (self.font_size - 4)
     local multilines_show_more_text = self.multilines_show_more_text
     if multilines_show_more_text == nil then
         multilines_show_more_text = G_reader_settings:isTrue("items_multilines_show_more_text")
@@ -1075,10 +1082,10 @@ function Menu:updateItems(select_number)
                 bold = self.item_table.current == i or self.item_table[i].bold == true,
                 dim = self.item_table[i].dim,
                 font = "smallinfofont",
-                font_size = font_size,
+                font_size = self.font_size,
                 infont = "infont",
                 infont_size = infont_size,
-                dimen = self.item_dimen:new(),
+                dimen = self.item_dimen:copy(),
                 shortcut = item_shortcut,
                 shortcut_style = shortcut_style,
                 table = self.item_table[i],

@@ -27,7 +27,6 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
-local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -53,7 +52,7 @@ local scale_by_size = Screen:scaleBySize(1000000) * (1/1000000)
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
 local ItemShortCutIcon = WidgetContainer:extend{
-    dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
+    dimen = Geom:new{ x = 0, y = 0, w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
     key = nil,
     bordersize = Size.border.default,
     radius = 0,
@@ -82,7 +81,7 @@ function ItemShortCutIcon:init()
         bordersize = self.bordersize,
         radius = radius,
         background = background,
-        dimen = self.dimen,
+        dimen = self.dimen:copy(),
         CenterContainer:new{
             dimen = self.dimen,
             TextWidget:new{
@@ -115,16 +114,20 @@ local ListMenuItem = InputContainer:extend{
 }
 
 function ListMenuItem:init()
-    -- filepath may be provided as 'file' (history) or 'path' (filechooser)
+    -- filepath may be provided as 'file' (history, collection) or 'path' (filechooser)
     -- store it as attribute so we can use it elsewhere
     self.filepath = self.entry.file or self.entry.path
 
     -- As done in MenuItem
     -- Squared letter for keyboard navigation
     if self.shortcut then
-        local shortcut_icon_dimen = Geom:new()
-        shortcut_icon_dimen.w = math.floor(self.dimen.h*2/5)
-        shortcut_icon_dimen.h = shortcut_icon_dimen.w
+        local icon_width = math.floor(self.dimen.h*2/5)
+        local shortcut_icon_dimen = Geom:new{
+            x = 0,
+            y = 0,
+            w = icon_width,
+            h = icon_width,
+        }
         -- To keep a simpler widget structure, this shortcut icon will not
         -- be part of it, but will be painted over the widget in our paintTo
         self.shortcut_icon = ItemShortCutIcon:new{
@@ -209,7 +212,6 @@ function ListMenuItem:update()
     local max_img_w = dimen.h - 2*border_size -- width = height, squared
     local max_img_h = dimen.h - 2*border_size
     local cover_specs = {
-        sizetag = self.menu.cover_sizetag,
         max_cover_w = max_img_w,
         max_cover_h = max_img_h,
     }
@@ -221,9 +223,8 @@ function ListMenuItem:update()
         self.menu.cover_specs = false
     end
 
-    local file_mode = lfs.attributes(self.filepath, "mode")
-    if file_mode == "directory" then
-        self.is_directory = true
+    self.is_directory = not (self.entry.is_file or self.entry.file)
+    if self.is_directory then
         -- nb items on the right, directory name on the left
         local wright = TextWidget:new{
             text = self.mandatory or "",
@@ -258,33 +259,31 @@ function ListMenuItem:update()
                 },
             },
         }
-    else
-        local is_file_selected = self.menu.filemanager and self.menu.filemanager.selected_files
-            and self.menu.filemanager.selected_files[self.filepath]
-        if file_mode ~= "file" or is_file_selected then
-            self.file_deleted = true -- dim file
-        end
-        -- File
+    else -- file
+        self.file_deleted = self.entry.dim -- entry with deleted file from History or selected file from FM
+        local fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil
 
         local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.do_cover_image)
+
         if bookinfo and self.do_cover_image and not bookinfo.ignore_cover then
             if bookinfo.cover_fetched then
-                -- trigger recalculation of thumbnail if size changed
-                if bookinfo.has_cover and bookinfo.cover_sizetag ~= "M" and bookinfo.cover_sizetag ~= cover_specs.sizetag then
-                    if bookinfo.cover_bb then
-                        bookinfo.cover_bb:free()
+                if bookinfo.has_cover and not self.menu.no_refresh_covers then
+                    if BookInfoManager.isCachedCoverInvalid(bookinfo, cover_specs) then
+                        -- there is a thumbnail, but it's smaller than is needed for new grid dimensions,
+                        -- and it would be ugly if scaled up to the required size:
+                        -- do as if not found to force a new extraction with our size
+                        if bookinfo.cover_bb then
+                            bookinfo.cover_bb:free()
+                        end
+                        bookinfo = nil
                     end
-                    bookinfo = nil
                 end
+                -- if not has_cover, book has no cover, no need to try again
             else
                 -- cover was not fetched previously, do as if not found
                 -- to force a new extraction
                 bookinfo = nil
             end
-            -- If there's already a cover and it's a "M" size (MosaicMenuItem),
-            -- we'll use it and scale it down (it may slow a bit rendering,
-            -- but "M" size may be useful in another view (FileBrowser/History),
-            -- so we don't replace it).
         end
 
         if bookinfo then -- This book is known
@@ -301,7 +300,7 @@ function ListMenuItem:update()
                 if bookinfo.has_cover and not bookinfo.ignore_cover then
                     cover_bb_used = true
                     -- Let ImageWidget do the scaling and give us the final size
-                    local scale_factor = math.min(max_img_w / bookinfo.cover_w, max_img_h / bookinfo.cover_h)
+                    local _, _, scale_factor = BookInfoManager.getCachedCoverSize(bookinfo.cover_w, bookinfo.cover_h, max_img_w, max_img_h)
                     local wimage = ImageWidget:new{
                         image = bookinfo.cover_bb,
                         scale_factor = scale_factor,
@@ -432,7 +431,7 @@ function ListMenuItem:update()
                 local wfileinfo = TextWidget:new{
                     text = fileinfo_str,
                     face = Font:getFace("cfont", fontsize_info),
-                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                    fgcolor = fgcolor,
                 }
                 table.insert(wright_items, wfileinfo)
             end
@@ -441,7 +440,7 @@ function ListMenuItem:update()
                 local wpageinfo = TextWidget:new{
                     text = pages_str,
                     face = Font:getFace("cfont", fontsize_info),
-                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                    fgcolor = fgcolor,
                 }
                 table.insert(wright_items, wpageinfo)
             end
@@ -579,7 +578,7 @@ function ListMenuItem:update()
                     height_overflow_show_ellipsis = true,
                     alignment = "left",
                     bold = true,
-                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                    fgcolor = fgcolor,
                 }
             end
             local build_authors = function(height)
@@ -596,7 +595,7 @@ function ListMenuItem:update()
                     height_adjust = true,
                     height_overflow_show_ellipsis = true,
                     alignment = "left",
-                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                    fgcolor = fgcolor,
                 }
             end
             while true do
@@ -722,7 +721,7 @@ function ListMenuItem:update()
                 local wfileinfo = TextWidget:new{
                     text = fileinfo_str,
                     face = Font:getFace("cfont", fontsize_info),
-                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                    fgcolor = fgcolor,
                 }
                 local wpageinfo = TextWidget:new{ -- Empty but needed for similar positionning
                     text = "",
@@ -757,7 +756,7 @@ function ListMenuItem:update()
                     face = Font:getFace("cfont", fontsize_no_bookinfo),
                     width = dimen.w - 2 * Screen:scaleBySize(10) - wright_width - wright_right_padding,
                     alignment = "left",
-                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                    fgcolor = fgcolor,
                 }
                 -- reduce font size for next loop, in case text widget is too large to fit into ListMenuItem
                 fontsize_no_bookinfo = fontsize_no_bookinfo - fontsize_dec_step
@@ -901,6 +900,7 @@ end
 local ListMenu = {}
 
 function ListMenu:_recalculateDimen()
+    self.portrait_mode = Screen:getWidth() <= Screen:getHeight()
     -- Find out available height from other UI elements made in Menu
     self.others_height = 0
     if self.title_bar then -- Menu:init() has been done
@@ -927,25 +927,16 @@ function ListMenu:_recalculateDimen()
     end
     local available_height = self.inner_dimen.h - self.others_height - Size.line.thin
 
-    -- (Note: we can't assign directly to self.perpage and expect it to
-    -- be 'nil' if it was not defined, as we'll find instead the value
-    -- defined in the Menu class (14) because of inheritance.)
-    local files_per_page = BookInfoManager:getSetting("files_per_page")
-    if files_per_page then
-        self.perpage = tonumber(files_per_page)
-    else
-        -- perpage used to be static and computed from a base of 64px per ListMenuItem,
-        -- which gave 10 items both in filemanager and history on kobo glo hd.
-        -- Now that we can change the nb of items, let's start with a similar default
-        -- and save it so it's known as the initial value by the menu selection widget.
-        self.perpage = math.floor(available_height / scale_by_size / 64)
-        BookInfoManager:saveSetting("files_per_page", tostring(self.perpage))
+    if self.files_per_page == nil then -- first drawing
+        -- Default perpage is computed from a base of 64px per ListMenuItem,
+        -- which gives 10 items on kobo glo hd.
+        self.files_per_page = math.floor(available_height / scale_by_size / 64)
+        BookInfoManager:saveSetting("files_per_page", self.files_per_page)
     end
-    self.cover_sizetag = "s" .. self.perpage
-    if Screen:getWidth() > Screen:getHeight() then -- landscape mode
-        -- When in landscape mode (only possible with History), adjust
-        -- perpage so items get a chance to have about the same height
-        -- as when in portrait mode.
+    self.perpage = self.files_per_page
+    if not self.portrait_mode then
+        -- When in landscape mode, adjust perpage so items get a chance
+        -- to have about the same height as when in portrait mode.
         -- This computation is not strictly correct, as "others_height" would
         -- have a different value in portrait mode. But let's go with that.
         local portrait_available_height = Screen:getWidth() - self.others_height - Size.line.thin
@@ -962,6 +953,7 @@ function ListMenu:_recalculateDimen()
     self.item_height = math.floor(available_height / self.perpage) - Size.line.thin
     self.item_width = self.inner_dimen.w
     self.item_dimen = Geom:new{
+        x = 0, y = 0,
         w = self.item_width,
         h = self.item_height
     }
@@ -1022,7 +1014,7 @@ function ListMenu:_updateItemsBuildUI()
                 text = getMenuText(entry),
                 show_parent = self.show_parent,
                 mandatory = entry.mandatory,
-                dimen = self.item_dimen:new(),
+                dimen = self.item_dimen:copy(),
                 shortcut = item_shortcut,
                 shortcut_style = shortcut_style,
                 menu = self,

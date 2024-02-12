@@ -12,7 +12,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local UnderlineContainer = WidgetContainer:extend{
     linesize = Size.line.thick,
     padding = Size.padding.tiny,
-    --- @todo shouldn't this default to black instead?
+    -- We default to white to be invisible by default for FocusManager use-cases (only switching to black @ onFocus)
     color = Blitbuffer.COLOR_WHITE,
     vertical_align = "top",
 }
@@ -27,11 +27,16 @@ end
 
 function UnderlineContainer:paintTo(bb, x, y)
     local container_size = self:getSize()
-    self.dimen = Geom:new{
-        x = x, y = y,
-        w = container_size.w,
-        h = container_size.h
-    }
+    if not self.dimen then
+        self.dimen = Geom:new{
+            x = x, y = y,
+            w = container_size.w,
+            h = container_size.h
+        }
+    else
+        self.dimen.x = x
+        self.dimen.y = y
+    end
     local content_size = self[1]:getSize()
     local p_y = y
     if self.vertical_align == "center" then

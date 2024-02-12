@@ -326,7 +326,7 @@ function Device:onPowerEvent(ev)
                 self:resume()
                 local widget_was_closed = Screensaver:close()
                 if widget_was_closed and self:needsScreenRefreshAfterResume() then
-                    UIManager:scheduleIn(1, function() self.screen:refreshFull() end)
+                    UIManager:scheduleIn(1, function() self.screen:refreshFull(0, 0, self.screen:getWidth(), self.screen:getHeight()) end)
                 end
                 self.powerd:afterResume()
             end
@@ -371,7 +371,7 @@ function Device:onPowerEvent(ev)
         --       and on platforms where we defer to a system tool, it'd probably suspend too early!
         --       c.f., #6676
         if self:needsScreenRefreshAfterResume() then
-            self.screen:refreshFull()
+            self.screen:refreshFull(0, 0, self.screen:getWidth(), self.screen:getHeight())
         end
         -- NOTE: In the same vein as above, make sure we update the screen *now*, before dealing with Wi-Fi.
         UIManager:forceRePaint()
@@ -415,6 +415,15 @@ function Device:install()
             end
             UIManager:broadcastEvent(Event:new("Exit", save_quit))
         end,
+        cancel_text = _("Later"),
+        cancel_callback = function()
+            local InfoMessage = require("ui/widget/infomessage")
+            UIManager:show(InfoMessage:new{
+                text = _("The update will be applied the next time KOReader is started."),
+                unmovable = true,
+            })
+        end,
+        unmovable = true,
     })
 end
 

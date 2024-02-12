@@ -3,7 +3,6 @@ local DocSettings = require("docsettings")
 local datetime = require("datetime")
 local dump = require("dump")
 local ffiutil = require("ffi/util")
-local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("util")
 local joinPath = ffiutil.joinPath
 local lfs = require("libs/libkoreader-lfs")
@@ -323,36 +322,32 @@ end
 --- Adds new item (last opened document) to the top of the history list.
 -- If item time (ts) is passed, add item to the history list at this time position.
 function ReadHistory:addItem(file, ts, no_flush)
-    if file ~= nil and lfs.attributes(file, "mode") == "file" then
-        local index = self:getIndexByFile(realpath(file))
-        if index then -- book is in the history already
-            if ts and self.hist[index].time == ts then
-                return -- legacy item already added
-            end
-            if not ts and G_reader_settings:isTrue("history_freeze_finished_books")
-                      and filemanagerutil.getStatus(file) == "complete" then
-                return -- book marked as finished, do not update timestamps of item and file
-            end
-        end
-        local now = ts or os.time()
-        local mtime = lfs.attributes(file, "modification")
-        lfs.touch(file, now, mtime) -- update book access time for sorting by last read date
-        if index == 1 and not ts then -- last book, update access time only
-            self.hist[1].time = now
-            self.hist[1].mandatory = getMandatory(now)
-        else -- old or new book
-            if index then -- old book
-                table.remove(self.hist, index)
-            end
-            index = ts and self:getIndexByTime(ts, file:gsub(".*/", "")) or 1
-            table.insert(self.hist, index, buildEntry(now, file))
-        end
-        if not no_flush then
-            self:_reduce()
-            self:_flush()
-        end
-        return true -- used while adding legacy items
+    file = realpath(file)
+    if not file or (ts and lfs.attributes(file, "mode") ~= "file") then
+        return -- bad legacy item
     end
+    local index = self:getIndexByFile(file)
+    if ts and index and self.hist[index].time == ts then
+        return -- legacy item already added
+    end
+    local now = ts or os.time()
+    local mtime = lfs.attributes(file, "modification")
+    lfs.touch(file, now, mtime) -- update book access time for sorting by last read date
+    if index == 1 and not ts then -- last book, update access time only
+        self.hist[1].time = now
+        self.hist[1].mandatory = getMandatory(now)
+    else -- old or new book
+        if index then -- old book
+            table.remove(self.hist, index)
+        end
+        index = ts and self:getIndexByTime(ts, file:gsub(".*/", "")) or 1
+        table.insert(self.hist, index, buildEntry(now, file))
+    end
+    if not no_flush then
+        self:_reduce()
+        self:_flush()
+    end
+    return true -- used while adding legacy items
 end
 
 --- Updates last book access time on closing the document.

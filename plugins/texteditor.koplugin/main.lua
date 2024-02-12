@@ -493,10 +493,11 @@ function TextEditor:readFileContent(file_path)
 end
 
 function TextEditor:saveFileContent(file_path, content)
-    local file, err = io.open(file_path, "wb")
-    if file then
-        file:write(content)
-        file:close()
+    local ok, err = util.writeToFile(content, file_path)
+    if ok then
+        if self.ui.file_chooser then
+            self.ui.file_chooser:refreshPath()
+        end
         logger.info("TextEditor: saved file", file_path)
         return true
     end

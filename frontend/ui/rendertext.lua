@@ -289,17 +289,25 @@ end
 -- @int glyph index
 -- @bool[opt=false] bold whether the glyph should be artificially boldened
 -- @treturn glyph
-function RenderText:getGlyphByIndex(face, glyphindex, bold)
+function RenderText:getGlyphByIndex(face, glyphindex, bold, bolder)
     if face.is_real_bold then
         bold = false -- don't embolden glyphs already bold
     end
-    local hash = "xglyph|"..face.hash.."|"..glyphindex.."|"..(bold and 1 or 0)
+    local hash = "xglyph|"..face.hash.."|"..glyphindex.."|"..(bold and 1 or 0)..(bolder and "x" or "")
     local glyph = GlyphCache:check(hash)
     if glyph then
         -- cache hit
         return glyph
     end
-    local rendered_glyph = face.ftsize:renderGlyphByIndex(glyphindex, bold and face.embolden_half_strength)
+    local embolden_strength
+    if bold or bolder then
+        embolden_strength = face.embolden_half_strength
+        if bolder then
+            -- Even if not bold, get it bolder than the strength we'd use for bold
+            embolden_strength = embolden_strength * 1.5
+        end
+    end
+    local rendered_glyph = face.ftsize:renderGlyphByIndex(glyphindex, embolden_strength)
     if not rendered_glyph then
         logger.warn("error rendering glyph (glyphindex=", glyphindex, ") for face", face)
         return

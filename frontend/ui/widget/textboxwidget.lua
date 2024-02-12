@@ -110,6 +110,17 @@ local TextBoxWidget = InputContainer:extend{
 
     -- for internal use
     for_measurement_only = nil, -- When the widget is a one-off used to compute text height
+
+    -- Some Poor Text Formatting (PTF, not not to be confused with Richer RTF :)) can be done
+    -- by embedding some chars in self.text (these codepoints are not part of Unicode, so
+    -- hopefully not present naturally in any provided self.text).
+    PTF_HEADER = "\u{FFF1}", -- should be put at start of 'text' to indicate we may find other PTF_ chars
+    PTF_BOLD_START = "\u{FFF2}", -- start a sequence of bold chars
+    PTF_BOLD_END = "\u{FFF3}",   -- end a sequence of bold chars
+    _ptf_char_is_bold = nil,
+        -- This uses fake/synthetic bold, making each glyph bolder without modifying advance.
+        -- Some other possible formatting we could implement is different alignment (center,
+        -- right) of some lines in the provided text.
 }
 
 function TextBoxWidget:init()
@@ -152,6 +163,41 @@ function TextBoxWidget:init()
         -- if no self.height, these will be set just after self:_splitToLines()
         self.lines_per_page = math.floor(self.height / self.line_height_px)
         self.text_height = self.lines_per_page * self.line_height_px
+    end
+
+    -- Check for Poor Text Formatting
+    if not self.charlist and self.text and type(self.text) == "string"
+            and self.text:sub(1, #TextBoxWidget.PTF_HEADER) == TextBoxWidget.PTF_HEADER then
+        -- Support for very simple text styling (bold only for now)
+        self._ptf_char_is_bold = {}
+        -- Alas, we can't let any of our flag characters be fed to xtext (even with ASCII control
+        -- chars, it would give them a width, which would result at best in spurious added spacing).
+        -- So, split text into a table of chars, filter our flags out keeping track of where they
+        -- start and end bold, and rebuild self.text without them.
+        local charlist = util.splitToChars(self.text)
+        table.remove(charlist, 1)
+        local is_bold = false
+        local len = #charlist
+        local i = 1
+        while i <= len do
+            local ch = charlist[i]
+            if ch == TextBoxWidget.PTF_BOLD_START then
+                is_bold = true
+                table.remove(charlist, i)
+                len = len - 1
+            elseif ch == TextBoxWidget.PTF_BOLD_END then
+                is_bold = false
+                table.remove(charlist, i)
+                len = len - 1
+            else
+                if is_bold then
+                    self._ptf_char_is_bold[i] = true
+                end
+                i = i + 1
+            end
+        end
+        self.text = table.concat(charlist, "")
+        charlist = nil -- luacheck: no unused
     end
 
     self:_computeTextDimensions()
@@ -822,7 +868,8 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
                 for _, xglyph in ipairs(line.xglyphs) do
                     if not xglyph.no_drawing then
                         local face = self.face.getFallbackFont(xglyph.font_num) -- callback (not a method)
-                        local glyph = RenderText:getGlyphByIndex(face, xglyph.glyph, self.bold)
+                        local bolder = self._ptf_char_is_bold and self._ptf_char_is_bold[xglyph.text_index] or false
+                        local glyph = RenderText:getGlyphByIndex(face, xglyph.glyph, self.bold, bolder)
                         local color = self.fgcolor
                         if self._alt_color_for_rtl then
                             color = xglyph.is_rtl and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK
@@ -965,7 +1012,7 @@ function TextBoxWidget:_renderImage(start_row_idx)
             margin = 0,
             padding = 0,
             RightContainer:new{
-                dimen = {
+                dimen = Geom:new{
                     w = image.width,
                     h = status_height,
                 },
@@ -1142,7 +1189,7 @@ function TextBoxWidget:getSize()
         self:_updateLayout()
     end
 
-    return Geom:new{w = self.width, h = self._bb:getHeight()}
+    return Geom:new{x = 0, y = 0, w = self.width, h = self._bb:getHeight()}
 end
 
 function TextBoxWidget:paintTo(bb, x, y)

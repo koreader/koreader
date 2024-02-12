@@ -225,7 +225,7 @@ function FileChooser:show_file(filename, fullpath)
     for _, pattern in ipairs(self.exclude_files) do
         if filename:match(pattern) then return false end
     end
-    if not FileChooser.show_unsupported and self.file_filter ~= nil and not self.file_filter(filename) then return false end
+    if not self.show_unsupported and self.file_filter ~= nil and not self.file_filter(filename) then return false end
     if not FileChooser.show_finished and fullpath ~= nil and filemanagerutil.getStatus(fullpath) == "complete" then return false end
     return true
 end
@@ -266,7 +266,7 @@ function FileChooser:getList(path, collate)
     else -- error, probably "permission denied"
         if unreadable_dir_content[path] then
             -- Add this dummy item that will be replaced with a message by genItemTable()
-            table.insert(dirs, FileChooser:getListItem(path, "./.", path, lfs.attributes(path)), collate)
+            table.insert(dirs, self:getListItem(path, "./.", path, {}))
             -- If we knew about some content (if we had come up from them
             -- to this directory), have them shown
             for k, v in pairs(unreadable_dir_content[path]) do

@@ -25,7 +25,6 @@ local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -52,7 +51,7 @@ local progress_widget
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
 local ItemShortCutIcon = WidgetContainer:extend{
-    dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
+    dimen = Geom:new{ x = 0, y = 0, w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
     key = nil,
     bordersize = Size.border.default,
     radius = 0,
@@ -81,7 +80,7 @@ function ItemShortCutIcon:init()
         bordersize = self.bordersize,
         radius = radius,
         background = background,
-        dimen = self.dimen,
+        dimen = self.dimen:copy(),
         CenterContainer:new{
             dimen = self.dimen,
             TextWidget:new{
@@ -373,9 +372,12 @@ function MosaicMenuItem:init()
     -- As done in MenuItem
     -- Squared letter for keyboard navigation
     if self.shortcut then
-        local shortcut_icon_dimen = Geom:new()
-        shortcut_icon_dimen.w = math.floor(self.dimen.h*1/5)
-        shortcut_icon_dimen.h = shortcut_icon_dimen.w
+        local icon_width = math.floor(self.dimen.h*1/5)
+        local shortcut_icon_dimen = Geom:new{
+            x = 0, y = 0,
+            w = icon_width,
+            h = icon_width,
+        }
         -- To keep a simpler widget structure, this shortcut icon will not
         -- be part of it, but will be painted over the widget in our paintTo
         self.shortcut_icon = ItemShortCutIcon:new{
@@ -416,6 +418,7 @@ function MosaicMenuItem:init()
         vertical_align = "top",
         padding = 0,
         dimen = Geom:new{
+            x = 0, y = 0,
             w = self.width,
             h = self.height
         },
@@ -447,7 +450,6 @@ function MosaicMenuItem:update()
     local max_img_w = dimen.w - 2*border_size
     local max_img_h = dimen.h - 2*border_size
     local cover_specs = {
-        sizetag = "M",
         max_cover_w = max_img_w,
         max_cover_h = max_img_h,
     }
@@ -459,9 +461,8 @@ function MosaicMenuItem:update()
         self.menu.cover_specs = false
     end
 
-    local file_mode = lfs.attributes(self.filepath, "mode")
-    if file_mode == "directory" then
-        self.is_directory = true
+    self.is_directory = not (self.entry.is_file or self.entry.file)
+    if self.is_directory then
         -- Directory : rounded corners
         local margin = Screen:scaleBySize(5) -- make directories less wide
         local padding = Screen:scaleBySize(5)
@@ -521,39 +522,31 @@ function MosaicMenuItem:update()
             radius = Screen:scaleBySize(10),
             OverlapGroup:new{
                 dimen = dimen_in,
-                CenterContainer:new{ dimen=dimen_in, directory},
-                BottomContainer:new{ dimen=dimen_in, nbitems},
+                CenterContainer:new{ dimen = dimen_in, directory},
+                BottomContainer:new{ dimen = dimen_in, nbitems},
             },
         }
-    else
-        local is_file_selected = self.menu.filemanager and self.menu.filemanager.selected_files
-            and self.menu.filemanager.selected_files[self.filepath]
-        if file_mode ~= "file" or is_file_selected then
-            self.file_deleted = true -- dim file
-        end
-        -- File : various appearances
+    else -- file
+        self.file_deleted = self.entry.dim -- entry with deleted file from History or selected file from FM
 
         if self.do_hint_opened and DocSettings:hasSidecarFile(self.filepath) then
             self.been_opened = true
         end
 
         local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.do_cover_image)
+
         if bookinfo and self.do_cover_image and not bookinfo.ignore_cover then
             if bookinfo.cover_fetched then
-                if bookinfo.has_cover and bookinfo.cover_sizetag ~= "M" then
-                    -- there is a cover, but it's a small one (made by ListMenuItem),
-                    -- and it would be ugly if scaled up to MosaicMenuItem size:
-                    -- do as if not found to force a new extraction with our size
-                    if bookinfo.cover_bb then
-                        bookinfo.cover_bb:free()
+                if bookinfo.has_cover and not self.menu.no_refresh_covers then
+                    if BookInfoManager.isCachedCoverInvalid(bookinfo, cover_specs) then
+                        -- there is a thumbnail, but it's smaller than is needed for new grid dimensions,
+                        -- and it would be ugly if scaled up to the required size:
+                        -- do as if not found to force a new extraction with our size
+                        if bookinfo.cover_bb then
+                            bookinfo.cover_bb:free()
+                        end
+                        bookinfo = nil
                     end
-                    bookinfo = nil
-                    -- Note: with the current size differences between FileManager
-                    -- and the History windows, we'll get lower max_img_* in History.
-                    -- So, when one get Items first generated by the other, it will
-                    -- have to do some scaling. Hopefully, people most probably
-                    -- browse a lot more files than have them in history, so
-                    -- it's most probably History that will have to do some scaling.
                 end
                 -- if not has_cover, book has no cover, no need to try again
             else
@@ -595,7 +588,7 @@ function MosaicMenuItem:update()
             if self.do_cover_image and bookinfo.has_cover and not bookinfo.ignore_cover then
                 cover_bb_used = true
                 -- Let ImageWidget do the scaling and give us a bb that fit
-                local scale_factor = math.min(max_img_w / bookinfo.cover_w, max_img_h / bookinfo.cover_h)
+                local _, _, scale_factor = BookInfoManager.getCachedCoverSize(bookinfo.cover_w, bookinfo.cover_h, max_img_w, max_img_h)
                 local image= ImageWidget:new{
                     image = bookinfo.cover_bb,
                     scale_factor = scale_factor,
@@ -858,14 +851,13 @@ end
 local MosaicMenu = {}
 
 function MosaicMenu:_recalculateDimen()
-    local portrait_mode = Screen:getWidth() <= Screen:getHeight()
-    -- 3 x 3 grid by default if not initially provided (4 x 2 in landscape mode)
-    if portrait_mode then
-        self.nb_cols = self.nb_cols_portrait or 3
-        self.nb_rows = self.nb_rows_portrait or 3
+    self.portrait_mode = Screen:getWidth() <= Screen:getHeight()
+    if self.portrait_mode then
+        self.nb_cols = self.nb_cols_portrait
+        self.nb_rows = self.nb_rows_portrait
     else
-        self.nb_cols = self.nb_cols_landscape or 4
-        self.nb_rows = self.nb_rows_landscape or 2
+        self.nb_cols = self.nb_cols_landscape
+        self.nb_rows = self.nb_rows_landscape
     end
     self.perpage = self.nb_rows * self.nb_cols
     self.page_num = math.ceil(#self.item_table / self.perpage)
@@ -892,6 +884,7 @@ function MosaicMenu:_recalculateDimen()
     self.item_height = math.floor((self.inner_dimen.h - self.others_height - (1+self.nb_rows)*self.item_margin) / self.nb_rows)
     self.item_width = math.floor((self.inner_dimen.w - (1+self.nb_cols)*self.item_margin) / self.nb_cols)
     self.item_dimen = Geom:new{
+        x = 0, y = 0,
         w = self.item_width,
         h = self.item_height
     }
@@ -984,7 +977,7 @@ function MosaicMenu:_updateItemsBuildUI()
                 text = getMenuText(entry),
                 show_parent = self.show_parent,
                 mandatory = entry.mandatory,
-                dimen = self.item_dimen:new(),
+                dimen = self.item_dimen:copy(),
                 shortcut = item_shortcut,
                 shortcut_style = shortcut_style,
                 menu = self,
