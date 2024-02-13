@@ -817,6 +817,16 @@ function ReaderBookmark:onShowBookmark(match_table)
                     end,
                 },
             })
+            table.insert(buttons, {
+                {
+                    text = _("Update bookmark page strings"),
+                    enabled = actions_enabled,
+                    callback = function()
+                        UIManager:close(bm_dialog)
+                        bookmark:updatePageStrings()
+                    end,
+                },
+            })
         end
         bm_dialog = ButtonDialog:new{
             title = dialog_title,
@@ -1468,6 +1478,65 @@ function ReaderBookmark:getHighlightDrawer(datetime)
             end
         end
     end
+end
+
+function ReaderBookmark:updatePageStrings()
+    local types = {
+        {_("linear"), "linear"},
+        {_("non-linear"), "nonlinear"},
+        {_("label"), "label"},
+        {_("none"), "none"},
+    }
+    local radio_buttons = {}
+    for _, v in ipairs(types) do
+        local text, type = unpack(v)
+        local enabled = true
+        if type == "nonlinear" then
+            enabled = self.ui.rolling and self.ui.document:hasHiddenFlows()
+        elseif type == "label" then
+            enabled = self.ui.rolling and self.ui.pagemap and self.ui.pagemap:wantsPageLabels()
+        end
+        table.insert(radio_buttons, {
+            {
+                text = text,
+                provider = type,
+                enabled = enabled,
+            },
+        })
+    end
+    local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
+    UIManager:show(RadioButtonWidget:new{
+        title_text = _("Page string format"),
+        width_factor = 0.5,
+        radio_buttons = radio_buttons,
+        ok_text = _("Update"),
+        callback = function(radio)
+            local type = radio.provider
+            for _, bookmark in ipairs(self.bookmarks) do
+                local page = bookmark.page
+                local str
+                if type == "linear" then
+                    str = tostring(self.ui.rolling and self.ui.document:getPageFromXPointer(page) or page)
+                elseif type == "nonlinear" then
+                    page = self.ui.document:getPageFromXPointer(page)
+                    local flow = self.ui.document:getPageFlow(page)
+                    page = self.ui.document:getPageNumberInFlow(page)
+                    if flow > 0 then
+                        str = T("[%1]%2", page, flow)
+                    else
+                        str = tostring(page)
+                    end
+                elseif type == "label" then
+                    str = self.ui.pagemap:getXPointerPageLabel(page, true)
+                end
+                bookmark.page_string = str
+            end
+            local Notification = require("ui/widget/notification")
+            UIManager:show(Notification:new{
+                text = _("Bookmark page strings updated."),
+            })
+        end,
+    })
 end
 
 return ReaderBookmark
