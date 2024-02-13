@@ -1492,9 +1492,9 @@ function ReaderBookmark:updatePageStrings()
         local text, type = unpack(v)
         local enabled = true
         if type == "nonlinear" then
-            enabled = self.ui.rolling and self.ui.document:hasHiddenFlows()
+            enabled = (self.ui.rolling and self.ui.document:hasHiddenFlows()) and true or false
         elseif type == "label" then
-            enabled = self.ui.rolling and self.ui.pagemap and self.ui.pagemap:wantsPageLabels()
+            enabled = (self.ui.rolling and self.ui.pagemap and self.ui.pagemap:wantsPageLabels()) and true or false
         end
         table.insert(radio_buttons, {
             {
