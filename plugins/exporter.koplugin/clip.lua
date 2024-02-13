@@ -266,6 +266,9 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
                             clipping.note = bookmark_quote or bookmark.text
                         end
                     end
+                    if bookmark.page_string then
+                        clipping.page = bookmark.page_string
+                    end
                     bookmark_found = true
                     break
                 end
