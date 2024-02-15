@@ -93,8 +93,11 @@ function HttpInspector:start()
             "-m conntrack --ctstate ESTABLISHED -j ACCEPT"))
     end
 
-    local StreamMessageQueueServer = require("ui/message/streammessagequeueserver")
-    self.http_socket = StreamMessageQueueServer:new{
+    -- Using a simple LuaSocket based TCP server instead of a ZeroMQ based one
+    -- seems to solve strange issues with Chrome.
+    -- local ServerClass = require("ui/message/streammessagequeueserver")
+    local ServerClass = require("ui/message/simpletcpserver")
+    self.http_socket = ServerClass:new{
         host = "*",
         port = self.port,
         receiveCallback = function(data, id) return self:onRequest(data, id) end,
@@ -264,9 +267,8 @@ function HttpInspector:sendResponse(reqinfo, http_code, content_type, body)
     if type(body) ~= "string" then body = tostring(body) end
 
     local response = {}
-    -- StreamMessageQueueServer:send() seems to close the connection (although it really does not close
-    -- the TCP connexion, but it doesn't accept further requests on it), so announced that with HTTP/1.0
-    -- and "Connection: close"
+    -- StreamMessageQueueServer:send() closes the connection, so announce
+    -- that with HTTP/1.0 and a "Connection: close" header.
     table.insert(response, T("HTTP/1.0 %1 %2", http_code, HTTP_RESPONSE_CODE[http_code] or "Unspecified"))
     -- If no content type provided, let the browser sniff it
     if content_type then
