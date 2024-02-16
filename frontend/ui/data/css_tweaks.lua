@@ -965,6 +965,8 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
 .footnote, .footnotes, .fn,
 .note, .note1, .note2, .note3,
 .ntb, .ntb-txt, .ntb-txt-j,
+.fnote, .fnote1,
+.duokan-footnote-item, /* Common chinese books */
 .przypis, .przypis1, /* Polish footnotes */
 .voetnoten /* Dutch footnotes */
 {
@@ -1114,6 +1116,21 @@ If the footnote text uses variable or absolute font sizes, line height or vertic
         font-size: inherit !important;
         line-height: inherit !important;
         vertical-align: inherit !important;
+}
+                ]],
+            },
+            {
+                id = "inpage_footnote_combine_non_linear",
+                title = _("Combine footnotes in a non-linear flow"),
+                description = _([[
+This will mark each section of consecutive footnotes (at their original location in the book) as being non-linear.
+The menu checkbox "Hide non-linear fragments" will then be available after the document is reopened, allowing to hide these sections from the regular flow: they will be skipped when turning pages and not considered in the various book & chapter progress and time to read features.]]),
+                priority = 6,
+                css = [[
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: inpage-footnote;
+        -cr-hint: non-linear-combining;
 }
                 ]],
             },
