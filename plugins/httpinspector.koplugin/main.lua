@@ -1,7 +1,5 @@
---[[--
-This plugin allows for inspecting KOReader's internal objects,
-calling methods, sending events... over HTTP.
---]]--
+-- This plugin allows for inspecting KOReader's internal objects,
+-- calling methods, sending events... over HTTP.
 
 local DataStorage = require("datastorage")
 local Device =  require("device")
