@@ -1,8 +1,3 @@
---[[--
-This plugin allows for inspecting KOReader's internal objects,
-calling methods, sending events... over HTTP.
---]]--
-
 local DataStorage = require("datastorage")
 local Device =  require("device")
 local UIManager = require("ui/uimanager")
@@ -13,6 +8,9 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
+
+-- This plugin allows for inspecting KOReader's internal objects,
+-- calling methods, sending events... over HTTP.
 
 local HttpInspector = WidgetContainer:extend{
     name = "httpinspector",
