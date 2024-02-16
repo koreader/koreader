@@ -1058,7 +1058,9 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
         for _, link in ipairs(links) do
             -- link.uri may be an empty string with some invalid links: ignore them
             if link.section or (link.uri and link.uri ~= "") then
-                if link.segments then
+                -- Note: we may get segments empty in some conditions (in which
+                -- case we'll fallback to the 'else' branch and using x/y)
+                if link.segments and #link.segments > 0 then
                     -- With segments, each is a horizontal segment, with start_x < end_x,
                     -- and we should compute the distance from gesture position to
                     -- each segment.
