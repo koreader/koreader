@@ -237,7 +237,7 @@ local FileChooser = Menu:extend{
                     local summary = doc_settings:readSetting("summary")
 
                     -- books marked as "finished" should be considered the same as 100%
-                    if summary.status == "complete" then
+                    if summary and summary.status == "complete" then
                         item.percent_finished = 1.0
                         return
                     end
