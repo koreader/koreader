@@ -185,18 +185,18 @@ function FileManager:setupLayout()
         return true
     end
 
-    function file_chooser:onFileHold(file)
+    function file_chooser:onFileHold(item)
         if file_manager.select_mode then
             file_manager:tapPlus()
         else
-            self:showFileDialog(file)
+            self:showFileDialog(item)
         end
     end
 
-    function file_chooser:showFileDialog(file)  -- luacheck: ignore
-        local is_file = isFile(file)
-        local is_folder = lfs.attributes(file, "mode") == "directory"
-        local is_not_parent_folder = BaseUtil.basename(file) ~= ".."
+    function file_chooser:showFileDialog(item)  -- luacheck: ignore
+        local file = item.path
+        local is_file = item.is_file
+        local is_not_parent_folder = not item.is_go_up
 
         local function close_dialog_callback()
             UIManager:close(self.file_dialog)
@@ -324,9 +324,7 @@ function FileManager:setupLayout()
                     },
                 })
             end
-        end
-
-        if is_folder then
+        else -- folder
             local folder = BaseUtil.realpath(file)
             table.insert(buttons, {
                 {
@@ -1495,7 +1493,7 @@ function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_ca
     if provider == nil then
         provider = DocumentRegistry:getProvider(file, true) -- include auxiliary
     end
-    if provider.order then -- auxiliary
+    if provider and provider.order then -- auxiliary
         if aux_caller_callback then
             aux_caller_callback()
         end
