@@ -342,18 +342,6 @@ function ReaderRolling:onCloseDocument()
             logger.dbg("cre DOM may not be in sync with styles, invalidating cache file for a full reload at next opening")
             self.ui.document:invalidateCacheFile()
         end
-        -- 'title' and 'authors' props are saved to cre cache on first document opening.
-        -- If the document has no 'title', crengine saves filename-without-extension as 'title'.
-        -- If the props have been changed before first closing the document,
-        -- restore original values to write them to the cache.
-        local title = self.ui.doc_settings:readSetting("title") or filemanagerutil.splitFileNameType(self.ui.document.file)
-        if title ~= self.ui.doc_props.title then
-            self.ui.document:overrideDocumentProp("title", title)
-        end
-        local authors = self.ui.doc_settings:readSetting("authors")
-        if authors ~= self.ui.doc_props.authors then
-            self.ui.document:overrideDocumentProp("authors", authors)
-        end
     end
     logger.dbg("cre cache used:", cache_file_path or "none")
     -- Unknown elements and attributes, uncomment if needed for debugging:
