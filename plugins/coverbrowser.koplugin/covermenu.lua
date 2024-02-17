@@ -242,10 +242,11 @@ function CoverMenu:updateItems(select_number)
             -- Replace it with ours
             -- This causes luacheck warning: "shadowing upvalue argument 'self' on line 34".
             -- Ignoring it (as done in filemanager.lua for the same showFileDialog)
-            self.showFileDialog = function(self, file) -- luacheck: ignore
+            self.showFileDialog = function(self, item) -- luacheck: ignore
+                local file = item.path
                 -- Call original function: it will create a ButtonDialog
                 -- and store it as self.file_dialog, and UIManager:show() it.
-                self.showFileDialog_orig(self, file)
+                self.showFileDialog_orig(self, item)
 
                 local bookinfo = self.book_props -- getBookInfo(file) called by FileManager
                 if not bookinfo or bookinfo._is_directory then
