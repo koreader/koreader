@@ -171,10 +171,8 @@ function ReaderFont:onReadSettings(config)
                   or self.ui.document.default_font
     self.ui.document:setFontFace(self.font_face)
 
-    self.header_font_face = config:readSetting("header_font_face")
-                         or G_reader_settings:readSetting("header_font")
-                         or self.ui.document.header_font
-    self.ui.document:setHeaderFont(self.header_font_face)
+    local header_font = G_reader_settings:readSetting("header_font") or self.ui.document.header_font
+    self.ui.document:setHeaderFont(header_font)
 
     self.ui.document:setFontSize(Screen:scaleBySize(self.configurable.font_size))
     self.ui.document:setFontBaseWeight(self.configurable.font_base_weight)
@@ -311,7 +309,6 @@ end
 
 function ReaderFont:onSaveSettings()
     self.ui.doc_settings:saveSetting("font_face", self.font_face)
-    self.ui.doc_settings:saveSetting("header_font_face", self.header_font_face)
     self.ui.doc_settings:saveSetting("font_family_fonts", self.font_family_fonts)
 end
 

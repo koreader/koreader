@@ -33,6 +33,13 @@ local CreDocument = Document:extend{
     monospace_font = "Droid Sans Mono",
     header_font = "Noto Sans",
 
+    prop_to_cre_prop = { -- see cre lvtinydom.h
+        title        = "doc.title",
+        authors      = "doc.authors",
+        series       = "doc.series.name",
+        series_index = "doc.series.number",
+    },
+
     -- Reasons for the fallback font ordering:
     -- - Noto Sans CJK SC before FreeSans/Serif, as it has nice and larger
     --   symbol glyphs for Wikipedia EPUB headings than both Free fonts)
@@ -214,6 +221,14 @@ end
 
 function CreDocument:getDocumentProps()
     return self._document:getDocumentProps()
+end
+
+function CreDocument:setAltDocumentProp(prop, value)
+    logger.dbg("CreDocument: set alt document prop", prop, value)
+    if type(value) == "number" then -- series index
+        value = tostring(value)
+    end
+    self._document:setAltDocumentProp(self.prop_to_cre_prop[prop], value)
 end
 
 function CreDocument:setupDefaultView()

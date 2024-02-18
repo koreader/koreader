@@ -313,8 +313,6 @@ function ReaderRolling:onReadSettings(config)
     end)
 end
 
--- in scroll mode percent_finished must be save before close document
--- we cannot do it in onSaveSettings() because getLastPercent() uses self.ui.document
 function ReaderRolling:onCloseDocument()
     self:tearDownRerenderingAutomation()
     -- Unschedule anything that might still somehow be...
@@ -328,6 +326,7 @@ function ReaderRolling:onCloseDocument()
     UIManager:unschedule(self.onUpdatePos)
 
     self.current_header_height = nil -- show unload progress bar at top
+    -- we cannot do it in onSaveSettings() because getLastPercent() uses self.ui.document
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
 
     local cache_file_path = self.ui.document:getCacheFilePath() -- nil if no cache file
@@ -375,15 +374,8 @@ function ReaderRolling:onCheckDomStyleCoherence()
 end
 
 function ReaderRolling:onSaveSettings()
-    -- remove last_percent config since its deprecated
-    self.ui.doc_settings:delSetting("last_percent")
+    self.ui.doc_settings:delSetting("last_percent") -- deprecated
     self.ui.doc_settings:saveSetting("last_xpointer", self.xpointer)
-    -- in scrolling mode, the document may already be closed,
-    -- so we have to check the condition to avoid crash function self:getLastPercent()
-    -- that uses self.ui.document
-    if self.ui.document then
-        self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
-    end
     self.ui.doc_settings:saveSetting("hide_nonlinear_flows", self.hide_nonlinear_flows)
     self.ui.doc_settings:saveSetting("partial_rerendering", self.partial_rerendering)
 end

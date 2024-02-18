@@ -64,6 +64,27 @@ function ReaderCoptListener:onReadSettings(config)
     self:rescheduleHeaderRefreshIfNeeded() -- schedule (or not) first refresh
 end
 
+function ReaderCoptListener:onReaderReady()
+    -- custom metadata support for alt status bar and cre synthetic cover
+    for prop_key in pairs(self.document.prop_to_cre_prop) do
+        local orig_prop_value = self.ui.doc_settings:readSetting(prop_key)
+        local custom_prop_key = prop_key == "title" and "display_title" or prop_key
+        local custom_prop_value = self.ui.doc_props[custom_prop_key]
+        if custom_prop_value ~= orig_prop_value then
+            self.document:setAltDocumentProp(prop_key, custom_prop_value)
+        end
+    end
+end
+
+function ReaderCoptListener:onBookMetadataChanged(prop_updated)
+    -- custom metadata support for alt status bar and cre synthetic cover
+    local prop_key = prop_updated and prop_updated.metadata_key_updated
+    if prop_key and self.document.prop_to_cre_prop[prop_key] then
+        self.document:setAltDocumentProp(prop_key, prop_updated.doc_props[prop_key])
+        self:updateHeader()
+    end
+end
+
 function ReaderCoptListener:onConfigChange(option_name, option_value)
     -- font_size and line_spacing are historically and sadly shared by both mupdf and cre reader modules,
     -- but fortunately they can be distinguished by their different ranges
