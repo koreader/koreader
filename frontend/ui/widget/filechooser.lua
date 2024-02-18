@@ -233,7 +233,6 @@ local FileChooser = Menu:extend{
                 item.opened = DocSettings:hasSidecarFile(item.path)
                 if item.opened then
                     local doc_settings = DocSettings:open(item.path)
-                    percent_finished = doc_settings:readSetting("percent_finished")
                     local summary = doc_settings:readSetting("summary")
 
                     -- books marked as "finished" should be considered the same as 100%
@@ -241,6 +240,8 @@ local FileChooser = Menu:extend{
                         item.percent_finished = 1.0
                         return
                     end
+
+                    percent_finished = doc_settings:readSetting("percent_finished")
                 end
                 -- smooth 2 decimal points (0.00) instead of 16 decimal numbers
                 item.percent_finished = math.floor((percent_finished or -1) * 100) / 100
