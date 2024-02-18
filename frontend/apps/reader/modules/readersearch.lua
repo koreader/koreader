@@ -13,6 +13,7 @@ local Utf8Proc = require("ffi/utf8proc")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
+local C_ = _.pgettext
 local Screen = Device.screen
 local T = require("ffi/util").template
 
@@ -196,8 +197,8 @@ function ReaderSearch:onShowFulltextSearchInput()
                     end,
                 },
                 {
-                    -- @translators Search all entries in entire document
-                    text = _("All"),
+                    -- @translators Find all results in entire document, button displayed on the search bar, should be short.
+                    text = C_("Search text", "All"),
                     callback = function()
                         self:searchCallback()
                     end,

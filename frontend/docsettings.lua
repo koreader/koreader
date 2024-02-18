@@ -35,6 +35,8 @@ local function isFile(file)
     return lfs.attributes(file, "mode") == "file"
 end
 
+local is_history_location_enabled = isDir(HISTORY_DIR)
+
 local doc_hash_cache = {}
 local is_hash_location_enabled
 
@@ -164,7 +166,7 @@ function DocSettings:findSidecarFile(doc_path, no_legacy)
             return sidecar_file, location
         end
     end
-    if not no_legacy then
+    if is_history_location_enabled and not no_legacy then
         sidecar_file = self:getHistoryPath(doc_path)
         if isFile(sidecar_file) then
             return sidecar_file, "hist" -- for isSidecarFileNotInPreferredLocation() used in moveBookMetadata
@@ -238,7 +240,7 @@ function DocSettings:open(doc_path)
         new.hash_sidecar_dir = new:getSidecarDir(doc_path, "hash")
         hash_sidecar_file = new.hash_sidecar_dir .. "/" .. new.sidecar_filename
     end
-    local history_file = new:getHistoryPath(doc_path)
+    local history_file = is_history_location_enabled and new:getHistoryPath(doc_path)
 
     -- Candidates list, in order of priority:
     local candidates_list = {
@@ -257,9 +259,9 @@ function DocSettings:open(doc_path)
         -- Backup file of new sidecar file in hashdocsettings folder
         hash_sidecar_file and (hash_sidecar_file .. ".old") or "",
         -- Legacy history folder
-        history_file,
+        history_file or "",
         -- Backup file in legacy history folder
-        history_file .. ".old",
+        history_file and (history_file .. ".old") or "",
         -- Legacy kpdfview setting
         doc_path .. ".kpdfview.lua",
     }

@@ -560,7 +560,6 @@ local KindleOasis = Kindle:extend{
     model = "KindleOasis",
     isTouchDevice = yes,
     hasFrontlight = yes,
-    hasLightSensor = yes,
     hasKeys = yes,
     hasGSensor = yes,
     display_dpi = 300,

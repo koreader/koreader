@@ -77,6 +77,7 @@ local function initDataDir()
         "data/dict",
         "data/tessdata",
         -- "docsettings", -- created when needed
+        -- "hashdocsettings", -- created when needed
         -- "history", -- legacy/obsolete sidecar files
         "ota",
         -- "patches", -- must be created manually by the interested user

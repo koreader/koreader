@@ -25,7 +25,6 @@ local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -462,9 +461,8 @@ function MosaicMenuItem:update()
         self.menu.cover_specs = false
     end
 
-    local file_mode = lfs.attributes(self.filepath, "mode")
-    if file_mode == "directory" then
-        self.is_directory = true
+    self.is_directory = not (self.entry.is_file or self.entry.file)
+    if self.is_directory then
         -- Directory : rounded corners
         local margin = Screen:scaleBySize(5) -- make directories less wide
         local padding = Screen:scaleBySize(5)
@@ -528,13 +526,8 @@ function MosaicMenuItem:update()
                 BottomContainer:new{ dimen = dimen_in, nbitems},
             },
         }
-    else
-        local is_file_selected = self.menu.filemanager and self.menu.filemanager.selected_files
-            and self.menu.filemanager.selected_files[self.filepath]
-        if file_mode ~= "file" or is_file_selected then
-            self.file_deleted = true -- dim file
-        end
-        -- File : various appearances
+    else -- file
+        self.file_deleted = self.entry.dim -- entry with deleted file from History or selected file from FM
 
         if self.do_hint_opened and DocSettings:hasSidecarFile(self.filepath) then
             self.been_opened = true

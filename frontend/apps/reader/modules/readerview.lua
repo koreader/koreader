@@ -695,7 +695,7 @@ function ReaderView:recalculate()
             -- start from right of page_area
             self.visible_area.x = self.page_area.x + self.page_area.w - self.visible_area.w
         end
-        if self.ui.zooming.zoom_bottom_to_top then
+        if self.document.configurable.zoom_direction >= 2 and self.document.configurable.zoom_direction <= 5 then -- zoom_bottom_to_top
             -- starts from bottom of page_area
             self.visible_area.y = self.page_area.y + self.page_area.h - self.visible_area.h
         else

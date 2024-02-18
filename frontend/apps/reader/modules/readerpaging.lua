@@ -1029,8 +1029,15 @@ function ReaderPaging:onGotoPageRel(diff)
             goto_end(y)
             goto_end(x)
         elseif new_page > 0 then
+            -- Be sure that the new and old view areas are reset so that no value is carried over to next page.
+            -- Without this, we would have panned_y = new_va.y - old_va.y > 0, and panned_y will be added to the next page's y direction.
+            -- This occurs when the current page has a y > 0 position (for example, a cropped page) and can fit the whole page height,
+            -- while the next page needs scrolling in the height.
             self:_gotoPage(new_page)
+            new_va = self.visible_area:copy()
+            old_va = self.visible_area
             goto_end(y, -y_diff)
+            goto_end(x, -x_diff)
         else
             goto_end(x)
         end

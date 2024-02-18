@@ -206,6 +206,42 @@ local FileChooser = Menu:extend{
                 return item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
             end,
         },
+        percent_natural = {
+            -- sort 90% > 50% > 0% > unopened > 100%
+            text = _("percent - unopened - finished last"),
+            menu_order = 90,
+            can_collate_mixed = false,
+            init_sort_func = function(cache)
+                local natsort
+                natsort, cache = sort.natsort_cmp(cache)
+                local sortfunc =  function(a, b)
+                    if a.percent_finished == b.percent_finished then
+                        return natsort(a.text, b.text)
+                    elseif a.percent_finished == 1 then
+                        return false
+                    elseif b.percent_finished == 1 then
+                        return true
+                    else
+                        return a.percent_finished > b.percent_finished
+                    end
+                end
+
+                return sortfunc, cache
+            end,
+            item_func = function(item)
+                local percent_finished
+                item.opened = DocSettings:hasSidecarFile(item.path)
+                if item.opened then
+                    local doc_settings = DocSettings:open(item.path)
+                    percent_finished = doc_settings:readSetting("percent_finished")
+                end
+                -- smooth 2 decimal points (0.00) instead of 16 decimal numbers
+                item.percent_finished = math.floor((percent_finished or -1) * 100) / 100
+            end,
+            mandatory_func = function(item)
+                return item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
+            end,
+        },
     },
 }
 
@@ -232,6 +268,9 @@ end
 
 function FileChooser:init()
     self.path_items = {}
+    if lfs.attributes(self.path, "mode") ~= "directory" then
+        self.path = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+    end
     self.item_table = self:genItemTableFromPath(self.path)
     Menu.init(self) -- call parent's init()
 end
@@ -540,7 +579,7 @@ function FileChooser:onMenuSelect(item)
 end
 
 function FileChooser:onMenuHold(item)
-    self:onFileHold(item.path)
+    self:onFileHold(item)
     return true
 end
 
@@ -549,7 +588,7 @@ function FileChooser:onFileSelect(file)
     return true
 end
 
-function FileChooser:onFileHold(file)
+function FileChooser:onFileHold(item)
     return true
 end
 

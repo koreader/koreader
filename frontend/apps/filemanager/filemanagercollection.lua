@@ -1,7 +1,9 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
+local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local Menu = require("ui/widget/menu")
 local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
@@ -49,7 +51,7 @@ end
 function FileManagerCollection:onMenuHold(item)
     local file = item.file
     self.collfile_dialog = nil
-    self.bookinfo = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
+    self.book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
 
     local function close_dialog_callback()
         UIManager:close(self.collfile_dialog)
@@ -66,11 +68,29 @@ function FileManagerCollection:onMenuHold(item)
     local is_currently_opened = file == (self.ui.document and self.ui.document.file)
 
     local buttons = {}
-    local doc_settings_or_file = is_currently_opened and self.ui.doc_settings or file
+    local doc_settings_or_file
+    if is_currently_opened then
+        doc_settings_or_file = self.ui.doc_settings
+        if not self.book_props then
+            self.book_props = self.ui.doc_props
+            self.book_props.has_cover = true
+        end
+    else
+        if DocSettings:hasSidecarFile(file) then
+            doc_settings_or_file = DocSettings:open(file)
+            if not self.book_props then
+                local props = doc_settings_or_file:readSetting("doc_props")
+                self.book_props = FileManagerBookInfo.extendProps(props, file)
+                self.book_props.has_cover = true
+            end
+        else
+            doc_settings_or_file = file
+        end
+    end
     table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_update_callback))
     table.insert(buttons, {}) -- separator
     table.insert(buttons, {
-        filemanagerutil.genResetSettingsButton(file, close_dialog_update_callback, is_currently_opened),
+        filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_update_callback, is_currently_opened),
         {
             text = _("Remove from favorites"),
             callback = function()
@@ -82,11 +102,11 @@ function FileManagerCollection:onMenuHold(item)
     })
     table.insert(buttons, {
         filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback),
-        filemanagerutil.genBookInformationButton(file, self.bookinfo, close_dialog_callback),
+        filemanagerutil.genBookInformationButton(file, self.book_props, close_dialog_callback),
     })
     table.insert(buttons, {
-        filemanagerutil.genBookCoverButton(file, self.bookinfo, close_dialog_callback),
-        filemanagerutil.genBookDescriptionButton(file, self.bookinfo, close_dialog_callback),
+        filemanagerutil.genBookCoverButton(file, self.book_props, close_dialog_callback),
+        filemanagerutil.genBookDescriptionButton(file, self.book_props, close_dialog_callback),
     })
 
     if Device:canExecuteScript(file) then
