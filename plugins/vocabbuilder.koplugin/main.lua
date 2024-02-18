@@ -128,7 +128,9 @@ function MenuDialog:init()
             }
         }
     end
+end
 
+function MenuDialog:setupPluginMenu()
     local size = Screen:getSize()
     local width = math.floor(size.w * 0.9)
 
@@ -378,6 +380,95 @@ function MenuDialog:init()
         }
     }
 
+end
+
+function MenuDialog:setupBookMenu(sort_item, onSuccess)
+    local size = Screen:getSize()
+    local width = math.floor(size.w * 0.9)
+
+    local change_title_button = {
+        text = _("Change book title"),
+        callback = function()
+            self:onClose()
+            -- first show_parent is sortWidget, second is vocabBuilderWidget
+            self.show_parent.show_parent:showChangeBookTitleDialog(sort_item, onSuccess)
+        end
+    }
+    local select_single_button = {
+        text = _("Select only this book"),
+        callback = function()
+            self:onClose()
+            for _, item in pairs(self.show_parent.item_table) do
+                if item == sort_item then
+                    if not item.checked_func() then
+                        item.callback() -- toggle checkmark
+                    end
+                elseif item.checked_func() then
+                    item.callback()
+                end
+            end
+            self.show_parent:goToPage(self.show_parent.show_page)
+        end
+    }
+    local select_all_button = {
+        text = _("Select all books"),
+        callback = function()
+            self:onClose()
+            for _, item in pairs(self.show_parent.item_table) do
+                if not item.checked_func() then
+                    item.callback()
+                end
+            end
+            self.show_parent:goToPage(self.show_parent.show_page)
+        end
+    }
+    local select_page_all_button = {
+        text = _("Select all books on this page"),
+        callback = function()
+            self:onClose()
+            for _, content in pairs(self.show_parent.main_content) do
+                if content.item and not content.item.checked_func() then
+                    content.item.callback()
+                end
+            end
+            self.show_parent:goToPage(self.show_parent.show_page)
+        end
+    }
+    local deselect_page_all_button = {
+        text = _("Deselect all books on this page"),
+        callback = function()
+            self:onClose()
+            for _, content in pairs(self.show_parent.main_content) do
+                if content.item and content.item.checked_func() then
+                    content.item.callback()
+                end
+            end
+            self.show_parent:goToPage(self.show_parent.show_page)
+        end
+    }
+    local buttons = ButtonTable:new{
+        width = width,
+        buttons = {
+            {change_title_button},
+            {select_single_button},
+            {select_all_button},
+            {select_page_all_button},
+            {deselect_page_all_button},
+        },
+        show_parent = self
+    }
+
+    self.covers_fullscreen = true
+    self[1] = CenterContainer:new{
+        dimen = size,
+        FrameContainer:new{
+            padding = Size.padding.default,
+            background = Blitbuffer.COLOR_WHITE,
+            bordersize = Size.border.window,
+            radius = Size.radius.window,
+            buttons
+        }
+    }
 end
 
 function MenuDialog:onShow()
@@ -1640,7 +1731,7 @@ function VocabularyBuilderWidget:resetItems()
 end
 
 function VocabularyBuilderWidget:showMenu()
-    UIManager:show(MenuDialog:new{
+    local menu = MenuDialog:new{
         is_edit_mode = self.is_edit_mode,
         edit_callback = function()
             self.is_edit_mode = not self.is_edit_mode
@@ -1656,7 +1747,10 @@ function VocabularyBuilderWidget:showMenu()
             self:resetItems()
         end,
         show_parent = self
-    })
+    }
+
+    menu:setupPluginMenu()
+    UIManager:show(menu)
 end
 
 function VocabularyBuilderWidget:check_reverse()
@@ -1668,6 +1762,7 @@ function VocabularyBuilderWidget:onShowFilter()
     local sort_items = {}
     local book_data = DB:selectBooks()
     local toggled = {}
+    local sort_widget
     for _, info in pairs(book_data) do
         table.insert(sort_items, {
             text = info.name or "",
@@ -1683,12 +1778,16 @@ function VocabularyBuilderWidget:onShowFilter()
                 return info.filter
             end,
             hold_callback = function(sort_item, onSuccess)
-                self:showChangeBookTitleDialog(sort_item, onSuccess)
+                local menu = MenuDialog:new{
+                    show_parent = sort_widget
+                }
+                menu:setupBookMenu(sort_item, onSuccess)
+                UIManager:show(menu)
             end,
         })
     end
 
-    local sort_widget = SortWidget:new{
+    sort_widget = SortWidget:new{
         title = _("Filter words from books"),
         item_table = sort_items,
         sort_disabled = true,
@@ -1699,7 +1798,8 @@ function VocabularyBuilderWidget:onShowFilter()
             end
 
             UIManager:setDirty(nil, "ui")
-        end
+        end,
+        show_parent = self
     }
     UIManager:show(sort_widget)
 end
