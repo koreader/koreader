@@ -171,14 +171,17 @@ function FileManager:setupLayout()
         return true
     end
 
-    function file_chooser:onFileSelect(file)  -- luacheck: ignore
+    function file_chooser:onFileSelect(item)  -- luacheck: ignore
+        local file = item.path
         if file_manager.select_mode then
             if file_manager.selected_files[file] then
                 file_manager.selected_files[file] = nil
+                item.dim = nil
             else
                 file_manager.selected_files[file] = true
+                item.dim = true
             end
-            self:refreshPath()
+            self:updateItems()
         else
             file_manager:openFile(file)
         end
@@ -234,7 +237,8 @@ function FileManager:setupLayout()
                         file_manager:onToggleSelectMode(true) -- no full screen refresh
                         if is_file then
                             file_manager.selected_files[file] = true
-                            self:refreshPath()
+                            item.dim = true
+                            self:updateItems()
                         end
                     end,
                 },
@@ -540,8 +544,7 @@ function FileManager:tapPlus()
                     text = _("Select all files in folder"),
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        self.file_chooser:selectAllFilesInFolder()
-                        self:onRefresh()
+                        self.file_chooser:selectAllFilesInFolder(true)
                     end,
                 },
                 {
@@ -562,7 +565,7 @@ function FileManager:tapPlus()
                         for file in pairs (self.selected_files) do
                             self.selected_files[file] = nil
                         end
-                        self:onRefresh()
+                        self.file_chooser:selectAllFilesInFolder(false) -- undim
                     end,
                 },
                 {
@@ -1326,25 +1329,22 @@ function FileManager:showSelectedFilesList()
     end
     table.sort(selected_files, sorting)
 
-    local menu_container = CenterContainer:new{
-        dimen = Screen:getSize(),
-    }
-    local menu = Menu:new{
+    local menu
+    menu = Menu:new{
+        title = T(_("Selected files (%1)"), #selected_files),
+        item_table = selected_files,
         is_borderless = true,
         is_popout = false,
         truncate_left = true,
-        show_parent = menu_container,
         onMenuSelect = function(_, item)
-            UIManager:close(menu_container)
+            UIManager:close(menu)
             self.file_chooser:changeToPath(util.splitFilePathName(item.filepath), item.filepath)
         end,
         close_callback = function()
-            UIManager:close(menu_container)
+            UIManager:close(menu)
         end,
     }
-    table.insert(menu_container, menu)
-    menu:switchItemTable(T(_("Selected files (%1)"), #selected_files), selected_files)
-    UIManager:show(menu_container)
+    UIManager:show(menu)
 end
 
 function FileManager:showOpenWithDialog(file)
