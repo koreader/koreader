@@ -385,7 +385,7 @@ end
 function MenuDialog:setupBookMenu(sort_item, onSuccess)
     local size = Screen:getSize()
     local width = math.floor(size.w * 0.9)
-    
+
     local change_title_button = {
         text = _("Change book title"),
         callback = function()
@@ -1748,7 +1748,7 @@ function VocabularyBuilderWidget:showMenu()
         end,
         show_parent = self
     }
-    
+
     menu:setupPluginMenu()
     UIManager:show(menu)
 end
