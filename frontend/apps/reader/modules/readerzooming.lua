@@ -238,7 +238,7 @@ function ReaderZooming:onReadSettings(config)
         -- Validate it
         zoom_mode = self.zoom_mode_label[zoom_mode] and zoom_mode or self.DEFAULT_ZOOM_MODE
     end
-    
+
     -- Import legacy zoom_factor settings
     if config:has("zoom_factor") and config:hasNot("kopt_zoom_factor") then
         config:saveSetting("kopt_zoom_factor", config:readSetting("zoom_factor"))
