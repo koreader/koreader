@@ -571,7 +571,7 @@ function FileChooser:onMenuSelect(item)
     -- parent directory of dir without permission get nil mode
     -- we need to change to parent path in this case
     if item.is_file then
-        self:onFileSelect(item.path)
+        self:onFileSelect(item)
     else
         self:changeToPath(item.path, item.is_go_up and self.path)
     end
@@ -583,7 +583,7 @@ function FileChooser:onMenuHold(item)
     return true
 end
 
-function FileChooser:onFileSelect(file)
+function FileChooser:onFileSelect(item)
     UIManager:close(self)
     return true
 end
@@ -620,12 +620,18 @@ end
 
 -- Used in file manager select mode to select all files in a folder,
 -- that are visible in all file browser pages, without subfolders.
-function FileChooser:selectAllFilesInFolder()
+function FileChooser:selectAllFilesInFolder(do_select)
     for _, item in ipairs(self.item_table) do
         if item.is_file then
-            self.filemanager.selected_files[item.path] = true
+            if do_select then
+                self.filemanager.selected_files[item.path] = true
+                item.dim = true
+            else
+                item.dim = nil
+            end
         end
     end
+    self:updateItems()
 end
 
 return FileChooser
