@@ -1174,7 +1174,9 @@ function ReaderBookmark:setHighlightedText(item, text)
     item.text_orig = bm.text or text
     item.text = self.display_prefix[item.type] .. item.text_orig
     item.edited = edited
-    self.refresh()
+    if edited then
+        self.refresh()
+    end
 end
 
 function ReaderBookmark:onSearchBookmark(bm_menu)
