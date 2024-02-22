@@ -1015,7 +1015,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
         }
     }
 
-    if self.ui.rolling then
+    if self.ui.rolling and not self.view.highlight.saved[page][index].edited then
         local start_prev = "◁▒▒"
         local start_next = "▷▒▒"
         local end_prev = "▒▒◁"
@@ -1809,6 +1809,16 @@ function ReaderHighlight:onUnhighlight(bookmark_item)
         logger.dbg("found highlight to delete on page", page, idx)
         self:deleteHighlight(page, idx, bookmark_item)
         return true
+    end
+end
+
+function ReaderHighlight:getHighlightByDatetime(datetime)
+    for page, highlights in pairs(self.view.highlight.saved) do
+        for _, highlight in ipairs(highlights) do
+            if highlight.datetime == datetime then
+                return highlight
+            end
+        end
     end
 end
 
