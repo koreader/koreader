@@ -273,7 +273,7 @@ else
         if start_with == "history" then
             FileManager.instance.history:onShowHist()
         elseif start_with == "favorites" then
-            FileManager.instance.collections:onShowColl("favorites")
+            FileManager.instance.collections:onShowColl()
         elseif start_with == "folder_shortcuts" then
             FileManager.instance.folder_shortcuts:onShowFolderShortcutsDialog()
         end
