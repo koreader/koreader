@@ -3,6 +3,7 @@ This module provides a way to display book information (filename and book metada
 ]]
 
 local BD = require("ui/bidi")
+local Geom = require("ui/geometry")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -365,6 +366,13 @@ function BookInfo:getCoverImage(doc, file, force_orig)
     end
     if doc then
         cover_bb = doc:getCoverPageImage()
+        if not cover_bb and doc.loadDocument then -- try falling back to first page image
+            local img_pos = Geom:new{x = 50, y = 50}
+            doc:gotoPage(0)
+            doc._document:loadDocument(doc.file, false)
+            doc:render()
+            cover_bb = doc:getImageFromPosition(img_pos, true, false)
+        end
         if not is_doc then
             doc:close()
         end
