@@ -554,14 +554,15 @@ function Wallabag:download(article)
 
     -- If the article links to a supported file, we will download it directly.
     -- All webpages are HTML. Ignore them since we want the Wallabag EPUB instead!
-    if article.mimetype ~= "text/html" then
+    if type(article.mimetype) == "string" and article.mimetype:find("^text/html") then
+        logger.dbg("Wallabag: ignoring EPUB in favor of mimetype: ", article.mimetype)
         if DocumentRegistry:hasProvider(nil, article.mimetype) then
             file_ext = "."..DocumentRegistry:mimeToExt(article.mimetype)
             item_url = article.url
         -- A function represents `null` in our JSON.decode, because `nil` would just disappear.
         -- In that case, fall back to the file extension.
         elseif type(article.mimetype) == "function" and DocumentRegistry:hasProvider(article.url) then
-            file_ext = ""
+            file_ext = "."..util.getFileNameSuffix(article.url)
             item_url = article.url
         end
     end
