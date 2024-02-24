@@ -1015,7 +1015,8 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
         }
     }
 
-    if self.ui.rolling and not self.view.highlight.saved[page][index].edited then
+    if self.ui.rolling then
+        local enabled = not self.view.highlight.saved[page][index].edited
         local start_prev = "◁▒▒"
         local start_next = "▷▒▒"
         local end_prev = "▒▒◁"
@@ -1028,6 +1029,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
         table.insert(buttons, {
             {
                 text = start_prev,
+                enabled = enabled,
                 callback = function()
                     self:updateHighlight(page, index, 0, -1, false)
                 end,
@@ -1038,6 +1040,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             },
             {
                 text = start_next,
+                enabled = enabled,
                 callback = function()
                     self:updateHighlight(page, index, 0, 1, false)
                 end,
@@ -1048,6 +1051,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             },
             {
                 text = end_prev,
+                enabled = enabled,
                 callback = function()
                     self:updateHighlight(page, index, 1, -1, false)
                 end,
@@ -1057,6 +1061,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             },
             {
                 text = end_next,
+                enabled = enabled,
                 callback = function()
                     self:updateHighlight(page, index, 1, 1, false)
                 end,
