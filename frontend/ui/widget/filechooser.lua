@@ -24,6 +24,7 @@ local FileChooser = Menu:extend{
     show_finished    = G_reader_settings:readSetting("show_finished", true), -- books marked as finished
     show_hidden      = G_reader_settings:readSetting("show_hidden", false), -- folders/files starting with "."
     show_unsupported = G_reader_settings:readSetting("show_unsupported", false), -- set to true to ignore file_filter
+    cover_fallback = G_reader_settings:readSetting("cover_fallback", false), -- set to true to use first image as cover fallback
     file_filter = nil, -- function defined in the caller, returns true for files to be shown
     -- NOTE: Input is *always* a relative entry name
     exclude_dirs = { -- const
@@ -564,6 +565,12 @@ function FileChooser:toggleShowFilesMode(mode)
     -- modes: "show_finished", "show_hidden", "show_unsupported"
     FileChooser[mode] = not FileChooser[mode]
     G_reader_settings:saveSetting(mode, FileChooser[mode])
+    self:refreshPath()
+end
+
+function FileChooser:toggleCoverFallback()
+    local newValue = not G_reader_settings:readSetting("cover_fallback")
+    G_reader_settings:saveSetting("cover_fallback", newValue)
     self:refreshPath()
 end
 

@@ -168,6 +168,11 @@ function FileManagerMenu:setUpdateItemTable()
                 separator = true,
             },
             {
+                text = _("Use cover fallback image"),
+                checked_func = function() return G_reader_settings:readSetting("cover_fallback") end,
+                callback = function() FileChooser:toggleCoverFallback() end,
+            },
+            {
                 text = _("Classic mode settings"),
                 sub_item_table = {
                     {

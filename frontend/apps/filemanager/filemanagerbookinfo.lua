@@ -366,7 +366,7 @@ function BookInfo:getCoverImage(doc, file, force_orig)
     end
     if doc then
         cover_bb = doc:getCoverPageImage()
-        if not cover_bb and doc.loadDocument then -- try falling back to first page image
+        if not cover_bb and doc.loadDocument and G_reader_settings:readSetting("cover_fallback") then
             local img_pos = Geom:new{x = 50, y = 50}
             doc:gotoPage(0)
             doc._document:loadDocument(doc.file, false)
