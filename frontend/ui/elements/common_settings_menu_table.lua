@@ -271,8 +271,9 @@ common_settings.screen_eink_opt = require("ui/elements/screen_eink_opt_menu_tabl
 common_settings.screen_notification = require("ui/elements/screen_notification_menu_table")
 
 if Device:isTouchDevice() then
-    common_settings.menu_activate = require("ui/elements/menu_activate")
-    common_settings.screen_disable_double_tab = require("ui/elements/screen_disable_double_tap_table")
+    common_settings.taps_and_gestures = {
+        text = _("Taps and gestures"),
+    }
     common_settings.ignore_hold_corners = {
         text = _("Ignore long-press on corners"),
         checked_func = function()
@@ -281,6 +282,12 @@ if Device:isTouchDevice() then
         callback = function()
             UIManager:broadcastEvent(Event:new("IgnoreHoldCorners"))
         end,
+    }
+    common_settings.screen_disable_double_tab = require("ui/elements/screen_disable_double_tap_table")
+    common_settings.menu_activate = require("ui/elements/menu_activate")
+    common_settings.keyboard_layout = {
+        text = _("Keyboard"),
+        sub_item_table = require("ui/elements/menu_keyboard_layout"),
     }
 end
 
@@ -368,16 +375,6 @@ Please don't change any settings unless you know what you're doing.]])
     end
 end
 
-if Device:isTouchDevice() then
-    common_settings.keyboard_layout = {
-        text = _("Keyboard"),
-        sub_item_table = require("ui/elements/menu_keyboard_layout"),
-    }
-    common_settings.taps_and_gestures = {
-        text = _("Taps and gestures"),
-    }
-end
-
 common_settings.navigation = {
     text = _("Navigation"),
 }
@@ -398,7 +395,6 @@ local function genGenericMenuEntry(title, setting, value, default, radiomark)
         end,
     }
 end
-
 common_settings.back_to_exit = {
     text_func = function()
         local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt") -- set "back_to_exit" to "prompt"
@@ -715,16 +711,11 @@ common_settings.document_end_action = {
 
 common_settings.language = Language:getLangMenuTable()
 
-common_settings.font_ui_fallbacks = require("ui/elements/font_ui_fallbacks")
-
-common_settings.screenshot = {
-    text = _("Screenshot folder"),
-    callback = function()
-        local Screenshoter = require("ui/widget/screenshoter")
-        Screenshoter:chooseFolder()
-    end,
-    keep_menu_open = true,
+common_settings.device = {
+    text = _("Device"),
 }
+
+common_settings.font_ui_fallbacks = require("ui/elements/font_ui_fallbacks")
 
 common_settings.units = {
     text = _("Units"),
@@ -743,10 +734,11 @@ common_settings.units = {
     },
 }
 
-common_settings.search_menu = {
-    text = _("Menu search"),
+common_settings.screenshot = {
+    text = _("Screenshot folder"),
     callback = function()
-        UIManager:sendEvent(Event:new("ShowMenuSearch"))
+        local Screenshoter = require("ui/widget/screenshoter")
+        Screenshoter:chooseFolder()
     end,
     keep_menu_open = true,
 }
