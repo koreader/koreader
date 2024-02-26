@@ -624,6 +624,15 @@ To:
             end,
         })
     end
+    table.insert(self.menu_items.developer_options.sub_item_table, {
+        text = _("Anti-alias rounded corners in UI"),
+        checked_func = function()
+            return G_reader_settings:nilOrTrue("anti_alias_ui")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrTrue("anti_alias_ui")
+        end,
+    })
     --- @note: Currently, only Kobo implements this quirk
     if Device:hasEinkScreen() and Device:isKobo() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
