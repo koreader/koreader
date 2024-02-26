@@ -96,7 +96,7 @@ function FrameContainer:paintTo(bb, x, y)
     if not self.dimen then
         self.dimen = Geom:new{
             x = x, y = y,
-            w = my_size.w, h = my_size.h
+            w = my_size.w, h = my_size.h,
         }
     else
         self.dimen.x = x
@@ -110,11 +110,16 @@ function FrameContainer:paintTo(bb, x, y)
         shift_x = container_width - my_size.w
     end
 
-    --- @todo get rid of margin here?  13.03 2013 (houqp)
     if self.background then
-        bb:paintRoundedRect(x, y,
-                            container_width, container_height,
-                            self.background, self.radius)
+        if not self.radius or not self.bordersize then
+            bb:paintRoundedRect(x, y,
+                                container_width, container_height,
+                                self.background, self.radius)
+        else
+            bb:paintRoundedRect(x, y,
+                                container_width, container_height,
+                                self.background, self.radius - self.bordersize)
+        end
     end
     if self.stripe_width and self.stripe_color and not self.stripe_over then
         -- (No support for radius when hatched/stripe)
