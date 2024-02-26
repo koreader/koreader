@@ -135,10 +135,11 @@ function FrameContainer:paintTo(bb, x, y)
             self.inner_bordersize, self.color, self.radius)
     end
     if self.bordersize > 0 then
+        local anti_alias = 1 -- get value from configuration here xxx
         bb:paintBorder(x + self.margin, y + self.margin,
             container_width - self.margin * 2,
             container_height - self.margin * 2,
-            self.bordersize, self.color, self.radius)
+            self.bordersize, self.color, self.radius, anti_alias)
     end
     if self[1] then
         self[1]:paintTo(bb,
