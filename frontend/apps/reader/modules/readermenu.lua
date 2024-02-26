@@ -5,6 +5,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Screensaver = require("ui/screensaver")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local dbg = require("dbg")
@@ -295,16 +296,8 @@ function ReaderMenu:setUpdateItemTable()
         text = _("Plugin management"),
         sub_item_table = PluginLoader:genPluginManagerSubItem()
     }
-    -- main menu tab
-    -- insert common info
-    for id, common_setting in pairs(dofile("frontend/ui/elements/common_info_menu_table.lua")) do
-        self.menu_items[id] = common_setting
-    end
-    -- insert common exit for reader
-    for id, common_setting in pairs(dofile("frontend/ui/elements/common_exit_menu_table.lua")) do
-        self.menu_items[id] = common_setting
-    end
 
+    -- main menu tab
     self.menu_items.open_previous_document = {
         text_func = function()
             local previous_file = self:getPreviousFile()
@@ -331,6 +324,14 @@ function ReaderMenu:setUpdateItemTable()
             })
         end
     }
+    -- insert common info
+    for id, common_setting in pairs(dofile("frontend/ui/elements/common_info_menu_table.lua")) do
+        self.menu_items[id] = common_setting
+    end
+    -- insert common exit
+    for id, common_setting in pairs(dofile("frontend/ui/elements/common_exit_menu_table.lua")) do
+        self.menu_items[id] = common_setting
+    end
 
     local order = require("ui/elements/reader_menu_order")
 
@@ -408,20 +409,13 @@ function ReaderMenu:exitOrRestart(callback, force)
     end
 end
 
-function ReaderMenu:onShowMenu(tab_index)
+function ReaderMenu:genMenu(tab_index)
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
     end
-
-    if not tab_index then
+    if tab_index == nil then
         tab_index = self.last_tab_index
     end
-
-    local menu_container = CenterContainer:new{
-        covers_header = true,
-        ignore = "height",
-        dimen = Screen:getSize(),
-    }
 
     local main_menu
     if Device:isTouchDevice() or Device:hasDPad() then
@@ -430,26 +424,31 @@ function ReaderMenu:onShowMenu(tab_index)
             width = Screen:getWidth(),
             last_index = tab_index,
             tab_item_table = self.tab_item_table,
-            show_parent = menu_container,
         }
     else
         local Menu = require("ui/widget/menu")
         main_menu = Menu:new{
             title = _("Document menu"),
             item_table = Menu.itemTableFromTouchMenu(self.tab_item_table),
-            width = Screen:getWidth() - 100,
-            show_parent = menu_container,
+            width = Screen:getWidth() - (Size.margin.fullscreen_popout * 2),
         }
     end
-
     main_menu.close_callback = function()
         self:onCloseReaderMenu()
     end
+    return main_menu
+end
 
-    main_menu.touch_menu_callback = function ()
-        self.ui:handleEvent(Event:new("CloseConfigMenu"))
+function ReaderMenu:onShowMenu(tab_index, main_menu)
+    if main_menu == nil then
+        main_menu = self:genMenu(tab_index)
     end
-
+    local menu_container = CenterContainer:new{
+        covers_header = true,
+        ignore = "height",
+        dimen = Screen:getSize(),
+    }
+    main_menu.show_parent = menu_container
     menu_container[1] = main_menu
     -- maintain a reference to menu_container
     self.menu_container = menu_container
@@ -552,8 +551,8 @@ function ReaderMenu:onSaveSettings()
 end
 
 function ReaderMenu:onMenuSearch()
-    self:onShowMenu()
-    self.menu_container[1]:onShowMenuSearch()
+    local main_menu = self:genMenu()
+    main_menu:onShowMenuSearch()
 end
 
 function ReaderMenu:registerToMainMenu(widget)
