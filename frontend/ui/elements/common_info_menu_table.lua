@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
@@ -12,28 +13,19 @@ local T = require("ffi/util").template
 
 local common_info = {}
 
-if Device:hasOTAUpdates() then
-    local OTAManager = require("ui/otamanager")
-    common_info.ota_update = OTAManager:getOTAMenuTable()
-end
-common_info.version = {
-    text = T(_("Version: %1"), Version:getShortVersion()),
-    keep_menu_open = true,
-    callback = function()
-        UIManager:show(InfoMessage:new{
-            text = Version:getCurrentRevision(),
-        })
-    end
-}
-common_info.help = {
-    text = _("Help"),
-}
+-- tools tab
 common_info.more_tools = {
     text = _("More tools"),
 }
 
-common_info.device = {
-    text = _("Device"),
+-- main tab
+if Device:hasOTAUpdates() then
+    local OTAManager = require("ui/otamanager")
+    common_info.ota_update = OTAManager:getOTAMenuTable()
+end
+
+common_info.help = {
+    text = _("Help"),
 }
 common_info.quickstart_guide = {
     text = _("Quickstart guide"),
@@ -43,15 +35,12 @@ common_info.quickstart_guide = {
         ReaderUI:showReader(QuickStart:getQuickStart())
     end
 }
-common_info.about = {
-    text = _("About"),
-    keep_menu_open = true,
+common_info.search_menu = {
+    text = _("Menu search"),
     callback = function()
-        UIManager:show(InfoMessage:new{
-            text = T(_("KOReader %1\n\nA document viewer for E Ink devices.\n\nLicensed under Affero GPL v3. All dependencies are free software.\n\nhttp://koreader.rocks"), BD.ltr(Version:getCurrentRevision())),
-            icon = "koreader",
-        })
-    end
+        UIManager:sendEvent(Event:new("ShowMenuSearch"))
+    end,
+    keep_menu_open = true,
 }
 common_info.report_bug = {
     text_func = function()
@@ -111,6 +100,25 @@ common_info.report_bug = {
                     end,
                 }
             }},
+        })
+    end
+}
+common_info.version = {
+    text = T(_("Version: %1"), Version:getShortVersion()),
+    keep_menu_open = true,
+    callback = function()
+        UIManager:show(InfoMessage:new{
+            text = Version:getCurrentRevision(),
+        })
+    end
+}
+common_info.about = {
+    text = _("About"),
+    keep_menu_open = true,
+    callback = function()
+        UIManager:show(InfoMessage:new{
+            text = T(_("KOReader %1\n\nA document viewer for E Ink devices.\n\nLicensed under Affero GPL v3. All dependencies are free software.\n\nhttp://koreader.rocks"), BD.ltr(Version:getCurrentRevision())),
+            icon = "koreader",
         })
     end
 }
