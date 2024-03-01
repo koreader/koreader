@@ -60,13 +60,13 @@ local ProgressWidget = Widget:extend{
     _orig_margin_v = nil,
     _orig_bordersize = nil,
     initial_pos_marker = false, -- overlay a marker at the initial percentage position
-    inital_percentage = nil,
+    initial_percentage = nil,
 }
 
 function ProgressWidget:init()
     if self.initial_pos_marker then
-        if not self.inital_percentage then
-            self.inital_percentage = self.percentage
+        if not self.initial_percentage then
+            self.initial_percentage = self.percentage
         end
 
         self:renderMarkerIcon()
@@ -182,11 +182,11 @@ function ProgressWidget:paintTo(bb, x, y)
                      self.fillcolor)
 
         -- Overlay the initial position marker on top of that
-        if self.initial_pos_marker then
+        if self.initial_pos_marker and self.initial_percentage >= 0 then
             if self.height <= INITIAL_MARKER_HEIGHT_THRESHOLD then
-                self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.inital_percentage) - self.height / 4), y - Math.round(self.height / 6))
+                self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.initial_percentage) - self.height / 4), y)
             else
-                self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.inital_percentage) - self.height / 2), y)
+                self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.initial_percentage) - self.height / 2), y)
             end
         end
     end
@@ -212,8 +212,8 @@ end
 function ProgressWidget:setPercentage(percentage)
     self.percentage = percentage
     if self.initial_pos_marker then
-        if not self.inital_percentage then
-            self.inital_percentage = self.percentage
+        if not self.initial_percentage then
+            self.initial_percentage = self.percentage
         end
     end
 end
