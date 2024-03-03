@@ -84,7 +84,8 @@ function ReaderSearch:addToMainMenu(menu_items)
         text = _("Fulltext search settings"),
         sub_item_table = {
             {
-                text = _("Search highlighted text: find all"),
+                text = _("Show all results on text selection"),
+                help_text = _("When invoked after text selection, show a list with all results instead of highlighting matches in book pages."),
                 checked_func = function()
                     return G_reader_settings:isTrue("fulltext_search_find_all")
                 end,
