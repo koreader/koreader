@@ -1048,10 +1048,6 @@ function TouchMenu:search(search_for)
 end
 
 function TouchMenu:openMenu(path, with_animation)
-    if self.show_parent == self then -- MenuSearch called from dispatcher, menu generated but not opened yet
-        UIManager:sendEvent(Event:new("ShowMenu", nil, self))
-    end
-
     local parts = {}
     for part in util.gsplit(path, "%.", false) do -- path is ie. "2.3.3.1"
         table.insert(parts, tonumber(part))
