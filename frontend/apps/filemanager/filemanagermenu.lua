@@ -687,6 +687,16 @@ To:
         end,
     })
     table.insert(self.menu_items.developer_options.sub_item_table, {
+        text = _("Anti-alias UI elements"),
+        checked_func = function()
+            return G_reader_settings:readSetting("anti_alias_ui", 1) ~= 0
+        end,
+        callback = function()
+            local old_val = G_reader_settings:readSetting("anti_alias_ui", 1)
+            G_reader_settings:saveSetting("anti_alias_ui", 1 - old_val)
+        end,
+    })
+    table.insert(self.menu_items.developer_options.sub_item_table, {
         text = _("UI layout mirroring and text direction"),
         sub_item_table = {
             {

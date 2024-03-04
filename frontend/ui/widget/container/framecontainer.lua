@@ -118,7 +118,7 @@ function FrameContainer:paintTo(bb, x, y)
         else
             bb:paintRoundedRect(x, y,
                                 container_width, container_height,
-                                self.background, self.radius - self.bordersize)
+                                self.background, self.radius + self.bordersize)
         end
     end
     if self.stripe_width and self.stripe_color and not self.stripe_over then
@@ -135,7 +135,9 @@ function FrameContainer:paintTo(bb, x, y)
             self.inner_bordersize, self.color, self.radius)
     end
     if self.bordersize > 0 then
-        local anti_alias = 1 -- get value from configuration here xxx
+        local anti_alias = G_reader_settings:readSetting("anti_alias_ui", 1);
+        require("logger").dbg("anti_alias_ui:", type(anti_alias), anti_alias);
+
         bb:paintBorder(x + self.margin, y + self.margin,
             container_width - self.margin * 2,
             container_height - self.margin * 2,
