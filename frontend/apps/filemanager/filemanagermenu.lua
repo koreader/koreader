@@ -956,7 +956,7 @@ function FileManagerMenu:genMenu(tab_index)
 end
 
 function FileManagerMenu:onShowMenu(tab_index, main_menu)
-    if main_menu == nil then
+    if main_menu == nil or main_menu.page_info == nil then -- be sure it's TouchMenu or Menu
         main_menu = self:genMenu(tab_index)
     end
     local menu_container = CenterContainer:new{
