@@ -178,6 +178,7 @@ local Input = {
 
     -- touch state:
     main_finger_slot = 0,
+    pen_slot = 4,
     cur_slot = 0,
     MTSlots = nil, -- table, object may be replaced at runtime
     active_slots = nil, -- ditto
@@ -218,6 +219,10 @@ function Input:init()
             slot = self.main_finger_slot,
         },
     }
+
+    -- Always send pen data to a slot far enough away from our main finger slot that it can never be matched with a finger buddy in GestureDetector (i.e., +/- 1),
+    -- with an extra bit of leeway, since we don't even actually support three finger gestures ;).
+    self.pen_slot = self.main_finger_slot + 4
 
     self.gesture_detector = GestureDetector:new{
         screen = self.device.screen,
@@ -563,24 +568,30 @@ function Input:handleKeyBoardEv(ev)
         end
     elseif self.wacom_protocol then
         if ev.code == C.BTN_TOOL_PEN then
-            -- Always send pen data to slot 2
-            self:setupSlotData(2)
+            -- Switch to the dedicated pen slot, and make sure it's active, as this can come in a dedicated input frame
+            self:setupSlotData(self.pen_slot)
             if ev.value == 1 then
                 self:setCurrentMtSlot("tool", TOOL_TYPE_PEN)
             else
                 self:setCurrentMtSlot("tool", TOOL_TYPE_FINGER)
+                -- Switch back to our main finger slot
+                self.cur_slot = self.main_finger_slot
             end
 
             return
         elseif ev.code == C.BTN_TOUCH then
             -- BTN_TOUCH is bracketed by BTN_TOOL_PEN, so we can limit this to pens, to avoid stomping on panel slots.
             if self:getCurrentMtSlotData("tool") == TOOL_TYPE_PEN then
+                -- Make sure the pen slot is active, as this can come in a dedicated input frame
+                -- (i.e., we need it to be referenced by self.MTSlots for the lift to be picked up in the EV_SYN:SYN_REPORT handler).
+                -- (Conversely, getCurrentMtSlotData pokes at the *persistent* slot data in self.ev_slots,
+                -- so it can keep track of data across input frames).
+                self:setupSlotData(self.pen_slot)
                 -- Much like on snow, use this to detect contact down & lift,
                 -- as ABS_PRESSURE may be entirely omitted from hover events,
                 -- and ABS_DISTANCE is not very clear cut...
-                self:setupSlotData(2)
                 if ev.value == 1 then
-                    self:setCurrentMtSlot("id", 2)
+                    self:setCurrentMtSlot("id", self.pen_slot)
                 else
                     self:setCurrentMtSlot("id", -1)
                 end
