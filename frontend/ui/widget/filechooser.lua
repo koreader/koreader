@@ -207,7 +207,7 @@ local FileChooser = Menu:extend{
             end,
         },
         percent_natural = {
-            -- sort 90% > 50% > 0% > unopened > 100% or finished
+            -- sort 90% > 50% > 0% or on hold > unopened > 100% or finished
             text = _("percent - unopened - finished last"),
             menu_order = 90,
             can_collate_mixed = false,
@@ -238,6 +238,12 @@ local FileChooser = Menu:extend{
                     -- books marked as "finished" should be considered the same as 100%
                     if summary and summary.status == "complete" then
                         item.percent_finished = 1.0
+                        return
+                    end
+
+                    -- books marked as "on hold" should be considered the same as 0%
+                    if summary and summary.status == "abandoned" then
+                        item.percent_finished = 0.0
                         return
                     end
 
