@@ -235,18 +235,14 @@ local FileChooser = Menu:extend{
                     local doc_settings = DocSettings:open(item.path)
                     local summary = doc_settings:readSetting("summary")
 
-                    -- books marked as "finished" should be considered the same as 100%
+                    -- books marked as "finished" or "on hold" should be considered the same as 100% and 0% respectively
                     if summary and summary.status == "complete" then
-                        item.percent_finished = 1.0
+                        item.percent_finished = 1
+                        return
+                    elseif summary and summary.status == "abandoned" then
+                        item.percent_finished = 0
                         return
                     end
-
-                    -- books marked as "on hold" should be considered the same as 0%
-                    if summary and summary.status == "abandoned" then
-                        item.percent_finished = 0.0
-                        return
-                    end
-
                     percent_finished = doc_settings:readSetting("percent_finished")
                 end
                 -- smooth 2 decimal points (0.00) instead of 16 decimal numbers
