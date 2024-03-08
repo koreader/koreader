@@ -184,7 +184,7 @@ function ProgressWidget:paintTo(bb, x, y)
         -- Overlay the initial position marker on top of that
         if self.initial_pos_marker and self.initial_percentage >= 0 then
             if self.height <= INITIAL_MARKER_HEIGHT_THRESHOLD then
-                self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.initial_percentage) - self.height / 4), y)
+                self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.initial_percentage) - self.height / 4), y - Math.round(self.height / 6))
             else
                 self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.initial_percentage) - self.height / 2), y)
             end
