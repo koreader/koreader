@@ -931,6 +931,12 @@ function Menu:init()
             }
         }
     end
+    self.ges_events.Pan = { -- (for mousewheel scrolling support)
+        GestureRange:new{
+            ges = "pan",
+            range = self.dimen,
+        }
+    }
     self.ges_events.Close = self.on_close_ges
 
     if not Device:hasKeyboard() then
@@ -1384,6 +1390,17 @@ function Menu:onSwipe(arg, ges_ev)
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
     end
+end
+
+function Menu:onPan(arg, ges_ev)
+    if ges_ev.mousewheel_direction then
+        if ges_ev.direction == "north" then
+            self:onNextPage()
+        elseif ges_ev.direction == "south" then
+            self:onPrevPage()
+        end
+    end
+    return true
 end
 
 function Menu:onMultiSwipe(arg, ges_ev)

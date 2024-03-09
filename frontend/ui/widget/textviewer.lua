@@ -444,6 +444,15 @@ function TextViewer:onForwardingPan(arg, ges)
 end
 
 function TextViewer:onForwardingPanRelease(arg, ges)
+    -- Allow scrolling with the mousewheel
+    if ges.from_mousewheel and ges.relative and ges.relative.y then
+        if ges.relative.y < 0 then
+            self.scroll_text_w:scrollText(1)
+        elseif ges.relative.y > 0 then
+            self.scroll_text_w:scrollText(-1)
+        end
+        return true
+    end
     -- We can forward onMovablePanRelease() does enough checks
     return self.movable:onMovablePanRelease(arg, ges)
 end

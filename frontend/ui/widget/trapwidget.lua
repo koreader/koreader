@@ -54,6 +54,9 @@ function TrapWidget:init()
             SwipeDismiss = {
                 GestureRange:new{ ges = "swipe", range = full_screen, }
             },
+            PanReleaseDismiss = { -- emitted on mousewheel event
+                GestureRange:new{ ges = "pan_release", range = full_screen, }
+            },
         }
     end
     if self.text then
@@ -136,6 +139,10 @@ function TrapWidget:onHoldDismiss(_, ev)
 end
 
 function TrapWidget:onSwipeDismiss(_, ev)
+    return self:_dismissAndResend("Gesture", ev)
+end
+
+function TrapWidget:onPanReleaseDismiss(_, ev)
     return self:_dismissAndResend("Gesture", ev)
 end
 
