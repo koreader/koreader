@@ -265,7 +265,7 @@ function ListMenuItem:update()
 
         local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.do_cover_image)
 
-        if bookinfo and self.do_cover_image and not bookinfo.ignore_cover then
+        if bookinfo and self.do_cover_image and not bookinfo.ignore_cover and not self.file_deleted then
             if bookinfo.cover_fetched then
                 if bookinfo.has_cover and not self.menu.no_refresh_covers then
                     if BookInfoManager.isCachedCoverInvalid(bookinfo, cover_specs) then
