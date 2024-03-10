@@ -173,6 +173,7 @@ function CreDocument:init()
     self.default_css = "./data/epub.css"
     if file_type == "fb2" or file_type == "fb3" then
         self.default_css = "./data/fb2.css"
+        self.is_fb2 = true -- FB2 won't look good with any html-oriented stylesheet
     end
 
     -- This mode must be the same as the default one set as ReaderView.view_mode
