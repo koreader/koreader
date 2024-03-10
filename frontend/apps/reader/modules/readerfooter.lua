@@ -1638,6 +1638,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
             },
             {
                 text = _("Chapter progress"),
+                help_text = _("Show progress bar for the current chapter, instead of the whole book."),
                 enabled_func = function()
                     return not self.settings.disable_progress_bar
                 end,
