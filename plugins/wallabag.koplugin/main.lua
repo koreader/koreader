@@ -99,6 +99,7 @@ function Wallabag:init()
         self.articles_per_sync = self.wb_settings.data.wallabag.articles_per_sync
     end
     self.remove_finished_from_history = self.wb_settings.data.wallabag.remove_finished_from_history or false
+    self.download_original_pdf = self.wb_settings.data.wallabag.download_original_pdf
     self.download_queue = self.wb_settings.data.wallabag.download_queue or {}
 
     -- workaround for dateparser only available if newsdownloader is active
@@ -341,6 +342,18 @@ function Wallabag:addToMainMenu(menu_items)
                         separator = true,
                     },
                     {
+                        text = _("Download original PDF if available"),
+                        keep_menu_open = true,
+                        checked_func = function()
+                            return self.download_original_pdf
+                        end,
+                        callback = function()
+                            self.download_original_pdf = not self.download_original_pdf
+                            self:saveSettings()
+                        end,
+                        separator = true,
+                    },
+                    {
                         text = _("Help"),
                         keep_menu_open = true,
                         callback = function()
@@ -552,19 +565,10 @@ function Wallabag:download(article)
     local file_ext = ".epub"
     local item_url = "/api/entries/" .. article.id .. "/export.epub"
 
-    -- If the article links to a supported file, we will download it directly.
-    -- All webpages are HTML. Ignore them since we want the Wallabag EPUB instead!
-    if type(article.mimetype) == "string" and article.mimetype:find("^text/html") then
-        logger.dbg("Wallabag: ignoring EPUB in favor of mimetype: ", article.mimetype)
-        if DocumentRegistry:hasProvider(nil, article.mimetype) then
-            file_ext = "."..DocumentRegistry:mimeToExt(article.mimetype)
-            item_url = article.url
-        -- A function represents `null` in our JSON.decode, because `nil` would just disappear.
-        -- In that case, fall back to the file extension.
-        elseif type(article.mimetype) == "function" and DocumentRegistry:hasProvider(article.url) then
-            file_ext = "."..util.getFileNameSuffix(article.url)
-            item_url = article.url
-        end
+    if self.download_original_pdf and type(article.mimetype) == "string" and article.mimetype:find("^application/pdf") then
+        logger.dbg("Wallabag: ignoring EPUB in favor of original PDF")
+        file_ext = ".pdf"
+        item_url = article.url
     end
 
     local local_path = self.directory .. article_id_prefix .. article.id .. article_id_postfix .. title .. file_ext
@@ -1140,6 +1144,7 @@ function Wallabag:saveSettings()
         send_review_as_tags   = self.send_review_as_tags,
         remove_finished_from_history = self.remove_finished_from_history,
         remove_read_from_history = self.remove_read_from_history,
+        download_original_pdf = self.download_original_pdf,
         download_queue        = self.download_queue,
     }
     self.wb_settings:saveSetting("wallabag", tempsettings)
