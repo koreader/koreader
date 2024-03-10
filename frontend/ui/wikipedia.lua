@@ -915,6 +915,84 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
     -- to look more alike wikipedia web pages (that the user can ignore
     -- with "Embedded Style" off)
     epub:add("OEBPS/stylesheet.css", [[
+/* Generic styling picked from our epub.css (see it for comments),
+   to give this epub a book look even if used with html5.css */
+body {
+  text-align: justify;
+}
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 0.7em;
+  margin-bottom: 0.5em;
+  hyphens: none;
+}
+h1 { font-size: 150%; }
+h2 { font-size: 140%; }
+h3 { font-size: 130%; }
+h4 { font-size: 120%; }
+h5 { font-size: 110%; }
+h6 { font-size: 100%; }
+p {
+  text-indent: 1.2em;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+blockquote {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  margin-left: 2em;
+  margin-right: 1em;
+}
+blockquote:dir(rtl) {
+  margin-left: 1em;
+  margin-right: 2em;
+}
+dl {
+  margin-left: 0;
+}
+dt {
+  margin-left: 0;
+  margin-top: 0.3em;
+  font-weight: bold;
+}
+dd {
+  margin-left: 1.3em;
+}
+dd:dir(rtl) {
+  margin-left: unset;
+  margin-right: 1.3em;
+}
+pre {
+  text-align: left;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+hr {
+  border-style: solid;
+}
+table {
+  font-size: 80%;
+  margin: 3px 0;
+  border-spacing: 1px;
+}
+table table { /* stop imbricated tables from getting smaller */
+  font-size: 100%;
+}
+th, td {
+  padding: 3px;
+}
+th {
+  background-color: #DDD;
+  text-align: center;
+}
+table caption {
+  padding: 4px;
+  background-color: #EEE;
+}
+sup { font-size: 70%; }
+sub { font-size: 70%; }
+
+/* Specific for our Wikipedia EPUBs */
+
 /* Make section headers looks left aligned and avoid some page breaks */
 h1, h2 {
     page-break-before: always;
@@ -978,10 +1056,7 @@ a.newwikinonexistent {
 
 /* Don't waste left margin for TOC, notes and other lists */
 ul, ol {
-    margin-left: 0;
-}
-ul:dir(rtl), ol:dir(rtl) {
-    margin-right: 0;
+    margin: 0;
 }
 /* OL in Wikipedia pages may inherit their style-type from a wrapping div,
  * ensure they fallback to decimal with inheritance */
@@ -1176,6 +1251,11 @@ table {
 .citation {
     font-style: italic;
 }
+abbr.abbr {
+    /* Prevent these from looking like a link */
+    text-decoration: inherit;
+}
+
 /* hide some view/edit/discuss short links displayed as "v m d" */
 .nv-view, .nv-edit, .nv-talk {
     display: none;
