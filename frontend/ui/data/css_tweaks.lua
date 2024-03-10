@@ -420,6 +420,13 @@ Further small adjustments can be done with 'Line Spacing' in the bottom menu.]])
         {
             title = _("Font size and families"),
             {
+                id = "font_no_presentational_hints",
+                title = _("Ignore font related HTML presentational hints"),
+                description = _("Ignore HTML attributes that contribute to styles on the elements <body> (bgcolor, text…) and <font> (face, size, color…)."),
+                css = [[body, font { -cr-hint: no-presentational; }]],
+                separator = true,
+            },
+            {
                 id = "font_family_all_inherit",
                 title = _("Ignore publisher font families"),
                 description = _("Disable font-family specified in embedded styles."),
@@ -564,6 +571,13 @@ body, h1, h2, h3, h4, h5, h6, div, li, td, th { text-indent: 0 !important; }
         title = _("Tables, links, images"),
         {
             title = _("Tables"),
+            {
+                id = "table_no_presentational_hints",
+                title = _("Ignore tables related HTML presentational hints"),
+                description = _("Ignore HTML attributes that contribute to styles on the <table> element and its sub-elements (ie. align, valign, frame, rules, border, cellpading, cellspacing…)."),
+                css = [[table, caption, colgroup, col, thead, tbody, tfoot, tr, td, th { -cr-hint: no-presentational; }]],
+                separator = true,
+            },
             {
                 id = "table_full_width",
                 title = _("Full-width tables"),
