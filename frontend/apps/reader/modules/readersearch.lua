@@ -84,6 +84,16 @@ function ReaderSearch:addToMainMenu(menu_items)
         text = _("Fulltext search settings"),
         sub_item_table = {
             {
+                text = _("Show all results on text selection"),
+                help_text = _("When invoked after text selection, show a list with all results instead of highlighting matches in book pages."),
+                checked_func = function()
+                    return G_reader_settings:isTrue("fulltext_search_find_all")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("fulltext_search_find_all")
+                end,
+            },
+            {
                 text_func = function()
                     return T(_("Words in context: %1"), self.findall_nb_context_words)
                 end,
@@ -142,19 +152,36 @@ function ReaderSearch:addToMainMenu(menu_items)
     }
 end
 
--- if reverse ~= 0 search backwards
-function ReaderSearch:searchCallback(reverse)
-    local search_text = self.input_dialog:getInputText()
-    if search_text == "" then return end
-    -- search_text comes from our keyboard, and may contain multiple diacritics ordered
-    -- in any order: we'd rather have them normalized, and expect the book content to
-    -- be proper and normalized text.
+function ReaderSearch:searchText(text) -- from highlight dialog
+    if G_reader_settings:isTrue("fulltext_search_find_all") then
+        self.ui.highlight:clear()
+        self:searchCallback(nil, text)
+    else
+        self:searchCallback(0, text) -- forward
+    end
+end
+
+-- if reverse == 1 search backwards
+function ReaderSearch:searchCallback(reverse, text)
+    local search_text = text or self.input_dialog:getInputText()
+    if search_text == nil or search_text == "" then return end
     self.ui.doc_settings:saveSetting("fulltext_search_last_search_text", search_text)
-    self.last_search_text = search_text -- if shown again, show it as it has been inputted
-    search_text = Utf8Proc.normalize_NFC(search_text)
-    self.use_regex = self.check_button_regex.checked
-    self.case_insensitive = not self.check_button_case.checked
-    local regex_error = self.use_regex and self.ui.document:checkRegex(search_text)
+    self.last_search_text = search_text
+
+    local regex_error
+    if text then -- from highlight dialog
+        self.use_regex = false
+        self.case_insensitive = true
+    else -- from input dialog
+        -- search_text comes from our keyboard, and may contain multiple diacritics ordered
+        -- in any order: we'd rather have them normalized, and expect the book content to
+        -- be proper and normalized text.
+        search_text = Utf8Proc.normalize_NFC(search_text)
+        self.use_regex = self.check_button_regex.checked
+        self.case_insensitive = not self.check_button_case.checked
+        regex_error = self.use_regex and self.ui.document:checkRegex(search_text)
+    end
+
     if self.use_regex and regex_error ~= 0 then
         logger.dbg("ReaderSearch: regex error", regex_error, SRELL_ERROR_CODES[regex_error])
         local error_message
@@ -167,6 +194,7 @@ function ReaderSearch:searchCallback(reverse)
     else
         UIManager:close(self.input_dialog)
         if reverse then
+            self.last_search_hash = nil
             self:onShowSearchDialog(search_text, reverse, self.use_regex, self.case_insensitive)
         else
             local Trapper = require("ui/trapper")
@@ -392,7 +420,6 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                     icon_height = Screen:scaleBySize(DGENERIC_ICON_SIZE * 0.8),
                     callback = function()
                         self.search_dialog:onClose()
-                        self.last_search_text = text
                         self:onShowFulltextSearchInput()
                     end,
                 },
@@ -500,7 +527,7 @@ function ReaderSearch:searchNext(pattern, direction, regex, case_insensitive)
 end
 
 function ReaderSearch:findAllText(search_text)
-    local last_search_hash = self.last_search_text .. tostring(self.case_insensitive) .. tostring(self.use_regex)
+    local last_search_hash = (self.last_search_text or "") .. tostring(self.case_insensitive) .. tostring(self.use_regex)
     local not_cached = self.last_search_hash ~= last_search_hash
     if not_cached then
         local Trapper = require("ui/trapper")
@@ -525,7 +552,7 @@ function ReaderSearch:findAllText(search_text)
 end
 
 function ReaderSearch:onShowFindAllResults(not_cached)
-    if not not_cached and self.findall_results == nil then
+    if not self.last_search_hash or (not not_cached and self.findall_results == nil) then
         -- no cached results, show input dialog
         self:onShowFulltextSearchInput()
         return
@@ -546,9 +573,15 @@ function ReaderSearch:onShowFindAllResults(not_cached)
             local text = TextBoxWidget.PTF_BOLD_START .. word .. TextBoxWidget.PTF_BOLD_END
             -- append context before and after the word
             if item.prev_text then
+                if not item.prev_text:find("%s$") then
+                    text = " " .. text
+                end
                 text = item.prev_text .. text
             end
             if item.next_text then
+                if not item.next_text:find("^[%s%p]") then
+                    text = text .. " "
+                end
                 text = text .. item.next_text
             end
             text = TextBoxWidget.PTF_HEADER .. text -- enable handling of our bold tags

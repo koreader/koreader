@@ -1958,7 +1958,7 @@ function ReaderHighlight:onHighlightSearch()
     self:highlightFromHoldPos()
     if self.selected_text then
         local text = util.stripPunctuation(cleanupSelectedText(self.selected_text.text))
-        self.ui:handleEvent(Event:new("ShowSearchDialog", text))
+        self.ui.search:searchText(text)
     end
 end
 
