@@ -304,15 +304,7 @@ local footerTextGeneratorMap = {
         return prefix .. " " .. left
     end,
     chapter_progress = function(footer)
-        local current = footer.ui.toc:getChapterPagesDone(footer.pageno)
-        -- We want a page number, not a page read count
-        if current then
-            current = current + 1
-        else
-            current = footer.pageno
-        end
-        local total = footer.ui.toc:getChapterPageCount(footer.pageno) or footer.pages
-        return current .. " ⁄⁄ " .. total
+        return footer:getChapterProgress()
     end,
     percentage = function(footer)
         local symbol_type = footer.settings.item_prefix
@@ -446,6 +438,7 @@ local ReaderFooter = WidgetContainer:extend{
 --       which is why it's public.
 ReaderFooter.default_settings = {
     disable_progress_bar = false, -- enable progress bar by default
+    chapter_progress_bar = false, -- the whole book
     disabled = false,
     all_at_once = false,
     reclaim_height = false,
@@ -1644,6 +1637,19 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                 end,
             },
             {
+                text = _("Chapter progress"),
+                help_text = _("Show progress bar for the current chapter, instead of the whole book."),
+                enabled_func = function()
+                    return not self.settings.disable_progress_bar
+                end,
+                checked_func = function()
+                    return self.settings.chapter_progress_bar
+                end,
+                callback = function()
+                    self:onToggleChapterProgressBar()
+                end,
+            },
+            {
                 text_func = function()
                     local text = _("alongside items")
                     if self.settings.progress_bar_position == "above" then
@@ -1668,16 +1674,6 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                         end,
                     },
                     {
-                        text = _("Below items"),
-                        checked_func = function()
-                            return self.settings.progress_bar_position == "below"
-                        end,
-                        callback = function()
-                            self.settings.progress_bar_position = "below"
-                            self:refreshFooter(true, true)
-                        end,
-                    },
-                    {
                         text = _("Alongside items"),
                         checked_func = function()
                             return self.settings.progress_bar_position == "alongside"
@@ -1694,6 +1690,16 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                             self.settings.progress_bar_position = "alongside"
                             self:refreshFooter(true, true)
                         end
+                    },
+                    {
+                        text = _("Below items"),
+                        checked_func = function()
+                            return self.settings.progress_bar_position == "below"
+                        end,
+                        callback = function()
+                            self.settings.progress_bar_position = "below"
+                            self:refreshFooter(true, true)
+                        end,
                     },
                 },
             },
@@ -1776,10 +1782,10 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                     {
                         text = _("Show chapter markers"),
                         checked_func = function()
-                            return self.settings.toc_markers == true
+                            return self.settings.toc_markers == true and not self.settings.chapter_progress_bar
                         end,
                         enabled_func = function()
-                            return not self.settings.progress_style_thin
+                            return not self.settings.progress_style_thin and not self.settings.chapter_progress_bar
                         end,
                         callback = function()
                             self.settings.toc_markers = not self.settings.toc_markers
@@ -1798,7 +1804,8 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                             return T(_("Chapter marker width (%1)"), markers_width_text)
                         end,
                         enabled_func = function()
-                            return not self.settings.progress_style_thin and self.settings.toc_markers
+                            return not self.settings.progress_style_thin and not self.settings.chapter_progress_bar
+                                and self.settings.toc_markers
                         end,
                         sub_item_table = {
                             {
@@ -2057,7 +2064,7 @@ function ReaderFooter:setTocMarkers(reset)
         self.progress_bar.ticks = nil
         self.pages = self.ui.document:getPageCount()
     end
-    if self.settings.toc_markers then
+    if self.settings.toc_markers and not self.settings.chapter_progress_bar then
         self.progress_bar.tick_width = Screen:scaleBySize(self.settings.toc_markers_width)
         if self.progress_bar.ticks ~= nil then -- already computed
             return
@@ -2123,20 +2130,42 @@ end
 
 function ReaderFooter:updateFooterPage(force_repaint, full_repaint)
     if type(self.pageno) ~= "number" then return end
-    if self.ui.document:hasHiddenFlows() then
-        local flow = self.ui.document:getPageFlow(self.pageno)
-        local page = self.ui.document:getPageNumberInFlow(self.pageno)
-        local pages = self.ui.document:getTotalPagesInFlow(flow)
-        self.progress_bar:setPercentage(page / pages)
+    if self.settings.chapter_progress_bar then
+        if self.progress_bar.initial_pos_marker then
+            if self.ui.toc:getNextChapter(self.pageno) == self.ui.toc:getNextChapter(self.initial_pageno) then
+                self.progress_bar.initial_percentage = self:getChapterProgress(true, self.initial_pageno)
+            else -- initial position is not in the current chapter
+                self.progress_bar.initial_percentage = -1 -- do not draw initial position marker
+            end
+        end
+        self.progress_bar:setPercentage(self:getChapterProgress(true))
     else
-        self.progress_bar:setPercentage(self.pageno / self.pages)
+        if self.ui.document:hasHiddenFlows() then
+            local flow = self.ui.document:getPageFlow(self.pageno)
+            local page = self.ui.document:getPageNumberInFlow(self.pageno)
+            local pages = self.ui.document:getTotalPagesInFlow(flow)
+            self.progress_bar:setPercentage(page / pages)
+        else
+            self.progress_bar:setPercentage(self.pageno / self.pages)
+        end
     end
     self:updateFooterText(force_repaint, full_repaint)
 end
 
 function ReaderFooter:updateFooterPos(force_repaint, full_repaint)
     if type(self.position) ~= "number" then return end
-    self.progress_bar:setPercentage(self.position / self.doc_height)
+    if self.settings.chapter_progress_bar then
+        if self.progress_bar.initial_pos_marker then
+            if self.pageno and (self.ui.toc:getNextChapter(self.pageno) == self.ui.toc:getNextChapter(self.initial_pageno)) then
+                self.progress_bar.initial_percentage = self:getChapterProgress(true, self.initial_pageno)
+            else
+                self.progress_bar.initial_percentage = -1
+            end
+        end
+        self.progress_bar:setPercentage(self:getChapterProgress(true))
+    else
+        self.progress_bar:setPercentage(self.position / self.doc_height)
+    end
     self:updateFooterText(force_repaint, full_repaint)
 end
 
@@ -2267,6 +2296,9 @@ function ReaderFooter:onPageUpdate(pageno)
         end
     end
     self.pageno = pageno
+    if not self.initial_pageno then
+        self.initial_pageno = pageno
+    end
     self.pages = self.ui.document:getPageCount()
     if toc_markers_update then
         self:setTocMarkers(true)
@@ -2280,6 +2312,9 @@ function ReaderFooter:onPosUpdate(pos, pageno)
     self.doc_height = self.ui.document.info.doc_height
     if pageno then
         self.pageno = pageno
+        if not self.initial_pageno then
+            self.initial_pageno = pageno
+        end
         self.pages = self.ui.document:getPageCount()
         self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
     end
@@ -2405,6 +2440,31 @@ function ReaderFooter:onToggleFooterMode()
     return true
 end
 
+function ReaderFooter:onToggleChapterProgressBar()
+    self.settings.chapter_progress_bar = not self.settings.chapter_progress_bar
+    self:setTocMarkers()
+    if self.progress_bar.initial_pos_marker and not self.settings.chapter_progress_bar then
+        self.progress_bar.initial_percentage = self.initial_pageno / self.pages
+    end
+    self:refreshFooter(true)
+end
+
+function ReaderFooter:getChapterProgress(get_percentage, pageno)
+    pageno = pageno or self.pageno
+    local current = self.ui.toc:getChapterPagesDone(pageno)
+    -- We want a page number, not a page read count
+    if current then
+        current = current + 1
+    else
+        current = pageno
+    end
+    local total = self.ui.toc:getChapterPageCount(pageno) or self.pages
+    if get_percentage then
+        return current / total
+    end
+    return current .. " ⁄⁄ " .. total
+end
+
 function ReaderFooter:onHoldFooter(ges)
     -- We're higher priority than readerhighlight_hold, so, make sure we fall through properly...
     if not self.settings.skim_widget_on_hold then
@@ -2443,7 +2503,8 @@ end
 function ReaderFooter:onResume()
     -- Reset the initial marker, if any
     if self.progress_bar.initial_pos_marker then
-        self.progress_bar.inital_percentage = self.progress_bar.percentage
+        self.initial_pageno = self.pageno
+        self.progress_bar.initial_percentage = self.progress_bar.percentage
     end
 
     -- Don't repaint the footer until OutOfScreenSaver if screensaver_delay is enabled...
