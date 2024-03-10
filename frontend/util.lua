@@ -1275,6 +1275,11 @@ function util.prettifyCSS(css_text, condensed)
             s = s:gsub(";", "\b")
             return s
         end)
+        -- Protect ',' inside () (ie. ":is(td, th)") by replacing them with rare control chars
+        css_text = css_text:gsub("%b()/", function(s)
+            s = s:gsub(",", "\v")
+            return s
+        end)
         -- Cleanup declarations (the most nested ones only, which may be
         -- contained in "@supports (...) {...}" or "@media (...) {...}")
         css_text = css_text:gsub(" *{([^{}]*)} *", function(s)
