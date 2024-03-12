@@ -48,7 +48,7 @@ return {
                 sub_item_table = {
                     genMenuItem(_("Black"), "screensaver_img_background", "black"),
                     genMenuItem(_("White"), "screensaver_img_background", "white"),
-                    genMenuItem(_("Leave as-is"), "screensaver_img_background", "none", nil, true),
+                    genMenuItem(_("Current state"), "screensaver_img_background", "none", nil, true),
                     -- separator
                         {
                             text_func = function()
@@ -56,7 +56,7 @@ return {
                                 if G_reader_settings:isTrue("screensaver_stretch_images") and percentage then
                                     return T(_("Stretch to fit screen (with limit: %1 %)"), percentage)
                                 end
-                                return _("Stretch to Fit Screen")
+                                return _("Stretch Cover to Fit Screen")
                             end,
                             checked_func = function()
                                 return G_reader_settings:isTrue("screensaver_stretch_images")
@@ -102,15 +102,15 @@ return {
                 end,
             },
             {
-                text = _("Sidebars"), 
+                text = _("Fill-in Background"), 
                 sub_item_table = {
                     genMenuItem(_("Black"), "screensaver_msg_background", "black"),
                     genMenuItem(_("White"), "screensaver_msg_background", "white"),
-                    genMenuItem(_("Leave as-is"), "screensaver_msg_background", "none", nil, true),
+                    genMenuItem(_("Current state"), "screensaver_msg_background", "none", nil, true),
                 },
             },
             {
-                text = _("Position"),
+                text = _("Message Position"),
                 sub_item_table = {
                     genMenuItem(_("Top"), "screensaver_message_position", "top"),
                     genMenuItem(_("Middle"), "screensaver_message_position", "middle"),
@@ -140,7 +140,7 @@ return {
                 end,
             },
             {
-                text = _("Select folder with custom images"),
+                text = _("Folder used for custom images"),
                 keep_menu_open = true,
                 callback = function()
                     Screensaver:chooseFolder()
