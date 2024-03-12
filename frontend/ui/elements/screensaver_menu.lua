@@ -33,14 +33,14 @@ return {
         text = _("Screensaver"),
         sub_item_table = {
             
-                genMenuItem(_("Show book cover on lock screen"), "screensaver_type", "cover", hasLastFile),
-                genMenuItem(_("Show custom image on lock screen"), "screensaver_type", "image_file"),
-                genMenuItem(_("Show multiple custom images on lock screen"), "screensaver_type", "random_image"),
-                genMenuItem(_("Show document cover on lock screen"), "screensaver_type", "document_cover"),
-                genMenuItem(_("Show reading progress on lock screen"), "screensaver_type", "readingprogress", isReaderProgressEnabled),
-                genMenuItem(_("Show book status on lock screen"), "screensaver_type", "bookstatus", hasLastFile),
-                genMenuItem(_("Lock the screen in current state"), "screensaver_type", "disable", nil, true),
-                separator = true,
+            genMenuItem(_("Show book cover on lock screen"), "screensaver_type", "cover", hasLastFile),
+            genMenuItem(_("Show custom image on lock screen"), "screensaver_type", "image_file"),
+            genMenuItem(_("Use slide show on lock screen"), "screensaver_type", "random_image"),
+            genMenuItem(_("Show document cover on lock screen"), "screensaver_type", "document_cover"),
+            genMenuItem(_("Show reading progress on lock screen"), "screensaver_type", "readingprogress", isReaderProgressEnabled),
+            genMenuItem(_("Show book status on lock screen"), "screensaver_type", "bookstatus", hasLastFile),
+            genMenuItem(_("Lock the screen in current state"), "screensaver_type", "disable", nil, true),
+            separator = true,
                 
         
             {
@@ -140,7 +140,7 @@ return {
                 end,
             },
             {
-                text = _("Folder used for custom images"),
+                text = _("Select slide show folder"),
                 keep_menu_open = true,
                 callback = function()
                     Screensaver:chooseFolder()
@@ -148,7 +148,7 @@ return {
             },
             
             {
-                text = _("Document Cover"),
+                text = _("Select Document Cover"),
                 keep_menu_open = true,
                 callback = function()
                     Screensaver:chooseFile(true)
