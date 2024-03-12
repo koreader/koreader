@@ -30,7 +30,7 @@ end
 return {
 
     {
-        text = _("Lock Screen"),
+        text = _("Screensaver"),
         sub_item_table = {
             
                 genMenuItem(_("Show book cover on lock screen"), "screensaver_type", "cover", hasLastFile),
