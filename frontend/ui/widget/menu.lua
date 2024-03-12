@@ -1065,7 +1065,7 @@ function Menu:updateItems(select_number)
         -- calculate index in item_table
         local i = (self.page - 1) * self.perpage + c
         if i <= #self.item_table then
-            self.item_table[i].index = i -- item.index is valid only for items that have been displayed
+            self.item_table[i].idx = i -- index is valid only for items that have been displayed
             local item_shortcut = nil
             local shortcut_style = "square"
             if self.is_enable_shortcut then

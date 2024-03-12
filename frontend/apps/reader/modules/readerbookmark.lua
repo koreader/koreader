@@ -535,7 +535,7 @@ function ReaderBookmark:onShowBookmark(match_table)
                             UIManager:close(textviewer)
                             bookmark:setHighlightedText(item)
                             if bookmark.show_edited_only then
-                                table.remove(item_table, item.index)
+                                table.remove(item_table, item.idx)
                             end
                             bookmark.refresh()
                         end,
@@ -559,7 +559,7 @@ function ReaderBookmark:onShowBookmark(match_table)
                                 ok_text = _("Remove"),
                                 ok_callback = function()
                                     bookmark:removeHighlight(item)
-                                    table.remove(item_table, item.index)
+                                    table.remove(item_table, item.idx)
                                     bm_menu:switchItemTable(nil, item_table, -1)
                                     UIManager:close(textviewer)
                                 end,
