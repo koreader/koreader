@@ -74,7 +74,7 @@ function InputContainer:paintTo(bb, x, y)
         local content_size = self[1]:getSize()
         self.dimen = Geom:new{
             x = x, y = y,
-            w = content_size.w, h = content_size.h
+            w = content_size.w, h = content_size.h,
         }
     else
         self.dimen.x = x

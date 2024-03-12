@@ -1016,6 +1016,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
     }
 
     if self.ui.rolling then
+        local enabled = not self.view.highlight.saved[page][index].edited
         local start_prev = "◁▒▒"
         local start_next = "▷▒▒"
         local end_prev = "▒▒◁"
@@ -1028,6 +1029,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
         table.insert(buttons, {
             {
                 text = start_prev,
+                enabled = enabled,
                 callback = function()
                     self:updateHighlight(page, index, 0, -1, false)
                 end,
@@ -1038,6 +1040,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             },
             {
                 text = start_next,
+                enabled = enabled,
                 callback = function()
                     self:updateHighlight(page, index, 0, 1, false)
                 end,
@@ -1048,6 +1051,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             },
             {
                 text = end_prev,
+                enabled = enabled,
                 callback = function()
                     self:updateHighlight(page, index, 1, -1, false)
                 end,
@@ -1057,6 +1061,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             },
             {
                 text = end_next,
+                enabled = enabled,
                 callback = function()
                     self:updateHighlight(page, index, 1, 1, false)
                 end,
@@ -1812,6 +1817,16 @@ function ReaderHighlight:onUnhighlight(bookmark_item)
     end
 end
 
+function ReaderHighlight:getHighlightByDatetime(datetime)
+    for page, highlights in pairs(self.view.highlight.saved) do
+        for _, highlight in ipairs(highlights) do
+            if highlight.datetime == datetime then
+                return highlight
+            end
+        end
+    end
+end
+
 function ReaderHighlight:getHighlightBookmarkItem()
     if self.hold_pos and not self.selected_text then
         self:highlightFromHoldPos()
@@ -1943,7 +1958,7 @@ function ReaderHighlight:onHighlightSearch()
     self:highlightFromHoldPos()
     if self.selected_text then
         local text = util.stripPunctuation(cleanupSelectedText(self.selected_text.text))
-        self.ui:handleEvent(Event:new("ShowSearchDialog", text))
+        self.ui.search:searchText(text)
     end
 end
 
