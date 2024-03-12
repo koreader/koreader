@@ -207,7 +207,7 @@ local FileChooser = Menu:extend{
             end,
         },
         percent_natural = {
-            -- sort 90% > 50% > 0% or on hold > unopened > 100% or finished
+            -- sort 90% > 50% > 0% > unopened > 100% or finished
             text = _("percent - unopened - finished last"),
             menu_order = 90,
             can_collate_mixed = false,
@@ -235,14 +235,12 @@ local FileChooser = Menu:extend{
                     local doc_settings = DocSettings:open(item.path)
                     local summary = doc_settings:readSetting("summary")
 
-                    -- books marked as "finished" or "on hold" should be considered the same as 100% and 0% respectively
+                    -- books marked as "finished" should be considered the same as 100%
                     if summary and summary.status == "complete" then
-                        item.percent_finished = 1
-                        return
-                    elseif summary and summary.status == "abandoned" then
-                        item.percent_finished = 0
+                        item.percent_finished = 1.0
                         return
                     end
+
                     percent_finished = doc_settings:readSetting("percent_finished")
                 end
                 -- smooth 2 decimal points (0.00) instead of 16 decimal numbers
