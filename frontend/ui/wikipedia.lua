@@ -800,14 +800,18 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
     logger.dbg("Images found in html:", images)
 
     -- See what to do with images
-    local include_images = false
-    local use_img_2x = false
+    local include_images = G_reader_settings:readSetting("wikipedia_epub_include_images")
+    local use_img_2x = G_reader_settings:readSetting("wikipedia_epub_highres_images")
     if with_images then
         -- If no UI (Trapper:wrap() not called), UI:confirm() will answer true
         if #images > 0 then
-            include_images = UI:confirm(T(_("This article contains %1 images.\nWould you like to download and include them in the generated EPUB file?"), #images), _("Don't include"), _("Include"))
+            if include_images == nil then
+                include_images = UI:confirm(T(_("This article contains %1 images.\nWould you like to download and include them in the generated EPUB file?"), #images), _("Don't include"), _("Include"))
+            end
             if include_images then
-                use_img_2x = UI:confirm(_("Would you like to use slightly higher quality images? This will result in a bigger file size."), _("Standard quality"), _("Higher quality"))
+                if use_img_2x == nil then
+                    use_img_2x = UI:confirm(_("Would you like to use slightly higher quality images? This will result in a bigger file size."), _("Standard quality"), _("Higher quality"))
+                end
             end
         else
             UI:info(_("This article does not contain any images."))
