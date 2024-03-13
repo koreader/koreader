@@ -316,7 +316,6 @@ function ReaderToc:validateAndFixToc()
 end
 
 function ReaderToc:completeTocWithChapterLengths()
-    logger.warn("ReaderToc:completeTocWithChapterLengths")
     local toc = self.toc
     local first = 1
     local last = #toc
@@ -331,7 +330,7 @@ function ReaderToc:completeTocWithChapterLengths()
         for j=#prev_item_by_level, depth, -1 do
             local prev_item = prev_item_by_level[j]
             if prev_item then
-                prev_item.length = page - prev_item.page
+                prev_item.chapter_length = page - prev_item.page
             end
             prev_item_by_level[j] = nil
         end
@@ -342,7 +341,7 @@ function ReaderToc:completeTocWithChapterLengths()
     for j=#prev_item_by_level, 0, -1 do
         local prev_item = prev_item_by_level[j]
         if prev_item then
-            prev_item.length = page - prev_item.page
+            prev_item.chapter_length = page - prev_item.page
         end
     end
 end
@@ -718,7 +717,7 @@ function ReaderToc:onShowToc()
             v.indent = toc_indent * (v.depth-1)
             v.text = self:cleanUpTocTitle(v.title, true)
             if items_show_chapter_length then
-                v.text = v.text .. T("  (%1)", v.length)
+                v.text = v.text .. T("  (%1)", v.chapter_length)
             end
             v.bidi_wrap_func = BD.auto
             v.mandatory = v.page
