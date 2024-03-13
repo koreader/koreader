@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
+local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CssTweaks = require("ui/data/css_tweaks")
@@ -783,13 +784,125 @@ local BOOK_TWEAK_INPUT_HINT = T([[
 %2]], _("You can add CSS snippets which will be applied only to this book."), BOOK_TWEAK_SAMPLE_CSS)
 
 local CSS_SUGGESTIONS = {
-    { "-cr-hint: footnote-inpage;", _("When set on a block element containing the target id of a href, this block element will be shown as an in-page footnote.")},
-    { "-cr-hint: non-linear-combining;", _("Can be set on some specific DocFragments (ie. DocFragment[id*=16]) to ignore them in the linear pages flow.")},
-    { "-cr-hint: toc-level1;", _("When set on an element, its text can be used to build the alternative table of contents.")},
-    { "display: run-in !important;", _("When set on a block element, this element content will be inlined with the next block element.")},
-    { "font-size: 1rem !important;", _("1rem will enforce your main font size.")},
-    { "hyphens: none !important;", _("Disables hyphenation inside the targeted elements.")},
-    { "text-indent: 1.2em !important;", _("1.2em is our default text indentation.")},
+    { _("Long-press for info ⓘ"), _([[
+This popup menu provides a quick CSS cheat sheet, showing common selector syntax and classic CSS properties.
+It also shows some KOReader-specific non-standard CSS features, that can be useful with e-books.
+
+Most of these CSS bits are used by our categorized Style tweaks in the top menu: look there and long-press on a style tweak to see its CSS code and a description of what it does.
+If these are not enough to trigger what you want, you may need to adapt them: tap on their CSS code to copy it to the clipboard. You can then paste it here and edit it.
+
+Long-press on any item in this popup to get more information on what it does and what it can help solving.
+
+Tap on the item to insert it: you can then edit it and combine it with others.]]), true },
+
+    { _("Matching elements"), {
+        { "p.className", _([[
+p.className matches a <p> with class='className'.
+
+*.className matches any element with class='className'.
+
+p:not([class]) matches a <p> without any class= attribute.]])},
+        { "aside > p", _([[
+aside > p matches a <p> children of an <aside> element.
+
+aside p (without any intermediate symbol) matches a <p> descendant of an <aside> element.]])},
+        { "p + img", _([[
+p + img matches a <img> if its immediate previous sibling is a <p>.
+
+p ~ img matches a <img> if any of its previous siblings is a <p>.]])},
+
+        { "p[name='what']", _([[
+[name="what"] matches if the element has the attribute 'name' and its value is exactly 'what'.
+
+[name] matches if the attribute 'name' is present.
+
+[name~="what"] matches if the value of the attribute 'name' contains 'what' as a word (among other words separated by spaces).]])},
+
+        { "p[name*='what' i]", _([[
+[name*="what" i] matches any element having the attribute 'name' with a value that contains 'what', case insensitive.
+
+[name^="what"] matches if the attribute value starts with 'what'.
+
+[name$="what"] matches if the attribute value ends with 'what'.]])},
+
+        { "p[_='what']", _([[
+Similar in syntax to attribute matching, but matches the inner text of an element.
+
+p[_="what"] matches any <p> whose text is exactly 'what'.
+
+p[_] matches any non-empty <p>.
+
+p:not([_]) matches any empty <p>.
+
+p[_~="what"] matches any <p> that contains the word 'what'.]])},
+
+        { "p[_*='what' i]", _([[
+Similar in syntax to attribute matching, but matches the inner text of an element.
+
+p[_*="what" i] matches any <p> that contains 'what', case insensitive.
+
+p[_^="what"] matches any <p> whose text starts with 'what'.
+(This can be used to match "Act" or "Scene", or character names in plays, and make them stand out.)
+
+p[_$="what"] matches any <p> whose text ends with 'what'.]])},
+
+        { "p:first-child", _([[
+p:first-child matches a <p> that is the first child of its parent.
+
+p:last-child matches a <p> that is the last child of its parent.
+
+p:nth-child(odd) matches any other <p> in a series of sibling <p>.]])},
+
+        { "Tip: use View HTML ⓘ", _([[
+On a book page, select some text spanning around (before and after) the element you are interested in, and use 'View HTML'.
+In the HTML viewer, long press on tags or text to get a list of selectors matching the element: tap on one of them to copy it to the clipboard.
+You can then paste it here with long-press in the text box.]]), true},
+
+    }},
+
+    { _("Common classic properties"), {
+        { "font-size: 1rem !important;", _("1rem will enforce your main font size.")},
+        { "font-weight: normal !important;", _("Remove bold. Use 'bold' to get bold.")},
+        { "hyphens: none !important;", _("Disables hyphenation inside the targeted elements.")},
+        { "text-indent: 1.2em !important;", _("1.2em is our default text indentation.")},
+        { "break-before: always !important;", _("Start a new page with this element. Use 'avoid' to avoid a new page.")},
+        { "color: black !important;", _("Force text to be black.")},
+        { "background: transparent !important;", _("Remove any background color.")},
+        { "max-width: 50vw !important;", _("Limit an element width to 50% of your screen width (use 'max-height: 50vh' for 50% of the screen height). Can be useful with <img> to limit their size.")},
+    }},
+
+    { _("Private CSS properties"), {
+        { "-cr-hint: footnote-inpage;", _("When set on a block element containing the target id of a href, this block element will be shown as an in-page footnote.")},
+        { "-cr-hint: non-linear;", _("Can be set on some specific DocFragments (e.g. DocFragment[id$=_16]) to ignore them in the linear pages flow.")},
+        { "-cr-hint: non-linear-combining;", _("Can be set on contiguous footnote blocks to ignore them in the linear pages flow.")},
+        { "-cr-hint: toc-level1;", _("When set on an element, its text can be used to build the alternative table of contents. toc-level2 to toc-level6 can be used for nested chapters.")},
+        { "-cr-hint: toc-ignore;", _("When set on an element, it will be ignored when building the alternative table of contents.")},
+        { "-cr-hint: footnote;", _("Can be set on target of links (<div id='..'>) to have their link trigger as footnote popup, in case KOReader wrongly detect this target is not a footnote.")},
+        { "-cr-hint: noteref;", _("Can be set on links (<a href='#..'>) to have them trigger as footnote popups, in case KOReader wrongly detect the links is not to a footnote.")},
+        { "-cr-hint: noteref-ignore;", _([[
+Can be set on links (<a href='#..'>) to have them NOT trigger footnote popups and in-page footnote.
+If some DocFragment presents an index of names with cross references, resulting in in-page footnotes taking half of these pages, you can avoid this with:
+DocFragment[id$=_16] a { -cr-hint: noteref-ignore }]])},
+    }},
+
+    { _("Useful 'content:' values"), {
+        { _("Caution ⚠"), _([[
+Be careful with these: stick them to a proper discriminating selector, like:
+
+span.specificClassName
+
+p[_*="keyword" i]
+
+If used as-is, they will act on ALL elements!]]), true},
+        { "::before {content: ' '}", _("Insert a visible space before an element.")},
+        { "::before {content: '\\A0 '}", _("Insert a visible non-breakable space before an element, so it sticks to what's before.")},
+        { "::before {content: '\\2060'}", _("U+2060 WORD JOINER may act as a glue (like an invisible non-breakable space) before an element, so it sticks to what's before.")},
+        { "::before {content: '\\200B'}", _("U+200B ZERO WIDTH SPACE may allow a linebreak before an element, in case the absence of any space prevents that.")},
+        { "::before {content: attr(title)}", _("Insert the value of the attribute 'title' at start of an element content.")},
+        { "::before {content: '▶ '}", _("Prepend a visible marker.")},
+        { "::before {content: '● '}", _("Prepend a visible marker.")},
+        { "::before {content: '█ '}", _("Prepend a visible marker.")},
+    }},
 }
 
 function ReaderStyleTweak:editBookTweak(touchmenu_instance)
@@ -869,19 +982,89 @@ function ReaderStyleTweak:editBookTweak(touchmenu_instance)
                     local suggestions_popup_widget
                     local buttons = {}
                     for _, suggestion in ipairs(CSS_SUGGESTIONS) do
+                        local title = suggestion[1]
+                        local is_submenu, submenu_items, description
+                        if type(suggestion[2]) == "table" then
+                            is_submenu = true
+                            submenu_items = suggestion[2]
+                        else
+                            description = suggestion[2]
+                        end
+                        local is_info_only = suggestion[3]
+                        local text
+                        if is_submenu then -- add the same arrow we use for top menu submenus
+                            text = require("ui/widget/menu").getMenuText({text=title, sub_item_table=true})
+                        elseif is_info_only then
+                            text = title
+                        else
+                            text = BD.ltr(title) -- CSS code, keep it LTR
+                        end
                         table.insert(buttons, {{
-                            text = suggestion[1],
+                            text = text,
+                            id = title,
                             align = "left",
                             callback = function()
-                                UIManager:close(suggestions_popup_widget)
-                                editor._input_widget:addChars(suggestion[1])
+                                if is_info_only then
+                                    -- No CSS bit to insert, show description also on tap
+                                    UIManager:show(InfoMessage:new{ text = description })
+                                    return
+                                end
+                                if not is_submenu then -- insert as-is on tap
+                                    UIManager:close(suggestions_popup_widget)
+                                    editor._input_widget:addChars(title)
+                                else
+                                    local sub_suggestions_popup_widget
+                                    local sub_buttons = {}
+                                    for _, sub_suggestion in ipairs(submenu_items) do
+                                        -- (No 2nd level submenu needed for now)
+                                        local sub_title = sub_suggestion[1]
+                                        local sub_description = sub_suggestion[2]
+                                        local sub_is_info_only = sub_suggestion[3]
+                                        local sub_text = sub_is_info_only and sub_title or BD.ltr(sub_title)
+                                        table.insert(sub_buttons, {{
+                                            text = sub_text,
+                                            align = "left",
+                                            callback = function()
+                                                if sub_is_info_only then
+                                                    UIManager:show(InfoMessage:new{ text = sub_description })
+                                                    return
+                                                end
+                                                UIManager:close(sub_suggestions_popup_widget)
+                                                UIManager:close(suggestions_popup_widget)
+                                                editor._input_widget:addChars(sub_title)
+                                            end,
+                                            hold_callback = sub_description and function()
+                                                UIManager:show(InfoMessage:new{ text = sub_description })
+                                            end,
+                                        }})
+                                    end
+                                    local anchor_func = function()
+                                        local d = suggestions_popup_widget:getButtonById(title).dimen:copy()
+                                        if BD.mirroredUILayout() then
+                                            d.x = d.x - d.w + Size.padding.default
+                                        else
+                                            d.x = d.x + d.w - Size.padding.default
+                                        end
+                                        -- As we don't know if we will pop up or down, anchor it on the middle of the item
+                                        d.y = d.y + math.floor(d.h / 2)
+                                        d.h = 1
+                                        return d, true
+                                    end
+                                    sub_suggestions_popup_widget = ButtonDialog:new{
+                                        modal = true, -- needed when keyboard is shown
+                                        width = math.floor(Screen:getWidth() * 0.9), -- max width, will get smaller
+                                        shrink_unneeded_width = true,
+                                        buttons = sub_buttons,
+                                        anchor = anchor_func,
+                                    }
+                                    UIManager:show(sub_suggestions_popup_widget)
+                                end
                             end,
-                            hold_callback = suggestion[2] and function()
-                                UIManager:show(InfoMessage:new{ text = suggestion[2] })
+                            hold_callback = description and function()
+                                UIManager:show(InfoMessage:new{ text = description })
                             end or nil
                         }})
                     end
-                    local ButtonDialog = require("ui/widget/buttondialog")
                     suggestions_popup_widget = ButtonDialog:new{
                         modal = true, -- needed when keyboard is shown
                         width = math.floor(Screen:getWidth() * 0.9), -- max width, will get smaller
