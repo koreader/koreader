@@ -99,6 +99,7 @@ function Wallabag:init()
         self.articles_per_sync = self.wb_settings.data.wallabag.articles_per_sync
     end
     self.remove_finished_from_history = self.wb_settings.data.wallabag.remove_finished_from_history or false
+    self.download_original_document = self.wb_settings.data.wallabag.download_original_document
     self.download_queue = self.wb_settings.data.wallabag.download_queue or {}
 
     -- workaround for dateparser only available if newsdownloader is active
@@ -341,6 +342,18 @@ function Wallabag:addToMainMenu(menu_items)
                         separator = true,
                     },
                     {
+                        text = _("Prefer original non-HTML document"),
+                        keep_menu_open = true,
+                        checked_func = function()
+                            return self.download_original_document
+                        end,
+                        callback = function()
+                            self.download_original_document = not self.download_original_document
+                            self:saveSettings()
+                        end,
+                        separator = true,
+                    },
+                    {
                         text = _("Help"),
                         keep_menu_open = true,
                         callback = function()
@@ -551,17 +564,21 @@ function Wallabag:download(article)
     local title = util.getSafeFilename(article.title, self.directory, 230, 0)
     local file_ext = ".epub"
     local item_url = "/api/entries/" .. article.id .. "/export.epub"
+    -- The mimetype is actually an HTTP Content-Type, so it can include a semicolon with stuff after it.
+    -- Just in case we also trim it, though that shouldn't be necessary.
+    -- A function represents `null` in our JSON.decode, because `nil` would just disappear.
+    -- We can simplify that to not a string.
+    local mimetype = type(article.mimetype) == string and util.trim(article.mimetype:match("^[^;]*")) or nil
 
     -- If the article links to a supported file, we will download it directly.
     -- All webpages are HTML. Ignore them since we want the Wallabag EPUB instead!
-    if type(article.mimetype) == "string" and article.mimetype:find("^text/html") then
-        logger.dbg("Wallabag: ignoring EPUB in favor of mimetype: ", article.mimetype)
-        if DocumentRegistry:hasProvider(nil, article.mimetype) then
+    if self.download_original_document then
+        if mimetype ~= "text/html" and DocumentRegistry:hasProvider(nil, mimetype) then
+            logger.dbg("Wallabag: ignoring EPUB in favor of mimetype: ", mimetype)
             file_ext = "."..DocumentRegistry:mimeToExt(article.mimetype)
             item_url = article.url
-        -- A function represents `null` in our JSON.decode, because `nil` would just disappear.
-        -- In that case, fall back to the file extension.
-        elseif type(article.mimetype) == "function" and DocumentRegistry:hasProvider(article.url) then
+        elseif mimetype == nil and DocumentRegistry:hasProvider(article.url) then
+            logger.dbg("Wallabag: ignoring EPUB in favor of original: ", article.url)
             file_ext = "."..util.getFileNameSuffix(article.url)
             item_url = article.url
         end
@@ -1140,6 +1157,7 @@ function Wallabag:saveSettings()
         send_review_as_tags   = self.send_review_as_tags,
         remove_finished_from_history = self.remove_finished_from_history,
         remove_read_from_history = self.remove_read_from_history,
+        download_original_document = self.download_original_document,
         download_queue        = self.download_queue,
     }
     self.wb_settings:saveSetting("wallabag", tempsettings)
