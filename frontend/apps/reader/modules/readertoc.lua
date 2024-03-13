@@ -192,7 +192,6 @@ function ReaderToc:validateAndFixToc()
     local cur_page = 0
     local max_depth = 0
     local cur_seq_by_level = {}
-    local prev_item_by_level = {}
     for i = first, last do
         local item = toc[i]
         local page = item.page
@@ -212,24 +211,6 @@ function ReaderToc:validateAndFixToc()
         local seq = (cur_seq_by_level[depth] or 0) + 1
         item.seq_in_level = seq
         cur_seq_by_level[depth] = seq
-        -- Also use this loop to compute chapter lengths
-        for j=#prev_item_by_level, depth, -1 do
-            local prev_item = prev_item_by_level[j]
-            if prev_item then
-                prev_item.length = page - prev_item.page
-            end
-            prev_item_by_level[j] = nil
-        end
-        prev_item_by_level[depth] = item
-        if i == last then -- set the length of the last ones
-            local page = self.ui.document:getPageCount()
-            for j=#prev_item_by_level, 0, -1 do
-                local prev_item = prev_item_by_level[j]
-                if prev_item then
-                    prev_item.length = page - prev_item.page
-                end
-            end
-        end
     end
     if not has_bogus then -- no TOC items, or all are valid
         logger.dbg("validateAndFixToc(): TOC is fine")
@@ -332,7 +313,16 @@ function ReaderToc:validateAndFixToc()
     end
     logger.info(string.format("TOC had %d bogus page numbers: fixed %d items to keep them ordered.", nb_bogus, nb_fixed_pages))
     self.toc_depth = max_depth
-    -- Recompute chapter lengths now that pages are fixed
+end
+
+function ReaderToc:completeTocWithChapterLengths()
+    logger.warn("ReaderToc:completeTocWithChapterLengths")
+    local toc = self.toc
+    local first = 1
+    local last = #toc
+    if last == 0 then
+        return
+    end
     local prev_item_by_level = {}
     for i = first, last do
         local item = toc[i]
@@ -346,14 +336,13 @@ function ReaderToc:validateAndFixToc()
             prev_item_by_level[j] = nil
         end
         prev_item_by_level[depth] = item
-        if i == last then -- set the length of the last ones
-            local page = self.ui.document:getPageCount()
-            for j=#prev_item_by_level, 0, -1 do
-                local prev_item = prev_item_by_level[j]
-                if prev_item then
-                    prev_item.length = page - prev_item.page
-                end
-            end
+    end
+    -- Set the length of the last ones
+    local page = self.ui.document:getPageCount()
+    for j=#prev_item_by_level, 0, -1 do
+        local prev_item = prev_item_by_level[j]
+        if prev_item then
+            prev_item.length = page - prev_item.page
         end
     end
 end
@@ -712,6 +701,9 @@ function ReaderToc:onShowToc()
     -- build menu items
     if #self.toc > 0 and not self.toc_menu_items_built then
         self.toc_menu_items_built = true
+        if items_show_chapter_length then
+            self:completeTocWithChapterLengths()
+        end
         -- Have the width of 4 spaces be the unit of indentation
         local tmp = TextWidget:new{
             text = "    ",
