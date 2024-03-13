@@ -148,13 +148,7 @@ function Screensaver:expandSpecial(message, fallback)
             time_left_chapter = self:_calcAverageTimeForPages(ui.toc:getChapterPagesLeft(currentpage) or doc:getTotalPagesLeft(currentpage))
             time_left_document = self:_calcAverageTimeForPages(doc:getTotalPagesLeft(currentpage))
         end
-        if currentpage == 1 then
-            percent = 0
-        elseif ((currentpage / totalpages) * 100) < 1 then
-            percent = 1
-        else
-            percent = math.floor((currentpage * 100) / totalpages)
-        end
+        percent = math.min( Math.round((currentpage * 100) / totalpages), 99)
         props = ui.doc_props
     elseif DocSettings:hasSidecarFile(lastfile) then
         -- If there's no ReaderUI instance, but the file has sidecar data, use that
@@ -162,7 +156,7 @@ function Screensaver:expandSpecial(message, fallback)
         totalpages = doc_settings:readSetting("doc_pages") or totalpages
         percent = doc_settings:readSetting("percent_finished") or percent
         currentpage = Math.round(percent * totalpages)
-        percent = math.floor(percent * 100)
+        percent = math.min( Math.round(percent * 100), 99)
         props = FileManagerBookInfo.extendProps(doc_settings:readSetting("doc_props"), lastfile)
         -- Unable to set time_left_chapter and time_left_document without ReaderUI, so leave N/A
     end
