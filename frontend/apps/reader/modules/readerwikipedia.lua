@@ -113,6 +113,17 @@ function ReaderWikipedia:addToMainMenu(menu_items)
             })
         end,
     }
+    local function genChoiceMenuEntry(title, setting, value, default)
+        return {
+            text = title,
+            checked_func = function()
+                return G_reader_settings:readSetting(setting, default) == value
+            end,
+            callback = function()
+                G_reader_settings:saveSetting(setting, value)
+            end,
+        }
+    end
     menu_items.wikipedia_settings = {
         text = _("Wikipedia settings"),
         sub_item_table = {
@@ -170,6 +181,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                     UIManager:show(wikilang_input)
                     wikilang_input:onShowKeyboard()
                 end,
+                separator = true,
             },
             { -- setting used by dictquicklookup
                 text = _("Set Wikipedia 'Save as EPUB' folder"),
@@ -199,6 +211,41 @@ You can choose an existing folder, or use a default folder named "Wikipedia" in 
                 callback = function()
                     G_reader_settings:flipNilOrFalse("wikipedia_save_in_book_dir")
                 end,
+            },
+            { -- setting used in wikipedia.lua
+                text_func = function()
+                    local include_images = _("ask")
+                    if G_reader_settings:readSetting("wikipedia_epub_include_images") == true then
+                        include_images = _("always")
+                    elseif G_reader_settings:readSetting("wikipedia_epub_include_images") == false then
+                        include_images = _("never")
+                    end
+                    return T(_("Include images in EPUB: %1"), include_images)
+                end,
+                sub_item_table = {
+                    genChoiceMenuEntry(_("Ask"), "wikipedia_epub_include_images", nil),
+                    genChoiceMenuEntry(_("Include images"), "wikipedia_epub_include_images", true),
+                    genChoiceMenuEntry(_("Don't include images"), "wikipedia_epub_include_images", false),
+                },
+            },
+            { -- setting used in wikipedia.lua
+                text_func = function()
+                    local images_quality = _("ask")
+                    if G_reader_settings:readSetting("wikipedia_epub_highres_images") == true then
+                        images_quality = _("higher")
+                    elseif G_reader_settings:readSetting("wikipedia_epub_highres_images") == false then
+                        images_quality = _("standard")
+                    end
+                    return T(_("Images quality in EPUB: %1"), images_quality)
+                end,
+                enabled_func = function()
+                    return G_reader_settings:readSetting("wikipedia_epub_include_images") ~= false
+                end,
+                sub_item_table = {
+                    genChoiceMenuEntry(_("Ask"), "wikipedia_epub_highres_images", nil),
+                    genChoiceMenuEntry(_("Standard quality"), "wikipedia_epub_highres_images", false),
+                    genChoiceMenuEntry(_("Higher quality"), "wikipedia_epub_highres_images", true),
+                },
                 separator = true,
             },
             {
