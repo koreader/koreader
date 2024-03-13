@@ -342,7 +342,7 @@ function Wallabag:addToMainMenu(menu_items)
                         separator = true,
                     },
                     {
-                        text = _("Download original document if supported and not HTML"),
+                        text = _("Prefer original non-HTML document"),
                         keep_menu_open = true,
                         checked_func = function()
                             return self.download_original_document
