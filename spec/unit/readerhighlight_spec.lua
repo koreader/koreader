@@ -231,6 +231,7 @@ describe("Readerhighlight module", function()
                 document = DocumentRegistry:openDocument(sample_pdf),
                 _testsuite = true,
             }
+            readerui.document.configurable.trim_page = 3
             readerui:handleEvent(Event:new("SetScrollMode", true))
         end)
         teardown(function()
