@@ -44,7 +44,7 @@ return {
                 
         
             {
-                text = _("Fill-in Borders"),
+                text = _("Border Fill"),
                 sub_item_table = {
                     genMenuItem(_("Black"), "screensaver_img_background", "black"),
                     genMenuItem(_("White"), "screensaver_img_background", "white"),
@@ -54,7 +54,7 @@ return {
                             text_func = function()
                                 local percentage = G_reader_settings:readSetting("screensaver_stretch_limit_percentage")
                                 if G_reader_settings:isTrue("screensaver_stretch_images") and percentage then
-                                    return T(_("Stretch to fit screen (with limit: %1 %)"), percentage)
+                                    return T(_("Stretch to Fit Screen (with limit: %1 %)"), percentage)
                                 end
                                 return _("Stretch Cover to Fit Screen")
                             end,
@@ -74,7 +74,7 @@ return {
                     genMenuItem(_("1 second"), "screensaver_delay", "1"),
                     genMenuItem(_("3 seconds"), "screensaver_delay", "3"),
                     genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
-                    genMenuItem(_("Unlock with tap"), "screensaver_delay", "tap"),
+                    genMenuItem(_("Unlock with a tap"), "screensaver_delay", "tap"),
                     genMenuItem(_("Unlock with 'Exit Screensaver' gesture"), "screensaver_delay", "gesture"),
                 },
             },
@@ -102,7 +102,9 @@ return {
                 end,
             },
             {
-                text = _("Fill-in Background"), 
+                text = _("Background Fill"),
+                help_text = _([[This option will only become available, if you have selected 'Lock the screen in current state' 
+                    as screensaver and have 'Lock screen message' on.]]),
                 sub_item_table = {
                     genMenuItem(_("Black"), "screensaver_msg_background", "black"),
                     genMenuItem(_("White"), "screensaver_msg_background", "white"),
