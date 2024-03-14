@@ -285,7 +285,7 @@ function ReaderMenu:setUpdateItemTable()
         end
         table.insert(screensaver_sub_item_table, ss_book_settings)
         self.menu_items.screensaver = {
-            text = _("Lock Screen"),
+            text = _("Lock screen"),
             sub_item_table = screensaver_sub_item_table,
         }
     end
