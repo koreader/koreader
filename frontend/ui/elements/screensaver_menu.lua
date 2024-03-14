@@ -35,7 +35,7 @@ return {
             
             genMenuItem(_("Show book cover on lock screen"), "screensaver_type", "cover", hasLastFile),
             genMenuItem(_("Show custom image on lock screen"), "screensaver_type", "image_file"),
-            genMenuItem(_("Use slide show on lock screen"), "screensaver_type", "random_image"),
+            genMenuItem(_("Shuffle images on lock screen"), "screensaver_type", "random_image"),
             genMenuItem(_("Show document cover on lock screen"), "screensaver_type", "document_cover"),
             genMenuItem(_("Show reading progress on lock screen"), "screensaver_type", "readingprogress", isReaderProgressEnabled),
             genMenuItem(_("Show book status on lock screen"), "screensaver_type", "bookstatus", hasLastFile),
@@ -142,7 +142,7 @@ return {
                 end,
             },
             {
-                text = _("Select slide show folder"),
+                text = _("Select shuffle folder"),
                 keep_menu_open = true,
                 callback = function()
                     Screensaver:chooseFolder()
