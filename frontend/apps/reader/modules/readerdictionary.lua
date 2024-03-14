@@ -1114,15 +1114,24 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
         --logger.dbg(headers)
         file_size = headers and headers["content-length"]
 
-        UIManager:show(ConfirmBox:new{
-            text =  T(_("Dictionary filesize is %1 (%2 bytes). Continue with download?"), util.getFriendlySize(file_size), util.getFormattedSize(file_size)),
-            ok_text =  _("Download"),
-            ok_callback = function()
-                -- call ourselves with continue = true
-                self:downloadDictionary(dict, download_location, true)
-            end,
-        })
-        return
+        if file_size then
+            UIManager:show(ConfirmBox:new{
+                text =  T(_("Dictionary filesize is %1 (%2 bytes). Continue with download?"), util.getFriendlySize(file_size), util.getFormattedSize(file_size)),
+                ok_text =  _("Download"),
+                ok_callback = function()
+                    -- call ourselves with continue = true
+                    self:downloadDictionary(dict, download_location, true)
+                end,
+            })
+            return
+        else
+            logger.dbg("ReaderDictionary: Request failed; response headers:", headers)
+            UIManager:show(InfoMessage:new{
+                text = _("Failed to fetch dictionary. Are you online?"),
+                --timeout = 3,
+            })
+            return false
+        end
     else
         UIManager:nextTick(function()
             UIManager:show(InfoMessage:new{
