@@ -452,7 +452,7 @@ To:
 
     if Device:supportsScreensaver() then
         self.menu_items.screensaver = {
-            text = _("Lock Screen"),
+            text = _("Lock screen"),
             sub_item_table = require("ui/elements/screensaver_menu"),
         }
     end
