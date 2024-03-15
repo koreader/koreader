@@ -156,6 +156,7 @@ end
 
 --- Parse and export highlights from the currently opened document.
 function Exporter:exportCurrentNotes()
+    self.ui.highlight:updateHighlightPageNumbers()
     local clippings = self:getDocumentClippings()
     self:exportClippings(clippings)
 end
