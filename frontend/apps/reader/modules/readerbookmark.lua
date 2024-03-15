@@ -1158,8 +1158,10 @@ function ReaderBookmark:setHighlightedText(item, text)
     end
     -- highlight
     local hl = self.ui.highlight:getHighlightByDatetime(item.datetime)
-    hl.text = text
-    hl.edited = edited
+    if hl then -- skip orphaned bookmark
+        hl.text = text
+        hl.edited = edited
+    end
     -- bookmark
     local index = self:getBookmarkIndexBinarySearch(item) or self:getBookmarkIndexFullScan(item)
     local bm = self.bookmarks[index]
