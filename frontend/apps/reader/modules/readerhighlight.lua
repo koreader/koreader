@@ -2217,6 +2217,31 @@ function ReaderHighlight:onUpdateHoldPanRate()
     self:setupTouchZones()
 end
 
+function ReaderHighlight:updateHighlightPageNumbers()
+    local bookmarks = self.ui.bookmark.bookmarks
+    local highlights = {}
+    for i = #bookmarks, 1, -1 do
+        local bookmark = bookmarks[i]
+        if bookmark.highlighted then
+            local highlight = self:getHighlightByDatetime(bookmark.datetime)
+            if highlight then
+                local pageno = self.ui.paging and bookmark.page or self.document:getPageFromXPointer(bookmark.page)
+                if highlights[pageno] == nil then
+                    highlights[pageno] = {}
+                end
+                table.insert(highlights[pageno], highlight)
+            else -- orphan
+                table.remove(bookmarks, i)
+            end
+        end
+    end
+    self.view.highlight.saved = highlights
+end
+
+function ReaderHighlight:onCloseDocument()
+    self:updateHighlightPageNumbers()
+end
+
 function ReaderHighlight:onSaveSettings()
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
     self.ui.doc_settings:saveSetting("panel_zoom_enabled", self.panel_zoom_enabled)
