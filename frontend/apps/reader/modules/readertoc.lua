@@ -717,7 +717,9 @@ function ReaderToc:onShowToc()
             v.indent = toc_indent * (v.depth-1)
             v.text = self:cleanUpTocTitle(v.title, true)
             if items_show_chapter_length then
-                v.text = v.text .. T("  (%1)", v.chapter_length)
+                v.post_text = T("(%1)", v.chapter_length)
+            else
+                v.post_text = nil
             end
             v.bidi_wrap_func = BD.auto
             v.mandatory = v.page
