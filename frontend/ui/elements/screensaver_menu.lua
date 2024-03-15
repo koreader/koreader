@@ -44,7 +44,7 @@ return {
                 
         
             {
-                text = _("Border Fill"),
+                text = _("Border fill"),
                 sub_item_table = {
                     genMenuItem(_("Black"), "screensaver_img_background", "black"),
                     genMenuItem(_("White"), "screensaver_img_background", "white"),
@@ -54,9 +54,9 @@ return {
                             text_func = function()
                                 local percentage = G_reader_settings:readSetting("screensaver_stretch_limit_percentage")
                                 if G_reader_settings:isTrue("screensaver_stretch_images") and percentage then
-                                    return T(_("Stretch to Fit Screen (with limit: %1 %)"), percentage)
+                                    return T(_("Stretch to fit screen (with limit: %1 %)"), percentage)
                                 end
-                                return _("Stretch Cover to Fit Screen")
+                                return _("Stretch cover to fit screen")
                             end,
                             checked_func = function()
                                 return G_reader_settings:isTrue("screensaver_stretch_images")
@@ -68,24 +68,24 @@ return {
                 },
             },
             {
-                text = _("Unlock Screen Delay"),
+                text = _("Unlock screen delay"),
                 sub_item_table = {
                     genMenuItem(_("Never"), "screensaver_delay", "disable"),
                     genMenuItem(_("1 second"), "screensaver_delay", "1"),
                     genMenuItem(_("3 seconds"), "screensaver_delay", "3"),
                     genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
                     genMenuItem(_("Unlock with a tap"), "screensaver_delay", "tap"),
-                    genMenuItem(_("Unlock with 'Exit Screensaver' gesture"), "screensaver_delay", "gesture"),
+                    genMenuItem(_("Unlock with 'exit Screensaver' gesture"), "screensaver_delay", "gesture"),
                 },
             },
         },
     },
 
     {
-        text = _("Lock Screen Message"),
+        text = _("Lock screen message"),
         sub_item_table = {
             {
-                text = _("Add Custom Message to Lock Screen"),
+                text = _("Add custom message to lock screen"),
                 checked_func = function()
                     return G_reader_settings:isTrue("screensaver_show_message")
                 end,
@@ -95,14 +95,14 @@ return {
                 separator = true,
             },
             {
-            text = _("Edit Lock Screen Message"),
+            text = _("Edit lock screen message"),
             keep_menu_open = true,
                 callback = function()
                     Screensaver:setMessage()
                 end,
             },
             {
-                text = _("Background Fill"),
+                text = _("Background fill"),
                 help_text = _([[This option will only become available, if you have selected 'Lock the screen in current state' 
                     as screensaver and have 'Lock screen message' on.]]),
                 sub_item_table = {
@@ -112,7 +112,7 @@ return {
                 },
             },
             {
-                text = _("Message Position"),
+                text = _("Message position"),
                 sub_item_table = {
                     genMenuItem(_("Top"), "screensaver_message_position", "top"),
                     genMenuItem(_("Middle"), "screensaver_message_position", "middle"),
@@ -120,7 +120,7 @@ return {
                 },
             },
             {
-                text = _("Hide reboot/poweroff Message"),
+                text = _("Hide reboot/poweroff message"),
                 checked_func = function()
                     return G_reader_settings:isTrue("screensaver_hide_fallback_msg")
                 end,
@@ -132,10 +132,10 @@ return {
     },
 
     {
-        text = _("Custom Images"),
+        text = _("Custom images"),
         sub_item_table = {
             {
-                text = _("Select Custom Image"),
+                text = _("Select custom image"),
                 keep_menu_open = true,
                 callback = function()
                     Screensaver:chooseFile()
@@ -150,7 +150,7 @@ return {
             },
             
             {
-                text = _("Select Document Cover"),
+                text = _("Select document cover"),
                 keep_menu_open = true,
                 callback = function()
                     Screensaver:chooseFile(true)
