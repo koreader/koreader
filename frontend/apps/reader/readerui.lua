@@ -25,6 +25,7 @@ local Notification = require("ui/widget/notification")
 local PluginLoader = require("pluginloader")
 local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
 local ReaderBack = require("apps/reader/modules/readerback")
+local ReaderAnnotation = require("apps/reader/modules/readerannotation")
 local ReaderBookmark = require("apps/reader/modules/readerbookmark")
 local ReaderConfig = require("apps/reader/modules/readerconfig")
 local ReaderCoptListener = require("apps/reader/modules/readercoptlistener")
@@ -181,6 +182,12 @@ function ReaderUI:init()
         dialog = self.dialog,
         view = self.view,
         ui = self
+    })
+    self:registerModule("annotation", ReaderAnnotation:new{
+        dialog = self.dialog,
+        view = self.view,
+        ui = self,
+        document = self.document,
     })
     -- reader goto controller
     -- "goto" being a dirty keyword in Lua?
@@ -584,6 +591,7 @@ end
 function ReaderUI:showReader(file, provider, seamless)
     logger.dbg("show reader ui")
 
+    file = ffiUtil.realpath(file)
     if lfs.attributes(file, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
              text = T(_("File '%1' does not exist."), BD.filepath(file))
