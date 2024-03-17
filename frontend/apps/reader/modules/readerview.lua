@@ -913,40 +913,6 @@ function ReaderView:onReadSettings(config)
     self:resetLayout()
     local page_scroll = config:readSetting("kopt_page_scroll") or self.document.configurable.page_scroll
     self.page_scroll = page_scroll == 1 and true or false
-    self.highlight.saved = config:readSetting("highlight", {})
-    -- Highlight formats in crengine and mupdf are incompatible.
-    -- Backup highlights when the document is opened with incompatible engine.
-    local page, page_highlights
-    while true do -- remove empty tables for pages without highlights and get the first page with highlights
-        page, page_highlights = next(self.highlight.saved)
-        if not page or #page_highlights > 0 then
-            break -- we're done (there is none, or there is some usable)
-        else
-            self.highlight.saved[page] = nil -- clean it up while we're at it, and find another one
-        end
-    end
-    if page_highlights then
-        local highlight_type = type(page_highlights[1].pos0)
-        if self.ui.rolling and highlight_type == "table" then
-            config:saveSetting("highlight_paging", self.highlight.saved)
-            self.highlight.saved = config:readSetting("highlight_rolling", {})
-            config:saveSetting("highlight", self.highlight.saved)
-            config:delSetting("highlight_rolling")
-        elseif self.ui.paging and highlight_type == "string" then
-            config:saveSetting("highlight_rolling", self.highlight.saved)
-            self.highlight.saved = config:readSetting("highlight_paging", {})
-            config:saveSetting("highlight", self.highlight.saved)
-            config:delSetting("highlight_paging")
-        end
-    else
-        if self.ui.rolling and config:has("highlight_rolling") then
-            self.highlight.saved = config:readSetting("highlight_rolling")
-            config:delSetting("highlight_rolling")
-        elseif self.ui.paging and config:has("highlight_paging") then
-            self.highlight.saved = config:readSetting("highlight_paging")
-            config:delSetting("highlight_paging")
-        end
-    end
     self.inverse_reading_order = config:isTrue("inverse_reading_order") or G_reader_settings:isTrue("inverse_reading_order")
     self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or G_defaults:readSetting("DSHOWOVERLAP")
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
@@ -1106,7 +1072,6 @@ function ReaderView:onSaveSettings()
     if G_reader_settings:nilOrFalse("lock_rotation") then
         self.document.configurable.rotation_mode = Screen:getRotationMode() -- will be saved by ReaderConfig
     end
-    self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.page_overlap_enable)
     self.ui.doc_settings:saveSetting("page_overlap_style", self.page_overlap_style)
