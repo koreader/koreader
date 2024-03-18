@@ -12,6 +12,7 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, update_pageno)
         hl = {}
         if bm.highlighted then -- orphaned bookmark
             hl.drawer = self.view.highlight.saved_drawer
+            hl.color = self.view.highlight.saved_color
             if self.ui.paging then
                 if bm.pos0.page == bm.pos1.page then
                     hl.pboxes = self.document:getPageBoxesFromPositions(bm.page, bm.pos0, bm.pos1)
@@ -22,19 +23,20 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, update_pageno)
         end
     end
 
-    return { -- annotation structure
-        datetime    = bm.datetime,
-        drawer      = hl.drawer,
-        text        = bm.notes,
-        text_edited = hl.edited,
-        note        = bm.text,
-        chapter     = bm.chapter,
-        page        = bm.page,
-        pageno      = pageno,
-        pos0        = bm.pos0,
-        pos1        = bm.pos1,
-        pboxes      = hl.pboxes,
-        ext         = hl.ext,
+    return { -- annotation
+        datetime    = bm.datetime, -- creation time, not changeable
+        drawer      = hl.drawer,   -- highlight drawer
+        color       = hl.color,    -- highlight color
+        text        = bm.notes,    -- highlighted text, editable
+        text_edited = hl.edited,   -- true if highlighted text has been edited
+        note        = bm.text,     -- user's note, editable
+        chapter     = bm.chapter,  -- book chapter title
+        pageno      = pageno,      -- book page number
+        page        = bm.page,     -- highlight location, xPointer or number (pdf)
+        pos0        = bm.pos0,     -- highlight start position, xPointer or table (pdf)
+        pos1        = bm.pos1,     -- highlight end position, xPointer or table (pdf)
+        pboxes      = hl.pboxes,   -- pdf pboxes, used only and changeable by addMarkupAnnotation
+        ext         = hl.ext,      -- pdf multi-page highlight
     }
 end
 
@@ -55,6 +57,7 @@ function ReaderAnnotation.buildHighlight(an)
     return {
         datetime    = an.datetime,
         drawer      = an.drawer,
+        color       = an.color,
         text        = an.text,
         edited      = an.text_edited,
         chapter     = an.chapter,
