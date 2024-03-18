@@ -84,6 +84,21 @@ function ReaderAnnotation:getAnnotationsFromBookmarksHighlights(bookmarks, highl
     return annotations
 end
 
+function ReaderAnnotation:getBookmarksHighlightsFromAnnotations(annotations)
+    local bookmarks, highlights = {}, {}
+    for i = #annotations, 1, -1 do
+        local an = annotations[i]
+        table.insert(bookmarks, self.buildBookmark(an))
+        if an.drawer then
+            if highlights[an.pageno] == nil then
+                highlights[an.pageno] = {}
+            end
+            table.insert(highlights[an.pageno], self.buildHighlight(an))
+        end
+    end
+    return bookmarks, highlights
+end
+
 function ReaderAnnotation:onReadSettings(config)
     local bookmarks, highlights
     local annotations = config:readSetting("annotations")
@@ -91,11 +106,11 @@ function ReaderAnnotation:onReadSettings(config)
         local has_annotations = #annotations > 0
         local annotations_type = has_annotations and type(annotations[1].page)
         -- Annotation formats in crengine and mupdf are incompatible.
-        -- Backup annotations when the document is opened with incompatible engine.
-        if self.ui.rolling and annotations_type ~= "string" then
-            if has_annotations then
+        if self.ui.rolling and annotations_type ~= "string" then -- incompatible format loaded, or empty
+            if has_annotations then -- backup incompatible format if not empty
                 config:saveSetting("annotations_paging", annotations)
             end
+             -- load compatible format
             annotations = config:readSetting("annotations_rolling") or {}
             config:delSetting("annotations_rolling")
         elseif self.ui.paging and annotations_type ~= "number" then
@@ -105,43 +120,53 @@ function ReaderAnnotation:onReadSettings(config)
             annotations = config:readSetting("annotations_paging") or {}
             config:delSetting("annotations_paging")
         end
-        -- Build bookmarks/highlights
-        bookmarks, highlights = {}, {}
-        if #annotations > 0 then
-            local n = #annotations + 1
-            for i, an in ipairs(annotations) do
-                bookmarks[n - i] = self.buildBookmark(an)
-                if an.drawer then
-                    if highlights[an.pageno] == nil then
-                        highlights[an.pageno] = {}
-                    end
-                    table.insert(highlights[an.pageno], self.buildHighlight(an))
-                end
-            end
-        end
+        bookmarks, highlights = self:getBookmarksHighlightsFromAnnotations(annotations)
     else -- old bookmarks/highlights
         bookmarks = config:readSetting("bookmarks") or {}
         highlights = config:readSetting("highlight") or {}
         local has_bookmarks = #bookmarks > 0
         local bookmarks_type = has_bookmarks and type(bookmarks[1].page)
-        if self.ui.rolling and bookmarks_type ~= "string" then
-            if has_bookmarks then
-                annotations = self:getAnnotationsFromBookmarksHighlights(bookmarks, highlights)
-                config:saveSetting("annotations_paging", annotations)
+        if self.ui.rolling then
+            if bookmarks_type == "string" then -- compatible format loaded, check for incompatible old backup
+                if config:has("bookmarks_paging") then -- backup incompatible old backup
+                    local bookmarks_paging = config:readSetting("bookmarks_paging")
+                    local highlights_paging = config:readSetting("highlight_paging")
+                    local annotations_paging = self:getAnnotationsFromBookmarksHighlights(bookmarks_paging, highlights_paging)
+                    config:saveSetting("annotations_paging", annotations_paging)
+                    config:delSetting("bookmarks_paging")
+                    config:delSetting("highlight_paging")
+                end
+            else -- incompatible format loaded, or empty
+                if has_bookmarks then -- backup incompatible format if not empty
+                    annotations = self:getAnnotationsFromBookmarksHighlights(bookmarks, highlights)
+                    config:saveSetting("annotations_paging", annotations)
+                end
+                -- load compatible format
+                bookmarks = config:readSetting("bookmarks_rolling") or {}
+                highlights = config:readSetting("highlight_rolling") or {}
+                config:delSetting("bookmarks_rolling")
+                config:delSetting("highlight_rolling")
             end
-            bookmarks = config:readSetting("bookmarks_rolling") or {}
-            highlights = config:readSetting("highlight_rolling") or {}
-            config:delSetting("bookmarks_rolling")
-            config:delSetting("highlight_rolling")
-        elseif self.ui.paging and bookmarks_type ~= "number" then
-            if has_bookmarks then
-                annotations = self:getAnnotationsFromBookmarksHighlights(bookmarks, highlights)
-                config:saveSetting("annotations_rolling", annotations)
+        else
+            if bookmarks_type == "number" then
+                if config:has("bookmarks_rolling") then
+                    local bookmarks_rolling = config:readSetting("bookmarks_rolling")
+                    local highlights_rolling = config:readSetting("highlight_rolling")
+                    local annotations_rolling = self:getAnnotationsFromBookmarksHighlights(bookmarks_rolling, highlights_rolling)
+                    config:saveSetting("annotations_rolling", annotations_rolling)
+                    config:delSetting("bookmarks_rolling")
+                    config:delSetting("highlight_rolling")
+                end
+            else
+                if has_bookmarks then
+                    annotations = self:getAnnotationsFromBookmarksHighlights(bookmarks, highlights)
+                    config:saveSetting("annotations_rolling", annotations)
+                end
+                bookmarks = config:readSetting("bookmarks_paging") or {}
+                highlights = config:readSetting("highlight_paging") or {}
+                config:delSetting("bookmarks_paging")
+                config:delSetting("highlight_paging")
             end
-            bookmarks = config:readSetting("bookmarks_paging") or {}
-            highlights = config:readSetting("highlight_paging") or {}
-            config:delSetting("bookmarks_paging")
-            config:delSetting("highlight_paging")
         end
     end
     self.ui.bookmark.bookmarks = bookmarks
@@ -151,8 +176,8 @@ end
 function ReaderAnnotation:onCloseDocument()
     local annotations = self:getAnnotationsFromBookmarksHighlights(self.ui.bookmark.bookmarks, self.view.highlight.saved, true)
     self.ui.doc_settings:saveSetting("annotations", annotations)
-    self.ui.doc_settings:delSetting("bookmarks")
-    self.ui.doc_settings:delSetting("highlight")
+    self.ui.doc_settings:saveSetting("bookmarks", self.ui.bookmark.bookmarks)
+    self.ui.doc_settings:saveSetting("highlight", self.view.highlight.saved)
 end
 
 return ReaderAnnotation
