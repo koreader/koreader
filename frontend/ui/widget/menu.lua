@@ -185,8 +185,8 @@ function MenuItem:init()
     -- Font for "mandatory" on the right
     self.info_face = Font:getFace(self.infont, self.infont_size)
     -- Font for post_text if any: for now, this is only used with TOC, showing
-    -- the chapter pages count: if feels best to use the face of the main text,
-    -- but with the size of the mandatory font (showing some number too).
+    -- the chapter length: if feels best to use the face of the main text, but
+    -- with the size of the mandatory font (which shows some number too).
     if self.post_text then
         self.post_text_face = Font:getFace(self.font, self.infont_size)
     end

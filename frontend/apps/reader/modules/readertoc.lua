@@ -1190,7 +1190,7 @@ Enabling this option will restrict display to the chapter titles of progress bar
         end,
     }
     menu_items.toc_items_show_chapter_length = {
-        text = _("Show chapter page counts"),
+        text = _("Show chapter length"),
         keep_menu_open = true,
         checked_func = function()
             return not G_reader_settings:nilOrFalse("toc_items_show_chapter_length")
