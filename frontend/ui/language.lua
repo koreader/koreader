@@ -6,6 +6,7 @@ local Language = {
     language_names = {
         C = "English",
         en = "English",
+        en_UK = "English (United Kingdom)",
         ca = "Catalá",
         cs = "Čeština",
         da = "Dansk",
