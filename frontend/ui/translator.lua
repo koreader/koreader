@@ -174,7 +174,8 @@ ALT_LANGUAGE_CODES["iw"] = "he"
 local Translator = {
     trans_servers = {
         "https://translate.googleapis.com/",
-        -- "http://translate.google.cn",
+        "https://translate.google.cn",
+        "https://fanyi.youdao.com",
     },
     trans_path = "/translate_a/single",
     trans_params = {
@@ -206,8 +207,14 @@ local Translator = {
     default_lang = "en",
 }
 
+local TRANS_FUNCS = {}
+
 function Translator:getTransServer()
     return G_reader_settings:readSetting("trans_server") or self.trans_servers[1]
+end
+
+function Translator:getTransFunc(server)
+    return TRANS_FUNCS[server] or Translator.loadPageByGoogle
 end
 
 function Translator:getLanguageName(lang, default_string)
@@ -223,27 +230,38 @@ end
 
 -- Will be called by ReaderHighlight to make it available in Reader menu
 function Translator:genSettingsMenu()
-    local function genLanguagesItems(setting_name, default_checked_item)
+    local function genItems(items, setting_name, default_checked_item)
         local items_table = {}
-        for lang_key, lang_name in ffiutil.orderedPairs(SUPPORTED_LANGUAGES) do
+        for key, value in ffiutil.orderedPairs(items) do
             table.insert(items_table, {
                 text_func = function()
-                    return T("%1 (%2)", lang_name, lang_key)
+                    return T("%1 (%2)", value, key)
                 end,
                 checked_func = function()
                     if G_reader_settings:has(setting_name) then
-                        return lang_key == G_reader_settings:readSetting(setting_name)
+                        return key == G_reader_settings:readSetting(setting_name)
                     else
-                        return lang_key == default_checked_item
+                        return key == default_checked_item
                     end
                 end,
                 callback = function()
-                    G_reader_settings:saveSetting(setting_name, lang_key)
+                    G_reader_settings:saveSetting(setting_name, key)
                 end,
             })
         end
         return items_table
     end
+    local function genLanguagesItems(setting_name, default_checked_item)
+        return genItems(SUPPORTED_LANGUAGES, setting_name, default_checked_item)
+    end
+    local function genServersItems(setting_name, default_checked_item)
+        local servers = {}
+        for _, value in ipairs(self.trans_servers) do
+          servers[value] = ""
+        end
+        return genItems(servers, setting_name, default_checked_item)
+    end
+
     return {
         text = _("Translation settings"),
         sub_item_table = {
@@ -300,6 +318,14 @@ This is useful:
                     return T(_("Translate to: %1"), self:getLanguageName(lang, ""))
                 end,
                 sub_item_table = genLanguagesItems("translator_to_language", self:getTargetLanguage()),
+                keep_menu_open = true,
+            },
+            {
+                text_func = function()
+                    local value = self:getTransServer()
+                    return T(_("Translation server: %1"), value)
+                end,
+                sub_item_table = genServersItems("trans_server", self:getTransServer()),
                 keep_menu_open = true,
             },
         },
@@ -373,6 +399,120 @@ Returns decoded JSON table from translate server.
 @treturn string result, or nil
 --]]
 function Translator:loadPage(text, target_lang, source_lang)
+    local trans_server = self:getTransServer()
+    local trans_func = self:getTransFunc(trans_server)
+    return trans_func(self, text, target_lang, source_lang)
+end
+
+local function http_request(s_url, method, headers, request)
+    local socket = require("socket")
+    local socketutil = require("socketutil")
+    local http = require("socket.http")
+    local ltn12 = require("ltn12")
+
+    local sink = {}
+    if request == nil then
+        request = {}
+    end
+    socketutil:set_timeout()
+
+    request["url"] = s_url
+    request["method"] = method
+    request["sink"] = ltn12.sink.table(sink)
+    request["headers"] = headers
+
+    http.TIMEOUT = 5
+    http.USERAGENT = "Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2950.0 Iron Safari/537.36"
+    local httpRequest = http.request
+
+    local code, response_headers, status = socket.skip(
+        1, httpRequest(request))
+
+    socketutil:reset_timeout()
+    if response_headers == nil then
+        return {
+            code = code,
+            response_headers = response_headers,
+            status = status,
+            response_body = nil
+        }
+    end
+    local xml = table.concat(sink)
+
+    return {
+        code = code,
+        response_headers = response_headers,
+        status = status,
+        response_body = xml
+    }
+end
+
+--[[--
+Returns decoded JSON table from translate server.
+
+@string text
+@string target_lang
+@string source_lang
+@treturn string result, or nil
+--]]
+
+function Translator:loadPageByYoudao(text, target_lang, source_lang)
+    local ltn12 = require("ltn12")
+    local headers = {}
+    headers['content-type'] = 'application/x-www-form-urlencoded'
+    local query = string.format(
+        'from=%s&to=%s&i=%s&doctype=json&xmlVersion=1.4&keyfrom=fanyi.web&ue=UTF-8&typoResult=true&flag=false',
+        source_lang, target_lang, text)
+    logger.dbg("query", query)
+    headers["content-length"] = string.len(query)
+    local request = {
+        source = ltn12.source.string(query)
+    }
+
+    local s_url = "https://fanyi.youdao.com/translate?smartresult=dict&smartresult=rule&smartresult=ugc&sessionFrom=dict.top"
+    local resp = http_request(s_url, "POST", headers, request)
+    local ok, youdao_result = pcall(JSON.decode, resp.response_body, JSON.decode.simple)
+    if ok and youdao_result then
+        logger.dbg("translator json:", youdao_result)
+    else
+        logger.warn("translator error:", youdao_result)
+    end
+    local resultAlternative = {}
+    local translateResult = {}
+    for _, v1 in ipairs(youdao_result.translateResult) do
+        for _, v2 in ipairs(v1) do
+            table.insert(translateResult,
+                { v2.tgt, v2.src }
+            )
+            table.insert(resultAlternative,
+                {
+                [1] = v2.src,
+                [3] = {
+                    [1] = {
+                        [1] = v2.tgt,
+                        [2] = 0,
+                    }
+                }
+            })
+        end
+    end
+    local resultAsGoogleTranslate = {}
+    resultAsGoogleTranslate[1] = translateResult
+    resultAsGoogleTranslate[6] = resultAlternative
+    logger.dbg("translator json as google translate format:", resultAsGoogleTranslate)
+    return resultAsGoogleTranslate
+end
+TRANS_FUNCS["https://fanyi.youdao.com"] = Translator.loadPageByYoudao
+
+--[[--
+Returns decoded JSON table from translate server.
+
+@string text
+@string target_lang
+@string source_lang
+@treturn string result, or nil
+--]]
+function Translator:loadPageByGoogle(text, target_lang, source_lang)
     local socket = require("socket")
     local socketutil = require("socketutil")
     local url = require("socket.url")
@@ -437,6 +577,7 @@ function Translator:loadPage(text, target_lang, source_lang)
         logger.warn("not JSON in translator response:", content)
     end
 end
+
 -- The JSON result is a list of 9 to 15 items:
 --    1: translation
 --    2: all-translations
