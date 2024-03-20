@@ -119,6 +119,7 @@ function Language:getLangMenuTable()
             -- NOTE: language with no translation are commented out for now
             sub_item_table = {
                 self:genLanguageSubItem("C"),
+                self:genLanguageSubItem("en_GB"),
                 self:genLanguageSubItem("ca"),
                 self:genLanguageSubItem("cs"),
                 self:genLanguageSubItem("de"),
