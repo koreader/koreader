@@ -232,7 +232,9 @@ function CoverMenu:updateItems(select_number)
     -- we replace it by ours.
     -- (FileManager may replace file_chooser.showFileDialog after we've been called once, so we need
     -- to replace it again if it is not ours)
-    if self.showFileDialog and self.showFileDialog ~= self.showFileDialog_ours then
+    if self.path -- FileManager only
+        and (not self.showFileDialog_ours -- never replaced
+              or self.showFileDialog ~= self.showFileDialog_ours) then -- it is no more ours
         -- We need to do it at nextTick, once FileManager has instantiated
         -- its FileChooser completely
         UIManager:nextTick(function()
