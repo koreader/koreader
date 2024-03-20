@@ -140,7 +140,7 @@ function Language:getLangMenuTable()
                 --self:genLanguageSubItem("pl_PL"),
                 self:genLanguageSubItem("pt_PT"),
                 self:genLanguageSubItem("pt_BR"),
-                --self:genLanguageSubItem("ro"),
+                self:genLanguageSubItem("ro"),
                 self:genLanguageSubItem("ro_MD"),
                 self:genLanguageSubItem("sk"),
                 self:genLanguageSubItem("sv"),
