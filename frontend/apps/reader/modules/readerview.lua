@@ -522,6 +522,7 @@ function ReaderView:drawTempHighlight(bb, x, y)
 end
 
 function ReaderView:drawSavedHighlight(bb, x, y)
+    if #self.ui.annotation.annotations == 0 then return end
     if self.ui.paging then
         self:drawPageSavedHighlight(bb, x, y)
     else
@@ -535,18 +536,13 @@ function ReaderView:getPageSavedHighlights(page)
     local highlights = {}
     local is_reflow = self.document.configurable.text_wrap
     self.document.configurable.text_wrap = 0
-    for page_num, page_highlights in pairs(self.highlight.saved) do
-        for i, highlight in ipairs(page_highlights) do
-            -- old single-page reflow highlights do not have page in position
-            local pos0_page = highlight.pos0.page or page_num
-            local pos1_page = highlight.pos1.page or page_num
-            if pos0_page <= page and page <= pos1_page then
-                if pos0_page == pos1_page then -- single-page highlight
-                    table.insert(highlights, highlight)
-                else -- multi-page highlight
-                    local item = self.ui.highlight:getSavedExtendedHighlightPage(highlight, page, i)
-                    table.insert(highlights, item)
-                end
+    for i, highlight in ipairs(self.ui.annotation.annotations) do
+        if highlight.pos0.page <= page and page <= highlight.pos1.page then
+            if highlight.pos0.page == highlight.pos1.page then -- single-page highlight
+                table.insert(highlights, highlight)
+            else -- multi-page highlight
+                local item = self.ui.highlight:getSavedExtendedHighlightPage(highlight, page, i)
+                table.insert(highlights, item)
             end
         end
     end
@@ -558,16 +554,14 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
     local pages = self:getCurrentPageList()
     for _, page in ipairs(pages) do
         local items = self:getPageSavedHighlights(page)
-        for _, item in ipairs(items) do
+        for __, item in ipairs(items) do
             local boxes = self.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
             if boxes then
-                local drawer = item.drawer or self.highlight.saved_drawer
-                local draw_note_mark = self.highlight.note_mark and
-                    self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
-                for _, box in ipairs(boxes) do
+                local draw_note_mark = self.highlight.note_mark and not self.ui.bookmark:isAnnotationAutoText(item)
+                for ___, box in ipairs(boxes) do
                     local rect = self:pageToScreenTransform(page, box)
                     if rect then
-                        self:drawHighlightRect(bb, x, y, rect, drawer, draw_note_mark)
+                        self:drawHighlightRect(bb, x, y, rect, item.drawer, draw_note_mark)
                         if draw_note_mark and self.highlight.note_mark == "sidemark" then
                             draw_note_mark = false -- side mark in the first line only
                         end
@@ -583,48 +577,38 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
     -- showing menu...). We might want to cache these boxes per page (and
     -- clear that cache when page layout change or highlights are added
     -- or removed).
-    local cur_view_top, cur_view_bottom
-    for _, items in pairs(self.highlight.saved) do
-        if items then
-            for j = 1, #items do
-                local item = items[j]
-                local pos0, pos1 = item.pos0, item.pos1
-                -- document:getScreenBoxesFromPositions() is expensive, so we
-                -- first check this item is on current page
-                if not cur_view_top then
-                    -- Even in page mode, it's safer to use pos and ui.dimen.h
-                    -- than pages' xpointers pos, even if ui.dimen.h is a bit
-                    -- larger than pages' heights
-                    cur_view_top = self.document:getCurrentPos()
-                    if self.view_mode == "page" and self.document:getVisiblePageCount() > 1 then
-                        cur_view_bottom = cur_view_top + 2 * self.ui.dimen.h
-                    else
-                        cur_view_bottom = cur_view_top + self.ui.dimen.h
+    -- Even in page mode, it's safer to use pos and ui.dimen.h
+    -- than pages' xpointers pos, even if ui.dimen.h is a bit
+    -- larger than pages' heights
+    local cur_view_top = self.document:getCurrentPos()
+    local cur_view_bottom
+    if self.view_mode == "page" and self.document:getVisiblePageCount() > 1 then
+        cur_view_bottom = cur_view_top + 2 * self.ui.dimen.h
+    else
+        cur_view_bottom = cur_view_top + self.ui.dimen.h
+    end
+    for _, item in ipairs(self.ui.annotation.annotations) do
+        if item.drawer then
+            -- document:getScreenBoxesFromPositions() is expensive, so we
+            -- first check if this item is on current page
+            local start_pos = self.document:getPosFromXPointer(item.pos0)
+            local end_pos = self.document:getPosFromXPointer(item.pos1)
+            if start_pos <= cur_view_bottom and end_pos >= cur_view_top then
+                local boxes = self.document:getScreenBoxesFromPositions(item.pos0, item.pos1, true) -- get_segments=true
+                if boxes then
+                    local draw_note_mark = self.highlight.note_mark and not self.ui.bookmark:isAnnotationAutoText(item)
+                    for __, box in ipairs(boxes) do
+                        if box.h ~= 0 then
+                            self:drawHighlightRect(bb, x, y, box, item.drawer, draw_note_mark)
+                            if draw_note_mark and self.highlight.note_mark == "sidemark" then
+                                draw_note_mark = false -- side mark in the first line only
+                            end
+                        end
                     end
                 end
-                local spos0 = self.document:getPosFromXPointer(pos0)
-                local spos1 = self.document:getPosFromXPointer(pos1)
-                local start_pos = math.min(spos0, spos1)
-                local end_pos = math.max(spos0, spos1)
-                if start_pos <= cur_view_bottom and end_pos >= cur_view_top then
-                    local boxes = self.document:getScreenBoxesFromPositions(pos0, pos1, true) -- get_segments=true
-                    if boxes then
-                        local drawer = item.drawer or self.highlight.saved_drawer
-                        local draw_note_mark = self.highlight.note_mark and
-                            self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
-                        for _, box in ipairs(boxes) do
-                            if box.h ~= 0 then
-                                self:drawHighlightRect(bb, x, y, box, drawer, draw_note_mark)
-                                if draw_note_mark and self.highlight.note_mark == "sidemark" then
-                                    draw_note_mark = false -- side mark in the first line only
-                                end
-                            end
-                        end -- end for each box
-                    end -- end if boxes
-                end
-            end -- end for each highlight
+            end
         end
-    end -- end for all saved highlight
+    end
 end
 
 function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, draw_note_mark)
