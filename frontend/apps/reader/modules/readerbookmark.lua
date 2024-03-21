@@ -1534,4 +1534,17 @@ function ReaderBookmark:getBookmarkForHighlight(item)
     return self.bookmarks[self:getBookmarkIndexFullScan(item)]
 end
 
+function ReaderBookmark:getAnnotationAutoText(annotation, force_auto_text)
+    if force_auto_text or G_reader_settings:nilOrTrue("bookmarks_items_auto_text") then
+        local page = self:getBookmarkPageString(annotation.page)
+        return T(_("Page %1 %2 @ %3"), page, annotation.text, annotation.datetime)
+    end
+end
+
+--- Check if the note has not been edited manually
+function ReaderBookmark:isAnnotationAutoText(annotation)
+    local note = annotation.note
+    return (note == nil) or (note == annotation.text) or (note == self:getAnnotationAutoText(annotation, true))
+end
+
 return ReaderBookmark
