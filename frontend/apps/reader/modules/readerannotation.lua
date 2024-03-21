@@ -1,6 +1,8 @@
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
-local ReaderAnnotation = WidgetContainer:extend{}
+local ReaderAnnotation = WidgetContainer:extend{
+    annotations = nil,
+}
 
 function ReaderAnnotation:buildAnnotation(bm, highlights, update_pageno)
     -- bm - corresponding bookmark, highlights - all highlights
@@ -22,18 +24,25 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, update_pageno)
             end
         end
     end
-
+    local note = bm.text ~= "" and bm.text or nil
+    if self.ui.paging then
+        -- old single-page reflow highlights do not have page in position
+        if not bm.pos0.page then
+            bm.pos0.page = bm.page
+            bm.pos1.page = bm.page
+        end
+    end
     return { -- annotation
         datetime    = bm.datetime, -- creation time, not changeable
         drawer      = hl.drawer,   -- highlight drawer
         color       = hl.color,    -- highlight color
         text        = bm.notes,    -- highlighted text, editable
         text_edited = hl.edited,   -- true if highlighted text has been edited
-        note        = bm.text,     -- user's note, editable
+        note        = note,        -- user's note, editable
         chapter     = bm.chapter,  -- book chapter title
         pageno      = pageno,      -- book page number
         page        = bm.page,     -- highlight location, xPointer or number (pdf)
-        pos0        = bm.pos0,     -- highlight start position, xPointer or table (pdf)
+        pos0        = bm.pos0,     -- highlight start position, xPointer (== page) or table (pdf)
         pos1        = bm.pos1,     -- highlight end position, xPointer or table (pdf)
         pboxes      = hl.pboxes,   -- pdf pboxes, used only and changeable by addMarkupAnnotation
         ext         = hl.ext,      -- pdf multi-page highlight
@@ -124,6 +133,7 @@ function ReaderAnnotation:onReadSettings(config)
             config:delSetting("annotations_paging")
         end
         bookmarks, highlights = self:getBookmarksHighlightsFromAnnotations(annotations)
+        self.annotations = annotations
     else -- old bookmarks/highlights
         bookmarks = config:readSetting("bookmarks") or {}
         highlights = config:readSetting("highlight") or {}
@@ -171,6 +181,7 @@ function ReaderAnnotation:onReadSettings(config)
                 config:delSetting("highlight_paging")
             end
         end
+        self.annotations = self:getAnnotationsFromBookmarksHighlights(bookmarks, highlights)
     end
     self.ui.bookmark.bookmarks = bookmarks
     self.view.highlight.saved = highlights
