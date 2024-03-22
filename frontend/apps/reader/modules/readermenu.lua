@@ -254,7 +254,7 @@ function ReaderMenu:setUpdateItemTable()
 
     if Device:supportsScreensaver() then
         local ss_book_settings = {
-            text = _("Do not show current book cover on lock screen"),
+            text = _("Do not show this book cover on lock screen"),
             enabled_func = function()
                 if self.ui and self.ui.document then
                     local screensaverType = G_reader_settings:readSetting("screensaver_type")
