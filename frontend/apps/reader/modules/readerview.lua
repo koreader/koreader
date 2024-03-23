@@ -632,7 +632,7 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, draw_note_mark)
     if drawer == "lighten" then
         bb:lightenRect(x, y, w, h, self.highlight.lighten_factor)
     elseif drawer == "underscore" then
-        bb:paintRect(x, y + h - 1, w, h / 8, Blitbuffer.COLOR_GRAY)
+        bb:paintRect(x, y + h - math.floor(h / 16), w, math.floor(h / 8), Blitbuffer.COLOR_GRAY_4)
     elseif drawer == "strikeout" then
         local line_y = y + math.floor(h / 2) + 1
         if self.ui.paging then
