@@ -26,23 +26,18 @@ local function genMenuItem(text, setting, value, enabled_func, separator)
         separator = separator,
     }
 end
-
 return {
-
     {
         text = _("Screensaver"),
         sub_item_table = {
-            
-            genMenuItem(_("Show book cover on lock screen"), "screensaver_type", "cover", hasLastFile),
-            genMenuItem(_("Show custom image on lock screen"), "screensaver_type", "image_file"),
-            genMenuItem(_("Shuffle images on lock screen"), "screensaver_type", "random_image"),
-            genMenuItem(_("Show document cover on lock screen"), "screensaver_type", "document_cover"),
-            genMenuItem(_("Show reading progress on lock screen"), "screensaver_type", "readingprogress", isReaderProgressEnabled),
-            genMenuItem(_("Show book status on lock screen"), "screensaver_type", "bookstatus", hasLastFile),
+            genMenuItem(_("Show book cover on sleep screen"), "screensaver_type", "cover", hasLastFile),
+            genMenuItem(_("Show custom image on sleep screen"), "screensaver_type", "image_file"),
+            genMenuItem(_("Shuffle images on sleep screen"), "screensaver_type", "random_image"),
+            genMenuItem(_("Show document cover on sleep screen"), "screensaver_type", "document_cover"),
+            genMenuItem(_("Show reading progress on sleep screen"), "screensaver_type", "readingprogress", isReaderProgressEnabled),
+            genMenuItem(_("Show book status on sleep screen"), "screensaver_type", "bookstatus", hasLastFile),
             genMenuItem(_("Lock the screen in current state"), "screensaver_type", "disable", nil, true),
             separator = true,
-                
-        
             {
                 text = _("Border fill"),
                 sub_item_table = {
@@ -80,12 +75,11 @@ return {
             },
         },
     },
-
     {
-        text = _("Lock screen message"),
+        text = _("Sleep screen message"),
         sub_item_table = {
             {
-                text = _("Add custom message to lock screen"),
+                text = _("Add custom message to sleep screen"),
                 checked_func = function()
                     return G_reader_settings:isTrue("screensaver_show_message")
                 end,
@@ -95,7 +89,7 @@ return {
                 separator = true,
             },
             {
-            text = _("Edit lock screen message"),
+            text = _("Edit sleep screen message"),
             keep_menu_open = true,
                 callback = function()
                     Screensaver:setMessage()
@@ -103,8 +97,8 @@ return {
             },
             {
                 text = _("Background fill"),
-                help_text = _([[This option will only become available, if you have selected 'Lock the screen in current state' 
-                    as screensaver and have 'Lock screen message' on.]]),
+                help_text = _([[This option will only become available, if you have selected 'Lock the screen in current state'
+                    as screensaver and have 'Sleep screen message' on.]]),
                 sub_item_table = {
                     genMenuItem(_("Black"), "screensaver_msg_background", "black"),
                     genMenuItem(_("White"), "screensaver_msg_background", "white"),
@@ -127,10 +121,9 @@ return {
                 callback = function()
                     G_reader_settings:toggle("screensaver_hide_fallback_msg")
                 end,
-            }, 
+            },
         },
     },
-
     {
         text = _("Custom images"),
         sub_item_table = {
@@ -148,7 +141,6 @@ return {
                     Screensaver:chooseFolder()
                 end,
             },
-            
             {
                 text = _("Select document cover"),
                 keep_menu_open = true,
