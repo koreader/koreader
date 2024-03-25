@@ -315,7 +315,7 @@ function Screensaver:setMessage()
     input_dialog = InputDialog:new{
         title = _("Screensaver message"),
         description = _([[
-Enter a custom message to be displayed on the lock screen. The following escape sequences are available:
+Enter a custom message to be displayed on the sleep screen. The following escape sequences are available:
   %T title
   %A author(s)
   %S series
