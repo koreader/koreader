@@ -26,114 +26,140 @@ local function genMenuItem(text, setting, value, enabled_func, separator)
         separator = separator,
     }
 end
-
 return {
-    genMenuItem(_("Use last book's cover as screensaver"), "screensaver_type", "cover", hasLastFile),
-    genMenuItem(_("Use book status as screensaver"), "screensaver_type", "bookstatus", hasLastFile),
-    genMenuItem(_("Use random image from folder as screensaver"), "screensaver_type", "random_image"),
-    genMenuItem(_("Use document cover as screensaver"), "screensaver_type", "document_cover"),
-    genMenuItem(_("Use image as screensaver"), "screensaver_type", "image_file"),
-    genMenuItem(_("Use reading progress as screensaver"), "screensaver_type", "readingprogress", isReaderProgressEnabled),
-    genMenuItem(_("Leave screen as-is"), "screensaver_type", "disable", nil, true),
-    -- separator
     {
-        text = _("Add message to screensaver"),
-        checked_func = function()
-            return G_reader_settings:isTrue("screensaver_show_message")
-        end,
-        callback = function()
-            G_reader_settings:toggle("screensaver_show_message")
-        end,
-        separator = true,
+        text = _("Screensaver"),
+        sub_item_table = {
+            genMenuItem(_("Show book cover on sleep screen"), "screensaver_type", "cover", hasLastFile),
+            genMenuItem(_("Show custom image on sleep screen"), "screensaver_type", "image_file"),
+            genMenuItem(_("Shuffle images on sleep screen"), "screensaver_type", "random_image"),
+            genMenuItem(_("Show document cover on sleep screen"), "screensaver_type", "document_cover"),
+            genMenuItem(_("Show reading progress on sleep screen"), "screensaver_type", "readingprogress", isReaderProgressEnabled),
+            genMenuItem(_("Show book status on sleep screen"), "screensaver_type", "bookstatus", hasLastFile),
+            genMenuItem(_("Lock the screen in current state"), "screensaver_type", "disable", nil, true),
+            separator = true,
+            {
+                text = _("Border fill"),
+                enabled_func = function()
+                    return G_reader_settings:readSetting("screensaver_type") == "cover" or G_reader_settings:readSetting("screensaver_type") == "random_image"
+                    or G_reader_settings:readSetting("screensaver_type") == "image_file" or G_reader_settings:readSetting("screensaver_type") == "document_cover" 
+                end,
+                sub_item_table = {
+                    genMenuItem(_("Black"), "screensaver_img_background", "black"),
+                    genMenuItem(_("White"), "screensaver_img_background", "white"),
+                    genMenuItem(_("Current state"), "screensaver_img_background", "none", nil, true),
+                    -- separator
+                        {
+                            text_func = function()
+                                local percentage = G_reader_settings:readSetting("screensaver_stretch_limit_percentage")
+                                if G_reader_settings:isTrue("screensaver_stretch_images") and percentage then
+                                    return T(_("Stretch to fit screen (with limit: %1 %)"), percentage)
+                                end
+                                return _("Stretch cover to fit screen")
+                            end,
+                            checked_func = function()
+                                return G_reader_settings:isTrue("screensaver_stretch_images")
+                            end,
+                            callback = function(touchmenu_instance)
+                                Screensaver:setStretchLimit(touchmenu_instance)
+                            end,
+                        },
+                },
+            },
+            {
+                text = _("Unlock screen delay"),
+                sub_item_table = {
+                    genMenuItem(_("Never"), "screensaver_delay", "disable"),
+                    genMenuItem(_("1 second"), "screensaver_delay", "1"),
+                    genMenuItem(_("3 seconds"), "screensaver_delay", "3"),
+                    genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
+                    genMenuItem(_("Unlock with a tap"), "screensaver_delay", "tap"),
+                    genMenuItem(_("Unlock with 'exit sleep screen' gesture"), "screensaver_delay", "gesture"),
+                },
+            },
+        },
     },
-    -- separator
     {
-        text = _("Settings"),
+        text = _("Sleep screen message"),
         sub_item_table = {
             {
-                text = _("Screensaver folder"),
-                keep_menu_open = true,
+                text = _("Add custom message to sleep screen"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("screensaver_show_message")
+                end,
                 callback = function()
-                    Screensaver:chooseFolder()
+                    G_reader_settings:toggle("screensaver_show_message")
+                end,
+                separator = true,
+            },
+            {
+            text = _("Edit sleep screen message"),
+            enabled_func = function() 
+                return G_reader_settings:isTrue("screensaver_show_message")
+            end,
+            keep_menu_open = true,
+                callback = function()
+                    Screensaver:setMessage()
                 end,
             },
             {
-                text = _("Screensaver image"),
+                text = _("Background fill"),
+                help_text = _([[This option will only become available, if you have selected 'Lock the screen in current state'
+                    as screensaver and have 'Sleep screen message' on.]]),
+               enabled_func = function()
+                    return G_reader_settings:readSetting("screensaver_type") == "disable" and G_reader_settings:isTrue("screensaver_show_message")
+                end,
+                sub_item_table = {
+                    genMenuItem(_("Black fill"), "screensaver_msg_background", "black"),
+                    genMenuItem(_("White fill"), "screensaver_msg_background", "white"),
+                    genMenuItem(_("Current state"), "screensaver_msg_background", "none", nil, true),
+                },
+            },
+            {
+                text = _("Message position"),
+                enabled_func = function() 
+                    return G_reader_settings:isTrue("screensaver_show_message")
+                end,
+                sub_item_table = {
+                    genMenuItem(_("Top"), "screensaver_message_position", "top"),
+                    genMenuItem(_("Middle"), "screensaver_message_position", "middle"),
+                    genMenuItem(_("Bottom"), "screensaver_message_position", "bottom", nil, true),
+                },
+            },
+            {
+                text = _("Hide reboot/poweroff message"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("screensaver_hide_fallback_msg")
+                end,
+                callback = function()
+                    G_reader_settings:toggle("screensaver_hide_fallback_msg")
+                end,
+            },
+        },
+    },
+    {
+        text = _("Custom images"),
+        sub_item_table = {
+            {
+                text = _("Select custom image"),
                 keep_menu_open = true,
                 callback = function()
                     Screensaver:chooseFile()
                 end,
             },
             {
-                text = _("Document cover"),
+                text = _("Select shuffle folder"),
+                keep_menu_open = true,
+                callback = function()
+                    Screensaver:chooseFolder()
+                end,
+            },
+            {
+                text = _("Select document cover"),
                 keep_menu_open = true,
                 callback = function()
                     Screensaver:chooseFile(true)
                 end,
-            },
-            {
-                text = _("Screensaver message"),
-                keep_menu_open = true,
-                callback = function()
-                    Screensaver:setMessage()
-                end,
-            },
-            {
-                text = _("Covers and images settings"),
-                sub_item_table = {
-                    genMenuItem(_("Black background"), "screensaver_img_background", "black"),
-                    genMenuItem(_("White background"), "screensaver_img_background", "white"),
-                    genMenuItem(_("Leave background as-is"), "screensaver_img_background", "none", nil, true),
-                    -- separator
-                    {
-                        text_func = function()
-                            local percentage = G_reader_settings:readSetting("screensaver_stretch_limit_percentage")
-                            if G_reader_settings:isTrue("screensaver_stretch_images") and percentage then
-                                return T(_("Stretch to fit screen (with limit: %1 %)"), percentage)
-                            end
-                            return _("Stretch to fit screen")
-                        end,
-                        checked_func = function()
-                            return G_reader_settings:isTrue("screensaver_stretch_images")
-                        end,
-                        callback = function(touchmenu_instance)
-                            Screensaver:setStretchLimit(touchmenu_instance)
-                        end,
-                    },
-                },
-            },
-            {
-                text = _("Message settings"),
-                sub_item_table = {
-                    genMenuItem(_("Black background behind message"), "screensaver_msg_background", "black"),
-                    genMenuItem(_("White background behind message"), "screensaver_msg_background", "white"),
-                    genMenuItem(_("Leave background as-is behind message"), "screensaver_msg_background", "none", nil, true),
-                    -- separator
-                    genMenuItem(_("Message position: top"), "screensaver_message_position", "top"),
-                    genMenuItem(_("Message position: middle"), "screensaver_message_position", "middle"),
-                    genMenuItem(_("Message position: bottom"), "screensaver_message_position", "bottom", nil, true),
-                    -- separator
-                    {
-                        text = _("Hide reboot/poweroff message"),
-                        checked_func = function()
-                            return G_reader_settings:isTrue("screensaver_hide_fallback_msg")
-                        end,
-                        callback = function()
-                            G_reader_settings:toggle("screensaver_hide_fallback_msg")
-                        end,
-                    },
-                },
-            },
-            {
-                text = _("Keep the screensaver on screen after wakeup"),
-                sub_item_table = {
-                    genMenuItem(_("Disable"), "screensaver_delay", "disable"),
-                    genMenuItem(_("For 1 second"), "screensaver_delay", "1"),
-                    genMenuItem(_("For 3 second"), "screensaver_delay", "3"),
-                    genMenuItem(_("For 5 second"), "screensaver_delay", "5"),
-                    genMenuItem(_("Until a tap"), "screensaver_delay", "tap"),
-                    genMenuItem(_("Until 'Exit screensaver' gesture"), "screensaver_delay", "gesture"),
-                },
             },
         },
     },

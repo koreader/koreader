@@ -254,7 +254,7 @@ function ReaderMenu:setUpdateItemTable()
 
     if Device:supportsScreensaver() then
         local ss_book_settings = {
-            text = _("Exclude this book's content and cover from screensaver"),
+            text = _("Do not show this book cover on sleep screen"),
             enabled_func = function()
                 if self.ui and self.ui.document then
                     local screensaverType = G_reader_settings:readSetting("screensaver_type")
@@ -285,7 +285,7 @@ function ReaderMenu:setUpdateItemTable()
         end
         table.insert(screensaver_sub_item_table, ss_book_settings)
         self.menu_items.screensaver = {
-            text = _("Screensaver"),
+            text = _("Sleep screen"),
             sub_item_table = screensaver_sub_item_table,
         }
     end
