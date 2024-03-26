@@ -340,31 +340,6 @@ function ReaderBookmark:updateHighlightsIfNeeded(config)
 end
 
 function ReaderBookmark:onReadSettings(config)
-    self.bookmarks = config:readSetting("bookmarks", {})
-    -- Bookmark formats in crengine and mupdf are incompatible.
-    -- Backup bookmarks when the document is opened with incompatible engine.
-    if #self.bookmarks > 0 then
-        local bookmarks_type = type(self.bookmarks[1].page)
-        if self.ui.rolling and bookmarks_type == "number" then
-            config:saveSetting("bookmarks_paging", self.bookmarks)
-            self.bookmarks = config:readSetting("bookmarks_rolling", {})
-            config:saveSetting("bookmarks", self.bookmarks)
-            config:delSetting("bookmarks_rolling")
-        elseif self.ui.paging and bookmarks_type == "string" then
-            config:saveSetting("bookmarks_rolling", self.bookmarks)
-            self.bookmarks = config:readSetting("bookmarks_paging", {})
-            config:saveSetting("bookmarks", self.bookmarks)
-            config:delSetting("bookmarks_paging")
-        end
-    else
-        if self.ui.rolling and config:has("bookmarks_rolling") then
-            self.bookmarks = config:readSetting("bookmarks_rolling")
-            config:delSetting("bookmarks_rolling")
-        elseif self.ui.paging and config:has("bookmarks_paging") then
-            self.bookmarks = config:readSetting("bookmarks_paging")
-            config:delSetting("bookmarks_paging")
-        end
-    end
     -- need to do this after initialization because checking xpointer
     -- may cause segfaults before credocuments are inited.
     self.ui:registerPostInitCallback(function()
@@ -375,7 +350,6 @@ function ReaderBookmark:onReadSettings(config)
 end
 
 function ReaderBookmark:onSaveSettings()
-    self.ui.doc_settings:saveSetting("bookmarks", self.bookmarks)
     self.ui.doc_settings:saveSetting("bookmarks_version", 20200615)
     self.ui.doc_settings:makeTrue("bookmarks_sorted_20220106")
     self.ui.doc_settings:makeTrue("highlights_imported")
@@ -1558,6 +1532,19 @@ end
 
 function ReaderBookmark:getBookmarkForHighlight(item)
     return self.bookmarks[self:getBookmarkIndexFullScan(item)]
+end
+
+function ReaderBookmark:getAnnotationAutoText(annotation, force_auto_text)
+    if force_auto_text or G_reader_settings:nilOrTrue("bookmarks_items_auto_text") then
+        local page = self:getBookmarkPageString(annotation.page)
+        return T(_("Page %1 %2 @ %3"), page, annotation.text, annotation.datetime)
+    end
+end
+
+--- Check if the note has not been edited manually
+function ReaderBookmark:isAnnotationAutoText(annotation)
+    local note = annotation.note
+    return (note == nil) or (note == annotation.text) or (note == self:getAnnotationAutoText(annotation, true))
 end
 
 return ReaderBookmark

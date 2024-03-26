@@ -2126,7 +2126,10 @@ function ReaderHighlight:getExtendedHighlightPage(pos0, pos1, cur_page)
             local page_boxes = self.ui.document:getTextBoxes(page)
             if page == pos0.page then
                 -- first page (from the start of highlight to the end of the page)
-                item.pos0 = pos0
+                item.pos0 = {
+                    x = pos0.x,
+                    y = pos0.y,
+                }
                 item.pos1 = {
                     x = page_boxes[#page_boxes][#page_boxes[#page_boxes]].x1,
                     y = page_boxes[#page_boxes][#page_boxes[#page_boxes]].y1,
@@ -2147,7 +2150,10 @@ function ReaderHighlight:getExtendedHighlightPage(pos0, pos1, cur_page)
                     x = page_boxes[1][1].x0,
                     y = page_boxes[1][1].y0,
                 }
-                item.pos1 = pos1
+                item.pos1 = {
+                    x = pos1.x,
+                    y = pos1.y,
+                }
             end
             item.pos0.page = page
             item.pos1.page = page
@@ -2173,17 +2179,20 @@ function ReaderHighlight:getSavedExtendedHighlightPage(hl_or_bm, page, index)
             end
         end
     end
-    local item = {}
-    item.datetime = highlight.datetime
-    item.drawer = highlight.drawer
-    item.pos0 = highlight.ext[page].pos0
-    item.pos0.zoom = highlight.pos0.zoom
+    local item = {
+        datetime = highlight.datetime,
+        drawer   = highlight.drawer,
+        text     = highlight.text,
+        page     = highlight.page,
+        pos0     = highlight.ext[page].pos0,
+        pos1     = highlight.ext[page].pos1,
+        pboxes   = highlight.ext[page].pboxes,
+        parent   = index,
+    }
+    item.pos0.zoom     = highlight.pos0.zoom
     item.pos0.rotation = highlight.pos0.rotation
-    item.pos1 = highlight.ext[page].pos1
-    item.pos1.zoom = highlight.pos0.zoom
+    item.pos1.zoom     = highlight.pos0.zoom
     item.pos1.rotation = highlight.pos0.rotation
-    item.pboxes = highlight.ext[page].pboxes
-    item.parent = {highlight.pos0.page, index}
     return item
 end
 
