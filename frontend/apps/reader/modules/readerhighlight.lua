@@ -2217,6 +2217,44 @@ function ReaderHighlight:onUpdateHoldPanRate()
     self:setupTouchZones()
 end
 
+function ReaderHighlight:updateHighlightPageNumbers()
+    local bookmarks = self.ui.bookmark.bookmarks
+    local highlights = {}
+    for i = #bookmarks, 1, -1 do
+        local bookmark = bookmarks[i]
+        if bookmark.highlighted then
+            local highlight = self:getHighlightByDatetime(bookmark.datetime)
+            if not highlight and (self.ui.rolling or bookmark.pos0.page == bookmark.pos1.page) then
+                -- restore highlight for orphaned bookmark
+                -- do not bother with restoring pboxes for pdf multi-page highlight, keep bookmark orphaned
+                highlight = {
+                    datetime = bookmark.datetime,
+                    text     = bookmark.notes,
+                    chapter  = bookmark.chapter,
+                    pos0     = bookmark.pos0,
+                    pos1     = bookmark.pos1,
+                    drawer   = self.view.highlight.saved_drawer,
+                }
+                if self.ui.paging then
+                    highlight.pboxes = self.document:getPageBoxesFromPositions(bookmark.page, bookmark.pos0, bookmark.pos1)
+                end
+            end
+            if highlight then
+                local pageno = self.ui.paging and bookmark.page or self.document:getPageFromXPointer(bookmark.page)
+                if highlights[pageno] == nil then
+                    highlights[pageno] = {}
+                end
+                table.insert(highlights[pageno], highlight)
+            end
+        end
+    end
+    self.view.highlight.saved = highlights
+end
+
+function ReaderHighlight:onCloseDocument()
+    self:updateHighlightPageNumbers()
+end
+
 function ReaderHighlight:onSaveSettings()
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
     self.ui.doc_settings:saveSetting("panel_zoom_enabled", self.panel_zoom_enabled)
