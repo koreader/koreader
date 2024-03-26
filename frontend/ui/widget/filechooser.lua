@@ -215,14 +215,14 @@ local FileChooser = Menu:extend{
                 local natsort
                 natsort, cache = sort.natsort_cmp(cache)
                 local sortfunc =  function(a, b)
-                    if a.percent_finished == b.percent_finished then
+                    if a.sort_percent == b.sort_percent then
                         return natsort(a.text, b.text)
-                    elseif a.percent_finished == 1 then
+                    elseif a.sort_percent == 1 then
                         return false
-                    elseif b.percent_finished == 1 then
+                    elseif b.sort_percent == 1 then
                         return true
                     else
-                        return a.percent_finished > b.percent_finished
+                        return a.sort_percent > b.sort_percent
                     end
                 end
 
@@ -237,14 +237,14 @@ local FileChooser = Menu:extend{
 
                     -- books marked as "finished" should be considered the same as 100%
                     if summary and summary.status == "complete" then
-                        item.percent_finished = 1.0
-                        return
+                        item.sort_percent = 1.0
                     end
 
                     percent_finished = doc_settings:readSetting("percent_finished")
                 end
                 -- smooth 2 decimal points (0.00) instead of 16 decimal numbers
-                item.percent_finished = math.floor((percent_finished or -1) * 100) / 100
+                item.sort_percent = item.sort_percent or math.floor((percent_finished or -1) * 100) / 100
+                item.percent_finished = percent_finished or 0
             end,
             mandatory_func = function(item)
                 return item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
