@@ -565,7 +565,7 @@ function ReaderPaging:onGotoPercent(percent)
     if dest > self.number_of_pages then
         dest = self.number_of_pages
     end
-    self:_gotoPage(dest)
+    self:onGotoPage(dest)
     return true
 end
 
@@ -575,6 +575,7 @@ function ReaderPaging:onGotoViewRel(diff)
     else
         self:onGotoPageRel(diff)
     end
+    self.ui:handleEvent(Event:new("PageChangeAnimation", diff > 0))
     self:setPagePosition(self:getTopPage(), self:getTopPosition())
     return true
 end
@@ -1127,8 +1128,11 @@ function ReaderPaging:_gotoPage(number, orig_mode)
 end
 
 function ReaderPaging:onGotoPage(number, pos)
+    local same_page = number == self.current_page;
+    local animation_direction = number > self.current_page;
     self:setPagePosition(number, 0)
     self:_gotoPage(number)
+    self.ui:handleEvent(Event:new("PageChangeAnimation", animation_direction))
     if pos then
         local rect_p = Geom:new{ x = pos.x or 0, y = pos.y or 0 }
         local rect_s = Geom:new(rect_p):copy()
@@ -1138,7 +1142,7 @@ function ReaderPaging:onGotoPage(number, pos)
         else
             self.view:PanningUpdate(rect_s.x - self.view.visible_area.x, rect_s.y - self.view.visible_area.y)
         end
-    elseif number == self.current_page then
+    elseif same_page then
         -- gotoPage emits this event only if the page changes
         self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
     end
@@ -1157,14 +1161,14 @@ function ReaderPaging:onGotoRelativePage(number)
         end
         new_page = test_page
     end
-    self:_gotoPage(new_page)
+    self:onGotoPage(new_page)
     return true
 end
 
 function ReaderPaging:onGotoPercentage(percentage)
     if percentage < 0 then percentage = 0 end
     if percentage > 1 then percentage = 1 end
-    self:_gotoPage(math.floor(percentage*self.number_of_pages))
+    self:onGotoPage(math.floor(percentage*self.number_of_pages))
     return true
 end
 
