@@ -40,6 +40,10 @@ return {
             separator = true,
             {
                 text = _("Border fill"),
+                enabled_func = function()
+                    return G_reader_settings:readSetting("screensaver_type") == "cover" or G_reader_settings:readSetting("screensaver_type") == "random_image"
+                    or G_reader_settings:readSetting("screensaver_type") == "image_file" or G_reader_settings:readSetting("screensaver_type") == "document_cover" 
+                end,
                 sub_item_table = {
                     genMenuItem(_("Black"), "screensaver_img_background", "black"),
                     genMenuItem(_("White"), "screensaver_img_background", "white"),
@@ -91,9 +95,7 @@ return {
             {
             text = _("Edit sleep screen message"),
             enabled_func = function() 
-                if not G_reader_settings:isTrue("screensaver_show_message") then
-                    return false    
-                end
+                return G_reader_settings:isTrue("screensaver_show_message")
             end,
             keep_menu_open = true,
                 callback = function()
@@ -104,25 +106,19 @@ return {
                 text = _("Background fill"),
                 help_text = _([[This option will only become available, if you have selected 'Lock the screen in current state'
                     as screensaver and have 'Sleep screen message' on.]]),
-                enabled_func = function() 
-                    if G_reader_settings:readSetting("screensaver_type") == "disable" and G_reader_settings:isTrue("screensaver_show_message") then
-                        return true    
-                    else
-                        return false
-                    end 
+               enabled_func = function()
+                    return G_reader_settings:readSetting("screensaver_type") == "disable" and G_reader_settings:isTrue("screensaver_show_message")
                 end,
                 sub_item_table = {
-                    genMenuItem(_("Black"), "screensaver_msg_background", "black"),
-                    genMenuItem(_("White"), "screensaver_msg_background", "white"),
+                    genMenuItem(_("Black fill"), "screensaver_msg_background", "black"),
+                    genMenuItem(_("White fill"), "screensaver_msg_background", "white"),
                     genMenuItem(_("Current state"), "screensaver_msg_background", "none", nil, true),
                 },
             },
             {
                 text = _("Message position"),
                 enabled_func = function() 
-                    if not G_reader_settings:isTrue("screensaver_show_message") then
-                        return false    
-                    end
+                    return G_reader_settings:isTrue("screensaver_show_message")
                 end,
                 sub_item_table = {
                     genMenuItem(_("Top"), "screensaver_message_position", "top"),
