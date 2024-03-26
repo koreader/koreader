@@ -207,7 +207,7 @@ local FileChooser = Menu:extend{
             end,
         },
         percent_natural = {
-            -- sort 90% > 50% > 0% > unopened > 100% or finished
+            -- sort 90% > 50% > 0% or on hold > unopened > 100% or finished
             text = _("percent - unopened - finished last"),
             menu_order = 90,
             can_collate_mixed = false,
@@ -215,14 +215,14 @@ local FileChooser = Menu:extend{
                 local natsort
                 natsort, cache = sort.natsort_cmp(cache)
                 local sortfunc =  function(a, b)
-                    if a.percent_finished == b.percent_finished then
+                    if a.sort_percent == b.sort_percent then
                         return natsort(a.text, b.text)
-                    elseif a.percent_finished == 1 then
+                    elseif a.sort_percent == 1 then
                         return false
-                    elseif b.percent_finished == 1 then
+                    elseif b.sort_percent == 1 then
                         return true
                     else
-                        return a.percent_finished > b.percent_finished
+                        return a.sort_percent > b.sort_percent
                     end
                 end
 
@@ -230,21 +230,24 @@ local FileChooser = Menu:extend{
             end,
             item_func = function(item)
                 local percent_finished
+                local sort_percent
                 item.opened = DocSettings:hasSidecarFile(item.path)
                 if item.opened then
                     local doc_settings = DocSettings:open(item.path)
                     local summary = doc_settings:readSetting("summary")
 
-                    -- books marked as "finished" should be considered the same as 100%
+                    -- books marked as "finished" or "on hold" should be considered the same as 100% and 0% respectively
                     if summary and summary.status == "complete" then
-                        item.percent_finished = 1.0
-                        return
+                        sort_percent = 1.0
+                    elseif summary and summary.status == "abandoned" then
+                        sort_percent = 0
                     end
 
                     percent_finished = doc_settings:readSetting("percent_finished")
                 end
                 -- smooth 2 decimal points (0.00) instead of 16 decimal numbers
-                item.percent_finished = math.floor((percent_finished or -1) * 100) / 100
+                item.sort_percent = sort_percent or math.floor((percent_finished or -1) * 100) / 100
+                item.percent_finished = percent_finished or 0
             end,
             mandatory_func = function(item)
                 return item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
