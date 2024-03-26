@@ -58,7 +58,7 @@ end
 -- So sorry for the Tolinos with (Android 4.4.x).
 -- Maybe https://f-droid.org/de/packages/jackpal.androidterm/ could be an alternative then.
 if (Device:isAndroid() and Device.firmware_rev < 21) or not check_prerequisites() then
-    logger.warn("Terminal: Device doesn't meet some of the plugin's prerequisites")
+    logger.warn("Terminal: Device doesn't meet some of the plugin's requirements")
     return { disabled = true, }
 end
 
