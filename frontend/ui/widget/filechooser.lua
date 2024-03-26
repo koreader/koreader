@@ -230,6 +230,7 @@ local FileChooser = Menu:extend{
             end,
             item_func = function(item)
                 local percent_finished
+                local sort_percent
                 item.opened = DocSettings:hasSidecarFile(item.path)
                 if item.opened then
                     local doc_settings = DocSettings:open(item.path)
@@ -237,15 +238,15 @@ local FileChooser = Menu:extend{
 
                     -- books marked as "finished" or "on hold" should be considered the same as 100% and 0% respectively
                     if summary and summary.status == "complete" then
-                        item.sort_percent = 1.0
+                        sort_percent = 1.0
                     elseif summary and summary.status == "abandoned" then
-                        item.sort_percent = 0
+                        sort_percent = 0
                     end
 
                     percent_finished = doc_settings:readSetting("percent_finished")
                 end
                 -- smooth 2 decimal points (0.00) instead of 16 decimal numbers
-                item.sort_percent = item.sort_percent or math.floor((percent_finished or -1) * 100) / 100
+                item.sort_percent = sort_percent or math.floor((percent_finished or -1) * 100) / 100
                 item.percent_finished = percent_finished or 0
             end,
             mandatory_func = function(item)
