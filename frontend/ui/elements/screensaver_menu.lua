@@ -70,7 +70,7 @@ return {
                     genMenuItem(_("3 seconds"), "screensaver_delay", "3"),
                     genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
                     genMenuItem(_("Unlock with a tap"), "screensaver_delay", "tap"),
-                    genMenuItem(_("Unlock with 'exit Screensaver' gesture"), "screensaver_delay", "gesture"),
+                    genMenuItem(_("Unlock with 'exit sleep screen' gesture"), "screensaver_delay", "gesture"),
                 },
             },
         },
@@ -90,6 +90,11 @@ return {
             },
             {
             text = _("Edit sleep screen message"),
+            enabled_func = function() 
+                if not G_reader_settings:isTrue("screensaver_show_message") then
+                    return false    
+                end
+            end,
             keep_menu_open = true,
                 callback = function()
                     Screensaver:setMessage()
@@ -99,6 +104,13 @@ return {
                 text = _("Background fill"),
                 help_text = _([[This option will only become available, if you have selected 'Lock the screen in current state'
                     as screensaver and have 'Sleep screen message' on.]]),
+                enabled_func = function() 
+                    if G_reader_settings:readSetting("screensaver_type") == "disable" and G_reader_settings:isTrue("screensaver_show_message") then
+                        return true    
+                    else
+                        return false
+                    end 
+                end,
                 sub_item_table = {
                     genMenuItem(_("Black"), "screensaver_msg_background", "black"),
                     genMenuItem(_("White"), "screensaver_msg_background", "white"),
@@ -107,6 +119,11 @@ return {
             },
             {
                 text = _("Message position"),
+                enabled_func = function() 
+                    if not G_reader_settings:isTrue("screensaver_show_message") then
+                        return false    
+                    end
+                end,
                 sub_item_table = {
                     genMenuItem(_("Top"), "screensaver_message_position", "top"),
                     genMenuItem(_("Middle"), "screensaver_message_position", "middle"),
