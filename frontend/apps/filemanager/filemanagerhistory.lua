@@ -270,7 +270,7 @@ function FileManagerHistory:onShowHist(search_info)
         self.hist_menu = nil
         G_reader_settings:saveSetting("history_filter", self.filter)
     end
-    UIManager:show(self.hist_menu)
+    UIManager:show(self.hist_menu, "flashui")
     return true
 end
 
