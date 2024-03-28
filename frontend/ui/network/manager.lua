@@ -532,6 +532,12 @@ function NetworkMgr:isOnline()
         return true
     end
 
+    -- Fail early if we don't even have a default route.
+    -- On PocketBook devices, if the first call to socket.dns.toip(…) fails, it never succeeds again.
+    if not Device:getDefaultRoute() then
+        return false
+    end
+
     local socket = require("socket")
     -- Microsoft uses `dns.msftncsi.com` for Windows, see
     -- <https://technet.microsoft.com/en-us/library/ee126135#BKMK_How> for
