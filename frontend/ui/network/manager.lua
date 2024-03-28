@@ -274,6 +274,30 @@ function NetworkMgr:ifHasAnAddress()
     return ok
 end
 
+-- The socket API equivalent of "ip route get 1.1.1.1".
+function NetworkMgr:hasDefaultRoute()
+    local socket = require("socket")
+
+    local s, ret, err
+    s, err = socket.udp()
+    if s == nil then
+        logger.err("NetworkMgr: socket.udp:", err)
+        return nil
+    end
+
+    --- @todo: Try 2606:4700:4700::1111 if IPv4 is unavailable.
+    ret, err = s:setpeername("1.1.1.1", "53")
+    if ret == nil then
+        -- Most likely "Network is unreachable", meaning there's no route to that address.
+        logger.dbg("NetworkMgr: socket.udp.setpeername:", err)
+    end
+
+    s:close()
+
+    -- If setpeername succeeded, we have a default route.
+    return ret ~= nil
+end
+
 -- Wrappers around turnOnWifi & turnOffWifi with proper Event signaling
 function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget, interactive)
     local status = self:requestToTurnOnWifi(wifi_cb, interactive)
@@ -534,7 +558,7 @@ function NetworkMgr:isOnline()
 
     -- Fail early if we don't even have a default route.
     -- On PocketBook devices, if the first call to socket.dns.toip(…) fails, it never succeeds again.
-    if not Device:getDefaultRoute() then
+    if not self:hasDefaultRoute() then
         return false
     end
 
