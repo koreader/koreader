@@ -274,6 +274,39 @@ function NetworkMgr:ifHasAnAddress()
     return ok
 end
 
+-- The socket API equivalent of "ip route get 203.0.113.1 || ip route get 2001:db8::1".
+--
+-- These addresses are from special ranges reserved for documentation
+-- (RFC 5737, RFC 3849) and therefore likely to just use the default route.
+function NetworkMgr:hasDefaultRoute()
+    local socket = require("socket")
+
+    local s, ret, err
+    s, err = socket.udp()
+    if s == nil then
+        logger.err("NetworkMgr: socket.udp:", err)
+        return nil
+    end
+
+    ret, err = s:setpeername("203.0.113.1", "53")
+    if ret == nil then
+        -- Most likely "Network is unreachable", meaning there's no route to that address.
+        logger.dbg("NetworkMgr: socket.udp.setpeername:", err)
+
+        -- Try IPv6, may still succeed if this is an IPv6-only network.
+        ret, err = s:setpeername("2001:db8::1", "53")
+        if ret == nil then
+            -- Most likely "Network is unreachable", meaning there's no route to that address.
+            logger.dbg("NetworkMgr: socket.udp.setpeername:", err)
+        end
+    end
+
+    s:close()
+
+    -- If setpeername succeeded, we have a default route.
+    return ret ~= nil
+end
+
 -- Wrappers around turnOnWifi & turnOffWifi with proper Event signaling
 function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget, interactive)
     local status = self:requestToTurnOnWifi(wifi_cb, interactive)
@@ -534,7 +567,7 @@ function NetworkMgr:isOnline()
 
     -- Fail early if we don't even have a default route.
     -- On PocketBook devices, if the first call to socket.dns.toip(…) fails, it never succeeds again.
-    if not Device:getDefaultRoute() then
+    if not self:hasDefaultRoute() then
         return false
     end
 
