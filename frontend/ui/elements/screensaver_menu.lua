@@ -28,7 +28,7 @@ local function genMenuItem(text, setting, value, enabled_func, separator)
 end
 return {
     {
-        text = _("Screensaver"),
+        text = _("Wallpaper"),
         sub_item_table = {
             genMenuItem(_("Show book cover on sleep screen"), "screensaver_type", "cover", hasLastFile),
             genMenuItem(_("Show custom image on sleep screen"), "screensaver_type", "image_file"),
@@ -69,12 +69,52 @@ return {
             {
                 text = _("Unlock screen delay"),
                 sub_item_table = {
-                    genMenuItem(_("Never"), "screensaver_delay", "disable"),
+                    genMenuItem(_("Off"), "screensaver_delay", "disable"),
                     genMenuItem(_("1 second"), "screensaver_delay", "1"),
                     genMenuItem(_("3 seconds"), "screensaver_delay", "3"),
                     genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
                     genMenuItem(_("Unlock with a tap"), "screensaver_delay", "tap"),
                     genMenuItem(_("Unlock with 'exit sleep screen' gesture"), "screensaver_delay", "gesture"),
+                },
+            },
+            {
+                text = _("Custom images"),
+                enabled_func = function() 
+                    return G_reader_settings:readSetting("screensaver_type") == "image_file"
+                    or G_reader_settings:readSetting("screensaver_type") == "random_image"
+                    or G_reader_settings:readSetting("screensaver_type") == "document_cover"
+                end,
+                sub_item_table = {
+                    {
+                        text = _("Select custom image"),
+                        enabled_func = function() 
+                            return G_reader_settings:readSetting("screensaver_type") == "image_file"
+                        end,
+                        keep_menu_open = true,
+                        callback = function()
+                            Screensaver:chooseFile()
+                        end,
+                    },
+                    {
+                        text = _("Select shuffle folder"),
+                        enabled_func = function() 
+                            return G_reader_settings:readSetting("screensaver_type") == "random_image"
+                        end,
+                        keep_menu_open = true,
+                        callback = function()
+                            Screensaver:chooseFolder()
+                        end,
+                    },
+                    {
+                        text = _("Select document cover"),
+                        enabled_func = function() 
+                            return G_reader_settings:readSetting("screensaver_type") == "document_cover"
+                        end,
+                        keep_menu_open = true,
+                        callback = function()
+                            Screensaver:chooseFile(true)
+                        end,
+                    },
                 },
             },
         },
@@ -133,32 +173,6 @@ return {
                 end,
                 callback = function()
                     G_reader_settings:toggle("screensaver_hide_fallback_msg")
-                end,
-            },
-        },
-    },
-    {
-        text = _("Custom images"),
-        sub_item_table = {
-            {
-                text = _("Select custom image"),
-                keep_menu_open = true,
-                callback = function()
-                    Screensaver:chooseFile()
-                end,
-            },
-            {
-                text = _("Select shuffle folder"),
-                keep_menu_open = true,
-                callback = function()
-                    Screensaver:chooseFolder()
-                end,
-            },
-            {
-                text = _("Select document cover"),
-                keep_menu_open = true,
-                callback = function()
-                    Screensaver:chooseFile(true)
                 end,
             },
         },
