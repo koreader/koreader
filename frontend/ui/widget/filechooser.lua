@@ -246,7 +246,7 @@ local FileChooser = Menu:extend{
                     percent_finished = doc_settings:readSetting("percent_finished")
                 end
                 -- smooth 2 decimal points (0.00) instead of 16 decimal numbers
-                item.sort_percent = sort_percent or math.floor((percent_finished or -1) * 100) / 100
+                item.sort_percent = sort_percent or util.round_decimal(percent_finished or -1, 2)
                 item.percent_finished = percent_finished or 0
             end,
             mandatory_func = function(item)
