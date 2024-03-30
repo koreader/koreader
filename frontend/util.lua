@@ -1537,4 +1537,12 @@ function util.wrapMethod(target_table, target_field_name, new_func, before_callb
     return wrapped
 end
 
+-- Round a given "num" to the decimal points of "points"
+-- (i.e. `round_decimal(0.000000001, 2)` will yield `0.00`)
+function util.round_decimal(num, points)
+    local op = 10 ^ points
+
+    return math.floor(num * op) / op
+end
+
 return util
