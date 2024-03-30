@@ -158,7 +158,7 @@ local FileChooser = Menu:extend{
                 return function(a, b)
                     if a.opened == b.opened then
                         if a.opened then
-                            return a.sort_percent < b.sort_percent
+                            return a.percent_finished < b.percent_finished
                         end
                         return ffiUtil.strcoll(a.text, b.text)
                     end
@@ -173,10 +173,8 @@ local FileChooser = Menu:extend{
                     percent_finished = doc_settings:readSetting("percent_finished")
                 end
 
-                percent_finished = percent_finished or 0
                 -- smooth 2 decimal points (0.00) instead of 16 decimal points
-                item.sort_percent = util.round_decimal(percent_finished, 2)
-                item.percent_finished = percent_finished
+                item.percent_finished = util.round_decimal(percent_finished or 0, 2)
             end,
             mandatory_func = function(item)
                 return item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
@@ -190,7 +188,7 @@ local FileChooser = Menu:extend{
                 return function(a, b)
                     if a.opened == b.opened then
                         if a.opened then
-                            return a.sort_percent < b.sort_percent
+                            return a.percent_finished < b.percent_finished
                         end
                         return ffiUtil.strcoll(a.text, b.text)
                     end
@@ -205,10 +203,8 @@ local FileChooser = Menu:extend{
                     percent_finished = doc_settings:readSetting("percent_finished")
                 end
 
-                percent_finished = percent_finished or 0
                 -- smooth 2 decimal points (0.00) instead of 16 decimal points
-                item.sort_percent = util.round_decimal(percent_finished, 2)
-                item.percent_finished = percent_finished
+                item.percent_finished = util.round_decimal(percent_finished or 0, 2)
             end,
             mandatory_func = function(item)
                 return item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
