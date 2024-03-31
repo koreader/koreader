@@ -530,34 +530,14 @@ function ReaderView:drawSavedHighlight(bb, x, y)
     end
 end
 
--- Returns the list of highlights in page.
--- The list includes full single-page highlights and parts of multi-page highlights.
-function ReaderView:getPageSavedHighlights(page)
-    local highlights = {}
-    local is_reflow = self.document.configurable.text_wrap
-    self.document.configurable.text_wrap = 0
-    for i, highlight in ipairs(self.ui.annotation.annotations) do
-        if highlight.pos0.page <= page and page <= highlight.pos1.page then
-            if highlight.pos0.page == highlight.pos1.page then -- single-page highlight
-                table.insert(highlights, highlight)
-            else -- multi-page highlight
-                local item = self.ui.highlight:getSavedExtendedHighlightPage(highlight, page, i)
-                table.insert(highlights, item)
-            end
-        end
-    end
-    self.document.configurable.text_wrap = is_reflow
-    return highlights
-end
-
 function ReaderView:drawPageSavedHighlight(bb, x, y)
     local pages = self:getCurrentPageList()
     for _, page in ipairs(pages) do
-        local items = self:getPageSavedHighlights(page)
+        local items = self.ui.highlight:getPageSavedHighlights(page)
         for __, item in ipairs(items) do
             local boxes = self.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
             if boxes then
-                local draw_note_mark = self.highlight.note_mark and not self.ui.bookmark:isAnnotationAutoText(item)
+                local draw_note_mark = item.note and self.highlight.note_mark
                 for ___, box in ipairs(boxes) do
                     local rect = self:pageToScreenTransform(page, box)
                     if rect then
@@ -596,7 +576,7 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
             if start_pos <= cur_view_bottom and end_pos >= cur_view_top then
                 local boxes = self.document:getScreenBoxesFromPositions(item.pos0, item.pos1, true) -- get_segments=true
                 if boxes then
-                    local draw_note_mark = self.highlight.note_mark and not self.ui.bookmark:isAnnotationAutoText(item)
+                    local draw_note_mark = item.note and self.highlight.note_mark
                     for __, box in ipairs(boxes) do
                         if box.h ~= 0 then
                             self:drawHighlightRect(bb, x, y, box, item.drawer, draw_note_mark)
@@ -679,8 +659,7 @@ function ReaderView:recalculate()
             -- start from right of page_area
             self.visible_area.x = self.page_area.x + self.page_area.w - self.visible_area.w
         end
-        -- Check if we are in zoom_bottom_to_top
-        if self.document.configurable.zoom_direction and self.document.configurable.zoom_direction >= 2 and self.document.configurable.zoom_direction <= 5 then
+        if self.document.configurable.zoom_direction >= 2 and self.document.configurable.zoom_direction <= 5 then -- zoom_bottom_to_top
             -- starts from bottom of page_area
             self.visible_area.y = self.page_area.y + self.page_area.h - self.visible_area.h
         else
