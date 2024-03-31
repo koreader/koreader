@@ -184,6 +184,12 @@ function MenuItem:init()
     self.face = Font:getFace(self.font, self.font_size)
     -- Font for "mandatory" on the right
     self.info_face = Font:getFace(self.infont, self.infont_size)
+    -- Font for post_text if any: for now, this is only used with TOC, showing
+    -- the chapter length: if feels best to use the face of the main text, but
+    -- with the size of the mandatory font (which shows some number too).
+    if self.post_text then
+        self.post_text_face = Font:getFace(self.font, self.infont_size)
+    end
 
     -- "mandatory" is the text on the right: file size, page number...
     -- Padding before mandatory
@@ -219,10 +225,23 @@ function MenuItem:init()
         text = self.bidi_wrap_func(text)
     end
 
+    -- Note: support for post_text is currently implemented only when single_line=true
+    local post_text_widget
+    local post_text_left_padding = Size.padding.large
+    local post_text_right_padding = self.with_dots and 0 or Size.padding.large
     local dots_widget
     local dots_left_padding = Size.padding.small
     local dots_right_padding = Size.padding.small
     if self.single_line then  -- items only in single line
+        if self.post_text then
+            post_text_widget = TextWidget:new{
+                text = self.post_text,
+                face = self.post_text_face,
+                bold = self.bold,
+                fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+            }
+            available_width = available_width - post_text_widget:getWidth() - post_text_left_padding - post_text_right_padding
+        end
         -- No font size change: text will be truncated if it overflows
         item_name = TextWidget:new{
             text = text,
@@ -271,6 +290,9 @@ function MenuItem:init()
             if dots_widget then
                 dots_widget.forced_height = self.dimen.h
             end
+            if post_text_widget then
+                post_text_widget.forced_height = self.dimen.h
+            end
             -- And adjust their baselines for proper centering and alignment
             -- (We made sure the font sizes wouldn't exceed self.dimen.h, so we
             -- get only non-negative pad_top here, and we're moving them down.)
@@ -288,6 +310,9 @@ function MenuItem:init()
             mandatory_widget.forced_baseline = mdtr_baseline
             if dots_widget then
                 dots_widget.forced_baseline = mdtr_baseline
+            end
+            if post_text_widget then
+                post_text_widget.forced_baseline = mdtr_baseline
             end
         end
 
@@ -374,6 +399,8 @@ function MenuItem:init()
                 width = state_width,
             },
             item_name,
+            post_text_widget and HorizontalSpan:new{ width = post_text_left_padding },
+            post_text_widget,
         }
     }
 
@@ -1083,6 +1110,7 @@ function Menu:updateItems(select_number)
                 state_w = self.state_w or 0,
                 text = Menu.getMenuText(self.item_table[i]),
                 bidi_wrap_func = self.item_table[i].bidi_wrap_func,
+                post_text = self.item_table[i].post_text,
                 mandatory = self.item_table[i].mandatory,
                 mandatory_func = self.item_table[i].mandatory_func,
                 mandatory_dim = self.item_table[i].mandatory_dim or self.item_table[i].dim,

@@ -142,6 +142,7 @@ function ReaderLink:init()
         return {
             text = _("Copy"),
             callback = function()
+                Device.input.setClipboardText(link_url)
                 UIManager:close(this.external_link_dialog)
             end,
         }

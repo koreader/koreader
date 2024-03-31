@@ -616,7 +616,7 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, draw_note_mark)
     if drawer == "lighten" then
         bb:lightenRect(x, y, w, h, self.highlight.lighten_factor)
     elseif drawer == "underscore" then
-        bb:paintRect(x, y + h - 1, w, Size.line.medium, Blitbuffer.COLOR_GRAY)
+        bb:paintRect(x, y + h - 1, w, Size.line.thick, Blitbuffer.COLOR_GRAY_4)
     elseif drawer == "strikeout" then
         local line_y = y + math.floor(h / 2) + 1
         if self.ui.paging then
@@ -679,7 +679,8 @@ function ReaderView:recalculate()
             -- start from right of page_area
             self.visible_area.x = self.page_area.x + self.page_area.w - self.visible_area.w
         end
-        if self.document.configurable.zoom_direction >= 2 and self.document.configurable.zoom_direction <= 5 then -- zoom_bottom_to_top
+        -- Check if we are in zoom_bottom_to_top
+        if self.document.configurable.zoom_direction and self.document.configurable.zoom_direction >= 2 and self.document.configurable.zoom_direction <= 5 then
             -- starts from bottom of page_area
             self.visible_area.y = self.page_area.y + self.page_area.h - self.visible_area.h
         else

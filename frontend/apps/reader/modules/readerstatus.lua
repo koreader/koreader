@@ -219,6 +219,7 @@ end
 -- Otherwise we change status from reading/abandoned to complete or from complete to reading.
 function ReaderStatus:onMarkBook(mark_read)
     self.summary.status = (not mark_read and self.summary.status == "complete") and "reading" or "complete"
+    self.summary.modified = os.date("%Y-%m-%d", os.time())
     -- If History is called over Reader, it will read the file to get the book status, so save and flush
     self.settings:saveSetting("summary", self.summary)
     self.settings:flush()

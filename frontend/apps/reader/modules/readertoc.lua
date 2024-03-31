@@ -104,6 +104,7 @@ end
 
 function ReaderToc:resetToc()
     self.toc = nil
+    self.toc_menu_items_built = false
     self.toc_depth = nil
     self.ticks = nil
     self.ticks_flattened = nil
@@ -312,6 +313,37 @@ function ReaderToc:validateAndFixToc()
     end
     logger.info(string.format("TOC had %d bogus page numbers: fixed %d items to keep them ordered.", nb_bogus, nb_fixed_pages))
     self.toc_depth = max_depth
+end
+
+function ReaderToc:completeTocWithChapterLengths()
+    local toc = self.toc
+    local first = 1
+    local last = #toc
+    if last == 0 then
+        return
+    end
+    local prev_item_by_level = {}
+    for i = first, last do
+        local item = toc[i]
+        local page = item.page
+        local depth = item.depth
+        for j=#prev_item_by_level, depth, -1 do
+            local prev_item = prev_item_by_level[j]
+            if prev_item then
+                prev_item.chapter_length = page - prev_item.page
+            end
+            prev_item_by_level[j] = nil
+        end
+        prev_item_by_level[depth] = item
+    end
+    -- Set the length of the last ones
+    local page = self.ui.document:getPageCount()
+    for j=#prev_item_by_level, 0, -1 do
+        local prev_item = prev_item_by_level[j]
+        if prev_item then
+            prev_item.chapter_length = page - prev_item.page
+        end
+    end
 end
 
 function ReaderToc:getTocIndexByPage(pn_or_xp, skip_ignored_ticks)
@@ -661,11 +693,16 @@ function ReaderToc:onShowToc()
 
     local items_per_page = G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_default
     local items_font_size = G_reader_settings:readSetting("toc_items_font_size") or Menu.getItemFontSize(items_per_page)
+    local items_show_chapter_length = G_reader_settings:isTrue("toc_items_show_chapter_length")
     local items_with_dots = G_reader_settings:nilOrTrue("toc_items_with_dots")
 
     self:fillToc()
     -- build menu items
-    if #self.toc > 0 and not self.toc[1].text then
+    if #self.toc > 0 and not self.toc_menu_items_built then
+        self.toc_menu_items_built = true
+        if items_show_chapter_length then
+            self:completeTocWithChapterLengths()
+        end
         -- Have the width of 4 spaces be the unit of indentation
         local tmp = TextWidget:new{
             text = "    ",
@@ -679,6 +716,11 @@ function ReaderToc:onShowToc()
             v.index = k
             v.indent = toc_indent * (v.depth-1)
             v.text = self:cleanUpTocTitle(v.title, true)
+            if items_show_chapter_length then
+                v.post_text = T("(%1)", v.chapter_length)
+            else
+                v.post_text = nil
+            end
             v.bidi_wrap_func = BD.auto
             v.mandatory = v.page
             if has_hidden_flows then
@@ -1146,6 +1188,17 @@ Enabling this option will restrict display to the chapter titles of progress bar
             }
             UIManager:show(items_font)
         end,
+    }
+    menu_items.toc_items_show_chapter_length = {
+        text = _("Show chapter length"),
+        keep_menu_open = true,
+        checked_func = function()
+            return not G_reader_settings:nilOrFalse("toc_items_show_chapter_length")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("toc_items_show_chapter_length")
+            self.toc_menu_items_built = false
+        end
     }
     menu_items.toc_items_with_dots = {
         text = _("With dots"),
