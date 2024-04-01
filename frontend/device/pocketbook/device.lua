@@ -67,6 +67,9 @@ local PocketBook = Generic:extend{
     -- Will be set appropriately at init
     isB288SoC = no,
 
+    -- Most of the devices are B&W.
+    hasColorScreen = no,
+
     -- Private per-model kludges
     _fb_init = function() end,
     _model_init = function() end,
