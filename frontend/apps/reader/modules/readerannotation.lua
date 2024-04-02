@@ -1,4 +1,5 @@
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local logger = require("logger")
 
 local ReaderAnnotation = WidgetContainer:extend{
     annotations = nil,
