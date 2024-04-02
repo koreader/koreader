@@ -387,6 +387,14 @@ function PocketBook:initNetworkManager(NetworkMgr)
         return band(inkview.QueryNetwork(), C.NET_CONNECTED) ~= 0
     end
     NetworkMgr.isWifiOn = NetworkMgr.isConnected
+
+    function NetworkMgr:isOnline()
+        -- Fail early if we don't even have a default route, otherwise we're
+        -- unlikely to be online and canResolveHostnames would never succeed
+        -- again because PocketBook's glibc parses /etc/resolv.conf on first
+        -- use only. See https://sourceware.org/bugzilla/show_bug.cgi?id=984
+        return NetworkMgr:hasDefaultRoute() and NetworkMgr:canResolveHostnames()
+    end
 end
 
 function PocketBook:getSoftwareVersion()
