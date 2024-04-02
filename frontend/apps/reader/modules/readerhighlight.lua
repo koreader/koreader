@@ -813,7 +813,6 @@ end
 function ReaderHighlight:updateHighlight(index, side, direction, move_by_char)
     local highlight = self.ui.annotation.annotations[index]
     local bookmark_before = util.tableDeepCopy(highlight)
-    local highlight_time = highlight.datetime
     local highlight_beginning = highlight.pos0
     local highlight_end = highlight.pos1
     if side == 0 then -- we move pos0
