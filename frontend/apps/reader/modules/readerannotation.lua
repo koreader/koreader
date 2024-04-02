@@ -6,15 +6,16 @@ local ReaderAnnotation = WidgetContainer:extend{
 
 -- build, read, save
 
-function ReaderAnnotation:buildAnnotation(bm, highlights, update_pageno)
+function ReaderAnnotation:buildAnnotation(bm, highlights, init)
     -- bm - corresponding bookmark, highlights - all highlights
     local note = bm.text
     if note == "" then
         note = nil
     end
     local chapter = bm.chapter
-    local hl, pageno = self:getHighlightByDatetime(highlights, bm.datetime)
-    if update_pageno then
+    local pos_percent
+    local hl = self:getHighlightByDatetime(highlights, bm.datetime)
+    if init then
         if note and self.ui.bookmark:isBookmarkAutoText(bm) then
             note = nil
         end
@@ -22,7 +23,7 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, update_pageno)
             local pn_or_xp = (self.ui.rolling and bm.pos0) and bm.pos0 or bm.page
             chapter = self.ui.toc:getTocTitleByPage(pn_or_xp)
         end
-        pageno = self.ui.bookmark:getBookmarkPageString(bm.page)
+        pos_percent = self:getPosPercent(bm.page)
     end
     if not hl then -- page bookmark or orphaned bookmark
         hl = {}
@@ -53,7 +54,7 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, update_pageno)
         text_edited = hl.edited,   -- true if highlighted text has been edited
         note        = note,        -- user's note, editable
         chapter     = chapter,     -- book chapter title
-        pageno      = pageno,      -- book page number
+        pos_percent = pos_percent, -- highlight (or highlight page for pdf) absolute position percentage
         page        = bm.page,     -- highlight location, xPointer or number (pdf)
         pos0        = bm.pos0,     -- highlight start position, xPointer (== page) or table (pdf)
         pos1        = bm.pos1,     -- highlight end position, xPointer or table (pdf)
@@ -63,19 +64,27 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, update_pageno)
 end
 
 function ReaderAnnotation:getHighlightByDatetime(highlights, datetime)
-    for pageno, page_highlights in pairs(highlights) do
-        for i, highlight in ipairs(page_highlights) do
+    for _, page_highlights in pairs(highlights) do
+        for __, highlight in ipairs(page_highlights) do
             if highlight.datetime == datetime then
-                return highlight, pageno
+                return highlight
             end
         end
     end
 end
 
-function ReaderAnnotation:getAnnotationsFromBookmarksHighlights(bookmarks, highlights, update_pageno)
+function ReaderAnnotation:getPosPercent(pn_or_xp)
+    if self.ui.rolling then
+        return self.document:getPosFromXPointer(pn_or_xp) / self.document.info.doc_height
+    else
+        return pn_or_xp / self.document.info.number_of_pages
+    end
+end
+
+function ReaderAnnotation:getAnnotationsFromBookmarksHighlights(bookmarks, highlights, init)
     local annotations = {}
     for i = #bookmarks, 1, -1 do
-        table.insert(annotations, self:buildAnnotation(bookmarks[i], highlights, update_pageno))
+        table.insert(annotations, self:buildAnnotation(bookmarks[i], highlights, init))
     end
     if #annotations > 1 then
         local sort_func = function(a, b)
@@ -112,9 +121,13 @@ function ReaderAnnotation:onReadSettings(config)
         end
         self.annotations = annotations
     else -- first run
-        self.ui:registerPostInitCallback(function()
+        if self.ui.rolling then
+            self.ui:registerPostInitCallback(function()
+                self:createAnnotations(config)
+            end)
+        else
             self:createAnnotations(config)
-        end)
+        end
     end
 end
 
@@ -197,12 +210,29 @@ function ReaderAnnotation:createAnnotations(config)
     self.annotations = self:getAnnotationsFromBookmarksHighlights(bookmarks, highlights, true)
 end
 
+function ReaderAnnotation:onDocumentRerendered()
+    self.update = true
+end
+
 function ReaderAnnotation:onCloseDocument()
-    self:updatePageNumbers()
+    self:updatePosPercent()
+end
+
+function ReaderAnnotation:onSaveSettings()
+    self:updatePosPercent()
     self.ui.doc_settings:saveSetting("annotations", self.annotations)
 end
 
 -- items handling
+
+function ReaderAnnotation:updatePosPercent()
+    if self.update then -- triggered by ReaderRolling
+        for _, item in ipairs(self.annotations) do
+            item.pos_percent = self.document:getPosFromXPointer(item.page) / self.document.info.doc_height
+        end
+        self.update = nil
+    end
+end
 
 function ReaderAnnotation:isItemInPositionOrderRolling(a, b)
     local a_page = self.document:getPageFromXPointer(a.page)
@@ -326,17 +356,10 @@ function ReaderAnnotation:getInsertionIndex(item)
 end
 
 function ReaderAnnotation:addItem(item)
+    item.pos_percent = self:getPosPercent(item.page)
     local index = self:getInsertionIndex(item)
     table.insert(self.annotations, index, item)
     return index
-end
-
-function ReaderAnnotation:updatePageNumbers()
-    if self.ui.rolling then
-        for _, item in ipairs(self.annotations) do
-            item.pageno = self.ui.bookmark:getBookmarkPageString(item.page)
-        end
-    end
 end
 
 return ReaderAnnotation
