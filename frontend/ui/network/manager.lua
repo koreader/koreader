@@ -307,6 +307,15 @@ function NetworkMgr:hasDefaultRoute()
     return ret ~= nil
 end
 
+function NetworkMgr:canResolveHostnames()
+    local socket = require("socket")
+    -- Microsoft uses `dns.msftncsi.com` for Windows, see
+    -- <https://technet.microsoft.com/en-us/library/ee126135#BKMK_How> for
+    -- more information. They also check whether <http://www.msftncsi.com/ncsi.txt>
+    -- returns `Microsoft NCSI`.
+    return socket.dns.toip("dns.msftncsi.com") ~= nil
+end
+
 -- Wrappers around turnOnWifi & turnOffWifi with proper Event signaling
 function NetworkMgr:enableWifi(wifi_cb, connectivity_cb, connectivity_widget, interactive)
     local status = self:requestToTurnOnWifi(wifi_cb, interactive)
@@ -565,18 +574,7 @@ function NetworkMgr:isOnline()
         return true
     end
 
-    -- Fail early if we don't even have a default route.
-    -- On PocketBook devices, if the first call to socket.dns.toip(…) fails, it never succeeds again.
-    if not self:hasDefaultRoute() then
-        return false
-    end
-
-    local socket = require("socket")
-    -- Microsoft uses `dns.msftncsi.com` for Windows, see
-    -- <https://technet.microsoft.com/en-us/library/ee126135#BKMK_How> for
-    -- more information. They also check whether <http://www.msftncsi.com/ncsi.txt>
-    -- returns `Microsoft NCSI`.
-    return socket.dns.toip("dns.msftncsi.com") ~= nil
+    return self:canResolveHostnames()
 end
 
 -- Update our cached network status
