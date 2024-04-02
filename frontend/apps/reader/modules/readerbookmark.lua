@@ -50,6 +50,7 @@ function ReaderBookmark:init()
             G_reader_settings:saveSetting("bookmarks_items_font_size", items_font_size)
         end
     end
+    self.items_text = G_reader_settings:readSetting("bookmarks_items_text", "note")
 
     self.ui.menu:registerToMainMenu(self)
     -- NOP our own gesture handling
@@ -65,6 +66,27 @@ function ReaderBookmark:registerKeyEvents()
 end
 
 ReaderBookmark.onPhysicalKeyboardConnected = ReaderBookmark.registerKeyEvents
+
+function ReaderBookmark:genItemTextMenuItem(type, get_string)
+    local text_type = {
+        text = _("highlighted text"),
+        all  = _("highlighted text and note"),
+        note = _("note"),
+    }
+    if get_string then
+        return text_type[type]
+    end
+    return {
+        text = text_type[type],
+        checked_func = function()
+            return self.items_text == type
+        end,
+        callback = function()
+            self.items_text = type
+            G_reader_settings:saveSetting("bookmarks_items_text", type)
+        end,
+    }
+end
 
 function ReaderBookmark:addToMainMenu(menu_items)
     menu_items.bookmarks = {
@@ -154,6 +176,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 callback = function()
                     G_reader_settings:flipNilOrFalse("bookmarks_items_multilines_show_more_text")
                 end,
+                separator = true,
             },
             {
                 text = _("Show separator between items"),
@@ -163,6 +186,17 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 callback = function()
                     G_reader_settings:flipNilOrFalse("bookmarks_items_show_separator")
                 end,
+            },
+            {
+                text_func = function()
+                    local curr_type = G_reader_settings:readSetting("bookmarks_items_text", "note")
+                    return T(_("Show in items: %1"), self:genItemTextMenuItem(curr_type, true))
+                end,
+                sub_item_table = {
+                    self:genItemTextMenuItem("text"),
+                    self:genItemTextMenuItem("all"),
+                    self:genItemTextMenuItem("note"),
+                },
             },
             {
                 text = _("Sort by largest page number"),
@@ -540,7 +574,7 @@ function ReaderBookmark:onShowBookmark(match_table)
         item.text_orig = item.text or ""
         item.type = self:getBookmarkType(item)
         if not match_table or self:doesBookmarkMatchTable(item, match_table) then
-            item.text = self.display_prefix[item.type] .. (item.note or item.text_orig)
+            item.text = self:getBookmarkItemText(item)
             item.mandatory = self:getBookmarkPageString(item.page)
             if (not is_reverse_sorting and i >= curr_page_index) or (is_reverse_sorting and i <= curr_page_index) then
                 item.after_curr_page = true
@@ -614,7 +648,7 @@ function ReaderBookmark:onShowBookmark(match_table)
     end
 
     function bm_menu:onMenuHold(item)
-        local bm_view = bookmark._getDialogHeader(item) .. "\n\n"
+        local bm_view = bookmark:_getDialogHeader(item) .. "\n\n"
         local prefix = item.type == "bookmark" and bookmark.display_prefix["bookmark"] or bookmark.display_prefix["highlight"]
         bm_view = bm_view .. prefix .. item.text_orig
         if item.note then
@@ -961,8 +995,31 @@ function ReaderBookmark:onShowBookmark(match_table)
     return true
 end
 
-function ReaderBookmark._getDialogHeader(bookmark)
-    return T(_("Page: %1"), bookmark.mandatory) .. "     " .. T(_("Time: %1"), bookmark.datetime)
+function ReaderBookmark:getBookmarkItemText(item)
+    if item.type == "highlight" or self.items_text == "text" then
+        return self.display_prefix[item.type] .. item.text_orig
+    end
+    if item.type == "note" and self.items_text == "note" then
+        return self.display_prefix["note"] .. item.note
+    end
+    local text
+    if item.type == "bookmark" then
+        text = self.display_prefix["bookmark"]
+    else -- it is a note, but we show the "highlight" prefix before the highlighted text
+        text = self.display_prefix["highlight"]
+    end
+    if self.items_text == "all" then
+        text = text .. item.text_orig
+    end
+    if item.note then
+        text = text .. "\u{2002}" .. self.display_prefix["note"] .. item.note
+    end
+    return text
+end
+
+function ReaderBookmark:_getDialogHeader(bookmark)
+    local page_str = bookmark.mandatory or self:getBookmarkPageString(bookmark.page)
+    return T(_("Page: %1"), page_str) .. "     " .. T(_("Time: %1"), bookmark.datetime)
 end
 
 function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note)
@@ -986,7 +1043,7 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note)
     end
     self.input = InputDialog:new{
         title = _("Edit note"),
-        description = "   " .. self._getDialogHeader(annotation),
+        description = "   " .. self:_getDialogHeader(annotation),
         input = input_text,
         allow_newline = true,
         add_scroll_buttons = true,
@@ -1039,8 +1096,8 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note)
                             end
                         else
                             item.note = value
-                            item.text = self.display_prefix[type_after] .. (value or item.text_orig)
                             item.type = type_after
+                            item.text = self:getBookmarkItemText(item)
                             self.refresh()
                         end
                     end,
@@ -1056,7 +1113,7 @@ function ReaderBookmark:editHighlightedText(item)
     local input_dialog
     input_dialog = InputDialog:new{
         title = _("Edit highlighted text"),
-        description = "   " .. self._getDialogHeader(item),
+        description = "   " .. self:_getDialogHeader(item),
         input = item.text_orig,
         allow_newline = true,
         add_scroll_buttons = true,
