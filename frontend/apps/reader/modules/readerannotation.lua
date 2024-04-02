@@ -1,5 +1,7 @@
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
+local _ = require("gettext")
+local T = require("ffi/util").template
 
 local ReaderAnnotation = WidgetContainer:extend{
     annotations = nil,
@@ -227,12 +229,25 @@ end
 -- items handling
 
 function ReaderAnnotation:updatePosPercent()
-    if self.update then -- triggered by ReaderRolling
+    if self.update then -- triggered by ReaderRolling on document layout change
         for _, item in ipairs(self.annotations) do
             item.pos_percent = self.document:getPosFromXPointer(item.page) / self.document.info.doc_height
         end
         self.update = nil
     end
+end
+
+function ReaderAnnotation:updateItemByXPointer(item)
+    -- called by ReaderRolling:checkXPointersAndProposeDOMVersionUpgrade()
+    local chapter = self.ui.toc:getTocTitleByPage(item.page)
+    if chapter == "" then
+        chapter = nil
+    end
+    if not item.drawer then -- page bookmark
+        item.text = chapter and T(_("in %1"), chapter) or nil
+    end
+    item.chapter = chapter
+    item.pos_percent = self.document:getPosFromXPointer(item.page) / self.document.info.doc_height
 end
 
 function ReaderAnnotation:isItemInPositionOrderRolling(a, b)
