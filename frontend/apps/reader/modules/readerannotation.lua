@@ -169,14 +169,14 @@ function ReaderAnnotation:createAnnotations(config)
             if config:has("bookmarks_paging") then -- save incompatible old backup
                 local bookmarks_paging = config:readSetting("bookmarks_paging")
                 local highlights_paging = config:readSetting("highlight_paging")
-                local annotations_paging = self:getAnnotationsFromBookmarksHighlights(bookmarks_paging, highlights_paging)
-                config:saveSetting("annotations_paging", annotations_paging)
+                local annotations = self:getAnnotationsFromBookmarksHighlights(bookmarks_paging, highlights_paging)
+                config:saveSetting("annotations_paging", annotations)
                 config:delSetting("bookmarks_paging")
                 config:delSetting("highlight_paging")
             end
         else -- incompatible format loaded, or empty
             if has_bookmarks then -- save incompatible format if not empty
-                annotations = self:getAnnotationsFromBookmarksHighlights(bookmarks, highlights)
+                local annotations = self:getAnnotationsFromBookmarksHighlights(bookmarks, highlights)
                 config:saveSetting("annotations_paging", annotations)
             end
             -- load compatible format
@@ -190,14 +190,14 @@ function ReaderAnnotation:createAnnotations(config)
             if config:has("bookmarks_rolling") then
                 local bookmarks_rolling = config:readSetting("bookmarks_rolling")
                 local highlights_rolling = config:readSetting("highlight_rolling")
-                local annotations_rolling = self:getAnnotationsFromBookmarksHighlights(bookmarks_rolling, highlights_rolling)
-                config:saveSetting("annotations_rolling", annotations_rolling)
+                local annotations = self:getAnnotationsFromBookmarksHighlights(bookmarks_rolling, highlights_rolling)
+                config:saveSetting("annotations_rolling", annotations)
                 config:delSetting("bookmarks_rolling")
                 config:delSetting("highlight_rolling")
             end
         else
             if has_bookmarks then
-                annotations = self:getAnnotationsFromBookmarksHighlights(bookmarks, highlights)
+                local annotations = self:getAnnotationsFromBookmarksHighlights(bookmarks, highlights)
                 config:saveSetting("annotations_rolling", annotations)
             end
             bookmarks = config:readSetting("bookmarks_paging") or {}
@@ -317,7 +317,7 @@ function ReaderAnnotation:getItemIndex(item, no_binary)
             end
         end
     end
-    
+
     if not no_binary then
         local isInOrder = self.ui.rolling and self.isItemInPositionOrderRolling or self.isItemInPositionOrderPaging
         local _start, _end, _middle = 1, #self.annotations
@@ -333,7 +333,7 @@ function ReaderAnnotation:getItemIndex(item, no_binary)
             end
         end
     end
-    
+
     for i, v in ipairs(self.annotations) do
         if doesMatch(item, v) then
             return i
