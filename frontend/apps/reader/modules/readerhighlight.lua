@@ -836,8 +836,8 @@ function ReaderHighlight:updateHighlight(index, side, direction, move_by_char)
             if order and order > 0 then -- only if beginning did not go past end
                 highlight.pos0 = updated_highlight_beginning
                 highlight.page = updated_highlight_beginning
-                highlight.pageno = self.document:getPageFromXPointer(updated_highlight_beginning)
                 highlight.chapter = self.ui.toc:getTocTitleByPage(updated_highlight_beginning)
+                highlight.pos_percent = self.ui.annotation:getPosPercent(updated_highlight_beginning)
             end
         end
     else -- we move pos1
@@ -1761,7 +1761,6 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             drawer = self.view.highlight.saved_drawer,
             datetime = os.date("%Y-%m-%d %H:%M:%S"),
             chapter = self.ui.toc:getTocTitleByPage(pg_or_xp),
-            pageno = page,
         }
         if self.ui.paging then
             item.pboxes = self.selected_text.pboxes
