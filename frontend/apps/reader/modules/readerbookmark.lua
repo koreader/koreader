@@ -17,7 +17,6 @@ local SpinWidget = require("ui/widget/spinwidget")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
-local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
