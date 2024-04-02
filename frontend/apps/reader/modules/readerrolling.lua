@@ -1445,25 +1445,12 @@ function ReaderRolling:checkXPointersAndProposeDOMVersionUpgrade()
     local applyFuncToXPointersSlots = function(func)
         -- Last position
         func(self, "xpointer", "last position in book")
-        -- Bookmarks
-        if self.ui.bookmark and self.ui.bookmark.bookmarks and #self.ui.bookmark.bookmarks > 0 then
+        -- Annotations
+        if self.ui.annotation and self.ui.annotation.annotations and #self.ui.annotation.annotations > 0 then
             local slots = { "page", "pos0", "pos1" }
-            for _, bookmark in ipairs(self.ui.bookmark.bookmarks) do
+            for _, item in ipairs(self.ui.annotation.annotations) do
                 for _, slot in ipairs(slots) do
-                    func(bookmark, slot, bookmark.notes or "bookmark")
-                end
-            end
-        end
-        -- Highlights
-        if self.view.highlight and self.view.highlight.saved then
-            local slots = { "pos0", "pos1" }
-            for page, items in pairs(self.view.highlight.saved) do
-                if items and #items > 0 then
-                    for _, highlight in ipairs(items) do
-                        for _, slot in ipairs(slots) do
-                            func(highlight, slot, highlight.text or "highlight")
-                        end
-                    end
+                    func(item, slot, item.text or "annotation")
                 end
             end
         end
@@ -1509,6 +1496,9 @@ function ReaderRolling:checkXPointersAndProposeDOMVersionUpgrade()
         local new_xp = normalized_xpointers[xp]
         if new_xp then
             obj[slot] = new_xp
+            if slot == "page" then
+                self.ui.annotation:updateItemByXPointer(obj)
+            end
         else
             -- Let lost/not-found XPointer be. There is a small chance that
             -- it will be found (it it was made before the boxing code moved
