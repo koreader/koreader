@@ -106,6 +106,7 @@ describe("Readerhighlight module", function()
         end)
         after_each(function()
             readerui.highlight:clear()
+            readerui.annotation.annotations = {}
         end)
         it("should highlight single word", function()
             highlight_single_word(readerui, Geom:new{ x = 400, y = 70 })
@@ -154,6 +155,7 @@ describe("Readerhighlight module", function()
             end)
             after_each(function()
                 readerui.highlight:clear()
+                readerui.annotation.annotations = {}
             end)
             it("should response on tap gesture #nocov", function()
                 tap_highlight_text(readerui,
@@ -181,6 +183,7 @@ describe("Readerhighlight module", function()
             end)
             after_each(function()
                 readerui.highlight:clear()
+                readerui.annotation.annotations = {}
             end)
             it("should respond to tap gesture #nocov", function()
                 tap_highlight_text(readerui, Geom:new{ x = 260, y = 70 }, Geom:new{ x = 260, y = 150 }, Geom:new{ x = 280, y = 110 })
@@ -206,6 +209,7 @@ describe("Readerhighlight module", function()
             end)
             after_each(function()
                 readerui.highlight:clear()
+                readerui.annotation.annotations = {}
                 readerui.document.configurable.text_wrap = 0
                 UIManager:close(readerui)  -- close to flush settings
                 -- We haven't torn it down yet
@@ -253,6 +257,7 @@ describe("Readerhighlight module", function()
             end)
             after_each(function()
                 readerui.highlight:clear()
+                readerui.annotation.annotations = {}
             end)
             it("should highlight single word", function()
                 highlight_single_word(readerui, Geom:new{ x = 260, y = 70 })
@@ -281,6 +286,7 @@ describe("Readerhighlight module", function()
             end)
             after_each(function()
                 readerui.highlight:clear()
+                readerui.annotation.annotations = {}
             end)
             it("should highlight single word", function()
                 highlight_single_word(readerui, Geom:new{ x = 260, y = 70 })
@@ -306,6 +312,7 @@ describe("Readerhighlight module", function()
             end)
             after_each(function()
                 readerui.highlight:clear()
+                readerui.annotation.annotations = {}
                 readerui.document.configurable.text_wrap = 0
                 UIManager:close(readerui)  -- close to flush settings
                 -- We haven't torn it down yet
