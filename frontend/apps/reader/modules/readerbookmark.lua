@@ -419,7 +419,7 @@ function ReaderBookmark:onGotoPreviousBookmarkFromPage(add_current_location_to_s
     if add_current_location_to_stack ~= false then -- nil or true
         self.ui.link:addCurrentLocationToStack()
     end
-    local pn_or_xp = self.ui:getCurrentPage()
+    local pn_or_xp = self:getCurrentPageNumber()
     self:gotoBookmark(self:getPreviousBookmarkedPage(pn_or_xp))
     return true
 end
@@ -428,7 +428,7 @@ function ReaderBookmark:onGotoNextBookmarkFromPage(add_current_location_to_stack
     if add_current_location_to_stack ~= false then -- nil or true
         self.ui.link:addCurrentLocationToStack()
     end
-    local pn_or_xp = self.ui:getCurrentPage()
+    local pn_or_xp = self:getCurrentPageNumber()
     self:gotoBookmark(self:getNextBookmarkedPage(pn_or_xp))
     return true
 end
@@ -437,7 +437,7 @@ function ReaderBookmark:onGotoFirstBookmark(add_current_location_to_stack)
     if add_current_location_to_stack ~= false then -- nil or true
         self.ui.link:addCurrentLocationToStack()
     end
-    local pn_or_xp = self.ui:getCurrentPage()
+    local pn_or_xp = self:getCurrentPageNumber()
     self:gotoBookmark(self:getFirstBookmarkedPage(pn_or_xp))
     return true
 end
@@ -446,7 +446,7 @@ function ReaderBookmark:onGotoLastBookmark(add_current_location_to_stack)
     if add_current_location_to_stack ~= false then -- nil or true
         self.ui.link:addCurrentLocationToStack()
     end
-    local pn_or_xp = self.ui:getCurrentPage()
+    local pn_or_xp = self:getCurrentPageNumber()
     self:gotoBookmark(self:getLastBookmarkedPage(pn_or_xp))
     return true
 end
