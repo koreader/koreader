@@ -574,7 +574,7 @@ body, h1, h2, h3, h4, h5, h6, div, li, td, th { text-indent: 0 !important; }
             {
                 id = "table_no_presentational_hints",
                 title = _("Ignore tables related HTML presentational hints"),
-                description = _("Ignore HTML attributes that contribute to styles on the <table> element and its sub-elements (ie. align, valign, frame, rules, border, cellpading, cellspacing…)."),
+                description = _("Ignore HTML attributes that contribute to styles on the <table> element and its sub-elements (ie. align, valign, frame, rules, border, cellpadding, cellspacing…)."),
                 css = [[table, caption, colgroup, col, thead, tbody, tfoot, tr, td, th { -cr-hint: no-presentational; }]],
                 separator = true,
             },
