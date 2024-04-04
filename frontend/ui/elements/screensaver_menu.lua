@@ -41,8 +41,10 @@ return {
             {
                 text = _("Border fill"),
                 enabled_func = function()
-                    return G_reader_settings:readSetting("screensaver_type") == "cover" or G_reader_settings:readSetting("screensaver_type") == "random_image"
-                    or G_reader_settings:readSetting("screensaver_type") == "image_file" or G_reader_settings:readSetting("screensaver_type") == "document_cover" 
+                    return G_reader_settings:readSetting("screensaver_type") == "cover"
+                            or G_reader_settings:readSetting("screensaver_type") == "random_image"
+                            or G_reader_settings:readSetting("screensaver_type") == "image_file"
+                            or G_reader_settings:readSetting("screensaver_type") == "document_cover" 
                 end,
                 sub_item_table = {
                     genMenuItem(_("Black"), "screensaver_img_background", "black"),
@@ -81,8 +83,8 @@ return {
                 text = _("Custom images"),
                 enabled_func = function() 
                     return G_reader_settings:readSetting("screensaver_type") == "image_file"
-                    or G_reader_settings:readSetting("screensaver_type") == "random_image"
-                    or G_reader_settings:readSetting("screensaver_type") == "document_cover"
+                            or G_reader_settings:readSetting("screensaver_type") == "random_image"
+                            or G_reader_settings:readSetting("screensaver_type") == "document_cover"
                 end,
                 sub_item_table = {
                     {
