@@ -255,7 +255,6 @@ function ReaderBookmark:toggleBookmark(pageno)
         end
         self:addItem({
             page = pn_or_xp,
-            datetime = os.date("%Y-%m-%d %H:%M:%S"),
             text = text,
             chapter = chapter,
         })
