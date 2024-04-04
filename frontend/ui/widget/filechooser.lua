@@ -212,7 +212,7 @@ local FileChooser = Menu:extend{
         },
         percent_natural = {
             -- sort 90% > 50% > 0% or on hold > unopened > 100% or finished
-            text = _("percent - unopened - finished last"),
+            text = _("percent – unopened – finished last"),
             menu_order = 90,
             can_collate_mixed = false,
             init_sort_func = function(cache)
