@@ -880,7 +880,7 @@ You can then paste it here with long-press in the text box.]]), true},
         { "-cr-hint: footnote;", _("Can be set on target of links (<div id='..'>) to have their link trigger as footnote popup, in case KOReader wrongly detect this target is not a footnote.")},
         { "-cr-hint: noteref;", _("Can be set on links (<a href='#..'>) to have them trigger as footnote popups, in case KOReader wrongly detect the links is not to a footnote.")},
         { "-cr-hint: noteref-ignore;", _([[
-Can be set on links (<a href='#..'>) to have them NOT trigger footnote popups and in-page footnote.
+Can be set on links (<a href='#..'>) to have them NOT trigger footnote popups and in-page footnotes.
 If some DocFragment presents an index of names with cross references, resulting in in-page footnotes taking half of these pages, you can avoid this with:
 DocFragment[id$=_16] a { -cr-hint: noteref-ignore }]])},
     }},
