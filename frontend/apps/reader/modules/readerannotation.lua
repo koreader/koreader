@@ -16,8 +16,7 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
         note = nil
     end
     local chapter = bm.chapter
-    local pos_percent
-    local hl = self:getHighlightByDatetime(highlights, bm.datetime)
+    local hl, pageno = self:getHighlightByDatetime(highlights, bm.datetime)
     if init then
         if note and self.ui.bookmark:isBookmarkAutoText(bm) then
             note = nil
@@ -26,7 +25,7 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
             local pn_or_xp = (self.ui.rolling and bm.pos0) and bm.pos0 or bm.page
             chapter = self.ui.toc:getTocTitleByPage(pn_or_xp)
         end
-        pos_percent = self:getPosPercent(bm.page)
+        pageno = self.ui.paging and bm.page or self.document:getPageFromXPointer(bm.page)
     end
     if not hl then -- page bookmark or orphaned bookmark
         hl = {}
@@ -57,7 +56,7 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
         text_edited = hl.edited,   -- true if highlighted text has been edited
         note        = note,        -- user's note, editable
         chapter     = chapter,     -- book chapter title
-        pos_percent = pos_percent, -- highlight (or highlight page for pdf) absolute position percentage
+        pageno      = pageno,      -- book page number
         page        = bm.page,     -- highlight location, xPointer or number (pdf)
         pos0        = bm.pos0,     -- highlight start position, xPointer (== page) or table (pdf)
         pos1        = bm.pos1,     -- highlight end position, xPointer or table (pdf)
@@ -67,20 +66,12 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
 end
 
 function ReaderAnnotation:getHighlightByDatetime(highlights, datetime)
-    for _, page_highlights in pairs(highlights) do
-        for __, highlight in ipairs(page_highlights) do
+    for pageno, page_highlights in pairs(highlights) do
+        for _, highlight in ipairs(page_highlights) do
             if highlight.datetime == datetime then
-                return highlight
+                return highlight, pageno
             end
         end
-    end
-end
-
-function ReaderAnnotation:getPosPercent(pn_or_xp)
-    if self.ui.rolling then
-        return self.document:getPosFromXPointer(pn_or_xp) / self.document.info.doc_height
-    else
-        return pn_or_xp / self.document.info.number_of_pages
     end
 end
 
@@ -218,20 +209,20 @@ function ReaderAnnotation:onDocumentRerendered()
 end
 
 function ReaderAnnotation:onCloseDocument()
-    self:updatePosPercent()
+    self:updatePageNumbers()
 end
 
 function ReaderAnnotation:onSaveSettings()
-    self:updatePosPercent()
+    self:updatePageNumbers()
     self.ui.doc_settings:saveSetting("annotations", self.annotations)
 end
 
 -- items handling
 
-function ReaderAnnotation:updatePosPercent()
+function ReaderAnnotation:updatePageNumbers()
     if self.update then -- triggered by ReaderRolling on document layout change
         for _, item in ipairs(self.annotations) do
-            item.pos_percent = self.document:getPosFromXPointer(item.page) / self.document.info.doc_height
+            item.pageno = self.document:getPageFromXPointer(item.page)
         end
         self.update = nil
     end
@@ -247,7 +238,7 @@ function ReaderAnnotation:updateItemByXPointer(item)
         item.text = chapter and T(_("in %1"), chapter) or nil
     end
     item.chapter = chapter
-    item.pos_percent = self.document:getPosFromXPointer(item.page) / self.document.info.doc_height
+    item.pageno = self.document:getPageFromXPointer(item.page)
 end
 
 function ReaderAnnotation:isItemInPositionOrderRolling(a, b)
@@ -372,7 +363,8 @@ function ReaderAnnotation:getInsertionIndex(item)
 end
 
 function ReaderAnnotation:addItem(item)
-    item.pos_percent = self:getPosPercent(item.page)
+    item.datetime = os.date("%Y-%m-%d %H:%M:%S")
+    item.pageno = self.ui.paging and item.page or self.document:getPageFromXPointer(item.page)
     local index = self:getInsertionIndex(item)
     table.insert(self.annotations, index, item)
     return index
