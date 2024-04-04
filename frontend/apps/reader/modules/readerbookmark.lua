@@ -327,7 +327,7 @@ end
 
 function ReaderBookmark:removeItemByIndex(index)
     local item = self.ui.annotation.annotations[index]
-    local item_type = self:getBookmarkType(item)
+    local item_type = self.getBookmarkType(item)
     if item_type == "highlight" then
         self.ui:handleEvent(Event:new("DelHighlight"))
     elseif item_type == "note" then
@@ -463,12 +463,13 @@ end
 function ReaderBookmark:getNumberOfHighlightsAndNotes() -- for Statistics plugin
     local highlights = 0
     local notes = 0
-    for _, v in ipairs(self.ui.annotation.annotations) do
-        local bm_type = self:getBookmarkType(v)
-        if bm_type == "highlight" then
-            highlights = highlights + 1
-        elseif bm_type == "note" then
-            notes = notes + 1
+    for _, item in ipairs(self.ui.annotation.annotations) do
+        if item.drawer then
+            if item.note then
+                notes = notes + 1
+            else
+                highlights = highlights + 1
+            end
         end
     end
     return highlights, notes
@@ -482,16 +483,14 @@ function ReaderBookmark:getBookmarkPageNumber(bookmark)
     return self.ui.paging and bookmark.page or self.ui.document:getPageFromXPointer(bookmark.page)
 end
 
-function ReaderBookmark:getBookmarkType(bookmark)
+function ReaderBookmark.getBookmarkType(bookmark)
     if bookmark.drawer then
         if bookmark.note then
             return "note"
-        else
-            return "highlight"
         end
-    else
-        return "bookmark"
+        return "highlight"
     end
+    return "bookmark"
 end
 
 function ReaderBookmark:getLatestBookmark()
@@ -511,7 +510,7 @@ function ReaderBookmark:getBookmarkedPages()
     local pages = {}
     for _, bm in ipairs(self.ui.annotation.annotations) do
         local page = self:getBookmarkPageNumber(bm)
-        local btype = self:getBookmarkType(bm)
+        local btype = self.getBookmarkType(bm)
         if not pages[page] then
             pages[page] = {}
         end
@@ -570,7 +569,7 @@ function ReaderBookmark:onShowBookmark(match_table)
         local v = self.ui.annotation.annotations[is_reverse_sorting and num - i or i]
         local item = util.tableDeepCopy(v)
         item.text_orig = item.text or ""
-        item.type = self:getBookmarkType(item)
+        item.type = self.getBookmarkType(item)
         if not match_table or self:doesBookmarkMatchTable(item, match_table) then
             item.text = self:getBookmarkItemText(item)
             item.mandatory = self:getBookmarkPageString(item.page)
@@ -1027,10 +1026,10 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note)
         index = item_or_index
     else
         item = item_or_index -- in item_table
-        index = self.filtered_mode and self.ui.annotation:getItemIndex(item) or item.idx
+        index = (self.filtered_mode or self.show_edited_only) and self.ui.annotation:getItemIndex(item) or item.idx
     end
     local annotation = self.ui.annotation.annotations[index]
-    local type_before = item and item.type or self:getBookmarkType(annotation)
+    local type_before = item and item.type or self.getBookmarkType(annotation)
     local input_text = annotation.note
     if new_note then
         if input_text then
@@ -1073,7 +1072,7 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note)
                             value = nil
                         end
                         annotation.note = value
-                        local type_after = self:getBookmarkType(annotation)
+                        local type_after = self.getBookmarkType(annotation)
                         if type_before ~= type_after then
                             if type_before == "highlight" then
                                 self.ui:handleEvent(Event:new("DelHighlight"))
