@@ -334,7 +334,7 @@ end
 local highlight_style = {
     {_("Lighten"), "lighten"},
     {_("Underline"), "underscore"},
-    {_("Strikeout"), "strikeout"},
+    {_("Strike through"), "strikeout"},
     {_("Invert"), "invert"},
 }
 
