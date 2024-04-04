@@ -235,6 +235,23 @@ function MyClipping:getImage(image)
     end
 end
 
+function MyClipping:parseAnnotations(annotations, book)
+    for _, item in ipairs(annotations) do
+        if item.drawer then
+            local clipping = {
+                sort    = "highlight",
+                page    = item.pageno,
+                time    = self:getTime(item.datetime),
+                text    = self:getText(item.text),
+                note    = self:getText(item.note),
+                chapter = item.chapter,
+                drawer  = item.drawer,
+            }
+            table.insert(book, { clipping })
+        end
+    end
+end
+
 function MyClipping:parseHighlight(highlights, bookmarks, book)
     --DEBUG("book", book.file)
 
@@ -249,13 +266,14 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
     local orphan_highlights = {}
     for page, items in pairs(highlights) do
         for _, item in ipairs(items) do
-            local clipping = {}
-            clipping.page = page
-            clipping.sort = "highlight"
-            clipping.time = self:getTime(item.datetime or "")
-            clipping.text = self:getText(item.text)
-            clipping.chapter = item.chapter
-            clipping.drawer = item.drawer
+            local clipping = {
+                sort    = "highlight",
+                page    = page,
+                time    = self:getTime(item.datetime or ""),
+                text    = self:getText(item.text),
+                chapter = item.chapter,
+                drawer  = item.drawer,
+            }
             local bookmark_found = false
             for _, bookmark in pairs(bookmarks) do
                 if bookmark.datetime == item.datetime then
@@ -316,9 +334,13 @@ end
 
 function MyClipping:getClippingsFromBook(clippings, doc_path)
     local doc_settings = DocSettings:open(doc_path)
-    local highlights = doc_settings:readSetting("highlight")
-    if not highlights then return end
-    local bookmarks = doc_settings:readSetting("bookmarks")
+    local highlights, bookmarks
+    local annotations = doc_settings:readSetting("annotations")
+    if annotations == nil then
+        highlights = doc_settings:readSetting("highlight")
+        if highlights == nil then return end
+        bookmarks = doc_settings:readSetting("bookmarks")
+    end
     local props = doc_settings:readSetting("doc_props")
     props = FileManagerBookInfo.extendProps(props, doc_path)
     local title, author = self:getTitleAuthor(doc_path, props)
@@ -326,8 +348,13 @@ function MyClipping:getClippingsFromBook(clippings, doc_path)
         file = doc_path,
         title = title,
         author = author,
+        number_of_pages = doc_settings:readSetting("doc_pages"),
     }
-    self:parseHighlight(highlights, bookmarks, clippings[title])
+    if annotations then
+        self:parseAnnotations(annotations, clippings[title])
+    else
+        self:parseHighlight(highlights, bookmarks, clippings[title])
+    end
 end
 
 function MyClipping:parseHistory()
@@ -361,7 +388,7 @@ function MyClipping:parseCurrentDoc(view)
         output_filename = util.getSafeFilename(title),
         number_of_pages = view.document.info.number_of_pages,
     }
-    self:parseHighlight(view.highlight.saved, view.ui.bookmark.bookmarks, clippings[title])
+    self:parseAnnotations(view.ui.annotation.annotations, clippings[title])
     return clippings
 end
 
