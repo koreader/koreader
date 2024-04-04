@@ -95,7 +95,6 @@ function ReaderView:init()
         temp_drawer = "invert",
         temp = {},
         saved_drawer = "lighten",
-        saved = {},
         indicator = nil, -- geom: non-touch highlight position indicator: {x = 50, y=50}
     }
     self.page_states = {}
@@ -534,11 +533,11 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
     local pages = self:getCurrentPageList()
     for _, page in ipairs(pages) do
         local items = self.ui.highlight:getPageSavedHighlights(page)
-        for __, item in ipairs(items) do
+        for _, item in ipairs(items) do
             local boxes = self.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
             if boxes then
                 local draw_note_mark = item.note and self.highlight.note_mark
-                for ___, box in ipairs(boxes) do
+                for _, box in ipairs(boxes) do
                     local rect = self:pageToScreenTransform(page, box)
                     if rect then
                         self:drawHighlightRect(bb, x, y, rect, item.drawer, draw_note_mark)
@@ -577,7 +576,7 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
                 local boxes = self.document:getScreenBoxesFromPositions(item.pos0, item.pos1, true) -- get_segments=true
                 if boxes then
                     local draw_note_mark = item.note and self.highlight.note_mark
-                    for __, box in ipairs(boxes) do
+                    for _, box in ipairs(boxes) do
                         if box.h ~= 0 then
                             self:drawHighlightRect(bb, x, y, box, item.drawer, draw_note_mark)
                             if draw_note_mark and self.highlight.note_mark == "sidemark" then
