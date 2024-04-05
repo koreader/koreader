@@ -4,7 +4,7 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 
 local ReaderAnnotation = WidgetContainer:extend{
-    annotations = nil,
+    annotations = nil, -- array sorted by annotation position order, ascending
 }
 
 -- build, read, save
@@ -81,13 +81,8 @@ function ReaderAnnotation:getAnnotationsFromBookmarksHighlights(bookmarks, highl
         table.insert(annotations, self:buildAnnotation(bookmarks[i], highlights, init))
     end
     if #annotations > 1 then
-        local sort_func = function(a, b)
-            if self.ui.rolling then
-                return self:isItemInPositionOrderRolling(a, b)
-            else
-                return self:isItemInPositionOrderPaging(a, b)
-            end
-        end
+        local sort_func = self.ui.rolling and function(a, b) return self:isItemInPositionOrderRolling(a, b) end
+                                           or function(a, b) return self:isItemInPositionOrderPaging(a, b) end
         table.sort(annotations, sort_func)
     end
     return annotations
