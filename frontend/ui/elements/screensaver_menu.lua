@@ -36,7 +36,7 @@ return {
             genMenuItem(_("Show document cover on sleep screen"), "screensaver_type", "document_cover"),
             genMenuItem(_("Show reading progress on sleep screen"), "screensaver_type", "readingprogress", isReaderProgressEnabled),
             genMenuItem(_("Show book status on sleep screen"), "screensaver_type", "bookstatus", hasLastFile),
-            genMenuItem(_("Lock the screen in current state"), "screensaver_type", "disable", nil, true),
+            genMenuItem(_("Put screen to sleep in current state"), "screensaver_type", "disable", nil, true),
             separator = true,
             {
                 text = _("Border fill"),
@@ -69,14 +69,14 @@ return {
                 },
             },
             {
-                text = _("Unlock screen delay"),
+                text = _("Awake screen delay"),
                 sub_item_table = {
                     genMenuItem(_("Off"), "screensaver_delay", "disable"),
                     genMenuItem(_("1 second"), "screensaver_delay", "1"),
                     genMenuItem(_("3 seconds"), "screensaver_delay", "3"),
                     genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
-                    genMenuItem(_("Unlock with a tap"), "screensaver_delay", "tap"),
-                    genMenuItem(_("Unlock with 'exit sleep screen' gesture"), "screensaver_delay", "gesture"),
+                    genMenuItem(_("Awake with a tap"), "screensaver_delay", "tap"),
+                    genMenuItem(_("Awake with 'exit sleep screen' gesture"), "screensaver_delay", "gesture"),
                 },
             },
             {
@@ -146,7 +146,7 @@ return {
             },
             {
                 text = _("Background fill"),
-                help_text = _([[This option will only become available, if you have selected 'Lock the screen in current state'
+                help_text = _([[This option will only become available, if you have selected 'Put screen to sleep in current state'
                     as screensaver and have 'Sleep screen message' on.]]),
                enabled_func = function()
                     return G_reader_settings:readSetting("screensaver_type") == "disable" and G_reader_settings:isTrue("screensaver_show_message")
