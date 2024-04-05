@@ -70,7 +70,7 @@ function ReaderBookmark:genItemTextMenuItem(type, get_string)
     local text_type = {
         text = _("highlighted text"),
         all  = _("highlighted text and note"),
-        note = _("note"),
+        note = _("note, or highlighted text"),
     }
     if get_string then
         return text_type[type]
