@@ -38,6 +38,7 @@ local CreDocument = Document:extend{
         authors      = "doc.authors",
         series       = "doc.series.name",
         series_index = "doc.series.number",
+        identifiers  = "doc.identifiers",
     },
 
     -- Reasons for the fallback font ordering:
