@@ -210,7 +210,7 @@ function Document:getProps(cached_doc_metadata)
         language     = language,
         keywords     = keywords,
         description  = description,
-        identifiers  = identifiers
+        identifiers  = identifiers,
     }
 end
 

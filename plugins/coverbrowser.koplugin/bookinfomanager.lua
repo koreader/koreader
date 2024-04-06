@@ -57,7 +57,6 @@ local BOOKINFO_DB_SCHEMA = [[
         language            TEXT,
         keywords            TEXT,
         description         TEXT,
-        identifiers         TEXT,
 
         -- Cover image
         cover_w             INTEGER,  -- blitbuffer width
@@ -101,7 +100,6 @@ local BOOKINFO_COLS_SET = {
         "cover_bb_type",
         "cover_bb_stride",
         "cover_bb_data",
-        "identifiers"
     }
 
 local bookinfo_values_sql = {} -- for "VALUES (?, ?, ?,...)" insert sql part
