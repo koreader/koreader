@@ -10,7 +10,7 @@ local ReaderAnnotation = WidgetContainer:extend{
 -- build, read, save
 
 function ReaderAnnotation:buildAnnotation(bm, highlights, init)
-    -- bm - corresponding bookmark, highlights - all highlights
+    -- bm: associated single bookmark ; highlights: tables with all highlights
     local note = bm.text
     if note == "" then
         note = nil
@@ -22,8 +22,7 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
             note = nil
         end
         if chapter == nil then
-            local pn_or_xp = (self.ui.rolling and bm.pos0) and bm.pos0 or bm.page
-            chapter = self.ui.toc:getTocTitleByPage(pn_or_xp)
+            chapter = self.ui.toc:getTocTitleByPage(bm.page)
         end
         pageno = self.ui.paging and bm.page or self.document:getPageFromXPointer(bm.page)
     end
@@ -112,20 +111,20 @@ function ReaderAnnotation:onReadSettings(config)
     else -- first run
         if self.ui.rolling then
             self.ui:registerPostInitCallback(function()
-                self:createAnnotations(config)
+                self:migrateToAnnotations(config)
             end)
         else
-            self:createAnnotations(config)
+            self:migrateToAnnotations(config)
         end
     end
 end
 
-function ReaderAnnotation:createAnnotations(config)
+function ReaderAnnotation:migrateToAnnotations(config)
     local bookmarks = config:readSetting("bookmarks") or {}
     local highlights = config:readSetting("highlight") or {}
 
     if config:hasNot("highlights_imported") then
-        -- old bookmarks were not created along the highlights
+        -- before 2014, saved highlights were not added to bookmarks when they were created.
         for page, hls in pairs(highlights) do
             for _, hl in ipairs(hls) do
                 local hl_page = self.ui.paging and page or hl.pos0
@@ -200,7 +199,7 @@ function ReaderAnnotation:createAnnotations(config)
 end
 
 function ReaderAnnotation:onDocumentRerendered()
-    self.update = true
+    self.needs_update = true
 end
 
 function ReaderAnnotation:onCloseDocument()
@@ -215,11 +214,11 @@ end
 -- items handling
 
 function ReaderAnnotation:updatePageNumbers()
-    if self.update then -- triggered by ReaderRolling on document layout change
+    if self.needs_update and self.ui.rolling then -- triggered by ReaderRolling on document layout change
         for _, item in ipairs(self.annotations) do
             item.pageno = self.document:getPageFromXPointer(item.page)
         end
-        self.update = nil
+        self.needs_update = nil
     end
 end
 
