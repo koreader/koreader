@@ -44,7 +44,7 @@ return {
                     return G_reader_settings:readSetting("screensaver_type") == "cover"
                             or G_reader_settings:readSetting("screensaver_type") == "random_image"
                             or G_reader_settings:readSetting("screensaver_type") == "image_file"
-                            or G_reader_settings:readSetting("screensaver_type") == "document_cover" 
+                            or G_reader_settings:readSetting("screensaver_type") == "document_cover"
                 end,
                 sub_item_table = {
                     genMenuItem(_("Black"), "screensaver_img_background", "black"),
@@ -81,7 +81,7 @@ return {
             },
             {
                 text = _("Custom images"),
-                enabled_func = function() 
+                enabled_func = function()
                     return G_reader_settings:readSetting("screensaver_type") == "image_file"
                             or G_reader_settings:readSetting("screensaver_type") == "random_image"
                             or G_reader_settings:readSetting("screensaver_type") == "document_cover"
@@ -89,7 +89,7 @@ return {
                 sub_item_table = {
                     {
                         text = _("Select custom image"),
-                        enabled_func = function() 
+                        enabled_func = function()
                             return G_reader_settings:readSetting("screensaver_type") == "image_file"
                         end,
                         keep_menu_open = true,
@@ -99,7 +99,7 @@ return {
                     },
                     {
                         text = _("Select shuffle folder"),
-                        enabled_func = function() 
+                        enabled_func = function()
                             return G_reader_settings:readSetting("screensaver_type") == "random_image"
                         end,
                         keep_menu_open = true,
@@ -109,7 +109,7 @@ return {
                     },
                     {
                         text = _("Select document cover"),
-                        enabled_func = function() 
+                        enabled_func = function()
                             return G_reader_settings:readSetting("screensaver_type") == "document_cover"
                         end,
                         keep_menu_open = true,
@@ -136,7 +136,7 @@ return {
             },
             {
             text = _("Edit sleep screen message"),
-            enabled_func = function() 
+            enabled_func = function()
                 return G_reader_settings:isTrue("screensaver_show_message")
             end,
             keep_menu_open = true,
@@ -159,7 +159,7 @@ return {
             },
             {
                 text = _("Message position"),
-                enabled_func = function() 
+                enabled_func = function()
                     return G_reader_settings:isTrue("screensaver_show_message")
                 end,
                 sub_item_table = {
