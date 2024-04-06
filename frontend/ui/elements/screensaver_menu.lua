@@ -36,7 +36,7 @@ return {
             genMenuItem(_("Show document cover on sleep screen"), "screensaver_type", "document_cover"),
             genMenuItem(_("Show reading progress on sleep screen"), "screensaver_type", "readingprogress", isReaderProgressEnabled),
             genMenuItem(_("Show book status on sleep screen"), "screensaver_type", "bookstatus", hasLastFile),
-            genMenuItem(_("Put screen to sleep in current state"), "screensaver_type", "disable", nil, true),
+            genMenuItem(_("Leave screen in current state"), "screensaver_type", "disable", nil, true),
             separator = true,
             {
                 text = _("Border fill"),
