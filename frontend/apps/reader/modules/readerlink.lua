@@ -3,7 +3,7 @@ ReaderLink is an abstraction for document-specific link interfaces.
 ]]
 
 local BD = require("ui/bidi")
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
@@ -118,7 +118,7 @@ function ReaderLink:init()
     end)
     if G_reader_settings:isTrue("opening_page_location_stack") then
         -- Add location at book opening to stack
-        self.ui:registerPostReadyCallback(function()
+        self.ui:registerPostReaderReadyCallback(function()
             self:addCurrentLocationToStack()
         end)
     end
@@ -858,7 +858,7 @@ end
 
 function ReaderLink:onGoToExternalLink(link_url)
     local buttons, title = self:getButtonsForExternalLinkDialog(link_url)
-    self.external_link_dialog = ButtonDialogTitle:new{
+    self.external_link_dialog = ButtonDialog:new{
         title = title,
         buttons = buttons,
     }
