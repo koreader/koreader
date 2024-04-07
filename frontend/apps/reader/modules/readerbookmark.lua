@@ -49,7 +49,7 @@ function ReaderBookmark:init()
             G_reader_settings:saveSetting("bookmarks_items_font_size", items_font_size)
         end
     end
-    self.items_text = G_reader_settings:readSetting("bookmarks_items_text", "note")
+    self.items_text = G_reader_settings:readSetting("bookmarks_items_text_type", "note")
 
     self.ui.menu:registerToMainMenu(self)
     -- NOP our own gesture handling
@@ -82,7 +82,7 @@ function ReaderBookmark:genItemTextMenuItem(type, get_string)
         end,
         callback = function()
             self.items_text = type
-            G_reader_settings:saveSetting("bookmarks_items_text", type)
+            G_reader_settings:saveSetting("bookmarks_items_text_type", type)
         end,
     }
 end
@@ -188,7 +188,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    local curr_type = G_reader_settings:readSetting("bookmarks_items_text", "note")
+                    local curr_type = G_reader_settings:readSetting("bookmarks_items_text_type", "note")
                     return T(_("Show in items: %1"), self:genItemTextMenuItem(curr_type, true))
                 end,
                 sub_item_table = {
