@@ -32,7 +32,6 @@ local order = {
         "navigation",
         "document",
         "----------------------------",
-        "language",
         "device",
         -- end common settings
     },
@@ -49,6 +48,7 @@ local order = {
         "external_keyboard",
         "font_ui_fallbacks",
         "----------------------------",
+        "language",
         "time",
         "units",
         "device_status_alarm",
