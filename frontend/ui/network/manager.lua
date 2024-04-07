@@ -274,7 +274,10 @@ function NetworkMgr:ifHasAnAddress()
     return ok
 end
 
--- The socket API equivalent of "ip route get 1.1.1.1 || ip route get 2606:4700:4700::1111".
+-- The socket API equivalent of "ip route get 203.0.113.1 || ip route get 2001:db8::1".
+--
+-- These addresses are from special ranges reserved for documentation
+-- (RFC 5737, RFC 3849) and therefore likely to just use the default route.
 function NetworkMgr:hasDefaultRoute()
     local socket = require("socket")
 
@@ -285,13 +288,13 @@ function NetworkMgr:hasDefaultRoute()
         return nil
     end
 
-    ret, err = s:setpeername("1.1.1.1", "53")
+    ret, err = s:setpeername("203.0.113.1", "53")
     if ret == nil then
         -- Most likely "Network is unreachable", meaning there's no route to that address.
         logger.dbg("NetworkMgr: socket.udp.setpeername:", err)
 
         -- Try IPv6, may still succeed if this is an IPv6-only network.
-        ret, err = s:setpeername("2606:4700:4700::1111", "53")
+        ret, err = s:setpeername("2001:db8::1", "53")
         if ret == nil then
             -- Most likely "Network is unreachable", meaning there's no route to that address.
             logger.dbg("NetworkMgr: socket.udp.setpeername:", err)
