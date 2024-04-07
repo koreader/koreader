@@ -84,7 +84,7 @@ local ReaderUI = InputContainer:extend{
     password = nil,
 
     postInitCallback = nil,
-    postReaderCallback = nil,
+    postReaderReadyCallback = nil,
 }
 
 function ReaderUI:registerModule(name, ui_module, always_active)
@@ -103,8 +103,8 @@ function ReaderUI:registerPostInitCallback(callback)
     table.insert(self.postInitCallback, callback)
 end
 
-function ReaderUI:registerPostReadyCallback(callback)
-    table.insert(self.postReaderCallback, callback)
+function ReaderUI:registerPostReaderReadyCallback(callback)
+    table.insert(self.postReaderReadyCallback, callback)
 end
 
 function ReaderUI:init()
@@ -117,7 +117,7 @@ function ReaderUI:init()
     Device:setIgnoreInput(true) -- Avoid ANRs on Android with unprocessed events.
 
     self.postInitCallback = {}
-    self.postReaderCallback = {}
+    self.postReaderReadyCallback = {}
     -- if we are not the top level dialog ourselves, it must be given in the table
     if not self.dialog then
         self.dialog = self
@@ -498,10 +498,10 @@ function ReaderUI:init()
     -- Need the same event for PDF document
     self:handleEvent(Event:new("ReaderReady", self.doc_settings))
 
-    for _,v in ipairs(self.postReaderCallback) do
+    for _,v in ipairs(self.postReaderReadyCallback) do
         v()
     end
-    self.postReaderCallback = nil
+    self.postReaderReadyCallback = nil
 
     Device:setIgnoreInput(false) -- Allow processing of events (on Android).
     Input:inhibitInputUntil(0.2)
