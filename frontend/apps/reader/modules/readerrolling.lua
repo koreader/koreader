@@ -100,7 +100,7 @@ function ReaderRolling:init()
             self.valid_cache_rendering_hash = self.ui.document:getDocumentRenderingHash(false)
         end
     end)
-    table.insert(self.ui.postReaderCallback, function()
+    table.insert(self.ui.postReaderReadyCallback, function()
         self:updatePos()
         -- Disable crengine internal history, with required redraw
         self.ui.document:enableInternalHistory(false)
@@ -1029,9 +1029,9 @@ function ReaderRolling:onUpdatePos(force)
     if self.batched_update_count > 0 then
         return
     end
-    if self.ui.postReaderCallback ~= nil then -- ReaderUI:init() not yet done
+    if self.ui.postReaderReadyCallback ~= nil then -- ReaderUI:init() not yet done
         -- Don't schedule any updatePos as long as ReaderUI:init() is
-        -- not finished (one will be called in the ui.postReaderCallback
+        -- not finished (one will be called in the ui.postReaderReadyCallback
         -- we have set above) to avoid multiple refreshes.
         return true
     end
@@ -1129,7 +1129,7 @@ function ReaderRolling:onRedrawCurrentView()
 end
 
 function ReaderRolling:onSetDimensions(dimen)
-    if self.ui.postReaderCallback ~= nil then
+    if self.ui.postReaderReadyCallback ~= nil then
         -- ReaderUI:init() not yet done: just set document dimensions
         self.ui.document:setViewDimen(Screen:getSize())
         -- (what's done in the following else is done elsewhere by
