@@ -79,10 +79,8 @@ function ReaderAnnotation:getAnnotationsFromBookmarksHighlights(bookmarks, highl
     for i = #bookmarks, 1, -1 do
         table.insert(annotations, self:buildAnnotation(bookmarks[i], highlights, init))
     end
-    if #annotations > 1 then
-        local sort_func = self.ui.rolling and function(a, b) return self:isItemInPositionOrderRolling(a, b) end
-                                           or function(a, b) return self:isItemInPositionOrderPaging(a, b) end
-        table.sort(annotations, sort_func)
+    if init then
+        self:sortItems(annotations)
     end
     return annotations
 end
@@ -90,6 +88,8 @@ end
 function ReaderAnnotation:onReadSettings(config)
     local annotations = config:readSetting("annotations")
     if annotations then
+        local needs_update = config:isTrue("annotations_needs_update")
+        local needs_sort -- if incompatible annotations were built of old highlights/bookmarks
         -- Annotation formats in crengine and mupdf are incompatible.
         local has_annotations = #annotations > 0
         local annotations_type = has_annotations and type(annotations[1].page)
@@ -100,14 +100,26 @@ function ReaderAnnotation:onReadSettings(config)
              -- load compatible format
             annotations = config:readSetting("annotations_rolling") or {}
             config:delSetting("annotations_rolling")
+            needs_sort = true
         elseif self.ui.paging and annotations_type ~= "number" then
             if has_annotations then
                 config:saveSetting("annotations_rolling", annotations)
             end
             annotations = config:readSetting("annotations_paging") or {}
             config:delSetting("annotations_paging")
+            needs_sort = true
         end
         self.annotations = annotations
+        if needs_update or needs_sort then
+            if self.ui.rolling then
+                self.ui:registerPostInitCallback(function()
+                    self:updatedAnnotations(needs_update, needs_sort)
+                end)
+            else
+                self:updatedAnnotations(needs_update, needs_sort)
+            end
+            config:delSetting("annotations_needs_update")
+        end
     else -- first run
         if self.ui.rolling then
             self.ui:registerPostInitCallback(function()
@@ -218,7 +230,26 @@ function ReaderAnnotation:updatePageNumbers()
         for _, item in ipairs(self.annotations) do
             item.pageno = self.document:getPageFromXPointer(item.page)
         end
-        self.needs_update = nil
+    end
+    self.needs_update = nil
+end
+
+function ReaderAnnotation:sortItems(items)
+    if #items > 1 then
+        local sort_func = self.ui.rolling and function(a, b) return self:isItemInPositionOrderRolling(a, b) end
+                                           or function(a, b) return self:isItemInPositionOrderPaging(a, b) end
+        table.sort(items, sort_func)
+    end
+end
+
+function ReaderAnnotation:updatedAnnotations(needs_update, needs_sort)
+    if needs_update then
+        self.needs_update = true
+        self:updatePageNumbers()
+        needs_sort = true
+    end
+    if needs_sort then
+        self:sortItems(self.annotations)
     end
 end
 
