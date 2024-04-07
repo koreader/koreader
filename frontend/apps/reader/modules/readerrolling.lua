@@ -234,7 +234,7 @@ function ReaderRolling:onReadSettings(config)
         -- And check if we can migrate to a newest DOM version after
         -- the book is loaded (unless the user told us not to).
         if config:nilOrFalse("cre_keep_old_dom_version") then
-            self.ui:registerPostReadyCallback(function()
+            self.ui:registerPostReaderReadyCallback(function()
                 self:checkXPointersAndProposeDOMVersionUpgrade()
             end)
         end
