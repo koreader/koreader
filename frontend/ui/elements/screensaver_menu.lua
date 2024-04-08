@@ -45,8 +45,8 @@ return {
                             or G_reader_settings:readSetting("screensaver_type") == "document_cover"
                 end,
                 sub_item_table = {
-                    genMenuItem(_("Black"), "screensaver_img_background", "black"),
-                    genMenuItem(_("White"), "screensaver_img_background", "white"),
+                    genMenuItem(_("Black fill"), "screensaver_img_background", "black"),
+                    genMenuItem(_("White fill"), "screensaver_img_background", "white"),
                     genMenuItem(_("Current state"), "screensaver_img_background", "none", nil, true),
                     -- separator
                         {
