@@ -88,7 +88,9 @@ end
 function ReaderAnnotation:onReadSettings(config)
     local annotations = config:readSetting("annotations")
     if annotations then
-        local needs_update = config:isTrue("annotations_needs_update")
+        -- KOHighlights may set this key when it has merged annotations from different sources:
+        -- we want to make sure they are updated and sorted
+        local needs_update = config:isTrue("annotations_modified")
         local needs_sort -- if incompatible annotations were built of old highlights/bookmarks
         -- Annotation formats in crengine and mupdf are incompatible.
         local has_annotations = #annotations > 0
@@ -118,7 +120,7 @@ function ReaderAnnotation:onReadSettings(config)
             else
                 self:updatedAnnotations(needs_update, needs_sort)
             end
-            config:delSetting("annotations_needs_update")
+            config:delSetting("annotations_modified")
         end
     else -- first run
         if self.ui.rolling then
