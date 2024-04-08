@@ -98,7 +98,7 @@ return {
                         end,
                     },
                     {
-                        text = _("Select shuffle folder"),
+                        text = _("Select random image folder"),
                         enabled_func = function()
                             return G_reader_settings:readSetting("screensaver_type") == "random_image"
                         end,
