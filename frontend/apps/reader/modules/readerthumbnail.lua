@@ -186,11 +186,11 @@ function ReaderThumbnail:removeFromCache(hash_subs, remove_only_non_matching)
     return nb_removed, size_removed
 end
 
-function ReaderThumbnail:resetCachedPagesForBookmarks(items)
+function ReaderThumbnail:resetCachedPagesForBookmarks(annotations)
     -- Multiple bookmarks may be provided
     local start_page, end_page
-    for i = 1, #items do
-        local bm = items[i]
+    for i = 1, #annotations do
+        local bm = annotations[i]
         if self.ui.rolling then
             -- Look at all properties that may be xpointers
             for _, k in ipairs({"page", "pos0", "pos1"}) do
