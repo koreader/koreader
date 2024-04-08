@@ -1766,7 +1766,7 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
         end
         local index = self.ui.annotation:addItem(item)
         self.view.footer:onUpdateFooter(self.view.footer_visible)
-        self.ui:handleEvent(Event:new("AnnotationsModified", { item, highlights = 1 }))
+        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = 1 }))
         return index
     end
 end
