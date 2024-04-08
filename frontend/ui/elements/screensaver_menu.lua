@@ -41,29 +41,29 @@ return {
                 text = _("Border fill"),
                 enabled_func = function()
                     return G_reader_settings:readSetting("screensaver_type") == "cover"
-                            or G_reader_settings:readSetting("screensaver_type") == "random_image"
-                            or G_reader_settings:readSetting("screensaver_type") == "document_cover"
+                           or G_reader_settings:readSetting("screensaver_type") == "document_cover"
+                           or G_reader_settings:readSetting("screensaver_type") == "random_image"
                 end,
                 sub_item_table = {
                     genMenuItem(_("Black fill"), "screensaver_img_background", "black"),
                     genMenuItem(_("White fill"), "screensaver_img_background", "white"),
                     genMenuItem(_("Leave background as-is"), "screensaver_img_background", "none", nil, true),
                     -- separator
-                        {
-                            text_func = function()
-                                local percentage = G_reader_settings:readSetting("screensaver_stretch_limit_percentage")
-                                if G_reader_settings:isTrue("screensaver_stretch_images") and percentage then
-                                    return T(_("Stretch to fit screen (with limit: %1 %)"), percentage)
-                                end
-                                return _("Stretch cover to fit screen")
-                            end,
-                            checked_func = function()
-                                return G_reader_settings:isTrue("screensaver_stretch_images")
-                            end,
-                            callback = function(touchmenu_instance)
-                                Screensaver:setStretchLimit(touchmenu_instance)
-                            end,
-                        },
+                    {
+                        text_func = function()
+                            local percentage = G_reader_settings:readSetting("screensaver_stretch_limit_percentage")
+                            if G_reader_settings:isTrue("screensaver_stretch_images") and percentage then
+                                return T(_("Stretch to fit screen (with limit: %1 %)"), percentage)
+                            end
+                            return _("Stretch cover to fit screen")
+                        end,
+                        checked_func = function()
+                            return G_reader_settings:isTrue("screensaver_stretch_images")
+                        end,
+                        callback = function(touchmenu_instance)
+                            Screensaver:setStretchLimit(touchmenu_instance)
+                        end,
+                    },
                 },
             },
             {
