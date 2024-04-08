@@ -47,7 +47,7 @@ return {
                 sub_item_table = {
                     genMenuItem(_("Black fill"), "screensaver_img_background", "black"),
                     genMenuItem(_("White fill"), "screensaver_img_background", "white"),
-                    genMenuItem(_("Current state"), "screensaver_img_background", "none", nil, true),
+                    genMenuItem(_("Leave background as-is"), "screensaver_img_background", "none", nil, true),
                     -- separator
                         {
                             text_func = function()
@@ -133,15 +133,14 @@ return {
             },
             {
                 text = _("Background fill"),
-                help_text = _([[This option will only become available, if you have selected 'Put screen to sleep in current state'
-                    as screensaver and have 'Sleep screen message' on.]]),
+                help_text = _("This option will only become available, if you have selected 'Leave screen as-is' as screensaver and have 'Sleep screen message' on."),
                 enabled_func = function()
                     return G_reader_settings:readSetting("screensaver_type") == "disable" and G_reader_settings:isTrue("screensaver_show_message")
                 end,
                 sub_item_table = {
                     genMenuItem(_("Black fill"), "screensaver_msg_background", "black"),
                     genMenuItem(_("White fill"), "screensaver_msg_background", "white"),
-                    genMenuItem(_("Current state"), "screensaver_msg_background", "none", nil, true),
+                    genMenuItem(_("Leave background as-is"), "screensaver_msg_background", "none", nil, true),
                 },
             },
             {
