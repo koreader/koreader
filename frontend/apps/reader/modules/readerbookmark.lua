@@ -230,7 +230,7 @@ function ReaderBookmark:onToggleBookmark()
 end
 
 function ReaderBookmark:toggleBookmark(pageno)
-    local pn_or_xp
+    local pn_or_xp, item
     if pageno then
         if self.ui.rolling then
             pn_or_xp = self.ui.document:getPageXPointer(pageno)
@@ -242,8 +242,7 @@ function ReaderBookmark:toggleBookmark(pageno)
     end
     local index = self:getDogearBookmarkIndex(pn_or_xp)
     if index then
-        local item = table.remove(self.ui.annotation.annotations, index)
-        self.ui:handleEvent(Event:new("BookmarkRemoved", item))
+        item = table.remove(self.ui.annotation.annotations, index)
     else
         local text
         local chapter = self.ui.toc:getTocTitleByPage(pn_or_xp)
@@ -253,12 +252,14 @@ function ReaderBookmark:toggleBookmark(pageno)
             -- @translators In which chapter title (%1) a note is found.
             text = T(_("in %1"), chapter)
         end
-        self:addItem({
+        item = {
             page = pn_or_xp,
             text = text,
             chapter = chapter,
-        })
+        }
+        self.ui.annotation:addItem(item)
     end
+    self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
 end
 
 function ReaderBookmark:setDogearVisibility(pn_or_xp)
@@ -306,14 +307,7 @@ function ReaderBookmark:getDogearBookmarkIndex(pn_or_xp)
     end
 end
 
--- add, remove, update bookmark
-
-function ReaderBookmark:addItem(item)
-    local index = self.ui.annotation:addItem(item)
-    self.ui:handleEvent(Event:new("BookmarkAdded", item))
-    self.view.footer:onUpdateFooter(self.view.footer_visible)
-    return index
-end
+-- remove, update bookmark
 
 function ReaderBookmark:removeItem(item)
     local index = self.ui.annotation:getItemIndex(item)
@@ -329,11 +323,10 @@ function ReaderBookmark:removeItemByIndex(index)
     local item = self.ui.annotation.annotations[index]
     local item_type = self.getBookmarkType(item)
     if item_type == "highlight" then
-        self.ui:handleEvent(Event:new("DelHighlight"))
+        self.ui:handleEvent(Event:new("AnnotationsModified", { item, highlights = -1 }))
     elseif item_type == "note" then
-        self.ui:handleEvent(Event:new("DelNote"))
+        self.ui:handleEvent(Event:new("AnnotationsModified", { item, notes = -1 }))
     end
-    self.ui:handleEvent(Event:new("BookmarkRemoved", item))
     table.remove(self.ui.annotation.annotations, index)
     self.view.footer:onUpdateFooter(self.view.footer_visible)
 end
@@ -341,8 +334,7 @@ end
 function ReaderBookmark:deleteItemNote(item)
     local index = self.ui.annotation:getItemIndex(item)
     self.ui.annotation.annotations[index].note = nil
-    self.ui:handleEvent(Event:new("DelNote"))
-    self.ui:handleEvent(Event:new("AddHighlight"))
+    self.ui:handleEvent(Event:new("AnnotationsModified", { item, highlights = 1, notes = -1 }))
 end
 
 -- navigation
@@ -1075,14 +1067,11 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note)
                         local type_after = self.getBookmarkType(annotation)
                         if type_before ~= type_after then
                             if type_before == "highlight" then
-                                self.ui:handleEvent(Event:new("DelHighlight"))
-                                self.ui:handleEvent(Event:new("AddNote"))
+                                self.ui:handleEvent(Event:new("AnnotationsModified", { annotation, highlights = -1, notes = 1 }))
                             else
-                                self.ui:handleEvent(Event:new("AddHighlight"))
-                                self.ui:handleEvent(Event:new("DelNote"))
+                                self.ui:handleEvent(Event:new("AnnotationsModified", { annotation, highlights = 1, notes = -1 }))
                             end
                         end
-                        self.ui:handleEvent(Event:new("BookmarkEdited", annotation))
                         if annotation.drawer then
                             self.ui.highlight:writePdfAnnotation("content", annotation.page, annotation, annotation.note)
                         end
