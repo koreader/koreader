@@ -122,11 +122,11 @@ return {
                 separator = true,
             },
             {
-            text = _("Edit sleep screen message"),
-            enabled_func = function()
-                return G_reader_settings:isTrue("screensaver_show_message")
-            end,
-            keep_menu_open = true,
+                text = _("Edit sleep screen message"),
+                enabled_func = function()
+                    return G_reader_settings:isTrue("screensaver_show_message")
+                end,
+                keep_menu_open = true,
                 callback = function()
                     Screensaver:setMessage()
                 end,
@@ -135,7 +135,7 @@ return {
                 text = _("Background fill"),
                 help_text = _([[This option will only become available, if you have selected 'Put screen to sleep in current state'
                     as screensaver and have 'Sleep screen message' on.]]),
-               enabled_func = function()
+                enabled_func = function()
                     return G_reader_settings:readSetting("screensaver_type") == "disable" and G_reader_settings:isTrue("screensaver_show_message")
                 end,
                 sub_item_table = {
