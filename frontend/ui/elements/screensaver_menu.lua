@@ -39,7 +39,7 @@ return {
             genMenuItem(_("Leave screen as-is"), "screensaver_type", "disable", nil, true),
             separator = true,
             {
-                text = _("Image border fill"),
+                text = _("Border fill"),
                 enabled_func = function()
                     return G_reader_settings:readSetting("screensaver_type") == "cover"
                             or G_reader_settings:readSetting("screensaver_type") == "random_image"
