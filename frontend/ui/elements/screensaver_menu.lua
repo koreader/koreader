@@ -32,7 +32,7 @@ return {
         sub_item_table = {
             genMenuItem(_("Show book cover on sleep screen"), "screensaver_type", "cover", hasLastFile),
             genMenuItem(_("Show custom image or cover on sleep screen"), "screensaver_type", "document_cover"),
-            genMenuItem(_("Use random image from folder on sleep screen"), "screensaver_type", "random_image"),
+            genMenuItem(_("Show random image from folder on sleep screen"), "screensaver_type", "random_image"),
             genMenuItem(_("Show reading progress on sleep screen"), "screensaver_type", "readingprogress", isReaderProgressEnabled),
             genMenuItem(_("Show book status on sleep screen"), "screensaver_type", "bookstatus", hasLastFile),
             genMenuItem(_("Leave screen as-is"), "screensaver_type", "disable", nil, true),
