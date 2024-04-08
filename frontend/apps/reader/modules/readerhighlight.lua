@@ -866,7 +866,7 @@ function ReaderHighlight:updateHighlight(index, side, direction, move_by_char)
     local new_end = highlight.pos1
     local new_text = self.ui.document:getTextFromXPointers(new_beginning, new_end)
     highlight.text = cleanupSelectedText(new_text)
-    self.ui:handleEvent(Event:new("BookmarkUpdated", highlight, bookmark_before))
+    self.ui:handleEvent(Event:new("AnnotationsModified", { highlight, bookmark_before }))
     if side == 0 then
         -- Ensure we show the page with the new beginning of highlight
         if not self.ui.document:isXPointerInCurrentPage(new_beginning) then
@@ -1737,7 +1737,6 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
         self:highlightFromHoldPos()
     end
     if self.selected_text and self.selected_text.pos0 and self.selected_text.pos1 then
-        self.ui:handleEvent(Event:new("AddHighlight"))
         local pg_or_xp, page
         if self.ui.rolling then
             if extend_to_sentence then
@@ -1765,7 +1764,10 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             item.ext = self.selected_text.ext
             self:writePdfAnnotation("save", page, item)
         end
-        return self.ui.bookmark:addItem(item) -- index
+        local index = self.ui.annotation:addItem(item)
+        self.view.footer:onUpdateFooter(self.view.footer_visible)
+        self.ui:handleEvent(Event:new("AnnotationsModified", { item, highlights = 1 }))
+        return index
     end
 end
 
@@ -1870,7 +1872,7 @@ function ReaderHighlight:editHighlightStyle(index)
             end
         end
         UIManager:setDirty(self.dialog, "ui")
-        self.ui:handleEvent(Event:new("BookmarkUpdated", item))
+        self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
     end
     self:showHighlightStyleDialog(apply_drawer, item.drawer)
 end
