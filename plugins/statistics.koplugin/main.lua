@@ -2727,27 +2727,14 @@ function ReaderStatistics:onCloseDocument()
     self:insertDB()
 end
 
-function ReaderStatistics:onAddHighlight()
+function ReaderStatistics:onAnnotationsModified(diff)
     if self.settings.is_enabled then
-        self.data.highlights = self.data.highlights + 1
-    end
-end
-
-function ReaderStatistics:onDelHighlight()
-    if self.settings.is_enabled then
-        self.data.highlights = self.data.highlights - 1
-    end
-end
-
-function ReaderStatistics:onAddNote()
-    if self.settings.is_enabled then
-        self.data.notes = self.data.notes + 1
-    end
-end
-
-function ReaderStatistics:onDelNote()
-    if self.settings.is_enabled then
-        self.data.notes = self.data.notes - 1
+        if diff.highlights then
+            self.data.highlights = self.data.highlights + diff.highlights
+        end
+        if diff.notes then
+            self.data.notes = self.data.notes + diff.notes
+        end
     end
 end
 
