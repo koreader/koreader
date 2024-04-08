@@ -91,7 +91,7 @@ return {
                         end,
                         keep_menu_open = true,
                         callback = function()
-                            Screensaver:chooseFile(true)
+                            Screensaver:chooseFile()
                         end,
                     },
                     {

@@ -261,26 +261,15 @@ function Screensaver:chooseFolder()
     filemanagerutil.showChooseDialog(title_header, caller_callback, current_path)
 end
 
-function Screensaver:chooseFile(document_cover)
+function Screensaver:chooseFile()
     local title_header, current_path, file_filter, caller_callback
-    if document_cover then
-        title_header = _("Current screensaver document cover:")
-        current_path = G_reader_settings:readSetting("screensaver_document_cover")
-        file_filter = function(filename)
-            return DocumentRegistry:hasProvider(filename)
-        end
-        caller_callback = function(path)
-            G_reader_settings:saveSetting("screensaver_document_cover", path)
-        end
-    else
-        title_header = _("Current screensaver image:")
-        current_path = G_reader_settings:readSetting("screensaver_image")
-        file_filter = function(filename)
-            return DocumentRegistry:isImageFile(filename)
-        end
-        caller_callback = function(path)
-            G_reader_settings:saveSetting("screensaver_image", path)
-        end
+    title_header = _("Current sleep screen image or document cover:")
+    current_path = G_reader_settings:readSetting("screensaver_document_cover")
+    file_filter = function(filename)
+        return DocumentRegistry:hasProvider(filename)
+    end
+    caller_callback = function(path)
+        G_reader_settings:saveSetting("screensaver_document_cover", path)
     end
     filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, nil, file_filter)
 end
