@@ -201,6 +201,7 @@ function Document:getProps(cached_doc_metadata)
     local language = makeNilIfEmpty(props.language or props.Language)
     local keywords = makeNilIfEmpty(props.keywords or props.Keywords)
     local description = makeNilIfEmpty(props.description or props.Description or props.subject)
+    local identifiers = makeNilIfEmpty(props.identifiers)
     return {
         title        = title,
         authors      = authors,
@@ -209,6 +210,7 @@ function Document:getProps(cached_doc_metadata)
         language     = language,
         keywords     = keywords,
         description  = description,
+        identifiers  = identifiers,
     }
 end
 
