@@ -273,26 +273,15 @@ function Screensaver:chooseFolder()
     filemanagerutil.showChooseDialog(title_header, caller_callback, current_path)
 end
 
-function Screensaver:chooseFile(document_cover)
+function Screensaver:chooseFile()
     local title_header, current_path, file_filter, caller_callback
-    if document_cover then
-        title_header = _("Current screensaver document cover:")
-        current_path = G_reader_settings:readSetting("screensaver_document_cover")
-        file_filter = function(filename)
-            return DocumentRegistry:hasProvider(filename)
-        end
-        caller_callback = function(path)
-            G_reader_settings:saveSetting("screensaver_document_cover", path)
-        end
-    else
-        title_header = _("Current screensaver image:")
-        current_path = G_reader_settings:readSetting("screensaver_image")
-        file_filter = function(filename)
-            return DocumentRegistry:isImageFile(filename)
-        end
-        caller_callback = function(path)
-            G_reader_settings:saveSetting("screensaver_image", path)
-        end
+    title_header = _("Current sleep screen image or document cover:")
+    current_path = G_reader_settings:readSetting("screensaver_document_cover")
+    file_filter = function(filename)
+        return DocumentRegistry:hasProvider(filename)
+    end
+    caller_callback = function(path)
+        G_reader_settings:saveSetting("screensaver_document_cover", path)
     end
     filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, nil, file_filter)
 end
@@ -327,7 +316,7 @@ function Screensaver:setMessage()
     input_dialog = InputDialog:new{
         title = _("Screensaver message"),
         description = _([[
-Enter the message to be displayed by the screensaver. The following escape sequences can be used:
+Enter a custom message to be displayed on the sleep screen. The following escape sequences are available:
   %T title
   %A author(s)
   %S series
@@ -406,7 +395,6 @@ end
 function Screensaver:modeIsImage()
     return self.screensaver_type == "cover"
         or self.screensaver_type == "random_image"
-        or self.screensaver_type == "image_file"
 end
 
 function Screensaver:withBackground()
@@ -458,9 +446,13 @@ function Screensaver:setup(event, event_message)
         end
         if not excluded then
             if lastfile and lfs.attributes(lastfile, "mode") == "file" then
-                self.image = FileManagerBookInfo:getCoverImage(ui and ui.document, lastfile)
-                if self.image == nil then
-                    self.screensaver_type = "random_image"
+                if DocumentRegistry:isImageFile(lastfile) then
+                    self.image_file = lastfile
+                else
+                    self.image = FileManagerBookInfo:getCoverImage(ui and ui.document, lastfile)
+                    if self.image == nil then
+                        self.screensaver_type = "random_image"
+                    end
                 end
             else
                 self.screensaver_type = "random_image"
@@ -472,13 +464,6 @@ function Screensaver:setup(event, event_message)
     end
     if self.screensaver_type == "bookstatus" then
         if not ui or not lastfile or lfs.attributes(lastfile, "mode") ~= "file" or (ui.doc_settings and ui.doc_settings:isTrue("exclude_screensaver")) then
-            self.screensaver_type = "random_image"
-        end
-    end
-    if self.screensaver_type == "image_file" then
-        self.image_file = G_reader_settings:readSetting(self.prefix .. "screensaver_image")
-                       or G_reader_settings:readSetting("screensaver_image")
-        if self.image_file == nil or lfs.attributes(self.image_file, "mode") ~= "file" then
             self.screensaver_type = "random_image"
         end
     end
@@ -554,15 +539,22 @@ function Screensaver:show()
 
     -- Build the main widget for the effective mode, all the sanity checks were handled in setup
     local widget = nil
-    if self.screensaver_type == "cover" then
-        widget = ImageWidget:new{
-            image = self.image,
-            image_disposable = true,
+    if self.screensaver_type == "cover" or self.screensaver_type == "random_image" then
+        local widget_settings = {
             width = Screen:getWidth(),
             height = Screen:getHeight(),
             scale_factor = G_reader_settings:isFalse("screensaver_stretch_images") and 0 or nil,
             stretch_limit_percentage = G_reader_settings:readSetting("screensaver_stretch_limit_percentage"),
         }
+        if self.image then
+            widget_settings.image = self.image
+            widget_settings.image_disposable = true
+        elseif self.image_file then
+            widget_settings.file = self.image_file
+            widget_settings.file_do_cache = false
+            widget_settings.alpha = true
+        end
+        widget = ImageWidget:new(widget_settings)
     elseif self.screensaver_type == "bookstatus" then
         local ReaderUI = require("apps/reader/readerui")
         local ui = ReaderUI.instance
@@ -575,16 +567,6 @@ function Screensaver:show()
             settings = doc_settings,
             ui = ui,
             readonly = true,
-        }
-    elseif self.screensaver_type == "random_image" or self.screensaver_type == "image_file" then
-        widget = ImageWidget:new{
-            file = self.image_file,
-            file_do_cache = false,
-            alpha = true,
-            width = Screen:getWidth(),
-            height = Screen:getHeight(),
-            scale_factor = G_reader_settings:isFalse("screensaver_stretch_images") and 0 or nil,
-            stretch_limit_percentage = G_reader_settings:readSetting("screensaver_stretch_limit_percentage"),
         }
     elseif self.screensaver_type == "readingprogress" then
         widget = Screensaver.getReaderProgress()
