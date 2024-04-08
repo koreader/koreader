@@ -31,9 +31,8 @@ return {
         text = _("Wallpaper"),
         sub_item_table = {
             genMenuItem(_("Show book cover on sleep screen"), "screensaver_type", "cover", hasLastFile),
-            genMenuItem(_("Show custom image on sleep screen"), "screensaver_type", "image_file"),
+            genMenuItem(_("Show custom image or cover on sleep screen"), "screensaver_type", "document_cover"),
             genMenuItem(_("Use random image from folder on sleep screen"), "screensaver_type", "random_image"),
-            genMenuItem(_("Show document cover on sleep screen"), "screensaver_type", "document_cover"),
             genMenuItem(_("Show reading progress on sleep screen"), "screensaver_type", "readingprogress", isReaderProgressEnabled),
             genMenuItem(_("Show book status on sleep screen"), "screensaver_type", "bookstatus", hasLastFile),
             genMenuItem(_("Leave screen as-is"), "screensaver_type", "disable", nil, true),
@@ -43,7 +42,6 @@ return {
                 enabled_func = function()
                     return G_reader_settings:readSetting("screensaver_type") == "cover"
                             or G_reader_settings:readSetting("screensaver_type") == "random_image"
-                            or G_reader_settings:readSetting("screensaver_type") == "image_file"
                             or G_reader_settings:readSetting("screensaver_type") == "document_cover"
                 end,
                 sub_item_table = {
@@ -82,19 +80,18 @@ return {
             {
                 text = _("Custom images"),
                 enabled_func = function()
-                    return G_reader_settings:readSetting("screensaver_type") == "image_file"
-                            or G_reader_settings:readSetting("screensaver_type") == "random_image"
-                            or G_reader_settings:readSetting("screensaver_type") == "document_cover"
+                    return G_reader_settings:readSetting("screensaver_type") == "random_image"
+                           or G_reader_settings:readSetting("screensaver_type") == "document_cover"
                 end,
                 sub_item_table = {
                     {
-                        text = _("Select custom image"),
+                        text = _("Select image or document cover"),
                         enabled_func = function()
-                            return G_reader_settings:readSetting("screensaver_type") == "image_file"
+                            return G_reader_settings:readSetting("screensaver_type") == "document_cover"
                         end,
                         keep_menu_open = true,
                         callback = function()
-                            Screensaver:chooseFile()
+                            Screensaver:chooseFile(true)
                         end,
                     },
                     {
@@ -105,16 +102,6 @@ return {
                         keep_menu_open = true,
                         callback = function()
                             Screensaver:chooseFolder()
-                        end,
-                    },
-                    {
-                        text = _("Select document cover"),
-                        enabled_func = function()
-                            return G_reader_settings:readSetting("screensaver_type") == "document_cover"
-                        end,
-                        keep_menu_open = true,
-                        callback = function()
-                            Screensaver:chooseFile(true)
                         end,
                     },
                 },
