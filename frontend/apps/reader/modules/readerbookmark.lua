@@ -323,9 +323,9 @@ function ReaderBookmark:removeItemByIndex(index)
     local item = self.ui.annotation.annotations[index]
     local item_type = self.getBookmarkType(item)
     if item_type == "highlight" then
-        self.ui:handleEvent(Event:new("AnnotationsModified", { item, highlights = -1 }))
+        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = -1 }))
     elseif item_type == "note" then
-        self.ui:handleEvent(Event:new("AnnotationsModified", { item, notes = -1 }))
+        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_notes_added = -1 }))
     end
     table.remove(self.ui.annotation.annotations, index)
     self.view.footer:onUpdateFooter(self.view.footer_visible)
@@ -334,7 +334,7 @@ end
 function ReaderBookmark:deleteItemNote(item)
     local index = self.ui.annotation:getItemIndex(item)
     self.ui.annotation.annotations[index].note = nil
-    self.ui:handleEvent(Event:new("AnnotationsModified", { item, highlights = 1, notes = -1 }))
+    self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = 1, nb_notes_added = -1 }))
 end
 
 -- navigation
@@ -1067,9 +1067,11 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note)
                         local type_after = self.getBookmarkType(annotation)
                         if type_before ~= type_after then
                             if type_before == "highlight" then
-                                self.ui:handleEvent(Event:new("AnnotationsModified", { annotation, highlights = -1, notes = 1 }))
+                                self.ui:handleEvent(Event:new("AnnotationsModified",
+                                    { annotation, nb_highlights_added = -1, nb_notes_added = 1 }))
                             else
-                                self.ui:handleEvent(Event:new("AnnotationsModified", { annotation, highlights = 1, notes = -1 }))
+                                self.ui:handleEvent(Event:new("AnnotationsModified",
+                                    { annotation, nb_highlights_added = 1, nb_notes_added = -1 }))
                             end
                         end
                         if annotation.drawer then
