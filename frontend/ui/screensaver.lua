@@ -383,7 +383,6 @@ end
 function Screensaver:modeIsImage()
     return self.screensaver_type == "cover"
         or self.screensaver_type == "random_image"
-        or self.screensaver_type == "image_file"
 end
 
 function Screensaver:withBackground()
@@ -453,14 +452,6 @@ function Screensaver:setup(event, event_message)
     end
     if self.screensaver_type == "bookstatus" then
         if not ui or not lastfile or lfs.attributes(lastfile, "mode") ~= "file" or (ui.doc_settings and ui.doc_settings:isTrue("exclude_screensaver")) then
-            self.screensaver_type = "random_image"
-        end
-    end
-    -- NB Kept around to support old settings.
-    if self.screensaver_type == "image_file" then
-        self.image_file = G_reader_settings:readSetting(self.prefix .. "screensaver_image")
-                       or G_reader_settings:readSetting("screensaver_image")
-        if self.image_file == nil or lfs.attributes(self.image_file, "mode") ~= "file" then
             self.screensaver_type = "random_image"
         end
     end
@@ -536,7 +527,7 @@ function Screensaver:show()
 
     -- Build the main widget for the effective mode, all the sanity checks were handled in setup
     local widget = nil
-    if self.screensaver_type == "cover" or self.screensaver_type == "image_file" or self.screensaver_type == "random_image" then
+    if self.screensaver_type == "cover" or self.screensaver_type == "random_image" then
         local widget_settings = {
             width = Screen:getWidth(),
             height = Screen:getHeight(),

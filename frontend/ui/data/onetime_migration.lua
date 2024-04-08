@@ -10,7 +10,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20231217
+local CURRENT_MIGRATION_DATE = 20240408
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -644,6 +644,17 @@ if last_migration_date < 20231217 then
             new_shortcuts[item.folder] = { text = item.text, time = now + i }
         end
         G_reader_settings:saveSetting("folder_shortcuts", new_shortcuts)
+    end
+end
+
+-- 20240408, drop sleep screen/screensaver image_file setting in favor of document cover
+if last_migration_date < 20240408 then
+    logger.info("Performing one-time migration for 20240408")
+
+    local image_file = G_reader_settings:readSetting("screensaver_type") == "image_file" and G_reader_settings:readSetting("screensaver_image")
+    if image_file then
+        G_reader_settings:saveSetting("screensaver_type", "document_cover")
+        G_reader_settings:saveSetting("screensaver_document_cover", image_file)
     end
 end
 
