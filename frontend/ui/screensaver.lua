@@ -314,7 +314,7 @@ function Screensaver:setMessage()
                              or self.default_screensaver_message
     local input_dialog
     input_dialog = InputDialog:new{
-        title = _("Screensaver message"),
+        title = _("Sleep screen message"),
         description = _([[
 Enter a custom message to be displayed on the sleep screen. The following escape sequences are available:
   %T title
