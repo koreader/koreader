@@ -67,7 +67,7 @@ return {
                 },
             },
             {
-                text = _("Wake-up screen delay"),
+                text = _("Postpone screen update after wake-up"),
                 sub_item_table = {
                     genMenuItem(_("No delay"), "screensaver_delay", "disable"),
                     genMenuItem(_("1 second"), "screensaver_delay", "1"),
