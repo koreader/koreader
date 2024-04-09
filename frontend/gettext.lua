@@ -58,7 +58,7 @@ Returns a translation.
     local translation = _("A meaningful message.")
 --]]
 function GetText_mt.__call(gettext, msgid)
-    return gettext.translation[msgid] or gettext.wrapUntranslated(msgid)
+    return gettext.translation[msgid] and gettext.translation[msgid][0] or gettext.translation[msgid] or gettext.wrapUntranslated(msgid)
 end
 
 local function c_escape(what_full, what)
