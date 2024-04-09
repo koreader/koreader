@@ -140,7 +140,7 @@ return {
                 sub_item_table = {
                     genMenuItem(_("Black fill"), "screensaver_msg_background", "black"),
                     genMenuItem(_("White fill"), "screensaver_msg_background", "white"),
-                    genMenuItem(_("Leave background as-is"), "screensaver_msg_background", "none", nil, true),
+                    genMenuItem(_("No fill"), "screensaver_msg_background", "none", nil, true),
                 },
             },
             {
