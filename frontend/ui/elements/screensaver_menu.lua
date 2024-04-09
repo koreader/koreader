@@ -133,7 +133,7 @@ return {
             },
             {
                 text = _("Background fill"),
-                help_text = _("This option will only become available, if you have selected 'Leave screen as-is' as sleep screen and have 'Sleep screen message' on."),
+                help_text = _("This option will only become available, if you have selected 'Leave screen as-is' as wallpaper and have 'Sleep screen message' on."),
                 enabled_func = function()
                     return G_reader_settings:readSetting("screensaver_type") == "disable" and G_reader_settings:isTrue("screensaver_show_message")
                 end,
