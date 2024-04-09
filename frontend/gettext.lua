@@ -275,6 +275,8 @@ function GetText_mt.__index.changeLang(new_lang)
                     -- unescape \\ or msgid won't match
                     s = s:gsub("\\\\", "\\")
                     data[what] = (data[what] or "") .. s
+                elseif what and s == "" and fuzzy then -- luacheck: ignore 542
+                    -- Ignore the likes of msgid "" and msgstr ""
                 else
                     -- Don't save this fuzzy string and unset fuzzy for the next one.
                     fuzzy = false
