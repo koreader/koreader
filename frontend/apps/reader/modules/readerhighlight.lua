@@ -74,11 +74,11 @@ function ReaderHighlight:init()
         ["02_highlight"] = function(this)
             return {
                 text = _("Highlight"),
+                enabled = this.hold_pos ~= nil,
                 callback = function()
                     this:saveHighlight(true)
                     this:onClose()
                 end,
-                enabled = this.hold_pos ~= nil,
             }
         end,
         ["03_copy"] = function(this)
@@ -97,11 +97,11 @@ function ReaderHighlight:init()
         ["04_add_note"] = function(this)
             return {
                 text = _("Add note"),
+                enabled = this.hold_pos ~= nil,
                 callback = function()
                     this:addNote()
                     this:onClose()
                 end,
-                enabled = this.hold_pos ~= nil,
             }
         end,
         -- then information lookup functions, putting on the left those that
@@ -132,7 +132,7 @@ function ReaderHighlight:init()
             return {
                 text = _("Translate"),
                 callback = function()
-                    this:translate(this.selected_text, index)
+                    this:translate(index)
                     -- We don't call this:onClose(), so one can still see
                     -- the highlighted text when moving the translated
                     -- text window, and also if NetworkMgr:promptWifiOn()
@@ -430,7 +430,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
                     self.view.highlight.lighten_factor = spin.value
                     UIManager:setDirty(self.dialog, "ui")
                     if touchmenu_instance then touchmenu_instance:updateItems() end
-                end
+                end,
             }
             UIManager:show(spin_widget)
         end,
@@ -564,7 +564,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 callback = function(spin)
                     G_reader_settings:saveSetting("highlight_long_hold_threshold_s", spin.value)
                     if touchmenu_instance then touchmenu_instance:updateItems() end
-                end
+                end,
             }
             UIManager:show(items)
         end,
@@ -696,7 +696,7 @@ function ReaderHighlight:onTapSelectModeIcon()
         ok_callback = function()
             self.select_mode = false
             self:deleteHighlight(self.highlight_idx)
-        end
+        end,
     })
     return true
 end
@@ -812,7 +812,6 @@ end
 
 function ReaderHighlight:updateHighlight(index, side, direction, move_by_char)
     local highlight = self.ui.annotation.annotations[index]
-    local bookmark_before = util.tableDeepCopy(highlight)
     local highlight_beginning = highlight.pos0
     local highlight_end = highlight.pos1
     if side == 0 then -- we move pos0
@@ -866,7 +865,8 @@ function ReaderHighlight:updateHighlight(index, side, direction, move_by_char)
     local new_end = highlight.pos1
     local new_text = self.ui.document:getTextFromXPointers(new_beginning, new_end)
     highlight.text = cleanupSelectedText(new_text)
-    self.ui:handleEvent(Event:new("AnnotationsModified", { highlight, bookmark_before }))
+    local highlight_before = { pos0 = highlight_beginning, pos1 = highlight_end }
+    self.ui:handleEvent(Event:new("AnnotationsModified", { highlight, highlight_before }))
     if side == 0 then
         -- Ensure we show the page with the new beginning of highlight
         if not self.ui.document:isXPointerInCurrentPage(new_beginning) then
@@ -986,7 +986,7 @@ function ReaderHighlight:onShowHighlightDialog(index)
             {
                 text = "…",
                 callback = function()
-                    self.selected_text = util.tableDeepCopy(item)
+                    self.selected_text = { text = item.text, pos0 = item.pos0, pos1 = item.pos1 }
                     self:onShowHighlightMenu(index)
                     UIManager:close(self.edit_highlight_dialog)
                     self.edit_highlight_dialog = nil
@@ -1052,7 +1052,7 @@ function ReaderHighlight:onShowHighlightDialog(index)
         })
     end
     self.edit_highlight_dialog = ButtonDialog:new{
-        buttons = buttons
+        buttons = buttons,
     }
     UIManager:show(self.edit_highlight_dialog)
     return true
@@ -1528,20 +1528,20 @@ function ReaderHighlight:viewSelectionHTML(debug_view, no_css_files_buttons)
     end
 end
 
-function ReaderHighlight:translate(selected_text, index)
+function ReaderHighlight:translate(index)
     if self.ui.rolling then
         -- Extend the selected text to include any punctuation at start or end,
         -- which may give a better translation with the added context.
-        local extended_text = self.ui.document:extendXPointersToSentenceSegment(selected_text.pos0, selected_text.pos1)
+        local extended_text = self.ui.document:extendXPointersToSentenceSegment(self.selected_text.pos0, self.selected_text.pos1)
         if extended_text then
-            selected_text = extended_text
+            self.selected_text = extended_text
         end
     end
-    if #selected_text.text > 0 then
-        self:onTranslateText(selected_text.text, index)
+    if #self.selected_text.text > 0 then
+        self:onTranslateText(self.selected_text.text, index)
     -- or we will do OCR
     elseif self.hold_pos then
-        local text = self.ui.document:getOCRText(self.hold_pos.page, selected_text)
+        local text = self.ui.document:getOCRText(self.hold_pos.page, self.selected_text)
         logger.dbg("OCRed text:", text)
         if text and text ~= "" then
             self:onTranslateText(text)
@@ -1552,11 +1552,6 @@ function ReaderHighlight:translate(selected_text, index)
         end
     end
 end
-dbg:guard(ReaderHighlight, "translate",
-    function(self, selected_text)
-        assert(selected_text ~= nil,
-            "translate must not be called with nil selected_text!")
-    end)
 
 function ReaderHighlight:onTranslateText(text, index)
     Translator:showTranslation(text, true, nil, nil, true, index)
@@ -1641,7 +1636,7 @@ function ReaderHighlight:onHoldRelease()
                 self:addNote()
                 self:onClose()
             elseif default_highlight_action == "translate" then
-                self:translate(self.selected_text)
+                self:translate()
             elseif default_highlight_action == "wikipedia" then
                 self:lookupWikipedia()
                 self:onClose()
@@ -2101,6 +2096,8 @@ function ReaderHighlight:onClose()
     -- clear highlighted text
     self:clear()
 end
+
+-- dpad/keys support
 
 function ReaderHighlight:onHighlightPress()
     if self._current_indicator_pos then
