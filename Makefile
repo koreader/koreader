@@ -143,10 +143,7 @@ $(INSTALL_DIR)/koreader/.luacov:
 testfront: $(INSTALL_DIR)/koreader/.busted
 	# sdr files may have unexpected impact on unit testing
 	-rm -rf spec/unit/data/*.sdr
-	cd $(INSTALL_DIR)/koreader && ./luajit $(shell which busted) \
-		--sort-files \
-		--output=gtest \
-		--exclude-tags=notest $(BUSTED_OVERRIDES) $(BUSTED_SPEC_FILE)
+	cd $(INSTALL_DIR)/koreader && $(BUSTED_LUAJIT) $(BUSTED_OVERRIDES) $(BUSTED_SPEC_FILE)
 
 test: $(INSTALL_DIR)/koreader/.busted
 	$(MAKE) -C $(KOR_BASE) test
