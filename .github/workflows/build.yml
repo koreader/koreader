@@ -24,7 +24,10 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v4
         with:
+          clean: false
           fetch-depth: 0
+          filter: tree:0
+          show-progress: false
 
       - name: Homebrew install dependencies
         # Compared to the README, adds ccache for faster compilation times
