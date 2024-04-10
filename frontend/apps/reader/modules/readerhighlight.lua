@@ -812,6 +812,7 @@ end
 
 function ReaderHighlight:updateHighlight(index, side, direction, move_by_char)
     local highlight = self.ui.annotation.annotations[index]
+    local highlight_before = util.tableDeepCopy(highlight)
     local highlight_beginning = highlight.pos0
     local highlight_end = highlight.pos1
     if side == 0 then -- we move pos0
@@ -865,7 +866,6 @@ function ReaderHighlight:updateHighlight(index, side, direction, move_by_char)
     local new_end = highlight.pos1
     local new_text = self.ui.document:getTextFromXPointers(new_beginning, new_end)
     highlight.text = cleanupSelectedText(new_text)
-    local highlight_before = { pos0 = highlight_beginning, pos1 = highlight_end }
     self.ui:handleEvent(Event:new("AnnotationsModified", { highlight, highlight_before }))
     if side == 0 then
         -- Ensure we show the page with the new beginning of highlight
@@ -986,7 +986,7 @@ function ReaderHighlight:onShowHighlightDialog(index)
             {
                 text = "…",
                 callback = function()
-                    self.selected_text = { text = item.text, pos0 = item.pos0, pos1 = item.pos1 }
+                    self.selected_text = util.tableDeepCopy(item)
                     self:onShowHighlightMenu(index)
                     UIManager:close(self.edit_highlight_dialog)
                     self.edit_highlight_dialog = nil
