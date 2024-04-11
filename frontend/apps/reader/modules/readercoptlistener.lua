@@ -211,7 +211,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
         separator = true,
         sub_item_table = {
             {
-                text = _("About alternate status bar"),
+                text = _("About alternative status bar"),
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
