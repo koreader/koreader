@@ -70,9 +70,6 @@ WIN32_DIR=$(PLATFORM_DIR)/win32
 APPIMAGETOOL=appimagetool-x86_64.AppImage
 APPIMAGETOOL_URL=https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage
 
-# Is fuse support available?
-USE_FUSE ?= $(wildcard /dev/fuse)
-
 # files to link from main directory
 INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastorage.lua \
 		l10n tools README.md COPYING
@@ -342,11 +339,6 @@ ifeq ("$(wildcard $(APPIMAGETOOL))","")
 	wget "$(APPIMAGETOOL_URL)"
 	chmod a+x "$(APPIMAGETOOL)"
 endif
-ifeq ($(USE_FUSE),)
-	# remove previously extracted appimagetool, if any
-	rm -rf squashfs-root
-	./$(APPIMAGETOOL) --appimage-extract
-endif
 	cd $(INSTALL_DIR) && pwd && \
 		rm -rf tmp && mkdir -p tmp && \
 		cp -Lr koreader tmp && \
@@ -356,7 +348,7 @@ endif
 
 	# generate AppImage
 	cd $(INSTALL_DIR)/tmp && \
-		ARCH=x86_64 ../../$(if $(USE_FUSE),$(APPIMAGETOOL),squashfs-root/AppRun) koreader && \
+		ARCH=x86_64 "$$OLDPWD/$(APPIMAGETOOL)" --appimage-extract-and-run koreader && \
 		mv *.AppImage ../../koreader-$(DIST)-$(MACHINE)-$(VERSION).AppImage
 
 androidupdate: all
