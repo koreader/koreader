@@ -963,7 +963,7 @@ function ReaderFooter:textOptionTitles(option)
     local symbol = self.settings.item_prefix
     local option_titles = {
         all_at_once = _("Show all at once"),
-        reclaim_height = _("Reclaim bar height from bottom margin"),
+        reclaim_height = _("Overlay status bar"),
         bookmark_count = T(_("Bookmark count (%1)"), symbol_prefix[symbol].bookmark_count),
         page_progress = T(_("Current page (%1)"), "/"),
         pages_left_book = T(_("Pages left in book (%1)"), symbol_prefix[symbol].pages_left_book),
@@ -975,15 +975,15 @@ function ReaderFooter:textOptionTitles(option)
         percentage = symbol_prefix[symbol].percentage
             and T(_("Progress percentage (%1)"), symbol_prefix[symbol].percentage) or _("Progress percentage"),
         book_time_to_read = symbol_prefix[symbol].book_time_to_read
-            and T(_("Book time to read (%1)"),symbol_prefix[symbol].book_time_to_read) or _("Book time to read"),
-        chapter_time_to_read = T(_("Chapter time to read (%1)"), symbol_prefix[symbol].chapter_time_to_read),
+            and T(_("Time left to read book (%1)"),symbol_prefix[symbol].book_time_to_read) or _("Time left to read book"),
+        chapter_time_to_read = T(_("Time left to read chapter (%1)"), symbol_prefix[symbol].chapter_time_to_read),
         frontlight = T(_("Frontlight level (%1)"), symbol_prefix[symbol].frontlight),
-        frontlight_warmth = T(_("Frontlight warmth (%1)"), symbol_prefix[symbol].frontlight_warmth),
+        frontlight_warmth = T(_("Frontlight warmth level (%1)"), symbol_prefix[symbol].frontlight_warmth),
         mem_usage = T(_("KOReader memory usage (%1)"), symbol_prefix[symbol].mem_usage),
         wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
         book_title = _("Book title"),
         book_chapter = _("Current chapter"),
-        custom_text = T(_("Custom text: \'%1\'%2"), self.custom_text,
+        custom_text = T(_("Custom text (long press to edit): \'%1\'%2"), self.custom_text,
             self.custom_text_repetitions > 1 and
             string.format(" × %d", self.custom_text_repetitions) or ""),
     }
