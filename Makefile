@@ -68,7 +68,7 @@ WIN32_DIR=$(PLATFORM_DIR)/win32
 
 # appimage setup
 APPIMAGETOOL=appimagetool-x86_64.AppImage
-APPIMAGETOOL_URL=https://github.com/AppImage/AppImageKit/releases/download/12/appimagetool-x86_64.AppImage
+APPIMAGETOOL_URL=https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage
 
 # Is fuse support available?
 USE_FUSE ?= $(wildcard /dev/fuse)
