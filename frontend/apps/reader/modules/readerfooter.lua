@@ -1097,7 +1097,7 @@ function ReaderFooter:addToMainMenu(menu_items)
         text = _("Settings"),
         sub_item_table = {
             {
-                text = _("Sort items"),
+                text = _("Sort complications"),
                 separator = true,
                 callback = function()
                     local item_table = {}
@@ -1107,7 +1107,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     local SortWidget = require("ui/widget/sortwidget")
                     local sort_item
                     sort_item = SortWidget:new{
-                        title = _("Sort footer items"),
+                        title = _("Sort footer complications"),
                         item_table = item_table,
                         callback = function()
                             for i=1, #sort_item.item_table do
@@ -1124,7 +1124,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             getMinibarOption("all_at_once", self.updateFooterTextGenerator),
             {
-                text = _("Hide empty items"),
+                text = _("Hide empty complications"),
                 help_text = _([[This will hide values like 0 or off.]]),
                 enabled_func = function()
                     return self.settings.all_at_once == true
@@ -1218,7 +1218,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         keep_menu_open = true,
                     },
                     {
-                        text = _("Use bold font"),
+                        text = _("Use boldface"),
                         checked_func = function()
                             return self.settings.text_font_bold == true
                         end,
@@ -1291,7 +1291,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 keep_menu_open = true,
             },
             {
-                text = _("Maximum width of items"),
+                text = _("Maximum width of text complications"),
                 sub_item_table = {
                     {
                         text_func = function()
@@ -1406,7 +1406,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     elseif self.settings.item_prefix == "letters" then
                         prefix_text = C_("Status bar", "Letters")
                     end
-                    return T(_("Item style: %1"), prefix_text)
+                    return T(_("Complication symbol: %1"), prefix_text)
                 end,
                 sub_item_table = {
                     {
@@ -1463,11 +1463,11 @@ function ReaderFooter:addToMainMenu(menu_items)
                 text_func = function()
                     local separator = self:get_separator_symbol()
                     separator = separator ~= "" and separator or "none"
-                    return T(_("Item separator: %1"), separator)
+                    return T(_("Complication separator: %1"), separator)
                 end,
                 sub_item_table = {
                     {
-                        text = _("Vertical line (|)"),
+                        text = _("Pipe (|)"),
                         checked_func = function()
                             return self.settings.items_separator == "bar"
                         end,
@@ -1516,7 +1516,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("No decimal point (%1)"), self:progressPercentage(0))
+                            return T(_("No decimal places (%1)"), self:progressPercentage(0))
                         end,
                         checked_func = function()
                             return self.settings.progress_pct_format == "0"
@@ -1528,7 +1528,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     },
                     {
                         text_func = function()
-                            return T(_("1 digit after decimal point (%1)"), self:progressPercentage(1))
+                            return T(_("1 decimal place (%1)"), self:progressPercentage(1))
                         end,
                         checked_func = function()
                             return self.settings.progress_pct_format == "1"
@@ -1540,7 +1540,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     },
                     {
                         text_func = function()
-                            return T(_("2 digits after decimal point (%1)"), self:progressPercentage(2))
+                            return T(_("2 decimal places (%1)"), self:progressPercentage(2))
                         end,
                         checked_func = function()
                             return self.settings.progress_pct_format == "2"
@@ -1553,7 +1553,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 },
             },
             {
-                text = _("Include current page in pages left"),
+                text = _("Count current page in pages left"),
                 help_text = _([[
 Normally, the current page is not counted as remaining, so "pages left" (in a book or chapter with n pages) will run from n-1 to 0 on the last page.
 With this enabled, the current page is included, so the count goes from n to 1 instead.]]),
@@ -1637,7 +1637,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                 end,
             },
             {
-                text = _("Chapter progress"),
+                text = _("Show progress in chapter"),
                 help_text = _("Show progress bar for the current chapter, instead of the whole book."),
                 enabled_func = function()
                     return not self.settings.disable_progress_bar
@@ -1651,11 +1651,11 @@ With this enabled, the current page is included, so the count goes from n to 1 i
             },
             {
                 text_func = function()
-                    local text = _("alongside items")
+                    local text = _("alongside complications")
                     if self.settings.progress_bar_position == "above" then
-                        text = _("above items")
+                        text = _("above complications")
                     elseif self.settings.progress_bar_position == "below" then
-                        text = _("below items")
+                        text = _("below complications")
                     end
                     return T(_("Position: %1"), text)
                 end,
@@ -1664,7 +1664,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                 end,
                 sub_item_table = {
                     {
-                        text = _("Above items"),
+                        text = _("Above complications"),
                         checked_func = function()
                             return self.settings.progress_bar_position == "above"
                         end,
@@ -1674,7 +1674,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                         end,
                     },
                     {
-                        text = _("Alongside items"),
+                        text = _("Alongside complications"),
                         checked_func = function()
                             return self.settings.progress_bar_position == "alongside"
                         end,
@@ -1692,7 +1692,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                         end
                     },
                     {
-                        text = _("Below items"),
+                        text = _("Below complications"),
                         checked_func = function()
                             return self.settings.progress_bar_position == "below"
                         end,
@@ -1741,7 +1741,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                         end,
                     },
                     {
-                        text = _("Set size"),
+                        text = _("Set height"),
                         callback = function()
                             local value, value_min, value_max, default_value
                             if self.settings.progress_style_thin then
@@ -1763,7 +1763,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                                 value_hold_step = 2,
                                 value_max = value_max,
                                 default_value = default_value,
-                                title_text = _("Progress bar size"),
+                                title_text = _("Progress bar height"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     if self.settings.progress_style_thin then
