@@ -74,11 +74,17 @@ end
 function filemanagerutil.resetDocumentSettings(file)
     local settings_to_keep = {
         annotations = true,
+        annotations_paging = true,
+        annotations_rolling = true,
         bookmarks = true,
+        bookmarks_paging = true,
+        bookmarks_rolling = true,
         bookmarks_sorted_20220106 = true,
         bookmarks_version = true,
         cre_dom_version = true,
         highlight = true,
+        highlight_paging = true,
+        highlight_rolling = true,
         highlights_imported = true,
         last_page = true,
         last_xpointer = true,
