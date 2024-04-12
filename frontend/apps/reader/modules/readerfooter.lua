@@ -9,6 +9,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local InfoMessage = require("ui/widget/infomessage")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
@@ -962,7 +963,7 @@ end
 function ReaderFooter:textOptionTitles(option)
     local symbol = self.settings.item_prefix
     local option_titles = {
-        all_at_once = _("Show all at once"),
+        all_at_once = _("Show all selected complications at once"),
         reclaim_height = _("Overlay status bar"),
         bookmark_count = T(_("Bookmark count (%1)"), symbol_prefix[symbol].bookmark_count),
         page_progress = T(_("Current page (%1)"), "/"),
@@ -1097,7 +1098,7 @@ function ReaderFooter:addToMainMenu(menu_items)
         text = _("Settings"),
         sub_item_table = {
             {
-                text = _("Sort complications"),
+                text = _("Arrange complications"),
                 separator = true,
                 callback = function()
                     local item_table = {}
@@ -1107,7 +1108,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     local SortWidget = require("ui/widget/sortwidget")
                     local sort_item
                     sort_item = SortWidget:new{
-                        title = _("Sort footer complications"),
+                        title = _("Arrange complications"),
                         item_table = item_table,
                         callback = function()
                             for i=1, #sort_item.item_table do
@@ -1149,7 +1150,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end
             },
             {
-                text = _("Show footer separator"),
+                text = _("Show status bar separator"),
                 checked_func = function()
                     return self.settings.bottom_horizontal_separator == true
                 end,
@@ -1168,7 +1169,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Hold footer to skim"),
+                text = _("Hold status bar to skim"),
                 checked_func = function()
                     return self.settings.skim_widget_on_hold == true
                 end,
@@ -1182,12 +1183,12 @@ function ReaderFooter:addToMainMenu(menu_items)
                     if self.settings.text_font_bold == true then
                         font_weight = ", " .. _("bold")
                     end
-                    return T(_("Font: %1%2"), self.settings.text_font_size, font_weight)
+                    return T(_("Complications font: %1%2"), self.settings.text_font_size, font_weight)
                 end,
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Font size: %1"), self.settings.text_font_size)
+                            return T(_("Complications font size: %1"), self.settings.text_font_size)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
@@ -1198,7 +1199,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_max = 36,
                                 default_value = 14,
                                 ok_text = _("Set size"),
-                                title_text = _("Footer font size"),
+                                title_text = _("Complications font size"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.text_font_size = spin.value
@@ -1291,7 +1292,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 keep_menu_open = true,
             },
             {
-                text = _("Maximum width of text complications"),
+                text = _("Maximum lenght of text complications"),
                 sub_item_table = {
                     {
                         text_func = function()
@@ -1307,7 +1308,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_max = 100,
                                 unit = "%",
                                 title_text = _("Maximum width"),
-                                info_text = _("Maximum book title width in percentage of screen width"),
+                                info_text = _("Maximum book title length in percentage of screen width"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.book_title_max_width_pct = spin.value
@@ -1333,7 +1334,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_max = 100,
                                 unit = "%",
                                 title_text = _("Maximum width"),
-                                info_text = _("Maximum chapter width in percentage of screen width"),
+                                info_text = _("Maximum chapter length in percentage of screen width"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.book_chapter_max_width_pct = spin.value
@@ -1406,7 +1407,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     elseif self.settings.item_prefix == "letters" then
                         prefix_text = C_("Status bar", "Letters")
                     end
-                    return T(_("Complication symbol: %1"), prefix_text)
+                    return T(_("Complication symbols: %1"), prefix_text)
                 end,
                 sub_item_table = {
                     {
@@ -1637,7 +1638,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                 end,
             },
             {
-                text = _("Show progress in chapter"),
+                text = _("Switch to chapter progress bar"),
                 help_text = _("Show progress bar for the current chapter, instead of the whole book."),
                 enabled_func = function()
                     return not self.settings.disable_progress_bar
