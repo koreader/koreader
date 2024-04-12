@@ -73,6 +73,7 @@ end
 -- Purge doc settings except kept
 function filemanagerutil.resetDocumentSettings(file)
     local settings_to_keep = {
+        annotations = true,
         bookmarks = true,
         bookmarks_sorted_20220106 = true,
         bookmarks_version = true,
