@@ -1075,7 +1075,7 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note)
                             end
                         end
                         if annotation.drawer then
-                            self.ui.highlight:writePdfAnnotation("content", annotation.page, annotation, annotation.note)
+                            self.ui.highlight:writePdfAnnotation("content", annotation, value)
                         end
                         UIManager:close(self.input)
                         if from_highlight then
