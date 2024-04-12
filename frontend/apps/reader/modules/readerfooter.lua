@@ -1126,7 +1126,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             getMinibarOption("all_at_once", self.updateFooterTextGenerator),
             {
                 text = _("Hide empty complications"),
-                help_text = _([[This will hide values like 0 or off.]]),
+                help_text = _([[This option will hide values like 0 or off.]]),
                 enabled_func = function()
                     return self.settings.all_at_once == true
                 end,
@@ -1308,7 +1308,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_max = 100,
                                 unit = "%",
                                 title_text = _("Maximum width"),
-                                info_text = _("Maximum book title length in percentage of screen width"),
+                                info_text = _("Maximum percentage of screen width used for book title complication"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.book_title_max_width_pct = spin.value
@@ -1334,7 +1334,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_max = 100,
                                 unit = "%",
                                 title_text = _("Maximum width"),
-                                info_text = _("Maximum chapter length in percentage of screen width"),
+                                info_text = _("Maximum percentage of screen width used for chapter title complication"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.book_chapter_max_width_pct = spin.value
@@ -1556,8 +1556,9 @@ function ReaderFooter:addToMainMenu(menu_items)
             {
                 text = _("Count current page in pages left"),
                 help_text = _([[
-Normally, the current page is not counted as remaining, so "pages left" (in a book or chapter with n pages) will run from n-1 to 0 on the last page.
-With this enabled, the current page is included, so the count goes from n to 1 instead.]]),
+By default, KOReader does not include the current page when calculating pages left. For example, in a book or chapter with n pages the "pages
+left" complication will range from 'n-1' to 0 (last page). With this feature activated, the current page is factored in, resulting in the count
+going from n to 1 instead.]]),
                 enabled_func = function()
                     return self.settings.pages_left or self.settings.pages_left_book
                 end,
@@ -1966,31 +1967,51 @@ With this enabled, the current page is included, so the count goes from n to 1 i
             }
         }
     })
-    table.insert(sub_items, getMinibarOption("page_progress"))
-    table.insert(sub_items, getMinibarOption("pages_left_book"))
-    table.insert(sub_items, getMinibarOption("time"))
-    table.insert(sub_items, getMinibarOption("chapter_progress"))
-    table.insert(sub_items, getMinibarOption("pages_left"))
+    local about_text = _([[A complication is any feature that offers additional information beyond the content of your book. Examples of
+    common complications include time, percentage read, pages left, and battery indicator. You can choose which complications to display
+    on the status bar from this page.]])
+    
+    local complication_subitems = {}
+    table.insert(sub_items, {
+        text = _("Complications"),
+        sub_item_table = complication_subitems,
+    })
+    table.insert(sub_items, complications)
+    table.insert(complication_subitems, {    
+        text = _("About complications"),
+        keep_menu_open = true,
+        callback = function()
+            UIManager:show(InfoMessage:new{
+                text = about_text,
+            })
+        end,
+        separator = true,
+    })
+    table.insert(complication_subitems, getMinibarOption("page_progress"))
+    table.insert(complication_subitems, getMinibarOption("pages_left_book"))
+    table.insert(complication_subitems, getMinibarOption("time"))
+    table.insert(complication_subitems, getMinibarOption("chapter_progress"))
+    table.insert(complication_subitems, getMinibarOption("pages_left"))
     if Device:hasBattery() then
-        table.insert(sub_items, getMinibarOption("battery"))
+        table.insert(complication_subitems, getMinibarOption("battery"))
     end
-    table.insert(sub_items, getMinibarOption("bookmark_count"))
-    table.insert(sub_items, getMinibarOption("percentage"))
-    table.insert(sub_items, getMinibarOption("book_time_to_read"))
-    table.insert(sub_items, getMinibarOption("chapter_time_to_read"))
+    table.insert(complication_subitems, getMinibarOption("bookmark_count"))
+    table.insert(complication_subitems, getMinibarOption("percentage"))
+    table.insert(complication_subitems, getMinibarOption("book_time_to_read"))
+    table.insert(complication_subitems, getMinibarOption("chapter_time_to_read"))
     if Device:hasFrontlight() then
-        table.insert(sub_items, getMinibarOption("frontlight"))
+        table.insert(complication_subitems, getMinibarOption("frontlight"))
     end
     if Device:hasNaturalLight() then
-        table.insert(sub_items, getMinibarOption("frontlight_warmth"))
+        table.insert(complication_subitems, getMinibarOption("frontlight_warmth"))
     end
-    table.insert(sub_items, getMinibarOption("mem_usage"))
+    table.insert(complication_subitems, getMinibarOption("mem_usage"))
     if Device:hasFastWifiStatusQuery() then
-        table.insert(sub_items, getMinibarOption("wifi_status"))
+        table.insert(complication_subitems, getMinibarOption("wifi_status"))
     end
-    table.insert(sub_items, getMinibarOption("book_title"))
-    table.insert(sub_items, getMinibarOption("book_chapter"))
-    table.insert(sub_items, getMinibarOption("custom_text"))
+    table.insert(complication_subitems, getMinibarOption("book_title"))
+    table.insert(complication_subitems, getMinibarOption("book_chapter"))
+    table.insert(complication_subitems, getMinibarOption("custom_text"))
 
     -- Settings menu: keep the same parent page for going up from submenu
     for i = 1, #sub_items[settings_submenu_num].sub_item_table do
