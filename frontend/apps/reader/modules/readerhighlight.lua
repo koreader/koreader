@@ -1732,7 +1732,7 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
         self:highlightFromHoldPos()
     end
     if self.selected_text and self.selected_text.pos0 and self.selected_text.pos1 then
-        local pg_or_xp, page
+        local pg_or_xp
         if self.ui.rolling then
             if extend_to_sentence then
                 local extended_text = self.ui.document:extendXPointersToSentenceSegment(self.selected_text.pos0, self.selected_text.pos1)
@@ -1741,10 +1741,8 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
                 end
             end
             pg_or_xp = self.selected_text.pos0
-            page = self.ui.document:getPageFromXPointer(pg_or_xp)
         else
             pg_or_xp = self.selected_text.pos0.page
-            page = pg_or_xp
         end
         local item = {
             page = self.ui.paging and self.selected_text.pos0.page or self.selected_text.pos0,
