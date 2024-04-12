@@ -1757,7 +1757,7 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
         if self.ui.paging then
             item.pboxes = self.selected_text.pboxes
             item.ext = self.selected_text.ext
-            self:writePdfAnnotation("save", page, item)
+            self:writePdfAnnotation("save", item)
         end
         local index = self.ui.annotation:addItem(item)
         self.view.footer:onUpdateFooter(self.view.footer_visible)
@@ -1766,7 +1766,7 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
     end
 end
 
-function ReaderHighlight:writePdfAnnotation(action, page, item, content)
+function ReaderHighlight:writePdfAnnotation(action, item, content)
     if self.ui.rolling or G_reader_settings:readSetting("save_document") == "disable" then
         return
     end
@@ -1782,7 +1782,7 @@ function ReaderHighlight:writePdfAnnotation(action, page, item, content)
     end
     local can_write
     if item.pos0.page == item.pos1.page then -- single-page highlight
-        can_write = doAction(action, page, item, content)
+        can_write = doAction(action, item.pos0.page, item, content)
     else -- multi-page highlight
         for hl_page = item.pos0.page, item.pos1.page do
             local hl_part = self:getSavedExtendedHighlightPage(item, hl_page)
@@ -1836,7 +1836,7 @@ end
 function ReaderHighlight:deleteHighlight(index)
     logger.dbg("delete highlight", index)
     local item = self.ui.annotation.annotations[index]
-    self:writePdfAnnotation("delete", item.page, item)
+    self:writePdfAnnotation("delete", item)
     self.ui.bookmark:removeItemByIndex(index)
     UIManager:setDirty(self.dialog, "ui")
 end
@@ -1858,12 +1858,12 @@ end
 function ReaderHighlight:editHighlightStyle(index)
     local item = self.ui.annotation.annotations[index]
     local apply_drawer = function(drawer)
-        self:writePdfAnnotation("delete", item.page, item)
+        self:writePdfAnnotation("delete", item)
         item.drawer = drawer
         if self.ui.paging then
-            self:writePdfAnnotation("save", item.page, item)
+            self:writePdfAnnotation("save", item)
             if item.note then
-                self:writePdfAnnotation("content", item.page, item, item.note)
+                self:writePdfAnnotation("content", item, item.note)
             end
         end
         UIManager:setDirty(self.dialog, "ui")
