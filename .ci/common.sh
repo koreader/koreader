@@ -60,16 +60,3 @@ retry_cmd() {
     set -e
     return ${result}
 }
-
-# export CI_BUILD_DIR=${TRAVIS_BUILD_DIR}
-# use eval to get fully expanded path
-eval CI_BUILD_DIR="${CIRCLE_WORKING_DIRECTORY}"
-export CI_BUILD_DIR
-
-test -e "${HOME}/bin" || mkdir "${HOME}/bin"
-export PATH=${PWD}/bin:${HOME}/bin:${PATH}
-export PATH=${PATH}:${CI_BUILD_DIR}/install/bin
-if [ -f "${CI_BUILD_DIR}/install/bin/luarocks" ]; then
-    # add local rocks to $PATH
-    eval "$(luarocks path --bin)"
-fi
