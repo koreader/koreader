@@ -1094,6 +1094,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             end,
         }
     end
+    -- we call up the user interface
     -------PROGRESS BAR
     table.insert(sub_items, {
         text = _("Progress bar"),
@@ -1418,7 +1419,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    return T(_("Minimum width: %1 %"), self.settings.progress_bar_min_width_pct)
+                    return T(_("Screen width assigned to progress bar: %1 %"), self.settings.progress_bar_min_width_pct)
                 end,
                 enabled_func = function()
                     return self.settings.progress_bar_position == "alongside" and not self.settings.disable_progress_bar
@@ -1433,7 +1434,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         value_hold_step = 20,
                         value_max = 50,
                         unit = "%",
-                        title_text = _("Minimum width"),
+                        title_text = _("Minimum progress bar length"),
                         text = _("Minimum percentage of screen width assigned to progress bar"),
                         keep_shown_on_apply = true,
                         callback = function(spin)
@@ -1451,7 +1452,7 @@ function ReaderFooter:addToMainMenu(menu_items)
     })
     ----------- COMPLICATIONS
     local about_text = _([[A complication is any feature that offers additional information beyond the content of your book. Examples of
-common complications include time, percentage read, pages left, and battery indicator. You can choose which complications to display
+common complications include time, percentage read, pages left, and the battery indicator. You can choose which complications to display
 on the status bar from this page.]])
     local complication_subitems = {}
     table.insert(sub_items, {
@@ -1602,7 +1603,9 @@ going from n to 1 instead.]]),
                 end,
             },
             {
-                text = _("Auto refresh"),
+                text = _("Auto refresh complications"),
+                help_text = _([[This option allows certain complications to update without needing a full-page update. For example, the time
+                complication will update every minute regardless of user input.]]),
                 checked_func = function()
                     return self.settings.auto_refresh_time == true
                 end,
@@ -1633,7 +1636,7 @@ going from n to 1 instead.]]),
                                 value_max = 36,
                                 default_value = 14,
                                 ok_text = _("Set size"),
-                                title_text = _("Complications font size"),
+                                title_text = _("Set font size for complications"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.text_font_size = spin.value
@@ -1726,7 +1729,7 @@ going from n to 1 instead.]]),
                 keep_menu_open = true,
             },
             {
-                text = _("Maximum lenght of text complications"),
+                text = _("Maximum lenght for text complications"),
                 sub_item_table = {
                     {
                         text_func = function()
@@ -1741,8 +1744,8 @@ going from n to 1 instead.]]),
                                 value_hold_step = 20,
                                 value_max = 100,
                                 unit = "%",
-                                title_text = _("Maximum lenght of book title complication"),
-                                info_text = _("Maximum percentage of screen width used for book title complication"),
+                                title_text = _("Maximum lenght of book-title complication"),
+                                info_text = _("Maximum percentage of screen width used for book-title complication"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.book_title_max_width_pct = spin.value
@@ -1767,8 +1770,8 @@ going from n to 1 instead.]]),
                                 value_hold_step = 20,
                                 value_max = 100,
                                 unit = "%",
-                                title_text = _("Maximum lenght of chapter title complication"),
-                                info_text = _("Maximum percentage of screen width used for chapter title complication"),
+                                title_text = _("Maximum lenght of chapter-title complication"),
+                                info_text = _("Maximum percentage of screen width used for chapter-title complication"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.book_chapter_max_width_pct = spin.value
@@ -1945,13 +1948,14 @@ going from n to 1 instead.]]),
             },
         }
     })
+    local configure_complications_sub_table = sub_items[#sub_items].sub_item_table -- will pick the last item of sub_items
     if Device:hasBattery() then
-        table.insert(sub_items[settings_submenu_num].sub_item_table, 4, {
+        table.insert(configure_complications_sub_table , 4, {
             text_func = function()
                 if self.settings.battery_hide_threshold <= (Device:hasAuxBattery() and 200 or 100) then
                     return T(_("Hide battery complication when higher than: %1 %"), self.settings.battery_hide_threshold)
                 else
-                    return _("Hide battery complication when percent higher than")
+                    return _("Hide battery complication at custom threshold")
                 end
             end,
             checked_func = function()
@@ -1970,7 +1974,7 @@ going from n to 1 instead.]]),
                     default_value = Device:hasAuxBattery() and 200 or 100,
                     unit = "%",
                     value_hold_step = 10,
-                    title_text = _("Hide battery complication threshold"),
+                    title_text = _("Set minimum threshold to hide battery complication"),
                     callback = function(spin)
                         self.settings.battery_hide_threshold = spin.value
                         self:refreshFooter(true, true)
@@ -1989,7 +1993,7 @@ going from n to 1 instead.]]),
         })
     end
     ----------- MORE STATUS BAR OPTIONS
-    -- quick access to this setting for "@NiLuJe, and for people that do like him." -- poire-z 2024
+    -- quick access to this setting for "@NiLuJe, and for people that do like him." -- poire-z (2024)
     table.insert(sub_items, getMinibarOption("reclaim_height"))
     table.insert(sub_items, {
         text = _("Show status bar divider"),
@@ -2001,6 +2005,7 @@ going from n to 1 instead.]]),
             self:refreshFooter(true, true)
         end,
     })
+    -- these next settings are useless on non-touch devices so we take them off
     if Device:isTouchDevice() then
         table.insert(sub_items, {
             text = _("Lock status bar"),
