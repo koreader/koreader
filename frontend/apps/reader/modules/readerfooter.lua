@@ -1188,86 +1188,11 @@ function ReaderFooter:addToMainMenu(menu_items)
                 },
             },
             {
-                text = _("Show initial-position marker"),
-                checked_func = function()
-                    return self.settings.initial_marker == true
-                end,
-                callback = function()
-                    self.settings.initial_marker = not self.settings.initial_marker
-                    self.progress_bar.initial_pos_marker = self.settings.initial_marker
-                    self:refreshFooter(true)
-                end
-            },
-            {
-                text = _("Show chapter markers"),
-                checked_func = function()
-                    return self.settings.toc_markers == true and not self.settings.chapter_progress_bar
-                end,
-                enabled_func = function()
-                    return not self.settings.progress_style_thin and not self.settings.chapter_progress_bar
-                end,
-                callback = function()
-                    self.settings.toc_markers = not self.settings.toc_markers
-                    self:setTocMarkers()
-                    self:refreshFooter(true)
-                end
-            },
-            {
-                text_func = function()
-                    local markers_width_text = _("thick")
-                    if self.settings.toc_markers_width == 1 then
-                        markers_width_text = _("thin")
-                    elseif self.settings.toc_markers_width == 2 then
-                        markers_width_text = _("medium")
-                    end
-                    return T(_("Chapter marker width (%1)"), markers_width_text)
-                end,
-                enabled_func = function()
-                    return not self.settings.progress_style_thin and not self.settings.chapter_progress_bar
-                        and self.settings.toc_markers
-                end,
-                sub_item_table = {
-                    {
-                        text = _("Thin"),
-                        checked_func = function()
-                            return self.settings.toc_markers_width == 1
-                        end,
-                        callback = function()
-                            self.settings.toc_markers_width = 1  -- unscaled_size_check: ignore
-                            self:setTocMarkers()
-                            self:refreshFooter(true)
-                        end,
-                    },
-                    {
-                        text = _("Medium"),
-                        checked_func = function()
-                            return self.settings.toc_markers_width == 2
-                        end,
-                        callback = function()
-                            self.settings.toc_markers_width = 2  -- unscaled_size_check: ignore
-                            self:setTocMarkers()
-                            self:refreshFooter(true)
-                        end,
-                    },
-                    {
-                        text = _("Thick"),
-                        checked_func = function()
-                            return self.settings.toc_markers_width == 3
-                        end,
-                        callback = function()
-                            self.settings.toc_markers_width = 3  -- unscaled_size_check: ignore
-                            self:setTocMarkers()
-                            self:refreshFooter(true)
-                        end
-                    },
-                },
-            },
-            {
                 text_func = function()
                     if self.settings.progress_style_thin then
-                        return _("Style: thin")
+                        return _("Thickness and height: (thin)")
                     else
-                        return _("Style: thick")
+                        return _("Thickness and height: (thick)")
                     end
                 end,
                 enabled_func = function()
@@ -1298,6 +1223,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                             self.progress_bar:updateStyle(false, bar_height)
                             self:refreshFooter(true, true)
                         end,
+                        separator = true,
                     },
                     {
                         text = _("Set height"),
@@ -1447,13 +1373,92 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 keep_menu_open = true,
                 separator = true,
-            }
+            },
+            {
+                text = _("Show initial-position marker"),
+                checked_func = function()
+                    return self.settings.initial_marker == true
+                end,
+                enabled_func = function()
+                    return not self.settings.disable_progress_bar
+                end,
+                callback = function()
+                    self.settings.initial_marker = not self.settings.initial_marker
+                    self.progress_bar.initial_pos_marker = self.settings.initial_marker
+                    self:refreshFooter(true)
+                end
+            },
+            {
+                text = _("Show chapter markers"),
+                checked_func = function()
+                    return self.settings.toc_markers == true and not self.settings.chapter_progress_bar
+                end,
+                enabled_func = function()
+                    return not self.settings.progress_style_thin and not self.settings.chapter_progress_bar 
+                        and not self.settings.disable_progress_bar
+                end,
+                callback = function()
+                    self.settings.toc_markers = not self.settings.toc_markers
+                    self:setTocMarkers()
+                    self:refreshFooter(true)
+                end
+            },
+            {
+                text_func = function()
+                    local markers_width_text = _("thick")
+                    if self.settings.toc_markers_width == 1 then
+                        markers_width_text = _("thin")
+                    elseif self.settings.toc_markers_width == 2 then
+                        markers_width_text = _("medium")
+                    end
+                    return T(_("Chapter marker width (%1)"), markers_width_text)
+                end,
+                enabled_func = function()
+                    return not self.settings.progress_style_thin and not self.settings.chapter_progress_bar
+                        and self.settings.toc_markers and not self.settings.disable_progress_bar
+                end,
+                sub_item_table = {
+                    {
+                        text = _("Thin"),
+                        checked_func = function()
+                            return self.settings.toc_markers_width == 1
+                        end,
+                        callback = function()
+                            self.settings.toc_markers_width = 1  -- unscaled_size_check: ignore
+                            self:setTocMarkers()
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
+                        text = _("Medium"),
+                        checked_func = function()
+                            return self.settings.toc_markers_width == 2
+                        end,
+                        callback = function()
+                            self.settings.toc_markers_width = 2  -- unscaled_size_check: ignore
+                            self:setTocMarkers()
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
+                        text = _("Thick"),
+                        checked_func = function()
+                            return self.settings.toc_markers_width == 3
+                        end,
+                        callback = function()
+                            self.settings.toc_markers_width = 3  -- unscaled_size_check: ignore
+                            self:setTocMarkers()
+                            self:refreshFooter(true)
+                        end
+                    },
+                },
+            },
         }
     })
-    ----------- COMPLICATIONS
-    local about_text = _([[A complication is any feature that offers additional information beyond the content of your book. Examples of
-common complications include time, percentage read, pages left, and the battery indicator. You can choose which complications to display
-on the status bar from this page.]])
+    ----------- COMPLICATIONS (FOOTER_ITEMS)
+    local about_text = _("A complication is any feature that provides additional information beyond the content of your book. Examples of "..
+    "common complications include time, percentage read, pages left, and the battery indicator. You can choose which complications to "..
+    "display on the status bar from this page.")
     local complication_subitems = {}
     table.insert(sub_items, {
         text = _("Complications"),
@@ -1495,7 +1500,7 @@ on the status bar from this page.]])
     table.insert(complication_subitems, getMinibarOption("book_title"))
     table.insert(complication_subitems, getMinibarOption("book_chapter"))
     table.insert(complication_subitems, getMinibarOption("custom_text"))
-    -------- CONFIGURE COMPLICATIONS
+    -------- CONFIGURE COMPLICATIONS (FOOTER_ITEMS)
     table.insert(sub_items, {
         separator = true,
         text = _("Configure complications"),
@@ -1528,6 +1533,18 @@ on the status bar from this page.]])
             },
             getMinibarOption("all_at_once", self.updateFooterTextGenerator),
             {
+                text = _("Auto refresh complications"),
+                help_text = _("This option allows certain complications to update without needing a full-page update. For example, the time"..
+                " complication will update every minute regardless of user input."),
+                checked_func = function()
+                    return self.settings.auto_refresh_time == true
+                end,
+                callback = function()
+                    self.settings.auto_refresh_time = not self.settings.auto_refresh_time
+                    self:rescheduleFooterAutoRefreshIfNeeded()
+                end
+            },
+            {
                 text = _("Hide empty complications"),
                 help_text = _([[This option will hide values like 0 or off.]]),
                 enabled_func = function()
@@ -1539,6 +1556,22 @@ on the status bar from this page.]])
                 callback = function()
                     self.settings.hide_empty_generators = not self.settings.hide_empty_generators
                     self:refreshFooter(true, true)
+                end,
+            },
+            {
+                text = _("Count current page in pages left"),
+                help_text = _("By default, KOReader does not include the current page when calculating pages left. For example, in a book ".. 
+                "or chapter with n pages the 'pages left' complication will range from 'n-1' to 0 (last page). With this feature activated, "..
+                "the current page is factored in, resulting in the count going from n to 1 instead."),
+                enabled_func = function()
+                    return self.settings.pages_left or self.settings.pages_left_book
+                end,
+                checked_func = function()
+                    return self.settings.pages_left_includes_current_page == true
+                end,
+                callback = function()
+                    self.settings.pages_left_includes_current_page = not self.settings.pages_left_includes_current_page
+                    self:refreshFooter(true)
                 end,
             },
             {
@@ -1586,33 +1619,110 @@ on the status bar from this page.]])
                 },
             },
             {
-                text = _("Count current page in pages left"),
-                help_text = _([[
-By default, KOReader does not include the current page when calculating pages left. For example, in a book or chapter with n pages the "pages
-left" complication will range from 'n-1' to 0 (last page). With this feature activated, the current page is factored in, resulting in the count
-going from n to 1 instead.]]),
-                enabled_func = function()
-                    return self.settings.pages_left or self.settings.pages_left_book
-                end,
-                checked_func = function()
-                    return self.settings.pages_left_includes_current_page == true
-                end,
-                callback = function()
-                    self.settings.pages_left_includes_current_page = not self.settings.pages_left_includes_current_page
-                    self:refreshFooter(true)
-                end,
+                text = _("Maximum lenght for text complications"),
+                separator = true,
+                sub_item_table = {
+                    {
+                        text_func = function()
+                            return T(_("Lenght of book-title complication: %1".. "%"), self.settings.book_title_max_width_pct)
+                        end,
+                        callback = function(touchmenu_instance)
+                            local SpinWidget = require("ui/widget/spinwidget")
+                            local items = SpinWidget:new{
+                                value = self.settings.book_title_max_width_pct,
+                                value_min = 10,
+                                value_step = 5,
+                                value_hold_step = 20,
+                                value_max = 100,
+                                unit = "%",
+                                title_text = _("Max lenght of book-title complication"),
+                                info_text = _("Maximum percentage of screen width used for book-title complication"),
+                                keep_shown_on_apply = true,
+                                callback = function(spin)
+                                    self.settings.book_title_max_width_pct = spin.value
+                                    self:refreshFooter(true, true)
+                                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                                end
+                            }
+                            UIManager:show(items)
+                        end,
+                        keep_menu_open = true,
+                    },
+                    {
+                        text_func = function()
+                            return T(_("Lenght of chapter-title complication: %1".. "%"), self.settings.book_chapter_max_width_pct)
+                        end,
+                        callback = function(touchmenu_instance)
+                            local SpinWidget = require("ui/widget/spinwidget")
+                            local items = SpinWidget:new{
+                                value = self.settings.book_chapter_max_width_pct,
+                                value_min = 10,
+                                value_step = 5,
+                                value_hold_step = 20,
+                                value_max = 100,
+                                unit = "%",
+                                title_text = _("Max lenght of chapter-title complication"),
+                                info_text = _("Maximum percentage of screen width used for chapter-title complication"),
+                                keep_shown_on_apply = true,
+                                callback = function(spin)
+                                    self.settings.book_chapter_max_width_pct = spin.value
+                                    self:refreshFooter(true, true)
+                                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                                end
+                            }
+                            UIManager:show(items)
+                        end,
+                        keep_menu_open = true,
+                    }
+                },
             },
             {
-                text = _("Auto refresh complications"),
-                help_text = _([[This option allows certain complications to update without needing a full-page update. For example, the time
-                complication will update every minute regardless of user input.]]),
-                checked_func = function()
-                    return self.settings.auto_refresh_time == true
+                text_func = function()
+                    local align_text
+                    if self.settings.align == "left" then
+                        align_text = _("Left")
+                    elseif self.settings.align == "right" then
+                        align_text = _("Right")
+                    else
+                        align_text = _("Center")
+                    end
+                    return T(_("Alignment: %1"), align_text)
                 end,
-                callback = function()
-                    self.settings.auto_refresh_time = not self.settings.auto_refresh_time
-                    self:rescheduleFooterAutoRefreshIfNeeded()
-                end
+                enabled_func = function()
+                    return self.settings.disable_progress_bar or self.settings.progress_bar_position ~= "alongside"
+                end,
+                sub_item_table = {
+                    {
+                        text = _("Left"),
+                        checked_func = function()
+                            return self.settings.align == "left"
+                        end,
+                        callback = function()
+                            self.settings.align = "left"
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
+                        text = _("Center"),
+                        checked_func = function()
+                            return self.settings.align == "center"
+                        end,
+                        callback = function()
+                            self.settings.align = "center"
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
+                        text = _("Right"),
+                        checked_func = function()
+                            return self.settings.align == "right"
+                        end,
+                        callback = function()
+                            self.settings.align = "right"
+                            self:refreshFooter(true)
+                        end,
+                    },
+                }
             },
             {
                 text_func = function()
@@ -1727,112 +1837,6 @@ going from n to 1 instead.]]),
                     UIManager:show(items_font)
                 end,
                 keep_menu_open = true,
-            },
-            {
-                text = _("Maximum lenght for text complications"),
-                sub_item_table = {
-                    {
-                        text_func = function()
-                            return T(_("Book title: %1 %"), self.settings.book_title_max_width_pct)
-                        end,
-                        callback = function(touchmenu_instance)
-                            local SpinWidget = require("ui/widget/spinwidget")
-                            local items = SpinWidget:new{
-                                value = self.settings.book_title_max_width_pct,
-                                value_min = 10,
-                                value_step = 5,
-                                value_hold_step = 20,
-                                value_max = 100,
-                                unit = "%",
-                                title_text = _("Maximum lenght of book-title complication"),
-                                info_text = _("Maximum percentage of screen width used for book-title complication"),
-                                keep_shown_on_apply = true,
-                                callback = function(spin)
-                                    self.settings.book_title_max_width_pct = spin.value
-                                    self:refreshFooter(true, true)
-                                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                                end
-                            }
-                            UIManager:show(items)
-                        end,
-                        keep_menu_open = true,
-                    },
-                    {
-                        text_func = function()
-                            return T(_("Current chapter: %1 %"), self.settings.book_chapter_max_width_pct)
-                        end,
-                        callback = function(touchmenu_instance)
-                            local SpinWidget = require("ui/widget/spinwidget")
-                            local items = SpinWidget:new{
-                                value = self.settings.book_chapter_max_width_pct,
-                                value_min = 10,
-                                value_step = 5,
-                                value_hold_step = 20,
-                                value_max = 100,
-                                unit = "%",
-                                title_text = _("Maximum lenght of chapter-title complication"),
-                                info_text = _("Maximum percentage of screen width used for chapter-title complication"),
-                                keep_shown_on_apply = true,
-                                callback = function(spin)
-                                    self.settings.book_chapter_max_width_pct = spin.value
-                                    self:refreshFooter(true, true)
-                                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                                end
-                            }
-                            UIManager:show(items)
-                        end,
-                        keep_menu_open = true,
-                    }
-                },
-            },
-            {
-                text_func = function()
-                    local align_text
-                    if self.settings.align == "left" then
-                        align_text = _("Left")
-                    elseif self.settings.align == "right" then
-                        align_text = _("Right")
-                    else
-                        align_text = _("Center")
-                    end
-                    return T(_("Alignment: %1"), align_text)
-                end,
-                separator = true,
-                enabled_func = function()
-                    return self.settings.disable_progress_bar or self.settings.progress_bar_position ~= "alongside"
-                end,
-                sub_item_table = {
-                    {
-                        text = _("Center"),
-                        checked_func = function()
-                            return self.settings.align == "center"
-                        end,
-                        callback = function()
-                            self.settings.align = "center"
-                            self:refreshFooter(true)
-                        end,
-                    },
-                    {
-                        text = _("Left"),
-                        checked_func = function()
-                            return self.settings.align == "left"
-                        end,
-                        callback = function()
-                            self.settings.align = "left"
-                            self:refreshFooter(true)
-                        end,
-                    },
-                    {
-                        text = _("Right"),
-                        checked_func = function()
-                            return self.settings.align == "right"
-                        end,
-                        callback = function()
-                            self.settings.align = "right"
-                            self:refreshFooter(true)
-                        end,
-                    },
-                }
             },
             {
                 text_func = function()
@@ -1950,10 +1954,10 @@ going from n to 1 instead.]]),
     })
     local configure_complications_sub_table = sub_items[#sub_items].sub_item_table -- will pick the last item of sub_items
     if Device:hasBattery() then
-        table.insert(configure_complications_sub_table , 4, {
+        table.insert(configure_complications_sub_table , 5, {
             text_func = function()
                 if self.settings.battery_hide_threshold <= (Device:hasAuxBattery() and 200 or 100) then
-                    return T(_("Hide battery complication when higher than: %1 %"), self.settings.battery_hide_threshold)
+                    return T(_("Hide battery complication when higher than: %1".. "%"), self.settings.battery_hide_threshold)
                 else
                     return _("Hide battery complication at custom threshold")
                 end
@@ -2005,7 +2009,7 @@ going from n to 1 instead.]]),
             self:refreshFooter(true, true)
         end,
     })
-    -- these next settings are useless on non-touch devices so we take them off
+    -- the next couple of settings are useless on non-touch devices so we take them off there
     if Device:isTouchDevice() then
         table.insert(sub_items, {
             text = _("Lock status bar"),
