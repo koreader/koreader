@@ -32,6 +32,7 @@ jobs:
       - restore_cache:
           keys:
             - build-{{ arch }}-{{ checksum "git-rev-base" }}
+      - run: whoami; echo "PATH: $PATH"
 
       # installs everything and caches base
       - run:
