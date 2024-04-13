@@ -1094,11 +1094,413 @@ function ReaderFooter:addToMainMenu(menu_items)
             end,
         }
     end
+    -------PROGRESS BAR
     table.insert(sub_items, {
-        text = _("Settings"),
+        text = _("Progress bar"),
+        separator = true,
         sub_item_table = {
             {
-                text = _("Arrange complications"),
+                text = _("Show progress bar"),
+                checked_func = function()
+                    return not self.settings.disable_progress_bar
+                end,
+                callback = function()
+                    self.settings.disable_progress_bar = not self.settings.disable_progress_bar
+                    if not self.settings.disable_progress_bar then
+                        self:setTocMarkers()
+                    end
+                    -- If the status bar is currently disabled, switch to an innocuous mode to display it
+                    if not self.view.footer_visible then
+                        self.mode = self.mode_list.page_progress
+                        self:applyFooterMode()
+                        G_reader_settings:saveSetting("reader_footer_mode", self.mode)
+                    end
+                    self:refreshFooter(true, true)
+                end,
+            },
+            {
+                text = _("Switch to chapter progress bar"),
+                help_text = _("Show progress bar for the current chapter, instead of the whole book."),
+                enabled_func = function()
+                    return not self.settings.disable_progress_bar
+                end,
+                checked_func = function()
+                    return self.settings.chapter_progress_bar
+                end,
+                callback = function()
+                    self:onToggleChapterProgressBar()
+                end,
+            },
+            {
+                separator = true,
+                text_func = function()
+                    local text = _("alongside complications")
+                    if self.settings.progress_bar_position == "above" then
+                        text = _("above complications")
+                    elseif self.settings.progress_bar_position == "below" then
+                        text = _("below complications")
+                    end
+                    return T(_("Position: %1"), text)
+                end,
+                enabled_func = function()
+                    return not self.settings.disable_progress_bar
+                end,
+                sub_item_table = {
+                    {
+                        text = _("Above complications"),
+                        checked_func = function()
+                            return self.settings.progress_bar_position == "above"
+                        end,
+                        callback = function()
+                            self.settings.progress_bar_position = "above"
+                            self:refreshFooter(true, true)
+                        end,
+                    },
+                    {
+                        text = _("Alongside complications"),
+                        checked_func = function()
+                            return self.settings.progress_bar_position == "alongside"
+                        end,
+                        callback = function()
+                            -- "Same as book" is disabled in this mode, and we enforce the defaults.
+                            if self.settings.progress_margin then
+                                self.settings.progress_margin = false
+                                self.settings.progress_margin_width = self.horizontal_margin
+                            end
+                            -- Text alignment is also disabled
+                            self.settings.align = "center"
+
+                            self.settings.progress_bar_position = "alongside"
+                            self:refreshFooter(true, true)
+                        end
+                    },
+                    {
+                        text = _("Below complications"),
+                        checked_func = function()
+                            return self.settings.progress_bar_position == "below"
+                        end,
+                        callback = function()
+                            self.settings.progress_bar_position = "below"
+                            self:refreshFooter(true, true)
+                        end,
+                    },
+                },
+            },
+            {
+                text = _("Show initial-position marker"),
+                checked_func = function()
+                    return self.settings.initial_marker == true
+                end,
+                callback = function()
+                    self.settings.initial_marker = not self.settings.initial_marker
+                    self.progress_bar.initial_pos_marker = self.settings.initial_marker
+                    self:refreshFooter(true)
+                end
+            },
+            {
+                text = _("Show chapter markers"),
+                checked_func = function()
+                    return self.settings.toc_markers == true and not self.settings.chapter_progress_bar
+                end,
+                enabled_func = function()
+                    return not self.settings.progress_style_thin and not self.settings.chapter_progress_bar
+                end,
+                callback = function()
+                    self.settings.toc_markers = not self.settings.toc_markers
+                    self:setTocMarkers()
+                    self:refreshFooter(true)
+                end
+            },
+            {
+                text_func = function()
+                    local markers_width_text = _("thick")
+                    if self.settings.toc_markers_width == 1 then
+                        markers_width_text = _("thin")
+                    elseif self.settings.toc_markers_width == 2 then
+                        markers_width_text = _("medium")
+                    end
+                    return T(_("Chapter marker width (%1)"), markers_width_text)
+                end,
+                enabled_func = function()
+                    return not self.settings.progress_style_thin and not self.settings.chapter_progress_bar
+                        and self.settings.toc_markers
+                end,
+                sub_item_table = {
+                    {
+                        text = _("Thin"),
+                        checked_func = function()
+                            return self.settings.toc_markers_width == 1
+                        end,
+                        callback = function()
+                            self.settings.toc_markers_width = 1  -- unscaled_size_check: ignore
+                            self:setTocMarkers()
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
+                        text = _("Medium"),
+                        checked_func = function()
+                            return self.settings.toc_markers_width == 2
+                        end,
+                        callback = function()
+                            self.settings.toc_markers_width = 2  -- unscaled_size_check: ignore
+                            self:setTocMarkers()
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
+                        text = _("Thick"),
+                        checked_func = function()
+                            return self.settings.toc_markers_width == 3
+                        end,
+                        callback = function()
+                            self.settings.toc_markers_width = 3  -- unscaled_size_check: ignore
+                            self:setTocMarkers()
+                            self:refreshFooter(true)
+                        end
+                    },
+                },
+            },
+            {
+                text_func = function()
+                    if self.settings.progress_style_thin then
+                        return _("Style: thin")
+                    else
+                        return _("Style: thick")
+                    end
+                end,
+                enabled_func = function()
+                    return not self.settings.disable_progress_bar
+                end,
+                sub_item_table = {
+                    {
+                        text = _("Thick"),
+                        checked_func = function()
+                            return not self.settings.progress_style_thin
+                        end,
+                        callback = function()
+                            self.settings.progress_style_thin = nil
+                            local bar_height = self.settings.progress_style_thick_height
+                            self.progress_bar:updateStyle(true, bar_height)
+                            self:setTocMarkers()
+                            self:refreshFooter(true, true)
+                        end,
+                    },
+                    {
+                        text = _("Thin"),
+                        checked_func = function()
+                            return self.settings.progress_style_thin
+                        end,
+                        callback = function()
+                            self.settings.progress_style_thin = true
+                            local bar_height = self.settings.progress_style_thin_height
+                            self.progress_bar:updateStyle(false, bar_height)
+                            self:refreshFooter(true, true)
+                        end,
+                    },
+                    {
+                        text = _("Set height"),
+                        callback = function()
+                            local value, value_min, value_max, default_value
+                            if self.settings.progress_style_thin then
+                                default_value = PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT
+                                value = self.settings.progress_style_thin_height or default_value
+                                value_min = 1
+                                value_max = 12
+                            else
+                                default_value = PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT
+                                value = self.settings.progress_style_thick_height or default_value
+                                value_min = 5
+                                value_max = 28
+                            end
+                            local SpinWidget = require("ui/widget/spinwidget")
+                            local items = SpinWidget:new{
+                                value = value,
+                                value_min = value_min,
+                                value_step = 1,
+                                value_hold_step = 2,
+                                value_max = value_max,
+                                default_value = default_value,
+                                title_text = _("Progress bar height"),
+                                keep_shown_on_apply = true,
+                                callback = function(spin)
+                                    if self.settings.progress_style_thin then
+                                        self.settings.progress_style_thin_height = spin.value
+                                    else
+                                        self.settings.progress_style_thick_height = spin.value
+                                    end
+                                    self:refreshFooter(true, true)
+                                end
+                            }
+                            UIManager:show(items)
+                        end,
+                        separator = true,
+                        keep_menu_open = true,
+                    },
+                },
+            },
+            {
+                text_func = function()
+                    local text = _("static margins (10)")
+                    local cur_width = self.settings.progress_margin_width
+                    if cur_width == 0 then
+                        text = _("no margins (0)")
+                    elseif cur_width == Screen:scaleBySize(material_pixels) then
+                        text = T(_("static margins (%1)"), material_pixels)
+                    end
+                    if self.settings.progress_margin and not self.ui.document.info.has_pages then
+                        text = T(_("same as book margins (%1)"), self.book_margins_footer_width)
+                    end
+                    return T(_("Margins: %1"), text)
+                end,
+                enabled_func = function()
+                    return not self.settings.disable_progress_bar
+                end,
+                sub_item_table_func = function()
+                    local common = {
+                        {
+                            text = _("No margins (0)"),
+                            checked_func = function()
+                                return self.settings.progress_margin_width == 0
+                                    and not self.settings.progress_margin
+                            end,
+                            callback = function()
+                                self.settings.progress_margin_width = 0
+                                self.settings.progress_margin = false
+                                self:refreshFooter(true)
+                            end,
+                        },
+                        {
+                            text_func = function()
+                                if self.ui.document.info.has_pages then
+                                    return _("Same as book margins")
+                                end
+                                return T(_("Same as book margins (%1)"), self.book_margins_footer_width)
+                            end,
+                            checked_func = function()
+                                return self.settings.progress_margin and not self.ui.document.info.has_pages
+                            end,
+                            enabled_func = function()
+                                return not self.ui.document.info.has_pages and self.settings.progress_bar_position ~= "alongside"
+                            end,
+                            callback = function()
+                                self.settings.progress_margin = true
+                                self.settings.progress_margin_width = Screen:scaleBySize(self.book_margins_footer_width)
+                                self:refreshFooter(true)
+                            end
+                        },
+                    }
+                    local function customMargin(px)
+                        return {
+                            text = T(_("Static margins (%1)"), px),
+                            checked_func = function()
+                                return self.settings.progress_margin_width == Screen:scaleBySize(px)
+                                    and not self.settings.progress_margin
+                                    -- if same as book margins is selected in document with pages (pdf) we enforce static margins
+                                    or (self.ui.document.info.has_pages and self.settings.progress_margin)
+                            end,
+                            callback = function()
+                                self.settings.progress_margin_width = Screen:scaleBySize(px)
+                                self.settings.progress_margin = false
+                                self:refreshFooter(true)
+                            end,
+                        }
+                    end
+                    local device_defaults
+                    if Device:isAndroid() then
+                        device_defaults = customMargin(material_pixels)
+                    else
+                        device_defaults = customMargin(10)
+                    end
+                    table.insert(common, 2, device_defaults)
+                    return common
+                end,
+            },
+            {
+                text_func = function()
+                    return T(_("Minimum width: %1 %"), self.settings.progress_bar_min_width_pct)
+                end,
+                enabled_func = function()
+                    return self.settings.progress_bar_position == "alongside" and not self.settings.disable_progress_bar
+                        and self.settings.all_at_once
+                end,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local items = SpinWidget:new{
+                        value = self.settings.progress_bar_min_width_pct,
+                        value_min = 5,
+                        value_step = 5,
+                        value_hold_step = 20,
+                        value_max = 50,
+                        unit = "%",
+                        title_text = _("Minimum width"),
+                        text = _("Minimum percentage of screen width assigned to progress bar"),
+                        keep_shown_on_apply = true,
+                        callback = function(spin)
+                            self.settings.progress_bar_min_width_pct = spin.value
+                            self:refreshFooter(true, true)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end
+                    }
+                    UIManager:show(items)
+                end,
+                keep_menu_open = true,
+                separator = true,
+            }
+        }
+    })
+    ----------- COMPLICATIONS
+    local about_text = _([[A complication is any feature that offers additional information beyond the content of your book. Examples of
+common complications include time, percentage read, pages left, and battery indicator. You can choose which complications to display
+on the status bar from this page.]])
+    local complication_subitems = {}
+    table.insert(sub_items, {
+        text = _("Complications"),
+        sub_item_table = complication_subitems,
+    })
+    table.insert(sub_items, complications)
+    table.insert(complication_subitems, {    
+        text = _("About complications"),
+        keep_menu_open = true,
+        callback = function()
+            UIManager:show(InfoMessage:new{
+                text = about_text,
+            })
+        end,
+        separator = true,
+    })
+    table.insert(complication_subitems, getMinibarOption("page_progress"))
+    table.insert(complication_subitems, getMinibarOption("pages_left_book"))
+    table.insert(complication_subitems, getMinibarOption("time"))
+    table.insert(complication_subitems, getMinibarOption("chapter_progress"))
+    table.insert(complication_subitems, getMinibarOption("pages_left"))
+    if Device:hasBattery() then
+        table.insert(complication_subitems, getMinibarOption("battery"))
+    end
+    table.insert(complication_subitems, getMinibarOption("bookmark_count"))
+    table.insert(complication_subitems, getMinibarOption("percentage"))
+    table.insert(complication_subitems, getMinibarOption("book_time_to_read"))
+    table.insert(complication_subitems, getMinibarOption("chapter_time_to_read"))
+    if Device:hasFrontlight() then
+        table.insert(complication_subitems, getMinibarOption("frontlight"))
+    end
+    if Device:hasNaturalLight() then
+        table.insert(complication_subitems, getMinibarOption("frontlight_warmth"))
+    end
+    table.insert(complication_subitems, getMinibarOption("mem_usage"))
+    if Device:hasFastWifiStatusQuery() then
+        table.insert(complication_subitems, getMinibarOption("wifi_status"))
+    end
+    table.insert(complication_subitems, getMinibarOption("book_title"))
+    table.insert(complication_subitems, getMinibarOption("book_chapter"))
+    table.insert(complication_subitems, getMinibarOption("custom_text"))
+    -------- CONFIGURE COMPLICATIONS
+    table.insert(sub_items, {
+        separator = true,
+        text = _("Configure complications"),
+        sub_item_table = {
+            {
+                text = _("Arrange complications in status bar"),
                 separator = true,
                 callback = function()
                     local item_table = {}
@@ -1138,7 +1540,67 @@ function ReaderFooter:addToMainMenu(menu_items)
                     self:refreshFooter(true, true)
                 end,
             },
-            getMinibarOption("reclaim_height"),
+            {
+                text_func = function()
+                    return T(_("Progress percentage format: %1"),
+                        self:progressPercentage(tonumber(self.settings.progress_pct_format)))
+                end,
+                sub_item_table = {
+                    {
+                        text_func = function()
+                            return T(_("No decimal places (%1)"), self:progressPercentage(0))
+                        end,
+                        checked_func = function()
+                            return self.settings.progress_pct_format == "0"
+                        end,
+                        callback = function()
+                            self.settings.progress_pct_format = "0"
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
+                        text_func = function()
+                            return T(_("1 decimal place (%1)"), self:progressPercentage(1))
+                        end,
+                        checked_func = function()
+                            return self.settings.progress_pct_format == "1"
+                        end,
+                        callback = function()
+                            self.settings.progress_pct_format = "1"
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
+                        text_func = function()
+                            return T(_("2 decimal places (%1)"), self:progressPercentage(2))
+                        end,
+                        checked_func = function()
+                            return self.settings.progress_pct_format == "2"
+                        end,
+                        callback = function()
+                            self.settings.progress_pct_format = "2"
+                            self:refreshFooter(true)
+                        end,
+                    },
+                },
+            },
+            {
+                text = _("Count current page in pages left"),
+                help_text = _([[
+By default, KOReader does not include the current page when calculating pages left. For example, in a book or chapter with n pages the "pages
+left" complication will range from 'n-1' to 0 (last page). With this feature activated, the current page is factored in, resulting in the count
+going from n to 1 instead.]]),
+                enabled_func = function()
+                    return self.settings.pages_left or self.settings.pages_left_book
+                end,
+                checked_func = function()
+                    return self.settings.pages_left_includes_current_page == true
+                end,
+                callback = function()
+                    self.settings.pages_left_includes_current_page = not self.settings.pages_left_includes_current_page
+                    self:refreshFooter(true)
+                end,
+            },
             {
                 text = _("Auto refresh"),
                 checked_func = function()
@@ -1148,34 +1610,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                     self.settings.auto_refresh_time = not self.settings.auto_refresh_time
                     self:rescheduleFooterAutoRefreshIfNeeded()
                 end
-            },
-            {
-                text = _("Show status bar separator"),
-                checked_func = function()
-                    return self.settings.bottom_horizontal_separator == true
-                end,
-                callback = function()
-                    self.settings.bottom_horizontal_separator = not self.settings.bottom_horizontal_separator
-                    self:refreshFooter(true, true)
-                end,
-            },
-            {
-                text = _("Lock status bar"),
-                checked_func = function()
-                    return self.settings.lock_tap == true
-                end,
-                callback = function()
-                    self.settings.lock_tap = not self.settings.lock_tap
-                end,
-            },
-            {
-                text = _("Hold status bar to skim"),
-                checked_func = function()
-                    return self.settings.skim_widget_on_hold == true
-                end,
-                callback = function()
-                    self.settings.skim_widget_on_hold = not self.settings.skim_widget_on_hold
-                end,
             },
             {
                 text_func = function()
@@ -1307,7 +1741,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_hold_step = 20,
                                 value_max = 100,
                                 unit = "%",
-                                title_text = _("Maximum width"),
+                                title_text = _("Maximum lenght of book title complication"),
                                 info_text = _("Maximum percentage of screen width used for book title complication"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
@@ -1333,7 +1767,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_hold_step = 20,
                                 value_max = 100,
                                 unit = "%",
-                                title_text = _("Maximum width"),
+                                title_text = _("Maximum lenght of chapter title complication"),
                                 info_text = _("Maximum percentage of screen width used for chapter title complication"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
@@ -1509,76 +1943,15 @@ function ReaderFooter:addToMainMenu(menu_items)
                     },
                 },
             },
-            {
-                text_func = function()
-                    return T(_("Progress percentage format: %1"),
-                        self:progressPercentage(tonumber(self.settings.progress_pct_format)))
-                end,
-                sub_item_table = {
-                    {
-                        text_func = function()
-                            return T(_("No decimal places (%1)"), self:progressPercentage(0))
-                        end,
-                        checked_func = function()
-                            return self.settings.progress_pct_format == "0"
-                        end,
-                        callback = function()
-                            self.settings.progress_pct_format = "0"
-                            self:refreshFooter(true)
-                        end,
-                    },
-                    {
-                        text_func = function()
-                            return T(_("1 decimal place (%1)"), self:progressPercentage(1))
-                        end,
-                        checked_func = function()
-                            return self.settings.progress_pct_format == "1"
-                        end,
-                        callback = function()
-                            self.settings.progress_pct_format = "1"
-                            self:refreshFooter(true)
-                        end,
-                    },
-                    {
-                        text_func = function()
-                            return T(_("2 decimal places (%1)"), self:progressPercentage(2))
-                        end,
-                        checked_func = function()
-                            return self.settings.progress_pct_format == "2"
-                        end,
-                        callback = function()
-                            self.settings.progress_pct_format = "2"
-                            self:refreshFooter(true)
-                        end,
-                    },
-                },
-            },
-            {
-                text = _("Count current page in pages left"),
-                help_text = _([[
-By default, KOReader does not include the current page when calculating pages left. For example, in a book or chapter with n pages the "pages
-left" complication will range from 'n-1' to 0 (last page). With this feature activated, the current page is factored in, resulting in the count
-going from n to 1 instead.]]),
-                enabled_func = function()
-                    return self.settings.pages_left or self.settings.pages_left_book
-                end,
-                checked_func = function()
-                    return self.settings.pages_left_includes_current_page == true
-                end,
-                callback = function()
-                    self.settings.pages_left_includes_current_page = not self.settings.pages_left_includes_current_page
-                    self:refreshFooter(true)
-                end,
-            },
         }
     })
     if Device:hasBattery() then
         table.insert(sub_items[settings_submenu_num].sub_item_table, 4, {
             text_func = function()
                 if self.settings.battery_hide_threshold <= (Device:hasAuxBattery() and 200 or 100) then
-                    return T(_("Hide battery status if level higher than: %1 %"), self.settings.battery_hide_threshold)
+                    return T(_("Hide battery complication when higher than: %1 %"), self.settings.battery_hide_threshold)
                 else
-                    return _("Hide battery status")
+                    return _("Hide battery complication when percent higher than")
                 end
             end,
             checked_func = function()
@@ -1597,7 +1970,7 @@ going from n to 1 instead.]]),
                     default_value = Device:hasAuxBattery() and 200 or 100,
                     unit = "%",
                     value_hold_step = 10,
-                    title_text = _("Hide battery threshold"),
+                    title_text = _("Hide battery complication threshold"),
                     callback = function(spin)
                         self.settings.battery_hide_threshold = spin.value
                         self:refreshFooter(true, true)
@@ -1615,404 +1988,42 @@ going from n to 1 instead.]]),
             keep_menu_open = true,
         })
     end
+    ----------- MORE STATUS BAR OPTIONS
+    -- quick access to this setting for "@NiLuJe, and for people that do like him." -- poire-z 2024
+    table.insert(sub_items, getMinibarOption("reclaim_height"))
     table.insert(sub_items, {
-        text = _("Progress bar"),
-        separator = true,
-        sub_item_table = {
-            {
-                text = _("Show progress bar"),
-                checked_func = function()
-                    return not self.settings.disable_progress_bar
-                end,
-                callback = function()
-                    self.settings.disable_progress_bar = not self.settings.disable_progress_bar
-                    if not self.settings.disable_progress_bar then
-                        self:setTocMarkers()
-                    end
-                    -- If the status bar is currently disabled, switch to an innocuous mode to display it
-                    if not self.view.footer_visible then
-                        self.mode = self.mode_list.page_progress
-                        self:applyFooterMode()
-                        G_reader_settings:saveSetting("reader_footer_mode", self.mode)
-                    end
-                    self:refreshFooter(true, true)
-                end,
-            },
-            {
-                text = _("Switch to chapter progress bar"),
-                help_text = _("Show progress bar for the current chapter, instead of the whole book."),
-                enabled_func = function()
-                    return not self.settings.disable_progress_bar
-                end,
-                checked_func = function()
-                    return self.settings.chapter_progress_bar
-                end,
-                callback = function()
-                    self:onToggleChapterProgressBar()
-                end,
-            },
-            {
-                text_func = function()
-                    local text = _("alongside complications")
-                    if self.settings.progress_bar_position == "above" then
-                        text = _("above complications")
-                    elseif self.settings.progress_bar_position == "below" then
-                        text = _("below complications")
-                    end
-                    return T(_("Position: %1"), text)
-                end,
-                enabled_func = function()
-                    return not self.settings.disable_progress_bar
-                end,
-                sub_item_table = {
-                    {
-                        text = _("Above complications"),
-                        checked_func = function()
-                            return self.settings.progress_bar_position == "above"
-                        end,
-                        callback = function()
-                            self.settings.progress_bar_position = "above"
-                            self:refreshFooter(true, true)
-                        end,
-                    },
-                    {
-                        text = _("Alongside complications"),
-                        checked_func = function()
-                            return self.settings.progress_bar_position == "alongside"
-                        end,
-                        callback = function()
-                            -- "Same as book" is disabled in this mode, and we enforce the defaults.
-                            if self.settings.progress_margin then
-                                self.settings.progress_margin = false
-                                self.settings.progress_margin_width = self.horizontal_margin
-                            end
-                            -- Text alignment is also disabled
-                            self.settings.align = "center"
-
-                            self.settings.progress_bar_position = "alongside"
-                            self:refreshFooter(true, true)
-                        end
-                    },
-                    {
-                        text = _("Below complications"),
-                        checked_func = function()
-                            return self.settings.progress_bar_position == "below"
-                        end,
-                        callback = function()
-                            self.settings.progress_bar_position = "below"
-                            self:refreshFooter(true, true)
-                        end,
-                    },
-                },
-            },
-            {
-                text_func = function()
-                    if self.settings.progress_style_thin then
-                        return _("Style: thin")
-                    else
-                        return _("Style: thick")
-                    end
-                end,
-                enabled_func = function()
-                    return not self.settings.disable_progress_bar
-                end,
-                sub_item_table = {
-                    {
-                        text = _("Thick"),
-                        checked_func = function()
-                            return not self.settings.progress_style_thin
-                        end,
-                        callback = function()
-                            self.settings.progress_style_thin = nil
-                            local bar_height = self.settings.progress_style_thick_height
-                            self.progress_bar:updateStyle(true, bar_height)
-                            self:setTocMarkers()
-                            self:refreshFooter(true, true)
-                        end,
-                    },
-                    {
-                        text = _("Thin"),
-                        checked_func = function()
-                            return self.settings.progress_style_thin
-                        end,
-                        callback = function()
-                            self.settings.progress_style_thin = true
-                            local bar_height = self.settings.progress_style_thin_height
-                            self.progress_bar:updateStyle(false, bar_height)
-                            self:refreshFooter(true, true)
-                        end,
-                    },
-                    {
-                        text = _("Set height"),
-                        callback = function()
-                            local value, value_min, value_max, default_value
-                            if self.settings.progress_style_thin then
-                                default_value = PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT
-                                value = self.settings.progress_style_thin_height or default_value
-                                value_min = 1
-                                value_max = 12
-                            else
-                                default_value = PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT
-                                value = self.settings.progress_style_thick_height or default_value
-                                value_min = 5
-                                value_max = 28
-                            end
-                            local SpinWidget = require("ui/widget/spinwidget")
-                            local items = SpinWidget:new{
-                                value = value,
-                                value_min = value_min,
-                                value_step = 1,
-                                value_hold_step = 2,
-                                value_max = value_max,
-                                default_value = default_value,
-                                title_text = _("Progress bar height"),
-                                keep_shown_on_apply = true,
-                                callback = function(spin)
-                                    if self.settings.progress_style_thin then
-                                        self.settings.progress_style_thin_height = spin.value
-                                    else
-                                        self.settings.progress_style_thick_height = spin.value
-                                    end
-                                    self:refreshFooter(true, true)
-                                end
-                            }
-                            UIManager:show(items)
-                        end,
-                        separator = true,
-                        keep_menu_open = true,
-                    },
-                    {
-                        text = _("Show chapter markers"),
-                        checked_func = function()
-                            return self.settings.toc_markers == true and not self.settings.chapter_progress_bar
-                        end,
-                        enabled_func = function()
-                            return not self.settings.progress_style_thin and not self.settings.chapter_progress_bar
-                        end,
-                        callback = function()
-                            self.settings.toc_markers = not self.settings.toc_markers
-                            self:setTocMarkers()
-                            self:refreshFooter(true)
-                        end
-                    },
-                    {
-                        text_func = function()
-                            local markers_width_text = _("thick")
-                            if self.settings.toc_markers_width == 1 then
-                                markers_width_text = _("thin")
-                            elseif self.settings.toc_markers_width == 2 then
-                                markers_width_text = _("medium")
-                            end
-                            return T(_("Chapter marker width (%1)"), markers_width_text)
-                        end,
-                        enabled_func = function()
-                            return not self.settings.progress_style_thin and not self.settings.chapter_progress_bar
-                                and self.settings.toc_markers
-                        end,
-                        sub_item_table = {
-                            {
-                                text = _("Thin"),
-                                checked_func = function()
-                                    return self.settings.toc_markers_width == 1
-                                end,
-                                callback = function()
-                                    self.settings.toc_markers_width = 1  -- unscaled_size_check: ignore
-                                    self:setTocMarkers()
-                                    self:refreshFooter(true)
-                                end,
-                            },
-                            {
-                                text = _("Medium"),
-                                checked_func = function()
-                                    return self.settings.toc_markers_width == 2
-                                end,
-                                callback = function()
-                                    self.settings.toc_markers_width = 2  -- unscaled_size_check: ignore
-                                    self:setTocMarkers()
-                                    self:refreshFooter(true)
-                                end,
-                            },
-                            {
-                                text = _("Thick"),
-                                checked_func = function()
-                                    return self.settings.toc_markers_width == 3
-                                end,
-                                callback = function()
-                                    self.settings.toc_markers_width = 3  -- unscaled_size_check: ignore
-                                    self:setTocMarkers()
-                                    self:refreshFooter(true)
-                                end
-                            },
-                        },
-                    },
-                    {
-                        text = _("Show initial position marker"),
-                        checked_func = function()
-                            return self.settings.initial_marker == true
-                        end,
-                        callback = function()
-                            self.settings.initial_marker = not self.settings.initial_marker
-                            self.progress_bar.initial_pos_marker = self.settings.initial_marker
-                            self:refreshFooter(true)
-                        end
-                    },
-                },
-            },
-            {
-                text_func = function()
-                    local text = _("static margins (10)")
-                    local cur_width = self.settings.progress_margin_width
-                    if cur_width == 0 then
-                        text = _("no margins (0)")
-                    elseif cur_width == Screen:scaleBySize(material_pixels) then
-                        text = T(_("static margins (%1)"), material_pixels)
-                    end
-                    if self.settings.progress_margin and not self.ui.document.info.has_pages then
-                        text = T(_("same as book margins (%1)"), self.book_margins_footer_width)
-                    end
-                    return T(_("Margins: %1"), text)
-                end,
-                enabled_func = function()
-                    return not self.settings.disable_progress_bar
-                end,
-                sub_item_table_func = function()
-                    local common = {
-                        {
-                            text = _("No margins (0)"),
-                            checked_func = function()
-                                return self.settings.progress_margin_width == 0
-                                    and not self.settings.progress_margin
-                            end,
-                            callback = function()
-                                self.settings.progress_margin_width = 0
-                                self.settings.progress_margin = false
-                                self:refreshFooter(true)
-                            end,
-                        },
-                        {
-                            text_func = function()
-                                if self.ui.document.info.has_pages then
-                                    return _("Same as book margins")
-                                end
-                                return T(_("Same as book margins (%1)"), self.book_margins_footer_width)
-                            end,
-                            checked_func = function()
-                                return self.settings.progress_margin and not self.ui.document.info.has_pages
-                            end,
-                            enabled_func = function()
-                                return not self.ui.document.info.has_pages and self.settings.progress_bar_position ~= "alongside"
-                            end,
-                            callback = function()
-                                self.settings.progress_margin = true
-                                self.settings.progress_margin_width = Screen:scaleBySize(self.book_margins_footer_width)
-                                self:refreshFooter(true)
-                            end
-                        },
-                    }
-                    local function customMargin(px)
-                        return {
-                            text = T(_("Static margins (%1)"), px),
-                            checked_func = function()
-                                return self.settings.progress_margin_width == Screen:scaleBySize(px)
-                                    and not self.settings.progress_margin
-                                    -- if same as book margins is selected in document with pages (pdf) we enforce static margins
-                                    or (self.ui.document.info.has_pages and self.settings.progress_margin)
-                            end,
-                            callback = function()
-                                self.settings.progress_margin_width = Screen:scaleBySize(px)
-                                self.settings.progress_margin = false
-                                self:refreshFooter(true)
-                            end,
-                        }
-                    end
-                    local device_defaults
-                    if Device:isAndroid() then
-                        device_defaults = customMargin(material_pixels)
-                    else
-                        device_defaults = customMargin(10)
-                    end
-                    table.insert(common, 2, device_defaults)
-                    return common
-                end,
-            },
-            {
-                text_func = function()
-                    return T(_("Minimal width: %1 %"), self.settings.progress_bar_min_width_pct)
-                end,
-                enabled_func = function()
-                    return self.settings.progress_bar_position == "alongside" and not self.settings.disable_progress_bar
-                        and self.settings.all_at_once
-                end,
-                callback = function(touchmenu_instance)
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local items = SpinWidget:new{
-                        value = self.settings.progress_bar_min_width_pct,
-                        value_min = 5,
-                        value_step = 5,
-                        value_hold_step = 20,
-                        value_max = 50,
-                        unit = "%",
-                        title_text = _("Minimal width"),
-                        text = _("Minimal progress bar width in percentage of screen width"),
-                        keep_shown_on_apply = true,
-                        callback = function(spin)
-                            self.settings.progress_bar_min_width_pct = spin.value
-                            self:refreshFooter(true, true)
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end
-                    }
-                    UIManager:show(items)
-                end,
-                keep_menu_open = true,
-            }
-        }
-    })
-    local about_text = _([[A complication is any feature that offers additional information beyond the content of your book. Examples of
-    common complications include time, percentage read, pages left, and battery indicator. You can choose which complications to display
-    on the status bar from this page.]])
-    
-    local complication_subitems = {}
-    table.insert(sub_items, {
-        text = _("Complications"),
-        sub_item_table = complication_subitems,
-    })
-    table.insert(sub_items, complications)
-    table.insert(complication_subitems, {    
-        text = _("About complications"),
-        keep_menu_open = true,
-        callback = function()
-            UIManager:show(InfoMessage:new{
-                text = about_text,
-            })
+        text = _("Show status bar divider"),
+        checked_func = function()
+            return self.settings.bottom_horizontal_separator == true
         end,
-        separator = true,
+        callback = function()
+            self.settings.bottom_horizontal_separator = not self.settings.bottom_horizontal_separator
+            self:refreshFooter(true, true)
+        end,
     })
-    table.insert(complication_subitems, getMinibarOption("page_progress"))
-    table.insert(complication_subitems, getMinibarOption("pages_left_book"))
-    table.insert(complication_subitems, getMinibarOption("time"))
-    table.insert(complication_subitems, getMinibarOption("chapter_progress"))
-    table.insert(complication_subitems, getMinibarOption("pages_left"))
-    if Device:hasBattery() then
-        table.insert(complication_subitems, getMinibarOption("battery"))
+    if Device:isTouchDevice() then
+        table.insert(sub_items, {
+            text = _("Lock status bar"),
+            checked_func = function()
+                return self.settings.lock_tap == true
+            end,
+            callback = function()
+                self.settings.lock_tap = not self.settings.lock_tap
+            end,
+        })
     end
-    table.insert(complication_subitems, getMinibarOption("bookmark_count"))
-    table.insert(complication_subitems, getMinibarOption("percentage"))
-    table.insert(complication_subitems, getMinibarOption("book_time_to_read"))
-    table.insert(complication_subitems, getMinibarOption("chapter_time_to_read"))
-    if Device:hasFrontlight() then
-        table.insert(complication_subitems, getMinibarOption("frontlight"))
+    if Device:isTouchDevice() then
+        table.insert(sub_items, {
+            text = _("Hold status bar to skim"),
+            checked_func = function()
+                return self.settings.skim_widget_on_hold == true
+            end,
+            callback = function()
+                self.settings.skim_widget_on_hold = not self.settings.skim_widget_on_hold
+            end,
+        })
     end
-    if Device:hasNaturalLight() then
-        table.insert(complication_subitems, getMinibarOption("frontlight_warmth"))
-    end
-    table.insert(complication_subitems, getMinibarOption("mem_usage"))
-    if Device:hasFastWifiStatusQuery() then
-        table.insert(complication_subitems, getMinibarOption("wifi_status"))
-    end
-    table.insert(complication_subitems, getMinibarOption("book_title"))
-    table.insert(complication_subitems, getMinibarOption("book_chapter"))
-    table.insert(complication_subitems, getMinibarOption("custom_text"))
-
+    
     -- Settings menu: keep the same parent page for going up from submenu
     for i = 1, #sub_items[settings_submenu_num].sub_item_table do
         sub_items[settings_submenu_num].sub_item_table[i].menu_item_id = i
