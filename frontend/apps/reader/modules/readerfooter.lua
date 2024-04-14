@@ -1094,8 +1094,8 @@ function ReaderFooter:addToMainMenu(menu_items)
             end,
         }
     end
-    -- we call up the user interface
-    -------PROGRESS BAR
+    ---------------------
+    -------Progress bar
     table.insert(sub_items, {
         text = _("Progress bar"),
         separator = true,
@@ -1455,7 +1455,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
         }
     })
-    ----------- COMPLICATIONS (FOOTER_ITEMS)
+    ----------- complications (footer_items)
     local about_text = _("A complication is any feature that provides additional information beyond the content of your book. Examples of "..
     "common complications include time, percentage read, pages left, and the battery indicator. You can choose which complications to "..
     "display on the status bar from this page.")
@@ -1500,7 +1500,7 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(complication_subitems, getMinibarOption("book_title"))
     table.insert(complication_subitems, getMinibarOption("book_chapter"))
     table.insert(complication_subitems, getMinibarOption("custom_text"))
-    -------- CONFIGURE COMPLICATIONS (FOOTER_ITEMS)
+    -------- configure footer_items
     table.insert(sub_items, {
         separator = true,
         text = _("Configure complications"),
@@ -1619,12 +1619,12 @@ function ReaderFooter:addToMainMenu(menu_items)
                 },
             },
             {
-                text = _("Maximum lenght for text complications"),
+                text = _("Maximum length for text complications"),
                 separator = true,
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Lenght of book-title complication: %1".. "%"), self.settings.book_title_max_width_pct)
+                            return T(_("Length of book-title complication: %1".. "%"), self.settings.book_title_max_width_pct)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
@@ -1635,7 +1635,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_hold_step = 20,
                                 value_max = 100,
                                 unit = "%",
-                                title_text = _("Max lenght of book-title complication"),
+                                title_text = _("Max length of book-title complication"),
                                 info_text = _("Maximum percentage of screen width used for book-title complication"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
@@ -1650,7 +1650,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     },
                     {
                         text_func = function()
-                            return T(_("Lenght of chapter-title complication: %1".. "%"), self.settings.book_chapter_max_width_pct)
+                            return T(_("Length of chapter-title complication: %1".. "%"), self.settings.book_chapter_max_width_pct)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
@@ -1661,7 +1661,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_hold_step = 20,
                                 value_max = 100,
                                 unit = "%",
-                                title_text = _("Max lenght of chapter-title complication"),
+                                title_text = _("Max length of chapter-title complication"),
                                 info_text = _("Maximum percentage of screen width used for chapter-title complication"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
@@ -1996,7 +1996,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             keep_menu_open = true,
         })
     end
-    ----------- MORE STATUS BAR OPTIONS
+    ----------- More status bar options
     -- quick access to this setting for "@NiLuJe, and for people that do like him." -- poire-z (2024)
     table.insert(sub_items, getMinibarOption("reclaim_height"))
     table.insert(sub_items, {
