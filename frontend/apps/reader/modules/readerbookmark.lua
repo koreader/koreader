@@ -211,7 +211,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
     menu_items.bookmark_search = {
         text = _("Bookmark search"),
         enabled_func = function()
-            return self:hasBookmarks()
+            return self.ui.annotation:hasAnnotations()
         end,
         callback = function()
             self:onSearchBookmark()
@@ -443,29 +443,6 @@ function ReaderBookmark:onGotoLastBookmark(add_current_location_to_stack)
 end
 
 -- bookmarks misc info, helpers
-
-function ReaderBookmark:hasBookmarks()
-    return #self.ui.annotation.annotations > 0
-end
-
-function ReaderBookmark:getNumberOfBookmarks()
-    return #self.ui.annotation.annotations
-end
-
-function ReaderBookmark:getNumberOfHighlightsAndNotes() -- for Statistics plugin
-    local highlights = 0
-    local notes = 0
-    for _, item in ipairs(self.ui.annotation.annotations) do
-        if item.drawer then
-            if item.note then
-                notes = notes + 1
-            else
-                highlights = highlights + 1
-            end
-        end
-    end
-    return highlights, notes
-end
 
 function ReaderBookmark:getCurrentPageNumber()
     return self.ui.paging and self.view.state.page or self.ui.document:getXPointer()
