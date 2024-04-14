@@ -160,7 +160,18 @@ coverage: $(INSTALL_DIR)/koreader/.luacov
 fetchthirdparty:
 	git submodule init
 	git submodule sync
-	git submodule update
+ifneq (,$(CI))
+	git submodule update --depth 1 --jobs 3
+else
+	# Force shallow clones of submodules configured as such.
+	git submodule update --jobs 3 --depth 1 $(shell \
+		git config --file=.gitmodules --name-only --get-regexp '^submodule\.[^.]+\.shallow$$' true \
+		| sed 's/\.shallow$$/.path/' \
+		| xargs -n1 git config --file=.gitmodules \
+		)
+	# Update the rest.
+	git submodule update --jobs 3
+endif
 	$(MAKE) -C $(KOR_BASE) fetchthirdparty
 
 VERBOSE ?= @
