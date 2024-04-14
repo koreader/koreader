@@ -187,7 +187,7 @@ function ReaderStatistics:initData()
 
     self.data.pages = self.document:getPageCount()
     -- Update these numbers to what's actually stored in the settings
-    self.data.highlights, self.data.notes = self.ui.bookmark:getNumberOfHighlightsAndNotes()
+    self.data.highlights, self.data.notes = self.ui.annotation:getNumberOfHighlightsAndNotes()
     self.id_curr_book = self:getIdBookDB()
     self.book_read_pages, self.book_read_time = self:getPageTimeTotalStats(self.id_curr_book)
     if self.book_read_pages > 0 then
