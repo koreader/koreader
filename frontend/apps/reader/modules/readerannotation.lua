@@ -397,4 +397,29 @@ function ReaderAnnotation:addItem(item)
     return index
 end
 
+-- info
+
+function ReaderAnnotation:hasAnnotations()
+    return #self.annotations > 0
+end
+
+function ReaderAnnotation:getNumberOfAnnotations()
+    return #self.annotations
+end
+
+function ReaderAnnotation:getNumberOfHighlightsAndNotes() -- for Statistics plugin
+    local highlights = 0
+    local notes = 0
+    for _, item in ipairs(self.annotations) do
+        if item.drawer then
+            if item.note then
+                notes = notes + 1
+            else
+                highlights = highlights + 1
+            end
+        end
+    end
+    return highlights, notes
+end
+
 return ReaderAnnotation
