@@ -708,8 +708,7 @@ function ReaderHighlight:onTap(_, ges)
     -- ReaderHighlight:clear can only return true if self.hold_pos was set anyway.
     local cleared = self.hold_pos and self:clear()
     -- We only care about potential taps on existing highlights, not on taps that closed a highlight menu.
-    if not cleared and ges then
-        if #self.ui.annotation.annotations == 0 then return end
+    if not cleared and ges and self.ui.annotation:hasAnnotations() then
         if self.ui.paging then
             return self:onTapPageSavedHighlight(ges)
         else
