@@ -18,3 +18,4 @@
 [submodule "l10n"]
 	path = l10n
 	url = https://github.com/koreader/koreader-translations.git
+	shallow = true
