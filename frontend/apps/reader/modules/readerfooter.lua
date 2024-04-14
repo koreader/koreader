@@ -219,7 +219,7 @@ local footerTextGeneratorMap = {
     bookmark_count = function(footer)
         local symbol_type = footer.settings.item_prefix
         local prefix = symbol_prefix[symbol_type].bookmark_count
-        local bookmark_count = footer.ui.bookmark:getNumberOfBookmarks()
+        local bookmark_count = footer.ui.annotation:getNumberOfAnnotations()
         if footer.settings.all_at_once and footer.settings.hide_empty_generators and bookmark_count == 0 then
             return ""
         end
