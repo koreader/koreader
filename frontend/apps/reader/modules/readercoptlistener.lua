@@ -207,7 +207,7 @@ The alternative status bar can be configured here.]])
 
 function ReaderCoptListener:getAltStatusBarMenu()
     return {
-        text = _("Alternative status bar"),
+        text = _("Alt status bar"),
         separator = true,
         sub_item_table = {
             {
