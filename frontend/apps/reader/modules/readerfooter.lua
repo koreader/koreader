@@ -963,7 +963,7 @@ end
 function ReaderFooter:textOptionTitles(option)
     local symbol = self.settings.item_prefix
     local option_titles = {
-        all_at_once = _("Show all selected complications at once"),
+        all_at_once = _("Show all selected items at once"),
         reclaim_height = _("Overlay status bar"),
         bookmark_count = T(_("Bookmark count (%1)"), symbol_prefix[symbol].bookmark_count),
         page_progress = T(_("Current page (%1)"), "/"),
@@ -1120,7 +1120,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Switch to chapter progress bar"),
+                text = _("Show chapter progress bar instead"),
                 help_text = _("Show progress bar for the current chapter, instead of the whole book."),
                 enabled_func = function()
                     return not self.settings.disable_progress_bar
