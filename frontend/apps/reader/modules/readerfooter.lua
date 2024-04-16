@@ -1135,11 +1135,11 @@ function ReaderFooter:addToMainMenu(menu_items)
             {
                 separator = true,
                 text_func = function()
-                    local text = _("alongside complications")
+                    local text = _("alongside items")
                     if self.settings.progress_bar_position == "above" then
-                        text = _("above complications")
+                        text = _("above items")
                     elseif self.settings.progress_bar_position == "below" then
-                        text = _("below complications")
+                        text = _("below items")
                     end
                     return T(_("Position: %1"), text)
                 end,
@@ -1148,7 +1148,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 sub_item_table = {
                     {
-                        text = _("Above complications"),
+                        text = _("Above items"),
                         checked_func = function()
                             return self.settings.progress_bar_position == "above"
                         end,
@@ -1158,7 +1158,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Alongside complications"),
+                        text = _("Alongside items"),
                         checked_func = function()
                             return self.settings.progress_bar_position == "alongside"
                         end,
@@ -1176,7 +1176,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end
                     },
                     {
-                        text = _("Below complications"),
+                        text = _("Below items"),
                         checked_func = function()
                             return self.settings.progress_bar_position == "below"
                         end,
@@ -1455,58 +1455,45 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
         }
     })
-    ----------- complications (footer_items)
-    local about_text = _("A complication is any feature that provides additional information beyond the content of your book. Examples of "..
-    "common complications include time, percentage read, pages left, and the battery indicator. You can choose which complications to "..
-    "display on the status bar from this page.")
-    local complication_subitems = {}
+    ----------- footer_items
+    local footer_items = {}
     table.insert(sub_items, {
-        text = _("Complications"),
-        sub_item_table = complication_subitems,
+        text = _("Items"),
+        sub_item_table = footer_items,
     })
-    table.insert(sub_items, complications)
-    table.insert(complication_subitems, {    
-        text = _("About complications"),
-        keep_menu_open = true,
-        callback = function()
-            UIManager:show(InfoMessage:new{
-                text = about_text,
-            })
-        end,
-        separator = true,
-    })
-    table.insert(complication_subitems, getMinibarOption("page_progress"))
-    table.insert(complication_subitems, getMinibarOption("pages_left_book"))
-    table.insert(complication_subitems, getMinibarOption("time"))
-    table.insert(complication_subitems, getMinibarOption("chapter_progress"))
-    table.insert(complication_subitems, getMinibarOption("pages_left"))
+    table.insert(sub_items, items)
+    table.insert(footer_items, getMinibarOption("page_progress"))
+    table.insert(footer_items, getMinibarOption("pages_left_book"))
+    table.insert(footer_items, getMinibarOption("time"))
+    table.insert(footer_items, getMinibarOption("chapter_progress"))
+    table.insert(footer_items, getMinibarOption("pages_left"))
     if Device:hasBattery() then
-        table.insert(complication_subitems, getMinibarOption("battery"))
+        table.insert(footer_items, getMinibarOption("battery"))
     end
-    table.insert(complication_subitems, getMinibarOption("bookmark_count"))
-    table.insert(complication_subitems, getMinibarOption("percentage"))
-    table.insert(complication_subitems, getMinibarOption("book_time_to_read"))
-    table.insert(complication_subitems, getMinibarOption("chapter_time_to_read"))
+    table.insert(footer_items, getMinibarOption("bookmark_count"))
+    table.insert(footer_items, getMinibarOption("percentage"))
+    table.insert(footer_items, getMinibarOption("book_time_to_read"))
+    table.insert(footer_items, getMinibarOption("chapter_time_to_read"))
     if Device:hasFrontlight() then
-        table.insert(complication_subitems, getMinibarOption("frontlight"))
+        table.insert(footer_items, getMinibarOption("frontlight"))
     end
     if Device:hasNaturalLight() then
-        table.insert(complication_subitems, getMinibarOption("frontlight_warmth"))
+        table.insert(footer_items, getMinibarOption("frontlight_warmth"))
     end
-    table.insert(complication_subitems, getMinibarOption("mem_usage"))
+    table.insert(footer_items, getMinibarOption("mem_usage"))
     if Device:hasFastWifiStatusQuery() then
-        table.insert(complication_subitems, getMinibarOption("wifi_status"))
+        table.insert(footer_items, getMinibarOption("wifi_status"))
     end
-    table.insert(complication_subitems, getMinibarOption("book_title"))
-    table.insert(complication_subitems, getMinibarOption("book_chapter"))
-    table.insert(complication_subitems, getMinibarOption("custom_text"))
+    table.insert(footer_items, getMinibarOption("book_title"))
+    table.insert(footer_items, getMinibarOption("book_chapter"))
+    table.insert(footer_items, getMinibarOption("custom_text"))
     -------- configure footer_items
     table.insert(sub_items, {
         separator = true,
-        text = _("Configure complications"),
+        text = _("Configure items"),
         sub_item_table = {
             {
-                text = _("Arrange complications in status bar"),
+                text = _("Arrange items in status bar"),
                 separator = true,
                 callback = function()
                     local item_table = {}
@@ -1516,7 +1503,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     local SortWidget = require("ui/widget/sortwidget")
                     local sort_item
                     sort_item = SortWidget:new{
-                        title = _("Arrange complications"),
+                        title = _("Arrange items"),
                         item_table = item_table,
                         callback = function()
                             for i=1, #sort_item.item_table do
@@ -1533,9 +1520,9 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             getMinibarOption("all_at_once", self.updateFooterTextGenerator),
             {
-                text = _("Auto refresh complications"),
-                help_text = _("This option allows certain complications to update without needing a full-page update. For example, the time"..
-                " complication will update every minute regardless of user input."),
+                text = _("Auto refresh items"),
+                help_text = _("This option allows certain items to update without needing a full-page update. For example, the time"..
+                " item will update every minute regardless of user input."),
                 checked_func = function()
                     return self.settings.auto_refresh_time == true
                 end,
@@ -1545,7 +1532,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end
             },
             {
-                text = _("Hide empty complications"),
+                text = _("Hide empty items"),
                 help_text = _([[This option will hide values like 0 or off.]]),
                 enabled_func = function()
                     return self.settings.all_at_once == true
@@ -1559,9 +1546,9 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Count current page in pages left"),
+                text = _("Include current page in pages left"),
                 help_text = _("By default, KOReader does not include the current page when calculating pages left. For example, in a book ".. 
-                "or chapter with n pages the 'pages left' complication will range from 'n-1' to 0 (last page). With this feature activated, "..
+                "or chapter with n pages the 'pages left' item will range from 'n-1' to 0 (last page). With this feature activated, "..
                 "the current page is factored in, resulting in the count going from n to 1 instead."),
                 enabled_func = function()
                     return self.settings.pages_left or self.settings.pages_left_book
@@ -1619,12 +1606,12 @@ function ReaderFooter:addToMainMenu(menu_items)
                 },
             },
             {
-                text = _("Maximum length for text complications"),
+                text = _("Maximum length for text items"),
                 separator = true,
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Length of book-title complication: %1".. "%"), self.settings.book_title_max_width_pct)
+                            return T(_("Length of book-title items: %1".. "%"), self.settings.book_title_max_width_pct)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
@@ -1635,8 +1622,8 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_hold_step = 20,
                                 value_max = 100,
                                 unit = "%",
-                                title_text = _("Max length of book-title complication"),
-                                info_text = _("Maximum percentage of screen width used for book-title complication"),
+                                title_text = _("Max length of book-title item"),
+                                info_text = _("Maximum percentage of screen width used for book-title item"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.book_title_max_width_pct = spin.value
@@ -1650,7 +1637,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     },
                     {
                         text_func = function()
-                            return T(_("Length of chapter-title complication: %1".. "%"), self.settings.book_chapter_max_width_pct)
+                            return T(_("Length of chapter-title item: %1".. "%"), self.settings.book_chapter_max_width_pct)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
@@ -1661,8 +1648,8 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_hold_step = 20,
                                 value_max = 100,
                                 unit = "%",
-                                title_text = _("Max length of chapter-title complication"),
-                                info_text = _("Maximum percentage of screen width used for chapter-title complication"),
+                                title_text = _("Max length of chapter-title item"),
+                                info_text = _("Maximum percentage of screen width used for chapter-title item"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.book_chapter_max_width_pct = spin.value
@@ -1730,12 +1717,12 @@ function ReaderFooter:addToMainMenu(menu_items)
                     if self.settings.text_font_bold == true then
                         font_weight = ", " .. _("bold")
                     end
-                    return T(_("Complications font: %1%2"), self.settings.text_font_size, font_weight)
+                    return T(_("Items font: %1%2"), self.settings.text_font_size, font_weight)
                 end,
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Complications font size: %1"), self.settings.text_font_size)
+                            return T(_("Items font size: %1"), self.settings.text_font_size)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
@@ -1746,7 +1733,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_max = 36,
                                 default_value = 14,
                                 ok_text = _("Set size"),
-                                title_text = _("Set font size for complications"),
+                                title_text = _("Set font size for items"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.text_font_size = spin.value
@@ -1766,7 +1753,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         keep_menu_open = true,
                     },
                     {
-                        text = _("Use boldface"),
+                        text = _("Items in bold"),
                         checked_func = function()
                             return self.settings.text_font_bold == true
                         end,
@@ -1905,7 +1892,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 text_func = function()
                     local separator = self:get_separator_symbol()
                     separator = separator ~= "" and separator or "none"
-                    return T(_("Complication separator: %1"), separator)
+                    return T(_("Items separator: %1"), separator)
                 end,
                 sub_item_table = {
                     {
@@ -1957,9 +1944,9 @@ function ReaderFooter:addToMainMenu(menu_items)
         table.insert(configure_complications_sub_table , 5, {
             text_func = function()
                 if self.settings.battery_hide_threshold <= (Device:hasAuxBattery() and 200 or 100) then
-                    return T(_("Hide battery complication when higher than: %1".. "%"), self.settings.battery_hide_threshold)
+                    return T(_("Hide battery item when higher than: %1".. "%"), self.settings.battery_hide_threshold)
                 else
-                    return _("Hide battery complication at custom threshold")
+                    return _("Hide battery item at custom threshold")
                 end
             end,
             checked_func = function()
@@ -1978,7 +1965,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     default_value = Device:hasAuxBattery() and 200 or 100,
                     unit = "%",
                     value_hold_step = 10,
-                    title_text = _("Set minimum threshold to hide battery complication"),
+                    title_text = _("Set minimum threshold to hide battery item"),
                     callback = function(spin)
                         self.settings.battery_hide_threshold = spin.value
                         self:refreshFooter(true, true)
