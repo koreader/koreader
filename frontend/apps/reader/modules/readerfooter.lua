@@ -1546,9 +1546,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text = _("Include current page in pages left"),
-                help_text = _("By default, KOReader does not include the current page when calculating pages left. For example, in a book ".. 
-                "or chapter with n pages the 'pages left' item will range from 'n-1' to 0 (last page). With this feature activated, "..
-                "the current page is factored in, resulting in the count going from n to 1 instead."),
+                help_text = _("By default, KOReader does not include the current page when calculating pages left. For example, in a book or chapter with n pages the 'pages left' item will range from 'n-1' to 0 (last page). With this feature activated, the current page is factored in, resulting in the count going from n to 1 instead."),
                 enabled_func = function()
                     return self.settings.pages_left or self.settings.pages_left_book
                 end,
