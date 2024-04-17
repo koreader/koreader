@@ -512,7 +512,9 @@ function AutoWarmth:setWarmth(val, force_warmth)
     -- A value > 100 means to set night mode and set warmth to maximum.
     -- We use an offset of 1000 to "flag", that night mode is on.
     if val then
-        DeviceListener:onSetNightMode(self.control_nightmode and val > 100)
+        if self.control_nightmode then
+            DeviceListener:onSetNightMode(val > 100)
+        end
 
         if self.control_warmth and Device:hasNaturalLight() then
             val = math.min(val, 100) -- "mask" night mode
