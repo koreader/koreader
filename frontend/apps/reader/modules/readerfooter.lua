@@ -1190,9 +1190,9 @@ function ReaderFooter:addToMainMenu(menu_items)
             {
                 text_func = function()
                     if self.settings.progress_style_thin then
-                        return _("Thickness and height: (thin)")
+                        return _("Thickness and height: thin")
                     else
-                        return _("Thickness and height: (thick)")
+                        return _("Thickness and height: thick")
                     end
                 end,
                 enabled_func = function()
@@ -1411,7 +1411,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     elseif self.settings.toc_markers_width == 2 then
                         markers_width_text = _("medium")
                     end
-                    return T(_("Chapter marker width (%1)"), markers_width_text)
+                    return T(_("Chapter marker width: %1"), markers_width_text)
                 end,
                 enabled_func = function()
                     return not self.settings.progress_style_thin and not self.settings.chapter_progress_bar
@@ -1546,7 +1546,9 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text = _("Include current page in pages left"),
-                help_text = _("By default, KOReader does not include the current page when calculating pages left. For example, in a book or chapter with n pages the 'pages left' item will range from 'n-1' to 0 (last page). With this feature activated, the current page is factored in, resulting in the count going from n to 1 instead."),
+                help_text = _([[
+By default, KOReader does not include the current page when calculating pages left. For example, in a book or chapter with n pages the 'pages left' item will range from 'n−1' to 0 (last page).
+With this feature activated, the current page is factored in, resulting in the count going from n to 1 instead.]]),
                 enabled_func = function()
                     return self.settings.pages_left or self.settings.pages_left_book
                 end,
@@ -1714,12 +1716,12 @@ function ReaderFooter:addToMainMenu(menu_items)
                     if self.settings.text_font_bold == true then
                         font_weight = ", " .. _("bold")
                     end
-                    return T(_("Items font: %1%2"), self.settings.text_font_size, font_weight)
+                    return T(_("Item font: %1%2"), self.settings.text_font_size, font_weight)
                 end,
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Items font size: %1"), self.settings.text_font_size)
+                            return T(_("Item font size: %1"), self.settings.text_font_size)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
