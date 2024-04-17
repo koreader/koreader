@@ -9,7 +9,6 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
-local InfoMessage = require("ui/widget/infomessage")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
@@ -964,7 +963,7 @@ function ReaderFooter:textOptionTitles(option)
     local symbol = self.settings.item_prefix
     local option_titles = {
         all_at_once = _("Show all selected items at once"),
-        reclaim_height = _("Overlay status bar"),
+        reclaim_height = _("Overlap status bar"),
         bookmark_count = T(_("Bookmark count (%1)"), symbol_prefix[symbol].bookmark_count),
         page_progress = T(_("Current page (%1)"), "/"),
         pages_left_book = T(_("Pages left in book (%1)"), symbol_prefix[symbol].pages_left_book),
@@ -972,14 +971,14 @@ function ReaderFooter:textOptionTitles(option)
             and T(_("Current time (%1)"), symbol_prefix[symbol].time) or _("Current time"),
         chapter_progress = T(_("Current page in chapter (%1)"), " ⁄⁄ "),
         pages_left = T(_("Pages left in chapter (%1)"), symbol_prefix[symbol].pages_left),
-        battery = T(_("Battery status (%1)"), symbol_prefix[symbol].battery),
+        battery = T(_("Battery percentage (%1)"), symbol_prefix[symbol].battery),
         percentage = symbol_prefix[symbol].percentage
             and T(_("Progress percentage (%1)"), symbol_prefix[symbol].percentage) or _("Progress percentage"),
         book_time_to_read = symbol_prefix[symbol].book_time_to_read
-            and T(_("Time left to read book (%1)"),symbol_prefix[symbol].book_time_to_read) or _("Time left to read book"),
-        chapter_time_to_read = T(_("Time left to read chapter (%1)"), symbol_prefix[symbol].chapter_time_to_read),
-        frontlight = T(_("Frontlight level (%1)"), symbol_prefix[symbol].frontlight),
-        frontlight_warmth = T(_("Frontlight warmth level (%1)"), symbol_prefix[symbol].frontlight_warmth),
+            and T(_("Time left to finish book (%1)"),symbol_prefix[symbol].book_time_to_read) or _("Time left to finish book"),
+        chapter_time_to_read = T(_("Time left to finish chapter (%1)"), symbol_prefix[symbol].chapter_time_to_read),
+        frontlight = T(_("Brightness level (%1)"), symbol_prefix[symbol].frontlight),
+        frontlight_warmth = T(_("Warmth level (%1)"), symbol_prefix[symbol].frontlight_warmth),
         mem_usage = T(_("KOReader memory usage (%1)"), symbol_prefix[symbol].mem_usage),
         wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
         book_title = _("Book title"),
@@ -1120,7 +1119,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Show chapter progress bar instead"),
+                text = _("Show chapter-progress bar instead"),
                 help_text = _("Show progress bar for the current chapter, instead of the whole book."),
                 enabled_func = function()
                     return not self.settings.disable_progress_bar
@@ -1268,12 +1267,12 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    local text = _("static margins (10)")
+                    local text = _("static margins: 10")
                     local cur_width = self.settings.progress_margin_width
                     if cur_width == 0 then
-                        text = _("no margins (0)")
+                        text = _("no margins: 0")
                     elseif cur_width == Screen:scaleBySize(material_pixels) then
-                        text = T(_("static margins (%1)"), material_pixels)
+                        text = T(_("static margins: %1"), material_pixels)
                     end
                     if self.settings.progress_margin and not self.ui.document.info.has_pages then
                         text = T(_("same as book margins (%1)"), self.book_margins_footer_width)
@@ -1286,7 +1285,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 sub_item_table_func = function()
                     local common = {
                         {
-                            text = _("No margins (0)"),
+                            text = _("No margins: 0"),
                             checked_func = function()
                                 return self.settings.progress_margin_width == 0
                                     and not self.settings.progress_margin
@@ -1302,7 +1301,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 if self.ui.document.info.has_pages then
                                     return _("Same as book margins")
                                 end
-                                return T(_("Same as book margins (%1)"), self.book_margins_footer_width)
+                                return T(_("Same as book margins: %1"), self.book_margins_footer_width)
                             end,
                             checked_func = function()
                                 return self.settings.progress_margin and not self.ui.document.info.has_pages
@@ -1319,7 +1318,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     }
                     local function customMargin(px)
                         return {
-                            text = T(_("Static margins (%1)"), px),
+                            text = T(_("Static margins: %1"), px),
                             checked_func = function()
                                 return self.settings.progress_margin_width == Screen:scaleBySize(px)
                                     and not self.settings.progress_margin
@@ -1345,7 +1344,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    return T(_("Screen width assigned to progress bar: %1 %"), self.settings.progress_bar_min_width_pct)
+                    return T(_("Screen width assigned to progress bar: %1".. "%"), self.settings.progress_bar_min_width_pct)
                 end,
                 enabled_func = function()
                     return self.settings.progress_bar_position == "alongside" and not self.settings.disable_progress_bar
@@ -1531,8 +1530,8 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end
             },
             {
-                text = _("Hide empty items"),
-                help_text = _([[This option will hide values like 0 or off.]]),
+                text = _("Hide null value items"),
+                help_text = _([[This option will hide null (or inactive) values from temporarily appearing on the status bar. For example, if the frontlight is 'off' (i.e 0 brightness), no symbols or values will be displayed until the brightness is set to a value >= 1.]]),
                 enabled_func = function()
                     return self.settings.all_at_once == true
                 end,
@@ -1568,7 +1567,7 @@ With this feature activated, the current page is factored in, resulting in the c
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("No decimal places (%1)"), self:progressPercentage(0))
+                            return T(_("No decimal places: %1"), self:progressPercentage(0))
                         end,
                         checked_func = function()
                             return self.settings.progress_pct_format == "0"
@@ -1580,7 +1579,7 @@ With this feature activated, the current page is factored in, resulting in the c
                     },
                     {
                         text_func = function()
-                            return T(_("1 decimal place (%1)"), self:progressPercentage(1))
+                            return T(_("1 decimal place: %1"), self:progressPercentage(1))
                         end,
                         checked_func = function()
                             return self.settings.progress_pct_format == "1"
@@ -1592,7 +1591,7 @@ With this feature activated, the current page is factored in, resulting in the c
                     },
                     {
                         text_func = function()
-                            return T(_("2 decimal places (%1)"), self:progressPercentage(2))
+                            return T(_("2 decimal places: %1"), self:progressPercentage(2))
                         end,
                         checked_func = function()
                             return self.settings.progress_pct_format == "2"
@@ -1605,12 +1604,12 @@ With this feature activated, the current page is factored in, resulting in the c
                 },
             },
             {
-                text = _("Maximum length for text items"),
+                text = _("Max percentage of screen width used for text items"),
                 separator = true,
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Length of book-title items: %1".. "%"), self.settings.book_title_max_width_pct)
+                            return T(_("Book-title item: %1".. "%"), self.settings.book_title_max_width_pct)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
@@ -1622,7 +1621,7 @@ With this feature activated, the current page is factored in, resulting in the c
                                 value_max = 100,
                                 unit = "%",
                                 title_text = _("Max length of book-title item"),
-                                info_text = _("Maximum percentage of screen width used for book-title item"),
+                                info_text = _("Maximum percentage of screen width used for book-title"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.book_title_max_width_pct = spin.value
@@ -1636,7 +1635,7 @@ With this feature activated, the current page is factored in, resulting in the c
                     },
                     {
                         text_func = function()
-                            return T(_("Length of chapter-title item: %1".. "%"), self.settings.book_chapter_max_width_pct)
+                            return T(_("Chapter-title item: %1".. "%"), self.settings.book_chapter_max_width_pct)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
@@ -1834,7 +1833,7 @@ With this feature activated, the current page is factored in, resulting in the c
                     elseif self.settings.item_prefix == "letters" then
                         prefix_text = C_("Status bar", "Letters")
                     end
-                    return T(_("Complication symbols: %1"), prefix_text)
+                    return T(_("Item symbols: %1"), prefix_text)
                 end,
                 sub_item_table = {
                     {
@@ -1843,7 +1842,7 @@ With this feature activated, the current page is factored in, resulting in the c
                             for _, letter in pairs(symbol_prefix.icons) do
                                 table.insert(sym_tbl, letter)
                             end
-                            return T(C_("Status bar", "Icons (%1)"), table.concat(sym_tbl, " "))
+                            return T(C_("Status bar", "icons (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
                             return self.settings.item_prefix == "icons"
@@ -1859,7 +1858,7 @@ With this feature activated, the current page is factored in, resulting in the c
                             for _, letter in pairs(symbol_prefix.letters) do
                                 table.insert(sym_tbl, letter)
                             end
-                            return T(C_("Status bar", "Letters (%1)"), table.concat(sym_tbl, " "))
+                            return T(C_("Status bar", "letters (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
                             return self.settings.item_prefix == "letters"
@@ -1875,7 +1874,7 @@ With this feature activated, the current page is factored in, resulting in the c
                             for _, letter in pairs(symbol_prefix.compact_items) do
                                 table.insert(sym_tbl, letter)
                             end
-                            return T(C_("Status bar", "Compact (%1)"), table.concat(sym_tbl, " "))
+                            return T(C_("Status bar", "compact (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
                             return self.settings.item_prefix == "compact_items"
@@ -1891,11 +1890,11 @@ With this feature activated, the current page is factored in, resulting in the c
                 text_func = function()
                     local separator = self:get_separator_symbol()
                     separator = separator ~= "" and separator or "none"
-                    return T(_("Items separator: %1"), separator)
+                    return T(_("Item separator: %1"), separator)
                 end,
                 sub_item_table = {
                     {
-                        text = _("Pipe (|)"),
+                        text = _("Vertical bar (|)"),
                         checked_func = function()
                             return self.settings.items_separator == "bar"
                         end,
@@ -1983,7 +1982,7 @@ With this feature activated, the current page is factored in, resulting in the c
         })
     end
     ----------- More status bar options
-    -- quick access to this setting for "@NiLuJe, and for people that do like him." -- poire-z (2024)
+    -- quick access to this setting for "@NiLuJe, and for people that do like him." -- @poire-z (2024)
     table.insert(sub_items, getMinibarOption("reclaim_height"))
     table.insert(sub_items, {
         text = _("Show status bar divider"),
