@@ -1521,8 +1521,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             getMinibarOption("all_at_once", self.updateFooterTextGenerator),
             {
                 text = _("Auto refresh items"),
-                help_text = _("This option allows certain items to update without needing a full-page update. For example, the time"..
-                " item will update every minute regardless of user input."),
+                help_text = _("This option allows certain items to update without needing a full-page update. For example, the time item will update every minute regardless of user input."),
                 checked_func = function()
                     return self.settings.auto_refresh_time == true
                 end,
