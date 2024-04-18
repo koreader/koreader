@@ -1267,12 +1267,12 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    local text = _("static margins: 10")
+                    local text = _("static margins (10)")
                     local cur_width = self.settings.progress_margin_width
                     if cur_width == 0 then
-                        text = _("no margins: 0")
+                        text = _("no margins (0)")
                     elseif cur_width == Screen:scaleBySize(material_pixels) then
-                        text = T(_("static margins: %1"), material_pixels)
+                        text = T(_("static margins (%1)"), material_pixels)
                     end
                     if self.settings.progress_margin and not self.ui.document.info.has_pages then
                         text = T(_("same as book margins (%1)"), self.book_margins_footer_width)
@@ -1285,7 +1285,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 sub_item_table_func = function()
                     local common = {
                         {
-                            text = _("No margins: 0"),
+                            text = _("No margins (0)"),
                             checked_func = function()
                                 return self.settings.progress_margin_width == 0
                                     and not self.settings.progress_margin
@@ -1301,7 +1301,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 if self.ui.document.info.has_pages then
                                     return _("Same as book margins")
                                 end
-                                return T(_("Same as book margins: %1"), self.book_margins_footer_width)
+                                return T(_("Same as book margins (%1)"), self.book_margins_footer_width)
                             end,
                             checked_func = function()
                                 return self.settings.progress_margin and not self.ui.document.info.has_pages
@@ -1318,7 +1318,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     }
                     local function customMargin(px)
                         return {
-                            text = T(_("Static margins: %1"), px),
+                            text = T(_("Static margins (%1)"), px),
                             checked_func = function()
                                 return self.settings.progress_margin_width == Screen:scaleBySize(px)
                                     and not self.settings.progress_margin
@@ -1530,7 +1530,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end
             },
             {
-                text = _("Hide null value items"),
+                text = _("Hide inactive items"),
                 help_text = _([[This option will hide null (or inactive) values from temporarily appearing on the status bar. For example, if the frontlight is 'off' (i.e 0 brightness), no symbols or values will be displayed until the brightness is set to a value >= 1.]]),
                 enabled_func = function()
                     return self.settings.all_at_once == true
@@ -1567,7 +1567,7 @@ With this feature activated, the current page is factored in, resulting in the c
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("No decimal places: %1"), self:progressPercentage(0))
+                            return T(_("No decimal places (%1)"), self:progressPercentage(0))
                         end,
                         checked_func = function()
                             return self.settings.progress_pct_format == "0"
@@ -1579,7 +1579,7 @@ With this feature activated, the current page is factored in, resulting in the c
                     },
                     {
                         text_func = function()
-                            return T(_("1 decimal place: %1"), self:progressPercentage(1))
+                            return T(_("1 decimal place (%1)"), self:progressPercentage(1))
                         end,
                         checked_func = function()
                             return self.settings.progress_pct_format == "1"
@@ -1591,7 +1591,7 @@ With this feature activated, the current page is factored in, resulting in the c
                     },
                     {
                         text_func = function()
-                            return T(_("2 decimal places: %1"), self:progressPercentage(2))
+                            return T(_("2 decimal places (%1)"), self:progressPercentage(2))
                         end,
                         checked_func = function()
                             return self.settings.progress_pct_format == "2"
