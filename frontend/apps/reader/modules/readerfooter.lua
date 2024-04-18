@@ -1093,8 +1093,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             end,
         }
     end
-    ---------------------
-    -------Progress bar
+
     table.insert(sub_items, {
         text = _("Progress bar"),
         separator = true,
@@ -1520,7 +1519,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             getMinibarOption("all_at_once", self.updateFooterTextGenerator),
             {
                 text = _("Auto refresh items"),
-                help_text = _("This option allows certain items to update without needing a full-page update. For example, the time item will update every minute regardless of user input."),
+                help_text = _("This option allows certain items to update without needing user interaction (i.e page refresh). For example, the time item will update every minute regardless of user input."),
                 checked_func = function()
                     return self.settings.auto_refresh_time == true
                 end,
@@ -1547,7 +1546,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 text = _("Include current page in pages left"),
                 help_text = _([[
 By default, KOReader does not include the current page when calculating pages left. For example, in a book or chapter with n pages the 'pages left' item will range from 'n−1' to 0 (last page).
-With this feature activated, the current page is factored in, resulting in the count going from n to 1 instead.]]),
+With this feature enabled, the current page is factored in, resulting in the count going from n to 1 instead.]]),
                 enabled_func = function()
                     return self.settings.pages_left or self.settings.pages_left_book
                 end,
@@ -1663,54 +1662,6 @@ With this feature activated, the current page is factored in, resulting in the c
             },
             {
                 text_func = function()
-                    local align_text
-                    if self.settings.align == "left" then
-                        align_text = _("Left")
-                    elseif self.settings.align == "right" then
-                        align_text = _("Right")
-                    else
-                        align_text = _("Center")
-                    end
-                    return T(_("Alignment: %1"), align_text)
-                end,
-                enabled_func = function()
-                    return self.settings.disable_progress_bar or self.settings.progress_bar_position ~= "alongside"
-                end,
-                sub_item_table = {
-                    {
-                        text = _("Left"),
-                        checked_func = function()
-                            return self.settings.align == "left"
-                        end,
-                        callback = function()
-                            self.settings.align = "left"
-                            self:refreshFooter(true)
-                        end,
-                    },
-                    {
-                        text = _("Center"),
-                        checked_func = function()
-                            return self.settings.align == "center"
-                        end,
-                        callback = function()
-                            self.settings.align = "center"
-                            self:refreshFooter(true)
-                        end,
-                    },
-                    {
-                        text = _("Right"),
-                        checked_func = function()
-                            return self.settings.align == "right"
-                        end,
-                        callback = function()
-                            self.settings.align = "right"
-                            self:refreshFooter(true)
-                        end,
-                    },
-                }
-            },
-            {
-                text_func = function()
                     local font_weight = ""
                     if self.settings.text_font_bold == true then
                         font_weight = ", " .. _("bold")
@@ -1770,58 +1721,6 @@ With this feature activated, the current page is factored in, resulting in the c
                         keep_menu_open = true,
                     },
                 }
-            },
-            {
-                text_func = function()
-                    return T(_("Container height: %1"), self.settings.container_height)
-                end,
-                callback = function(touchmenu_instance)
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local container_height = self.settings.container_height
-                    local items_font = SpinWidget:new{
-                        value = container_height,
-                        value_min = 7,
-                        value_max = 98,
-                        default_value = G_defaults:readSetting("DMINIBAR_CONTAINER_HEIGHT"),
-                        ok_text = _("Set height"),
-                        title_text = _("Container height"),
-                        keep_shown_on_apply = true,
-                        callback = function(spin)
-                            self.settings.container_height = spin.value
-                            self.height = Screen:scaleBySize(self.settings.container_height)
-                            self:refreshFooter(true, true)
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end,
-                    }
-                    UIManager:show(items_font)
-                end,
-                keep_menu_open = true,
-            },
-            {
-                text_func = function()
-                    return T(_("Container bottom margin: %1"), self.settings.container_bottom_padding)
-                end,
-                callback = function(touchmenu_instance)
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local container_bottom_padding = self.settings.container_bottom_padding
-                    local items_font = SpinWidget:new{
-                        value = container_bottom_padding,
-                        value_min = 0,
-                        value_max = 49,
-                        default_value = 1,
-                        ok_text = _("Set margin"),
-                        title_text = _("Container bottom margin"),
-                        keep_shown_on_apply = true,
-                        callback = function(spin)
-                            self.settings.container_bottom_padding = spin.value
-                            self.bottom_padding = Screen:scaleBySize(self.settings.container_bottom_padding)
-                            self:refreshFooter(true, true)
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end,
-                    }
-                    UIManager:show(items_font)
-                end,
-                keep_menu_open = true,
             },
             {
                 text_func = function()
@@ -1935,11 +1834,111 @@ With this feature activated, the current page is factored in, resulting in the c
                     },
                 },
             },
+            {
+                text_func = function()
+                    local align_text
+                    if self.settings.align == "left" then
+                        align_text = _("Left")
+                    elseif self.settings.align == "right" then
+                        align_text = _("Right")
+                    else
+                        align_text = _("Center")
+                    end
+                    return T(_("Alignment: %1"), align_text)
+                end,
+                enabled_func = function()
+                    return self.settings.disable_progress_bar or self.settings.progress_bar_position ~= "alongside"
+                end,
+                sub_item_table = {
+                    {
+                        text = _("Left"),
+                        checked_func = function()
+                            return self.settings.align == "left"
+                        end,
+                        callback = function()
+                            self.settings.align = "left"
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
+                        text = _("Center"),
+                        checked_func = function()
+                            return self.settings.align == "center"
+                        end,
+                        callback = function()
+                            self.settings.align = "center"
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
+                        text = _("Right"),
+                        checked_func = function()
+                            return self.settings.align == "right"
+                        end,
+                        callback = function()
+                            self.settings.align = "right"
+                            self:refreshFooter(true)
+                        end,
+                    },
+                }
+            },    
+            {
+                text_func = function()
+                    return T(_("Container height: %1"), self.settings.container_height)
+                end,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local container_height = self.settings.container_height
+                    local items_font = SpinWidget:new{
+                        value = container_height,
+                        value_min = 7,
+                        value_max = 98,
+                        default_value = G_defaults:readSetting("DMINIBAR_CONTAINER_HEIGHT"),
+                        ok_text = _("Set height"),
+                        title_text = _("Container height"),
+                        keep_shown_on_apply = true,
+                        callback = function(spin)
+                            self.settings.container_height = spin.value
+                            self.height = Screen:scaleBySize(self.settings.container_height)
+                            self:refreshFooter(true, true)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                    }
+                    UIManager:show(items_font)
+                end,
+                keep_menu_open = true,
+            },
+            {
+                text_func = function()
+                    return T(_("Container bottom margin: %1"), self.settings.container_bottom_padding)
+                end,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local container_bottom_padding = self.settings.container_bottom_padding
+                    local items_font = SpinWidget:new{
+                        value = container_bottom_padding,
+                        value_min = 0,
+                        value_max = 49,
+                        default_value = 1,
+                        ok_text = _("Set margin"),
+                        title_text = _("Container bottom margin"),
+                        keep_shown_on_apply = true,
+                        callback = function(spin)
+                            self.settings.container_bottom_padding = spin.value
+                            self.bottom_padding = Screen:scaleBySize(self.settings.container_bottom_padding)
+                            self:refreshFooter(true, true)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                    }
+                    UIManager:show(items_font)
+                end,
+                keep_menu_open = true,
+            },    
         }
     })
-    local configure_complications_sub_table = sub_items[#sub_items].sub_item_table -- will pick the last item of sub_items
+    local configure_items_sub_table = sub_items[#sub_items].sub_item_table -- will pick the last item of sub_items
     if Device:hasBattery() then
-        table.insert(configure_complications_sub_table , 5, {
+        table.insert(configure_items_sub_table , 5, {
             text_func = function()
                 if self.settings.battery_hide_threshold <= (Device:hasAuxBattery() and 200 or 100) then
                     return T(_("Hide battery item when higher than: %1".. "%"), self.settings.battery_hide_threshold)
@@ -1981,7 +1980,7 @@ With this feature activated, the current page is factored in, resulting in the c
             keep_menu_open = true,
         })
     end
-    ----------- More status bar options
+    -- More status bar options
     -- quick access to this setting for "@NiLuJe, and for people that do like him." -- @poire-z (2024)
     table.insert(sub_items, getMinibarOption("reclaim_height"))
     table.insert(sub_items, {
