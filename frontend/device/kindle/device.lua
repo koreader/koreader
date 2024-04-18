@@ -1429,7 +1429,15 @@ function KindleScribe:init()
         end
     end
     -- Get accelerometer device
-    self.input.open("/dev/input/by-path/platform-11007000.i2c-event-joystick")
+    local std_out = io.popen("grep -A4 'accel' /proc/bus/input/devices | grep -o 'event[0-9]'", "r")
+    if std_out then
+        local gyro_dev = std_out:read("*line")
+        std_out:close()
+        logger.dbg("gyro_dev", gyro_dev)
+        if gyro_dev then
+            self.input.open("/dev/input/"..gyro_dev)
+        end
+    end
 
     self.input.open(self.touch_dev)
     self.input.open("fake_events")
