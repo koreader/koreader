@@ -1563,6 +1563,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                     return T(_("Progress percentage format: %1"),
                         self:progressPercentage(tonumber(self.settings.progress_pct_format)))
                 end,
+                separator = true,
                 sub_item_table = {
                     {
                         text_func = function()
@@ -1600,64 +1601,6 @@ With this feature enabled, the current page is factored in, resulting in the cou
                             self:refreshFooter(true)
                         end,
                     },
-                },
-            },
-            {
-                text = _("Max percentage of screen width used for text items"),
-                separator = true,
-                sub_item_table = {
-                    {
-                        text_func = function()
-                            return T(_("Book-title item: %1".. "%"), self.settings.book_title_max_width_pct)
-                        end,
-                        callback = function(touchmenu_instance)
-                            local SpinWidget = require("ui/widget/spinwidget")
-                            local items = SpinWidget:new{
-                                value = self.settings.book_title_max_width_pct,
-                                value_min = 10,
-                                value_step = 5,
-                                value_hold_step = 20,
-                                value_max = 100,
-                                unit = "%",
-                                title_text = _("Max length of book-title item"),
-                                info_text = _("Maximum percentage of screen width used for book-title"),
-                                keep_shown_on_apply = true,
-                                callback = function(spin)
-                                    self.settings.book_title_max_width_pct = spin.value
-                                    self:refreshFooter(true, true)
-                                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                                end
-                            }
-                            UIManager:show(items)
-                        end,
-                        keep_menu_open = true,
-                    },
-                    {
-                        text_func = function()
-                            return T(_("Chapter-title item: %1".. "%"), self.settings.book_chapter_max_width_pct)
-                        end,
-                        callback = function(touchmenu_instance)
-                            local SpinWidget = require("ui/widget/spinwidget")
-                            local items = SpinWidget:new{
-                                value = self.settings.book_chapter_max_width_pct,
-                                value_min = 10,
-                                value_step = 5,
-                                value_hold_step = 20,
-                                value_max = 100,
-                                unit = "%",
-                                title_text = _("Max length of chapter-title item"),
-                                info_text = _("Maximum percentage of screen width used for chapter-title item"),
-                                keep_shown_on_apply = true,
-                                callback = function(spin)
-                                    self.settings.book_chapter_max_width_pct = spin.value
-                                    self:refreshFooter(true, true)
-                                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                                end
-                            }
-                            UIManager:show(items)
-                        end,
-                        keep_menu_open = true,
-                    }
                 },
             },
             {
@@ -1726,11 +1669,11 @@ With this feature enabled, the current page is factored in, resulting in the cou
                 text_func = function()
                     local prefix_text = ""
                     if self.settings.item_prefix == "icons" then
-                        prefix_text = C_("Status bar", "Icons")
+                        prefix_text = C_("Status bar", "icons")
                     elseif self.settings.item_prefix == "compact_items" then
-                        prefix_text = C_("Status bar", "Compact")
+                        prefix_text = C_("Status bar", "compact")
                     elseif self.settings.item_prefix == "letters" then
-                        prefix_text = C_("Status bar", "Letters")
+                        prefix_text = C_("Status bar", "letters")
                     end
                     return T(_("Item symbols: %1"), prefix_text)
                 end,
@@ -1741,7 +1684,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                             for _, letter in pairs(symbol_prefix.icons) do
                                 table.insert(sym_tbl, letter)
                             end
-                            return T(C_("Status bar", "icons (%1)"), table.concat(sym_tbl, " "))
+                            return T(C_("Status bar", "Icons (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
                             return self.settings.item_prefix == "icons"
@@ -1757,7 +1700,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                             for _, letter in pairs(symbol_prefix.letters) do
                                 table.insert(sym_tbl, letter)
                             end
-                            return T(C_("Status bar", "letters (%1)"), table.concat(sym_tbl, " "))
+                            return T(C_("Status bar", "Letters (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
                             return self.settings.item_prefix == "letters"
@@ -1773,7 +1716,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                             for _, letter in pairs(symbol_prefix.compact_items) do
                                 table.insert(sym_tbl, letter)
                             end
-                            return T(C_("Status bar", "compact (%1)"), table.concat(sym_tbl, " "))
+                            return T(C_("Status bar", "Compact (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
                             return self.settings.item_prefix == "compact_items"
@@ -1791,6 +1734,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                     separator = separator ~= "" and separator or "none"
                     return T(_("Item separator: %1"), separator)
                 end,
+                separator = true,
                 sub_item_table = {
                     {
                         text = _("Vertical bar (|)"),
@@ -1832,6 +1776,63 @@ With this feature enabled, the current page is factored in, resulting in the cou
                             self:refreshFooter(true)
                         end,
                     },
+                },
+            },
+            {
+                text = _("Max pct. of screen width used for text items"),
+                sub_item_table = {
+                    {
+                        text_func = function()
+                            return T(_("Book-title item: %1".. "%"), self.settings.book_title_max_width_pct)
+                        end,
+                        callback = function(touchmenu_instance)
+                            local SpinWidget = require("ui/widget/spinwidget")
+                            local items = SpinWidget:new{
+                                value = self.settings.book_title_max_width_pct,
+                                value_min = 10,
+                                value_step = 5,
+                                value_hold_step = 20,
+                                value_max = 100,
+                                unit = "%",
+                                title_text = _("Max length of book-title item"),
+                                info_text = _("Maximum percentage of screen width used for book-title"),
+                                keep_shown_on_apply = true,
+                                callback = function(spin)
+                                    self.settings.book_title_max_width_pct = spin.value
+                                    self:refreshFooter(true, true)
+                                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                                end
+                            }
+                            UIManager:show(items)
+                        end,
+                        keep_menu_open = true,
+                    },
+                    {
+                        text_func = function()
+                            return T(_("Chapter-title item: %1".. "%"), self.settings.book_chapter_max_width_pct)
+                        end,
+                        callback = function(touchmenu_instance)
+                            local SpinWidget = require("ui/widget/spinwidget")
+                            local items = SpinWidget:new{
+                                value = self.settings.book_chapter_max_width_pct,
+                                value_min = 10,
+                                value_step = 5,
+                                value_hold_step = 20,
+                                value_max = 100,
+                                unit = "%",
+                                title_text = _("Max length of chapter-title item"),
+                                info_text = _("Maximum percentage of screen width used for chapter-title item"),
+                                keep_shown_on_apply = true,
+                                callback = function(spin)
+                                    self.settings.book_chapter_max_width_pct = spin.value
+                                    self:refreshFooter(true, true)
+                                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                                end
+                            }
+                            UIManager:show(items)
+                        end,
+                        keep_menu_open = true,
+                    }
                 },
             },
             {
@@ -1984,7 +1985,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
     -- quick access to this setting for "@NiLuJe, and for people that do like him." -- @poire-z (2024)
     table.insert(sub_items, getMinibarOption("reclaim_height"))
     table.insert(sub_items, {
-        text = _("Show status bar divider"),
+        text = _("Show status bar separator"),
         checked_func = function()
             return self.settings.bottom_horizontal_separator == true
         end,
