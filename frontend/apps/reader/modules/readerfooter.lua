@@ -1531,7 +1531,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text = _("Hide inactive items"),
-                help_text = _([[This option will hide null (or inactive) values from temporarily appearing on the status bar. For example, if the frontlight is 'off' (i.e 0 brightness), no symbols or values will be displayed until the brightness is set to a value >= 1.]]),
+                help_text = _([[This option will hide inactive items from appearing on the status bar. For example, if the frontlight is 'off' (i.e 0 brightness), no symbols or values will be displayed until the brightness is set to a value >= 1.]]),
                 enabled_func = function()
                     return self.settings.all_at_once == true
                 end,
