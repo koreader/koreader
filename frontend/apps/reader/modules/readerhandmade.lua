@@ -1,4 +1,5 @@
 local ConfirmBox = require("ui/widget/confirmbox")
+local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -119,6 +120,10 @@ function ReaderHandMade:onToggleHandmadeFlows()
 end
 
 function ReaderHandMade:addToMainMenu(menu_items)
+    -- As it's currently impossible to create custom hidden flows on non-touch, and really impractical to create a custom toc, it's better hide these features completely for now.
+    if not Device:isTouchDevice() then
+        return
+    end
     menu_items.handmade_toc = {
         text = _("Custom table of contents") .. " " .. self.custom_toc_symbol,
         checked_func = function() return self.toc_enabled end,
