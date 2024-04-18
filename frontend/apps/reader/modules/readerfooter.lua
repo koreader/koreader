@@ -982,7 +982,7 @@ function ReaderFooter:textOptionTitles(option)
         mem_usage = T(_("KOReader memory usage (%1)"), symbol_prefix[symbol].mem_usage),
         wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
         book_title = _("Book title"),
-        book_chapter = _("Current chapter"),
+        book_chapter = _("Chapter title"),
         custom_text = T(_("Custom text (long press to edit): \'%1\'%2"), self.custom_text,
             self.custom_text_repetitions > 1 and
             string.format(" × %d", self.custom_text_repetitions) or ""),
@@ -1882,7 +1882,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                         end,
                     },
                 }
-            },    
+            },
             {
                 text_func = function()
                     return T(_("Container height: %1"), self.settings.container_height)
@@ -1934,7 +1934,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                     UIManager:show(items_font)
                 end,
                 keep_menu_open = true,
-            },    
+            },
         }
     })
     local configure_items_sub_table = sub_items[#sub_items].sub_item_table -- will pick the last item of sub_items
@@ -1963,7 +1963,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                     default_value = Device:hasAuxBattery() and 200 or 100,
                     unit = "%",
                     value_hold_step = 10,
-                    title_text = _("Set minimum threshold to hide battery item"),
+                    title_text = _("Minimum threshold to hide battery item"),
                     callback = function(spin)
                         self.settings.battery_hide_threshold = spin.value
                         self:refreshFooter(true, true)
