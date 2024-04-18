@@ -120,188 +120,188 @@ function ReaderHandMade:onToggleHandmadeFlows()
 end
 
 function ReaderHandMade:addToMainMenu(menu_items)
-    if Device:isTouchDevice() then
-        menu_items.handmade_toc = {
-            text = _("Custom table of contents") .. " " .. self.custom_toc_symbol,
-            checked_func = function() return self.toc_enabled end,
-            callback = function()
-                self:onToggleHandmadeToc()
-            end,
-        }
-        menu_items.handmade_hidden_flows = {
-            text = _("Custom hidden flows"),
-            checked_func = function() return self.flows_enabled end,
-            callback = function()
-                self:onToggleHandmadeFlows()
-            end,
-        }
-        --[[ Not yet implemented
-        menu_items.handmade_page_numbers = {
-            text = _("Custom page numbers"),
-            checked_func = function() return false end,
-            callback = function()
-            end,
-        }
-        ]]--
-        menu_items.handmade_settings = {
-            text = _("Custom layout features"),
-            sub_item_table_func = function()
-                return {
-                    {
-                        text = _("About custom table of contents") .. " " .. self.custom_toc_symbol,
-                        callback = function()
-                            UIManager:show(InfoMessage:new{
-                                text = _([[
-    If the book has no table of contents or you would like to substitute it with your own, you can create a custom TOC. The original TOC (if available) will not be altered.
-
-    You can create, edit and remove chapters:
-    - in Page browser, by long-pressing on a thumbnail;
-    - on a book page, by selecting some text to be used as the chapter title.
-    (Once you're done building it and don't want to see the buttons anymore, you can disable Edit mode.)
-
-    This custom table of contents is currently limited to a single level and can't have sub-chapters.]])
-                            })
-                        end,
-                        keep_menu_open = true,
-                    },
-                    {
-                        text = _("Edit mode"),
-                        enabled_func = function()
-                            return self:isHandmadeTocEnabled()
-                        end,
-                        checked_func = function()
-                            return self:isHandmadeTocEditEnabled()
-                        end,
-                        callback = function()
-                            self.toc_edit_enabled = not self.toc_edit_enabled
-                            self:updateHighlightDialog()
-                        end,
-                    },
-                    --[[ Not yet implemented
-                    {
-                        text = _("Add multiple chapter start page numbers"),
-                    },
-                    ]]--
-                    {
-                        text = _("Clear custom table of contents"),
-                        enabled_func = function()
-                            return #self.toc > 0
-                        end,
-                        callback = function(touchmenu_instance)
-                            UIManager:show(ConfirmBox:new{
-                                text = _("Are you sure you want to clear your custom table of contents?"),
-                                ok_callback = function()
-                                    self.toc = {}
-                                    self.ui:handleEvent(Event:new("UpdateToc"))
-                                    -- The footer may be visible, so have it update its chapter related items
-                                    self.view.footer:onUpdateFooter(self.view.footer_visible)
-                                    if touchmenu_instance then
-                                        touchmenu_instance:updateItems()
-                                    end
-                                end,
-                            })
-                        end,
-                        keep_menu_open = true,
-                        separator = true,
-                    },
-                    {
-                        text = _("About custom hidden flows"),
-                        callback = function()
-                            UIManager:show(InfoMessage:new{
-                                text = _([[
-    Custom hidden flows can be created to exclude sections of the book from your normal reading flow:
-    - hidden flows will automatically be skipped when turning pages within the regular flow;
-    - pages part of hidden flows are assigned distinct page numbers and won't be considered in the various book & chapter progress and time to read features;
-    - following direct links to pages in hidden flows will still work, including from the TOC or Book map.
-
-    This can be useful to exclude long footnotes or bibliography sections.
-    It can also be handy when interested in reading only a subset of a book.
-
-    In Page browser, you can long-press on a thumbnail to start a hidden flow or restart the regular flow on this page.
-    (Once you're done building it and don't want to see the button anymore, you can disable Edit mode.)
-
-    Hidden flows are shown with gray or hatched background in Book map and Page browser.]])
-                            })
-                        end,
-                        keep_menu_open = true,
-                    },
-                    {
-                        text = _("Edit mode"),
-                        enabled_func = function()
-                            return self:isHandmadeHiddenFlowsEnabled()
-                        end,
-                        checked_func = function()
-                            return self:isHandmadeHiddenFlowsEditEnabled()
-                        end,
-                        callback = function()
-                            self.flows_edit_enabled = not self.flows_edit_enabled
-                        end,
-                    },
-                    {
-                        text_func = function()
-                            return T(_("Clear inactive marked pages (%1)"), #self.inactive_flow_points)
-                        end,
-                        enabled_func = function()
-                            return #self.inactive_flow_points > 0
-                        end,
-                        callback = function(touchmenu_instance)
-                            UIManager:show(ConfirmBox:new{
-                                text = _("Inactive marked pages are pages that you tagged as start hidden flow or restart regular flow, but that other marked pages made them have no effect.\nAre you sure you want to clear them?"),
-                                ok_callback = function()
-                                    for i=#self.inactive_flow_points, 1, -1 do
-                                        table.remove(self.flow_points, self.inactive_flow_points[i])
-                                    end
-                                    self:updateDocFlows()
-                                    self.ui:handleEvent(Event:new("UpdateToc"))
-                                    self.ui:handleEvent(Event:new("InitScrollPageStates"))
-                                    -- The footer may be visible, so have it update its dependant items
-                                    self.view.footer:onUpdateFooter(self.view.footer_visible)
-                                    if touchmenu_instance then
-                                        touchmenu_instance:updateItems()
-                                    end
-                                end,
-                            })
-                        end,
-                        keep_menu_open = true,
-                    },
-                    {
-                        text = _("Clear all marked pages"),
-                        enabled_func = function()
-                            return #self.flow_points > 0
-                        end,
-                        callback = function(touchmenu_instance)
-                            UIManager:show(ConfirmBox:new{
-                                text = _("Are you sure you want to clear all your custom hidden flows?"),
-                                ok_callback = function()
-                                    self.flow_points = {}
-                                    self:updateDocFlows()
-                                    self.ui:handleEvent(Event:new("UpdateToc"))
-                                    self.ui:handleEvent(Event:new("InitScrollPageStates"))
-                                    -- The footer may be visible, so have it update its dependant items
-                                    self.view.footer:onUpdateFooter(self.view.footer_visible)
-                                    if touchmenu_instance then
-                                        touchmenu_instance:updateItems()
-                                    end
-                                end,
-                            })
-                        end,
-                        keep_menu_open = true,
-                        separator = true,
-                    },
-                    --[[ Not yet implemented
-                    {
-                        text = _("About custom page numbers"),
-                    },
-                    {
-                        text = _("Clear custom page numbers"),
-                    },
-                    ]]--
-                }
-            end,
-        }
+    if not Device:isTouchDevice() then
+        return
     end
-end
+    menu_items.handmade_toc = {
+        text = _("Custom table of contents") .. " " .. self.custom_toc_symbol,
+        checked_func = function() return self.toc_enabled end,
+        callback = function()
+            self:onToggleHandmadeToc()
+        end,
+    }
+    menu_items.handmade_hidden_flows = {
+        text = _("Custom hidden flows"),
+        checked_func = function() return self.flows_enabled end,
+        callback = function()
+            self:onToggleHandmadeFlows()
+        end,
+    }
+    --[[ Not yet implemented
+    menu_items.handmade_page_numbers = {
+        text = _("Custom page numbers"),
+        checked_func = function() return false end,
+        callback = function()
+        end,
+    }
+    ]]--
+    menu_items.handmade_settings = {
+        text = _("Custom layout features"),
+        sub_item_table_func = function()
+            return {
+                {
+                    text = _("About custom table of contents") .. " " .. self.custom_toc_symbol,
+                    callback = function()
+                        UIManager:show(InfoMessage:new{
+                            text = _([[
+If the book has no table of contents or you would like to substitute it with your own, you can create a custom TOC. The original TOC (if available) will not be altered.
 
+You can create, edit and remove chapters:
+- in Page browser, by long-pressing on a thumbnail;
+- on a book page, by selecting some text to be used as the chapter title.
+(Once you're done building it and don't want to see the buttons anymore, you can disable Edit mode.)
+
+This custom table of contents is currently limited to a single level and can't have sub-chapters.]])
+                        })
+                    end,
+                    keep_menu_open = true,
+                },
+                {
+                    text = _("Edit mode"),
+                    enabled_func = function()
+                        return self:isHandmadeTocEnabled()
+                    end,
+                    checked_func = function()
+                        return self:isHandmadeTocEditEnabled()
+                    end,
+                    callback = function()
+                        self.toc_edit_enabled = not self.toc_edit_enabled
+                        self:updateHighlightDialog()
+                    end,
+                },
+                --[[ Not yet implemented
+                {
+                    text = _("Add multiple chapter start page numbers"),
+                },
+                ]]--
+                {
+                    text = _("Clear custom table of contents"),
+                    enabled_func = function()
+                        return #self.toc > 0
+                    end,
+                    callback = function(touchmenu_instance)
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Are you sure you want to clear your custom table of contents?"),
+                            ok_callback = function()
+                                self.toc = {}
+                                self.ui:handleEvent(Event:new("UpdateToc"))
+                                -- The footer may be visible, so have it update its chapter related items
+                                self.view.footer:onUpdateFooter(self.view.footer_visible)
+                                if touchmenu_instance then
+                                    touchmenu_instance:updateItems()
+                                end
+                            end,
+                        })
+                    end,
+                    keep_menu_open = true,
+                    separator = true,
+                },
+                {
+                    text = _("About custom hidden flows"),
+                    callback = function()
+                        UIManager:show(InfoMessage:new{
+                            text = _([[
+Custom hidden flows can be created to exclude sections of the book from your normal reading flow:
+- hidden flows will automatically be skipped when turning pages within the regular flow;
+- pages part of hidden flows are assigned distinct page numbers and won't be considered in the various book & chapter progress and time to read features;
+- following direct links to pages in hidden flows will still work, including from the TOC or Book map.
+
+This can be useful to exclude long footnotes or bibliography sections.
+It can also be handy when interested in reading only a subset of a book.
+
+In Page browser, you can long-press on a thumbnail to start a hidden flow or restart the regular flow on this page.
+(Once you're done building it and don't want to see the button anymore, you can disable Edit mode.)
+
+Hidden flows are shown with gray or hatched background in Book map and Page browser.]])
+                        })
+                    end,
+                    keep_menu_open = true,
+                },
+                {
+                    text = _("Edit mode"),
+                    enabled_func = function()
+                        return self:isHandmadeHiddenFlowsEnabled()
+                    end,
+                    checked_func = function()
+                        return self:isHandmadeHiddenFlowsEditEnabled()
+                    end,
+                    callback = function()
+                        self.flows_edit_enabled = not self.flows_edit_enabled
+                    end,
+                },
+                {
+                    text_func = function()
+                        return T(_("Clear inactive marked pages (%1)"), #self.inactive_flow_points)
+                    end,
+                    enabled_func = function()
+                        return #self.inactive_flow_points > 0
+                    end,
+                    callback = function(touchmenu_instance)
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Inactive marked pages are pages that you tagged as start hidden flow or restart regular flow, but that other marked pages made them have no effect.\nAre you sure you want to clear them?"),
+                            ok_callback = function()
+                                for i=#self.inactive_flow_points, 1, -1 do
+                                    table.remove(self.flow_points, self.inactive_flow_points[i])
+                                end
+                                self:updateDocFlows()
+                                self.ui:handleEvent(Event:new("UpdateToc"))
+                                self.ui:handleEvent(Event:new("InitScrollPageStates"))
+                                -- The footer may be visible, so have it update its dependant items
+                                self.view.footer:onUpdateFooter(self.view.footer_visible)
+                                if touchmenu_instance then
+                                    touchmenu_instance:updateItems()
+                                end
+                            end,
+                        })
+                    end,
+                    keep_menu_open = true,
+                },
+                {
+                    text = _("Clear all marked pages"),
+                    enabled_func = function()
+                        return #self.flow_points > 0
+                    end,
+                    callback = function(touchmenu_instance)
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Are you sure you want to clear all your custom hidden flows?"),
+                            ok_callback = function()
+                                self.flow_points = {}
+                                self:updateDocFlows()
+                                self.ui:handleEvent(Event:new("UpdateToc"))
+                                self.ui:handleEvent(Event:new("InitScrollPageStates"))
+                                -- The footer may be visible, so have it update its dependant items
+                                self.view.footer:onUpdateFooter(self.view.footer_visible)
+                                if touchmenu_instance then
+                                    touchmenu_instance:updateItems()
+                                end
+                            end,
+                        })
+                    end,
+                    keep_menu_open = true,
+                    separator = true,
+                },
+                --[[ Not yet implemented
+                {
+                    text = _("About custom page numbers"),
+                },
+                {
+                    text = _("Clear custom page numbers"),
+                },
+                ]]--
+            }
+        end,
+    }
+end
 
 function ReaderHandMade:updateHandmagePages()
     if not self.ui.rolling then
