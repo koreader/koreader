@@ -522,6 +522,17 @@ function FileManager:tapPlus()
         buttons = {
             {
                 {
+                    text = _("Add to collections"),
+                    enabled = actions_enabled,
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        self.collections:onShowCollList(self.selected_files)
+                        self:onToggleSelectMode()
+                    end,
+                },
+            },
+            {
+                {
                     text = _("Show selected files list"),
                     enabled = actions_enabled,
                     callback = function()
