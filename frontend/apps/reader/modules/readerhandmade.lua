@@ -343,10 +343,8 @@ function ReaderHandMade:onDocumentRerendered()
     -- Called with CRE document when partial rerendering not enabled
     self:updateHandmagePages()
     -- Don't have these send events their own events
-    if Device:isTouchDevice() then
-        self:setupFlows(true)
-        self:setupToc(true)
-    end
+    self:setupFlows(true)
+    self:setupToc(true)
     -- ReaderToc will process this event just after us, and will
     -- call its onUpdateToc: we don't need to send it.
     -- (Also, no need for InitScrollPageStates with CRE.)
