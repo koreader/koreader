@@ -120,6 +120,7 @@ function ReaderHandMade:onToggleHandmadeFlows()
 end
 
 function ReaderHandMade:addToMainMenu(menu_items)
+    -- As it's currently impossible to create custom hidden flows on non-touch, and really impractical to create custom toc, better hide these features completely
     if not Device:isTouchDevice() then
         return
     end
