@@ -493,6 +493,10 @@ function NewsDownloader:processFeed(feed_type, feeds, limit, download_full_artic
         local feed_description
         if feed_type == FEED_TYPE_RSS then
             feed_description = feed.description
+            if feed["content:encoded"] ~= nil then
+                -- Spec: https://web.resource.org/rss/1.0/modules/content/
+                feed_description = feed["content:encoded"]
+            end
         else
             feed_description = feed.summary
         end
