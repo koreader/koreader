@@ -1429,7 +1429,7 @@ function KindleScribe:init()
         end
     end
     -- Get accelerometer device
-    local std_out = io.popen("grep -A4 'accel' /proc/bus/input/devices | grep -o 'event[0-9]'", "r")
+    local std_out = io.popen("grep -A4 'acc' /proc/bus/input/devices | grep -o 'event[0-9]'", "r")
     if std_out then
         local gyro_dev = std_out:read("*line")
         std_out:close()
