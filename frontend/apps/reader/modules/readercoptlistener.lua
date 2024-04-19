@@ -302,10 +302,10 @@ function ReaderCoptListener:getAltStatusBarMenu()
                             status = _("Battery status: icon")
                         end
                     end
-                    return T(_("%1"), status)
+                    return status
                 end,
                 checked_func = function()
-                    return self.battery == 1 and ( self.battery_percent == 0 or self.battery_percent == 1 )
+                    return self.battery == 1
                 end,
                 sub_item_table = {
                     {
