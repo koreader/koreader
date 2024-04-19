@@ -649,6 +649,24 @@ local PocketBook700 = PocketBook:extend{
     inkview_translates_buttons = true,
 }
 
+-- PocketBook Era Color (PB700K3)
+local PocketBook700K3 = PocketBook:extend{
+    model = "PBEraColor",
+    display_dpi = 300,
+    hasColorScreen = yes,
+    canHWDither = yes, -- Adjust color saturation with inkview
+    canUseCBB = no, -- 24bpp
+    isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
+    -- c.f., https://github.com/koreader/koreader/issues/9556
+    inkview_translates_buttons = true,
+}
+
+function PocketBook700K3._fb_init(fb, finfo, vinfo)
+    -- Pocketbook Color Lux reports bits_per_pixel = 8, but actually uses an RGB24 framebuffer
+    vinfo.bits_per_pixel = 24
+end
+
 -- PocketBook InkPad 3 (740)
 local PocketBook740 = PocketBook:extend{
     model = "PBInkPad3",
@@ -836,6 +854,8 @@ elseif codename == "PB650" or codename == "PocketBook 650" then
     return PocketBook650
 elseif codename == "PB700" or codename == "PocketBook 700" then
     return PocketBook700
+elseif codename == "PB700K3" or codename == "PocketBook 700K3" then
+    return PocketBook700K3
 elseif codename == "PB740" then
     return PocketBook740
 elseif codename == "PB740-2" or codename == "PB740-3" then
