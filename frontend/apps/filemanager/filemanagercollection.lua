@@ -190,7 +190,7 @@ function FileManagerCollection:showCollDialog()
         }},
         {}, -- separator
         {{
-            text = _("Sort collection"),
+            text = _("Arrange books in collection"),
             callback = function()
                 UIManager:close(coll_dialog)
                 self:sortCollection()
@@ -242,7 +242,7 @@ end
 function FileManagerCollection:sortCollection()
     local sort_widget
     sort_widget = SortWidget:new{
-        title = _("Sort collection"),
+        title = _("Arrange books in collection"),
         item_table = ReadCollection:getOrderedCollection(self.coll_menu.collection_name),
         callback = function()
             ReadCollection:updateCollectionOrder(self.coll_menu.collection_name, sort_widget.item_table)
@@ -409,7 +409,7 @@ function FileManagerCollection:onLeftButtonTap(file_or_files)
         local buttons = {
             {
                 {
-                    text = _("Sort collections"),
+                    text = _("Arrange collections"),
                     callback = function()
                         UIManager:close(button_dialog)
                         self:sortCollections()
@@ -507,7 +507,7 @@ end
 function FileManagerCollection:sortCollections()
     local sort_widget
     sort_widget = SortWidget:new{
-        title = _("Sort collections"),
+        title = _("Arrange collections"),
         item_table = util.tableDeepCopy(self.coll_list.item_table),
         callback = function()
             ReadCollection:updateCollectionListOrder(sort_widget.item_table)
