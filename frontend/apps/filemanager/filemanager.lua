@@ -522,7 +522,7 @@ function FileManager:tapPlus()
         buttons = {
             {
                 {
-                    text = _("Add to collections"),
+                    text = _("Add to collection"),
                     enabled = actions_enabled,
                     callback = function()
                         UIManager:close(self.file_dialog)
