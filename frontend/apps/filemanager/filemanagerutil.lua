@@ -236,7 +236,7 @@ end
 
 function filemanagerutil.genAddRemoveFavoritesButton(file, caller_callback, button_disabled)
     return {
-        text = _("Book in collections"),
+        text = _("Add to collection"),
         enabled = not button_disabled,
         callback = function()
             caller_callback()
