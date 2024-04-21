@@ -28,10 +28,16 @@ function FileManagerCollection:init()
 end
 
 function FileManagerCollection:addToMainMenu(menu_items)
-    menu_items.collections = {
+    menu_items.favorites = {
         text = self.default_collection_title,
         callback = function()
             self:onShowColl()
+        end,
+    }
+    menu_items.collections = {
+        text = self.title,
+        callback = function()
+            self:onShowCollList()
         end,
     }
 end
