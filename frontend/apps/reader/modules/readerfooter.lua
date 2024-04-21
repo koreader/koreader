@@ -1779,7 +1779,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                 },
             },
             {
-                text = _("Max pct. of screen width used for text items"),
+                text = _("Max size used for text items"),
                 sub_item_table = {
                     {
                         text_func = function()
@@ -1794,7 +1794,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                                 value_hold_step = 20,
                                 value_max = 100,
                                 unit = "%",
-                                title_text = _("Max length of book-title item"),
+                                title_text = _("Max size of book-title item"),
                                 info_text = _("Maximum percentage of screen width used for book-title"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
@@ -1820,7 +1820,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                                 value_hold_step = 20,
                                 value_max = 100,
                                 unit = "%",
-                                title_text = _("Max length of chapter-title item"),
+                                title_text = _("Max size of chapter-title item"),
                                 info_text = _("Maximum percentage of screen width used for chapter-title item"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
@@ -1885,7 +1885,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
             },
             {
                 text_func = function()
-                    return T(_("Container height: %1"), self.settings.container_height)
+                    return T(_("Items mini-bar height: %1"), self.settings.container_height)
                 end,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
@@ -1911,7 +1911,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
             },
             {
                 text_func = function()
-                    return T(_("Container bottom margin: %1"), self.settings.container_bottom_padding)
+                    return T(_("Items mini-bar bottom margin: %1"), self.settings.container_bottom_padding)
                 end,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
