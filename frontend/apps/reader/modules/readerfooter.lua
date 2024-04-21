@@ -1779,7 +1779,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                 },
             },
             {
-                text = _("Max size used for text items"),
+                text = _("Text-items max size"),
                 sub_item_table = {
                     {
                         text_func = function()
