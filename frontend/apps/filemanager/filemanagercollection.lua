@@ -294,7 +294,7 @@ function FileManagerCollection:onShowCollList(file_or_files)
         is_popout = false,
         title_bar_fm_style = true,
         title_bar_left_icon = file_or_files and "check" or "appbar.menu",
-        onLeftButtonTap = function() self:onLeftButtonTap(file_or_files) end,
+        onLeftButtonTap = function() self:showCollListDialog(file_or_files) end,
         onMenuChoice = self.onCollListChoice,
         onMenuHold = self.onCollListHold,
         onSetRotationMode = self.MenuSetRotationModeHandler,
@@ -402,7 +402,7 @@ function FileManagerCollection:onCollListHold(item)
     return true
 end
 
-function FileManagerCollection:onLeftButtonTap(file_or_files)
+function FileManagerCollection:showCollListDialog(file_or_files)
     local button_dialog, buttons
     local new_collection_button = {
         {
@@ -417,6 +417,28 @@ function FileManagerCollection:onLeftButtonTap(file_or_files)
         buttons = {
             new_collection_button,
             {}, -- separator
+            {
+                {
+                    text = _("Deselect all"),
+                    callback = function()
+                        UIManager:close(button_dialog)
+                        for name in pairs(self.selected_colections) do
+                            self.selected_colections[name] = nil
+                        end
+                        self:updateCollListItemTable(true)
+                    end,
+                },
+                {
+                    text = _("Select all"),
+                    callback = function()
+                        UIManager:close(button_dialog)
+                        for name in pairs(ReadCollection.coll) do
+                            self.selected_colections[name] = true
+                        end
+                        self:updateCollListItemTable(true)
+                    end,
+                },
+            },
             {
                 {
                     text = _("Apply selection"),
