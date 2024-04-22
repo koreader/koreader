@@ -1343,7 +1343,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    return T(_("Screen width assigned to progress bar: %1".. "%"), self.settings.progress_bar_min_width_pct)
+                    return T(_("Minimum progress bar width: %1".. "%"), self.settings.progress_bar_min_width_pct)
                 end,
                 enabled_func = function()
                     return self.settings.progress_bar_position == "alongside" and not self.settings.disable_progress_bar
@@ -1358,7 +1358,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         value_hold_step = 20,
                         value_max = 50,
                         unit = "%",
-                        title_text = _("Minimum progress bar length"),
+                        title_text = _("Minimum progress bar width"),
                         text = _("Minimum percentage of screen width assigned to progress bar"),
                         keep_shown_on_apply = true,
                         callback = function(spin)
@@ -1794,7 +1794,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                                 value_hold_step = 20,
                                 value_max = 100,
                                 unit = "%",
-                                title_text = _("Max size of book-title item"),
+                                title_text = _("Book-title item"),
                                 info_text = _("Maximum percentage of screen width used for book-title"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
@@ -1820,7 +1820,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                                 value_hold_step = 20,
                                 value_max = 100,
                                 unit = "%",
-                                title_text = _("Max size of chapter-title item"),
+                                title_text = _("Chapter-title item"),
                                 info_text = _("Maximum percentage of screen width used for chapter-title item"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
@@ -1885,7 +1885,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
             },
             {
                 text_func = function()
-                    return T(_("Items mini-bar height: %1"), self.settings.container_height)
+                    return T(_("Items height: %1"), self.settings.container_height)
                 end,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
@@ -1896,7 +1896,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                         value_max = 98,
                         default_value = G_defaults:readSetting("DMINIBAR_CONTAINER_HEIGHT"),
                         ok_text = _("Set height"),
-                        title_text = _("Container height"),
+                        title_text = _("Items container height"),
                         keep_shown_on_apply = true,
                         callback = function(spin)
                             self.settings.container_height = spin.value
