@@ -403,16 +403,38 @@ function FileManagerCollection:onCollListHold(item)
 end
 
 function FileManagerCollection:onLeftButtonTap(file_or_files)
-    if file_or_files then
-        if type(file_or_files) == "string" then
-            ReadCollection:addRemoveItemMultiple(file_or_files, self.selected_colections)
-        else -- selected files
-            ReadCollection:addItemsMultiple(file_or_files, self.selected_colections)
-        end
-        self.coll_list.close_callback(true)
+    local button_dialog, buttons
+    local new_collection_button = {
+        {
+            text = _("New collection"),
+            callback = function()
+                UIManager:close(button_dialog)
+                self:addCollection()
+            end,
+        },
+    }
+    if self.selected_colections then
+        buttons = {
+            new_collection_button,
+            {}, -- separator
+            {
+                {
+                    text = _("Apply selection"),
+                    callback = function()
+                        UIManager:close(button_dialog)
+                        if type(file_or_files) == "string" then
+                            ReadCollection:addRemoveItemMultiple(file_or_files, self.selected_colections)
+                        else -- selected files
+                            ReadCollection:addItemsMultiple(file_or_files, self.selected_colections)
+                        end
+                        self.coll_list.close_callback(true)
+                    end,
+                },
+            },
+        }
     else
-        local button_dialog
-        local buttons = {
+        buttons = {
+            new_collection_button,
             {
                 {
                     text = _("Arrange collections"),
@@ -422,21 +444,12 @@ function FileManagerCollection:onLeftButtonTap(file_or_files)
                     end,
                 },
             },
-            {
-                {
-                    text = _("New collection"),
-                    callback = function()
-                        UIManager:close(button_dialog)
-                        self:addCollection()
-                    end,
-                },
-            },
         }
-        button_dialog = ButtonDialog:new{
-            buttons = buttons,
-        }
-        UIManager:show(button_dialog)
     end
+    button_dialog = ButtonDialog:new{
+        buttons = buttons,
+    }
+    UIManager:show(button_dialog)
 end
 
 function FileManagerCollection:editCollectionName(editCallback, old_name)
@@ -477,9 +490,16 @@ end
 function FileManagerCollection:addCollection()
     local editCallback = function(name)
         ReadCollection:addCollection(name)
+        local mandatory
+        if self.selected_colections then
+            self.selected_colections[name] = true
+            mandatory = self.checkmark
+        else
+            mandatory = 0
+        end
         table.insert(self.coll_list.item_table, {
             text      = name,
-            mandatory = 0,
+            mandatory = mandatory,
             name      = name,
             order     = ReadCollection.coll_order[name],
         })
