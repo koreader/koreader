@@ -281,11 +281,14 @@ end
 
 -- collection list
 
-function FileManagerCollection:onShowCollList(file_or_files)
+function FileManagerCollection:onShowCollList(file_or_files, caller_callback)
     self.selected_colections = nil
-    if file_or_files then
-        -- mark collections containing the file; do not mark any collection if group of selected files passed
-        self.selected_colections = type(file_or_files) == "string" and ReadCollection:getCollectionsWithFile(file_or_files) or {}
+    if file_or_files then -- select mode
+        if type(file_or_files) == "string" then -- checkmark collections containing the file
+            self.selected_colections = ReadCollection:getCollectionsWithFile(file_or_files)
+        else -- do not checkmark any
+            self.selected_colections = {}
+        end
     end
     self.coll_list = Menu:new{
         subtitle = "",
@@ -294,7 +297,7 @@ function FileManagerCollection:onShowCollList(file_or_files)
         is_popout = false,
         title_bar_fm_style = true,
         title_bar_left_icon = file_or_files and "check" or "appbar.menu",
-        onLeftButtonTap = function() self:showCollListDialog(file_or_files) end,
+        onLeftButtonTap = function() self:showCollListDialog(caller_callback) end,
         onMenuChoice = self.onCollListChoice,
         onMenuHold = self.onCollListHold,
         onSetRotationMode = self.MenuSetRotationModeHandler,
@@ -402,7 +405,7 @@ function FileManagerCollection:onCollListHold(item)
     return true
 end
 
-function FileManagerCollection:showCollListDialog(file_or_files)
+function FileManagerCollection:showCollListDialog(caller_callback)
     local button_dialog, buttons
     local new_collection_button = {
         {
@@ -413,7 +416,7 @@ function FileManagerCollection:showCollListDialog(file_or_files)
             end,
         },
     }
-    if self.selected_colections then
+    if self.selected_colections then -- select mode
         buttons = {
             new_collection_button,
             {}, -- separator
@@ -444,11 +447,7 @@ function FileManagerCollection:showCollListDialog(file_or_files)
                     text = _("Apply selection"),
                     callback = function()
                         UIManager:close(button_dialog)
-                        if type(file_or_files) == "string" then
-                            ReadCollection:addRemoveItemMultiple(file_or_files, self.selected_colections)
-                        else -- selected files
-                            ReadCollection:addItemsMultiple(file_or_files, self.selected_colections)
-                        end
+                        caller_callback()
                         self.coll_list.close_callback(true)
                     end,
                 },
@@ -563,6 +562,31 @@ function FileManagerCollection:sortCollections()
         end,
     }
     UIManager:show(sort_widget)
+end
+
+-- external
+
+function FileManagerCollection:genAddToCollectionButton(file_or_files, caller_pre_callback, caller_post_callback, button_disabled)
+    return {
+        text = _("Add to collection"),
+        enabled = not button_disabled,
+        callback = function()
+            if caller_pre_callback then
+                caller_pre_callback()
+            end
+            local caller_callback = function()
+                if type(file_or_files) == "string" then
+                    ReadCollection:addRemoveItemMultiple(file_or_files, self.selected_colections)
+                else -- selected files
+                    ReadCollection:addItemsMultiple(file_or_files, self.selected_colections)
+                end
+                if caller_post_callback then
+                    caller_post_callback()
+                end
+            end
+            self:onShowCollList(file_or_files, caller_callback)
+        end,
+    }
 end
 
 return FileManagerCollection
