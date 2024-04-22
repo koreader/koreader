@@ -1779,7 +1779,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                 },
             },
             {
-                text = _("Text-items max size"),
+                text = _("Item max width"),
                 sub_item_table = {
                     {
                         text_func = function()
@@ -1911,7 +1911,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
             },
             {
                 text_func = function()
-                    return T(_("Items mini-bar bottom margin: %1"), self.settings.container_bottom_padding)
+                    return T(_("Bottom margin: %1"), self.settings.container_bottom_padding)
                 end,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
