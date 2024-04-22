@@ -292,7 +292,7 @@ function FileManager:setupLayout()
                 table.insert(buttons, {}) -- separator
                 table.insert(buttons, {
                     filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_refresh_callback),
-                    filemanagerutil.genAddRemoveFavoritesButton(file, close_dialog_callback),
+                    file_manager.collections:genAddToCollectionButton(file, close_dialog_callback),
                 })
             end
             table.insert(buttons, {
@@ -515,21 +515,16 @@ function FileManager:tapPlus()
 
     local title, buttons
     if self.select_mode then
+        local function toggle_select_mode_callback()
+            self:onToggleSelectMode()
+        end
         local select_count = util.tableSize(self.selected_files)
         local actions_enabled = select_count > 0
         title = actions_enabled and T(N_("1 file selected", "%1 files selected", select_count), select_count)
             or _("No files selected")
         buttons = {
             {
-                {
-                    text = _("Add to collection"),
-                    enabled = actions_enabled,
-                    callback = function()
-                        UIManager:close(self.file_dialog)
-                        self.collections:onShowCollList(self.selected_files)
-                        self:onToggleSelectMode()
-                    end,
-                },
+                self.collections:genAddToCollectionButton(self.selected_files, close_dialog_callback, toggle_select_mode_callback),
             },
             {
                 {
