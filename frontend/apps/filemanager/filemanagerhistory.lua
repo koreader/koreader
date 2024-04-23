@@ -325,7 +325,7 @@ function FileManagerHistory:showHistDialog()
                     self.selected_colections = self.ui.collections.selected_colections
                     self:updateItemTable()
                 end
-                self.ui.collections:onShowCollList({}, caller_callback) -- do not select any
+                self.ui.collections:onShowCollList({}, caller_callback, true) -- do not select any, no dialog to apply
             end,
         },
     })
