@@ -1885,7 +1885,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
             },
             {
                 text_func = function()
-                    return T(_("Items height: %1"), self.settings.container_height)
+                    return T(_("Height: %1"), self.settings.container_height)
                 end,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
