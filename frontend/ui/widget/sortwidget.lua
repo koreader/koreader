@@ -2,6 +2,7 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
+local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckMark = require("ui/widget/checkmark")
 local Device = require("device")
@@ -132,7 +133,7 @@ local SortWidget = FocusManager:extend{
     -- table of items to sort
     item_table = nil, -- mandatory (array)
     callback = nil,
-    sort_disabled = false
+    sort_disabled = false,
 }
 
 function SortWidget:init()
@@ -294,6 +295,8 @@ function SortWidget:init()
         bottom_line_color = Blitbuffer.COLOR_DARK_GRAY,
         bottom_line_h_padding = padding,
         title = self.title,
+        left_icon = "appbar.menu",
+        left_icon_tap_callback = function() self:showMenu() end,
         close_callback = function() self:onClose() end,
         show_parent = self,
     }
@@ -338,24 +341,24 @@ function SortWidget:init()
 end
 
 function SortWidget:nextPage()
-    local new_page = math.min(self.show_page+1, self.pages)
-    if new_page > self.show_page then
-        self.show_page = new_page
-        if self.marked > 0 then
+    if self.show_page < self.pages then
+        self.show_page = self.show_page + 1
+        if self.marked > 0 then -- put selected item first in the page
             self:moveItem(self.items_per_page * (self.show_page - 1) + 1 - self.marked)
+        else
+            self:_populateItems()
         end
-        self:_populateItems()
     end
 end
 
 function SortWidget:prevPage()
-    local new_page = math.max(self.show_page-1, 1)
-    if new_page < self.show_page then
-        self.show_page = new_page
-        if self.marked > 0 then
+    if self.show_page > 1 then
+        self.show_page = self.show_page - 1
+        if self.marked > 0 then -- put selected item first in the page
             self:moveItem(self.items_per_page * (self.show_page - 1) + 1 - self.marked)
+        else
+            self:_populateItems()
         end
-        self:_populateItems()
     end
 end
 
@@ -470,6 +473,48 @@ function SortWidget:onSwipe(arg, ges_ev)
         -- so let it propagate
         return false
     end
+end
+
+function SortWidget:showMenu()
+    local dialog
+    local buttons = {
+        {{
+            text = _("Sort A to Z"),
+            align = "left",
+            callback = function()
+                UIManager:close(dialog)
+                self:sortItems()
+            end,
+        }},
+        {{
+            text = _("Sort Z to A"),
+            align = "left",
+            callback = function()
+                UIManager:close(dialog)
+                self:sortItems(true)
+            end,
+        }},
+    }
+    dialog = ButtonDialog:new{
+        shrink_unneeded_width = true,
+        buttons = buttons,
+        anchor = function()
+            return self.title_bar.left_button.image.dimen
+        end,
+    }
+    UIManager:show(dialog)
+end
+
+function SortWidget:sortItems(reverse)
+    if not self.orig_item_table then
+        self.orig_item_table = util.tableDeepCopy(self.item_table)
+    end
+    local sort_func = reverse and function(a, b) return a.text > b.text end
+                               or function(a, b) return a.text < b.text end
+    table.sort(self.item_table, sort_func)
+    self.show_page = 1
+    self.marked = 1 -- enable cancel button
+    self:_populateItems()
 end
 
 function SortWidget:onClose()
