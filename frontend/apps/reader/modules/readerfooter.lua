@@ -1392,7 +1392,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     return self.settings.toc_markers == true and not self.settings.chapter_progress_bar
                 end,
                 enabled_func = function()
-                    return not self.settings.progress_style_thin and not self.settings.chapter_progress_bar 
+                    return not self.settings.progress_style_thin and not self.settings.chapter_progress_bar
                         and not self.settings.disable_progress_bar
                 end,
                 callback = function()
@@ -2017,7 +2017,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
             end,
         })
     end
-    
+
     -- Settings menu: keep the same parent page for going up from submenu
     for i = 1, #configure_items_sub_table do
         configure_items_sub_table[i].menu_item_id = i
