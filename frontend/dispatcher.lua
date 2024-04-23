@@ -714,7 +714,7 @@ function Dispatcher:_sortActions(caller, location, settings, touchmenu_instance)
     local SortWidget = require("ui/widget/sortwidget")
     local sort_widget
     sort_widget = SortWidget:new{
-        title = _("Sort"),
+        title = _("Arrange actions"),
         item_table = display_list,
         callback = function()
             if location[settings] and next(location[settings]) ~= nil then
@@ -983,7 +983,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     end
     menu[#menu].separator = true
     table.insert(menu, {
-        text = _("Sort"),
+        text = _("Arrange actions"),
         checked_func = function()
             return location[settings] ~= nil
             and location[settings].settings ~= nil
