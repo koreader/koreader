@@ -483,7 +483,7 @@ function SortWidget:showMenu()
             align = "left",
             callback = function()
                 UIManager:close(dialog)
-                self:sortItems()
+                self:sortItems("strcoll")
             end,
         }},
         {{
@@ -491,7 +491,23 @@ function SortWidget:showMenu()
             align = "left",
             callback = function()
                 UIManager:close(dialog)
-                self:sortItems(true)
+                self:sortItems("strcoll", true)
+            end,
+        }},
+        {{
+            text = _("Sort A to Z (natural)"),
+            align = "left",
+            callback = function()
+                UIManager:close(dialog)
+                self:sortItems("natural")
+            end,
+        }},
+        {{
+            text = _("Sort Z to A (natural)"),
+            align = "left",
+            callback = function()
+                UIManager:close(dialog)
+                self:sortItems("natural", true)
             end,
         }},
     }
@@ -505,12 +521,12 @@ function SortWidget:showMenu()
     UIManager:show(dialog)
 end
 
-function SortWidget:sortItems(reverse)
+function SortWidget:sortItems(collate, reverse_collate)
     if not self.orig_item_table then
         self.orig_item_table = util.tableDeepCopy(self.item_table)
     end
-    local sort_func = reverse and function(a, b) return a.text > b.text end
-                               or function(a, b) return a.text < b.text end
+    local FileChooser = require("ui/widget/filechooser")
+    local sort_func = FileChooser:getSortingFunction(FileChooser.collates[collate], reverse_collate)
     table.sort(self.item_table, sort_func)
     self.show_page = 1
     self.marked = 1 -- enable cancel button
