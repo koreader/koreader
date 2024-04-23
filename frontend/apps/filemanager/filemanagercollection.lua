@@ -281,7 +281,7 @@ end
 
 -- collection list
 
-function FileManagerCollection:onShowCollList(file_or_files, caller_callback)
+function FileManagerCollection:onShowCollList(file_or_files, caller_callback, no_dialog)
     self.selected_colections = nil
     if file_or_files then -- select mode
         if type(file_or_files) == "string" then -- checkmark collections containing the file
@@ -297,7 +297,7 @@ function FileManagerCollection:onShowCollList(file_or_files, caller_callback)
         is_popout = false,
         title_bar_fm_style = true,
         title_bar_left_icon = file_or_files and "check" or "appbar.menu",
-        onLeftButtonTap = function() self:showCollListDialog(caller_callback) end,
+        onLeftButtonTap = function() self:showCollListDialog(caller_callback, no_dialog) end,
         onMenuChoice = self.onCollListChoice,
         onMenuHold = self.onCollListHold,
         onSetRotationMode = self.MenuSetRotationModeHandler,
@@ -405,7 +405,13 @@ function FileManagerCollection:onCollListHold(item)
     return true
 end
 
-function FileManagerCollection:showCollListDialog(caller_callback)
+function FileManagerCollection:showCollListDialog(caller_callback, no_dialog)
+    if no_dialog then
+        caller_callback()
+        self.coll_list.close_callback(true)
+        return
+    end
+
     local button_dialog, buttons
     local new_collection_button = {
         {
