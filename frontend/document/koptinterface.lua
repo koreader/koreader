@@ -1064,6 +1064,10 @@ function KoptInterface:getWordFromReflowPosition(doc, boxes, pos)
     local pageno = pos.page
 
     local scratch_reflowed_page_boxes = self:getReflowedTextBoxesFromScratch(doc, pageno)
+    if not DEBUG.dassert(scratch_reflowed_page_boxes and next(scratch_reflowed_page_boxes) ~= nil, "scratch_reflowed_page_boxes shouldn't be nil/{}") then
+        return
+    end
+
     local scratch_reflowed_word_box = self:getWordFromBoxes(scratch_reflowed_page_boxes, pos)
 
     local reflowed_page_boxes = self:getReflowedTextBoxes(doc, pageno)
@@ -1237,8 +1241,15 @@ function KoptInterface:getTextFromReflowPositions(doc, native_boxes, pos0, pos1)
     local reflowed_page_boxes = self:getReflowedTextBoxes(doc, pageno)
 
     local scratch_reflowed_word_box0 = self:getWordFromBoxes(scratch_reflowed_page_boxes, pos0)
+    if not DEBUG.dassert(scratch_reflowed_word_box0 and next(scratch_reflowed_word_box0) ~= nil, "scratch_reflowed_word_box0 shouldn't be nil/{}") then
+        return
+    end
     local reflowed_word_box0 = self:getWordFromBoxes(reflowed_page_boxes, pos0)
+
     local scratch_reflowed_word_box1 = self:getWordFromBoxes(scratch_reflowed_page_boxes, pos1)
+    if not DEBUG.dassert(scratch_reflowed_word_box1 and next(scratch_reflowed_word_box1) ~= nil, "scratch_reflowed_word_box1 shouldn't be nil/{}") then
+        return
+    end
     local reflowed_word_box1 = self:getWordFromBoxes(reflowed_page_boxes, pos1)
 
     local reflowed_pos_abs0 = scratch_reflowed_word_box0.box:center()
