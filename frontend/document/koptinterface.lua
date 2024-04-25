@@ -1237,8 +1237,10 @@ function KoptInterface:getTextFromReflowPositions(doc, native_boxes, pos0, pos1)
     local reflowed_page_boxes = self:getReflowedTextBoxes(doc, pageno)
 
     local scratch_reflowed_word_box0 = self:getWordFromBoxes(scratch_reflowed_page_boxes, pos0)
+    if not scratch_reflowed_word_box0 or next(scratch_reflowed_word_box0) == nil then return end
     local reflowed_word_box0 = self:getWordFromBoxes(reflowed_page_boxes, pos0)
     local scratch_reflowed_word_box1 = self:getWordFromBoxes(scratch_reflowed_page_boxes, pos1)
+    if not scratch_reflowed_word_box1 or next(scratch_reflowed_word_box1) == nil then return end
     local reflowed_word_box1 = self:getWordFromBoxes(reflowed_page_boxes, pos1)
 
     local reflowed_pos_abs0 = scratch_reflowed_word_box0.box:center()
