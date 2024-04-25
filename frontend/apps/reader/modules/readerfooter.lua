@@ -1259,7 +1259,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                             }
                             UIManager:show(items)
                         end,
-                        separator = true,
                         keep_menu_open = true,
                     },
                 },
@@ -1796,6 +1795,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                                 unit = "%",
                                 title_text = _("Book-title item"),
                                 info_text = _("Maximum percentage of screen width used for book-title"),
+                                book_title_max_width_pct = 30,
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.book_title_max_width_pct = spin.value
@@ -1822,6 +1822,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                                 unit = "%",
                                 title_text = _("Chapter-title item"),
                                 info_text = _("Maximum percentage of screen width used for chapter-title item"),
+                                book_chapter_max_width_pct = 30,
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.book_chapter_max_width_pct = spin.value
