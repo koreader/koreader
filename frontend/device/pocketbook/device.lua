@@ -797,85 +797,91 @@ local PocketBook1040 = PocketBook:extend{
 
 logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
 
-local codename = PocketBook:getDeviceModel()
+local full_codename = PocketBook:getDeviceModel()
 
-if codename == "PocketBook 515" then
+-- Pocketbook codenames are all over the place:
+local codename = full_codename
+-- "PocketBook 615 (PB615)"
+codename = codename:match(" [(]([^()]+)[)]$") or codename
+-- "PocketBook 615"
+codename = codename:match("^PocketBook ([^ ].*)$") or codename
+-- "PB615"
+codename = codename:match("^PB(.+)$") or codename
+
+if codename == "515" then
     return PocketBook515
-elseif codename == "PB606" or codename == "PocketBook 606" then
+elseif codename == "606" then
     return PocketBook606
-elseif codename == "PocketBook 611" then
+elseif codename == "611" then
     return PocketBook611
-elseif codename == "PocketBook 613" then
+elseif codename == "613" then
     return PocketBook613
-elseif codename == "PocketBook 614" or codename == "PocketBook 614W" then
+elseif codename == "614" or codename == "614W" then
     return PocketBook614W
-elseif codename == "PB615" or codename == "PB615W" or
-    codename == "PocketBook 615" or codename == "PocketBook 615W" then
+elseif codename == "615" or codename == "615W" then
     return PocketBook615
-elseif codename == "PB616" or codename == "PB616W" or
-    codename == "PocketBook 616" or codename == "PocketBook 616W" then
+elseif codename == "616" or codename == "616W" then
     return PocketBook616
-elseif codename == "PB617" or codename == "PocketBook 617" then
+elseif codename == "617" then
     return PocketBook617
-elseif codename == "PB618" then
+elseif codename == "618" then
     return PocketBook618
-elseif codename == "PocketBook 622" then
+elseif codename == "622" then
     return PocketBook622
-elseif codename == "PocketBook 623" then
+elseif codename == "623" then
     return PocketBook623
-elseif codename == "PocketBook 624" then
+elseif codename == "624" then
     return PocketBook624
-elseif codename == "PB625" then
+elseif codename == "625" then
     return PocketBook625
-elseif codename == "PB626" or codename == "PB626(2)-TL3" or
-    codename == "PocketBook 626" then
+elseif codename == "626" or codename == "626(2)-TL3" then
     return PocketBook626
-elseif codename == "PB627" then
+elseif codename == "627" then
     return PocketBook627
-elseif codename == "PB628" then
+elseif codename == "628" then
     return PocketBook628
-elseif codename == "PB629" then
+elseif codename == "629" then
     return PocketBook629
-elseif codename == "PocketBook 630" then
+elseif codename == "630" then
     return PocketBook630
-elseif codename == "PB631" or codename == "PocketBook 631" then
+elseif codename == "631" then
     return PocketBook631
-elseif codename == "PB632" then
+elseif codename == "632" then
     return PocketBook632
-elseif codename == "PB633" then
+elseif codename == "633" then
     return PocketBook633
-elseif codename == "PB634" then
+elseif codename == "634" then
     return PocketBook634
-elseif codename == "PB640" or codename == "PocketBook 640" then
+elseif codename == "640" then
     return PocketBook640
-elseif codename == "PB641" then
+elseif codename == "641" then
     return PocketBook641
-elseif codename == "PB650" or codename == "PocketBook 650" then
+elseif codename == "650" then
     return PocketBook650
-elseif codename == "PB700" or codename == "PocketBook 700" then
+elseif codename == "700" then
     return PocketBook700
-elseif codename == "PB700K3" or codename == "PocketBook 700K3" then
+elseif codename == "700K3" then
     return PocketBook700K3
-elseif codename == "PB740" then
+elseif codename == "740" then
     return PocketBook740
-elseif codename == "PB740-2" or codename == "PB740-3" then
+elseif codename == "740-2" or codename == "740-3" then
     return PocketBook740_2
-elseif codename == "PB741" then
+elseif codename == "741" then
     return PocketBook741
-elseif codename == "PB743C" then
+elseif codename == "743C" then
     return PocketBook743C
-elseif codename == "PB743K3" then
+elseif codename == "743K3" then
     return PocketBook743K3
-elseif codename == "PB743G" or codename == "PB743g" or codename == "PocketBook 743G" or codename == "PocketBook 743g" then
+elseif codename == "743G" or codename == "743g" then
     return PocketBook743G
-elseif codename == "PocketBook 840" or codename == "Reader InkPad" then
+elseif codename == "840" or codename == "Reader InkPad" then
     return PocketBook840
-elseif codename == "PB970" then
+elseif codename == "970" then
     return PocketBook970
-elseif codename == "PB1040" then
+elseif codename == "1040" then
     return PocketBook1040
-elseif codename == "PocketBook Color Lux" then
+elseif codename == "Color Lux" then
     return PocketBookColorLux
 else
-    error("unrecognized PocketBook model " .. codename)
+    error("unrecognized PocketBook model " .. full_codename)
 end
