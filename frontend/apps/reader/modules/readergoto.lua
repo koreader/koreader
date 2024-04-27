@@ -172,6 +172,14 @@ function ReaderGoto:onGoToBeginning()
     return true
 end
 
+function ReaderGoto:onGoToRandom()
+    local last_page = self.ui.document:getPageCount()
+    local random_page = math.random(1,last_page)
+    self.ui.link:addCurrentLocationToStack()
+    self.ui:handleEvent(Event:new("GotoPage", random_page))
+    return true
+end
+
 function ReaderGoto:onGoToEnd()
     local new_page = self.ui.document:getPrevPage(0)
     if new_page then

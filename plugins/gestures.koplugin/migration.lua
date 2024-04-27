@@ -53,6 +53,8 @@ function Migration:convertAction(location, ges, action)
         result = {first_page = true,}
     elseif action == "last_page" then
         result = {last_page = true,}
+    elseif action == "random_page" then
+        result = {random_page = true,}
     elseif action == "prev_chapter" then
         result = {prev_chapter = true,}
     elseif action == "next_bookmark" then
