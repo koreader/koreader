@@ -181,4 +181,28 @@ function ReaderGoto:onGoToEnd()
     return true
 end
 
+function ReaderGoto:onGoToRandomPage()
+    local page_count = self.document:getPageCount()
+    if page_count == 1 then return true end
+    local current_page = self.ui:getCurrentPage()
+    if self.pages_pool == nil then
+        self.pages_pool = {}
+    end
+    if #self.pages_pool == 0 or (#self.pages_pool == 1 and self.pages_pool[1] == current_page) then
+        for i = 1, page_count do
+            self.pages_pool[i] = i
+        end
+    end
+    while true do
+        local random_page_idx = math.random(1, #self.pages_pool)
+        local random_page = self.pages_pool[random_page_idx]
+        if random_page ~= current_page then
+            table.remove(self.pages_pool, random_page_idx)
+            self.ui.link:addCurrentLocationToStack()
+            self.ui:handleEvent(Event:new("GotoPage", random_page))
+            return true
+        end
+    end
+end
+
 return ReaderGoto
