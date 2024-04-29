@@ -84,8 +84,9 @@ local settingsList = {
     toggle_gsensor = {category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:hasGSensor()},
     toggle_rotation = {category="none", event="SwapRotation", title=_("Toggle orientation"), device=true},
     invert_rotation = {category="none", event="InvertRotation", title=_("Invert rotation"), device=true},
-    iterate_rotation = {category="none", event="IterateRotation", title=_("Rotate by 90° CW"), device=true},
-    iterate_rotation_ccw = {category="none", event="IterateRotation", arg=true, title=_("Rotate by 90° CCW"), device=true, separator=true},
+    iterate_rotation = {category="none", event="IterateRotation", arg=1, title=_("Rotate by 90° CW"), device=true},
+    iterate_rotation_ccw = {category="none", event="IterateRotation", arg=-1, title=_("Rotate by 90° CCW"), device=true},
+    iterate_rotation_180 = {category="none", event="IterateRotation", arg=2, title=_("Rotate by 180°"), device=true, separator=true},
     ----
     wifi_on = {category="none", event="InfoWifiOn", title=_("Turn on Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
     wifi_off = {category="none", event="InfoWifiOff", title=_("Turn off Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
@@ -306,6 +307,7 @@ local dispatcher_menu_order = {
     "invert_rotation",
     "iterate_rotation",
     "iterate_rotation_ccw",
+    "iterate_rotation_180",
     ----
     "wifi_on",
     "wifi_off",
