@@ -974,7 +974,7 @@ function ReaderBookmark:getBookmarkItemText(item)
     else -- it is a note, but we show the "highlight" prefix before the highlighted text
         text = self.display_prefix["highlight"]
     end
-    if self.items_text == "all" then
+    if self.items_text == "all" or self.items_text == "note" then
         text = text .. item.text_orig
     end
     if item.note then
