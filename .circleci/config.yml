@@ -16,7 +16,7 @@ workflows:
 jobs:
   build:
     docker:
-      - image: koreader/kobase:0.3.1-20.04
+      - image: koreader/kobase:0.3.2-20.04
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
@@ -69,7 +69,7 @@ jobs:
           path: koreader-emulator-x86_64-linux-gnu/koreader/junit-test-results.xml
   docs:
     docker:
-      - image: koreader/kobase:0.3.1-20.04
+      - image: koreader/kobase:0.3.2-20.04
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
