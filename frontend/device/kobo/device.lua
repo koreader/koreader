@@ -152,6 +152,8 @@ local Kobo = Generic:extend{
     hasEclipseWfm = no,
     -- Device ships with various hardware revisions under the same device code, requiring automatic hardware detection...
     automagic_sysfs = false,
+    -- Device is a Clara or Libra Colour
+    isRGB = false,
 
     unexpected_wakeup_count = 0,
 }
@@ -534,6 +536,83 @@ local KoboCondor = Kobo:extend{
     isSMP = yes,
 }
 
+-- Kobo Clara B/W:
+local KoboSpaBW = Kobo:extend{
+    model = "Kobo_spaBW",
+    isMk7 = yes,
+    hasEclipseWfm = yes,
+    canToggleChargingLED = yes,
+    led_uses_channel_3 = true,
+    hasFrontlight = yes,
+    display_dpi = 300,
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_mixer = "/sys/class/backlight/lm3630a_led/color",
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = true,
+    },
+    battery_sysfs = "/sys/class/power_supply/bd71827_bat",
+    power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event",
+    isMTK = yes,
+    touch_snow_protocol = true, -- fix for unresponsive touch screen
+}
+
+-- Kobo Clara Colour:
+local KoboSpaColour = Kobo:extend{
+    model = "Kobo_spaColour",
+    isMk7 = yes,
+    hasEclipseWfm = yes,
+    canToggleChargingLED = yes,
+    led_uses_channel_3 = true,
+    hasFrontlight = yes,
+    display_dpi = 300,
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_mixer = "/sys/class/backlight/lm3630a_led/color",
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = true,
+    },
+    battery_sysfs = "/sys/class/power_supply/bd71827_bat",
+    power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event",
+    isMTK = yes,
+    touch_snow_protocol = true, -- fix for unresponsive touch screen
+    isSMP = yes, -- device is dual core
+    hasColorScreen = yes,
+    isRGB = true,
+}
+
+-- Kobo Libra Colour:
+local KoboMonza = Kobo:extend{
+    model = "Kobo_monza",
+    isMk7 = yes,
+    hasEclipseWfm = yes,
+    canToggleChargingLED = yes,
+    led_uses_channel_3 = true,
+    hasFrontlight = yes,
+    hasKeys = yes,
+    hasGSensor = yes,
+    display_dpi = 300,
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_mixer = "/sys/class/backlight/lm3630a_led/color",
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = true,
+    },
+    battery_sysfs = "/sys/class/power_supply/bd71827_bat",
+    power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event",
+    isMTK = yes,
+    touch_snow_protocol = true, -- fix for unresponsive touch screen
+    isSMP = yes, -- device is dual core
+    hasColorScreen = yes,
+    isRGB = true,
+}
+
 function Kobo:setupChargingLED()
     if G_reader_settings:nilOrTrue("enable_charging_led") then
         if self:hasAuxBattery() and self.powerd:isAuxBatteryConnected() then
@@ -639,9 +718,11 @@ function Kobo:init()
             mxcfb_bypass_wait_for = mxcfb_bypass_wait_for,
         }
         if self.screen.fb_bpp == 32 then
-            -- Ensure we decode images properly, as our framebuffer is BGRA...
-            logger.info("Enabling Kobo @ 32bpp BGR tweaks")
-            self.hasBGRFrameBuffer = yes
+            if not self.isRGB then
+                -- Ensure we decode images properly, as our framebuffer is BGRA...
+                logger.info("Enabling Kobo @ 32bpp BGR tweaks")
+                self.hasBGRFrameBuffer = yes
+            end
         end
     end
 
@@ -1678,6 +1759,12 @@ elseif codename == "goldfinch" then
     return KoboGoldfinch
 elseif codename == "condor" then
     return KoboCondor
+elseif codename == "spaBW" then
+    return KoboSpaBW
+elseif codename == "spaColour" then
+    return KoboSpaColour
+elseif codename == "monza" then
+    return KoboMonza
 else
     error("unrecognized Kobo model ".. codename .. " with device id " .. product_id)
 end
