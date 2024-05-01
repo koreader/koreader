@@ -607,7 +607,6 @@ local KoboMonza = Kobo:extend{
     battery_sysfs = "/sys/class/power_supply/bd71827_bat",
     power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event",
     isMTK = yes,
-    touch_snow_protocol = true, -- fix for unresponsive touch screen
     isSMP = yes, -- device is dual core
     hasColorScreen = yes,
     isRGB = true,
