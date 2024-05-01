@@ -145,7 +145,7 @@ function CoverBrowser:addToMainMenu(menu_items)
         sub_item_table = history_sub_item_table,
     })
     table.insert(sub_item_table, {
-        text = _("Favorites display mode"),
+        text = _("Collections display mode"),
         enabled_func = function()
             return not BookInfoManager:getSetting("unified_display_mode")
         end,
@@ -364,7 +364,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Show hint for book status in favorites"),
+                        text = _("Show hint for book status in collections"),
                         checked_func = function() return BookInfoManager:getSetting("collections_hint_opened") end,
                         callback = function()
                             BookInfoManager:toggleSetting("collections_hint_opened")

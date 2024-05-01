@@ -234,25 +234,6 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
     }
 end
 
-function filemanagerutil.genAddRemoveFavoritesButton(file, caller_callback, button_disabled)
-    local ReadCollection = require("readcollection")
-    local has_file = ReadCollection:hasFile(file)
-    return {
-        text_func = function()
-            return has_file and _("Remove from favorites") or _("Add to favorites")
-        end,
-        enabled = not button_disabled,
-        callback = function()
-            caller_callback()
-            if has_file then
-                ReadCollection:removeItem(file)
-            else
-                ReadCollection:addItem(file)
-            end
-        end,
-    }
-end
-
 function filemanagerutil.genShowFolderButton(file, caller_callback, button_disabled)
     return {
         text = _("Show folder"),

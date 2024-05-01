@@ -53,7 +53,8 @@ local settingsList = {
     open_previous_document = {category="none", event="OpenLastDoc", title=_("Open previous document"), general=true},
     history = {category="none", event="ShowHist", title=_("History"), general=true},
     history_search = {category="none", event="SearchHistory", title=_("History search"), general=true},
-    favorites = {category="none", event="ShowColl", arg="favorites", title=_("Favorites"), general=true},
+    favorites = {category="none", event="ShowColl", title=_("Favorites"), general=true},
+    collections = {category="none", event="ShowCollList", title=_("Collections"), general=true},
     filemanager = {category="none", event="Home", title=_("File browser"), general=true, separator=true},
     ----
     dictionary_lookup = {category="none", event="ShowDictionaryLookup", title=_("Dictionary lookup"), general=true},
@@ -273,6 +274,7 @@ local dispatcher_menu_order = {
     "history",
     "history_search",
     "favorites",
+    "collections",
     "filemanager",
     ----
     "dictionary_lookup",
@@ -714,7 +716,7 @@ function Dispatcher:_sortActions(caller, location, settings, touchmenu_instance)
     local SortWidget = require("ui/widget/sortwidget")
     local sort_widget
     sort_widget = SortWidget:new{
-        title = _("Sort"),
+        title = _("Arrange actions"),
         item_table = display_list,
         callback = function()
             if location[settings] and next(location[settings]) ~= nil then
@@ -983,7 +985,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     end
     menu[#menu].separator = true
     table.insert(menu, {
-        text = _("Sort"),
+        text = _("Arrange actions"),
         checked_func = function()
             return location[settings] ~= nil
             and location[settings].settings ~= nil
