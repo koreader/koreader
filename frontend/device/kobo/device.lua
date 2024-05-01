@@ -152,8 +152,6 @@ local Kobo = Generic:extend{
     hasEclipseWfm = no,
     -- Device ships with various hardware revisions under the same device code, requiring automatic hardware detection...
     automagic_sysfs = false,
-    -- Device is a Clara or Libra Colour
-    isRGB = false,
 
     unexpected_wakeup_count = 0,
 }
@@ -539,11 +537,11 @@ local KoboCondor = Kobo:extend{
 -- Kobo Clara B/W:
 local KoboSpaBW = Kobo:extend{
     model = "Kobo_spaBW",
-    isMk7 = yes,
+    isMTK = yes,
     hasEclipseWfm = yes,
     canToggleChargingLED = yes,
-    led_uses_channel_3 = true,
     hasFrontlight = yes,
+    touch_snow_protocol = true,
     display_dpi = 300,
     hasNaturalLight = yes,
     frontlight_settings = {
@@ -555,18 +553,16 @@ local KoboSpaBW = Kobo:extend{
     },
     battery_sysfs = "/sys/class/power_supply/bd71827_bat",
     power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event",
-    isMTK = yes,
-    touch_snow_protocol = true, -- fix for unresponsive touch screen
 }
 
 -- Kobo Clara Colour:
 local KoboSpaColour = Kobo:extend{
     model = "Kobo_spaColour",
-    isMk7 = yes,
+    isMTK = yes,
     hasEclipseWfm = yes,
     canToggleChargingLED = yes,
-    led_uses_channel_3 = true,
     hasFrontlight = yes,
+    touch_snow_protocol = true,
     display_dpi = 300,
     hasNaturalLight = yes,
     frontlight_settings = {
@@ -578,20 +574,16 @@ local KoboSpaColour = Kobo:extend{
     },
     battery_sysfs = "/sys/class/power_supply/bd71827_bat",
     power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event",
-    isMTK = yes,
-    touch_snow_protocol = true, -- fix for unresponsive touch screen
-    isSMP = yes, -- device is dual core
+    isSMP = yes,
     hasColorScreen = yes,
-    isRGB = true,
 }
 
 -- Kobo Libra Colour:
 local KoboMonza = Kobo:extend{
     model = "Kobo_monza",
-    isMk7 = yes,
+    isMTK = yes,
     hasEclipseWfm = yes,
     canToggleChargingLED = yes,
-    led_uses_channel_3 = true,
     hasFrontlight = yes,
     hasKeys = yes,
     hasGSensor = yes,
@@ -606,11 +598,8 @@ local KoboMonza = Kobo:extend{
     },
     battery_sysfs = "/sys/class/power_supply/bd71827_bat",
     power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event",
-    isMTK = yes,
-    touch_snow_protocol = true, -- fix for unresponsive touch screen
-    isSMP = yes, -- device is dual core
+    isSMP = yes,
     hasColorScreen = yes,
-    isRGB = true,
 }
 
 function Kobo:setupChargingLED()
@@ -717,12 +706,10 @@ function Kobo:init()
             is_always_portrait = self.isAlwaysPortrait(),
             mxcfb_bypass_wait_for = mxcfb_bypass_wait_for,
         }
-        if self.screen.fb_bpp == 32 then
-            if not self.isRGB then
-                -- Ensure we decode images properly, as our framebuffer is BGRA...
-                logger.info("Enabling Kobo @ 32bpp BGR tweaks")
-                self.hasBGRFrameBuffer = yes
-            end
+        if self.screen.fb_bpp == 32 and not self:hasColorScreen() then
+            -- Ensure we decode images properly, as our framebuffer is BGRA...
+            logger.info("Enabling Kobo @ 32bpp BGR tweaks")
+            self.hasBGRFrameBuffer = yes
         end
     end
 
