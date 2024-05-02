@@ -759,6 +759,8 @@ function Gestures:addToMainMenu(menu_items)
             text = _("Spread and pinch"),
             sub_item_table = self:genSubItemTable({"spread_gesture", "pinch_gesture"}),
         })
+    end
+    if Device:hasGSensor()
         table.insert(menu_items.gesture_manager.sub_item_table, {
             text = _("Rotation"),
             sub_item_table = self:genSubItemTable({"rotate_cw", "rotate_ccw"}),
