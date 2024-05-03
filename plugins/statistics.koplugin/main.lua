@@ -187,7 +187,7 @@ function ReaderStatistics:initData()
 
     self.data.pages = self.document:getPageCount()
     -- Update these numbers to what's actually stored in the settings
-    self.data.highlights, self.data.notes = self.ui.bookmark:getNumberOfHighlightsAndNotes()
+    self.data.highlights, self.data.notes = self.ui.annotation:getNumberOfHighlightsAndNotes()
     self.id_curr_book = self:getIdBookDB()
     self.book_read_pages, self.book_read_time = self:getPageTimeTotalStats(self.id_curr_book)
     if self.book_read_pages > 0 then
@@ -2727,27 +2727,14 @@ function ReaderStatistics:onCloseDocument()
     self:insertDB()
 end
 
-function ReaderStatistics:onAddHighlight()
+function ReaderStatistics:onAnnotationsModified(annotations)
     if self.settings.is_enabled then
-        self.data.highlights = self.data.highlights + 1
-    end
-end
-
-function ReaderStatistics:onDelHighlight()
-    if self.settings.is_enabled then
-        self.data.highlights = self.data.highlights - 1
-    end
-end
-
-function ReaderStatistics:onAddNote()
-    if self.settings.is_enabled then
-        self.data.notes = self.data.notes + 1
-    end
-end
-
-function ReaderStatistics:onDelNote()
-    if self.settings.is_enabled then
-        self.data.notes = self.data.notes - 1
+        if annotations.nb_highlights_added then
+            self.data.highlights = self.data.highlights + annotations.nb_highlights_added
+        end
+        if annotations.nb_notes_added then
+            self.data.notes = self.data.notes + annotations.nb_notes_added
+        end
     end
 end
 

@@ -65,11 +65,6 @@ local DictQuickLookup = InputContainer:extend{
     rotated_update_wiki_languages_on_close = nil,
 }
 
-local highlight_strings = {
-    highlight =_("Highlight"),
-    unhighlight = _("Unhighlight"),
-}
-
 function DictQuickLookup.getWikiSaveEpubDefaultDir()
     local dir = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
     if dir:sub(-1) ~= "/" then
@@ -438,19 +433,13 @@ function DictQuickLookup:init()
                 },
                 {
                     id = "highlight",
-                    text = self:getHighlightText(),
+                    text = _("Highlight"),
                     enabled = not self:isDocless() and self.highlight ~= nil,
                     callback = function()
-                        if self:getHighlightText() == highlight_strings.highlight then
-                            self.ui:handleEvent(Event:new("Highlight"))
-                        else
-                            self.ui:handleEvent(Event:new("Unhighlight"))
-                        end
+                        self.save_highlight = not self.save_highlight
                         -- Just update, repaint and refresh *this* button
                         local this = self.button_table:getButtonById("highlight")
-                        if not this then return end
-                        this:enableDisable(self.highlight ~= nil)
-                        this:setText(self:getHighlightText(), this.width)
+                        this:setText(self.save_highlight and _("Unhighlight") or _("Highlight"), this.width)
                         this:refresh()
                     end,
                 },
@@ -953,22 +942,6 @@ function DictQuickLookup:onShow()
     return true
 end
 
-function DictQuickLookup:getHighlightedItem()
-    if self:isDocless() then return end
-    return self.ui.highlight:getHighlightBookmarkItem()
-end
-
-function DictQuickLookup:getHighlightText()
-    local item = self:getHighlightedItem()
-    if not item then
-        return highlight_strings.highlight, false
-    elseif self.ui.bookmark:isBookmarkAdded(item) then
-        return highlight_strings.unhighlight, false
-    else
-        return highlight_strings.highlight, true
-    end
-end
-
 function DictQuickLookup:isPrevDictAvaiable()
     return self.dict_index > 1
 end
@@ -1150,13 +1123,19 @@ function DictQuickLookup:onClose(no_clear)
             self.ui:handleEvent(Event:new("UpdateWikiLanguages", self.wiki_languages))
         end
     end
-    if self.highlight and not no_clear then
-        -- delay unhighlight of selection, so we can see where we stopped when
-        -- back from our journey into dictionary or wikipedia
-        local clear_id = self.highlight:getClearId()
-        UIManager:scheduleIn(0.5, function()
-            self.highlight:clear(clear_id)
-        end)
+
+    if self.save_highlight then
+        self.highlight:saveHighlight()
+        self.highlight:clear()
+    else
+        if self.highlight and not no_clear then
+            -- delay unhighlight of selection, so we can see where we stopped when
+            -- back from our journey into dictionary or wikipedia
+            local clear_id = self.highlight:getClearId()
+            UIManager:scheduleIn(0.5, function()
+                self.highlight:clear(clear_id)
+            end)
+        end
     end
     return true
 end

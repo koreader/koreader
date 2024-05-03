@@ -24,6 +24,7 @@ local LanguageSupport = require("languagesupport")
 local Notification = require("ui/widget/notification")
 local PluginLoader = require("pluginloader")
 local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
+local ReaderAnnotation = require("apps/reader/modules/readerannotation")
 local ReaderBack = require("apps/reader/modules/readerback")
 local ReaderBookmark = require("apps/reader/modules/readerbookmark")
 local ReaderConfig = require("apps/reader/modules/readerconfig")
@@ -83,7 +84,7 @@ local ReaderUI = InputContainer:extend{
     password = nil,
 
     postInitCallback = nil,
-    postReaderCallback = nil,
+    postReaderReadyCallback = nil,
 }
 
 function ReaderUI:registerModule(name, ui_module, always_active)
@@ -102,8 +103,8 @@ function ReaderUI:registerPostInitCallback(callback)
     table.insert(self.postInitCallback, callback)
 end
 
-function ReaderUI:registerPostReadyCallback(callback)
-    table.insert(self.postReaderCallback, callback)
+function ReaderUI:registerPostReaderReadyCallback(callback)
+    table.insert(self.postReaderReadyCallback, callback)
 end
 
 function ReaderUI:init()
@@ -116,7 +117,7 @@ function ReaderUI:init()
     Device:setIgnoreInput(true) -- Avoid ANRs on Android with unprocessed events.
 
     self.postInitCallback = {}
-    self.postReaderCallback = {}
+    self.postReaderReadyCallback = {}
     -- if we are not the top level dialog ourselves, it must be given in the table
     if not self.dialog then
         self.dialog = self
@@ -181,6 +182,12 @@ function ReaderUI:init()
         dialog = self.dialog,
         view = self.view,
         ui = self
+    })
+    self:registerModule("annotation", ReaderAnnotation:new{
+        dialog = self.dialog,
+        view = self.view,
+        ui = self,
+        document = self.document,
     })
     -- reader goto controller
     -- "goto" being a dirty keyword in Lua?
@@ -491,10 +498,10 @@ function ReaderUI:init()
     -- Need the same event for PDF document
     self:handleEvent(Event:new("ReaderReady", self.doc_settings))
 
-    for _,v in ipairs(self.postReaderCallback) do
+    for _,v in ipairs(self.postReaderReadyCallback) do
         v()
     end
-    self.postReaderCallback = nil
+    self.postReaderReadyCallback = nil
 
     Device:setIgnoreInput(false) -- Allow processing of events (on Android).
     Input:inhibitInputUntil(0.2)
@@ -584,6 +591,7 @@ end
 function ReaderUI:showReader(file, provider, seamless)
     logger.dbg("show reader ui")
 
+    file = ffiUtil.realpath(file)
     if lfs.attributes(file, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
              text = T(_("File '%1' does not exist."), BD.filepath(file))
