@@ -41,6 +41,7 @@ local Device = {
     hasAuxBattery = no,
     hasKeyboard = no,
     hasKeys = no,
+    hasPageUpDownKeys = no,
     canKeyRepeat = no,
     hasDPad = no,
     hasExitOptions = yes,
