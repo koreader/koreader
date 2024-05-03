@@ -116,7 +116,18 @@ end
 function ReaderRolling:onGesture() end
 
 function ReaderRolling:registerKeyEvents()
-    if Device:hasKeys() then
+    if Device:hasPageUpDownKeys() and Device:hasDPad() then
+        self.key_events.GotoNextView = {
+            { { "RPgFwd", "LPgFwd" } },
+            event = "GotoViewRel",
+            args = 1,
+        }
+        self.key_events.GotoPrevView = {
+            { { "RPgBack", "LPgBack" } },
+            event = "GotoViewRel",
+            args = -1,
+        }
+    elseif Device:hasKeys() then
         self.key_events.GotoNextView = {
             { { "RPgFwd", "LPgFwd", "Right" } },
             event = "GotoViewRel",
@@ -128,7 +139,28 @@ function ReaderRolling:registerKeyEvents()
             args = -1,
         }
     end
-    if Device:hasDPad() then
+    if Device:hasDPad() and Device:hasPageUpDownKeys() then
+        self.key_events.MoveUp = {
+            { "Up" },
+            event = "Panning",
+            args = {0, -1},
+        }
+        self.key_events.MoveDown = {
+            { "Down" },
+            event = "Panning",
+            args = {0,  1},
+        }
+        self.key_events.GotoNextChapter = {
+            { "Right" },
+            event = "GotoNextChapter",
+            args = 1,
+        }
+        self.key_events.GotoPrevChapter = {
+            { "Left" },
+            event = "GotoPrevChapter",
+            args = -1,
+        }
+    elseif Device:hasDPad() then
         self.key_events.MoveUp = {
             { "Up" },
             event = "Panning",
