@@ -139,7 +139,7 @@ function ReaderRolling:registerKeyEvents()
             args = -1,
         }
     end
-    if Device:hasDPad() and Device:hasPageUpDownKeys() then
+    if Device:hasPageUpDownKeys() and Device:hasDPad() then
         self.key_events.ContentSelection = {
             { { "Up", "Down" } },
             event = "ContentSelection",
