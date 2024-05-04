@@ -998,7 +998,6 @@ function ReaderFooter:addToMainMenu(menu_items)
     }
 
     -- menu item to fake footer tapping when touch area is disabled
-    local settings_submenu_num = 1
     local DTAP_ZONE_MINIBAR = G_defaults:readSetting("DTAP_ZONE_MINIBAR")
     if DTAP_ZONE_MINIBAR.h == 0 or DTAP_ZONE_MINIBAR.w == 0 then
         table.insert(sub_items, {
@@ -1008,7 +1007,6 @@ function ReaderFooter:addToMainMenu(menu_items)
             end,
             callback = function() self:onToggleFooterMode() end,
         })
-        settings_submenu_num = 2
     end
 
     local getMinibarOption = function(option, callback)
@@ -1454,6 +1452,7 @@ function ReaderFooter:addToMainMenu(menu_items)
     })
     ----------- footer_items
     local footer_items = {}
+    local items
     table.insert(sub_items, {
         text = _("Items"),
         sub_item_table = footer_items,
