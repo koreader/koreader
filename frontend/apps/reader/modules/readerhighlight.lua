@@ -594,6 +594,7 @@ Except when in two columns mode, where this is limited to showing only the previ
     if not Device:isTouchDevice() and Device:hasDPad() then
         menu_items.selection_text = util.tableDeepCopy(menu_items.long_press)
         menu_items.selection_text.text = _("Select on text")
+        menu_items.long_press = nil
     end
 
     -- main menu Search
