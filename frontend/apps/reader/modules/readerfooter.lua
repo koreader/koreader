@@ -1452,12 +1452,10 @@ function ReaderFooter:addToMainMenu(menu_items)
     })
     ----------- footer_items
     local footer_items = {}
-    local items
     table.insert(sub_items, {
         text = _("Items"),
         sub_item_table = footer_items,
     })
-    table.insert(sub_items, items)
     table.insert(footer_items, getMinibarOption("page_progress"))
     table.insert(footer_items, getMinibarOption("pages_left_book"))
     table.insert(footer_items, getMinibarOption("time"))
