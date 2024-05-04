@@ -140,15 +140,9 @@ function ReaderRolling:registerKeyEvents()
         }
     end
     if Device:hasDPad() and Device:hasPageUpDownKeys() then
-        self.key_events.MoveUp = {
-            { "Up" },
-            event = "Panning",
-            args = {0, -1},
-        }
-        self.key_events.MoveDown = {
-            { "Down" },
-            event = "Panning",
-            args = {0,  1},
+        self.key_events.ContentSelection = {
+            { { "Up", "Down" } },
+            event = "ContentSelection",
         }
         self.key_events.GotoNextChapter = {
             { "Right" },
@@ -810,6 +804,10 @@ function ReaderRolling:onGotoPrevChapter()
         self:onGotoPage(new_page)
     end
     return true
+end
+
+function ReaderRolling:onContentSelection()
+    return self.ui.highlight:onStartHighlightIndicator()
 end
 
 function ReaderRolling:onNotCharging()
