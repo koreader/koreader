@@ -760,7 +760,7 @@ function Gestures:addToMainMenu(menu_items)
             sub_item_table = self:genSubItemTable({"spread_gesture", "pinch_gesture"}),
         })
         table.insert(menu_items.gesture_manager.sub_item_table, {
-            text = _("Rotation"),
+            text = _("Two-finger half-moon swipe"),
             sub_item_table = self:genSubItemTable({"rotate_cw", "rotate_ccw"}),
         })
     end
