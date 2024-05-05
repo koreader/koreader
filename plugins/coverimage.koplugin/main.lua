@@ -113,14 +113,15 @@ function CoverImage:createCoverImage(doc_settings)
     if self:coverEnabled() and doc_settings:nilOrFalse("exclude_cover_image") then
         local cover_image, custom_cover = FileManagerBookInfo:getCoverImage(self.ui.document)
         if cover_image then
-            local cache_file = self:getCacheFile(custom_cover)
+            local s_w, s_h = Screen:getWidth(), Screen:getHeight()
+            local cache_file = self:getCacheFile(custom_cover, s_w, s_h)
             if lfs.attributes(cache_file, "mode") == "file" then
+                logger.dbg("CoverImage: cache file already exists")
                 ffiutil.copyFile(cache_file, self.cover_image_path)
                 lfs.touch(cache_file) -- update date
                 return
             end
 
-            local s_w, s_h = Screen:getWidth(), Screen:getHeight()
             local i_w, i_h = cover_image:getWidth(), cover_image:getHeight()
             local scale_factor = math.min(s_w / i_w, s_h / i_h)
 
@@ -199,6 +200,11 @@ function CoverImage:onReaderReady(doc_settings)
     self:createCoverImage(doc_settings)
 end
 
+function CoverImage:onRotationUpdate()
+    logger.dbg("CoverImage: onRotationUpdate")
+    self.createCoverImage(self.ui.doc_settings)
+end
+
 function CoverImage:fallbackEnabled()
     return self.fallback and isFileOk(self.cover_image_fallback_path)
 end
@@ -211,12 +217,13 @@ end
 -- cache handling functions
 ---------------------------
 
-function CoverImage:getCacheFile(custom_cover)
+function CoverImage:getCacheFile(custom_cover, s_w, s_h)
     local custom_cover_mtime = custom_cover and lfs.attributes(custom_cover, "modification") or ""
     local dummy, document_name = util.splitFilePathName(self.ui.document.file)
     -- use document_name here. Title may contain characters not allowed on every filesystem (esp. vfat on /sdcard)
     local key = document_name .. custom_cover_mtime .. self.cover_image_quality .. self.cover_image_stretch_limit
         .. self.cover_image_background .. self.cover_image_format .. tostring(self.cover_image_grayscale)
+        .. s_w .. s_h
 
     return self.cover_image_cache_path .. self.cover_image_cache_prefix .. md5(key) .. "." .. getExtension(self.cover_image_path)
 end
