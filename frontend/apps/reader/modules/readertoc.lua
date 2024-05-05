@@ -353,7 +353,7 @@ function ReaderToc:getTocIndexByPage(pn_or_xp, skip_ignored_ticks)
     if type(pn_or_xp) == "string" then
         return self:getAccurateTocIndexByXPointer(pn_or_xp, skip_ignored_ticks)
     end
-    local prev_index = 1
+    local prev_index = 0
     for _k,_v in ipairs(self.toc) do
         if not skip_ignored_ticks or not self.toc_ticks_ignored_levels[_v.depth] then
             if _v.page == pageno then
@@ -368,7 +368,7 @@ function ReaderToc:getTocIndexByPage(pn_or_xp, skip_ignored_ticks)
             prev_index = _k
         end
     end
-    return prev_index
+    return prev_index > 0 and prev_index or nil
 end
 
 function ReaderToc:getAccurateTocIndexByXPointer(xptr, skip_ignored_ticks)
