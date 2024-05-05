@@ -402,6 +402,11 @@ local _function_info_cache = {}
 local getFunctionInfo = function(func, full_code)
     local info = debug.getinfo( func, "S" )
     local src, firstline, lastline = info.source, info.linedefined, info.lastlinedefined
+    if firstline < 0 then
+        -- With builtin or C functions, we get: [C] -1 -1
+        -- Get something like "function: builtin" or "function: 0x7f5931f03828" instead
+        src = string.format("%s", func)
+    end
     local hash = src.."#"..firstline.."#"..lastline
     if _function_info_cache[hash] and not full_code then
         return _function_info_cache[hash]
@@ -455,8 +460,19 @@ local getFunctionInfo = function(func, full_code)
         dummy, cnt = signature:gsub("^[^(]*:","")
         info.is_method = cnt > 0
         info.classname = signature:gsub(".-(%w+):.*","%1")
+    else
+        -- possibly some Lua builtin function or from some C-module
+        lines = {}
+        info.source = "builtin or C module"
+        info.no_source = true
+        info.signature = src
+        info.nb_args = -1
+        info.is_method = false
+        info.classname = ""
     end
-    _function_info_cache[hash] = info
+    if hash then
+        _function_info_cache[hash] = info
+    end
     if not full_code then
         return info
     end
@@ -520,6 +536,7 @@ This service is aimed at developers, <mark>use at your own risk</mark>.
 <li><a href="device/">device</a>       the Device object (get a screenshot: <a href="device/screen/bb">device/screen/bb</a>).
 <li><a href="UIManager/">UIManager</a>    and its <a href="UIManager/_window_stack/">window stack</a>.
 <li><a href="g_settings/">g_settings</a>   your global settings saved as settings.reader.lua.
+<li><a href="globals/">globals</a>      the global namespace
 
 <big>Send an event:</big>
 <li><a href="event/">list of dispatcher/gestures actions</a>.
@@ -597,6 +614,8 @@ function HttpInspector:onRequest(data, request_id)
         return self:exposeObject(Device, uri, reqinfo)
     elseif fragment == "g_settings" then
         return self:exposeObject(G_reader_settings, uri, reqinfo)
+    elseif fragment == "globals" then
+        return self:exposeObject(_G, uri, reqinfo)
     elseif fragment == "UIManager" then
         return self:exposeObject(UIManager, uri, reqinfo)
     elseif fragment == "event" then
@@ -878,14 +897,18 @@ function HttpInspector:showFunctionDetails(obj, reqinfo)
     add_html("It may be called, to get results <b>as JSON</b>, with:")
     output_sample_uris("/")
     add_html("")
-    local dummy, git_commit = require("version"):getNormalizedCurrentVersion()
-    local github_uri = T("https://github.com/koreader/koreader/blob/%1/%2#L%3", git_commit, func_info.source, func_info.firstline)
-    add_html(T("Here's a snippet of the function code (it can be viewed with syntax coloring and line numbers <a href='%1'>on Github</a>):", github_uri))
-    add_html("<div style='background-color: lightgray'>")
-    for _, line in ipairs(func_info.lines) do
-        add_html(line)
+    if func_info.no_source then
+        add_html(T("Builtin function or from a C module: no source code available."))
+    else
+        local dummy, git_commit = require("version"):getNormalizedCurrentVersion()
+        local github_uri = T("https://github.com/koreader/koreader/blob/%1/%2#L%3", git_commit, func_info.source, func_info.firstline)
+        add_html(T("Here's a snippet of the function code (it can be viewed with syntax coloring and line numbers <a href='%1'>on Github</a>):", github_uri))
+        add_html("<div style='background-color: lightgray'>")
+        for _, line in ipairs(func_info.lines) do
+            add_html(line)
+        end
+        add_html("\n</div>")
     end
-    add_html("\n</div>")
     add_html("</pre>")
     html = table.concat(html, "\n")
     return self:sendResponse(reqinfo, 200, CTYPE.HTML, html)
@@ -942,7 +965,9 @@ function HttpInspector:callFunction(func, instance, args_as_uri, output_html, re
         http_code = 500
         -- On error, instead of the array on success, let's return an object,
         -- with keys 'error' and "stacktrace"
-        err, trace = res[2]:match("^(.-)\n(.*)$")
+        if res[2] then
+            err, trace = res[2]:match("^(.-)\n(.*)$")
+        end
         json = getAsJsonString({["error"] = err, ["stacktrace"] = trace})
     end
     if output_html then
