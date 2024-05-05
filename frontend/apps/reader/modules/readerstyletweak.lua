@@ -785,11 +785,9 @@ local BOOK_TWEAK_INPUT_HINT = T([[
 
 local CSS_SUGGESTIONS = {
     { _("Long-press for info ⓘ"), _([[
-This popup menu provides a quick CSS cheat sheet, showing common selector syntax and classic CSS properties.
-It also shows some KOReader-specific non-standard CSS features, that can be useful with e-books.
+This menu provides a non-exhaustive CSS syntax and properties list. It also shows some KOReader-specific, non-standard CSS features that can be useful with e-books.
 
-Most of these CSS bits are used by our categorized Style tweaks in the top menu: look there and long-press on a style tweak to see its CSS code and a description of what it does.
-If these are not enough to trigger what you want, you may need to adapt them: tap on their CSS code to copy it to the clipboard. You can then paste it here and edit it.
+Most of these bits are already used by our categorized 'Style tweaks' (found in the top menu). Long-press on any style-tweak option to see its code and its expected results. Should these not be enough to achieve your desired look, you may need to adjust them slightly: tap once on the CSS code-box to copy the code to the clipboard, paste it here and edit it.
 
 Long-press on any item in this popup to get more information on what it does and what it can help solving.
 
