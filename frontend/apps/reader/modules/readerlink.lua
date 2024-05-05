@@ -712,6 +712,10 @@ function ReaderLink:addCurrentLocationToStack(loc)
     table.insert(self.location_stack, location)
 end
 
+function ReaderLink:popFromLocationStack()
+    return table.remove(self.location_stack)
+end
+
 function ReaderLink:onClearLocationStack(show_notification)
     self.location_stack = {}
     self:onClearForwardLocationStack()

@@ -289,6 +289,9 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
             local res = search_func(self, search_term, param, regex, case_insensitive)
             if res then
                 if self.ui.paging then
+                    if not current_page then -- initial search
+                        current_page = self.ui.paging.current_page
+                    end
                     no_results = false
                     self.ui.link:onGotoLink({page = res.page - 1}, neglect_current_location)
                     self.view.highlight.temp[res.page] = res
@@ -357,8 +360,24 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                         self.ui.link:onGotoLink({xpointer=valid_link}, neglect_current_location)
                     end
                 end
-                -- Don't add result pages to location ("Go back") stack
-                neglect_current_location = true
+                if not neglect_current_location then
+                    -- Initial search: onGotoLink() has added the current page to the location stack,
+                    -- and we don't want this to be done when showing further pages with results.
+                    -- But if this initial search is showing results on the current page, we don't want
+                    -- the original page added: we will do it when we jump to a different page.
+                    -- For now, only do this with CreDocument. With PDF, whether in single page mode or
+                    -- in scroll mode, the view can scroll a bit when showing results, and we want to
+                    -- allow "go back" to restore the original viewport.
+                    if self.ui.rolling and self.view.view_mode == "page" then
+                        if current_page == (self.ui.rolling and self.ui.document:getCurrentPage() or self.ui.paging.current_page) then
+                            self.ui.link:popFromLocationStack()
+                            neglect_current_location = false
+                        else
+                            -- We won't add further result pages to the location stack ("Go back").
+                            neglect_current_location = true
+                        end
+                    end
+                end
             end
             if no_results then
                 local notification_text
