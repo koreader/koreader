@@ -915,9 +915,12 @@ function Kobo:init()
     end
 
     -- Detect the NTX charging LED sysfs knob
-    if util.pathExists("/sys/class/leds/bd71828-green-led") then
-        -- Standard Linux LED class, wheee!
-        self.charging_led_sysfs_knob = "/sys/class/leds/bd71828-green-led"
+    if util.pathExists("/sys/class/leds/LED") then
+        self.charging_led_sysfs_knob = "/sys/class/leds/LED/brightness"
+    elseif util.pathExists("/sys/class/leds/GLED") then
+        self.charging_led_sysfs_knob = "/sys/class/leds/GLED/brightness"
+    elseif util.pathExists("/sys/class/leds/bd71828-green-led") then
+        self.charging_led_sysfs_knob = "/sys/class/leds/bd71828-green-led/brightness"
     elseif util.pathExists("/sys/devices/platform/ntx_led/lit") then
         self.ntx_lit_sysfs_knob = "/sys/devices/platform/ntx_led/lit"
     elseif util.pathExists("/sys/devices/platform/pmic_light.1/lit") then
@@ -1517,6 +1520,7 @@ function Kobo:_NTXChargingLEDToggle(toggle)
 end
 
 function Kobo:_LinuxChargingLEDToggle(toggle)
+    -- max_brightness usually says 255 for those, but 1 does the same (and matches Nickel's behavior)
     ffiUtil.writeToSysfs(toggle and "1" or "0", self.charging_led_sysfs_knob)
 end
 
