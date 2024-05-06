@@ -692,7 +692,7 @@ function Screensaver:show()
         self.screensaver_widget.modal = true
         self.screensaver_widget.dithered = true
 
-        UIManager:show(self.screensaver_widget, "full")
+        UIManager:show(self.screensaver_widget, Device:hasKaleidoWfm() and "color" or "full")
     end
 
     -- Setup the gesture lock through an additional invisible widget, so that it works regardless of the configuration.

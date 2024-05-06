@@ -260,6 +260,10 @@ function ReaderView:paintTo(bb, x, y)
     if self.ui.paging then
         if self.document.hw_dithering then
             self.dialog.dithered = true
+            -- Assume we're going to be showing colorful stuff on kaleido panels...
+            if Device:hasKaleidoWfm() then
+                UIManager:setDirty(nil, "color")
+            end
         end
     else
         -- Whereas for CRe,
@@ -274,6 +278,10 @@ function ReaderView:paintTo(bb, x, y)
             -- Request a flashing update while we're at it, but only if it's the first time we're painting it
             if self.state.drawn == false and G_reader_settings:nilOrTrue("refresh_on_pages_with_images") then
                 UIManager:setDirty(nil, "full")
+            end
+            -- On Kaleido panels, we'll want to use GCC16, always...
+            if Device:hasKaleidoWfm() then
+                UIManager:setDirty(nil, "color")
             end
         end
         self.state.drawn = true
