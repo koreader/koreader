@@ -1124,7 +1124,7 @@ function ReaderBookmark:setHighlightedText(item, text)
     self.ui.annotation.annotations[index].text_edited = edited
     -- item table
     item.text_orig = text
-    item.text = self.display_prefix[item.type] .. (item.note or text)
+    item.text = self:getBookmarkItemText(item)
     item.text_edited = edited
     if edited then
         self.refresh()
