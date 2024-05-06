@@ -279,8 +279,8 @@ function ReaderView:paintTo(bb, x, y)
             if self.state.drawn == false and G_reader_settings:nilOrTrue("refresh_on_pages_with_images") then
                 UIManager:setDirty(nil, "full")
             end
-            -- On Kaleido panels, we'll want to use GCC16, always...
-            if Device:hasKaleidoWfm() then
+            -- On Kaleido panels, we'll want to use GCC16 on the actual image, always...
+            if Device:hasKaleidoWfm() and img_coverage >= 0.075 then
                 UIManager:setDirty(nil, "color")
             end
         end
