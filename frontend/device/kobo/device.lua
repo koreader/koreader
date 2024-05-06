@@ -31,7 +31,7 @@ local function koboEnableWifi(toggle)
 end
 
 -- checks if standby is available on the device
-local function checkStandby()
+local function checkStandby(target_state)
     logger.dbg("Kobo: checking if standby is possible ...")
     local f = io.open("/sys/power/state")
     if not f then
@@ -40,11 +40,11 @@ local function checkStandby()
     local mode = f:read()
     f:close()
     logger.dbg("Kobo: available power states:", mode)
-    if mode and mode:find("standby") then
-        logger.dbg("Kobo: standby state is supported")
+    if mode and mode:find(target_state) then
+        logger.dbg("Kobo: target standby state '" .. target_state .. "'is supported")
         return yes
     end
-    logger.dbg("Kobo: standby state is unsupported")
+    logger.dbg("Kobo: target standby state '" .. target_state .. "'is unsupported")
     return no
 end
 
@@ -152,6 +152,8 @@ local Kobo = Generic:extend{
     hasEclipseWfm = no,
     -- Device ships with various hardware revisions under the same device code, requiring automatic hardware detection...
     automagic_sysfs = false,
+    -- The standard "standby" power state
+    standby_state = "standby",
 
     unexpected_wakeup_count = 0,
 }
@@ -950,7 +952,12 @@ function Kobo:init()
     -- Only enable a single core on startup
     self:enableCPUCores(1)
 
-    self.canStandby = checkStandby()
+    -- On MTK, the "standby" power state is unavailable, and Nickel instead uses "mem"
+    if self:isMTK() then
+        self.standby_state = "mem"
+    end
+
+    self.canStandby = checkStandby(self.standby_state)
     if self.canStandby() and (self:isMk7() or self:isSunxi() or self:isMTK())  then
         self.canPowerSaveWhileCharging = yes
     end
@@ -1256,7 +1263,7 @@ function Kobo:standby(max_duration)
     -- WiFi toggle, but (almost) everywhere.
     ffiUtil.usleep(90000) -- sleep 0.09s (0.08s would also work)
 
-    local ret = ffiUtil.writeToSysfs("standby", "/sys/power/state")
+    local ret = ffiUtil.writeToSysfs(self.standby_state, "/sys/power/state")
 
     self.last_standby_time = time.boottime_or_realtime_coarse() - standby_time
     self.total_standby_time = self.total_standby_time + self.last_standby_time
