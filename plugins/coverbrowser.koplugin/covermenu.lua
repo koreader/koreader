@@ -1,4 +1,3 @@
-local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local DocSettings = require("docsettings")
 local InfoMessage = require("ui/widget/infomessage")
