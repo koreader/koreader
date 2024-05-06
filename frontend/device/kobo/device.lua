@@ -836,6 +836,11 @@ function Kobo:init()
         self.canHWDither = yes
     end
 
+    -- Enable Kaleido waveform modes on supported devices
+    if self:hasColorScreen() and self:isMTK() then
+        self.hasKaleidoWfm = yes
+    end
+
     -- NOTE: Devices with an AW99703 frontlight PWM controller feature a hardware smooth ramp when setting the frontlight intensity.
     ---      A side-effect of this behavior is that if you queue a series of intensity changes ending at 0,
     ---      it won't ramp *at all*, jumping straight to zero instead.
