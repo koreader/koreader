@@ -41,10 +41,10 @@ local function checkStandby(target_state)
     f:close()
     logger.dbg("Kobo: available power states:", mode)
     if mode and mode:find(target_state) then
-        logger.dbg("Kobo: target standby state '" .. target_state .. "'is supported")
+        logger.dbg("Kobo: target standby state '" .. target_state .. "' is supported")
         return yes
     end
-    logger.dbg("Kobo: target standby state '" .. target_state .. "'is unsupported")
+    logger.dbg("Kobo: target standby state '" .. target_state .. "' is unsupported")
     return no
 end
 
