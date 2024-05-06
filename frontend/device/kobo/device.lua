@@ -952,7 +952,7 @@ function Kobo:init()
     -- Only enable a single core on startup
     self:enableCPUCores(1)
 
-    -- On MTK, the "standby" power state is unavailable, and Nickel instead uses "mem"
+    -- On MTK, the "standby" power state is unavailable, and Nickel instead uses "mem" (and /sys/power/mem_sleep doesn't exist either)
     if self:isMTK() then
         self.standby_state = "mem"
     end
