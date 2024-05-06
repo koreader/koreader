@@ -534,6 +534,33 @@ local KoboCondor = Kobo:extend{
     isSMP = yes,
 }
 
+-- Kobo Libra Colour:
+local KoboMonza = Kobo:extend{
+    model = "Kobo_monza",
+    isMTK = yes,
+    hasEclipseWfm = yes,
+    canToggleChargingLED = yes,
+    hasFrontlight = yes,
+    hasKeys = yes,
+    hasGSensor = yes,
+    display_dpi = 300,
+    pressure_event = C.ABS_MT_PRESSURE,
+    touch_mirrored_x = false,
+    touch_mirrored_y = true,
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_mixer = "/sys/class/backlight/lm3630a_led/color",
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = true,
+    },
+    battery_sysfs = "/sys/class/power_supply/bd71827_bat",
+    power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event",
+    isSMP = yes,
+    hasColorScreen = yes,
+}
+
 -- Kobo Clara B/W:
 local KoboSpaBW = Kobo:extend{
     model = "Kobo_spaBW",
@@ -563,30 +590,6 @@ local KoboSpaColour = Kobo:extend{
     canToggleChargingLED = yes,
     hasFrontlight = yes,
     touch_snow_protocol = true,
-    display_dpi = 300,
-    hasNaturalLight = yes,
-    frontlight_settings = {
-        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
-        frontlight_mixer = "/sys/class/backlight/lm3630a_led/color",
-        nl_min = 0,
-        nl_max = 10,
-        nl_inverted = true,
-    },
-    battery_sysfs = "/sys/class/power_supply/bd71827_bat",
-    power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event",
-    isSMP = yes,
-    hasColorScreen = yes,
-}
-
--- Kobo Libra Colour:
-local KoboMonza = Kobo:extend{
-    model = "Kobo_monza",
-    isMTK = yes,
-    hasEclipseWfm = yes,
-    canToggleChargingLED = yes,
-    hasFrontlight = yes,
-    hasKeys = yes,
-    hasGSensor = yes,
     display_dpi = 300,
     hasNaturalLight = yes,
     frontlight_settings = {
