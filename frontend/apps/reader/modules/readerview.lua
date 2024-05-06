@@ -95,7 +95,6 @@ function ReaderView:init()
         temp_drawer = "invert",
         temp = {},
         saved_drawer = "lighten",
-        saved = {},
         indicator = nil, -- geom: non-touch highlight position indicator: {x = 50, y=50}
     }
     self.page_states = {}
@@ -522,6 +521,7 @@ function ReaderView:drawTempHighlight(bb, x, y)
 end
 
 function ReaderView:drawSavedHighlight(bb, x, y)
+    if #self.ui.annotation.annotations == 0 then return end
     if self.ui.paging then
         self:drawPageSavedHighlight(bb, x, y)
     else
@@ -529,45 +529,18 @@ function ReaderView:drawSavedHighlight(bb, x, y)
     end
 end
 
--- Returns the list of highlights in page.
--- The list includes full single-page highlights and parts of multi-page highlights.
-function ReaderView:getPageSavedHighlights(page)
-    local highlights = {}
-    local is_reflow = self.document.configurable.text_wrap
-    self.document.configurable.text_wrap = 0
-    for page_num, page_highlights in pairs(self.highlight.saved) do
-        for i, highlight in ipairs(page_highlights) do
-            -- old single-page reflow highlights do not have page in position
-            local pos0_page = highlight.pos0.page or page_num
-            local pos1_page = highlight.pos1.page or page_num
-            if pos0_page <= page and page <= pos1_page then
-                if pos0_page == pos1_page then -- single-page highlight
-                    table.insert(highlights, highlight)
-                else -- multi-page highlight
-                    local item = self.ui.highlight:getSavedExtendedHighlightPage(highlight, page, i)
-                    table.insert(highlights, item)
-                end
-            end
-        end
-    end
-    self.document.configurable.text_wrap = is_reflow
-    return highlights
-end
-
 function ReaderView:drawPageSavedHighlight(bb, x, y)
     local pages = self:getCurrentPageList()
     for _, page in ipairs(pages) do
-        local items = self:getPageSavedHighlights(page)
+        local items = self.ui.highlight:getPageSavedHighlights(page)
         for _, item in ipairs(items) do
             local boxes = self.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
             if boxes then
-                local drawer = item.drawer or self.highlight.saved_drawer
-                local draw_note_mark = self.highlight.note_mark and
-                    self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
+                local draw_note_mark = item.note and self.highlight.note_mark
                 for _, box in ipairs(boxes) do
                     local rect = self:pageToScreenTransform(page, box)
                     if rect then
-                        self:drawHighlightRect(bb, x, y, rect, drawer, draw_note_mark)
+                        self:drawHighlightRect(bb, x, y, rect, item.drawer, draw_note_mark)
                         if draw_note_mark and self.highlight.note_mark == "sidemark" then
                             draw_note_mark = false -- side mark in the first line only
                         end
@@ -583,48 +556,38 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
     -- showing menu...). We might want to cache these boxes per page (and
     -- clear that cache when page layout change or highlights are added
     -- or removed).
-    local cur_view_top, cur_view_bottom
-    for _, items in pairs(self.highlight.saved) do
-        if items then
-            for j = 1, #items do
-                local item = items[j]
-                local pos0, pos1 = item.pos0, item.pos1
-                -- document:getScreenBoxesFromPositions() is expensive, so we
-                -- first check this item is on current page
-                if not cur_view_top then
-                    -- Even in page mode, it's safer to use pos and ui.dimen.h
-                    -- than pages' xpointers pos, even if ui.dimen.h is a bit
-                    -- larger than pages' heights
-                    cur_view_top = self.document:getCurrentPos()
-                    if self.view_mode == "page" and self.document:getVisiblePageCount() > 1 then
-                        cur_view_bottom = cur_view_top + 2 * self.ui.dimen.h
-                    else
-                        cur_view_bottom = cur_view_top + self.ui.dimen.h
+    -- Even in page mode, it's safer to use pos and ui.dimen.h
+    -- than pages' xpointers pos, even if ui.dimen.h is a bit
+    -- larger than pages' heights
+    local cur_view_top = self.document:getCurrentPos()
+    local cur_view_bottom
+    if self.view_mode == "page" and self.document:getVisiblePageCount() > 1 then
+        cur_view_bottom = cur_view_top + 2 * self.ui.dimen.h
+    else
+        cur_view_bottom = cur_view_top + self.ui.dimen.h
+    end
+    for _, item in ipairs(self.ui.annotation.annotations) do
+        if item.drawer then
+            -- document:getScreenBoxesFromPositions() is expensive, so we
+            -- first check if this item is on current page
+            local start_pos = self.document:getPosFromXPointer(item.pos0)
+            local end_pos = self.document:getPosFromXPointer(item.pos1)
+            if start_pos <= cur_view_bottom and end_pos >= cur_view_top then
+                local boxes = self.document:getScreenBoxesFromPositions(item.pos0, item.pos1, true) -- get_segments=true
+                if boxes then
+                    local draw_note_mark = item.note and self.highlight.note_mark
+                    for _, box in ipairs(boxes) do
+                        if box.h ~= 0 then
+                            self:drawHighlightRect(bb, x, y, box, item.drawer, draw_note_mark)
+                            if draw_note_mark and self.highlight.note_mark == "sidemark" then
+                                draw_note_mark = false -- side mark in the first line only
+                            end
+                        end
                     end
                 end
-                local spos0 = self.document:getPosFromXPointer(pos0)
-                local spos1 = self.document:getPosFromXPointer(pos1)
-                local start_pos = math.min(spos0, spos1)
-                local end_pos = math.max(spos0, spos1)
-                if start_pos <= cur_view_bottom and end_pos >= cur_view_top then
-                    local boxes = self.document:getScreenBoxesFromPositions(pos0, pos1, true) -- get_segments=true
-                    if boxes then
-                        local drawer = item.drawer or self.highlight.saved_drawer
-                        local draw_note_mark = self.highlight.note_mark and
-                            self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
-                        for _, box in ipairs(boxes) do
-                            if box.h ~= 0 then
-                                self:drawHighlightRect(bb, x, y, box, drawer, draw_note_mark)
-                                if draw_note_mark and self.highlight.note_mark == "sidemark" then
-                                    draw_note_mark = false -- side mark in the first line only
-                                end
-                            end
-                        end -- end for each box
-                    end -- end if boxes
-                end
-            end -- end for each highlight
+            end
         end
-    end -- end for all saved highlight
+    end
 end
 
 function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, draw_note_mark)
@@ -914,40 +877,6 @@ function ReaderView:onReadSettings(config)
     self:resetLayout()
     local page_scroll = config:readSetting("kopt_page_scroll") or self.document.configurable.page_scroll
     self.page_scroll = page_scroll == 1 and true or false
-    self.highlight.saved = config:readSetting("highlight", {})
-    -- Highlight formats in crengine and mupdf are incompatible.
-    -- Backup highlights when the document is opened with incompatible engine.
-    local page, page_highlights
-    while true do -- remove empty tables for pages without highlights and get the first page with highlights
-        page, page_highlights = next(self.highlight.saved)
-        if not page or #page_highlights > 0 then
-            break -- we're done (there is none, or there is some usable)
-        else
-            self.highlight.saved[page] = nil -- clean it up while we're at it, and find another one
-        end
-    end
-    if page_highlights then
-        local highlight_type = type(page_highlights[1].pos0)
-        if self.ui.rolling and highlight_type == "table" then
-            config:saveSetting("highlight_paging", self.highlight.saved)
-            self.highlight.saved = config:readSetting("highlight_rolling", {})
-            config:saveSetting("highlight", self.highlight.saved)
-            config:delSetting("highlight_rolling")
-        elseif self.ui.paging and highlight_type == "string" then
-            config:saveSetting("highlight_rolling", self.highlight.saved)
-            self.highlight.saved = config:readSetting("highlight_paging", {})
-            config:saveSetting("highlight", self.highlight.saved)
-            config:delSetting("highlight_paging")
-        end
-    else
-        if self.ui.rolling and config:has("highlight_rolling") then
-            self.highlight.saved = config:readSetting("highlight_rolling")
-            config:delSetting("highlight_rolling")
-        elseif self.ui.paging and config:has("highlight_paging") then
-            self.highlight.saved = config:readSetting("highlight_paging")
-            config:delSetting("highlight_paging")
-        end
-    end
     self.inverse_reading_order = config:isTrue("inverse_reading_order") or G_reader_settings:isTrue("inverse_reading_order")
     self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or G_defaults:readSetting("DSHOWOVERLAP")
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
@@ -1107,7 +1036,6 @@ function ReaderView:onSaveSettings()
     if G_reader_settings:nilOrFalse("lock_rotation") then
         self.document.configurable.rotation_mode = Screen:getRotationMode() -- will be saved by ReaderConfig
     end
-    self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.page_overlap_enable)
     self.ui.doc_settings:saveSetting("page_overlap_style", self.page_overlap_style)

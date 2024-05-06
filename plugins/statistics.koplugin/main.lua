@@ -187,7 +187,7 @@ function ReaderStatistics:initData()
 
     self.data.pages = self.document:getPageCount()
     -- Update these numbers to what's actually stored in the settings
-    self.data.highlights, self.data.notes = self.ui.bookmark:getNumberOfHighlightsAndNotes()
+    self.data.highlights, self.data.notes = self.ui.annotation:getNumberOfHighlightsAndNotes()
     self.id_curr_book = self:getIdBookDB()
     self.book_read_pages, self.book_read_time = self:getPageTimeTotalStats(self.id_curr_book)
     if self.book_read_pages > 0 then
@@ -2622,6 +2622,13 @@ function ReaderStatistics:onPageUpdate(pageno)
         return
     end
 
+    if self._reading_paused_ts then
+        -- Reading paused: don't update stats, but remember the current
+        -- page for when reading resumed.
+        self._reading_paused_curr_page = pageno
+        return
+    end
+
     -- We only care about *actual* page turns ;)
     if self.curr_page == pageno then
         return
@@ -2727,27 +2734,14 @@ function ReaderStatistics:onCloseDocument()
     self:insertDB()
 end
 
-function ReaderStatistics:onAddHighlight()
+function ReaderStatistics:onAnnotationsModified(annotations)
     if self.settings.is_enabled then
-        self.data.highlights = self.data.highlights + 1
-    end
-end
-
-function ReaderStatistics:onDelHighlight()
-    if self.settings.is_enabled then
-        self.data.highlights = self.data.highlights - 1
-    end
-end
-
-function ReaderStatistics:onAddNote()
-    if self.settings.is_enabled then
-        self.data.notes = self.data.notes + 1
-    end
-end
-
-function ReaderStatistics:onDelNote()
-    if self.settings.is_enabled then
-        self.data.notes = self.data.notes - 1
+        if annotations.nb_highlights_added then
+            self.data.highlights = self.data.highlights + annotations.nb_highlights_added
+        end
+        if annotations.nb_notes_added then
+            self.data.notes = self.data.notes + annotations.nb_notes_added
+        end
     end
 end
 
@@ -2785,6 +2779,11 @@ function ReaderStatistics:onReadingResumed()
             local data_tuple = page_data and page_data[#page_data]
             if data_tuple then
                 data_tuple[1] = data_tuple[1] + pause_duration
+            end
+            if self._reading_paused_curr_page and self._reading_paused_curr_page ~= self.curr_page then
+                self._reading_paused_ts = nil
+                self:onPageUpdate(self._reading_paused_curr_page)
+                self._reading_paused_curr_page = nil
             end
         end
     end

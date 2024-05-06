@@ -8,10 +8,13 @@ local util = require("util")
 local collection_file = DataStorage:getSettingsDir() .. "/collection.lua"
 
 local ReadCollection = {
-    coll = {},
+    coll = nil, -- hash table
+    coll_order = nil, -- hash table
     last_read_time = 0,
     default_collection_name = "favorites",
 }
+
+-- read, write
 
 local function buildEntry(file, order, mandatory)
     file = FFIUtil.realpath(file)
@@ -41,6 +44,7 @@ function ReadCollection:_read()
     end
     logger.dbg("ReadCollection: reading from collection file")
     self.coll = {}
+    self.coll_order = {}
     for coll_name, collection in pairs(collections.data) do
         local coll = {}
         for _, v in ipairs(collection) do
@@ -50,14 +54,23 @@ function ReadCollection:_read()
             end
         end
         self.coll[coll_name] = coll
+        if not collection.settings then -- favorites, first run
+            collection.settings = { order = 1 }
+        end
+        self.coll_order[coll_name] = collection.settings.order
     end
 end
 
 function ReadCollection:write(collection_name)
     local collections = LuaSettings:open(collection_file)
+    for coll_name in pairs(collections.data) do
+        if not self.coll[coll_name] then
+            collections:delSetting(coll_name)
+        end
+    end
     for coll_name, coll in pairs(self.coll) do
         if not collection_name or coll_name == collection_name then
-            local data = {}
+            local data = { settings = { order = self.coll_order[coll_name] } }
             for _, item in pairs(coll) do
                 table.insert(data, { file = item.file, order = item.order })
             end
@@ -68,20 +81,32 @@ function ReadCollection:write(collection_name)
     collections:flush()
 end
 
-function ReadCollection:getFileCollectionName(file, collection_name)
+-- info
+
+function ReadCollection:isFileInCollection(file, collection_name)
     file = FFIUtil.realpath(file) or file
-    for coll_name, coll in pairs(self.coll) do
-        if not collection_name or coll_name == collection_name then
-            if coll[file] then
-                return coll_name, file
-            end
-        end
-    end
+    return self.coll[collection_name][file] and true or false
 end
 
-function ReadCollection:hasFile(file, collection_name)
-    local coll_name = self:getFileCollectionName(file, collection_name)
-    return coll_name and true or false
+function ReadCollection:isFileInCollections(file)
+    file = FFIUtil.realpath(file) or file
+    for _, coll in pairs(self.coll) do
+        if coll[file] then
+            return true
+        end
+    end
+    return false
+end
+
+function ReadCollection:getCollectionsWithFile(file)
+    file = FFIUtil.realpath(file) or file
+    local collections = {}
+    for coll_name, coll in pairs(self.coll) do
+        if coll[file] then
+            collections[coll_name] = true
+        end
+    end
+    return collections
 end
 
 function ReadCollection:getCollectionMaxOrder(collection_name)
@@ -94,61 +119,74 @@ function ReadCollection:getCollectionMaxOrder(collection_name)
     return max_order
 end
 
-function ReadCollection:getOrderedCollection(collection_name)
-    local ordered_coll = {}
-    for _, item in pairs(self.coll[collection_name]) do
-        table.insert(ordered_coll, item)
-    end
-    table.sort(ordered_coll, function(v1, v2) return v1.order < v2.order end)
-    return ordered_coll
-end
-
-function ReadCollection:updateCollectionOrder(collection_name, ordered_coll)
-    local coll = self.coll[collection_name]
-    for i, item in ipairs(ordered_coll) do
-        coll[item.file].order = i
-    end
-    self:write(collection_name)
-end
+-- manage items
 
 function ReadCollection:addItem(file, collection_name)
-    collection_name = collection_name or self.default_collection_name
     local max_order = self:getCollectionMaxOrder(collection_name)
     local item = buildEntry(file, max_order + 1)
     self.coll[collection_name][item.file] = item
     self:write(collection_name)
 end
 
-function ReadCollection:addItems(files, collection_name) -- files = { filepath = true, }
-    collection_name = collection_name or self.default_collection_name
-    local coll = self.coll[collection_name]
-    local max_order = self:getCollectionMaxOrder(collection_name)
-    local do_write
+function ReadCollection:addRemoveItemMultiple(file, collections_to_add)
+    file = FFIUtil.realpath(file) or file
+    for coll_name, coll in pairs(self.coll) do
+        if collections_to_add[coll_name] then
+            if not coll[file] then
+                local max_order = self:getCollectionMaxOrder(coll_name)
+                coll[file] = buildEntry(file, max_order + 1)
+            end
+        else
+            if coll[file] then
+                coll[file] = nil
+            end
+        end
+    end
+    self:write()
+end
+
+function ReadCollection:addItemsMultiple(files, collections_to_add)
     for file in pairs(files) do
-        if not self:hasFile(file) then
-            max_order = max_order + 1
-            local item = buildEntry(file, max_order)
-            coll[item.file] = item
-            do_write = true
+        file = FFIUtil.realpath(file) or file
+        for coll_name in pairs(collections_to_add) do
+            local coll = self.coll[coll_name]
+            if not coll[file] then
+                local max_order = self:getCollectionMaxOrder(coll_name)
+                coll[file] = buildEntry(file, max_order + 1)
+            end
         end
     end
-    if do_write then
-        self:write(collection_name)
+    self:write()
+end
+
+function ReadCollection:removeItem(file, collection_name, no_write) -- FM: delete file; FMColl: remove file
+    file = FFIUtil.realpath(file) or file
+    if collection_name then
+        if self.coll[collection_name][file] then
+            self.coll[collection_name][file] = nil
+            if not no_write then
+                self:write(collection_name)
+            end
+            return true
+        end
+    else
+        local do_write
+        for _, coll in pairs(self.coll) do
+            if coll[file] then
+                coll[file] = nil
+                do_write = true
+            end
+        end
+        if do_write then
+            if not no_write then
+                self:write()
+            end
+            return true
+        end
     end
 end
 
-function ReadCollection:removeItem(file, collection_name, no_write)
-    local coll_name, file_name = self:getFileCollectionName(file, collection_name)
-    if coll_name then
-        self.coll[coll_name][file_name] = nil
-        if not no_write then
-            self:write(coll_name)
-        end
-        return true
-    end
-end
-
-function ReadCollection:removeItems(files) -- files = { filepath = true, }
+function ReadCollection:removeItems(files) -- FM: delete files
     local do_write
     for file in pairs(files) do
         if self:removeItem(file, nil, true) then
@@ -160,12 +198,12 @@ function ReadCollection:removeItems(files) -- files = { filepath = true, }
     end
 end
 
-function ReadCollection:removeItemsByPath(path)
+function ReadCollection:removeItemsByPath(path) -- FM: delete folder
     local do_write
     for coll_name, coll in pairs(self.coll) do
         for file_name in pairs(coll) do
             if util.stringStartsWith(file_name, path) then
-                self.coll[coll_name][file_name] = nil
+                coll[file_name] = nil
                 do_write = true
             end
         end
@@ -185,20 +223,12 @@ function ReadCollection:_updateItem(coll_name, file_name, new_filepath, new_path
     coll[item.file] = item
 end
 
-function ReadCollection:updateItem(file, new_filepath)
-    local coll_name, file_name = self:getFileCollectionName(file)
-    if coll_name then
-        self:_updateItem(coll_name, file_name, new_filepath)
-        self:write(coll_name)
-    end
-end
-
-function ReadCollection:updateItems(files, new_path) -- files = { filepath = true, }
+function ReadCollection:updateItem(file, new_filepath) -- FM: rename file, move file
+    file = FFIUtil.realpath(file) or file
     local do_write
-    for file in pairs(files) do
-        local coll_name, file_name = self:getFileCollectionName(file)
-        if coll_name then
-            self:_updateItem(coll_name, file_name, nil, new_path)
+    for coll_name, coll in pairs(self.coll) do
+        if coll[file] then
+            self:_updateItem(coll_name, file, new_filepath)
             do_write = true
         end
     end
@@ -207,7 +237,23 @@ function ReadCollection:updateItems(files, new_path) -- files = { filepath = tru
     end
 end
 
-function ReadCollection:updateItemsByPath(path, new_path)
+function ReadCollection:updateItems(files, new_path) -- FM: move files
+    local do_write
+    for file in pairs(files) do
+        file = FFIUtil.realpath(file) or file
+        for coll_name, coll in pairs(self.coll) do
+            if coll[file] then
+                self:_updateItem(coll_name, file, nil, new_path)
+                do_write = true
+            end
+        end
+    end
+    if do_write then
+        self:write()
+    end
+end
+
+function ReadCollection:updateItemsByPath(path, new_path) -- FM: rename folder, move folder
     local len = #path
     local do_write
     for coll_name, coll in pairs(self.coll) do
@@ -221,6 +267,58 @@ function ReadCollection:updateItemsByPath(path, new_path)
     if do_write then
         self:write()
     end
+end
+
+function ReadCollection:getOrderedCollection(collection_name)
+    local ordered_coll = {}
+    for _, item in pairs(self.coll[collection_name]) do
+        table.insert(ordered_coll, item)
+    end
+    table.sort(ordered_coll, function(v1, v2) return v1.order < v2.order end)
+    return ordered_coll
+end
+
+function ReadCollection:updateCollectionOrder(collection_name, ordered_coll)
+    local coll = self.coll[collection_name]
+    for i, item in ipairs(ordered_coll) do
+        coll[item.file].order = i
+    end
+    self:write(collection_name)
+end
+
+-- manage collections
+
+function ReadCollection:addCollection(coll_name)
+    local max_order = 0
+    for _, order in pairs(self.coll_order) do
+        if max_order < order then
+            max_order = order
+        end
+    end
+    self.coll_order[coll_name] = max_order + 1
+    self.coll[coll_name] = {}
+    self:write(coll_name)
+end
+
+function ReadCollection:renameCollection(coll_name, new_name)
+    self.coll_order[new_name] = self.coll_order[coll_name]
+    self.coll[new_name] = self.coll[coll_name]
+    self.coll_order[coll_name] = nil
+    self.coll[coll_name] = nil
+    self:write(new_name)
+end
+
+function ReadCollection:removeCollection(coll_name)
+    self.coll_order[coll_name] = nil
+    self.coll[coll_name] = nil
+    self:write()
+end
+
+function ReadCollection:updateCollectionListOrder(ordered_coll)
+    for i, item in ipairs(ordered_coll) do
+        self.coll_order[item.name] = i
+    end
+    self:write()
 end
 
 ReadCollection:_read()

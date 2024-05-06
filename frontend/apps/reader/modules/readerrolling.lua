@@ -100,7 +100,7 @@ function ReaderRolling:init()
             self.valid_cache_rendering_hash = self.ui.document:getDocumentRenderingHash(false)
         end
     end)
-    table.insert(self.ui.postReaderCallback, function()
+    table.insert(self.ui.postReaderReadyCallback, function()
         self:updatePos()
         -- Disable crengine internal history, with required redraw
         self.ui.document:enableInternalHistory(false)
@@ -234,7 +234,7 @@ function ReaderRolling:onReadSettings(config)
         -- And check if we can migrate to a newest DOM version after
         -- the book is loaded (unless the user told us not to).
         if config:nilOrFalse("cre_keep_old_dom_version") then
-            self.ui:registerPostReadyCallback(function()
+            self.ui:registerPostReaderReadyCallback(function()
                 self:checkXPointersAndProposeDOMVersionUpgrade()
             end)
         end
@@ -1029,9 +1029,9 @@ function ReaderRolling:onUpdatePos(force)
     if self.batched_update_count > 0 then
         return
     end
-    if self.ui.postReaderCallback ~= nil then -- ReaderUI:init() not yet done
+    if self.ui.postReaderReadyCallback ~= nil then -- ReaderUI:init() not yet done
         -- Don't schedule any updatePos as long as ReaderUI:init() is
-        -- not finished (one will be called in the ui.postReaderCallback
+        -- not finished (one will be called in the ui.postReaderReadyCallback
         -- we have set above) to avoid multiple refreshes.
         return true
     end
@@ -1129,7 +1129,7 @@ function ReaderRolling:onRedrawCurrentView()
 end
 
 function ReaderRolling:onSetDimensions(dimen)
-    if self.ui.postReaderCallback ~= nil then
+    if self.ui.postReaderReadyCallback ~= nil then
         -- ReaderUI:init() not yet done: just set document dimensions
         self.ui.document:setViewDimen(Screen:getSize())
         -- (what's done in the following else is done elsewhere by
@@ -1445,25 +1445,12 @@ function ReaderRolling:checkXPointersAndProposeDOMVersionUpgrade()
     local applyFuncToXPointersSlots = function(func)
         -- Last position
         func(self, "xpointer", "last position in book")
-        -- Bookmarks
-        if self.ui.bookmark and self.ui.bookmark.bookmarks and #self.ui.bookmark.bookmarks > 0 then
+        -- Annotations
+        if self.ui.annotation and self.ui.annotation.annotations and #self.ui.annotation.annotations > 0 then
             local slots = { "page", "pos0", "pos1" }
-            for _, bookmark in ipairs(self.ui.bookmark.bookmarks) do
+            for _, item in ipairs(self.ui.annotation.annotations) do
                 for _, slot in ipairs(slots) do
-                    func(bookmark, slot, bookmark.notes or "bookmark")
-                end
-            end
-        end
-        -- Highlights
-        if self.view.highlight and self.view.highlight.saved then
-            local slots = { "pos0", "pos1" }
-            for page, items in pairs(self.view.highlight.saved) do
-                if items and #items > 0 then
-                    for _, highlight in ipairs(items) do
-                        for _, slot in ipairs(slots) do
-                            func(highlight, slot, highlight.text or "highlight")
-                        end
-                    end
+                    func(item, slot, item.text or "annotation")
                 end
             end
         end
@@ -1509,6 +1496,9 @@ function ReaderRolling:checkXPointersAndProposeDOMVersionUpgrade()
         local new_xp = normalized_xpointers[xp]
         if new_xp then
             obj[slot] = new_xp
+            if slot == "page" then
+                self.ui.annotation:updateItemByXPointer(obj)
+            end
         else
             -- Let lost/not-found XPointer be. There is a small chance that
             -- it will be found (it it was made before the boxing code moved

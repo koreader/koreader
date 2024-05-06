@@ -503,14 +503,14 @@ Show translated text in TextViewer, with alternate translations
 @string source_lang[opt="auto"] (`"en"`, `"fr"`, `…`) or `"auto"` to auto-detect source language
 @string target_lang[opt] (`"en"`, `"fr"`, `…`)
 --]]
-function Translator:showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, page, index)
+function Translator:showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, index)
     if Device:hasClipboard() then
         Device.input.setClipboardText(text)
     end
 
     local NetworkMgr = require("ui/network/manager")
     if NetworkMgr:willRerunWhenOnline(function()
-                self:showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, page, index)
+                self:showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, index)
             end) then
         return
     end
@@ -519,11 +519,11 @@ function Translator:showTranslation(text, detailed_view, source_lang, target_lan
     -- translation service query.
     local Trapper = require("ui/trapper")
     Trapper:wrap(function()
-        self:_showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, page, index)
+        self:_showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, index)
     end)
 end
 
-function Translator:_showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, page, index)
+function Translator:_showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, index)
     if not target_lang then
         target_lang = self:getTargetLanguage()
     end
@@ -632,8 +632,8 @@ function Translator:_showTranslation(text, detailed_view, source_lang, target_la
                             UIManager:close(textviewer)
                             UIManager:close(ui.highlight.highlight_dialog)
                             ui.highlight.highlight_dialog = nil
-                            if page then
-                                ui.highlight:editHighlight(page, index, false, text_main)
+                            if index then
+                                ui.highlight:editHighlight(index, false, text_main)
                             else
                                 ui.highlight:addNote(text_main)
                             end
@@ -645,8 +645,8 @@ function Translator:_showTranslation(text, detailed_view, source_lang, target_la
                             UIManager:close(textviewer)
                             UIManager:close(ui.highlight.highlight_dialog)
                             ui.highlight.highlight_dialog = nil
-                            if page then
-                                ui.highlight:editHighlight(page, index, false, text_all)
+                            if index then
+                                ui.highlight:editHighlight(index, false, text_all)
                             else
                                 ui.highlight:addNote(text_all)
                             end

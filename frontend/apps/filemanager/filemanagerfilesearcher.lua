@@ -265,7 +265,7 @@ function FileSearcher:onMenuSelect(item)
             table.insert(buttons, {}) -- separator
             table.insert(buttons, {
                 filemanagerutil.genResetSettingsButton(file, close_dialog_callback, is_currently_opened),
-                filemanagerutil.genAddRemoveFavoritesButton(file, close_dialog_callback),
+                self.ui.collections:genAddToCollectionButton(file, close_dialog_callback),
             })
         end
         table.insert(buttons, {

@@ -73,11 +73,18 @@ end
 -- Purge doc settings except kept
 function filemanagerutil.resetDocumentSettings(file)
     local settings_to_keep = {
+        annotations = true,
+        annotations_paging = true,
+        annotations_rolling = true,
         bookmarks = true,
+        bookmarks_paging = true,
+        bookmarks_rolling = true,
         bookmarks_sorted_20220106 = true,
         bookmarks_version = true,
         cre_dom_version = true,
         highlight = true,
+        highlight_paging = true,
+        highlight_rolling = true,
         highlights_imported = true,
         last_page = true,
         last_xpointer = true,
@@ -230,25 +237,6 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
             }
             confirmbox:addWidget(check_button_metadata)
             UIManager:show(confirmbox)
-        end,
-    }
-end
-
-function filemanagerutil.genAddRemoveFavoritesButton(file, caller_callback, button_disabled)
-    local ReadCollection = require("readcollection")
-    local has_file = ReadCollection:hasFile(file)
-    return {
-        text_func = function()
-            return has_file and _("Remove from favorites") or _("Add to favorites")
-        end,
-        enabled = not button_disabled,
-        callback = function()
-            caller_callback()
-            if has_file then
-                ReadCollection:removeItem(file)
-            else
-                ReadCollection:addItem(file)
-            end
         end,
     }
 end

@@ -168,6 +168,7 @@ local order = {
         "history",
         "open_last_document",
         "----------------------------",
+        "favorites",
         "collections",
         "----------------------------",
         "mass_storage_actions", -- if Device:canToggleMassStorage()

@@ -24,20 +24,41 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v4
         with:
+          clean: false
           fetch-depth: 0
+          filter: tree:0
+          show-progress: false
 
       - name: Homebrew install dependencies
-        # Compared to the README, adds ccache for faster compilation times
-        # Compared to the emulator, adds p7zip.
-        run: >
-          brew install -q nasm ragel binutils coreutils libtool autoconf automake cmake makedepend
-          sdl2 lua@5.1 luarocks gettext pkg-config wget gnu-getopt grep bison
-          ccache p7zip
+        # Compared to the README, adds p7zip.
+        run: |
+          packages=(
+            nasm binutils coreutils libtool autoconf automake cmake makedepend
+            sdl2 lua@5.1 luarocks gettext pkg-config wget gnu-getopt grep bison
+            p7zip
+          )
+          # Lua 5.1 is disabled, so we need to work around that:
+          # - fetch all packages
+          brew fetch "${packages[@]}"
+          # - disable auto-updates
+          export HOMEBREW_NO_AUTO_UPDATE=1
+          # - install lua@5.1 from cache
+          brew install "$(brew --cache lua@5.1)"
+          # - and install the rest
+          brew install "${packages[@]}"
+
+      - name: Update PATH
+        run: |
+          printf '%s\n' \
+            "$(brew --prefix)/opt/bison/bin" \
+            "$(brew --prefix)/opt/gettext/bin" \
+            "$(brew --prefix)/opt/gnu-getopt/bin" \
+            "$(brew --prefix)/opt/grep/libexec/gnubin" \
+            >>"${GITHUB_PATH}"
 
       - name: Building in progress…
         run: |
           export MACOSX_DEPLOYMENT_TARGET=10.15;
-          export PATH="$(brew --prefix)/opt/gettext/bin:$(brew --prefix)/opt/gnu-getopt/bin:$(brew --prefix)/opt/bison/bin:$(brew --prefix)/opt/grep/libexec/gnubin:${PATH}";
           ./kodev release macos
 
       - name: Uploading artifacts
