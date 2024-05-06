@@ -832,7 +832,7 @@ function Kobo:init()
         self.hasNaturalLightMixer = yes
     end
     -- Ditto
-    if self:isMk7() then
+    if self:isMk7() or self:isMTK() then
         self.canHWDither = yes
     end
 
