@@ -849,6 +849,11 @@ function Kobo:init()
         self.frontlight_settings.ramp_off_delay = 0.5
     end
 
+    -- I don't know how this PWM controller behaves on earlier devices, but it's... not great here.
+    if self:hasNaturalLightMixer() and self:isMTK() and self.frontlight_settings.frontlight_mixer:find("lm3630a_led", 12, true) then
+        self.frontlight_settings.ramp_delay =  0.025
+    end
+
     self.powerd = require("device/kobo/powerd"):new{
         device = self,
         battery_sysfs = self.battery_sysfs,
