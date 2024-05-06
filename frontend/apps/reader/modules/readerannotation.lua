@@ -26,6 +26,11 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
         end
         pageno = self.ui.paging and bm.page or self.document:getPageFromXPointer(bm.page)
     end
+    if self.ui.paging and bm.pos0 and not bm.pos0.page then
+        -- old single-page reflow highlights do not have page in position
+        bm.pos0.page = bm.page
+        bm.pos1.page = bm.page
+    end
     if not hl then -- page bookmark or orphaned bookmark
         hl = {}
         if bm.highlighted then -- orphaned bookmark
@@ -38,13 +43,6 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
                     hl.pboxes = self.document:getPageBoxesFromPositions(bm.page, bm.pos0, bm.pos0)
                 end
             end
-        end
-    end
-    if self.ui.paging then
-        -- old single-page reflow highlights do not have page in position
-        if not bm.pos0.page then
-            bm.pos0.page = bm.page
-            bm.pos1.page = bm.page
         end
     end
     return { -- annotation
