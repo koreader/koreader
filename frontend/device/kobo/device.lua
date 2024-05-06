@@ -971,7 +971,9 @@ function Kobo:init()
     end
 
     self.canStandby = checkStandby(self.standby_state)
-    if self.canStandby() and (self:isMk7() or self:isSunxi() or self:isMTK()) then
+    if self.canStandby() and (self:isMk7() or self:isSunxi()) then
+        -- NOTE: Do *NOT* enable this on MTK. What happens if you do can only be described as "shit hits the fan".
+        --       (Nickel doesn't).
         self.canPowerSaveWhileCharging = yes
     end
 
