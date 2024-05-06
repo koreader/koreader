@@ -1749,11 +1749,11 @@ elseif codename == "goldfinch" then
     return KoboGoldfinch
 elseif codename == "condor" then
     return KoboCondor
-elseif codename == "monza" then
+elseif codename == "monza" or codename == "monzaTolino" then
     return KoboMonza
-elseif codename == "spaBW" then
+elseif codename == "spaBW" or codename == "spaTolinoBW" then
     return KoboSpaBW
-elseif codename == "spaColour" then
+elseif codename == "spaColour" or codename == "spaTolinoColour" then
     return KoboSpaColour
 else
     error("unrecognized Kobo model ".. codename .. " with device id " .. product_id)
