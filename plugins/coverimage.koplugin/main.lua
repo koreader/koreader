@@ -126,11 +126,12 @@ function CoverImage:createCoverImage(doc_settings)
             local scale_factor = math.min(s_w / i_w, s_h / i_h)
 
             if Screen:getRotationMode() == Screen.DEVICE_ROTATED_UPSIDE_DOWN
-                or Screen:getRotationMode() == Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE then
-                    print("xxxxx rotating")
-                cover_image:rotate(180) -- this does not work ????
-            end
+                or Screen:getRotationMode() == Screen.DEVICE_ROTATED_CLOCKWISE then
 
+                local flipped_cover = cover_image:rotatedCopy(180)
+                cover_image:free()
+                cover_image = flipped_cover
+            end
 
             if self.cover_image_background == "none" or scale_factor == 1 then
                 local act_format = self.cover_image_format == "auto" and getExtension(self.cover_image_path) or self.cover_image_format
@@ -484,7 +485,9 @@ function CoverImage:menuEntryCache()
                     end
                     return T(_("Maximum number of cached covers: %1"), number)
                 end,
-                help_text = _("If set to zero the number of cache files is unlimited.\nIf set to -1 the cache is disabled."),
+                help_text = string.format("%s\n\n%s",
+                    _("If set to zero the number of cache files is unlimited.\nIf set to -1 the cache is disabled."),
+                    _("Each screen orientation requires its own cache file.")),
                 checked_func = function()
                     return self.cover_image_cache_maxfiles >= 0
                 end,
