@@ -14,7 +14,6 @@ local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local DictQuickLookUp = require("ui/widget/dictquicklookup")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local Font = require("ui/font")
@@ -1919,8 +1918,8 @@ function VocabBuilder:addToMainMenu(menu_items)
     }
 end
 
-function VocabularyBuilderWidget:onDictButtonsReady(_, buttons)
-    if self.due_time > os.time() then
+function VocabItemWidget:onDictButtonsReady(obj, buttons)
+    if self.item.due_time > os.time() then
         return nil
     end
     local tweaked_button_count = 0
@@ -1932,7 +1931,7 @@ function VocabularyBuilderWidget:onDictButtonsReady(_, buttons)
                     id = "got_it",
                     text = _("Got it"),
                     callback = function()
-                        self.widget:gotItFromDict(self.word)
+                        self.widget:gotItFromDict(self.item.word)
                         UIManager:sendEvent(Event:new("Close"))
                     end
                 }
@@ -1946,7 +1945,7 @@ function VocabularyBuilderWidget:onDictButtonsReady(_, buttons)
                     id = "forgot",
                     text = _("Forgot"),
                     callback = function()
-                        self.widget:forgotFromDict(self.word)
+                        self.widget:forgotFromDict(self.item.word)
                         UIManager:sendEvent(Event:new("Close"))
                     end
                 }
@@ -2016,6 +2015,7 @@ function VocabBuilder:setupWidget()
             reload_items_callback = reload_items
         }
     end
+    self[1] = self.widget
 end
 
 function VocabBuilder:onDispatcherRegisterActions()
