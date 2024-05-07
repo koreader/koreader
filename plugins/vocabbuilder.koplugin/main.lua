@@ -59,41 +59,6 @@ local subtitle_color = Blitbuffer.COLOR_DARK_GRAY
 local dim_color = Blitbuffer.COLOR_GRAY_3
 local settings = G_reader_settings:readSetting("vocabulary_builder", {enabled = false, with_context = true})
 
-local function resetButtonOnLookupWindow()
-    if not settings.enabled then -- auto add words
-        DictQuickLookUp.tweak_buttons_func = function(obj, buttons)
-            if obj.is_wiki_fullpage then
-                return
-            elseif obj.is_wiki then
-                -- make wiki window have the same button_tweak as its presenting dictionary window
-                local widget = UIManager:getNthTopWidget(2)
-                if widget and widget.tweak_buttons_func then
-                    widget:tweak_buttons_func(buttons)
-                end
-                return
-            end
-            table.insert(buttons, 1, {{
-                id = "vocabulary",
-                text = _("Add to vocabulary builder"),
-                font_bold = false,
-                callback = function()
-                    local book_title = (obj.ui.doc_props and obj.ui.doc_props.display_title) or _("Dictionary lookup")
-                    obj.ui:handleEvent(Event:new("WordLookedUp", obj.word, book_title, true)) -- is_manual: true
-                    local button = obj.button_table.button_by_id["vocabulary"]
-                    if button then
-                        button:disable()
-                        UIManager:setDirty(obj, function()
-                            return "ui", button.dimen
-                        end)
-                    end
-                end
-            }})
-        end
-    else
-        DictQuickLookUp.tweak_buttons_func = nil
-    end
-end
-
 local function saveSettings()
     G_reader_settings:saveSetting("vocabulary_builder", settings)
 end
@@ -1954,6 +1919,35 @@ function VocabBuilder:addToMainMenu(menu_items)
     }
 end
 
+function VocabBuilder:onDictButtonsReady(obj, buttons)
+    if obj.is_wiki_fullpage then
+        return
+    elseif obj.is_wiki then
+        -- make wiki window have the same button_tweak as its presenting dictionary window
+        local widget = UIManager:getNthTopWidget(2)
+        if widget and widget.tweak_buttons_func then
+            widget:tweak_buttons_func(buttons)
+        end
+        return
+    end
+    table.insert(buttons, 1, {{
+        id = "vocabulary",
+        text = _("Add to vocabulary builder"),
+        font_bold = false,
+        callback = function()
+            local book_title = (obj.ui.doc_props and obj.ui.doc_props.display_title) or _("Dictionary lookup")
+            obj.ui:handleEvent(Event:new("WordLookedUp", obj.word, book_title, true)) -- is_manual: true
+            local button = obj.button_table.button_by_id["vocabulary"]
+            if button then
+                button:disable()
+                UIManager:setDirty(obj, function()
+                    return "ui", button.dimen
+                end)
+            end
+        end
+    }})
+end
+
 function VocabBuilder:setupWidget()
     if self.widget then
         self.widget:reloadItems()
@@ -2057,6 +2051,5 @@ function VocabBuilder:onWordLookedUp(word, title, is_manual)
 end
 
 -- register button in readerdictionary
-resetButtonOnLookupWindow()
 
 return VocabBuilder
