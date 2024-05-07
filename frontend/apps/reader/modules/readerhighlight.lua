@@ -1119,6 +1119,7 @@ function ReaderHighlight:_getHighlightMenuAnchor()
         if self.ui.paging then
             text_box = self.view:pageToScreenTransform(self.ui.paging.current_page, text_box)
         end
+        if text_box == nil then return end -- fallback to "center"
         anchor_y = text_box.y + text_box.h + Size.padding.small -- do not stick to the box
         if anchor_y + dialog_box.h <= self.screen_h - Size.padding.small then -- enough room below box with gest_pos
             prefers_pop_down = true
