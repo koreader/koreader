@@ -11,7 +11,6 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local IconWidget = require("ui/widget/iconwidget")
 local ImageWidget = require("ui/widget/imagewidget")
-local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
@@ -21,7 +20,6 @@ local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
-local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -98,7 +96,6 @@ local ListMenuItem = InputContainer:extend{
     entry = nil, -- hash, mandatory
     text = nil,
     show_parent = nil,
-    detail = nil,
     dimen = nil,
     shortcut = nil,
     shortcut_style = "square",
@@ -136,7 +133,6 @@ function ListMenuItem:init()
             style = self.shortcut_style,
         }
     end
-    self.detail = self.text
 
     -- we need this table per-instance, so we declare it here
     self.ges_events = {
@@ -875,11 +871,6 @@ function ListMenuItem:onUnfocus()
     return true
 end
 
-function ListMenuItem:onShowItemDetail()
-    UIManager:show(InfoMessage:new{ text = self.detail, })
-    return true
-end
-
 -- The transient color inversions done in MenuItem:onTapSelect
 -- and MenuItem:onHoldSelect are ugly when done on an image,
 -- so let's not do it
@@ -992,19 +983,15 @@ function ListMenu:_updateItemsBuildUI()
     table.insert(self.item_group, line_widget)
     local idx_offset = (self.page - 1) * self.perpage
     for idx = 1, self.perpage do
-        local entry = self.item_table[idx_offset + idx]
+        local index = idx_offset + idx
+        local entry = self.item_table[index]
         if entry == nil then break end
-
+        entry.idx = index
         -- Keyboard shortcuts, as done in Menu
-        local item_shortcut = nil
-        local shortcut_style = "square"
+        local item_shortcut, shortcut_style
         if self.is_enable_shortcut then
-            -- give different shortcut_style to keys in different
-            -- lines of keyboard
-            if idx >= 11 and idx <= 20 then
-                shortcut_style = "grey_square"
-            end
             item_shortcut = self.item_shortcuts[idx]
+            shortcut_style = (idx < 11 or idx > 20) and "square" or "grey_square"
         end
 
         local item_tmp = ListMenuItem:new{

@@ -159,18 +159,17 @@ function CoverBrowser:addToMainMenu(menu_items)
     -- add Mosaic / Detailed list mode settings to File browser Settings submenu
     -- next to Classic mode settings
     if menu_items.filebrowser_settings == nil then return end
+    local fc = self.ui.file_chooser
     table.insert (menu_items.filebrowser_settings.sub_item_table, 5, {
         text = _("Mosaic and detailed list settings"),
         separator = true,
         sub_item_table = {
             {
                 text_func = function()
-                    local fc = self.ui.file_chooser
                     return T(_("Items per page in portrait mosaic mode: %1 × %2"), fc.nb_cols_portrait, fc.nb_rows_portrait)
                 end,
                 -- Best to not "keep_menu_open = true", to see how this apply on the full view
                 callback = function()
-                    local fc = self.ui.file_chooser
                     local nb_cols = fc.nb_cols_portrait
                     local nb_rows = fc.nb_rows_portrait
                     local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
@@ -216,11 +215,9 @@ function CoverBrowser:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    local fc = self.ui.file_chooser
                     return T(_("Items per page in landscape mosaic mode: %1 × %2"), fc.nb_cols_landscape, fc.nb_rows_landscape)
                 end,
                 callback = function()
-                    local fc = self.ui.file_chooser
                     local nb_cols = fc.nb_cols_landscape
                     local nb_rows = fc.nb_rows_landscape
                     local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
@@ -266,13 +263,11 @@ function CoverBrowser:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    local fc = self.ui.file_chooser
                     -- default files_per_page should be calculated by ListMenu on the first drawing,
                     -- use 10 if ListMenu has not been drawn yet
                     return T(_("Items per page in portrait list mode: %1"), fc.files_per_page or 10)
                 end,
                 callback = function()
-                    local fc = self.ui.file_chooser
                     local files_per_page = fc.files_per_page or 10
                     local SpinWidget = require("ui/widget/spinwidget")
                     local widget = SpinWidget:new{
@@ -312,7 +307,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         checked_func = function() return BookInfoManager:getSetting("show_progress_in_mosaic") end,
                         callback = function()
                             BookInfoManager:toggleSetting("show_progress_in_mosaic")
-                            self:refreshFileManagerInstance()
+                            fc:updateItems(1, true)
                         end,
                         separator = true,
                     },
@@ -321,7 +316,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         checked_func = function() return not BookInfoManager:getSetting("hide_page_info") end,
                         callback = function()
                             BookInfoManager:toggleSetting("hide_page_info")
-                            self:refreshFileManagerInstance()
+                            fc:updateItems(1, true)
                         end,
                     },
                     {
@@ -330,7 +325,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         checked_func = function() return BookInfoManager:getSetting("show_pages_read_as_progress") end,
                         callback = function()
                             BookInfoManager:toggleSetting("show_pages_read_as_progress")
-                            self:refreshFileManagerInstance()
+                            fc:updateItems(1, true)
                         end,
                     },
                     {
@@ -339,7 +334,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         checked_func = function() return BookInfoManager:getSetting("show_pages_left_in_progress") end,
                         callback = function()
                             BookInfoManager:toggleSetting("show_pages_left_in_progress")
-                            self:refreshFileManagerInstance()
+                            fc:updateItems(1, true)
                         end,
                     },
                 },
@@ -352,7 +347,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         checked_func = function() return not BookInfoManager:getSetting("no_hint_description") end,
                         callback = function()
                             BookInfoManager:toggleSetting("no_hint_description")
-                            self:refreshFileManagerInstance()
+                            fc:updateItems(1, true)
                         end,
                     },
                     {
@@ -360,7 +355,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         checked_func = function() return BookInfoManager:getSetting("history_hint_opened") end,
                         callback = function()
                             BookInfoManager:toggleSetting("history_hint_opened")
-                            self:refreshFileManagerInstance()
+                            fc:updateItems(1, true)
                         end,
                     },
                     {
@@ -368,7 +363,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         checked_func = function() return BookInfoManager:getSetting("collections_hint_opened") end,
                         callback = function()
                             BookInfoManager:toggleSetting("collections_hint_opened")
-                            self:refreshFileManagerInstance()
+                            fc:updateItems(1, true)
                         end,
                     }
                 }
@@ -386,7 +381,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                                 series_mode = "append_series_to_authors"
                             end
                             BookInfoManager:saveSetting("series_mode", series_mode)
-                            self:refreshFileManagerInstance()
+                            fc:updateItems(1, true)
                         end,
                     },
                     {
@@ -399,7 +394,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                                 series_mode = "append_series_to_title"
                             end
                             BookInfoManager:saveSetting("series_mode", series_mode)
-                            self:refreshFileManagerInstance()
+                            fc:updateItems(1, true)
                         end,
                     },
                     {
@@ -412,7 +407,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                                 series_mode = "series_in_separate_line"
                             end
                             BookInfoManager:saveSetting("series_mode", series_mode)
-                            self:refreshFileManagerInstance()
+                            fc:updateItems(1, true)
                         end,
                     },
                 },
@@ -424,7 +419,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     BookInfoManager:toggleSetting("hide_file_info")
-                    self:refreshFileManagerInstance()
+                    fc:updateItems(1, true)
                 end,
                 separator = true,
             },
