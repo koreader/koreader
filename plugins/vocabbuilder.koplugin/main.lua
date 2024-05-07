@@ -472,7 +472,6 @@ end
 function MenuDialog:onChangeEnableStatus(args, position)
     settings.enabled = position == 2
     saveSettings()
-    resetButtonOnLookupWindow()
 end
 
 function MenuDialog:onConfigChoose(values, name, event, args, position)
@@ -1219,6 +1218,7 @@ end
 Container widget. Same as sortwidget
 --]]--
 local VocabularyBuilderWidget = FocusManager:extend{
+    id = "vocab_builder_widget",
     title = "",
     width = nil,
     height = nil,
@@ -1919,15 +1919,55 @@ function VocabBuilder:addToMainMenu(menu_items)
     }
 end
 
-function VocabBuilder:onDictButtonsReady(obj, buttons)
-    if obj.is_wiki_fullpage then
-        return
-    elseif obj.is_wiki then
-        -- make wiki window have the same button_tweak as its presenting dictionary window
-        local widget = UIManager:getNthTopWidget(2)
-        if widget and widget.tweak_buttons_func then
-            widget:tweak_buttons_func(buttons)
+function VocabularyBuilderWidget:onDictButtonsReady(_, buttons)
+    if self.due_time > os.time() then
+        return nil
+    end
+    local tweaked_button_count = 0
+    local early_break
+    for j = 1, #buttons do
+        for k = 1, #buttons[j] do
+            if buttons[j][k].id == "highlight" and not buttons[j][k].enabled then
+                buttons[j][k] = {
+                    id = "got_it",
+                    text = _("Got it"),
+                    callback = function()
+                        self.widget:gotItFromDict(self.word)
+                        UIManager:sendEvent(Event:new("Close"))
+                    end
+                }
+                if tweaked_button_count == 1 then
+                    early_break = true
+                    break
+                end
+                tweaked_button_count = tweaked_button_count + 1
+            elseif buttons[j][k].id == "search" and not buttons[j][k].enabled then
+                buttons[j][k] = {
+                    id = "forgot",
+                    text = _("Forgot"),
+                    callback = function()
+                        self.widget:forgotFromDict(self.word)
+                        UIManager:sendEvent(Event:new("Close"))
+                    end
+                }
+                if tweaked_button_count == 1 then
+                    early_break = true
+                    break
+                end
+                tweaked_button_count = tweaked_button_count + 1
+            end
         end
+        if early_break then break end
+    end
+    return true -- we consume the event here!
+end
+
+function VocabBuilder:onDictButtonsReady(obj, buttons)
+    if settings.enabled then
+        -- words are added automatically, no need to add the button
+        return
+    end
+    if obj.is_wiki_fullpage then
         return
     end
     table.insert(buttons, 1, {{
@@ -1957,54 +1997,11 @@ function VocabBuilder:setupWidget()
         local reload_items = function(widget)
                 widget.reload_time = os.time()
                 local vocab_items = {}
-                for i = 1, DB:selectCount(widget) do
+                for _ = 1, DB:selectCount(widget) do
                     table.insert(vocab_items, {
                         callback = function(item)
-                            -- custom button table
-                            local tweak_buttons_func = function() end
-                            if item.due_time <= os.time() then
-                                tweak_buttons_func = function(obj, buttons)
-                                    local tweaked_button_count = 0
-                                    local early_break
-                                    for j = 1, #buttons do
-                                        for k = 1, #buttons[j] do
-                                            if buttons[j][k].id == "highlight" and not buttons[j][k].enabled then
-                                                buttons[j][k] = {
-                                                    id = "got_it",
-                                                    text = _("Got it"),
-                                                    callback = function()
-                                                        self.widget:gotItFromDict(item.word)
-                                                        UIManager:sendEvent(Event:new("Close"))
-                                                    end
-                                                }
-                                                if tweaked_button_count == 1 then
-                                                    early_break = true
-                                                    break
-                                                end
-                                                tweaked_button_count = tweaked_button_count + 1
-                                            elseif buttons[j][k].id == "search" and not buttons[j][k].enabled then
-                                                buttons[j][k] = {
-                                                    id = "forgot",
-                                                    text = _("Forgot"),
-                                                    callback = function()
-                                                        self.widget:forgotFromDict(item.word)
-                                                        UIManager:sendEvent(Event:new("Close"))
-                                                    end
-                                                }
-                                                if tweaked_button_count == 1 then
-                                                    early_break = true
-                                                    break
-                                                end
-                                                tweaked_button_count = tweaked_button_count + 1
-                                            end
-                                        end
-                                        if early_break then break end
-                                    end
-                                end
-                            end
-
                             widget.current_lookup_word = item.word
-                            self.ui:handleEvent(Event:new("LookupWord", item.word, true, nil, nil, nil, tweak_buttons_func))
+                            self.ui:handleEvent(Event:new("LookupWord", item.word, true, nil, nil, nil))
                         end
                     })
                 end
