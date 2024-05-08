@@ -1918,9 +1918,12 @@ function VocabBuilder:addToMainMenu(menu_items)
     }
 end
 
-function VocabItemWidget:onDictButtonsReady(obj, buttons)
+function VocabItemWidget:onDictButtonsReady(popup_dict, buttons)
+    if self.item.word ~= popup_dict.word then
+        return
+    end
     if self.item.due_time > os.time() then
-        return nil
+        return true
     end
     local tweaked_button_count = 0
     local early_break
@@ -1931,7 +1934,7 @@ function VocabItemWidget:onDictButtonsReady(obj, buttons)
                     id = "got_it",
                     text = _("Got it"),
                     callback = function()
-                        self.widget:gotItFromDict(self.item.word)
+                        self.show_parent:gotItFromDict(self.item.word)
                         UIManager:sendEvent(Event:new("Close"))
                     end
                 }
@@ -1945,7 +1948,7 @@ function VocabItemWidget:onDictButtonsReady(obj, buttons)
                     id = "forgot",
                     text = _("Forgot"),
                     callback = function()
-                        self.widget:forgotFromDict(self.item.word)
+                        self.show_parent:forgotFromDict(self.item.word)
                         UIManager:sendEvent(Event:new("Close"))
                     end
                 }
