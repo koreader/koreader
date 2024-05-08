@@ -524,25 +524,25 @@ function ReaderBookmark:onShowBookmark(match_table)
     self.show_edited_only = nil
     self.select_mode = false
     self.filtered_mode = match_table and true or false
+    self.is_reverse_sorting = G_reader_settings:nilOrTrue("bookmarks_items_reverse_sorting") -- page numbers descending
 
     -- build up item_table
     local item_table = {}
-    local is_reverse_sorting = G_reader_settings:nilOrTrue("bookmarks_items_reverse_sorting") -- page numbers descending
     local curr_page_num = self:getCurrentPageNumber()
     local curr_page_string = self:getBookmarkPageString(curr_page_num)
     local curr_page_index = self.ui.annotation:getInsertionIndex({page = curr_page_num})
     local num = #self.ui.annotation.annotations + 1
-    curr_page_index = is_reverse_sorting and num - curr_page_index or curr_page_index
+    curr_page_index = self.is_reverse_sorting and num - curr_page_index or curr_page_index
     local curr_page_index_filtered = curr_page_index
     for i = 1, #self.ui.annotation.annotations do
-        local v = self.ui.annotation.annotations[is_reverse_sorting and num - i or i]
+        local v = self.ui.annotation.annotations[self.is_reverse_sorting and num - i or i]
         local item = util.tableDeepCopy(v)
         item.text_orig = item.text or ""
         item.type = self.getBookmarkType(item)
         if not match_table or self:doesBookmarkMatchTable(item, match_table) then
             item.text = self:getBookmarkItemText(item)
             item.mandatory = self:getBookmarkPageString(item.page)
-            if (not is_reverse_sorting and i >= curr_page_index) or (is_reverse_sorting and i <= curr_page_index) then
+            if (not self.is_reverse_sorting and i >= curr_page_index) or (self.is_reverse_sorting and i <= curr_page_index) then
                 item.after_curr_page = true
                 item.mandatory_dim = true
             end
@@ -910,7 +910,7 @@ function ReaderBookmark:onShowBookmark(match_table)
                     callback = function()
                         UIManager:close(bm_dialog)
                         local _, idx = bookmark:getLatestBookmark()
-                        idx = is_reverse_sorting and #item_table - idx + 1 or idx
+                        idx = self.is_reverse_sorting and #item_table - idx + 1 or idx
                         bm_menu:switchItemTable(nil, item_table, idx)
                         bm_menu:onMenuHold(item_table[idx])
                     end,
@@ -961,6 +961,11 @@ function ReaderBookmark:onShowBookmark(match_table)
     return true
 end
 
+function ReaderBookmark:getBookmarkItemIndex(item)
+    return (self.filtered_mode or self.show_edited_only) and self.ui.annotation:getItemIndex(item)
+        or (self.is_reverse_sorting and #self.ui.annotation.annotations - item.idx + 1 or item.idx)
+end
+
 function ReaderBookmark:getBookmarkItemText(item)
     if item.type == "highlight" or self.items_text == "text" then
         return self.display_prefix[item.type] .. item.text_orig
@@ -995,7 +1000,7 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note)
         index = item_or_index
     else
         item = item_or_index -- in item_table
-        index = (self.filtered_mode or self.show_edited_only) and self.ui.annotation:getItemIndex(item) or item.idx
+        index = self:getBookmarkItemIndex(item)
     end
     local annotation = self.ui.annotation.annotations[index]
     local type_before = item and item.type or self.getBookmarkType(annotation)
@@ -1119,7 +1124,7 @@ function ReaderBookmark:setHighlightedText(item, text)
         end
     end
     -- annotation
-    local index = (self.filtered_mode or self.show_edited_only) and self.ui.annotation:getItemIndex(item) or item.idx
+    local index = self:getBookmarkItemIndex(item)
     self.ui.annotation.annotations[index].text = text
     self.ui.annotation.annotations[index].text_edited = edited
     -- item table
