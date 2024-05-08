@@ -558,7 +558,6 @@ function ReaderUI:showFileManager(file)
     local last_dir, last_file
     if file then
         last_dir = util.splitFilePathName(file)
-        last_dir = last_dir:match("(.*)/")
         last_file = file
     else
         last_dir, last_file = self:getLastDirFile(true)
