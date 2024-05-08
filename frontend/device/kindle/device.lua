@@ -1399,14 +1399,10 @@ function KindleScribe:init()
             logger.dbg("orientation_code =", orientation_code)
             local rotation_mode = 0
             if orientation_code then
-                if orientation_code == "U" then
+                if orientation_code == "U" or "L" then
                     rotation_mode = self.screen.DEVICE_ROTATED_UPRIGHT
-                elseif orientation_code == "R" then
-                    rotation_mode = self.screen.DEVICE_ROTATED_CLOCKWISE
-                elseif orientation_code == "D" then
+                elseif orientation_code == "D" or "R" then
                     rotation_mode = self.screen.DEVICE_ROTATED_UPSIDE_DOWN
-                elseif orientation_code == "L" then
-                    rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
             if rotation_mode > 0 then
