@@ -722,14 +722,14 @@ function ReaderHighlight:onTapPageSavedHighlight(ges)
     local pos = self.view:screenToPageTransform(ges.pos)
     local highlights_tapped = {}
     for _, page in ipairs(pages) do
-        local items = self:getPageSavedHighlights(page)
+        local items, idx_offset = self:getPageSavedHighlights(page)
         for i, item in ipairs(items) do
             local boxes = self.ui.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
             if boxes then
                 for __, box in ipairs(boxes) do
                     if inside_box(pos, box) then
                         logger.dbg("Tap on highlight")
-                        local hl_i = item.parent or i -- parent exists in multi-page highlight only
+                        local hl_i = item.parent or (i + idx_offset) -- parent exists in multi-page highlight only
                         if self.select_mode then
                             if hl_i == self.highlight_idx then
                                 -- tap on the first fragment: abort select mode, clear highlight
@@ -2018,9 +2018,13 @@ end
 -- The list includes full single-page highlights and parts of multi-page highlights.
 -- (For pdf documents only)
 function ReaderHighlight:getPageSavedHighlights(page)
+    local idx_offset
     local highlights = {}
     for index, highlight in ipairs(self.ui.annotation.annotations) do
         if highlight.drawer and highlight.pos0.page <= page and page <= highlight.pos1.page then
+            if idx_offset == nil then
+                idx_offset = index - 1
+            end
             if highlight.ext then -- multi-page highlight
                 local item = self:getSavedExtendedHighlightPage(highlight, page, index)
                 table.insert(highlights, item)
@@ -2029,7 +2033,7 @@ function ReaderHighlight:getPageSavedHighlights(page)
             end
         end
     end
-    return highlights
+    return highlights, idx_offset
 end
 
 -- Returns one page of saved multi-page highlight
@@ -2039,6 +2043,7 @@ function ReaderHighlight:getSavedExtendedHighlightPage(highlight, page, index)
         datetime = highlight.datetime,
         drawer   = highlight.drawer,
         text     = highlight.text,
+        note     = highlight.note,
         page     = highlight.page,
         pos0     = highlight.ext[page].pos0,
         pos1     = highlight.ext[page].pos1,
