@@ -222,7 +222,7 @@ function ReaderView:paintTo(bb, x, y)
             self.arrow:paintTo(bb, 0, self.dim_area.y == 0 and self.dim_area.h - center_offset or self.dim_area.y - center_offset)
         elseif self.page_overlap_style == "line" then
             bb:paintRect(0, self.dim_area.y == 0 and self.dim_area.h or self.dim_area.y,
-                self.dim_area.w, Size.line.medium, Blitbuffer.COLOR_BLACK)
+                self.dim_area.w, Size.line.medium, Blitbuffer.COLOR_DARK_GRAY)
         end
     end
     -- draw saved highlight
@@ -789,7 +789,7 @@ function ReaderView:onSetRotationMode(rotation)
     if rotation ~= nil then
         local old_rotation = Screen:getRotationMode()
         if rotation == old_rotation then
-            return true
+            return
         end
 
         -- NOTE: We cannot rely on getScreenMode, as it actually checks the screen dimensions, instead of the rotation mode.
@@ -806,7 +806,7 @@ function ReaderView:onSetRotationMode(rotation)
             Screen:setRotationMode(rotation)
             UIManager:setDirty(self.dialog, "full")
             Notification:notify(T(_("Rotation mode set to: %1"), optionsutil:getOptionText("SetRotationMode", rotation)))
-            return true
+            return
         end
 
         Screen:setRotationMode(rotation)
@@ -818,7 +818,7 @@ function ReaderView:onSetRotationMode(rotation)
     self.ui:onScreenResize(new_screen_size)
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
     Notification:notify(T(_("Rotation mode set to: %1"), optionsutil:getOptionText("SetRotationMode", rotation)))
-    return true
+    return
 end
 
 function ReaderView:onSetDimensions(dimensions)

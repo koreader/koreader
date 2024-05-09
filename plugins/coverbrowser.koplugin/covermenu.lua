@@ -1,10 +1,8 @@
-local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local DocSettings = require("docsettings")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
-local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local logger = require("logger")
 local _ = require("gettext")
 
@@ -77,7 +75,7 @@ function CoverMenu:updateCache(file, status, do_create, pages)
     end
 end
 
-function CoverMenu:updateItems(select_number)
+function CoverMenu:updateItems(select_number, no_recalculate_dimen)
     -- As done in Menu:updateItems()
     local old_dimen = self.dimen and self.dimen:copy()
     -- self.layout must be updated for focusmanager
@@ -87,7 +85,9 @@ function CoverMenu:updateItems(select_number)
     --       on the rest of the widget elements being properly laid-out,
     --       so we have to run it *first*, unlike in Menu.
     --       Otherwise, various layout issues arise (e.g., MosaicMenu's page_info is misaligned).
-    self:_recalculateDimen()
+    if not no_recalculate_dimen then
+        self:_recalculateDimen()
+    end
     self.page_info:resetLayout()
     self.return_button:resetLayout()
     self.content_group:resetLayout()
@@ -145,9 +145,6 @@ function CoverMenu:updateItems(select_number)
     -- As done in Menu:updateItems()
     self:updatePageInfo(select_number)
 
-    if self.show_path then
-        self.title_bar:setSubTitle(BD.directory(filemanagerutil.abbreviate(self.path)))
-    end
     self.show_parent.dithered = self._has_cover_images
     UIManager:setDirty(self.show_parent, function()
         local refresh_dimen =
@@ -282,7 +279,7 @@ function CoverMenu:updateItems(select_number)
                                 ["ignore_cover"] = not bookinfo.ignore_cover and 'Y' or false,
                             })
                             UIManager:close(self.file_dialog)
-                            self:updateItems()
+                            self:updateItems(1, true)
                         end,
                     },
                     { -- Allow user to ignore some bad metadata (filename will be used instead)
@@ -293,7 +290,7 @@ function CoverMenu:updateItems(select_number)
                                 ["ignore_meta"] = not bookinfo.ignore_meta and 'Y' or false,
                             })
                             UIManager:close(self.file_dialog)
-                            self:updateItems()
+                            self:updateItems(1, true)
                         end,
                     },
                 })
@@ -305,7 +302,7 @@ function CoverMenu:updateItems(select_number)
                             self:updateCache(file)
                             BookInfoManager:deleteBookInfo(file)
                             UIManager:close(self.file_dialog)
-                            self:updateItems()
+                            self:updateItems(1, true)
                         end,
                     },
                 })
@@ -360,7 +357,7 @@ function CoverMenu:onHistoryMenuHold(item)
                     ["ignore_cover"] = not bookinfo.ignore_cover and 'Y' or false,
                 })
                 UIManager:close(self.histfile_dialog)
-                self:updateItems()
+                self:updateItems(1, true)
             end,
         },
         { -- Allow user to ignore some bad metadata (filename will be used instead)
@@ -371,7 +368,7 @@ function CoverMenu:onHistoryMenuHold(item)
                     ["ignore_meta"] = not bookinfo.ignore_meta and 'Y' or false,
                 })
                 UIManager:close(self.histfile_dialog)
-                self:updateItems()
+                self:updateItems(1, true)
             end,
         },
     })
@@ -383,7 +380,7 @@ function CoverMenu:onHistoryMenuHold(item)
                 self:updateCache(file)
                 BookInfoManager:deleteBookInfo(file)
                 UIManager:close(self.histfile_dialog)
-                self:updateItems()
+                self:updateItems(1, true)
             end,
         },
     })
@@ -431,7 +428,7 @@ function CoverMenu:onCollectionsMenuHold(item)
                     ["ignore_cover"] = not bookinfo.ignore_cover and 'Y' or false,
                 })
                 UIManager:close(self.collfile_dialog)
-                self:updateItems()
+                self:updateItems(1, true)
             end,
         },
         { -- Allow user to ignore some bad metadata (filename will be used instead)
@@ -442,7 +439,7 @@ function CoverMenu:onCollectionsMenuHold(item)
                     ["ignore_meta"] = not bookinfo.ignore_meta and 'Y' or false,
                 })
                 UIManager:close(self.collfile_dialog)
-                self:updateItems()
+                self:updateItems(1, true)
             end,
         },
     })
@@ -454,7 +451,7 @@ function CoverMenu:onCollectionsMenuHold(item)
                 self:updateCache(file)
                 BookInfoManager:deleteBookInfo(file)
                 UIManager:close(self.collfile_dialog)
-                self:updateItems()
+                self:updateItems(1, true)
             end,
         },
     })

@@ -12,7 +12,6 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local IconWidget = require("ui/widget/iconwidget")
 local ImageWidget = require("ui/widget/imagewidget")
-local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local ProgressWidget = require("ui/widget/progresswidget")
@@ -20,7 +19,6 @@ local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
-local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -350,7 +348,6 @@ local MosaicMenuItem = InputContainer:extend{
     entry = nil, -- table, mandatory
     text = nil,
     show_parent = nil,
-    detail = nil,
     dimen = nil,
     shortcut = nil,
     shortcut_style = "square",
@@ -387,7 +384,6 @@ function MosaicMenuItem:init()
         }
     end
 
-    self.detail = self.text
     self.percent_finished = nil
     self.status = nil
 
@@ -826,11 +822,6 @@ function MosaicMenuItem:onUnfocus()
     return true
 end
 
-function MosaicMenuItem:onShowItemDetail()
-    UIManager:show(InfoMessage:new{ text = self.detail, })
-    return true
-end
-
 -- The transient color inversions done in MenuItem:onTapSelect
 -- and MenuItem:onHoldSelect are ugly when done on an image,
 -- so let's not do it
@@ -937,11 +928,19 @@ end
 
 function MosaicMenu:_updateItemsBuildUI()
     -- Build our grid
-    local idx_offset = (self.page - 1) * self.perpage
     local cur_row = nil
+    local idx_offset = (self.page - 1) * self.perpage
     for idx = 1, self.perpage do
-        local entry = self.item_table[idx_offset + idx]
+        local index = idx_offset + idx
+        local entry = self.item_table[index]
         if entry == nil then break end
+        entry.idx = index
+        -- Keyboard shortcuts, as done in Menu
+        local item_shortcut, shortcut_style
+        if self.is_enable_shortcut then
+            item_shortcut = self.item_shortcuts[idx]
+            shortcut_style = (idx < 11 or idx > 20) and "square" or "grey_square"
+        end
 
         if idx % self.nb_cols == 1 then -- new row
             table.insert(self.item_group, VerticalSpan:new{ width = self.item_margin })
@@ -956,18 +955,6 @@ function MosaicMenu:_updateItemsBuildUI()
                 cur_row
             })
             table.insert(cur_row, HorizontalSpan:new({ width = self.item_margin }))
-        end
-
-        -- Keyboard shortcuts, as done in Menu
-        local item_shortcut = nil
-        local shortcut_style = "square"
-        if self.is_enable_shortcut then
-            -- give different shortcut_style to keys in different
-            -- lines of keyboard
-            if idx >= 11 and idx <= 20 then
-                shortcut_style = "grey_square"
-            end
-            item_shortcut = self.item_shortcuts[idx]
         end
 
         local item_tmp = MosaicMenuItem:new{
