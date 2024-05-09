@@ -113,7 +113,7 @@ local ImageWidget = Widget:extend{
     _max_off_center_y_ratio = 0,
 
     -- So we can reset self.scale_factor to its initial value in free(), in
-    -- case this same object is free'd but re-used and and re-render'ed
+    -- case this same object is free'd but re-used and re-render'ed
     _initial_scale_factor = nil,
 
     _bb = nil,

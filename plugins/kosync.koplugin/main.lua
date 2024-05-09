@@ -680,7 +680,7 @@ function KOSync:updateProgress(ensure_networking, interactive, refresh_on_succes
         if interactive then showSyncError() end
         if err then logger.dbg("err:", err) end
     else
-        -- This is solely for onSuspend's sake, to clear the ghosting left by the the "Connected" InfoMessage
+        -- This is solely for onSuspend's sake, to clear the ghosting left by the "Connected" InfoMessage
         if refresh_on_success then
             -- Our top-level widget should be the "Connected to network" InfoMessage from NetworkMgr's reconnectOrShowNetworkMenu
             local widget = UIManager:getTopmostVisibleWidget()
