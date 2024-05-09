@@ -557,10 +557,9 @@ local KoboMonza = Kobo:extend{
         nl_max = 10,
         nl_inverted = true,
     },
-    battery_sysfs = "/sys/class/power_supply/bd71827_bat",
-    power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event",
     isSMP = yes,
     hasColorScreen = yes,
+    automagic_sysfs = true,
 }
 
 -- Kobo Clara B/W:
@@ -580,8 +579,7 @@ local KoboSpaBW = Kobo:extend{
         nl_max = 10,
         nl_inverted = true,
     },
-    battery_sysfs = "/sys/class/power_supply/bd71827_bat",
-    power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event",
+    automagic_sysfs = true,
 }
 
 -- Kobo Clara Colour:
@@ -601,10 +599,9 @@ local KoboSpaColour = Kobo:extend{
         nl_max = 10,
         nl_inverted = true,
     },
-    battery_sysfs = "/sys/class/power_supply/bd71827_bat",
-    power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event",
     isSMP = yes,
     hasColorScreen = yes,
+    automagic_sysfs = true,
 }
 
 function Kobo:setupChargingLED()
