@@ -1,18 +1,22 @@
 describe("ReaderBookmark module", function()
-    local DocumentRegistry, ReaderUI, UIManager, Screen, Geom, DocSettings
+    local DataStorage, DocumentRegistry, ReaderUI, UIManager, Screen, Geom, DocSettings, Util
     local sample_epub, sample_pdf
 
     setup(function()
         require("commonrequire")
+        DataStorage = require("datastorage")
         DocSettings = require("docsettings")
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")
         UIManager = require("ui/uimanager")
         Screen = require("device").screen
         Geom = require("ui/geometry")
+        Util = require("ffi/util")
 
         sample_epub = "spec/front/unit/data/juliet.epub"
-        sample_pdf = "spec/front/unit/data/sample.pdf"
+        sample_pdf = DataStorage:getDataDir() .. "/readerbookmark.pdf"
+
+        Util.copyFile("spec/front/unit/data/sample.pdf", sample_pdf)
     end)
 
     local function highlight_text(readerui, pos0, pos1)
