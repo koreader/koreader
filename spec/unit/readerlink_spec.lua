@@ -14,62 +14,60 @@ describe("ReaderLink module", function()
         sample_pdf = "spec/front/unit/data/paper.pdf"
     end)
 
+    local readerui
+
+    after_each(function()
+        readerui:closeDocument()
+        readerui:onClose()
+        readerui = nil
+        UIManager:quit()
+        UIManager._exit_code = nil
+    end)
+
     describe("with epub", function()
 
-        it("should jump to links #nocov", function()
-            local readerui = ReaderUI:new{
+        before_each(function()
+            readerui = ReaderUI:new{
                 dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_epub),
             }
+        end)
+
+        it("should jump to links #nocov", function()
             readerui.rolling:onGotoPage(5)
             readerui.link:onTap(nil, {pos = {x = 320, y = 190}})
             assert.is.same(37, readerui.rolling.current_page)
-            readerui:closeDocument()
-            readerui:onClose()
         end)
 
         it("should be able to go back after link jump #nocov", function()
-            local readerui = ReaderUI:new{
-                dimen = Screen:getSize(),
-                document = DocumentRegistry:openDocument(sample_epub),
-            }
             readerui.rolling:onGotoPage(5)
             readerui.link:onTap(nil, {pos = {x = 320, y = 190}})
             assert.is.same(37, readerui.rolling.current_page)
             readerui.link:onGoBackLink()
             assert.is.same(5, readerui.rolling.current_page)
-            readerui:closeDocument()
-            readerui:onClose()
         end)
 
     end)
 
     describe("with pdf", function()
 
-        it("should jump to links in page mode", function()
-            UIManager:quit()
-            UIManager._exit_code = nil
-            local readerui = ReaderUI:new{
+        before_each(function()
+            readerui = ReaderUI:new{
                 dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_pdf),
             }
+        end)
+
+        it("should jump to links in page mode", function()
             readerui:handleEvent(Event:new("SetScrollMode", false))
             readerui:handleEvent(Event:new("SetZoomMode", "page"))
             readerui.paging:onGotoPage(1)
             readerui.link:onTap(nil, {pos = {x = 363, y = 565}})
             UIManager:run()
             assert.is.same(22, readerui.paging.current_page)
-            readerui:closeDocument()
-            readerui:onClose()
         end)
 
         it("should jump to links in scroll mode", function()
-            UIManager:quit()
-            UIManager._exit_code = nil
-            local readerui = ReaderUI:new{
-                dimen = Screen:getSize(),
-                document = DocumentRegistry:openDocument(sample_pdf),
-            }
             readerui:handleEvent(Event:new("SetScrollMode", true))
             readerui:handleEvent(Event:new("SetZoomMode", "page"))
             readerui.paging:onGotoPage(1)
@@ -80,17 +78,9 @@ describe("ReaderLink module", function()
             -- page positions may have unexpected impact on page number
             assert.truthy(readerui.paging.current_page == 21
                 or readerui.paging.current_page == 20)
-            readerui:closeDocument()
-            readerui:onClose()
         end)
 
         it("should be able to go back after link jump in page mode", function()
-            UIManager:quit()
-            UIManager._exit_code = nil
-            local readerui = ReaderUI:new{
-                dimen = Screen:getSize(),
-                document = DocumentRegistry:openDocument(sample_pdf),
-            }
             readerui:handleEvent(Event:new("SetScrollMode", false))
             readerui:handleEvent(Event:new("SetZoomMode", "page"))
             readerui.paging:onGotoPage(1)
@@ -99,17 +89,9 @@ describe("ReaderLink module", function()
             assert.is.same(22, readerui.paging.current_page)
             readerui.link:onGoBackLink()
             assert.is.same(1, readerui.paging.current_page)
-            readerui:closeDocument()
-            readerui:onClose()
         end)
 
         it("should be able to go back after link jump in scroll mode", function()
-            UIManager:quit()
-            UIManager._exit_code = nil
-            local readerui = ReaderUI:new{
-                dimen = Screen:getSize(),
-                document = DocumentRegistry:openDocument(sample_pdf),
-            }
             readerui:handleEvent(Event:new("SetScrollMode", true))
             readerui:handleEvent(Event:new("SetZoomMode", "page"))
             readerui.paging:onGotoPage(1)
@@ -120,41 +102,43 @@ describe("ReaderLink module", function()
                 or readerui.paging.current_page == 20)
             readerui.link:onGoBackLink()
             assert.is.same(1, readerui.paging.current_page)
-            readerui:closeDocument()
-            readerui:onClose()
         end)
 
+    end)
+
+    describe("with pdf", function()
+
+        before_each()
+
         it("should be able to go back to the same position after link jump in scroll mode", function()
-            UIManager:quit()
-            UIManager._exit_code = nil
             local expected_page_states = {
                 {
                     gamma = 1,
                     offset = {x = 17, y = 0},
                     page = 3,
                     page_area = {
-                      x = 0, y = 0,
-                      h = 800, w = 566,
+                        x = 0, y = 0,
+                        h = 800, w = 566,
                     },
                     rotation = 0,
                     visible_area = {
-                      x = 0, y = 694,
-                      h = 106, w = 566,
+                        x = 0, y = 694,
+                        h = 106, w = 566,
                     },
                     zoom = 0.95032191328269044472,
-               },
-               {
+                },
+                {
                     gamma = 1,
                     offset = {x = 17, y = 0},
                     page = 4,
                     page_area = {
-                      h = 800, w = 566,
-                      x = 0, y = 0,
+                        h = 800, w = 566,
+                        x = 0, y = 0,
                     },
                     rotation = 0,
                     visible_area = {
-                      h = 686, w = 566,
-                      x = 0, y = 0,
+                        h = 686, w = 566,
+                        x = 0, y = 0,
                     },
                     zoom = 0.95032191328269044472,
                 },
@@ -162,7 +146,7 @@ describe("ReaderLink module", function()
             -- disable footer
             G_reader_settings:saveSetting("reader_footer_mode", 0)
             require("docsettings"):open(sample_pdf):purge()
-            local readerui = ReaderUI:new{
+            readerui = ReaderUI:new{
                 dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_pdf),
             }
@@ -198,8 +182,6 @@ describe("ReaderLink module", function()
             readerui.link:onGoBackLink()
             assert.is.same(3, readerui.paging.current_page)
             assert.are.same(expected_page_states, readerui.view.page_states)
-            readerui:closeDocument()
-            readerui:onClose()
         end)
 
     end)
