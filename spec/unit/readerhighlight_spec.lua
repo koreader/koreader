@@ -1,15 +1,20 @@
 describe("Readerhighlight module", function()
-    local DocumentRegistry, ReaderUI, UIManager, Screen, Geom, Event
+    local DataStorage, DocumentRegistry, ReaderUI, UIManager, Screen, Geom, Event
+    local sample_pdf
+
     setup(function()
         require("commonrequire")
         package.unloadAll()
         require("document/canvascontext"):init(require("device"))
+        DataStorage = require("datastorage")
         DocumentRegistry = require("document/documentregistry")
         Event = require("ui/event")
         Geom = require("ui/geometry")
         ReaderUI = require("apps/reader/readerui")
         Screen = require("device").screen
         UIManager = require("ui/uimanager")
+        sample_pdf = DataStorage:getDataDir() .. "/readerhighlight.pdf"
+        require("ffi/util").copyFile("spec/front/unit/data/sample.pdf", sample_pdf)
     end)
 
     local function highlight_single_word(readerui, pos0)
@@ -135,7 +140,6 @@ describe("Readerhighlight module", function()
     describe("highlight for PDF documents in page mode", function()
         local readerui
         setup(function()
-            local sample_pdf = "spec/front/unit/data/sample.pdf"
             readerui = ReaderUI:new{
                 dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_pdf),
@@ -235,7 +239,6 @@ describe("Readerhighlight module", function()
     describe("highlight for PDF documents in scroll mode", function()
         local readerui
         setup(function()
-            local sample_pdf = "spec/front/unit/data/sample.pdf"
             readerui = ReaderUI:new{
                 dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_pdf),
