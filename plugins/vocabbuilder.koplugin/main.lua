@@ -1217,7 +1217,6 @@ end
 Container widget. Same as sortwidget
 --]]--
 local VocabularyBuilderWidget = FocusManager:extend{
-    id = "vocab_builder_widget",
     title = "",
     width = nil,
     height = nil,
@@ -2066,7 +2065,5 @@ function VocabBuilder:onWordLookedUp(word, title, is_manual)
     })
     return true
 end
-
--- register button in readerdictionary
 
 return VocabBuilder
