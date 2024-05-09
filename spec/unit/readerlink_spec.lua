@@ -16,6 +16,12 @@ describe("ReaderLink module", function()
 
     local readerui
 
+    local function fastforward_ui_events()
+        -- Fast forward all scheduled tasks.
+        UIManager:shiftScheduledTasksBy(-1e9)
+        UIManager:run()
+    end
+
     after_each(function()
         readerui:closeDocument()
         readerui:onClose()
@@ -63,7 +69,7 @@ describe("ReaderLink module", function()
             readerui:handleEvent(Event:new("SetZoomMode", "page"))
             readerui.paging:onGotoPage(1)
             readerui.link:onTap(nil, {pos = {x = 363, y = 565}})
-            UIManager:run()
+            fastforward_ui_events()
             assert.is.same(22, readerui.paging.current_page)
         end)
 
@@ -73,7 +79,7 @@ describe("ReaderLink module", function()
             readerui.paging:onGotoPage(1)
             assert.is.same(1, readerui.paging.current_page)
             readerui.link:onTap(nil, {pos = {x = 228, y = 534}})
-            UIManager:run()
+            fastforward_ui_events()
             -- its really hard to get the exact page number in scroll mode
             -- page positions may have unexpected impact on page number
             assert.truthy(readerui.paging.current_page == 21
@@ -85,7 +91,7 @@ describe("ReaderLink module", function()
             readerui:handleEvent(Event:new("SetZoomMode", "page"))
             readerui.paging:onGotoPage(1)
             readerui.link:onTap(nil, {pos = {x = 363, y = 565}})
-            UIManager:run()
+            fastforward_ui_events()
             assert.is.same(22, readerui.paging.current_page)
             readerui.link:onGoBackLink()
             assert.is.same(1, readerui.paging.current_page)
@@ -97,7 +103,7 @@ describe("ReaderLink module", function()
             readerui.paging:onGotoPage(1)
             assert.is.same(1, readerui.paging.current_page)
             readerui.link:onTap(nil, {pos = {x = 228, y = 534}})
-            UIManager:run()
+            fastforward_ui_events()
             assert.truthy(readerui.paging.current_page == 21
                 or readerui.paging.current_page == 20)
             readerui.link:onGoBackLink()
@@ -177,7 +183,7 @@ describe("ReaderLink module", function()
             assert.are.same(expected_page_states, readerui.view.page_states)
 
             readerui.link:onTap(nil, {pos = {x = 164, y = 366}})
-            UIManager:run()
+            fastforward_ui_events()
             assert.is.same(22, readerui.paging.current_page)
             readerui.link:onGoBackLink()
             assert.is.same(3, readerui.paging.current_page)
