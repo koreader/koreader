@@ -856,7 +856,7 @@ function Kobo:init()
         -- First, we need a delay between ioctls
         self.frontlight_settings.ramp_delay =  0.025
         -- Second, it *really* doesn't like being interleaved with screen refreshes
-        self.frontlight_settings.delay_ramp_on = true
+        self.frontlight_settings.delay_ramp_start = true
     end
 
     self.powerd = require("device/kobo/powerd"):new{

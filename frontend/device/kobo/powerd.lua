@@ -141,7 +141,7 @@ function KoboPowerD:init()
         self.device.frontlight_settings.ramp_delay = self.device.frontlight_settings.ramp_delay or (self.device:hasNaturalLight() and 0.0 or 0.025)
         -- Some PWM controllers *really* don't like being interleaved between screen refreshes,
         -- so we delay the *start* of the ramp on these.
-        self.device.frontlight_settings.delay_ramp_on = self.device.frontlight_settings.delay_ramp_on or false
+        self.device.frontlight_settings.delay_ramp_start = self.device.frontlight_settings.delay_ramp_start or false
 
         -- If this device has natural light, use the sysfs interface, and ioctl otherwise.
         -- NOTE: On the Forma, nickel still appears to prefer using ntx_io to handle the FL,
@@ -370,7 +370,7 @@ function KoboPowerD:turnOffFrontlightHW(done_callback)
             else
                 -- NOTE: Similarly, some controllers *really* don't like to be interleaved with screen refreshes,
                 --       so we wait until the next UI frame for the refreshes to go through first...
-                if self.device.frontlight_settings.delay_ramp_on then
+                if self.device.frontlight_settings.delay_ramp_start then
                     UIManager:nextTick(function()
                         self:turnOffFrontlightRamp(self.fl_intensity, self.fl_min, done_callback)
                         self.fl_ramp_down_running = true
@@ -436,7 +436,7 @@ function KoboPowerD:turnOnFrontlightHW(done_callback)
                 UIManager:scheduleIn(self.device.frontlight_settings.ramp_delay, self._endRampUp, self, self.fl_intensity, done_callback)
             else
                 -- Same deal as in turnOffFrontlightHW
-                if self.device.frontlight_settings.delay_ramp_on then
+                if self.device.frontlight_settings.delay_ramp_start then
                     UIManager:nextTick(function()
                         self:turnOnFrontlightRamp(self.fl_min, self.fl_intensity, done_callback)
                         self.fl_ramp_up_running = true
