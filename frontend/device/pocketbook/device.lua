@@ -428,6 +428,48 @@ function PocketBook:setEventHandlers(uimgr)
     end
 end
 
+local function getBrowser()
+    if util.pathExists("/usr/bin/browser.app") then
+        return true, "/usr/bin/browser.app"
+    elseif util.pathExists("/ebrmain/bin/browser.app") then
+        return true, "/ebrmain/bin/browser.app"
+    end
+    return false
+end
+
+function PocketBook:canOpenLink()
+    return inkview.MultitaskingSupported() and getBrowser()
+end
+
+function PocketBook:openLink(link)
+    if not link or type(link) ~= "string" then return end
+
+    local appname = "browser.app"
+    local task = inkview.FindTaskByAppName(appname)
+    if task > 0 then
+        local size_t_len = ffi.sizeof("size_t")
+        local data = ffi.new("char[?]", size_t_len + #link)
+        ffi.cast("size_t *", data)[0] = #link
+        ffi.copy(data + size_t_len, link, #link)
+        inkview.SendRequestToNoWait(task, C.REQ_OPENBOOK2, data, size_t_len + #link, 0)
+        inkview.SetActiveTask(task, 0)
+    else
+        local _, bin = getBrowser()
+        local args = ffi.new("const char *[3]", {bin, link, nil})
+        inkview.NewTask(bin, ffi.cast("char **", args), appname, appname, nil, C.TASK_MAKEACTIVE)
+    end
+    -- the above logic is available in newer PocketBook SDKs [1] as OpenTask:
+    --
+    --     ffi.cdef[[ int OpenTask(const char *, int, const char **, int); ]]
+    --
+    --     local argv = ffi.new("const char *[1]", {link})
+    --     inkview.OpenTask("/usr/bin/browser.app", 1, argv, C.TASK_MAKEACTIVE)
+    --
+    -- we're using an older SDK for compatibility, so we need to handle this manually
+    --
+    -- [1]: https://github.com/pocketbook/SDK_6.3.0/blob/6.5/SDK-B288/usr/arm-obreey-linux-gnueabi/sysroot/usr/local/include/inkview.h
+end
+
 -- Pocketbook HW rotation modes start from landsape, CCW
 local function landscape_ccw() return {
     1, 0, 3, 2,         -- PORTRAIT, LANDSCAPE, PORTRAIT_180, LANDSCAPE_180
