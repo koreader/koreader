@@ -797,6 +797,9 @@ function Kobo:init()
         elseif util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event") then
             -- Sage w/ a BD71828 PMIC
             self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event"
+        elseif util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event") then
+            -- MTK w/ a BD71828 PMIC
+            self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event"
         end
     end
 
