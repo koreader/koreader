@@ -428,6 +428,56 @@ function PocketBook:setEventHandlers(uimgr)
     end
 end
 
+local function getBrowser()
+    if util.pathExists("/usr/bin/browser.app") then
+        return true, "/usr/bin/browser.app"
+    elseif util.pathExists("/ebrmain/bin/browser.app") then
+        return true, "/ebrmain/bin/browser.app"
+    end
+    return false
+end
+
+function PocketBook:canOpenLink()
+    return inkview.MultitaskingSupported() and getBrowser()
+end
+
+function PocketBook:openLink(link)
+    if not link or type(link) ~= "string" then return end
+
+    -- SendRequestToNoWait only available in PocketBook SDK since 5.17
+    local inkview_SendRequestTo
+    if pcall(function() local _ = inkview.SendRequestToNoWait end) then
+        inkview_SendRequestTo = function(t, r, d, l) inkview.SendRequestToNoWait(t, r, d, l, 0) end
+    else
+        inkview_SendRequestTo = function(t, r, d, l) inkview.SendRequestTo(t, r, d, l, 0, 2000) end
+    end
+
+    local appname = "browser.app"
+    local task = inkview.FindTaskByAppName(appname)
+    if task > 0 then
+        local data = ffi.new("void *[1]")
+        local len = ffi.new("int[1]")
+        inkview.PackParameters(1, ffi.new("const char *[1]", {link}), data, len)
+        inkview_SendRequestTo(task, C.REQ_OPENBOOK2, data[0], len[0])
+        C.free(data[0])
+        inkview.SetActiveTask(task, 0)
+    else
+        local _, bin = getBrowser()
+        local args = ffi.new("const char *[3]", {bin, link, nil})
+        inkview.NewTask(bin, ffi.cast("char **", args), appname, appname, nil, C.TASK_MAKEACTIVE)
+    end
+    -- the above logic is available in newer PocketBook SDKs [1] as OpenTask:
+    --
+    --     ffi.cdef[[ int OpenTask(const char *, int, const char **, int); ]]
+    --
+    --     local argv = ffi.new("const char *[1]", {link})
+    --     inkview.OpenTask("/usr/bin/browser.app", 1, argv, C.TASK_MAKEACTIVE)
+    --
+    -- we're using an older SDK for compatibility, so we need to handle this manually
+    --
+    -- [1]: https://github.com/pocketbook/SDK_6.3.0/blob/6.5/SDK-B288/usr/arm-obreey-linux-gnueabi/sysroot/usr/local/include/inkview.h
+end
+
 -- Pocketbook HW rotation modes start from landsape, CCW
 local function landscape_ccw() return {
     1, 0, 3, 2,         -- PORTRAIT, LANDSCAPE, PORTRAIT_180, LANDSCAPE_180
