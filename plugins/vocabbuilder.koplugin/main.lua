@@ -1665,18 +1665,18 @@ function VocabularyBuilderWidget:_populateItems()
 end
 
 function VocabularyBuilderWidget:gotItFromDict(word)
-    for i = 1, #self.main_content, 1 do
-        if self.main_content[i].item and self.main_content[i].item.word == word then
-            self.main_content[i]:onGotIt()
+    for vocabItem in self:vocabItemIter() do
+        if vocabItem.item.word == word then
+            vocabItem:onGotIt()
             return
         end
     end
 end
 
 function VocabularyBuilderWidget:forgotFromDict(word)
-    for i = 1, #self.main_content, 1 do
-        if self.main_content[i].item and self.main_content[i].item.word == word then
-            self.main_content[i]:onForgot(true)
+    for vocabItem in self:vocabItemIter() do
+        if vocabItem.item.word == word then
+            vocabItem:onForgot(true)
             return
         end
     end
@@ -1895,33 +1895,20 @@ function VocabularyBuilderWidget:onReturn()
     return self:onClose()
 end
 
-
---[[--
-Item shown in main menu
---]]--
-local VocabBuilder = WidgetContainer:extend{
-    name = "vocabulary_builder",
-    is_doc_only = false
-}
-
-function VocabBuilder:init()
-    self.ui.menu:registerToMainMenu(self)
-    self:onDispatcherRegisterActions()
-end
-
-function VocabBuilder:addToMainMenu(menu_items)
-    menu_items.vocabbuilder = {
-        text = _("Vocabulary builder"),
-        callback = function()
-            self:onShowVocabBuilder()
+-- This skips the VerticalSpan widgets which are also in self.main_content
+function VocabularyBuilderWidget:vocabItemIter()
+    local i, n = 0, #self.main_content
+    return function()
+        while true do
+            i = i + 1
+            if i <= n and self.main_content[i].item then
+                return self.main_content[i]
+            end
         end
-    }
+    end
 end
 
-function VocabItemWidget:onDictButtonsReady(popup_dict, buttons)
-    if self.item.word ~= popup_dict.word then
-        return
-    end
+function VocabItemWidget:onDictButtonsReady(buttons)
     if self.item.due_time > os.time() then
         return true
     end
@@ -1964,7 +1951,38 @@ function VocabItemWidget:onDictButtonsReady(popup_dict, buttons)
     return true -- we consume the event here!
 end
 
+
+--[[--
+Item shown in main menu
+--]]--
+local VocabBuilder = WidgetContainer:extend{
+    name = "vocabulary_builder",
+    is_doc_only = false
+}
+
+function VocabBuilder:init()
+    self.ui.menu:registerToMainMenu(self)
+    self:onDispatcherRegisterActions()
+end
+
+function VocabBuilder:addToMainMenu(menu_items)
+    menu_items.vocabbuilder = {
+        text = _("Vocabulary builder"),
+        callback = function()
+            self:onShowVocabBuilder()
+        end
+    }
+end
+
 function VocabBuilder:onDictButtonsReady(obj, buttons)
+    if UIManager:isWidgetShown(self.widget) then
+        for vocabItem in self.widget:vocabItemIter() do
+            print(vocabItem)
+            if vocabItem.item.word == obj.word then
+                return vocabItem:onDictButtonsReady(buttons)
+            end
+        end
+    end
     if settings.enabled then
         -- words are added automatically, no need to add the button
         return
@@ -2018,7 +2036,6 @@ function VocabBuilder:setupWidget()
             reload_items_callback = reload_items
         }
     end
-    self[1] = self.widget
 end
 
 function VocabBuilder:onDispatcherRegisterActions()
