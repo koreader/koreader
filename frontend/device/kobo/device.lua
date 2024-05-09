@@ -742,6 +742,8 @@ function Kobo:init()
         if util.pathExists("/sys/class/power_supply/battery") then
             -- Newer devices (circa sunxi)
             self.battery_sysfs = "/sys/class/power_supply/battery"
+        elseif util.fileExists("/sys/class/power_supply/bd71827_bat") then
+            self.battery_sysfs = "/sys/class/power_supply/bd71827_bat"
         else
             self.battery_sysfs = "/sys/class/power_supply/mc13892_bat"
         end
