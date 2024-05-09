@@ -616,7 +616,7 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
             end
             -- The go_on_func resumed us: we have not been dismissed.
             -- Check if sub process has ended
-            -- Depending on the the size of what the child has to write,
+            -- Depending on the size of what the child has to write,
             -- it may has ended (if data fits in the kernel pipe buffer) or
             -- it may still be alive blocking on write() (if data exceeds
             -- the kernel pipe buffer)
