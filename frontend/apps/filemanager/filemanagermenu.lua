@@ -149,7 +149,7 @@ function FileManagerMenu:setUpdateItemTable()
 
     -- setting tab
     self.menu_items.filebrowser_settings = {
-        text = _("Settings"),
+        text = _("File Management"),
         sub_item_table = {
             {
                 text = _("Show finished books"),
@@ -165,18 +165,33 @@ function FileManagerMenu:setUpdateItemTable()
                 text = _("Show unsupported files"),
                 checked_func = function() return FileChooser.show_unsupported end,
                 callback = function() FileChooser:toggleShowFilesMode("show_unsupported") end,
-                separator = true,
             },
             {
-                text = _("Classic mode settings"),
+                text = _("Mix folders and files"),
+                separator = true,
+                enabled_func = function()
+                    local collate = FileChooser:getCollate()
+                    return collate.can_collate_mixed
+                end,
+                checked_func = function()
+                    local collate = FileChooser:getCollate()
+                    return collate.can_collate_mixed and G_reader_settings:isTrue("collate_mixed")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("collate_mixed")
+                    FileChooser:refreshPath()
+                end,
+            },
+            {
+                text = _("Classic view properties"),
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Items per page: %1"),
+                            return T(_("Book entries per page: %1"),
                                 G_reader_settings:readSetting("items_per_page") or FileChooser.items_per_page_default)
                         end,
-                        help_text = _([[This sets the number of items per page in:
-- File browser, history and favorites in 'classic' display mode
+                        help_text = _([[This sets the number of entries per page in:
+- File browser, history and collections in 'classic' library view
 - Search results and folder shortcuts
 - File and folder selection
 - Calibre and OPDS browsers/search results]]),
@@ -184,7 +199,7 @@ function FileManagerMenu:setUpdateItemTable()
                             local default_value = FileChooser.items_per_page_default
                             local current_value = G_reader_settings:readSetting("items_per_page") or default_value
                             local widget = SpinWidget:new{
-                                title_text =  _("Items per page"),
+                                title_text =  _("Entries per page"),
                                 value = current_value,
                                 value_min = 6,
                                 value_max = 30,
@@ -201,14 +216,14 @@ function FileManagerMenu:setUpdateItemTable()
                     },
                     {
                         text_func = function()
-                            return T(_("Item font size: %1"), FileChooser.font_size)
+                            return T(_("File name font size: %1"), FileChooser.font_size)
                         end,
                         callback = function(touchmenu_instance)
                             local current_value = FileChooser.font_size
                             local default_value = FileChooser.getItemFontSize(G_reader_settings:readSetting("items_per_page")
                                 or FileChooser.items_per_page_default)
                             local widget = SpinWidget:new{
-                                title_text =  _("Item font size"),
+                                title_text =  _("File name font size"),
                                 value = current_value,
                                 value_min = 10,
                                 value_max = 72,
@@ -231,7 +246,7 @@ function FileManagerMenu:setUpdateItemTable()
                         end,
                     },
                     {
-                        text = _("Shrink item font size to fit more text"),
+                        text = _("Auto reduce filename-font-size to fit whole text"),
                         checked_func = function()
                             return G_reader_settings:isTrue("items_multilines_show_more_text")
                         end,
@@ -256,7 +271,7 @@ function FileManagerMenu:setUpdateItemTable()
                         end,
                     },
                     {
-                        text = _("Show new (not yet opened) files in bold"),
+                        text = _("Show unopened files in bold"),
                         checked_func = function()
                             return G_reader_settings:hasNot("show_file_in_bold")
                         end,
@@ -272,7 +287,7 @@ function FileManagerMenu:setUpdateItemTable()
                 },
             },
             {
-                text = _("History settings"),
+                text = _("History tab"),
                 sub_item_table = {
                     {
                         text = _("Shorten date/time"),
@@ -285,7 +300,7 @@ function FileManagerMenu:setUpdateItemTable()
                         end,
                     },
                     {
-                        text = _("Freeze last read date of finished books"),
+                        text = _("Freeze last-read date for finished books"),
                         checked_func = function()
                             return G_reader_settings:isTrue("history_freeze_finished_books")
                         end,
@@ -295,10 +310,10 @@ function FileManagerMenu:setUpdateItemTable()
                         separator = true,
                     },
                     {
-                        text = _("Clear history of deleted files"),
+                        text = _("Clear deleted files from history"),
                         callback = function()
                             UIManager:show(ConfirmBox:new{
-                                text = _("Clear history of deleted files?"),
+                                text = _("Clear deleted files from history?"),
                                 ok_text = _("Clear"),
                                 ok_callback = function()
                                     require("readhistory"):clearMissing()
@@ -307,7 +322,7 @@ function FileManagerMenu:setUpdateItemTable()
                         end,
                     },
                     {
-                        text = _("Auto-remove deleted or purged items from history"),
+                        text = _("Auto-remove deleted or purged entries from history"),
                         checked_func = function()
                             return G_reader_settings:isTrue("autoremove_deleted_items_from_history")
                         end,
@@ -317,7 +332,7 @@ function FileManagerMenu:setUpdateItemTable()
                         separator = true,
                     },
                     {
-                        text = _("Show filename in Open last/previous menu items"),
+                        text = _("Show filename in Open last/previous menu"),
                         checked_func = function()
                             return G_reader_settings:isTrue("open_last_menu_show_filename")
                         end,
@@ -328,7 +343,7 @@ function FileManagerMenu:setUpdateItemTable()
                 },
             },
             {
-                text = _("Home folder settings"),
+                text = _("Home folder"),
                 sub_item_table = {
                     {
                         text = _("Set home folder"),
@@ -344,7 +359,7 @@ function FileManagerMenu:setUpdateItemTable()
                         end,
                     },
                     {
-                        text = _("Shorten home folder"),
+                        text = _("Shorten home folder path"),
                         checked_func = function()
                             return G_reader_settings:nilOrTrue("shorten_home_dir")
                         end,
@@ -382,9 +397,9 @@ To:
                 text_func = function()
                     local default_value = KeyValuePage.getDefaultItemsPerPage()
                     local current_value = G_reader_settings:readSetting("keyvalues_per_page") or default_value
-                    return T(_("Info lists items per page: %1"), current_value)
+                    return T(_("Entries per page on info lists: %1"), current_value)
                 end,
-                help_text = _([[This sets the number of items per page in:
+                help_text = _([[This sets the number of entries per page in:
 - Book information
 - Dictionary and Wikipedia lookup history
 - Reading statistics details
@@ -398,7 +413,7 @@ To:
                         value_min = 10,
                         value_max = 30,
                         default_value = default_value,
-                        title_text =  _("Info lists items per page"),
+                        title_text =  _("Entries per page on info lists"),
                         callback = function(spin)
                             if spin.value == default_value then
                                 -- We can't know if the user has set a value or hit "Use default", but
@@ -432,21 +447,6 @@ To:
         end,
         callback = function()
             G_reader_settings:flipNilOrFalse("reverse_collate")
-            FileChooser:refreshPath()
-        end,
-    }
-    self.menu_items.sort_mixed = {
-        text = _("Folders and files mixed"),
-        enabled_func = function()
-            local collate = FileChooser:getCollate()
-            return collate.can_collate_mixed
-        end,
-        checked_func = function()
-            local collate = FileChooser:getCollate()
-            return collate.can_collate_mixed and G_reader_settings:isTrue("collate_mixed")
-        end,
-        callback = function()
-            G_reader_settings:flipNilOrFalse("collate_mixed")
             FileChooser:refreshPath()
         end,
     }
@@ -906,7 +906,7 @@ function FileManagerMenu:getStartWithMenuTable()
             local start_with = G_reader_settings:readSetting("start_with") or "filemanager"
             for i, v in ipairs(start_withs) do
                 if v[2] == start_with then
-                    return T(_("Start with: %1"), v[1])
+                    return T(_("Open on startup: %1"), v[1])
                 end
             end
         end,
