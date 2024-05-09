@@ -1976,7 +1976,6 @@ end
 function VocabBuilder:onDictButtonsReady(obj, buttons)
     if UIManager:isWidgetShown(self.widget) then
         for vocabItem in self.widget:vocabItemIter() do
-            print(vocabItem)
             if vocabItem.item.word == obj.word then
                 return vocabItem:onDictButtonsReady(buttons)
             end
