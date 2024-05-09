@@ -31,7 +31,7 @@ local function koboEnableWifi(toggle)
 end
 
 -- checks if standby is available on the device
-local function checkStandby()
+local function checkStandby(target_state)
     logger.dbg("Kobo: checking if standby is possible ...")
     local f = io.open("/sys/power/state")
     if not f then
@@ -40,11 +40,11 @@ local function checkStandby()
     local mode = f:read()
     f:close()
     logger.dbg("Kobo: available power states:", mode)
-    if mode and mode:find("standby") then
-        logger.dbg("Kobo: standby state is supported")
+    if mode and mode:find(target_state) then
+        logger.dbg("Kobo: target standby state '" .. target_state .. "' is supported")
         return yes
     end
-    logger.dbg("Kobo: standby state is unsupported")
+    logger.dbg("Kobo: target standby state '" .. target_state .. "' is unsupported")
     return no
 end
 
@@ -152,6 +152,8 @@ local Kobo = Generic:extend{
     hasEclipseWfm = no,
     -- Device ships with various hardware revisions under the same device code, requiring automatic hardware detection...
     automagic_sysfs = false,
+    -- The standard "standby" power state
+    standby_state = "standby",
 
     unexpected_wakeup_count = 0,
 }
@@ -534,6 +536,74 @@ local KoboCondor = Kobo:extend{
     isSMP = yes,
 }
 
+-- Kobo Libra Colour:
+local KoboMonza = Kobo:extend{
+    model = "Kobo_monza",
+    isMTK = yes,
+    hasEclipseWfm = yes,
+    canToggleChargingLED = yes,
+    hasFrontlight = yes,
+    hasKeys = yes,
+    hasGSensor = yes,
+    display_dpi = 300,
+    pressure_event = C.ABS_MT_PRESSURE,
+    touch_mirrored_x = false,
+    touch_mirrored_y = true,
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_mixer = "/sys/class/backlight/lm3630a_led/color",
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = true,
+    },
+    isSMP = yes,
+    hasColorScreen = yes,
+    automagic_sysfs = true,
+}
+
+-- Kobo Clara B/W:
+local KoboSpaBW = Kobo:extend{
+    model = "Kobo_spaBW",
+    isMTK = yes,
+    hasEclipseWfm = yes,
+    canToggleChargingLED = yes,
+    hasFrontlight = yes,
+    touch_snow_protocol = true,
+    display_dpi = 300,
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_mixer = "/sys/class/backlight/lm3630a_led/color",
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = true,
+    },
+    automagic_sysfs = true,
+}
+
+-- Kobo Clara Colour:
+local KoboSpaColour = Kobo:extend{
+    model = "Kobo_spaColour",
+    isMTK = yes,
+    hasEclipseWfm = yes,
+    canToggleChargingLED = yes,
+    hasFrontlight = yes,
+    touch_snow_protocol = true,
+    display_dpi = 300,
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_mixer = "/sys/class/backlight/lm3630a_led/color",
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = true,
+    },
+    isSMP = yes,
+    hasColorScreen = yes,
+    automagic_sysfs = true,
+}
+
 function Kobo:setupChargingLED()
     if G_reader_settings:nilOrTrue("enable_charging_led") then
         if self:hasAuxBattery() and self.powerd:isAuxBatteryConnected() then
@@ -638,7 +708,7 @@ function Kobo:init()
             is_always_portrait = self.isAlwaysPortrait(),
             mxcfb_bypass_wait_for = mxcfb_bypass_wait_for,
         }
-        if self.screen.fb_bpp == 32 then
+        if self.screen.fb_bpp == 32 and not self:hasColorScreen() then
             -- Ensure we decode images properly, as our framebuffer is BGRA...
             logger.info("Enabling Kobo @ 32bpp BGR tweaks")
             self.hasBGRFrameBuffer = yes
@@ -669,6 +739,8 @@ function Kobo:init()
         if util.pathExists("/sys/class/power_supply/battery") then
             -- Newer devices (circa sunxi)
             self.battery_sysfs = "/sys/class/power_supply/battery"
+        elseif util.fileExists("/sys/class/power_supply/bd71827_bat") then
+            self.battery_sysfs = "/sys/class/power_supply/bd71827_bat"
         else
             self.battery_sysfs = "/sys/class/power_supply/mc13892_bat"
         end
@@ -722,6 +794,9 @@ function Kobo:init()
         elseif util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event") then
             -- Sage w/ a BD71828 PMIC
             self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event"
+        elseif util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event") then
+            -- MTK w/ a BD71828 PMIC
+            self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event"
         end
     end
 
@@ -759,8 +834,13 @@ function Kobo:init()
         self.hasNaturalLightMixer = yes
     end
     -- Ditto
-    if self:isMk7() then
+    if self:isMk7() or self:isMTK() then
         self.canHWDither = yes
+    end
+
+    -- Enable Kaleido waveform modes on supported devices
+    if self:hasColorScreen() and self:isMTK() then
+        self.hasKaleidoWfm = yes
     end
 
     -- NOTE: Devices with an AW99703 frontlight PWM controller feature a hardware smooth ramp when setting the frontlight intensity.
@@ -769,6 +849,14 @@ function Kobo:init()
     ---      So we delay the final ramp off step to prevent (both) the native and our ramping from being optimized out.
     if self:hasNaturalLightMixer() and self.frontlight_settings.frontlight_mixer:find("aw99703", 12, true) then
         self.frontlight_settings.ramp_off_delay = 0.5
+    end
+
+    -- I don't know how this PWM controller behaves on earlier devices, but it's... not great here.
+    if self:hasNaturalLightMixer() and self:isMTK() and self.frontlight_settings.frontlight_mixer:find("lm3630a_led", 12, true) then
+        -- First, we need a delay between ioctls
+        self.frontlight_settings.ramp_delay =  0.025
+        -- Second, it *really* doesn't like being interleaved with screen refreshes
+        self.frontlight_settings.delay_ramp_start = true
     end
 
     self.powerd = require("device/kobo/powerd"):new{
@@ -844,9 +932,12 @@ function Kobo:init()
     end
 
     -- Detect the NTX charging LED sysfs knob
-    if util.pathExists("/sys/class/leds/bd71828-green-led") then
-        -- Standard Linux LED class, wheee!
-        self.charging_led_sysfs_knob = "/sys/class/leds/bd71828-green-led"
+    if util.pathExists("/sys/class/leds/LED") then
+        self.charging_led_sysfs_knob = "/sys/class/leds/LED/brightness"
+    elseif util.pathExists("/sys/class/leds/GLED") then
+        self.charging_led_sysfs_knob = "/sys/class/leds/GLED/brightness"
+    elseif util.pathExists("/sys/class/leds/bd71828-green-led") then
+        self.charging_led_sysfs_knob = "/sys/class/leds/bd71828-green-led/brightness"
     elseif util.pathExists("/sys/devices/platform/ntx_led/lit") then
         self.ntx_lit_sysfs_knob = "/sys/devices/platform/ntx_led/lit"
     elseif util.pathExists("/sys/devices/platform/pmic_light.1/lit") then
@@ -876,8 +967,15 @@ function Kobo:init()
     -- Only enable a single core on startup
     self:enableCPUCores(1)
 
-    self.canStandby = checkStandby()
-    if self.canStandby() and (self:isMk7() or self:isSunxi() or self:isMTK())  then
+    -- On MTK, the "standby" power state is unavailable, and Nickel instead uses "mem" (and /sys/power/mem_sleep doesn't exist either)
+    if self:isMTK() then
+        self.standby_state = "mem"
+    end
+
+    self.canStandby = checkStandby(self.standby_state)
+    if self.canStandby() and (self:isMk7() or self:isSunxi()) then
+        -- NOTE: Do *NOT* enable this on MTK. What happens if you do can only be described as "shit hits the fan".
+        --       (Nickel doesn't).
         self.canPowerSaveWhileCharging = yes
     end
 
@@ -1182,7 +1280,7 @@ function Kobo:standby(max_duration)
     -- WiFi toggle, but (almost) everywhere.
     ffiUtil.usleep(90000) -- sleep 0.09s (0.08s would also work)
 
-    local ret = ffiUtil.writeToSysfs("standby", "/sys/power/state")
+    local ret = ffiUtil.writeToSysfs(self.standby_state, "/sys/power/state")
 
     self.last_standby_time = time.boottime_or_realtime_coarse() - standby_time
     self.total_standby_time = self.total_standby_time + self.last_standby_time
@@ -1446,6 +1544,7 @@ function Kobo:_NTXChargingLEDToggle(toggle)
 end
 
 function Kobo:_LinuxChargingLEDToggle(toggle)
+    -- max_brightness usually says 255 for those, but 1 does the same (and matches Nickel's behavior)
     ffiUtil.writeToSysfs(toggle and "1" or "0", self.charging_led_sysfs_knob)
 end
 
@@ -1678,6 +1777,12 @@ elseif codename == "goldfinch" then
     return KoboGoldfinch
 elseif codename == "condor" then
     return KoboCondor
+elseif codename == "monza" or codename == "monzaTolino" then
+    return KoboMonza
+elseif codename == "spaBW" or codename == "spaTolinoBW" then
+    return KoboSpaBW
+elseif codename == "spaColour" or codename == "spaTolinoColour" then
+    return KoboSpaColour
 else
     error("unrecognized Kobo model ".. codename .. " with device id " .. product_id)
 end

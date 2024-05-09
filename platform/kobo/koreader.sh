@@ -99,7 +99,7 @@ ko_update_check() {
         export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
         rm -f "${FBINK_NAMED_PIPE}"
         # We'll want to use REAGL on sunxi, because AUTO is slow, and fast merges are extremely broken outside of REAGL...
-        eval "$(fbink -e | tr ';' '\n' | grep -e isSunxi | tr '\n' ';')"
+        eval "$(./fbink -e | tr ';' '\n' | grep -e isSunxi | tr '\n' ';')"
         # shellcheck disable=SC2154
         if [ "${isSunxi}" = "1" ]; then
             PBAR_WFM="REAGL"
@@ -330,6 +330,17 @@ ko_do_fbdepth() {
         ./fbdepth -R UR >>crash.log 2>&1
         # We haven't actually done anything, so don't do anything on exit either ;).
         unset ORIG_FB_BPP
+
+        return
+    fi
+
+    # On color panels, we target 32bpp for, well, color, and sane addressing (it also happens to be their default) ;o).
+    # Also, the current lineup of MTK + Kaleido devices doesn't even *support* switching to 8bpp anymore.
+    eval "$(./fbink -e | tr ';' '\n' | grep -e hasColorPanel | tr '\n' ';')"
+    # shellcheck disable=SC2154
+    if [ "${hasColorPanel}" = "1" ]; then
+        echo "Switching fb bitdepth to 32bpp & rotation to Portrait" >>crash.log 2>&1
+        ./fbdepth -d 32 -R UR >>crash.log 2>&1
 
         return
     fi
