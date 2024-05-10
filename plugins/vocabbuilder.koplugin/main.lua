@@ -1908,7 +1908,7 @@ function VocabularyBuilderWidget:vocabItemIter()
     end
 end
 
-function VocabItemWidget:onDictButtonsReady(buttons)
+function VocabItemWidget:onDictButtonsReady(obj, buttons)
     if self.item.due_time > os.time() then
         return true
     end
@@ -1922,7 +1922,7 @@ function VocabItemWidget:onDictButtonsReady(buttons)
                     text = _("Got it"),
                     callback = function()
                         self.show_parent:gotItFromDict(self.item.word)
-                        UIManager:sendEvent(Event:new("Close"))
+                        UIManager:close(obj)
                     end
                 }
                 if tweaked_button_count == 1 then
@@ -1936,7 +1936,7 @@ function VocabItemWidget:onDictButtonsReady(buttons)
                     text = _("Forgot"),
                     callback = function()
                         self.show_parent:forgotFromDict(self.item.word)
-                        UIManager:sendEvent(Event:new("Close"))
+                        UIManager:close(obj)
                     end
                 }
                 if tweaked_button_count == 1 then
@@ -1978,7 +1978,7 @@ function VocabBuilder:onDictButtonsReady(obj, buttons)
     if UIManager:isWidgetShown(self.widget) and #obj.window_list == 0 then
         for vocabItem in self.widget:vocabItemIter() do
             if vocabItem.item.word == obj.word then
-                return vocabItem:onDictButtonsReady(buttons)
+                return vocabItem:onDictButtonsReady(obj, buttons)
             end
         end
         -- we should never get here
