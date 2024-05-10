@@ -1454,6 +1454,9 @@ function KindleTouch:exit()
     end
 
     if self.framework_lipc_handle then
+        -- Fixes missing *stock Amazon UI* screensavers on exiting out of "no framework" started KOReader
+        -- module was unloaded in frameworkStopped() function but wasn't (re)loaded on KOReader exit
+        self.framework_lipc_handle:set_string_property("com.lab126.blanket", "load", "screensaver")
         self.framework_lipc_handle:close()
     end
 
