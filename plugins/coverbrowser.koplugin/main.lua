@@ -81,6 +81,7 @@ function CoverBrowser:init()
 end
 
 function CoverBrowser:addToMainMenu(menu_items)
+    local fc = self.ui.file_chooser
     local modes = {
         { _("Classic (filename only)") },
         { _("Mosaic"), "mosaic_image" },
@@ -133,11 +134,7 @@ function CoverBrowser:addToMainMenu(menu_items)
     table.insert(sub_item_table, {
         text = _("Hide book covers"),
         enabled_func = function()
-            return filemanager_display_mode == "mosaic_image"
-                or filemanager_display_mode == "mosaic_text"
-                or filemanager_display_mode == "list_image_meta"
-                or filemanager_display_mode == "list_only_meta"
-                or filemanager_display_mode == "list_image_filename"
+            return not fc.display_mode_type == false
         end,
         checked_func = function()
             return filemanager_display_mode == "mosaic_text" or filemanager_display_mode == "list_only_meta"
@@ -157,9 +154,7 @@ function CoverBrowser:addToMainMenu(menu_items)
     table.insert(sub_item_table, {
         text = _("Replace book title with file name"),
         enabled_func = function()
-            return filemanager_display_mode == "list_image_meta"
-                or filemanager_display_mode == "list_image_filename"
-                or filemanager_display_mode == "list_only_meta"
+            return fc.display_mode_type == "list"
         end,
         checked_func = function()
             return filemanager_display_mode == "list_image_filename"
@@ -293,16 +288,11 @@ function CoverBrowser:addToMainMenu(menu_items)
     table.insert(sub_item_table, menu_items.filebrowser_settings.sub_item_table[5])
     table.remove(menu_items.filebrowser_settings.sub_item_table, 5)
 
-    local fc = self.ui.file_chooser
     table.insert(sub_item_table, {
         text = _("Mosaic and list view properties"),
         separator = true,
         enabled_func = function()
-            return filemanager_display_mode == "mosaic_image"
-                or filemanager_display_mode == "mosaic_text"
-                or filemanager_display_mode == "list_image_meta"
-                or filemanager_display_mode == "list_only_meta"
-                or filemanager_display_mode == "list_image_filename"
+            return not fc.display_mode_type == false
         end,
         sub_item_table = {
             {
@@ -310,7 +300,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     return T(_("Grid size in portrait-mosaic mode: %1 × %2"), fc.nb_cols_portrait, fc.nb_rows_portrait)
                 end,
                 enabled_func = function()
-                    return filemanager_display_mode == "mosaic_image" or filemanager_display_mode == "mosaic_text"
+                    return fc.display_mode_type == "mosaic"
                 end,
                 -- Best to not "keep_menu_open = true", to see how this apply on the full view
                 callback = function()
@@ -362,7 +352,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     return T(_("Grid size in landscape-mosaic mode: %1 × %2"), fc.nb_cols_landscape, fc.nb_rows_landscape)
                 end,
                 enabled_func = function()
-                    return filemanager_display_mode == "mosaic_image" or filemanager_display_mode == "mosaic_text"
+                    return fc.display_mode_type == "mosaic"
                 end,
                 callback = function()
                     local nb_cols = fc.nb_cols_landscape
@@ -415,9 +405,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     return T(_("Books per page in list view: %1"), fc.files_per_page or 10)
                 end,
                 enabled_func = function()
-                    return filemanager_display_mode == "list_image_meta"
-                        or filemanager_display_mode == "list_image_filename"
-                        or filemanager_display_mode == "list_only_meta"
+                    return fc.display_mode_type == "list"
                 end,
                 callback = function()
                     local files_per_page = fc.files_per_page or 10
@@ -457,7 +445,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     {
                         text = _("Show progress bar"),
                         enabled_func = function()
-                            return filemanager_display_mode == "mosaic_image" or filemanager_display_mode == "mosaic_text"
+                            return fc.display_mode_type == "mosaic"
                         end,
                         checked_func = function() return BookInfoManager:getSetting("show_progress_in_mosaic") end,
                         callback = function()
@@ -469,7 +457,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     {
                         text = _("Show progress information"),
                         enabled_func = function()
-                            return not (filemanager_display_mode == "mosaic_image" or filemanager_display_mode == "mosaic_text")
+                            return fc.display_mode_type == "list"
                         end,
                         checked_func = function() return not BookInfoManager:getSetting("hide_page_info") end,
                         callback = function()
@@ -480,8 +468,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     {
                         text = _("Show number of pages read instead of percentage"),
                         enabled_func = function() 
-                            return not BookInfoManager:getSetting("hide_page_info")
-                                and not (filemanager_display_mode == "mosaic_image" or filemanager_display_mode == "mosaic_text")
+                            return not BookInfoManager:getSetting("hide_page_info") and fc.display_mode_type == "list"
                             end,
                         checked_func = function() return BookInfoManager:getSetting("show_pages_read_as_progress") end,
                         callback = function()
@@ -492,8 +479,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     {
                         text = _("Show number of pages left to read"),
                         enabled_func = function()
-                            return not BookInfoManager:getSetting("hide_page_info")
-                                and not (filemanager_display_mode == "mosaic_image" or filemanager_display_mode == "mosaic_text")
+                            return not BookInfoManager:getSetting("hide_page_info") and fc.display_mode_type == "list"
                         end,
                         checked_func = function() return BookInfoManager:getSetting("show_pages_left_in_progress") end,
                         callback = function()
@@ -504,9 +490,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     {
                         text = _("Show file metadata"),
                         enabled_func = function()
-                            return filemanager_display_mode == "list_image_meta"
-                                or filemanager_display_mode == "list_image_filename"
-                                or filemanager_display_mode == "list_only_meta"
+                            return fc.display_mode_type == "list"
                         end,
                         checked_func = function()
                             return not BookInfoManager:getSetting("hide_file_info")
@@ -551,9 +535,7 @@ function CoverBrowser:addToMainMenu(menu_items)
             {
                 text = _("Series"),
                 enabled_func = function()
-                    return filemanager_display_mode == "list_image_meta"
-                        or filemanager_display_mode == "list_image_filename"
-                        or filemanager_display_mode == "list_only_meta"
+                    return fc.display_mode_type == "list"
                 end,
                 sub_item_table = {
                     {
