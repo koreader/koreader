@@ -1975,12 +1975,13 @@ function VocabBuilder:addToMainMenu(menu_items)
 end
 
 function VocabBuilder:onDictButtonsReady(obj, buttons)
-    if UIManager:isWidgetShown(self.widget) then
+    if UIManager:isWidgetShown(self.widget) and #obj.window_list == 0 then
         for vocabItem in self.widget:vocabItemIter() do
             if vocabItem.item.word == obj.word then
                 return vocabItem:onDictButtonsReady(buttons)
             end
         end
+        -- we should never get here
     end
     if settings.enabled then
         -- words are added automatically, no need to add the button
