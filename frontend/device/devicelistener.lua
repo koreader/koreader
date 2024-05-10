@@ -204,6 +204,19 @@ if Device:hasGSensor() then
         Notification:notify(new_text)
         return true
     end
+
+    function DeviceListener:onLockGSensor()
+        G_reader_settings:flipNilOrFalse("input_lock_gsensor")
+        Device:lockGSensor(G_reader_settings:isTrue("input_lock_gsensor"))
+        local new_text
+        if G_reader_settings:isTrue("input_lock_gsensor") then
+            new_text = _("Orientation locked.")
+        else
+            new_text = _("Orientation unlocked.")
+        end
+        Notification:notify(new_text)
+        return true
+    end
 end
 
 if not Device:isAlwaysFullscreen() then
