@@ -1900,7 +1900,8 @@ function VocabularyBuilderWidget:vocabItemIter()
     return function()
         while true do
             i = i + 1
-            if i <= n and self.main_content[i].item then
+            if i > n then return nil end
+            if self.main_content[i].item then
                 return self.main_content[i]
             end
         end
