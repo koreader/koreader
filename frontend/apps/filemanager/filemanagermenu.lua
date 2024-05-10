@@ -201,12 +201,15 @@ function FileManagerMenu:setUpdateItemTable()
                     },
                     {
                         text_func = function()
-                            return T(_("Item font size: %1"), FileChooser.font_size)
+                            local items_per_page = G_reader_settings:readSetting("items_per_page") or FileChooser.items_per_page_default
+                            local items_font_size = FileChooser.font_size
+                                or G_reader_settings:readSetting("items_font_size") or FileChooser.getItemFontSize(items_per_page)
+                            return T(_("Item font size: %1"), items_font_size)
                         end,
                         callback = function(touchmenu_instance)
-                            local current_value = FileChooser.font_size
-                            local default_value = FileChooser.getItemFontSize(G_reader_settings:readSetting("items_per_page")
-                                or FileChooser.items_per_page_default)
+                            local items_per_page = G_reader_settings:readSetting("items_per_page") or FileChooser.items_per_page_default
+                            local default_value = FileChooser.getItemFontSize(items_per_page)
+                            local current_value = FileChooser.font_size or G_reader_settings:readSetting("items_font_size") or default_value
                             local widget = SpinWidget:new{
                                 title_text =  _("Item font size"),
                                 value = current_value,
