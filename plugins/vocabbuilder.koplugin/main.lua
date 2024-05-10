@@ -1212,6 +1212,49 @@ function VocabItemWidget:onShowBookAssignment(title_changed_cb)
     UIManager:show(sort_widget)
 end
 
+function VocabItemWidget:onDictButtonsReady(obj, buttons)
+    if self.item.due_time > os.time() then
+        return true
+    end
+    local tweaked_button_count = 0
+    local early_break
+    for j = 1, #buttons do
+        for k = 1, #buttons[j] do
+            if buttons[j][k].id == "highlight" and not buttons[j][k].enabled then
+                buttons[j][k] = {
+                    id = "got_it",
+                    text = _("Got it"),
+                    callback = function()
+                        self.show_parent:gotItFromDict(self.item.word)
+                        UIManager:close(obj)
+                    end
+                }
+                if tweaked_button_count == 1 then
+                    early_break = true
+                    break
+                end
+                tweaked_button_count = tweaked_button_count + 1
+            elseif buttons[j][k].id == "search" and not buttons[j][k].enabled then
+                buttons[j][k] = {
+                    id = "forgot",
+                    text = _("Forgot"),
+                    callback = function()
+                        self.show_parent:forgotFromDict(self.item.word)
+                        UIManager:close(obj)
+                    end
+                }
+                if tweaked_button_count == 1 then
+                    early_break = true
+                    break
+                end
+                tweaked_button_count = tweaked_button_count + 1
+            end
+        end
+        if early_break then break end
+    end
+    return true -- we consume the event here!
+end
+
 
 --[[--
 Container widget. Same as sortwidget
@@ -1906,49 +1949,6 @@ function VocabularyBuilderWidget:vocabItemIter()
             end
         end
     end
-end
-
-function VocabItemWidget:onDictButtonsReady(obj, buttons)
-    if self.item.due_time > os.time() then
-        return true
-    end
-    local tweaked_button_count = 0
-    local early_break
-    for j = 1, #buttons do
-        for k = 1, #buttons[j] do
-            if buttons[j][k].id == "highlight" and not buttons[j][k].enabled then
-                buttons[j][k] = {
-                    id = "got_it",
-                    text = _("Got it"),
-                    callback = function()
-                        self.show_parent:gotItFromDict(self.item.word)
-                        UIManager:close(obj)
-                    end
-                }
-                if tweaked_button_count == 1 then
-                    early_break = true
-                    break
-                end
-                tweaked_button_count = tweaked_button_count + 1
-            elseif buttons[j][k].id == "search" and not buttons[j][k].enabled then
-                buttons[j][k] = {
-                    id = "forgot",
-                    text = _("Forgot"),
-                    callback = function()
-                        self.show_parent:forgotFromDict(self.item.word)
-                        UIManager:close(obj)
-                    end
-                }
-                if tweaked_button_count == 1 then
-                    early_break = true
-                    break
-                end
-                tweaked_button_count = tweaked_button_count + 1
-            end
-        end
-        if early_break then break end
-    end
-    return true -- we consume the event here!
 end
 
 
