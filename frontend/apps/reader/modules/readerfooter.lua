@@ -499,6 +499,9 @@ function ReaderFooter:init()
     if not Device:hasBattery() then
         MODE.battery = nil
     end
+    if not Device:hasNaturalLight() then
+        MODE.frontlight_warmth = nil
+    end
 
     -- self.mode_index will be an array of MODE names, with an additional element
     -- with key 0 for "off", which feels a bit strange but seems to work...
@@ -676,6 +679,7 @@ local option_help_text = {}
 option_help_text[MODE.pages_left_book] = _("Can be configured to include or exclude the current page.")
 option_help_text[MODE.percentage] = _("Progress percentage can be shown with zero, one or two decimal places.")
 option_help_text[MODE.mem_usage] = _("Show memory usage in MiB.")
+--option_help_text[MODE.reclaim_height] = _("When status bar is unlocked and hidden, this setting will utilise the entirety of screen real state and will temporarily overlap status bar and text when unhidden.")
 option_help_text[MODE.custom_text] = ReaderFooter.set_custom_text
 
 function ReaderFooter:updateFooterContainer()
@@ -1450,7 +1454,8 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
         }
     })
-    ----------- footer_items
+    ---------------------------------
+    -- footer_items
     local footer_items = {}
     table.insert(sub_items, {
         text = _("Items"),
@@ -1481,7 +1486,7 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(footer_items, getMinibarOption("book_title"))
     table.insert(footer_items, getMinibarOption("book_chapter"))
     table.insert(footer_items, getMinibarOption("custom_text"))
-    -------- configure footer_items
+    -- configure footer_items
     table.insert(sub_items, {
         separator = true,
         text = _("Configure items"),
@@ -1980,8 +1985,10 @@ With this feature enabled, the current page is factored in, resulting in the cou
         })
     end
     -- More status bar options
-    -- quick access to this setting for "@NiLuJe, and for people that do like him." -- @poire-z (2024)
-    table.insert(sub_items, getMinibarOption("reclaim_height"))
+    -- Easy access for "@NiLuJe, and for people that do like him." -- @poire-z (2024)
+    if Device:isTouchDevice() then -- this setting requires a touch screen to be useful
+        table.insert(sub_items, getMinibarOption("reclaim_height"))
+    end
     table.insert(sub_items, {
         text = _("Show status bar separator"),
         checked_func = function()
@@ -1992,7 +1999,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
             self:refreshFooter(true, true)
         end,
     })
-    -- the next couple of settings are useless on non-touch devices so we take them off there
+    -- the next couple of settings are also useless on non-touch devices so we take them off there
     if Device:isTouchDevice() then
         table.insert(sub_items, {
             text = _("Lock status bar"),
