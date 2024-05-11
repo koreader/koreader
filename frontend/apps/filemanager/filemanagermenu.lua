@@ -149,7 +149,7 @@ function FileManagerMenu:setUpdateItemTable()
 
     -- setting tab
     self.menu_items.filebrowser_settings = {
-        text = _("File Management"),
+        text = _("Settings"),
         sub_item_table = {
             {
                 text = _("Show finished books"),
@@ -290,7 +290,7 @@ function FileManagerMenu:setUpdateItemTable()
                 },
             },
             {
-                text = _("History tab"),
+                text = _("History"),
                 sub_item_table = {
                     {
                         text = _("Shorten date/time"),
