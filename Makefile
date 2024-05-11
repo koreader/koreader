@@ -43,7 +43,7 @@ else
 	DIST:=emulator
 endif
 
-INSTALL_DIR=koreader-$(DIST)-$(MACHINE)
+INSTALL_DIR ?= koreader-$(DIST)-$(MACHINE)
 
 # platform directories
 PLATFORM_DIR=platform
@@ -54,6 +54,13 @@ WIN32_DIR=$(PLATFORM_DIR)/win32
 INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastorage.lua \
 		l10n tools README.md COPYING
 
+ifeq ($(abspath $(OUTPUT_DIR)),$(OUTPUT_DIR))
+  ABSOLUTE_OUTPUT_DIR = $(OUTPUT_DIR)
+else
+  ABSOLUTE_OUTPUT_DIR = $(KOR_BASE)/$(OUTPUT_DIR)
+endif
+OUTPUT_DIR_ARTIFACTS = $(ABSOLUTE_OUTPUT_DIR)/!(cache|history)
+
 all: base
 	install -d $(INSTALL_DIR)/koreader
 	rm -f $(INSTALL_DIR)/koreader/git-rev; echo "$(VERSION)" > $(INSTALL_DIR)/koreader/git-rev
@@ -61,30 +68,26 @@ ifdef ANDROID
 	rm -f android-fdroid-version; echo -e "$(ANDROID_NAME)\n$(ANDROID_VERSION)" > koreader-android-fdroid-latest
 endif
 ifeq ($(IS_RELEASE),1)
-	$(RCP) -fL $(KOR_BASE)/$(OUTPUT_DIR)/. $(INSTALL_DIR)/koreader/.
+	bash -O extglob -c '$(RCP) -fL $(OUTPUT_DIR_ARTIFACTS) $(INSTALL_DIR)/koreader/'
 else
 	cp -f $(KOR_BASE)/ev_replay.py $(INSTALL_DIR)/koreader/
 	@echo "[*] create symlink instead of copying files in development mode"
-	cd $(INSTALL_DIR)/koreader && \
-		bash -O extglob -c "ln -sf ../../$(KOR_BASE)/$(OUTPUT_DIR)/!(cache|history) ."
+	bash -O extglob -c '$(SYMLINK) $(OUTPUT_DIR_ARTIFACTS) $(INSTALL_DIR)/koreader/'
+  ifneq (,$(EMULATE_READER))
 	@echo "[*] install front spec only for the emulator"
-	cd $(INSTALL_DIR)/koreader/spec && test -e front || \
-		ln -sf ../../../../spec ./front
-	cd $(INSTALL_DIR)/koreader/spec/front/unit && test -e data || \
-		ln -sf ../../test ./data
+	$(SYMLINK) $(abspath spec) $(INSTALL_DIR)/koreader/spec/front
+	$(SYMLINK) $(abspath test) $(INSTALL_DIR)/koreader/spec/front/unit/data
+  endif
 endif
-	for f in $(INSTALL_FILES); do \
-		ln -sf ../../$$f $(INSTALL_DIR)/koreader/; \
-	done
+	$(SYMLINK) $(abspath $(INSTALL_FILES)) $(INSTALL_DIR)/koreader/
 ifdef ANDROID
-	cd $(INSTALL_DIR)/koreader && \
-		ln -sf ../../$(ANDROID_DIR)/*.lua .
+	$(SYMLINK) $(abspath $(ANDROID_DIR)/*.lua) $(INSTALL_DIR)/koreader/
 endif
 	@echo "[*] Install update once marker"
 	@echo "# This file indicates that update once patches have not been applied yet." > $(INSTALL_DIR)/koreader/update_once.marker
 ifdef WIN32
 	@echo "[*] Install runtime libraries for win32..."
-	cd $(INSTALL_DIR)/koreader && cp ../../$(WIN32_DIR)/*.dll .
+	$(SYMLINK) $(abspath $(WIN32_DIR)/*.dll) $(INSTALL_DIR)/koreader/
 endif
 ifdef SHIP_SHARED_STL
 	@echo "[*] Install C++ runtime..."
@@ -110,11 +113,10 @@ base:
 	$(MAKE) -C $(KOR_BASE)
 
 $(INSTALL_DIR)/koreader/.busted: .busted
-	ln -sf ../../.busted $(INSTALL_DIR)/koreader
+	$(SYMLINK) $(abspath .busted) $@
 
 $(INSTALL_DIR)/koreader/.luacov:
-	test -e $(INSTALL_DIR)/koreader/.luacov || \
-		ln -sf ../../.luacov $(INSTALL_DIR)/koreader
+	$(SYMLINK) $(abspath .luacov) $@
 
 testfront: $(INSTALL_DIR)/koreader/.busted
 	# sdr files may have unexpected impact on unit testing
