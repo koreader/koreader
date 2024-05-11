@@ -34,8 +34,18 @@ trap 'rm -rf "${tmpdir}"' EXIT
 
 manifest="${tmpdir}/manifest"
 
-"${sevenzip}" -l -ba h "${patterns[@]}" |
-    awk '{ if ($3!="") print $3, $2, $1; else print $1 }' |
+# Detect if that version of 7z deferences symlinks by default.
+sevenzip_manifest_cmd=("${sevenzip}" -ba h)
+ln -s /dev/null "${tmpdir}/symlink"
+checksum="$("${sevenzip_manifest_cmd[@]}" "${tmpdir}/symlink" | awk '{ print $1 }')"
+if [[ "${checksum}" != '00000000' ]]; then
+    sevenzip_manifest_cmd+=(-l)
+fi
+rm -f "${tmpdir}/symlink"
+
+# Note: remove trailing `/` appended to directories in some 7z versions.
+"${sevenzip_manifest_cmd[@]}" "${patterns[@]}" |
+    awk '{ if ($3!="") print $3, $2, $1; else { gsub("/$", "", $1); print $1 } }' |
     sort >"${manifest}"
 
 # cat "${manifest}" | less
@@ -78,6 +88,6 @@ cd "${tmpdir}/contents"
 find . -depth -print0 | xargs -0 touch --date="${epoch}"
 
 # And create the final archive.
-"${sevenzip}" -l -mqs "${options[@]}" a "${archive}" .
+"${sevenzip}" -mqs "${options[@]}" a "${archive}" .
 
 # vim: sw=4
