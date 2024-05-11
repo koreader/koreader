@@ -35,7 +35,7 @@ trap 'rm -rf "${tmpdir}"' EXIT
 manifest="${tmpdir}/manifest"
 
 "${sevenzip}" -l -ba h "${patterns[@]}" |
-    awk '{ if ($3) print $3, $2, $1; else print $1 }' |
+    awk '{ if ($3!="") print $3, $2, $1; else print $1 }' |
     sort >"${manifest}"
 
 # cat "${manifest}" | less
@@ -46,7 +46,7 @@ if [[ -r "${archive}" ]]; then
             "${sevenzip}" -slt l "${archive}" |
                 awk '
                     /^(\w+) = / { entry[$1] = $3; }
-                    /^CRC =/ { if ($3) print entry["Path"], entry["Size"], $3; else print entry["Path"] }
+                    /^CRC =/ { if ($3!="") print entry["Path"], entry["Size"], $3; else print entry["Path"] }
                     ' | sort
         ) --label 'to add' "${manifest}"; then
         exit
