@@ -74,8 +74,7 @@ APPIMAGETOOL_URL=https://github.com/AppImage/AppImageKit/releases/download/13/ap
 INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastorage.lua \
 		l10n tools README.md COPYING
 
-all: $(if $(ANDROID),,$(KOR_BASE)/$(OUTPUT_DIR)/luajit)
-	$(MAKE) -C $(KOR_BASE)
+all: base
 	install -d $(INSTALL_DIR)/koreader
 	rm -f $(INSTALL_DIR)/koreader/git-rev; echo "$(VERSION)" > $(INSTALL_DIR)/koreader/git-rev
 ifdef ANDROID
@@ -127,7 +126,7 @@ ifeq ($(IS_RELEASE),1)
 	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,cr3skin-format.txt,desktop,devices,manual}
 endif
 
-$(KOR_BASE)/$(OUTPUT_DIR)/luajit:
+base:
 	$(MAKE) -C $(KOR_BASE)
 
 $(INSTALL_DIR)/koreader/.busted: .busted
@@ -629,4 +628,4 @@ static-check:
 doc:
 	make -C doc
 
-.PHONY: all clean doc test update
+.PHONY: all base clean doc test update
