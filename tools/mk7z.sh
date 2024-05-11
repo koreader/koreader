@@ -45,7 +45,7 @@ if [[ -r "${archive}" ]]; then
         <(
             "${sevenzip}" -slt l "${archive}" |
                 awk '
-                    /^(\w+) = / { entry[$1] = $3; }
+                    /^([^=]+) = / { entry[$1] = $3; }
                     /^CRC =/ { if ($3!="") print entry["Path"], entry["Size"], $3; else print entry["Path"] }
                     ' | sort
         ) --label 'to add' "${manifest}"; then
