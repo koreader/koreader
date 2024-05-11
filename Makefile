@@ -57,7 +57,7 @@ ifeq ($(abspath $(OUTPUT_DIR)),$(OUTPUT_DIR))
 else
   ABSOLUTE_OUTPUT_DIR = $(KOR_BASE)/$(OUTPUT_DIR)
 endif
-OUTPUT_DIR_ARTIFACTS = $(ABSOLUTE_OUTPUT_DIR)/!(cache|history)
+OUTPUT_DIR_ARTIFACTS = $(ABSOLUTE_OUTPUT_DIR)/!(cache|history|thirdparty)
 
 all: base
 	install -d $(INSTALL_DIR)/koreader
