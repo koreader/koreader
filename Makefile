@@ -96,13 +96,9 @@ ifdef SHIP_SHARED_STL
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/koreader/libs/$(notdir $(SHARED_STL_LIB))
 endif
 	@echo "[*] Install plugins"
-	@# TODO: link istead of cp?
-	$(RCP) plugins/. $(INSTALL_DIR)/koreader/plugins/.
-	@# purge deleted plugins
-	for d in $$(ls $(INSTALL_DIR)/koreader/plugins); do \
-		test -d plugins/$$d || rm -rf $(INSTALL_DIR)/koreader/plugins/$$d ; done
+	$(SYMLINK) $(abspath plugins) $(INSTALL_DIR)/koreader/
 	@echo "[*] Install resources"
-	$(RCP) -pL resources/fonts/. $(INSTALL_DIR)/koreader/fonts/.
+	$(SYMLINK) $(abspath resources/fonts/*) $(INSTALL_DIR)/koreader/fonts/
 	install -d $(INSTALL_DIR)/koreader/{screenshots,data/{dict,tessdata},fonts/host,ota}
 ifeq ($(IS_RELEASE),1)
 	@echo "[*] Clean up, remove unused files for releases"
