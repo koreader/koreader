@@ -676,11 +676,11 @@ end
 
 -- Help text string, or function, to be shown, or executed, on a long press on menu item
 local option_help_text = {}
-option_help_text[MODE.pages_left_book] = _("Can be configured to include or exclude the current page.")
-option_help_text[MODE.percentage] = _("Progress percentage can be shown with zero, one or two decimal places.")
-option_help_text[MODE.mem_usage] = _("Show memory usage in MiB.")
---option_help_text[MODE.reclaim_height] = _("When status bar is unlocked and hidden, this setting will utilise the entirety of screen real state and will temporarily overlap status bar and text when unhidden.")
-option_help_text[MODE.custom_text] = ReaderFooter.set_custom_text
+option_help_text["pages_left_book"] = _("Can be configured to include or exclude the current page.")
+option_help_text["percentage"] = _("Progress percentage can be shown with zero, one or two decimal places.")
+option_help_text["mem_usage"] = _("Show memory usage in MiB.")
+option_help_text["reclaim_height"] = _("When status bar is unlocked and hidden, this setting will utilise the entirety of screen real state and will temporarily overlap status bar and text when unhidden.")
+option_help_text["custom_text"] = ReaderFooter.set_custom_text
 
 function ReaderFooter:updateFooterContainer()
     local margin_span = HorizontalSpan:new{ width = self.horizontal_margin }
@@ -1018,11 +1018,11 @@ function ReaderFooter:addToMainMenu(menu_items)
             text_func = function()
                 return self:textOptionTitles(option)
             end,
-            help_text = type(option_help_text[MODE[option]]) == "string"
-                and option_help_text[MODE[option]],
-            help_text_func = type(option_help_text[MODE[option]]) == "function" and
-                function(touchmenu_instance)
-                    option_help_text[MODE[option]](self, touchmenu_instance)
+            help_text = type(option_help_text[option]) == "string" 
+                and option_help_text[option], 
+            help_text_func = type(option_help_text[option]) == "function" and 
+                function(touchmenu_instance) 
+                    option_help_text[option](self, touchmenu_instance) 
                 end,
             checked_func = function()
                 return self.settings[option] == true
