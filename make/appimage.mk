@@ -6,17 +6,17 @@ APPIMAGETOOL_URL = https://github.com/AppImage/AppImageKit/releases/download/13/
 update: all
 	# remove old package if any
 	rm -f koreader-appimage-$(MACHINE)-$(VERSION).appimage
-	ln -sf ../../$(APPIMAGE_DIR)/AppRun $(INSTALL_DIR)/koreader
-	ln -sf ../../$(APPIMAGE_DIR)/koreader.appdata.xml $(INSTALL_DIR)/koreader
-	ln -sf ../../$(APPIMAGE_DIR)/koreader.desktop $(INSTALL_DIR)/koreader
-	ln -sf ../../resources/koreader.png $(INSTALL_DIR)/koreader
+	$(SYMLINK) $(abspath $(APPIMAGE_DIR)/AppRun) $(INSTALL_DIR)/koreader/
+	$(SYMLINK) $(abspath $(APPIMAGE_DIR)/koreader.appdata.xml) $(INSTALL_DIR)/koreader/
+	$(SYMLINK) $(abspath $(APPIMAGE_DIR)/koreader.desktop) $(INSTALL_DIR)/koreader/
+	$(SYMLINK) $(abspath resources/koreader.png) $(INSTALL_DIR)/koreader/
 	# TODO at best this is DebUbuntu specific
-	ln -sf /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 $(INSTALL_DIR)/koreader/libs/libSDL2.so
+	$(SYMLINK) /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 $(INSTALL_DIR)/koreader/libs/libSDL2.so
 	# required for our stock Ubuntu SDL even though we don't use sound
 	# the readlink is a half-hearted attempt at being generic; the echo libsndio.so.7.0 is specific to the nightly builds
-	ln -sf /usr/lib/x86_64-linux-gnu/$(shell readlink /usr/lib/x86_64-linux-gnu/libsndio.so || echo libsndio.so.7.0) $(INSTALL_DIR)/koreader/libs/
+	$(SYMLINK) /usr/lib/x86_64-linux-gnu/$(shell readlink /usr/lib/x86_64-linux-gnu/libsndio.so || echo libsndio.so.7.0) $(INSTALL_DIR)/koreader/libs/
 	# also copy libbsd.so.0, cf. https://github.com/koreader/koreader/issues/4627
-	ln -sf /lib/x86_64-linux-gnu/libbsd.so.0 $(INSTALL_DIR)/koreader/libs/
+	$(SYMLINK) /lib/x86_64-linux-gnu/libbsd.so.0 $(INSTALL_DIR)/koreader/libs/
 ifeq ("$(wildcard $(APPIMAGETOOL))","")
 	# download appimagetool
 	wget "$(APPIMAGETOOL_URL)"
