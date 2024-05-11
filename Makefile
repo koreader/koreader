@@ -3,7 +3,7 @@ KOR_BASE?=base
 
 # the repository might not have been checked out yet, so make this
 # able to fail:
--include $(KOR_BASE)/Makefile.defs
+include $(KOR_BASE)/Makefile.defs
 
 # We want VERSION to carry the version of the KOReader main repo, not that of koreader-base
 VERSION:=$(shell git describe HEAD)
@@ -157,7 +157,7 @@ coverage: $(INSTALL_DIR)/koreader/.luacov
 		+$$(($$(grep -nm1 -e "^Summary$$" luacov.report.out|cut -d: -f1)-1)) \
 		luacov.report.out
 
-fetchthirdparty:
+$(KOR_BASE)/Makefile.defs fetchthirdparty:
 	git submodule init
 	git submodule sync
 ifneq (,$(CI))
