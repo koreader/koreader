@@ -31,7 +31,7 @@ endif
 ANDROID_VERSION?=$(shell git rev-list --count HEAD)
 ANDROID_NAME?=$(VERSION)
 
-MACHINE=$(shell $(CC) -dumpmachine 2>/dev/null)
+MACHINE=$(TARGET_MACHINE)
 ifdef KODEBUG
 	MACHINE:=$(MACHINE)-debug
 	KODEDUG_SUFFIX:=-debug
