@@ -9,7 +9,7 @@ KOR_BASE?=base
 VERSION:=$(shell git describe HEAD)
 # Only append date if we're not on a whole version, like v2018.11
 ifneq (,$(findstring -,$(VERSION)))
-	VERSION:=$(VERSION)_$(shell git describe HEAD | xargs git show -s --format=format:"%cd" --date=short)
+	VERSION:=$(VERSION)_$(shell git show -s --format=format:"%cd" --date=short HEAD)
 endif
 
 # releases do not contain tests and misc data
