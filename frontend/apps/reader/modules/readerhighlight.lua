@@ -592,8 +592,8 @@ Except when in two columns mode, where this is limited to showing only the previ
     -- long_press setting is under taps_and_gestures menu which is not available for non-touch devices
     -- Clone long_press setting and change its label, making it much more meaningful for non-touch device users.
     if not Device:isTouchDevice() and Device:hasDPad() then
-        menu_items.selection_text = util.tableDeepCopy(menu_items.long_press)
-        menu_items.selection_text.text = _("Select on text")
+        menu_items.selection_text = menu_items.long_press
+        menu_items.selection_text.text = _("Selection on text")
         menu_items.long_press = nil
     end
 
