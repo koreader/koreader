@@ -56,15 +56,15 @@ function Calibre:onCloseWirelessConnection()
     self:closeWirelessConnection()
 end
 
-function Calibre:closeWirelessConnection()
-    if CalibreWireless.calibre_socket then
-        CalibreWireless:disconnect()
-    end
-end
-
 function Calibre:startWirelessConnection()
     if not CalibreWireless.calibre_socket then
         CalibreWireless:connect()
+    end
+end
+
+function Calibre:closeWirelessConnection()
+    if CalibreWireless.calibre_socket then
+        CalibreWireless:disconnect()
     end
 end
 
