@@ -331,7 +331,7 @@ function ExternalKeyboard:findAndSetupKeyboards()
     -- A USB keyboard may be recognized as several devices under a hub. And several of them may
     -- have keyboard capabilities set. Yet, only one would emit the events. The solution is to open all of them.
     for __, keyboard_info in ipairs(keyboards) do
-        self:setupKeyboard(keyboard_info.event_path)
+        self:setupKeyboard(keyboard_info)
     end
 end
 
@@ -339,12 +339,22 @@ function ExternalKeyboard:onEvdevInputRemove(evdev)
     UIManager:scheduleIn(0.5, self._onEvdevInputRemove, self, evdev)
 end
 
-function ExternalKeyboard:setupKeyboard(event_path)
-    local keyboard_info = checkKeyboard(event_path)
-    if not keyboard_info then
-        logger.dbg("ExternalKeyboard:setupKeyboard:", event_path, "doesn't look like a keyboard")
-        return
+function ExternalKeyboard:setupKeyboard(data)
+    local keyboard_info
+    if type(data) == "table" then
+        -- We came from findAndSetupKeyboards, no need to-re-check the device
+        keyboard_info = data
+    else
+        -- We came from a USB hotplug event handler, check the specified path
+        local event_path = data
+
+        keyboard_info = checkKeyboard(event_path)
+        if not keyboard_info then
+            logger.dbg("ExternalKeyboard:setupKeyboard:", event_path, "doesn't look like a keyboard")
+            return
+        end
     end
+
     local has_dpad_func = Device.hasDPad
 
     logger.dbg("ExternalKeyboard:setupKeyboard", keyboard_info.event_path, "has_dpad", keyboard_info.has_dpad)
