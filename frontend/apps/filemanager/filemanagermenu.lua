@@ -187,7 +187,7 @@ function FileManagerMenu:setUpdateItemTable()
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Book entries per page: %1"),
+                            return T(_("Entries per page: %1"),
                                 G_reader_settings:readSetting("items_per_page") or FileChooser.items_per_page_default)
                         end,
                         help_text = _([[This sets the number of entries per page in:
@@ -219,14 +219,14 @@ function FileManagerMenu:setUpdateItemTable()
                             local items_per_page = G_reader_settings:readSetting("items_per_page") or FileChooser.items_per_page_default
                             local items_font_size = FileChooser.font_size
                                 or G_reader_settings:readSetting("items_font_size") or FileChooser.getItemFontSize(items_per_page)
-                            return T(_("File name font size: %1"), items_font_size)
+                            return T(_("Entries font size: %1"), items_font_size)
                         end,
                         callback = function(touchmenu_instance)
                             local items_per_page = G_reader_settings:readSetting("items_per_page") or FileChooser.items_per_page_default
                             local default_value = FileChooser.getItemFontSize(items_per_page)
                             local current_value = FileChooser.font_size or G_reader_settings:readSetting("items_font_size") or default_value
                             local widget = SpinWidget:new{
-                                title_text =  _("File name font size"),
+                                title_text =  _("Entries font size"),
                                 value = current_value,
                                 value_min = 10,
                                 value_max = 72,
@@ -249,7 +249,7 @@ function FileManagerMenu:setUpdateItemTable()
                         end,
                     },
                     {
-                        text = _("Auto reduce filename-font-size to fit whole text"),
+                        text = _("Auto reduce font-size to fit more text"),
                         checked_func = function()
                             return G_reader_settings:isTrue("items_multilines_show_more_text")
                         end,
@@ -313,11 +313,11 @@ function FileManagerMenu:setUpdateItemTable()
                         separator = true,
                     },
                     {
-                        text = _("Clear deleted files from history"),
+                        text = _("Remove deleted files from history"),
                         callback = function()
                             UIManager:show(ConfirmBox:new{
-                                text = _("Clear deleted files from history?"),
-                                ok_text = _("Clear"),
+                                text = _("Remove deleted files from history?"),
+                                ok_text = _("Remove"),
                                 ok_callback = function()
                                     require("readhistory"):clearMissing()
                                 end,
@@ -325,7 +325,7 @@ function FileManagerMenu:setUpdateItemTable()
                         end,
                     },
                     {
-                        text = _("Auto-remove deleted or purged entries from history"),
+                        text = _("Auto-remove deleted or purged files from history"),
                         checked_func = function()
                             return G_reader_settings:isTrue("autoremove_deleted_items_from_history")
                         end,
