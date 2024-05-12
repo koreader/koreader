@@ -143,15 +143,13 @@ local Kobo = Generic:extend{
     ntx_dev = "/dev/input/event0",
     -- Stable path to the Touch input device
     touch_dev = "/dev/input/event1",
-    -- Stable path to the Power Button input device
-    power_dev = nil,
     -- Event code to use to detect contact pressure
     pressure_event = nil,
     -- Device features multiple CPU cores
     isSMP = no,
     -- Device supports "eclipse" waveform modes (i.e., optimized for nightmode).
     hasEclipseWfm = no,
-    -- Device ships with various hardware revisions under the same device code, requiring automatic hardware detection...
+    -- Device ships with various hardware revisions under the same device code, requiring automatic hardware detection (PMIC & FL)...
     automagic_sysfs = false,
     -- The standard "standby" power state
     standby_state = "standby",
@@ -418,8 +416,6 @@ local KoboEuropa = Kobo:extend{
     display_dpi = 227,
     boot_rota = C.FB_ROTATE_CCW,
     battery_sysfs = "/sys/class/power_supply/battery",
-    ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
-    touch_dev = "/dev/input/by-path/platform-0-0010-event",
     isSMP = yes,
 }
 
@@ -449,8 +445,6 @@ local KoboCadmus = Kobo:extend{
     battery_sysfs = "/sys/class/power_supply/battery",
     hasAuxBattery = yes,
     aux_battery_sysfs = "/sys/class/misc/cilix",
-    ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
-    touch_dev = "/dev/input/by-path/platform-0-0010-event",
     isSMP = yes,
     -- Much like the Libra 2, there are at least two different HW revisions, with different PMICs...
     automagic_sysfs = true,
@@ -504,7 +498,6 @@ local KoboGoldfinch = Kobo:extend{
         nl_inverted = true,
     },
     battery_sysfs = "/sys/class/power_supply/battery",
-    power_dev = "/dev/input/by-path/platform-bd71828-pwrkey-event",
     -- Board is eerily similar to the Libra 2, so, it inherits the same quirks...
     -- c.f., https://github.com/koreader/koreader/issues/9552#issuecomment-1293000313
     hasReliableMxcWaitFor = no,
@@ -531,9 +524,6 @@ local KoboCondor = Kobo:extend{
         nl_inverted = true,
     },
     battery_sysfs = "/sys/class/power_supply/bd71827_bat",
-    touch_dev = "/dev/input/by-path/platform-2-0010-event",
-    ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
-    power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event",
     isSMP = yes,
 }
 
@@ -558,9 +548,9 @@ local KoboMonza = Kobo:extend{
         nl_max = 10,
         nl_inverted = true,
     },
+    battery_sysfs = "/sys/class/power_supply/bd71827_bat",
     isSMP = yes,
     hasColorScreen = yes,
-    automagic_sysfs = true,
 }
 
 -- Kobo Clara B/W:
@@ -580,7 +570,7 @@ local KoboSpaBW = Kobo:extend{
         nl_max = 10,
         nl_inverted = true,
     },
-    automagic_sysfs = true,
+    battery_sysfs = "/sys/class/power_supply/bd71827_bat",
 }
 
 -- Kobo Clara Colour:
@@ -600,9 +590,9 @@ local KoboSpaColour = Kobo:extend{
         nl_max = 10,
         nl_inverted = true,
     },
+    battery_sysfs = "/sys/class/power_supply/bd71827_bat",
     isSMP = yes,
     hasColorScreen = yes,
-    automagic_sysfs = true,
 }
 
 function Kobo:setupChargingLED()
@@ -759,46 +749,6 @@ function Kobo:init()
                 self.frontlight_settings.frontlight_mixer = "/sys/class/backlight/tlc5947_bl/color"
             end
         end
-
-        -- Touch panel input
-        if util.fileExists("/dev/input/by-path/platform-2-0010-event") then
-            -- Elan (HWConfig TouchCtrl is ekth6) on i2c bus 2
-            self.touch_dev = "/dev/input/by-path/platform-2-0010-event"
-        elseif util.fileExists("/dev/input/by-path/platform-1-0010-event") then
-            -- Elan (HWConfig TouchCtrl is ekth6) on i2c bus 1
-            self.touch_dev = "/dev/input/by-path/platform-1-0010-event"
-        elseif util.fileExists("/dev/input/by-path/platform-0-0010-event") then
-            -- Elan (HWConfig TouchCtrl is ekth6) on i2c bus 0
-            self.touch_dev = "/dev/input/by-path/platform-0-0010-event"
-        else
-            self.touch_dev = "/dev/input/event1"
-        end
-
-        -- Physical buttons & synthetic NTX events
-        if util.fileExists("/dev/input/by-path/platform-gpio-keys-event") then
-            -- Libra 2 w/ a BD71828 PMIC
-            self.ntx_dev = "/dev/input/by-path/platform-gpio-keys-event"
-        elseif util.fileExists("/dev/input/by-path/platform-ntx_event0-event") then
-            -- MTK, sunxi & Mk. 7
-            self.ntx_dev = "/dev/input/by-path/platform-ntx_event0-event"
-        elseif util.fileExists("/dev/input/by-path/platform-mxckpd-event") then
-            -- circa Mk. 5 i.MX
-            self.ntx_dev = "/dev/input/by-path/platform-mxckpd-event"
-        else
-            self.ntx_dev = "/dev/input/event0"
-        end
-
-        -- Power button (this usually ends up in ntx_dev, except with some PMICs)
-        if util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey-event") then
-            -- Libra 2 & Nia w/ a BD71828 PMIC
-            self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey-event"
-        elseif util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event") then
-            -- Sage w/ a BD71828 PMIC
-            self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event"
-        elseif util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event") then
-            -- MTK w/ a BD71828 PMIC
-            self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event"
-        end
     end
 
     -- NOTE: i.MX5 devices have a wonky RTC that doesn't like alarms set further away that UINT16_MAX seconds from now...
@@ -930,10 +880,6 @@ function Kobo:init()
         logger.warn("We failed to auto-detect the proper input devices, input handling may be inconsistent!")
         -- Various HW Buttons, Switches & Synthetic NTX events
         self.ntx_fd = self.input.open(self.ntx_dev)
-        -- Dedicated Power Button input device (if any)
-        if self.power_dev then
-            self.input.open(self.power_dev)
-        end
         -- Touch panel
         self.input.open(self.touch_dev)
     end
