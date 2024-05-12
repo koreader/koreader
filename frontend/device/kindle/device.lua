@@ -293,6 +293,11 @@ function Kindle:init()
         self.canDeepSleep = false
     end
 
+    -- If the device-specific init hasn't done so already (devices without keys don't), instantiate Input.
+    if not self.input then
+        self.input = require("device/input"):new{ device = self }
+    end
+
     -- Auto-detect & open input devices
     self:openInputDevices()
 
