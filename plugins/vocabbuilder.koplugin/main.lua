@@ -149,7 +149,7 @@ function MenuDialog:setupPluginMenu()
     local filter_button = {
         text = _("Filter books"),
         callback = function()
-            self:onClose()
+            UIManager:close(self)
             self.show_parent:onShowFilter()
         end
     }
@@ -157,7 +157,7 @@ function MenuDialog:setupPluginMenu()
     local reverse_button = {
         text = settings.reverse and _("Reverse order") or _("Reverse order and show only reviewable"),
         callback = function()
-            self:onClose()
+            UIManager:close(self)
             settings.reverse = not settings.reverse
             saveSettings()
             self.show_parent:reloadItems()
@@ -167,7 +167,7 @@ function MenuDialog:setupPluginMenu()
     local edit_button = {
         text = self.is_edit_mode and _("Resume") or _("Quick deletion"),
         callback = function()
-            self:onClose()
+            UIManager:close(self)
             self.edit_callback()
         end
     }
@@ -180,7 +180,7 @@ function MenuDialog:setupPluginMenu()
                 ok_text = _("Reset"),
                 ok_callback = function()
                     DB:resetProgress()
-                    self:onClose()
+                    UIManager:close(self)
                     self.reset_callback()
                 end
             })
@@ -195,7 +195,7 @@ function MenuDialog:setupPluginMenu()
                 ok_text = _("Clean"),
                 ok_callback = function()
                     DB:purge()
-                    self:onClose()
+                    UIManager:close(self)
                     self.clean_callback()
                 end
             })
@@ -353,7 +353,7 @@ function MenuDialog:setupBookMenu(sort_item, onSuccess)
     local change_title_button = {
         text = _("Change book title"),
         callback = function()
-            self:onClose()
+            UIManager:close(self)
             -- first show_parent is sortWidget, second is vocabBuilderWidget
             self.show_parent.show_parent:showChangeBookTitleDialog(sort_item, onSuccess)
         end
@@ -361,7 +361,7 @@ function MenuDialog:setupBookMenu(sort_item, onSuccess)
     local select_single_button = {
         text = _("Select only this book"),
         callback = function()
-            self:onClose()
+            UIManager:close(self)
             for _, item in pairs(self.show_parent.item_table) do
                 if item == sort_item then
                     if not item.checked_func() then
@@ -377,7 +377,7 @@ function MenuDialog:setupBookMenu(sort_item, onSuccess)
     local select_all_button = {
         text = _("Select all books"),
         callback = function()
-            self:onClose()
+            UIManager:close(self)
             for _, item in pairs(self.show_parent.item_table) do
                 if not item.checked_func() then
                     item.callback()
@@ -389,7 +389,7 @@ function MenuDialog:setupBookMenu(sort_item, onSuccess)
     local select_page_all_button = {
         text = _("Select all books on this page"),
         callback = function()
-            self:onClose()
+            UIManager:close(self)
             for _, content in pairs(self.show_parent.main_content) do
                 if content.item and not content.item.checked_func() then
                     content.item.callback()
@@ -401,7 +401,7 @@ function MenuDialog:setupBookMenu(sort_item, onSuccess)
     local deselect_page_all_button = {
         text = _("Deselect all books on this page"),
         callback = function()
-            self:onClose()
+            UIManager:close(self)
             for _, content in pairs(self.show_parent.main_content) do
                 if content.item and content.item.checked_func() then
                     content.item.callback()
@@ -442,6 +442,9 @@ function MenuDialog:onShow()
 end
 
 function MenuDialog:onCloseWidget()
+    if self.tap_close_callback then
+        self.tap_close_callback()
+    end
     UIManager:setDirty(nil, function()
         return "ui", self[1][1].dimen
     end)
@@ -457,10 +460,6 @@ end
 
 function MenuDialog:onClose()
     UIManager:close(self)
-    if self.tap_close_callback then
-        self.tap_close_callback()
-    end
-    return true
 end
 
 function MenuDialog:onChangeContextStatus(args, position)
@@ -673,6 +672,9 @@ function WordInfoDialog:onShow()
 end
 
 function WordInfoDialog:onCloseWidget()
+    if self.tap_close_callback then
+        self.tap_close_callback()
+    end
     UIManager:setDirty(nil, function()
         return "ui", self[1][1].dimen
     end)
@@ -680,16 +682,12 @@ end
 
 function WordInfoDialog:onClose()
     UIManager:close(self)
-    if self.tap_close_callback then
-        self.tap_close_callback()
-    end
-    return true
 end
 
 function WordInfoDialog:onTap(_, ges)
     if ges.pos:notIntersectWith(self[1][1].dimen) then
         -- Tap outside closes widget
-        self:onClose()
+        UIManager:close(self)
         return true
     end
 end
@@ -1212,7 +1210,10 @@ function VocabItemWidget:onShowBookAssignment(title_changed_cb)
     UIManager:show(sort_widget)
 end
 
-function VocabItemWidget:onDictButtonsReady(obj, buttons)
+function VocabItemWidget:onDictButtonsReady(dict_popup, buttons)
+    if not self.item or self.item.word ~= dict_popup.word then
+        return false
+    end
     if self.item.due_time > os.time() then
         return true
     end
@@ -1226,7 +1227,7 @@ function VocabItemWidget:onDictButtonsReady(obj, buttons)
                     text = _("Got it"),
                     callback = function()
                         self.show_parent:gotItFromDict(self.item.word)
-                        UIManager:close(obj)
+                        dict_popup:onClose()
                     end
                 }
                 if tweaked_button_count == 1 then
@@ -1240,7 +1241,7 @@ function VocabItemWidget:onDictButtonsReady(obj, buttons)
                     text = _("Forgot"),
                     callback = function()
                         self.show_parent:forgotFromDict(self.item.word)
-                        UIManager:close(obj)
+                        dict_popup:onClose()
                     end
                 }
                 if tweaked_button_count == 1 then
@@ -1326,7 +1327,7 @@ function VocabularyBuilderWidget:init()
         left_icon = "appbar.menu",
         left_icon_tap_callback = function() self:showMenu() end,
         title = self.title,
-        close_callback = function() self:onClose() end,
+        close_callback = function() UIManager:close(self) end,
         show_parent = self,
     }
 
@@ -1886,7 +1887,7 @@ function VocabularyBuilderWidget:onSwipe(arg, ges_ev)
         self:onPrevPage()
     elseif direction == "south" then
         -- Allow easier closing with swipe down
-        self:onClose()
+        UIManager:close(self)
     elseif direction == "north" then
         -- open filter
         self:onShowFilter()
@@ -1916,15 +1917,19 @@ function VocabularyBuilderWidget:onMultiSwipe(arg, ges_ev)
         -- For consistency with other fullscreen widgets where swipe south can't be
         -- used to close and where we then allow any multiswipe to close, allow any
         -- multiswipe to close this widget too.
-        self:onClose()
+        UIManager:close(self)
     end
     return true
 end
 
 function VocabularyBuilderWidget:onClose()
-    DB:batchUpdateItems(self.item_table)
     UIManager:close(self)
-    -- UIManager:setDirty(self, "ui")
+end
+
+function VocabularyBuilderWidget:onCloseWidget()
+    DB:batchUpdateItems(self.item_table)
+    for i=1,#self.main_content do self.main_content[i] = nil end
+    UIManager:setDirty(self, "ui")
     return true
 end
 
@@ -1934,7 +1939,7 @@ function VocabularyBuilderWidget:onCancel()
 end
 
 function VocabularyBuilderWidget:onReturn()
-    return self:onClose()
+    UIManager:close(self)
 end
 
 -- This skips the VerticalSpan widgets which are also in self.main_content
@@ -1974,20 +1979,12 @@ function VocabBuilder:addToMainMenu(menu_items)
     }
 end
 
-function VocabBuilder:onDictButtonsReady(obj, buttons)
-    if UIManager:isWidgetShown(self.widget) and #obj.window_list == 0 then
-        for vocabItem in self.widget:vocabItemIter() do
-            if vocabItem.item.word == obj.word then
-                return vocabItem:onDictButtonsReady(obj, buttons)
-            end
-        end
-        -- we should never get here
-    end
+function VocabBuilder:onDictButtonsReady(dict_popup, buttons)
     if settings.enabled then
         -- words are added automatically, no need to add the button
         return
     end
-    if obj.is_wiki_fullpage then
+    if dict_popup.is_wiki_fullpage then
         return
     end
     table.insert(buttons, 1, {{
@@ -1995,12 +1992,12 @@ function VocabBuilder:onDictButtonsReady(obj, buttons)
         text = _("Add to vocabulary builder"),
         font_bold = false,
         callback = function()
-            local book_title = (obj.ui.doc_props and obj.ui.doc_props.display_title) or _("Dictionary lookup")
-            obj.ui:handleEvent(Event:new("WordLookedUp", obj.word, book_title, true)) -- is_manual: true
-            local button = obj.button_table.button_by_id["vocabulary"]
+            local book_title = (dict_popup.ui.doc_props and dict_popup.ui.doc_props.display_title) or _("Dictionary lookup")
+            dict_popup.ui:handleEvent(Event:new("WordLookedUp", dict_popup.word, book_title, true)) -- is_manual: true
+            local button = dict_popup.button_table.button_by_id["vocabulary"]
             if button then
                 button:disable()
-                UIManager:setDirty(obj, function()
+                UIManager:setDirty(dict_popup, function()
                     return "ui", button.dimen
                 end)
             end
@@ -2036,6 +2033,7 @@ function VocabBuilder:setupWidget()
             reload_items_callback = reload_items
         }
     end
+    self[1] = self.widget
 end
 
 function VocabBuilder:onDispatcherRegisterActions()
