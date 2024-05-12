@@ -1409,11 +1409,12 @@ function KindleScribe:init()
                     rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
-            if rotation_mode > 0 then
-                self.screen.native_rotation_mode = rotation_mode
-            end
-            self.screen:setRotationMode(rotation_mode)
+            -- if rotation_mode > 0 then
+                -- self.screen.native_rotation_mode = rotation_mode
+            -- end
+            -- self.screen:setRotationMode(rotation_mode)
             lipc_handle:close()
+            self.screen:setHWRotation(3) -- somehow this is "U", not "D".
         end
     end
     -- put awesome back to sleep
