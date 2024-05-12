@@ -1447,7 +1447,14 @@ function KindleScribe:init()
     self.input.open("/dev/input/event4")
 end
 
-function KindleTouch:exit()
+function KindleTouch:exit(restart)
+    if restart then
+        logger.dbg("LOGG: This is a RESTART, not an exit!")
+    else
+        logger.dbg("LOGG: This is an EXIT!")
+        self.screen:setHWRotation(3)
+    end
+
     if self:isMTK() then
         -- Disable the so-called "fast" mode
         self.screen:_MTK_ToggleFastMode(false)
