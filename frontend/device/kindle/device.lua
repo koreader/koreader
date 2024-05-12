@@ -218,6 +218,7 @@ function Kindle:openInputDevices()
         for i = 0, tonumber(dev_count[0]) - 1 do
             local dev = devices[i]
             if dev.matched then
+                logger.dbg("Opening input device", ffi.string(dev.name), "@", ffi.string(dev.path))
                 self.input.open(dev.path)
             end
         end
