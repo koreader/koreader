@@ -11,6 +11,7 @@ local C = ffi.C
 require("ffi/linux_fb_h")
 require("ffi/linux_input_h")
 require("ffi/posix_h")
+require("ffi/fbink_input_h")
 
 local function yes() return true end
 local function no() return false end  -- luacheck: ignore
@@ -673,6 +674,38 @@ local KindleScribe = Kindle:extend{
     canDoSwipeAnimation = yes,
 }
 
+function Kindle:openInputDevices()
+    -- Auto-detect input devices (via FBInk's fbink_input_scan)
+    local FBInkInput = ffi.load("fbink_input")
+    local dev_count = ffi.new("size_t[1]")
+    -- We care about: the touchscreen, the stylus, the accelerometer and pagination buttons.
+    -- FIXME: See how well this works out with fancy virtual input devices on modern devices...
+    local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_TABLET, C.INPUT_ACCELEROMETER, C.INPUT_PAGINATION_BUTTONS)
+    local devices = FBInkInput.fbink_input_scan(match_mask, 0, C.SCAN_ONLY, dev_count)
+    if devices ~= nil then
+        for i = 0, tonumber(dev_count[0]) - 1 do
+            local dev = devices[i]
+            if dev.matched then
+                self.input.open(dev.path)
+            end
+        end
+        C.free(devices)
+    else
+        -- Auto-detection failed, warn and fall back to defaults
+        logger.warn("We failed to auto-detect the proper input devices, input handling may be inconsistent!")
+        if self.touch_dev then
+            -- We've got a preferred path specified for the touch panel
+            self.input.open(self.touch_dev)
+        else
+            -- That generally works out well enough on legacy devices...
+            self.input.open("/dev/input/event0")
+            self.input.open("/dev/input/event1")
+        end
+    end
+
+    self.input.open("fake_events")
+end
+
 function Kindle2:init()
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
@@ -683,9 +716,7 @@ function Kindle2:init()
         device = self,
         event_map = require("device/kindle/event_map_keyboard"),
     }
-    self.input.open("/dev/input/event0")
-    self.input.open("/dev/input/event1")
-    self.input.open("fake_events")
+    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -700,9 +731,7 @@ function KindleDXG:init()
         event_map = require("device/kindle/event_map_keyboard"),
     }
     self.keyboard_layout = require("device/kindle/keyboard_layout")
-    self.input.open("/dev/input/event0")
-    self.input.open("/dev/input/event1")
-    self.input.open("fake_events")
+    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -718,9 +747,7 @@ function Kindle3:init()
         event_map = require("device/kindle/event_map_kindle4"),
     }
     self.keyboard_layout = require("device/kindle/keyboard_layout")
-    self.input.open("/dev/input/event0")
-    self.input.open("/dev/input/event1")
-    self.input.open("fake_events")
+    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -735,9 +762,7 @@ function Kindle4:init()
         device = self,
         event_map = require("device/kindle/event_map_kindle4"),
     }
-    self.input.open("/dev/input/event0")
-    self.input.open("/dev/input/event1")
-    self.input.open("fake_events")
+    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -757,11 +782,7 @@ function KindleTouch:init()
     -- Kindle Touch needs event modification for proper coordinates
     self.input:registerEventAdjustHook(self.input.adjustTouchScale, {x=600/4095, y=800/4095})
 
-    -- event0 in KindleTouch is "WM8962 Beep Generator" (useless)
-    -- event1 in KindleTouch is "imx-yoshi Headset" (useless)
-    self.input.open("/dev/input/event2") -- Home button
-    self.input.open(self.touch_dev) -- touchscreen
-    self.input.open("fake_events")
+    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -774,10 +795,8 @@ function KindlePaperWhite:init()
         is_charging_file = "/sys/devices/platform/aplite_charger.0/charging",
     }
 
+    self:openInputDevices()
     Kindle.init(self)
-
-    self.input.open(self.touch_dev)
-    self.input.open("fake_events")
 end
 
 function KindlePaperWhite2:init()
@@ -790,10 +809,8 @@ function KindlePaperWhite2:init()
         hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 
+    self:openInputDevices()
     Kindle.init(self)
-
-    self.input.open(self.touch_dev)
-    self.input.open("fake_events")
 end
 
 function KindleBasic:init()
@@ -805,10 +822,8 @@ function KindleBasic:init()
         hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 
+    self:openInputDevices()
     Kindle.init(self)
-
-    self.input.open(self.touch_dev)
-    self.input.open("fake_events")
 end
 
 function KindleVoyage:init()
@@ -857,11 +872,8 @@ function KindleVoyage:init()
         end
     end)
 
+    self:openInputDevices()
     Kindle.init(self)
-
-    self.input.open(self.touch_dev)
-    self.input.open("/dev/input/event2") -- WhisperTouch
-    self.input.open("fake_events")
 
     -- reenable WhisperTouch keys when started without framework
     if self.framework_lipc_handle then
@@ -881,10 +893,8 @@ function KindlePaperWhite3:init()
         hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 
+    self:openInputDevices()
     Kindle.init(self)
-
-    self.input.open(self.touch_dev)
-    self.input.open("fake_events")
 end
 
 -- HAL for gyro orientation switches (EV_ABS:ABS_PRESSURE (?!) w/ custom values to EV_MSC:MSC_GYRO w/ our own custom values)
@@ -952,6 +962,7 @@ function KindleOasis:init()
         }
     }
 
+    self:openInputDevices()
     Kindle.init(self)
 
     --- @note See comments in KindleOasis2:init() for details.
@@ -992,21 +1003,6 @@ function KindleOasis:init()
             return this:handleGyroEv(ev)
         end
     end
-
-    self.input.open(self.touch_dev)
-    self.input.open("/dev/input/by-path/platform-gpiokey.0-event")
-
-    -- get rotate dev by EV=d
-    local std_out = io.popen("grep -e 'Handlers\\|EV=' /proc/bus/input/devices | grep -B1 'EV=d' | grep -o 'event[0-9]'", "r")
-    if std_out then
-        local rotation_dev = std_out:read("*line")
-        std_out:close()
-        if rotation_dev then
-            self.input.open("/dev/input/"..rotation_dev)
-        end
-    end
-
-    self.input.open("fake_events")
 end
 
 -- HAL for gyro orientation switches (EV_ABS:ABS_PRESSURE (?!) w/ custom values to EV_MSC:MSC_GYRO w/ our own custom values)
@@ -1069,6 +1065,7 @@ function KindleOasis2:init()
         }
     }
 
+    self:openInputDevices()
     Kindle.init(self)
 
     --- @note When starting KOReader with the device upside down ("D"), touch input is registered wrong
@@ -1118,21 +1115,6 @@ function KindleOasis2:init()
             return this:handleGyroEv(ev)
         end
     end
-
-    self.input.open(self.touch_dev)
-    self.input.open("/dev/input/by-path/platform-gpio-keys-event")
-
-    -- Get accelerometer device by looking for EV=d
-    local std_out = io.popen("grep -e 'Handlers\\|EV=' /proc/bus/input/devices | grep -B1 'EV=d' | grep -o 'event[0-9]\\{1,2\\}'", "r")
-    if std_out then
-        local rotation_dev = std_out:read("*line")
-        std_out:close()
-        if rotation_dev then
-            self.input.open("/dev/input/"..rotation_dev)
-        end
-    end
-
-    self.input.open("fake_events")
 end
 
 function KindleOasis3:init()
@@ -1161,6 +1143,7 @@ function KindleOasis3:init()
         }
     }
 
+    self:openInputDevices()
     Kindle.init(self)
 
     --- @note The same quirks as on the Oasis 2 apply ;).
@@ -1201,21 +1184,6 @@ function KindleOasis3:init()
             return this:handleGyroEv(ev)
         end
     end
-
-    self.input.open(self.touch_dev)
-    self.input.open("/dev/input/by-path/platform-gpio-keys-event")
-
-    -- Get accelerometer device by looking for EV=d
-    local std_out = io.popen("grep -e 'Handlers\\|EV=' /proc/bus/input/devices | grep -B1 'EV=d' | grep -o 'event[0-9]\\{1,2\\}'", "r")
-    if std_out then
-        local rotation_dev = std_out:read("*line")
-        std_out:close()
-        if rotation_dev then
-            self.input.open("/dev/input/"..rotation_dev)
-        end
-    end
-
-    self.input.open("fake_events")
 end
 
 function KindleBasic2:init()
@@ -1228,10 +1196,8 @@ function KindleBasic2:init()
         hall_file = "/sys/devices/system/heisenberg_hall/heisenberg_hall0/hall_enable",
     }
 
+    self:openInputDevices()
     Kindle.init(self)
-
-    self.input.open(self.touch_dev)
-    self.input.open("fake_events")
 end
 
 function KindlePaperWhite4:init()
@@ -1245,20 +1211,8 @@ function KindlePaperWhite4:init()
         hall_file = "/sys/bus/platform/drivers/hall_sensor/rex_hall/hall_enable",
     }
 
+    self:openInputDevices()
     Kindle.init(self)
-
-    -- So, look for a goodix TS input device (c.f., #5110)...
-    local std_out = io.popen("grep -e 'Handlers\\|Name=' /proc/bus/input/devices | grep -A1 'goodix-ts' | grep -o 'event[0-9]'", "r")
-    if std_out then
-        local goodix_dev = std_out:read("*line")
-        std_out:close()
-        if goodix_dev then
-            self.touch_dev = "/dev/input/" .. goodix_dev
-        end
-    end
-
-    self.input.open(self.touch_dev)
-    self.input.open("fake_events")
 end
 
 function KindleBasic3:init()
@@ -1272,35 +1226,13 @@ function KindleBasic3:init()
         hall_file = "/sys/bus/platform/drivers/hall_sensor/rex_hall/hall_enable",
     }
 
+    self:openInputDevices()
     Kindle.init(self)
 
     -- This device doesn't emit ABS_MT_TRACKING_ID:-1 events on contact lift,
     -- so we have to rely on contact lift detection via BTN_TOUCH:0,
     -- c.f., https://github.com/koreader/koreader/issues/5070
     self.input.snow_protocol = true
-    self.input.open(self.touch_dev)
-    self.input.open("fake_events")
-end
-
-local function findInputDevices()
-    -- Walk /sys/class/input and pick up any evdev input device with *any* EV_ABS capabilities
-    local devices = {}
-    for evdev in lfs.dir("/sys/class/input/") do
-        if evdev:match("event.*") then
-            local abs_cap = "/sys/class/input/" .. evdev .. "/device/capabilities/abs"
-            local f = io.open(abs_cap, "r")
-            if f then
-                local bitmap_str = f:read("l")
-                f:close()
-                if bitmap_str ~= "0" then
-                    logger.info("Potential input device found at", evdev, "because of ABS caps:", bitmap_str)
-                    table.insert(devices, "/dev/input/" .. evdev)
-                end
-            end
-        end
-    end
-
-    return devices
 end
 
 function KindlePaperWhite5:init()
@@ -1318,26 +1250,12 @@ function KindlePaperWhite5:init()
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
     self.screen:_MTK_ToggleFastMode(true)
 
+    self:openInputDevices()
     Kindle.init(self)
-
-    -- Some HW/FW variants stash their input device without a by-path symlink...
-    if util.pathExists("/dev/input/by-path/platform-1001e000.i2c-event") then
-        self.touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event"
-        self.input.open(self.touch_dev)
-    else
-        local devices = findInputDevices()
-        for _, touch in ipairs(devices) do
-            -- There should only be one match on the PW5 anyway...
-            self.touch_dev = touch
-            self.input.open(touch)
-        end
-    end
-    self.input.open("fake_events")
 end
 
 function KindleBasic4:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
-    -- TBD, assume PW5 for now
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         fl_intensity_file = "/sys/class/backlight/fp9966-bl1/brightness",
@@ -1350,21 +1268,8 @@ function KindleBasic4:init()
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
     self.screen:_MTK_ToggleFastMode(true)
 
+    self:openInputDevices()
     Kindle.init(self)
-
-    -- Some HW/FW variants stash their input device without a by-path symlink...
-    if util.pathExists("/dev/input/by-path/platform-1001e000.i2c-event") then
-        self.touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event"
-        self.input.open(self.touch_dev)
-    else
-        local devices = findInputDevices()
-        for _, touch in ipairs(devices) do
-            -- There should only be one match on the PW5 anyway...
-            self.touch_dev = touch
-            self.input.open(touch)
-        end
-    end
-    self.input.open("fake_events")
 end
 
 function KindleScribe:init()
@@ -1384,10 +1289,11 @@ function KindleScribe:init()
         hall_file = "/sys/devices/platform/eink_hall/hall_enable",
     }
 
-    Kindle.init(self)
-
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
     self.screen:_MTK_ToggleFastMode(true)
+
+    self:openInputDevices()
+    Kindle.init(self)
 
     --- @note The same quirks as on the Oasis 2 and 3 apply ;).
     local haslipc, lipc = pcall(require, "liblipclua")
@@ -1428,23 +1334,9 @@ function KindleScribe:init()
             return this:handleGyroEv(ev)
         end
     end
-    -- Get accelerometer device
-    local std_out = io.popen("grep -A4 'acc' /proc/bus/input/devices | grep -o 'event[0-9]'", "r")
-    if std_out then
-        local gyro_dev = std_out:read("*line")
-        std_out:close()
-        logger.dbg("gyro_dev", gyro_dev)
-        if gyro_dev then
-            self.input.open("/dev/input/"..gyro_dev)
-        end
-    end
-
-    self.input.open(self.touch_dev)
-    self.input.open("fake_events")
 
     -- Setup pen input
     self.input.wacom_protocol = true
-    self.input.open("/dev/input/event4")
 end
 
 function KindleTouch:exit()
