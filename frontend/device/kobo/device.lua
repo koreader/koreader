@@ -860,8 +860,9 @@ function Kobo:init()
     local dev_count = ffi.new("size_t[1]")
     -- We care about: the touchscreen, the stylus, the power button, the sleep cover, and pagination buttons
     -- (and technically rotation events, but we'll get it with the device that provides the buttons on NTX).
+    -- We exclude keyboards to play nice with the ExternalKeyboard plugin, which will handle potential keyboards on its own.
     local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_TABLET, C.INPUT_POWER_BUTTON, C.INPUT_SLEEP_COVER, C.INPUT_PAGINATION_BUTTONS)
-    local devices = FBInkInput.fbink_input_scan(match_mask, 0, C.SCAN_ONLY, dev_count)
+    local devices = FBInkInput.fbink_input_scan(match_mask, C.INPUT_KEYBOARD, C.SCAN_ONLY, dev_count)
     if devices ~= nil then
         for i = 0, tonumber(dev_count[0]) - 1 do
             local dev = devices[i]
