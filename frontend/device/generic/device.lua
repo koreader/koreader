@@ -552,7 +552,7 @@ function Device:toggleKeyRepeat(toggle) end
 --[[
 prepare for application shutdown
 --]]
-function Device:exit()
+function Device:exit(restart)
     -- Save any implementation-specific settings
     self:saveSettings()
 
