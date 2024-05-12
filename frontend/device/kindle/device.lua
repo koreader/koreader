@@ -210,8 +210,8 @@ function Kindle:openInputDevices()
     -- Auto-detect input devices (via FBInk's fbink_input_scan)
     local FBInkInput = ffi.load("fbink_input")
     local dev_count = ffi.new("size_t[1]")
-    -- We care about: the touchscreen, a properly scaled stylus, the rotation event and pagination buttons.
-    local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_SCALED_TABLET, C.INPUT_ROTATION_EVENT, C.INPUT_PAGINATION_BUTTONS)
+    -- We care about: the touchscreen, a properly scaled stylus and pagination buttons.
+    local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_SCALED_TABLET, C.INPUT_PAGINATION_BUTTONS)
     local devices = FBInkInput.fbink_input_scan(match_mask, 0, C.SCAN_ONLY, dev_count)
     if devices ~= nil then
         for i = 0, tonumber(dev_count[0]) - 1 do
@@ -222,6 +222,7 @@ function Kindle:openInputDevices()
             end
         end
         C.free(devices)
+        devices = nil
     else
         -- Auto-detection failed, warn and fall back to defaults
         logger.warn("We failed to auto-detect the proper input devices, input handling may be inconsistent!")
@@ -232,6 +233,22 @@ function Kindle:openInputDevices()
             -- That generally works out well enough on legacy devices...
             self.input.open("/dev/input/event0")
             self.input.open("/dev/input/event1")
+        end
+    end
+
+    -- Getting the device where rotation events end up without catching a bunch of false-positives is... trickier,
+    -- thanks to the inane event code being used...
+    if self:hasGSensor() then
+        devices = FBInkInput.fbink_input_scan(C.INPUT_ROTATION_EVENT, C.INPUT_TABLET, C.SCAN_ONLY, dev_count)
+        if devices ~= nil then
+            for i = 0, tonumber(dev_count[0]) - 1 do
+                local dev = devices[i]
+                if dev.matched then
+                    logger.dbg("Opening (gyro event) input device", ffi.string(dev.name), "@", ffi.string(dev.path))
+                    self.input.open(dev.path)
+                end
+            end
+            C.free(devices)
         end
     end
 
