@@ -93,13 +93,13 @@ function CoverBrowser:addToMainMenu(menu_items)
         sub_item_table[i] = {
             text = text,
             checked_func = function()
-                if filemanager_display_mode == "mosaic_text" then 
+                if filemanager_display_mode == "mosaic_text" then
                     return mode == "mosaic_image"
                 elseif filemanager_display_mode == "list_only_meta" then
                     return mode == "list_image_meta"
                 elseif filemanager_display_mode == "list_image_filename" then
                     return mode == "list_image_meta"
-                else 
+                else
                     return mode == filemanager_display_mode
                 end
             end,
@@ -148,7 +148,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                 self:setupFileManagerDisplayMode("list_image_meta")
             else
                 self:setupFileManagerDisplayMode("list_only_meta")
-            end  
+            end
         end,
     })
     table.insert(sub_item_table, {
@@ -468,7 +468,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     },
                     {
                         text = _("Show number of pages read instead of percentage"),
-                        enabled_func = function() 
+                        enabled_func = function()
                             return not BookInfoManager:getSetting("hide_page_info") and fc.display_mode_type == "list"
                             end,
                         checked_func = function() return BookInfoManager:getSetting("show_pages_read_as_progress") end,
