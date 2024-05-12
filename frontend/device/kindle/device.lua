@@ -243,7 +243,9 @@ function Kindle:openInputDevices()
     -- Getting the device where rotation events end up without catching a bunch of false-positives is... trickier,
     -- thanks to the inane event code being used...
     if self:hasGSensor() then
-        devices = FBInkInput.fbink_input_scan(C.INPUT_ROTATION_EVENT, C.INPUT_TABLET, bit.bor(C.SCAN_ONLY, C.NO_RECAP), dev_count)
+        -- i.e., we want something that reports EV_ABS:ABS_PRESSURE that isn't *also* a pen (because those are pretty much guaranteed to report pressure...).
+        --       And let's add that isn't also a touchscreen to the mix, because while not true at time of writing, that's an event touchscreens sure can support...
+        devices = FBInkInput.fbink_input_scan(C.INPUT_ROTATION_EVENT, bit.bor(C.INPUT_TABLET, C.INPUT_TOUCHSCREEN), bit.bor(C.SCAN_ONLY, C.NO_RECAP), dev_count)
         if devices ~= nil then
             for i = 0, tonumber(dev_count[0]) - 1 do
                 local dev = devices[i]
