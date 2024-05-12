@@ -1,5 +1,4 @@
 local Event = require("ui/event")
-local FindKeyboard = require("find-keyboard")
 local Device =  require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local InputText = require("ui/widget/inputtext")
@@ -14,6 +13,7 @@ local _ = require("gettext")
 local ffi = require("ffi")
 local C = ffi.C
 require("ffi/posix_h")
+require("ffi/fbink_input_h")
 
 -- The include/linux/usb/role.h calls the USB roles "host" and "device".
 local USB_ROLE_DEVICE = "device"
@@ -282,11 +282,51 @@ ExternalKeyboard._broadcastDisconnected = UIManager:debounce(0.5, false, functio
     UIManager:broadcastEvent(Event:new("PhysicalKeyboardDisconnected"))
 end)
 
+-- Implement FindKeyboard:find & check via FBInkInput
+local function findKeyboards()
+    local keyboards = {}
+
+    local FBInkInput = ffi.load("fbink_input")
+    local dev_count = ffi.new("size_t[1]")
+    local devices = FBInkInput.fbink_input_scan(C.INPUT_KEYBOARD, 0, C.SCAN_ONLY, dev_count)
+    if devices ~= nil then
+        for i = 0, tonumber(dev_count[0]) - 1 do
+            local dev = devices[i]
+            if dev.matched then
+                -- Check if it provides a DPad, too.
+                local has_dpad = bit.band(dev.type, C.INPUT_DPAD) ~= 0
+                table.insert(keyboards, { event_path = ffi.string(dev.path), had_dpad = has_dpad })
+            end
+        end
+        C.free(devices)
+    end
+
+    return keyboards
+end
+
+local function checkKeyboard(path)
+    local keyboard
+
+    local FBInkInput = ffi.load("fbink_input")
+    local dev = FBInkInput.fbink_input_check(path, C.INPUT_KEYBOARD, 0, C.SCAN_ONLY)
+    if dev ~= nil then
+        if dev.matched then
+            keyboard = {
+                event_path = ffi.string(dev.path),
+                has_dpad = bit.band(dev.type, C.INPUT_DPAD) ~= 0
+            }
+        end
+        C.free(dev)
+    end
+
+    return keyboard
+end
+
 -- The keyboard events with the same key codes would override the original events.
 -- That may cause embedded buttons to lose their original function and produce letters,
 -- as we cannot tell which device a key press comes from.
 function ExternalKeyboard:findAndSetupKeyboards()
-    local keyboards = FindKeyboard:find()
+    local keyboards = findKeyboards()
 
     -- A USB keyboard may be recognized as several devices under a hub. And several of them may
     -- have keyboard capabilities set. Yet, only one would emit the events. The solution is to open all of them.
@@ -300,7 +340,7 @@ function ExternalKeyboard:onEvdevInputRemove(evdev)
 end
 
 function ExternalKeyboard:setupKeyboard(event_path)
-    local keyboard_info = FindKeyboard:check(event_path:match(".+/(.+)")) -- FindKeyboard only wants eventN, not the full path
+    local keyboard_info = checkKeyboard(event_path)
     if not keyboard_info then
         logger.dbg("ExternalKeyboard:setupKeyboard:", event_path, "doesn't look like a keyboard")
         return
