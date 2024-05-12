@@ -284,7 +284,7 @@ end
 -- Exit
 local function exitReader()
     -- Shutdown hardware abstraction (it'll also flush G_reader_settings to disk)
-    Device:exit()
+    Device:exit(exit_code == 85)
 
     if Profiler then Profiler.stop() end
 
