@@ -215,15 +215,15 @@ function ReaderView:paintTo(bb, x, y)
             bb:dimRect(self.dim_area.x, self.dim_area.y, self.dim_area.w, self.dim_area.h)
         else
             -- Paint at the proper y origin depending on whether we paged forward (dim_area.y == 0) or backward
-            local y = self.dim_area.y == 0 and self.dim_area.h or self.dim_area.y
+            local paint_y = self.dim_area.y == 0 and self.dim_area.h or self.dim_area.y
             if self.page_overlap_style == "arrow" then
                 local center_offset = bit.rshift(self.arrow.height, 1)
-                self.arrow:paintTo(bb, 0, y - center_offset)
+                self.arrow:paintTo(bb, 0, paint_y - center_offset)
             elseif self.page_overlap_style == "line" then
-                bb:paintRect(0, y, self.dim_area.w, Size.line.medium, Blitbuffer.COLOR_DARK_GRAY)
+                bb:paintRect(0, paint_y, self.dim_area.w, Size.line.medium, Blitbuffer.COLOR_DARK_GRAY)
             elseif self.page_overlap_style == "dashed_line" then
                 for i = 0, self.dim_area.w - 20, 20 do
-                    bb:paintRect(i, y, 14, Size.line.medium, Blitbuffer.COLOR_DARK_GRAY)
+                    bb:paintRect(i, paint_y, 14, Size.line.medium, Blitbuffer.COLOR_DARK_GRAY)
                 end
             end
         end
