@@ -1928,7 +1928,7 @@ end
 
 function VocabularyBuilderWidget:onCloseWidget()
     DB:batchUpdateItems(self.item_table)
-    for i=1,#self.main_content do self.main_content[i] = nil end
+    self.main_content:clear()
     UIManager:setDirty(self, "ui")
     return true
 end
