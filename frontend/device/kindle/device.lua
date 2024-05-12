@@ -3,7 +3,6 @@ local UIManager
 local time = require("ui/time")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local util = require("util")
 
 -- We're going to need a few <linux/fb.h> & <linux/input.h> constants...
 local ffi = require("ffi")
