@@ -718,6 +718,12 @@ function DictQuickLookup:init()
         self.movable,
     }
 
+    -- NT: add dict_title.left_button and lookup_edit_button to FocusManager.
+    -- It is better to add these two buttons into self.movable, but it is not a FocusManager.
+    -- Only self.button_table is a FocusManager, so workaground is inserting these two buttons into self.button_table.layout.
+    table.insert(self.button_table.layout, 1, { self.dict_title.left_button });
+    table.insert(self.button_table.layout, 2, { lookup_edit_button });
+
     -- We're a new window
     table.insert(DictQuickLookup.window_list, self)
 end
