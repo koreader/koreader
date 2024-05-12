@@ -15,6 +15,7 @@ local C = ffi.C
 require("ffi/linux_fb_h")
 require("ffi/linux_input_h")
 require("ffi/posix_h")
+require("ffi/fbink_input_h")
 
 local function yes() return true end
 local function no() return false end
@@ -904,14 +905,39 @@ function Kobo:init()
     -- And then handle the extra shenanigans if necessary.
     self:initEventAdjustHooks()
 
-    -- Various HW Buttons, Switches & Synthetic NTX events
-    self.ntx_fd = self.input.open(self.ntx_dev)
-    -- Dedicated Power Button input device (if any)
-    if self.power_dev then
-        self.input.open(self.power_dev)
+    -- Auto-detect input devices (via FBInk's fbink_input_scan)
+    local FBInkInput = ffi.load("fbink_input")
+    local dev_count = ffi.new("size_t[1]")
+    -- We care about: the touchscreen, the stylus, the power button, the sleep cover, and pagination buttons
+    -- (and technically rotation events, but we'll get it with the device that provides the buttons on NTX).
+    local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_TABLET, C.INPUT_POWER_BUTTON, C.INPUT_SLEEP_COVER, C.INPUT_PAGINATION_BUTTONS)
+    local devices = FBInkInput.fbink_input_scan(match_mask, 0, C.SCAN_ONLY, dev_count)
+    if devices ~= nil then
+        for i = 0, tonumber(dev_count[0]) - 1 do
+            local dev = devices[i]
+            if dev.matched then
+                -- We need to single out whichever device provides pagination buttons or sleep cover events, as we'll want to tweak key repeat there...
+                if bit.band(dev.type, C.INPUT_PAGINATION_BUTTONS) ~= 0 or bit.band(dev.type, C.INPUT_SLEEP_COVER) ~= 0 then
+                    self.ntx_fd = self.input.open(dev.path)
+                else
+                    self.input.open(dev.path)
+                end
+            end
+        end
+        C.free(devices)
+    else
+        -- Auto-detection failed, warn and fall back to defaults
+        logger.warn("We failed to auto-detect the proper input devices, input handling may be inconsistent!")
+        -- Various HW Buttons, Switches & Synthetic NTX events
+        self.ntx_fd = self.input.open(self.ntx_dev)
+        -- Dedicated Power Button input device (if any)
+        if self.power_dev then
+            self.input.open(self.power_dev)
+        end
+        -- Touch panel
+        self.input.open(self.touch_dev)
     end
-    -- Touch panel
-    self.input.open(self.touch_dev)
+
     -- NOTE: On devices with a gyro, there may be a dedicated input device outputting the raw accelerometer data
     --       (3-Axis Orientation/Motion Detection).
     --       We skip it because we don't need it (synthetic rotation change events are sent to the main ntx input device),
