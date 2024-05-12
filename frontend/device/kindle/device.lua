@@ -207,6 +207,38 @@ function Kindle:supportsScreensaver()
     end
 end
 
+function Kindle:openInputDevices()
+    -- Auto-detect input devices (via FBInk's fbink_input_scan)
+    local FBInkInput = ffi.load("fbink_input")
+    local dev_count = ffi.new("size_t[1]")
+    -- We care about: the touchscreen, the stylus, the accelerometer and pagination buttons.
+    -- FIXME: See how well this works out with fancy virtual input devices on modern devices...
+    local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_TABLET, C.INPUT_ACCELEROMETER, C.INPUT_PAGINATION_BUTTONS)
+    local devices = FBInkInput.fbink_input_scan(match_mask, 0, C.SCAN_ONLY, dev_count)
+    if devices ~= nil then
+        for i = 0, tonumber(dev_count[0]) - 1 do
+            local dev = devices[i]
+            if dev.matched then
+                self.input.open(dev.path)
+            end
+        end
+        C.free(devices)
+    else
+        -- Auto-detection failed, warn and fall back to defaults
+        logger.warn("We failed to auto-detect the proper input devices, input handling may be inconsistent!")
+        if self.touch_dev then
+            -- We've got a preferred path specified for the touch panel
+            self.input.open(self.touch_dev)
+        else
+            -- That generally works out well enough on legacy devices...
+            self.input.open("/dev/input/event0")
+            self.input.open("/dev/input/event1")
+        end
+    end
+
+    self.input.open("fake_events")
+end
+
 function Kindle:init()
     -- Check if the device supports deep sleep/quick boot
     if lfs.attributes("/sys/devices/platform/falconblk/uevent", "mode") == "file" then
@@ -234,6 +266,9 @@ function Kindle:init()
     else
         self.canDeepSleep = false
     end
+
+    -- Auto-detect & open input devices
+    self:openInputDevices()
 
     Generic.init(self)
 end
@@ -674,38 +709,6 @@ local KindleScribe = Kindle:extend{
     canDoSwipeAnimation = yes,
 }
 
-function Kindle:openInputDevices()
-    -- Auto-detect input devices (via FBInk's fbink_input_scan)
-    local FBInkInput = ffi.load("fbink_input")
-    local dev_count = ffi.new("size_t[1]")
-    -- We care about: the touchscreen, the stylus, the accelerometer and pagination buttons.
-    -- FIXME: See how well this works out with fancy virtual input devices on modern devices...
-    local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_TABLET, C.INPUT_ACCELEROMETER, C.INPUT_PAGINATION_BUTTONS)
-    local devices = FBInkInput.fbink_input_scan(match_mask, 0, C.SCAN_ONLY, dev_count)
-    if devices ~= nil then
-        for i = 0, tonumber(dev_count[0]) - 1 do
-            local dev = devices[i]
-            if dev.matched then
-                self.input.open(dev.path)
-            end
-        end
-        C.free(devices)
-    else
-        -- Auto-detection failed, warn and fall back to defaults
-        logger.warn("We failed to auto-detect the proper input devices, input handling may be inconsistent!")
-        if self.touch_dev then
-            -- We've got a preferred path specified for the touch panel
-            self.input.open(self.touch_dev)
-        else
-            -- That generally works out well enough on legacy devices...
-            self.input.open("/dev/input/event0")
-            self.input.open("/dev/input/event1")
-        end
-    end
-
-    self.input.open("fake_events")
-end
-
 function Kindle2:init()
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
@@ -716,7 +719,6 @@ function Kindle2:init()
         device = self,
         event_map = require("device/kindle/event_map_keyboard"),
     }
-    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -731,7 +733,6 @@ function KindleDXG:init()
         event_map = require("device/kindle/event_map_keyboard"),
     }
     self.keyboard_layout = require("device/kindle/keyboard_layout")
-    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -747,7 +748,6 @@ function Kindle3:init()
         event_map = require("device/kindle/event_map_kindle4"),
     }
     self.keyboard_layout = require("device/kindle/keyboard_layout")
-    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -762,7 +762,6 @@ function Kindle4:init()
         device = self,
         event_map = require("device/kindle/event_map_kindle4"),
     }
-    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -782,7 +781,6 @@ function KindleTouch:init()
     -- Kindle Touch needs event modification for proper coordinates
     self.input:registerEventAdjustHook(self.input.adjustTouchScale, {x=600/4095, y=800/4095})
 
-    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -795,7 +793,6 @@ function KindlePaperWhite:init()
         is_charging_file = "/sys/devices/platform/aplite_charger.0/charging",
     }
 
-    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -809,7 +806,6 @@ function KindlePaperWhite2:init()
         hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 
-    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -822,7 +818,6 @@ function KindleBasic:init()
         hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 
-    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -872,10 +867,9 @@ function KindleVoyage:init()
         end
     end)
 
-    self:openInputDevices()
     Kindle.init(self)
 
-    -- reenable WhisperTouch keys when started without framework
+    -- Re-enable WhisperTouch keys when started without framework
     if self.framework_lipc_handle then
         self.framework_lipc_handle:set_int_property("com.lab126.deviced", "fsrkeypadEnable", 1)
         self.framework_lipc_handle:set_int_property("com.lab126.deviced", "fsrkeypadPrevEnable", 1)
@@ -893,7 +887,6 @@ function KindlePaperWhite3:init()
         hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 
-    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -962,7 +955,6 @@ function KindleOasis:init()
         }
     }
 
-    self:openInputDevices()
     Kindle.init(self)
 
     --- @note See comments in KindleOasis2:init() for details.
@@ -1065,7 +1057,6 @@ function KindleOasis2:init()
         }
     }
 
-    self:openInputDevices()
     Kindle.init(self)
 
     --- @note When starting KOReader with the device upside down ("D"), touch input is registered wrong
@@ -1143,7 +1134,6 @@ function KindleOasis3:init()
         }
     }
 
-    self:openInputDevices()
     Kindle.init(self)
 
     --- @note The same quirks as on the Oasis 2 apply ;).
@@ -1196,7 +1186,6 @@ function KindleBasic2:init()
         hall_file = "/sys/devices/system/heisenberg_hall/heisenberg_hall0/hall_enable",
     }
 
-    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -1211,7 +1200,6 @@ function KindlePaperWhite4:init()
         hall_file = "/sys/bus/platform/drivers/hall_sensor/rex_hall/hall_enable",
     }
 
-    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -1226,7 +1214,6 @@ function KindleBasic3:init()
         hall_file = "/sys/bus/platform/drivers/hall_sensor/rex_hall/hall_enable",
     }
 
-    self:openInputDevices()
     Kindle.init(self)
 
     -- This device doesn't emit ABS_MT_TRACKING_ID:-1 events on contact lift,
@@ -1250,7 +1237,6 @@ function KindlePaperWhite5:init()
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
     self.screen:_MTK_ToggleFastMode(true)
 
-    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -1268,7 +1254,6 @@ function KindleBasic4:init()
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
     self.screen:_MTK_ToggleFastMode(true)
 
-    self:openInputDevices()
     Kindle.init(self)
 end
 
@@ -1292,7 +1277,6 @@ function KindleScribe:init()
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
     self.screen:_MTK_ToggleFastMode(true)
 
-    self:openInputDevices()
     Kindle.init(self)
 
     --- @note The same quirks as on the Oasis 2 and 3 apply ;).
