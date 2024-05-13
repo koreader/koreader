@@ -73,8 +73,8 @@ You can set how many lines are shown.]]),
 local page_overlap_styles = {
     {_("Arrow"), "arrow"},
     {_("Gray out"), "dim"},
-    {_("Horizontal line"), "line"},
-    {_("Horizontal dashed line"), "dashed_line"},
+    {_("Solid line"), "line"},
+    {_("Dashed line"), "dashed_line"},
 }
 for _, v in ipairs(page_overlap_styles) do
     local style_text, style = unpack(v)
