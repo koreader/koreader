@@ -1,80 +1,125 @@
-version: 2
+version: "2.1"
 
-workflows:
-  version: 2
-  build:
-    jobs:
-      - build
-      - docs:
-          context: koreader-vars
-          filters:
-            branches:
-              only: master
-          requires:
-            - build
+# Parameters. {{{
+
+parameters:
+
+    # Bump this to reset all caches.
+    cache_epoch:
+      type: integer
+      default: 0
+
+# }}}
+
+# Executors. {{{
+
+executors:
+
+  base:
+    docker:
+      - image: koreader/kobase:0.3.2-20.04
+        auth:
+          username: $DOCKER_USERNAME
+          password: $DOCKER_PASSWORD
+
+# }}}
+
+# Jobs. {{{
 
 jobs:
+
+  # Build. {{{
+
   build:
-    docker:
-      - image: koreader/kobase:0.3.2-20.04
-        auth:
-          username: $DOCKER_USERNAME
-          password: $DOCKER_PASSWORD
-        environment:
-          EMULATE_READER: 1
+    executor: base
     environment:
       BASH_ENV: "~/.bashrc"
+      CCACHE_MAXSIZE: "256M"
+      EMULATE_READER: "1"
+      MAKEFLAGS: "OUTPUT_DIR=build INSTALL_DIR=install"
     parallelism: 2
     steps:
+      # Checkout / fetch. {{{
       - checkout
-      # need to init some stuff first or git will complain when sticking in base cache
-      - run: git submodule update --init base && git -C base submodule update --depth 1 --init --jobs 3 --recursive
-      # we can't use command output directly for cache check so we write it to git-rev-base
-      - run: pushd base && git_rev_base=$(git describe HEAD) && popd && echo $git_rev_base && echo $git_rev_base >git-rev-base
-      - restore_cache:
-          keys:
-            - build-{{ arch }}-{{ checksum "git-rev-base" }}
-
-      # installs everything and caches base
       - run:
-          name: fetch
+          name: Fetch
           command: .ci/fetch.sh
+      # }}}
+      # Check.
       - run:
-          name: check
+          name: Check
           command: .ci/check.sh
+      # Restore / setup caches. {{{
       - run:
-          name: build
+          name: Generate cache key
+          command: make -C base TARGET= cache-key
+      - restore_cache:
+          name: Restore build directory
+          keys:
+            - &CACHE_KEY_BUILD_DIR '<< pipeline.parameters.cache_epoch >>-{{ .Environment.CIRCLE_JOB }}-build-{{ arch }}-{{ checksum "base/cache-key" }}'
+      - restore_cache:
+          name: Restore build cache
+          keys:
+            - &CACHE_KEY_BUILD_CACHE '<< pipeline.parameters.cache_epoch >>-{{ .Environment.CIRCLE_JOB }}-ccache-{{ arch }}-{{ checksum "base/cache-key" }}'
+            - '<< pipeline.parameters.cache_epoch >>-{{ .Environment.CIRCLE_JOB }}-ccache-{{ arch }}-'
+      - run:
+          name: Setup build cache
+          command: |
+            set -x
+            which ccache
+            ccache --version
+            ccache --zero-stats
+            ccache --show-config
+      # }}}
+      # Build.
+      - run:
+          name: Build
           command: .ci/build.sh
-      # we want to save cache prior to testing so we don't have to clean it up
+      # Clean / save caches. {{{
+      # We want to save cache prior to testing so we don't have to clean it up.
+      - run:
+          name: Clean caches
+          when: always
+          command: |
+            set -x
+            # Trim the build directory.
+            rm -rf base/build/thirdparty
+            ccache --cleanup >/dev/null
+            ccache --show-stats
       - save_cache:
-          key: build-{{ arch }}-{{ checksum "git-rev-base" }}
+          name: Save build cache
+          key: *CACHE_KEY_BUILD_CACHE
           paths:
-            - "/home/ko/.ccache"
-            - "base"
-
-      # our lovely unit tests
+            - /home/ko/.ccache
+      - save_cache:
+          name: Save build directory
+          key: *CACHE_KEY_BUILD_DIR
+          paths:
+            - base/build
+      # }}}
+      # Tests / coverage. {{{
+      # Our lovely unit tests.
       - run:
-          name: test
+          name: Test
           command: .ci/test.sh
-
-      # docs, coverage, and test timing (can we use two outputs at once?); master branch only
+      # Docs, coverage, and test timing (can we use two outputs at once?); master branch only.
       - run:
-          name: coverage
+          name: Coverage
           command: .ci/after_success.sh
-      # by storing the test results CircleCI automatically distributes tests based on execution time
+      # By storing the test results CircleCI automatically distributes tests based on execution time.
       - store_test_results:
-          path: koreader-emulator-x86_64-linux-gnu/koreader
-      # CircleCI doesn't make the test results available as artifacts (October 2017)
+          path: &TESTS_XML install/koreader/junit-test-results.xml
+      # CircleCI doesn't make the test results available as artifacts (October 2017).
       - store_artifacts:
-          path: koreader-emulator-x86_64-linux-gnu/koreader/junit-test-results.xml
+          path: *TESTS_XML
+      # }}}
+
+  # }}}
+
+  # Docs. {{{
+
   docs:
-    docker:
-      - image: koreader/kobase:0.3.2-20.04
-        auth:
-          username: $DOCKER_USERNAME
-          password: $DOCKER_PASSWORD
-        environment:
-          EMULATE_READER: 1
+    executor: base
     environment:
       BASH_ENV: "~/.bashrc"
     parallelism: 1
@@ -83,8 +128,35 @@ jobs:
       - run:
           name: fetch
           command: .ci/fetch.sh
-
       # docs, coverage, and test timing (can we use two outputs at once?); master branch only
       - run:
           name: docs-and-translation
           command: .ci/after_success_docs_translation.sh
+
+  # }}}
+
+# }}}
+
+# Workflows. {{{
+
+workflows:
+
+  version: 2
+
+  build:
+
+    jobs:
+
+      - build
+
+      - docs:
+          context: koreader-vars
+          filters:
+            branches:
+              only: master
+          requires:
+            - build
+
+# }}}
+
+# vim: foldmethod=marker foldlevel=0

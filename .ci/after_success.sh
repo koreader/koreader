@@ -15,7 +15,7 @@ if [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
 
     if [ "${CIRCLE_NODE_INDEX}" = 0 ]; then
         travis_retry make coverage
-        pushd koreader-*/koreader && {
+        pushd install/koreader && {
             # see https://github.com/codecov/example-lua
             bash <(curl -s https://codecov.io/bash)
         } && popd || exit

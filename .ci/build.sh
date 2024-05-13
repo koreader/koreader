@@ -4,4 +4,11 @@ CI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "${CI_DIR}/common.sh"
 
-make all
+# Build.
+cmd=(make all)
+if [[ -d base/build ]]; then
+    cmd+=(--assume-old=base)
+fi
+"${cmd[@]}"
+
+# vim: sw=4
