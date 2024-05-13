@@ -869,7 +869,8 @@ function Kobo:init()
             if dev.matched then
                 local path = ffi.string(dev.path)
                 -- We need to single out whichever device provides pagination buttons or sleep cover events, as we'll want to tweak key repeat there...
-                if bit.band(dev.type, C.INPUT_PAGINATION_BUTTONS) ~= 0 or bit.band(dev.type, C.INPUT_SLEEP_COVER) ~= 0 then
+                -- The first one will do, as it's extremely likely to be event0, and that's pretty fairly set in stone on NTX boards.
+                if (bit.band(dev.type, C.INPUT_PAGINATION_BUTTONS) ~= 0 or bit.band(dev.type, C.INPUT_SLEEP_COVER) ~= 0) and not self.ntx_fd then
                     logger.dbg("Opening (ntx_fd) input device", ffi.string(dev.name), "@", path)
                     self.ntx_fd = self.input.open(path)
                 else
