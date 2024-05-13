@@ -300,7 +300,7 @@ function Input:disableRotationMap()
 end
 
 --[[--
-Wrapper for FFI input open.
+Wrapper for Lua/C input open.
 
 Note that we adhere to the "." syntax here for compatibility.
 
@@ -324,7 +324,7 @@ function Input.open(path, name)
 end
 
 --[[--
-Wrapper for FFI input close.
+Wrapper for Lua/C input close.
 
 Note that we adhere to the "." syntax here for compatibility.
 --]]
