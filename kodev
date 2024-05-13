@@ -154,10 +154,7 @@ SUPPORTED_TARGETS="
     pocketbook
     ubuntu-touch
     appimage
-    debian          Debian package for current arch
-    debian-armel    Debian package for generic armel devices
-    debian-armhf    Debian package for generic armhf devices
-    debian-arm64    Debian package for generic 64 bits arm devices
+    linux
     macos           MacOS app bundle. You need a mac to build this package
     emu             (*default) If no TARGET is given, assume emulator
     win32
@@ -268,20 +265,8 @@ ${SUPPORTED_TARGETS}"
             make TARGET=appimage
             assert_ret_zero $?
             ;;
-        debian)
-            make TARGET=debian
-            assert_ret_zero $?
-            ;;
-        debian-armel)
-            make TARGET=debian-armel
-            assert_ret_zero $?
-            ;;
-        debian-armhf)
-            make TARGET=debian-armhf
-            assert_ret_zero $?
-            ;;
-        debian-arm64)
-            make TARGET=debian-arm64
+        linux)
+            make TARGET=linux
             assert_ret_zero $?
             ;;
         macos)
@@ -389,17 +374,8 @@ ${SUPPORTED_TARGETS}"
         appimage)
             make TARGET=appimage clean
             ;;
-        debian)
-            make TARGET=debian clean
-            ;;
-        debian-armel)
-            make TARGET=debian-armel clean
-            ;;
-        debian-armhf)
-            make TARGET=debian-armhf clean
-            ;;
-        debian-arm64)
-            make TARGET=debian-arm64 clean
+        linux)
+            make TARGET=linux clean
             ;;
         macos)
             is_mac
@@ -540,21 +516,9 @@ ${SUPPORTED_RELEASE_TARGETS}"
             kodev-build appimage
             make TARGET=appimage update
             ;;
-        debian)
-            kodev-build debian
-            make TARGET=debian update
-            ;;
-        debian-armel)
-            kodev-build debian-armel
-            make TARGET=debian-armel update
-            ;;
-        debian-armhf)
-            kodev-build debian-armhf
-            make TARGET=debian-armhf update
-            ;;
-        debian-arm64)
-            kodev-build debian-arm64
-            make TARGET=debian-arm64 update
+        linux)
+            kodev-build linux
+            make TARGET=linux update
             ;;
         macos)
             is_mac
