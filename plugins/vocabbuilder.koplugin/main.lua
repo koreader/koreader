@@ -1928,7 +1928,6 @@ function VocabularyBuilderWidget:onClose()
     UIManager:close(self)
     DB:batchUpdateItems(self.item_table)
     self.main_content:clear()
-    return true
 end
 
 function VocabularyBuilderWidget:onCancel()
