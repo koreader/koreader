@@ -36,6 +36,7 @@ jobs:
     environment:
       BASH_ENV: "~/.bashrc"
       CCACHE_MAXSIZE: "256M"
+      CLICOLOR_FORCE: "1"
       EMULATE_READER: "1"
       MAKEFLAGS: "OUTPUT_DIR=build INSTALL_DIR=install"
     parallelism: 2
