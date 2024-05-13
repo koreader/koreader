@@ -1,4 +1,4 @@
-name: build
+name: macos
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -9,8 +9,13 @@ on: [push, pull_request]
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  macos_build:
+
+  macos:
 
     # macos-11, macos-12 & macos-13 are broken at this time being.
     # https://github.com/koreader/koreader/issues/8686,
@@ -21,11 +26,19 @@ jobs:
     # 10.15 is no longer supported so we are running 13 just to make sure the build does not break.
     runs-on: macos-13
 
+    env:
+      # Bump number to reset all caches.
+      CACHE_EPOCH: '0'
+      MACOSX_DEPLOYMENT_TARGET: '10.15'
+      MAKEFLAGS: 'OUTPUT_DIR=build INSTALL_DIR=install TARGET=macos'
+
     steps:
       - name: XCode version
         run: xcode-select -p
 
-      - name: Check out Git repository
+      # Checkout / fetch. {{{
+
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           clean: false
@@ -33,13 +46,67 @@ jobs:
           filter: tree:0
           show-progress: false
 
-      - name: Homebrew install dependencies
+      - name: Fetch
+        run: make fetchthirdparty
+
+      # }}}
+
+      # Restore / setup caches. {{{
+
+      - name: Generate cache key
+        run: make -C base TARGET= cache-key
+
+      - name: Restore build directory
+        id: build-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: base/build
+          key: ${{ env.CACHE_EPOCH }}-${{ runner.os }}-build-${{ hashFiles('base/cache-key') }}
+
+      - name: Restore build cache
+        id: ccache-restore
+        if: steps.build-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: /Users/runner/Library/Caches/ccache
+          key: ${{ env.CACHE_EPOCH }}-${{ runner.os }}-ccache-${{ hashFiles('base/cache-key') }}
+          restore-keys: ${{ env.CACHE_EPOCH }}-${{ runner.os }}-ccache-
+
+      - name: Install ccache
+        if: steps.build-restore.outputs.cache-hit != 'true'
+        run: |
+          wget --progress=dot:mega https://github.com/ccache/ccache/releases/download/v4.9.1/ccache-4.9.1-darwin.tar.gz
+          tar xf ccache-4.9.1-darwin.tar.gz
+          printf '%s\n' "$PWD/ccache-4.9.1-darwin" >>"${GITHUB_PATH}"
+
+      - name: Setup build cache
+        if: steps.build-restore.outputs.cache-hit != 'true'
+        run: |
+          set -x
+          which ccache
+          ccache --version
+          ccache --zero-stats
+          ccache --max-size=256M
+          ccache --show-config
+
+      # }}}
+
+      # Install dependencies. {{{
+
+      - name: Setup Python
+        if: steps.build-restore.outputs.cache-hit != 'true'
+        uses: actions/setup-python@v5
+        with:
+          # Note: Python 3.12 removal of `distutils` breaks GLib's build.
+          python-version: '3.11'
+
+      - name: Install homebrew dependencies
         # Compared to the README, adds p7zip.
         run: |
           packages=(
-            nasm binutils coreutils libtool autoconf automake cmake makedepend
-            sdl2 lua@5.1 luarocks gettext pkg-config wget gnu-getopt grep bison
-            p7zip
+            nasm binutils coreutils libtool autoconf automake cmake make
+            makedepend sdl2 lua@5.1 luarocks gettext pkg-config wget
+            gnu-getopt grep bison p7zip
           )
           # Lua 5.1 is disabled, so we need to work around that:
           # - fetch all packages
@@ -52,21 +119,63 @@ jobs:
           brew install "${packages[@]}"
 
       - name: Update PATH
-        run: |
-          printf '%s\n' \
-            "$(brew --prefix)/opt/bison/bin" \
-            "$(brew --prefix)/opt/gettext/bin" \
-            "$(brew --prefix)/opt/gnu-getopt/bin" \
-            "$(brew --prefix)/opt/grep/libexec/gnubin" \
-            >>"${GITHUB_PATH}"
+        run: >
+          printf '%s\n'
+          "$(brew --prefix)/opt/bison/bin"
+          "$(brew --prefix)/opt/gettext/bin"
+          "$(brew --prefix)/opt/gnu-getopt/bin"
+          "$(brew --prefix)/opt/grep/libexec/gnubin"
+          "$(brew --prefix)/opt/make/libexec/gnubin"
+          | tee "${GITHUB_PATH}"
 
-      - name: Building in progress…
-        run: |
-          export MACOSX_DEPLOYMENT_TARGET=10.15;
-          ./kodev release macos
+      # }}}
 
-      - name: Uploading artifacts
+      # Build. {{{
+
+      - name: Build
+        if: steps.build-restore.outputs.cache-hit != 'true'
+        run: make base
+
+      # }}}
+
+      # Clean / save caches. {{{
+
+      - name: Clean caches
+        if: steps.build-restore.outputs.cache-hit != 'true' && always()
+        run: |
+          set -x
+          # Trim the build directory.
+          rm -rf base/build/thirdparty
+          ccache --cleanup >/dev/null
+          ccache --show-stats --verbose
+
+      - name: Save build cache
+        uses: actions/cache/save@v4
+        if: steps.build-restore.outputs.cache-hit != 'true' && steps.ccache-restore.outputs.cache-hit != 'true'
+        with:
+          path: /Users/runner/Library/Caches/ccache
+          key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
+
+      - name: Save build directory
+        uses: actions/cache/save@v4
+        if: steps.build-restore.outputs.cache-hit != 'true'
+        with:
+          path: base/build
+          key: ${{ steps.build-restore.outputs.cache-primary-key }}
+
+      # }}}
+
+      # Generate / upload artifact. {{{
+
+      - name: Generate artifact
+        run: make update --assume-old=base
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: koreader-macos
           path: '*.7z'
+
+      # }}}
+
+# vim: foldmethod=marker foldlevel=0
