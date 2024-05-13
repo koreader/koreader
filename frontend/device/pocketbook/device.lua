@@ -57,8 +57,6 @@ local PocketBook = Generic:extend{
         keymap = { [scan] = event },
     }]]
     -- Runtime state: whether raw input is actually used
-    --- @fixme: Never actually set anywhere?
-    is_using_raw_input = nil,
 
     -- InkView may have started translating button codes based on rotation on newer devices...
     -- That historically wasn't the case, hence this defaulting to false.
@@ -242,8 +240,7 @@ function PocketBook:init()
     -- NOTE: This all happens in ffi/input_pocketbook.lua
 
     self._model_init()
-    --- @fixme: ffi/input_pocketbook's open implementation doesn't actually take any argument, it pokes at self.raw_input via self instead...
-    if (not self.input.raw_input) or (not pcall(self.input.open, self.input, self.raw_input)) then
+    if (not self.input.raw_input) or (not pcall(self.input.open, self.input)) then
         inkview.OpenScreen()
         -- Raw mode open failed (no permissions?), so we'll run the usual way.
         -- Disable touch coordinate translation as inkview will do that.

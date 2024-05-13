@@ -352,8 +352,7 @@ end
 
 -- Wrappers for the custom FFI implementations with no concept of paths or fd
 if input.is_ffi then
-    -- None of the current implementations actually *take* any arguments...
-    -- (Or they think they do, but they don't... Lookin' at you, PB).
+    -- Pass args as-is. None of 'em actually *take* arguments, but some may be invoked as methods...
     function Input.open(...)
         return input.open(...)
     end
