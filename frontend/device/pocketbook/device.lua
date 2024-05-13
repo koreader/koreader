@@ -447,11 +447,15 @@ function PocketBook:openLink(link)
     local appname = "browser.app"
     local task = inkview.FindTaskByAppName(appname)
     if task > 0 then
-        local size_t_len = ffi.sizeof("size_t")
-        local data = ffi.new("char[?]", size_t_len + #link)
-        ffi.cast("size_t *", data)[0] = #link
-        ffi.copy(data + size_t_len, link, #link)
-        inkview.SendRequestToNoWait(task, C.REQ_OPENBOOK2, data, size_t_len + #link, 0)
+        local data = ffi.new("void *[1]")
+        local len = ffi.new("int[1]")
+        inkview.PackParameters(1, ffi.new("const char *[1]", {link}), data, len)
+        if pcall(function() local _ = inkview.SendRequestToNoWait end) then
+            inkview.SendRequestToNoWait(task, C.REQ_OPENBOOK2, data[0], len[0], 0)
+        else
+            inkview.SendRequestTo(task, C.REQ_OPENBOOK2, data[0], len[0], 0, 2000)
+        end
+        C.free(data[0])
         inkview.SetActiveTask(task, 0)
     else
         local _, bin = getBrowser()
