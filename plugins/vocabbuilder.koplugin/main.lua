@@ -1275,7 +1275,7 @@ local VocabularyBuilderWidget = FocusManager:extend{
 }
 
 function VocabularyBuilderWidget:init()
-    self.item_table = self:reload_items_callback()
+    self.item_table = self:getVocabItems()
     self.layout = {}
 
     self.dimen = Geom:new{
@@ -1371,6 +1371,7 @@ function VocabularyBuilderWidget:init()
         background = Blitbuffer.COLOR_WHITE,
         content
     }
+    self.show_parent[1] = self
 end
 
 function VocabularyBuilderWidget:refreshFooter()
@@ -1635,9 +1636,7 @@ function VocabularyBuilderWidget:_populateItems()
         page_last = #self.item_table
     end
 
-    if self.select_items_callback then
-        self:select_items_callback(idx_offset, page_last)
-    end
+    self:selectVocabItems(idx_offset, page_last)
 
     for idx = idx_offset + 1, page_last do
         table.insert(self.main_content, VerticalSpan:new{ width = self.item_margin / (idx == idx_offset+1 and 2 or 1) })
@@ -1862,7 +1861,7 @@ end
 
 function VocabularyBuilderWidget:reloadItems()
     DB:batchUpdateItems(self.item_table)
-    self.item_table = self:reload_items_callback()
+    self.item_table = self:getVocabItems()
     self.pages = math.ceil(#self.item_table / self.items_per_page)
     self:goToPage(1)
 end
@@ -1926,8 +1925,9 @@ end
 
 function VocabularyBuilderWidget:onClose()
     DB:batchUpdateItems(self.item_table)
-    self.main_content:clear()
     UIManager:close(self)
+    self.show_parent.widget = nil
+    self.show_parent[1] = nil
     -- UIManager:setDirty(self, "ui")
 end
 
@@ -1954,6 +1954,23 @@ function VocabularyBuilderWidget:vocabItemIter()
     end
 end
 
+function VocabularyBuilderWidget:getVocabItems()
+    self.reload_time = os.time()
+    local vocab_items = {}
+    for _ = 1, DB:selectCount(self) do
+        table.insert(vocab_items, {
+            callback = function(item)
+                self.current_lookup_word = item.word
+                self.ui:handleEvent(Event:new("LookupWord", item.word, true, nil, nil, nil))
+            end
+        })
+    end
+    return vocab_items
+end
+
+function VocabularyBuilderWidget:selectVocabItems(start_idx, end_idx)
+    DB:select_items(self, start_idx, end_idx)
+end
 
 --[[--
 Item shown in main menu
@@ -1972,7 +1989,12 @@ function VocabBuilder:addToMainMenu(menu_items)
     menu_items.vocabbuilder = {
         text = _("Vocabulary builder"),
         callback = function()
-            self:onShowVocabBuilder()
+            self.widget = VocabularyBuilderWidget:new{
+                title = _("Vocabulary builder"),
+                show_parent = self,
+                ui = self.ui
+            }
+            UIManager:show(self.widget)
         end
     }
 end
@@ -2003,45 +2025,9 @@ function VocabBuilder:onDictButtonsReady(dict_popup, buttons)
     }})
 end
 
-function VocabBuilder:setupWidget()
-    if self.widget then
-        self.widget:reloadItems()
-    else
-        -- We initiate the widget with proper
-        -- callback definition for reload_items
-        local reload_items = function(widget)
-                widget.reload_time = os.time()
-                local vocab_items = {}
-                for _ = 1, DB:selectCount(widget) do
-                    table.insert(vocab_items, {
-                        callback = function(item)
-                            widget.current_lookup_word = item.word
-                            self.ui:handleEvent(Event:new("LookupWord", item.word, true, nil, nil, nil))
-                        end
-                    })
-                end
-            return vocab_items
-        end
-
-        self.widget = VocabularyBuilderWidget:new{
-            title = _("Vocabulary builder"),
-            select_items_callback = function(obj, start_idx, end_idx)
-                DB:select_items(obj, start_idx, end_idx)
-            end,
-            reload_items_callback = reload_items
-        }
-    end
-    self[1] = self.widget
-end
-
 function VocabBuilder:onDispatcherRegisterActions()
     Dispatcher:registerAction("show_vocab_builder",
         {category="none", event="ShowVocabBuilder", title=_("Open vocabulary builder"), general=true, separator=true})
-end
-
-function VocabBuilder:onShowVocabBuilder()
-    self:setupWidget()
-    UIManager:show(self.widget)
 end
 
 -- Event sent by readerdictionary "WordLookedUp"
