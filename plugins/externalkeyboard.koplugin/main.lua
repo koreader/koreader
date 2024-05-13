@@ -224,18 +224,17 @@ function ExternalKeyboard:onExit()
     end
 end
 
-function ExternalKeyboard:_onEvdevInputInsert(evdev)
-    self:setupKeyboard("/dev/input/event" .. tostring(evdev))
+function ExternalKeyboard:_onEvdevInputInsert(event_path)
+    self:setupKeyboard(event_path)
 end
 
-function ExternalKeyboard:onEvdevInputInsert(evdev)
+function ExternalKeyboard:onEvdevInputInsert(path)
     -- Leave time for the kernel to actually create the device
-    UIManager:scheduleIn(0.5, self._onEvdevInputInsert, self, evdev)
+    UIManager:scheduleIn(0.5, self._onEvdevInputInsert, self, path)
 end
 
-function ExternalKeyboard:_onEvdevInputRemove(evdev)
+function ExternalKeyboard:_onEvdevInputRemove(event_path)
     -- Check that a keyboard we know about really was disconnected. Another input device could've been unplugged.
-    local event_path = "/dev/input/event" .. tostring(evdev)
     if not ExternalKeyboard.keyboard_fds[event_path] then
         logger.dbg("ExternalKeyboard:onEvdevInputRemove:", event_path, "was not a keyboard we knew about")
         return
@@ -247,6 +246,9 @@ function ExternalKeyboard:_onEvdevInputRemove(evdev)
         logger.warn("ExternalKeyboard:onEvdevInputRemove:", event_path, "is still connected?!")
         return
     end
+
+    -- Close our Input handle on it
+    Device.input.close(event_path)
 
     ExternalKeyboard.keyboard_fds[event_path] = nil
     ExternalKeyboard.connected_keyboards = ExternalKeyboard.connected_keyboards - 1
@@ -275,6 +277,10 @@ function ExternalKeyboard:_onEvdevInputRemove(evdev)
     --   This must come after, because widgets *may* rely on static class members,
     --   we have no guarantee about Event delivery order.
     self:_broadcastDisconnected()
+end
+
+function ExternalKeyboard:onEvdevInputRemove(path)
+    UIManager:scheduleIn(0.5, self._onEvdevInputRemove, self, path)
 end
 
 ExternalKeyboard._broadcastDisconnected = UIManager:debounce(0.5, false, function()
@@ -333,10 +339,6 @@ function ExternalKeyboard:findAndSetupKeyboards()
     for __, keyboard_info in ipairs(keyboards) do
         self:setupKeyboard(keyboard_info)
     end
-end
-
-function ExternalKeyboard:onEvdevInputRemove(evdev)
-    UIManager:scheduleIn(0.5, self._onEvdevInputRemove, self, evdev)
 end
 
 function ExternalKeyboard:setupKeyboard(data)
