@@ -307,7 +307,7 @@ Note that we adhere to the "." syntax here for compatibility.
 The `name` argument is optional, and used for logging purposes only.
 --]]
 function Input.open(path, name)
-    -- Make sure we don't open the same device twice
+    -- Make sure we don't open the same device twice.
     if not Input.opened_devices[path] then
         local fd = input.open(path)
         if fd then
@@ -348,6 +348,21 @@ Note that we adhere to the "." syntax here for compatibility.
 function Input.teardown()
     input.closeAll()
     Input.opened_devices = {}
+end
+
+-- Wrappers for the custom FFI implementations with no concept of paths or fd
+if input.is_ffi then
+    -- None of the current implementations actually *take* any arguments...
+    -- (Or they think they do, but they don't... Lookin' at you, PB).
+    function Input.open(...)
+        return input.open(...)
+    end
+    function Input.close(...)
+        return input.close(...)
+    end
+    function Input.teardown(...)
+        return input.closeAll(...)
+    end
 end
 
 --[[--
