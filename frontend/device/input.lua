@@ -300,7 +300,7 @@ function Input:disableRotationMap()
 end
 
 --[[--
-Wrapper for Lua/C input open.
+Wrapper for our Lua/C input module's open.
 
 Note that we adhere to the "." syntax here for compatibility.
 
@@ -325,7 +325,7 @@ function Input.open(path, name)
 end
 
 --[[--
-Wrapper for Lua/C input close.
+Wrapper for our Lua/C input module's close.
 
 Note that we adhere to the "." syntax here for compatibility.
 --]]
@@ -338,6 +338,16 @@ function Input.close(path)
     else
         logger.warn("Tried to close an unknown input device @", path)
     end
+end
+
+--[[--
+Wrapper for our Lua/C input module's closeAll.
+
+Note that we adhere to the "." syntax here for compatibility.
+--]]
+function Input.teardown()
+    input.closeAll()
+    Input.opened_devices = {}
 end
 
 --[[--

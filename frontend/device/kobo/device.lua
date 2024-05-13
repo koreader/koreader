@@ -141,6 +141,7 @@ local Kobo = Generic:extend{
     battery_sysfs = "/sys/class/power_supply/mc13892_bat",
     -- Stable path to the NTX input device
     ntx_dev = "/dev/input/event0",
+    ntx_fd = nil,
     -- Stable path to the Touch input device
     touch_dev = "/dev/input/event1",
     -- Event code to use to detect contact pressure

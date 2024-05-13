@@ -569,7 +569,7 @@ function Device:exit()
     G_reader_settings:close()
 
     -- I/O teardown
-    require("ffi/input"):closeAll()
+    self.input.teardown()
 end
 
 -- Lifted from busybox's libbb/inet_cksum.c
