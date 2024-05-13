@@ -26,6 +26,7 @@ jobs:
     env:
       # Bump number to reset all caches.
       CACHE_EPOCH: '0'
+      CLICOLOR_FORCE: '1'
       MACOSX_DEPLOYMENT_TARGET: '10.15'
       MAKEFLAGS: 'OUTPUT_DIR=build INSTALL_DIR=install TARGET=macos'
 
