@@ -1925,9 +1925,10 @@ function VocabularyBuilderWidget:onMultiSwipe(arg, ges_ev)
 end
 
 function VocabularyBuilderWidget:onClose()
-    UIManager:close(self)
     DB:batchUpdateItems(self.item_table)
     self.main_content:clear()
+    UIManager:close(self)
+    -- UIManager:setDirty(self, "ui")
 end
 
 function VocabularyBuilderWidget:onCancel()
