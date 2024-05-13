@@ -195,6 +195,11 @@ local Input = {
     setClipboardText = function(text)
         _internal_clipboard_text = text or ""
     end,
+
+    -- open'ed input devices hashmap (key: path, value: fd number)
+    -- (Must be a class member, both because Input is a singleton and that state is process-wide anyway,
+    -- and because the FFI open/close wrappers aren't methods to boot).
+    opened_devices = {},
 }
 
 function Input:new(o)
@@ -299,10 +304,39 @@ Wrapper for FFI input open.
 
 Note that we adhere to the "." syntax here for compatibility.
 
-@todo Clean up separation FFI/this.
+The `name` argument is optional, and used for logging purposes only.
 --]]
-function Input.open(device, is_emu_events)
-    return input.open(device, is_emu_events and 1 or 0)
+function Input.open(path, name)
+    -- Make sure we don't open the same device twice
+    if not Input.opened_devices[path] then
+        local fd = input.open(path)
+        if fd then
+            Input.opened_devices[path] = fd
+            if name then
+                logger.dbg("Opened input device", name, "@", path)
+            else
+                logger.dbg("Opened input device @", path)
+            end
+        end
+        -- No need to log failures, input will have raised an error already,
+        -- and we want to make those fatal, so we don't protect this call.
+    end
+end
+
+--[[--
+Wrapper for FFI input close.
+
+Note that we adhere to the "." syntax here for compatibility.
+--]]
+function Input.close(path)
+    -- Make sure we actually know about this device
+    local fd = Input.opened_devices[path]
+    if fd then
+        input.close(fd)
+        Input.opened_devices[path] = nil
+    else
+        logger.warn("Tried to close an unknown input device @", path)
+    end
 end
 
 --[[--
