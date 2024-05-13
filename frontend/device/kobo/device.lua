@@ -614,7 +614,7 @@ function Kobo:getKeyRepeat()
     self.key_repeat = ffi.new("unsigned int[?]", C.REP_CNT)
     if C.ioctl(self.ntx_fd, C.EVIOCGREP, self.key_repeat) < 0 then
         local err = ffi.errno()
-        logger.warn("Device:getKeyRepeat: EVIOCGREP ioctl failed:", ffi.string(C.strerror(err)))
+        logger.warn("Device:getKeyRepeat: EVIOCGREP ioctl on fd", self.ntx_fd, "failed:", ffi.string(C.strerror(err)))
         return false
     else
         logger.dbg("Key repeat is set up to repeat every", self.key_repeat[C.REP_PERIOD], "ms after a delay of", self.key_repeat[C.REP_DELAY], "ms")
@@ -628,14 +628,14 @@ function Kobo:disableKeyRepeat()
     local key_repeat = ffi.new("unsigned int[?]", C.REP_CNT)
     if C.ioctl(self.ntx_fd, C.EVIOCSREP, key_repeat) < 0 then
         local err = ffi.errno()
-        logger.warn("Device:disableKeyRepeat: EVIOCSREP ioctl failed:", ffi.string(C.strerror(err)))
+        logger.warn("Device:disableKeyRepeat: EVIOCSREP ioctl on fd", self.ntx_fd, "failed:", ffi.string(C.strerror(err)))
     end
 end
 
 function Kobo:restoreKeyRepeat()
     if C.ioctl(self.ntx_fd, C.EVIOCSREP, self.key_repeat) < 0 then
         local err = ffi.errno()
-        logger.warn("Device:restoreKeyRepeat: EVIOCSREP ioctl failed:", ffi.string(C.strerror(err)))
+        logger.warn("Device:restoreKeyRepeat: EVIOCSREP ioctl on fd", self.ntx_fd, "failed:", ffi.string(C.strerror(err)))
     end
 end
 
@@ -652,7 +652,7 @@ function Kobo:toggleKeyRepeat(toggle)
         -- Check the current (kernel) state to know what to do
         if C.ioctl(self.ntx_fd, C.EVIOCGREP, key_repeat) < 0 then
             local err = ffi.errno()
-            logger.warn("Device:toggleKeyRepeat: EVIOCGREP ioctl failed:", ffi.string(C.strerror(err)))
+            logger.warn("Device:toggleKeyRepeat: EVIOCGREP ioctl on fd", self.ntx_fd, "failed:", ffi.string(C.strerror(err)))
             return false
         else
             if key_repeat[C.REP_DELAY] == 0 and key_repeat[C.REP_PERIOD] == 0 then
@@ -665,7 +665,7 @@ function Kobo:toggleKeyRepeat(toggle)
 
     if C.ioctl(self.ntx_fd, C.EVIOCSREP, key_repeat) < 0 then
         local err = ffi.errno()
-        logger.warn("Device:toggleKeyRepeat: EVIOCSREP ioctl failed:", ffi.string(C.strerror(err)))
+        logger.warn("Device:toggleKeyRepeat: EVIOCSREP ioctl on fd", self.ntx_fd, "failed:", ffi.string(C.strerror(err)))
         return false
     end
 

@@ -313,13 +313,14 @@ function Input.open(path, name)
         if fd then
             Input.opened_devices[path] = fd
             if name then
-                logger.dbg("Opened input device", name, "@", path)
+                logger.dbg("Opened fd", fd, "for input device", name, "@", path)
             else
-                logger.dbg("Opened input device @", path)
+                logger.dbg("Opened fd", fd, "for input device @", path)
             end
         end
         -- No need to log failures, input will have raised an error already,
         -- and we want to make those fatal, so we don't protect this call.
+        return fd
     end
 end
 
