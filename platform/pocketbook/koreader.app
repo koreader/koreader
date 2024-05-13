@@ -15,7 +15,7 @@ export KO_PATH_OPEN_BOOK="/tmp/.koreader.open"
 INSTANCE_PID=$(cat /tmp/koreader.pid 2>/dev/null)
 if [ "${INSTANCE_PID}" != "" ] && [ -e "/proc/${INSTANCE_PID}" ]; then
     echo "$@" >"${KO_PATH_OPEN_BOOK}"
-    exec /usr/bin/iv2sh SetActiveTask "${INSTANCE_PID}" 0
+    exec $(if [ -f "/usr/bin/iv2sh" ]; then echo /usr/bin/iv2sh; else echo /ebrmain/bin/iv2sh; fi) SetActiveTask "${INSTANCE_PID}" 0
 fi
 
 # try to bring in raw device input (on rooted devices)
