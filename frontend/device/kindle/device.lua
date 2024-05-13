@@ -207,9 +207,6 @@ function Kindle:supportsScreensaver()
 end
 
 function Kindle:openInputDevices()
-    -- Keep track of what we opened to avoid duplicates since we may do two passes...
-    local opened = {}
-
     -- Auto-detect input devices (via FBInk's fbink_input_scan)
     local FBInkInput = ffi.load("fbink_input")
     local dev_count = ffi.new("size_t[1]")
@@ -220,10 +217,7 @@ function Kindle:openInputDevices()
         for i = 0, tonumber(dev_count[0]) - 1 do
             local dev = devices[i]
             if dev.matched then
-                local path = ffi.string(dev.path)
-                logger.dbg("Opening input device", ffi.string(dev.name), "@", path)
-                self.input.open(path)
-                opened[path] = true
+                self.input.open(ffi.string(dev.path), ffi.string(dev.name))
             end
         end
         C.free(devices)
@@ -250,12 +244,7 @@ function Kindle:openInputDevices()
             for i = 0, tonumber(dev_count[0]) - 1 do
                 local dev = devices[i]
                 if dev.matched then
-                    local path = ffi.string(dev.path)
-                    if not opened[path] then
-                        logger.dbg("Opening (gyro event) input device", ffi.string(dev.name), "@", path)
-                        self.input.open(path)
-                        opened[path] = true
-                    end
+                    self.input.open(ffi.string(dev.path), ffi.string(dev.name))
                 end
             end
             C.free(devices)
