@@ -52,25 +52,19 @@ function ReaderPaging:onGesture() end
 
 function ReaderPaging:registerKeyEvents()
     if Device:useDPadAsExtraButtons() then
-        self.key_events.GotoNextPage = {
-            { { "RPgFwd", "LPgFwd" } },
-            event = "GotoViewRel",
-            args = 1,
-        }
-        self.key_events.GotoPrevPage = {
-            { { "RPgBack", "LPgBack" } },
-            event = "GotoViewRel",
-            args = -1,
-        }
         self.key_events.GotoNextPos = {
-            { "Down" },
+            { { "RPgFwd", "LPgFwd" } },
             event = "GotoPosRel",
             args = 1,
         }
         self.key_events.GotoPrevPos = {
-            { "Up" },
+            { { "RPgBack", "LPgBack" } },
             event = "GotoPosRel",
             args = -1,
+        }
+        self.key_events.ContentSelection = {
+            { { "Up", "Down" } },
+            event = "ContentSelection",
         }
         self.key_events.GotoNextChapter = {
             { "Right" },
@@ -82,6 +76,12 @@ function ReaderPaging:registerKeyEvents()
             event = "GotoPrevChapter",
             args = -1,
         }
+        --[[ upcoming
+        self.key_events.PrevDocument = {
+            { "ScreenKB", "Back" },
+            event = "PrevDocument",
+            args = 0,
+        } ]]
     elseif Device:hasKeys() then
         self.key_events.GotoNextPage = {
             { { "RPgFwd", "LPgFwd", not Device:hasFewKeys() and "Right" } },
@@ -164,6 +164,10 @@ function ReaderPaging:onReaderReady()
     self:setupTouchZones()
 end
 
+function ReaderPaging:onContentSelection()
+    return self.ui.highlight:onStartHighlightIndicator()
+end
+
 function ReaderPaging:setupTouchZones()
     if not Device:isTouchDevice() then return end
 
@@ -231,6 +235,10 @@ function ReaderPaging:onSaveSettings()
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
     self.ui.doc_settings:saveSetting("flipping_zoom_mode", self.flipping_zoom_mode)
     self.ui.doc_settings:saveSetting("flipping_scroll_mode", self.flipping_scroll_mode)
+end
+
+function ReaderPaging:onPrevDocument()
+    return self.ui:onOpenLastDoc()
 end
 
 function ReaderPaging:getLastProgress()
