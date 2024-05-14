@@ -44,6 +44,7 @@ local Device = {
     hasPageUpDownKeys = no,
     canKeyRepeat = no,
     hasDPad = no,
+    useDPadAsExtraButtons = no,
     hasExitOptions = yes,
     hasFewKeys = no,
     hasWifiToggle = yes,
@@ -230,6 +231,10 @@ function Device:init()
         if G_reader_settings:isTrue("input_invert_page_turn_keys") then
             self:invertButtons()
         end
+    end
+
+    if not Device:hasKeyboard() and Device:hasDPad() and Device:hasPageUpDownKeys() then
+        self.useDpadAsExtraButtons = yes
     end
 
     if self:hasGSensor() then
