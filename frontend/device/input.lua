@@ -197,8 +197,7 @@ local Input = {
     end,
 
     -- open'ed input devices hashmap (key: path, value: fd number)
-    -- (Must be a class member, both because Input is a singleton and that state is process-wide anyway,
-    -- and because the FFI open/close wrappers aren't methods to boot).
+    -- Must be a class member, both because Input is a singleton and that state is process-wide anyway.
     opened_devices = {},
 }
 
