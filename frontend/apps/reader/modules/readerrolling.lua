@@ -116,7 +116,7 @@ end
 function ReaderRolling:onGesture() end
 
 function ReaderRolling:registerKeyEvents()
-    if Device:hasPageUpDownKeys() and Device:hasDPad() then
+    if Device:useDPadAsExtraButtons() then
         self.key_events.GotoNextView = {
             { { "RPgFwd", "LPgFwd" } },
             event = "GotoViewRel",
@@ -139,7 +139,7 @@ function ReaderRolling:registerKeyEvents()
             args = -1,
         }
     end
-    if Device:hasPageUpDownKeys() and Device:hasDPad() then
+    if Device:useDPadAsExtraButtons() then
         self.key_events.ContentSelection = {
             { { "Up", "Down" } },
             event = "ContentSelection",

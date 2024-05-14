@@ -51,7 +51,7 @@ end
 function ReaderPaging:onGesture() end
 
 function ReaderPaging:registerKeyEvents()
-    if Device:hasPageUpDownKeys() and Device:hasDPad() then
+    if Device:useDPadAsExtraButtons() then
         self.key_events.GotoNextPage = {
             { { "RPgFwd", "LPgFwd" } },
             event = "GotoViewRel",

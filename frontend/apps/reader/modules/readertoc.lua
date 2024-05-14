@@ -62,7 +62,7 @@ function ReaderToc:onGesture() end
 function ReaderToc:registerKeyEvents()
     if Device:hasKeyboard() then
         self.key_events.ShowToc = { { "T" } }
-    elseif Device:hasPageUpDownKeys() and Device:hasDPad() then
+    elseif Device:useDPadAsExtraButtons() then
         self.key_events.ShowToc = { { "ScreenKB", "Up" } }
     end
 end
