@@ -4,12 +4,6 @@ ANDROID_ASSETS = $(ANDROID_LAUNCHER_DIR)/assets/module
 ANDROID_LIBS_ROOT = $(ANDROID_LAUNCHER_DIR)/libs
 ANDROID_LIBS_ABI = $(ANDROID_LIBS_ROOT)/$(ANDROID_ABI)
 
-android-ndk:
-	$(MAKE) -C $(KOR_BASE)/toolchain $(ANDROID_NDK_HOME)
-
-android-sdk:
-	$(MAKE) -C $(KOR_BASE)/toolchain $(ANDROID_HOME)
-
 androiddev: update
 	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) dev
 
@@ -70,4 +64,4 @@ update: all
 	cp $(ANDROID_LAUNCHER_DIR)/bin/NativeActivity.apk \
 		koreader-android-$(ANDROID_ARCH)$(KODEDUG_SUFFIX)-$(VERSION).apk
 
-.PHONY: android-ndk android-sdk androiddev update
+.PHONY: androiddev update
