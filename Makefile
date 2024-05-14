@@ -180,6 +180,12 @@ ifneq (,$(wildcard make/$(TARGET).mk))
   include make/$(TARGET).mk
 endif
 
+android-ndk:
+	$(MAKE) -C $(KOR_BASE)/toolchain $(ANDROID_NDK_HOME)
+
+android-sdk:
+	$(MAKE) -C $(KOR_BASE)/toolchain $(ANDROID_HOME)
+
 # for gettext
 DOMAIN=koreader
 TEMPLATE_DIR=l10n/templates
@@ -210,4 +216,4 @@ static-check:
 doc:
 	make -C doc
 
-.PHONY: all base clean doc test
+.PHONY: all android-ndk android-sdk base clean doc test
