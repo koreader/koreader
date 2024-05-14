@@ -154,6 +154,12 @@ function ReaderRolling:registerKeyEvents()
             event = "GotoPrevChapter",
             args = -1,
         }
+        --[[ upcoming
+        self.key_events.PrevDocument = {
+            { "ScreenKB", "Back" },
+            event = "PrevDocument",
+            args = 0,
+        } ]]
     elseif Device:hasDPad() then
         self.key_events.MoveUp = {
             { "Up" },
@@ -374,6 +380,10 @@ function ReaderRolling:onCloseDocument()
     -- if elements ~= "" then logger.info("cre unknown elements: ", elements) end
     -- if attributes ~= "" then logger.info("cre unknown attributes: ", attributes) end
     -- if namespaces ~= "" then logger.info("cre unknown namespaces: ", namespaces) end
+end
+
+function ReaderRolling:onPrevDocument()
+    return self.ui:onOpenLastDoc()
 end
 
 function ReaderRolling:onCheckDomStyleCoherence()
