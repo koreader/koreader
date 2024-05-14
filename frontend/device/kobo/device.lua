@@ -859,7 +859,7 @@ function Kobo:init()
     -- Auto-detect input devices (via FBInk's fbink_input_scan)
     local ok, FBInkInput = pcall(ffi.load, "fbink_input")
     if not ok then
-        -- NOP fallback foir the testsuite...
+        -- NOP fallback for the testsuite...
         FBInkInput = { fbink_input_scan = NOP }
     end
     local dev_count = ffi.new("size_t[1]")
