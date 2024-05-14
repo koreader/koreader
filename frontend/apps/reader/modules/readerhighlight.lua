@@ -229,7 +229,16 @@ end
 function ReaderHighlight:onGesture() end
 
 function ReaderHighlight:registerKeyEvents()
-    if Device:hasKeys() then
+    if Device:hasDPad() then
+        self.key_events.StopHighlightIndicator  = { { Device.input.group.Back }, args = true } -- true: clear highlight selection
+        self.key_events.UpHighlightIndicator    = { { "Up" },    event = "MoveHighlightIndicator", args = {0, -1} }
+        self.key_events.DownHighlightIndicator  = { { "Down" },  event = "MoveHighlightIndicator", args = {0, 1} }
+        -- let hasFewKeys device move the indicator left
+        self.key_events.LeftHighlightIndicator  = { { "Left" },  event = "MoveHighlightIndicator", args = {-1, 0} }
+        self.key_events.RightHighlightIndicator = { { "Right" }, event = "MoveHighlightIndicator", args = {1, 0} }
+        self.key_events.HighlightPress          = { { "Press" } }
+    end
+    if Device:hasKeyboard() then
         -- Used for text selection with dpad/keys
         local QUICK_INDICATOR_MOVE = true
         self.key_events.QuickUpHighlightIndicator    = { { "Shift", "Up" },    event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICATOR_MOVE} }
@@ -237,15 +246,12 @@ function ReaderHighlight:registerKeyEvents()
         self.key_events.QuickLeftHighlightIndicator  = { { "Shift", "Left" },  event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICATOR_MOVE} }
         self.key_events.QuickRightHighlightIndicator = { { "Shift", "Right" }, event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICATOR_MOVE} }
         self.key_events.StartHighlightIndicator      = { { "H" } }
-        if Device:hasDPad() then
-            self.key_events.StopHighlightIndicator  = { { Device.input.group.Back }, args = true } -- true: clear highlight selection
-            self.key_events.UpHighlightIndicator    = { { "Up" },    event = "MoveHighlightIndicator", args = {0, -1} }
-            self.key_events.DownHighlightIndicator  = { { "Down" },  event = "MoveHighlightIndicator", args = {0, 1} }
-            -- let hasFewKeys device move the indicator left
-            self.key_events.LeftHighlightIndicator  = { { "Left" },  event = "MoveHighlightIndicator", args = {-1, 0} }
-            self.key_events.RightHighlightIndicator = { { "Right" }, event = "MoveHighlightIndicator", args = {1, 0} }
-            self.key_events.HighlightPress          = { { "Press" } }
-        end
+    elseif Device:hasPageUpDownKeys() and Device:hasDPad() then
+        local QUICK_INDICATOR_MOVE = true
+        self.key_events.QuickUpHighlightIndicator    = { { "ScreenKB", "Up" },    event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICATOR_MOVE} }
+        self.key_events.QuickDownHighlightIndicator  = { { "ScreenKB", "Down" },  event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICATOR_MOVE} }
+        self.key_events.QuickLeftHighlightIndicator  = { { "ScreenKB", "Left" },  event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICATOR_MOVE} }
+        self.key_events.QuickRightHighlightIndicator = { { "ScreenKB", "Right" }, event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICATOR_MOVE} }
     end
 end
 
@@ -588,6 +594,36 @@ Except when in two columns mode, where this is limited to showing only the previ
             self.allow_corner_scroll = G_reader_settings:nilOrTrue("highlight_corner_scroll")
         end,
     })
+    -- we allow user to select the rate at which the content selection tool moves through screen
+    if not Device:isTouchDevice() and Device:hasDPad() then
+        table.insert(menu_items.long_press.sub_item_table, {
+            text_func = function()
+                return T(_("Rate of movement in content selection: %1"), G_reader_settings:readSetting("highlight_non_touch_factor", 4))
+            end,
+            callback = function(touchmenu_instance)
+                local SpinWidget = require("ui/widget/spinwidget")
+                local curr_val = G_reader_settings:readSetting("highlight_non_touch_factor", 4)
+                local spin_widget = SpinWidget:new{
+                    value = curr_val,
+                    value_min = 1,
+                    value_max = 5,
+                    precision = "%.2f",
+                    value_step = 0.25,
+                    value_hold_step = 0.25,
+                    default_value = 4,
+                    title_text =  _("Rate of movement"),
+                    info_text = _("Select a decimal value from 1 to 5, smaller values result in greater travel per keystroke."),
+                    callback = function(spin)
+                        G_reader_settings:saveSetting("highlight_non_touch_factor", spin.value)
+                        self.view.highlight.non_touch_factor = spin.value
+                        UIManager:setDirty(self.dialog, "ui")
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end
+                }
+                UIManager:show(spin_widget)
+            end,
+        })
+    end
 
     -- long_press menu is under taps_and_gestures menu which is not available for non touch device
     -- Clone long_press menu and change label making much meaning for non touch devices
@@ -2170,8 +2206,8 @@ function ReaderHighlight:onMoveHighlightIndicator(args)
         local dx, dy, quick_move = unpack(args)
         local quick_move_distance_dx = self.view.visible_area.w * (1/5) -- quick move distance: fifth of visible_area
         local quick_move_distance_dy = self.view.visible_area.h * (1/5)
-        -- single move distance, small and capable to move on word with small font size and narrow line height
-        local move_distance = Size.item.height_default / 4
+        -- single move distance, user adjustable, default value (4) capable to move on word with small font size and narrow line height
+        local move_distance = Size.item.height_default / G_reader_settings:readSetting("highlight_non_touch_factor")
         local rect = self._current_indicator_pos:copy()
         if quick_move then
             rect.x = rect.x + quick_move_distance_dx * dx
@@ -2184,8 +2220,11 @@ function ReaderHighlight:onMoveHighlightIndicator(args)
                 -- double press: 4 single move distances, usually move to next word or line
                 -- triple press: 16 single distances, usually skip several words or lines
                 -- quadruple press: 54 single distances, almost move to screen edge
-                if diff < time.s(1) then
-                    move_distance = self._last_indicator_move_args.distance * 4
+                if not ( Device:hasPageUpDownKeys() and Device:hasDPad() ) then
+                    -- does not apply (for now..?) to newer (relatively) non-touch devices, i.e kindle 4
+                    if diff < time.s(1) then
+                        move_distance = self._last_indicator_move_args.distance * 4
+                    end
                 end
             end
             rect.x = rect.x + move_distance * dx
