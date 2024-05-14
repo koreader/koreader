@@ -17,10 +17,10 @@ Each target has its own architecture and you'll need to setup a proper cross-com
 A compatible version of the Android NDK and SDK will be downloaded automatically by `./kodev release android` if no NDK or SDK is provided in environment variables. For that purpose you can use:
 
 ```
-NDK=/ndk/location SDK=/sdk/location ./kodev release android
+ANDROID_NDK_HOME=/ndk/location ANDROID_HOME=/sdk/location ./kodev release android
 ```
 
-If you want to use your own installed tools please make sure that you have the **NDKr15c** and the SDK for Android 9 (**API level 28**) already installed.
+If you want to use your own installed tools please make sure that you have the **NDKr23c** and the SDK for Android 9 (**API level 28**) already installed.
 
 #### for embedded linux devices
 
