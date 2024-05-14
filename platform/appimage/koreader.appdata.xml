@@ -1,41 +1,54 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
   <id>rocks.koreader.KOReader</id>
-  <launchable type="desktop-id">rocks.koreader.KOReader.desktop</launchable>
+
+  <name>KOReader</name>
+  <summary>A document viewer for DjVu, PDF, EPUB and more</summary>
+  <developer_name>KOReader Community</developer_name>
+  
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>AGPL-3.0-only</project_license>
-  <name>KOReader</name>
-  <developer_name>KOReader Community</developer_name>
-  <summary>A document viewer for DjVu, PDF, EPUB and more</summary>
+
+  <url type="homepage">https://koreader.rocks/</url>
+  <url type="bugtracker">https://github.com/koreader/koreader/issues</url>
+  <url type="faq">https://github.com/koreader/koreader/wiki</url>
+  <url type="translate">https://hosted.weblate.org/engage/koreader/</url>
+  <url type="vcs-browser">https://github.com/koreader/koreader</url>
+  <url type="contribute">https://koreader.rocks/doc/</url>
+  
+  <recommends>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>touch</control>
+  </recommends>
+
+  <launchable type="desktop-id">rocks.koreader.KOReader.desktop</launchable>
+  
   <description>
     <p>
       KOReader is a document viewer for E Ink devices. It supports PDF, DjVu, XPS, CBT, CBZ, FB2,
       PDB, TXT, HTML, RTF, CHM, EPUB, DOC, MOBI, and ZIP files.
     </p>
   </description>
+  
   <screenshots>
     <screenshot type="default">
       <image>
-        https://github.com/koreader/koreader-artwork/raw/master/koreader-menu.png</image>
+        https://github.com/koreader/koreader-artwork/raw/master/koreader-menu-framed.png</image>
     </screenshot>
     <screenshot>
       <image>
-        https://github.com/koreader/koreader-artwork/raw/master/koreader-footnotes.png</image>
+        https://github.com/koreader/koreader-artwork/raw/master/koreader-footnotes-framed.png</image>
     </screenshot>
     <screenshot>
       <image>
-        https://github.com/koreader/koreader-artwork/raw/master/koreader-dictionary.png</image>
+        https://github.com/koreader/koreader-artwork/raw/master/koreader-dictionary-framed.png</image>
     </screenshot>
   </screenshots>
-  <url type="homepage">https://koreader.rocks/</url>
-  <url type="bugtracker">https://github.com/koreader/koreader/issues</url>
-  <url type="faq">https://github.com/koreader/koreader/wiki</url>
-  <url type="translate">https://github.com/koreader/koreader-translations</url>
-  <url type="vcs-browser">https://github.com/koreader/koreader</url>
-  <url type="contribute">https://koreader.rocks/doc/</url>
+
   <categories>
     <category>Viewer</category>
     <category>Literature</category>
   </categories>
-  <content_rating type="oars-1.1" />
+  <content_rating type="oars-1.1"/>
 </component>
