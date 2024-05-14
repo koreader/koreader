@@ -214,11 +214,6 @@ function ReaderHighlight:init()
         }
     end)
 
-    -- default value for non-touch content selection speed-up rate
-    if G_reader_settings:hasNot("highlight_non_touch_spedup") then
-        G_reader_settings:makeTrue("highlight_non_touch_spedup")
-    end
-
     self.ui:registerPostInitCallback(function()
         self.ui.menu:registerToMainMenu(self)
     end)
@@ -617,30 +612,27 @@ Except when in two columns mode, where this is limited to showing only the previ
                     value_step = 0.25,
                     value_hold_step = 0.25,
                     default_value = 4,
-                    title_text =  _("Rate of movement"),
+                    title_text = _("Rate of movement"),
                     info_text = _("Select a decimal value from 1 to 5, smaller values result in greater travel per keystroke."),
                     callback = function(spin)
                         G_reader_settings:saveSetting("highlight_non_touch_factor", spin.value)
                         self.view.highlight.non_touch_factor = spin.value
-                        UIManager:setDirty(self.dialog, "ui")
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end
                 }
                 UIManager:show(spin_widget)
             end,
         })
-    end
-    if not Device:isTouchDevice() and Device:hasDPad() then
         table.insert(menu_items.long_press.sub_item_table, {
-            text = _("Speed-up rate on consecutive keystrokes"),
+            text = _("Speed-up rate on multiple keystrokes"),
             checked_func = function()
-                return G_reader_settings:isTrue("highlight_non_touch_spedup")
+                return G_reader_settings:nilOrTrue("highlight_non_touch_spedup")
             end,
             enabled_func = function()
                 return not self.view.highlight.disabled
             end,
             callback = function()
-                G_reader_settings:toggle("highlight_non_touch_spedup")
+                G_reader_settings:flipNilOrTrue("highlight_non_touch_spedup")
             end,
         })
     end
@@ -2240,7 +2232,7 @@ function ReaderHighlight:onMoveHighlightIndicator(args)
                 -- double press: 4 single move distances, usually move to next word or line
                 -- triple press: 16 single distances, usually skip several words or lines
                 -- quadruple press: 54 single distances, almost move to screen edge
-                if G_reader_settings:isTrue("highlight_non_touch_spedup") then
+                if G_reader_settings:nilOrTrue("highlight_non_touch_spedup") then
                     -- user selects whether to use 'constant' or [this] 'sped up' rate (speed-up on by default)
                     if diff < time.s(1) then
                         move_distance = self._last_indicator_move_args.distance * 4
