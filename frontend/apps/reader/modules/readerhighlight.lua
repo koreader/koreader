@@ -635,6 +635,35 @@ Except when in two columns mode, where this is limited to showing only the previ
                 G_reader_settings:flipNilOrTrue("highlight_non_touch_spedup")
             end,
         })
+        table.insert(menu_items.long_press.sub_item_table, {
+            text_func = function()
+                return T(_("Interval to speed-up rate: %1 second(s)"), G_reader_settings:readSetting("highlight_non_touch_interval", 1))
+            end,
+            enabled_func = function()
+                return not self.view.highlight.disabled and G_reader_settings:nilOrTrue("highlight_non_touch_spedup")
+            end,
+            callback = function(touchmenu_instance)
+                local SpinWidget = require("ui/widget/spinwidget")
+                local curr_val = G_reader_settings:readSetting("highlight_non_touch_interval", 1)
+                local spin_widget = SpinWidget:new{
+                    value = curr_val,
+                    value_min = 0.1,
+                    value_max = 1,
+                    precision = "%.1f",
+                    value_step = 0.1,
+                    value_hold_step = 0.1,
+                    default_value = 1,
+                    title_text = _("Time interval"),
+                    info_text = _("Select a decimal value up to 1 second. This is the period of time within which multiple keystrokes will speed-up rate of travel"),
+                    callback = function(spin)
+                        G_reader_settings:saveSetting("highlight_non_touch_interval", spin.value)
+                        self.view.highlight.non_touch_factor = spin.value
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end
+                }
+                UIManager:show(spin_widget)
+            end,
+        })
     end
 
     -- long_press menu is under taps_and_gestures menu which is not available for non touch device
@@ -2228,13 +2257,14 @@ function ReaderHighlight:onMoveHighlightIndicator(args)
             local now = time:now()
             if dx == self._last_indicator_move_args.dx and dy == self._last_indicator_move_args.dy then
                 local diff = now - self._last_indicator_move_args.time
-                -- if user presses same arrow key within 1 second, speed up
+                -- if user presses same arrow key within 1 second (default, user adjustable), speed up
                 -- double press: 4 single move distances, usually move to next word or line
                 -- triple press: 16 single distances, usually skip several words or lines
                 -- quadruple press: 54 single distances, almost move to screen edge
                 if G_reader_settings:nilOrTrue("highlight_non_touch_spedup") then
                     -- user selects whether to use 'constant' or [this] 'sped up' rate (speed-up on by default)
-                    if diff < time.s(1) then
+                    local x_inter = G_reader_settings:readSetting("highlight_non_touch_interval")
+                    if diff < time.s( x_inter ) then
                         move_distance = self._last_indicator_move_args.distance * 4
                     end
                 end
