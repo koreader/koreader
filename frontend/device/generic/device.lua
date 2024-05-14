@@ -234,7 +234,7 @@ function Device:init()
     end
 
     if not Device:hasKeyboard() and Device:hasDPad() and Device:hasPageUpDownKeys() then
-        self.useDpadAsExtraButtons = yes
+        self.useDPadAsExtraButtons = yes
     end
 
     if self:hasGSensor() then
