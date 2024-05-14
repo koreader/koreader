@@ -332,8 +332,10 @@ function Input.close(path)
     -- Make sure we actually know about this device
     local fd = Input.opened_devices[path]
     if fd then
-        input.close(fd)
-        Input.opened_devices[path] = nil
+        local ok, err = input.close(fd)
+        if ok or err == C.ENODEV then
+            Input.opened_devices[path] = nil
+        end
     else
         logger.warn("Tried to close an unknown input device @", path)
     end
