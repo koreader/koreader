@@ -208,7 +208,11 @@ end
 
 function Kindle:openInputDevices()
     -- Auto-detect input devices (via FBInk's fbink_input_scan)
-    local FBInkInput = ffi.load("fbink_input")
+    local ok, FBInkInput = pcall(ffi.load, "fbink_input")
+    if not ok then
+        -- NOP fallback for the testsuite...
+        FBInkInput = { fbink_input_scan = function() end }
+    end
     local dev_count = ffi.new("size_t[1]")
     -- We care about: the touchscreen, a properly scaled stylus, pagination buttons and a home button.
     local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_SCALED_TABLET, C.INPUT_PAGINATION_BUTTONS, C.INPUT_HOME_BUTTON)

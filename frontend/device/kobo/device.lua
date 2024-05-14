@@ -857,7 +857,11 @@ function Kobo:init()
     self:initEventAdjustHooks()
 
     -- Auto-detect input devices (via FBInk's fbink_input_scan)
-    local FBInkInput = ffi.load("fbink_input")
+    local ok, FBInkInput = pcall(ffi.load, "fbink_input")
+    if not ok then
+        -- NOP fallback foir the testsuite...
+        FBInkInput = { fbink_input_scan = NOP }
+    end
     local dev_count = ffi.new("size_t[1]")
     -- We care about: the touchscreen, the stylus, the power button, the sleep cover, and pagination buttons
     -- (and technically rotation events, but we'll get it with the device that provides the buttons on NTX).
