@@ -336,6 +336,7 @@ function Input.close(path)
         if ok or err == C.ENODEV then
             -- Either the call succeeded,
             -- or the backend had already caught an ENODEV in waitForInput and closed the fd internally.
+            -- (Because the EvdevInputRemove Event comes from an UsbDevicePlugOut uevent forwarded as an... *input* EV_KEY event ;)).
             -- Regardless, that device is gone, so clear its spot in the hashmap.
             Input.opened_devices[path] = nil
         end
