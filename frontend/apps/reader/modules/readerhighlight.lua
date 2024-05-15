@@ -606,13 +606,13 @@ Except when in two columns mode, where this is limited to showing only the previ
                 local curr_val = G_reader_settings:readSetting("highlight_non_touch_factor", 4)
                 local spin_widget = SpinWidget:new{
                     value = curr_val,
-                    value_min = 1,
+                    value_min = 0.25,
                     value_max = 5,
                     precision = "%.2f",
                     value_step = 0.25,
                     default_value = 4,
                     title_text = _("Rate of movement"),
-                    info_text = _("Select a decimal value from 1 to 5, smaller values result in greater travel per keystroke."),
+                    info_text = _("Select a decimal value from 0.25 to 5, smaller values result in greater travel per keystroke. Font size and this value are inversely correlated, i.e smaller font size requires a larger value and vice versa."),
                     callback = function(spin)
                         G_reader_settings:saveSetting("highlight_non_touch_factor", spin.value)
                         if touchmenu_instance then touchmenu_instance:updateItems() end
