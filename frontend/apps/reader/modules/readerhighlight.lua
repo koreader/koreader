@@ -2260,7 +2260,7 @@ function ReaderHighlight:onMoveHighlightIndicator(args)
                 -- if user presses same arrow key within 1 second (default, user adjustable), speed up
                 -- double press: 4 single move distances, usually move to next word or line
                 -- triple press: 16 single distances, usually skip several words or lines
-                -- quadruple press: 54 single distances, almost move to screen edge
+                -- quadruple press: 64 single distances, almost move to screen edge
                 if G_reader_settings:nilOrTrue("highlight_non_touch_spedup") then
                     -- user selects whether to use 'constant' or [this] 'sped up' rate (speed-up on by default)
                     local x_inter = G_reader_settings:readSetting("highlight_non_touch_interval")
