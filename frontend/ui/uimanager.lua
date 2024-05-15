@@ -62,11 +62,15 @@ function UIManager:init()
         UsbDevicePlugIn = function(input_event)
             -- Retrieve the argument set by Input:handleKeyBoardEv
             local evdev = table.remove(Input.fake_event_args[input_event])
-            self:broadcastEvent(Event:new("EvdevInputInsert", evdev))
+            local path = "/dev/input/event" .. tostring(evdev)
+
+            self:broadcastEvent(Event:new("EvdevInputInsert", path))
         end,
         UsbDevicePlugOut = function(input_event)
             local evdev = table.remove(Input.fake_event_args[input_event])
-            self:broadcastEvent(Event:new("EvdevInputRemove", evdev))
+            local path = "/dev/input/event" .. tostring(evdev)
+
+            self:broadcastEvent(Event:new("EvdevInputRemove", path))
         end,
     }
     self.poweroff_action = function()

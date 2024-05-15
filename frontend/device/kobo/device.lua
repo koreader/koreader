@@ -15,6 +15,7 @@ local C = ffi.C
 require("ffi/linux_fb_h")
 require("ffi/linux_input_h")
 require("ffi/posix_h")
+require("ffi/fbink_input_h")
 
 local function yes() return true end
 local function no() return false end
@@ -140,17 +141,16 @@ local Kobo = Generic:extend{
     battery_sysfs = "/sys/class/power_supply/mc13892_bat",
     -- Stable path to the NTX input device
     ntx_dev = "/dev/input/event0",
+    ntx_fd = nil,
     -- Stable path to the Touch input device
     touch_dev = "/dev/input/event1",
-    -- Stable path to the Power Button input device
-    power_dev = nil,
     -- Event code to use to detect contact pressure
     pressure_event = nil,
     -- Device features multiple CPU cores
     isSMP = no,
     -- Device supports "eclipse" waveform modes (i.e., optimized for nightmode).
     hasEclipseWfm = no,
-    -- Device ships with various hardware revisions under the same device code, requiring automatic hardware detection...
+    -- Device ships with various hardware revisions under the same device code, requiring automatic hardware detection (PMIC & FL)...
     automagic_sysfs = false,
     -- The standard "standby" power state
     standby_state = "standby",
@@ -417,8 +417,6 @@ local KoboEuropa = Kobo:extend{
     display_dpi = 227,
     boot_rota = C.FB_ROTATE_CCW,
     battery_sysfs = "/sys/class/power_supply/battery",
-    ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
-    touch_dev = "/dev/input/by-path/platform-0-0010-event",
     isSMP = yes,
 }
 
@@ -448,8 +446,6 @@ local KoboCadmus = Kobo:extend{
     battery_sysfs = "/sys/class/power_supply/battery",
     hasAuxBattery = yes,
     aux_battery_sysfs = "/sys/class/misc/cilix",
-    ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
-    touch_dev = "/dev/input/by-path/platform-0-0010-event",
     isSMP = yes,
     -- Much like the Libra 2, there are at least two different HW revisions, with different PMICs...
     automagic_sysfs = true,
@@ -503,7 +499,6 @@ local KoboGoldfinch = Kobo:extend{
         nl_inverted = true,
     },
     battery_sysfs = "/sys/class/power_supply/battery",
-    power_dev = "/dev/input/by-path/platform-bd71828-pwrkey-event",
     -- Board is eerily similar to the Libra 2, so, it inherits the same quirks...
     -- c.f., https://github.com/koreader/koreader/issues/9552#issuecomment-1293000313
     hasReliableMxcWaitFor = no,
@@ -530,9 +525,6 @@ local KoboCondor = Kobo:extend{
         nl_inverted = true,
     },
     battery_sysfs = "/sys/class/power_supply/bd71827_bat",
-    touch_dev = "/dev/input/by-path/platform-2-0010-event",
-    ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
-    power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event",
     isSMP = yes,
 }
 
@@ -557,9 +549,9 @@ local KoboMonza = Kobo:extend{
         nl_max = 10,
         nl_inverted = true,
     },
+    battery_sysfs = "/sys/class/power_supply/bd71827_bat",
     isSMP = yes,
     hasColorScreen = yes,
-    automagic_sysfs = true,
 }
 
 -- Kobo Clara B/W:
@@ -579,7 +571,7 @@ local KoboSpaBW = Kobo:extend{
         nl_max = 10,
         nl_inverted = true,
     },
-    automagic_sysfs = true,
+    battery_sysfs = "/sys/class/power_supply/bd71827_bat",
 }
 
 -- Kobo Clara Colour:
@@ -599,9 +591,9 @@ local KoboSpaColour = Kobo:extend{
         nl_max = 10,
         nl_inverted = true,
     },
+    battery_sysfs = "/sys/class/power_supply/bd71827_bat",
     isSMP = yes,
     hasColorScreen = yes,
-    automagic_sysfs = true,
 }
 
 function Kobo:setupChargingLED()
@@ -623,7 +615,7 @@ function Kobo:getKeyRepeat()
     self.key_repeat = ffi.new("unsigned int[?]", C.REP_CNT)
     if C.ioctl(self.ntx_fd, C.EVIOCGREP, self.key_repeat) < 0 then
         local err = ffi.errno()
-        logger.warn("Device:getKeyRepeat: EVIOCGREP ioctl failed:", ffi.string(C.strerror(err)))
+        logger.warn("Device:getKeyRepeat: EVIOCGREP ioctl on fd", self.ntx_fd, "failed:", ffi.string(C.strerror(err)))
         return false
     else
         logger.dbg("Key repeat is set up to repeat every", self.key_repeat[C.REP_PERIOD], "ms after a delay of", self.key_repeat[C.REP_DELAY], "ms")
@@ -637,14 +629,14 @@ function Kobo:disableKeyRepeat()
     local key_repeat = ffi.new("unsigned int[?]", C.REP_CNT)
     if C.ioctl(self.ntx_fd, C.EVIOCSREP, key_repeat) < 0 then
         local err = ffi.errno()
-        logger.warn("Device:disableKeyRepeat: EVIOCSREP ioctl failed:", ffi.string(C.strerror(err)))
+        logger.warn("Device:disableKeyRepeat: EVIOCSREP ioctl on fd", self.ntx_fd, "failed:", ffi.string(C.strerror(err)))
     end
 end
 
 function Kobo:restoreKeyRepeat()
     if C.ioctl(self.ntx_fd, C.EVIOCSREP, self.key_repeat) < 0 then
         local err = ffi.errno()
-        logger.warn("Device:restoreKeyRepeat: EVIOCSREP ioctl failed:", ffi.string(C.strerror(err)))
+        logger.warn("Device:restoreKeyRepeat: EVIOCSREP ioctl on fd", self.ntx_fd, "failed:", ffi.string(C.strerror(err)))
     end
 end
 
@@ -661,7 +653,7 @@ function Kobo:toggleKeyRepeat(toggle)
         -- Check the current (kernel) state to know what to do
         if C.ioctl(self.ntx_fd, C.EVIOCGREP, key_repeat) < 0 then
             local err = ffi.errno()
-            logger.warn("Device:toggleKeyRepeat: EVIOCGREP ioctl failed:", ffi.string(C.strerror(err)))
+            logger.warn("Device:toggleKeyRepeat: EVIOCGREP ioctl on fd", self.ntx_fd, "failed:", ffi.string(C.strerror(err)))
             return false
         else
             if key_repeat[C.REP_DELAY] == 0 and key_repeat[C.REP_PERIOD] == 0 then
@@ -674,7 +666,7 @@ function Kobo:toggleKeyRepeat(toggle)
 
     if C.ioctl(self.ntx_fd, C.EVIOCSREP, key_repeat) < 0 then
         local err = ffi.errno()
-        logger.warn("Device:toggleKeyRepeat: EVIOCSREP ioctl failed:", ffi.string(C.strerror(err)))
+        logger.warn("Device:toggleKeyRepeat: EVIOCSREP ioctl on fd", self.ntx_fd, "failed:", ffi.string(C.strerror(err)))
         return false
     end
 
@@ -757,46 +749,6 @@ function Kobo:init()
                 -- HWConfig FL_PWM is TLC5947
                 self.frontlight_settings.frontlight_mixer = "/sys/class/backlight/tlc5947_bl/color"
             end
-        end
-
-        -- Touch panel input
-        if util.fileExists("/dev/input/by-path/platform-2-0010-event") then
-            -- Elan (HWConfig TouchCtrl is ekth6) on i2c bus 2
-            self.touch_dev = "/dev/input/by-path/platform-2-0010-event"
-        elseif util.fileExists("/dev/input/by-path/platform-1-0010-event") then
-            -- Elan (HWConfig TouchCtrl is ekth6) on i2c bus 1
-            self.touch_dev = "/dev/input/by-path/platform-1-0010-event"
-        elseif util.fileExists("/dev/input/by-path/platform-0-0010-event") then
-            -- Elan (HWConfig TouchCtrl is ekth6) on i2c bus 0
-            self.touch_dev = "/dev/input/by-path/platform-0-0010-event"
-        else
-            self.touch_dev = "/dev/input/event1"
-        end
-
-        -- Physical buttons & synthetic NTX events
-        if util.fileExists("/dev/input/by-path/platform-gpio-keys-event") then
-            -- Libra 2 w/ a BD71828 PMIC
-            self.ntx_dev = "/dev/input/by-path/platform-gpio-keys-event"
-        elseif util.fileExists("/dev/input/by-path/platform-ntx_event0-event") then
-            -- MTK, sunxi & Mk. 7
-            self.ntx_dev = "/dev/input/by-path/platform-ntx_event0-event"
-        elseif util.fileExists("/dev/input/by-path/platform-mxckpd-event") then
-            -- circa Mk. 5 i.MX
-            self.ntx_dev = "/dev/input/by-path/platform-mxckpd-event"
-        else
-            self.ntx_dev = "/dev/input/event0"
-        end
-
-        -- Power button (this usually ends up in ntx_dev, except with some PMICs)
-        if util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey-event") then
-            -- Libra 2 & Nia w/ a BD71828 PMIC
-            self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey-event"
-        elseif util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event") then
-            -- Sage w/ a BD71828 PMIC
-            self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event"
-        elseif util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event") then
-            -- MTK w/ a BD71828 PMIC
-            self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.6.auto-event"
         end
     end
 
@@ -904,14 +856,41 @@ function Kobo:init()
     -- And then handle the extra shenanigans if necessary.
     self:initEventAdjustHooks()
 
-    -- Various HW Buttons, Switches & Synthetic NTX events
-    self.ntx_fd = self.input.open(self.ntx_dev)
-    -- Dedicated Power Button input device (if any)
-    if self.power_dev then
-        self.input.open(self.power_dev)
+    -- Auto-detect input devices (via FBInk's fbink_input_scan)
+    local ok, FBInkInput = pcall(ffi.load, "fbink_input")
+    if not ok then
+        -- NOP fallback for the testsuite...
+        FBInkInput = { fbink_input_scan = NOP }
     end
-    -- Touch panel
-    self.input.open(self.touch_dev)
+    local dev_count = ffi.new("size_t[1]")
+    -- We care about: the touchscreen, the stylus, the power button, the sleep cover, and pagination buttons
+    -- (and technically rotation events, but we'll get it with the device that provides the buttons on NTX).
+    -- We exclude keyboards to play nice with the ExternalKeyboard plugin, which will handle potential keyboards on its own.
+    local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_TABLET, C.INPUT_POWER_BUTTON, C.INPUT_SLEEP_COVER, C.INPUT_PAGINATION_BUTTONS)
+    local devices = FBInkInput.fbink_input_scan(match_mask, C.INPUT_KEYBOARD, C.SCAN_ONLY, dev_count)
+    if devices ~= nil then
+        for i = 0, tonumber(dev_count[0]) - 1 do
+            local dev = devices[i]
+            if dev.matched then
+                -- We need to single out whichever device provides pagination buttons or sleep cover events, as we'll want to tweak key repeat there...
+                -- The first one will do, as it's extremely likely to be event0, and that's pretty fairly set in stone on NTX boards.
+                if (bit.band(dev.type, C.INPUT_PAGINATION_BUTTONS) ~= 0 or bit.band(dev.type, C.INPUT_SLEEP_COVER) ~= 0) and not self.ntx_fd then
+                    self.ntx_fd = self.input.open(ffi.string(dev.path), ffi.string(dev.name))
+                else
+                    self.input.open(ffi.string(dev.path), ffi.string(dev.name))
+                end
+            end
+        end
+        C.free(devices)
+    else
+        -- Auto-detection failed, warn and fall back to defaults
+        logger.warn("We failed to auto-detect the proper input devices, input handling may be inconsistent!")
+        -- Various HW Buttons, Switches & Synthetic NTX events
+        self.ntx_fd = self.input.open(self.ntx_dev)
+        -- Touch panel
+        self.input.open(self.touch_dev)
+    end
+
     -- NOTE: On devices with a gyro, there may be a dedicated input device outputting the raw accelerometer data
     --       (3-Axis Orientation/Motion Detection).
     --       We skip it because we don't need it (synthetic rotation change events are sent to the main ntx input device),
