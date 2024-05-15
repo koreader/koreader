@@ -51,7 +51,7 @@ end
 function ReaderPaging:onGesture() end
 
 function ReaderPaging:registerKeyEvents()
-    if Device:hasPageUpDownKeys() and Device:hasDPad() then
+    if Device:hasFiveWay() then
         -- this targets all devices (kindles) non-touch with dPads (i.e dx, kk, k4 and others)
         self.key_events.GotoNextPos = {
             { { "RPgFwd", "LPgFwd" } },
@@ -100,7 +100,7 @@ function ReaderPaging:registerKeyEvents()
         }
     end
     --[[ upcoming
-    if Device:useDPadAsExtraButtons() then
+    if Device:hasFiveWay() and not Device:hasKeyboard() then
         -- targets exclusively kindle 4
         self.key_events.PrevDocument = {
             { "ScreenKB", "Back" },

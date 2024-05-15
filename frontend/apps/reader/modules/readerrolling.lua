@@ -116,7 +116,7 @@ end
 function ReaderRolling:onGesture() end
 
 function ReaderRolling:registerKeyEvents()
-    if Device:hasPageUpDownKeys() and Device:hasDPad() then
+    if Device:hasFiveWay() then
         -- targetting all non-touch kindles
         self.key_events.GotoNextView = {
             { { "RPgFwd", "LPgFwd" } },
@@ -140,7 +140,7 @@ function ReaderRolling:registerKeyEvents()
             args = -1,
         }
     end
-    if Device:hasPageUpDownKeys() and Device:hasDPad() then
+    if Device:hasFiveWay() then
         self.key_events.ContentSelection = {
             { { "Up", "Down" } },
             event = "ContentSelection",
@@ -168,7 +168,7 @@ function ReaderRolling:registerKeyEvents()
         }
     end
     --[[ upcoming
-    if Device:useDPadAsExtraButtons() then
+    if Device:hasFiveWay() and not Device:hasKeyboard() then
         self.key_events.PrevDocument = {
             { "ScreenKB", "Back" },
             event = "PrevDocument",
