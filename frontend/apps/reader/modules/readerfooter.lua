@@ -1018,11 +1018,11 @@ function ReaderFooter:addToMainMenu(menu_items)
             text_func = function()
                 return self:textOptionTitles(option)
             end,
-            help_text = type(option_help_text[option]) == "string" 
-                and option_help_text[option], 
-            help_text_func = type(option_help_text[option]) == "function" and 
-                function(touchmenu_instance) 
-                    option_help_text[option](self, touchmenu_instance) 
+            help_text = type(option_help_text[option]) == "string"
+                and option_help_text[option],
+            help_text_func = type(option_help_text[option]) == "function" and
+                function(touchmenu_instance)
+                    option_help_text[option](self, touchmenu_instance)
                 end,
             checked_func = function()
                 return self.settings[option] == true
