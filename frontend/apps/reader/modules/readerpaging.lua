@@ -51,7 +51,8 @@ end
 function ReaderPaging:onGesture() end
 
 function ReaderPaging:registerKeyEvents()
-    if Device:useDPadAsExtraButtons() then
+    if Device:hasPageUpDownKeys() and Device:hasDPad() then
+        -- this targets all devices (kindles) non-touch with dPads (i.e dx, kk, k4 and others)
         self.key_events.GotoNextPos = {
             { { "RPgFwd", "LPgFwd" } },
             event = "GotoPosRel",
@@ -76,12 +77,6 @@ function ReaderPaging:registerKeyEvents()
             event = "GotoPrevChapter",
             args = -1,
         }
-        --[[ upcoming
-        self.key_events.PrevDocument = {
-            { "ScreenKB", "Back" },
-            event = "PrevDocument",
-            args = 0,
-        } ]]
     elseif Device:hasKeys() then
         self.key_events.GotoNextPage = {
             { { "RPgFwd", "LPgFwd", not Device:hasFewKeys() and "Right" } },
@@ -104,6 +99,15 @@ function ReaderPaging:registerKeyEvents()
             args = -1,
         }
     end
+    --[[ upcoming
+    if Device:useDPadAsExtraButtons() then
+        -- targets exclusively kindle 4
+        self.key_events.PrevDocument = {
+            { "ScreenKB", "Back" },
+            event = "PrevDocument",
+            args = 0,
+        }
+    end ]]
     if Device:hasKeyboard() then
         self.key_events.GotoFirst = {
             { "1" },
