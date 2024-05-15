@@ -117,7 +117,7 @@ function ReaderRolling:onGesture() end
 
 function ReaderRolling:registerKeyEvents()
     if Device:hasPageUpDownKeys() and Device:hasDPad() then
-        -- targetting all non-touch kindles 
+        -- targetting all non-touch kindles
         self.key_events.GotoNextView = {
             { { "RPgFwd", "LPgFwd" } },
             event = "GotoViewRel",

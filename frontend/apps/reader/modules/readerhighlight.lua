@@ -610,13 +610,11 @@ Except when in two columns mode, where this is limited to showing only the previ
                     value_max = 5,
                     precision = "%.2f",
                     value_step = 0.25,
-                    value_hold_step = 0.25,
                     default_value = 4,
                     title_text = _("Rate of movement"),
                     info_text = _("Select a decimal value from 1 to 5, smaller values result in greater travel per keystroke."),
                     callback = function(spin)
                         G_reader_settings:saveSetting("highlight_non_touch_factor", spin.value)
-                        self.view.highlight.non_touch_factor = spin.value
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end
                 }
@@ -637,7 +635,11 @@ Except when in two columns mode, where this is limited to showing only the previ
         })
         table.insert(menu_items.long_press.sub_item_table, {
             text_func = function()
-                return T(_("Interval to speed-up rate: %1 second(s)"), G_reader_settings:readSetting("highlight_non_touch_interval", 1))
+                if G_reader_settings:readSetting("highlight_non_touch_interval") == 1 then
+                    return T(_("Interval to speed-up rate: %1 second"), G_reader_settings:readSetting("highlight_non_touch_interval", 1))
+                else
+                    return T(_("Interval to speed-up rate: %1 seconds"), G_reader_settings:readSetting("highlight_non_touch_interval", 1))
+                end
             end,
             enabled_func = function()
                 return not self.view.highlight.disabled and G_reader_settings:nilOrTrue("highlight_non_touch_spedup")
@@ -651,13 +653,11 @@ Except when in two columns mode, where this is limited to showing only the previ
                     value_max = 1,
                     precision = "%.1f",
                     value_step = 0.1,
-                    value_hold_step = 0.1,
                     default_value = 1,
                     title_text = _("Time interval"),
                     info_text = _("Select a decimal value up to 1 second. This is the period of time within which multiple keystrokes will speed-up rate of travel"),
                     callback = function(spin)
                         G_reader_settings:saveSetting("highlight_non_touch_interval", spin.value)
-                        self.view.highlight.non_touch_factor = spin.value
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end
                 }
