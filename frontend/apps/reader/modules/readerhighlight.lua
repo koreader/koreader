@@ -1691,6 +1691,14 @@ function ReaderHighlight:onCycleHighlightAction()
     return true
 end
 
+function ReaderHighlight:getHighlightStyleString(style) -- for bookmark list
+    for _, v in ipairs(highlight_style) do
+        if v[2] == style then
+            return v[1]
+        end
+    end
+end
+
 function ReaderHighlight:onCycleHighlightStyle()
     local current_style = self.view.highlight.saved_drawer
     local next_style_num
@@ -1851,7 +1859,14 @@ function ReaderHighlight:addNote(text)
 end
 
 function ReaderHighlight:editHighlight(index, is_new_note, text)
-    self.ui.bookmark:setBookmarkNote(index, is_new_note, text)
+    local note_updated_callback = function()
+        local item = self.ui.annotation.annotations[index]
+        self:writePdfAnnotation("content", item, item.note)
+        if self.view.highlight.note_mark then -- refresh note marker
+            UIManager:setDirty(self.dialog, "ui")
+        end
+    end
+    self.ui.bookmark:setBookmarkNote(index, is_new_note, text, note_updated_callback)
 end
 
 function ReaderHighlight:editHighlightStyle(index)
