@@ -1454,7 +1454,6 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
         }
     })
-    ---------------------------------
     -- footer_items
     local footer_items = {}
     table.insert(sub_items, {
