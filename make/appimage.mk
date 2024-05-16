@@ -3,6 +3,8 @@ APPIMAGE_DIR = $(PLATFORM_DIR)/appimage
 APPIMAGETOOL = appimagetool-x86_64.AppImage
 APPIMAGETOOL_URL = https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage
 
+RELEASE_DATE := $(shell date --iso-8601)
+
 update: all
 	# remove old package if any
 	rm -f koreader-appimage-$(MACHINE)-$(VERSION).appimage
@@ -10,6 +12,8 @@ update: all
 	$(SYMLINK) $(abspath $(APPIMAGE_DIR)/koreader.appdata.xml) $(INSTALL_DIR)/koreader/
 	$(SYMLINK) $(abspath $(APPIMAGE_DIR)/koreader.desktop) $(INSTALL_DIR)/koreader/
 	$(SYMLINK) $(abspath resources/koreader.png) $(INSTALL_DIR)/koreader/
+	sed -i 's/%%VERSION%%/$(VERSION)/' $(INSTALL_DIR)/koreader/koreader.appdata.xml
+	sed -i 's/%%DATE%%/$(RELEASE_DATE)/' $(INSTALL_DIR)/koreader/koreader.appdata.xml
 	# TODO at best this is DebUbuntu specific
 	$(SYMLINK) /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 $(INSTALL_DIR)/koreader/libs/libSDL2.so
 	# required for our stock Ubuntu SDL even though we don't use sound

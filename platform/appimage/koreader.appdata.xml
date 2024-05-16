@@ -50,5 +50,8 @@
     <category>Viewer</category>
     <category>Literature</category>
   </categories>
+  <releases>
+    <release version="%%VERSION%%" date="%%DATE%%"/>
+  </releases>
   <content_rating type="oars-1.1"/>
 </component>

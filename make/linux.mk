@@ -1,6 +1,8 @@
 LINUX_DIR = $(PLATFORM_DIR)/linux
 LINUX_PACKAGE:=koreader-linux-$(LINUX_ARCH_NAME)$(KODEDUG_SUFFIX)-$(VERSION).tar.xz
 
+RELEASE_DATE := $(shell date --iso-8601)
+
 update: all
 	mkdir -pv \
 		$(INSTALL_DIR)/linux/bin \
@@ -9,6 +11,10 @@ update: all
 		$(INSTALL_DIR)/linux/share/applications \
 		$(INSTALL_DIR)/linux/share/doc/koreader \
 		$(INSTALL_DIR)/linux/share/man/man1
+
+	cp -pv $(PLATFORM_DIR)/appimage/koreader.appdata.xml $(INSTALL_DIR)/linux
+	sed -i 's/%%VERSION%%/$(VERSION)/' $(INSTALL_DIR)/linux/koreader.appdata.xml
+	sed -i 's/%%DATE%%/$(RELEASE_DATE)/' $(INSTALL_DIR)/linux/koreader.appdata.xml
 	cp -pv resources/koreader.png $(INSTALL_DIR)/linux/share/pixmaps
 	cp -pv $(LINUX_DIR)/koreader.desktop $(INSTALL_DIR)/linux/share/applications
 	cp -pv $(LINUX_DIR)/copyright COPYING $(INSTALL_DIR)/linux/share/doc/koreader
