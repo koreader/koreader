@@ -626,8 +626,14 @@ local Menu = FocusManager:extend{
     line_color = Blitbuffer.COLOR_DARK_GRAY,
 }
 
-function Menu:_recalculateDimen()
-    self.perpage = self.items_per_page or G_reader_settings:readSetting("items_per_page") or self.items_per_page_default
+function Menu:_recalculateDimen(no_recalculate_dimen)
+    local perpage = self.items_per_page or G_reader_settings:readSetting("items_per_page") or self.items_per_page_default
+    if self.perpage ~= perpage then
+        self.perpage = perpage
+        no_recalculate_dimen = false
+    end
+
+    if no_recalculate_dimen then return end
 
     local top_height = 0
     if self.title_bar and not self.no_title then
@@ -645,7 +651,7 @@ function Menu:_recalculateDimen()
     self.item_dimen = Geom:new{
         x = 0, y = 0,
         w = self.inner_dimen.w,
-        h = math.floor(self.available_height / self.perpage),
+        h = math.floor(self.available_height / perpage),
     }
 
     self.page_num = self:getPageNumber(#self.item_table)
@@ -1021,9 +1027,7 @@ function Menu:updateItems(select_number, no_recalculate_dimen)
     self.page_info:resetLayout()
     self.return_button:resetLayout()
     self.content_group:resetLayout()
-    if not no_recalculate_dimen then
-        self:_recalculateDimen()
-    end
+    self:_recalculateDimen(no_recalculate_dimen)
     -- default to select the first item
     if not select_number then
         select_number = 1
@@ -1127,15 +1131,21 @@ end
     which item.key = value
 --]]
 function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch, new_subtitle)
+    local no_recalculate_dimen = true
+
     if new_item_table then
         self.item_table = new_item_table
+        no_recalculate_dimen = false
     end
 
     if self.title_bar then
         if new_title then
             self.title_bar:setTitle(new_title, true)
+            if self.title_multilines then
+                no_recalculate_dimen = false
+            end
         end
-        if new_subtitle then
+        if new_subtitle then -- always single line
             self.title_bar:setSubTitle(new_subtitle, true)
         end
     end
@@ -1156,7 +1166,7 @@ function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch, 
         self.page = self:getPageNumber(itemnumber)
     end
 
-    self:updateItems()
+    self:updateItems(1, no_recalculate_dimen)
 end
 
 function Menu:getPageNumber(item_number)

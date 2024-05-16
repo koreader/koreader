@@ -1009,7 +1009,7 @@ function ReaderStyleTweak:editBookTweak(touchmenu_instance)
                                 end
                                 if not is_submenu then -- insert as-is on tap
                                     UIManager:close(suggestions_popup_widget)
-                                    editor._input_widget:addChars(title)
+                                    editor:addTextToInput(title)
                                 else
                                     local sub_suggestions_popup_widget
                                     local sub_buttons = {}
@@ -1029,7 +1029,7 @@ function ReaderStyleTweak:editBookTweak(touchmenu_instance)
                                                 end
                                                 UIManager:close(sub_suggestions_popup_widget)
                                                 UIManager:close(suggestions_popup_widget)
-                                                editor._input_widget:addChars(sub_title)
+                                                editor:addTextToInput(sub_title)
                                             end,
                                             hold_callback = sub_description and function()
                                                 UIManager:show(InfoMessage:new{ text = sub_description })

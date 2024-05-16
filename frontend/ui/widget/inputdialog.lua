@@ -532,6 +532,10 @@ function InputDialog:setInputText(text, edited_state, cursor_at_start_or_end)
     end
 end
 
+function InputDialog:addTextToInput(text)
+    return self._input_widget:addChars(text)
+end
+
 function InputDialog:isTextEditable()
     return self._input_widget:isTextEditable()
 end
