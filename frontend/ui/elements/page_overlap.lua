@@ -71,15 +71,17 @@ You can set how many lines are shown.]]),
 })
 
 local page_overlap_styles = {
-    arrow = _("Arrow"),
-    dim = _("Gray out"),
-    line = _("Horizontal line"),
+    {_("Arrow"), "arrow"},
+    {_("Gray out"), "dim"},
+    {_("Solid line"), "line"},
+    {_("Dashed line"), "dashed_line"},
 }
-for k, v in FFIUtil.orderedPairs(page_overlap_styles) do
+for _, v in ipairs(page_overlap_styles) do
+    local style_text, style = unpack(v)
     table.insert(PageOverlap.sub_item_table, {
         text_func = function()
-            local text = v
-            if G_reader_settings:readSetting("page_overlap_style") == k then
+            local text = style_text
+            if G_reader_settings:readSetting("page_overlap_style") == style then
                 text = text .. "   ★"
             end
             return text
@@ -88,14 +90,14 @@ for k, v in FFIUtil.orderedPairs(page_overlap_styles) do
             return ReaderUI.instance.view:isOverlapAllowed() and ReaderUI.instance.view.page_overlap_enable
         end,
         checked_func = function()
-            return ReaderUI.instance.view.page_overlap_style == k
+            return ReaderUI.instance.view.page_overlap_style == style
         end,
         radio = true,
         callback = function()
-            ReaderUI.instance.view.page_overlap_style = k
+            ReaderUI.instance.view.page_overlap_style = style
         end,
         hold_callback = function(touchmenu_instance)
-            G_reader_settings:saveSetting("page_overlap_style", k)
+            G_reader_settings:saveSetting("page_overlap_style", style)
             touchmenu_instance:updateItems()
         end,
     })
