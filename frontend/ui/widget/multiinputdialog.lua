@@ -119,7 +119,7 @@ function MultiInputDialog:init()
             text_type =  field.text_type, -- "password"
             face = self.input_face,
             width = content_width,
-            idx = i, 
+            idx = i,
             focused = i == self.focused_field_idx,
             scroll = false,
             parent = self,
