@@ -120,6 +120,13 @@ local Desktop = Device:extend{
     hasExitOptions = notOSX,
 }
 
+local Flatpak = Device:extend{
+    model = "Flatpak",
+    isDesktop = yes,
+    canRestart = no,
+    hasExitOptions = no,
+}
+
 local Emulator = Device:extend{
     model = "Emulator",
     isEmulator = yes,
@@ -436,6 +443,8 @@ io.write("Starting SDL in " .. SDL.getBasePath() .. "\n")
 -------------- device probe ------------
 if os.getenv("APPIMAGE") then
     return AppImage
+elseif os.getenv("FLATPAK") then
+    return Flatpak
 elseif os.getenv("KO_MULTIUSER") then
     return Desktop
 elseif os.getenv("UBUNTU_APPLICATION_ISOLATION") then
