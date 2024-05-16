@@ -612,7 +612,7 @@ Except when in two columns mode, where this is limited to showing only the previ
                     value_step = 0.25,
                     default_value = 4,
                     title_text = _("Rate of movement"),
-                    info_text = _("Select a decimal value from 0.25 to 5, smaller values result in greater travel per keystroke. Font size and this value are inversely correlated, i.e smaller font size requires a larger value and vice versa."),
+                    info_text = _("Select a decimal value from 0.25 to 5. A smaller value results in a larger travel distance per keystroke. Font size and this value are inversely correlated, meaning a smaller font size requires a larger value and vice versa."),
                     callback = function(spin)
                         G_reader_settings:saveSetting("highlight_non_touch_factor", spin.value)
                         if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -655,7 +655,7 @@ Except when in two columns mode, where this is limited to showing only the previ
                     value_step = 0.1,
                     default_value = 1,
                     title_text = _("Time interval"),
-                    info_text = _("Select a decimal value up to 1 second. This is the period of time within which multiple keystrokes will speed-up rate of travel"),
+                    info_text = _("Select a decimal value up to 1 second. This is the period of time within which multiple keystrokes will speed-up rate of travel."),
                     callback = function(spin)
                         G_reader_settings:saveSetting("highlight_non_touch_interval", spin.value)
                         if touchmenu_instance then touchmenu_instance:updateItems() end
