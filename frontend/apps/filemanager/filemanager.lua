@@ -731,7 +731,7 @@ function FileManager:reinit(path, focused_file)
     UIManager:flushSettings()
     self.dimen = Screen:getSize()
     -- backup the root path and path items
-    self.root_path = path or self.file_chooser.path
+    self.root_path = BaseUtil.realpath(path or self.file_chooser.path)
     local path_items_backup = {}
     for k, v in pairs(self.file_chooser.path_items) do
         path_items_backup[k] = v
@@ -1208,7 +1208,7 @@ function FileManager:showFiles(path, focused_file)
         FileManager.instance:onClose()
     end
 
-    path = path or G_reader_settings:readSetting("lastdir") or filemanagerutil.getDefaultDir()
+    path = BaseUtil.realpath(path or G_reader_settings:readSetting("lastdir") or filemanagerutil.getDefaultDir())
     G_reader_settings:saveSetting("lastdir", path)
     self:setRotationMode()
     local file_manager = FileManager:new{
