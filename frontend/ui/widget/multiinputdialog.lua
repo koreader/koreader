@@ -94,6 +94,7 @@ local Screen = Device.screen
 local MultiInputDialog = InputDialog:extend{
     fields = nil, -- array, mandatory
     input_fields = nil, -- array
+    focused_field_idx = 1,
     description_padding = Size.padding.default,
     description_margin = Size.margin.small,
     bottom_v_padding = Size.padding.default,
@@ -106,22 +107,24 @@ function MultiInputDialog:init()
         align = "left",
         self.title_bar,
     }
+    local content_width = math.floor(self.width * 0.9)
 
-    self.input_field = {}
+    self.input_fields = {}
     local input_description = {}
     for i, field in ipairs(self.fields) do
-        self.input_field[i] = InputText:new{
-            text = field.text or "",
-            hint = field.hint or "",
-            input_type = field.input_type or "string",
-            text_type =  field.text_type,
+        local input_field_tmp = InputText:new{
+            text = field.text,
+            hint = field.hint,
+            input_type = field.input_type,
+            text_type =  field.text_type, -- "password"
             face = self.input_face,
-            width = math.floor(self.width * 0.9),
-            focused = i == 1 and true or false,
+            width = content_width,
+            idx = i,
+            focused = i == self.focused_field_idx,
             scroll = false,
             parent = self,
-            padding = field.padding or nil,
-            margin = field.margin or nil,
+            padding = field.padding,
+            margin = field.margin,
             -- Allow these to be specified per field if needed
             alignment = field.alignment or self.alignment,
             justified = field.justified or self.justified,
@@ -130,7 +133,8 @@ function MultiInputDialog:init()
             auto_para_direction = field.auto_para_direction or self.auto_para_direction,
             alignment_strict = field.alignment_strict or self.alignment_strict,
         }
-        table.insert(self.layout, #self.layout, {self.input_field[i]})
+        table.insert(self.input_fields, input_field_tmp)
+        table.insert(self.layout, { input_field_tmp })
         if field.description then
             input_description[i] = FrameContainer:new{
                 padding = self.description_padding,
@@ -139,7 +143,7 @@ function MultiInputDialog:init()
                 TextBoxWidget:new{
                     text = field.description,
                     face = Font:getFace("x_smallinfofont"),
-                    width = math.floor(self.width * 0.9),
+                    width = content_width,
                 }
             }
             table.insert(VerticalGroupData, CenterContainer:new{
@@ -153,9 +157,9 @@ function MultiInputDialog:init()
         table.insert(VerticalGroupData, CenterContainer:new{
             dimen = Geom:new{
                 w = self.title_bar:getSize().w,
-                h = self.input_field[i]:getSize().h,
+                h = input_field_tmp:getSize().h,
             },
-            self.input_field[i],
+            input_field_tmp,
         })
     end
 
@@ -185,7 +189,7 @@ function MultiInputDialog:init()
         VerticalGroupData,
     }
 
-    self._input_widget = self.input_field[1]
+    self._input_widget = self.input_fields[self.focused_field_idx]
 
     self[1] = CenterContainer:new{
         dimen = Geom:new{
@@ -201,18 +205,12 @@ function MultiInputDialog:init()
 
 end
 
---- Returns an array of our input field's *text* field.
 function MultiInputDialog:getFields()
     local fields = {}
-    for i, field in ipairs(self.input_field) do
+    for i, field in ipairs(self.input_fields) do
         table.insert(fields, field:getText())
     end
     return fields
-end
-
---- BEWARE: Live ref to an internal component!
-function MultiInputDialog:getRawFields()
-    return self.input_field
 end
 
 function MultiInputDialog:onSwitchFocus(inputbox)
@@ -228,10 +226,27 @@ function MultiInputDialog:onSwitchFocus(inputbox)
     -- focus new inputbox
     self._input_widget = inputbox
     self._input_widget:focus()
+    self.focused_field_idx = inputbox.idx
 
     -- Make sure we have a (new) visible keyboard
     self:onShowKeyboard()
 end
 
-return MultiInputDialog
+function MultiInputDialog:onKeyboardHeightChanged()
+    local visible = self:isKeyboardVisible()
+    local fields = self.input_fields -- backup entered text
+    self:onClose() -- will close keyboard and save view position
+    self._input_widget:onCloseWidget() -- proper cleanup of InputText and its keyboard
+    self:free()
+    self.keyboard_visible = visible
+    for i, field in ipairs(self.fields) do -- restore entered text
+        field.text = fields[i].text
+    end
+    self:init()
+    if self.keyboard_visible then
+        self:onShowKeyboard()
+    end
+    UIManager:setDirty("all", "flashui")
+end
 
+return MultiInputDialog
