@@ -424,7 +424,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
     end
 end
 
-function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link, tweak_buttons_func)
+function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link)
     logger.dbg("dict lookup word:", word, boxes)
     -- escape quotes and other funny characters in word
     word = self:cleanSelection(word, is_sane)
@@ -440,7 +440,7 @@ function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link, tw
 
     -- Wrapped through Trapper, as we may be using Trapper:dismissablePopen() in it
     Trapper:wrap(function()
-        self:stardictLookup(word, self.enabled_dict_names, not disable_fuzzy_search, boxes, link, tweak_buttons_func)
+        self:stardictLookup(word, self.enabled_dict_names, not disable_fuzzy_search, boxes, link)
     end)
     return true
 end
@@ -932,7 +932,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     return results
 end
 
-function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link, tweak_buttons_func)
+function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link)
     if word == "" then
         return
     end
@@ -992,16 +992,15 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
         return
     end
 
-    self:showDict(word, tidyMarkup(results), boxes, link, tweak_buttons_func)
+    self:showDict(word, tidyMarkup(results), boxes, link)
 end
 
-function ReaderDictionary:showDict(word, results, boxes, link, tweak_buttons_func)
+function ReaderDictionary:showDict(word, results, boxes, link)
     if results and results[1] then
         logger.dbg("showing quick lookup window", #DictQuickLookup.window_list+1, ":", word, results)
         self.dict_window = DictQuickLookup:new{
             ui = self.ui,
             highlight = self.highlight,
-            tweak_buttons_func = tweak_buttons_func,
             dialog = self.dialog,
             -- original lookup word
             word = word,

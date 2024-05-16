@@ -526,8 +526,8 @@ function DictQuickLookup:init()
             })
         end
     end
-    if self.tweak_buttons_func then
-        self:tweak_buttons_func(buttons)
+    if self.ui then
+        self.ui:handleEvent(Event:new("DictButtonsReady", self, buttons))
     end
     -- Bottom buttons get a bit less padding so their line separators
     -- reach out from the content to the borders a bit more
