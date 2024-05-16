@@ -1527,7 +1527,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 callback = function()
                     self.settings.auto_refresh_time = not self.settings.auto_refresh_time
                     self:rescheduleFooterAutoRefreshIfNeeded()
-                end
+                end,
             },
             {
                 text = _("Hide inactive items"),
