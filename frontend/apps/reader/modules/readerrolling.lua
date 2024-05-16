@@ -117,7 +117,6 @@ function ReaderRolling:onGesture() end
 
 function ReaderRolling:registerKeyEvents()
     if Device:hasFiveWay() then
-        -- targetting all non-touch kindles
         self.key_events.GotoNextView = {
             { { "RPgFwd", "LPgFwd" } },
             event = "GotoViewRel",
