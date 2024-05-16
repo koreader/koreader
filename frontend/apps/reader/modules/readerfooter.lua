@@ -679,7 +679,7 @@ local option_help_text = {}
 option_help_text["pages_left_book"] = _("Can be configured to include or exclude the current page.")
 option_help_text["percentage"] = _("Progress percentage can be shown with zero, one or two decimal places.")
 option_help_text["mem_usage"] = _("Show memory usage in MiB.")
-option_help_text["reclaim_height"] = _("When status bar is unlocked and hidden, this setting will utilise the entirety of screen real state and will temporarily overlap status bar and text when unhidden.")
+option_help_text["reclaim_height"] = _("When status bar is hidden, this setting will utilize the entirety of screen real state (for your book) and will temporarily overlap status bar and text when unhidden.")
 option_help_text["custom_text"] = ReaderFooter.set_custom_text
 
 function ReaderFooter:updateFooterContainer()
