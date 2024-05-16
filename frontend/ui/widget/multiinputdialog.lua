@@ -239,9 +239,8 @@ function MultiInputDialog:onKeyboardHeightChanged()
     self._input_widget:onCloseWidget() -- proper cleanup of InputText and its keyboard
     self:free()
     self.keyboard_visible = visible
-    for i, field in ipairs(self.fields) do -- restore entered text and focused field
+    for i, field in ipairs(self.fields) do -- restore entered text
         field.text = fields[i].text
-        field.focused = i == self.focused_field_idx
     end
     self:init()
     if self.keyboard_visible then
