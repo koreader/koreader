@@ -104,7 +104,6 @@ function ReaderPaging:registerKeyEvents()
         self.key_events.PrevDocument = {
             { "ScreenKB", "Back" },
             event = "PrevDocument",
-            args = 0,
         }
     end
     if Device:hasKeyboard() then

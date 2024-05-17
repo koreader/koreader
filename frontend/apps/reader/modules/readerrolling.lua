@@ -183,7 +183,6 @@ function ReaderRolling:registerKeyEvents()
         self.key_events.PrevDocument = {
             { "ScreenKB", "Back" },
             event = "PrevDocument",
-            args = 0,
         }
         self.key_events.MoveUp = {
             { "ScreenKB", { "RPgBack", "LPgBack" } },
