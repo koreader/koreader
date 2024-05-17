@@ -123,8 +123,7 @@ local Desktop = Device:extend{
 local Flatpak = Device:extend{
     model = "Flatpak",
     isDesktop = yes,
-    canRestart = no,
-    hasExitOptions = no,
+    canExternalDictLookup = no,
 }
 
 local Emulator = Device:extend{
