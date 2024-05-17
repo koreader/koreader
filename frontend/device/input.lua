@@ -732,6 +732,16 @@ function Input:handlePowerManagementOnlyEv(ev)
         end
     end
 
+    -- Make sure we don't leave modifiers in an inconsistent state
+    if self.modifiers[keycode] ~= nil then
+        if ev.value == KEY_PRESS then
+            self.modifiers[keycode] = true
+        elseif ev.value == KEY_RELEASE then
+            self.modifiers[keycode] = false
+        end
+        return
+    end
+
     -- Nothing to see, move along!
     return
 end
