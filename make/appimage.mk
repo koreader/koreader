@@ -3,8 +3,6 @@ APPIMAGE_DIR = $(PLATFORM_DIR)/appimage
 APPIMAGETOOL = appimagetool-x86_64.AppImage
 APPIMAGETOOL_URL = https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage
 
-RELEASE_DATE := $(shell date --iso-8601)
-
 update: all
 	# remove old package if any
 	rm -f koreader-appimage-$(MACHINE)-$(VERSION).appimage

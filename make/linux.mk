@@ -1,8 +1,6 @@
 LINUX_DIR = $(PLATFORM_DIR)/linux
 LINUX_PACKAGE:=koreader-linux-$(LINUX_ARCH_NAME)$(KODEDUG_SUFFIX)-$(VERSION).tar.xz
 
-RELEASE_DATE := $(shell date --iso-8601)
-
 update: all
 	mkdir -pv \
 		$(INSTALL_DIR)/linux/bin \
