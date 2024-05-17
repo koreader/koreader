@@ -4,11 +4,11 @@
 
 * Ricco di opzioni di lettura: interfaccia utente multilingue con lettore altamente personalizzabile e numerose opzioni di impaginazione. È possibile impostare margini di pagina arbitrari, sovrascrivere l'interlinea e scegliere font e stili esterni. Dispone di dizionari di sillabazione multilingue integrati nell'applicazione.
 
-*Integrato con calibre (ricerca di metadati, ricezione di ebook in modalità wireless, consultazione della biblioteca tramite OPDS), Wallabag, Wikipedia, Google Translate e altri fornitori di contenuti.
+* Integrato con calibre (ricerca di metadati, ricezione di ebook in modalità wireless, consultazione della biblioteca tramite OPDS), Wallabag, Wikipedia, Google Translate e altri fornitori di contenuti.
 
 * Ottimizzato per i dispositivi e-ink: interfaccia utente specializzata, senza animazioni, con menu divisi in pagine, contrasto del testo regolabile e zoom facile che si adatta al contenuto o alla pagina nei formati impaginati.
 
-* estensibile tramite plugin
+* estensibile tramite componenti aggiuntivi
 
-* e molto altro: consultazione di dizionari StarDict / Wikipedia, aggiunta di cataloghi OPDS online e feed RSS, aggiornamenti software online over-the-air, un cliente FTP, un server SSH, ...
+* e molto altro: consultazione di dizionari StarDict/Wikipedia, aggiunta di cataloghi OPDS online e feed RSS, aggiornamenti software online over-the-air, un cliente FTP, un server SSH, ...
 

@@ -1,14 +1,14 @@
 * Portátil: roda em dispositivos embarcados (Cervantes, Kindle, Kobo, PocketBook), computadores Android e Linux. Os desenvolvedores podem executar um emulador KOReader no Linux e MacOS. 
  
-* Documentos multiformato: suporta formatos de página fixa (PDF, DjVu, CBT, CBZ) e formatos de e-book refluíveis (EPUB, FB2, Mobi, DOC, CHM, TXT). Documentos PDF/DjVu digitalizados também podem ser refluídos com a biblioteca K2pdfopt integrada. 
+* Documentos multiformato: suporta formatos de página fixa (PDF, DjVu, CBT, CBZ) e formatos de livro eletrônico refluíveis (EPUB, FB2, Mobi, DOC, CHM, TXT). Documentos PDF/DjVu digitalizados também podem ser refluídos com a biblioteca K2pdfopt integrada. 
  
-* Leitura completa: interface de usuário multilíngue com visualização de leitor altamente personalizável e muitas opções de composição. Você pode definir margens de página arbitrárias, substituir o espaçamento entre linhas e escolher fontes e estilos externos. Possui dicionários de hifenização multilíngues incluídos no aplicativo. 
+* Leitura completa: interface de usuário multilíngue com visualização do leitor altamente personalizável e muitas opções tipográficas. Você pode definir margens de página arbitrárias, substituir o espaçamento entre linhas e escolher fontes e estilos externos. Possui dicionários de hifenização multilíngues incluídos no aplicativo. 
   
-* Integrado com o calibre ( pesquisar metadados, receber ebooks sem fio, navegar na biblioteca via OPDS),  Wallabag, Wikipedia, Google Tradutor e outros provedores de conteúdo. 
+* Integrado com o calibre (buscar metadados, receber livros eletrônicos sem fio, navegar na biblioteca via OPDS),  Wallabag, Wikipédia, Google Tradutor e outros provedores de conteúdo. 
  
-* Otimizado para dispositivos e-ink : interface do usuário personalizada sem animação, com menus paginados, contraste de texto ajustável e zoom fácil para ajustar o conteúdo ou a página na mídia paginada. 
+* Otimizado para dispositivos de tinta eletrônica: interface do usuário personalizada sem animação, com menus paginados, contraste de texto ajustável e ampliação fácil para ajustar o conteúdo ou a página na mídia paginada. 
  
 * Extensível através de plugins 
  
-* E muito mais: procure palavras com dicionários StarDict / Wikipedia, adicione seus próprios catálogos OPDS online e feeds RSS, atualizações de software on-line, um cliente FTP, um servidor SSH, …
+* E muito mais: busque palavras com dicionários StarDict / Wikipédia, adicione seus próprios catálogos OPDS online e canais de RSS, atualizações de software on-line, um cliente FTP, um servidor SSH, …
 

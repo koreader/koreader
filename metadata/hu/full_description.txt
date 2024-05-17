@@ -1,0 +1,14 @@
+* hordozható: fut beágyazott eszközökön (Cervantes, Kindle, Kobo, PocketBook), Android és Linux számítógépeken. A fejlesztők a KOReader emulátort futtathatják Linuxon és MacOS-en.
+
+* több formátumú dokumentum-kezelés: támogatja a rögzített oldalformátumokat (PDF, DjVu, CBT, CBZ) és az újraformázható e-könyv formátumokat (EPUB, FB2, Mobi, DOC, CHM, TXT). A beolvasott PDF/DjVu dokumentumok a beépített K2pdfopt könyvtáron is átfolyathatók.
+
+* teljes értékű olvasás: többnyelvű felhasználói felület, nagymértékben testreszabható olvasónézet és számos „szedési” lehetőség. Tetszőleges oldalmargók állíthatóak be, felülbírálható a sortávolság, valamint külső betűtípusok és stílusok választhatóak. Többnyelvű kötőjelszótárral rendelkezik az alkalmazás részeként.
+
+* integrálva van a Calibre (metaadatok keresése, e-könyvek vezeték nélküli fogadása, könyvtár böngészése OPDS-en keresztül), Wallabag, Wikipedia, Google Translate és más tartalomszolgáltatókkal.
+
+* e-ink eszközökre optimalizált: egyedi felhasználói felület animációk nélkül, oldalszámozott menük, állítható szövegkontraszt és egyszerű zoomolás a tartalom vagy az oldalszámozott médiumok tartalmának illesztéséhez.
+
+* tovább bővíthető külső bővítményekkel
+
+* és még sok más: szavak keresése StarDict szótárakban / Wikipédiával, saját online OPDS katalógusok és RSS feedek hozzáadása, online szoftverfrissítések, FTP kliens, SSH szerver, ...
+

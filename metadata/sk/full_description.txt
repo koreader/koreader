@@ -6,7 +6,7 @@
 
 * integrovaný s Calibre (vyhľadávanie metadát, bezdrôtové prijímanie elektronických kníh, prehliadanie knižnice prostredníctvom OPDS), Wallabag, Wikipedia, Google Translate a ďalšími poskytovateľmi obsahu.
 
-* optimalizované pre zariadenia s elektronickým atramentom (e-ink): vlastné používateľské rozhranie bez animácií, so stránkovacími ponukami, nastaviteľným kontrastom textu a jednoduchým priblížením na prispôsobenie obsahu alebo stránky v stránkovaných médiách.
+* optimalizované pre displej zariadenia s elektronickým atramentom (e-ink): vlastné používateľské rozhranie bez animácií, so stránkovanými ponukami menu, nastaviteľným kontrastom textu a jednoduchým priblížením na prispôsobenie obsahu alebo stránky v stránkovaných médiách.
 
 * rozšíriteľný prostredníctvom zásuvných modulov
 

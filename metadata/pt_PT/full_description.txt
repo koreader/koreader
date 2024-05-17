@@ -1,0 +1,14 @@
+* Portátil: roda em aparelhos embarcados (Cervantes, Kindle, Kobo, PocketBook), computadores Android e Linux. Os programadores podem executar um emulador KOReader no Linux e MacOS. 
+ 
+* Documentos multiformato: suporta formatos de página fixa (PDF, DjVu, CBT, CBZ) e formatos de e-book refluíveis (EPUB, FB2, Mobi, DOC, CHM, TXT). Documentos PDF/DjVu digitalizados também podem ser refluídos com a biblioteca K2pdfopt integrada. 
+ 
+* Leitura completa: interface de utilizador multilíngue com visualização de leitor altamente personalizável e muitas opções de composição. Pode definir margens de página arbitrárias, substituir o espaçamento entre linhas e escolher fontes e estilos externos. Possui dicionários de hifenização multilíngues incluídos na app. 
+  
+* Integrado com o calibre ( pesquisar metadados, receber ebooks sem fio, navegar na biblioteca via OPDS),  Wallabag, Wikipedia, Google Tradutor e outros provedores de conteúdo. 
+ 
+* Otimizado para aparelhos e-ink : interface do utilizador personalizada sem animação, com menus paginados, contraste de texto ajustável e zoom fácil para ajustar o conteúdo ou a página na mídia paginada. 
+ 
+* Extensível através de plugins 
+ 
+* E muito mais: procure palavras com dicionários StarDict / Wikipedia, adicione os seus próprios catálogos OPDS online e feeds RSS, atualizações de software on-line, um cliente FTP, um servidor SSH, …
+

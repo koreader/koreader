@@ -1,6 +1,6 @@
 * 휴대용: 임베디드 장치(Cervantes, Kindle, Kobo, PocketBook), Android 및 Linux 컴퓨터에서 실행됩니다. 개발자는 Linux 및 MacOS에서 KOReader 에뮬레이터를 실행할 수 있습니다.
 
-* 다중 형식 문서: 고정 페이지 형식(PDF, DjVu, CBT, CBZ) 및 리플로우 가능한 전자책 형식(EPUB, FB2, Mobi, DOC, CHM, TXT)을 지원합니다. 스캔한 PDF/DjVu 문서는 내장된 K2pdfopt 라이브러리로 리플로우할 수도 있습니다.
+* 다중 형식 문서: 고정된 페이지 형식(PDF, DjVu, CBT, CBZ) 및 가변형 전자책 형식(EPUB, FB2, Mobi, DOC, CHM, TXT)을 지원합니다. 스캔한 PDF/DjVu 문서는 내장된 K2pdfopt 라이브러리로 재정돈할 수도 있습니다.
 
 * 완전한 기능을 갖춘 읽기: 고도로 사용자 정의 가능한 리더 보기 및 다양한 조판 옵션이 있는 다국어 사용자 인터페이스. 임의의 페이지 여백을 설정하고 줄 간격을 무시하고 외부 글꼴 및 스타일을 선택할 수 있습니다. 응용 프로그램에 번들로 제공되는 다국어 하이픈 넣기 사전이 있습니다.
 
