@@ -1,0 +1,14 @@
+* portabel: draait op embedded apparaten (Cervantes, Kindle, Kobo, PocketBook), Android en Linux-computers. Ontwikkelaars kunnen een KOReader-emulator draaien in Linux en MacOS.
+
+* multi-format documenten: ondersteunt vaste paginaformaten (PDF, DjVu, CBT, CBZ) en herschikbare e-book formaten (EPUB, FB2, Mobi, DOC, CHM, TXT). Gescande PDF/DjVu-documenten kunnen ook worden herschikt met de ingebouwde K2pdfopt-bibliotheek.
+
+* volledige leesfunctie: meertalige gebruikersinterface met een zeer aanpasbare leesweergave en vele zetopties. U kunt willekeurige paginamarges instellen, regelafstand overschrijven en externe lettertypen en stijlen kiezen. Meertalige afbreekwoordenboeken zijn gebundeld in de applicatie.
+
+* geïntegreerd met calibre (metadata zoeken, ebooks draadloos ontvangen, bibliotheek doorzoeken via OPDS), Wallabag, Wikipedia, Google Translate en andere contentproviders.
+
+* geoptimaliseerd voor e-ink apparaten: aangepaste UI zonder animatie, met gepagineerde menu's, instelbaar tekstcontrast, en eenvoudige zoom om inhoud of pagina in gepagineerde media te passen.
+
+* uitbreidbaar via plugins
+
+* en nog veel meer: woorden opzoeken met StarDict woordenboeken / Wikipedia, uw eigen online OPDS catalogi en RSS feeds toevoegen, online over-the-air software updates, een FTP client, een SSH server, ...
+

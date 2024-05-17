@@ -1,0 +1,14 @@
+* Taşınabilir: Gömülü aygıtlarda (Cervantes, Kindle, Kobo, PocketBook), Android ve Linux bilgisayarlarda çalışır. Geliştiriciler, Linux ve macOS üzerinde bir KOReader öykünücüsü çalıştırabilir.
+
+* Çok biçimli belgeler: Sabit sayfa biçimleri (PDF, DjVu, CBT, CBZ) ve yeniden düzenlenebilir e-kitap biçimleri (EPUB, FB2, Mobi, DOC, CHM, TXT) desteklenir. Taranan PDF/DjVu belgeleri, yerleşik K2pdfopt kitaplığı ile yeniden düzenlenebilir.
+
+* Tam özellikli okuma: Son derece özelleştirilebilir okuyucu görünümü ve birçok dizgi seçeneği ile çok dilli kullanıcı arabirimi. İsteğe bağlı sayfa kenar boşlukları ayarlayabilir, satır aralığını değiştirebilir ve dış yazı tipleri ile biçemleri seçebilirsiniz. Uygulamada çok dilli tireleme sözlükleri de bulunur.
+
+* Calibre (üst veri arama, kablosuz olarak e-kitap alma, OPDS aracılığıyla kitaplığa göz atma), Wallabag, Vikipedi, Google Translate ve diğer içerik sağlayıcılarla bütünleşik.
+
+* E-mürekkep aygıtları ile uyumlu hale getirilmiş: Sayfalandırılmış menüler, ayarlanabilir metin karşıtlığı ve içeriği veya sayfalı ortama sığdırmak için kolay yakınlaştırma ile canlandırma olmayan özel kullanıcı arayüzü.
+
+* Uygulama ekleri ile zenginleştirilebilir
+
+* Ve pek çok diğer özellik: StarDict sözlükleri / Wikipedia ile sözcük arama, kendi çevrim içi OPDS kataloglarınızı ve RSS akışlarınızı ekleyebilme, çevrim içi kablosuz yazılım güncellemeleri, bir FTP istemcisi, bir SSH sunucusu, …
+

@@ -1,0 +1,1 @@
+Eboeklezer met ondersteuning voor veel formaten, zoals PDF, DjVu, EPUB, FB2, CBZ.
