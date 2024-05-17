@@ -127,6 +127,18 @@ function ReaderRolling:registerKeyEvents()
             event = "GotoViewRel",
             args = -1,
         }
+        if Device:hasKeyboard() then
+            self.key_events.MoveUp = {
+                { "Shift", { "RPgBack", "LPgBack" } },
+                event = "Panning",
+                args = {0, -1},
+            }
+            self.key_events.MoveDown = {
+                { "Shift", { "RPgFwd", "LPgFwd" } },
+                event = "Panning",
+                args = {0,  1},
+            }
+        end
     elseif Device:hasKeys() then
         self.key_events.GotoNextView = {
             { { "RPgFwd", "LPgFwd", "Right" } },
@@ -166,14 +178,25 @@ function ReaderRolling:registerKeyEvents()
             args = {0,  1},
         }
     end
-    --[[ upcoming
+    
     if Device:hasFiveWay() and not Device:hasKeyboard() then
+        --[[ upcoming
         self.key_events.PrevDocument = {
             { "ScreenKB", "Back" },
             event = "PrevDocument",
             args = 0,
+        } ]]
+        self.key_events.MoveUp = {
+            { "ScreenKB", { "RPgBack", "LPgBack" } },
+            event = "Panning",
+            args = {0, -1},
         }
-    end]]
+        self.key_events.MoveDown = {
+            { "ScreenKB", { "RPgFwd", "LPgFwd" } },
+            event = "Panning",
+            args = {0,  1},
+        }
+    end
     if Device:hasKeyboard() then
         self.key_events.GotoFirst = {
             { "1" },
