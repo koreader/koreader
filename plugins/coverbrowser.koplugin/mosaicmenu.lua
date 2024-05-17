@@ -585,12 +585,24 @@ function MosaicMenuItem:update()
                 cover_bb_used = true
                 -- Let ImageWidget do the scaling and give us a bb that fit
                 local _, _, scale_factor = BookInfoManager.getCachedCoverSize(bookinfo.cover_w, bookinfo.cover_h, max_img_w, max_img_h)
+                local consistent_aspect_ratio_covers = BookInfoManager:getSetting("consistent_aspect_ratio_covers") and true or false
+
+                local scale_factor_img = consistent_aspect_ratio_covers and nil or scale_factor
+                if consistent_aspect_ratio_covers then scale_factor_img = nil end
+
+                local stretch = BookInfoManager:getSetting("aspect_ratio_covers_max_stretch") or 8
+                stretch = consistent_aspect_ratio_covers and stretch or nil
+
                 local image= ImageWidget:new{
                     image = bookinfo.cover_bb,
-                    scale_factor = scale_factor,
+                    scale_factor = scale_factor_img,
+                    stretch_limit_percentage = stretch,
+                    width = consistent_aspect_ratio_covers and max_img_w or nil,
+                    height = consistent_aspect_ratio_covers and max_img_h or nil,
                 }
                 image:_render()
                 local image_size = image:getSize()
+
                 widget = CenterContainer:new{
                     dimen = dimen,
                     FrameContainer:new{

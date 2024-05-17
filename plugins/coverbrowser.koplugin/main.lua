@@ -369,6 +369,42 @@ function CoverBrowser:addToMainMenu(menu_items)
                 }
             },
             {
+                text = _("Consistent aspect ratio of book covers"),
+                checked_func = function()
+                    return BookInfoManager:getSetting("consistent_aspect_ratio_covers")
+                end,
+                callback = function()
+                    BookInfoManager:toggleSetting("consistent_aspect_ratio_covers")
+                    fc:updateItems(1, true)
+                end,
+            },
+            {
+                text_func = function()
+                    return T(_("Maximum stretch limit: %1%"), BookInfoManager:getSetting("aspect_ratio_covers_max_stretch") or 8)
+                end,
+                enabled_func = function()
+                    return BookInfoManager:getSetting("consistent_aspect_ratio_covers") and true or false
+                end,
+                callback = function()
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    UIManager:show(SpinWidget:new{
+                        value = BookInfoManager:getSetting("aspect_ratio_covers_max_stretch") or 8,
+                        value_min = 0,
+                        value_max = 25,
+                        default_value = 8,
+                        unit = "%",
+                        title_text = _("Set maximum stretch limit"),
+                        ok_text = _("Set"),
+                        ok_always_enabled = true,
+                        callback = function(spin)
+                            BookInfoManager:saveSetting("aspect_ratio_covers_max_stretch", spin.value)
+                            fc:updateItems(1, true)
+                        end,
+                    })
+                end,
+                separator = true,
+            },
+            {
                 text = _("Series"),
                 sub_item_table = {
                     {
