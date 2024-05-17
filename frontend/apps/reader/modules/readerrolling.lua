@@ -180,12 +180,11 @@ function ReaderRolling:registerKeyEvents()
     end
     
     if Device:hasFiveWay() and not Device:hasKeyboard() then
-        --[[ upcoming
         self.key_events.PrevDocument = {
             { "ScreenKB", "Back" },
             event = "PrevDocument",
             args = 0,
-        } ]]
+        }
         self.key_events.MoveUp = {
             { "ScreenKB", { "RPgBack", "LPgBack" } },
             event = "Panning",

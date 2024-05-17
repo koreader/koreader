@@ -99,7 +99,6 @@ function ReaderPaging:registerKeyEvents()
             args = -1,
         }
     end
-    --[[ upcoming
     if Device:hasFiveWay() and not Device:hasKeyboard() then
         -- targets exclusively kindle 4
         self.key_events.PrevDocument = {
@@ -107,7 +106,7 @@ function ReaderPaging:registerKeyEvents()
             event = "PrevDocument",
             args = 0,
         }
-    end ]]
+    end
     if Device:hasKeyboard() then
         self.key_events.GotoFirst = {
             { "1" },
