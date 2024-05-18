@@ -428,6 +428,25 @@ function PocketBook:setEventHandlers(uimgr)
     end
 end
 
+local function getBrowser()
+    if util.pathExists("/usr/bin/browser.app") then
+        return true, "/usr/bin/browser.app"
+    elseif util.pathExists("/ebrmain/bin/browser.app") then
+        return true, "/ebrmain/bin/browser.app"
+    end
+    return false
+end
+
+function PocketBook:canOpenLink()
+    return inkview.MultitaskingSupported() and getBrowser()
+end
+
+function PocketBook:openLink(link)
+    local found, bin = getBrowser()
+    if not found or not link or type(link) ~= "string" then return end
+    inkview.OpenBook(bin, link, 0)
+end
+
 -- Pocketbook HW rotation modes start from landsape, CCW
 local function landscape_ccw() return {
     1, 0, 3, 2,         -- PORTRAIT, LANDSCAPE, PORTRAIT_180, LANDSCAPE_180
