@@ -3,11 +3,12 @@ KOR_BASE?=base
 
 include $(KOR_BASE)/Makefile.defs
 
+RELEASE_DATE := $(shell git show -s --format=format:"%cd" --date=short HEAD)
 # We want VERSION to carry the version of the KOReader main repo, not that of koreader-base
-VERSION:=$(shell git describe HEAD)
+VERSION := $(shell git describe HEAD)
 # Only append date if we're not on a whole version, like v2018.11
 ifneq (,$(findstring -,$(VERSION)))
-	VERSION:=$(VERSION)_$(shell git show -s --format=format:"%cd" --date=short HEAD)
+	VERSION := $(VERSION)_$(RELEASE_DATE)
 endif
 
 # releases do not contain tests and misc data

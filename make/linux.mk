@@ -9,6 +9,7 @@ update: all
 		$(INSTALL_DIR)/linux/share/applications \
 		$(INSTALL_DIR)/linux/share/doc/koreader \
 		$(INSTALL_DIR)/linux/share/man/man1
+    sed -e 's/%%VERSION%%/$(VERSION)/' -e 's/%%DATE%%/$(RELEASE_DATE)/' $(PLATFORM_DIR)/appimage/koreader.appdata.xml >$(INSTALL_DIR)/linux/koreader.appdata.xml
 	cp -pv resources/koreader.png $(INSTALL_DIR)/linux/share/pixmaps
 	cp -pv $(LINUX_DIR)/koreader.desktop $(INSTALL_DIR)/linux/share/applications
 	cp -pv $(LINUX_DIR)/copyright COPYING $(INSTALL_DIR)/linux/share/doc/koreader
