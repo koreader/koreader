@@ -247,7 +247,7 @@ function ReaderLink:registerKeyEvents()
             -- when G_reader_settings:readSetting("back_in_reader") == "previous_location"
         }
     end
-    if Device:isKindle() then
+    if Device:hasFiveWay() then
         if Device:hasKeyboard() then
             self.key_events.AddCurrentLocationToStack = { { "Shift", "Down" } }
         else
