@@ -2208,6 +2208,8 @@ function ReaderHighlight:onHighlightPress()
 end
 
 function ReaderHighlight:onStartHighlightIndicator()
+    -- disable that long-press icon, as, as NT device owners, we are slow people, and we are slow at selecting text. -- poire-z (2024)
+    self.long_hold_reached_action = function() end
     if self.view.visible_area and not self._current_indicator_pos then
         -- set start position to centor of page
         local rect = self._previous_indicator_pos
