@@ -105,6 +105,10 @@ function ReaderPaging:registerKeyEvents()
             { "ScreenKB", "Back" },
             event = "PrevDocument",
         }
+        self.key_events.ToggleWifi = {
+            { "ScreenKB", "Home" },
+            event = "ToggleWifi",
+        }
     end
     if Device:hasKeyboard() then
         self.key_events.GotoFirst = {
@@ -168,6 +172,10 @@ end
 
 function ReaderPaging:onContentSelection()
     return self.ui.highlight:onStartHighlightIndicator()
+end
+
+function ReaderPaging:onToggleWifi()
+    return self.ui.networklistener:onToggleWifi()
 end
 
 function ReaderPaging:setupTouchZones()

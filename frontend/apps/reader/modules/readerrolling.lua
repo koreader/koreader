@@ -194,6 +194,10 @@ function ReaderRolling:registerKeyEvents()
             event = "Panning",
             args = {0,  1},
         }
+        self.key_events.ToggleWifi = {
+            { "ScreenKB", "Home" },
+            event = "ToggleWifi",
+        }
     end
     if Device:hasKeyboard() then
         self.key_events.GotoFirst = {
@@ -841,6 +845,10 @@ end
 
 function ReaderRolling:onContentSelection()
     return self.ui.highlight:onStartHighlightIndicator()
+end
+
+function ReaderRolling:onToggleWifi()
+    return self.ui.networklistener:onToggleWifi()
 end
 
 function ReaderRolling:onNotCharging()
