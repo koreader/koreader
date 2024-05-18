@@ -373,7 +373,7 @@ local highlight_dialog_position = {
 
 function ReaderHighlight:addToMainMenu(menu_items)
     -- insert table to main reader menu
-    if not Device:isTouchDevice() and Device:hasDPad() then
+    if not Device:isTouchDevice() and Device:hasDPad() and not Device:hasFiveWay() then
         menu_items.start_content_selection = {
             text = _("Start content selection"),
             callback = function()
