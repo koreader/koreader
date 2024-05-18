@@ -9,7 +9,7 @@ update: all
 	$(SYMLINK) $(abspath $(APPIMAGE_DIR)/AppRun) $(INSTALL_DIR)/koreader/
 	$(SYMLINK) $(abspath $(APPIMAGE_DIR)/koreader.desktop) $(INSTALL_DIR)/koreader/
 	$(SYMLINK) $(abspath resources/koreader.png) $(INSTALL_DIR)/koreader/
-    sed -e 's/%%VERSION%%/$(VERSION)/' -e 's/%%DATE%%/$(RELEASE_DATE)/' $(APPIMAGE_DIR)/koreader.appdata.xml >$(INSTALL_DIR)/koreader/koreader.appdata.xml
+	sed -e 's/%%VERSION%%/$(VERSION)/' -e 's/%%DATE%%/$(RELEASE_DATE)/' $(APPIMAGE_DIR)/koreader.appdata.xml >$(INSTALL_DIR)/koreader/koreader.appdata.xml
 	# TODO at best this is DebUbuntu specific
 	$(SYMLINK) /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 $(INSTALL_DIR)/koreader/libs/libSDL2.so
 	# required for our stock Ubuntu SDL even though we don't use sound
