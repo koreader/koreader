@@ -133,6 +133,11 @@ function VirtualKey:init()
             self.ignore_key_release = true -- don't have delChar called on release
             self.keyboard:delToStartOfLine()
         end
+        self.swipe_callback = function(ges)
+            if ges.direction == "west" then
+                self.keyboard:delWord()
+            end
+        end
         --self.skiphold = true
     elseif self.label == "←" then
         self.callback = function() self.keyboard:leftChar() end
@@ -1072,7 +1077,7 @@ function VirtualKeyboard:addKeys()
                 width = key_width,
                 height = key_height,
             }
-            if not virtual_key.key_chars then
+            if not virtual_key.key_chars and label ~= "" then
                 virtual_key.swipe_callback = nil
             end
             table.insert(horizontal_group, virtual_key)
@@ -1132,6 +1137,11 @@ end
 function VirtualKeyboard:delChar()
     logger.dbg("delete char")
     self.inputbox:delChar()
+end
+
+function VirtualKeyboard:delWord()
+    logger.dbg("delete word")
+    self.inputbox:delWord()
 end
 
 function VirtualKeyboard:delToStartOfLine()
