@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=KOReader
-Comment=ebook reader
+Comment=Ebook reader
 Exec=reader.lua %u
 Icon=koreader
 Terminal=false
