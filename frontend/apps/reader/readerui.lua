@@ -61,6 +61,7 @@ local Screenshoter = require("ui/widget/screenshoter")
 local SettingsMigration = require("ui/data/settings_migration")
 local UIManager = require("ui/uimanager")
 local ffiUtil  = require("ffi/util")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local time = require("ui/time")
@@ -593,14 +594,14 @@ function ReaderUI:showReader(file, provider, seamless)
     file = ffiUtil.realpath(file)
     if lfs.attributes(file, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
-             text = T(_("File '%1' does not exist."), BD.filepath(file))
+             text = T(_("File '%1' does not exist."), BD.filepath(filemanagerutil.abbreviate(file)))
         })
         return
     end
 
     if not DocumentRegistry:hasProvider(file) and provider == nil then
         UIManager:show(InfoMessage:new{
-            text = T(_("File '%1' is not supported."), BD.filepath(file))
+            text = T(_("File '%1' is not supported."), BD.filepath(filemanagerutil.abbreviate(file)))
         })
         self:showFileManager(file)
         return
@@ -616,7 +617,7 @@ end
 
 function ReaderUI:showReaderCoroutine(file, provider, seamless)
     UIManager:show(InfoMessage:new{
-        text = T(_("Opening file '%1'."), BD.filepath(file)),
+        text = T(_("Opening file '%1'."), BD.filepath(filemanagerutil.abbreviate(file))),
         timeout = 0.0,
         invisible = seamless,
     })
