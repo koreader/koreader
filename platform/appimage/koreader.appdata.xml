@@ -3,34 +3,22 @@
   <id>rocks.koreader.KOReader</id>
 
   <name>KOReader</name>
-  <summary>A document viewer for DjVu, PDF, EPUB and more</summary>
-  <developer_name>KOReader Community</developer_name>
-  
-  <metadata_license>CC0-1.0</metadata_license>
-  <project_license>AGPL-3.0-only</project_license>
+  <summary>Ebook reader</summary>
 
-  <url type="homepage">https://koreader.rocks/</url>
-  <url type="bugtracker">https://github.com/koreader/koreader/issues</url>
-  <url type="faq">https://github.com/koreader/koreader/wiki</url>
-  <url type="translate">https://hosted.weblate.org/engage/koreader/</url>
-  <url type="vcs-browser">https://github.com/koreader/koreader</url>
-  <url type="contribute">https://koreader.rocks/doc/</url>
-  
-  <recommends>
-    <control>pointing</control>
-    <control>keyboard</control>
-    <control>touch</control>
-  </recommends>
-
-  <launchable type="desktop-id">rocks.koreader.KOReader.desktop</launchable>
-  
   <description>
-    <p>
-      KOReader is a document viewer for E Ink devices. It supports PDF, DjVu, XPS, CBT, CBZ, FB2,
-      PDB, TXT, HTML, RTF, CHM, EPUB, DOC, MOBI, and ZIP files.
-    </p>
+    <p>KOReader is an ebook reader optimized for e-ink screens. It can open many formats and provides advanced text adjustments.</p>
+    <p>See below for a selection of its many features:</p>
+    <ul>
+      <li>Supports both fixed page formats (PDF, DjVu, CBT, CBZ) and reflowable e-book formats (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Scanned PDF/DjVu documents can be reflowed. Special flow directions for reading double column PDFs and manga.</li>
+      <li>Multi-lingual user interface optimized for e-ink screens. Highly customizable reader view with complete typesetting options. Multi-lingual hyphenation dictionaries are bundled in.</li>
+      <li>Non-Latin script support for books, including the Hebrew, Arabic, Persian, Russian, Chinese, Japanese and Korean languages.</li>
+      <li>Unique Book Map and Page Browser features to navigate your book.</li>
+      <li>Special multi-page highlight mode with many local and online export options.</li>
+      <li>Can synchronize your reading progress across all your KOReader running devices.</li>
+      <li>Integrated with Calibre, Wallabag, Wikipedia, Google translate and other content providers.</li>
+    </ul>
   </description>
-  
+
   <screenshots>
     <screenshot type="default">
       <image>
@@ -50,8 +38,88 @@
     <category>Viewer</category>
     <category>Literature</category>
   </categories>
+
+  <developer_name>KOReader Community</developer_name>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>AGPL-3.0-only</project_license>
+
+  <url type="homepage">https://koreader.rocks/</url>
+  <url type="bugtracker">https://github.com/koreader/koreader/issues</url>
+  <url type="faq">https://github.com/koreader/koreader/wiki</url>
+  <url type="translate">https://hosted.weblate.org/engage/koreader/</url>
+  <url type="vcs-browser">https://github.com/koreader/koreader</url>
+  <url type="contribute">https://koreader.rocks/doc/</url>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#ffffff</color>
+    <color type="primary" scheme_preference="dark">#303030</color>
+  </branding>
+
+  <requires>
+    <memory>128</memory>
+    <display_length>360</display_length>
+  </requires>
+
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>gamepad</control>
+  </supports>
+
+  <recommends>
+    <memory>1024</memory>
+    <display_length compare="ge">600</display_length>
+    <internet>always</internet>
+    <control>touch</control>
+  </recommends>
+
+  <provides>
+    <mediatype>application/epub+zip</mediatype>
+    <mediatype>application/fb2</mediatype>
+    <mediatype>application/fb3</mediatype>
+    <mediatype>application/msword</mediatype>
+    <mediatype>application/oxps</mediatype>
+    <mediatype>application/pdf</mediatype>
+    <mediatype>application/rtf</mediatype>
+    <mediatype>application/tcr</mediatype>
+    <mediatype>application/vnd.amazon.mobi8-ebook</mediatype>
+    <mediatype>application/vnd.comicbook+tar</mediatype>
+    <mediatype>application/vnd.comicbook+zip</mediatype>
+    <mediatype>application/vnd.ms-htmlhelp</mediatype>
+    <mediatype>application/vnd.openxmlformats-officedocument.wordprocessingml.document</mediatype>
+    <mediatype>application/vnd.palm</mediatype>
+    <mediatype>application/x-cbz</mediatype>
+    <mediatype>application/x-chm</mediatype>
+    <mediatype>application/x-fb2</mediatype>
+    <mediatype>application/x-fb3</mediatype>
+    <mediatype>application/x-mobipocket-ebook</mediatype>
+    <mediatype>application/x-tar</mediatype>
+    <mediatype>application/xhtml+xml</mediatype>
+    <mediatype>application/xml</mediatype>
+    <mediatype>application/zip</mediatype>
+    <mediatype>image/djvu</mediatype>
+    <mediatype>image/gif</mediatype>
+    <mediatype>image/jp2</mediatype>
+    <mediatype>image/jpeg</mediatype>
+    <mediatype>image/jxr</mediatype>
+    <mediatype>image/png</mediatype>
+    <mediatype>image/svg+xml</mediatype>
+    <mediatype>image/tiff</mediatype>
+    <mediatype>image/vnd.djvu</mediatype>
+    <mediatype>image/vnd.ms-photo</mediatype>
+    <mediatype>image/x-djvu</mediatype>
+    <mediatype>image/x-portable-arbitrarymap</mediatype>
+    <mediatype>image/x-portable-bitmap</mediatype>
+    <mediatype>text/html</mediatype>
+    <mediatype>text/plain</mediatype>
+  </provides>
+
+  <launchable type="desktop-id">rocks.koreader.KOReader.desktop</launchable>
+
   <releases>
     <release version="%%VERSION%%" date="%%DATE%%"/>
   </releases>
+
   <content_rating type="oars-1.1"/>
 </component>
