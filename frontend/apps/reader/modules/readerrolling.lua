@@ -152,9 +152,9 @@ function ReaderRolling:registerKeyEvents()
         }
     end
     if Device:hasFiveWay() then
-        self.key_events.ContentSelection = {
+        self.key_events.KeyContentSelection = {
             { { "Up", "Down" } },
-            event = "ContentSelection",
+            event = "KeyContentSelection",
         }
         self.key_events.GotoNextChapter = {
             { "Right" },
@@ -180,9 +180,9 @@ function ReaderRolling:registerKeyEvents()
     end
     
     if Device:hasFiveWay() and not Device:hasKeyboard() then
-        self.key_events.PrevDocument = {
+        self.key_events.PreviousDocument = {
             { "ScreenKB", "Back" },
-            event = "PrevDocument",
+            event = "PreviousDocument",
         }
         self.key_events.MoveUp = {
             { "ScreenKB", { "RPgBack", "LPgBack" } },
@@ -194,9 +194,9 @@ function ReaderRolling:registerKeyEvents()
             event = "Panning",
             args = {0,  1},
         }
-        self.key_events.ToggleWifi = {
+        self.key_events.KeyToggleWifi = {
             { "ScreenKB", "Home" },
-            event = "ToggleWifi",
+            event = "KeyToggleWifi",
         }
     end
     if Device:hasKeyboard() then
@@ -409,7 +409,7 @@ function ReaderRolling:onCloseDocument()
     -- if namespaces ~= "" then logger.info("cre unknown namespaces: ", namespaces) end
 end
 
-function ReaderRolling:onPrevDocument()
+function ReaderRolling:onPreviousDocument()
     return self.ui:onOpenLastDoc()
 end
 
@@ -843,11 +843,11 @@ function ReaderRolling:onGotoPrevChapter()
     return true
 end
 
-function ReaderRolling:onContentSelection()
+function ReaderRolling:onKeyContentSelection()
     return self.ui.highlight:onStartHighlightIndicator()
 end
 
-function ReaderRolling:onToggleWifi()
+function ReaderRolling:onKeyToggleWifi()
     return self.ui.networklistener:onToggleWifi()
 end
 

@@ -63,9 +63,9 @@ function ReaderPaging:registerKeyEvents()
             event = "GotoPosRel",
             args = -1,
         }
-        self.key_events.ContentSelection = {
+        self.key_events.KeyContentSelection = {
             { { "Up", "Down" } },
-            event = "ContentSelection",
+            event = "KeyContentSelection",
         }
         self.key_events.GotoNextChapter = {
             { "Right" },
@@ -101,13 +101,13 @@ function ReaderPaging:registerKeyEvents()
     end
     if Device:hasFiveWay() and not Device:hasKeyboard() then
         -- targets exclusively kindle 4
-        self.key_events.PrevDocument = {
+        self.key_events.PreviousDocument = {
             { "ScreenKB", "Back" },
-            event = "PrevDocument",
+            event = "PreviousDocument",
         }
-        self.key_events.ToggleWifi = {
+        self.key_events.KeyToggleWifi = {
             { "ScreenKB", "Home" },
-            event = "ToggleWifi",
+            event = "KeyToggleWifi",
         }
     end
     if Device:hasKeyboard() then
@@ -170,11 +170,11 @@ function ReaderPaging:onReaderReady()
     self:setupTouchZones()
 end
 
-function ReaderPaging:onContentSelection()
+function ReaderPaging:onKeyContentSelection()
     return self.ui.highlight:onStartHighlightIndicator()
 end
 
-function ReaderPaging:onToggleWifi()
+function ReaderPaging:onKeyToggleWifi()
     return self.ui.networklistener:onToggleWifi()
 end
 
@@ -247,7 +247,7 @@ function ReaderPaging:onSaveSettings()
     self.ui.doc_settings:saveSetting("flipping_scroll_mode", self.flipping_scroll_mode)
 end
 
-function ReaderPaging:onPrevDocument()
+function ReaderPaging:onPreviousDocument()
     return self.ui:onOpenLastDoc()
 end
 

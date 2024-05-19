@@ -382,7 +382,7 @@ function FileManager:registerKeyEvents()
         self.file_chooser.key_events.Back = { { Device.input.group.Back } }
         self.key_events.Home = { { "Home" } }
         if Device:hasFiveWay() and not Device:hasKeyboard() then
-            self.key_events.ToggleWifi = { { "ScreenKB", "Home" } }
+            self.key_events.KeyToggleWifi = { { "ScreenKB", "Home" } }
         end
         if not Device:hasFewKeys() then
             -- Also remove the handler assigned to the "Back" key by menu.lua
@@ -461,7 +461,7 @@ function FileManager:init()
     FileManager.instance = self
 end
 
-function FileManager:onToggleWifi()
+function FileManager:onKeyToggleWifi()
     return self.networklistener:onToggleWifi()
 end
 
