@@ -294,14 +294,14 @@ local function findKeyboards()
 
     local FBInkInput = ffi.load("fbink_input")
     local dev_count = ffi.new("size_t[1]")
-    local devices = FBInkInput.fbink_input_scan(C.INPUT_KEYBOARD, 0, C.SCAN_ONLY, dev_count)
+    local devices = FBInkInput.fbink_input_scan(C.INPUT_KEYBOARD, 0, 0, dev_count)
     if devices ~= nil then
         for i = 0, tonumber(dev_count[0]) - 1 do
             local dev = devices[i]
             if dev.matched then
                 -- Check if it provides a DPad, too.
                 local has_dpad = bit.band(dev.type, C.INPUT_DPAD) ~= 0
-                table.insert(keyboards, { event_path = ffi.string(dev.path), has_dpad = has_dpad })
+                table.insert(keyboards, { event_fd = tonumber(dev.fd), event_path = ffi.string(dev.path), name = ffi.string(dev.name), has_dpad = has_dpad })
             end
         end
         C.free(devices)
@@ -314,11 +314,13 @@ local function checkKeyboard(path)
     local keyboard
 
     local FBInkInput = ffi.load("fbink_input")
-    local dev = FBInkInput.fbink_input_check(path, C.INPUT_KEYBOARD, 0, C.SCAN_ONLY)
+    local dev = FBInkInput.fbink_input_check(path, C.INPUT_KEYBOARD, 0, 0)
     if dev ~= nil then
         if dev.matched then
             keyboard = {
+                event_fd = tonumber(dev.fd),
                 event_path = ffi.string(dev.path),
+                name = ffi.string(dev.name),
                 has_dpad = bit.band(dev.type, C.INPUT_DPAD) ~= 0
             }
         end
@@ -359,10 +361,10 @@ function ExternalKeyboard:setupKeyboard(data)
 
     local has_dpad_func = Device.hasDPad
 
-    logger.dbg("ExternalKeyboard:setupKeyboard", keyboard_info.event_path, "has_dpad", keyboard_info.has_dpad)
+    logger.dbg("ExternalKeyboard:setupKeyboard", keyboard_info.name, "@", keyboard_info.event_path, "- has_dpad:", keyboard_info.has_dpad)
     -- Check if we already know about this event file.
     if ExternalKeyboard.keyboard_fds[keyboard_info.event_path] == nil then
-        local ok, fd = pcall(Device.input.open, keyboard_info.event_path)
+        local ok, fd = pcall(Device.input.fdopen, keyboard_info.event_fd, keyboard_info.event_path, keyboard_info.name)
         if not ok then
             UIManager:show(InfoMessage:new{
                 text = "Error opening keyboard:\n" .. tostring(fd),
@@ -373,7 +375,7 @@ function ExternalKeyboard:setupKeyboard(data)
 
         ExternalKeyboard.keyboard_fds[keyboard_info.event_path] = fd
         ExternalKeyboard.connected_keyboards = ExternalKeyboard.connected_keyboards + 1
-        logger.dbg("ExternalKeyboard: USB keyboard", keyboard_info.event_path, "was connected; total:", ExternalKeyboard.connected_keyboards)
+        logger.dbg("ExternalKeyboard: USB keyboard", keyboard_info.name, "@", keyboard_info.event_path, "was connected; total:", ExternalKeyboard.connected_keyboards)
 
         if keyboard_info.has_dpad then
             has_dpad_func = yes

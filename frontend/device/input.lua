@@ -324,6 +324,29 @@ function Input.open(path, name)
 end
 
 --[[--
+Wrapper for our Lua/C input module's fdopen.
+
+Note that we adhere to the "." syntax here for compatibility.
+
+The `name` argument is optional, and used for logging purposes only.
+`path` is mandatory, though!
+--]]
+function Input.fdopen(fd, path, name)
+    -- Make sure we don't open the same device twice.
+    if not Input.opened_devices[path] then
+        input.fdopen(fd)
+        -- As with input.open, it will throw on error (closing the fd first)
+        Input.opened_devices[path] = fd
+        if name then
+            logger.dbg("Kept fd", fd, "open for input device", name, "@", path)
+        else
+            logger.dbg("Kept fd", fd, "open for input device @", path)
+        end
+        return fd
+    end
+end
+
+--[[--
 Wrapper for our Lua/C input module's close.
 
 Note that we adhere to the "." syntax here for compatibility.

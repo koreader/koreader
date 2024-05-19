@@ -216,12 +216,12 @@ function Kindle:openInputDevices()
     local dev_count = ffi.new("size_t[1]")
     -- We care about: the touchscreen, a properly scaled stylus, pagination buttons, a home button and a fiveway.
     local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_SCALED_TABLET, C.INPUT_PAGINATION_BUTTONS, C.INPUT_HOME_BUTTON, C.INPUT_DPAD)
-    local devices = FBInkInput.fbink_input_scan(match_mask, 0, C.SCAN_ONLY, dev_count)
+    local devices = FBInkInput.fbink_input_scan(match_mask, 0, 0, dev_count)
     if devices ~= nil then
         for i = 0, tonumber(dev_count[0]) - 1 do
             local dev = devices[i]
             if dev.matched then
-                self.input.open(ffi.string(dev.path), ffi.string(dev.name))
+                self.input.fdopen(tonumber(dev.fd), ffi.string(dev.path), ffi.string(dev.name))
             end
         end
         C.free(devices)
@@ -243,12 +243,12 @@ function Kindle:openInputDevices()
     if self:hasGSensor() then
         -- i.e., we want something that reports EV_ABS:ABS_PRESSURE that isn't *also* a pen (because those are pretty much guaranteed to report pressure...).
         --       And let's add that isn't also a touchscreen to the mix, because while not true at time of writing, that's an event touchscreens sure can support...
-        devices = FBInkInput.fbink_input_scan(C.INPUT_ROTATION_EVENT, bit.bor(C.INPUT_TABLET, C.INPUT_TOUCHSCREEN), bit.bor(C.SCAN_ONLY, C.NO_RECAP), dev_count)
+        devices = FBInkInput.fbink_input_scan(C.INPUT_ROTATION_EVENT, bit.bor(C.INPUT_TABLET, C.INPUT_TOUCHSCREEN), C.NO_RECAP, dev_count)
         if devices ~= nil then
             for i = 0, tonumber(dev_count[0]) - 1 do
                 local dev = devices[i]
                 if dev.matched then
-                    self.input.open(ffi.string(dev.path), ffi.string(dev.name))
+                    self.input.fdopen(tonumber(dev.fd), ffi.string(dev.path), ffi.string(dev.name))
                 end
             end
             C.free(devices)
