@@ -867,7 +867,7 @@ function Kobo:init()
     -- (and technically rotation events, but we'll get it with the device that provides the buttons on NTX).
     -- We exclude keyboards to play nice with the ExternalKeyboard plugin, which will handle potential keyboards on its own.
     local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_TABLET, C.INPUT_POWER_BUTTON, C.INPUT_SLEEP_COVER, C.INPUT_PAGINATION_BUTTONS)
-    local devices = FBInkInput.fbink_input_scan(match_mask, C.INPUT_KEYBOARD, C.SCAN_ONLY, dev_count)
+    local devices = FBInkInput.fbink_input_scan(match_mask, C.INPUT_KEYBOARD, 0, dev_count)
     if devices ~= nil then
         for i = 0, tonumber(dev_count[0]) - 1 do
             local dev = devices[i]
@@ -875,9 +875,9 @@ function Kobo:init()
                 -- We need to single out whichever device provides pagination buttons or sleep cover events, as we'll want to tweak key repeat there...
                 -- The first one will do, as it's extremely likely to be event0, and that's pretty fairly set in stone on NTX boards.
                 if (bit.band(dev.type, C.INPUT_PAGINATION_BUTTONS) ~= 0 or bit.band(dev.type, C.INPUT_SLEEP_COVER) ~= 0) and not self.ntx_fd then
-                    self.ntx_fd = self.input.open(ffi.string(dev.path), ffi.string(dev.name))
+                    self.ntx_fd = self.input.fdopen(tonumber(dev.fd), ffi.string(dev.path), ffi.string(dev.name))
                 else
-                    self.input.open(ffi.string(dev.path), ffi.string(dev.name))
+                    self.input.fdopen(tonumber(dev.fd), ffi.string(dev.path), ffi.string(dev.name))
                 end
             end
         end
