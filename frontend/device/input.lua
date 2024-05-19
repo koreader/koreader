@@ -335,7 +335,7 @@ function Input.fdopen(fd, path, name)
     -- Make sure we don't open the same device twice.
     if not Input.opened_devices[path] then
         input.fdopen(fd)
-        -- As with input.open, it will throw on error
+        -- As with input.open, it will throw on error (closing the fd first)
         Input.opened_devices[path] = fd
         if name then
             logger.dbg("Kept fd", fd, "open for input device", name, "@", path)
