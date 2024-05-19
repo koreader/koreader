@@ -23,6 +23,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local LanguageSupport = require("languagesupport")
 local Menu = require("ui/widget/menu")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+local NetworkListener = require("ui/network/networklistener")
 local PluginLoader = require("pluginloader")
 local ReadCollection = require("readcollection")
 local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
@@ -379,6 +380,7 @@ function FileManager:registerKeyEvents()
         self.key_events.Home = { { "Home" } }
         -- Override the menu.lua way of handling the back key
         self.file_chooser.key_events.Back = { { Device.input.group.Back } }
+        self.key_events.ToggleWifi = { { "ScreenKB", "Home" } }
         if not Device:hasFewKeys() then
             -- Also remove the handler assigned to the "Back" key by menu.lua
             self.file_chooser.key_events.Close = nil
@@ -423,6 +425,7 @@ function FileManager:init()
     self:registerModule("wikipedia", ReaderWikipedia:new{ ui = self })
     self:registerModule("devicestatus", ReaderDeviceStatus:new{ ui = self })
     self:registerModule("devicelistener", DeviceListener:new{ ui = self })
+    self:registerModule("networklistener", NetworkListener:new{ ui = self })
 
     -- koreader plugins
     for _, plugin_module in ipairs(PluginLoader:loadPlugins()) do
@@ -453,6 +456,10 @@ function FileManager:init()
         logger.err("FileManager instance mismatch! Opened", tostring(self), "while we still have an existing instance:", tostring(FileManager.instance), debug.traceback())
     end
     FileManager.instance = self
+end
+
+function FileManager:onToggleWifi()
+    return self.networklistener:onToggleWifi()
 end
 
 function FileChooser:onBack()
