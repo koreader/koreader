@@ -83,11 +83,26 @@ Installed-Size: $(du -ks "${BASE_DIR}/usr/" | cut -f 1)
 Package: koreader
 Maintainer: Martín Fdez <paziusss@gmail.com>
 Homepage: https://koreader.rocks
-Description: Ebook reader application supporting PDF, DjVu, EPUB, FB2 and many more formats
- KOReader is a document viewer for E Ink devices.
- Supported fileformats include EPUB, PDF, DjVu, XPS, CBT,
- CBZ, FB2, PDB, TXT, HTML, RTF, CHM, DOC, MOBI and ZIP files.
- It’s available for Kindle, Kobo, PocketBook, Android and desktop Linux.
+Description: Ebook reader optimized for e-ink screens.
+ It can open many formats and provides advanced text adjustments.
+ .
+ See below for a selection of its many features:
+ .
+ Supports both fixed page formats (PDF, DjVu, CBT, CBZ) and reflowable e-book formats (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). 
+ Scanned PDF/DjVu documents can be reflowed. Special flow directions for reading double column PDFs and manga.
+ .
+ Multi-lingual user interface optimized for e-ink screens.
+ Highly customizable reader view with complete typesetting options. Multi-lingual hyphenation dictionaries are bundled in.
+ .
+ Non-Latin script support for books, including the Hebrew, Arabic, Persian, Russian, Chinese, Japanese and Korean languages.
+ .
+ Unique Book Map and Page Browser features to navigate your book.
+ .
+ Special multi-page highlight mode with many local and online export options.
+ .
+ Can synchronize your reading progress across all your KOReader running devices.
+ .
+ Integrated with Calibre, Wallabag, Wikipedia, Google translate and other content providers.
 EOF
 
 # use absolute path to luajit in reader.lua
