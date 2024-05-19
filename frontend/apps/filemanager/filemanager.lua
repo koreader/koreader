@@ -380,7 +380,9 @@ function FileManager:registerKeyEvents()
         self.key_events.Home = { { "Home" } }
         -- Override the menu.lua way of handling the back key
         self.file_chooser.key_events.Back = { { Device.input.group.Back } }
-        self.key_events.ToggleWifi = { { "ScreenKB", "Home" } }
+        if Device:hasFiveWay() and not Device:hasKeyboard() then
+            self.key_events.ToggleWifi = { { "ScreenKB", "Home" } }
+        end
         if not Device:hasFewKeys() then
             -- Also remove the handler assigned to the "Back" key by menu.lua
             self.file_chooser.key_events.Close = nil
