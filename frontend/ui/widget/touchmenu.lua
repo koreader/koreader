@@ -511,6 +511,7 @@ function TouchMenu:init()
     }
 
     self.key_events.Back = { { Input.group.Back } }
+    self.key_events.Close = { { "Menu" } }
     if Device:hasFewKeys() then
         self.key_events.Back = { { "Left" } }
     end
