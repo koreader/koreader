@@ -294,7 +294,7 @@ local function findKeyboards()
 
     local FBInkInput = ffi.load("fbink_input")
     local dev_count = ffi.new("size_t[1]")
-    local devices = FBInkInput.fbink_input_scan(C.INPUT_KEYBOARD, 0, C.SCAN_ONLY, dev_count)
+    local devices = FBInkInput.fbink_input_scan(C.INPUT_KEYBOARD, 0, 0, dev_count)
     if devices ~= nil then
         for i = 0, tonumber(dev_count[0]) - 1 do
             local dev = devices[i]
@@ -314,7 +314,7 @@ local function checkKeyboard(path)
     local keyboard
 
     local FBInkInput = ffi.load("fbink_input")
-    local dev = FBInkInput.fbink_input_check(path, C.INPUT_KEYBOARD, 0, C.SCAN_ONLY)
+    local dev = FBInkInput.fbink_input_check(path, C.INPUT_KEYBOARD, 0, 0)
     if dev ~= nil then
         if dev.matched then
             keyboard = {
