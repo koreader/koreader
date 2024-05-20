@@ -12,6 +12,6 @@ KOReader %%VERSION%% (Linux %%ARCH%%)
 
 ## Package maintainers
 
-The script in **`bin/`** expects the rest of the **assets** in **`../lib/koreader`**. This works with **`/usr`** and **`/usr/local`** installations. If you want to install elsewhere make sure to tweak the script.
+The script in **`bin/`** expects the rest of the **assets** in **`../lib/koreader`**.
 
 In any case the aforementioned script should jump to the **assets** dir and call **`./reader.lua`**
