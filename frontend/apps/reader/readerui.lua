@@ -436,6 +436,12 @@ function ReaderUI:init()
         view = self.view,
         ui = self,
     })
+    self:registerModule("networklistener", NetworkListener:new {
+        document = self.document,
+        view = self.view,
+        ui = self,
+    })
+
     -- koreader plugins
     for _, plugin_module in ipairs(PluginLoader:loadPlugins()) do
         local ok, plugin_or_err = PluginLoader:createPluginInstance(
@@ -452,12 +458,6 @@ function ReaderUI:init()
                         "at", plugin_module.path)
         end
     end
-
-    self:registerModule("networklistener", NetworkListener:new {
-        document = self.document,
-        view = self.view,
-        ui = self,
-    })
 
     -- Allow others to change settings based on external factors
     -- Must be called after plugins are loaded & before setting are read.
