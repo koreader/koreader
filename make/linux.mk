@@ -1,7 +1,7 @@
 LINUX_DIR = $(PLATFORM_DIR)/linux
 LINUX_PACKAGE:=koreader-linux-$(LINUX_ARCH_NAME)$(KODEDUG_SUFFIX)-$(VERSION).tar.xz
 
-GLIBC_VERSION := $(shell ldd --version | head -n 1 | cut -d ")" -f2 | tr -d " ")
+GLIBC_VERSION := $(shell ldd --version | sed -n '1s/.* \([0-9.]\+\)$$/\1/p')
 
 update: all
 	mkdir -pv \
