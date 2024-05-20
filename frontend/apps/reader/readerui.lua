@@ -525,12 +525,12 @@ function ReaderUI:registerKeyEvents()
         self.key_events.Home = { { "Home" } }
         self.key_events.Reload = { { "F5" } }
         if Device:hasFiveWay() then
-            self.key_events.KeyContentSelection = { { { "Up", "Down" } } }
+            self.key_events.KeyContentSelection = { { { "Up", "Down" } }, event = "StartHighlightIndicator" }
             if Device:hasKeyboard() then
-                self.key_events.KeyToggleWifi = { { "Shift", "Home" } }
+                self.key_events.KeyToggleWifi = { { "Shift", "Home" }, event = "ToggleWifi" }
                 self.key_events.OpenLastDoc = { { "Shift", "Back" } }
             else -- targets exclusively kindle 4
-                self.key_events.KeyToggleWifi = { { "ScreenKB", "Home" } }
+                self.key_events.KeyToggleWifi = { { "ScreenKB", "Home" }, event = "ToggleWifi" }
                 self.key_events.OpenLastDoc = { { "ScreenKB", "Back" } }
             end
         end
@@ -906,14 +906,6 @@ end
 
 function ReaderUI:onOpenLastDoc()
     self:switchDocument(self.menu:getPreviousFile())
-end
-
-function ReaderUI:onKeyContentSelection()
-    return self.highlight:onStartHighlightIndicator()
-end
-
-function ReaderUI:onKeyToggleWifi()
-    return self.networklistener:onToggleWifi()
 end
 
 function ReaderUI:getCurrentPage()
