@@ -14,4 +14,4 @@ KOReader %%VERSION%% (Linux %%ARCH%%)
 
 The script in **`bin/`** expects the rest of the **assets** in **`../lib/koreader`**.
 
-In any case the aforementioned script should jump to the **assets** dir and call **`./reader.lua`**
+In any case the aforementioned script should jump to the **assets** dir and call **`./reader.lua`**.
