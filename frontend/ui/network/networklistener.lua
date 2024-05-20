@@ -16,6 +16,10 @@ local NetworkListener = EventListener:extend{
     _activity_check_delay_seconds = nil,
 }
 
+if not Device:hasWifiToggle() then
+    return NetworkListener
+end
+
 local function enableWifi()
     local toggle_im = InfoMessage:new{
         text = _("Turning on Wi-Fi…"),
@@ -173,11 +177,9 @@ end
 
 function NetworkListener:onNetworkConnected()
     logger.dbg("NetworkListener: onNetworkConnected")
-    if Device:hasWifiToggle() then
-        -- This is for the sake of events that don't emanate from NetworkMgr itself (e.g., the Emu)...
-        NetworkMgr:setWifiState(true)
-        NetworkMgr:setConnectionState(true)
-    end
+    -- This is for the sake of events that don't emanate from NetworkMgr itself (e.g., the Emu)...
+    NetworkMgr:setWifiState(true)
+    NetworkMgr:setConnectionState(true)
 
     if not G_reader_settings:isTrue("auto_disable_wifi") then
         return
@@ -190,10 +192,8 @@ end
 
 function NetworkListener:onNetworkDisconnected()
     logger.dbg("NetworkListener: onNetworkDisconnected")
-    if Device:hasWifiToggle() then
-        NetworkMgr:setWifiState(false)
-        NetworkMgr:setConnectionState(false)
-    end
+    NetworkMgr:setWifiState(false)
+    NetworkMgr:setConnectionState(false)
 
     NetworkListener:_unscheduleActivityCheck()
     -- Reset NetworkMgr's beforeWifiAction marker
