@@ -1,0 +1,17 @@
+KOReader %%VERSION%% (Linux %%ARCH%%)
+--------
+
+## Requires
+
+- `GLIBC` >= %%ABI%%
+- `SDL2`
+
+## users
+
+#### You shouldn't use this package unless you know what you're doing. Please use [AppImage](https://github.com/koreader/koreader/wiki/Installation-on-desktop-linux#what-is-an-appimage) instead.
+
+## package maintainers
+
+The script in **`bin/`** expects the rest of the **assets** in **`../lib/koreader`**. This works with **`/usr`** and **`/usr/local`** installations. If you want to install elsewhere make sure to tweak the script.
+
+In any case the aforementioned script should jump to the **assets** dir and call **`./reader.lua`**
