@@ -21,6 +21,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LanguageSupport = require("languagesupport")
+local NetworkListener = require("ui/network/networklistener")
 local Notification = require("ui/widget/notification")
 local PluginLoader = require("pluginloader")
 local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
@@ -452,14 +453,11 @@ function ReaderUI:init()
         end
     end
 
-    if Device:hasWifiToggle() then
-        local NetworkListener = require("ui/network/networklistener")
-        self:registerModule("networklistener", NetworkListener:new {
-            document = self.document,
-            view = self.view,
-            ui = self,
-        })
-    end
+    self:registerModule("networklistener", NetworkListener:new {
+        document = self.document,
+        view = self.view,
+        ui = self,
+    })
 
     -- Allow others to change settings based on external factors
     -- Must be called after plugins are loaded & before setting are read.
