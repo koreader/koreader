@@ -523,6 +523,15 @@ function ReaderUI:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events.Home = { { "Home" } }
         self.key_events.Reload = { { "F5" } }
+        if Device:hasFiveWay() then
+            if Device:hasKeyboard() then
+                self.key_events.KeyToggleWifi = { { "Shift", "Home" }, event = "ToggleWifi" }
+                self.key_events.OpenLastDoc = { { "Shift", "Back" } }
+            else -- Currently exclusively targets Kindle 4.
+                self.key_events.KeyToggleWifi = { { "ScreenKB", "Home" }, event = "ToggleWifi" }
+                self.key_events.OpenLastDoc = { { "ScreenKB", "Back" } }
+            end
+        end
     end
 end
 

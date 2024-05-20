@@ -61,6 +61,9 @@ end
 function FileManagerMenu:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events.ShowMenu = { { "Menu" } }
+        if Device:hasFiveWay() and not Device:hasKeyboard() then
+            self.key_events.OpenLastDoc = { { "ScreenKB", "Back" } }
+        end
     end
 end
 

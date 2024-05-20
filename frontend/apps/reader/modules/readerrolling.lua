@@ -116,7 +116,30 @@ end
 function ReaderRolling:onGesture() end
 
 function ReaderRolling:registerKeyEvents()
-    if Device:hasKeys() then
+    if Device:hasFiveWay() then
+        self.key_events.GotoNextView = {
+            { { "RPgFwd", "LPgFwd" } },
+            event = "GotoViewRel",
+            args = 1,
+        }
+        self.key_events.GotoPrevView = {
+            { { "RPgBack", "LPgBack" } },
+            event = "GotoViewRel",
+            args = -1,
+        }
+        if Device:hasKeyboard() then
+            self.key_events.MoveUp = {
+                { "Shift", "RPgBack" },
+                event = "Panning",
+                args = {0, -1},
+            }
+            self.key_events.MoveDown = {
+                { "Shift", "RPgFwd" },
+                event = "Panning",
+                args = {0,  1},
+            }
+        end
+    elseif Device:hasKeys() then
         self.key_events.GotoNextView = {
             { { "RPgFwd", "LPgFwd", "Right" } },
             event = "GotoViewRel",
@@ -128,7 +151,18 @@ function ReaderRolling:registerKeyEvents()
             args = -1,
         }
     end
-    if Device:hasDPad() then
+    if Device:hasFiveWay() then
+        self.key_events.GotoNextChapter = {
+            { "Right" },
+            event = "GotoNextChapter",
+            args = 1,
+        }
+        self.key_events.GotoPrevChapter = {
+            { "Left" },
+            event = "GotoPrevChapter",
+            args = -1,
+        }
+    elseif Device:hasDPad() then
         self.key_events.MoveUp = {
             { "Up" },
             event = "Panning",
@@ -136,6 +170,18 @@ function ReaderRolling:registerKeyEvents()
         }
         self.key_events.MoveDown = {
             { "Down" },
+            event = "Panning",
+            args = {0,  1},
+        }
+    end
+    if Device:hasFiveWay() and not Device:hasKeyboard() then
+        self.key_events.MoveUp = {
+            { "ScreenKB", "RPgBack" },
+            event = "Panning",
+            args = {0, -1},
+        }
+        self.key_events.MoveDown = {
+            { "ScreenKB", "RPgFwd" },
             event = "Panning",
             args = {0,  1},
         }

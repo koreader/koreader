@@ -51,7 +51,29 @@ end
 function ReaderPaging:onGesture() end
 
 function ReaderPaging:registerKeyEvents()
-    if Device:hasKeys() then
+    if Device:hasFiveWay() then
+        -- this targets all devices (kindles) non-touch with dPads (i.e dx, kk, k4 and others)
+        self.key_events.GotoNextPos = {
+            { { "RPgFwd", "LPgFwd" } },
+            event = "GotoPosRel",
+            args = 1,
+        }
+        self.key_events.GotoPrevPos = {
+            { { "RPgBack", "LPgBack" } },
+            event = "GotoPosRel",
+            args = -1,
+        }
+        self.key_events.GotoNextChapter = {
+            { "Right" },
+            event = "GotoNextChapter",
+            args = 1,
+        }
+        self.key_events.GotoPrevChapter = {
+            { "Left" },
+            event = "GotoPrevChapter",
+            args = -1,
+        }
+    elseif Device:hasKeys() then
         self.key_events.GotoNextPage = {
             { { "RPgFwd", "LPgFwd", not Device:hasFewKeys() and "Right" } },
             event = "GotoViewRel",
