@@ -2208,7 +2208,7 @@ function ReaderHighlight:onHighlightPress()
 end
 
 function ReaderHighlight:onStartHighlightIndicator()
-    -- disable long-press icon (poke-ball), as it is triggered constantly due to  NT devices needing a workaround for text selection to work.
+    -- disable long-press icon (poke-ball), as it is triggered constantly due to NT devices needing a workaround for text selection to work.
     self.long_hold_reached_action = function() end
     if self.view.visible_area and not self._current_indicator_pos then
         -- set start position to centor of page
