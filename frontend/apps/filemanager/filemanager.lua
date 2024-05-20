@@ -23,6 +23,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local LanguageSupport = require("languagesupport")
 local Menu = require("ui/widget/menu")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+local NetworkListener = require("ui/network/networklistener")
 local PluginLoader = require("pluginloader")
 local ReadCollection = require("readcollection")
 local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
@@ -423,6 +424,7 @@ function FileManager:init()
     self:registerModule("wikipedia", ReaderWikipedia:new{ ui = self })
     self:registerModule("devicestatus", ReaderDeviceStatus:new{ ui = self })
     self:registerModule("devicelistener", DeviceListener:new{ ui = self })
+    self:registerModule("networklistener", NetworkListener:new{ ui = self })
 
     -- koreader plugins
     for _, plugin_module in ipairs(PluginLoader:loadPlugins()) do
@@ -436,11 +438,6 @@ function FileManager:init()
                             "at", plugin_module.path)
             end
         end
-    end
-
-    if Device:hasWifiToggle() then
-        local NetworkListener = require("ui/network/networklistener")
-        table.insert(self, NetworkListener:new{ ui = self })
     end
 
     self:initGesListener()
