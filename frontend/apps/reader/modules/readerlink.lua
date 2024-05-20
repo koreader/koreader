@@ -228,7 +228,7 @@ end
 function ReaderLink:onGesture() end
 
 function ReaderLink:registerKeyEvents()
-    if Device:hasKeys() and not Device:hasFiveWay then
+    if Device:hasKeys() and not Device:hasFiveWay() then
         self.key_events = {
             SelectNextPageLink = {
                 { "Tab" },
