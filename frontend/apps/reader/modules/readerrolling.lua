@@ -129,12 +129,12 @@ function ReaderRolling:registerKeyEvents()
         }
         if Device:hasKeyboard() then
             self.key_events.MoveUp = {
-                { "Shift", { "RPgBack", "LPgBack" } },
+                { "Shift", "RPgBack" },
                 event = "Panning",
                 args = {0, -1},
             }
             self.key_events.MoveDown = {
-                { "Shift", { "RPgFwd", "LPgFwd" } },
+                { "Shift", "RPgFwd" },
                 event = "Panning",
                 args = {0,  1},
             }
@@ -176,12 +176,12 @@ function ReaderRolling:registerKeyEvents()
     end
     if Device:hasFiveWay() and not Device:hasKeyboard() then
         self.key_events.MoveUp = {
-            { "ScreenKB", { "RPgBack", "LPgBack" } },
+            { "ScreenKB", "RPgBack" },
             event = "Panning",
             args = {0, -1},
         }
         self.key_events.MoveDown = {
-            { "ScreenKB", { "RPgFwd", "LPgFwd" } },
+            { "ScreenKB", "RPgFwd" },
             event = "Panning",
             args = {0,  1},
         }
