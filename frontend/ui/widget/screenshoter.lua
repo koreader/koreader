@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local DataStorage = require("datastorage")
+local Device = require("device")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
@@ -14,6 +15,22 @@ local Screenshoter = InputContainer:extend{
 }
 
 function Screenshoter:init()
+    if not Device:isTouchDevice() then
+        if Device:hasKeyboard() then
+            self.key_events.KeyPressShoot = {
+                { "Alt", "Shift", "G" }, -- same as stock firmware
+                event = "KeyPressShoot",
+            }
+        elseif Device:hasFiveWay() then
+            -- kindle 4 case: same as stock firmware.
+            self.key_events.KeyPressShoot = {
+                { "ScreenKB", "Menu" },
+                event = "KeyPressShoot",
+            }
+            -- unable to add other non-touch devices as simultaneous key presses won't work without modifiers
+        end
+        return
+    end
     local diagonal = math.sqrt(Screen:getWidth()^2 + Screen:getHeight()^2)
     self.ges_events = {
         TapDiagonal = {
@@ -79,7 +96,7 @@ function Screenshoter:onScreenshot(screenshot_name, caller_callback)
                 end,
             },
             {
-                text = _("Set as screensaver"),
+                text = _("Set as wallpaper"),
                 callback = function()
                     G_reader_settings:saveSetting("screensaver_type", "image_file")
                     G_reader_settings:saveSetting("screensaver_image", screenshot_name)
@@ -115,6 +132,10 @@ function Screenshoter:chooseFolder()
         G_reader_settings:saveSetting("screenshot_dir", path)
     end
     filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, default_path)
+end
+
+function Screenshoter:onKeyPressShoot()
+    return self:onScreenshot()
 end
 
 function Screenshoter:onTapDiagonal()
