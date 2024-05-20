@@ -1378,6 +1378,11 @@ function CreDocument:setBatteryState(state)
     self._document:setBatteryState(state)
 end
 
+function CreDocument:setPageInfoOverride(pageinfo)
+    logger.dbg("CreDocument: set page info", pageinfo)
+    self._document:setPageInfoOverride(pageinfo)
+end
+
 function CreDocument:isXPointerInCurrentPage(xp)
     logger.dbg("CreDocument: check xpointer in current page", xp)
     return self._document:isXPointerInCurrentPage(xp)
