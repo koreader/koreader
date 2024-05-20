@@ -1,6 +1,8 @@
 LINUX_DIR = $(PLATFORM_DIR)/linux
 LINUX_PACKAGE:=koreader-linux-$(LINUX_ARCH_NAME)$(KODEDUG_SUFFIX)-$(VERSION).tar.xz
 
+GLIBC_VERSION := $(shell ldd --version | sed -n '1s/.* \([0-9.]\+\)$$/\1/p')
+
 update: all
 	mkdir -pv \
 		$(INSTALL_DIR)/linux/bin \
@@ -25,6 +27,12 @@ update: all
 	# remove leftovers
 	find $(INSTALL_DIR)/linux -type f \( -name ".git" -o -name ".gitignore" -o -name "discovery2spore" -o -name "wadl2spore" -o -name "*.txt" -o -name "LICENSE*" -o -name "NOTICE" -o -name "README.md" \) -print0 | xargs -0 rm -rf
 	find $(INSTALL_DIR)/linux -type d \( -name "test" -o -name ".github" \) -print0 | xargs -0 rm -rf
+
+	# add instructions
+	sed -e 's/%%VERSION%%/$(VERSION)/' \
+		-e 's/%%ARCH%%/$(LINUX_ARCH_NAME)/' \
+		-e 's/%%ABI%%/$(GLIBC_VERSION)/' \
+		 $(LINUX_DIR)/instructions.txt >$(INSTALL_DIR)/linux/README.md
 
 	# fix permissions
 	chmod -R u=rwX,og=rX $(INSTALL_DIR)/linux
