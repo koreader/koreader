@@ -174,7 +174,6 @@ function ReaderRolling:registerKeyEvents()
             args = {0,  1},
         }
     end
-    
     if Device:hasFiveWay() and not Device:hasKeyboard() then
         self.key_events.MoveUp = {
             { "ScreenKB", { "RPgBack", "LPgBack" } },
