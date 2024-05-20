@@ -458,7 +458,6 @@ function FileManager:init()
     FileManager.instance = self
 end
 
-
 function FileChooser:onBack()
     local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt")
     local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager", "default")
