@@ -515,6 +515,9 @@ function TouchMenu:init()
     if Device:hasFewKeys() then
         self.key_events.Back = { { "Left" } }
     end
+    if Device:hasFiveWay() and not Device:hasKeyboard() then
+        self.key_events.Hold = { { "ScreenKB", "Press" }, event = "Hold" }
+    end
     self.key_events.NextPage = { { Input.group.PgFwd } }
     self.key_events.PrevPage = { { Input.group.PgBack } }
 
