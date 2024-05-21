@@ -6,6 +6,7 @@ local DocumentRegistry = require("document/documentregistry")
 local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local Menu = require("ui/widget/menu")
+local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
 local ffi = require("ffi")
 local ffiUtil = require("ffi/util")
@@ -474,6 +475,9 @@ function FileChooser:getMenuItemMandatory(item, collate)
             text = collate.mandatory_func(item)
         else
             text = util.getFriendlySize(item.attr.size or 0)
+        end
+        if ReadCollection:isFileInCollections(item.path) then
+            text = "☆ " .. text
         end
     else -- folder, count number of folders and files inside it
         local sub_dirs, dir_files = self:getList(item.path)
