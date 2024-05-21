@@ -211,7 +211,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
         separator = true,
         sub_item_table = {
             {
-                text = _("About alternate status bar"),
+                text = _("About alt status bar"),
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
@@ -294,15 +294,18 @@ function ReaderCoptListener:getAltStatusBarMenu()
             },
             {
                 text_func = function()
-                    local status = _("off")
+                    local status = _("Battery status")
                     if self.battery == 1 then
                         if self.battery_percent == 1 then
-                            status = _("percentage")
+                            status = _("Battery status: percentage")
                         else
-                            status = _("icon")
+                            status = _("Battery status: icon")
                         end
                     end
-                    return T(_("Battery status: %1"), status)
+                    return status
+                end,
+                checked_func = function()
+                    return self.battery == 1
                 end,
                 sub_item_table = {
                     {
