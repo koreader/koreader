@@ -3,6 +3,7 @@
 local DataStorage = require("datastorage")
 local FileConverter = require("apps/filemanager/filemanagerconverter")
 local DocSettings = require("docsettings")
+local Language = require("ui/language")
 local Version = require("version")
 local FFIUtil = require("ffi/util")
 local T = FFIUtil.template
@@ -257,6 +258,9 @@ function QuickStart:getQuickStart()
             relpath = relpath .. dst
             relpath = relpath:gsub("//", "/") -- make it prettier
             quickstart_html = quickstart_html:gsub([[src="resources/]], [[src="]]..relpath..[[resources/]])
+            if Language:isLanguageRTL(language) then
+                quickstart_html = quickstart_html:gsub('<html>', '<html dir="rtl">')
+            end
             -- Write the fixed HTML content
             FileConverter:writeStringToFile(quickstart_html, quickstart_filename)
         end
