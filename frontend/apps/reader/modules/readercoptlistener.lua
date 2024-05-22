@@ -41,6 +41,11 @@ function ReaderCoptListener:onReadSettings(config)
     self.document._document:setIntProperty("window.status.battery.percent", self.battery_percent)
     self.document._document:setIntProperty("window.status.pos.percent", self.reading_percent)
 
+    -- We will build the top status bar page info string ourselves,
+    -- if we have to display any chunk of it
+    self.page_info_override = self.page_number == 1 or self.page_count == 1 or self.reading_percent == 1
+    self.document:setPageInfoOverride("") -- an empty string lets crengine display its own page info
+
     self:onTimeFormatChanged()
 
     -- Enable or disable crengine header status line (note that for crengine, 0=header enabled, 1=header disabled)
@@ -74,6 +79,80 @@ function ReaderCoptListener:onReaderReady()
             self.document:setAltDocumentProp(prop_key, custom_prop_value)
         end
     end
+end
+
+function ReaderCoptListener:updatePageInfoOverride(pageno)
+    if not (self.document.configurable.status_line == 0 and self.view.view_mode == "page" and self.page_info_override) then
+        return
+    end
+    -- There are a few cases where we may not be updated on change, at least:
+    -- - when toggling ReaderPageMap's "Use reference page numbers"
+    -- - when changing footer's nb of digits after decimal point
+    -- but we will update on next page turn. Let's not bother.
+
+    local page_pre = ""
+    local page_number = pageno
+    local page_sep = " / "
+    local page_count = self.ui.document:getPageCount()
+    local page_post = ""
+    local percentage = page_number / page_count
+    local percentage_pre = ""
+    local percentage_post = ""
+    -- Let's use the same setting for nb of digits after decimal point as configured for the footer
+    local percentage_digits =  self.ui.view.footer.settings.progress_pct_format
+    local percentage_fmt = "%." .. percentage_digits .. "f%%"
+
+    -- We want the same output as with ReaderFooter's page_progress() and percentage()
+    -- but here each item (page number, page counte, percentage) is individually toggable,
+    -- so try to get something that make sense when not all are enabled
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+        -- These become strings here
+        page_number = self.ui.pagemap:getCurrentPageLabel(true)
+        page_count = self.ui.pagemap:getLastPageLabel(true)
+    elseif self.ui.document:hasHiddenFlows() then
+        local flow = self.ui.document:getPageFlow(pageno)
+        page_number = tostring(self.ui.document:getPageNumberInFlow(pageno))
+        page_count = tostring(self.ui.document:getTotalPagesInFlow(flow))
+        percentage = page_number / page_count
+        if flow == 0 then
+            page_sep = " // "
+        else
+            page_pre = "["
+            page_post = "]"..tostring(flow)
+            percentage_pre = "["
+            percentage_post = "]"
+        end
+    end
+
+    local page_info = ""
+    if self.page_number or self.page_count then
+        page_info = page_info .. page_pre
+        if self.page_number then
+            page_info = page_info .. page_number
+            if self.page_count then
+                page_info = page_info .. page_sep
+            end
+        end
+        if self.page_count then
+            page_info = page_info .. page_count
+        end
+        page_info = page_info .. page_post
+        if self.reading_percent then
+            page_info = page_info .. "  " -- (double space as done by crengine's own drawing)
+        end
+    end
+    if self.reading_percent then
+        page_info = page_info .. percentage_pre .. percentage_fmt:format(percentage*100) .. percentage_post
+    end
+    self.document:setPageInfoOverride(page_info)
+end
+
+function ReaderCoptListener:onPageUpdate(pageno)
+    self:updatePageInfoOverride(pageno)
+end
+
+function ReaderCoptListener:onPosUpdate(pos, pageno)
+    self:updatePageInfoOverride(pageno)
 end
 
 function ReaderCoptListener:onBookMetadataChanged(prop_updated)
@@ -191,6 +270,8 @@ ReaderCoptListener.onSuspend = ReaderCoptListener.unscheduleHeaderRefresh
 function ReaderCoptListener:setAndSave(setting, property, value)
     self.document._document:setIntProperty(property, value)
     G_reader_settings:saveSetting(setting, value)
+    self.page_info_override = self.page_number == 1 or self.page_count == 1 or self.reading_percent == 1
+    self.document:setPageInfoOverride("")
     -- Have crengine redraw it (even if hidden by the menu at this time)
     self.ui.rolling:updateBatteryState()
     self:updateHeader()
