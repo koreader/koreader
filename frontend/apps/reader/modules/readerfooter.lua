@@ -265,9 +265,12 @@ local footerTextGeneratorMap = {
         if footer.pageno then
             if footer.ui.pagemap and footer.ui.pagemap:wantsPageLabels() then
                 -- (Page labels might not be numbers)
-                return ("%s %s / %s"):format(prefix,
-                                          footer.ui.pagemap:getCurrentPageLabel(true),
-                                          footer.ui.pagemap:getLastPageLabel(true))
+                local label, idx, count = footer.ui.pagemap:getCurrentPageLabel(false)
+                local remaining = count - idx
+                if footer.settings.pages_left_includes_current_page then
+                    remaining = remaining + 1
+                end
+                return ("%s %s / %s"):format(prefix, remaining, footer.ui.pagemap:getLastPageLabel(true))
             end
             if footer.ui.document:hasHiddenFlows() then
                 -- i.e., if we are hiding non-linear fragments and there's anything to hide,
@@ -2488,6 +2491,9 @@ function ReaderFooter:getChapterProgress(get_percentage, pageno)
         current = current + 1
     else
         current = pageno
+        if self.ui.document:hasHiddenFlows() then
+            current = self.ui.document:getPageNumberInFlow(pageno)
+        end
     end
     local total = self.ui.toc:getChapterPageCount(pageno) or self.pages
     if get_percentage then

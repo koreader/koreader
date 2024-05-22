@@ -280,8 +280,11 @@ function ReaderPageMap:getCurrentPageLabel(clean_label)
     -- For consistency, getPageMapCurrentPageLabel() returns the last page
     -- label shown in the view if there are more than one (or the previous
     -- one if there is none).
-    local label = self.ui.document:getPageMapCurrentPageLabel()
-    return clean_label and self:cleanPageLabel(label) or label
+    local label, idx, count = self.ui.document:getPageMapCurrentPageLabel()
+    if clean_label then
+        label = self:cleanPageLabel(label)
+    end
+    return label, idx, count
 end
 
 function ReaderPageMap:getFirstPageLabel(clean_label)
