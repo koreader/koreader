@@ -103,4 +103,73 @@ function userpatch.applyPatches(priority)
     end
 end
 
+
+-- Helper functions that can be used in userpatches
+
+--[[
+-- For replacing/extending some object method, one just has to do in his user patch:
+
+local TheModule = require("themodule")
+local orig_TheModule_theMethod = TheModule.theMethod
+TheModule.theMethod = function(self, arg1, arg2)
+    -- do your stuff here
+    -- and call the original method if needed
+    return orig_TheModule_theMethod(self, arg1, arg2)
+end
+
+-- (Tried to make use of util.wrapMethod(), but it doesn't make anything simpler
+-- than doing it manually.)
+]]--
+
+-- Module local variables aren't directly reachable when we require() a module.
+-- The only way to possibly reach them is thru an exported function that uses
+-- these local variables, by looking at its referenced upvalues
+function userpatch.getUpValue(func_obj, up_value_name)
+    local upvalue
+    local up_value_idx = 1
+    while true do
+        local name, value = debug.getupvalue(func_obj, up_value_idx)
+        if not name then break end
+        if name == up_value_name then
+            upvalue = value
+            break
+        end
+        up_value_idx = up_value_idx + 1
+    end
+    return upvalue, up_value_idx
+end
+
+-- Replace an upvalue: func_obj should be the same as given to userpatch.getUpValue(),
+-- and up_value_idx the one we got when calling it
+function userpatch.replaceUpValue(func_obj, up_value_idx, replacement_obj)
+    debug.setupvalue(func_obj, up_value_idx, replacement_obj)
+end
+
+-- On each new Reader/FileManager, plugins are dofile()d, and then
+-- instantiated through createPluginInstance. We need to catch and
+-- patch them each time they are instantiated.
+local orig_PluginLoader_createPluginInstance
+local patch_plugin_funcs = {}
+function userpatch.registerPatchPluginFunc(plugin_name, patch_func)
+    if not orig_PluginLoader_createPluginInstance then
+        local PluginLoader = require("pluginloader")
+        orig_PluginLoader_createPluginInstance = PluginLoader.createPluginInstance
+        PluginLoader.createPluginInstance = function(this, plugin, attr)
+            local ok, plugin_or_err = orig_PluginLoader_createPluginInstance(this, plugin, attr)
+            if ok and patch_plugin_funcs[plugin.name] then
+                for _, patchfunc in ipairs(patch_plugin_funcs[plugin.name]) do
+                    patchfunc(plugin)
+                    logger.dbg("userpatch applied to plugin", plugin.name)
+                end
+            end
+            return ok, plugin_or_err
+        end
+    end
+    if not patch_plugin_funcs[plugin_name] then
+        patch_plugin_funcs[plugin_name] = {} -- array (to allow more than one patch_func per plugin)
+    end
+    table.insert(patch_plugin_funcs[plugin_name], patch_func)
+    logger.dbg("userpatch registered for plugin", plugin_name)
+end
+
 return userpatch
