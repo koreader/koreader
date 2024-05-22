@@ -54,8 +54,8 @@ local function populateEventMappings()
 
         table.insert(event_keys, { "FocusLeft",  { { "Left" },  event = "FocusMove", args = {-1, 0} } })
 
-        -- Advanced features: more event handlers can be enabled via settings.reader.lua
         table.insert(event_keys, { "HoldContext",    { { "ContextMenu" },  event = "Hold" } })
+        table.insert(event_keys, { "HoldShift",      { { "Shift", "Press" }, event = "Hold" } })
         -- half rows/columns move, it is helpful for slow device like Kindle DX to move quickly
         table.insert(event_keys, { "HalfFocusUp",    { { "Alt", "Up" },    event = "FocusHalfMove", args = {"up"} } })
         table.insert(event_keys, { "HalfFocusRight", { { "Alt", "Right" }, event = "FocusHalfMove", args = {"right"} } })
@@ -66,6 +66,7 @@ local function populateEventMappings()
         table.insert(event_keys, { "FocusPrevious",  { { "Shift", "Tab" }, event = "FocusPrevious" } })
         local NORMAL_KEYS_END_INDEX = #event_keys
 
+        -- Advanced features: more event handlers can be enabled via settings.reader.lua
         table.insert(event_keys, { "HoldSymAA",      { { "Sym", "AA" },    event = "Hold" } })
 
         for i = 1, FEW_KEYS_END_INDEX do
