@@ -40,7 +40,13 @@ local BookInfoManager = require("bookinfomanager")
 -- opened files (the dogear will make it look like a "used book")
 -- The ImageWidget will be created when we know the available height (and
 -- recreated if height changes)
-local corner_mark_size, corner_mark, reading_mark, abandoned_mark, complete_mark, collection_mark, progress_widget
+local corner_mark_size
+local corner_mark
+local reading_mark
+local abandoned_mark
+local complete_mark
+local collection_mark
+local progress_widget
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
@@ -733,7 +739,8 @@ function MosaicMenuItem:paintTo(bb, x, y)
     -- other paintings are anchored to the sub-widget (cover image)
     local target =  self[1][1][1]
 
-    if ReadCollection:isFileInCollections(self.filepath) then
+    if self.entry.order == nil -- File manager, History
+        and ReadCollection:isFileInCollections(self.filepath) then
         -- top right corner
         local ix
         if BD.mirroredUILayout() then
