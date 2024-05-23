@@ -135,6 +135,8 @@ function VirtualKey:init()
         end
         self.swipe_callback = function(ges)
             if ges.direction == "west" then
+                self.keyboard:delWord(true) -- left to cursor
+            elseif ges.direction == "north" then
                 self.keyboard:delWord()
             end
         end
@@ -1139,9 +1141,9 @@ function VirtualKeyboard:delChar()
     self.inputbox:delChar()
 end
 
-function VirtualKeyboard:delWord()
+function VirtualKeyboard:delWord(left_to_cursor)
     logger.dbg("delete word")
-    self.inputbox:delWord()
+    self.inputbox:delWord(left_to_cursor)
 end
 
 function VirtualKeyboard:delToStartOfLine()
