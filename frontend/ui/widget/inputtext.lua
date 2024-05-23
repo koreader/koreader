@@ -765,7 +765,7 @@ end
 
 -- Get start and end positions of a line (or a word) under the cursor.
 function InputText:getStringPos(is_word)
-    local delimiter = is_word and "[\n\r%s.,;:!?]" or "[\n\r]"
+    local delimiter = is_word and "[\n\r%s.,;:!?–—―]" or "[\n\r]"
     local start_pos, end_pos
     if self.charpos > 1 then
         for i = self.charpos - 1, 1, -1 do
@@ -849,17 +849,20 @@ function InputText:delNextChar()
     self:initTextBox(table.concat(self.charlist))
 end
 
-function InputText:delWord()
+function InputText:delWord(left_to_cursor)
     if self.readonly or not self:isTextEditable(true) then
         return
     end
     local start_pos, end_pos = self:getStringPos(true)
+    if left_to_cursor then
+        end_pos = self.charpos - 1
+    end
     for i = end_pos, start_pos, -1 do
         table.remove(self.charlist, i)
     end
     local prev_pos = start_pos > 1 and start_pos - 1 or 1
     if #self.charlist > 0 then
-        if self.charlist[prev_pos]:find("[ \t]") then -- remove redundant space
+        if not left_to_cursor and self.charlist[prev_pos]:find("[ \t]") then -- remove redundant space
             table.remove(self.charlist, prev_pos)
             self.charpos = prev_pos
         else
