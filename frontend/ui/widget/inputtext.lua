@@ -764,7 +764,7 @@ function InputText:getLineCharPos(line_num)
 end
 
 -- Get start and end positions of a line (or a word) under the cursor.
-function InputText:getStringPos(is_word)
+function InputText:getStringPos(is_word, left_to_cursor)
     local delimiter = is_word and "[\n\r%s.,;:!?–—―]" or "[\n\r]"
     local start_pos, end_pos
     if self.charpos > 1 then
@@ -775,11 +775,15 @@ function InputText:getStringPos(is_word)
             end
         end
     end
-    if self.charpos <= #self.charlist then
-        for i = self.charpos, #self.charlist do
-            if self.charlist[i]:find(delimiter) then
-                end_pos = i - 1
-                break
+    if left_to_cursor then
+        end_pos = self.charpos - 1
+    else
+        if self.charpos <= #self.charlist then
+            for i = self.charpos, #self.charlist do
+                if self.charlist[i]:find(delimiter) then
+                    end_pos = i - 1
+                    break
+                end
             end
         end
     end
@@ -853,10 +857,7 @@ function InputText:delWord(left_to_cursor)
     if self.readonly or not self:isTextEditable(true) then
         return
     end
-    local start_pos, end_pos = self:getStringPos(true)
-    if left_to_cursor then
-        end_pos = self.charpos - 1
-    end
+    local start_pos, end_pos = self:getStringPos(true, left_to_cursor)
     for i = end_pos, start_pos, -1 do
         table.remove(self.charlist, i)
     end
