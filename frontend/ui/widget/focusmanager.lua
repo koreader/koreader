@@ -57,6 +57,7 @@ local function populateEventMappings()
         -- Advanced features: more event handlers can be enabled via settings.reader.lua in a similar manner
         table.insert(event_keys, { "HoldContext",    { { "ContextMenu" },  event = "Hold" } })
         table.insert(event_keys, { "HoldShift",      { { "Shift", "Press" }, event = "Hold" } })
+        table.insert(event_keys, { "HoldScreenKB",      { { "ScreenKB", "Press" }, event = "Hold" } })
         table.insert(event_keys, { "HoldSymAA",      { { "Sym", "AA" },    event = "Hold" } })
         -- half rows/columns move, it is helpful for slow device like Kindle DX to move quickly
         table.insert(event_keys, { "HalfFocusUp",    { { "Alt", "Up" },    event = "FocusHalfMove", args = {"up"} } })
