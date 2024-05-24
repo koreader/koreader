@@ -861,8 +861,8 @@ function InputText:delWord(left_to_cursor)
     for i = end_pos, start_pos, -1 do
         table.remove(self.charlist, i)
     end
-    local prev_pos = start_pos > 1 and start_pos - 1 or 1
     if #self.charlist > 0 then
+        local prev_pos = start_pos > 1 and start_pos - 1 or 1
         if not left_to_cursor and self.charlist[prev_pos]:find("[ \t]") then -- remove redundant space
             table.remove(self.charlist, prev_pos)
             self.charpos = prev_pos
