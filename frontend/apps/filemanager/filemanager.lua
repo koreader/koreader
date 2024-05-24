@@ -952,7 +952,7 @@ function FileManager:pasteSelectedFiles(overwrite)
     for orig_file in pairs(self.selected_files) do
         local orig_name = BaseUtil.basename(orig_file)
         local dest_file = BaseUtil.joinPath(dest_path, orig_name)
-        if orig_file == dest_file then -- do not paste to itself
+        if BaseUtil.realpath(orig_file) == dest_file then -- do not paste to itself
             self.selected_files[orig_file] = nil
         else
             local ok
