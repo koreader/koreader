@@ -699,6 +699,7 @@ function Kobo:init()
             debug = logger.dbg,
             is_always_portrait = self.isAlwaysPortrait(),
             mxcfb_bypass_wait_for = mxcfb_bypass_wait_for,
+            no_cfa_post_processing = G_reader_settings:isTrue("no_cfa_post_processing"),
         }
         if self.screen.fb_bpp == 32 and not self:hasColorScreen() then
             -- Ensure we decode images properly, as our framebuffer is BGRA...
