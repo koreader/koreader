@@ -83,6 +83,12 @@
 
   <launchable type="desktop-id">rocks.koreader.KOReader.desktop</launchable>
 
+  <categories>
+    <category>Viewer</category>
+    <category>Literature</category>
+        _("Literature"),
+  </categories>
+
   <content_rating type="oars-1.1"/>
 
   <summary>Ebook reader</summary>
@@ -110,10 +116,18 @@
       <image>https://github.com/koreader/koreader-artwork/raw/master/koreader-dictionary-framed.png</image>
     </screenshot>
   </screenshots>
-  <categories>
-    <category>Viewer</category>
-    <category>Literature</category>
-  </categories>
+  <keywords>
+    <keyword>reader</keyword>
+    <keyword>viewer</keyword>
+    <keyword>dictionary</keyword>
+    <keyword>wikipedia</keyword>
+    <keyword>wallabag</keyword>
+    <keyword>annotations</keyword>
+    <keyword>epub</keyword>
+    <keyword>fb2</keyword>
+    <keyword>pdf</keyword>
+    <keyword>djvu</keyword>
+  </keywords>
   <releases>
     <release version="%%VERSION%%" date="%%DATE%%">
       <description>

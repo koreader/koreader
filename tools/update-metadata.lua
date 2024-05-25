@@ -105,10 +105,6 @@ local metadata = {
     notes = {
         _ ("Release notes available on the link below"),
     },
-    tags = {
-        _("Viewer"),
-        _("Literature"),
-    },
     screenshots = {
         { image = "https://github.com/koreader/koreader-artwork/raw/master/koreader-menu-framed.png",
           default = true,
@@ -117,6 +113,19 @@ local metadata = {
         },
         { image = "https://github.com/koreader/koreader-artwork/raw/master/koreader-dictionary-framed.png",
         }
+    },
+    keywords = {
+        _("reader"),
+        _("viewer"),
+        _("dictionary"),
+        _("wikipedia"),
+        _("wallabag"),
+        _("annotations"),
+        -- don't translate formats
+        "epub",
+        "fb2",
+        "pdf",
+        "djvu",
     },
 
     -- appstream metadata don't need to be translated
@@ -202,6 +211,12 @@ local metadata = {
   </provides>
 
   <launchable type="desktop-id">rocks.koreader.KOReader.desktop</launchable>
+
+  <categories>
+    <category>Viewer</category>
+    <category>Literature</category>
+        _("Literature"),
+  </categories>
 
   <content_rating type="oars-1.1"/>
 ]],
@@ -300,19 +315,19 @@ local function genAppstream()
     end
     table.insert(t, '  </screenshots>')
 
-    table.insert(t, '  <categories>')
-    for i, v in ipairs(metadata.tags) do
+    table.insert(t, '  <keywords>')
+    for i, v in ipairs(metadata.keywords) do
         _.changeLang(en)
         orig = v
         for __, lang in ipairs(locales) do
             _.changeLang(lang)
             translated = _(v)
             if orig ~= translated or lang == "en" then
-                table.insert(t, tag("category", lang, translated, 4))
+                table.insert(t, tag("keyword", lang, translated, 4))
             end
         end
     end
-    table.insert(t, '  </categories>')
+    table.insert(t, '  </keywords>')
     table.insert(t, [[  <releases>
     <release version="%%VERSION%%" date="%%DATE%%">
       <description>]])
