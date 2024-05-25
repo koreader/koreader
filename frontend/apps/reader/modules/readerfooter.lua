@@ -324,7 +324,7 @@ local footerTextGeneratorMap = {
         if prefix then
             string_percentage = prefix .. " " .. string_percentage
         end
-        return string_percentage:format(footer.pageno / footer.pages * 100)
+        return string_percentage:format(footer:getBookProgress() * 100)
     end,
     book_time_to_read = function(footer)
         local symbol_type = footer.settings.item_prefix
@@ -1840,7 +1840,7 @@ function ReaderFooter:genProgressPercentageFormatMenuItems(value)
         if prefix then
             string_percentage = prefix .. " " .. string_percentage
         end
-        return string_percentage:format(self.pageno / self.pages * 100)
+        return string_percentage:format(self:getBookProgress() * 100)
     end
     if value == nil then
         return progressPercentage(self.settings.progress_pct_format)
@@ -2067,14 +2067,7 @@ function ReaderFooter:updateFooterPage(force_repaint, full_repaint)
         end
         self.progress_bar:setPercentage(self:getChapterProgress(true))
     else
-        if self.ui.document:hasHiddenFlows() then
-            local flow = self.ui.document:getPageFlow(self.pageno)
-            local page = self.ui.document:getPageNumberInFlow(self.pageno)
-            local pages = self.ui.document:getTotalPagesInFlow(flow)
-            self.progress_bar:setPercentage(page / pages)
-        else
-            self.progress_bar:setPercentage(self.pageno / self.pages)
-        end
+        self.progress_bar:setPercentage(self:getBookProgress())
     end
     self:updateFooterText(force_repaint, full_repaint)
 end
@@ -2374,6 +2367,16 @@ function ReaderFooter:onToggleChapterProgressBar()
         self.progress_bar.initial_percentage = self.initial_pageno / self.pages
     end
     self:refreshFooter(true)
+end
+
+function ReaderFooter:getBookProgress()
+    if self.ui.document:hasHiddenFlows() then
+        local flow = self.ui.document:getPageFlow(self.pageno)
+        local page = self.ui.document:getPageNumberInFlow(self.pageno)
+        local pages = self.ui.document:getTotalPagesInFlow(flow)
+        return page / pages
+    end
+    return self.pageno / self.pages
 end
 
 function ReaderFooter:getChapterProgress(get_percentage, pageno)
