@@ -142,7 +142,7 @@ local metadata = {
 
   <url type="homepage">https://koreader.rocks/</url>
   <url type="bugtracker">https://github.com/koreader/koreader/issues</url>
-  <url type="faq">https://github.com/koreader/koreader/wiki</url>
+  <url type="faq">https://koreader.rocks/user_guide</url>
   <url type="translate">https://hosted.weblate.org/engage/koreader/</url>
   <url type="vcs-browser">https://github.com/koreader/koreader</url>
   <url type="contribute">https://koreader.rocks/doc/</url>
