@@ -213,7 +213,7 @@ local function initTouchEvents()
                                 text = _("Copy line"),
                                 callback = function()
                                     UIManager:close(clipboard_dialog)
-                                    local txt = table.concat(self.charlist, "", self:getStringPos({"\n", "\r"}, {"\n", "\r"}))
+                                    local txt = table.concat(self.charlist, "", self:getStringPos())
                                     Device.input.setClipboardText(txt)
                                     UIManager:show(Notification:new{
                                         text = _("Line copied to clipboard."),
@@ -224,7 +224,7 @@ local function initTouchEvents()
                                 text = _("Copy word"),
                                 callback = function()
                                     UIManager:close(clipboard_dialog)
-                                    local txt = table.concat(self.charlist, "", self:getStringPos({"\n", "\r", " "}, {"\n", "\r", " "}))
+                                    local txt = table.concat(self.charlist, "", self:getStringPos(true))
                                     Device.input.setClipboardText(txt)
                                     UIManager:show(Notification:new{
                                         text = _("Word copied to clipboard."),
@@ -763,39 +763,31 @@ function InputText:getLineCharPos(line_num)
     return char_pos
 end
 
--- Get start and end positions of the substring
--- delimited with the delimiters and containing char_pos.
--- If char_pos not set, current charpos assumed.
-function InputText:getStringPos(left_delimiter, right_delimiter, char_pos)
-    char_pos = char_pos and char_pos or self.charpos
-    local start_pos, end_pos = 1, #self.charlist
-    local done = false
-    if char_pos > 1 then
-        for i = char_pos, 2, -1 do
-            for j = 1, #left_delimiter do
-                if self.charlist[i-1] == left_delimiter[j] then
-                    start_pos = i
-                    done = true
-                    break
-                end
+-- Get start and end positions of a line (or a word) under the cursor.
+function InputText:getStringPos(is_word, left_to_cursor)
+    local delimiter = is_word and "[\n\r%s.,;:!?–—―]" or "[\n\r]"
+    local start_pos, end_pos
+    if self.charpos > 1 then
+        for i = self.charpos - 1, 1, -1 do
+            if self.charlist[i]:find(delimiter) then
+                start_pos = i + 1
+                break
             end
-            if done then break end
         end
     end
-    done = false
-    if char_pos < #self.charlist then
-        for i = char_pos, #self.charlist do
-            for j = 1, #right_delimiter do
-                if self.charlist[i] == right_delimiter[j] then
+    if left_to_cursor then
+        end_pos = self.charpos - 1
+    else
+        if self.charpos <= #self.charlist then
+            for i = self.charpos, #self.charlist do
+                if self.charlist[i]:find(delimiter) then
                     end_pos = i - 1
-                    done = true
                     break
                 end
             end
-            if done then break end
         end
     end
-    return start_pos, end_pos
+    return start_pos or 1, end_pos or #self.charlist
 end
 
 --- Return the character at the given offset. If is_absolute is truthy then the
@@ -861,6 +853,27 @@ function InputText:delNextChar()
     self:initTextBox(table.concat(self.charlist))
 end
 
+function InputText:delWord(left_to_cursor)
+    if self.readonly or not self:isTextEditable(true) then
+        return
+    end
+    local start_pos, end_pos = self:getStringPos(true, left_to_cursor)
+    for i = end_pos, start_pos, -1 do
+        table.remove(self.charlist, i)
+    end
+    if #self.charlist > 0 then
+        local prev_pos = start_pos > 1 and start_pos - 1 or 1
+        if not left_to_cursor and self.charlist[prev_pos]:find("[ \t]") then -- remove redundant space
+            table.remove(self.charlist, prev_pos)
+            self.charpos = prev_pos
+        else
+            self.charpos = start_pos
+        end
+    end
+    self.is_text_edited = true
+    self:initTextBox(table.concat(self.charlist))
+end
+
 function InputText:delToStartOfLine()
     if self.readonly or not self:isTextEditable(true) then
         return
@@ -906,14 +919,14 @@ function InputText:rightChar()
 end
 
 function InputText:goToStartOfLine()
-    local new_pos = select(1, self:getStringPos({"\n", "\r"}, {"\n", "\r"}))
+    local new_pos = self:getStringPos()
     self.text_widget:moveCursorToCharPos(new_pos)
     self:resyncPos()
 end
 
 function InputText:goToEndOfLine()
-    local new_pos = select(2, self:getStringPos({"\n", "\r"}, {"\n", "\r"})) + 1
-    self.text_widget:moveCursorToCharPos(new_pos)
+    local _, new_pos = self:getStringPos()
+    self.text_widget:moveCursorToCharPos(new_pos + 1)
     self:resyncPos()
 end
 
