@@ -740,15 +740,19 @@ function MosaicMenuItem:paintTo(bb, x, y)
     local target =  self[1][1][1]
 
     if self.entry.order == nil -- File manager, History
-        and ReadCollection:isFileInCollections(self.filepath) then
+            and ReadCollection:isFileInCollections(self.filepath) then
         -- top right corner
-        local ix
+        local ix, rect_ix
         if BD.mirroredUILayout() then
             ix = math.floor((self.width - target.dimen.w)/2)
+            rect_ix = target.bordersize
         else
             ix = self.width - math.ceil((self.width - target.dimen.w)/2) - corner_mark_size
+            rect_ix = 0
         end
         local iy = 0
+        local rect_size = corner_mark_size - target.bordersize
+        bb:paintRect(x+ix+rect_ix, y+target.bordersize, rect_size, rect_size, Blitbuffer.COLOR_GRAY)
         collection_mark:paintTo(bb, x+ix, y+iy)
     end
 
