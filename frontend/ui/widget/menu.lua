@@ -966,7 +966,7 @@ function Menu:init()
     end
 
     if Device:hasDPad() then
-        if not Device:hasFiveWay() then
+        if Device:hasFewKeys() then
             -- we won't catch presses to "Right", leave that to MenuItem.
             self.key_events.FocusRight = nil
             -- add long press on "Right" key
