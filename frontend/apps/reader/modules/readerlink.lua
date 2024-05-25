@@ -67,6 +67,7 @@ local ReaderLink = InputContainer:extend{
     location_stack = nil, -- table, per-instance
     forward_location_stack = nil, -- table, per-instance
     _external_link_buttons = nil,
+    handleableSchemes = {"http", "https"},
 }
 
 function ReaderLink:init()
@@ -223,6 +224,10 @@ function ReaderLink:init()
             end,
         }
     end
+end
+
+function ReaderLink:registerScheme(scheme)
+    table.insert(self.handleableSchemes, scheme)
 end
 
 function ReaderLink:onGesture() end
@@ -824,8 +829,9 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
     end
     logger.dbg("ReaderLink:onGotoLink: External link:", link_url)
 
-    local is_http_link = link_url:find("^https?://") ~= nil
-    if is_http_link and self:onGoToExternalLink(link_url) then
+    local scheme = link_url:match("^(%w+)://")
+    local is_handleable_external_link = scheme and util.arrayContains(self.handleableSchemes, scheme)
+    if is_handleable_external_link and self:onGoToExternalLink(link_url) then
         return true
     end
 
