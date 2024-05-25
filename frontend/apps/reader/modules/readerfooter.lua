@@ -1861,9 +1861,9 @@ end
 
 function ReaderFooter:genItemSymbolsMenuItems(value)
     local strings = {
-        icons          = C_("Status bar", "Icons"),
-        letters        = C_("Status bar", "Letters"),
-        compact_items  = C_("Status bar", "Compact"),
+        icons         = C_("Status bar", "Icons"),
+        letters       = C_("Status bar", "Letters"),
+        compact_items = C_("Status bar", "Compact"),
     }
     if value == nil then
         return strings[self.settings.item_prefix]:lower()
