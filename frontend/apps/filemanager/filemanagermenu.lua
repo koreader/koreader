@@ -629,6 +629,21 @@ To:
             end,
         })
     end
+    if Device:isKobo() and Device:hasColorScreen() then
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            -- We default to a flag (G2) that slightly boosts saturation,
+            -- but it *is* a destructive process, so we want to allow disabling it.
+            -- @translators CFA is a technical term for the technology behind eInk's color panels. It stands for Color Film/Filter Array, leave the abbreviation alone ;).
+            text = _("Disable CFA post-processing"),
+            checked_func = function()
+                return G_reader_settings:isTrue("no_cfa_post_processing")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("no_cfa_post_processing")
+                UIManager:askForRestart()
+            end,
+        })
+    end
     table.insert(self.menu_items.developer_options.sub_item_table, {
         text = _("Anti-alias rounded corners"),
         checked_func = function()

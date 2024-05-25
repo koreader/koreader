@@ -253,7 +253,7 @@ describe("Readerfooter module", function()
                         footer.footer_text.text)
 
         -- disable show all at once, page progress should be on the first
-        tapFooterMenu(fake_menu, "Show all at once")
+        tapFooterMenu(fake_menu, "Show all selected items at once")
         assert.are.same('1 / 2', footer.footer_text.text)
 
         -- disable page progress, time should follow
@@ -269,7 +269,7 @@ describe("Readerfooter module", function()
         assert.are.same('0%', footer.footer_text.text)
 
         -- disable battery, percentage should follow
-        tapFooterMenu(fake_menu, "Battery status".." ()")
+        tapFooterMenu(fake_menu, "Battery percentage".." ()")
         assert.are.same('⤠ 50%', footer.footer_text.text)
 
         -- disable percentage, book time to read should follow
@@ -277,15 +277,15 @@ describe("Readerfooter module", function()
         assert.are.same('⏳ N/A', footer.footer_text.text)
 
         -- disable book time to read, chapter time to read should follow
-        tapFooterMenu(fake_menu, "Book time to read".." (⏳)")
+        tapFooterMenu(fake_menu, "Time left to finish book".." (⏳)")
         assert.are.same('⤻ N/A', footer.footer_text.text)
 
         -- disable chapter time to read, text should be empty
-        tapFooterMenu(fake_menu, "Chapter time to read".." (⤻)")
+        tapFooterMenu(fake_menu, "Time left to finish chapter".." (⤻)")
         assert.are.same('', footer.footer_text.text)
 
         -- reenable chapter time to read, text should be chapter time to read
-        tapFooterMenu(fake_menu, "Chapter time to read".." (⤻)")
+        tapFooterMenu(fake_menu, "Time left to finish chapter".." (⤻)")
         assert.are.same('⤻ N/A', footer.footer_text.text)
         readerui:closeDocument()
         readerui:onClose()
@@ -528,7 +528,7 @@ describe("Readerfooter module", function()
         assert.is.same(1, found)
 
         -- disable auto refresh time
-        tapFooterMenu(fake_menu, "Auto refresh")
+        tapFooterMenu(fake_menu, "Auto refresh items")
         found = 0
         for _,task in ipairs(UIManager._task_queue) do
             if task.action == footer.autoRefreshFooter then
@@ -538,7 +538,7 @@ describe("Readerfooter module", function()
         assert.is.same(0, found)
 
         -- enable auto refresh time again
-        tapFooterMenu(fake_menu, "Auto refresh")
+        tapFooterMenu(fake_menu, "Auto refresh items")
         found = 0
         for _,task in ipairs(UIManager._task_queue) do
             if task.action == footer.autoRefreshFooter then
@@ -699,7 +699,7 @@ describe("Readerfooter module", function()
 
         -- test in all at once mode
         tapFooterMenu(fake_menu, "Progress percentage".." (⤠)")
-        tapFooterMenu(fake_menu, "Show all at once")
+        tapFooterMenu(fake_menu, "Show all selected items at once")
         assert.is.same(false, footer.has_no_mode)
         tapFooterMenu(fake_menu, "Progress percentage".." (⤠)")
         assert.is.same(true, footer.has_no_mode)
