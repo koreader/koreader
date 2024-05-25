@@ -213,9 +213,9 @@ local metadata = {
   <launchable type="desktop-id">rocks.koreader.KOReader.desktop</launchable>
 
   <categories>
+    <category>Office</category>
     <category>Viewer</category>
     <category>Literature</category>
-        _("Literature"),
   </categories>
 
   <content_rating type="oars-1.1"/>
