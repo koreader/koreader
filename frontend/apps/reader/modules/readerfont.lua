@@ -1,5 +1,4 @@
 local BD = require("ui/bidi")
-local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
@@ -8,7 +7,6 @@ local FontList = require("fontlist")
 local InfoMessage = require("ui/widget/infomessage")
 local Input = Device.input
 local InputContainer = require("ui/widget/container/inputcontainer")
-local Menu = require("ui/widget/menu")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
 local Screen = require("device").screen
