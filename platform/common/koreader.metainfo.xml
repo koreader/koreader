@@ -96,7 +96,7 @@
     <p>KOReader is an ebook reader optimized for e-ink screens. It can open many formats and provides advanced text adjustments.</p>
     <p>See below for a selection of its many features:</p>
     <ul>
-      <li>Supports both fixed page formats (PDF, DjVu, CBT, CBZ) and reflowable e-book formats (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Scanned PDF/DjVu documents can be reflowed. Special flow directions for reading double column PDFs and manga.</li>
+      <li>Supports both fixed page formats (PDF, DjVu, CBT, CBZ) and reflowable e-book formats (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Scanned PDF&#47;DjVu documents can be reflowed. Special flow directions for reading double column PDFs and manga.</li>
       <li>Multi-lingual user interface optimized for e-ink screens. Highly customizable reader view with complete typesetting options. Multi-lingual hyphenation dictionaries are bundled in.</li>
       <li>Non-Latin script support for books, including the Hebrew, Arabic, Persian, Russian, Chinese, Japanese and Korean languages.</li>
       <li>Unique Book Map and Page Browser features to navigate your book.</li>
@@ -107,13 +107,13 @@
   </description>
   <screenshots>
     <screenshot type="default">
-      <image>https://github.com/koreader/koreader-artwork/raw/master/koreader-menu-framed.png</image>
+      <image>https:&#47;&#47;github.com&#47;koreader&#47;koreader-artwork&#47;raw&#47;master&#47;koreader-menu-framed.png</image>
     </screenshot>
     <screenshot>
-      <image>https://github.com/koreader/koreader-artwork/raw/master/koreader-footnotes-framed.png</image>
+      <image>https:&#47;&#47;github.com&#47;koreader&#47;koreader-artwork&#47;raw&#47;master&#47;koreader-footnotes-framed.png</image>
     </screenshot>
     <screenshot>
-      <image>https://github.com/koreader/koreader-artwork/raw/master/koreader-dictionary-framed.png</image>
+      <image>https:&#47;&#47;github.com&#47;koreader&#47;koreader-artwork&#47;raw&#47;master&#47;koreader-dictionary-framed.png</image>
     </screenshot>
   </screenshots>
   <keywords>

@@ -1,16 +1,14 @@
 #!/usr/bin/env luajit
 
 --[[
-    Tool to generate localized metadata that produces
-    appstream and fastlane compatible files.
+    This tool generates localized metadata for application stores.
+    We currently support F-Droid(fastlane) and Flathub(appstream).
 
     usage: ./tools/update_metadata.lua
 ]]--
 
 package.path = "frontend/?.lua;base/" .. package.path
 local _ = require("gettext")
-
-local updated_files = {}
 
 -- we can't require util here, some C libraries might not be available
 local function htmlEscape(text)
@@ -22,67 +20,6 @@ local function htmlEscape(text)
         ["'"] = "&#39;",
         ["/"] = "&#47;",
     })
-end
-
-local function isFile(str)
-    local f = io.open(str, "r")
-    if f then
-        f:close()
-        return true
-    end
-    return false
-end
-
-local function writeFile(str, path)
-    local f = io.open(path, "w")
-    table.insert(updated_files, path)
-    if f then
-        f:write(str)
-        f:write("\n")
-        f:close()
-    end
-end
-
-local function isLocaleDir(str)
-    for _, v in ipairs({"templates", "README.md", "LICENSE"}) do
-        if str == v then return false end
-    end
-    return true
-end
-
-local function getLocales()
-    local locales = {}
-    local output = io.popen('ls l10n')
-    if not output then return {} end
-    for dir in output:lines() do
-        if isLocaleDir(dir) then
-            locales[#locales + 1] = dir
-        end
-    end
-    output:close()
-    table.insert(locales, 1, "en")
-    return locales
-end
-
-
-
-local function tag(element, lang, str, pad)
-    assert(type(element) == "string", "element must be a string")
-    assert(type(lang) == "string", "lang must be a string")
-    assert(type(str) == "string", "str must be a string")
-    local offset = ""
-    local pad = pad or 0
-    if pad >= 1 then
-        for i = 1, pad do
-            offset = offset .. " "
-        end
-    end
-    _.changeLang(lang)
-    if lang == "en" then
-        return offset .. '<' .. element .. '>' .. _(str) .. '</' .. element .. '>'
-    else
-        return offset .. '<' .. element .. ' xml:lang="' .. lang .. '">' .. _(str) .. '</' .. element .. '>'
-    end
 end
 
 local metadata = {
@@ -128,7 +65,7 @@ local metadata = {
         "djvu",
     },
 
-    -- appstream metadata don't need to be translated
+    -- appstream metadata that needs no translation
     component = [[
   <id>rocks.koreader.KOReader</id>
 
@@ -222,11 +159,39 @@ local metadata = {
 ]],
 }
 
-local function summary(lang)
-    local lang = lang or "en"
-    _.changeLang(lang)
-    return _(metadata.summary)
+local updated_files = {}
+local function writeFile(str, path)
+    local f = io.open(path, "w")
+    table.insert(updated_files, path)
+    if f then
+        f:write(str)
+        f:write("\n")
+        f:close()
+    end
 end
+
+local function isLocaleDir(str)
+    for _, v in ipairs({"templates", "README.md", "LICENSE"}) do
+        if str == v then return false end
+    end
+    return true
+end
+
+local function getLocales()
+    local locales = {}
+    local output = io.popen('ls l10n')
+    if not output then return {} end
+    for dir in output:lines() do
+        if isLocaleDir(dir) then
+            locales[#locales + 1] = dir
+        end
+    end
+    output:close()
+    table.insert(locales, 1, "en")
+    return locales
+end
+
+local locales = getLocales()
 
 local function htmlDescription(lang)
     local lang = lang or "en"
@@ -236,20 +201,34 @@ local function htmlDescription(lang)
     for i, v in ipairs (desc.paragraphs) do
         table.insert(t, "<p>" .. htmlEscape(_(v)) .. "</p>")
     end
-
     table.insert(t, "<ul>")
     for i, v in ipairs(desc.highlights) do
-        table.insert(t, "  <li>" .. _(v) .. "</li>")
+        table.insert(t, "  <li>" .. htmlEscape(_(v)) .. "</li>")
     end
     table.insert(t, "</ul>")
     return table.concat(t, "\n")
 end
 
-local locales = getLocales()
+local function tag(element, lang, str, pad)
+    local offset = ""
+    local pad = pad or 0
+    if pad >= 1 then
+        for i = 1, pad do
+            offset = offset .. " "
+        end
+    end
+    if lang == "en" then
+        return string.format("%s<%s>%s</%s>",
+            offset, element, htmlEscape(str), element)
+    else
+        return string.format('%s<%s xml:lang="%s">%s</%s>',
+            offset, element, lang, htmlEscape(str), element)
+    end
+end
 
 local function genAppstream()
     local metadata_file = "platform/common/koreader.metainfo.xml"
-    print("Building appstream metadata")
+    print("Building appstream metadata, this might take a while...")
     local t = {}
     local desc = metadata.desc
     table.insert(t, '<?xml version="1.0" encoding="UTF-8"?>')
@@ -263,7 +242,7 @@ local function genAppstream()
         _.changeLang(lang)
         translated = _(metadata.summary)
         if orig ~= translated or lang == "en" then
-            table.insert(t, tag("summary", lang, _(metadata.summary), 2))
+            table.insert(t, tag("summary", lang, translated, 2))
         end
     end
     table.insert(t, '  <description>')
@@ -353,20 +332,25 @@ end
 
 local function genFastlane()
     print("Building fastlane metadata")
+
+
     local short, full = "short_description.txt", "full_description.txt"
-    local short_orig, full_orig = summary(), htmlDescription()
+    local short_orig = metadata.summary
+    local full_orig = htmlDescription()
     local short_translated, full_translated
-    local metadata_file
-    local metadata_dir = "metadata/en-US/"
-    metadata_file = metadata_dir .. short
-    writeFile(short_orig, metadata_file)
-    metadata_file = metadata_dir .. full
-    writeFile(full_orig, metadata_file)
+
     for __, lang in ipairs(locales) do
-        if lang ~= "en" then
-            short_translated = summary(lang)
-            full_translated = htmlDescription(lang)
+        _.changeLang(lang)
+        if lang == "en" then
+            metadata_dir = "metadata/en-US/"
+            metadata_file = metadata_dir .. short
+            writeFile(short_orig, metadata_file)
+            metadata_file = metadata_dir .. full
+            writeFile(full_orig, metadata_file)
+        else
             metadata_dir = "metadata/" .. lang .. "/"
+            short_translated = _(metadata.summary)
+            full_translated = htmlDescription(lang)
             if short_orig ~= short_translated or full_orig ~= full_translated then
                 os.execute('mkdir -p ' .. metadata_dir)
             end
