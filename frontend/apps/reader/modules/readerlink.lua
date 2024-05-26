@@ -251,7 +251,7 @@ function ReaderLink:registerKeyEvents()
             -- when G_reader_settings:readSetting("back_in_reader") == "previous_location"
         }
     end
-    if Device:hasScreenKB() then
+    if Device:hasScreenKB() or Device:hasSymKey() then
         self.key_events.GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" }
         if Device:hasKeyboard() then
             self.key_events.AddCurrentLocationToStack = { { "Shift", "Down" } }
