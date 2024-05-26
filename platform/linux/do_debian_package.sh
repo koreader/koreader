@@ -65,7 +65,7 @@ fi
 mkdir -p tmp-debian/usr
 chmod 0755 tmp-debian/usr
 tar -xf "${1}" -C tmp-debian/usr
-rm -f tmp-debian/usr/koreader.appdata.xml tmp-debian/usr/README.md
+rm -f tmp-debian/usr/README.md
 ARCH="$(echo "${1}" | cut -d '-' -f3)"
 VERSION="$(cut -f2 -dv "tmp-debian/usr/lib/koreader/git-rev" | cut -f1,2 -d-)"
 DEB_ARCH="$(uname_to_debian "${ARCH}")"
