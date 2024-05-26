@@ -549,36 +549,38 @@ function ReaderHighlight:addToMainMenu(menu_items)
         end,
         sub_item_table = sub_item_table,
     })
-    -- highlight very-long-press interval
-    table.insert(menu_items.long_press.sub_item_table, {
-        text_func = function()
-            return T(_("Highlight very-long-press interval: %1 s"),
-                G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3))
-        end,
-        keep_menu_open = true,
-        callback = function(touchmenu_instance)
-            local SpinWidget = require("ui/widget/spinwidget")
-            local items = SpinWidget:new{
-                title_text = _("Highlight very-long-press interval"),
-                info_text = _("If a long-press is not released in this interval, it is considered a very-long-press. On document text, single word selection will not be triggered."),
-                width = math.floor(self.screen_w * 0.75),
-                value = G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3),
-                value_min = 2.5,
-                value_max = 20,
-                value_step = 0.1,
-                value_hold_step = 0.5,
-                unit = C_("Time", "s"),
-                precision = "%0.1f",
-                ok_text = _("Set interval"),
-                default_value = 3,
-                callback = function(spin)
-                    G_reader_settings:saveSetting("highlight_long_hold_threshold_s", spin.value)
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                end,
-            }
-            UIManager:show(items)
-        end,
-    })
+    if Device:isTouchDevice() then
+        -- highlight very-long-press interval
+        table.insert(menu_items.long_press.sub_item_table, {
+            text_func = function()
+                return T(_("Highlight very-long-press interval: %1 s"),
+                    G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3))
+            end,
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                local SpinWidget = require("ui/widget/spinwidget")
+                local items = SpinWidget:new{
+                    title_text = _("Highlight very-long-press interval"),
+                    info_text = _("If a long-press is not released in this interval, it is considered a very-long-press. On document text, single word selection will not be triggered."),
+                    width = math.floor(self.screen_w * 0.75),
+                    value = G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3),
+                    value_min = 2.5,
+                    value_max = 20,
+                    value_step = 0.1,
+                    value_hold_step = 0.5,
+                    unit = C_("Time", "s"),
+                    precision = "%0.1f",
+                    ok_text = _("Set interval"),
+                    default_value = 3,
+                    callback = function(spin)
+                        G_reader_settings:saveSetting("highlight_long_hold_threshold_s", spin.value)
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                }
+                UIManager:show(items)
+            end,
+        })
+    end
 
     table.insert(menu_items.long_press.sub_item_table, {
         text = _("Auto-scroll when selection reaches a corner"),
