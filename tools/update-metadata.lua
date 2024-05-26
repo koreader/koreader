@@ -1,7 +1,7 @@
 #!/usr/bin/env luajit
 
 --[[
-    This tool generates localized metadata for application stores.
+    tool to generate localized metadata for application stores.
     We currently support F-Droid(fastlane) and Flathub(appstream).
 
     usage: ./tools/update_metadata.lua
