@@ -219,10 +219,10 @@ local function tag(element, lang, str, pad)
     end
     if lang == "en" then
         return string.format("%s<%s>%s</%s>",
-            offset, element, htmlEscape(str), element)
+            offset, element, str, element)
     else
         return string.format('%s<%s xml:lang="%s">%s</%s>',
-            offset, element, lang, htmlEscape(str), element)
+            offset, element, lang, str, element)
     end
 end
 
@@ -242,7 +242,7 @@ local function genAppstream()
         _.changeLang(lang)
         translated = _(metadata.summary)
         if orig ~= translated or lang == "en" then
-            table.insert(t, tag("summary", lang, translated, 2))
+            table.insert(t, tag("summary", lang, htmlEscape(translated), 2))
         end
     end
     table.insert(t, '  <description>')
@@ -253,7 +253,7 @@ local function genAppstream()
             _.changeLang(lang)
             translated = _(v)
             if orig ~= translated or lang == "en" then
-                table.insert(t, tag("p", lang, translated, 4))
+                table.insert(t, tag("p", lang, htmlEscape(translated), 4))
             end
         end
     end
@@ -265,7 +265,7 @@ local function genAppstream()
             _.changeLang(lang)
             translated = _(v)
             if orig ~= translated or lang == "en" then
-                table.insert(t, tag("li", lang, translated, 6))
+                table.insert(t, tag("li", lang, htmlEscape(translated), 6))
             end
         end
     end
@@ -286,7 +286,7 @@ local function genAppstream()
                 _.changeLang(lang)
                 translated = _(v.caption)
                 if orig ~= translated or lang == "en" then
-                    table.insert(t, tag("caption", lang, translated, 6))
+                    table.insert(t, tag("caption", lang, htmlEscape(translated), 6))
                 end
             end
         end
@@ -302,7 +302,7 @@ local function genAppstream()
             _.changeLang(lang)
             translated = _(v)
             if orig ~= translated or lang == "en" then
-                table.insert(t, tag("keyword", lang, translated, 4))
+                table.insert(t, tag("keyword", lang, htmlEscape(translated), 4))
             end
         end
     end
@@ -317,7 +317,7 @@ local function genAppstream()
             _.changeLang(lang)
             translated = _(v)
             if orig ~= translated or lang == "en" then
-                table.insert(t, tag("p", lang, translated, 8))
+                table.insert(t, tag("p", lang, htmlEscape(translated), 8))
             end
         end
     end
