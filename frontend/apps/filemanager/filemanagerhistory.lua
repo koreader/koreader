@@ -70,8 +70,14 @@ function FileManagerHistory:updateItemTable()
     local item_table = {}
     for _, v in ipairs(require("readhistory").hist) do
         if self:isItemMatch(v) then
-            v.mandatory_dim = (self.is_frozen and v.status == "complete") and true or nil
-            table.insert(item_table, v)
+            local item = util.tableDeepCopy(v)
+            if item.select_enabled and ReadCollection:isFileInCollections(item.file) then
+                item.mandatory = "☆ " .. item.mandatory
+            end
+            if self.is_frozen and item.status == "complete" then
+                item.mandatory_dim = true
+            end
+            table.insert(item_table, item)
         end
         if self.statuses_fetched then
             self.count[v.status] = self.count[v.status] + 1
@@ -150,6 +156,9 @@ function FileManagerHistory:onMenuHold(item)
         self._manager:updateItemTable()
         self._manager.files_updated = true -- sidecar folder may be created/deleted
     end
+    local function update_callback()
+        self._manager:updateItemTable()
+    end
     local is_currently_opened = file == (self.ui.document and self.ui.document.file)
 
     local buttons = {}
@@ -178,7 +187,7 @@ function FileManagerHistory:onMenuHold(item)
     end
     table.insert(buttons, {
         filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_update_callback, is_currently_opened),
-        self._manager.ui.collections:genAddToCollectionButton(file, close_dialog_callback, nil, item.dim),
+        self._manager.ui.collections:genAddToCollectionButton(file, close_dialog_callback, update_callback, item.dim),
     })
     table.insert(buttons, {
         {

@@ -293,7 +293,7 @@ function FileManager:setupLayout()
                 table.insert(buttons, {}) -- separator
                 table.insert(buttons, {
                     filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_refresh_callback),
-                    file_manager.collections:genAddToCollectionButton(file, close_dialog_callback),
+                    file_manager.collections:genAddToCollectionButton(file, close_dialog_callback, refresh_callback),
                 })
             end
             table.insert(buttons, {

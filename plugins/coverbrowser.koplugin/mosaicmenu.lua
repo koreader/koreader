@@ -14,8 +14,9 @@ local IconWidget = require("ui/widget/iconwidget")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
-local ProgressWidget = require("ui/widget/progresswidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
+local ProgressWidget = require("ui/widget/progresswidget")
+local ReadCollection = require("readcollection")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
@@ -37,13 +38,14 @@ local BookInfoManager = require("bookinfomanager")
 
 -- We will show a rotated dogear at bottom right corner of cover widget for
 -- opened files (the dogear will make it look like a "used book")
--- The ImageWidget Will be created when we know the available height (and
+-- The ImageWidget will be created when we know the available height (and
 -- recreated if height changes)
-local corner_mark_size = -1
+local corner_mark_size
 local corner_mark
 local reading_mark
 local abandoned_mark
 local complete_mark
+local collection_mark
 local progress_widget
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
@@ -89,10 +91,9 @@ function ItemShortCutIcon:init()
     }
 end
 
-
 -- We may find a better algorithm, or just a set of
 -- nice looking combinations of 3 sizes to iterate thru
--- The rendering of the TextBoxWidget we're doing below
+-- the rendering of the TextBoxWidget we're doing below
 -- with decreasing font sizes till it fits is quite expensive.
 
 local FakeCover = FrameContainer:extend{
@@ -349,8 +350,6 @@ local MosaicMenuItem = InputContainer:extend{
     text = nil,
     show_parent = nil,
     dimen = nil,
-    shortcut = nil,
-    shortcut_style = "square",
     _underline_container = nil,
     do_cover_image = false,
     do_hint_opened = false,
@@ -737,16 +736,35 @@ function MosaicMenuItem:paintTo(bb, x, y)
         self.shortcut_icon:paintTo(bb, x+ix, y+iy)
     end
 
+    -- other paintings are anchored to the sub-widget (cover image)
+    local target =  self[1][1][1]
+
+    if self.entry.order == nil -- File manager, History
+            and ReadCollection:isFileInCollections(self.filepath) then
+        -- top right corner
+        local ix, rect_ix
+        if BD.mirroredUILayout() then
+            ix = math.floor((self.width - target.dimen.w)/2)
+            rect_ix = target.bordersize
+        else
+            ix = self.width - math.ceil((self.width - target.dimen.w)/2) - corner_mark_size
+            rect_ix = 0
+        end
+        local iy = 0
+        local rect_size = corner_mark_size - target.bordersize
+        bb:paintRect(x+ix+rect_ix, y+target.bordersize, rect_size, rect_size, Blitbuffer.COLOR_GRAY)
+        collection_mark:paintTo(bb, x+ix, y+iy)
+    end
+
     if self.do_hint_opened and self.been_opened then
-        -- align it on bottom right corner of sub-widget
-        local target =  self[1][1][1]
+        -- bottom right corner
         local ix
         if BD.mirroredUILayout() then
             ix = math.floor((self.width - target.dimen.w)/2)
         else
-            ix = self.width - math.ceil((self.width - target.dimen.w)/2) - corner_mark:getSize().w
+            ix = self.width - math.ceil((self.width - target.dimen.w)/2) - corner_mark_size
         end
-        local iy = self.height - math.ceil((self.height - target.dimen.h)/2) - corner_mark:getSize().h
+        local iy = self.height - math.ceil((self.height - target.dimen.h)/2) - corner_mark_size
         -- math.ceil() makes it looks better than math.floor()
         if self.status == "abandoned" then
             corner_mark = abandoned_mark
@@ -759,9 +777,8 @@ function MosaicMenuItem:paintTo(bb, x, y)
     end
 
     if self.show_progress_bar then
-        local cover_item = self[1][1][1]
         local progress_widget_margin = math.floor((corner_mark_size - progress_widget.height) / 2)
-        progress_widget.width = cover_item.width - 2*progress_widget_margin
+        progress_widget.width = target.width - 2*progress_widget_margin
         local pos_x = x + math.ceil((self.width - progress_widget.width) / 2)
         if self.do_hint_opened then
             progress_widget.width = progress_widget.width - corner_mark_size
@@ -769,7 +786,7 @@ function MosaicMenuItem:paintTo(bb, x, y)
                 pos_x = pos_x + corner_mark_size
             end
         end
-        local pos_y = y + self.height - math.ceil((self.height - cover_item.height) / 2) - corner_mark_size + progress_widget_margin
+        local pos_y = y + self.height - math.ceil((self.height - target.height) / 2) - corner_mark_size + progress_widget_margin
         if self.status == "abandoned" then
             progress_widget.fillcolor = Blitbuffer.COLOR_GRAY_6
         else
@@ -782,7 +799,6 @@ function MosaicMenuItem:paintTo(bb, x, y)
     -- to which we paint a small indicator if this book has a description
     if self.has_description and not BookInfoManager:getSetting("no_hint_description") then
         -- On book's right (for similarity to ListMenuItem)
-        local target =  self[1][1][1]
         local d_w = Screen:scaleBySize(3)
         local d_h = math.ceil(target.dimen.h / 8)
         -- Paint it directly relative to target.dimen.x/y which has been computed at this point
@@ -907,7 +923,15 @@ function MosaicMenu:_recalculateDimen()
             width = corner_mark_size,
             height = corner_mark_size,
         }
-        corner_mark = reading_mark
+        if collection_mark then
+            collection_mark:free()
+        end
+        collection_mark = IconWidget:new{
+            icon = "star.white",
+            width = corner_mark_size,
+            height = corner_mark_size,
+            alpha = true,
+        }
     end
 
     -- Create or replace progress_widget if needed
