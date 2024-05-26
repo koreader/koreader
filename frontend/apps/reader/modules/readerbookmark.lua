@@ -888,7 +888,7 @@ function ReaderBookmark:updateBookmarkList(item_table, item_number)
         if self.show_edited_only then
             subtitle = _("Filter: edited highlighted text")
         elseif self.show_drawer_only then
-            subtitle = _("Highlight style: ") .. self.ui.highlight:getHighlightStyleString(self.show_drawer_only):lower()
+            subtitle = _("Highlight style:") .. " " .. self.ui.highlight:getHighlightStyleString(self.show_drawer_only):lower()
         elseif self.match_table then
             if self.match_table.search_str then
                 subtitle = T(_("Query: %1"), self.match_table.search_str)
@@ -900,7 +900,7 @@ function ReaderBookmark:updateBookmarkList(item_table, item_number)
                     end
                 end
                 table.sort(types)
-                subtitle = #types > 0 and _("Bookmark type: ") .. table.concat(types, ", ")
+                subtitle = #types > 0 and _("Bookmark type:") .. " " .. table.concat(types, ", ")
             end
         else
             subtitle = ""
