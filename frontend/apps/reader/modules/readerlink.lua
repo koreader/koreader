@@ -233,7 +233,7 @@ end
 function ReaderLink:onGesture() end
 
 function ReaderLink:registerKeyEvents()
-    if Device:hasKeys() and not Device:hasFiveWay() then
+    if Device:hasKeys() and not Device:hasScreenKB() then
         self.key_events = {
             SelectNextPageLink = {
                 { "Tab" },
@@ -252,7 +252,7 @@ function ReaderLink:registerKeyEvents()
             -- when G_reader_settings:readSetting("back_in_reader") == "previous_location"
         }
     end
-    if Device:hasFiveWay() then
+    if Device:hasScreenKB() then
         self.key_events.GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" }
         if Device:hasKeyboard() then
             self.key_events.AddCurrentLocationToStack = { { "Shift", "Down" } }

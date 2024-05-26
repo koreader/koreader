@@ -66,7 +66,7 @@ function ReaderBookmark:onGesture() end
 function ReaderBookmark:registerKeyEvents()
     if Device:hasKeyboard() then
         self.key_events.ShowBookmark = { { "B" } }
-    elseif Device:hasFiveWay() then
+    elseif Device:hasScreenKB() then
         self.key_events.ShowBookmark = { { "ScreenKB", "Left" } }
         self.key_events.ToggleBookmark = { { "ScreenKB", "Right" } }
     end

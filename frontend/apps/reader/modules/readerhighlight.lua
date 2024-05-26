@@ -251,7 +251,7 @@ function ReaderHighlight:registerKeyEvents()
         end
     elseif Device:hasDPad() and Device:useDPadAsActionKeys() then
         local QUICK_INDICATOR_MOVE = true
-        if Device:hasFiveWay() then
+        if Device:hasScreenKB() then
             self.key_events.QuickUpHighlightIndicator    = { { "ScreenKB", "Up" },    event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICATOR_MOVE} }
             self.key_events.QuickDownHighlightIndicator  = { { "ScreenKB", "Down" },  event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICATOR_MOVE} }
             self.key_events.QuickLeftHighlightIndicator  = { { "ScreenKB", "Left" },  event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICATOR_MOVE} }
