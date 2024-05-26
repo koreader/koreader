@@ -151,7 +151,7 @@ function ReaderRolling:registerKeyEvents()
             args = -1,
         }
     end
-    if Device:hasFiveWay() then
+    if Device:hasDPad() and Device:useDPadAsActionKeys() then
         self.key_events.GotoNextChapter = {
             { "Right" },
             event = "GotoNextChapter",
