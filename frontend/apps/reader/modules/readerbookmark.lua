@@ -900,7 +900,7 @@ function ReaderBookmark:updateBookmarkList(item_table, item_number)
                     end
                 end
                 table.sort(types)
-                subtitle = #types > 0 and _("Bookmark type: ") .. table.concat(types, ", ")
+                subtitle = #types > 0 and _("Bookmark type:") .. " " .. table.concat(types, ", ")
             end
         else
             subtitle = ""
