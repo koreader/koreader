@@ -60,10 +60,10 @@ end
 function ReaderToc:onGesture() end
 
 function ReaderToc:registerKeyEvents()
-    if Device:hasKeyboard() then
-        self.key_events.ShowToc = { { "T" } }
-    elseif Device:hasFiveWay() then
+    if Device:hasScreenKB() then
         self.key_events.ShowToc = { { "ScreenKB", "Up" } }
+    elseif Device:hasKeyboard() then
+        self.key_events.ShowToc = { { "T" } }
     end
 end
 

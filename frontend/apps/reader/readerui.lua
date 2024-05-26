@@ -523,7 +523,10 @@ function ReaderUI:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events.Home = { { "Home" } }
         self.key_events.Reload = { { "F5" } }
-        if Device:hasFiveWay() then
+        if Device:hasDPad() and Device:useDPadAsActionKeys() then
+            self.key_events.KeyContentSelection = { { { "Up", "Down" } }, event = "StartHighlightIndicator" }
+        end
+        if Device:hasScreenKB() or Device:hasSymKey() then
             if Device:hasKeyboard() then
                 self.key_events.KeyToggleWifi = { { "Shift", "Home" }, event = "ToggleWifi" }
                 self.key_events.OpenLastDoc = { { "Shift", "Back" } }

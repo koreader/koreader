@@ -233,26 +233,7 @@ end
 function ReaderLink:onGesture() end
 
 function ReaderLink:registerKeyEvents()
-    if Device:hasKeys() and not Device:hasFiveWay() then
-        self.key_events = {
-            SelectNextPageLink = {
-                { "Tab" },
-                event = "SelectNextPageLink",
-            },
-            SelectPrevPageLink = {
-                { "Shift", "Tab" },
-                { "Sym", "Tab" }, -- Shift or Sym + Tab
-                event = "SelectPrevPageLink",
-            },
-            GotoSelectedPageLink = {
-                { "Press" },
-                event = "GotoSelectedPageLink",
-            },
-            -- "Back" is handled by ReaderBack, which will call our onGoBackLink()
-            -- when G_reader_settings:readSetting("back_in_reader") == "previous_location"
-        }
-    end
-    if Device:hasFiveWay() then
+    if Device:hasScreenKB() or Device:hasSymKey() then
         self.key_events.GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" }
         if Device:hasKeyboard() then
             self.key_events.AddCurrentLocationToStack = { { "Shift", "Down" } }
@@ -263,6 +244,23 @@ function ReaderLink:registerKeyEvents()
             self.key_events.SelectNextPageLink = { { "ScreenKB", "LPgFwd" }, event = "SelectNextPageLink" }
             self.key_events.SelectPrevPageLink = { { "ScreenKB", "LPgBack" }, event = "SelectPrevPageLink" }
         end
+    elseif Device:hasKeys() then
+        self.key_events = {
+            SelectNextPageLink = {
+                { "Tab" },
+                event = "SelectNextPageLink",
+            },
+            SelectPrevPageLink = {
+                { "Shift", "Tab" },
+                event = "SelectPrevPageLink",
+            },
+            GotoSelectedPageLink = {
+                { "Press" },
+                event = "GotoSelectedPageLink",
+            },
+            -- "Back" is handled by ReaderBack, which will call our onGoBackLink()
+            -- when G_reader_settings:readSetting("back_in_reader") == "previous_location"
+        }
     end
 end
 

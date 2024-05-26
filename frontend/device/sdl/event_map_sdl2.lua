@@ -61,7 +61,7 @@ return {
     [1073741893] = "F12", -- F[12]
 
     [1073742049] = "Shift", -- left shift
-    [1073742053] = "Sym", -- right shift
+    [1073742053] = os.getenv("DISABLE_TOUCH") == "1" and "Sym" or "Shift", -- right shift
     [1073742050] = "Alt", -- left alt
     [1073742054] = "AA", -- right alt key
     [1073741925] = "ContextMenu", -- Context menu key

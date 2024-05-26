@@ -139,7 +139,7 @@ function Screenshoter:registerKeyEvents()
             { "Alt", "Shift", "G" }, -- same as stock Kindle firmware
             event = "KeyPressShoot",
         }
-    elseif Device:hasFiveWay() then
+    elseif Device:hasScreenKB() then
         -- kindle 4 case: same as stock firmware.
         self.key_events.KeyPressShoot = {
             { "ScreenKB", "Menu" },
