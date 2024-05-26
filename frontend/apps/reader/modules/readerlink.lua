@@ -241,7 +241,6 @@ function ReaderLink:registerKeyEvents()
             },
             SelectPrevPageLink = {
                 { "Shift", "Tab" },
-                { "Sym", "Tab" }, -- Shift or Sym + Tab
                 event = "SelectPrevPageLink",
             },
             GotoSelectedPageLink = {
