@@ -857,6 +857,10 @@ function FileManager:pasteFileFromClipboard(file)
     local dest_path = BaseUtil.realpath(file or self.file_chooser.path)
     dest_path = isFile(dest_path) and dest_path:match("(.*/)") or dest_path
     local dest_file = BaseUtil.joinPath(dest_path, orig_name)
+    if orig_file == dest_file or orig_file == dest_path then -- do not paste to itself
+        self.clipboard = nil
+        return
+    end
     local is_file = isFile(orig_file)
 
     local function doPaste()
@@ -948,19 +952,23 @@ function FileManager:pasteSelectedFiles(overwrite)
     for orig_file in pairs(self.selected_files) do
         local orig_name = BaseUtil.basename(orig_file)
         local dest_file = BaseUtil.joinPath(dest_path, orig_name)
-        local ok
-        local dest_mode = lfs.attributes(dest_file, "mode")
-        if not dest_mode or (dest_mode == "file" and overwrite) then
-            if self.cutfile then
-                ok = self:moveFile(orig_file, dest_path)
-            else
-                ok = self:copyRecursive(orig_file, dest_path)
-            end
-        end
-        if ok then
-            DocSettings.updateLocation(orig_file, dest_file, not self.cutfile)
-            ok_files[orig_file] = true
+        if BaseUtil.realpath(orig_file) == dest_file then -- do not paste to itself
             self.selected_files[orig_file] = nil
+        else
+            local ok
+            local dest_mode = lfs.attributes(dest_file, "mode")
+            if not dest_mode or (dest_mode == "file" and overwrite) then
+                if self.cutfile then
+                    ok = self:moveFile(orig_file, dest_path)
+                else
+                    ok = self:copyRecursive(orig_file, dest_path)
+                end
+            end
+            if ok then
+                DocSettings.updateLocation(orig_file, dest_file, not self.cutfile)
+                ok_files[orig_file] = true
+                self.selected_files[orig_file] = nil
+            end
         end
     end
     local skipped_nb = util.tableSize(self.selected_files)
