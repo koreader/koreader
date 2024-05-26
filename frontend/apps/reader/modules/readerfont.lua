@@ -142,7 +142,6 @@ function ReaderFont:onGesture() end
 
 function ReaderFont:registerKeyEvents()
     if Device:hasKeyboard() then
-        self.key_events.ShowFontMenu = { { "F" } }
         if not (Device:hasScreenKB() or Device:hasSymKey()) then
             -- add shortcut for keyboard
             self.key_events.IncreaseSize = {
@@ -194,34 +193,6 @@ function ReaderFont:onReadSettings(config)
     table.insert(self.ui.postInitCallback, function()
         self.ui:handleEvent(Event:new("UpdatePos"))
     end)
-end
-
-function ReaderFont:onShowFontMenu()
-    -- build menu widget
-    local main_menu = Menu:new{
-        title = self.font_menu_title,
-        item_table = self.face_table,
-        width = Screen:getWidth() - 100,
-        height = math.floor(Screen:getHeight() * 0.5),
-        single_line = true,
-        items_per_page = 8,
-        items_font_size = Menu.getItemFontSize(8),
-    }
-    -- build container
-    local menu_container = CenterContainer:new{
-        dimen = Screen:getSize(),
-        main_menu,
-    }
-    main_menu.close_callback = function()
-        UIManager:close(menu_container)
-    end
-    -- show menu
-
-    main_menu.show_parent = menu_container
-
-    UIManager:show(menu_container)
-
-    return true
 end
 
 --[[
