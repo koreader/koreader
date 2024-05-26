@@ -141,7 +141,7 @@ end
 function ReaderFont:onGesture() end
 
 function ReaderFont:registerKeyEvents()
-    if Device:hasKeyboard() then
+    if Device:hasKeyboard() and not (Device:hasDPad() and Device:useDPadAsActionKeys()) then
         -- add shortcut for keyboard
         self.key_events = {
             ShowFontMenu = { { "F" } },
