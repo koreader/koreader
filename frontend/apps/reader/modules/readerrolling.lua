@@ -116,7 +116,7 @@ end
 function ReaderRolling:onGesture() end
 
 function ReaderRolling:registerKeyEvents()
-    if Device:hasScreenKB() then
+    if Device:hasScreenKB() or Device:hasSymKey() then
         self.key_events.GotoNextView = {
             { { "RPgFwd", "LPgFwd" } },
             event = "GotoViewRel",
@@ -174,7 +174,7 @@ function ReaderRolling:registerKeyEvents()
             args = {0,  1},
         }
     end
-    if Device:hasScreenKB() and not Device:hasKeyboard() then
+    if Device:hasScreenKB() then
         self.key_events.MoveUp = {
             { "ScreenKB", "RPgBack" },
             event = "Panning",

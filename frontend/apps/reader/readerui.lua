@@ -526,7 +526,7 @@ function ReaderUI:registerKeyEvents()
         if Device:hasDPad() and Device:useDPadAsActionKeys() then
             self.key_events.KeyContentSelection = { { { "Up", "Down" } }, event = "StartHighlightIndicator" }
         end
-        if Device:hasScreenKB() then
+        if Device:hasScreenKB() or Device:hasSymKey() then
             if Device:hasKeyboard() then
                 self.key_events.KeyToggleWifi = { { "Shift", "Home" }, event = "ToggleWifi" }
                 self.key_events.OpenLastDoc = { { "Shift", "Back" } }

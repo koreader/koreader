@@ -143,7 +143,7 @@ function ReaderFont:onGesture() end
 function ReaderFont:registerKeyEvents()
     if Device:hasKeyboard() then
         self.key_events.ShowFontMenu = { { "F" } }
-        if not Device:hasScreenKB() then
+        if not (Device:hasScreenKB() or Device:hasSymKey()) then
             -- add shortcut for keyboard
             self.key_events.IncreaseSize = {
                 { "Shift", Input.group.PgFwd },
