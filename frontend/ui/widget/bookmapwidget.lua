@@ -632,13 +632,17 @@ function BookMapWidget:init()
     self.covers_fullscreen = true -- hint for UIManager:_repaint()
 
     if Device:hasKeys() then
-        self.key_events = {
-            Close = { { Input.group.Back } },
-            ScrollRowUp = { { "Up" } },
-            ScrollRowDown = { { "Down" } },
-            ScrollPageUp = { { Input.group.PgBack } },
-            ScrollPageDown = { { Input.group.PgFwd } },
-        }
+        self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.ShowMenu = { { "Menu" } }
+        self.key_events.ScrollPageUp = { { Input.group.PgBack } }
+        self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
+        if Device:hasKeyboard() then
+            self.key_events.ScrollRowUp = { { "Shift", "Up" } }
+            self.key_events.ScrollRowDown = { { "Shift", "Down" } }
+        elseif Device:hasScreenKB() then
+            self.key_events.ScrollRowUp = { { "ScreenKB", "Up" } }
+            self.key_events.ScrollRowDown = { { "ScreenKB", "Down" } }
+        end
     end
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -1202,6 +1206,7 @@ function BookMapWidget:showMenu()
         }},
         {{
             text = _("Page browser on tap"),
+            enabled_func = function() return Device:isTouchDevice() end,
             checked_func = function()
                 return G_reader_settings:nilOrTrue("book_map_tap_to_page_browser")
             end,
@@ -1341,6 +1346,11 @@ function BookMapWidget:showMenu()
     }
     UIManager:show(button_dialog)
 end
+
+function BookMapWidget:onShowMenu()
+    self:showMenu()
+end
+
 function BookMapWidget:showAbout()
     local text = _([[
 Book map displays an overview of the book content.
