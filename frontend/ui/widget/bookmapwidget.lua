@@ -1199,6 +1199,7 @@ function BookMapWidget:showMenu()
         }},
         {{
             text = _("Available gestures"),
+            enabled_func = function() return Device:isTouchDevice() end,
             align = "left",
             callback = function()
                 self:showGestures()
