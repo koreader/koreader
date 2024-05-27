@@ -1989,12 +1989,7 @@ function VocabBuilder:addToMainMenu(menu_items)
     menu_items.vocabbuilder = {
         text = _("Vocabulary builder"),
         callback = function()
-            self.widget = VocabularyBuilderWidget:new{
-                title = _("Vocabulary builder"),
-                show_parent = self,
-                ui = self.ui
-            }
-            UIManager:show(self.widget)
+            self:onShowVocabBuilder()
         end
     }
 end
@@ -2028,6 +2023,15 @@ end
 function VocabBuilder:onDispatcherRegisterActions()
     Dispatcher:registerAction("show_vocab_builder",
         {category="none", event="ShowVocabBuilder", title=_("Open vocabulary builder"), general=true, separator=true})
+end
+
+function VocabBuilder:onShowVocabBuilder()
+    self.widget = VocabularyBuilderWidget:new{
+        title = _("Vocabulary builder"),
+        show_parent = self,
+        ui = self.ui
+    }
+    UIManager:show(self.widget)
 end
 
 -- Event sent by readerdictionary "WordLookedUp"
