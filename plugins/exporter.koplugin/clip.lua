@@ -243,7 +243,7 @@ function MyClipping:parseAnnotations(annotations, book)
                 page    = item.pageno,
                 time    = self:getTime(item.datetime),
                 text    = self:getText(item.text),
-                note    = self:getText(item.note),
+                note    = item.note and self:getText(item.note),
                 chapter = item.chapter,
                 drawer  = item.drawer,
             }
