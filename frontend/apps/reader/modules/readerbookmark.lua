@@ -66,6 +66,7 @@ function ReaderBookmark:onGesture() end
 function ReaderBookmark:registerKeyEvents()
     if Device:hasKeyboard() then
         self.key_events.ShowBookmark = { { "B" } }
+        self.key_events.ToggleBookmark = { { "Shift", "Right" } }
     elseif Device:hasScreenKB() then
         self.key_events.ShowBookmark = { { "ScreenKB", "Left" } }
         self.key_events.ToggleBookmark = { { "ScreenKB", "Right" } }
@@ -102,7 +103,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
             self:onShowBookmark()
         end,
     }
-    if not Device:isTouchDevice() then
+    if not Device:isTouchDevice() and not ( Device:hasScreenKB() or Device:hasSymKey() ) then
         menu_items.toggle_bookmark = {
             text_func = function()
                 return self:isPageBookmarked() and _("Remove bookmark for current page") or _("Bookmark current page")
