@@ -104,7 +104,7 @@ function ReadwiseExporter:createHighlights(booknotes)
                 author = booknotes.author ~= "" and booknotes.author:gsub("\n", ", ") or nil, -- optional author
                 source_type = "koreader",
                 category = "books",
-                note = clipping.note,
+                note = clipping.note ~= "" and clipping.note or nil,
                 location = clipping.page,
                 location_type = "order",
                 highlighted_at = os.date("!%Y-%m-%dT%TZ", clipping.time),
