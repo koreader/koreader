@@ -954,6 +954,7 @@ function MosaicMenu:_updateItemsBuildUI()
     -- Build our grid
     local cur_row = nil
     local idx_offset = (self.page - 1) * self.perpage
+    local line_layout = {}
     for idx = 1, self.perpage do
         local index = idx_offset + idx
         local entry = self.item_table[index]
@@ -967,6 +968,10 @@ function MosaicMenu:_updateItemsBuildUI()
         end
 
         if idx % self.nb_cols == 1 then -- new row
+            if idx > 1 then
+                table.insert(self.layout, line_layout)
+            end
+            line_layout = {}
             table.insert(self.item_group, VerticalSpan:new{ width = self.item_margin })
             cur_row = HorizontalGroup:new{}
             -- Have items on the possibly non-fully filled last row aligned to the left
@@ -999,13 +1004,14 @@ function MosaicMenu:_updateItemsBuildUI()
         table.insert(cur_row, HorizontalSpan:new({ width = self.item_margin }))
 
         -- this is for focus manager
-        table.insert(self.layout, {item_tmp})
+        table.insert(line_layout, item_tmp)
 
         if not item_tmp.bookinfo_found and not item_tmp.is_directory and not item_tmp.file_deleted then
             -- Register this item for update
             table.insert(self.items_to_update, item_tmp)
         end
     end
+    table.insert(self.layout, line_layout)
     table.insert(self.item_group, VerticalSpan:new{ width = self.item_margin }) -- bottom padding
 end
 
