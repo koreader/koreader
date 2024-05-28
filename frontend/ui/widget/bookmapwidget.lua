@@ -1199,7 +1199,6 @@ function BookMapWidget:showMenu()
         }},
         {{
             text = _("Available gestures"),
-            enabled_func = function() return Device:isTouchDevice() end,
             align = "left",
             callback = function()
                 self:showGestures()
@@ -1229,7 +1228,7 @@ function BookMapWidget:showMenu()
             end,
         }},
         not self.overview_mode and {{
-            text = _("Switch current/initial views"),
+            text = _("Switch current/initial view"),
             align = "left",
             enabled_func = function() return self.toc_depth > 0 end,
             callback = function()
@@ -1275,7 +1274,7 @@ function BookMapWidget:showMenu()
         },
         not self.overview_mode and {
             {
-                text = _("Page slot width"),
+                text = _("Bar width"),
                 callback = function() end,
                 align = "left",
                 -- Below, minus increases page per row and plus decreases it.
@@ -1354,11 +1353,9 @@ end
 
 function BookMapWidget:showAbout()
     local text = _([[
-Book map displays an overview of the book content.
+The book map provides a summary of the book's content, showing chapters and pages visually. If statistics are on, black bars represent pages already read (gray for pages read in the current session), with varying heights based on reading time. 
 
-If statistics are enabled, black bars are shown for already read pages (gray for pages read in the current reading session). Their heights vary depending on the time spent reading the page.
-Chapters are shown above the pages they encompass.
-Under the pages, these indicators may be shown:
+Map Legends:
 ▲ current page
 ❶ ❷ … previous locations
 ▒ highlighted text
@@ -1368,17 +1365,24 @@ Under the pages, these indicators may be shown:
 
     if self.overview_mode then
         text = text .. "\n\n" .. _([[
-In overview mode, the book map is always in grid mode and made to fit on a single screen. Chapter levels can be changed for the most comfortable overview.]])
+When in overview mode, the book map is always displayed in grid mode to fit on one screen. The chapter levels can be easily adjusted for the most convenient overview experience.]])
     else
         text = text .. "\n\n" .. _([[
-On a newly opened book, the book map will start in grid mode showing all chapter levels, fitting on a single screen, to give the best initial overview of the book's content.]])
+When you first open a book, the book map will begin in grid mode, displaying all chapter levels on one screen for a comprehensive overview of the book's content.]])
     end
     UIManager:show(InfoMessage:new{ text = text })
 end
 
 function BookMapWidget:showGestures()
     local text
-    if self.overview_mode then
+    if not Device:isTouchDevice() then
+        text = _([[
+Use settings in this menu to change the level of chapters to include in the book map, the view type (grid or flat) and the width of page slots.
+
+Use "ScreenKB/Shift" + "Up/Down" to scroll or use the page turn buttons to move at a faster rate.
+
+Press back to exit the book map.]])
+    elseif self.overview_mode then
         text = _([[
 Tap on a location in the book to browse thumbnails of the pages there.
 
