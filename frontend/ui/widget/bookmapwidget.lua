@@ -1274,7 +1274,7 @@ function BookMapWidget:showMenu()
         },
         not self.overview_mode and {
             {
-                text = _("Bar width"),
+                text = _("Page-bar width"),
                 callback = function() end,
                 align = "left",
                 -- Below, minus increases page per row and plus decreases it.
