@@ -21,7 +21,7 @@ local _ = require("gettext")
 local ReaderThumbnail = WidgetContainer:extend{}
 
 function ReaderThumbnail:init()
-    if not Device:isTouchDevice() and not useDPadAsActionKeys() then
+    if not Device:isTouchDevice() and not Device:useDPadAsActionKeys() then
         -- The BookMap and PageBrowser widgets depend too much on gestures,
         -- making them work with not enough keys on Non-Touch would be hard and very limited, so
         -- just don't make them available.
@@ -77,7 +77,7 @@ function ReaderThumbnail:addToMainMenu(menu_items)
         end,
     }
     -- PageBrowser still needs some work before we can let it run on non-touch devices with useDPadAsActionKeys
-    if useDPadAsActionKeys() then return end
+    if Device:useDPadAsActionKeys() then return end
     menu_items.page_browser = {
         text = _("Page browser"),
         callback = function()
