@@ -133,6 +133,9 @@ jobs:
         if: steps.build-restore.outputs.cache-hit != 'true'
         run: make base
 
+      - name: Dump binaries runtime path & dependencies
+        run: make bindeps
+
       # }}}
 
       # Clean / save caches. {{{
