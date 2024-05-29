@@ -54,7 +54,7 @@ end
 
 -- this is the max file size we attempt to decode using json. For larger
 -- files we want to attempt to manually parse the file to avoid OOM errors
-local MAX_JSON_FILESIZE = 30 * 1000 * 1000
+local MAX_JSON_FILESIZE = 30
 
 --- find calibre files for a given dir
 local function findCalibreFiles(dir)
