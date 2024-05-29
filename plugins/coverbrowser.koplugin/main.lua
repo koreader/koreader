@@ -48,6 +48,14 @@ local series_mode = nil -- defaults to not display series
 
 local CoverBrowser = WidgetContainer:extend{
     name = "coverbrowser",
+    modes = {
+        { _("Classic (filename only)") },
+        { _("Mosaic with cover images"), "mosaic_image" },
+        { _("Mosaic with text covers"), "mosaic_text" },
+        { _("Detailed list with cover images and metadata"), "list_image_meta" },
+        { _("Detailed list with metadata, no images"), "list_only_meta" },
+        { _("Detailed list with cover images and filenames"), "list_image_filename" },
+    },
 }
 
 function CoverBrowser:init()
@@ -81,16 +89,8 @@ function CoverBrowser:init()
 end
 
 function CoverBrowser:addToMainMenu(menu_items)
-    local modes = {
-        { _("Classic (filename only)") },
-        { _("Mosaic with cover images"), "mosaic_image" },
-        { _("Mosaic with text covers"), "mosaic_text" },
-        { _("Detailed list with cover images and metadata"), "list_image_meta" },
-        { _("Detailed list with metadata, no images"), "list_only_meta" },
-        { _("Detailed list with cover images and filenames"), "list_image_filename" },
-    }
     local sub_item_table, history_sub_item_table, collection_sub_item_table = {}, {}, {}
-    for i, v in ipairs(modes) do
+    for i, v in ipairs(self.modes) do
         local text, mode = unpack(v)
         sub_item_table[i] = {
             text = text,
@@ -98,11 +98,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                 return mode == filemanager_display_mode
             end,
             callback = function()
-                self:setupFileManagerDisplayMode(mode)
-                if BookInfoManager:getSetting("unified_display_mode") then
-                    self:setupHistoryDisplayMode(mode)
-                    self:setupCollectionDisplayMode(mode)
-                end
+                self:setDisplayMode(mode)
             end,
         }
         history_sub_item_table[i] = {
@@ -124,7 +120,7 @@ function CoverBrowser:addToMainMenu(menu_items)
             end,
         }
     end
-    sub_item_table[#modes].separator = true
+    sub_item_table[#self.modes].separator = true
     table.insert(sub_item_table, {
         text = _("Use this mode everywhere"),
         checked_func = function()
@@ -540,6 +536,14 @@ function CoverBrowser:refreshFileManagerInstance(cleanup, post_init)
     end
 end
 
+function CoverBrowser:setDisplayMode(display_mode)
+    self:setupFileManagerDisplayMode(display_mode)
+    if BookInfoManager:getSetting("unified_display_mode") then
+        self:setupHistoryDisplayMode(display_mode)
+        self:setupCollectionDisplayMode(display_mode)
+    end
+end
+
 function CoverBrowser:setupFileManagerDisplayMode(display_mode)
     if not DISPLAY_MODES[display_mode] then
         display_mode = nil -- unknow mode, fallback to classic
@@ -749,7 +753,6 @@ local function _FileManagerCollections_updateItemTable(self)
     -- And do now what the original does
     _FileManagerCollection_updateItemTable_orig(self)
 end
-
 
 function CoverBrowser:setupCollectionDisplayMode(display_mode)
     if not DISPLAY_MODES[display_mode] then
