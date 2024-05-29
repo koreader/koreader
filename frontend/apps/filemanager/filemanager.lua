@@ -1575,4 +1575,16 @@ function FileManager:onSetSortBy(mode)
     return true
 end
 
+function FileManager:onSetReverseSorting(toggle)
+    G_reader_settings:saveSetting("reverse_collate", toggle or nil)
+    self.file_chooser:refreshPath()
+    return true
+end
+
+function FileManager:onSetMixedSorting(toggle)
+    G_reader_settings:saveSetting("collate_mixed", toggle or nil)
+    self.file_chooser:refreshPath()
+    return true
+end
+
 return FileManager
