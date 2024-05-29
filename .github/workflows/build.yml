@@ -103,8 +103,8 @@ jobs:
         run: |
           packages=(
             nasm binutils coreutils libtool autoconf automake cmake make
-            makedepend sdl2 lua@5.1 luarocks gettext pkg-config wget
-            gnu-getopt grep bison p7zip ninja
+            sdl2 lua@5.1 luarocks gettext pkg-config wget
+            gnu-getopt grep p7zip ninja
           )
           # Lua 5.1 is disabled, so we need to work around that:
           # - fetch all packages
@@ -119,7 +119,6 @@ jobs:
       - name: Update PATH
         run: >
           printf '%s\n'
-          "$(brew --prefix)/opt/bison/bin"
           "$(brew --prefix)/opt/gettext/bin"
           "$(brew --prefix)/opt/gnu-getopt/bin"
           "$(brew --prefix)/opt/grep/libexec/gnubin"
