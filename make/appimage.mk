@@ -33,4 +33,4 @@ endif
 		ARCH=x86_64 "$$OLDPWD/$(APPIMAGETOOL)" --appimage-extract-and-run koreader && \
 		mv *.AppImage ../../koreader-$(DIST)-$(MACHINE)-$(VERSION).AppImage
 
-.PHONY: update
+PHONY += update

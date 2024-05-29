@@ -30,4 +30,4 @@ update: all
 		tar --hard-dereference -I"gzip --rsyncable" -cah --no-recursion -f ../$(KOBO_PACKAGE_OTA) \
 		-T koreader/ota/package.index
 
-.PHONY: update
+PHONY += update

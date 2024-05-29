@@ -40,4 +40,4 @@ update: all
 		tar --hard-dereference -I"gzip --rsyncable" -cah --no-recursion -f ../../$(PB_PACKAGE_OTA) \
 		-T koreader/ota/package.index
 
-.PHONY: update
+PHONY += update

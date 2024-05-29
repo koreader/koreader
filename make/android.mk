@@ -64,4 +64,4 @@ update: all
 	cp $(ANDROID_LAUNCHER_DIR)/bin/NativeActivity.apk \
 		koreader-android-$(ANDROID_ARCH)$(KODEDUG_SUFFIX)-$(VERSION).apk
 
-.PHONY: androiddev update
+PHONY += androiddev update

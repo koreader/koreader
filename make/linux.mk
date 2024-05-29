@@ -41,4 +41,4 @@ update: all
 
 	rm -rf $(INSTALL_DIR)/linux
 
-.PHONY: update
+PHONY += update

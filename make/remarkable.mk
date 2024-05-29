@@ -29,4 +29,4 @@ update: all
 	        tar -I"gzip --rsyncable" -cah --no-recursion -f ../$(REMARKABLE_PACKAGE_OTA) \
 	        -T koreader/ota/package.index
 
-.PHONY: update
+PHONY += update
