@@ -32,6 +32,7 @@ local CreOptions = require("ui/data/creoptions")
 local KoptOptions = require("ui/data/koptoptions")
 local Device = require("device")
 local Event = require("ui/event")
+local FileManager = require("apps/filemanager/filemanager")
 local Notification = require("ui/widget/notification")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
@@ -121,6 +122,8 @@ local settingsList = {
     ----
 
     -- File browser
+    set_display_mode = {category="string", event="SetDisplayMode", title=_("Set display mode"), args_func=FileManager.getDisplayModeActions, filemanager=true},
+    set_sort_by = {category="string", event="SetSortBy", title=_("Sort by"), args_func=FileManager.getSortByActions, filemanager=true, separator=true},
     folder_up = {category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
     show_plus_menu = {category="none", event="ShowPlusMenu", title=_("Show plus menu"), filemanager=true},
     toggle_select_mode = {category="none", event="ToggleSelectMode", title=_("Toggle select mode"), filemanager=true},
@@ -343,6 +346,9 @@ local dispatcher_menu_order = {
     ----
 
     -- File browser
+    "set_display_mode",
+    "set_sort_by",
+    ----
     "folder_up",
     "show_plus_menu",
     "toggle_select_mode",
