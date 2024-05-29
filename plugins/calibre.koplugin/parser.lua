@@ -2,9 +2,9 @@
 
 local lj = require("lunajson")
 
-local last_key = nil
+local field = ""
 local wanted = false
-local wanted_struct = false
+local wanted_array = false
 
 local result = {}
 local t = {}
@@ -58,7 +58,7 @@ local used_fields = {
 local function isField(s)
    for _, v in ipairs(all_fields) do
       if s == v then
-         last_key = v
+         field = v
          return true
       end
    end
@@ -75,9 +75,9 @@ local function isRequiredField(s)
 end
 
 local function isArrayField()
-   return last_key == "authors" or
-      last_key == "tags" or
-      last_key == "series"
+   return field == "authors" or
+      field == "tags" or
+      field == "series"
 end
 
 local function append(s)
@@ -87,11 +87,13 @@ local function append(s)
          wanted = true
       end
    else
-      if wanted_struct then
-         table.insert(t[last_key], s)
+      if wanted_array then
+         table.insert(t[field], s)
       elseif wanted then
-         t[last_key] = s
-         if last_key == all_fields[#all_fields] then
+         t[field] = s
+         -- this ugly hack assumes fields are always in the same order.
+         -- C.f https://www.mobileread.com/forums/showthread.php?t=361567
+         if field == all_fields[#all_fields] then
             table.insert(result, t)
             t = {}
          end
@@ -102,13 +104,13 @@ end
 local saxtbl = {
    startarray = function()
       if isArrayField() then
-         wanted_struct = true
-         t[last_key] = {}
+         wanted_array = true
+         t[field] = {}
       end
    end,
    endarray = function()
       if isArrayField() then
-         wanted_struct = false
+         wanted_array = false
       end
    end,
    key = function(s)
@@ -127,6 +129,7 @@ local saxtbl = {
       append()
    end,
 }
+
 local parser = {}
 function parser.parseFile(file)
     result = {}
