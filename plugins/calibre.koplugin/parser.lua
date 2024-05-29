@@ -89,7 +89,7 @@ local function append(s)
    else
       if wanted_struct then
          table.insert(t[last_key], s)
-      elseif wanted and s and last_key then
+      elseif wanted then
          t[last_key] = s
          if last_key == all_fields[#all_fields] then
             table.insert(result, t)
@@ -129,8 +129,9 @@ local saxtbl = {
 }
 local parser = {}
 function parser.parseFile(file)
-    local parser = lj.newfileparser(file, saxtbl)
-    parser.run()
+    result = {}
+    local p = lj.newfileparser(file, saxtbl)
+    p.run()
     return result
 end
 
