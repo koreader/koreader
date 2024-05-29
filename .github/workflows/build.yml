@@ -143,7 +143,7 @@ jobs:
         run: |
           set -x
           # Trim the build directory.
-          rm -rf base/build/thirdparty
+          rm -rf base/build/{cmake,staging,thirdparty}
           ccache --cleanup >/dev/null
           ccache --show-stats --verbose
 
