@@ -1,90 +1,137 @@
 -- A parser for metadata.calibre
-local util = require("util")
 
--- removes leading and closing characters and converts hex-unicodes
-local function replaceHexChars(s, n, j)
-    local l = string.len(s)
-    if string.sub(s, l, l) == "\"" then
-        s = string.sub(s, n, string.len(s)-1)
-    else
-        s = string.sub(s, n, string.len(s)-j)
-    end
-    s = string.gsub(s, "\\u([a-f0-9][a-f0-9][a-f0-9][a-f0-9])", function(w)
-        return util.unicodeCodepointToUtf8(tonumber(w, 16))
-    end)
-    return s
+local lj = require("lunajson")
+
+local last_key = nil
+local wanted = false
+local wanted_struct = false
+
+local result = {}
+local t = {}
+
+local all_fields = {
+   "publisher",
+   "title_sort",
+   "author_sort",
+   "link_maps",
+   "identifiers",
+   "mobi-asin",
+   "cover",
+   "db_id",
+   "book_producer",
+   "pubdate",
+   "series",
+   "thumbnail",
+   "lpath",
+   "author_sort_map",
+   "application_id",
+   "series_index",
+   "authors",
+   "comments",
+   "rating",
+   "rights",
+   "publication_type",
+   "mime",
+   "languages",
+   "size",
+   "tags",
+   "timestamp",
+   "uuid",
+   "last_modified",
+   "user_categories",
+   "user_metadata",
+   "title",
+}
+
+local used_fields = {
+   "uuid",
+   "lpath",
+   "last_modified",
+   "size",
+   "title",
+   "authors",
+   "tags",
+   "series",
+   "series_index"
+}
+
+local function isField(s)
+   for _, v in ipairs(all_fields) do
+      if s == v then
+         last_key = v
+         return true
+      end
+   end
+   return false
 end
 
--- a couple of string helper functions for dealing with raw json strings
-local function isEqual(str, key)
-    if str:sub(1, key:len() + 6) == string.format("    \"%s\"", key) then
-        return true
-    end
-    return false
+local function isRequiredField(s)
+   for _, v in ipairs(used_fields) do
+      if s == v then
+         return true
+      end
+   end
+   return false
 end
 
-local function getValue(str, key)
-    if str == string.format("    \"%s\": null, ", key) then
-        return nil
-    else
-        return replaceHexChars(str, key:len() + 10, key == "series_index" and 2 or 3)
-    end
+local function isArrayField()
+   return last_key == "authors" or
+      last_key == "tags" or
+      last_key == "series"
 end
 
-local jsonStr = getmetatable("")
-jsonStr.__index["equals"] = isEqual
-jsonStr.__index["value"] = getValue
+local function append(s)
+   if isField(s) then
+      wanted = false
+      if isRequiredField(s) then
+         wanted = true
+      end
+   else
+      if wanted_struct then
+         table.insert(t[last_key], s)
+      elseif wanted and s and last_key then
+         t[last_key] = s
+         if last_key == all_fields[#all_fields] then
+            table.insert(result, t)
+            t = {}
+         end
+      end
+   end
+end
 
-
+local saxtbl = {
+   startarray = function()
+      if isArrayField() then
+         wanted_struct = true
+         t[last_key] = {}
+      end
+   end,
+   endarray = function()
+      if isArrayField() then
+         wanted_struct = false
+      end
+   end,
+   key = function(s)
+      append(s)
+   end,
+   string = function(s)
+      append(s)
+   end,
+   number = function(n)
+      append(n)
+   end,
+   boolean = function(b)
+      append(b)
+   end,
+   null = function()
+      append()
+   end,
+}
 local parser = {}
-
--- read metadata from file, line by line, and keep just the data we need
 function parser.parseFile(file)
-    assert(type(file) == "string", "wrong type (expected a string")
-    local f, err = io.open(file, "rb")
-    if not f then
-        return nil, string.format("error parsing %s: %s", file, err)
-    end
-    f:close()
-    local add = function(t, line)
-        if type(t) ~= "table" or type(line) ~= "string" then
-            return {}
-        end
-        line = replaceHexChars(line, 8, 3)
-        table.insert(t, #t + 1, line)
-        return t
-    end
-    local books, book = {}, {}
-    local is_author, is_tag = false, false
-    for line in io.lines(file) do
-        if line == "  }, " or line == "  }" then
-            if type(book) == "table" then
-                table.insert(books, #books + 1, book)
-            end
-            book = {}
-        elseif line == "    \"authors\": [" then
-            is_author = true
-        elseif line == "    \"tags\": [" then
-            is_tag = true
-        elseif line == "    ], " or line == "    ]" then
-            is_author, is_tag = false, false
-        else
-            for _, key in ipairs({"title", "uuid", "lpath", "size",
-                "last_modified", "series", "series_index"})
-            do
-                if line:equals(key) then
-                    book[key] = line:value(key)
-                    break
-                end
-            end
-        end
-        if is_author then
-            book.authors = add(book.authors, line)
-        elseif is_tag then
-            book.tags = add(book.tags, line)
-        end
-    end
-    return books
+    local parser = lj.newfileparser(file, saxtbl)
+    parser.run()
+    return result
 end
 
 return parser
