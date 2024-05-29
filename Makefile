@@ -1,3 +1,5 @@
+PHONY = all android-ndk android-sdk base clean coverage doc fetchthirdparty po pot static-check test testfront
+
 # koreader-base directory
 KOR_BASE?=base
 
@@ -69,7 +71,7 @@ ifeq ($(abspath $(OUTPUT_DIR)),$(OUTPUT_DIR))
 else
   ABSOLUTE_OUTPUT_DIR = $(KOR_BASE)/$(OUTPUT_DIR)
 endif
-OUTPUT_DIR_ARTIFACTS = $(ABSOLUTE_OUTPUT_DIR)/!(cache|history|thirdparty)
+OUTPUT_DIR_ARTIFACTS = $(ABSOLUTE_OUTPUT_DIR)/!(cache|cmake|history|staging|thirdparty)
 
 all: base
 	install -d $(INSTALL_DIR)/koreader
@@ -217,4 +219,10 @@ static-check:
 doc:
 	make -C doc
 
-.PHONY: all android-ndk android-sdk base clean doc test
+.NOTPARALLEL:
+.PHONY: $(PHONY)
+
+LEFTOVERS = $(filter-out $(PHONY) $(INSTALL_DIR)/%,$(MAKECMDGOALS))
+.PHONY: $(LEFTOVERS)
+$(LEFTOVERS):
+	$(MAKE) -C $(KOR_BASE) $@

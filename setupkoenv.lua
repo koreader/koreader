@@ -1,9 +1,9 @@
 -- set search path for 'require()'
 package.path =
-    "common/?.lua;rocks/share/lua/5.1/?.lua;frontend/?.lua;" ..
+    "common/?.lua;frontend/?.lua;" ..
     package.path
 package.cpath =
-    "common/?.so;common/?.dll;/usr/lib/lua/?.so;rocks/lib/lua/5.1/?.so;" ..
+    "common/?.so;common/?.dll;/usr/lib/lua/?.so;" ..
     package.cpath
 
 -- set search path for 'ffi.load()'
@@ -20,7 +20,7 @@ ffi.load = function(lib, global)
     local loaded, re = pcall(ffi_load, lib)
     if loaded then return re end
 
-    local lib_path = package.searchpath(lib, "./lib?.so;./libs/lib?.so;./libs/lib?.so.1;./rocks/lib/lua/5.1/lib?.so")
+    local lib_path = package.searchpath(lib, "./lib?.so;./libs/lib?.so;./libs/lib?.so.1")
 
     if not lib_path then
         io.write("ffi.load (warning): ", re, "\n")

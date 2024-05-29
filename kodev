@@ -804,7 +804,7 @@ TARGET:
                     # We don't want to stack valgrind/catchsegv on top of GDB ;).
                     if [[ "${gdb}" == gdb* ]]; then
                         # The standard CLI needs a little hand holding to properly pass arguments to the process it'll monitor
-                        KOREADER_COMMAND="${gdb} --args ./luajit reader.lua ${KOREADER_ARGS} ${args}"
+                        KOREADER_COMMAND="${gdb} --directory "${CURDIR}/base" --args ./luajit reader.lua ${KOREADER_ARGS} ${args}"
                     else
                         KOREADER_COMMAND="${gdb} ./luajit reader.lua ${KOREADER_ARGS} ${args}"
                     fi

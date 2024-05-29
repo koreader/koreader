@@ -11,4 +11,4 @@ update: all
 	rm -rfv "$(INSTALL_DIR)/bundle/Contents/MainMenu.xib"
 	$(CURDIR)/platform/mac/do_mac_bundle.sh $(INSTALL_DIR)
 
-.PHONY: update
+PHONY += update

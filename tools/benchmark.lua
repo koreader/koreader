@@ -2,8 +2,8 @@
 -- usage: ./luajit tools/benchmark.lua test/sample.pdf
 
 require "defaults"
-package.path = "common/?.lua;rocks/share/lua/5.1/?.lua;frontend/?.lua;" .. package.path
-package.cpath = "common/?.so;common/?.dll;/usr/lib/lua/?.so;rocks/lib/lua/5.1/?.so;" .. package.cpath
+package.path = "common/?.lua;frontend/?.lua;" .. package.path
+package.cpath = "common/?.so;common/?.dll;/usr/lib/lua/?.so;" .. package.cpath
 
 local DataStorage = require("datastorage")
 --G_reader_settings = require("docsettings"):open(".reader")

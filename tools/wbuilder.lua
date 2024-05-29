@@ -2,8 +2,8 @@
 -- usage: ./luajit tools/wtest.lua
 
 print(package.path)
-package.path = "common/?.lua;rocks/share/lua/5.1/?.lua;frontend/?.lua;" .. package.path
-package.cpath = "common/?.so;common/?.dll;/usr/lib/lua/?.so;rocks/lib/lua/5.1/?.so;" .. package.cpath
+package.path = "common/?.lua;frontend/?.lua;" .. package.path
+package.cpath = "common/?.so;common/?.dll;/usr/lib/lua/?.so;" .. package.cpath
 
 -- Load default settings
 G_defaults = require("luadefaults"):open()
