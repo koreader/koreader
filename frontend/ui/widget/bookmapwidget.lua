@@ -633,7 +633,7 @@ function BookMapWidget:init()
 
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
-        self.key_events.ShowMenu = { { "Menu" } }
+        self.key_events.ShowBookMapMenu = { { "Menu" } }
         self.key_events.ScrollPageUp = { { Input.group.PgBack } }
         self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
         if Device:hasKeyboard() then
@@ -1347,7 +1347,7 @@ function BookMapWidget:showMenu()
     UIManager:show(button_dialog)
 end
 
-function BookMapWidget:onShowMenu()
+function BookMapWidget: onShowBookMapMenu()
     self:showMenu()
 end
 
