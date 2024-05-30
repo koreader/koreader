@@ -92,7 +92,7 @@ function ButtonDialog:init()
     if self.dismissable then
         if Device:hasFewKeys() then
             self.key_events.Close = { { { "Back", "Left", "Menu" } } }
-        else
+        elseif not Device:isTouchDevice() then
             self.key_events.Close = { { { "Back", "Menu" } } }
         end
         if Device:isTouchDevice() then
