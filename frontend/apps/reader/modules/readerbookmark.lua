@@ -188,7 +188,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Auto-reduce item font size to fit more text"),
+                text = _("Shrink item font size to fit more text"),
                 enabled_func = function()
                     return not self.items_max_lines
                 end,
