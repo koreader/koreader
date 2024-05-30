@@ -94,6 +94,8 @@ function ButtonDialog:init()
             self.key_events.Close = { { { "Back", "Left", "Menu" } } }
         elseif not Device:isTouchDevice() then
             self.key_events.Close = { { { "Back", "Menu" } } }
+        else
+            self.key_events.Close = { { Device.input.group.Back } }
         end
         if Device:isTouchDevice() then
             self.ges_events.TapClose = {
