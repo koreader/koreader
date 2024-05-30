@@ -21,6 +21,7 @@ local _ = require("gettext")
 local ReaderThumbnail = WidgetContainer:extend{}
 
 function ReaderThumbnail:init()
+    self:registerKeyEvents()
     if not Device:isTouchDevice() and not Device:useDPadAsActionKeys() then
         -- The BookMap and PageBrowser widgets depend too much on gestures,
         -- making them work with not enough keys on Non-Touch would be hard and very limited, so
@@ -59,6 +60,16 @@ function ReaderThumbnail:init()
         else
             schedule_step = 0
             self:ensureTileGeneration()
+        end
+    end
+end
+
+function ReaderThumbnail:registerKeyEvents()
+    if Device:useDPadAsActionKeys() then
+        if Device:hasKeyboard() then
+            self.key_events.ShowBookMap = { { "Shift", "Down" } }
+        else
+            self.key_events.ShowBookMap = { { "ScreenKB", "Down" } }
         end
     end
 end
