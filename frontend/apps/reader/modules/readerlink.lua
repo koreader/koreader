@@ -236,11 +236,11 @@ function ReaderLink:registerKeyEvents()
     if Device:hasScreenKB() or Device:hasSymKey() then
         self.key_events.GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" }
         if Device:hasKeyboard() then
-            self.key_events.AddCurrentLocationToStack = { { "Shift", "Press" }, args = true, }
+            self.key_events.onAddCustomCurrentLocationToStack = { { "Shift", "Press" }, args = true, }
             self.key_events.SelectNextPageLink = { { "Shift", "LPgFwd" }, event = "SelectNextPageLink" }
             self.key_events.SelectPrevPageLink = { { "Shift", "LPgBack" }, event = "SelectPrevPageLink" }
         else
-            self.key_events.AddCurrentLocationToStack = { { "ScreenKB", "Press" }, args = true, }
+            self.key_events.onAddCustomCurrentLocationToStack = { { "ScreenKB", "Press" }, args = true, }
             self.key_events.SelectNextPageLink = { { "ScreenKB", "LPgFwd" }, event = "SelectNextPageLink" }
             self.key_events.SelectPrevPageLink = { { "ScreenKB", "LPgBack" }, event = "SelectPrevPageLink" }
         end
@@ -716,7 +716,17 @@ end
 function ReaderLink:onAddCurrentLocationToStack(show_notification)
     self:addCurrentLocationToStack()
     if show_notification then
-        Notification:notify(_("Current location added to history."), Notification.SOURCE_ALWAYS_SHOW)
+        Notification:notify(_("Current location added to history."))
+    end
+end
+
+-- to be used on shortcuts for non-touch devices
+function ReaderLink:onAddCustomCurrentLocationToStack(show_notification)
+    self:addCurrentLocationToStack()
+    if show_notification then
+        Notification:setNotifySource(Notification.SOURCE_ALWAYS_SHOW)
+        Notification:notify(_("Current location added to history."))
+        Notification:resetNotifySource()
     end
 end
 
