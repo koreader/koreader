@@ -636,12 +636,15 @@ function BookMapWidget:init()
         self.key_events.ShowBookMapMenu = { { "Menu" } }
         self.key_events.ScrollPageUp = { { Input.group.PgBack } }
         self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
-        if Device:hasKeyboard() then
+        if Device:hasSymKey() then
             self.key_events.ScrollRowUp = { { "Shift", "Up" } }
             self.key_events.ScrollRowDown = { { "Shift", "Down" } }
         elseif Device:hasScreenKB() then
             self.key_events.ScrollRowUp = { { "ScreenKB", "Up" } }
             self.key_events.ScrollRowDown = { { "ScreenKB", "Down" } }
+        else
+            self.key_events.ScrollRowUp = { { "Up" } }
+            self.key_events.ScrollRowDown = { { "Down" } }
         end
     end
     if Device:isTouchDevice() then
@@ -706,7 +709,7 @@ function BookMapWidget:init()
         fullscreen = true,
         title = title,
         left_icon = "appbar.menu",
-        left_icon_tap_callback = function() self:showMenu() end,
+        left_icon_tap_callback = function() self:onShowBookMapMenu() end,
         left_icon_hold_callback = not self.overview_mode and function()
             self:toggleDefaultSettings() -- toggle between user settings and default view
         end,
@@ -1185,7 +1188,7 @@ function BookMapWidget:update()
 end
 
 
-function BookMapWidget:showMenu()
+function BookMapWidget:onShowBookMapMenu()
     local button_dialog
     -- Width of our -/+ buttons, so it looks fine with Button's default font size of 20
     local plus_minus_width = Screen:scaleBySize(60)
@@ -1345,10 +1348,6 @@ function BookMapWidget:showMenu()
         end,
     }
     UIManager:show(button_dialog)
-end
-
-function BookMapWidget: onShowBookMapMenu()
-    self:showMenu()
 end
 
 function BookMapWidget:showAbout()
