@@ -90,9 +90,10 @@ function ButtonDialog:init()
         self.width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * self.width_factor)
     end
     if self.dismissable then
-        if Device:hasKeys() then
-            local close_keys = Device:hasFewKeys() and { "Back", "Left" } or Device.input.group.Back
-            self.key_events.Close = { { close_keys } }
+        if Device:hasFewKeys() then
+            self.key_events.Close = { { { "Back", "Left", "Menu" } } }
+        else
+            self.key_events.Close = { { { "Back", "Menu" } } }
         end
         if Device:isTouchDevice() then
             self.ges_events.TapClose = {
