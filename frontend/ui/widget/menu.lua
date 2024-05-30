@@ -611,6 +611,9 @@ local Menu = FocusManager:extend{
     items_mandatory_font_size = nil,
     multilines_show_more_text = nil,
         -- Global settings or default values will be used if not provided
+    -- Setting this to a number enables flexible height of items
+    -- and sets the maximum number of lines in an item, longer items are truncated
+    items_max_lines = nil,
 
     -- set this to true to not paint as popup menu
     is_borderless = false,
@@ -1220,7 +1223,7 @@ function Menu:setupItemHeights()
         available_width = available_width - line_height - Size.span.horizontal_default
     end
 
-    self.page_items = {} -- items in all pages
+    self.page_items = {} -- list of all 'items in the page' indexed by page
     local items = {} -- items in a page
     local items_height = 0 -- of all items in a page
     for i = 1, #self.item_table do
