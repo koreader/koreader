@@ -754,7 +754,7 @@ TARGET:
                 # there's no adb run so we do this…
                 adb shell monkey -p org.koreader.launcher${KODEBUG_SUFFIX/-/.} -c android.intent.category.LAUNCHER 1
                 assert_ret_zero $?
-                adb logcat KOReader:V luajit-launcher:V dlopen:V "*:E"
+                adb logcat KOReader:V k2pdfopt:V luajit-launcher:V dlopen:V "*:E"
             } || echo "Failed to find adb in PATH to interact with Android device."
             ;;
         *)
