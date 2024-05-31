@@ -717,12 +717,14 @@ function ReaderLink:onAddCurrentLocationToStack(show_notification)
     self:addCurrentLocationToStack()
     if show_notification then
         Notification:notify(_("Current location added to history."))
+        return true
     end
 end
 
 function ReaderLink:onAddCurrentLocationToStackNonTouch()
     self:addCurrentLocationToStack()
     Notification:notify(_("Current location added to history."), Notification.SOURCE_ALWAYS_SHOW)
+    return true
 end
 
 -- Remember current location so we can go back to it
