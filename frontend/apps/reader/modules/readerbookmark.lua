@@ -104,17 +104,17 @@ function ReaderBookmark:addToMainMenu(menu_items)
         }
     end
     menu_items.bookmarks_settings = {
-        text = _("Annotation list"),
+        text = _("Bookmarks"),
         sub_item_table = {
             {
                 text_func = function()
-                    return T(_("Maximum number of lines in item: %1"), self.items_max_lines or _("disabled"))
+                    return T(_("Max lines per bookmark: %1"), self.items_max_lines or _("disabled"))
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local default_value = 4
                     local spin_wodget = SpinWidget:new{
-                        title_text = _("Maximum lines in item"),
+                        title_text = _("Max lines per bookmark"),
                         info_text = _("Set maximum number of lines to enable flexible item heights."),
                         value = self.items_max_lines or default_value,
                         value_min = 1,
@@ -139,7 +139,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
             {
                 text_func = function()
                     local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page")
-                    return T(_("Items per page: %1"), curr_perpage)
+                    return T(_("Bookmarks per page: %1"), curr_perpage)
                 end,
                 enabled_func = function()
                     return not self.items_max_lines
@@ -148,7 +148,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 callback = function(touchmenu_instance)
                     local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page")
                     local items = SpinWidget:new{
-                        title_text = _("Items per page"),
+                        title_text = _("Bookmarks per page"),
                         value = curr_perpage,
                         value_min = 6,
                         value_max = 24,
@@ -166,7 +166,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                     local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page")
                     local default_font_size = Menu.getItemFontSize(curr_perpage)
                     local curr_font_size = G_reader_settings:readSetting("bookmarks_items_font_size", default_font_size)
-                    return T(_("Item font size: %1"), curr_font_size)
+                    return T(_("Bookmark font size: %1"), curr_font_size)
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
@@ -174,7 +174,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                     local default_font_size = Menu.getItemFontSize(curr_perpage)
                     local curr_font_size = G_reader_settings:readSetting("bookmarks_items_font_size", default_font_size)
                     local items_font = SpinWidget:new{
-                        title_text = _("Item font size"),
+                        title_text = _("Bookmark font size"),
                         value = curr_font_size,
                         value_min = 10,
                         value_max = 72,
@@ -188,7 +188,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Shrink item font size to fit more text"),
+                text = _("Shrink bookmark font size to fit more text"),
                 enabled_func = function()
                     return not self.items_max_lines
                 end,
