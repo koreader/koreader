@@ -1339,6 +1339,7 @@ function ReaderBookmark:onSearchBookmark()
 
     UIManager:show(input_dialog)
     input_dialog:onShowKeyboard()
+    return true
 end
 
 function ReaderBookmark:filterByEditedText()
