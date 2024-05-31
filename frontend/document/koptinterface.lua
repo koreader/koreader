@@ -23,7 +23,7 @@ local KoptInterface = {
     -- If `$TESSDATA_PREFIX` is set, don't override it: let libk2pdfopt honor it
     -- (which includes checking for data in both `$TESSDATA_PREFIX/tessdata` and
     -- in `$TESSDATA_PREFIX/` on more recent versions).
-    tessocr_data = not os.getenv('TESSDATA_PREFIX') and DataStorage:getDataDir().."/data" or nil,
+    tessocr_data = not os.getenv('TESSDATA_PREFIX') and DataStorage:getDataDir().."/data/tessdata" or nil,
     ocr_lang = "eng",
     ocr_type = 3, -- default 0, for more accuracy use 3
     last_context_size = nil,
