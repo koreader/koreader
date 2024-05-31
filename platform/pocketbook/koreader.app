@@ -78,9 +78,6 @@ ko_update_check() {
 # we're always starting from our working directory
 cd ${KOREADER_DIR} || exit
 
-# export trained OCR data directory
-export TESSDATA_PREFIX="data"
-
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 

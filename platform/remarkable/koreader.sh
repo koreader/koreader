@@ -72,9 +72,6 @@ if [ -n "${fail}" ] && [ "${fail}" -eq 0 ]; then
     exec ./koreader.sh "${@}"
 fi
 
-# export trained OCR data directory
-export TESSDATA_PREFIX="data"
-
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 

@@ -16,9 +16,6 @@ end
 -- path to primary external storage partition
 local path = android.getExternalStoragePath()
 
--- set TESSDATA_PREFIX env var
-C.setenv("TESSDATA_PREFIX", path.."/koreader/data", 1)
-
 -- create fake command-line arguments
 -- luacheck: ignore 121
 if android.isDebuggable() then

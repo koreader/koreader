@@ -7,9 +7,6 @@ KOREADER_DIR="${0%/*}"
 # we're always starting from our working directory
 cd "${KOREADER_DIR}" || exit
 
-# export trained OCR data directory
-export TESSDATA_PREFIX="data"
-
 # export external font directory
 export EXT_FONT_DIR="${HOME}/fonts"
 
