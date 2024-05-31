@@ -285,10 +285,6 @@ if Device:isTouchDevice() then
     }
     common_settings.screen_disable_double_tab = require("ui/elements/screen_disable_double_tap_table")
     common_settings.menu_activate = require("ui/elements/menu_activate")
-    common_settings.keyboard_layout = {
-        text = _("Keyboard"),
-        sub_item_table = require("ui/elements/menu_keyboard_layout"),
-    }
 end
 
 -- NOTE: Allow disabling color if it's mistakenly enabled on a Grayscale screen (after a settings import?)
@@ -713,6 +709,11 @@ common_settings.language = Language:getLangMenuTable()
 
 common_settings.device = {
     text = _("Device"),
+}
+
+common_settings.keyboard_layout = {
+    text = _("Keyboard"),
+    sub_item_table = require("ui/elements/menu_keyboard_layout"),
 }
 
 common_settings.font_ui_fallbacks = require("ui/elements/font_ui_fallbacks")

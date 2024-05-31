@@ -105,6 +105,7 @@ function DictQuickLookup:init()
             ReadPrevResult = { { Input.group.PgBack } },
             ReadNextResult = { { Input.group.PgFwd } },
             Close = { { Input.group.Back } },
+            ShowResultsMenu = { { "Menu" } },
         }
     end
     if Device:isTouchDevice() then
@@ -1326,6 +1327,10 @@ function DictQuickLookup:lookupWikipedia(get_fullpage, word, is_sane, lang)
     end
     -- Keep providing self.word_boxes so new windows keep being positionned to not hide it
     self.ui:handleEvent(Event:new("LookupWikipedia", word, is_sane, self.word_boxes, get_fullpage, lang))
+end
+
+function DictQuickLookup:onShowResultsMenu()
+    return self:showResultsMenu()
 end
 
 function DictQuickLookup:showResultsMenu()
