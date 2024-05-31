@@ -211,18 +211,18 @@ local function _quadpointsFromPboxes(pboxes)
     -- will also need mupdf_h.lua to be evaluated once
     -- but this is guaranteed at this point
     local n = #pboxes
-    local quadpoints = ffi.new("float[?]", 8*n)
+    local quadpoints = ffi.new("fz_quad[?]", n)
     for i=1, n do
         -- The order must be left bottom, right bottom, left top, right top.
         -- https://bugs.ghostscript.com/show_bug.cgi?id=695130
-        quadpoints[8*i-8] = pboxes[i].x
-        quadpoints[8*i-7] = pboxes[i].y + pboxes[i].h
-        quadpoints[8*i-6] = pboxes[i].x + pboxes[i].w
-        quadpoints[8*i-5] = pboxes[i].y + pboxes[i].h
-        quadpoints[8*i-4] = pboxes[i].x
-        quadpoints[8*i-3] = pboxes[i].y
-        quadpoints[8*i-2] = pboxes[i].x + pboxes[i].w
-        quadpoints[8*i-1] = pboxes[i].y
+        quadpoints[i-1].ll.x = pboxes[i].x
+        quadpoints[i-1].ll.y = pboxes[i].y + pboxes[i].h - 1
+        quadpoints[i-1].lr.x = pboxes[i].x + pboxes[i].w - 1
+        quadpoints[i-1].lr.y = pboxes[i].y + pboxes[i].h - 1
+        quadpoints[i-1].ul.x = pboxes[i].x
+        quadpoints[i-1].ul.y = pboxes[i].y
+        quadpoints[i-1].ur.x = pboxes[i].x + pboxes[i].w - 1
+        quadpoints[i-1].ur.y = pboxes[i].y
     end
     return quadpoints, n
 end
@@ -232,10 +232,10 @@ local function _quadpointsToPboxes(quadpoints, n)
     local pboxes = {}
     for i=1, n do
         table.insert(pboxes, {
-            x = quadpoints[8*i-4],
-            y = quadpoints[8*i-3],
-            w = quadpoints[8*i-6] - quadpoints[8*i-4],
-            h = quadpoints[8*i-5] - quadpoints[8*i-3],
+            x = quadpoints[i-1].ul.x,
+            y = quadpoints[i-1].ul.y,
+            w = quadpoints[i-1].lr.x - quadpoints[i-1].ul.x + 1,
+            h = quadpoints[i-1].lr.y - quadpoints[i-1].ul.y + 1,
         })
     end
     return pboxes

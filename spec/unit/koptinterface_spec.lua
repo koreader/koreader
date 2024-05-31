@@ -127,7 +127,7 @@ describe("Koptinterface module", function()
         local word_boxes = Koptinterface:getWordFromPosition(complex_doc, {
             page = 19, x = 320, y = 730,
         })
-        assert.is.same("of", word_boxes.word)
+        assert.is.same("time,", word_boxes.word)
     end)
 
     it("should get link from native position", function()
