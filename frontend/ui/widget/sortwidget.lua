@@ -153,6 +153,7 @@ function SortWidget:init()
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.NextPage = { { Device.input.group.PgFwd } }
         self.key_events.PrevPage = { { Device.input.group.PgBack } }
+        self.key_events.ShowWidgetMenu = { { "Menu" } }
     end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
@@ -273,6 +274,11 @@ function SortWidget:init()
     }
     table.insert(self.layout, {
         self.footer_cancel,
+        self.footer_first_up,
+        self.footer_left,
+        self.footer_page,
+        self.footer_right,
+        self.footer_last_down,
         self.footer_ok,
     })
     local bottom_line = LineWidget:new{
@@ -473,6 +479,10 @@ function SortWidget:onSwipe(arg, ges_ev)
         -- so let it propagate
         return false
     end
+end
+
+function SortWidget:onShowWidgetMenu()
+    self:showMenu()
 end
 
 function SortWidget:showMenu()
