@@ -90,12 +90,15 @@ function ButtonDialog:init()
         self.width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * self.width_factor)
     end
     if self.dismissable then
-        if Device:hasFewKeys() then
-            self.key_events.Close = { { { "Back", "Left", "Menu" } } }
-        elseif not Device:isTouchDevice() then
-            self.key_events.Close = { { { "Back", "Menu" } } }
-        else
-            self.key_events.Close = { { Device.input.group.Back } }
+        if Device:hasKeys() then -- NB! Documentation + not adding unnecessary things to memory.
+            local back_group = util.tableDeepCopy(Device.input.group.Back)
+            if Device:hasFewKeys() then -- with left added
+                table.insert(back_group, "Left")
+                self.key_events.Close = { { back_group } }
+            else -- regular
+                table.insert(back_group, "Menu")
+                self.key_events.Close = { { back_group } }
+            end
         end
         if Device:isTouchDevice() then
             self.ges_events.TapClose = {
