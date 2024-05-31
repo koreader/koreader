@@ -54,10 +54,10 @@ local ScrollableContainer = require("ui/widget/container/scrollablecontainer")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
-local util = require("util")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
+local util = require("util")
 
 local ButtonDialog = InputContainer:extend{
     buttons = nil,
@@ -91,12 +91,12 @@ function ButtonDialog:init()
         self.width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * self.width_factor)
     end
     if self.dismissable then
-        if Device:hasKeys() then -- NB! Documentation + not adding unnecessary things to memory.
+        if Device:hasKeys() then
             local back_group = util.tableDeepCopy(Device.input.group.Back)
-            if Device:hasFewKeys() then -- with left added
+            if Device:hasFewKeys() then
                 table.insert(back_group, "Left")
                 self.key_events.Close = { { back_group } }
-            else -- regular
+            else
                 table.insert(back_group, "Menu")
                 self.key_events.Close = { { back_group } }
             end
