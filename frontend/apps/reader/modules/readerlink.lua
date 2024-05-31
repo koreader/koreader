@@ -834,8 +834,8 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
     end
     logger.dbg("ReaderLink:onGotoLink: External link:", link_url)
 
-    local scheme = link_url:match("^(%w+)://")
-    local is_handled_external_link = scheme and util.arrayContains(self.handledSchemes, scheme)
+    local scheme = link_url:match("^(%w[%w+%-.]*):")
+    local is_handled_external_link = scheme and util.arrayContains(self.handledSchemes, scheme:lower())
     if is_handled_external_link and self:onGoToExternalLink(link_url) then
         return true
     end
