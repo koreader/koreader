@@ -105,7 +105,7 @@ function DictQuickLookup:init()
             ReadPrevResult = { { Input.group.PgBack } },
             ReadNextResult = { { Input.group.PgFwd } },
             Close = { { Input.group.Back } },
-            ShowMenu = { { "Menu" } },
+            ShowResultsMenu = { { "Menu" } },
         }
     end
     if Device:isTouchDevice() then
@@ -1329,7 +1329,7 @@ function DictQuickLookup:lookupWikipedia(get_fullpage, word, is_sane, lang)
     self.ui:handleEvent(Event:new("LookupWikipedia", word, is_sane, self.word_boxes, get_fullpage, lang))
 end
 
-function DictQuickLookup:onShowMenu()
+function DictQuickLookup:onShowResultsMenu()
     return self:showResultsMenu()
 end
 
