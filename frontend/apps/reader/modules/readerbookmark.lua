@@ -24,7 +24,6 @@ local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local ReaderBookmark = InputContainer:extend{
-    bookmarks_items_per_page_default = 14,
     -- mark the type of a bookmark with a symbol + non-expandable space
     display_prefix = {
         highlight = "\u{2592}\u{2002}", -- "medium shade"
@@ -45,8 +44,7 @@ function ReaderBookmark:init()
         -- The Bookmarks items per page and items' font size can now be
         -- configured. Previously, the ones set for the file browser
         -- were used. Initialize them from these ones.
-        local items_per_page = G_reader_settings:readSetting("items_per_page")
-                            or self.bookmarks_items_per_page_default
+        local items_per_page = G_reader_settings:readSetting("items_per_page") or Menu.items_per_page_default
         G_reader_settings:saveSetting("bookmarks_items_per_page", items_per_page)
         local items_font_size = G_reader_settings:readSetting("items_font_size")
         if items_font_size and items_font_size ~= Menu.getItemFontSize(items_per_page) then
@@ -55,6 +53,7 @@ function ReaderBookmark:init()
         end
     end
     self.items_text = G_reader_settings:readSetting("bookmarks_items_text_type", "note")
+    self.items_max_lines = G_reader_settings:readSetting("bookmarks_items_max_lines")
 
     self.ui.menu:registerToMainMenu(self)
     -- NOP our own gesture handling
@@ -75,27 +74,6 @@ end
 
 ReaderBookmark.onPhysicalKeyboardConnected = ReaderBookmark.registerKeyEvents
 
-function ReaderBookmark:genItemTextMenuItem(type, get_string)
-    local text_type = {
-        text = _("highlighted text"),
-        all  = _("highlighted text and note"),
-        note = _("note, or highlighted text"),
-    }
-    if get_string then
-        return text_type[type]
-    end
-    return {
-        text = text_type[type],
-        checked_func = function()
-            return self.items_text == type
-        end,
-        callback = function()
-            self.items_text = type
-            G_reader_settings:saveSetting("bookmarks_items_text_type", type)
-        end,
-    }
-end
-
 function ReaderBookmark:addToMainMenu(menu_items)
     menu_items.bookmarks = {
         text = _("Bookmarks"),
@@ -103,7 +81,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
             self:onShowBookmark()
         end,
     }
-    if not Device:isTouchDevice() and not ( Device:hasScreenKB() or Device:hasSymKey() ) then
+    if not Device:isTouchDevice() and not (Device:hasScreenKB() or Device:hasSymKey()) then
         menu_items.toggle_bookmark = {
             text_func = function()
                 return self:isPageBookmarked() and _("Remove bookmark for current page") or _("Bookmark current page")
@@ -130,22 +108,55 @@ function ReaderBookmark:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text_func = function()
+                    return T(_("Max lines per bookmark: %1"), self.items_max_lines or _("disabled"))
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local default_value = 4
+                    local spin_wodget = SpinWidget:new{
+                        title_text = _("Max lines per bookmark"),
+                        info_text = _("Set maximum number of lines to enable flexible item heights."),
+                        value = self.items_max_lines or default_value,
+                        value_min = 1,
+                        value_max = 10,
+                        default_value = default_value,
+                        ok_always_enabled = true,
+                        callback = function(spin)
+                            G_reader_settings:saveSetting("bookmarks_items_max_lines", spin.value)
+                            self.items_max_lines = spin.value
+                            touchmenu_instance:updateItems()
+                        end,
+                        extra_text = _("Disable"),
+                        extra_callback = function()
+                            G_reader_settings:delSetting("bookmarks_items_max_lines")
+                            self.items_max_lines = nil
+                            touchmenu_instance:updateItems()
+                        end,
+                    }
+                    UIManager:show(spin_wodget)
+                end,
+            },
+            {
+                text_func = function()
                     local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page")
                     return T(_("Bookmarks per page: %1"), curr_perpage)
+                end,
+                enabled_func = function()
+                    return not self.items_max_lines
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page")
                     local items = SpinWidget:new{
+                        title_text = _("Bookmarks per page"),
                         value = curr_perpage,
                         value_min = 6,
                         value_max = 24,
-                        default_value = self.bookmarks_items_per_page_default,
-                        title_text = _("Bookmarks per page"),
+                        default_value = Menu.items_per_page_default,
                         callback = function(spin)
                             G_reader_settings:saveSetting("bookmarks_items_per_page", spin.value)
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end
+                            touchmenu_instance:updateItems()
+                        end,
                     }
                     UIManager:show(items)
                 end,
@@ -163,21 +174,24 @@ function ReaderBookmark:addToMainMenu(menu_items)
                     local default_font_size = Menu.getItemFontSize(curr_perpage)
                     local curr_font_size = G_reader_settings:readSetting("bookmarks_items_font_size", default_font_size)
                     local items_font = SpinWidget:new{
+                        title_text = _("Bookmark font size"),
                         value = curr_font_size,
                         value_min = 10,
                         value_max = 72,
                         default_value = default_font_size,
-                        title_text = _("Bookmark font size"),
                         callback = function(spin)
                             G_reader_settings:saveSetting("bookmarks_items_font_size", spin.value)
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end
+                            touchmenu_instance:updateItems()
+                        end,
                     }
                     UIManager:show(items_font)
                 end,
             },
             {
                 text = _("Shrink bookmark font size to fit more text"),
+                enabled_func = function()
+                    return not self.items_max_lines
+                end,
                 checked_func = function()
                     return G_reader_settings:isTrue("bookmarks_items_multilines_show_more_text")
                 end,
@@ -187,6 +201,16 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 separator = true,
             },
             {
+                text_func = function()
+                    return T(_("Show in items: %1"), self:genShowInItemsMenuItems())
+                end,
+                sub_item_table = {
+                    self:genShowInItemsMenuItems("text"),
+                    self:genShowInItemsMenuItems("all"),
+                    self:genShowInItemsMenuItems("note"),
+                },
+            },
+            {
                 text = _("Show separator between items"),
                 checked_func = function()
                     return G_reader_settings:isTrue("bookmarks_items_show_separator")
@@ -194,17 +218,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 callback = function()
                     G_reader_settings:flipNilOrFalse("bookmarks_items_show_separator")
                 end,
-            },
-            {
-                text_func = function()
-                    local curr_type = G_reader_settings:readSetting("bookmarks_items_text_type", "note")
-                    return T(_("Show in items: %1"), self:genItemTextMenuItem(curr_type, true))
-                end,
-                sub_item_table = {
-                    self:genItemTextMenuItem("text"),
-                    self:genItemTextMenuItem("all"),
-                    self:genItemTextMenuItem("note"),
-                },
+                separator = true,
             },
             {
                 text = _("Sort by largest page number"),
@@ -224,6 +238,28 @@ function ReaderBookmark:addToMainMenu(menu_items)
         end,
         callback = function()
             self:onSearchBookmark()
+        end,
+    }
+end
+
+function ReaderBookmark:genShowInItemsMenuItems(value)
+    local strings = {
+        text = _("highlighted text"),
+        all  = _("highlighted text and note"),
+        note = _("note, or highlighted text"),
+    }
+    if value == nil then
+        value = G_reader_settings:readSetting("bookmarks_items_text_type", "note")
+        return strings[value]
+    end
+    return {
+        text = strings[value],
+        checked_func = function()
+            return self.items_text == value
+        end,
+        callback = function()
+            self.items_text = value
+            G_reader_settings:saveSetting("bookmarks_items_text_type", value)
         end,
     }
 end
@@ -574,13 +610,13 @@ function ReaderBookmark:onShowBookmark()
     }
     local bm_menu = Menu:new{
         title = T(_("Bookmarks (%1)"), #item_table),
-        subtitle = "",
         item_table = item_table,
         is_borderless = true,
         is_popout = false,
         title_bar_fm_style = true,
         items_per_page = items_per_page,
         items_font_size = items_font_size,
+        items_max_lines = self.items_max_lines,
         multilines_show_more_text = multilines_show_more_text,
         line_color = show_separator and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE,
         title_bar_left_icon = "appbar.menu",
@@ -1303,6 +1339,7 @@ function ReaderBookmark:onSearchBookmark()
 
     UIManager:show(input_dialog)
     input_dialog:onShowKeyboard()
+    return true
 end
 
 function ReaderBookmark:filterByEditedText()

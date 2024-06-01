@@ -103,7 +103,7 @@ function MenuItem:init()
 
     local shortcut_icon_dimen
     if self.shortcut then
-        local icon_width = math.floor(self.dimen.h * 4/5)
+        local icon_width = self.entry.shortcut_icon_width or math.floor(self.dimen.h * 4/5)
         shortcut_icon_dimen = Geom:new{
             x = 0,
             y = 0,
@@ -374,7 +374,7 @@ function MenuItem:init()
             text = text,
             face = self.face,
             width = available_width,
-            height = max_item_height,
+            height = self.entry.height and (self.entry.height - 2 * Size.span.vertical_default - self.linesize) or max_item_height,
             height_adjust = true,
             height_overflow_show_ellipsis = true,
             alignment = "left",
@@ -589,13 +589,14 @@ local Menu = FocusManager:extend{
     header_padding = Size.padding.default,
     dimen = nil,
     item_table = nil, -- NOT mandatory (will be empty)
+    item_table_stack = nil,
+
     item_shortcuts = { -- const
         "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
         "A", "S", "D", "F", "G", "H", "J", "K", "L", "Del",
         "Z", "X", "C", "V", "B", "N", "M", ".", "Sym",
     },
-    item_table_stack = nil,
-    is_enable_shortcut = true,
+    is_enable_shortcut = Device:hasKeyboard(),
 
     item_dimen = nil,
     page = 1,
@@ -610,6 +611,9 @@ local Menu = FocusManager:extend{
     items_mandatory_font_size = nil,
     multilines_show_more_text = nil,
         -- Global settings or default values will be used if not provided
+    -- Setting this to a number enables flexible height of items
+    -- and sets the maximum number of lines in an item, longer items are truncated
+    items_max_lines = nil,
 
     -- set this to true to not paint as popup menu
     is_borderless = false,
@@ -628,8 +632,10 @@ local Menu = FocusManager:extend{
 
 function Menu:_recalculateDimen(no_recalculate_dimen)
     local perpage = self.items_per_page or G_reader_settings:readSetting("items_per_page") or self.items_per_page_default
-    if self.perpage ~= perpage then
+    local font_size = self.items_font_size or G_reader_settings:readSetting("items_font_size") or Menu.getItemFontSize(perpage)
+    if self.perpage ~= perpage or self.font_size ~= font_size then
         self.perpage = perpage
+        self.font_size = font_size
         no_recalculate_dimen = false
     end
 
@@ -653,6 +659,10 @@ function Menu:_recalculateDimen(no_recalculate_dimen)
         w = self.inner_dimen.w,
         h = math.floor(self.available_height / perpage),
     }
+
+    if self.items_max_lines then
+        self:setupItemHeights()
+    end
 
     self.page_num = self:getPageNumber(#self.item_table)
     if self.page > self.page_num then
@@ -950,11 +960,6 @@ function Menu:init()
     }
     self.ges_events.Close = self.on_close_ges
 
-    if not Device:hasKeyboard() then
-        -- remove menu item shortcut for K4
-        self.is_enable_shortcut = false
-    end
-
     if Device:hasKeys() then
         -- set up keyboard events
         self.key_events.Close = { { Input.group.Back } }
@@ -1036,17 +1041,21 @@ function Menu:updateItems(select_number, no_recalculate_dimen)
         select_number = 1
     end
 
-    self.font_size = self.items_font_size or G_reader_settings:readSetting("items_font_size")
-                                     or Menu.getItemFontSize(self.perpage)
-    local infont_size = self.items_mandatory_font_size or (self.font_size - 4)
-    local multilines_show_more_text = self.multilines_show_more_text
-    if multilines_show_more_text == nil then
-        multilines_show_more_text = G_reader_settings:isTrue("items_multilines_show_more_text")
+    local items_nb -- number of items in the visible page
+    local idx_offset, multilines_show_more_text
+    if self.items_max_lines then
+        items_nb = #self.page_items[self.page]
+    else
+        items_nb = self.perpage
+        idx_offset = (self.page - 1) * items_nb
+        multilines_show_more_text = self.multilines_show_more_text
+        if multilines_show_more_text == nil then
+            multilines_show_more_text = G_reader_settings:isTrue("items_multilines_show_more_text")
+        end
     end
 
-    local idx_offset = (self.page - 1) * self.perpage
-    for idx = 1, self.perpage do
-        local index = idx_offset + idx
+    for idx = 1, items_nb do
+        local index = self.items_max_lines and self.page_items[self.page][idx] or idx_offset + idx
         local item = self.item_table[index]
         if item == nil then break end
         item.idx = index -- index is valid only for items that have been displayed
@@ -1055,6 +1064,9 @@ function Menu:updateItems(select_number, no_recalculate_dimen)
             item_shortcut = self.item_shortcuts[idx]
             -- give different shortcut_style to keys in different lines of keyboard
             shortcut_style = (idx < 11 or idx > 20) and "square" or "grey_square"
+        end
+        if self.items_max_lines then
+            self.item_dimen.h = item.height
         end
         local item_tmp = MenuItem:new{
             show_parent = self.show_parent,
@@ -1068,7 +1080,7 @@ function Menu:updateItems(select_number, no_recalculate_dimen)
             bold = self.item_table.current == index or item.bold == true,
             dim = item.dim,
             font_size = self.font_size,
-            infont_size = infont_size,
+            infont_size = self.items_mandatory_font_size or (self.font_size - 4),
             dimen = self.item_dimen:copy(),
             shortcut = item_shortcut,
             shortcut_style = shortcut_style,
@@ -1176,7 +1188,71 @@ function Menu:getPageNumber(item_number)
     if #self.item_table == 0 or item_number == 0 then
         return 1
     end
-    return math.ceil(math.min(item_number, #self.item_table) / self.perpage)
+    if self.items_max_lines then
+        for page, items in ipairs(self.page_items) do
+            if item_number <= items[#items] then
+                return page
+            end
+        end
+        return #self.page_items
+    else
+        return math.ceil(math.min(item_number, #self.item_table) / self.perpage)
+    end
+end
+
+function Menu:setupItemHeights()
+    if #self.item_table == 0 then
+        self.page_items = {{}}
+        return
+    end
+
+    local face = Font:getFace("smallinfofont", self.font_size)
+    local line_height = TextBoxWidget:new{
+        text = "A",
+        face = face,
+    }:getSize().h
+    local infont_size = self.items_mandatory_font_size or (self.font_size - 4)
+    local infont_face = Font:getFace("infont", infont_size)
+    local infont_char_width = TextWidget:new{
+        text = "0",
+        face = infont_face,
+        bold = true,
+    }:getSize().w
+    local available_width = self.inner_dimen.w
+    if self.is_enable_shortcut then
+        available_width = available_width - line_height - Size.span.horizontal_default
+    end
+
+    self.page_items = {} -- list of all 'items in the page' indexed by page
+    local items = {} -- items in a page
+    local items_height = 0 -- of all items in a page
+    for i = 1, #self.item_table do
+        local item = self.item_table[i]
+        -- exact item height can be calculated by building the TextBoxWidget for item text,
+        -- but it is slow, so estimate the number of lines by building the TextWidget
+        local item_text_width = TextWidget:new{
+            text = item.text,
+            face = face,
+            bold = item.bold,
+        }:getSize().w
+        local item_available_width = available_width - infont_char_width * (item.mandatory and #item.mandatory or 0)
+        local lines_nb = math.min(math.ceil(item_text_width / item_available_width), self.items_max_lines)
+        item.height = lines_nb * line_height + 2 * Size.span.vertical_default + self.linesize
+        item.shortcut_icon_width = line_height -- letter shortcuts of fixed size (1 line)
+
+        -- put items in pages
+        items_height = items_height + item.height
+        if items_height <= self.available_height then
+            table.insert(items, i)
+        else -- start building next page
+            table.insert(self.page_items, items)
+            items = { i }
+            items_height = item.height
+        end
+        if i == #self.item_table then -- last page
+            table.insert(self.page_items, items)
+        end
+    end
 end
 
 function Menu:onScreenResize(dimen)
