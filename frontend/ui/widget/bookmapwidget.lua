@@ -1332,6 +1332,7 @@ function BookMapWidget:onShowBookMapMenu()
             G_reader_settings:flipNilOrTrue("book_map_tap_to_page_browser")
         end,
     }})
+    end
     -- Remove false buttons from the list if overview_mode
     for i = #buttons, 1, -1 do
         if not buttons[i] then
