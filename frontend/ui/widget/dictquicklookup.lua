@@ -228,7 +228,7 @@ function DictQuickLookup:init()
             if self.is_wiki then
                 self:showWikiResultsMenu()
             else
-                self:showResultsMenu()
+                self:onShowResultsMenu()
             end
         end,
         left_icon_hold_callback = not self.is_wiki and function() self:showResultsAltMenu() end or nil,
@@ -1330,10 +1330,6 @@ function DictQuickLookup:lookupWikipedia(get_fullpage, word, is_sane, lang)
 end
 
 function DictQuickLookup:onShowResultsMenu()
-    return self:showResultsMenu()
-end
-
-function DictQuickLookup:showResultsMenu()
     -- Show one row: "| word | dict |" for each result
     local width = math.floor(self.width * 0.75)
     local right_width = math.floor(width * 0.5)
