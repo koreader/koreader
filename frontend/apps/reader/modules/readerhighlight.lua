@@ -2289,7 +2289,7 @@ function ReaderHighlight:onMoveHighlightIndicator(args)
                 -- quadruple press: 64 single distances, almost move to screen edge
                 if G_reader_settings:nilOrTrue("highlight_non_touch_spedup") then
                     -- user selects whether to use 'constant' or [this] 'sped up' rate (speed-up on by default)
-                    local x_inter = G_reader_settings:readSetting("highlight_non_touch_interval")
+                    local x_inter = G_reader_settings:readSetting("highlight_non_touch_interval", 1)
                     if diff < time.s( x_inter ) then
                         move_distance = self._last_indicator_move_args.distance * 4
                     end
