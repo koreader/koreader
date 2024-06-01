@@ -225,7 +225,7 @@ local sub_item_table = {
     },
 }
 if Device:isTouchDevice() then
-    table.insert(sub_item_table, {
+    table.insert(sub_item_table, 4, {
         text = _("Swipe to input additional characters"),
         checked_func = function()
             return G_reader_settings:nilOrTrue("keyboard_swipes_enabled")
