@@ -525,6 +525,7 @@ function SortWidget:onShowWidgetMenu()
         end,
     }
     UIManager:show(dialog)
+    return true
 end
 
 function SortWidget:sortItems(collate, reverse_collate)
