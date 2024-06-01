@@ -376,7 +376,7 @@ function PdfDocument:register(registry)
     registry:addProvider("xhtml", "application/xhtml+xml", self, 90)
     registry:addProvider("xml", "application/xml", self, 10)
     registry:addProvider("xps", "application/oxps", self, 100)
-    registry:addProvider("xslx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", self, 80)
+    registry:addProvider("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", self, 80)
     registry:addProvider("zip", "application/zip", self, 20)
 
     --- Picture types ---
