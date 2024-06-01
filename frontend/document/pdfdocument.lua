@@ -362,16 +362,21 @@ function PdfDocument:register(registry)
     registry:addProvider("cbt", "application/vnd.comicbook+tar", self, 100)
     registry:addProvider("cbz", "application/vnd.comicbook+zip", self, 100)
     registry:addProvider("cbz", "application/x-cbz", self, 100) -- Alternative mimetype for OPDS.
+    registry:addProvider("cfb", "application/octet-stream", self, 80) -- Compound File Binary, a Microsoft general-purpose file with a file-system-like structure.
+    registry:addProvider("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", self, 80)
     registry:addProvider("epub", "application/epub+zip", self, 50)
     registry:addProvider("epub3", "application/epub+zip", self, 50)
     registry:addProvider("fb2", "application/fb2", self, 80)
     registry:addProvider("htm", "text/html", self, 90)
     registry:addProvider("html", "text/html", self, 90)
     registry:addProvider("pdf", "application/pdf", self, 100)
+    registry:addProvider("pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation", self, 80)
     registry:addProvider("tar", "application/x-tar", self, 10)
+    registry:addProvider("txt", "text/plain", self, 80)
     registry:addProvider("xhtml", "application/xhtml+xml", self, 90)
     registry:addProvider("xml", "application/xml", self, 10)
     registry:addProvider("xps", "application/oxps", self, 100)
+    registry:addProvider("xslx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", self, 80)
     registry:addProvider("zip", "application/zip", self, 20)
 
     --- Picture types ---
