@@ -302,7 +302,7 @@ function SortWidget:init()
         bottom_line_h_padding = padding,
         title = self.title,
         left_icon = not self.sort_disabled and "appbar.menu",
-        left_icon_tap_callback = function() self:showMenu() end,
+        left_icon_tap_callback = function() self:onShowWidgetMenu() end,
         close_callback = function() self:onClose() end,
         show_parent = self,
     }
@@ -482,10 +482,6 @@ function SortWidget:onSwipe(arg, ges_ev)
 end
 
 function SortWidget:onShowWidgetMenu()
-    self:showMenu()
-end
-
-function SortWidget:showMenu()
     local dialog
     local buttons = {
         {{
@@ -529,6 +525,7 @@ function SortWidget:showMenu()
         end,
     }
     UIManager:show(dialog)
+    return true
 end
 
 function SortWidget:sortItems(collate, reverse_collate)

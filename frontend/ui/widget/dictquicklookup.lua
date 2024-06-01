@@ -101,12 +101,10 @@ function DictQuickLookup:init()
     end
     self.image_alt_face = Font:getFace("cfont", font_size_alt)
     if Device:hasKeys() then
-        self.key_events = {
-            ReadPrevResult = { { Input.group.PgBack } },
-            ReadNextResult = { { Input.group.PgFwd } },
-            Close = { { Input.group.Back } },
-            ShowResultsMenu = { { "Menu" } },
-        }
+        self.key_events.ReadPrevResult = { { Input.group.PgBack } }
+        self.key_events.ReadNextResult = { { Input.group.PgFwd } }
+        self.key_events.Close = { { Input.group.Back } }
+        self.key_events.ShowResultsMenu = { { "Menu" } }
     end
     if Device:isTouchDevice() then
         local range = Geom:new{
@@ -228,7 +226,7 @@ function DictQuickLookup:init()
             if self.is_wiki then
                 self:showWikiResultsMenu()
             else
-                self:showResultsMenu()
+                self:onShowResultsMenu()
             end
         end,
         left_icon_hold_callback = not self.is_wiki and function() self:showResultsAltMenu() end or nil,
@@ -1330,10 +1328,6 @@ function DictQuickLookup:lookupWikipedia(get_fullpage, word, is_sane, lang)
 end
 
 function DictQuickLookup:onShowResultsMenu()
-    return self:showResultsMenu()
-end
-
-function DictQuickLookup:showResultsMenu()
     -- Show one row: "| word | dict |" for each result
     local width = math.floor(self.width * 0.75)
     local right_width = math.floor(width * 0.5)
@@ -1392,6 +1386,7 @@ function DictQuickLookup:showResultsMenu()
     button_dialog:setScrolledOffset(self.menu_scrolled_offsets["main"])
     self.menu_opened[button_dialog] = true
     UIManager:show(button_dialog)
+    return true
 end
 
 function DictQuickLookup:showResultsAltMenu()
