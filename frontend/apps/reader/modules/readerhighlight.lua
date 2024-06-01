@@ -2274,7 +2274,7 @@ function ReaderHighlight:onMoveHighlightIndicator(args)
         local quick_move_distance_dx = self.view.visible_area.w * (1/5) -- quick move distance: fifth of visible_area
         local quick_move_distance_dy = self.view.visible_area.h * (1/5)
         -- single move distance, user adjustable, default value (4) capable to move on word with small font size and narrow line height
-        local move_distance = Size.item.height_default / G_reader_settings:readSetting("highlight_non_touch_factor", 4)
+        local move_distance = Size.item.height_default / (G_reader_settings:readSetting("highlight_non_touch_factor") or 4)
         local rect = self._current_indicator_pos:copy()
         if quick_move then
             rect.x = rect.x + quick_move_distance_dx * dx
@@ -2289,7 +2289,7 @@ function ReaderHighlight:onMoveHighlightIndicator(args)
                 -- quadruple press: 64 single distances, almost move to screen edge
                 if G_reader_settings:nilOrTrue("highlight_non_touch_spedup") then
                     -- user selects whether to use 'constant' or [this] 'sped up' rate (speed-up on by default)
-                    local x_inter = G_reader_settings:readSetting("highlight_non_touch_interval", 1)
+                    local x_inter = (G_reader_settings:readSetting("highlight_non_touch_interval") or 1)
                     if diff < time.s( x_inter ) then
                         move_distance = self._last_indicator_move_args.distance * 4
                     end
