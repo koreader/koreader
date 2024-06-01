@@ -14,20 +14,18 @@ jobs:
 
   macos:
 
-    # macos-11, macos-12 & macos-13 are broken at this time being.
-    # https://github.com/koreader/koreader/issues/8686,
-    # https://github.com/koreader/koreader/issues/8686#issuecomment-1172950236
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ['arm64', 'x86_64']
 
-    # Please don't update to newer macOS version unless you can test that the new
-    # action produces working binaries.
-    # 10.15 is no longer supported so we are running 13 just to make sure the build does not break.
-    runs-on: macos-13
+    runs-on: ${{ matrix.platform == 'arm64' && 'macos-14' || 'macos-13' }}
 
     env:
       # Bump number to reset all caches.
       CACHE_EPOCH: '0'
       CLICOLOR_FORCE: '1'
-      MACOSX_DEPLOYMENT_TARGET: '10.15'
+      MACOSX_DEPLOYMENT_TARGET: ${{ matrix.platform == 'arm64' && '11.0' || '10.15' }}
       MAKEFLAGS: 'OUTPUT_DIR=build INSTALL_DIR=install TARGET=macos'
 
     steps:
@@ -59,7 +57,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: base/build
-          key: ${{ env.CACHE_EPOCH }}-${{ runner.os }}-build-${{ hashFiles('base/cache-key') }}
+          key: ${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ runner.arch }}-build-${{ hashFiles('base/cache-key') }}
 
       - name: Restore build cache
         id: ccache-restore
@@ -67,7 +65,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: /Users/runner/Library/Caches/ccache
-          key: ${{ env.CACHE_EPOCH }}-${{ runner.os }}-ccache-${{ hashFiles('base/cache-key') }}
+          key: ${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ runner.arch }}-ccache-${{ hashFiles('base/cache-key') }}
           restore-keys: ${{ env.CACHE_EPOCH }}-${{ runner.os }}-ccache-
 
       - name: Install ccache
@@ -173,7 +171,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: koreader-macos
+          name: koreader-macos-${{ matrix.platform }}
           path: '*.7z'
 
       # }}}
