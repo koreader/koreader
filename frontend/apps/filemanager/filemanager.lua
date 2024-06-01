@@ -1524,4 +1524,67 @@ function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_ca
     end
 end
 
+-- Dispatcher helpers
+
+function FileManager.getDisplayModeActions()
+    local action_names, action_texts = { "classic" }, { _("Classic (filename only)") }
+    local ui = FileManager.instance or require("apps/reader/readerui").instance
+    if ui.coverbrowser then
+        for _, v in ipairs(ui.coverbrowser.modes) do
+            local action_text, action_name = unpack(v)
+            if action_name then -- skip Classic
+                table.insert(action_names, action_name)
+                table.insert(action_texts, action_text)
+            end
+        end
+    end
+    return action_names, action_texts
+end
+
+function FileManager:onSetDisplayMode(mode)
+    if self.coverbrowser then
+        mode = mode ~= "classic" and mode or nil
+        self.coverbrowser:setDisplayMode(mode)
+    end
+    return true
+end
+
+function FileManager.getSortByActions()
+    local collates = {}
+    for k, v in pairs(FileChooser.collates) do
+        table.insert(collates, {
+            name = k,
+            text = v.text,
+            menu_order = v.menu_order,
+        })
+    end
+    table.sort(collates, function(a, b) return a.menu_order < b.menu_order end)
+
+    local action_names, action_texts = {}, {}
+    for _, v in ipairs(collates) do
+        table.insert(action_names, v.name)
+        table.insert(action_texts, v.text)
+    end
+    return action_names, action_texts
+end
+
+function FileManager:onSetSortBy(mode)
+    G_reader_settings:saveSetting("collate", mode)
+    self.file_chooser:clearSortingCache()
+    self.file_chooser:refreshPath()
+    return true
+end
+
+function FileManager:onSetReverseSorting(toggle)
+    G_reader_settings:saveSetting("reverse_collate", toggle or nil)
+    self.file_chooser:refreshPath()
+    return true
+end
+
+function FileManager:onSetMixedSorting(toggle)
+    G_reader_settings:saveSetting("collate_mixed", toggle or nil)
+    self.file_chooser:refreshPath()
+    return true
+end
+
 return FileManager
