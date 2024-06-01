@@ -640,7 +640,7 @@ Except when in two columns mode, where this is limited to showing only the previ
                 if G_reader_settings:readSetting("highlight_non_touch_interval") == 1 then
                     return T(_("Interval to speed-up rate: %1 second"), G_reader_settings:readSetting("highlight_non_touch_interval") or 1)
                 else
-                    return T(_("Interval to speed-up rate: %1 seconds"), G_reader_settings:readSetting("highlight_non_touch_interval"))
+                    return T(_("Interval to speed-up rate: %1 seconds"), G_reader_settings:readSetting("highlight_non_touch_interval") or 1)
                 end
             end,
             enabled_func = function()
