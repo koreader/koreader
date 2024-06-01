@@ -2274,7 +2274,7 @@ function ReaderHighlight:onMoveHighlightIndicator(args)
         local quick_move_distance_dx = self.view.visible_area.w * (1/5) -- quick move distance: fifth of visible_area
         local quick_move_distance_dy = self.view.visible_area.h * (1/5)
         -- single move distance, user adjustable, default value (4) capable to move on word with small font size and narrow line height
-        local move_distance = Size.item.height_default / G_reader_settings:readSetting("highlight_non_touch_factor")
+        local move_distance = Size.item.height_default / G_reader_settings:readSetting("highlight_non_touch_factor", 4)
         local rect = self._current_indicator_pos:copy()
         if quick_move then
             rect.x = rect.x + quick_move_distance_dx * dx
