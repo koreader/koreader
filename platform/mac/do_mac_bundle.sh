@@ -160,6 +160,6 @@ mv "${APP_PATH}" "${APP_BUNDLE}.app"
 
 # Package as 7z reduces size from 80MB to 30MB.
 if command_exists "7z"; then
-    7z a -l -m0=lzma2 -mx=9 "${APP_BUNDLE}-${VERSION}.7z" "${APP_BUNDLE}.app"
+    7z a -l -m0=lzma2 -mx=9 "${APP_BUNDLE}-$(uname -m)-${VERSION}.7z" "${APP_BUNDLE}.app"
     rm -rfv "${APP_BUNDLE}.app"
 fi
