@@ -701,7 +701,7 @@ function Kobo:init()
             mxcfb_bypass_wait_for = mxcfb_bypass_wait_for,
             no_cfa_post_processing = G_reader_settings:isTrue("no_cfa_post_processing"),
         }
-        if self.screen.fb_bpp == 32 and not self:hasColorScreen() then
+        if self.screen.fb_bpp == 32 and self.screen._vinfo.red.offset ~= 0 then
             -- Ensure we decode images properly, as our framebuffer is BGRA...
             logger.info("Enabling Kobo @ 32bpp BGR tweaks")
             self.hasBGRFrameBuffer = yes
