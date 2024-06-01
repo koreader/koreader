@@ -161,15 +161,6 @@ local sub_item_table = {
         separator = true,
     },
     {
-        text = _("Swipe to input additional characters"),
-        checked_func = function()
-            return G_reader_settings:nilOrTrue("keyboard_swipes_enabled")
-        end,
-        callback = function()
-            G_reader_settings:flipNilOrTrue("keyboard_swipes_enabled")
-        end,
-    },
-    {
         text = _("Keyboard appearance settings"),
         keep_menu_open = true,
         callback = function(touchmenu_instance)
@@ -233,5 +224,16 @@ local sub_item_table = {
         end,
     },
 }
+if Device:isTouchDevice() then
+    table.insert(sub_item_table, 4, {
+        text = _("Swipe to input additional characters"),
+        checked_func = function()
+            return G_reader_settings:nilOrTrue("keyboard_swipes_enabled")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrTrue("keyboard_swipes_enabled")
+        end,
+    })
+end
 
 return sub_item_table
