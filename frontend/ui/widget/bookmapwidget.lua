@@ -1208,6 +1208,16 @@ function BookMapWidget:onShowBookMapMenu()
             end,
         }},
         {{
+            text = _("Page browser on tap"),
+            checked_func = function()
+                return G_reader_settings:nilOrTrue("book_map_tap_to_page_browser")
+            end,
+            align = "left",
+            callback = function()
+                G_reader_settings:flipNilOrTrue("book_map_tap_to_page_browser")
+            end,
+        }},
+        {{
             text = _("Alternative theme"),
             checked_func = function()
                 return G_reader_settings:isTrue("book_map_alt_theme")
@@ -1321,17 +1331,9 @@ function BookMapWidget:onShowBookMapMenu()
             }
         },
     }
-    if Device:isTouchDevice() then
-        table.insert(buttons, 3, {{
-        text = _("Page browser on tap"),
-        checked_func = function()
-            return G_reader_settings:nilOrTrue("book_map_tap_to_page_browser")
-        end,
-        align = "left",
-        callback = function()
-            G_reader_settings:flipNilOrTrue("book_map_tap_to_page_browser")
-        end,
-    }})
+    -- remove "Page browser on tap" from non-touch devices
+    if not Device:isTouchDevice() then
+        table.remove(buttons, 3)
     end
     -- Remove false buttons from the list if overview_mode
     for i = #buttons, 1, -1 do
