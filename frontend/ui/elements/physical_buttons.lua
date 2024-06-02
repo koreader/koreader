@@ -19,6 +19,28 @@ local PhysicalButtons = {
     },
 }
 
+if Device:hasScreenKB() or Device:hasSymKey() then
+    table.remove(PhysicalButtons.sub_item_table, 1)
+    table.insert(PhysicalButtons.sub_item_table, {
+        text = _("Invert left side page-turn buttons"),
+            checked_func = function()
+                return G_reader_settings:isTrue("input_invert_left_page_turn_keys")
+            end,
+            callback = function()
+                UIManager:broadcastEvent(Event:new("SwapLeftPageTurnButtons"))
+            end,
+    })
+    table.insert(PhysicalButtons.sub_item_table, {
+        text = _("Invert right side page-turn buttons"),
+            checked_func = function()
+                return G_reader_settings:isTrue("input_invert_right_page_turn_keys")
+            end,
+            callback = function()
+                UIManager:broadcastEvent(Event:new("SwapRightPageTurnButtons"))
+            end,
+    })
+end
+
 if Device:canKeyRepeat() then
     table.insert(PhysicalButtons.sub_item_table, {
         text = _("Disable key repeat"),
