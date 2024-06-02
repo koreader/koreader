@@ -602,11 +602,11 @@ Except when in two columns mode, where this is limited to showing only the previ
     if not Device:isTouchDevice() and Device:hasDPad() then
         table.insert(menu_items.long_press.sub_item_table, {
             text_func = function()
-                return T(_("Rate of movement in content selection: %1"), G_reader_settings:readSetting("highlight_non_touch_factor" or 4))
+                return T(_("Rate of movement in content selection: %1"), G_reader_settings:readSetting("highlight_non_touch_factor") or 4)
             end,
             callback = function(touchmenu_instance)
                 local SpinWidget = require("ui/widget/spinwidget")
-                local curr_val = G_reader_settings:readSetting("highlight_non_touch_factor" or 4)
+                local curr_val = G_reader_settings:readSetting("highlight_non_touch_factor") or 4
                 local spin_widget = SpinWidget:new{
                     value = curr_val,
                     value_min = 0.25,
@@ -638,7 +638,7 @@ Except when in two columns mode, where this is limited to showing only the previ
         })
         table.insert(menu_items.long_press.sub_item_table, {
             text_func = function()
-                local highlight_non_touch_interval = G_reader_settings:readSetting("highlight_non_touch_interval" or 1)
+                local highlight_non_touch_interval = G_reader_settings:readSetting("highlight_non_touch_interval") or 1
                 return T(NC_("Speed-up rate interval: %1 second", "Speed-up rate interval: %1 seconds", highlight_non_touch_interval), highlight_non_touch_interval)
             end,
             enabled_func = function()
@@ -646,7 +646,7 @@ Except when in two columns mode, where this is limited to showing only the previ
             end,
             callback = function(touchmenu_instance)
                 local SpinWidget = require("ui/widget/spinwidget")
-                local curr_val = G_reader_settings:readSetting("highlight_non_touch_interval" or 1)
+                local curr_val = G_reader_settings:readSetting("highlight_non_touch_interval") or 1
                 local spin_widget = SpinWidget:new{
                     value = curr_val,
                     value_min = 0.1,
@@ -2272,7 +2272,7 @@ function ReaderHighlight:onMoveHighlightIndicator(args)
         local quick_move_distance_dx = self.view.visible_area.w * (1/5) -- quick move distance: fifth of visible_area
         local quick_move_distance_dy = self.view.visible_area.h * (1/5)
         -- single move distance, user adjustable, default value (4) capable to move on word with small font size and narrow line height
-        local move_distance = Size.item.height_default / (G_reader_settings:readSetting("highlight_non_touch_factor" or 4))
+        local move_distance = Size.item.height_default / (G_reader_settings:readSetting("highlight_non_touch_factor") or 4)
         local rect = self._current_indicator_pos:copy()
         if quick_move then
             rect.x = rect.x + quick_move_distance_dx * dx
@@ -2287,7 +2287,7 @@ function ReaderHighlight:onMoveHighlightIndicator(args)
                 -- quadruple press: 64 single distances, almost move to screen edge
                 if G_reader_settings:nilOrTrue("highlight_non_touch_spedup") then
                     -- user selects whether to use 'constant' or [this] 'sped up' rate (speed-up on by default)
-                    local t_inter = G_reader_settings:readSetting("highlight_non_touch_interval" or 1)
+                    local t_inter = G_reader_settings:readSetting("highlight_non_touch_interval") or 1
                     if diff < time.s( t_inter ) then
                         move_distance = self._last_indicator_move_args.distance * 4
                     end
