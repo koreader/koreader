@@ -158,6 +158,7 @@ for path in l10n/*; do
 done
 
 mv "${APP_PATH}" "${APP_BUNDLE}.app"
+codesign --force --deep -s - "${APP_BUNDLE}.app"
 
 # Package as 7z reduces size from 80MB to 30MB.
 if command_exists "7z"; then
