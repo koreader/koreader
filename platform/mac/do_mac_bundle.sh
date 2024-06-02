@@ -31,6 +31,7 @@ fi
 VERSION="$(cut -f2 -dv "${1}/koreader/git-rev" | cut -f1,2 -d-)"
 APP_PATH="${1}/bundle"
 APP_BUNDLE="${1}/../KOReader"
+APP_ARCH="$(uname -m)"
 OSX_MAJOR=$(sw_vers -productVersion | cut -d "." -f1)
 OSX_MINOR=$(sw_vers -productVersion | cut -d "." -f2)
 
@@ -127,7 +128,7 @@ END
 pushd "${APP_PATH}/Contents/koreader"
 
 # Prepare bundle for distribution.
-ln -s /usr/bin/tar tar
+lipo /usr/bin/tar -extract_family "${APP_ARCH}" -output tar
 mv COPYING README.md ../Resources/
 mv koreader ../MacOS/koreader
 rm -rf cache clipboard history ota \
@@ -160,6 +161,6 @@ mv "${APP_PATH}" "${APP_BUNDLE}.app"
 
 # Package as 7z reduces size from 80MB to 30MB.
 if command_exists "7z"; then
-    7z a -l -m0=lzma2 -mx=9 "${APP_BUNDLE}-$(uname -m)-${VERSION}.7z" "${APP_BUNDLE}.app"
+    7z a -l -m0=lzma2 -mx=9 "${APP_BUNDLE}-${APP_ARCH}-${VERSION}.7z" "${APP_BUNDLE}.app"
     rm -rfv "${APP_BUNDLE}.app"
 fi
