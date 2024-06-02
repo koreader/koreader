@@ -101,17 +101,8 @@ jobs:
         run: |
           packages=(
             nasm binutils coreutils libtool autoconf automake cmake make
-            sdl2 lua@5.1 luarocks gettext pkg-config wget
-            gnu-getopt grep p7zip ninja
+            sdl2 gettext pkg-config wget gnu-getopt grep p7zip ninja
           )
-          # Lua 5.1 is disabled, so we need to work around that:
-          # - fetch all packages
-          brew fetch --formula "${packages[@]}"
-          # - disable auto-updates
-          export HOMEBREW_NO_AUTO_UPDATE=1
-          # - install lua@5.1 from cache
-          brew install --formula --quiet "$(brew --cache lua@5.1)"
-          # - and install the rest
           brew install --formula --quiet "${packages[@]}"
 
       - name: Update PATH
