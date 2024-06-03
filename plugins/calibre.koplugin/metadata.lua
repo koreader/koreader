@@ -52,8 +52,8 @@ local function slim(book, is_search)
     return slim_book
 end
 
--- this is the max file size we attempt to decode using json. For larger
--- files we want to attempt to manually parse the file to avoid OOM errors
+-- This is the max file size we attempt to decode using rapidjson.
+-- For larger files we use a sax parser to avoid OOM errors
 local MAX_JSON_FILESIZE = 50 * 1024 * 1024
 
 --- find calibre files for a given dir
