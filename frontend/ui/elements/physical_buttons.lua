@@ -25,7 +25,7 @@ local PhysicalButtons = {
 
 if Device:hasScreenKB() or Device:hasSymKey() then
     table.insert(PhysicalButtons.sub_item_table, {
-        text = _("Invert left side page-turn buttons"),
+        text = _("Invert left-side page turn buttons"),
         enabled_func = function()
             return not G_reader_settings:isTrue("input_invert_page_turn_keys")
         end,
@@ -37,7 +37,7 @@ if Device:hasScreenKB() or Device:hasSymKey() then
         end,
     })
     table.insert(PhysicalButtons.sub_item_table, {
-        text = _("Invert right side page-turn buttons"),
+        text = _("Invert right-side page turn buttons"),
         enabled_func = function()
             return not G_reader_settings:isTrue("input_invert_page_turn_keys")
         end,
