@@ -76,12 +76,20 @@ local sax = {
     end,
 }
 
+local function parse_unsafe(path)
+    local p = lj.newfileparser(path, sax)
+    p.run()
+end
+
 local parser = {}
+
 function parser.parseFile(file)
     result = {}
-    local p = lj.newfileparser(file, sax)
-    p.run()
+    local ok, err = pcall(parse_unsafe, file)
     field = nil
+    if not ok then
+        return nil, err
+    end
     return result
 end
 
