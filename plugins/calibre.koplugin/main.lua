@@ -118,6 +118,11 @@ function Calibre:addToMainMenu(menu_items)
                 keep_menu_open = true,
                 sub_item_table = self:getWirelessMenuTable(),
             },
+            {
+                text = _("JSON parser"),
+                keep_menu_open = true,
+                sub_item_table = self:getParserMenuTable(),
+            },
         }
     }
     -- insert the metadata search
@@ -413,5 +418,41 @@ function Calibre:getWirelessMenuTable()
     end
     return t
 end
+
+function Calibre:getParserMenuTable()
+    return {
+        {
+            text = _("Automatic"),
+            help_text = _("The program will decide based on the size of the JSON file. Recommended"),
+            checked_func = function()
+                return G_reader_settings:hasNot("calibre_json_parser")
+            end,
+            callback = function()
+                G_reader_settings:delSetting("calibre_json_parser")
+            end,
+        },
+        {
+            text = _("DOM parser"),
+            help_text = _("Faster parsing, might not be suitable for devices with little RAM"),
+            checked_func = function()
+                return G_reader_settings:readSetting("calibre_json_parser") == "dom"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("calibre_json_parser", "dom")
+            end,
+        },
+        {
+            text = _("SAX parser"),
+            help_text = _("Slower, use only if you're experiencing problems with the automatic mode"),
+            checked_func = function()
+                return G_reader_settings:readSetting("calibre_json_parser") == "sax"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("calibre_json_parser", "sax")
+            end,
+        },
+    }
+end
+
 
 return Calibre
