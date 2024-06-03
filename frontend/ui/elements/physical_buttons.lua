@@ -9,35 +9,44 @@ local PhysicalButtons = {
     sub_item_table = {
         {
             text = _("Invert page turn buttons"),
+            enabled_func = function()
+                return not (G_reader_settings:isTrue("input_invert_left_page_turn_keys") or G_reader_settings:isTrue("input_invert_right_page_turn_keys"))
+            end,
             checked_func = function()
                 return G_reader_settings:isTrue("input_invert_page_turn_keys")
             end,
             callback = function()
                 UIManager:broadcastEvent(Event:new("SwapPageTurnButtons"))
             end,
+            separator = true,
         }
     },
 }
 
 if Device:hasScreenKB() or Device:hasSymKey() then
-    table.remove(PhysicalButtons.sub_item_table, 1)
     table.insert(PhysicalButtons.sub_item_table, {
         text = _("Invert left side page-turn buttons"),
-            checked_func = function()
-                return G_reader_settings:isTrue("input_invert_left_page_turn_keys")
-            end,
-            callback = function()
-                UIManager:broadcastEvent(Event:new("SwapLeftPageTurnButtons"))
-            end,
+        enabled_func = function()
+            return not G_reader_settings:isTrue("input_invert_page_turn_keys")
+        end,
+        checked_func = function()
+            return G_reader_settings:isTrue("input_invert_left_page_turn_keys")
+        end,
+        callback = function()
+            UIManager:broadcastEvent(Event:new("SwapLeftPageTurnButtons"))
+        end,
     })
     table.insert(PhysicalButtons.sub_item_table, {
         text = _("Invert right side page-turn buttons"),
-            checked_func = function()
-                return G_reader_settings:isTrue("input_invert_right_page_turn_keys")
-            end,
-            callback = function()
-                UIManager:broadcastEvent(Event:new("SwapRightPageTurnButtons"))
-            end,
+        enabled_func = function()
+            return not G_reader_settings:isTrue("input_invert_page_turn_keys")
+        end,
+        checked_func = function()
+            return G_reader_settings:isTrue("input_invert_right_page_turn_keys")
+        end,
+        callback = function()
+            UIManager:broadcastEvent(Event:new("SwapRightPageTurnButtons"))
+        end,
     })
 end
 
