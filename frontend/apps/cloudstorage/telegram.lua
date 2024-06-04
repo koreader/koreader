@@ -12,7 +12,6 @@ local socket = require("socket")
 local socketutil = require("socketutil")
 local http = require("socket.http")
 local logger = require("logger")
-local json = require("rapidjson")
 local ltn12 = require('ltn12')
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -21,7 +20,7 @@ local Telegram = {
     offset = 0 -- offset for get_updates
 }
 
-local function file_exist(download_dir, filename) 
+local function file_exist(download_dir, filename)
     local path_dir = (download_dir ~= "/" and download_dir or "") .. '/' .. filename
     return lfs.attributes(path_dir)
 end
@@ -52,13 +51,13 @@ function Telegram:run(password, url, download_dir)
                     if DocumentRegistry:hasProvider(document.file_name) or G_reader_settings:isTrue("show_unsupported") then
                         local mandatory, dim
                         if file_exist(download_dir, document.file_name) then
-                            mandatory = "Downloaded"
+                            mandatory = _("Downloaded")
                             dim = true
                         else
                             mandatory = util.getFriendlySize(document.file_size)
                             dim = false
                         end
-                        table.insert(books, {text = document.file_name, file_id = document.file_id, type = "file", mandatory = mandatory, dim = dim}) 
+                        table.insert(books, {text = document.file_name, file_id = document.file_id, type = "file", mandatory = mandatory, dim = dim})
                     end
                 end
                 Telegram.offset = update.update_id and update.update_id + 1 or Telegram.offset
@@ -73,10 +72,9 @@ function Telegram:run(password, url, download_dir)
         UIManager:show(InfoMessage:new{
             text = _("There are no new files.\nSend message with book (as file) to your bot and check for new files again."),
         })
-        
     end
 
-    local check_button_text = #books > 0 and _("Cleanup the list and check for new files...") or _("Check for new files...") 
+    local check_button_text = #books > 0 and _("Cleanup the list and check for new files...") or _("Check for new files...")
     table.insert(books, {text = check_button_text, type="folder", bold=true})
     return books
 end
@@ -149,6 +147,7 @@ function Telegram:downloadFile(item, address, username, password, path, callback
             else
                 UIManager:show(InfoMessage:new{
                     text = T(_("File saved to:\n%1"), BD.filename(path)),
+                    timeout = 3,
                 })
             end
         else
@@ -240,12 +239,15 @@ function Telegram:info(item)
     if type(success) == "table" and type(success.result) == "table" then
         local info = success.result
         UIManager:show(InfoMessage:new{
-            text = T(_"Username: %1\nFirst name: %2\nCan join groups: %3\nCan read all group messages: %4",
+            text = T(_"Username: @%1\nFirst name: %2\nCan join groups: %3\nCan read all group messages: %4",
                 info.username, info.first_name,
                 yes_no(info.can_join_groups),
                 yes_no(info.can_read_all_group_messages))
         })
+    else
+        error_message()
     end
+
 end
 
 return Telegram
