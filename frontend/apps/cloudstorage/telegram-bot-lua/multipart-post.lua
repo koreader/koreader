@@ -1,4 +1,4 @@
-[[
+--[[
 Copyright (C) 2012-2013 by Moodstocks SAS
 Copyright (C) 2014-2022 by Pierre Chapuis
 
