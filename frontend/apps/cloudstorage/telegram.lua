@@ -47,17 +47,24 @@ function Telegram:run(password, url, download_dir)
         for i, update in ipairs(updates) do
             if type(update) == "table" and type(update.message) == "table" then
                 local document = update.message.document
-                if type(document) == "table" and document.file_name and document.file_id then
+                if type(document) == "table" and document.file_name and document.file_id and document.file_size then
                     if DocumentRegistry:hasProvider(document.file_name) or G_reader_settings:isTrue("show_unsupported") then
-                        local mandatory, dim
+                        local mandatory, dim, type
+                        local max_allowed_file_size = 20971520 -- 20 MiB
                         if file_exist(download_dir, document.file_name) then
                             mandatory = _("Downloaded")
                             dim = true
+                            type = "file"
+                        elseif document.file_size > max_allowed_file_size then
+                            mandatory = _("File too big")
+                            dim = true
+                            type = "other" -- disable for selection and download
                         else
                             mandatory = util.getFriendlySize(document.file_size)
                             dim = false
+                            type = "file"
                         end
-                        table.insert(books, {text = document.file_name, file_id = document.file_id, type = "file", mandatory = mandatory, dim = dim})
+                        table.insert(books, {text = document.file_name, file_id = document.file_id, type = type, mandatory = mandatory, dim = dim})
                     end
                 end
                 Telegram.offset = update.update_id and update.update_id + 1 or Telegram.offset
@@ -83,15 +90,9 @@ end
 function Telegram:getFileUrl(file_id, token)
     TelegramApi.token = token
     local success = TelegramApi.get_file(file_id)
-    local max_allowed_file_size = 20e6 -- 20MB
     if type(success) == "table" and type(success.result) == "table" and success.result.file_path then
         local file_path = success.result.file_path
-        local file_size = tonumber(success.result.file_size)
-        if file_size and (file_size <= max_allowed_file_size) then
-            return "https://api.telegram.org/file/bot" .. token .. "/" .. file_path
-        else
-            return false
-        end
+        return "https://api.telegram.org/file/bot" .. token .. "/" .. file_path
     else
         logger.warn("Telegram.getFileUrl: get_file error")
         return false
