@@ -497,7 +497,8 @@ function OPDSBrowser:updateCatalog(item_url, paths_updated)
             self:addSubCatalog(item_url)
         end
         if self.page_num <= 1 then
-            self:onNextPage()
+            -- Request more content, but don't change the page
+            self:onNextPage(true)
         end
     end
 end
@@ -886,7 +887,7 @@ function OPDSBrowser:onHoldReturn()
 end
 
 -- Menu action on next-page chevron tap (request and show more catalog entries)
-function OPDSBrowser:onNextPage()
+function OPDSBrowser:onNextPage(fill_only)
     -- self.page_num comes from menu.lua
     local page_num = self.page_num
     -- fetch more entries until we fill out one page or reach the end
@@ -900,8 +901,10 @@ function OPDSBrowser:onNextPage()
             break
         end
     end
-    -- We also *do* want to paginate, so call the base class.
-    Menu.onNextPage(self)
+    if not fill_only then
+        -- We also *do* want to paginate, so call the base class.
+        Menu.onNextPage(self)
+    end
     return true
 end
 
