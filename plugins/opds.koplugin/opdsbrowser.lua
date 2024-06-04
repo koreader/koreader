@@ -279,6 +279,7 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
         text = text,
         icon = icon,
     })
+    logger.dbg(string.format("OPDS: Failed to fetch catalog `%s`: %s", item_url, text))
 end
 
 -- Parses feed to catalog
@@ -353,11 +354,22 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                         hrefs[link.rel] = build_href(link.href)
                     end
                 end
+                -- OpenSearch
                 if link.type:find(self.search_type) then
                     if link.href then
                         table.insert(item_table, { -- the first item in each subcatalog
                             text       = "\u{f002} " .. _("Search"), -- append SEARCH icon
                             url        = build_href(self:getSearchTemplate(build_href(link.href))),
+                            searchable = true,
+                       })
+                    end
+                end
+                -- Calibre search
+                if link.type:find(self.search_template_type) and link.rel and link.rel:find("search") then
+                    if link.href then
+                        table.insert(item_table, {
+                            text       = "\u{f002} " .. _("Search"),
+                            url        = build_href(link.href:gsub("{searchTerms}", "%%s")),
                             searchable = true,
                        })
                     end
