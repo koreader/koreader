@@ -313,16 +313,6 @@ function DeviceListener:onSwapPageTurnButtons()
     Device:invertButtons()
 end
 
-function DeviceListener:onSwapLeftPageTurnButtons()
-    G_reader_settings:flipNilOrFalse("input_invert_left_page_turn_keys")
-    Device:invertButtonsLeft()
-end
-
-function DeviceListener:onSwapRightPageTurnButtons()
-    G_reader_settings:flipNilOrFalse("input_invert_right_page_turn_keys")
-    Device:invertButtonsRight()
-end
-
 function DeviceListener:onToggleKeyRepeat(toggle)
     if toggle == true then
         G_reader_settings:makeFalse("input_no_key_repeat")
