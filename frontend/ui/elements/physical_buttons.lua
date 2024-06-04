@@ -23,7 +23,7 @@ local PhysicalButtons = {
     },
 }
 
-if Device:hasScreenKB() or Device:hasSymKey() then
+if Device:hasDPad() and Device:useDPadAsActionKeys() then
     table.insert(PhysicalButtons.sub_item_table, {
         text = _("Invert left-side page turn buttons"),
         enabled_func = function()
