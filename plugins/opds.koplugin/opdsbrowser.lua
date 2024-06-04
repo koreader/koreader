@@ -345,6 +345,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
         return url.absolute(item_url, href)
     end
 
+    local has_opensearch = false
     local hrefs = {}
     if feed.link then
         for __, link in ipairs(feed.link) do
@@ -362,11 +363,12 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                             url        = build_href(self:getSearchTemplate(build_href(link.href))),
                             searchable = true,
                         })
+                        has_opensearch = true
                     end
                 end
-                -- Calibre search
+                -- Calibre search (also matches the actual template for OpenSearch!)
                 if link.type:find(self.search_template_type) and link.rel and link.rel:find("search") then
-                    if link.href then
+                    if link.href and not has_opensearch then
                         table.insert(item_table, {
                             text       = "\u{f002} " .. _("Search"),
                             url        = build_href(link.href:gsub("{searchTerms}", "%%s")),
