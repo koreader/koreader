@@ -6,6 +6,7 @@ local DataStorage = require("datastorage")
 local DropBox = require("apps/cloudstorage/dropbox")
 local FFIUtil = require("ffi/util")
 local Ftp = require("apps/cloudstorage/ftp")
+local Telegram = require("apps/cloudstorage/telegram")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
@@ -32,6 +33,7 @@ local server_types = {
     dropbox = _("Dropbox"),
     ftp = _("FTP"),
     webdav = _("WebDAV"),
+    telegram = _("Telegram"),
 }
 
 function CloudStorage:init()
@@ -162,6 +164,13 @@ function CloudStorage:openCloudServer(url)
             return
         end
         tbl, e = WebDav:run(self.address, self.username, self.password, url, self.choose_folder_mode)
+    elseif self.type == "telegram" then
+        if NetworkMgr:willRerunWhenConnected(function() self:openCloudServer(url) end) then
+            return
+        end
+        local cs_settings = self:readSettings()
+        local download_dir = cs_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+        tbl, e = Telegram:run(self.password, url, download_dir)
     end
     if tbl then
         self:switchItemTable(url, tbl)
@@ -219,6 +228,9 @@ function CloudStorage:downloadFile(item)
                 Ftp:downloadFile(unit_item, address, username, password, path_dir, callback_close)
             elseif self.type == "webdav" then
                 WebDav:downloadFile(unit_item, address, username, password, path_dir, callback_close)
+            elseif self.type == "telegram" then
+                Telegram:downloadFile(unit_item, address, username, password, path_dir, callback_close)
+                self:updateItems(1, false) -- refresh appearance of downloaded menu items
             end
         end)
         UIManager:show(InfoMessage:new{
@@ -728,6 +740,13 @@ function CloudStorage:configCloud(type)
                 url = fields[5],
                 type = "webdav",
             })
+        elseif type == "telegram" then
+            table.insert(cs_servers,{
+                name = fields[1],
+                password = fields[2],
+                url = fields[1], -- same as name, since for teleram url does't matter
+                type = "telegram",
+            })
         end
         cs_settings:saveSetting("cs_servers", cs_servers)
         cs_settings:flush()
@@ -741,6 +760,9 @@ function CloudStorage:configCloud(type)
     end
     if type == "webdav" then
         WebDav:config(nil, callbackAdd)
+    end
+    if type == "telegram" then
+        Telegram:config(nil, callbackAdd)
     end
 end
 
@@ -783,6 +805,16 @@ function CloudStorage:editCloudServer(item)
                     break
                 end
             end
+        elseif item.type == "telegram" then
+            for i, server in ipairs(cs_servers) do
+                if server.name == updated_config.text and server.address == updated_config.address then
+                    server.name = fields[1]
+                    server.password = fields[2]
+                    server.url = fields[1] -- same as name, since for telegram url does't matter
+                    cs_servers[i] = server
+                    break
+                end
+            end
         end
         cs_settings:saveSetting("cs_servers", cs_servers)
         cs_settings:flush()
@@ -794,6 +826,8 @@ function CloudStorage:editCloudServer(item)
         Ftp:config(item, callbackEdit)
     elseif item.type == "webdav" then
         WebDav:config(item, callbackEdit)
+    elseif item.type == "telegram" then
+        Telegram:config(item, callbackEdit)
     end
 end
 
@@ -826,6 +860,8 @@ function CloudStorage:infoServer(item)
         Ftp:info(item)
     elseif item.type == "webdav" then
         WebDav:info(item)
+    elseif item.type == "telegram" then
+        Telegram:info(item)
     end
 end
 
