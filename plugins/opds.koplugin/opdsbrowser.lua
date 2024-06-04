@@ -361,7 +361,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                             text       = "\u{f002} " .. _("Search"), -- append SEARCH icon
                             url        = build_href(self:getSearchTemplate(build_href(link.href))),
                             searchable = true,
-                       })
+                        })
                     end
                 end
                 -- Calibre search
@@ -371,7 +371,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                             text       = "\u{f002} " .. _("Search"),
                             url        = build_href(link.href:gsub("{searchTerms}", "%%s")),
                             searchable = true,
-                       })
+                        })
                     end
                 end
             end
@@ -497,7 +497,7 @@ function OPDSBrowser:updateCatalog(item_url, paths_updated)
             self:addSubCatalog(item_url)
         end
         if self.page_num <= 1 then
-            self:onNext()
+            self:onNextPage()
         end
     end
 end
@@ -507,7 +507,10 @@ function OPDSBrowser:appendCatalog(item_url)
     local menu_table = self:genItemTableFromURL(item_url)
     if #menu_table > 0 then
         for _, item in ipairs(menu_table) do
-            table.insert(self.item_table, item)
+            -- Don't append multiple search entries
+            if not item.searchable then
+                table.insert(self.item_table, item)
+            end
         end
         self.item_table.hrefs = menu_table.hrefs
         self:switchItemTable(self.catalog_title, self.item_table, -1)
@@ -883,7 +886,7 @@ function OPDSBrowser:onHoldReturn()
 end
 
 -- Menu action on next-page chevron tap (request and show more catalog entries)
-function OPDSBrowser:onNext()
+function OPDSBrowser:onNextPage()
     -- self.page_num comes from menu.lua
     local page_num = self.page_num
     -- fetch more entries until we fill out one page or reach the end
@@ -897,6 +900,8 @@ function OPDSBrowser:onNext()
             break
         end
     end
+    -- We also *do* want to paginate, so call the base class.
+    Menu.onNextPage(self)
     return true
 end
 
