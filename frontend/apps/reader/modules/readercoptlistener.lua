@@ -125,23 +125,23 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
     end
 
     local page_info = ""
-    if self.page_number or self.page_count then
+    if self.page_number == 1 or self.page_count == 1 then
         page_info = page_info .. page_pre
-        if self.page_number then
+        if self.page_number == 1 then
             page_info = page_info .. page_number
-            if self.page_count then
+            if self.page_count == 1 then
                 page_info = page_info .. page_sep
             end
         end
-        if self.page_count then
+        if self.page_count == 1 then
             page_info = page_info .. page_count
         end
         page_info = page_info .. page_post
-        if self.reading_percent then
+        if self.reading_percent == 1 then
             page_info = page_info .. "  " -- (double space as done by crengine's own drawing)
         end
     end
-    if self.reading_percent then
+    if self.reading_percent == 1 then
         page_info = page_info .. percentage_pre .. percentage_fmt:format(percentage*100) .. percentage_post
     end
     self.document:setPageInfoOverride(page_info)
