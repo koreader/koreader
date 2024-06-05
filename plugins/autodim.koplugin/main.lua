@@ -191,6 +191,8 @@ function AutoDim:onInputEvent()
     self:_schedule_autodim_task()
 end
 
+AutoDim.onPageUpdate = AutoDim.onInputEvent
+
 function AutoDim:_onSuspend()
     self:_unschedule_autodim_task()
     if self.isCurrentlyDimming then
