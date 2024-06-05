@@ -9,15 +9,48 @@ local PhysicalButtons = {
     sub_item_table = {
         {
             text = _("Invert page turn buttons"),
+            enabled_func = function()
+                return not (G_reader_settings:isTrue("input_invert_left_page_turn_keys") or G_reader_settings:isTrue("input_invert_right_page_turn_keys"))
+            end,
             checked_func = function()
                 return G_reader_settings:isTrue("input_invert_page_turn_keys")
             end,
             callback = function()
                 UIManager:broadcastEvent(Event:new("SwapPageTurnButtons"))
             end,
+            separator = true,
         }
     },
 }
+
+if Device:hasDPad() and Device:useDPadAsActionKeys() then
+    table.insert(PhysicalButtons.sub_item_table, {
+        text = _("Invert left-side page turn buttons"),
+        enabled_func = function()
+            return not G_reader_settings:isTrue("input_invert_page_turn_keys")
+        end,
+        checked_func = function()
+            return G_reader_settings:isTrue("input_invert_left_page_turn_keys")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("input_invert_left_page_turn_keys")
+            Device:invertButtonsLeft()
+        end,
+    })
+    table.insert(PhysicalButtons.sub_item_table, {
+        text = _("Invert right-side page turn buttons"),
+        enabled_func = function()
+            return not G_reader_settings:isTrue("input_invert_page_turn_keys")
+        end,
+        checked_func = function()
+            return G_reader_settings:isTrue("input_invert_right_page_turn_keys")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("input_invert_right_page_turn_keys")
+            Device:invertButtonsRight()
+        end,
+    })
+end
 
 if Device:canKeyRepeat() then
     table.insert(PhysicalButtons.sub_item_table, {

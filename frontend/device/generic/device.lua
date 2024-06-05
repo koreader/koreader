@@ -170,6 +170,30 @@ function Device:invertButtons()
     end
 end
 
+function Device:invertButtonsLeft()
+    if self:hasKeys() and self.input and self.input.event_map then
+        for key, value in pairs(self.input.event_map) do
+            if value == "LPgFwd" then
+                self.input.event_map[key] = "LPgBack"
+            elseif value == "LPgBack" then
+                self.input.event_map[key] = "LPgFwd"
+            end
+        end
+    end
+end
+
+function Device:invertButtonsRight()
+    if self:hasKeys() and self.input and self.input.event_map then
+        for key, value in pairs(self.input.event_map) do
+            if value == "RPgFwd" then
+                self.input.event_map[key] = "RPgBack"
+            elseif value == "RPgBack" then
+                self.input.event_map[key] = "RPgFwd"
+            end
+        end
+    end
+end
+
 function Device:init()
     if not self.screen then
         error("screen/framebuffer must be implemented")
