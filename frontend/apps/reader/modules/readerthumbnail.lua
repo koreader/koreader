@@ -65,7 +65,7 @@ function ReaderThumbnail:init()
 end
 
 function ReaderThumbnail:registerKeyEvents()
-    if Device:useDPadAsActionKeys() then
+    if Device:hasDPad() and Device:useDPadAsActionKeys() then
         if Device:hasKeyboard() then
             self.key_events.ShowBookMap = { { "Shift", "Down" } }
         else
