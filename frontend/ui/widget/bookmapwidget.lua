@@ -1357,7 +1357,7 @@ function BookMapWidget:showAbout()
     local text = _([[
 Book map provides a summary of a book's content, showing chapters and pages visually. If statistics are enabled, black bars represent pages already read (gray for pages read in the current session), with varying heights based on reading time.
 
-Map Legend:
+Map legend:
 ▲ current page
 ❶ ❷ … previous locations
 ▒ highlighted text
