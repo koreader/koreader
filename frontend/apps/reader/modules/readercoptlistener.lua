@@ -150,20 +150,24 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
     if self.battery == 1 and self.battery_percent == 1 then -- append battery percentage
         local batt_pre = "["
         local batt_post = "]"
-        local batt_val = ""
+        local batt_val = nil
         if Device:hasBattery() then
             local powerd = Device:getPowerDevice()
             local batt_lvl = powerd:getCapacity()
 
             if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
                 local aux_batt_lvl = powerd:getAuxCapacity()
-                batt_pre = "+"
-                batt_post = "+"
+                if powerd:isAuxCharging() then
+                    batt_pre = ""
+                    batt_post = "+"
+                end
                 -- Sum both batteries for the actual text
                 batt_lvl = batt_lvl + aux_batt_lvl
             else
-                batt_pre = "+"
-                batt_post = "+"
+                if powerd:isCharging() then
+                    batt_pre = ""
+                    batt_post = "+"
+                end
             end
             batt_val = string.format("%2d%%", batt_lvl)
         end
