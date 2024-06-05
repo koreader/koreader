@@ -88,7 +88,7 @@ function ReaderThumbnail:addToMainMenu(menu_items)
         end,
     }
     -- PageBrowser still needs some work before we can let it run on non-touch devices with useDPadAsActionKeys
-    if Device:useDPadAsActionKeys() then return end
+    if Device:hasDPad() and Device:useDPadAsActionKeys() then return end
     menu_items.page_browser = {
         text = _("Page browser"),
         callback = function()
