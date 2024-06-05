@@ -97,14 +97,9 @@ function FileSearcher:onShowFileSearch(search_string)
 end
 
 function FileSearcher:doSearch()
-    local results
     local dirs, files = self:getList()
     -- If we have a FileChooser instance, use it, to be able to make use of its natsort cache
-    if self.ui.file_chooser then
-        results = self.ui.file_chooser:genItemTable(dirs, files)
-    else
-        results = FileChooser:genItemTable(dirs, files)
-    end
+    local results = (self.ui.file_chooser or FileChooser):genItemTable(dirs, files)
     if #results > 0 then
         self:showSearchResults(results)
     else
@@ -221,31 +216,51 @@ end
 
 function FileSearcher:showSearchResults(results)
     self.search_menu = Menu:new{
-        title = T(_("Search results (%1)"), #results),
         subtitle = T(_("Query: %1"), self.search_string),
-        item_table = results,
-        ui = self.ui,
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         is_borderless = true,
         is_popout = false,
         title_bar_fm_style = true,
+        title_bar_left_icon = "appbar.menu",
+        onLeftButtonTap = function() self:setSelectMode() end,
         onMenuSelect = self.onMenuSelect,
         onMenuHold = self.onMenuHold,
         handle_hold_on_hold_release = true,
+        ui = self.ui,
+        _manager = self,
     }
     self.search_menu.close_callback = function()
+        self.selected_files = nil
         UIManager:close(self.search_menu)
         if self.ui.file_chooser then
             self.ui.file_chooser:refreshPath()
         end
     end
+    self:updateMenu(results)
     UIManager:show(self.search_menu)
     if self.no_metadata_count ~= 0 then
         self:showSearchResultsMessage()
     end
 end
 
+function FileSearcher:updateMenu(item_table)
+    item_table = item_table or self.search_menu.item_table
+    self.search_menu:switchItemTable(T(_("Search results (%1)"), #item_table), item_table, -1)
+end
+
 function FileSearcher:onMenuSelect(item)
+    if self._manager.selected_files then
+        if item.is_file then
+            item.dim = not item.dim and true or nil
+            self._manager.selected_files[item.path] = item.dim
+            self._manager:updateMenu()
+        end
+    else
+        self._manager:showFileDialog(item)
+    end
+end
+
+function FileSearcher:showFileDialog(item)
     local file = item.path
     local bookinfo, dialog
     local function close_dialog_callback()
@@ -253,7 +268,11 @@ function FileSearcher:onMenuSelect(item)
     end
     local function close_dialog_menu_callback()
         UIManager:close(dialog)
-        self.close_callback()
+        self.search_menu.close_callback()
+    end
+    local function update_item_callback()
+        item.mandatory = FileChooser:getMenuItemMandatory(item, FileChooser:getCollate())
+        self:updateMenu()
     end
     local buttons = {}
     if item.is_file then
@@ -265,7 +284,7 @@ function FileSearcher:onMenuSelect(item)
             table.insert(buttons, {}) -- separator
             table.insert(buttons, {
                 filemanagerutil.genResetSettingsButton(file, close_dialog_callback, is_currently_opened),
-                self.ui.collections:genAddToCollectionButton(file, close_dialog_callback),
+                self.ui.collections:genAddToCollectionButton(file, close_dialog_callback, update_item_callback),
             })
         end
         table.insert(buttons, {
@@ -275,13 +294,8 @@ function FileSearcher:onMenuSelect(item)
                 callback = function()
                     local function post_delete_callback()
                         UIManager:close(dialog)
-                        for i, menu_item in ipairs(self.item_table) do
-                            if menu_item.path == file then
-                                table.remove(self.item_table, i)
-                                break
-                            end
-                            self:switchItemTable(T(_("Search results (%1)"), #self.item_table), self.item_table)
-                        end
+                        table.remove(self.search_menu.item_table, item.idx)
+                        self:updateMenu()
                     end
                     local FileManager = require("apps/filemanager/filemanager")
                     FileManager:showDeleteFileDialog(file, post_delete_callback)
@@ -296,9 +310,9 @@ function FileSearcher:onMenuSelect(item)
             text = _("Open"),
             enabled = DocumentRegistry:hasProvider(file, nil, true), -- allow auxiliary providers
             callback = function()
-                close_dialog_callback()
+                close_dialog_menu_callback()
                 local FileManager = require("apps/filemanager/filemanager")
-                FileManager.openFile(self.ui, file, nil, self.close_callback)
+                FileManager.openFile(self.ui, file)
             end,
         },
     })
@@ -319,10 +333,12 @@ function FileSearcher:onMenuSelect(item)
 end
 
 function FileSearcher:onMenuHold(item)
+    if self._manager.selected_files then return true end
     if item.is_file then
         if DocumentRegistry:hasProvider(item.path, nil, true) then
+            self.close_callback()
             local FileManager = require("apps/filemanager/filemanager")
-            FileManager.openFile(self.ui, item.path, nil, self.close_callback)
+            FileManager.openFile(self.ui, item.path)
         end
     else
         self.close_callback()
@@ -335,6 +351,94 @@ function FileSearcher:onMenuHold(item)
         end
     end
     return true
+end
+
+function FileSearcher:setSelectMode()
+    if self.selected_files then
+        self:showSelectModeDialog()
+    else
+        self.selected_files = {}
+        self.search_menu:setTitleBarLeftIcon("check")
+    end
+end
+
+function FileSearcher:showSelectModeDialog()
+    local item_table = self.search_menu.item_table
+    local select_count = util.tableSize(self.selected_files)
+    local actions_enabled = select_count > 0
+    title = actions_enabled and T(N_("1 file selected", "%1 files selected", select_count), select_count)
+        or _("No files selected")
+    local select_dialog
+    buttons = {
+        {
+            {
+                text = _("Deselect all"),
+                enabled = actions_enabled,
+                callback = function()
+                    UIManager:close(select_dialog)
+                    for file in pairs (self.selected_files) do
+                        self.selected_files[file] = nil
+                    end
+                    for _, item in ipairs(item_table) do
+                        item.dim = nil
+                    end
+                    self:updateMenu()
+                end,
+            },
+            {
+                text = _("Select all"),
+                callback = function()
+                    UIManager:close(select_dialog)
+                    for _, item in ipairs(item_table) do
+                        if item.is_file then
+                            item.dim = true
+                            self.selected_files[item.path] = true
+                        end
+                    end
+                    self:updateMenu()
+                end,
+            },
+        },
+        {
+            {
+                text = _("Exit select mode"),
+                callback = function()
+                    UIManager:close(select_dialog)
+                    self.selected_files = nil
+                    self.search_menu:setTitleBarLeftIcon("appbar.menu")
+                    if actions_enabled then
+                        for _, item in ipairs(item_table) do
+                            item.dim = nil
+                        end
+                    end
+                    self:updateMenu()
+                end,
+            },
+            {
+                text = _("Select in file browser"),
+                enabled = actions_enabled,
+                callback = function()
+                    UIManager:close(select_dialog)
+                    local selected_files = self.selected_files
+                    self.search_menu.close_callback()
+                    if self.ui.file_chooser then
+                        self.ui.selected_files = selected_files
+                        self.ui.title_bar:setRightIcon("check")
+                        self.ui.file_chooser:refreshPath()
+                    else -- called from Reader
+                        self.ui:onClose()
+                        self.ui:showFileManager(self.path .. "/", selected_files)
+                    end
+                end,
+            },
+        },
+    }
+    select_dialog = ButtonDialog:new{
+        title = title,
+        title_align = "center",
+        buttons = buttons,
+    }
+    UIManager:show(select_dialog)
 end
 
 return FileSearcher
