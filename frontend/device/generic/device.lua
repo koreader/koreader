@@ -257,6 +257,12 @@ function Device:init()
         if G_reader_settings:isTrue("input_invert_page_turn_keys") then
             self:invertButtons()
         end
+        if G_reader_settings:isTrue("input_invert_left_page_turn_keys") then
+            self:invertButtonsLeft()
+        end
+        if G_reader_settings:isTrue("input_invert_right_page_turn_keys") then
+            self:invertButtonsRight()
+        end
     end
 
     if self:hasGSensor() then
