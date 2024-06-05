@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local Device = require("device")
+local IsoLanguage = require("ui/data/isolanguage")
 local optionsutil = require("ui/data/optionsutil")
 local util = require("util")
 local _ = require("gettext")
@@ -10,6 +11,16 @@ local Screen = Device.screen
 local FONT_SCALE_FACTORS = {0.2, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.3, 1.6, 2.0}
 -- Font sizes used for the font size widget only
 local FONT_SCALE_DISPLAY_SIZE = {12, 14, 15, 16, 17, 18, 19, 20, 22, 25, 30, 35}
+
+local KOPTREADER_CONFIG_DOC_LANGS_TEXT = {}
+for _, lang in ipairs(G_defaults:readSetting("DKOPTREADER_CONFIG_DOC_LANGS_CODE")) do
+    local langName = IsoLanguage:getLocalizedLanguage(lang)
+    if langName then
+        table.insert(KOPTREADER_CONFIG_DOC_LANGS_TEXT, langName)
+    else
+        table.insert(KOPTREADER_CONFIG_DOC_LANGS_TEXT, lang)
+    end
+end
 
 -- Get font scale numbers as a table of strings
 local tableOfNumbersToTableOfStrings = function(numbers)
@@ -555,7 +566,7 @@ This can also be used to remove some gray background or to convert a grayscale o
             {
                 name = "doc_language",
                 name_text = _("Document Language"),
-                toggle = G_defaults:readSetting("DKOPTREADER_CONFIG_DOC_LANGS_TEXT"),
+                toggle = KOPTREADER_CONFIG_DOC_LANGS_TEXT,
                 values = G_defaults:readSetting("DKOPTREADER_CONFIG_DOC_LANGS_CODE"),
                 default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE"),
                 event = "DocLangUpdate",
