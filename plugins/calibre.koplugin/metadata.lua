@@ -121,11 +121,13 @@ function CalibreMetadata:loadBookList()
         return {}
     end
     local books, err
-    local impl = G_reader_settings:readSetting("calibre_json_parser") or attr.size > MAX_JSON_FILESIZE and "sax" or "dom"
-    if impl == "dom" then
-        books, err = rapidjson.load(self.metadata)
+    local impl = G_reader_settings:readSetting("calibre_json_parser") or attr.size > MAX_JSON_FILESIZE and "fast" or "safe"
+    if impl == "fast" then
+        books, err = rapidjson.load_calibre(self.metadata)
+    elseif impl == "safe" then
+         books, err = parser.parseFile(self.metadata)
     else
-        books, err = parser.parseFile(self.metadata)
+        books, err = rapidjson.load(self.metadata)
     end
     if not books then
         logger.warn(string.format("Unable to load library from json file %s: \n%s",

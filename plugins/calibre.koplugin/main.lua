@@ -432,23 +432,33 @@ function Calibre:getParserMenuTable()
             end,
         },
         {
-            text = _("DOM parser"),
-            help_text = _("Faster parsing, might not be suitable for devices with little RAM"),
+            text = _("Fast"),
+            help_text = _("Faster parsing, but may not take too kindly to malformed input files"),
             checked_func = function()
-                return G_reader_settings:readSetting("calibre_json_parser") == "dom"
+                return G_reader_settings:readSetting("calibre_json_parser") == "fast"
             end,
             callback = function()
-                G_reader_settings:saveSetting("calibre_json_parser", "dom")
+                G_reader_settings:saveSetting("calibre_json_parser", "fast")
             end,
         },
         {
-            text = _("SAX parser"),
-            help_text = _("Slower, use only if you're experiencing problems with the automatic mode"),
+            text = _("Safe"),
+            help_text = _("Slower, but safer. Useful if you're experiencing problems with the other modes"),
             checked_func = function()
-                return G_reader_settings:readSetting("calibre_json_parser") == "sax"
+                return G_reader_settings:readSetting("calibre_json_parser") == "safe"
             end,
             callback = function()
-                G_reader_settings:saveSetting("calibre_json_parser", "sax")
+                G_reader_settings:saveSetting("calibre_json_parser", "safe")
+            end,
+        },
+        {
+            text = _("Legacy"),
+            help_text = _("Fast, but requires more RAM, only recommended on modest library sizes (or beefier devices)"),
+            checked_func = function()
+                return G_reader_settings:readSetting("calibre_json_parser") == "legacy"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("calibre_json_parser", "legacy")
             end,
         },
     }
