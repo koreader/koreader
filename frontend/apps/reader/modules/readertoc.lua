@@ -1203,7 +1203,7 @@ Enabling this option will restrict display to the chapter titles of progress bar
         end
     }
     menu_items.toc_items_with_dots = {
-        text = _("With dots"),
+        text = _("Dot leaders"),
         keep_menu_open = true,
         checked_func = function()
             return G_reader_settings:nilOrTrue("toc_items_with_dots")
