@@ -21,10 +21,12 @@ local _ = require("gettext")
 local ReaderThumbnail = WidgetContainer:extend{}
 
 function ReaderThumbnail:init()
-    if not Device:isTouchDevice() then
+    self:registerKeyEvents()
+    if not Device:isTouchDevice() and not Device:useDPadAsActionKeys() then
         -- The BookMap and PageBrowser widgets depend too much on gestures,
-        -- making them work with keys would be hard and very limited, so
+        -- making them work with not enough keys on Non-Touch would be hard and very limited, so
         -- just don't make them available.
+        -- We will only let BookMap run on useDPadAsActionKeys devices.
         return
     end
 
@@ -62,6 +64,16 @@ function ReaderThumbnail:init()
     end
 end
 
+function ReaderThumbnail:registerKeyEvents()
+    if Device:hasDPad() and Device:useDPadAsActionKeys() then
+        if Device:hasKeyboard() then
+            self.key_events.ShowBookMap = { { "Shift", "Down" } }
+        else
+            self.key_events.ShowBookMap = { { "ScreenKB", "Down" } }
+        end
+    end
+end
+
 function ReaderThumbnail:addToMainMenu(menu_items)
     menu_items.book_map = {
         text = _("Book map"),
@@ -75,6 +87,8 @@ function ReaderThumbnail:addToMainMenu(menu_items)
             self:onShowBookMap(true)
         end,
     }
+    -- PageBrowser still needs some work before we can let it run on non-touch devices with useDPadAsActionKeys
+    if Device:hasDPad() and Device:useDPadAsActionKeys() then return end
     menu_items.page_browser = {
         text = _("Page browser"),
         callback = function()

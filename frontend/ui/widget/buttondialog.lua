@@ -57,6 +57,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
+local util = require("util")
 
 local ButtonDialog = InputContainer:extend{
     buttons = nil,
@@ -91,8 +92,14 @@ function ButtonDialog:init()
     end
     if self.dismissable then
         if Device:hasKeys() then
-            local close_keys = Device:hasFewKeys() and { "Back", "Left" } or Device.input.group.Back
-            self.key_events.Close = { { close_keys } }
+            local back_group = util.tableDeepCopy(Device.input.group.Back)
+            if Device:hasFewKeys() then
+                table.insert(back_group, "Left")
+                self.key_events.Close = { { back_group } }
+            else
+                table.insert(back_group, "Menu")
+                self.key_events.Close = { { back_group } }
+            end
         end
         if Device:isTouchDevice() then
             self.ges_events.TapClose = {
