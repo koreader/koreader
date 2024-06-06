@@ -1,5 +1,6 @@
 -- parse "metadata.calibre" files
 local lj = require("lunajson")
+local rapidjson = require("rapidjson")
 
 local array_fields = {
     authors = true,
@@ -32,21 +33,21 @@ local function append(v)
 end
 
 local depth = 0
-local result = {}
+local result = rapidjson.array({})
 local sax = {
     startobject = function()
         depth = depth + 1
     end,
     endobject = function()
         if depth == 1 then
-            table.insert(result, t)
+            table.insert(result, rapidjson.object(t))
             t = {}
         end
         depth = depth - 1
     end,
     startarray = function()
         if array_fields[field] then
-            t[field] = {}
+            t[field] = rapidjson.array({})
         end
     end,
     endarray = function()
@@ -84,7 +85,7 @@ end
 local parser = {}
 
 function parser.parseFile(file)
-    result = {}
+    result = rapidjson.array({})
     local ok, err = pcall(parse_unsafe, file)
     field = nil
     if not ok then
