@@ -125,6 +125,7 @@ end
 function FileManager:setupLayout()
     self.show_parent = self.show_parent or self
     self.title_bar = TitleBar:new{
+        show_parent = self.show_parent,
         fullscreen = "true",
         align = "center",
         title = self.title,
@@ -137,7 +138,7 @@ function FileManager:setupLayout()
         left_icon_size_ratio = 1,
         left_icon_tap_callback = function() self:goHome() end,
         left_icon_hold_callback = function() self:onShowFolderMenu() end,
-        right_icon = "plus",
+        right_icon = self.selected_files and "check" or "plus",
         right_icon_size_ratio = 1,
         right_icon_tap_callback = function() self:onShowPlusMenu() end,
         right_icon_hold_callback = false, -- propagate long-press to dispatcher
@@ -166,37 +167,31 @@ function FileManager:setupLayout()
 
     local file_manager = self
 
-    function file_chooser:onPathChanged(path)  -- luacheck: ignore
+    function file_chooser:onPathChanged(path)
         file_manager:updateTitleBarPath(path)
         return true
     end
 
-    function file_chooser:onFileSelect(item)  -- luacheck: ignore
-        local file = item.path
-        if file_manager.select_mode then
-            if file_manager.selected_files[file] then
-                file_manager.selected_files[file] = nil
-                item.dim = nil
-            else
-                file_manager.selected_files[file] = true
-                item.dim = true
-            end
+    function file_chooser:onFileSelect(item)
+        if file_manager.selected_files then -- toggle selection
+            item.dim = not item.dim and true or nil
+            file_manager.selected_files[item.path] = item.dim
             self:updateItems()
         else
-            file_manager:openFile(file)
+            file_manager:openFile(item.path)
         end
         return true
     end
 
     function file_chooser:onFileHold(item)
-        if file_manager.select_mode then
+        if file_manager.selected_files then
             file_manager:tapPlus()
         else
             self:showFileDialog(item)
         end
     end
 
-    function file_chooser:showFileDialog(item)  -- luacheck: ignore
+    function file_chooser:showFileDialog(item)
         local file = item.path
         local is_file = item.is_file
         local is_not_parent_folder = not item.is_go_up
@@ -234,7 +229,7 @@ function FileManager:setupLayout()
                     text = _("Select"),
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        file_manager:onToggleSelectMode(true) -- no full screen refresh
+                        file_manager:onToggleSelectMode()
                         if is_file then
                             file_manager.selected_files[file] = true
                             item.dim = true
@@ -381,7 +376,7 @@ function FileManager:registerKeyEvents()
         -- Override the menu.lua way of handling the back key
         self.file_chooser.key_events.Back = { { Device.input.group.Back } }
         if Device:hasScreenKB() then
-            self.key_events.KeyToggleWifi = { { "ScreenKB", "Home" }, event = "ToggleWifi" }
+            self.key_events.ToggleWifi = { { "ScreenKB", "Home" } }
         end
         if not Device:hasFewKeys() then
             -- Also remove the handler assigned to the "Back" key by menu.lua
@@ -495,14 +490,21 @@ function FileManager:onShowPlusMenu()
     return true
 end
 
-function FileManager:onToggleSelectMode(no_refresh)
+function FileManager:onToggleSelectMode(do_refresh)
     logger.dbg("toggle select mode")
-    self.select_mode = not self.select_mode
-    self.selected_files = self.select_mode and {} or nil
-    self.title_bar:setRightIcon(self.select_mode and "check" or "plus")
-    if not no_refresh then
-        self:onRefresh()
+    if self.selected_files then
+        self.selected_files = nil
+        self.title_bar:setRightIcon("plus")
+        if do_refresh then
+            self.file_chooser:refreshPath()
+        else
+            self.file_chooser:selectAllFilesInFolder(false) -- undim
+        end
+    else
+        self.selected_files = {}
+        self.title_bar:setRightIcon("check")
     end
+    return true
 end
 
 function FileManager:tapPlus()
@@ -514,9 +516,9 @@ function FileManager:tapPlus()
     end
 
     local title, buttons
-    if self.select_mode then
+    if self.selected_files then
         local function toggle_select_mode_callback()
-            self:onToggleSelectMode()
+            self:onToggleSelectMode(true)
         end
         local select_count = util.tableSize(self.selected_files)
         local actions_enabled = select_count > 0
@@ -624,7 +626,7 @@ function FileManager:tapPlus()
                     text = _("Select files"),
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        self:onToggleSelectMode(true) -- no full screen refresh
+                        self:onToggleSelectMode()
                     end,
                 },
             },
@@ -722,7 +724,7 @@ function FileManager:tapPlus()
         title = title,
         title_align = "center",
         buttons = buttons,
-        select_mode = self.select_mode, -- for coverbrowser
+        select_mode = self.selected_files and true or nil, -- for coverbrowser
     }
     UIManager:show(self.file_dialog)
 end
@@ -746,9 +748,6 @@ function FileManager:reinit(path, focused_file)
     -- looks unnecessary (cheap with classic mode, less cheap with
     -- CoverBrowser plugin's cover image renderings)
     -- self:onRefresh()
-    if self.select_mode then
-        self.title_bar:setRightIcon("check")
-    end
 end
 
 function FileManager:getCurrentDir()
@@ -989,7 +988,7 @@ function FileManager:pasteSelectedFiles(overwrite)
             icon = "notice-warning",
         })
     else
-        self:onToggleSelectMode()
+        self:onToggleSelectMode(true)
     end
 end
 
@@ -1117,7 +1116,7 @@ function FileManager:deleteSelectedFiles()
             icon = "notice-warning",
         })
     else
-        self:onToggleSelectMode()
+        self:onToggleSelectMode(true)
     end
 end
 
@@ -1208,7 +1207,7 @@ function FileManager:renameFile(file, basename, is_file)
 end
 
 --- @note: This is the *only* safe way to instantiate a new FileManager instance!
-function FileManager:showFiles(path, focused_file)
+function FileManager:showFiles(path, focused_file, selected_files)
     -- Warn about and close any pre-existing FM instances first...
     if FileManager.instance then
         logger.warn("FileManager instance mismatch! Tried to spin up a new instance, while we still have an existing one:", tostring(FileManager.instance))
@@ -1224,6 +1223,7 @@ function FileManager:showFiles(path, focused_file)
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         root_path = path,
         focused_file = focused_file,
+        selected_files = selected_files,
     }
     UIManager:show(file_manager)
 end
@@ -1348,6 +1348,7 @@ function FileManager:showSelectedFilesList()
         item_table = selected_files,
         is_borderless = true,
         is_popout = false,
+        title_bar_fm_style = true,
         truncate_left = true,
         onMenuSelect = function(_, item)
             UIManager:close(menu)
