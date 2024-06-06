@@ -50,7 +50,7 @@ local ota_channels = {
 }
 
 -- Try to detect Kindle running hardfp firmware
-function OTAManager:_isKindleHardFP() 
+function OTAManager:_isKindleHardFP()
     local util = require("util")
     return util.pathExists("/lib/ld-linux-armhf.so.3")
 end
