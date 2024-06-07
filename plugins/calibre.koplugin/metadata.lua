@@ -77,7 +77,7 @@ end
 local CalibreMetadata = {
     -- info about the library itself. It should
     -- hold a table with the contents of "driveinfo.calibre"
-    drive = {},
+    drive = rapidjson.array({}),
     -- info about the books in this library. It should
     -- hold a table with the contents of "metadata.calibre"
     books = rapidjson.array({}),
@@ -222,7 +222,7 @@ end
 -- cleans all temp data stored for current library.
 function CalibreMetadata:clean()
     self.books = rapidjson.array({})
-    self.drive = {}
+    self.drive = rapidjson.array({})
     self.path = nil
     self.driveinfo = nil
     self.metadata = nil
