@@ -158,15 +158,13 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
             if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
                 local aux_batt_lvl = powerd:getAuxCapacity()
                 if powerd:isAuxCharging() then
-                    batt_pre = "\u{2009}\u{21AF}"
-                    batt_post = " "
+                    batt_pre = "[\u{21AF}"
                 end
                 -- Sum both batteries for the actual text
                 batt_lvl = batt_lvl + aux_batt_lvl
             else
                 if powerd:isCharging() then
-                    batt_pre = "\u{2009}\u{21AF}"
-                    batt_post = " "
+                    batt_pre = "[\u{21AF}"
                 end
             end
             batt_val = string.format("%2d%%", batt_lvl)
