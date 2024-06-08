@@ -11,16 +11,14 @@ local order = {
         "main",
     },
     navi = {
+        "navi_settings",
+        "----------------------------",
         "table_of_contents",
         "bookmarks",
         "toggle_bookmark", -- if not Device:isTouchDevice()
         "bookmark_browsing_mode",
-        "navi_settings",
         "----------------------------",
-        "page_map",
-        "hide_nonlinear_flows",
-        "----------------------------",
-        "book_map", -- if Device:isTouchDevice()
+        "book_map", -- if Device:isTouchDevice() or Device:useDPadAsActionKeys()
         "page_browser", -- if Device:isTouchDevice()
         "----------------------------",
         "go_to",
@@ -33,18 +31,24 @@ local order = {
     navi_settings = {
         "toc_ticks_level_ignore",
         "----------------------------",
+        "toc_submenu",
+        "bookmarks_settings",
+        "----------------------------",
+        "page_map",
+        "hide_nonlinear_flows",
+        "----------------------------",
+        "handmade_hidden_flows", -- if Device:isTouchDevice()
+        "handmade_settings_hidden_flows", -- if Device:isTouchDevice()
+    },
+    toc_submenu = {
         "toc_items_per_page",
         "toc_items_font_size",
         "toc_items_show_chapter_length",
         "toc_items_with_dots",
         "----------------------------",
         "toc_alt_toc",
-        "----------------------------",
-        "handmade_toc",
-        "handmade_hidden_flows",
-        "handmade_settings",
-        "----------------------------",
-        "bookmarks_settings",
+        "handmade_toc", -- if Device:isTouchDevice()
+        "handmade_settings", -- if Device:isTouchDevice()
     },
     typeset = {
         "document_settings",
