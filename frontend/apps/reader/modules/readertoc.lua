@@ -1000,7 +1000,7 @@ function ReaderToc:addToMainMenu(menu_items)
     }
     -- ToC (and other navigation) settings
     menu_items.navi_settings = {
-        text = _("Settings"),
+        text = _("Preferences"),
     }
     -- Alternative ToC (only available with CRE documents)
     if self.ui.document:canHaveAlternativeToc() then
@@ -1091,9 +1091,9 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]])
                     nb_ticks = nb_ticks + #ticks[level]
                 end
             end
-            return T(N_("Progress bars: 1 tick", "Progress bars: %1 ticks", nb_ticks), nb_ticks)
+            return T(N_("Chapter markers: 1 marker", "Chapter markers: %1 markers", nb_ticks), nb_ticks)
         end,
-        help_text = _([[The progress bars in the footer and the skim dialog can become cramped when the table of contents is complex. This allows you to restrict the number of tick marks.]]),
+        help_text = _([[The progress bars in the footer and the skim dialog can become cramped when the table of contents is complex. This allows you to restrict the number of tick markers.]]),
         enabled_func = function()
             local ticks = self:getTocTicks()
             return #ticks > 0
@@ -1114,9 +1114,9 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]])
                 toc_ticks_levels[#toc_ticks_levels].separator = true
             end
             table.insert(toc_ticks_levels, {
-                text = _("Bind chapter navigation to ticks"),
+                text = _("Bind chapter navigation to markers"),
                 help_text = _([[Entries from ToC levels that are ignored in the progress bars will still be used for chapter navigation and 'page/time left until next chapter' in the footer.
-Enabling this option will restrict chapter navigation to progress bar ticks.]]),
+Enabling this option will restrict chapter navigation to progress bar markers.]]),
                 enabled_func = function()
                     return next(self.toc_ticks_ignored_levels) ~= nil
                 end,
@@ -1130,9 +1130,9 @@ Enabling this option will restrict chapter navigation to progress bar ticks.]]),
                 end,
             })
             table.insert(toc_ticks_levels, {
-                text = _("Chapter titles from ticks only"),
+                text = _("Chapter titles from markers only"),
                 help_text = _([[Entries from ToC levels that are ignored in the progress bars will still be used for displaying the title of the current chapter in the footer and in bookmarks.
-Enabling this option will restrict display to the chapter titles of progress bar ticks.]]),
+Enabling this option will restrict chapter names used to those of the associated chapter markers.]]),
                 enabled_func = function()
                     return next(self.toc_ticks_ignored_levels) ~= nil
                 end,
@@ -1147,8 +1147,11 @@ Enabling this option will restrict display to the chapter titles of progress bar
             return toc_ticks_levels
         end,
     }
+    menu_items.toc_submenu = {
+        text = _("Table of contents"),
+    }
     menu_items.toc_items_per_page = {
-        text = _("ToC entries per page"),
+        text = _("Entries per page"),
         keep_menu_open = true,
         callback = function()
             local SpinWidget = require("ui/widget/spinwidget")
@@ -1171,7 +1174,7 @@ Enabling this option will restrict display to the chapter titles of progress bar
         end
     }
     menu_items.toc_items_font_size = {
-        text = _("ToC entry font size"),
+        text = _("Entry font size"),
         keep_menu_open = true,
         callback = function()
             local SpinWidget = require("ui/widget/spinwidget")
@@ -1203,7 +1206,7 @@ Enabling this option will restrict display to the chapter titles of progress bar
         end
     }
     menu_items.toc_items_with_dots = {
-        text = _("Dot leaders"),
+        text = _("Show dot leaders"),
         keep_menu_open = true,
         checked_func = function()
             return G_reader_settings:nilOrTrue("toc_items_with_dots")
