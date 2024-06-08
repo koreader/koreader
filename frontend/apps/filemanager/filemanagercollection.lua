@@ -351,7 +351,7 @@ function FileManagerCollection:updateCollListItemTable(do_init, item_number)
     local subtitle
     if self.selected_colections then
         local selected_nb = util.tableSize(self.selected_colections)
-        subtitle = self.selected_colections and T(_("Selected collections: %1"), selected_nb)
+        subtitle = self.selected_colections and T(_("Selected: %1"), selected_nb)
         if do_init and selected_nb > 0 then -- show first collection containing the long-pressed book
             for i, item in ipairs(item_table) do
                 if self.selected_colections[item.name] then
