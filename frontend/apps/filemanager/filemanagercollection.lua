@@ -50,6 +50,15 @@ function FileManagerCollection:getCollectionTitle(collection_name)
          or collection_name
 end
 
+function FileManagerCollection:refreshFileManager()
+    if self.files_updated then
+        if self.ui.file_chooser then
+            self.ui.file_chooser:refreshPath()
+        end
+        self.files_updated = nil
+    end
+end
+
 function FileManagerCollection:onShowColl(collection_name)
     collection_name = collection_name or ReadCollection.default_collection_name
     self.coll_menu = Menu:new{
@@ -69,12 +78,7 @@ function FileManagerCollection:onShowColl(collection_name)
         collection_name = collection_name,
     }
     self.coll_menu.close_callback = function()
-        if self.files_updated then
-            if self.ui.file_chooser then
-                self.ui.file_chooser:refreshPath()
-            end
-            self.files_updated = nil
-        end
+        self:refreshFileManager()
         UIManager:close(self.coll_menu)
         self.coll_menu = nil
     end
@@ -156,6 +160,7 @@ function FileManagerCollection:onMenuHold(item)
                 UIManager:close(self.collfile_dialog)
                 ReadCollection:removeItem(file, self.collection_name)
                 self._manager:updateItemTable()
+                self._manager.files_updated = true
             end,
         },
     })
@@ -214,6 +219,7 @@ function FileManagerCollection:showCollDialog()
                         if not ReadCollection:isFileInCollection(file, self.coll_menu.collection_name) then
                             ReadCollection:addItem(file, self.coll_menu.collection_name)
                             self:updateItemTable(true) -- show added item
+                            self.files_updated = true
                         end
                     end,
                 }
@@ -236,6 +242,7 @@ function FileManagerCollection:showCollDialog()
                     ReadCollection:addItem(file, self.coll_menu.collection_name)
                 end
                 self:updateItemTable(not is_in_collection)
+                self.files_updated = true
             end,
         }})
     end
@@ -305,6 +312,7 @@ function FileManagerCollection:onShowCollList(file_or_files, caller_callback, no
     }
     self.coll_list.close_callback = function(force_close)
         if force_close or self.selected_colections == nil then
+            self:refreshFileManager()
             UIManager:close(self.coll_list)
             self.coll_list = nil
         end
@@ -553,6 +561,7 @@ function FileManagerCollection:removeCollection(item)
             ReadCollection:removeCollection(item.name)
             table.remove(self.coll_list.item_table, item.idx)
             self:updateCollListItemTable()
+            self.files_updated = true
         end,
     })
 end
