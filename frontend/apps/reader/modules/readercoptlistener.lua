@@ -23,6 +23,7 @@ function ReaderCoptListener:onReadSettings(config)
 
     -- crengine top status bar can only show author and title together
     self.title = G_reader_settings:readSetting("cre_header_title", 1)
+    self.timer_value = G_reader_settings:readSetting("cre_header_timer_value", 0)
     self.clock = G_reader_settings:readSetting("cre_header_clock", 1)
     self.header_auto_refresh = G_reader_settings:readSetting("cre_header_auto_refresh", 1)
     self.page_number = G_reader_settings:readSetting("cre_header_page_number", 1)
@@ -43,7 +44,6 @@ function ReaderCoptListener:onReadSettings(config)
 
     -- We will build the top status bar page info string ourselves,
     -- if we have to display any chunk of it
-    self.page_info_override = self.page_number == 1 or self.page_count == 1 or self.reading_percent == 1
     self.document:setPageInfoOverride("") -- an empty string lets crengine display its own page info
 
     self:onTimeFormatChanged()
@@ -84,13 +84,25 @@ end
 function ReaderCoptListener:updatePageInfoOverride(pageno)
     pageno = pageno or self.ui.view.footer.pageno
 
-    if not (self.document.configurable.status_line == 0 and self.view.view_mode == "page" and self.page_info_override) then
+    local page_info_override = self.page_number == 1 or self.page_count == 1 or self.reading_percent == 1
+        or (self.timer_value == 1 and self.ui.readtimer and self.ui.readtimer:scheduled())
+
+    if not (self.document.configurable.status_line == 0 and self.view.view_mode == "page" and page_info_override) then
+        self.document:setPageInfoOverride("")
         return
     end
     -- There are a few cases where we may not be updated on change, at least:
     -- - when toggling ReaderPageMap's "Use reference page numbers"
     -- - when changing footer's nb of digits after decimal point
     -- but we will update on next page turn. Let's not bother.
+
+    local page_info = ""
+    if self.timer_value == 1 and self.ui.readtimer and self.ui.readtimer:scheduled() then
+        local timer_info_pre = "\u{23F2}"  -- ⏲ timer symbol
+        local hours, minutes, dummy = self.ui.readtimer:remainingTime(1)
+        local timer_info = timer_info_pre .. string.format("%02d:%02d", hours, minutes)
+        page_info = timer_info .. "  " -- (double space as done by crengine's other drawings)
+    end
 
     local page_pre = ""
     local page_number = pageno
@@ -126,7 +138,6 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
         end
     end
 
-    local page_info = ""
     if self.page_number == 1 or self.page_count == 1 then
         page_info = page_info .. page_pre
         if self.page_number == 1 then
@@ -296,20 +307,25 @@ function ReaderCoptListener:onOutOfScreenSaver()
     self:headerRefresh()
 end
 
--- Unschedule on these events
-ReaderCoptListener.onCloseDocument = ReaderCoptListener.unscheduleHeaderRefresh
-ReaderCoptListener.onSuspend = ReaderCoptListener.unscheduleHeaderRefresh
-
-function ReaderCoptListener:setAndSave(setting, property, value)
-    self.document._document:setIntProperty(property, value)
-    G_reader_settings:saveSetting(setting, value)
-    self.page_info_override = self.page_number == 1 or self.page_count == 1 or self.reading_percent == 1
-    self:updatePageInfoOverride()
+function ReaderCoptListener:onUpdateHeader()
+    self:updatePageInfoOverride(self.pageno)
     -- Have crengine redraw it (even if hidden by the menu at this time)
     self.ui.rolling:updateBatteryState()
     self:updateHeader()
     -- And see if we should auto-refresh
     self:rescheduleHeaderRefreshIfNeeded()
+end
+
+-- Unschedule on these events
+ReaderCoptListener.onCloseDocument = ReaderCoptListener.unscheduleHeaderRefresh
+ReaderCoptListener.onSuspend = ReaderCoptListener.unscheduleHeaderRefresh
+
+function ReaderCoptListener:setAndSave(setting, property, value)
+    if property and property ~= "" then
+        self.document._document:setIntProperty(property, value)
+    end
+    G_reader_settings:saveSetting(setting, value)
+    self:onUpdateHeader()
 end
 
 local about_text = _([[
@@ -364,6 +380,16 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 callback = function()
                     self.clock = self.clock == 0 and 1 or 0
                     self:setAndSave("cre_header_clock", "window.status.clock", self.clock)
+                end,
+            },
+            {
+                text = _("Current timer value"),
+                checked_func = function()
+                    return self.timer_value == 1
+                end,
+                callback = function()
+                    self.timer_value = self.timer_value == 0 and 1 or 0
+                    self:setAndSave("cre_header_timer_value", "", self.clock)
                 end,
             },
             {

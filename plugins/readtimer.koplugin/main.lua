@@ -1,4 +1,5 @@
 local DateTimeWidget = require("ui/widget/datetimewidget")
+local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local UIManager = require("ui/uimanager")
@@ -20,6 +21,8 @@ function ReadTimer:init()
         if self.time == 0 then return end
 
         self.time = 0
+        UIManager:broadcastEvent(Event:new("UpdateFooter", true))
+        UIManager:broadcastEvent(Event:new("UpdateHeader"))
         local tip_text = _("Time is up")
         local confirm_box
         -- only interval support repeat
@@ -66,9 +69,21 @@ function ReadTimer:remaining()
     end
 end
 
-function ReadTimer:remainingTime()
+-- can round
+function ReadTimer:remainingTime(round)
     if self:scheduled() then
         local remainder = self:remaining()
+        if round then
+            if round < 0 then -- round down
+                remainder = remainder - 59
+            elseif round == 0 then
+                remainder = remainder + 30
+            else -- round up
+                remainder = remainder + 59
+            end
+            remainder = math.floor(remainder * (1/60)) * 60
+        end
+
         local hours = math.floor(remainder * (1/3600))
         local minutes = math.floor(remainder % 3600 * (1/60))
         local seconds = math.floor(remainder % 60)
@@ -86,6 +101,8 @@ end
 function ReadTimer:rescheduleIn(seconds)
     self.time = os.time() + seconds
     UIManager:scheduleIn(seconds, self.alarm_callback)
+    UIManager:broadcastEvent(Event:new("UpdateFooter", true))
+    UIManager:broadcastEvent(Event:new("UpdateHeader"))
 end
 
 function ReadTimer:addToMainMenu(menu_items)
@@ -198,6 +215,8 @@ function ReadTimer:addToMainMenu(menu_items)
                     self.last_interval_time = 0
                     self:unschedule()
                     touchmenu_instance:updateItems()
+                    UIManager:broadcastEvent(Event:new("UpdateFooter", true))
+                    UIManager:broadcastEvent(Event:new("UpdateHeader"))
                 end,
             },
         },

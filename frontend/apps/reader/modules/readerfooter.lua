@@ -49,6 +49,7 @@ local MODE = {
     chapter_progress = 15,
     frontlight_warmth = 16,
     custom_text = 17,
+    timer_value = 18,
 }
 
 local symbol_prefix = {
@@ -72,6 +73,8 @@ local symbol_prefix = {
         frontlight_warmth = C_("FooterLetterPrefix", "R:"),
         -- @translators This is the footer letter prefix for memory usage.
         mem_usage = C_("FooterLetterPrefix", "M:"),
+        -- @translators This is the footer letter prefix for timer value.
+        timer_value = C_("FooterLetterPrefix", "T:"),
         -- @translators This is the footer letter prefix for Wi-Fi status.
         wifi_status = C_("FooterLetterPrefix", "W:"),
         -- no prefix for custom text
@@ -89,6 +92,7 @@ local symbol_prefix = {
         frontlight = "☼",
         frontlight_warmth = "💡",
         mem_usage = "",
+        timer_value = "⏲",
         wifi_status = "",
         wifi_status_off = "",
         custom_text = "",
@@ -106,6 +110,7 @@ local symbol_prefix = {
         frontlight_warmth = "⊛",
         -- @translators This is the footer compact item prefix for memory usage.
         mem_usage = C_("FooterCompactItemsPrefix", "M"),
+        timer_value = "⏲",
         wifi_status = "",
         wifi_status_off = "",
         custom_text = "",
@@ -340,15 +345,24 @@ local footerTextGeneratorMap = {
             prefix .. " ", left)
     end,
     mem_usage = function(footer)
-        local symbol_type = footer.settings.item_prefix
-        local prefix = symbol_prefix[symbol_type].mem_usage
         local statm = io.open("/proc/self/statm", "r")
         if statm then
+            local symbol_type = footer.settings.item_prefix
+            local prefix = symbol_prefix[symbol_type].mem_usage
             local dummy, rss = statm:read("*number", "*number")
             statm:close()
             -- we got the nb of 4Kb-pages used, that we convert to MiB
             rss = math.floor(rss * (4096 / 1024 / 1024))
             return (prefix .. " %d"):format(rss)
+        end
+        return ""
+    end,
+    timer_value = function(footer)
+        if footer.ui.readtimer and footer.ui.readtimer:scheduled() then
+            local symbol_type = footer.settings.item_prefix
+            local prefix = symbol_prefix[symbol_type].timer_value
+            local hours, minutes, dummy = footer.ui.readtimer:remainingTime(1)
+            return (prefix .. " %02d:%02d"):format(hours, minutes)
         end
         return ""
     end,
@@ -977,6 +991,7 @@ function ReaderFooter:textOptionTitles(option)
         wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
         book_title = _("Book title"),
         book_chapter = _("Chapter title"),
+        timer_value = T(_("Timer value (%1)"), symbol_prefix[symbol].timer_value),
         custom_text = T(_("Custom text (long press to edit): \'%1\'%2"), self.custom_text,
             self.custom_text_repetitions > 1 and
             string.format(" × %d", self.custom_text_repetitions) or ""),
@@ -1405,6 +1420,7 @@ function ReaderFooter:addToMainMenu(menu_items)
     end
     table.insert(footer_items, getMinibarOption("book_title"))
     table.insert(footer_items, getMinibarOption("book_chapter"))
+    table.insert(footer_items, getMinibarOption("timer_value"))
     table.insert(footer_items, getMinibarOption("custom_text"))
     -- configure footer_items
     table.insert(sub_items, {
