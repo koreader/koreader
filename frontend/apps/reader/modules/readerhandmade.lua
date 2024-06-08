@@ -125,14 +125,14 @@ function ReaderHandMade:addToMainMenu(menu_items)
         return
     end
     menu_items.handmade_toc = {
-        text = _("Custom table of contents") .. " " .. self.custom_toc_symbol,
+        text = _("Enable custom table of contents") .. " " .. self.custom_toc_symbol,
         checked_func = function() return self.toc_enabled end,
         callback = function()
             self:onToggleHandmadeToc()
         end,
     }
     menu_items.handmade_hidden_flows = {
-        text = _("Custom hidden flows"),
+        text = _("Enable custom hidden flows"),
         checked_func = function() return self.flows_enabled end,
         callback = function()
             self:onToggleHandmadeFlows()
@@ -147,7 +147,7 @@ function ReaderHandMade:addToMainMenu(menu_items)
     }
     ]]--
     menu_items.handmade_settings = {
-        text = _("Custom layout features"),
+        text = _("Custom table of contents"),
         sub_item_table_func = function()
             return {
                 {
@@ -207,6 +207,13 @@ This custom table of contents is currently limited to a single level and can't h
                     keep_menu_open = true,
                     separator = true,
                 },
+            }
+        end,
+    }
+    menu_items.handmade_settings_hidden_flows = {
+        text = _("Custom hidden flows"),
+        sub_item_table_func = function()
+            return {
                 {
                     text = _("About custom hidden flows"),
                     callback = function()
