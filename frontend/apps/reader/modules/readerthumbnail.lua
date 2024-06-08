@@ -2,11 +2,11 @@ local Blitbuffer = require("ffi/blitbuffer")
 local Cache = require("cache")
 local Device = require("device")
 local Geom = require("ui/geometry")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local Persist = require("persist")
 local RenderImage = require("ui/renderimage")
 local TileCacheItem = require("document/tilecacheitem")
 local UIManager = require("ui/uimanager")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Screen = Device.screen
 local ffiutil = require("ffi/util")
 local logger = require("logger")
@@ -18,7 +18,7 @@ local _ = require("gettext")
 -- It handles launching via the menu or Dispatcher/Gestures two fullscreen
 -- widgets related to showing pages and thumbnails that will make use of
 -- its services: BookMap and PageBrowser.
-local ReaderThumbnail = WidgetContainer:extend{}
+local ReaderThumbnail = InputContainer:extend{}
 
 function ReaderThumbnail:init()
     self:registerKeyEvents()

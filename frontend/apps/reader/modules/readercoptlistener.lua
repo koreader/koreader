@@ -82,6 +82,8 @@ function ReaderCoptListener:onReaderReady()
 end
 
 function ReaderCoptListener:updatePageInfoOverride(pageno)
+    pageno = pageno or self.ui.view.footer.pageno
+
     if not (self.document.configurable.status_line == 0 and self.view.view_mode == "page" and self.page_info_override) then
         return
     end
@@ -144,6 +146,37 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
     if self.reading_percent == 1 then
         page_info = page_info .. percentage_pre .. percentage_fmt:format(percentage*100) .. percentage_post
     end
+
+    if self.battery == 1 and self.battery_percent == 1 then -- append battery percentage
+        local batt_pre = "["
+        local batt_post = "]"
+        local batt_val = nil
+        if Device:hasBattery() then
+            local powerd = Device:getPowerDevice()
+            local batt_lvl = powerd:getCapacity()
+
+            if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
+                local aux_batt_lvl = powerd:getAuxCapacity()
+                if powerd:isAuxCharging() then
+                    batt_pre = "[\u{21AF}"
+                end
+                -- Sum both batteries for the actual text
+                batt_lvl = batt_lvl + aux_batt_lvl
+            else
+                if powerd:isCharging() then
+                    batt_pre = "[\u{21AF}"
+                end
+            end
+            batt_val = string.format("%2d%%", batt_lvl)
+        end
+
+        if batt_val then
+            local battery_info = "  " .. batt_pre .. batt_val .. batt_post
+            --                     ^--- (double space as done by crengine's own drawing)
+            page_info = page_info .. battery_info
+        end
+    end
+
     self.document:setPageInfoOverride(page_info)
 end
 
@@ -271,7 +304,7 @@ function ReaderCoptListener:setAndSave(setting, property, value)
     self.document._document:setIntProperty(property, value)
     G_reader_settings:saveSetting(setting, value)
     self.page_info_override = self.page_number == 1 or self.page_count == 1 or self.reading_percent == 1
-    self.document:setPageInfoOverride("")
+    self:updatePageInfoOverride()
     -- Have crengine redraw it (even if hidden by the menu at this time)
     self.ui.rolling:updateBatteryState()
     self:updateHeader()
