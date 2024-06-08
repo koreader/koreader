@@ -41,9 +41,12 @@ function ReaderCoptListener:onReadSettings(config)
     self.document._document:setIntProperty("window.status.battery.percent", self.battery_percent)
     self.document._document:setIntProperty("window.status.pos.percent", self.reading_percent)
 
+    self.external_header_content = {} -- place, where additional header content can be inserted.
+
     -- We will build the top status bar page info string ourselves,
     -- if we have to display any chunk of it
     self.page_info_override = self.page_number == 1 or self.page_count == 1 or self.reading_percent == 1
+        or (self.battery == 1 and self.battery_percent == 1) -- don't forget a sole battery
     self.document:setPageInfoOverride("") -- an empty string lets crengine display its own page info
 
     self:onTimeFormatChanged()
@@ -84,7 +87,10 @@ end
 function ReaderCoptListener:updatePageInfoOverride(pageno)
     pageno = pageno or self.ui.view.footer.pageno
 
-    if not (self.document.configurable.status_line == 0 and self.view.view_mode == "page" and self.page_info_override) then
+    if self.document.configurable.status_line ~= 0 or self.view.view_mode ~= "page"
+        or not self.page_info_override or not next(self.external_header_content) then
+
+        self.document:setPageInfoOverride("")
         return
     end
     -- There are a few cases where we may not be updated on change, at least:
@@ -126,7 +132,12 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
         end
     end
 
-    local page_info = ""
+    local additional_content = ""
+    for i, v in pairs(self.external_header_content) do
+        additional_content = additional_content .. v
+    end
+
+    local page_info = additional_content
     if self.page_number == 1 or self.page_count == 1 then
         page_info = page_info .. page_pre
         if self.page_number == 1 then
@@ -158,13 +169,13 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
             if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
                 local aux_batt_lvl = powerd:getAuxCapacity()
                 if powerd:isAuxCharging() then
-                    batt_pre = "[\u{21AF}"
+                    batt_pre = "[\u{21AF}" -- ↯-symbol
                 end
                 -- Sum both batteries for the actual text
                 batt_lvl = batt_lvl + aux_batt_lvl
             else
                 if powerd:isCharging() then
-                    batt_pre = "[\u{21AF}"
+                    batt_pre = "[\u{21AF}" -- ↯-symbol
                 end
             end
             batt_val = string.format("%2d%%", batt_lvl)
@@ -300,15 +311,29 @@ end
 ReaderCoptListener.onCloseDocument = ReaderCoptListener.unscheduleHeaderRefresh
 ReaderCoptListener.onSuspend = ReaderCoptListener.unscheduleHeaderRefresh
 
+function ReaderCoptListener:addAdditionalHeaderContent(value)
+    table.insert(self.external_header_content, value)
+end
+
+function ReaderCoptListener:removeAdditionalHeaderContent(pattern)
+    for i, v in pairs(self.external_header_content) do
+        if v:find(pattern) then
+            table.remove(self.external_header_content, i)
+        end
+    end
+end
+
 function ReaderCoptListener:setAndSave(setting, property, value)
     self.document._document:setIntProperty(property, value)
     G_reader_settings:saveSetting(setting, value)
+    self:onUpdateHeader()
+end
+
+function ReaderCoptListener:onUpdateHeader()
     self.page_info_override = self.page_number == 1 or self.page_count == 1 or self.reading_percent == 1
-    if self.page_info_override then
-        self:updatePageInfoOverride()
-    else
-        self.document:setPageInfoOverride("") -- Don't forget to restore CRE default behaviour.
-    end
+        or (self.battery == 1 and self.battery_percent == 1) -- don't forget a sole battery
+
+    self:updatePageInfoOverride()
     -- Have crengine redraw it (even if hidden by the menu at this time)
     self.ui.rolling:updateBatteryState()
     self:updateHeader()

@@ -341,10 +341,10 @@ local footerTextGeneratorMap = {
             prefix .. " ", left)
     end,
     mem_usage = function(footer)
-        local symbol_type = footer.settings.item_prefix
-        local prefix = symbol_prefix[symbol_type].mem_usage
         local statm = io.open("/proc/self/statm", "r")
         if statm then
+            local symbol_type = footer.settings.item_prefix
+            local prefix = symbol_prefix[symbol_type].mem_usage
             local dummy, rss = statm:read("*number", "*number")
             statm:close()
             -- we got the nb of 4Kb-pages used, that we convert to MiB
@@ -515,6 +515,8 @@ ReaderFooter.default_settings = {
 
 function ReaderFooter:init()
     self.settings = G_reader_settings:readSetting("footer", self.default_settings)
+
+    self.external_footer_content = {} -- place, where additional header content can be inserted.
 
     -- Remove items not supported by the current device
     if not Device:hasFastWifiStatusQuery() then
@@ -1981,6 +1983,18 @@ function ReaderFooter:genAlignmentMenuItems(value)
     }
 end
 
+function ReaderFooter:addAdditionalFooterContent(value)
+    table.insert(self.external_footer_content, value)
+end
+
+function ReaderFooter:removeAdditionalFooterContent(pattern)
+    for i, v in pairs(self.external_footer_content) do
+        if v:find(pattern) then
+            table.remove(self.external_footer_content, i)
+        end
+    end
+end
+
 -- this method will be updated at runtime based on user setting
 function ReaderFooter:genFooterText() end
 
@@ -2153,6 +2167,10 @@ function ReaderFooter:_updateFooterText(force_repaint, full_repaint)
         return
     end
     local text = self:genFooterText()
+    for i, v in pairs(self.external_footer_content) do
+        text = v .. " " .. self:get_separator_symbol() .. " " .. text
+    end
+
     if not text then text = "" end
     self.footer_text:setText(text)
     if self.settings.disable_progress_bar then
@@ -2469,6 +2487,7 @@ function ReaderFooter:onHoldFooter(ges)
 end
 
 function ReaderFooter:refreshFooter(refresh, signal)
+    UIManager:broadcastEvent(Event:new("FooterRefresh"))
     self:updateFooterContainer()
     self:resetLayout(true)
     -- If we signal, the event we send will trigger a full repaint anyway, so we should be able to skip this one.
