@@ -213,6 +213,10 @@ function WebDavApi:uploadFile(file_url, user, pass, local_path, etag)
         }
     })
     socketutil:reset_timeout()
+    if code == "timeout" or "wantread" or "sink timeout" then
+        logger.warn("WebDavApi: upload failure, code = ", code)
+        return
+    end
     if code < 200 or code > 299 then
         logger.warn("WebDavApi: upload failure:", status or code or "network unreachable")
     end
