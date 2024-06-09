@@ -53,6 +53,13 @@ function WebDav:uploadFile(url, address, username, password, local_path, callbac
     local path = WebDavApi:getJoinedPath(address, url)
     path = WebDavApi:getJoinedPath(path, ffiutil.basename(local_path))
     local code_response = WebDavApi:uploadFile(path, username, password, local_path)
+    if not code_response then
+        UIManager:show(InfoMessage:new{
+            text = T(_("Could not upload file (network error)")),
+            timeout = 3,
+        })
+        return
+    end
     if code_response >= 200 and code_response < 300 then
         UIManager:show(InfoMessage:new{
             text = T(_("File uploaded:\n%1"), BD.filepath(address)),
