@@ -234,7 +234,7 @@ end
 
 -- 20210518, ReaderFooter, https://github.com/koreader/koreader/pull/7702
 -- 20210622, ReaderFooter, https://github.com/koreader/koreader/pull/7876
--- 20240609, ReaderFooter, https://github.com/koreader/koreader/pull/
+-- 20240609, ReaderFooter, https://github.com/koreader/koreader/pull/11999
 if last_migration_date < 20240609 then
     logger.info("Performing one-time migration for 20240609")
 
