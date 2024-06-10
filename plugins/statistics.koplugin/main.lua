@@ -189,6 +189,7 @@ function ReaderStatistics:initData()
     -- Update these numbers to what's actually stored in the settings
     self.data.highlights, self.data.notes = self.ui.annotation:getNumberOfHighlightsAndNotes()
     self.id_curr_book = self:getIdBookDB()
+    if not self.id_curr_book then return end
     self.book_read_pages, self.book_read_time = self:getPageTimeTotalStats(self.id_curr_book)
     if self.book_read_pages > 0 then
         self.avg_time = self.book_read_time / self.book_read_pages
@@ -759,6 +760,7 @@ function ReaderStatistics:getIdBookDB()
     local result = stmt:reset():bind(self.data.title, self.data.authors, self.doc_md5):step()
     local nr_id = tonumber(result[1])
     if nr_id == 0 then
+        if not self.is_doc_not_frozen then return end
         -- Not in the DB yet, initialize it
         stmt = conn:prepare("INSERT INTO book VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);")
         stmt:reset():bind(self.data.title, self.data.authors, self.data.notes,
