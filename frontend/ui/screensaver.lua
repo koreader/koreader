@@ -265,7 +265,7 @@ local function addOverlayMessage(widget, widget_height, text)
 end
 
 function Screensaver:chooseFolder()
-    local title_header = _("Current screensaver folder:")
+    local title_header = _("Current random image folder:")
     local current_path = G_reader_settings:readSetting("screensaver_dir")
     local caller_callback = function(path)
         G_reader_settings:saveSetting("screensaver_dir", path)
@@ -275,7 +275,7 @@ end
 
 function Screensaver:chooseFile()
     local title_header, current_path, file_filter, caller_callback
-    title_header = _("Current sleep screen image or document cover:")
+    title_header = _("Current image or document cover:")
     current_path = G_reader_settings:readSetting("screensaver_document_cover")
     file_filter = function(filename)
         return DocumentRegistry:hasProvider(filename)
