@@ -87,20 +87,30 @@ function ProgressWidget:renderMarkerIcon()
         return
     end
 
-    if self.height <= INITIAL_MARKER_HEIGHT_THRESHOLD then
+    -- If we're in "thin" mode, do something entirely different.
+    if self.bordersize == 0 then
         self.initial_pos_icon = IconWidget:new{
-            icon = "position.marker.top",
-            width = Math.round(self.height / 1.5),
-            height = Math.round(self.height / 1.5),
-            alpha = true,
-        }
-    else
-        self.initial_pos_icon = IconWidget:new{
-            icon = "position.marker",
+            icon = "position.marker.thin",
             width = self.height,
             height = self.height,
             alpha = true,
         }
+    else
+        if self.height <= INITIAL_MARKER_HEIGHT_THRESHOLD then
+            self.initial_pos_icon = IconWidget:new{
+                icon = "position.marker.top",
+                width = Math.round(self.height / 1.5),
+                height = Math.round(self.height / 1.5),
+                alpha = true,
+            }
+        else
+            self.initial_pos_icon = IconWidget:new{
+                icon = "position.marker",
+                width = self.height,
+                height = self.height,
+                alpha = true,
+            }
+        end
     end
 end
 
@@ -202,7 +212,7 @@ function ProgressWidget:paintTo(bb, x, y)
 
     -- Overlay the initial position marker on top of everything
     if self.initial_pos_marker and self.initial_percentage >= 0 and fill_x then
-        if self.height <= INITIAL_MARKER_HEIGHT_THRESHOLD then
+        if self.initial_pos_icon.icon == "position.marker.top" then
             self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.initial_percentage) - self.height / 3), y - Math.round(self.height / 6))
         else
             self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.initial_percentage) - self.height / 2), y)
