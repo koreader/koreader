@@ -85,7 +85,7 @@ return {
                 end,
                 sub_item_table = {
                     {
-                        text = _("Select image or document cover"),
+                        text = _("Choose image or document cover"),
                         enabled_func = function()
                             return G_reader_settings:readSetting("screensaver_type") == "document_cover"
                         end,
@@ -95,7 +95,7 @@ return {
                         end,
                     },
                     {
-                        text = _("Select random image folder"),
+                        text = _("Choose random image folder"),
                         enabled_func = function()
                             return G_reader_settings:readSetting("screensaver_type") == "random_image"
                         end,
