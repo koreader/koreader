@@ -212,7 +212,14 @@ function ProgressWidget:paintTo(bb, x, y)
 
     -- Overlay the initial position marker on top of everything
     if self.initial_pos_marker and self.initial_percentage >= 0 and fill_x then
-        if self.initial_pos_icon.icon == "position.marker.top" then
+        if self.initial_pos_icon.icon == "position.marker.thin" then
+            -- Just draw a tick, as thin mode precludes any other ticks anyway.
+            bb:paintRect(fill_x + math.ceil(fill_width * self.initial_percentage),
+                         fill_y,
+                         self.tick_width,
+                         math.ceil(fill_height),
+                         self.bordercolor)
+        elseif self.initial_pos_icon.icon == "position.marker.top" then
             self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.initial_percentage) - self.height / 3), y - Math.round(self.height / 6))
         else
             self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.initial_percentage) - self.height / 2), y)
