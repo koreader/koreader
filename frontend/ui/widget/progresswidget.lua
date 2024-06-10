@@ -60,6 +60,7 @@ local ProgressWidget = Widget:extend{
     _orig_margin_v = nil,
     _orig_bordersize = nil,
     initial_pos_marker = false, -- overlay a marker at the initial percentage position
+    initial_pos_icon = nil,
     initial_percentage = nil,
 }
 
@@ -87,14 +88,9 @@ function ProgressWidget:renderMarkerIcon()
         return
     end
 
-    -- If we're in "thin" mode, do something entirely different.
     if self.bordersize == 0 then
-        self.initial_pos_icon = IconWidget:new{
-            icon = "position.marker.thin",
-            width = self.height,
-            height = self.height,
-            alpha = true,
-        }
+        -- If we're in "thin" mode, we'll do something entirely different
+        self.initial_pos_icon = nil
     else
         if self.height <= INITIAL_MARKER_HEIGHT_THRESHOLD then
             self.initial_pos_icon = IconWidget:new{
@@ -212,7 +208,7 @@ function ProgressWidget:paintTo(bb, x, y)
 
     -- Overlay the initial position marker on top of everything
     if self.initial_pos_marker and self.initial_percentage >= 0 and fill_x then
-        if self.initial_pos_icon.icon == "position.marker.thin" then
+        if not self.initial_pos_icon then
             -- Just draw a tick, as thin mode precludes any other ticks anyway.
             bb:paintRect(fill_x + math.ceil(fill_width * self.initial_percentage),
                          fill_y,
