@@ -381,19 +381,24 @@ local footerTextGeneratorMap = {
         end
     end,
     book_author = function(footer)
-        local author = footer.ui.doc_props.authors:gsub(" ", "\u{00A0}") -- replace space with no-break-space
-        local author_widget = TextWidget:new{
-            text = author,
-            max_width = footer._saved_screen_width * footer.settings.book_author_max_width_pct * (1/100),
-            face = Font:getFace(footer.text_font_face, footer.settings.text_font_size),
-            bold = footer.settings.text_font_bold,
-        }
-        local fitted_author_text, add_ellipsis = author_widget:getFittedText()
-        author_widget:free()
-        if add_ellipsis then
-            fitted_author_text = fitted_author_text .. "…"
+        local author = footer.ui.doc_props.authors
+        if author and author ~= "" then
+            author = author:gsub(" ", "\u{00A0}") -- replace space with no-break-space
+            local author_widget = TextWidget:new{
+                text = author,
+                max_width = footer._saved_screen_width * footer.settings.book_author_max_width_pct * (1/100),
+                face = Font:getFace(footer.text_font_face, footer.settings.text_font_size),
+                bold = footer.settings.text_font_bold,
+            }
+            local fitted_author_text, add_ellipsis = author_widget:getFittedText()
+            author_widget:free()
+            if add_ellipsis then
+                fitted_author_text = fitted_author_text .. "…"
+            end
+            return BD.auto(fitted_author_text)
+        else
+            return ""
         end
-        return BD.auto(fitted_author_text)
     end,
     book_title = function(footer)
         local title = footer.ui.doc_props.display_title:gsub(" ", "\u{00A0}") -- replace space with no-break-space
