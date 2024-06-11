@@ -92,6 +92,7 @@ end
 
 local Kobo = Generic:extend{
     model = "Kobo",
+    ota_model = "kobo",
     isKobo = yes,
     isTouchDevice = yes, -- all of them are
     hasOTAUpdates = yes,

@@ -49,88 +49,12 @@ local ota_channels = {
     nightly = _("Development"),
 }
 
--- Try to detect Kindle running hardfp firmware
-function OTAManager:_isKindleHardFP()
-    local util = require("util")
-    return util.pathExists("/lib/ld-linux-armhf.so.3")
-end
-
--- Try to detect WARIO+ Kindle boards (i.MX6 & i.MX7)
-function OTAManager:_isKindleWarioOrMore()
-    local cpu_hw = nil
-    -- Parse cpuinfo line by line, until we find the Hardware description
-    for line in io.lines("/proc/cpuinfo") do
-        if line:find("^Hardware") then
-            cpu_hw = line:match("^Hardware%s*:%s([%g%s]*)$")
-        end
-    end
-    -- NOTE: I couldn't dig up a cpuinfo dump from an Oasis 2 to check the CPU part value,
-    --       but for Wario (Cortex A9), matching that to 0xc09 would work, too.
-    --       On the other hand, I'm already using the Hardware match in MRPI, so, that sealed the deal ;).
-
-    -- If we've got a Hardware string, check if it mentions an i.MX 6 or 7 or a MTK...
-    if cpu_hw then
-        if cpu_hw:find("i%.MX%s?[6-7]") or cpu_hw:find("MT8110") then
-            return true
-        else
-            return false
-        end
-    else
-        return false
-    end
-end
-
--- "x86", "x64", "arm", "arm64", "ppc", "mips" or "mips64".
-local arch = jit.arch
-
-function OTAManager:getOTAModel()
-    if Device:isAndroid() then
-        if arch == "arm64" then
-            return "android-arm64"
-        elseif arch == "x86" then
-            return "android-x86"
-        elseif arch == "x64" then
-            return "android-x86_64"
-        end
-        return "android"
-    elseif Device:isSDL() then
-        return "appimage"
-    elseif Device:isCervantes() then
-        return "cervantes"
-    elseif Device:isKindle() then
-        if Device:isTouchDevice() or Device.model == "Kindle4" then
-            if self:_isKindleHardFP() then
-                return "kindlehf"
-            elseif self:_isKindleWarioOrMore() then
-                return "kindlepw2"
-            else
-                return "kindle"
-            end
-        else
-            return "kindle-legacy"
-        end
-    elseif Device:isKobo() then
-        return "kobo"
-    elseif Device:isPocketBook() then
-        return "pocketbook"
-    elseif Device:isRemarkable() then
-        return "remarkable"
-    elseif Device:isSonyPRSTUX() then
-        return "sony-prstux"
-    else
-        return ""
-    end
-end
-
 function OTAManager:getOTAType()
-    local ota_model = self:getOTAModel()
-
+    local ota_model = Device:otaModel()
     if ota_model == "" then return end
-
     if ota_model:find("android") or ota_model:find("appimage") then
         return "link"
     end
-
     return "ota"
 end
 

@@ -15,6 +15,37 @@ require("ffi/fbink_input_h")
 local function yes() return true end
 local function no() return false end  -- luacheck: ignore
 
+-- Try to detect WARIO+ Kindle boards (i.MX6 & i.MX7)
+local function isWarioOrMore()
+    local cpu_hw = nil
+    -- Parse cpuinfo line by line, until we find the Hardware description
+    for line in io.lines("/proc/cpuinfo") do
+        if line:find("^Hardware") then
+            cpu_hw = line:match("^Hardware%s*:%s([%g%s]*)$")
+        end
+    end
+    -- NOTE: I couldn't dig up a cpuinfo dump from an Oasis 2 to check the CPU part value,
+    --       but for Wario (Cortex A9), matching that to 0xc09 would work, too.
+    --       On the other hand, I'm already using the Hardware match in MRPI, so, that sealed the deal ;).
+
+    -- If we've got a Hardware string, check if it mentions an i.MX 6 or 7 or a MTK...
+    if cpu_hw then
+        if cpu_hw:find("i%.MX%s?[6-7]") or cpu_hw:find("MT8110") then
+            return true
+        else
+            return false
+        end
+    else
+        return false
+    end
+end
+
+-- Try to detect Kindle running hardfp firmware
+local function isHardFP()
+    local util = require("util")
+    return util.pathExists("/lib/ld-linux-armhf.so.3")
+end
+
 local function kindleEnableWifi(toggle)
     local haslipc, lipc = pcall(require, "liblipclua")
     local lipc_handle = nil
@@ -256,6 +287,20 @@ function Kindle:openInputDevices()
     end
 
     self.input.open("fake_events")
+end
+
+function Kindle:otaModel()
+    if self:isTouchDevice() or self.model == "Kindle4" then
+        if isHardFP() then
+            return "kindlehf"
+        elseif isWarioOrMore() then
+            return "kindlepw2"
+        else
+            return "kindle"
+        end
+    else
+        return "kindle-legacy"
+    end
 end
 
 function Kindle:init()
