@@ -304,7 +304,11 @@ function ReaderCoptListener:setAndSave(setting, property, value)
     self.document._document:setIntProperty(property, value)
     G_reader_settings:saveSetting(setting, value)
     self.page_info_override = self.page_number == 1 or self.page_count == 1 or self.reading_percent == 1
-    self:updatePageInfoOverride()
+    if self.page_info_override then
+        self:updatePageInfoOverride()
+    else
+        self.document:setPageInfoOverride("") -- Don't forget to restore CRE default behaviour.
+    end
     -- Have crengine redraw it (even if hidden by the menu at this time)
     self.ui.rolling:updateBatteryState()
     self:updateHeader()
