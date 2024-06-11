@@ -8,14 +8,14 @@ case "${mime_type}" in
     application/x*)
         ./"$1"
         echo "Application done, hit enter to return"
-        read -r
+        read -r REPLY
         exit
         ;;
 
     text/x-shellscript*)
         ./"$1"
         echo "Shellscript done, hit enter to return"
-        read -r
+        read -r REPLY
         exit
         ;;
 esac
@@ -24,7 +24,7 @@ case "$1" in
     *.sh)
         sh "$1"
         echo "Shellscript done, enter to return."
-        read -r
+        read -r REPLY
         exit
         ;;
 

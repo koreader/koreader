@@ -115,10 +115,10 @@ function setup_env() {
         local ts=()
         # Store list of ts at the same index
         for i in "${!files[@]}"; do
-            local file="${files[${i}]}/koreader"
+            local file="${files[i]}/koreader"
             if [ -d "${file}" ]; then
                 echo "${file} (last modified on $(stat -c %y "${file}"))"
-                ts[${i}]="$(stat -c %Y "${file}")"
+                ts[i]="$(stat -c %Y "${file}")"
             fi
         done
         # Sort the list of ts
@@ -126,15 +126,15 @@ function setup_env() {
         IFS=$'\n' read -d '' -r -a sorted_ts < <(printf '%s\n' "${ts[@]}" | sort -r)
         # Find the id of the most recent ts (spoiler: it's going to be the one currently targeted by this invocation of kodev)
         for i in "${!ts[@]}"; do
-            if [ "${ts[${i}]}" == "${sorted_ts[0]}" ]; then
+            if [ "${ts[i]}" == "${sorted_ts[0]}" ]; then
                 idx="${i}"
                 break
             fi
         done
         # Recap
-        echo "Picking the most recent one: ${files[${idx}]}/koreader"
+        echo "Picking the most recent one: ${files[idx]}/koreader"
     fi
-    EMU_DIR="${files[${idx}]}/koreader"
+    EMU_DIR="${files[idx]}/koreader"
     export EMU_DIR
 }
 
@@ -764,7 +764,7 @@ TARGET:
                 adb install "koreader-android-${ANDROID_ARCH}${KODEBUG_SUFFIX}-${VERSION}.apk"
                 assert_ret_zero $?
                 # there's no adb run so we do this…
-                adb shell monkey -p org.koreader.launcher${KODEBUG_SUFFIX/-/.} -c android.intent.category.LAUNCHER 1
+                adb shell monkey -p "org.koreader.launcher${KODEBUG_SUFFIX/-/.}" -c android.intent.category.LAUNCHER 1
                 assert_ret_zero $?
                 adb logcat KOReader:V k2pdfopt:V luajit-launcher:V dlopen:V "*:E"
             } || echo "Failed to find adb in PATH to interact with Android device."
@@ -837,7 +837,7 @@ TARGET:
                 capture_ctrl_c
             fi
 
-            exit ${RETURN_VALUE}
+            exit "${RETURN_VALUE}"
             ;;
     esac
 }
