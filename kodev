@@ -144,6 +144,7 @@ function kodev-fetch-thirdparty() {
 
 SUPPORTED_TARGETS="
     kindle          Compatible with all Kindle models >= Kindle4
+    kindlehf        Compatible with all Kindles with FW >= 5.16.3
     kindlepw2       With compiler optimizations for Kindle models >= Paperwhite 2
     kindle-legacy   Needed only for Kindle2/3/DXG
     kobo
@@ -226,6 +227,10 @@ ${SUPPORTED_TARGETS}"
             ;;
         kindle)
             make TARGET=kindle
+            assert_ret_zero $?
+            ;;
+        kindlehf)
+            make TARGET=kindlehf
             assert_ret_zero $?
             ;;
         kindlepw2)
@@ -345,6 +350,9 @@ ${SUPPORTED_TARGETS}"
             ;;
         kindle)
             make TARGET=kindle clean
+            ;;
+        kindlehf)
+            make TARGET=kindlehf clean
             ;;
         kindlepw2)
             make TARGET=kindlepw2 clean
@@ -474,6 +482,10 @@ ${SUPPORTED_RELEASE_TARGETS}"
         kindle)
             kodev-build kindle
             make TARGET=kindle update
+            ;;
+        kindlehf)
+            kodev-build kindlehf
+            make TARGET=kindlehf update
             ;;
         kindlepw2)
             kodev-build kindlepw2
