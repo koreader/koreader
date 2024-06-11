@@ -49,6 +49,12 @@ local ota_channels = {
     nightly = _("Development"),
 }
 
+-- Try to detect Kindle running hardfp firmware
+function OTAManager:_isKindleHardFP()
+    local util = require("util")
+    return util.pathExists("/lib/ld-linux-armhf.so.3")
+end
+
 -- Try to detect WARIO+ Kindle boards (i.MX6 & i.MX7)
 function OTAManager:_isKindleWarioOrMore()
     local cpu_hw = nil
@@ -93,7 +99,9 @@ function OTAManager:getOTAModel()
         return "cervantes"
     elseif Device:isKindle() then
         if Device:isTouchDevice() or Device.model == "Kindle4" then
-            if self:_isKindleWarioOrMore() then
+            if self:_isKindleHardFP() then
+                return "kindlehf"
+            elseif self:_isKindleWarioOrMore() then
                 return "kindlepw2"
             else
                 return "kindle"

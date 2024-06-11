@@ -1,0 +1,1 @@
+include make/kindle.mk
