@@ -290,17 +290,19 @@ function Kindle:openInputDevices()
 end
 
 function Kindle:otaModel()
+    local model
     if self:isTouchDevice() or self.model == "Kindle4" then
         if isHardFP() then
-            return "kindlehf"
+            model = "kindlehf"
         elseif isWarioOrMore() then
-            return "kindlepw2"
+            model = "kindlepw2"
         else
-            return "kindle"
+            model = "kindle"
         end
     else
-        return "kindle-legacy"
+        model = "kindle-legacy"
     end
+    return model, "ota"
 end
 
 function Kindle:init()

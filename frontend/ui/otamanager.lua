@@ -50,12 +50,9 @@ local ota_channels = {
 }
 
 function OTAManager:getOTAType()
-    local ota_model = Device:otaModel()
-    if ota_model == "" then return end
-    if ota_model:find("android") or ota_model:find("appimage") then
-        return "link"
-    end
-    return "ota"
+    local platform, kind = Device:otaModel()
+    if not platform then return end
+    return kind
 end
 
 function OTAManager:getOTAServer()

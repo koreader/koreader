@@ -108,6 +108,12 @@ local Device = Generic:extend{
     window = G_reader_settings:readSetting("sdl_window", {}),
 }
 
+function Device:otaModel()
+    if self.ota_model then
+        return self.ota_model, "link"
+    end
+end
+
 local AppImage = Device:extend{
     model = "AppImage",
     ota_model = "appimage",

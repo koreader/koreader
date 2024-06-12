@@ -118,14 +118,17 @@ local Device = Generic:extend{
 function Device:otaModel()
     -- "x86", "x64", "arm", "arm64", "ppc", "mips" or "mips64".
     local arch = jit.arch
+    local model
     if arch == "arm64" then
-        return "android-arm64"
+        model = "android-arm64"
     elseif arch == "x86" then
-        return "android-x86"
+        model = "android-x86"
     elseif arch == "x64" then
-        return "android-x86_64"
+        model = "android-x86_64"
+    else
+        model = "android"
     end
-    return "android"
+    return model, "link"
 end
 
 function Device:init()
