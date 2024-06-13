@@ -632,7 +632,7 @@ You can enable individual tweaks on this book with a tap, or view more details a
                     local mode = lfs.attributes(dir.."/"..f, "mode")
                     if mode == "directory" then
                         table.insert(dir_list, f)
-                    elseif mode == "file" and string.match(f, "%.css$") then
+                    elseif mode == "file" and string.match(f, "%.css$") and not util.stringStartsWith(f, "._") then
                         table.insert(file_list, f)
                     end
                 end
