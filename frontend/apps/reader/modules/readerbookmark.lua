@@ -297,6 +297,7 @@ function ReaderBookmark:genSortByMenuItems(value, separator)
         checked_func = function()
             return value == (G_reader_settings:readSetting("bookmarks_items_sorting") or "page")
         end,
+        radio = true,
         callback = function()
             G_reader_settings:saveSetting("bookmarks_items_sorting", value ~= "page" and value or nil)
         end,
