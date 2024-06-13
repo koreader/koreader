@@ -581,25 +581,25 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
     fi
 done
 
-# Restore original fb bitdepth if need be...
-# Since we also (almost) always enforce Portrait, we also have to restore the original rotation no matter what ;).
-if [ -n "${ORIG_FB_BPP}" ]; then
-    echo "Restoring original fb bitdepth @ ${ORIG_FB_BPP}bpp & rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
-    ./fbdepth -d "${ORIG_FB_BPP}" -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
-else
-    echo "Restoring original fb rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
-    ./fbdepth -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
-fi
-
-# Restore original CPUFreq governor if need be...
-if [ -n "${ORIG_CPUFREQ_GOV}" ]; then
-    echo "${ORIG_CPUFREQ_GOV}" >"${CPUFREQ_SYSFS_PATH}/scaling_governor"
-
-    # NOTE: Leave DVFS alone, it'll be handled by Nickel if necessary.
-fi
-
 # If we requested a reboot/shutdown, no need to bother with this...
 if [ ${RETURN_VALUE} -ne ${KO_RC_HALT} ]; then
+    # Restore original fb bitdepth if need be...
+    # Since we also (almost) always enforce Portrait, we also have to restore the original rotation no matter what ;).
+    if [ -n "${ORIG_FB_BPP}" ]; then
+        echo "Restoring original fb bitdepth @ ${ORIG_FB_BPP}bpp & rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
+        ./fbdepth -d "${ORIG_FB_BPP}" -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
+    else
+        echo "Restoring original fb rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
+        ./fbdepth -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
+    fi
+
+    # Restore original CPUFreq governor if need be...
+    if [ -n "${ORIG_CPUFREQ_GOV}" ]; then
+        echo "${ORIG_CPUFREQ_GOV}" >"${CPUFREQ_SYSFS_PATH}/scaling_governor"
+
+        # NOTE: Leave DVFS alone, it'll be handled by Nickel if necessary.
+    fi
+
     if [ "${VIA_NICKEL}" = "true" ]; then
         if [ "${FROM_KFMON}" = "true" ]; then
             # KFMon is the only launcher that has a toggle to either reboot or restart Nickel on exit
