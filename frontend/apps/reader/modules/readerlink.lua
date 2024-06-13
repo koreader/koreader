@@ -67,7 +67,7 @@ local ReaderLink = InputContainer:extend{
     location_stack = nil, -- table, per-instance
     forward_location_stack = nil, -- table, per-instance
     _external_link_buttons = nil,
-    supported_external_schemes = {"http", "https"},
+    supported_external_schemes = nil,
 }
 
 function ReaderLink:init()
@@ -136,6 +136,9 @@ function ReaderLink:init()
 
     -- delegate gesture listener to readerui, NOP our own
     self.ges_events = nil
+
+    -- Set always supported external link schemes
+    self.supported_external_schemes = {"http", "https"}
 
     -- Set up buttons for alternative external link handling methods
     self._external_link_buttons = {}
@@ -226,6 +229,12 @@ function ReaderLink:init()
     end
 end
 
+-- Register URL scheme. The external link dialog will be brought up when a URL
+-- with a registered scheme is followed; this also applies to schemeless
+-- (including relative) URLs if the empty scheme ("") is registered,
+-- overriding the default behaviour of treating these as filepaths.
+-- Registering the "file" scheme also overrides its default handling.
+-- Registered schemes are reset on each initialisation of ReaderLink.
 function ReaderLink:registerScheme(scheme)
     table.insert(self.supported_external_schemes, scheme)
 end
@@ -834,8 +843,8 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
     end
     logger.dbg("ReaderLink:onGotoLink: External link:", link_url)
 
-    local scheme = link_url:match("^(%w[%w+%-.]*):")
-    local is_supported_external_link = scheme and util.arrayContains(self.supported_external_schemes, scheme:lower())
+    local scheme = link_url:match("^(%w[%w+%-.]*):") or ""
+    local is_supported_external_link = util.arrayContains(self.supported_external_schemes, scheme:lower())
     if is_supported_external_link and self:onGoToExternalLink(link_url) then
         return true
     end
