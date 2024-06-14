@@ -1326,7 +1326,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    return T(_("Minimum progress bar width: %1".. "\u{202F}%"), self.settings.progress_bar_min_width_pct)
+                    return T(_("Minimum progress bar width: %1\u{202F}%"), self.settings.progress_bar_min_width_pct)
                 end,
                 enabled_func = function()
                     return self.settings.progress_bar_position == "alongside" and not self.settings.disable_progress_bar
@@ -1602,7 +1602,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Book-author item: %1".. "\u{202F}%"), self.settings.book_author_max_width_pct)
+                            return T(_("Book-author item: %1\u{202F}%"), self.settings.book_author_max_width_pct)
                         end,
                         callback = function(touchmenu_instance)
                             local items = SpinWidget:new{
@@ -1628,7 +1628,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                     },
                     {
                         text_func = function()
-                            return T(_("Book-title item: %1".. "\u{202F}%"), self.settings.book_title_max_width_pct)
+                            return T(_("Book-title item: %1\u{202F}%"), self.settings.book_title_max_width_pct)
                         end,
                         callback = function(touchmenu_instance)
                             local items = SpinWidget:new{
@@ -1654,7 +1654,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                     },
                     {
                         text_func = function()
-                            return T(_("Chapter-title item: %1".. "\u{202F}%"), self.settings.book_chapter_max_width_pct)
+                            return T(_("Chapter-title item: %1\u{202F}%"), self.settings.book_chapter_max_width_pct)
                         end,
                         callback = function(touchmenu_instance)
                             local items = SpinWidget:new{
@@ -1748,7 +1748,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
         table.insert(configure_items_sub_table , 5, {
             text_func = function()
                 if self.settings.battery_hide_threshold <= (Device:hasAuxBattery() and 200 or 100) then
-                    return T(_("Hide battery item when higher than: %1".. "\u{202F}%"), self.settings.battery_hide_threshold)
+                    return T(_("Hide battery item when higher than: %1\u{202F}%"), self.settings.battery_hide_threshold)
                 else
                     return _("Hide battery item at custom threshold")
                 end
