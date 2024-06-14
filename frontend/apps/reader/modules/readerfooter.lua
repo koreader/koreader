@@ -2571,4 +2571,3 @@ function ReaderFooter:onCloseWidget()
 end
 
 return ReaderFooter
-
