@@ -2073,7 +2073,7 @@ local dictionaries = {
         lang_out = "eng",
         entries = 20431,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Norwegian%20Bokmål-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Norwegian%20Bokm%C3%A5l-English%20Wiktionary%20dictionary%20stardict.tar.gz",
     },
     {
         name = "Norwegian Nynorsk-English Wiktionary",
