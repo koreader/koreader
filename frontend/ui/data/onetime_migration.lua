@@ -10,7 +10,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20240609
+local CURRENT_MIGRATION_DATE = 20240614
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -235,8 +235,8 @@ end
 -- 20210518, ReaderFooter, https://github.com/koreader/koreader/pull/7702
 -- 20210622, ReaderFooter, https://github.com/koreader/koreader/pull/7876
 -- 20240609, ReaderFooter, https://github.com/koreader/koreader/pull/11999
-if last_migration_date < 20240609 then
-    logger.info("Performing one-time migration for 20240609")
+if last_migration_date < 20240614 then
+    logger.info("Performing one-time migration for 20240614")
 
     local ReaderFooter = require("apps/reader/modules/readerfooter")
     local settings = G_reader_settings:readSetting("footer", ReaderFooter.default_settings)
