@@ -11,19 +11,47 @@ You can skip most of the following instructions if desired, and use our premade 
 
 ## Prerequisites
 
-To get and compile the source you must have `patch`, `wget`, `unzip`, `git`,
-`cmake` and `luarocks` installed, as well as a version of `autoconf`
-greater than 2.64. You also need `nasm`, and of course a compiler like `gcc`
-or `clang`.
+To get and compile the source you must have:
+- `autoconf`: version greater than 2.64
+- `bash`: version 4.0 or greater
+- `ccache`: optional, but recommended
+- `cmake`: version 3.15 or greater, 3.20 or greater recommended
+- `gettext`
+- `gcc/g++` or `clang/clang++`: with C11 & C++17 support
+- `git`
+- `make`: version 4.1 or greater
+- `nasm`
+- `ninja`: optional, but recommended
+- `patch`
+- `pkg-config` or `pkgconf`
+- `unzip`
+- `wget`
 
-### Debian/Ubuntu and derivates
+For testing:
+- `busted`
+- `lua`: version 5.1
+- `luarocks`
+- `SDL2`
+
+### Alpine Linux
+
+Install the prerequisites using apk:
+
+```
+sudo apk add autoconf automake bash cmake coreutils curl diffutils g++ \
+    gcc gettext-dev git grep gzip libtool linux-headers lua5.1-busted \
+    luarocks5.1 make ninja-build ninja-is-really-ninja patch pkgconf \
+    procps-ng sdl2 tar unzip wget
+```
+
+### Debian/Ubuntu
 
 Install the prerequisites using APT:
 
 ```
-sudo apt-get install build-essential git patch wget unzip \
-gettext autoconf automake cmake libtool libtool-bin nasm luarocks lua5.1 libsdl2-dev \
-libssl-dev libffi-dev libc6-dev-i386 xutils-dev linux-libc-dev:i386 zlib1g:i386
+sudo apt-get install autoconf automake build-essential ca-certificates cmake \
+    gcc-multilib gettext git libsdl2-2.0-0 libtool libtool-bin lua-busted \
+    lua5.1 luarocks nasm ninja-build patch pkg-config unzip wget
 ```
 
 ### Fedora/Red Hat
@@ -31,7 +59,14 @@ libssl-dev libffi-dev libc6-dev-i386 xutils-dev linux-libc-dev:i386 zlib1g:i386
 Install the prerequisites using DNF:
 
 ```
-sudo dnf install libstdc++-static SDL SDL-devel patch wget unzip git cmake luarocks autoconf nasm gcc
+sudo dnf install autoconf automake cmake gettext gcc gcc-c++ git libtool \
+    lua5.1 luarocks nasm ninja-build patch perl-FindBin procps-ng SDL2 \
+    unzip wget
+```
+
+And for busted:
+```
+luarocks --lua-version=5.1 --local install busted
 ```
 
 ### macOS
@@ -39,13 +74,13 @@ sudo dnf install libstdc++-static SDL SDL-devel patch wget unzip git cmake luaro
 Install the prerequisites using [Homebrew](https://brew.sh/):
 
 ```
-brew install nasm binutils coreutils libtool autoconf automake cmake makedepend \
-sdl2 lua@5.1 luarocks gettext pkg-config wget gnu-getopt grep bison
+brew install autoconf automake binutils cmake coreutils gettext \
+    gnu-getopt grep libtool make nasm ninja pkg-config sdl2 wget
 ```
 
-You will also have to ensure Homebrew's gettext, gnu-getopt, bison & grep are in your path, e.g., via
+You will also have to ensure Homebrew's gettext, gnu-getopt, grep are in your path, e.g., via
 ```
-export PATH="$(brew --prefix)/opt/gettext/bin:$(brew --prefix)/opt/gnu-getopt/bin:$(brew --prefix)/opt/bison/bin:$(brew --prefix)/opt/grep/libexec/gnubin:${PATH}"
+export PATH="$(brew --prefix)/opt/gettext/bin:$(brew --prefix)/opt/gnu-getopt/bin:$(brew --prefix)/opt/grep/libexec/gnubin:${PATH}"
 ```
 See also `brew info gettext` for details on how to make that permanent in your shell.
 
@@ -85,9 +120,6 @@ To run KOReader on your development machine:
 ./kodev run
 ```
 
-*Note:* On macOS and possibly other non-Linux hosts, you might want to pass `--no-build` to prevent re-running the buildsystem, as incremental builds may not behave properly.
-
-
 You can specify the size and DPI of the emulator's screen using
 `-w=X` (width), `-h=X` (height), and `-d=X` (DPI).
 
@@ -117,11 +149,6 @@ modifications with the KOReader frontend. NOTE: this only supports relative path
 Once you have the emulator ready to rock you can [build for other platforms too](Building_targets.md).
 
 ## Testing
-
-You may need to check out the [circleci config file][circleci-conf] to setup up
-a proper testing environment.
-
-Briefly, you need to install `luarocks` and then install `busted` and `ansicolors` with `luarocks`. The "eng" language data file for tesseract-ocr is also need to test OCR functionality. Finally, make sure that `luajit` in your system is at least of version 2.0.2.
 
 To automatically set up a number of primarily luarocks-related environment variables:
 
@@ -193,17 +220,15 @@ De auteur van het boek is Plato en de titel is The Republic.
 
 Ccache can speed up recompilation by caching previous compilations and detecting
 when the same compilation is being repeated. In other words, it will decrease
-build time when the sources have been built before. Ccache support has been added to
-KOReader's build system. To install ccache:
+build time when the sources have been built before. To install ccache use:
 
-* in Ubuntu use:`sudo apt-get install ccache`
-* in Fedora use:`sudo dnf install ccache`
-* from source:
-  * download the latest ccache source from http://ccache.samba.org/download.html
-  * extract the source package in a directory
-  * `cd` to that directory and use:`./configure && make && sudo make install`
-* to disable ccache, use `export USE_NO_CCACHE=1` before make.
-* for more information about ccache, visit: https://ccache.samba.org/
+* Alpine Linux: `sudo apk add ccache`
+* Debian/Ubuntu: `sudo apt-get install ccache`
+* Fedora/Red Hat: `sudo dnf install ccache`
+* macOS: `brew install ccache`
+* or from an official release or source: https://github.com/ccache/ccache/releases
+
+To disable ccache, use `export USE_NO_CCACHE=1` before make.
 
 [circleci-conf]:https://github.com/koreader/koreader/blob/master/.circleci/config.yml
 [koreader-weblate]:https://hosted.weblate.org/engage/koreader/
