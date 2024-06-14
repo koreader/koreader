@@ -194,7 +194,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                     return not self.items_max_lines
                 end,
                 checked_func = function()
-                    return G_reader_settings:isTrue("bookmarks_items_multilines_show_more_text")
+                    return not self.items_max_lines and G_reader_settings:isTrue("bookmarks_items_multilines_show_more_text")
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrFalse("bookmarks_items_multilines_show_more_text")
@@ -268,6 +268,7 @@ function ReaderBookmark:genShowInItemsMenuItems(value)
         checked_func = function()
             return self.items_text == value
         end,
+        radio = true,
         callback = function()
             self.items_text = value
             G_reader_settings:saveSetting("bookmarks_items_text_type", value)
@@ -640,7 +641,9 @@ function ReaderBookmark:onShowBookmark()
             curr_page_index_filtered = curr_page_index_filtered - 1
         end
     end
+    local curr_page_datetime
     if self.sorting_mode == "date" then
+        curr_page_datetime = item_table[curr_page_index_filtered].datetime
         local sort_func = self.is_reverse_sorting and function(a, b) return a.datetime < b.datetime end
                                                    or function(a, b) return a.datetime > b.datetime end
         table.sort(item_table, sort_func)
@@ -896,17 +899,33 @@ function ReaderBookmark:onShowBookmark()
                     text = _("Current page"),
                     callback = function()
                         UIManager:close(bm_dialog)
-                        bookmark:updateBookmarkList(nil, curr_page_index_filtered)
+                        local idx
+                        if bookmark.sorting_mode == "date" then
+                            for i, v in ipairs(item_table) do
+                                if v.datetime == curr_page_datetime then
+                                    idx = i
+                                    break
+                                end
+                            end
+                        else -- "page"
+                            idx = curr_page_index_filtered
+                        end
+                        bookmark:updateBookmarkList(nil, idx)
                     end,
                 },
                 {
                     text = _("Latest bookmark"),
-                    enabled = actions_enabled and bookmark.sorting_mode ~= "date"
+                    enabled = actions_enabled
                         and not (bookmark.match_table or bookmark.show_edited_only or bookmark.show_drawer_only),
                     callback = function()
                         UIManager:close(bm_dialog)
-                        local _, idx = bookmark:getLatestBookmark()
-                        idx = self.is_reverse_sorting and #item_table - idx + 1 or idx
+                        local idx
+                        if bookmark.sorting_mode == "date" then
+                            idx = bookmark.is_reverse_sorting and #item_table or 1
+                        else -- "page"
+                            idx = select(2, bookmark:getLatestBookmark())
+                            idx = bookmark.is_reverse_sorting and #item_table - idx + 1 or idx
+                        end
                         bookmark:updateBookmarkList(nil, idx)
                         bookmark:showBookmarkDetails(item_table[idx])
                     end,
@@ -998,13 +1017,11 @@ function ReaderBookmark:getBookmarkItemIndex(item)
     if self.match_table or self.show_edited_only or self.show_drawer_only -- filtered
             or self.sorting_mode ~= "page" then -- or item_table order does not match with annotations
         return self.ui.annotation:getItemIndex(item)
-    else
-        if self.is_reverse_sorting then
-            return #self.ui.annotation.annotations - item.idx + 1
-        else
-            return item.idx
-        end
     end
+    if self.is_reverse_sorting then
+        return #self.ui.annotation.annotations - item.idx + 1
+    end
+    return item.idx
 end
 
 function ReaderBookmark:getBookmarkItemText(item)
