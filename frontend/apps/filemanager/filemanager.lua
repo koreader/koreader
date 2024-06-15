@@ -1457,6 +1457,7 @@ function FileManager:showOpenWithDialog(file)
     table.insert(buttons, {
         {
             text = _("Cancel"),
+            id = "close",
             callback = function()
                 UIManager:close(dialog)
             end,
