@@ -814,7 +814,7 @@ function Menu:init()
                     search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
                     for k, v in ipairs(self.item_table) do
                         local filename = Utf8Proc.lowercase(util.fixUtf8(FFIUtil.basename(v.path), "?"))
-                        local i, _ = filename:find(search_string)
+                        local i = filename:find(search_string)
                         if i == 1 and not v.is_go_up then
                             self:onGotoPage(self:getPageNumber(k))
                             break
@@ -836,7 +836,7 @@ function Menu:init()
         text = "",
         hold_input = {
             title = title_goto,
-            type = type_goto,
+            input_type = type_goto,
             hint_func = hint_func,
             buttons = buttons,
         },
