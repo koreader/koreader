@@ -9,7 +9,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local DB = require("db")
 local Button = require("ui/widget/button")
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -259,7 +259,7 @@ function MenuDialog:setupPluginMenu()
             }
         }
         local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
-        self.sync_dialogue = ButtonDialogTitle:new{
+        self.sync_dialogue = ButtonDialog:new{
             title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nSet up the same cloud folder on each device to sync across your devices."),
                          server.name.." "..type, SyncService.getReadablePath(server)),
             info_face = Font:getFace("smallinfofont"),
@@ -1146,7 +1146,6 @@ function VocabItemWidget:onShowBookAssignment(title_changed_cb)
             dialog = InputDialog:new{
                 title = _("Enter book title:"),
                 input = "",
-                input_type = "text",
                 buttons = {
                     {
                         {
@@ -1501,11 +1500,10 @@ function VocabularyBuilderWidget:refreshFooter()
         text = "",
         hold_input = {
             title = _("Enter page number"),
+            input_type = "number",
             hint_func = function()
-                return "(" .. "1 - " .. self.pages .. ")"
+                return string.format("(1 - %s)", self.pages)
             end,
-            type = "number",
-            deny_blank_input = true,
             callback = function(input)
                 local page = tonumber(input)
                 if page and page >= 1 and page <= self.pages then
@@ -1537,7 +1535,6 @@ function VocabularyBuilderWidget:showSearchDialog()
         title = _("Search words"),
         input = self.search_text or "",
         input_hint = _("Search empty content to exit"),
-        input_type = "text",
         buttons = {
             {
                 {
@@ -1817,7 +1814,6 @@ function VocabularyBuilderWidget:showChangeBookTitleDialog(sort_item, onSuccess)
     dialog = InputDialog:new {
         title = _("Change book title to:"),
         input = sort_item.text,
-        input_type = "text",
         buttons = {
             {
                 {

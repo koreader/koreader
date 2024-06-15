@@ -881,14 +881,11 @@ function NetworkMgr:getProxyMenuTable()
         end,
         hold_input = {
             title = _("Enter proxy address"),
-            type = "text",
-            hint = proxy() or "",
+            hint = proxy(),
             callback = function(input)
-                if input ~= "" then
-                    self:setHTTPProxy(input)
-                end
+                self:setHTTPProxy(input)
             end,
-        }
+        },
     }
 end
 

@@ -398,11 +398,10 @@ function KeyValuePage:init()
         text = "",
         hold_input = {
             title = _("Enter page number"),
-            type = "number",
+            input_type = "number",
             hint_func = function()
-                return "(" .. "1 - " .. self.pages .. ")"
+                return string.format("(1 - %s)", self.pages)
             end,
-            deny_blank_input = true,
             callback = function(input)
                 local page = tonumber(input)
                 if page and page >= 1 and page <= self.pages then
