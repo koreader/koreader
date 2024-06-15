@@ -19,8 +19,8 @@ echo "$@" | nice -n 19 sh &
 JOB_ID=$!
 echo "Job id: ${JOB_ID}"
 
-for i in $(seq 1 1 ${TIMEOUT}); do
-    if ps -p ${JOB_ID} >/dev/null 2>&1; then
+for i in $(seq 1 1 "${TIMEOUT}"); do
+    if ps -p "${JOB_ID}" >/dev/null 2>&1; then
         # Job is still running.
         sleep 1
         ROUND=$(printf "%s" "${i}" | tail -c 1)
