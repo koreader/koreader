@@ -1549,6 +1549,7 @@ function VocabularyBuilderWidget:showSearchDialog()
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(dialog)
                     end,
