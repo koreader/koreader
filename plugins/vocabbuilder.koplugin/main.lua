@@ -1378,7 +1378,7 @@ function VocabularyBuilderWidget:init()
         background = Blitbuffer.COLOR_WHITE,
         content
     }
-    self.show_parent[1] = self
+    self.vocabbuilder[1] = self
 end
 
 function VocabularyBuilderWidget:refreshFooter()
@@ -1933,8 +1933,8 @@ end
 function VocabularyBuilderWidget:onClose()
     DB:batchUpdateItems(self.item_table)
     UIManager:close(self)
-    self.show_parent.widget = nil
-    self.show_parent[1] = nil
+    self.vocabbuilder.widget = nil
+    self.vocabbuilder[1] = nil
     -- UIManager:setDirty(self, "ui")
 end
 
@@ -2035,7 +2035,7 @@ end
 function VocabBuilder:onShowVocabBuilder()
     self.widget = VocabularyBuilderWidget:new{
         title = _("Vocabulary builder"),
-        show_parent = self,
+        vocabbuilder = self,
         ui = self.ui
     }
     UIManager:show(self.widget)
