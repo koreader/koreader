@@ -1816,6 +1816,17 @@ function VocabularyBuilderWidget:onShowFilter()
         end,
         show_parent = self
     }
+
+    if Device:hasKeys() then
+        sort_widget.key_events.ShowMenu = { { "Menu" }}
+        sort_widget.onShowMenu = function(this)
+            local item = this:getFocusItem()
+            if item and item.onHold then
+                item:onHold()
+            end
+        end
+    end
+
     UIManager:show(sort_widget)
 end
 
