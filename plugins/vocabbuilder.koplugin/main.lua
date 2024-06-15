@@ -1293,7 +1293,7 @@ function VocabularyBuilderWidget:init()
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.NextPage = { { Device.input.group.PgFwd } }
         self.key_events.PrevPage = { { Device.input.group.PgBack } }
-        self.key_events.ShowMenu = { { { "Menu" } }}
+        self.key_events.ShowMenu = { { "Menu" }}
     end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
