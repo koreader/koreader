@@ -28,4 +28,3 @@ done
 export -n KO_MULTIUSER
 
 exit ${RETURN_VALUE}
-

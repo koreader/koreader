@@ -23,4 +23,3 @@ mount -o "${MOUNT_ARGS}" -t vfat "${PARTITION}" /mnt/onboard
 PARTITION=${DISK}1p1
 
 [ -e "${PARTITION}" ] && mount -o "${MOUNT_ARGS}" -t vfat "${PARTITION}" /mnt/sd
-
