@@ -12,4 +12,3 @@ sync
 
 # Suspend to RAM.
 echo mem >/sys/power/state
-
