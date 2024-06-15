@@ -644,8 +644,8 @@ function ReaderBookmark:onShowBookmark()
     local curr_page_datetime
     if self.sorting_mode == "date" then
         curr_page_datetime = item_table[curr_page_index_filtered].datetime
-        local sort_func = self.is_reverse_sorting and function(a, b) return a.datetime < b.datetime end
-                                                   or function(a, b) return a.datetime > b.datetime end
+        local sort_func = self.is_reverse_sorting and function(a, b) return a.datetime > b.datetime end
+                                                   or function(a, b) return a.datetime < b.datetime end
         table.sort(item_table, sort_func)
     end
 
@@ -921,7 +921,7 @@ function ReaderBookmark:onShowBookmark()
                         UIManager:close(bm_dialog)
                         local idx
                         if bookmark.sorting_mode == "date" then
-                            idx = bookmark.is_reverse_sorting and #item_table or 1
+                            idx = bookmark.is_reverse_sorting and 1 or #item_table
                         else -- "page"
                             idx = select(2, bookmark:getLatestBookmark())
                             idx = bookmark.is_reverse_sorting and #item_table - idx + 1 or idx
@@ -971,7 +971,13 @@ function ReaderBookmark:onShowBookmark()
         self.show_drawer_only = nil
     end
 
-    self:updateBookmarkList(nil, self.sorting_mode == "page" and curr_page_index_filtered or 1)
+    local idx
+    if bookmark.sorting_mode == "date" then -- show the most recent bookmark
+        idx = bookmark.is_reverse_sorting and 1 or #item_table
+    else -- "page", show bookmark in the current book page
+        idx = curr_page_index_filtered
+    end
+    self:updateBookmarkList(nil, idx)
     UIManager:show(self.bookmark_menu)
     return true
 end
@@ -1025,23 +1031,28 @@ function ReaderBookmark:getBookmarkItemIndex(item)
 end
 
 function ReaderBookmark:getBookmarkItemText(item)
-    if item.type == "highlight" or self.items_text == "text" then
-        return self.display_prefix[item.type] .. item.text_orig
-    end
-    if item.type == "note" and self.items_text == "note" then
-        return self.display_prefix["note"] .. item.note
-    end
     local text
-    if item.type == "bookmark" then
-        text = self.display_prefix["bookmark"]
-    else -- it is a note, but we show the "highlight" prefix before the highlighted text
-        text = self.display_prefix["highlight"]
+    if item.type == "highlight" or self.items_text == "text" then
+        text = self.display_prefix[item.type] .. item.text_orig
+    else
+        if item.type == "note" and self.items_text == "note" then
+            text = self.display_prefix["note"] .. item.note
+        else
+            if item.type == "bookmark" then
+                text = self.display_prefix["bookmark"]
+            else -- it is a note, but we show the "highlight" prefix before the highlighted text
+                text = self.display_prefix["highlight"]
+            end
+            if self.items_text == "all" or self.items_text == "note" then
+                text = text .. item.text_orig
+            end
+            if item.note then
+                text = text .. "\u{2002}" .. self.display_prefix["note"] .. item.note
+            end
+        end
     end
-    if self.items_text == "all" or self.items_text == "note" then
-        text = text .. item.text_orig
-    end
-    if item.note then
-        text = text .. "\u{2002}" .. self.display_prefix["note"] .. item.note
+    if self.sorting_mode == "date" then
+        text = item.datetime .. "\u{2002}" .. text
     end
     return text
 end
