@@ -49,6 +49,7 @@ local MODE = {
     chapter_progress = 15,
     frontlight_warmth = 16,
     custom_text = 17,
+    book_author = 18,
 }
 
 local symbol_prefix = {
@@ -379,6 +380,26 @@ local footerTextGeneratorMap = {
             end
         end
     end,
+    book_author = function(footer)
+        local author = footer.ui.doc_props.authors
+        if author and author ~= "" then
+            author = author:gsub(" ", "\u{00A0}") -- replace space with no-break-space
+            local author_widget = TextWidget:new{
+                text = author,
+                max_width = footer._saved_screen_width * footer.settings.book_author_max_width_pct * (1/100),
+                face = Font:getFace(footer.text_font_face, footer.settings.text_font_size),
+                bold = footer.settings.text_font_bold,
+            }
+            local fitted_author_text, add_ellipsis = author_widget:getFittedText()
+            author_widget:free()
+            if add_ellipsis then
+                fitted_author_text = fitted_author_text .. "…"
+            end
+            return BD.auto(fitted_author_text)
+        else
+            return ""
+        end
+    end,
     book_title = function(footer)
         local title = footer.ui.doc_props.display_title:gsub(" ", "\u{00A0}") -- replace space with no-break-space
         local title_widget = TextWidget:new{
@@ -459,6 +480,7 @@ ReaderFooter.default_settings = {
     frontlight = false,
     mem_usage = false,
     wifi_status = false,
+    book_author = false,
     book_title = false,
     book_chapter = false,
     bookmark_count = false,
@@ -471,6 +493,7 @@ ReaderFooter.default_settings = {
     container_bottom_padding = 1, -- unscaled_size_check: ignore
     progress_margin_width = Screen:scaleBySize(Device:isAndroid() and material_pixels or 10), -- default margin (like self.horizontal_margin)
     progress_bar_min_width_pct = 20,
+    book_author_max_width_pct = 30,
     book_title_max_width_pct = 30,
     book_chapter_max_width_pct = 30,
     skim_widget_on_hold = false,
@@ -975,6 +998,7 @@ function ReaderFooter:textOptionTitles(option)
         frontlight_warmth = T(_("Warmth level (%1)"), symbol_prefix[symbol].frontlight_warmth),
         mem_usage = T(_("KOReader memory usage (%1)"), symbol_prefix[symbol].mem_usage),
         wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
+        book_author = _("Book author"),
         book_title = _("Book title"),
         book_chapter = _("Chapter title"),
         custom_text = T(_("Custom text (long press to edit): \'%1\'%2"), self.custom_text,
@@ -1302,7 +1326,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    return T(_("Minimum progress bar width: %1".. "\u{202F}%"), self.settings.progress_bar_min_width_pct)
+                    return T(_("Minimum progress bar width: %1\xE2\x80\xAF%"), self.settings.progress_bar_min_width_pct) -- U+202F NARROW NO-BREAK SPACE
                 end,
                 enabled_func = function()
                     return self.settings.progress_bar_position == "alongside" and not self.settings.disable_progress_bar
@@ -1403,9 +1427,11 @@ function ReaderFooter:addToMainMenu(menu_items)
     if Device:hasFastWifiStatusQuery() then
         table.insert(footer_items, getMinibarOption("wifi_status"))
     end
+    table.insert(footer_items, getMinibarOption("book_author"))
     table.insert(footer_items, getMinibarOption("book_title"))
     table.insert(footer_items, getMinibarOption("book_chapter"))
     table.insert(footer_items, getMinibarOption("custom_text"))
+
     -- configure footer_items
     table.insert(sub_items, {
         separator = true,
@@ -1576,7 +1602,33 @@ With this feature enabled, the current page is factored in, resulting in the cou
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Book-title item: %1".. "\u{202F}%"), self.settings.book_title_max_width_pct)
+                            return T(_("Book-author item: %1\xE2\x80\xAF%"), self.settings.book_author_max_width_pct) -- U+202F NARROW NO-BREAK SPACE
+                        end,
+                        callback = function(touchmenu_instance)
+                            local items = SpinWidget:new{
+                                value = self.settings.book_author_max_width_pct,
+                                value_min = 10,
+                                value_step = 5,
+                                value_hold_step = 20,
+                                value_max = 100,
+                                unit = "%",
+                                title_text = _("Book-author item"),
+                                info_text = _("Maximum percentage of screen width used for book-author"),
+                                default_value = self.default_settings.book_author_max_width_pct,
+                                keep_shown_on_apply = true,
+                                callback = function(spin)
+                                    self.settings.book_author_max_width_pct = spin.value
+                                    self:refreshFooter(true, true)
+                                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                                end
+                            }
+                            UIManager:show(items)
+                        end,
+                        keep_menu_open = true,
+                    },
+                    {
+                        text_func = function()
+                            return T(_("Book-title item: %1\xE2\x80\xAF%"), self.settings.book_title_max_width_pct) -- U+202F NARROW NO-BREAK SPACE
                         end,
                         callback = function(touchmenu_instance)
                             local items = SpinWidget:new{
@@ -1588,7 +1640,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                                 unit = "%",
                                 title_text = _("Book-title item"),
                                 info_text = _("Maximum percentage of screen width used for book-title"),
-                                book_title_max_width_pct = 30,
+                                default_value = self.default_settings.book_title_max_width_pct,
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.book_title_max_width_pct = spin.value
@@ -1602,7 +1654,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                     },
                     {
                         text_func = function()
-                            return T(_("Chapter-title item: %1".. "\u{202F}%"), self.settings.book_chapter_max_width_pct)
+                            return T(_("Chapter-title item: %1\xE2\x80\xAF%"), self.settings.book_chapter_max_width_pct) -- U+202F NARROW NO-BREAK SPACE
                         end,
                         callback = function(touchmenu_instance)
                             local items = SpinWidget:new{
@@ -1614,7 +1666,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                                 unit = "%",
                                 title_text = _("Chapter-title item"),
                                 info_text = _("Maximum percentage of screen width used for chapter-title item"),
-                                book_chapter_max_width_pct = 30,
+                                default_value = self.default_settings.book_chapter_max_width_pct,
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.book_chapter_max_width_pct = spin.value
@@ -1696,7 +1748,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
         table.insert(configure_items_sub_table , 5, {
             text_func = function()
                 if self.settings.battery_hide_threshold <= (Device:hasAuxBattery() and 200 or 100) then
-                    return T(_("Hide battery item when higher than: %1".. "\u{202F}%"), self.settings.battery_hide_threshold)
+                    return T(_("Hide battery item when higher than: %1\xE2\x80\xAF%"), self.settings.battery_hide_threshold) -- U+202F NARROW NO-BREAK SPACE
                 else
                     return _("Hide battery item at custom threshold")
                 end
