@@ -23,8 +23,11 @@ local ReadTimer = WidgetContainer:extend{
 }
 
 function ReadTimer:init()
-    self.show_timer_value_in_header = G_reader_settings:readSetting("readtimer_show_value_in_header")
-    self.show_timer_value_in_footer = G_reader_settings:readSetting("readtimer_show_value_in_footer")
+    self.timer_symbol = "\u{23F2}"  -- ⏲ timer symbol
+    self.timer_letter = "T"
+
+    self.readtimer_show_value_in_footerheader = G_reader_settings:readSetting("readtimer_show_value_in_header")
+    self.readtimer_show_value_in_footer = G_reader_settings:readSetting("readtimer_show_value_in_footer")
 
     self.alarm_callback = function()
         -- Don't do anything if we were unscheduled
@@ -58,17 +61,51 @@ function ReadTimer:init()
         end
     end
 
-    self.update_status_bars = function()
-        if self.show_timer_value_in_header then
-            UIManager:broadcastEvent(Event:new("UpdateHeader"))
+    self.additional_header_content_func = function()
+        if self:scheduled() then
+            local hours, minutes, dummy = self:remainingTime(1)
+            local timer_info = string.format("%02d:%02d", hours, minutes)
+            return self.timer_symbol .. timer_info .. " "
+        else
+            return ""
         end
-        if self.show_timer_value_in_footer then
-            UIManager:broadcastEvent(Event:new("UpdateFooter", true))
+    end
+    self.additional_footer_content_func = function()
+        if self:scheduled() then
+            local item_prefix = self.ui.view.footer.settings.item_prefix
+            local hours, minutes, dummy = self:remainingTime(1)
+            local timer_info = string.format("%02d:%02d", hours, minutes)
+
+            if item_prefix == "icons" then
+                return self.timer_symbol .. " " .. timer_info
+            elseif item_prefix == "compact_items" then
+                return self.timer_symbol .. timer_info
+            else
+                return self.timer_letter .. ": " .. timer_info
+            end
+        else
+            return ""
         end
-        UIManager:scheduleIn(60, self.update_status_bars)
     end
 
     self.ui.menu:registerToMainMenu(self)
+end
+
+function ReadTimer:update_status_bars(seconds)
+    if self.readtimer_show_value_in_footerheader then
+        UIManager:broadcastEvent(Event:new("UpdateHeader"))
+    end
+    if self.readtimer_show_value_in_footer then
+        UIManager:broadcastEvent(Event:new("UpdateFooter", true))
+    end
+    -- if seconds schedule 1ms later
+    if seconds and seconds >= 0 then
+        UIManager:scheduleIn(math.max(math.floor(seconds)%60, 0.001), self.update_status_bars, self)
+    elseif seconds and seconds < 0 and self:scheduled() then
+        UIManager:scheduleIn(math.max(math.floor(self:remaining())%60, 0.001), self.update_status_bars, self)
+    else
+        UIManager:scheduleIn(60, self.update_status_bars, self)
+    end
 end
 
 function ReadTimer:scheduled()
@@ -110,54 +147,30 @@ function ReadTimer:remainingTime(round)
     end
 end
 
-local timer_symbol = "\u{23F2}"  -- ⏲ timer symbol
-local timer_letter = "T"
-
-local function additional_header_content_func(this)
-    if this:scheduled() then
-        local hours, minutes, dummy = this:remainingTime(1)
-        local timer_info = string.format("%02d:%02d", hours, minutes)
-        return timer_symbol .. timer_info .. " "
-    else
-        return ""
-    end
-end
-local function additional_footer_content_func(this)
-    if this:scheduled() then
-        local item_prefix = this.ui.view.footer.settings.item_prefix
-        local hours, minutes, dummy = this:remainingTime(1)
-        local timer_info = string.format("%02d:%02d", hours, minutes)
-
-        if item_prefix == "icons" then
-            return timer_symbol .. " " .. timer_info
-        elseif item_prefix == "compact_items" then
-            return timer_symbol .. timer_info
-        else
-            return timer_letter .. ": " .. timer_info
-        end
-    else
-        return ""
-    end
-end
-
 function ReadTimer:addAdditionalHeaderContent()
-    self.ui.crelistener:addAdditionalHeaderContent({func=additional_header_content_func, this=self})
+    self.ui.crelistener:addAdditionalHeaderContent(self.additional_header_content_func)
+    self.update_status_bars(self, -1)
 end
 function ReadTimer:addAdditionalFooterContent()
-    self.ui.view.footer:addAdditionalFooterContent({func=additional_footer_content_func, this=self})
+    self.ui.view.footer:addAdditionalFooterContent(self.additional_footer_content_func)
+    self.update_status_bars(self, -1)
 end
 
 function ReadTimer:removeAdditionalHeaderContent()
-    self.ui.crelistener:removeAdditionalHeaderContent(additional_header_content_func)
+    self.ui.crelistener:removeAdditionalHeaderContent(self.additional_header_content_func)
+    self.update_status_bars(self, -1)
+    UIManager:broadcastEvent(Event:new("UpdateHeader"))
 end
 function ReadTimer:removeAdditionalFooterContent()
-    self.ui.view.footer:removeAdditionalFooterContent(additional_footer_content_func)
+    self.ui.view.footer:removeAdditionalFooterContent(self.additional_footer_content_func)
+    self.update_status_bars(self, -1)
+    UIManager:broadcastEvent(Event:new("UpdateFooter", true))
 end
 
 function ReadTimer:unschedule()
     if self:scheduled() then
         UIManager:unschedule(self.alarm_callback)
-        UIManager:unschedule(self.update_status_bars)
+        UIManager:unschedule(self.update_status_bars, self)
         self.time = 0
     end
 end
@@ -165,7 +178,9 @@ end
 function ReadTimer:rescheduleIn(seconds)
     self.time = os.time() + seconds
     UIManager:scheduleIn(seconds, self.alarm_callback)
-    self:update_status_bars()
+    if self.readtimer_show_value_in_footerheader or self.readtimer_show_value_in_footerheader then
+        self.update_status_bars(self, seconds)
+    end
 end
 
 function ReadTimer:addCheckboxes(widget)
@@ -177,12 +192,12 @@ function ReadTimer:addCheckboxes(widget)
     }
     local checkbox_header = CheckButton:new{
         text = _("top status bar"),
-        checked = self.show_timer_value_in_header,
+        checked = self.readtimer_show_value_in_footerheader,
         parent = widget,
         callback = function()
-            self.show_timer_value_in_header = not self.show_timer_value_in_header
-            G_reader_settings:saveSetting("readtimer_show_value_in_header", self.show_timer_value_in_header)
-            if self.show_timer_value_in_header then
+            self.readtimer_show_value_in_footerheader = not self.readtimer_show_value_in_footerheader
+            G_reader_settings:saveSetting("readtimer_show_value_in_header", self.readtimer_show_value_in_footerheader)
+            if self.readtimer_show_value_in_footerheader then
                 self:addAdditionalHeaderContent()
             else
                 self:removeAdditionalHeaderContent()
@@ -191,12 +206,12 @@ function ReadTimer:addCheckboxes(widget)
     }
     local checkbox_footer = CheckButton:new{
         text = _("bottom status bar"),
-        checked = self.show_timer_value_in_footer,
+        checked = self.readtimer_show_value_in_footer,
         parent = widget,
         callback = function()
-            self.show_timer_value_in_footer = not self.show_timer_value_in_footer
-            G_reader_settings:saveSetting("readtimer_show_value_in_footer", self.show_timer_value_in_footer)
-            if self.show_timer_value_in_footer then
+            self.readtimer_show_value_in_footer = not self.readtimer_show_value_in_footer
+            G_reader_settings:saveSetting("readtimer_show_value_in_footer", self.readtimer_show_value_in_footer)
+            if self.readtimer_show_value_in_footer then
                 self:addAdditionalFooterContent()
             else
                 self:removeAdditionalFooterContent()
