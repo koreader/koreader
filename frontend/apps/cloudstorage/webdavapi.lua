@@ -118,18 +118,18 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
 
     if res_data ~= "" then
         -- iterate through the <d:response> tags, each containing an entry
-        for item in res_data:gmatch("<[^:]*:response[^>]*>(.-)</[^:]*:response>") do repeat
+        for item in res_data:gmatch("<[^:]*:response[^>]*>(.-)</[^:]*:response>") do
             --logger.dbg("WebDav catalog item=", item)
             -- <d:href> is the path and filename of the entry.
             local item_fullpath = item:match("<[^:]*:href[^>]*>(.*)</[^:]*:href>")
             if string.sub( item_fullpath, -1 ) == "/" then
                 item_fullpath = string.sub( item_fullpath, 1, -2 )
             end
-            local is_current_dir = self:isCurrentDirectory( util.urlDecode(item_fullpath), address, folder_path )
 
-            local item_name = util.urlDecode( FFIUtil.basename( item_fullpath ) )
+            local item_name = util.urlDecode(FFIUtil.basename(item_fullpath))
             item_name = util.htmlEntitiesToUtf8(item_name)
-            if item_name == string.sub(folder_path, -#item_name) then do break end end -- avoid adding phantom items
+            local is_current_dir = item_name == string.sub(folder_path, -#item_name)
+
             local is_not_collection = item:find("<[^:]*:resourcetype/>") or
                 item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
 
@@ -151,7 +151,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
                     type = "file",
                 })
             end
-        until true end
+        end
     else
         return nil
     end
