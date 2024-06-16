@@ -128,7 +128,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
             local is_current_dir = self:isCurrentDirectory( util.urlDecode(item_fullpath), address, folder_path )
 
             local item_name = util.urlDecode( FFIUtil.basename( item_fullpath ) )
-            item_name = util.htmlEntitiesToUtf8(item_name)
+            item_name = util.htmlEntitiesToUtf8(item_name) -- avoid adding phantom items
             if "/" .. item_name == path then do break end end
             local is_not_collection = item:find("<[^:]*:resourcetype/>") or
                 item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
