@@ -46,9 +46,10 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local T = require("ffi/util").template
+local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
+local T = require("ffi/util").template
 
 -------- shared values
 local word_face = Font:getFace("x_smallinfofont")
@@ -77,7 +78,13 @@ local MenuDialog = FocusManager:extend{
 function MenuDialog:init()
     self.layout = {}
     if Device:hasKeys() then
-        self.key_events.Close = { { Device.input.group.Back } }
+        local back_group = util.tableDeepCopy(Device.input.group.Back)
+        if Device:hasFewKeys() then
+            table.insert(back_group, "Left")
+        else
+            table.insert(back_group, "Menu")
+        end
+        self.key_events.Close = { { back_group } }
     end
     if Device:isTouchDevice() then
         self.ges_events.Tap = {
@@ -150,7 +157,7 @@ function MenuDialog:setupPluginMenu()
         text = _("Filter books"),
         callback = function()
             self:onClose()
-            self.show_parent:onShowFilter()
+            self.vocabbuilder:onShowFilter()
         end
     }
 
@@ -160,7 +167,7 @@ function MenuDialog:setupPluginMenu()
             self:onClose()
             settings.reverse = not settings.reverse
             saveSettings()
-            self.show_parent:reloadItems()
+            self.vocabbuilder:reloadItems()
         end
     }
 
@@ -211,9 +218,9 @@ function MenuDialog:setupPluginMenu()
             sync_settings.onConfirm = function(server)
                 settings.server = server
                 saveSettings()
-                DB:batchUpdateItems(self.show_parent.item_table)
+                DB:batchUpdateItems(self.vocabbuilder.item_table)
                 SyncService.sync(server, DB.path, DB.onSync, false)
-                self.show_parent:reloadItems()
+                self.vocabbuilder:reloadItems()
             end
             UIManager:close(self.sync_dialogue)
             UIManager:close(self)
@@ -251,9 +258,9 @@ function MenuDialog:setupPluginMenu()
                     callback = function()
                         UIManager:close(self.sync_dialogue)
                         UIManager:close(self)
-                        DB:batchUpdateItems(self.show_parent.item_table)
+                        DB:batchUpdateItems(self.vocabbuilder.item_table)
                         SyncService.sync(server, DB.path, DB.onSync, false)
-                        self.show_parent:reloadItems()
+                        self.vocabbuilder:reloadItems()
                     end
                 }
             }
@@ -277,7 +284,7 @@ function MenuDialog:setupPluginMenu()
         text = _("Search"),
         callback = function()
             UIManager:close(self)
-            self.show_parent:showSearchDialog()
+            self.vocabbuilder:showSearchDialog()
         end
     }
 
@@ -343,7 +350,7 @@ function MenuDialog:setupPluginMenu()
             }
         }
     }
-
+    self:refocusWidget()
 end
 
 function MenuDialog:setupBookMenu(sort_item, onSuccess)
@@ -489,7 +496,7 @@ end
 --[[--
 Individual word info dialogue widget
 --]]--
-local WordInfoDialog = InputContainer:extend{
+local WordInfoDialog = FocusManager:extend{
     title = nil,
     book_title = nil,
     dates = nil,
@@ -503,6 +510,7 @@ local WordInfoDialog = InputContainer:extend{
 local book_title_triangle = BD.mirroredUILayout() and " ⯇" or " ⯈"
 local word_info_dialog_width
 function WordInfoDialog:init()
+    self.layout = {}
     if self.dismissable then
         if Device:hasKeys() then
             self.key_events.Close = { { Device.input.group.Back } }
@@ -550,7 +558,7 @@ function WordInfoDialog:init()
     }
 
     local buttons = {{reset_button, remove_button}}
-    if self.show_parent.item.last_due_time then
+    if self.vocabbuilder.item.last_due_time then
         table.insert(buttons, {{
             text = _("Undo study status"),
             callback = function()
@@ -586,13 +594,18 @@ function WordInfoDialog:init()
         padding = Size.padding.button,
         bordersize = 0,
         callback = function()
-            self.show_parent:onShowBookAssignment(function(new_book_title)
+            self.vocabbuilder:onShowBookAssignment(function(new_book_title)
                 self.book_title = new_book_title
                 self.book_title_button:setText(new_book_title..book_title_triangle, width)
             end)
         end,
         show_parent = self
     }
+
+    table.insert(self.layout, {copy_button})
+    table.insert(self.layout, {self.book_title_button})
+    self:mergeLayoutInVertical(focus_button)
+
     local has_context = self.prev_context or self.next_context
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
@@ -1036,7 +1049,7 @@ function VocabItemWidget:showMore()
         undo_callback = function()
             self:undo()
         end,
-        show_parent = self
+        vocabbuilder = self
     }
 
     UIManager:show(dialogue)
@@ -1286,6 +1299,7 @@ function VocabularyBuilderWidget:init()
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.NextPage = { { Device.input.group.PgFwd } }
         self.key_events.PrevPage = { { Device.input.group.PgBack } }
+        self.key_events.ShowMenu = { { "Menu" }}
     end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
@@ -1326,7 +1340,7 @@ function VocabularyBuilderWidget:init()
         with_bottom_line = true,
         bottom_line_h_padding = Size.padding.large,
         left_icon = "appbar.menu",
-        left_icon_tap_callback = function() self:showMenu() end,
+        left_icon_tap_callback = function() self:onShowMenu() end,
         title = self.title,
         close_callback = function() self:onClose() end,
         show_parent = self,
@@ -1370,7 +1384,7 @@ function VocabularyBuilderWidget:init()
         background = Blitbuffer.COLOR_WHITE,
         content
     }
-    self.show_parent[1] = self
+    self.vocabbuilder[1] = self
 end
 
 function VocabularyBuilderWidget:refreshFooter()
@@ -1539,6 +1553,7 @@ function VocabularyBuilderWidget:showSearchDialog()
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(dialog)
                     end,
@@ -1735,7 +1750,7 @@ function VocabularyBuilderWidget:resetItems()
     self:_populateItems()
 end
 
-function VocabularyBuilderWidget:showMenu()
+function VocabularyBuilderWidget:onShowMenu()
     local menu = MenuDialog:new{
         is_edit_mode = self.is_edit_mode,
         edit_callback = function()
@@ -1751,7 +1766,7 @@ function VocabularyBuilderWidget:showMenu()
         reset_callback = function()
             self:resetItems()
         end,
-        show_parent = self
+        vocabbuilder = self
     }
 
     menu:setupPluginMenu()
@@ -1806,6 +1821,17 @@ function VocabularyBuilderWidget:onShowFilter()
         end,
         show_parent = self
     }
+
+    if Device:hasKeys() then
+        sort_widget.key_events.ShowMenu = { { "Menu" }}
+        sort_widget.onShowMenu = function(this)
+            local item = this:getFocusItem()
+            if item and item.onHold then
+                item:onHold()
+            end
+        end
+    end
+
     UIManager:show(sort_widget)
 end
 
@@ -1922,8 +1948,8 @@ end
 function VocabularyBuilderWidget:onClose()
     DB:batchUpdateItems(self.item_table)
     UIManager:close(self)
-    self.show_parent.widget = nil
-    self.show_parent[1] = nil
+    self.vocabbuilder.widget = nil
+    self.vocabbuilder[1] = nil
     -- UIManager:setDirty(self, "ui")
 end
 
@@ -2024,7 +2050,7 @@ end
 function VocabBuilder:onShowVocabBuilder()
     self.widget = VocabularyBuilderWidget:new{
         title = _("Vocabulary builder"),
-        show_parent = self,
+        vocabbuilder = self,
         ui = self.ui
     }
     UIManager:show(self.widget)
