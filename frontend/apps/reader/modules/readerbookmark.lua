@@ -138,7 +138,8 @@ function ReaderBookmark:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page")
+                    local curr_perpage = self.items_max_lines and _("flexible")
+                        or G_reader_settings:readSetting("bookmarks_items_per_page")
                     return T(_("Bookmarks per page: %1"), curr_perpage)
                 end,
                 enabled_func = function()
@@ -193,7 +194,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                     return not self.items_max_lines
                 end,
                 checked_func = function()
-                    return G_reader_settings:isTrue("bookmarks_items_multilines_show_more_text")
+                    return not self.items_max_lines and G_reader_settings:isTrue("bookmarks_items_multilines_show_more_text")
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrFalse("bookmarks_items_multilines_show_more_text")
@@ -221,13 +222,23 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 separator = true,
             },
             {
-                text = _("Sort by largest page number"),
-                checked_func = function()
-                    return G_reader_settings:nilOrTrue("bookmarks_items_reverse_sorting")
+                text_func = function()
+                    return T(_("Sort by: %1"), self:genSortByMenuItems())
                 end,
-                callback = function()
-                    G_reader_settings:flipNilOrTrue("bookmarks_items_reverse_sorting")
-                end,
+                sub_item_table = {
+                    self:genSortByMenuItems("page"),
+                    self:genSortByMenuItems("date", true),
+                    -- separator
+                    {
+                        text = _("Reverse sorting"),
+                        checked_func = function()
+                            return G_reader_settings:isTrue("bookmarks_items_reverse_sorting")
+                        end,
+                        callback = function()
+                            G_reader_settings:flipNilOrFalse("bookmarks_items_reverse_sorting")
+                        end,
+                    },
+                },
             },
         },
     }
@@ -257,10 +268,41 @@ function ReaderBookmark:genShowInItemsMenuItems(value)
         checked_func = function()
             return self.items_text == value
         end,
+        radio = true,
         callback = function()
             self.items_text = value
             G_reader_settings:saveSetting("bookmarks_items_text_type", value)
         end,
+    }
+end
+
+function ReaderBookmark:genSortByMenuItems(value, separator)
+    local strings = {
+        page = _("page number"),
+        date = _("date"),
+    }
+    local strings_reverse = {
+        page = _("page number, reverse"),
+        date = _("date, reverse"),
+    }
+    if value == nil then
+        local curr_value = G_reader_settings:readSetting("bookmarks_items_sorting") or "page"
+        if G_reader_settings:isTrue("bookmarks_items_reverse_sorting") then
+            return strings_reverse[curr_value]
+        else
+            return strings[curr_value]
+        end
+    end
+    return {
+        text = strings[value],
+        checked_func = function()
+            return value == (G_reader_settings:readSetting("bookmarks_items_sorting") or "page")
+        end,
+        radio = true,
+        callback = function()
+            G_reader_settings:saveSetting("bookmarks_items_sorting", value ~= "page" and value or nil)
+        end,
+        separator = separator,
     }
 end
 
@@ -566,7 +608,8 @@ end
 -- bookmark list, dialogs
 
 function ReaderBookmark:onShowBookmark()
-    self.is_reverse_sorting = G_reader_settings:nilOrTrue("bookmarks_items_reverse_sorting") -- page numbers descending
+    self.sorting_mode = G_reader_settings:readSetting("bookmarks_items_sorting") or "page"
+    self.is_reverse_sorting = G_reader_settings:isTrue("bookmarks_items_reverse_sorting")
 
     -- build up item_table
     local item_table = {}
@@ -597,6 +640,13 @@ function ReaderBookmark:onShowBookmark()
         else
             curr_page_index_filtered = curr_page_index_filtered - 1
         end
+    end
+    local curr_page_datetime
+    if self.sorting_mode == "date" then
+        curr_page_datetime = item_table[curr_page_index_filtered].datetime
+        local sort_func = self.is_reverse_sorting and function(a, b) return a.datetime > b.datetime end
+                                                   or function(a, b) return a.datetime < b.datetime end
+        table.sort(item_table, sort_func)
     end
 
     local items_per_page = G_reader_settings:readSetting("bookmarks_items_per_page")
@@ -638,7 +688,7 @@ function ReaderBookmark:onShowBookmark()
     local bookmark = self
 
     function bm_menu:onMenuSelect(item)
-        if self.select_mode then
+        if self.select_count then
             if item.dim then
                 item.dim = nil
                 if item.after_curr_page then
@@ -663,11 +713,8 @@ function ReaderBookmark:onShowBookmark()
     end
 
     function bm_menu:toggleSelectMode()
-        self.select_mode = not self.select_mode
-        if self.select_mode then
-            self.select_count = 0
-            self:setTitleBarLeftIcon("check")
-        else
+        if self.select_count then
+            self.select_count = nil
             for _, v in ipairs(item_table) do
                 v.dim = nil
                 if v.after_curr_page then
@@ -675,6 +722,9 @@ function ReaderBookmark:onShowBookmark()
                 end
             end
             self:setTitleBarLeftIcon("appbar.menu")
+        else
+            self.select_count = 0
+            self:setTitleBarLeftIcon("check")
         end
         bookmark:updateBookmarkList(nil, -1)
     end
@@ -682,7 +732,7 @@ function ReaderBookmark:onShowBookmark()
     function bm_menu:onLeftButtonTap()
         local bm_dialog, dialog_title
         local buttons = {}
-        if self.select_mode then
+        if self.select_count then
             local actions_enabled = self.select_count > 0
             local more_selections_enabled = self.select_count < #item_table
             if actions_enabled then
@@ -781,7 +831,7 @@ function ReaderBookmark:onShowBookmark()
                                         table.remove(item_table, i)
                                     end
                                 end
-                                self.select_mode = false
+                                self.select_count = nil
                                 self:setTitleBarLeftIcon("appbar.menu")
                                 bookmark:updateBookmarkList(item_table, -1)
                             end,
@@ -849,7 +899,18 @@ function ReaderBookmark:onShowBookmark()
                     text = _("Current page"),
                     callback = function()
                         UIManager:close(bm_dialog)
-                        bookmark:updateBookmarkList(nil, curr_page_index_filtered)
+                        local idx
+                        if bookmark.sorting_mode == "date" then
+                            for i, v in ipairs(item_table) do
+                                if v.datetime == curr_page_datetime then
+                                    idx = i
+                                    break
+                                end
+                            end
+                        else -- "page"
+                            idx = curr_page_index_filtered
+                        end
+                        bookmark:updateBookmarkList(nil, idx)
                     end,
                 },
                 {
@@ -858,8 +919,13 @@ function ReaderBookmark:onShowBookmark()
                         and not (bookmark.match_table or bookmark.show_edited_only or bookmark.show_drawer_only),
                     callback = function()
                         UIManager:close(bm_dialog)
-                        local _, idx = bookmark:getLatestBookmark()
-                        idx = self.is_reverse_sorting and #item_table - idx + 1 or idx
+                        local idx
+                        if bookmark.sorting_mode == "date" then
+                            idx = bookmark.is_reverse_sorting and 1 or #item_table
+                        else -- "page"
+                            idx = select(2, bookmark:getLatestBookmark())
+                            idx = bookmark.is_reverse_sorting and #item_table - idx + 1 or idx
+                        end
                         bookmark:updateBookmarkList(nil, idx)
                         bookmark:showBookmarkDetails(item_table[idx])
                     end,
@@ -905,7 +971,13 @@ function ReaderBookmark:onShowBookmark()
         self.show_drawer_only = nil
     end
 
-    self:updateBookmarkList(nil, curr_page_index_filtered)
+    local idx
+    if bookmark.sorting_mode == "date" then -- show the most recent bookmark
+        idx = bookmark.is_reverse_sorting and 1 or #item_table
+    else -- "page", show bookmark in the current book page
+        idx = curr_page_index_filtered
+    end
+    self:updateBookmarkList(nil, idx)
     UIManager:show(self.bookmark_menu)
     return true
 end
@@ -919,7 +991,7 @@ function ReaderBookmark:updateBookmarkList(item_table, item_number)
     end
 
     local subtitle
-    if bm_menu.select_mode then
+    if bm_menu.select_count then
         subtitle = T(_("Selected: %1"), bm_menu.select_count)
     else
         if self.show_edited_only then
@@ -948,29 +1020,39 @@ function ReaderBookmark:updateBookmarkList(item_table, item_number)
 end
 
 function ReaderBookmark:getBookmarkItemIndex(item)
-    return (self.match_table or self.show_edited_only or self.show_drawer_only)
-        and self.ui.annotation:getItemIndex(item) -- item table is filtered, cannot use item.idx
-        or (self.is_reverse_sorting and #self.ui.annotation.annotations - item.idx + 1 or item.idx)
+    if self.match_table or self.show_edited_only or self.show_drawer_only -- filtered
+            or self.sorting_mode ~= "page" then -- or item_table order does not match with annotations
+        return self.ui.annotation:getItemIndex(item)
+    end
+    if self.is_reverse_sorting then
+        return #self.ui.annotation.annotations - item.idx + 1
+    end
+    return item.idx
 end
 
 function ReaderBookmark:getBookmarkItemText(item)
-    if item.type == "highlight" or self.items_text == "text" then
-        return self.display_prefix[item.type] .. item.text_orig
-    end
-    if item.type == "note" and self.items_text == "note" then
-        return self.display_prefix["note"] .. item.note
-    end
     local text
-    if item.type == "bookmark" then
-        text = self.display_prefix["bookmark"]
-    else -- it is a note, but we show the "highlight" prefix before the highlighted text
-        text = self.display_prefix["highlight"]
+    if item.type == "highlight" or self.items_text == "text" then
+        text = self.display_prefix[item.type] .. item.text_orig
+    else
+        if item.type == "note" and self.items_text == "note" then
+            text = self.display_prefix["note"] .. item.note
+        else
+            if item.type == "bookmark" then
+                text = self.display_prefix["bookmark"]
+            else -- it is a note, but we show the "highlight" prefix before the highlighted text
+                text = self.display_prefix["highlight"]
+            end
+            if self.items_text == "all" or self.items_text == "note" then
+                text = text .. item.text_orig
+            end
+            if item.note then
+                text = text .. "\u{2002}" .. self.display_prefix["note"] .. item.note
+            end
+        end
     end
-    if self.items_text == "all" or self.items_text == "note" then
-        text = text .. item.text_orig
-    end
-    if item.note then
-        text = text .. "\u{2002}" .. self.display_prefix["note"] .. item.note
+    if self.sorting_mode == "date" then
+        text = item.datetime .. "\u{2002}" .. text
     end
     return text
 end
@@ -989,7 +1071,7 @@ function ReaderBookmark:showBookmarkDetails(item)
     if item.note then
         text = text .. "\n\n" .. self.display_prefix["note"] .. item.note
     end
-    local not_select_mode = not bm_menu.select_mode and not self.ui.highlight.select_mode
+    local not_select_mode = not bm_menu.select_count and not self.ui.highlight.select_mode
 
     local textviewer
     local edit_details_callback = function()
@@ -1043,7 +1125,7 @@ function ReaderBookmark:showBookmarkDetails(item)
                 },
                 {
                     text = item.note and _("Edit note") or _("Add note"),
-                    enabled = not bm_menu.select_mode,
+                    enabled = not bm_menu.select_count,
                     callback = function()
                         self:setBookmarkNote(item, nil, nil, edit_details_callback)
                     end,
@@ -1069,7 +1151,7 @@ function ReaderBookmark:showBookmarkDetails(item)
                 },
                 {
                     text = _("Go to bookmark"),
-                    enabled = not bm_menu.select_mode,
+                    enabled = not bm_menu.select_count,
                     callback = function()
                         UIManager:close(textviewer)
                         self.ui.link:addCurrentLocationToStack()
