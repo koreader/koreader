@@ -51,7 +51,7 @@ function WebDavApi:getJoinedPath(address, path)
 end
 
 function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
-    local path = self.urlEncode(folder_path) or ""
+    local path = folder_path or ""
     local webdav_list = {}
     local webdav_file = {}
 
@@ -61,7 +61,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
     address = self.rtrim_slashes(address)
     -- Join our final URL, which *must* have a trailing / (it's a URL)
     -- This is where we deviate from getJoinedPath ;).
-    local webdav_url = address .. "/" .. path
+    local webdav_url = address .. "/" .. self.urlEncode(path)
     if webdav_url:sub(-1) ~= "/" then
         webdav_url = webdav_url .. "/"
     end
