@@ -43,13 +43,13 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local TitleBar = require("ui/widget/titlebar")
 local ToggleSwitch = require("ui/widget/toggleswitch")
 local UIManager = require("ui/uimanager")
-local util = require("util")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local T = require("ffi/util").template
+local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
+local T = require("ffi/util").template
 
 -------- shared values
 local word_face = Font:getFace("x_smallinfofont")
