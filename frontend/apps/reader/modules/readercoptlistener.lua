@@ -134,7 +134,7 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
 
     local additional_content = ""
     for i, v in pairs(self.external_header_content) do
-        additional_content = additional_content .. v
+        additional_content = additional_content .. v.func(v.this)
     end
 
     local page_info = additional_content
@@ -311,13 +311,13 @@ end
 ReaderCoptListener.onCloseDocument = ReaderCoptListener.unscheduleHeaderRefresh
 ReaderCoptListener.onSuspend = ReaderCoptListener.unscheduleHeaderRefresh
 
-function ReaderCoptListener:addAdditionalHeaderContent(value)
-    table.insert(self.external_header_content, value)
+function ReaderCoptListener:addAdditionalHeaderContent(content)
+    table.insert(self.external_header_content, content)
 end
 
-function ReaderCoptListener:removeAdditionalHeaderContent(pattern)
+function ReaderCoptListener:removeAdditionalHeaderContent(content_func)
     for i, v in pairs(self.external_header_content) do
-        if v:find(pattern) then
+        if v.func == content_func then
             table.remove(self.external_header_content, i)
         end
     end
