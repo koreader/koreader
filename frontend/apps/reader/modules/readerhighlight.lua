@@ -19,7 +19,7 @@ local ffiUtil = require("ffi/util")
 local time = require("ui/time")
 local _ = require("gettext")
 local C_ = _.pgettext
-local N_ = _.npgettext
+local N_ = _.ngettext
 local T = ffiUtil.template
 local Screen = Device.screen
 
@@ -639,7 +639,7 @@ Except when in two columns mode, where this is limited to showing only the previ
         table.insert(menu_items.long_press.sub_item_table, {
             text_func = function()
                 local highlight_non_touch_interval = G_reader_settings:readSetting("highlight_non_touch_interval") or 1
-                return T(N_("Speed-up rate interval: %1 second", "Speed-up rate interval: %1 seconds", highlight_non_touch_interval), highlight_non_touch_interval)
+                return T(N_("Speed-up rate interval: 1 second", "Speed-up rate interval: %1 seconds", highlight_non_touch_interval), highlight_non_touch_interval)
             end,
             enabled_func = function()
                 return not self.view.highlight.disabled and G_reader_settings:nilOrTrue("highlight_non_touch_spedup")
