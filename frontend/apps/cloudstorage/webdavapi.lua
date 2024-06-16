@@ -118,7 +118,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
 
     if res_data ~= "" then
         -- iterate through the <d:response> tags, each containing an entry
-        for item in res_data:gmatch("<[^:]*:response[^>]*>(.-)</[^:]*:response>") do
+        for item in res_data:gmatch("<[^:]*:response[^>]*>(.-)</[^:]*:response>") do repeat
             --logger.dbg("WebDav catalog item=", item)
             -- <d:href> is the path and filename of the entry.
             local item_fullpath = item:match("<[^:]*:href[^>]*>(.*)</[^:]*:href>")
@@ -129,7 +129,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
 
             local item_name = util.urlDecode( FFIUtil.basename( item_fullpath ) )
             item_name = util.htmlEntitiesToUtf8(item_name)
-
+            if "/" .. item_name == path then do break end end
             local is_not_collection = item:find("<[^:]*:resourcetype/>") or
                 item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
 
@@ -151,7 +151,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
                     type = "file",
                 })
             end
-        end
+        until true end
     else
         return nil
     end
