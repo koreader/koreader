@@ -522,15 +522,23 @@ Extract text boxes in a MuPDF/Djvu page.
 Returned boxes are in native page coordinates zoomed at `1.0`.
 --]]
 function KoptInterface:getTextBoxes(doc, pageno)
+    --logger.dbg("LOGG doc =", doc)
+    --logger.dbg("LOGG pageno =", pageno)
     local text = doc:getPageTextBoxes(pageno)
+    logger.dbg("LOGG-5 text =", text)
+    logger.dbg("LOGG-5 doc.configurable.forced_ocr =", doc.configurable.forced_ocr)
+    logger.dbg("LOGG-5 #text =", #text)
     if text and #text > 1 and doc.configurable.forced_ocr ~= 1 then
         return text
     -- if we have no text in original page then we will reuse native word boxes
     -- in reflow mode and find text boxes from scratch in non-reflow mode
     else
+        logger.dbg("LOGG-5 do you see this message? Then forced_ocr == 1")
+        logger.dbg("LOGG-5 doc.configurable.text_wrap =", doc.configurable.text_wrap)
         if doc.configurable.text_wrap == 1 then
             return self:getNativeTextBoxes(doc, pageno)
         else
+            logger.dbg("LOGG-5 KI.lua getTextBoxes =", self:getNativeTextBoxesFromScratch(doc, pageno))
             return self:getNativeTextBoxesFromScratch(doc, pageno)
         end
     end
@@ -674,6 +682,7 @@ function KoptInterface:getNativeTextBoxesFromScratch(doc, pageno)
         local kc = self:createContext(doc, pageno, bbox)
         kc:setZoom(1.0)
         local page = doc._document:openPage(pageno)
+        logger.dbg("LOGG-6 getNativeTextBoxesFromScratch: page_size = ", page_size)
         page:getPagePix(kc)
         local boxes, nr_word = kc:getNativeWordBoxes("src", 0, 0, page_size.w, page_size.h)
         if boxes then
@@ -681,6 +690,7 @@ function KoptInterface:getNativeTextBoxesFromScratch(doc, pageno)
         end
         page:close()
         kc:free()
+        logger.dbg("LOGG-6 getNativeTextBoxesFromScratch: RETURN boxes =", boxes)
         return boxes
     else
         return cached.scratchnativepgboxes
@@ -924,6 +934,7 @@ end
 Get text and text boxes between `pos0` and `pos1`.
 --]]
 function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
+    logger.dbg("LOGG-4 KI.lua getWordFromBoxes: CHECK IF THERE ARE input boxes =", boxes)
     if not pos0 or not pos1 or #boxes == 0 then return {} end
     local line_text = ""
     local line_boxes = {}
@@ -986,6 +997,7 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
                             add_space = false
                         end
                     end
+                    logger.dbg("LOGG-11 add_space =", add_space)
                     if add_space then
                         word = " " .. word
                     end
@@ -1042,11 +1054,13 @@ Get word and word box from `doc` position.
 ]]--
 function KoptInterface:getWordFromPosition(doc, pos)
     local text_boxes = self:getTextBoxes(doc, pos.page)
+    logger.dbg("LOGG-2 KI.lua getWordFromPosition: text_boxes =", text_boxes)
     if text_boxes then
         self.last_text_boxes = text_boxes
         if doc.configurable.text_wrap == 1 then
             return self:getWordFromReflowPosition(doc, text_boxes, pos)
         else
+            logger.dbg("LOGG-2 KI.lua getWordFromPosition: getWordFromNativePosition =", self:getWordFromNativePosition(doc, text_boxes, pos))
             return self:getWordFromNativePosition(doc, text_boxes, pos)
         end
     end
@@ -1095,6 +1109,9 @@ end
 Get word and word box from position in native page.
 ]]--
 function KoptInterface:getWordFromNativePosition(doc, boxes, pos)
+    logger.dbg("LOGG-3 KI.lua getWordFromNativePosition CHECK doc =", doc)
+    logger.dbg("LOGG-3 KI.lua getWordFromNativePosition CHECK boxes =", boxes)
+    logger.dbg("LOGG-3 KI.lua getWordFromNativePosition CHECK pos =", pos)
     local native_word_box = self:getWordFromBoxes(boxes, pos)
     local word_box = {
         word = native_word_box.word,
@@ -1102,6 +1119,7 @@ function KoptInterface:getWordFromNativePosition(doc, boxes, pos)
         sbox = native_word_box.box,   -- box on screen
         pos = pos,
     }
+    logger.dbg("LOGG-3 KI.lua getWordFromNativePosition: word_box =", word_box)
     return word_box
 end
 
@@ -1280,6 +1298,7 @@ Get text and text boxes from screen positions for native page.
 ]]--
 function KoptInterface:getTextFromNativePositions(doc, native_boxes, pos0, pos1)
     local native_text_boxes = self:getTextFromBoxes(native_boxes, pos0, pos1)
+    logger.dbg("LOGG-10 getTextFromNativePositions: native_text_boxes = ", native_text_boxes)
     local text_boxes = {
         text = native_text_boxes.text,
         pboxes = native_text_boxes.boxes,   -- boxes on page

@@ -1329,6 +1329,7 @@ function ReaderHighlight:onHold(arg, ges)
     -- otherwise, we must be holding on text
     if self.view.highlight.disabled then return false end -- Long-press action "Do nothing" checked
     local ok, word = pcall(self.ui.document.getWordFromPosition, self.ui.document, self.hold_pos)
+    logger.dbg("LOGG-1 RH.lua onHold: word =", word, "ok =", ok)
     if ok and word then
         logger.dbg("selected word:", word)
         -- Convert "word selection" table to "text selection" table because we
@@ -1348,6 +1349,9 @@ function ReaderHighlight:onHold(arg, ges)
             logger.dbg("link:", link)
             self.selected_link = link
         end
+
+        logger.dbg("LOGG-9 onHold self.ui.languagesupport =", self.ui.languagesupport)
+        logger.dbg("LOGG-9 onHold self.ui.languagesupport:hasActiveLanguagePlugins() =", self.ui.languagesupport:hasActiveLanguagePlugins())
 
         if self.ui.languagesupport and self.ui.languagesupport:hasActiveLanguagePlugins() then
             -- If this is a language where pan-less word selection needs some
@@ -1800,6 +1804,8 @@ function ReaderHighlight:highlightFromHoldPos()
     if self.hold_pos then
         if not self.selected_text then
             self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.hold_pos)
+            logger.dbg("LOGG-8 self.ui.languagesupport =", self.ui.languagesupport)
+            logger.dbg("LOGG-8 self.ui.languagesupport:hasActiveLanguagePlugins() =", self.ui.languagesupport:hasActiveLanguagePlugins())
             if self.ui.languagesupport and self.ui.languagesupport:hasActiveLanguagePlugins() then
                 -- Match language-specific expansion you'd get from self:onHold().
                 local new_selected_text = self.ui.languagesupport:improveWordSelection(self.selected_text)
