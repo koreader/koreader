@@ -1983,13 +1983,13 @@ function ReaderFooter:genAlignmentMenuItems(value)
     }
 end
 
-function ReaderFooter:addAdditionalFooterContent(content)
-    table.insert(self.external_footer_content, content)
+function ReaderFooter:addAdditionalFooterContent(content_func)
+    table.insert(self.external_footer_content, content_func)
 end
 
 function ReaderFooter:removeAdditionalFooterContent(content_func)
     for i, v in pairs(self.external_footer_content) do
-        if v.func == content_func then
+        if v == content_func then
             table.remove(self.external_footer_content, i)
         end
     end
@@ -2167,8 +2167,8 @@ function ReaderFooter:_updateFooterText(force_repaint, full_repaint)
         return
     end
     local text = self:genFooterText()
-    for i, v in pairs(self.external_footer_content) do
-        text = v.func(v.this) .. " " .. self:get_separator_symbol() .. " " .. text
+    for dummy, v in pairs(self.external_footer_content) do
+        text = v() .. " " .. self:get_separator_symbol() .. " " .. text
     end
 
     if not text then text = "" end
