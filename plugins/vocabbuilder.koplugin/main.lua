@@ -77,7 +77,13 @@ local MenuDialog = FocusManager:extend{
 function MenuDialog:init()
     self.layout = {}
     if Device:hasKeys() then
-        self.key_events.Close = { { { "Back", "Menu" } } }
+        local back_group = util.tableDeepCopy(Device.input.group.Back)
+        if Device:hasFewKeys() then
+            table.insert(back_group, "Left")
+        else
+            table.insert(back_group, "Menu")
+        end
+        self.key_events.Close = { { back_group } }
     end
     if Device:isTouchDevice() then
         self.ges_events.Tap = {
