@@ -41,7 +41,7 @@ function ReaderCoptListener:onReadSettings(config)
     self.document._document:setIntProperty("window.status.battery.percent", self.battery_percent)
     self.document._document:setIntProperty("window.status.pos.percent", self.reading_percent)
 
-    self.external_header_content = {} -- place, where additional header content can be inserted.
+    self.additional_header_content = {} -- place, where additional header content can be inserted.
 
     -- We will build the top status bar page info string ourselves,
     -- if we have to display any chunk of it
@@ -88,7 +88,7 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
     pageno = pageno or self.ui.view.footer.pageno
 
     if self.document.configurable.status_line ~= 0 or self.view.view_mode ~= "page"
-        or not self.page_info_override or not next(self.external_header_content) then
+        or not self.page_info_override or not next(self.additional_header_content) then
 
         self.document:setPageInfoOverride("")
         return
@@ -133,7 +133,7 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
     end
 
     local additional_content = ""
-    for dummy, v in pairs(self.external_header_content) do
+    for dummy, v in ipairs(self.additional_header_content) do
         additional_content = additional_content .. v()
     end
 
@@ -312,13 +312,13 @@ ReaderCoptListener.onCloseDocument = ReaderCoptListener.unscheduleHeaderRefresh
 ReaderCoptListener.onSuspend = ReaderCoptListener.unscheduleHeaderRefresh
 
 function ReaderCoptListener:addAdditionalHeaderContent(content_func)
-    table.insert(self.external_header_content, content_func)
+    table.insert(self.additional_header_content, content_func)
 end
 
 function ReaderCoptListener:removeAdditionalHeaderContent(content_func)
-    for i, v in pairs(self.external_header_content) do
+    for i, v in ipairs(self.additional_header_content) do
         if v == content_func then
-            table.remove(self.external_header_content, i)
+            table.remove(self.additional_header_content, i)
         end
     end
 end

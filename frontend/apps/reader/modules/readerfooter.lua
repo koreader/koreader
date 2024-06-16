@@ -493,7 +493,7 @@ ReaderFooter.default_settings = {
 function ReaderFooter:init()
     self.settings = G_reader_settings:readSetting("footer", self.default_settings)
 
-    self.external_footer_content = {} -- place, where additional header content can be inserted.
+    self.additional_footer_content = {} -- place, where additional header content can be inserted.
 
     -- Remove items not supported by the current device
     if not Device:hasFastWifiStatusQuery() then
@@ -1932,13 +1932,13 @@ function ReaderFooter:genAlignmentMenuItems(value)
 end
 
 function ReaderFooter:addAdditionalFooterContent(content_func)
-    table.insert(self.external_footer_content, content_func)
+    table.insert(self.additional_footer_content, content_func)
 end
 
 function ReaderFooter:removeAdditionalFooterContent(content_func)
-    for i, v in pairs(self.external_footer_content) do
+    for i, v in ipairs(self.additional_footer_content) do
         if v == content_func then
-            table.remove(self.external_footer_content, i)
+            table.remove(self.additional_footer_content, i)
         end
     end
 end
@@ -2115,7 +2115,7 @@ function ReaderFooter:_updateFooterText(force_repaint, full_repaint)
         return
     end
     local text = self:genFooterText()
-    for dummy, v in pairs(self.external_footer_content) do
+    for dummy, v in ipairs(self.additional_footer_content) do
         text = v() .. " " .. self:get_separator_symbol() .. " " .. text
     end
 
