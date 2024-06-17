@@ -8,11 +8,13 @@ local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-local ReaderCoptListener = EventListener:extend{
-    additional_header_content = {} -- place, where additional header content can be inserted.
-}
+local ReaderCoptListener = EventListener:extend{}
 
 local CRE_HEADER_DEFAULT_SIZE = 20
+
+function ReaderCoptListener:init()
+    self.additional_header_content = {} -- place, where additional header content can be inserted.
+end
 
 function ReaderCoptListener:onReadSettings(config)
     local view_mode_name = self.document.configurable.view_mode == 0 and "page" or "scroll"
