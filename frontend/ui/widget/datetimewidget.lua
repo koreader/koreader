@@ -60,6 +60,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -400,6 +401,11 @@ function DateTimeWidget:createLayout()
 end
 
 function DateTimeWidget:addWidget(widget)
+    widget = HorizontalGroup:new{
+        align = "center",
+        HorizontalSpan:new{ width = Size.span.horizontal_default },
+        widget,
+    }
     table.insert(self.date_frame[1],  #self.date_frame[1], widget)
 end
 

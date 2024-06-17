@@ -2,14 +2,8 @@ local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DateTimeWidget = require("ui/widget/datetimewidget")
 local Event = require("ui/event")
-local Font = require("ui/font")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InfoMessage = require("ui/widget/infomessage")
-local HorizontalSpan = require("ui/widget/horizontalspan")
-local Size = require("ui/size")
-local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
-local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local datetime = require("datetime")
@@ -66,9 +60,8 @@ function ReadTimer:init()
             local hours, minutes, dummy = self:remainingTime(1)
             local timer_info = string.format("%02d:%02d", hours, minutes)
             return self.timer_symbol .. timer_info .. " "
-        else
-            return ""
         end
+        return
     end
 
     self.additional_footer_content_func = function()
@@ -84,9 +77,8 @@ function ReadTimer:init()
             else
                 return self.timer_letter .. ": " .. timer_info
             end
-        else
-            return ""
         end
+        return
     end
 
     self.ui.menu:registerToMainMenu(self)
@@ -185,14 +177,8 @@ function ReadTimer:rescheduleIn(seconds)
 end
 
 function ReadTimer:addCheckboxes(widget)
-    local checkbox_title = TextBoxWidget:new{
-        alignment = "left",
-        text = _("Display timer value in:"),
-        face = Font:getFace("smallinfofont"),
-        width = widget:getAddedWidgetAvailableWidth(),
-    }
     local checkbox_header = CheckButton:new{
-        text = _("top status bar"),
+        text = _("Show timer in alt status bar"),
         checked = self.show_value_in_header,
         parent = widget,
         callback = function()
@@ -206,7 +192,7 @@ function ReadTimer:addCheckboxes(widget)
         end,
     }
     local checkbox_footer = CheckButton:new{
-        text = _("bottom status bar"),
+        text = _("Show timer status bar"),
         checked = self.show_value_in_footer,
         parent = widget,
         callback = function()
@@ -219,16 +205,8 @@ function ReadTimer:addCheckboxes(widget)
             end
         end,
     }
-    local checkbox_frame = HorizontalGroup:new{
-        align = "center",
-        HorizontalSpan:new{ width = Size.span.horizontal_default },
-        VerticalGroup:new{
-            checkbox_title,
-            checkbox_header,
-            checkbox_footer,
-        },
-    }
-    widget:addWidget(checkbox_frame)
+    widget:addWidget(checkbox_header)
+    widget:addWidget(checkbox_footer)
 end
 
 function ReadTimer:addToMainMenu(menu_items)

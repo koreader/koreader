@@ -134,7 +134,10 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
 
     local additional_content = ""
     for dummy, v in ipairs(self.additional_header_content) do
-        additional_content = additional_content .. v()
+        local value = v()
+        if value and value ~= "" then
+            additional_content = additional_content .. value
+        end
     end
 
     local page_info = additional_content

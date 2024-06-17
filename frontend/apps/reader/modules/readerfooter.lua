@@ -1932,6 +1932,7 @@ function ReaderFooter:genAlignmentMenuItems(value)
 end
 
 function ReaderFooter:addAdditionalFooterContent(content_func)
+    table.insert(self.textGeneratorMap, content_func)
     table.insert(self.additional_footer_content, content_func)
 end
 
@@ -2116,7 +2117,10 @@ function ReaderFooter:_updateFooterText(force_repaint, full_repaint)
     end
     local text = self:genFooterText()
     for dummy, v in ipairs(self.additional_footer_content) do
-        text = v() .. " " .. self:get_separator_symbol() .. " " .. text
+        local value = v()
+        if value and value ~= "" then
+            text = value .. " " .. self:get_separator_symbol() .. " " .. text
+        end
     end
 
     if not text then text = "" end
