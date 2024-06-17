@@ -8,7 +8,9 @@ local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-local ReaderCoptListener = EventListener:extend{}
+local ReaderCoptListener = EventListener:extend{
+    additional_header_content = {} -- place, where additional header content can be inserted.
+}
 
 local CRE_HEADER_DEFAULT_SIZE = 20
 
@@ -40,8 +42,6 @@ function ReaderCoptListener:onReadSettings(config)
     self.document._document:setIntProperty("window.status.battery", self.battery)
     self.document._document:setIntProperty("window.status.battery.percent", self.battery_percent)
     self.document._document:setIntProperty("window.status.pos.percent", self.reading_percent)
-
-    self.additional_header_content = {} -- place, where additional header content can be inserted.
 
     -- We will build the top status bar page info string ourselves,
     -- if we have to display any chunk of it
