@@ -162,7 +162,6 @@ function TweakInfoWidget:init()
         FrameContainer:new{
             background = Blitbuffer.COLOR_WHITE,
             radius = Size.radius.window,
-            margin = Size.margin.default,
             padding = Size.padding.default,
             padding_bottom = 0, -- no padding below buttontable
             VerticalGroup:new{
