@@ -14,15 +14,15 @@ for fd in /proc/"$$"/fd/*; do
             fd_path="$(readlink "${fd}")"
             close_me="true"
         elif [ -p "${fd}" ]; then
-            # NOTE: Old busybox will very likely fail to even recognize pipes as such in this context,
-            #       as they will fail the top-level -e check, so we'll likely never hit this codepath...
+            # We *might* be catching temporary pipes created by this very test, se we have to leave pipes alone...
+            # Although it would take extremely unlucky timing, as by the time we go through the top-level -e test,
+            # said temporary pipe is already gone, and as such we *should* never really enter this branch for temporary pipes ;).
             fd_path="$(readlink "${fd}")"
-            # We might be catching temporary pipes created by this very test, se we have to leave pipes alone...
             close_me="false"
         else
             # NOTE: dash (meaning, in turn, busybox's ash) uses fd 10+ open to /dev/tty or $0 (w/ CLOEXEC)
-            # NOTE: The last fd != fd_path check is there to (potentially) whitelist the temporary pipe created by this test,
-            #       when old busybox fails to detect it as a pipe but does think it exists, and canonicalizes its path in an unhelpful manner...).
+            # NOTE: The last fd != fd_path check is there to (potentially) whitelist non-regular files we might have failed to handle,
+            #       it's designed to match the unhelpful result from old buysbox's readlink -f on non-regular files (c.f., previous notes).
             if [ "${fd_path}" != "/dev/tty" ] && [ "${fd_path}" != "$(readlink -f "${0}")" ] && [ "${fd}" != "${fd_path}" ]; then
                 close_me="true"
             else
