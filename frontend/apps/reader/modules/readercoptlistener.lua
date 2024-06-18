@@ -324,6 +324,7 @@ function ReaderCoptListener:removeAdditionalHeaderContent(content_func)
     for i, v in ipairs(self.additional_header_content) do
         if v == content_func then
             table.remove(self.additional_header_content, i)
+            return true
         end
     end
 end
