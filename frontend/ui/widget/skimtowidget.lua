@@ -44,19 +44,12 @@ function SkimToWidget:init()
 
     -- nil for default center full mode; "top" and "bottom" for compact mode
     local skim_dialog_position = G_reader_settings:readSetting("skim_dialog_position")
+    local full_mode = not skim_dialog_position
 
     local frame_border_size = Size.border.window
     local button_span_unit_width = Size.span.horizontal_small
     local button_font_size, frame_padding, frame_width, inner_width, nb_buttons, larger_span_units, progress_bar_height
-    if skim_dialog_position then
-        button_font_size = 14
-        frame_padding = Size.padding.default
-        frame_width = screen_width + 2 * frame_border_size -- hide side borders
-        inner_width = frame_width - 2 * frame_padding
-        nb_buttons = 11 -- in equal distances
-        larger_span_units = 1
-        progress_bar_height = Screen:scaleBySize(36)
-    else
+    if full_mode then
         button_font_size = nil -- use default
         frame_padding = Size.padding.fullscreen -- large padding for airy feeling
         frame_width = math.floor(math.min(screen_width, screen_height) * 0.95)
@@ -64,6 +57,14 @@ function SkimToWidget:init()
         nb_buttons = 5 -- with the middle one separated a bit more from the others
         larger_span_units = 3 -- 3 x small span width
         progress_bar_height = Size.item.height_big
+    else
+        button_font_size = 14
+        frame_padding = Size.padding.default
+        frame_width = screen_width + 2 * frame_border_size -- hide side borders
+        inner_width = frame_width - 2 * frame_padding
+        nb_buttons = 11 -- in equal distances
+        larger_span_units = 1
+        progress_bar_height = Screen:scaleBySize(36)
     end
     local nb_span_units = (nb_buttons - 1) - 2 + 2 * larger_span_units
     local button_width = math.floor((inner_width - nb_span_units * button_span_unit_width) * (1 / nb_buttons))
@@ -151,7 +152,7 @@ function SkimToWidget:init()
     }
     local button_orig_page = Button:new{
         text = "\u{21BA}", -- Anticlockwise Open Circle Arrow
-        --text = "\u{21A9}", -- Leftwards Arrow with Hook
+        -- text = "\u{21A9}", -- Leftwards Arrow with Hook
         text_font_size = button_font_size,
         radius = 0,
         width = button_width,
@@ -256,7 +257,35 @@ function SkimToWidget:init()
     local small_button_span = HorizontalSpan:new{ width = button_span_unit_width }
     local large_button_span = HorizontalSpan:new{ width = button_span_unit_width * larger_span_units }
     local top_row_span, bottom_row_span, top_buttons_row, bottom_buttons_row, radius
-    if skim_dialog_position then
+    if full_mode then
+        top_row_span = VerticalSpan:new{ width = Size.padding.fullscreen }
+        bottom_row_span = top_row_span
+        top_buttons_row = HorizontalGroup:new{
+            align = "center",
+            button_chapter_prev,
+            small_button_span,
+            button_bookmark_prev,
+            large_button_span,
+            self.button_bookmark_toggle,
+            large_button_span,
+            button_bookmark_next,
+            small_button_span,
+            button_chapter_next,
+        }
+        bottom_buttons_row = HorizontalGroup:new{
+            align = "center",
+            button_minus_ten,
+            small_button_span,
+            button_minus,
+            large_button_span,
+            self.current_page_text,
+            large_button_span,
+            button_plus,
+            small_button_span,
+            button_plus_ten,
+        }
+        radius = Size.radius.window
+    else
         top_row_span = VerticalSpan:new{ width = Size.padding.default }
         top_buttons_row = HorizontalGroup:new{
             align = "center",
@@ -287,34 +316,6 @@ function SkimToWidget:init()
             top_buttons_row = VerticalSpan:new{ width = 0 }
             top_row_span = top_buttons_row
         end
-    else
-        top_row_span = VerticalSpan:new{ width = Size.padding.fullscreen }
-        bottom_row_span = top_row_span
-        top_buttons_row = HorizontalGroup:new{
-            align = "center",
-            button_chapter_prev,
-            small_button_span,
-            button_bookmark_prev,
-            large_button_span,
-            self.button_bookmark_toggle,
-            large_button_span,
-            button_bookmark_next,
-            small_button_span,
-            button_chapter_next,
-        }
-        bottom_buttons_row = HorizontalGroup:new{
-            align = "center",
-            button_minus_ten,
-            small_button_span,
-            button_minus,
-            large_button_span,
-            self.current_page_text,
-            large_button_span,
-            button_plus,
-            small_button_span,
-            button_plus_ten,
-        }
-        radius = Size.radius.window
     end
 
     self.skimto_frame = FrameContainer:new{
@@ -332,7 +333,7 @@ function SkimToWidget:init()
             bottom_buttons_row,
         }
     }
-    if not skim_dialog_position then
+    if full_mode then
         self.movable = MovableContainer:new{
             self.skimto_frame,
         }
@@ -348,15 +349,15 @@ function SkimToWidget:init()
     }
 
     if Device:hasDPad() then
-        if skim_dialog_position then
-            self.layout = {
-                { button_chapter_prev, button_chapter_next, button_bookmark_prev, button_bookmark_next, self.button_bookmark_toggle,
-                  self.current_page_text, button_orig_page, button_minus_ten, button_plus_ten, button_minus, button_plus },
-            }
-        else
+        if full_mode then
             self.layout = {
                 { button_chapter_prev, button_bookmark_prev, self.button_bookmark_toggle, button_bookmark_next, button_chapter_next },
                 { button_minus_ten, button_minus, self.current_page_text, button_plus, button_plus_ten },
+            }
+        else
+            self.layout = {
+                { button_chapter_prev, button_chapter_next, button_bookmark_prev, button_bookmark_next, self.button_bookmark_toggle,
+                  self.current_page_text, button_orig_page, button_minus_ten, button_plus_ten, button_minus, button_plus },
             }
         end
         self:moveFocusTo(1, 1)
