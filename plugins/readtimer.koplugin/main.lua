@@ -207,7 +207,7 @@ function ReadTimer:addCheckboxes(widget)
         end,
     }
     local checkbox_footer = CheckButton:new{
-        text = _("Show timer status bar"),
+        text = _("Show timer in status bar"),
         checked = self.show_value_in_footer,
         parent = widget,
         callback = function()

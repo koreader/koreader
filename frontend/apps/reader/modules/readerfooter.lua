@@ -1992,6 +1992,7 @@ function ReaderFooter:removeAdditionalFooterContent(content_func)
     for i, v in ipairs(self.additional_footer_content) do
         if v == content_func then
             table.remove(self.additional_footer_content, i)
+            return true
         end
     end
 end

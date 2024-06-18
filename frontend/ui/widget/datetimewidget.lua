@@ -401,6 +401,7 @@ function DateTimeWidget:createLayout()
 end
 
 function DateTimeWidget:addWidget(widget)
+    table.insert(self.layout, #self.layout, {widget})
     widget = HorizontalGroup:new{
         align = "center",
         HorizontalSpan:new{ width = Size.span.horizontal_default },
