@@ -114,6 +114,8 @@ function AutoStandby:onInputEvent()
     UIManager:scheduleIn(AutoStandby.delay, AutoStandby.allow, AutoStandby)
 end
 
+AutoStandby.onPageUpdate = AutoStandby.onInputEvent
+
 -- Prevent standby (by timer)
 function AutoStandby:prevent()
     if not AutoStandby.preventing then
