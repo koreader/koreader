@@ -51,7 +51,7 @@ local ota_channels = {
 
 function OTAManager:getOTAType()
     local platform, kind = Device:otaModel()
-    if not platform then return end
+    if not platform then return "none" end
     return kind
 end
 
@@ -73,23 +73,29 @@ function OTAManager:setOTAChannel(channel)
     G_reader_settings:saveSetting("ota_channel", channel)
 end
 
-function OTAManager:getLinkFilename()
-    return self.link_template:format(self:getOTAModel(), self:getOTAChannel())
-end
-
-function OTAManager:getZsyncFilename()
-    return self.zsync_template:format(self:getOTAModel(), self:getOTAChannel())
+function OTAManager:getFilename(kind)
+    if type(kind) ~= "string" then return end
+    local model = Device:otaModel()
+    local channel = self:getOTAChannel()
+    if kind == "ota" then
+        return self.zsync_template:format(model, channel)
+    elseif kind == "link" then
+        return self.link_template:format(model, channel)
+    end
 end
 
 function OTAManager:checkUpdate()
     if Device:isDeprecated() then return -1 end
-
     local http = require("socket.http")
     local ltn12 = require("ltn12")
     local socket = require("socket")
     local socketutil = require("socketutil")
 
-    local update_file = (self:getOTAType() == "link") and self:getLinkFilename() or self:getZsyncFilename()
+    local update_kind = self:getOTAType()
+    if not update_kind then return -1 end
+
+    local update_file = self:getFilename(update_kind)
+    if not update_file then return -2 end
 
     local ota_update_file = self:getOTAServer() .. update_file
     local local_update_file = ota_dir .. update_file
@@ -161,6 +167,10 @@ function OTAManager:fetchAndProcessUpdate()
     elseif ota_version == -1 then
         UIManager:show(InfoMessage:new{
             text = T(_("Device no longer supported.\n\nPlease check %1"), "https://github.com/koreader/koreader/wiki/deprecated-devices")
+        })
+    elseif ota_version == -2 then
+        UIManager:show(InfoMessage:new{
+            text = _("Unable to determine OTA model.")
         })
     elseif ota_version == nil then
         UIManager:show(InfoMessage:new{
