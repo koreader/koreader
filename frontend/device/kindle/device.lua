@@ -15,6 +15,35 @@ require("ffi/fbink_input_h")
 local function yes() return true end
 local function no() return false end  -- luacheck: ignore
 
+local function kindleGetCurrentEssid() 
+    local haslipc, lipc = pcall(require, "liblipclua")
+    local lipc_handle = nil
+    if haslipc and lipc then
+        lipc_handle = lipc.init("com.github.koreader.networkmgr")
+    end
+    if lipc_handle then
+        return lipc_handle:get_string_property("com.lab126.wifid", "currentEssid")
+    else
+        return nil
+    end
+end
+
+local function kindleScanWidi()
+    local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
+    local lipc_handle = nil
+    if haslipc and lipc then
+        lipc_handle = lipc.open("com.github.koreader.networkmgr")
+    end
+    if lipc_handle then
+        lipc_handle:set_string_property("com.lab126.wifid", "scan", "") -- trigger a scan
+        local scan_result = lipc_handle:access_hash_property("com.lab126.wifid", "scanList", lipc_handle:new_hasharray()):to_table()
+        return scan_result
+    else
+        return nil
+    end
+end
+
+
 local function kindleEnableWifi(toggle)
     local haslipc, lipc = pcall(require, "liblipclua")
     local lipc_handle = nil
@@ -192,6 +221,14 @@ function Kindle:initNetworkManager(NetworkMgr)
 
     function NetworkMgr:restoreWifiAsync()
         kindleEnableWifi(1)
+    end
+
+    function NetworkMgr:getNetworkList() 
+        
+    end
+
+    function NetworkMgr:getCurrentNetwork() 
+        return { [ssid]: kindleGetCurrentEssid() }
     end
 
     NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
