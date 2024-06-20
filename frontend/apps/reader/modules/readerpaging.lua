@@ -359,6 +359,30 @@ function ReaderPaging:bookmarkFlipping(flipping_page, flipping_ges)
     UIManager:setDirty(self.view.dialog, "partial")
 end
 
+function ReaderPaging:enterSkimMode()
+    if self.view.document.configurable.text_wrap ~= 0 or self.view.page_scroll or self.view.zoom_mode ~= "page" then
+        self.backup_text_wrap = self.view.document.configurable.text_wrap
+        self.backup_page_scroll = self.view.page_scroll
+        self.backup_zoom_mode = self.view.zoom_mode
+        self.view.document.configurable.text_wrap = 0
+        self.view.page_scroll = false
+        self.ui.zooming:onSetZoomMode("page")
+        self.ui.zooming:onReZoom()
+    end
+end
+
+function ReaderPaging:exitSkimMode()
+    if self.backup_text_wrap then
+        self.view.document.configurable.text_wrap = self.backup_text_wrap
+        self.view.page_scroll = self.backup_page_scroll
+        self.ui.zooming:onSetZoomMode(self.backup_zoom_mode)
+        self.ui.zooming:onReZoom()
+        self.backup_text_wrap = nil
+        self.backup_page_scroll = nil
+        self.backup_zoom_mode = nil
+    end
+end
+
 function ReaderPaging:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay_ms)
     self.scroll_method = scroll_method
     self.scroll_activation_delay = time.ms(scroll_activation_delay_ms)
