@@ -22,9 +22,46 @@ local function kindleGetCurrentEssid()
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
     if lipc_handle then
-        return lipc_handle:get_string_property("com.lab126.wifid", "currentEssid")
+        local essid = lipc_handle:get_string_property("com.lab126.wifid", "currentEssid")
+        lipc_handle:close()
+        return essid
     else
         return nil
+    end
+end
+
+local function kindleAuthenticateNetwork(essid) 
+    local haslipc, lipc = pcall(require, "liblipclua")
+    local lipc_handle = nil
+    if haslipc and lipc then
+        lipc_handle = lipc.init("com.github.koreader.networkmgr")
+    end
+    if lipc_handle then
+        lipc_handle:get_string_property("com.lab126.cmd","ensureConnection", "wifi:" .. essid)
+        lipc_handle:close()
+    end
+end
+
+local function kindleSaveNetwork(data) 
+    local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
+    local lipc_handle = nil
+    if haslipc and lipc then
+        lipc_handle = lipc.open_no_name()
+    end
+    if lipc_handle then
+        local profile = lipc_handle:new_hasharray()
+        profile:add_hash()
+        profile:put_string(0, "essid", data["ssid"])
+        if string.find(data.flags, "WPA") then
+            profile:put_string(0, "secured", "yes")
+            profile:put_string(0, "psk", data["password"])
+            profile:put_int(0, "store_nw_user_pref", 0) -- tells amazon we don't want them to have our password
+        else
+            profile:put_string(0, "secured", "no")
+        end
+        lipc_handle:access_hash_property("com.lab126.wifid", "createProfile", profile)
+
+    else
     end
 end
 
@@ -224,6 +261,15 @@ function Kindle:initNetworkManager(NetworkMgr)
         kindleEnableWifi(1)
     end
 
+    function NetworkMgr:authenticateNetwork(network)
+        kindleAuthenticateNetwork(network["ssid"])
+        return true, nil
+    end
+
+    function NetworkMgr:saveNetwork(setting)
+        kindleSaveNetwork(setting)
+    end
+
     function NetworkMgr:getNetworkList() 
         local scanList = kindleScanWifi();
         if not scanList then 
@@ -242,14 +288,6 @@ function Kindle:initNetworkManager(NetworkMgr)
         local network_list = {}
         local current_essid = kindleGetCurrentEssid()
         for i, network in ipairs(scanList) do
-            logger.info("Network ", i)
-            
-            for k, v in pairs(network) do 
-                logger.info(k, ":", v)
-                
-            end
-            logger.info("===============")
-
             network_list[i] = { 
                 ["signal_level"] = 0,
                 ["signal_quality"] = qualities[network["signal"]],
