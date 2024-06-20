@@ -28,11 +28,11 @@ local function kindleGetCurrentEssid()
     end
 end
 
-local function kindleScanWidi()
+local function kindleScanWifi()
     local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
     local lipc_handle = nil
     if haslipc and lipc then
-        lipc_handle = lipc.open("com.github.koreader.networkmgr")
+        lipc_handle = lipc.open_no_name()
     end
     if lipc_handle then
         lipc_handle:set_string_property("com.lab126.wifid", "scan", "") -- trigger a scan
@@ -197,14 +197,15 @@ local Kindle = Generic:extend{
 }
 
 function Kindle:initNetworkManager(NetworkMgr)
-    function NetworkMgr:turnOnWifi(complete_callback)
+    function NetworkMgr:turnOnWifi(complete_callback, interactive)
         kindleEnableWifi(1)
+        return self:reconnectOrShowNetworkMenu(complete_callback, interactive)
         -- NOTE: As we defer the actual work to lipc,
         --       we have no guarantee the Wi-Fi state will have changed by the time kindleEnableWifi returns,
         --       so, delay the callback until we at least can ensure isConnect is true.
-        if complete_callback then
-            NetworkMgr:scheduleConnectivityCheck(complete_callback)
-        end
+        -- if complete_callback then
+        --     NetworkMgr:scheduleConnectivityCheck(complete_callback)
+        -- end
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
@@ -224,11 +225,51 @@ function Kindle:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:getNetworkList() 
-        
+        local scanList = kindleScanWifi();
+        if not scanList then 
+            return nil, "Wifi scanning isnt supported on this kindle."
+        end
+
+        local qualities = {
+            [1] = 0,
+            [2] = 6,
+            [3] = 31,
+            [4] = 56,
+            [5] = 81
+        } 
+        -- trick ui/widget/networksetting to display correct icon
+
+        local network_list = {}
+        local current_essid = kindleGetCurrentEssid()
+        for i, network in ipairs(scanList) do
+            logger.info("Network ", i)
+            
+            for k, v in pairs(network) do 
+                logger.info(k, ":", v)
+                
+            end
+            logger.info("===============")
+
+            network_list[i] = { 
+                ["signal_level"] = 0,
+                ["signal_quality"] = qualities[network["signal"]],
+                ["connected"] = current_essid == network["essid"],
+                ["flags"] = network["key_mgmt"],
+            }
+            
+            if network["essid"] ~= "" then
+                network_list[i]["ssid"] = network["essid"]
+            end
+
+            if network["known"] == "yes" then
+                network_list[i]["password"] = "HIDDEN"
+            end
+        end
+        return network_list, nil
     end
 
     function NetworkMgr:getCurrentNetwork() 
-        return { [ssid]: kindleGetCurrentEssid() }
+        return { [ssid] = kindleGetCurrentEssid() }
     end
 
     NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
