@@ -15,7 +15,7 @@ require("ffi/fbink_input_h")
 local function yes() return true end
 local function no() return false end  -- luacheck: ignore
 
-local function kindleGetCurrentEssid() 
+local function kindleGetCurrentEssid()
     local haslipc, lipc = pcall(require, "liblipclua")
     local lipc_handle = nil
     if haslipc and lipc then
@@ -30,7 +30,7 @@ local function kindleGetCurrentEssid()
     end
 end
 
-local function kindleAuthenticateNetwork(essid) 
+local function kindleAuthenticateNetwork(essid)
     local haslipc, lipc = pcall(require, "liblipclua")
     local lipc_handle = nil
     if haslipc and lipc then
@@ -42,7 +42,7 @@ local function kindleAuthenticateNetwork(essid)
     end
 end
 
-local function kindleSaveNetwork(data) 
+local function kindleSaveNetwork(data)
     local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
     local lipc_handle = nil
     if haslipc and lipc then
@@ -60,8 +60,6 @@ local function kindleSaveNetwork(data)
             profile:put_string(0, "secured", "no")
         end
         lipc_handle:access_hash_property("com.lab126.wifid", "createProfile", profile)
-
-    else
     end
 end
 
@@ -270,9 +268,9 @@ function Kindle:initNetworkManager(NetworkMgr)
         kindleSaveNetwork(setting)
     end
 
-    function NetworkMgr:getNetworkList() 
+    function NetworkMgr:getNetworkList()
         local scanList = kindleScanWifi();
-        if not scanList then 
+        if not scanList then
             return nil, "Wifi scanning isnt supported on this kindle."
         end
 
@@ -282,23 +280,21 @@ function Kindle:initNetworkManager(NetworkMgr)
             [3] = 31,
             [4] = 56,
             [5] = 81
-        } 
+        }
         -- trick ui/widget/networksetting to display correct icon
 
         local network_list = {}
         local current_essid = kindleGetCurrentEssid()
         for i, network in ipairs(scanList) do
-            network_list[i] = { 
+            network_list[i] = {
                 ["signal_level"] = 0,
                 ["signal_quality"] = qualities[network["signal"]],
                 ["connected"] = current_essid == network["essid"],
                 ["flags"] = network["key_mgmt"],
             }
-            
             if network["essid"] ~= "" then
                 network_list[i]["ssid"] = network["essid"]
             end
-
             if network["known"] == "yes" then
                 network_list[i]["password"] = "HIDDEN"
             end
@@ -306,8 +302,8 @@ function Kindle:initNetworkManager(NetworkMgr)
         return network_list, nil
     end
 
-    function NetworkMgr:getCurrentNetwork() 
-        return { [ssid] = kindleGetCurrentEssid() }
+    function NetworkMgr:getCurrentNetwork()
+        return { ["ssid"] = kindleGetCurrentEssid() }
     end
 
     NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
