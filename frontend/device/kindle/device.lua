@@ -37,7 +37,7 @@ local function kindleAuthenticateNetwork(essid)
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
     if lipc_handle then
-        lipc_handle:get_string_property("com.lab126.cmd","ensureConnection", "wifi:" .. essid)
+        lipc_handle:set_string_property("com.lab126.cmd","ensureConnection", "wifi:" .. essid)
         lipc_handle:close()
     end
 end
