@@ -23,6 +23,10 @@ local Screen = Device.screen
 local SkimToWidget = FocusManager:extend{}
 
 function SkimToWidget:init()
+    if self.ui.paging then -- "page" view
+        self.ui.paging:enterSkimMode()
+    end
+
     local screen_width = Screen:getWidth()
     local screen_height = Screen:getHeight()
 
@@ -398,6 +402,9 @@ function SkimToWidget:addOriginToLocationStack()
 end
 
 function SkimToWidget:onCloseWidget()
+    if self.ui.paging then
+        self.ui.paging:exitSkimMode()
+    end
     UIManager:setDirty(nil, function()
         return "ui", self.skimto_frame.dimen
     end)
