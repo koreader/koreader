@@ -60,6 +60,7 @@ local function kindleSaveNetwork(data)
             profile:put_string(0, "secured", "no")
         end
         lipc_handle:access_hash_property("com.lab126.wifid", "createProfile", profile)
+        lipc_handle:close()
     end
 end
 
@@ -71,7 +72,12 @@ local function kindleScanWifi()
     end
     if lipc_handle then
         lipc_handle:set_string_property("com.lab126.wifid", "scan", "") -- trigger a scan
-        local scan_result = lipc_handle:access_hash_property("com.lab126.wifid", "scanList", lipc_handle:new_hasharray()):to_table()
+        local ha_outp = lipc_handle:new_hasharray()
+        local ha_results = lipc_handle:access_hash_property("com.lab126.wifid", "scanList", ha_outp)
+        local scan_result = ha_results:to_table()
+        ha_results:destroy()
+        ha_outp:destroy()
+        lipc_handle:close()
         return scan_result
     else
         return nil
