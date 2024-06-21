@@ -238,9 +238,6 @@ function Kindle:initNetworkManager(NetworkMgr)
         -- NOTE: As we defer the actual work to lipc,
         --       we have no guarantee the Wi-Fi state will have changed by the time kindleEnableWifi returns,
         --       so, delay the callback until we at least can ensure isConnect is true.
-        -- if complete_callback then
-        --     NetworkMgr:scheduleConnectivityCheck(complete_callback)
-        -- end
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
@@ -269,7 +266,7 @@ function Kindle:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:getNetworkList()
-        local scanList = kindleScanWifi();
+        local scanList = kindleScanWifi()
         if not scanList then
             return nil, "Wifi scanning isnt supported on this kindle."
         end
