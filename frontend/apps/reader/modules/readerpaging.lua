@@ -361,9 +361,13 @@ end
 
 function ReaderPaging:enterSkimMode()
     if self.view.document.configurable.text_wrap ~= 0 or self.view.page_scroll or self.view.zoom_mode ~= "page" then
-        self.backup_text_wrap = self.view.document.configurable.text_wrap
-        self.backup_page_scroll = self.view.page_scroll
-        self.backup_zoom_mode = self.view.zoom_mode
+        self.skim_backup = {
+            text_wrap    = self.view.document.configurable.text_wrap,
+            page_scroll  = self.view.page_scroll,
+            zoom_mode    = self.view.zoom_mode,
+            current_page = self.current_page,
+            location     = self:getBookLocation(),
+        }
         self.view.document.configurable.text_wrap = 0
         self.view.page_scroll = false
         self.ui.zooming:onSetZoomMode("page")
@@ -372,14 +376,17 @@ function ReaderPaging:enterSkimMode()
 end
 
 function ReaderPaging:exitSkimMode()
-    if self.backup_text_wrap then
-        self.view.document.configurable.text_wrap = self.backup_text_wrap
-        self.view.page_scroll = self.backup_page_scroll
-        self.ui.zooming:onSetZoomMode(self.backup_zoom_mode)
+    if self.skim_backup then
+        self.view.document.configurable.text_wrap = self.skim_backup.text_wrap
+        self.view.page_scroll = self.skim_backup.page_scroll
+        self.ui.zooming:onSetZoomMode(self.skim_backup.zoom_mode)
         self.ui.zooming:onReZoom()
-        self.backup_text_wrap = nil
-        self.backup_page_scroll = nil
-        self.backup_zoom_mode = nil
+        if self.current_page == self.skim_backup.current_page then
+            -- if SkimToWidget is closed on the start page, restore exact location
+            self.current_page = 0 -- do not emit extra PageUpdate event
+            self:onRestoreBookLocation(self.skim_backup.location)
+        end
+        self.skim_backup = nil
     end
 end
 
