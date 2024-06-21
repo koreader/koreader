@@ -231,11 +231,7 @@ function Translator:genSettingsMenu()
                     return T("%1 (%2)", lang_name, lang_key)
                 end,
                 checked_func = function()
-                    if G_reader_settings:has(setting_name) then
-                        return lang_key == G_reader_settings:readSetting(setting_name)
-                    else
-                        return lang_key == default_checked_item
-                    end
+                    return lang_key == (G_reader_settings:readSetting(setting_name) or default_checked_item)
                 end,
                 callback = function()
                     G_reader_settings:saveSetting(setting_name, lang_key)
@@ -247,32 +243,6 @@ function Translator:genSettingsMenu()
     return {
         text = _("Translation settings"),
         sub_item_table = {
-            {
-                text = _("Auto-detect source language"),
-                help_text = _("This setting is best suited for foreign text found in books written in your native language."),
-                enabled_func = function()
-                    return not (G_reader_settings:isTrue("translator_from_doc_lang") and self:getDocumentLanguage() ~= nil)
-                end,
-                checked_func = function()
-                    return G_reader_settings:nilOrTrue("translator_from_auto_detect")
-                end,
-                callback = function()
-                    G_reader_settings:flipNilOrTrue("translator_from_auto_detect")
-                end,
-            },
-            {
-                text_func = function()
-                    local lang = G_reader_settings:readSetting("translator_from_language")
-                    return T(_("Translate from: %1"), self:getLanguageName(lang, ""))
-                end,
-                help_text = _("If a specific source language is manually selected, it will be used everywhere, in all your books."),
-                enabled_func = function()
-                    return not G_reader_settings:nilOrTrue("translator_from_auto_detect")
-                        and not (G_reader_settings:isTrue("translator_from_doc_lang") and self:getDocumentLanguage() ~= nil)
-                end,
-                sub_item_table = genLanguagesItems("translator_from_language"),
-                keep_menu_open = true,
-            },
             {
                 text_func = function()
                     local __, name = self:getDocumentLanguage()
@@ -292,6 +262,32 @@ This is useful:
                 callback = function()
                     G_reader_settings:flipTrue("translator_from_doc_lang")
                 end,
+            },
+            {
+                text = _("Auto-detect source language"),
+                help_text = _("This setting is best suited for foreign text found in books written in your native language."),
+                enabled_func = function()
+                    return not (G_reader_settings:isTrue("translator_from_doc_lang") and self:getDocumentLanguage() ~= nil)
+                end,
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("translator_from_auto_detect")
+                        and not (G_reader_settings:isTrue("translator_from_doc_lang") and self:getDocumentLanguage() ~= nil)
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("translator_from_auto_detect")
+                end,
+            },
+            {
+                text_func = function()
+                    local lang = G_reader_settings:readSetting("translator_from_language")
+                    return T(_("Translate from: %1"), self:getLanguageName(lang, ""))
+                end,
+                help_text = _("If a specific source language is manually selected, it will be used everywhere, in all your books."),
+                enabled_func = function()
+                    return not G_reader_settings:nilOrTrue("translator_from_auto_detect")
+                        and not (G_reader_settings:isTrue("translator_from_doc_lang") and self:getDocumentLanguage() ~= nil)
+                end,
+                sub_item_table = genLanguagesItems("translator_from_language"),
                 separator = true,
             },
             {
@@ -300,7 +296,6 @@ This is useful:
                     return T(_("Translate to: %1"), self:getLanguageName(lang, ""))
                 end,
                 sub_item_table = genLanguagesItems("translator_to_language", self:getTargetLanguage()),
-                keep_menu_open = true,
             },
         },
     }
