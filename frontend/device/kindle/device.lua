@@ -17,7 +17,7 @@ local function no() return false end  -- luacheck: ignore
 
 local function kindleGetCurrentEssid()
     local haslipc, lipc = pcall(require, "liblipclua")
-    local lipc_handle = nil
+    local lipc_handle
     if haslipc and lipc then
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
@@ -32,19 +32,19 @@ end
 
 local function kindleAuthenticateNetwork(essid)
     local haslipc, lipc = pcall(require, "liblipclua")
-    local lipc_handle = nil
+    local lipc_handle
     if haslipc and lipc then
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
     if lipc_handle then
-        lipc_handle:set_string_property("com.lab126.cmd","ensureConnection", "wifi:" .. essid)
+        lipc_handle:set_string_property("com.lab126.cmd", "ensureConnection", "wifi:" .. essid)
         lipc_handle:close()
     end
 end
 
 local function kindleSaveNetwork(data)
     local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
-    local lipc_handle = nil
+    local lipc_handle
     if haslipc and lipc then
         lipc_handle = lipc.open_no_name()
     end
@@ -65,7 +65,7 @@ end
 
 local function kindleScanWifi()
     local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
-    local lipc_handle = nil
+    local lipc_handle
     if haslipc and lipc then
         lipc_handle = lipc.open_no_name()
     end
@@ -78,10 +78,9 @@ local function kindleScanWifi()
     end
 end
 
-
 local function kindleEnableWifi(toggle)
     local haslipc, lipc = pcall(require, "liblipclua")
-    local lipc_handle = nil
+    local lipc_handle
     if haslipc and lipc then
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
@@ -108,7 +107,7 @@ end
 --[[
 local function isWifiUp()
     local haslipc, lipc = pcall(require, "liblipclua")
-    local lipc_handle = nil
+    local lipc_handle
     if haslipc and lipc then
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
@@ -234,10 +233,16 @@ local Kindle = Generic:extend{
 function Kindle:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback, interactive)
         kindleEnableWifi(1)
-        return self:reconnectOrShowNetworkMenu(complete_callback, interactive)
         -- NOTE: As we defer the actual work to lipc,
         --       we have no guarantee the Wi-Fi state will have changed by the time kindleEnableWifi returns,
         --       so, delay the callback until we at least can ensure isConnect is true.
+        if complete_callback then
+            NetworkMgr:scheduleConnectivityCheck(complete_callback)
+        end
+        -- Keep forwarding complete_callback, NetworkMgr:enableWifi will wrap it up in a connectivity check *again*
+        -- so it fires *after* isConnect, as the one from reconnectOrShowNetworkMenu itself will be too early:
+        -- it's designed for the wpa_supplicant backend, which is blocking, while we're async...
+        return self:reconnectOrShowNetworkMenu(complete_callback, interactive)
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
@@ -257,7 +262,7 @@ function Kindle:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:authenticateNetwork(network)
-        kindleAuthenticateNetwork(network["ssid"])
+        kindleAuthenticateNetwork(network.ssid)
         return true, nil
     end
 
@@ -282,25 +287,21 @@ function Kindle:initNetworkManager(NetworkMgr)
 
         local network_list = {}
         local current_essid = kindleGetCurrentEssid()
-        for i, network in ipairs(scanList) do
-            network_list[i] = {
-                ["signal_level"] = 0,
-                ["signal_quality"] = qualities[network["signal"]],
-                ["connected"] = current_essid == network["essid"],
-                ["flags"] = network["key_mgmt"],
-            }
-            if network["essid"] ~= "" then
-                network_list[i]["ssid"] = network["essid"]
-            end
-            if network["known"] == "yes" then
-                network_list[i]["password"] = "HIDDEN"
-            end
+        for _, network in ipairs(scanList) do
+            table.insert(network_list, {
+                signal_level = 0,
+                signal_quality = qualities[network.signal],
+                connected = current_essid == network.essid,
+                flags = network.key_mgmt,
+                ssid = network.essid ~= "" and network.essid,
+                password = network.known == "yes" and "HIDDEN",
+            })
         end
         return network_list, nil
     end
 
     function NetworkMgr:getCurrentNetwork()
-        return { ["ssid"] = kindleGetCurrentEssid() }
+        return { ssid = kindleGetCurrentEssid() }
     end
 
     NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
