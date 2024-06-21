@@ -242,7 +242,10 @@ function Kindle:initNetworkManager(NetworkMgr)
         -- Keep forwarding complete_callback, NetworkMgr:enableWifi will wrap it up in a connectivity check *again*
         -- so it fires *after* isConnect, as the one from reconnectOrShowNetworkMenu itself will be too early:
         -- it's designed for the wpa_supplicant backend, which is blocking, while we're async...
-        return self:reconnectOrShowNetworkMenu(complete_callback, interactive)
+        -- NOTE: Don't return reconnectOrShowNetworkMenu's status,
+        --       we don't want NetworkMgr:enableWifi to think that the connection failed early,
+        --       as we cannot actually tell (again, we're async, not what the API expects).
+        self:reconnectOrShowNetworkMenu(complete_callback, interactive)
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
@@ -262,6 +265,7 @@ function Kindle:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:authenticateNetwork(network)
+        print("NetworkMgr:authenticateNetwork on", network.ssid)
         kindleAuthenticateNetwork(network.ssid)
         return true, nil
     end
