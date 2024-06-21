@@ -969,6 +969,15 @@ function Menu:init()
         end
         self.key_events.NextPage = { { Input.group.PgFwd } }
         self.key_events.PrevPage = { { Input.group.PgBack } }
+        if Device:hasKeyboard() then
+            self.key_events.FirstPage = { { "Shift", { "LPgBack", "RPgBack" } } }
+            self.key_events.LastPage = { { "Shift", { "LPgFwd", "RPgFwd" } } }
+            self.key_events.ShowGotoDialog = { { "Shift", "Down" } }
+        elseif Device:hasScreenKB() then
+            self.key_events.FirstPage = { { "ScreenKB", { "LPgBack", "RPgBack" } } }
+            self.key_events.LastPage = { { "ScreenKB", { "LPgFwd", "RPgFwd" } } }
+            self.key_events.ShowGotoDialog = { { "ScreenKB", "Down" } }
+        end
     end
 
     if Device:hasDPad() then
