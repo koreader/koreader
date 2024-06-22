@@ -24,7 +24,7 @@ local function kindleGetSavedNetworks()
     if lipc_handle then
         local ha_input = lipc_handle:new_hasharray() -- an empty hash array since we only want to read
         local ha_result = lipc_handle:access_hash_property("com.lab126.wifid", "profileData", ha_input)
-        local profiles = ha_results:to_table()
+        local profiles = ha_result:to_table()
         ha_result:destroy()
         ha_input:destroy()
         lipc_handle:close()
@@ -318,15 +318,25 @@ function Kindle:initNetworkManager(NetworkMgr)
         -- trick ui/widget/networksetting to display correct icon
 
         local network_list = {}
+        local saved_profiles = kindleGetSavedNetworks()
         local current_profile = kindleGetCurrentProfile()
         for _, network in ipairs(scanList) do
+            local password = nil
+            if network.known == "yes" then
+                for _, p in ipairs(saved_profiles) do 
+                    if p.netid == network.netid then
+                        password = p.psk
+                        break
+                    end
+                end                
+            end
             table.insert(network_list, {
                 signal_level = 0,
                 signal_quality = qualities[network.signal],
-                connected = current_profile.netid == network.netid,
+                connected = current_profile.netid and current_profile.netid ~= -1 and current_profile.netid == network.netid,
                 flags = network.key_mgmt,
                 ssid = network.essid ~= "" and network.essid,
-                password = network.known == "yes" and "HIDDEN",
+                password = password,
             })
         end
         return network_list, nil
