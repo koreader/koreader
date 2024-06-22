@@ -86,39 +86,8 @@ local function kindleSaveNetwork(data)
     end
 end
 
-local function kindleIsScanFinished(iter, lipc_handle, callback)
-    logger.warn('we are still alive')
-    if not lipc_handle then
-        return -- we dont have a handle :(
-    end
-    local scan_state = lipc_handle:get_string_property("com.lab126.wifid", "scanState")
-    if scan_state == "scanning" then
-        if iter > 80 then
-            lipc_handle:close()
-            return
-        end
-        UIManager:scheduleIn(0.25, kindleIsScanFinished, iter + 1, lipc_handle, callback)
-    elseif scan_state == "idle" then
-        lipc_handle:close()
-        callback()
-    else
-        UIManager:scheduleIn(0.25, kindleIsScanFinished, iter + 1, lipc_handle, callback)
-    end
-end
-
-local function kindleScheduleWifiScanFinished(callback)
-    local haslipc, lipc = pcall(require, "liblipclua")
-    local lipc_handle
-    if haslipc and lipc then
-        lipc_handle = lipc.init("com.github.koreader.networkmgr")
-    end
-    if lipc_handle then
-        lipc_handle:set_string_property("com.lab126.wifid", "scan", "") -- trigger a scan
-        UIManager:scheduleIn(0.25, kindleIsScanFinished, 1, lipc_handle, callback)
-    end
-end
-
 local function kindleGetScanList(second_attempt)
+    local _ = require("gettext")
     local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
     local lipc_handle
     if haslipc and lipc then
@@ -132,9 +101,10 @@ local function kindleGetScanList(second_attempt)
                 ha_input:destroy()
                 lipc_handle:close()
                 if not second_attempt then
+                    -- Try again? For... reasons?
                     return kindleGetScanList(true)
                 else
-                    return nil, "Hash property is nil"
+                    return nil, _("scanList hash property is nil")
                 end
             end
             local scan_result = ha_results:to_table()
@@ -144,13 +114,49 @@ local function kindleGetScanList(second_attempt)
             return scan_result, nil
         end
         lipc_handle:close()
-        return nil, "Wifi is already connected"
+        return nil, _("Wi-Fi is already connected")
     else
-        return nil, "No lipc handle"
+        return nil, _("Failed to acquire an anonymous lipc handle")
     end
 end
 
-local function scanThenGetResults()
+local function kindleScanThenGetResults()
+    local _ = require("gettext")
+    local haslipc, lipc = pcall(require, "liblipclua")
+    local lipc_handle
+    if haslipc and lipc then
+        lipc_handle = lipc.init("com.github.koreader.networkmgr")
+    end
+    if not lipc_handle then
+        return nil, _("Failed to acquire a lipc handle for NetworkMgr")
+    end
+
+    lipc_handle:set_string_property("com.lab126.wifid", "scan", "") -- trigger a scan
+
+    -- Mimic WpaClient:scanThenGetResults: block while waiting for the scan to finish.
+    -- Ideally, we'd do this via a poll/event workflow, but, eh', this is going to be good enough for now ;p.
+    local done_scanning = false
+    local wait_cnt = 80 -- 20s in chunks on 250ms
+    while wait_cnt > 0 do
+        local scan_state = lipc_handle:get_string_property("com.lab126.wifid", "scanState")
+
+        if scan_state == "idle" then
+            done_scanning = true
+            break
+        end
+
+        -- Whether it's still "scanning" or in whatever other state we don't know about,
+        -- try again until it says it's done.
+        wait_cnt = wait_cnt - 1
+        C.usleep(250 * 1000)
+    end
+    lipc_handle:close()
+
+    if done_scanning then
+        return kindleGetScanList()
+    else
+        return nil, _("Timed-out scanning for Wi-Fi networks")
+    end
 end
 
 local function kindleEnableWifi(toggle)
@@ -308,7 +314,7 @@ local Kindle = Generic:extend{
 function Kindle:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback, interactive)
         kindleEnableWifi(1)
-        kindleScheduleWifiScanFinished(function() self:reconnectOrShowNetworkMenu(complete_callback, interactive) end)
+        return self:reconnectOrShowNetworkMenu(complete_callback, interactive)
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
@@ -338,8 +344,8 @@ function Kindle:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:getNetworkList()
-        local scanList, err = kindleGetScanList()
-        if not scanList then
+        local scan_list, err = kindleScanThenGetResults()
+        if not scan_list then
             return nil, err
         end
 
@@ -355,7 +361,7 @@ function Kindle:initNetworkManager(NetworkMgr)
         local network_list = {}
         local saved_profiles = kindleGetSavedNetworks()
         local current_profile = kindleGetCurrentProfile()
-        for _, network in ipairs(scanList) do
+        for _, network in ipairs(scan_list) do
             local password = nil
             if network.known == "yes" then
                 for _, p in ipairs(saved_profiles) do
