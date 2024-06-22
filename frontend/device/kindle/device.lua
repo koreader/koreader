@@ -360,12 +360,16 @@ function Kindle:initNetworkManager(NetworkMgr)
 
         local network_list = {}
         local saved_profiles = kindleGetSavedNetworks()
+        logger.dbg("saved_profiles:", saved_profiles)
         local current_profile = kindleGetCurrentProfile()
+        logger.dbg("current_profile:", current_profile)
         for _, network in ipairs(scan_list) do
+            logger.dbg("network:", network)
             local password = nil
             if network.known == "yes" then
                 for _, p in ipairs(saved_profiles) do
-                    if p.netid == network.netid then
+                    -- Earlier FW do not have a netid field at all, fall back to essid as that's the best we'll get...
+                    if (p.netid and p.netid == network.netid) or p.essid == network.essid then
                         password = p.psk
                         break
                     end
@@ -374,12 +378,13 @@ function Kindle:initNetworkManager(NetworkMgr)
             table.insert(network_list, {
                 signal_level = 0,
                 signal_quality = qualities[network.signal],
-                connected = current_profile.netid and current_profile.netid ~= -1 and current_profile.netid == network.netid,
+                connected = (current_profile.netid and current_profile.netid ~= -1 and current_profile.netid == network.netid) or (current_profile.essid ~= "" and current_profile.essid == network.essid),
                 flags = network.key_mgmt,
                 ssid = network.essid ~= "" and network.essid,
                 password = password,
             })
         end
+        logger.dbg("network_list:", network_list)
         return network_list, nil
     end
 
