@@ -377,7 +377,7 @@ function Kindle:initNetworkManager(NetworkMgr)
             if network.known == "yes" then
                 for _, p in ipairs(saved_profiles) do
                     -- Earlier FW do not have a netid field at all, fall back to essid as that's the best we'll get (we don't get bssid either)...
-                    if (p.netid and p.netid == network.netid) or p.essid == network.essid then
+                    if (p.netid and p.netid == network.netid) or (p.netid == nil and p.essid == network.essid) then
                         password = p.psk
                         break
                     end
@@ -387,7 +387,7 @@ function Kindle:initNetworkManager(NetworkMgr)
                 signal_level = 0,
                 signal_quality = qualities[network.signal],
                 -- See comment above about netid being unfortunately optional...
-                connected = (current_profile.netid and current_profile.netid ~= -1 and current_profile.netid == network.netid) or (current_profile.essid ~= "" and current_profile.essid == network.essid),
+                connected = (current_profile.netid and current_profile.netid ~= -1 and current_profile.netid == network.netid) or (current_profile.netid == nil and current_profile.essid ~= "" and current_profile.essid == network.essid),
                 flags = network.key_mgmt,
                 ssid = network.essid ~= "" and network.essid,
                 password = password,
