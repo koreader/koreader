@@ -323,12 +323,12 @@ function Kindle:initNetworkManager(NetworkMgr)
         for _, network in ipairs(scanList) do
             local password = nil
             if network.known == "yes" then
-                for _, p in ipairs(saved_profiles) do 
+                for _, p in ipairs(saved_profiles) do
                     if p.netid == network.netid then
                         password = p.psk
                         break
                     end
-                end                
+                end
             end
             table.insert(network_list, {
                 signal_level = 0,
