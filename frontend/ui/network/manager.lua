@@ -1057,58 +1057,60 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
     -- true: we're connected; false: things went kablooey; nil: we don't know yet (e.g., interactive)
     -- NOTE: false *will* lead enableWifi to kill Wi-Fi via _abortWifiConnection!
     local success
-    if self.wifi_toggle_long_press then
-        self.wifi_toggle_long_press = nil
-    else
-        local ssid
-        -- We need to do two passes, as we may have *both* an already connected network (from the global wpa config),
-        -- *and* preferred networks, and if the prferred networks have a better signal quality,
-        -- they'll be sorted *earlier*, which would cause us to try to associate to a different AP than
-        -- what wpa_supplicant is already trying to do...
-        for dummy, network in ipairs(network_list) do
-            if network.connected then
-                -- On platforms where we use wpa_supplicant (if we're calling this, we are),
-                -- the invocation will check its global config, and if an AP configured there is reachable,
-                -- it'll already have connected to it on its own.
-                success = true
-                ssid = network.ssid
-                break
-            end
+    local ssid
+    -- We need to do two passes, as we may have *both* an already connected network (from the global wpa config),
+    -- *and* preferred networks, and if the preferred networks have a better signal quality,
+    -- they'll be sorted *earlier*, which would cause us to try to associate to a different AP than
+    -- what wpa_supplicant is already trying to do...
+    -- NOTE: We can't really skip this, even when we force showing the scan list,
+    --       as the backend *will* connect in the background regardless of what we do,
+    --       and we *need* our complete_callback to run,
+    --       which would not be the case if we were to just dismiss the scan list,
+    --       especially since it wouldn't show as "connected" in this case...
+    for dummy, network in ipairs(network_list) do
+        if network.connected then
+            -- On platforms where we use wpa_supplicant (if we're calling this, we probably are),
+            -- the invocation will check its global config, and if an AP configured there is reachable,
+            -- it'll already have connected to it on its own.
+            success = true
+            ssid = network.ssid
+            break
         end
+    end
 
-        -- Next, look for our own prferred networks...
-        local err_msg = _("Connection failed")
-        if not success then
-            for dummy, network in ipairs(network_list) do
-                if network.password then
-                    -- If we hit a preferred network and we're not already connected,
-                    -- attempt to connect to said preferred network....
-                    success, err_msg = self:authenticateNetwork(network)
-                    if success then
-                        ssid = network.ssid
-                        break
-                    end
+    -- Next, look for our own preferred networks...
+    local err_msg = _("Connection failed")
+    if not success then
+        for dummy, network in ipairs(network_list) do
+            if network.password then
+                -- If we hit a preferred network and we're not already connected,
+                -- attempt to connect to said preferred network....
+                success, err_msg = self:authenticateNetwork(network)
+                if success then
+                    ssid = network.ssid
+                    break
                 end
             end
         end
-
-        if success then
-            self:obtainIP()
-            if complete_callback then
-                complete_callback()
-            end
-            UIManager:show(InfoMessage:new{
-                tag = "NetworkMgr", -- for crazy KOSync purposes
-                text = T(_("Connected to network %1"), BD.wrap(util.fixUtf8(ssid, "�"))),
-                timeout = 3,
-            })
-        else
-            UIManager:show(InfoMessage:new{
-                text = err_msg,
-                timeout = 3,
-            })
-        end
     end
+
+    if success then
+        self:obtainIP()
+        if complete_callback then
+            complete_callback()
+        end
+        UIManager:show(InfoMessage:new{
+            tag = "NetworkMgr", -- for crazy KOSync purposes
+            text = T(_("Connected to network %1"), BD.wrap(util.fixUtf8(ssid, "�"))),
+            timeout = 3,
+        })
+    else
+        UIManager:show(InfoMessage:new{
+            text = err_msg,
+            timeout = 3,
+        })
+    end
+
     if not success then
         -- NOTE: Also supports a disconnect_callback, should we use it for something?
         --       Tearing down Wi-Fi completely when tapping "disconnect" would feel a bit harsh, though...
@@ -1122,8 +1124,15 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
             -- Let enableWifi tear it all down when we're non-interactive
             success = false
         end
+    elseif self.wifi_toggle_long_press then
+        -- Success, but we asked for the list, show it w/o any callbacks.
+        -- (We *could* potentially setup a pair of callbacks that just send Network* events, but it's probably not worth it).
+        UIManager:show(require("ui/widget/networksetting"):new{
+            network_list = network_list,
+        })
     end
 
+    self.wifi_toggle_long_press = nil
     return success
 end
 

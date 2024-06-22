@@ -150,6 +150,9 @@ local function kindleGetScanList(second_attempt)
     end
 end
 
+local function scanThenGetResults()
+end
+
 local function kindleEnableWifi(toggle)
     local haslipc, lipc = pcall(require, "liblipclua")
     local lipc_handle
