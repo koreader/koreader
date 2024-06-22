@@ -87,19 +87,22 @@ local function kindleSaveNetwork(data)
 end
 
 local function kindleIsScanFinished(iter, lipc_handle, callback)
+    logger.warn('we are still alive')
     if not lipc_handle then
         return -- we dont have a handle :(
     end
     local scan_state = lipc_handle:get_string_property("com.lab126.wifid", "scanState")
-    if scan_state == "idle" then
+    if scan_state == "scanning" then
         if iter > 80 then
             lipc_handle:close()
             return
         end
         UIManager:scheduleIn(0.25, kindleIsScanFinished, iter + 1, lipc_handle, callback)
-    else
+    elseif scan_state == "idle" then
         lipc_handle:close()
         callback()
+    else
+        UIManager:scheduleIn(0.25, kindleIsScanFinished, iter + 1, lipc_handle, callback)
     end
 end
 
@@ -115,22 +118,35 @@ local function kindleScheduleWifiScanFinished(callback)
     end
 end
 
-local function kindleGetScanList()
+local function kindleGetScanList(second_attempt)
     local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
     local lipc_handle
     if haslipc and lipc then
         lipc_handle = lipc.open_no_name()
     end
     if lipc_handle then
-        local ha_input = lipc_handle:new_hasharray()
-        local ha_results = lipc_handle:access_hash_property("com.lab126.wifid", "scanList", ha_input)
-        local scan_result = ha_results:to_table()
-        ha_results:destroy()
-        ha_input:destroy()
+        if lipc_handle:get_string_property("com.lab126.wifid", "cmState") ~= "CONNECTED" then
+            local ha_input = lipc_handle:new_hasharray()
+            local ha_results = lipc_handle:access_hash_property("com.lab126.wifid", "scanList", ha_input)
+            if not ha_results then
+                ha_input:destroy()
+                lipc_handle:close()
+                if not second_attempt then
+                    return kindleGetScanList(true)
+                else
+                    return nil, "Hash property is nil"
+                end
+            end
+            local scan_result = ha_results:to_table()
+            ha_results:destroy()
+            ha_input:destroy()
+            lipc_handle:close()
+            return scan_result, nil
+        end
         lipc_handle:close()
-        return scan_result
+        return nil, "Wifi is already connected"
     else
-        return nil
+        return nil, "No lipc handle"
     end
 end
 
@@ -319,9 +335,9 @@ function Kindle:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:getNetworkList()
-        local scanList = kindleGetScanList()
+        local scanList, err = kindleGetScanList()
         if not scanList then
-            return nil, "Wifi scan failed."
+            return nil, err
         end
 
         local qualities = {
