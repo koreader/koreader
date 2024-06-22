@@ -320,22 +320,24 @@ end
 
 -- Wrappers around turnOnWifi & turnOffWifi with proper Event signaling
 function NetworkMgr:enableWifi(wifi_cb, interactive)
-    local connectivity_cb
-    -- NOTE: If we're interactive, let the backend run the connectivity check once it's actually attempted a connection,
-    --       this prevents reconnectOrShowNetworkMenu from having a kill switch ticking behind its back while the scan widget is up,
+    -- NOTE: Let the backend run the wifi_cb via a connectivity check once it's *actually* attempted a connection.
+    --       e.g., if we're interactive, this prevents reconnectOrShowNetworkMenu
+    --       from having a kill switch ticking behind its back while the scan widget is up,
     --       which is what would happen if *we* were to launch the connectivity check...
-    if interactive then
-        connectivity_cb = function()
-            -- This will handle sending the proper Event, manage wifi_was_on, as well as tearing down Wi-Fi in case of failures.
-            self:scheduleConnectivityCheck(wifi_cb)
+    local connectivity_cb = function()
+        -- NOTE: Some turnOnWifi implementations fire a connectivity check as a means to handle its complete_callback.
+        --       Thankfully, *we* are the ones calling turnOnWifi (via requestToTurnOnWifi), and said callback is our own wifi_cb,
+        --       so we can just re-schedule it to ensure we only have a single connectivity check ticking.
+        -- NOTE: We *could* arguably have multiple connectivity checks running concurrently,
+        --       but only having a single one running makes things somewhat easier to follow...
+        if self.pending_connectivity_check then
+            self:unscheduleConnectivityCheck()
         end
-    else
-        -- FIXME: Don't even pass *any* callback and wait for our own branch down below?
-        --        (We don't want the cb to potntially fire *without* a connectivity check?)
-        connectivity_cb = wifi_cb
+
+        -- This will handle sending the proper Event, manage wifi_was_on, as well as tearing down Wi-Fi in case of failures.
+        self:scheduleConnectivityCheck(wifi_cb)
     end
-    -- FIXME: Fix android & sdl turnOnWifi so that they actually honor complete_callback...
-    --        ... probably via a scheduleConnectivityCheck ;p.
+    -- FIXME: Fix android & sdl turnOnWifi so that they actually honor complete_callback (via a scheduleConnectivityCheck).
 
     local status = self:requestToTurnOnWifi(connectivity_cb, interactive)
     -- If turnOnWifi failed, abort early
@@ -349,31 +351,12 @@ function NetworkMgr:enableWifi(wifi_cb, interactive)
         -- If it wasn't, it might have been from a beforeWifiAction, and, much like in turnOnWifiAndWaitForConnection,
         -- we don't want to risk rescheduling the same thing over and over again.
         if interactive then
-            -- Unlike the next branch, turnOnWifi was *not* called, so we don't need the extra guards around concurrent checks.
-            -- (This is obviously the exact same thing as what our connectivity_cb wrapper would do, but make it explicit for clarity).
-            self:scheduleConnectivityCheck(wifi_cb) -- i.e., connectivity_cb()
-        end
-        return
-    else
-        -- If we're interactive, we've already handled the cb in a connectivity check via our backend,
-        -- but if we're not, we're potentially missing a connectivity check.
-        if not interactive then
-            -- Some turnOnWifi implementations may fire a connectivity check,
-            -- but we *need* our own, because of the callback & widget passing,
-            -- as we might have been called by the "prompt" beforeWifiAction...
-            -- NOTE: We *could* arguably have multiple connectivity checks running concurrently,
-            --       but only having a single one running makes things somewhat easier to follow...
-            -- NOTE: Most of the platforms that use a connectivity check in turnOnWifi do it to handle
-            --       turnOnWifi's complete_callback, i.e., our own wifi_cb (usually because of an async backend).
-            --       Which means that if there *isn't* a connectivity check scheduled,
-            --       we can assume that wifi_cb already ran, via requestToTurnOnWifi,
-            --       most likely because the backend is our own, and reconnectOrShowNetworkMenu handled it ;).
-            if self.pending_connectivity_check then
-                self:unscheduleConnectivityCheck()
-            end
-
+            -- Given the return value, we *know* that turnOnWifi was *not* called,
+            -- so we don't need the extra guards around potentially concurrent connectivity checks,
+            -- unlike in our connectivity_cb wrapper above.
             self:scheduleConnectivityCheck(wifi_cb)
         end
+        return
     end
 
     return true
