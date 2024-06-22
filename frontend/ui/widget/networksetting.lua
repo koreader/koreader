@@ -483,6 +483,7 @@ function NetworkSetting:init()
         }
     end
 
+    -- If the backend is already authenticated, expedite the process
     UIManager:nextTick(function()
         local connected_item = self:getConnectedItem()
         if connected_item ~= nil then
@@ -514,6 +515,12 @@ function NetworkSetting:onTapClose(arg, ges_ev)
         UIManager:close(self)
         return true
     end
+end
+
+function NetworkSetting:onCloseWidget()
+    print("NetworkSetting:onCloseWidget on", self)
+    -- Explicitly destroy our NetworkItems *now*, as they may pin references for a while...
+    --self:clear()
 end
 
 return NetworkSetting
