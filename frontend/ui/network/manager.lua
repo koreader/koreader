@@ -354,6 +354,13 @@ function NetworkMgr:enableWifi(wifi_cb, interactive)
         if wifi_cb then
             logger.warn("NetworkMgr:enableWifi: We've had to drop wifi_cb:", wifi_cb)
         end
+        -- Make it more obvious to the user when interactive...
+        if interactive then
+            UIManager:show(InfoMessage:new{
+                text = _("A previous connection attempt is still ongoing, this one will be ignored!"),
+                timeout = 3,
+            })
+        end
         return
     end
 
