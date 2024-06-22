@@ -339,6 +339,9 @@ function Kindle:initNetworkManager(NetworkMgr)
         return true, nil
     end
 
+    -- NOTE: We don't have a disconnectNetwork & releaseIP implementation,
+    --       which means the "disconnect" button in NetworkSetting kind of does nothing ;p.
+
     function NetworkMgr:saveNetwork(setting)
         kindleSaveNetwork(setting)
     end
