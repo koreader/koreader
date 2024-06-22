@@ -351,10 +351,11 @@ function NetworkMgr:enableWifi(wifi_cb, interactive)
         -- If it wasn't, it might have been from a beforeWifiAction, and, much like in turnOnWifiAndWaitForConnection,
         -- we don't want to risk rescheduling the same thing over and over again.
         if interactive then
-            -- Given the return value, we *know* that turnOnWifi was *not* called,
-            -- so we don't need the extra guards around potentially concurrent connectivity checks,
-            -- unlike in our connectivity_cb wrapper above.
-            self:scheduleConnectivityCheck(wifi_cb)
+            -- Given the return value, we *know* that turnOnWifi was *not* called.
+            -- As such, *this* specific wifi_cb was never scheduled, so, do that *now*,
+            -- potentially dropping earlier callbacks (and effectively rewinding the connectivity timer).
+            -- FIXME: None of those things are... great, so, maybe just do nothing like in turnOnWifiAndWaitForConnection?
+            connectivity_cb()
         end
         return
     end
