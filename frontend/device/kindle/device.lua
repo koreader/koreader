@@ -15,16 +15,37 @@ require("ffi/fbink_input_h")
 local function yes() return true end
 local function no() return false end  -- luacheck: ignore
 
-local function kindleGetCurrentEssid()
-    local haslipc, lipc = pcall(require, "liblipclua")
+local function kindleGetSavedNetworks()
+    local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
     local lipc_handle
     if haslipc and lipc then
-        lipc_handle = lipc.init("com.github.koreader.networkmgr")
+        lipc_handle = lipc.open_no_name()
     end
     if lipc_handle then
-        local essid = lipc_handle:get_string_property("com.lab126.wifid", "currentEssid")
+        local ha_input = lipc_handle:new_hasharray() -- an empty hash array since we only want to read
+        local ha_result = lipc_handle:access_hash_property("com.lab126.wifid", "profileData", ha_input)
+        local profiles = ha_result:to_table()
+        ha_result:destroy()
+        ha_input:destroy()
         lipc_handle:close()
-        return essid
+        return profiles
+    end
+end
+
+local function kindleGetCurrentProfile()
+    local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
+    local lipc_handle
+    if haslipc and lipc then
+        lipc_handle = lipc.open_no_name()
+    end
+    if lipc_handle then
+        local ha_input = lipc_handle:new_hasharray() -- an empty hash array since we only want to read
+        local ha_result = lipc_handle:access_hash_property("com.lab126.wifid", "currentEssid", ha_input)
+        local profile = ha_result:to_table()[1] -- theres only a single element
+        ha_input:destroy()
+        ha_result:destroy()
+        lipc_handle:close()
+        return profile
     else
         return nil
     end
@@ -59,7 +80,8 @@ local function kindleSaveNetwork(data)
         else
             profile:put_string(0, "secured", "no")
         end
-        lipc_handle:access_hash_property("com.lab126.wifid", "createProfile", profile)
+        lipc_handle:access_hash_property("com.lab126.wifid", "createProfile", profile):destroy() -- destroy the returned empty ha
+        profile:destroy()
         lipc_handle:close()
     end
 end
@@ -72,11 +94,11 @@ local function kindleScanWifi()
     end
     if lipc_handle then
         lipc_handle:set_string_property("com.lab126.wifid", "scan", "") -- trigger a scan
-        local ha_outp = lipc_handle:new_hasharray()
-        local ha_results = lipc_handle:access_hash_property("com.lab126.wifid", "scanList", ha_outp)
+        local ha_input = lipc_handle:new_hasharray()
+        local ha_results = lipc_handle:access_hash_property("com.lab126.wifid", "scanList", ha_input)
         local scan_result = ha_results:to_table()
         ha_results:destroy()
-        ha_outp:destroy()
+        ha_input:destroy()
         lipc_handle:close()
         return scan_result
     else
@@ -284,22 +306,32 @@ function Kindle:initNetworkManager(NetworkMgr)
         -- trick ui/widget/networksetting to display correct icon
 
         local network_list = {}
-        local current_essid = kindleGetCurrentEssid()
+        local saved_profiles = kindleGetSavedNetworks()
+        local current_profile = kindleGetCurrentProfile()
         for _, network in ipairs(scanList) do
+            local password = nil
+            if network.known == "yes" then
+                for _, p in ipairs(saved_profiles) do
+                    if p.netid == network.netid then
+                        password = p.psk
+                        break
+                    end
+                end
+            end
             table.insert(network_list, {
                 signal_level = 0,
                 signal_quality = qualities[network.signal],
-                connected = current_essid == network.essid,
+                connected = current_profile.netid and current_profile.netid ~= -1 and current_profile.netid == network.netid,
                 flags = network.key_mgmt,
                 ssid = network.essid ~= "" and network.essid,
-                password = network.known == "yes" and "HIDDEN",
+                password = password,
             })
         end
         return network_list, nil
     end
 
     function NetworkMgr:getCurrentNetwork()
-        return { ssid = kindleGetCurrentEssid() }
+        return { ssid = kindleGetCurrentProfile().essid }
     end
 
     NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
