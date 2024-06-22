@@ -130,6 +130,7 @@ local order = {
         "android_back_button",
         "----------------------------",
         "opening_page_location_stack",
+        "skim_dialog_position",
     },
     network = {
         "network_wifi",

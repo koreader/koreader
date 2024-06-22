@@ -76,15 +76,15 @@ common_settings.time = {
     text = _("Time and date"),
     sub_item_table = {
         {
-        text = _("12-hour clock"),
-        keep_menu_open = true,
-        checked_func = function()
-            return G_reader_settings:isTrue("twelve_hour_clock")
-        end,
-        callback = function()
-            G_reader_settings:flipNilOrFalse("twelve_hour_clock")
-            UIManager:broadcastEvent(Event:new("TimeFormatChanged"))
-        end,
+            text = _("12-hour clock"),
+            keep_menu_open = true,
+            checked_func = function()
+                return G_reader_settings:isTrue("twelve_hour_clock")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("twelve_hour_clock")
+                UIManager:broadcastEvent(Event:new("TimeFormatChanged"))
+            end,
         },
         {
             text_func = function ()
@@ -477,13 +477,30 @@ if Device:hasKeyboard() then
 end
 
 common_settings.opening_page_location_stack = {
-        text = _("Add opening page to location history"),
-        checked_func = function()
-            return G_reader_settings:isTrue("opening_page_location_stack")
-        end,
-        callback = function()
-            G_reader_settings:flipNilOrFalse("opening_page_location_stack")
-        end,
+    text = _("Add opening page to location history"),
+    checked_func = function()
+        return G_reader_settings:isTrue("opening_page_location_stack")
+    end,
+    callback = function()
+        G_reader_settings:flipNilOrFalse("opening_page_location_stack")
+    end,
+}
+
+local skim_dialog_position_string = {
+    top    = _("Top"),
+    center = _("Center"),
+    bottom = _("Bottom"),
+}
+common_settings.skim_dialog_position = {
+    text_func = function()
+        local position = G_reader_settings:readSetting("skim_dialog_position") or "center"
+        return T(_"Skim dialog position: %1", skim_dialog_position_string[position]:lower())
+    end,
+    sub_item_table = {
+        genGenericMenuEntry(skim_dialog_position_string["top"],    "skim_dialog_position", "top"),
+        genGenericMenuEntry(skim_dialog_position_string["center"], "skim_dialog_position", nil), -- default
+        genGenericMenuEntry(skim_dialog_position_string["bottom"], "skim_dialog_position", "bottom"),
+    },
 }
 
 -- Auto-save settings: default value, info text and warning, and menu items

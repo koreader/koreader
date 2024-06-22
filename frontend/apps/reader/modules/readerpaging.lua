@@ -359,6 +359,37 @@ function ReaderPaging:bookmarkFlipping(flipping_page, flipping_ges)
     UIManager:setDirty(self.view.dialog, "partial")
 end
 
+function ReaderPaging:enterSkimMode()
+    if self.view.document.configurable.text_wrap ~= 0 or self.view.page_scroll or self.view.zoom_mode ~= "page" then
+        self.skim_backup = {
+            text_wrap    = self.view.document.configurable.text_wrap,
+            page_scroll  = self.view.page_scroll,
+            zoom_mode    = self.view.zoom_mode,
+            current_page = self.current_page,
+            location     = self:getBookLocation(),
+        }
+        self.view.document.configurable.text_wrap = 0
+        self.view.page_scroll = false
+        self.ui.zooming:onSetZoomMode("page")
+        self.ui.zooming:onReZoom()
+    end
+end
+
+function ReaderPaging:exitSkimMode()
+    if self.skim_backup then
+        self.view.document.configurable.text_wrap = self.skim_backup.text_wrap
+        self.view.page_scroll = self.skim_backup.page_scroll
+        self.ui.zooming:onSetZoomMode(self.skim_backup.zoom_mode)
+        self.ui.zooming:onReZoom()
+        if self.current_page == self.skim_backup.current_page then
+            -- if SkimToWidget is closed on the start page, restore exact location
+            self.current_page = 0 -- do not emit extra PageUpdate event
+            self:onRestoreBookLocation(self.skim_backup.location)
+        end
+        self.skim_backup = nil
+    end
+end
+
 function ReaderPaging:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay_ms)
     self.scroll_method = scroll_method
     self.scroll_activation_delay = time.ms(scroll_activation_delay_ms)
