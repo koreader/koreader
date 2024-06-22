@@ -86,7 +86,7 @@ local function kindleSaveNetwork(data)
     end
 end
 
-local function kindleGetScanList(second_attempt)
+local function kindleGetScanList()
     local _ = require("gettext")
     local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
     local lipc_handle
@@ -100,12 +100,7 @@ local function kindleGetScanList(second_attempt)
             if not ha_results then
                 ha_input:destroy()
                 lipc_handle:close()
-                if not second_attempt then
-                    -- Try again? For... reasons?
-                    return kindleGetScanList(true)
-                else
-                    return nil, _("scanList hash property is nil")
-                end
+                return nil, _("Failed to access scan results")
             end
             local scan_result = ha_results:to_table()
             ha_results:destroy()
@@ -142,6 +137,7 @@ local function kindleScanThenGetResults()
 
         if scan_state == "idle" then
             done_scanning = true
+            logger.dbg("kindleScanThenGetResults: Wi-Fi scan took", (80 - wait_cnt) * 0.25, "seconds")
             break
         end
 
@@ -155,6 +151,7 @@ local function kindleScanThenGetResults()
     if done_scanning then
         return kindleGetScanList()
     else
+        logger.warn("kindleScanThenGetResults: Timed-out scanning for Wi-Fi networks")
         return nil, _("Timed-out scanning for Wi-Fi networks")
     end
 end
