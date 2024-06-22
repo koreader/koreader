@@ -3,8 +3,8 @@ local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local Device = require("device")
 local Event = require("ui/event")
-local FrameContainer = require("ui/widget/container/framecontainer")
 local FocusManager = require("ui/widget/focusmanager")
+local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
@@ -23,6 +23,10 @@ local Screen = Device.screen
 local SkimToWidget = FocusManager:extend{}
 
 function SkimToWidget:init()
+    if self.ui.paging then -- "page" view
+        self.ui.paging:enterSkimMode()
+    end
+
     local screen_width = Screen:getWidth()
     local screen_height = Screen:getHeight()
 
@@ -42,31 +46,43 @@ function SkimToWidget:init()
         }
     end
 
-    self.buttons_layout = {}
+    -- nil for default center full mode; "top" and "bottom" for compact mode
+    local skim_dialog_position = G_reader_settings:readSetting("skim_dialog_position")
+    local full_mode = not skim_dialog_position
 
-    local frame_width = math.floor(math.min(screen_width, screen_height) * 0.95)
     local frame_border_size = Size.border.window
-    local frame_padding = Size.padding.fullscreen -- large padding for airy feeling
-    local inner_width = frame_width - 2 * (frame_border_size + frame_padding)
-
-    -- In this inner width, we'll be showing 5 buttons, with the middle one
-    -- separated a bit more from the others
     local button_span_unit_width = Size.span.horizontal_small
-    local larger_span_units = 3 -- 3 x small span width
-    local nb_span_units = 2 + 2*larger_span_units
-    local button_width = math.floor( (inner_width - nb_span_units * button_span_unit_width) * (1/5))
+    local button_font_size, frame_padding, frame_width, inner_width, nb_buttons, larger_span_units, progress_bar_height
+    if full_mode then
+        button_font_size = nil -- use default
+        frame_padding = Size.padding.fullscreen -- large padding for airy feeling
+        frame_width = math.floor(math.min(screen_width, screen_height) * 0.95)
+        inner_width = frame_width - 2 * (frame_border_size + frame_padding)
+        nb_buttons = 5 -- with the middle one separated a bit more from the others
+        larger_span_units = 3 -- 3 x small span width
+        progress_bar_height = Size.item.height_big
+    else
+        button_font_size = 14
+        frame_padding = Size.padding.default
+        frame_width = screen_width + 2 * frame_border_size -- hide side borders
+        inner_width = frame_width - 2 * frame_padding
+        nb_buttons = 11 -- in equal distances
+        larger_span_units = 1
+        progress_bar_height = Screen:scaleBySize(36)
+    end
+    local nb_span_units = (nb_buttons - 1) - 2 + 2 * larger_span_units
+    local button_width = math.floor((inner_width - nb_span_units * button_span_unit_width) * (1 / nb_buttons))
     -- Update inner_width (possibly smaller because of math.floor())
-    inner_width = button_width * 5 + nb_span_units * button_span_unit_width
+    inner_width = nb_buttons * button_width + nb_span_units * button_span_unit_width
 
     self.curr_page = self.ui:getCurrentPage()
-    self.page_count = self.document:getPageCount()
-    self.ticks_flattened = self.ui.toc:getTocTicksFlattened()
+    self.page_count = self.ui.document:getPageCount()
 
     self.progress_bar = ProgressWidget:new{
         width = inner_width,
-        height = Size.item.height_big,
+        height = progress_bar_height,
         percentage = self.curr_page / self.page_count,
-        ticks = self.ticks_flattened,
+        ticks = self.ui.toc:getTocTicksFlattened(),
         tick_width = Size.line.medium,
         last = self.page_count,
         alt = self.ui.document.flows,
@@ -76,6 +92,7 @@ function SkimToWidget:init()
     -- Bottom row buttons
     local button_minus = Button:new{
         text = "-1",
+        text_font_size = button_font_size,
         radius = 0,
         width = button_width,
         show_parent = self,
@@ -86,6 +103,7 @@ function SkimToWidget:init()
     }
     local button_minus_ten = Button:new{
         text = "-10",
+        text_font_size = button_font_size,
         radius = 0,
         width = button_width,
         show_parent = self,
@@ -96,6 +114,7 @@ function SkimToWidget:init()
     }
     local button_plus = Button:new{
         text = "+1",
+        text_font_size = button_font_size,
         radius = 0,
         width = button_width,
         show_parent = self,
@@ -106,6 +125,7 @@ function SkimToWidget:init()
     }
     local button_plus_ten = Button:new{
         text = "+10",
+        text_font_size = button_font_size,
         radius = 0,
         width = button_width,
         show_parent = self,
@@ -116,12 +136,12 @@ function SkimToWidget:init()
     }
     self.current_page_text = Button:new{
         text_func = function()
-            local curr_page_display = tostring(self.curr_page)
             if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
-                curr_page_display = self.ui.pagemap:getCurrentPageLabel(true)
+                return self.ui.pagemap:getCurrentPageLabel(true)
             end
-            return curr_page_display
+            return tostring(self.curr_page)
         end,
+        text_font_size = button_font_size,
         radius = 0,
         padding = 0,
         bordersize = 0,
@@ -130,28 +150,44 @@ function SkimToWidget:init()
         callback = function()
             self.callback_switch_to_goto()
         end,
+        hold_callback = function()
+            self:goToOrigPage()
+        end,
+    }
+    local button_orig_page = Button:new{
+        text = "\u{21BA}", -- Anticlockwise Open Circle Arrow
+        -- text = "\u{21A9}", -- Leftwards Arrow with Hook
+        text_font_size = button_font_size,
+        radius = 0,
+        width = button_width,
+        show_parent = self,
+        vsync = true,
+        callback = function()
+            self:goToOrigPage()
+        end,
     }
 
     -- Top row buttons
-    local chapter_next_text = "▷▏"
-    local chapter_prev_text = "▕◁"
-    local bookmark_next_text = "☆▷"
-    local bookmark_prev_text = "◁☆"
-    local bookmark_enabled_text = "★"
-    local bookmark_disabled_text = "☆"
+    local chapter_next_text = "   ▷▏"
+    local chapter_prev_text = "▕◁   "
+    local bookmark_next_text = "\u{F097}\u{202F}▷"
+    local bookmark_prev_text = "◁\u{202F}\u{F097}"
+    local bookmark_enabled_text = "\u{F02E}"
+    local bookmark_disabled_text = "\u{F097}"
     if BD.mirroredUILayout() then
         chapter_next_text, chapter_prev_text = chapter_prev_text, chapter_next_text
         bookmark_next_text, bookmark_prev_text = bookmark_prev_text, bookmark_next_text
     end
     local button_chapter_next = Button:new{
         text = chapter_next_text,
+        text_font_size = button_font_size,
         radius = 0,
         width = button_width,
         show_parent = self,
         vsync = true,
         callback = function()
             local page = self.ui.toc:getNextChapter(self.curr_page)
-            if page and page >=1 and page <= self.page_count then
+            if page and page >= 1 and page <= self.page_count then
                 self:goToPage(page)
             end
         end,
@@ -161,13 +197,14 @@ function SkimToWidget:init()
     }
     local button_chapter_prev = Button:new{
         text = chapter_prev_text,
+        text_font_size = button_font_size,
         radius = 0,
         width = button_width,
         show_parent = self,
         vsync = true,
         callback = function()
             local page = self.ui.toc:getPreviousChapter(self.curr_page)
-            if page and page >=1 and page <= self.page_count then
+            if page and page >= 1 and page <= self.page_count then
                 self:goToPage(page)
             end
         end,
@@ -177,6 +214,7 @@ function SkimToWidget:init()
     }
     local button_bookmark_next = Button:new{
         text = bookmark_next_text,
+        text_font_size = button_font_size,
         radius = 0,
         width = button_width,
         show_parent = self,
@@ -190,6 +228,7 @@ function SkimToWidget:init()
     }
     local button_bookmark_prev = Button:new{
         text = bookmark_prev_text,
+        text_font_size = button_font_size,
         radius = 0,
         width = button_width,
         show_parent = self,
@@ -205,6 +244,7 @@ function SkimToWidget:init()
         text_func = function()
             return self.ui.view.dogear_visible and bookmark_enabled_text or bookmark_disabled_text
         end,
+        text_font_size = button_font_size,
         radius = 0,
         width = button_width,
         show_parent = self,
@@ -218,70 +258,113 @@ function SkimToWidget:init()
         end,
     }
 
-    local row_span = VerticalSpan:new{ width = Size.padding.fullscreen }
     local small_button_span = HorizontalSpan:new{ width = button_span_unit_width }
     local large_button_span = HorizontalSpan:new{ width = button_span_unit_width * larger_span_units }
-
-    local top_buttons_row = HorizontalGroup:new{
-        align = "center",
-        button_chapter_prev,
-        small_button_span,
-        button_bookmark_prev,
-        large_button_span,
-        self.button_bookmark_toggle,
-        large_button_span,
-        button_bookmark_next,
-        small_button_span,
-        button_chapter_next,
-    }
-    local bottom_buttons_row = HorizontalGroup:new{
-        align = "center",
-        button_minus_ten,
-        small_button_span,
-        button_minus,
-        large_button_span,
-        self.current_page_text,
-        large_button_span,
-        button_plus,
-        small_button_span,
-        button_plus_ten,
-    }
+    local top_row_span, bottom_row_span, top_buttons_row, bottom_buttons_row, radius
+    if full_mode then
+        top_row_span = VerticalSpan:new{ width = Size.padding.fullscreen }
+        bottom_row_span = top_row_span
+        top_buttons_row = HorizontalGroup:new{
+            align = "center",
+            button_chapter_prev,
+            small_button_span,
+            button_bookmark_prev,
+            large_button_span,
+            self.button_bookmark_toggle,
+            large_button_span,
+            button_bookmark_next,
+            small_button_span,
+            button_chapter_next,
+        }
+        bottom_buttons_row = HorizontalGroup:new{
+            align = "center",
+            button_minus_ten,
+            small_button_span,
+            button_minus,
+            large_button_span,
+            self.current_page_text,
+            large_button_span,
+            button_plus,
+            small_button_span,
+            button_plus_ten,
+        }
+        radius = Size.radius.window
+    else
+        top_row_span = VerticalSpan:new{ width = Size.padding.default }
+        top_buttons_row = HorizontalGroup:new{
+            align = "center",
+            button_chapter_prev,
+            small_button_span,
+            button_chapter_next,
+            small_button_span,
+            button_bookmark_prev,
+            small_button_span,
+            button_bookmark_next,
+            small_button_span,
+            self.button_bookmark_toggle,
+            small_button_span,
+            self.current_page_text,
+            small_button_span,
+            button_orig_page,
+            small_button_span,
+            button_minus_ten,
+            small_button_span,
+            button_plus_ten,
+            small_button_span,
+            button_minus,
+            small_button_span,
+            button_plus,
+        }
+        if skim_dialog_position == "top" then
+            bottom_row_span, bottom_buttons_row = top_row_span, top_buttons_row
+            top_buttons_row = VerticalSpan:new{ width = 0 }
+            top_row_span = top_buttons_row
+        end
+    end
 
     self.skimto_frame = FrameContainer:new{
         margin = 0,
         bordersize = frame_border_size,
         padding = frame_padding,
-        radius = Size.radius.window,
+        radius = radius,
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "center",
             top_buttons_row,
-            row_span,
+            top_row_span,
             self.progress_bar,
-            row_span,
+            bottom_row_span,
             bottom_buttons_row,
         }
     }
-    self.movable = MovableContainer:new{
-        self.skimto_frame,
-    }
+    if full_mode then
+        self.movable = MovableContainer:new{
+            self.skimto_frame,
+        }
+    end
     self[1] = WidgetContainer:new{
-        align = "center",
-        dimen =Geom:new{
+        align = skim_dialog_position or "center",
+        dimen = Geom:new{
             x = 0, y = 0,
             w = screen_width,
             h = screen_height,
         },
-        self.movable,
+        self.movable or self.skimto_frame,
     }
 
     if Device:hasDPad() then
-        self.buttons_layout = {
-            { button_chapter_prev, button_bookmark_prev, self.button_bookmark_toggle, button_bookmark_next, button_chapter_next },
-            { button_minus_ten, button_minus, self.current_page_text, button_plus, button_plus_ten },
-        }
-        self.layout = self.buttons_layout
-        self:moveFocusTo(1, 2)
+        if full_mode then
+            self.layout = {
+                { button_chapter_prev, button_bookmark_prev, self.button_bookmark_toggle, button_bookmark_next, button_chapter_next },
+                { button_minus_ten, button_minus, self.current_page_text, button_plus, button_plus_ten },
+            }
+        else
+            self.layout = {
+                { button_chapter_prev, button_chapter_next, button_bookmark_prev, button_bookmark_next, self.button_bookmark_toggle,
+                  self.current_page_text, button_orig_page, button_minus_ten, button_plus_ten, button_minus, button_plus },
+            }
+        end
+        self:moveFocusTo(1, 1)
     end
     if Device:hasKeyboard() then
         self.key_events.QKey = { { "Q" }, event = "FirstRowKeyPress", args =    0 }
@@ -310,20 +393,21 @@ function SkimToWidget:update()
     self:refocusWidget(FocusManager.RENDER_IN_NEXT_TICK)
 end
 
-function SkimToWidget:addOriginToLocationStack(add_current)
-    -- Only add the page from which we launched the SkimToWidget
-    -- to the location stack, unless add_current = true
-    if not self.orig_page_added_to_stack or add_current then
+function SkimToWidget:addOriginToLocationStack()
+    -- Only add the page from which we launched the SkimToWidget to the location stack
+    if not self.orig_page_added_to_stack then
         self.ui.link:addCurrentLocationToStack()
         self.orig_page_added_to_stack = true
     end
 end
 
 function SkimToWidget:onCloseWidget()
+    if self.ui.paging then
+        self.ui.paging:exitSkimMode()
+    end
     UIManager:setDirty(nil, function()
         return "ui", self.skimto_frame.dimen
     end)
-
     self:free()
 end
 
@@ -332,6 +416,15 @@ function SkimToWidget:onShow()
         return "ui", self.skimto_frame.dimen
     end)
     return true
+end
+
+function SkimToWidget:goToOrigPage()
+    if self.orig_page_added_to_stack then
+        self.ui.link:onGoBackLink()
+        self.curr_page = self.ui:getCurrentPage()
+        self:update()
+        self.orig_page_added_to_stack = nil
+    end
 end
 
 function SkimToWidget:goToPage(page)
@@ -351,28 +444,20 @@ end
 
 function SkimToWidget:onFirstRowKeyPress(percent)
     local page = Math.round(percent * self.page_count)
-    self:addOriginToLocationStack()
-    self.ui:handleEvent(Event:new("GotoPage", page ))
-    self.curr_page = page
-    self:update()
+    self:goToPage(page)
 end
 
 function SkimToWidget:onTapProgress(arg, ges_ev)
     if ges_ev.pos:intersectWith(self.progress_bar.dimen) then
-        local perc = self.progress_bar:getPercentageFromPosition(ges_ev.pos)
-        if not perc then
-            return true
+        local percent = self.progress_bar:getPercentageFromPosition(ges_ev.pos)
+        if percent then
+            local page = Math.round(percent * self.page_count)
+            self:goToPage(page)
         end
-        local page = Math.round(perc * self.page_count)
-        self:addOriginToLocationStack()
-        self.ui:handleEvent(Event:new("GotoPage", page ))
-        self.curr_page = page
-        self:update()
     elseif not ges_ev.pos:intersectWith(self.skimto_frame.dimen) then
         -- close if tap outside
         self:onClose()
     end
-    -- otherwise, do nothing (it's easy missing taping a button)
     return true
 end
 

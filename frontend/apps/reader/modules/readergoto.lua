@@ -41,6 +41,7 @@ function ReaderGoto:onShowGotoDialog()
     self.goto_dialog = InputDialog:new{
         title = _("Enter page number or percentage"),
         input_hint = input_hint,
+        input_type = "number",
         description = self.document:hasHiddenFlows() and
             _([[
 x for an absolute page number
@@ -80,7 +81,6 @@ x for an absolute page number
                 }
             },
         },
-        input_type = "number",
     }
     UIManager:show(self.goto_dialog)
     self.goto_dialog:onShowKeyboard()
@@ -88,7 +88,6 @@ end
 
 function ReaderGoto:onShowSkimtoDialog()
     self.skimto = SkimToWidget:new{
-        document = self.document,
         ui = self.ui,
         callback_switch_to_goto = function()
             UIManager:close(self.skimto)
