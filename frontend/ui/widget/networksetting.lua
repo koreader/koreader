@@ -517,10 +517,4 @@ function NetworkSetting:onTapClose(arg, ges_ev)
     end
 end
 
-function NetworkSetting:onCloseWidget()
-    print("NetworkSetting:onCloseWidget on", self)
-    -- Explicitly destroy our NetworkItems *now*, as they may pin references for a while...
-    --self:clear()
-end
-
 return NetworkSetting
