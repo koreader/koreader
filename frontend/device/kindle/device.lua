@@ -239,15 +239,6 @@ local Kindle = Generic:extend{
 function Kindle:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback, interactive)
         kindleEnableWifi(1)
-        -- NOTE: As we defer the actual work to lipc,
-        --       we have no guarantee the Wi-Fi state will have changed by the time kindleEnableWifi returns,
-        --       so, delay the callback until we at least can ensure isConnect is true.
-        if complete_callback then
-            NetworkMgr:scheduleConnectivityCheck(complete_callback)
-        end
-        -- Keep forwarding complete_callback, NetworkMgr:enableWifi will wrap it up in a connectivity check *again*
-        -- so it fires *after* isConnect, as the one from reconnectOrShowNetworkMenu itself will be too early:
-        -- it's designed for the wpa_supplicant backend, which is blocking, while we're async...
         return self:reconnectOrShowNetworkMenu(complete_callback, interactive)
     end
 

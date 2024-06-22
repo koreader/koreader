@@ -158,6 +158,9 @@ end
 --       as opposed to an indirect one (like the beforeWifiAction framework).
 --       It allows the backend to skip UI prompts for non-interactive use-cases.
 -- NOTE: May optionally return a boolean, e.g., return false if the backend can guarantee the connection failed.
+-- NOTE: These *must* run or appropriately forward complete_callback (e.g., to reconnectOrShowNetworkMenu),
+--       as said callback is responsible for schedulig the connectivity check,
+--       which, in turn, is responsible for the Event signaling!
 function NetworkMgr:turnOnWifi(complete_callback, interactive) end
 function NetworkMgr:turnOffWifi(complete_callback) end
 -- This function returns the current status of the WiFi radio
@@ -320,14 +323,9 @@ end
 
 -- Wrappers around turnOnWifi & turnOffWifi with proper Event signaling
 function NetworkMgr:enableWifi(wifi_cb, interactive)
-    -- NOTE: Let the backend run the wifi_cb via a connectivity check once it's *actually* attempted a connection.
-    --       e.g., if we're interactive, this prevents reconnectOrShowNetworkMenu
-    --       from having a kill switch ticking behind its back while the scan widget is up,
-    --       which is what would happen if *we* were to launch the connectivity check...
+    -- NOTE: Let the backend run the wifi_cb via a connectivity check once it's *actually* attempted a connection,
+    --       as it knows best when that actually happens (especially reconnectOrShowNetworkMenu), unlike us.
     local connectivity_cb = function()
-        -- NOTE: Some turnOnWifi implementations fire a connectivity check as a means to handle its complete_callback.
-        --       Thankfully, *we* are the ones calling turnOnWifi (via requestToTurnOnWifi), and said callback is our own wifi_cb,
-        --       so we can just re-schedule it to ensure we only have a single connectivity check ticking.
         -- NOTE: We *could* arguably have multiple connectivity checks running concurrently,
         --       but only having a single one running makes things somewhat easier to follow...
         if self.pending_connectivity_check then
@@ -337,7 +335,6 @@ function NetworkMgr:enableWifi(wifi_cb, interactive)
         -- This will handle sending the proper Event, manage wifi_was_on, as well as tearing down Wi-Fi in case of failures.
         self:scheduleConnectivityCheck(wifi_cb)
     end
-    -- FIXME: Fix android & sdl turnOnWifi so that they actually honor complete_callback (via a scheduleConnectivityCheck).
 
     local status = self:requestToTurnOnWifi(connectivity_cb, interactive)
     -- If turnOnWifi failed, abort early
