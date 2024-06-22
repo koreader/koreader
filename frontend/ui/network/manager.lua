@@ -1054,16 +1054,6 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
     table.sort(network_list,
         function(l, r) return l.signal_quality > r.signal_quality end)
 
-
-    if self.wifi_toggle_long_press then
-        self.wifi_toggle_long_press = nil
-        UIManager:show(require("ui/widget/networksetting"):new{
-            network_list = network_list,
-            connect_callback = complete_callback,
-        })
-        return
-    end
-
     -- true: we're connected; false: things went kablooey; nil: we don't know yet (e.g., interactive)
     -- NOTE: false *will* lead enableWifi to kill Wi-Fi via _abortWifiConnection!
     local success
@@ -1111,7 +1101,7 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
         end
         UIManager:show(InfoMessage:new{
             tag = "NetworkMgr", -- for crazy KOSync purposes
-            text = T(_("NetworkMgr: Connected to network %1"), BD.wrap(util.fixUtf8(ssid, "�"))),
+            text = T(_("Connected to network %1"), BD.wrap(util.fixUtf8(ssid, "�"))),
             timeout = 3,
         })
     else
@@ -1134,8 +1124,15 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
             -- Let enableWifi tear it all down when we're non-interactive
             success = false
         end
+    elseif self.wifi_toggle_long_press then
+        -- Success, but we asked for the list, show it w/o any callbacks.
+        -- (We *could* potentially setup a pair of callbacks that just send Network* events, but it's probably not worth it).
+        UIManager:show(require("ui/widget/networksetting"):new{
+            network_list = network_list,
+        })
     end
 
+    self.wifi_toggle_long_press = nil
     return success
 end
 

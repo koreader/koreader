@@ -486,6 +486,11 @@ function NetworkSetting:init()
     -- If the backend is already authenticated,
     -- and NetworkMgr:reconnectOrShowNetworkMenu somehow missed it,
     -- expedite the process.
+    -- Yes, this is a very old codepath that's hardly ever exercised anymore...
+    if not self.connect_callback then
+        return
+    end
+
     UIManager:nextTick(function()
         local connected_item = self:getConnectedItem()
         if connected_item ~= nil then
@@ -494,12 +499,10 @@ function NetworkSetting:init()
                 UIManager:close(self, "ui", self.dimen)
             end
             UIManager:show(InfoMessage:new{
-                text = T(_("NetworkSetting: Connected to network %1"), BD.wrap(connected_item.display_ssid)),
+                text = T(_("Connected to network %1"), BD.wrap(connected_item.display_ssid)),
                 timeout = 3,
             })
-            if self.connect_callback then
-                self.connect_callback()
-            end
+            self.connect_callback()
         end
     end)
 end
