@@ -343,7 +343,7 @@ function NetworkMgr:enableWifi(wifi_cb, interactive)
         self:_abortWifiConnection()
         return false
     elseif status == EBUSY then
-        -- NOTE: This means turnOnWifi was *not* called.
+        -- NOTE: This means turnOnWifi was *not* called (this time).
         logger.warn("NetworkMgr:enableWifi: A previous connection attempt is still ongoing!")
         -- We don't really have a great way of dealing with the wifi_cb in this case,
         -- so, much like in turnOnWifiAndWaitForConnection, we'll just drop it...
@@ -486,8 +486,6 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
         UIManager:close(info)
         return
     else
-        -- Some turnOnWifi implementations may fire a connectivity check,
-        -- but we *need* our own, because of the callback & widget passing.
         if self.pending_connectivity_check then
             self:unscheduleConnectivityCheck()
         end
