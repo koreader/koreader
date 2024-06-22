@@ -1088,6 +1088,7 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
                 success, err_msg = self:authenticateNetwork(network)
                 if success then
                     ssid = network.ssid
+                    network.connected = true
                     break
                 end
             end
