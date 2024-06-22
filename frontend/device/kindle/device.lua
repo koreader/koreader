@@ -343,7 +343,7 @@ function Kindle:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:getCurrentNetwork()
-        return { ssid = kindleGetCurrentEssid() }
+        return { ssid = kindleGetCurrentProfile().essid }
     end
 
     NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
