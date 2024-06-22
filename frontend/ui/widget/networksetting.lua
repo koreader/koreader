@@ -522,4 +522,9 @@ function NetworkSetting:onTapClose(arg, ges_ev)
     end
 end
 
+function NetworkSetting:onCloseWidget()
+    -- Regardless of the outcome, this connection attempt is done.
+    NetworkMgr.pending_connection = false
+end
+
 return NetworkSetting
