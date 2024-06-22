@@ -218,7 +218,7 @@ Test if a kindle device is flagged as a Special Offers device (i.e., ad supporte
 local function isSpecialOffers()
     -- Look at the current blanket modules to see if the SO screensavers are enabled...
     local haslipc, lipc = pcall(require, "liblipclua")
-    if not (haslipc and lipc) then
+    if not haslipc then
         logger.warn("could not load liblipclua:", lipc)
         return true
     end
@@ -256,7 +256,7 @@ end
 local function frameworkStopped()
     if os.getenv("STOP_FRAMEWORK") == "yes" then
         local haslipc, lipc = pcall(require, "liblipclua")
-        if not (haslipc and lipc) then
+        if not haslipc then
             logger.warn("could not load liblibclua")
             return
         end
@@ -309,9 +309,20 @@ local Kindle = Generic:extend{
 }
 
 function Kindle:initNetworkManager(NetworkMgr)
-    function NetworkMgr:turnOnWifi(complete_callback, interactive)
-        kindleEnableWifi(1)
-        return self:reconnectOrShowNetworkMenu(complete_callback, interactive)
+    local haslipc, _ = pcall(require, "liblipclua")
+    if haslipc then
+        function NetworkMgr:turnOnWifi(complete_callback, interactive)
+            kindleEnableWifi(1)
+            return self:reconnectOrShowNetworkMenu(complete_callback, interactive)
+        end
+    else
+        -- If we can't use the lipc Lua bindings, we can't support any kind of interactive Wi-Fi UI...
+        function NetworkMgr:turnOnWifi(complete_callback, interactive)
+            kindleEnableWifi(1)
+            if complete_callback then
+                complete_callback()
+            end
+        end
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
