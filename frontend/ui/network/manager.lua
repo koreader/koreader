@@ -346,16 +346,16 @@ function NetworkMgr:enableWifi(wifi_cb, interactive)
         self:_abortWifiConnection()
         return false
     elseif status == EBUSY then
+        -- NOTE: This means turnOnWifi was *not* called.
         logger.warn("NetworkMgr:enableWifi: A previous connection attempt is still ongoing!")
-        -- We warn, but do keep going on with scheduling the callback iff it was interactive.
-        -- If it wasn't, it might have been from a beforeWifiAction, and, much like in turnOnWifiAndWaitForConnection,
-        -- we don't want to risk rescheduling the same thing over and over again.
-        if interactive then
-            -- Given the return value, we *know* that turnOnWifi was *not* called.
-            -- As such, *this* specific wifi_cb was never scheduled, so, do that *now*,
-            -- potentially dropping earlier callbacks (and effectively rewinding the connectivity timer).
-            -- FIXME: None of those things are... great, so, maybe just do nothing like in turnOnWifiAndWaitForConnection?
-            connectivity_cb()
+        -- We don't really have a great way of dealing with the wifi_cb in this case,
+        -- so, much like in turnOnWifiAndWaitForConnection, we'll just drop it...
+        -- We don't want to run multiple concurrent connectivity checks,
+        -- which means we'd need to unschedule the pending one, which would effectively rewind the timer,
+        -- which we don't want, especially if we're non-interactive,
+        -- as that would risk rescheduling the same thing over and over again...
+        if wifi_cb then
+            logger.warn("NetworkMgr:enableWifi: We've had to drop wifi_cb:", wifi_cb)
         end
         return
     end
