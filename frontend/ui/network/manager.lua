@@ -336,6 +336,7 @@ function NetworkMgr:enableWifi(wifi_cb, interactive)
         self:scheduleConnectivityCheck(wifi_cb)
     end
 
+    -- Some implementations (usually, hasWifiManager) can report whether they were successful
     local status = self:requestToTurnOnWifi(connectivity_cb, interactive)
     -- If turnOnWifi failed, abort early
     if status == false then
@@ -470,10 +471,15 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     UIManager:show(info)
     UIManager:forceRePaint()
 
-    -- NOTE: This is a slightly tweaked variant of enableWifi, because of our peculiar connectivityCheck usage...
-    -- Some implementations (usually, hasWifiManager) can report whether they were successfull
-    local status = self:requestToTurnOnWifi()
-    -- If turnOnWifi failed, abort early
+    -- NOTE: This is a slightly tweaked variant of enableWifi, in order to handle our info widget...
+    local connectivity_cb = function()
+        if self.pending_connectivity_check then
+            self:unscheduleConnectivityCheck()
+        end
+
+        self:scheduleConnectivityCheck(callback, info)
+    end
+    local status = self:requestToTurnOnWifi(connectivity_cb)
     if status == false then
         logger.warn("NetworkMgr:turnOnWifiAndWaitForConnection: Connection failed!")
         self:_abortWifiConnection()
@@ -485,13 +491,7 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
         -- but it's just plain saner to just abort here, as we'd risk calling the same thing over and over...
         UIManager:close(info)
         return
-    else
-        if self.pending_connectivity_check then
-            self:unscheduleConnectivityCheck()
-        end
     end
-
-    self:scheduleConnectivityCheck(callback, info)
 
     return info
 end
