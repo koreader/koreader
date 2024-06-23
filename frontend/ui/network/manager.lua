@@ -445,6 +445,7 @@ function NetworkMgr:promptWifi(complete_callback, long_press, interactive)
     local text = _("Wi-Fi is enabled, but you're currently not connected to a network.")
     -- Detail whether there's an attempt and/or a connectivity check in progress.
     if self.pending_connection then
+        -- NOTE: Incidentally, this means that tapping Connect would yield EBUSY, so we gray it out...
         text = text .. "\n" .. _("Please note that a connection attempt is currently in progress!")
     end
     if self.pending_connectivity_check then
@@ -453,11 +454,13 @@ function NetworkMgr:promptWifi(complete_callback, long_press, interactive)
     text = text .. "\n" .. _("How would you like to proceed?")
     UIManager:show(MultiConfirmBox:new{
         text = text,
+        cancel_text = _("Do nothing"),
         choice1_text = _("Turn Wi-Fi off"),
         choice1_callback = function()
             self:toggleWifiOff(complete_callback, interactive)
         end,
         choice2_text = _("Connect"),
+        choice2_enabled = not self.pending_connection,
         choice2_callback = function()
             self:toggleWifiOn(complete_callback, long_press, interactive)
         end,
