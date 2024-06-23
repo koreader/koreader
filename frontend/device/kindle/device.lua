@@ -110,7 +110,7 @@ local function kindleGetScanList()
         end
         lipc_handle:close()
         -- NOTE: This is treated as an error, and will ultimately lead to a *disconnect*!
-        --       We could possibly return a minimal n,etwork list with just the current essid in it?
+        --       We could possibly return a minimal network list with just the current essid in it?
         return nil, _("Wi-Fi is already connected?!")
     else
         return nil, _("Failed to acquire an anonymous lipc handle")
