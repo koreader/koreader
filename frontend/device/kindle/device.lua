@@ -101,13 +101,14 @@ local function kindleGetScanList()
                 -- Shouldn't really happen, access_hash_property will throw if LipcAccessHasharrayProperty failed
                 ha_input:destroy()
                 lipc_handle:close()
+                -- NetworkMgr will ask for a re-scan on seing an empty table, the second attempt *should* work ;).
                 return {}, nil
             end
             local scan_result = ha_results:to_table()
             ha_results:destroy()
             ha_input:destroy()
             lipc_handle:close()
-            if type(scan_result) == "string" then
+            if not scan_result then
                 -- e.g., to_table hit lha->ha == NULL
                 return {}, nil
             else
