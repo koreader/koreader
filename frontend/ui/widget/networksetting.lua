@@ -523,8 +523,10 @@ function NetworkSetting:onTapClose(arg, ges_ev)
 end
 
 function NetworkSetting:onCloseWidget()
-    -- Regardless of the outcome, this connection attempt is done.
-    NetworkMgr.pending_connection = false
+    -- If we don't have a connectivity check ticking, assume we're done with this connection attempt *now*
+    if not NetworkMgr.pending_connectivity_check then
+        NetworkMgr.pending_connection = false
+    end
 end
 
 return NetworkSetting
