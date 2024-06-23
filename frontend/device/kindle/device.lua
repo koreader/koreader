@@ -116,7 +116,7 @@ local function kindleGetScanList()
         end
         lipc_handle:close()
         -- return a fake scan list containing only the currently connected profile :)
-        local profile = kindleGetCurrentProfile();
+        local profile = kindleGetCurrentProfile()
         return { profile }, nil
     else
         return nil, _("Failed to acquire an anonymous lipc handle")
