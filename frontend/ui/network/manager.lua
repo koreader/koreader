@@ -452,7 +452,8 @@ function NetworkMgr:promptWifi(complete_callback, long_press, interactive)
     text = text .. "\n" .. _("How would you like to proceed?")
     UIManager:show(MultiConfirmBox:new{
         text = text,
-        cancel_text = _("Do nothing"),
+        -- "Cancel" could be construed as "cancel the current attempt", which is not what this does ;p.
+        cancel_text = _("Dismiss"),
         choice1_text = _("Turn Wi-Fi off"),
         choice1_callback = function()
             self:toggleWifiOff(complete_callback, interactive)
