@@ -442,8 +442,17 @@ end
 
 -- NOTE: Currently only has a single caller, the Menu entry, so it's always flagged as interactive
 function NetworkMgr:promptWifi(complete_callback, long_press, interactive)
+    local text = _("Wi-Fi is enabled, but you're currently not connected to a network.")
+    -- Detail whether there's an attempt and/or a connectivity check in progress.
+    if self.pending_connection then
+        text = text .. "\n" .. _("Please note that a connection attempt is currently in progress!")
+    end
+    if self.pending_connectivity_check then
+        text = text .. "\n" .. _("KOReader is currently waiting for a connectivity attempt to succeed. This may take up to 45s, and will not affect this popup, so you may just want to try again later.")
+    end
+    text = text .. "\n" .. _("How would you like to proceed?")
     UIManager:show(MultiConfirmBox:new{
-        text = _("Wi-Fi is enabled, but you're currently not connected to a network.\nHow would you like to proceed?"),
+        text = text,
         choice1_text = _("Turn Wi-Fi off"),
         choice1_callback = function()
             self:toggleWifiOff(complete_callback, interactive)
