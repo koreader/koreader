@@ -98,6 +98,7 @@ local function kindleGetScanList()
             local ha_input = lipc_handle:new_hasharray()
             local ha_results = lipc_handle:access_hash_property("com.lab126.wifid", "scanList", ha_input)
             if ha_results == nil then
+                -- Shouldn't really happen, access_hash_property will throw if LipcAccessHasharrayProperty failed
                 ha_input:destroy()
                 lipc_handle:close()
                 return nil, _("Failed to access scan results")
@@ -107,7 +108,7 @@ local function kindleGetScanList()
             ha_input:destroy()
             lipc_handle:close()
             if type(scan_result) == "string" then
-                -- e.g., to_table hit lha->ha == NULL, which shouldn't happen given the above
+                -- e.g., to_table hit lha->ha == NULL
                 return nil, _("Failed to access scan results")
             else
                 return scan_result, nil
