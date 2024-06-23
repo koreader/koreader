@@ -100,7 +100,7 @@ local function kindleGetScanList()
             if not ha_results then
                 ha_input:destroy()
                 lipc_handle:close()
-                return nil, _("Failed to access scan results")
+                return {}, nil
             end
             local scan_result = ha_results:to_table()
             ha_results:destroy()
@@ -109,9 +109,9 @@ local function kindleGetScanList()
             return scan_result, nil
         end
         lipc_handle:close()
-        -- NOTE: This is treated as an error, and will ultimately lead to a *disconnect*!
-        --       We could possibly return a minimal network list with just the current essid in it?
-        return nil, _("Wi-Fi is already connected?!")
+        -- return a fake scan list containing only the currently connected profile :)
+        local profile = kindleGetCurrentProfile();
+        return { profile }, nil
     else
         return nil, _("Failed to acquire an anonymous lipc handle")
     end
