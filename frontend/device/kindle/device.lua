@@ -109,7 +109,7 @@ local function kindleGetScanList()
             lipc_handle:close()
             if type(scan_result) == "string" then
                 -- e.g., to_table hit lha->ha == NULL
-                return nil, _("Failed to access scan results")
+                return {}, nil
             else
                 return scan_result, nil
             end
