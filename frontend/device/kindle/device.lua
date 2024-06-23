@@ -18,7 +18,7 @@ local function no() return false end  -- luacheck: ignore
 local function kindleGetSavedNetworks()
     local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
     local lipc_handle
-    if haslipc and lipc then
+    if haslipc then
         lipc_handle = lipc.open_no_name()
     end
     if lipc_handle then
@@ -35,7 +35,7 @@ end
 local function kindleGetCurrentProfile()
     local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
     local lipc_handle
-    if haslipc and lipc then
+    if haslipc then
         lipc_handle = lipc.open_no_name()
     end
     if lipc_handle then
@@ -54,7 +54,7 @@ end
 local function kindleAuthenticateNetwork(essid)
     local haslipc, lipc = pcall(require, "liblipclua")
     local lipc_handle
-    if haslipc and lipc then
+    if haslipc then
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
     if lipc_handle then
@@ -66,7 +66,7 @@ end
 local function kindleSaveNetwork(data)
     local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
     local lipc_handle
-    if haslipc and lipc then
+    if haslipc then
         lipc_handle = lipc.open_no_name()
     end
     if lipc_handle then
@@ -90,7 +90,7 @@ local function kindleGetScanList()
     local _ = require("gettext")
     local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
     local lipc_handle
-    if haslipc and lipc then
+    if haslipc then
         lipc_handle = lipc.open_no_name()
     end
     if lipc_handle then
@@ -119,7 +119,7 @@ local function kindleScanThenGetResults()
     local _ = require("gettext")
     local haslipc, lipc = pcall(require, "liblipclua")
     local lipc_handle
-    if haslipc and lipc then
+    if haslipc then
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
     if not lipc_handle then
@@ -159,7 +159,7 @@ end
 local function kindleEnableWifi(toggle)
     local haslipc, lipc = pcall(require, "liblipclua")
     local lipc_handle
-    if haslipc and lipc then
+    if haslipc then
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
     if lipc_handle then
@@ -186,7 +186,7 @@ end
 local function isWifiUp()
     local haslipc, lipc = pcall(require, "liblipclua")
     local lipc_handle
-    if haslipc and lipc then
+    if haslipc then
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
     if lipc_handle then
@@ -1198,7 +1198,7 @@ function KindleOasis:init()
 
     --- @note See comments in KindleOasis2:init() for details.
     local haslipc, lipc = pcall(require, "liblipclua")
-    if haslipc and lipc then
+    if haslipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
         if lipc_handle then
             local orientation_code = lipc_handle:get_string_property(
@@ -1309,7 +1309,7 @@ function KindleOasis2:init()
     -- NOTE: It'd take some effort to actually start KOReader while in a LANDSCAPE orientation,
     --       since they're only exposed inside the stock reader, and not the Home/KUAL Booklets.
     local haslipc, lipc = pcall(require, "liblipclua")
-    if haslipc and lipc then
+    if haslipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
         if lipc_handle then
             local orientation_code = lipc_handle:get_string_property(
@@ -1377,7 +1377,7 @@ function KindleOasis3:init()
 
     --- @note The same quirks as on the Oasis 2 apply ;).
     local haslipc, lipc = pcall(require, "liblipclua")
-    if haslipc and lipc then
+    if haslipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
         if lipc_handle then
             local orientation_code = lipc_handle:get_string_property(
@@ -1520,7 +1520,7 @@ function KindleScribe:init()
 
     --- @note The same quirks as on the Oasis 2 and 3 apply ;).
     local haslipc, lipc = pcall(require, "liblipclua")
-    if haslipc and lipc then
+    if haslipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
         if lipc_handle then
             local orientation_code = lipc_handle:get_string_property(
