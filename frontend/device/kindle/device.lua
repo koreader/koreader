@@ -109,6 +109,7 @@ local function kindleGetScanList()
             return scan_result, nil
         end
         lipc_handle:close()
+        -- NOTE: This is treated as an error, and will ultimately lead to a *disconnect*!
         return nil, _("Wi-Fi is already connected")
     else
         return nil, _("Failed to acquire an anonymous lipc handle")
