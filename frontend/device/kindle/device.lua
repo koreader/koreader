@@ -139,6 +139,25 @@ local function kindleScanThenGetResults()
 
     -- Mimic WpaClient:scanThenGetResults: block while waiting for the scan to finish.
     -- Ideally, we'd do this via a poll/event workflow, but, eh', this is going to be good enough for now ;p.
+    -- For future reference, see `lipc-wait-event -m -s 0 -t com.lab126.wifid '*'`
+    --[[
+        -- For a connection:
+        [00:00:04.675699] cmStateChange "PENDING"
+        [00:00:04.677402] scanning
+        [00:00:05.488043] scanComplete
+        [00:00:05.973188] cmConnected
+        [00:00:05.977862] cmStateChange "CONNECTED"
+        [00:00:05.980698] signalStrength "1/5"
+        [00:00:06.417549] cmConnected
+
+        -- And a disconnection:
+        [00:01:34.094652] cmDisconnected
+        [00:01:34.096088] cmStateChange "NA"
+        [00:01:34.219802] signalStrength "0/5"
+        [00:01:34.221802] cmStateChange "READY"
+        [00:01:35.656375] cmIntfNotAvailable
+        [00:01:35.658710] cmStateChange "NA"
+    --]]
     local done_scanning = false
     local wait_cnt = 80 -- 20s in chunks on 250ms
     while wait_cnt > 0 do
