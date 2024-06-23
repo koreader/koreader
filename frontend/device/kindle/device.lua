@@ -387,6 +387,7 @@ function Kindle:initNetworkManager(NetworkMgr)
             return nil, err
         end
 
+         -- trick ui/widget/networksetting into displaying the correct signal strength icon
         local qualities = {
             [1] = 0,
             [2] = 6,
@@ -394,7 +395,6 @@ function Kindle:initNetworkManager(NetworkMgr)
             [4] = 56,
             [5] = 81
         }
-        -- trick ui/widget/networksetting to display correct icon
 
         local network_list = {}
         local saved_profiles = kindleGetSavedNetworks()
@@ -411,7 +411,8 @@ function Kindle:initNetworkManager(NetworkMgr)
                 end
             end
             table.insert(network_list, {
-                signal_level = 0,
+                -- signal_level is purely for fun, the widget doesn't do anything with it. The WpaClient backend stores the raw dBa attenuation in it.
+                signal_level = string.format("%d/%d", network.signal, network.signal_max),
                 signal_quality = qualities[network.signal],
                 -- See comment above about netid being unfortunately optional...
                 connected = (current_profile.netid and current_profile.netid ~= -1 and current_profile.netid == network.netid)
