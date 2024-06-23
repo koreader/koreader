@@ -101,7 +101,7 @@ local function kindleGetScanList()
                 -- Shouldn't really happen, access_hash_property will throw if LipcAccessHasharrayProperty failed
                 ha_input:destroy()
                 lipc_handle:close()
-                -- NetworkMgr will ask for a re-scan on seing an empty table, the second attempt *should* work ;).
+                -- NetworkMgr will ask for a re-scan on seeing an empty table, the second attempt *should* work ;).
                 return {}, nil
             end
             local scan_result = ha_results:to_table()
