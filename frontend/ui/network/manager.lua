@@ -374,6 +374,17 @@ function NetworkMgr:disableWifi(cb, interactive)
         end
     end
     UIManager:broadcastEvent(Event:new("NetworkDisconnecting"))
+
+    -- NOTE: This is a subset of _abortWifiConnection, in case we disable wifi during a connection attempt.
+    -- Cancel any pending connectivity check, because it wouldn't achieve anything
+    self:unscheduleConnectivityCheck()
+    -- Make sure we don't have an async script running...
+    if Device:hasWifiRestore() and not Device:isKindle() then
+        os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
+    end
+    -- Can't be connecting since we're killing Wi-Fi ;)
+    self.pending_connection = false
+
     self:turnOffWifi(complete_callback)
 
     if interactive then
