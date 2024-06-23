@@ -72,10 +72,10 @@ local function kindleSaveNetwork(data)
     if lipc_handle then
         local profile = lipc_handle:new_hasharray()
         profile:add_hash()
-        profile:put_string(0, "essid", data["ssid"])
+        profile:put_string(0, "essid", data.ssid)
         if string.find(data.flags, "WPA") then
             profile:put_string(0, "secured", "yes")
-            profile:put_string(0, "psk", data["password"])
+            profile:put_string(0, "psk", data.password)
             profile:put_int(0, "store_nw_user_pref", 0) -- tells amazon we don't want them to have our password
         else
             profile:put_string(0, "secured", "no")
