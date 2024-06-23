@@ -97,7 +97,7 @@ local function kindleGetScanList()
         if lipc_handle:get_string_property("com.lab126.wifid", "cmState") ~= "CONNECTED" then
             local ha_input = lipc_handle:new_hasharray()
             local ha_results = lipc_handle:access_hash_property("com.lab126.wifid", "scanList", ha_input)
-            if not ha_results then
+            if ha_results == nil then
                 ha_input:destroy()
                 lipc_handle:close()
                 return nil, _("Failed to access scan results")
@@ -106,7 +106,12 @@ local function kindleGetScanList()
             ha_results:destroy()
             ha_input:destroy()
             lipc_handle:close()
-            return scan_result, nil
+            if type(scan_result) == "string" then
+                -- e.g., to_table hit lha->ha == NULL, which shouldn't happen given the above
+                return nil, _("Failed to access scan results")
+            else
+                return scan_result, nil
+            end
         end
         lipc_handle:close()
         -- NOTE: This is treated as an error, and will ultimately lead to a *disconnect*!
