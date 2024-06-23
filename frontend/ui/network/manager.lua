@@ -119,8 +119,6 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
 end
 
 function NetworkMgr:scheduleConnectivityCheck(callback, widget)
-    print("NetworkMgr:scheduleConnectivityCheck")
-    print(debug.traceback())
     self.pending_connectivity_check = true
     UIManager:scheduleIn(0.25, self.connectivityCheck, self, 1, callback, widget)
 end
@@ -837,8 +835,6 @@ function NetworkMgr:getWifiToggleMenuTable()
         self:queryNetworkState()
         local fully_connected = self.is_wifi_on and self.is_connected
         local complete_callback = function()
-            print("Running NetworkMgr complete_callback on", touchmenu_instance)
-            print(debug.traceback())
             -- Notify TouchMenu to update item check state
             touchmenu_instance:updateItems()
         end -- complete_callback()

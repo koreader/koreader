@@ -344,7 +344,6 @@ function Kindle:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:authenticateNetwork(network)
-        print("NetworkMgr:authenticateNetwork on", network.ssid)
         kindleAuthenticateNetwork(network.ssid)
         return true, nil
     end
