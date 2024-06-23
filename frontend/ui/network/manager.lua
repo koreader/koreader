@@ -458,7 +458,7 @@ function NetworkMgr:promptWifi(complete_callback, long_press, interactive)
         text = text .. "\n" .. _("Please note that a connection attempt is currently in progress!")
     end
     if self.pending_connectivity_check then
-        text = text .. "\n" .. _("KOReader is currently waiting for a connectivity attempt to succeed. This may take up to 45s, and will not affect this popup, so you may just want to try again later.")
+        text = text .. "\n" .. _("KOReader is currently waiting for connectivity. This may take up to 45s, so you may just want to try again later.")
     end
     text = text .. "\n" .. _("How would you like to proceed?")
     UIManager:show(MultiConfirmBox:new{
