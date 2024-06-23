@@ -1100,9 +1100,13 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
         if complete_callback then
             complete_callback()
         end
+        -- NOTE: On Kindle, we don't have an explicit obtainIP implementation,
+        --       and authenticateNetwork is async,
+        --       so we don't *actually* have a full connection yet,
+        --       we've just *started* connecting to the requested network...
         UIManager:show(InfoMessage:new{
             tag = "NetworkMgr", -- for crazy KOSync purposes
-            text = T(_("Connected to network %1"), BD.wrap(util.fixUtf8(ssid, "�"))),
+            text = T(_(Device:isKindle() and "Connecting to network %1…" or "Connected to network %1"), BD.wrap(util.fixUtf8(ssid, "�"))),
             timeout = 3,
         })
     else
