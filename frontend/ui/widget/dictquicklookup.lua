@@ -1257,14 +1257,12 @@ function DictQuickLookup:lookupInputWord(hint)
         buttons = {
             {
                 {
-                    text = _("Search dictionary"),
-                    is_enter_default = not self.is_wiki,
+                    text = _("Translate"),
                     callback = function()
                         local text = self.input_dialog:getInputText()
                         if text ~= "" then
                             UIManager:close(self.input_dialog)
-                            self.is_wiki = false
-                            self.ui:handleEvent(Event:new("LookupWord", text, true))
+                            Translator:showTranslation(text, true)
                         end
                     end,
                 },
@@ -1290,12 +1288,14 @@ function DictQuickLookup:lookupInputWord(hint)
                     end,
                 },
                 {
-                    text = _("Translate"),
+                    text = _("Search dictionary"),
+                    is_enter_default = not self.is_wiki,
                     callback = function()
                         local text = self.input_dialog:getInputText()
                         if text ~= "" then
                             UIManager:close(self.input_dialog)
-                            Translator:showTranslation(text, true)
+                            self.is_wiki = false
+                            self.ui:handleEvent(Event:new("LookupWord", text, true))
                         end
                     end,
                 },
