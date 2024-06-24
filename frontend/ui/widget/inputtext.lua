@@ -610,8 +610,6 @@ function InputText:onKeyPress(key)
             self:downLine()
         elseif key["End"] then
             self:goToEnd()
-        elseif key["Home"] then
-            self:goToHome()
         elseif key["Press"] then
             self:addChars("\n")
         elseif key["Tab"] then
@@ -649,7 +647,7 @@ function InputText:onKeyPress(key)
             if self.keyboard:isVisible() then
                 self:onCloseKeyboard()
             else
-                self:onShowKeyboard(ignore_first_hold_release)
+                self:onShowKeyboard()
             end
         end
     end
