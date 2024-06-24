@@ -182,7 +182,7 @@ local function kindleScanThenGetResults()
         return kindleGetScanList()
     else
         logger.warn("kindleScanThenGetResults: Timed-out scanning for Wi-Fi networks")
-        return nil, _("Timed-out scanning for Wi-Fi networks")
+        return nil, _("Scanning for Wi-Fi networks timed out")
     end
 end
 
