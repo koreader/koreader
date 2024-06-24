@@ -340,7 +340,7 @@ end
 
 function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, render_mode, hinting)
     if doc.configurable.text_wrap == 1 then
-        return self:renderReflowedPage(doc, pageno, rect, zoom, rotation, render_mode, hinting)
+        return self:renderReflowedPage(doc, pageno, rect, zoom, rotation, render_mode)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
         return self:renderOptimizedPage(doc, pageno, rect, zoom, rotation, render_mode, hinting)
     else
