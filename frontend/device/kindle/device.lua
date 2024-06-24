@@ -120,7 +120,8 @@ local function kindleGetScanList()
         local profile = kindleGetCurrentProfile()
         return { profile }, nil
     else
-        return nil, _("Failed to acquire an anonymous lipc handle")
+        logger.dbg("kindleGetScanList: Failed to acquire an anonymous lipc handle")
+        return nil, _("Unable to communicate with the Wi-Fi backend")
     end
 end
 
@@ -132,7 +133,8 @@ local function kindleScanThenGetResults()
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
     if not lipc_handle then
-        return nil, _("Failed to acquire a lipc handle for NetworkMgr")
+        logger.dbg("kindleScanThenGetResults: Failed to acquire a lipc handle for NetworkMgr")
+        return nil, _("Unable to communicate with the Wi-Fi backend")
     end
 
     lipc_handle:set_string_property("com.lab126.wifid", "scan", "") -- trigger a scan
