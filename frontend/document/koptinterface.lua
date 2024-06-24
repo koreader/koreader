@@ -177,6 +177,13 @@ function KoptInterface:getContextHash(doc, pageno, bbox, hash_list)
     table.insert(hash_list, bbox.y1)
     table.insert(hash_list, canvas_size.w)
     table.insert(hash_list, canvas_size.h)
+    -- NOTE: only add an entry for the rendering
+    -- mode if colored output is enabled to avoid
+    -- invalidating previously cached data on B&W
+    -- devices.
+    if doc.render_color then
+        table.insert(hash_list, 'color')
+    end
 end
 
 function KoptInterface:getPageBBox(doc, pageno)
