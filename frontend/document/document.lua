@@ -387,14 +387,6 @@ function Document:updateColorRendering()
     end
 end
 
-function Document:preRenderPage()
-    return nil
-end
-
-function Document:postRenderPage()
-    return nil
-end
-
 function Document:getTileCacheValidity()
     return self.tile_cache_validity_ts
 end
@@ -435,7 +427,6 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, h
     if hinting then
         CanvasContext:enableCPUCores(2)
     end
-    self:preRenderPage()
 
     local page_size = self:getPageDimensions(pageno, zoom, rotation)
     -- this will be the size we actually render
@@ -493,7 +484,6 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, h
     page:close()
     DocCache:insert(hash, tile)
 
-    self:postRenderPage()
     if hinting then
         CanvasContext:enableCPUCores(1)
     end
