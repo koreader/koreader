@@ -116,6 +116,22 @@ local Device = Generic:extend{
     end,
 }
 
+function Device:otaModel()
+    -- "x86", "x64", "arm", "arm64", "ppc", "mips" or "mips64".
+    local arch = jit.arch
+    local model
+    if arch == "arm64" then
+        model = "android-arm64"
+    elseif arch == "x86" then
+        model = "android-x86"
+    elseif arch == "x64" then
+        model = "android-x86_64"
+    else
+        model = "android"
+    end
+    return model, "link"
+end
+
 function Device:init()
     self.screen = require("ffi/framebuffer_android"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/android/powerd"):new{device = self}

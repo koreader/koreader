@@ -49,89 +49,10 @@ local ota_channels = {
     nightly = _("Development"),
 }
 
--- Try to detect Kindle running hardfp firmware
-function OTAManager:_isKindleHardFP()
-    local util = require("util")
-    return util.pathExists("/lib/ld-linux-armhf.so.3")
-end
-
--- Try to detect WARIO+ Kindle boards (i.MX6 & i.MX7)
-function OTAManager:_isKindleWarioOrMore()
-    local cpu_hw = nil
-    -- Parse cpuinfo line by line, until we find the Hardware description
-    for line in io.lines("/proc/cpuinfo") do
-        if line:find("^Hardware") then
-            cpu_hw = line:match("^Hardware%s*:%s([%g%s]*)$")
-        end
-    end
-    -- NOTE: I couldn't dig up a cpuinfo dump from an Oasis 2 to check the CPU part value,
-    --       but for Wario (Cortex A9), matching that to 0xc09 would work, too.
-    --       On the other hand, I'm already using the Hardware match in MRPI, so, that sealed the deal ;).
-
-    -- If we've got a Hardware string, check if it mentions an i.MX 6 or 7 or a MTK...
-    if cpu_hw then
-        if cpu_hw:find("i%.MX%s?[6-7]") or cpu_hw:find("MT8110") then
-            return true
-        else
-            return false
-        end
-    else
-        return false
-    end
-end
-
--- "x86", "x64", "arm", "arm64", "ppc", "mips" or "mips64".
-local arch = jit.arch
-
-function OTAManager:getOTAModel()
-    if Device:isAndroid() then
-        if arch == "arm64" then
-            return "android-arm64"
-        elseif arch == "x86" then
-            return "android-x86"
-        elseif arch == "x64" then
-            return "android-x86_64"
-        end
-        return "android"
-    elseif Device:isSDL() then
-        return "appimage"
-    elseif Device:isCervantes() then
-        return "cervantes"
-    elseif Device:isKindle() then
-        if Device:isTouchDevice() or Device.model == "Kindle4" then
-            if self:_isKindleHardFP() then
-                return "kindlehf"
-            elseif self:_isKindleWarioOrMore() then
-                return "kindlepw2"
-            else
-                return "kindle"
-            end
-        else
-            return "kindle-legacy"
-        end
-    elseif Device:isKobo() then
-        return "kobo"
-    elseif Device:isPocketBook() then
-        return "pocketbook"
-    elseif Device:isRemarkable() then
-        return "remarkable"
-    elseif Device:isSonyPRSTUX() then
-        return "sony-prstux"
-    else
-        return ""
-    end
-end
-
 function OTAManager:getOTAType()
-    local ota_model = self:getOTAModel()
-
-    if ota_model == "" then return end
-
-    if ota_model:find("android") or ota_model:find("appimage") then
-        return "link"
-    end
-
-    return "ota"
+    local platform, kind = Device:otaModel()
+    if not platform then return "none" end
+    return kind
 end
 
 function OTAManager:getOTAServer()
@@ -152,23 +73,29 @@ function OTAManager:setOTAChannel(channel)
     G_reader_settings:saveSetting("ota_channel", channel)
 end
 
-function OTAManager:getLinkFilename()
-    return self.link_template:format(self:getOTAModel(), self:getOTAChannel())
-end
-
-function OTAManager:getZsyncFilename()
-    return self.zsync_template:format(self:getOTAModel(), self:getOTAChannel())
+function OTAManager:getFilename(kind)
+    if type(kind) ~= "string" then return end
+    local model = Device:otaModel()
+    local channel = self:getOTAChannel()
+    if kind == "ota" then
+        return self.zsync_template:format(model, channel)
+    elseif kind == "link" then
+        return self.link_template:format(model, channel)
+    end
 end
 
 function OTAManager:checkUpdate()
     if Device:isDeprecated() then return -1 end
-
     local http = require("socket.http")
     local ltn12 = require("ltn12")
     local socket = require("socket")
     local socketutil = require("socketutil")
 
-    local update_file = (self:getOTAType() == "link") and self:getLinkFilename() or self:getZsyncFilename()
+    local update_kind = self:getOTAType()
+    if not update_kind then return -1 end
+
+    local update_file = self:getFilename(update_kind)
+    if not update_file then return -2 end
 
     local ota_update_file = self:getOTAServer() .. update_file
     local local_update_file = ota_dir .. update_file
@@ -240,6 +167,10 @@ function OTAManager:fetchAndProcessUpdate()
     elseif ota_version == -1 then
         UIManager:show(InfoMessage:new{
             text = T(_("Device no longer supported.\n\nPlease check %1"), "https://github.com/koreader/koreader/wiki/deprecated-devices")
+        })
+    elseif ota_version == -2 then
+        UIManager:show(InfoMessage:new{
+            text = _("Unable to determine OTA model.")
         })
     elseif ota_version == nil then
         UIManager:show(InfoMessage:new{

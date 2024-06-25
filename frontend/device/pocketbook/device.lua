@@ -21,6 +21,7 @@ local app_name = "koreader.app"
 
 local PocketBook = Generic:extend{
     model = "PocketBook",
+    ota_model = "pocketbook",
     isPocketBook = yes,
     hasOTAUpdates = yes,
     hasWifiToggle = yes,
