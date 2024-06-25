@@ -599,8 +599,8 @@ function InputText:onKeyPress(key)
         if key["Backspace"] then
             self:delChar()
         elseif key["Del"] then
-            -- kindles with physical keyboards only have a "Del" key (no "Backspace") therefore we handle it differently there
-            if Device:hasSymKey() then -- and write why we do that ;)
+            -- Kindles with physical keyboards only have a "Del" key (no "Backspace").
+            if Device:hasSymKey() then
                 self:delChar()
             else
                 self:delNextChar()
