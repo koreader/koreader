@@ -169,6 +169,7 @@ function KoptInterface:getContextHash(doc, pageno, bbox, hash_list)
     local canvas_size = CanvasContext:getSize()
     table.insert(hash_list, doc.file)
     table.insert(hash_list, doc.mod_time)
+    table.insert(hash_list, doc.render_color and 'color' or 'bw')
     table.insert(hash_list, pageno)
     doc.configurable:hash(hash_list)
     table.insert(hash_list, bbox.x0)
@@ -340,7 +341,7 @@ end
 
 function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, render_mode, hinting)
     if doc.configurable.text_wrap == 1 then
-        return self:renderReflowedPage(doc, pageno, rect, zoom, rotation, render_mode, hinting)
+        return self:renderReflowedPage(doc, pageno, rect, zoom, rotation, render_mode)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
         return self:renderOptimizedPage(doc, pageno, rect, zoom, rotation, render_mode, hinting)
     else

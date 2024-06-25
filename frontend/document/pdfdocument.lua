@@ -21,12 +21,8 @@ local PdfDocument = Document:extend{
 
 function PdfDocument:init()
     if not pdf then pdf = require("ffi/mupdf") end
-    -- mupdf.color has to stay false for kopt to work correctly
-    -- and be accurate (including its job about showing highlight
-    -- boxes). We will turn it on and off in PdfDocument:preRenderPage()
-    -- and :postRenderPage() when mupdf is called without kopt involved.
-    pdf.color = false
     self:updateColorRendering()
+    pdf.color = self.render_color
     self.koptinterface = require("document/koptinterface")
     self.koptinterface:setDefaultConfigurable(self.configurable)
     local ok
@@ -79,14 +75,6 @@ function PdfDocument:convertKoptToReflowableFontSize(font_size)
     else
         return default_font_size
     end
-end
-
-function PdfDocument:preRenderPage()
-    pdf.color = self.render_color
-end
-
-function PdfDocument:postRenderPage()
-    pdf.color = false
 end
 
 function PdfDocument:unlock(password)
