@@ -639,7 +639,8 @@ function InputText:onKeyPress(key)
     else
         handled = false
     end
-    if key["ScreenKB"] or key["Shift"] then
+    if not handled and key["ScreenKB"] or key["Shift"] then
+        handled = true
         if key["Back"] then
             self:delChar()
         elseif key["Left"] then
@@ -661,6 +662,8 @@ function InputText:onKeyPress(key)
                 self:addChars(",")
                 return true
             end
+        else
+            handled = false
         end
     end
     if not handled and Device:hasDPad() then
