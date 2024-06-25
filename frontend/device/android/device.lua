@@ -115,6 +115,7 @@ local Device = Generic:extend{
         end
     end,
 }
+
 function Device:otaModel()
     -- "x86", "x64", "arm", "arm64", "ppc", "mips" or "mips64".
     local arch = jit.arch
