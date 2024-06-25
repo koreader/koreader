@@ -857,6 +857,7 @@ local FONT_TEST_DEFAULT_SAMPLE_PATH = "frontend/ui/elements/font-test-sample-def
 local FONT_TEST_USER_SAMPLE_PATH = require("datastorage"):getSettingsDir() .. "/font-test-sample.html"
 -- This document will be generated in the home or default directory
 local FONT_TEST_FINAL_FILENAME = "font-test.html"
+local NEW_FONT_TEST_FINAL_FILENAME = "font-test-new_" .. os.date("%m%d") .. ".html"
 
 function ReaderFont:buildFontsTestDocument()
     local html_sample
@@ -915,7 +916,76 @@ a { color: black; }
     f:write("</body></html>\n")
     f:close()
     UIManager:show(ConfirmBox:new{
-        text = T(_("Document created as:\n%1\n\nWould you like to read it now?"), BD.filepath(font_test_final_path)),
+        text = T(_("Document created as:\n%1\n\nWould you like to view it now?"), BD.filepath(font_test_final_path)),
+        ok_callback = function()
+            UIManager:scheduleIn(1.0, function()
+                self.ui:switchDocument(font_test_final_path)
+            end)
+        end,
+    })
+end
+
+function ReaderFont:buildNewFontsTestDocument()
+    local html_sample
+    local f = io.open(FONT_TEST_USER_SAMPLE_PATH, "r")
+    if f then
+        html_sample = f:read("*all")
+        f:close()
+    end
+    if not html_sample then
+        f = io.open(FONT_TEST_DEFAULT_SAMPLE_PATH, "r")
+        if not f then return nil end
+        html_sample = f:read("*all")
+        f:close()
+    end
+    local dir = G_reader_settings:readSetting("home_dir")
+             or require("apps/filemanager/filemanagerutil").getDefaultDir()
+             or "."
+    local font_test_final_path = dir .. "/" .. NEW_FONT_TEST_FINAL_FILENAME
+    f = io.open(font_test_final_path, "w")
+    if not f then return end
+    -- Using <section><title>...</title></section> allows for a TOC to be built by crengine
+    f:write(string.format([[
+<?xml version="1.0" encoding="UTF-8"?>
+<html>
+<head>
+<title>%s</title>
+<style>
+h1 {
+  font-size: large;
+  font-weight: bold;
+  text-align: center;
+  page-break-before: always;
+  margin-top: 0;
+  margin-bottom: 0.5em;
+}
+a { color: black; }
+</style>
+</head>
+<body>
+<h1>%s</h1>
+]], _("New fonts test document"), _("NEW FONTS")))
+    local face_list = {}
+	for k in pairs(newly_added_fonts) do
+		table.insert(face_list, k) 
+	end
+    f:write("<div style='margin: 2em'>\n")
+    for _, font_name in ipairs(face_list) do
+        local font_id = font_name:gsub(" ", "_"):gsub("'", "_")
+        f:write(string.format("  <div><a href='#%s'>%s</a></div>\n", font_id, font_name))
+    end
+    f:write("</div>\n\n")
+    for _, font_name in ipairs(face_list) do
+        local font_id = font_name:gsub(" ", "_"):gsub("'", "_")
+        f:write(string.format("<h1 id='%s'>%s</h1>\n", font_id, font_name))
+        f:write(string.format("<div style='font-family: %s'>\n", font_name))
+        f:write(html_sample)
+        f:write("\n</div>\n\n")
+    end
+    f:write("</body></html>\n")
+    f:close()
+    UIManager:show(ConfirmBox:new{
+        text = T(_("Document created as:\n%1\n\nWould you like to view it now?"), BD.filepath(font_test_final_path)),
         ok_callback = function()
             UIManager:scheduleIn(1.0, function()
                 self.ui:switchDocument(font_test_final_path)
