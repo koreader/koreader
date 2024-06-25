@@ -424,20 +424,23 @@ end
 
 -- fake network manager for the emulator
 function Emulator:initNetworkManager(NetworkMgr)
-    local connectionChangedEvent = function()
+    local connectionChangedEvent = function(complete_callback)
         if G_reader_settings:nilOrTrue("emulator_fake_wifi_connected") then
             UIManager:broadcastEvent(Event:new("NetworkConnected"))
         else
             UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
         end
+        if complete_callback then
+            complete_callback()
+        end
     end
     function NetworkMgr:turnOffWifi(complete_callback)
         G_reader_settings:flipNilOrTrue("emulator_fake_wifi_connected")
-        UIManager:scheduleIn(2, connectionChangedEvent)
+        UIManager:scheduleIn(2, connectionChangedEvent, complete_callback)
     end
     function NetworkMgr:turnOnWifi(complete_callback)
         G_reader_settings:flipNilOrTrue("emulator_fake_wifi_connected")
-        UIManager:scheduleIn(2, connectionChangedEvent)
+        UIManager:scheduleIn(2, connectionChangedEvent, complete_callback)
     end
     function NetworkMgr:isWifiOn()
         return G_reader_settings:nilOrTrue("emulator_fake_wifi_connected")

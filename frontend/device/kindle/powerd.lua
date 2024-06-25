@@ -14,7 +14,7 @@ local KindlePowerD = BasePowerD:new{
 
 function KindlePowerD:init()
     local haslipc, lipc = pcall(require, "liblipclua")
-    if haslipc and lipc then
+    if haslipc then
         self.lipc_handle = lipc.init("com.github.koreader.kindlepowerd")
     end
 

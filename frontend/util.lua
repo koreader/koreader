@@ -54,6 +54,23 @@ function util.trim(s)
    return from > #s and "" or s:match(".*%S", from)
 end
 
+--[[
+-- Trim leading & trailing character `c` from string `s`
+function util.trim_char(s, c)
+    local from = s:match"^"..c.."*()"
+    return from > #s and "" or s:match(".*[^"..c.."]", from)
+end
+
+-- Trim trailing character `c` from string `s`
+function util.rtrim_char(s, c)
+    local n = #s
+    while n > 0 and s:find("^"..c, n) do
+        n = n - 1
+    end
+    return s:sub(1, n)
+end
+--]]
+
 --[[--
 Splits a string by a pattern
 
