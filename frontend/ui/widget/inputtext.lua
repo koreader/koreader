@@ -636,7 +636,7 @@ function InputText:onKeyPress(key)
         if key["Del"] then
             self:delChar()
         end
-    else
+    elseif not key["Ctrl"] and not key["Shift"] and not key["Alt"] then
         if key["Del"] then
             self:delNextChar()
         end
