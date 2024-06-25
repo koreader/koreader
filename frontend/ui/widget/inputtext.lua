@@ -656,6 +656,11 @@ function InputText:onKeyPress(key)
             else
                 self:onShowKeyboard()
             end
+        elseif key["."] then
+            if Device:hasSymKey() then
+                self:addChars(",")
+                return true
+            end
         end
     end
     if not handled and Device:hasDPad() then
