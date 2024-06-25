@@ -598,8 +598,6 @@ function InputText:onKeyPress(key)
     if not key["Ctrl"] and not key["Shift"] and not key["Alt"] and not key["ScreenKB"] then
         if key["Backspace"] then
             self:delChar()
-        elseif key["Del"] then
-            self:delChar()
         elseif key["Left"] then
             self:leftChar()
         elseif key["Right"] then
@@ -633,6 +631,15 @@ function InputText:onKeyPress(key)
         end
     else
         handled = false
+    end
+    if Device:hasSymKey() then
+        if key["Del"] then
+            self:delChar()
+        end
+    else
+        if key["Del"] then
+            self:delNextChar()
+        end
     end
     if key["ScreenKB"] or key["Shift"] then
         if key["Back"] then
