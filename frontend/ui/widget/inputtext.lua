@@ -610,6 +610,8 @@ function InputText:onKeyPress(key)
             self:downLine()
         elseif key["End"] then
             self:goToEnd()
+        elseif key["Home"] then
+            self:goToHome()
         elseif key["Press"] then
             self:addChars("\n")
         elseif key["Tab"] then
