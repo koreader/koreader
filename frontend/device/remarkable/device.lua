@@ -32,6 +32,7 @@ local isRm2, rm_model = getModel()
 local Remarkable = Generic:extend{
     isRemarkable = yes,
     model = rm_model,
+    ota_model = "remarkable",
     hasKeys = yes,
     needsScreenRefreshAfterResume = no,
     hasOTAUpdates = yes,
@@ -308,4 +309,3 @@ if isRm2 then
 else
     return Remarkable1
 end
-
