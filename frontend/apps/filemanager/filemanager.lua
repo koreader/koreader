@@ -1427,7 +1427,7 @@ function FileManager:showOpenWithDialog(file)
     end
     -- row: wide button
     local associated_providers = DocumentRegistry:getAssociatedProviderKey() -- hash table
-    if next(associated_providers) ~= nil then
+    if associated_providers ~= nil and next(associated_providers) ~= nil then
         table.insert(buttons, {{
             text = _("View defaults for file types"),
             callback = function()
