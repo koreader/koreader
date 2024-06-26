@@ -49,8 +49,8 @@ sudo apk add autoconf automake bash cmake coreutils curl diffutils g++ \
 Install the prerequisites using pacman:
 
 ```
-run0 pacman -S base-devel ca-certificates cmake gcc-libs git sdl2 lua-busted \
-    lua51 luarocks nasm ninja unzip wget
+run0 pacman -S base-devel ca-certificates cmake gcc-libs git \
+    lua51-busted luarocks nasm ninja sdl2 unzip wget
 ```
 
 ### Debian/Ubuntu
