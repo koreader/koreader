@@ -57,7 +57,7 @@ function ReadTimer:init()
         if self:scheduled() then
             local hours, minutes, dummy = self:remainingTime(1)
             local timer_info = string.format("%02d:%02d", hours, minutes)
-            return self.timer_symbol .. timer_info .. " "
+            return self.timer_symbol .. timer_info
         end
         return
     end

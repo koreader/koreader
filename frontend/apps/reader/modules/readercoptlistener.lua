@@ -139,6 +139,9 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
         local value = v()
         if value and value ~= "" then
             additional_content = additional_content .. value
+            if self.page_number == 1 or self.page_count == 1 then
+                additional_content = additional_content .. "  " -- double spaces as crengine's own drawing
+            end
         end
     end
 

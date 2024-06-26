@@ -1984,7 +1984,6 @@ function ReaderFooter:genAlignmentMenuItems(value)
 end
 
 function ReaderFooter:addAdditionalFooterContent(content_func)
-    table.insert(self.textGeneratorMap, content_func)
     table.insert(self.additional_footer_content, content_func)
 end
 
