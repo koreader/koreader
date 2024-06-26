@@ -44,6 +44,15 @@ sudo apk add autoconf automake bash cmake coreutils curl diffutils g++ \
     procps-ng sdl2 tar unzip wget
 ```
 
+### Arch Linux
+
+Install the prerequisites using pacman:
+
+```
+run0 pacman -S base-devel ca-certificates cmake gcc-libs git \
+    lua51-busted luarocks nasm ninja sdl2 unzip wget
+```
+
 ### Debian/Ubuntu
 
 Install the prerequisites using APT:
@@ -223,6 +232,7 @@ when the same compilation is being repeated. In other words, it will decrease
 build time when the sources have been built before. To install ccache use:
 
 * Alpine Linux: `sudo apk add ccache`
+* Arch Linux: `run0 pacman -S ccache`
 * Debian/Ubuntu: `sudo apt-get install ccache`
 * Fedora/Red Hat: `sudo dnf install ccache`
 * macOS: `brew install ccache`
