@@ -657,11 +657,9 @@ function InputText:onKeyPress(key)
             else
                 self:onShowKeyboard()
             end
-        elseif key["."] then
+        elseif key["."] and Device:hasSymKey() then
             -- Kindle does not have a dedicated button for commas
-            if Device:hasSymKey() then
-                self:addChars(",")
-            end
+            self:addChars(",")
         else
             handled = false
         end
