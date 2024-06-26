@@ -639,7 +639,7 @@ function InputText:onKeyPress(key)
     else
         handled = false
     end
-    if not handled and key["ScreenKB"] or key["Shift"] then
+    if not handled and (key["ScreenKB"] or key["Shift"]) then
         handled = true
         if key["Back"] then
             self:delChar()
