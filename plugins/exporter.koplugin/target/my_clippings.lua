@@ -15,7 +15,11 @@ local function format(booknotes)
     for ___, entry in ipairs(booknotes) do
         for ____, clipping in ipairs(entry) do
             if booknotes.title and clipping.text then
-                content = content .. booknotes.title .. "\n"
+                if booknotes.author then
+                    content = content .. booknotes.title .. " (" .. booknotes.author .. ")" .. "\n"
+                else
+                    content = content .. booknotes.title .. "\n"
+                end
                 local header = T(_("- Your highlight on page %1 | Added on %2"), clipping.page, os.date("%A, %B %d, %Y %I:%M:%S %p", clipping.time)) .. "\n\n"
                 content = content .. header
                 content = content .. clipping.text
