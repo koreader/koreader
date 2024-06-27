@@ -546,14 +546,12 @@ function ConfigOption:init()
                 local row_count = self.options[c].row_count or 1
                 local toggle_height = Screen:scaleBySize(self.options[c].height
                                                          or (30 * row_count))
-                local toggle, args = {}, {} -- keep options intact
+                local toggle = {} -- keep options intact
                 for i = 1, #self.options[c].toggle do
                     toggle[i] = self.options[c].toggle[i]
-                    args[i] = self.options[c].args[i]
                 end
                 if self.options[c].more_options then
                     table.insert(toggle, "⋮")
-                    table.insert(args, "⋮")
                 end
                 local switch = ToggleSwitch:new{
                     width = math.min(max_toggle_width, toggle_width),
@@ -565,7 +563,7 @@ function ConfigOption:init()
                     toggle = toggle,
                     alternate = self.options[c].alternate,
                     values = self.options[c].values,
-                    args = args,
+                    args = self.options[c].args,
                     event = self.options[c].event,
                     hide_on_apply = self.options[c].hide_on_apply,
                     config = self.config,
