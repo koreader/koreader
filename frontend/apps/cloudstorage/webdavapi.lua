@@ -12,44 +12,23 @@ local lfs = require("libs/libkoreader-lfs")
 local WebDavApi = {
 }
 
-function WebDavApi:getJoinedPath( address, path )
-    local path_encoded = self:urlEncode( path ) or ""
-    local address_strip = address:sub(-1) == "/" and address:sub(1, -2) or address
-    local path_strip = path_encoded:sub(1, 1) == "/" and path_encoded:sub(2) or path_encoded
-    return address_strip .. "/" .. path_strip
+-- Trim leading & trailing slashes from string `s` (based on util.trim)
+function WebDavApi.trim_slashes(s)
+    local from = s:match"^/*()"
+    return from > #s and "" or s:match(".*[^/]", from)
 end
 
-function WebDavApi:isCurrentDirectory( current_item, address, path )
-    local is_home, is_parent
-    local home_path
-    -- find first occurence of / after http(s)://
-    local start = string.find( address, "/", 9 )
-    if not start then
-        home_path = "/"
-    else
-        home_path = string.sub( address, start )
+-- Trim trailing slashes from string `s` (based on util.rtrim)
+function WebDavApi.rtrim_slashes(s)
+    local n = #s
+    while n > 0 and s:find("^/", n) do
+        n = n - 1
     end
-    local item
-    if string.sub( current_item, -1 ) == "/" then
-        item = string.sub( current_item, 1, -2 )
-    else
-        item = current_item
-    end
-
-    if item == home_path then
-        is_home = true
-    else
-        local temp_path = string.sub( item, string.len(home_path) + 1 )
-        if string.sub( path, -1 ) == "/" then path = string.sub( path, 1, -2 ) end
-        if temp_path == path then
-            is_parent = true
-        end
-    end
-    return is_home or is_parent
+    return s:sub(1, n)
 end
 
--- version of urlEncode that doesn't encode the /
-function WebDavApi:urlEncode(url_data)
+-- Variant of util.urlEncode that doesn't encode the /
+function WebDavApi.urlEncode(url_data)
     local char_to_hex = function(c)
         return string.format("%%%02X", string.byte(c))
     end
@@ -60,28 +39,30 @@ function WebDavApi:urlEncode(url_data)
     return url_data
 end
 
+-- Append path to address with a slash separator, trimming any unwanted slashes in the process.
+function WebDavApi:getJoinedPath(address, path)
+    local path_encoded = self.urlEncode(path) or ""
+    -- Strip leading & trailing slashes from `path`
+    local sane_path = self.trim_slashes(path_encoded)
+    -- Strip trailing slashes from `address` for now
+    local sane_address = self.rtrim_slashes(address)
+    -- Join our final URL
+    return sane_address .. "/" .. sane_path
+end
+
 function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
-    local path = self:urlEncode( folder_path )
+    local path = folder_path or ""
     local webdav_list = {}
     local webdav_file = {}
 
-    local has_trailing_slash = false
-    local has_leading_slash = false
-    if string.sub( address, -1 ) == "/" then has_trailing_slash = true end
-    if path == nil or path == "/" then
-        path = ""
-    elseif string.sub( path, 1, 1 ) == "/" then
-        if has_trailing_slash then
-            -- too many slashes, remove one
-            path = string.sub( path, 2 )
-        end
-        has_leading_slash = true
-    end
-    if not has_trailing_slash and not has_leading_slash then
-        address = address .. "/"
-    end
-    local webdav_url = address .. path
-    if string.sub(webdav_url, -1) ~= "/" then
+    -- Strip leading & trailing slashes from `path`
+    path = self.trim_slashes(path)
+    -- Strip trailing slashes from `address` for now
+    address = self.rtrim_slashes(address)
+    -- Join our final URL, which *must* have a trailing / (it's a URL)
+    -- This is where we deviate from getJoinedPath ;).
+    local webdav_url = address .. "/" .. self.urlEncode(path)
+    if webdav_url:sub(-1) ~= "/" then
         webdav_url = webdav_url .. "/"
     end
 
@@ -122,24 +103,18 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
             --logger.dbg("WebDav catalog item=", item)
             -- <d:href> is the path and filename of the entry.
             local item_fullpath = item:match("<[^:]*:href[^>]*>(.*)</[^:]*:href>")
-            if string.sub( item_fullpath, -1 ) == "/" then
-                item_fullpath = string.sub( item_fullpath, 1, -2 )
-            end
-            local is_current_dir = self:isCurrentDirectory( util.urlDecode(item_fullpath), address, folder_path )
-
-            local item_name = util.urlDecode( FFIUtil.basename( item_fullpath ) )
-            item_name = util.htmlEntitiesToUtf8(item_name)
-
+            local item_name = FFIUtil.basename(util.htmlEntitiesToUtf8(util.urlDecode(item_fullpath)))
+            local is_current_dir = item_name == string.sub(folder_path, -#item_name)
             local is_not_collection = item:find("<[^:]*:resourcetype/>") or
-                item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
+                                      item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
+            local item_path = path .. "/" .. item_name
 
-            local item_path = (path == "" and has_trailing_slash) and item_name or path .. "/" .. item_name
             if item:find("<[^:]*:collection[^<]*/>") then
                 item_name = item_name .. "/"
                 if not is_current_dir then
                     table.insert(webdav_list, {
                         text = item_name,
-                        url = util.urlDecode( item_path ),
+                        url = item_path,
                         type = "folder",
                     })
                 end
@@ -147,7 +122,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
                 or G_reader_settings:isTrue("show_unsupported")) then
                 table.insert(webdav_file, {
                     text = item_name,
-                    url = util.urlDecode( item_path ),
+                    url = item_path,
                     type = "file",
                 })
             end

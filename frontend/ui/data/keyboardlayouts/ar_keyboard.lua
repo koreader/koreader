@@ -27,6 +27,7 @@ local raa = ar_popup.raa
 local sheen = ar_popup.sheen
 local taa = ar_popup.taa
 local thaa = ar_popup.thaa
+local th_aa = ar_popup.th_aa
 local thaal = ar_popup.thaal
 local dhad = ar_popup.dhad
 local ghayn = ar_popup.ghayn
@@ -96,7 +97,7 @@ return {
             { "'",                       taamarbouta,  "'",    "]", },
             {  arabic_comma,             waw,          "#",    "↑", },
             { ".",                       zay,          "@",    "↓", },
-            { "؟",                       thaa,         "!",    _at, },
+            { "؟",                       th_aa,         "!",    _at, },
             { label = "",
               width = 1.5,
               bold = false

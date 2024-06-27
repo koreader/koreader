@@ -22,6 +22,7 @@ end
 
 local Cervantes = Generic:extend{
     model = "Cervantes",
+    ota_model = "cervantes",
     isCervantes = yes,
     isAlwaysPortrait = yes,
     isTouchDevice = yes,
