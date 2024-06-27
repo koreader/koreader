@@ -232,6 +232,8 @@ function AutoSuspend:onInputEvent()
     self.last_action_time = UIManager:getElapsedTimeSinceBoot()
 end
 
+AutoSuspend.onPageUpdate = AutoSuspend.onInputEvent
+
 function AutoSuspend:_unschedule_standby()
     if self.is_standby_scheduled and self.standby_task then
         logger.dbg("AutoSuspend: unschedule standby timer")
