@@ -16,22 +16,17 @@ local function format(booknotes)
     for ___, entry in ipairs(booknotes) do
         for ____, clipping in ipairs(entry) do
             if booknotes.title and clipping.text then
-
                 local title_str = booknotes.title .. " (" .. (booknotes.author or "Unknown") .. ")"
                 table.insert(tbl, title_str)
-
                 local header = T(_("- Your highlight on page %1 | Added on %2"), clipping.page,
                     os.date("%A, %B %d, %Y %I:%M:%S %p", clipping.time))
                 table.insert(tbl, header)
-
                 table.insert(tbl, "")
                 table.insert(tbl, clipping.text)
                 table.insert(tbl, "==========")
 
                 if clipping.note then
-                    
                     table.insert(tbl, title_str)
-
                     header = T(_("- Your note on page %1 | Added on %2"), clipping.page,
                         os.date("%A, %B %d, %Y %I:%M:%S %p", clipping.time))
                     table.insert(tbl, header)
