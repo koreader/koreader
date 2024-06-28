@@ -73,12 +73,16 @@ function OTAManager:setOTAChannel(channel)
     G_reader_settings:saveSetting("ota_channel", channel)
 end
 
+function OTAManager:getZsyncFilename()
+    return self.zsync_template:format(model, channel)
+end
+
 function OTAManager:getFilename(kind)
     if type(kind) ~= "string" then return end
     local model = Device:otaModel()
     local channel = self:getOTAChannel()
     if kind == "ota" then
-        return self.zsync_template:format(model, channel)
+        return self:getZsyncFilename()
     elseif kind == "link" then
         return self.link_template:format(model, channel)
     end
