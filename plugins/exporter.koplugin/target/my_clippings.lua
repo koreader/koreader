@@ -18,7 +18,7 @@ local function format(booknotes)
                 if booknotes.author then
                     content = content .. booknotes.title .. " (" .. booknotes.author .. ")" .. "\n"
                 else
-                    content = content .. booknotes.title .. "\n"
+                    content = content .. booknotes.title .. " (Unknown)" .. "\n"
                 end
                 local header = T(_("- Your highlight on page %1 | Added on %2"), clipping.page, os.date("%A, %B %d, %Y %I:%M:%S %p", clipping.time)) .. "\n\n"
                 content = content .. header
