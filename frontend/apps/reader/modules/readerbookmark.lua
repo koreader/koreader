@@ -644,7 +644,7 @@ function ReaderBookmark:onShowBookmark()
     local curr_page_datetime
     if self.sorting_mode == "date" then
         local idx = math.max(1, math.min(curr_page_index_filtered, #item_table))
-        curr_page_datetime = item_table[idx].datetime
+        curr_page_datetime = item_table[idx] and item_table[idx].datetime
         local sort_func = self.is_reverse_sorting and function(a, b) return a.datetime > b.datetime end
                                                    or function(a, b) return a.datetime < b.datetime end
         table.sort(item_table, sort_func)
