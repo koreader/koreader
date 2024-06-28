@@ -16,11 +16,9 @@ local function format(booknotes)
     for ___, entry in ipairs(booknotes) do
         for ____, clipping in ipairs(entry) do
             if booknotes.title and clipping.text then
-                if booknotes.author then
-                    table.insert(tbl, booknotes.title .. " (" .. booknotes.author .. ")" )
-                else
-                    table.insert(tbl, booknotes.title .. " (Unknown)" )
-                end
+
+                local title_str = booknotes.title .. " (" .. (booknotes.author or "Unknown") .. ")"
+                table.insert(tbl, title_str)
 
                 local header = T(_("- Your highlight on page %1 | Added on %2"), clipping.page,
                     os.date("%A, %B %d, %Y %I:%M:%S %p", clipping.time))
@@ -31,11 +29,8 @@ local function format(booknotes)
                 table.insert(tbl, "==========")
 
                 if clipping.note then
-                    if booknotes.author then
-                        table.insert(tbl, booknotes.title .. " (" .. booknotes.author .. ")" )
-                    else
-                        table.insert(tbl, booknotes.title .. " (Unknown)" )
-                    end
+                    
+                    table.insert(tbl, title_str)
 
                     header = T(_("- Your note on page %1 | Added on %2"), clipping.page,
                         os.date("%A, %B %d, %Y %I:%M:%S %p", clipping.time))
