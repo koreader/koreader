@@ -105,6 +105,13 @@ function DictQuickLookup:init()
         self.key_events.ReadNextResult = { { Input.group.PgFwd } }
         self.key_events.Close = { { Input.group.Back } }
         self.key_events.ShowResultsMenu = { { "Menu" } }
+        if Device:hasKeyboard() then
+            self.key_events.ChangeToPrevDict = { { "Shift", "Left" } }
+            self.key_events.ChangeToNextDict = { { "Shift", "Right" } }
+        elseif Device:hasScreenKB() then
+            self.key_events.ChangeToPrevDict = { { "ScreenKB", "Left" } }
+            self.key_events.ChangeToNextDict = { { "ScreenKB", "Right" } }
+        end
     end
     if Device:isTouchDevice() then
         local range = Geom:new{
@@ -424,7 +431,7 @@ function DictQuickLookup:init()
                     vsync = true,
                     enabled = self:isPrevDictAvaiable(),
                     callback = function()
-                        self:changeToPrevDict()
+                        self:onChangeToPrevDict()
                     end,
                     hold_callback = function()
                         self:changeToFirstDict()
@@ -448,7 +455,7 @@ function DictQuickLookup:init()
                     vsync = true,
                     enabled = self:isNextDictAvaiable(),
                     callback = function()
-                        self:changeToNextDict()
+                        self:onChangeToNextDict()
                     end,
                     hold_callback = function()
                         self:changeToLastDict()
@@ -957,7 +964,7 @@ function DictQuickLookup:isNextDictAvaiable()
     return self.dict_index < #self.results
 end
 
-function DictQuickLookup:changeToPrevDict()
+function DictQuickLookup:onChangeToPrevDict()
     if self:isPrevDictAvaiable() then
         self:changeDictionary(self.dict_index - 1)
     elseif #self.results > 1 then -- restart at end if first reached
@@ -965,7 +972,7 @@ function DictQuickLookup:changeToPrevDict()
     end
 end
 
-function DictQuickLookup:changeToNextDict()
+function DictQuickLookup:onChangeToNextDict()
     if self:isNextDictAvaiable() then
         self:changeDictionary(self.dict_index + 1)
     elseif #self.results > 1 then -- restart at first if end reached
@@ -1076,13 +1083,13 @@ end
 ]]--
 
 function DictQuickLookup:onReadNextResult()
-    self:changeToNextDict()
+    self:onChangeToNextDict()
     return true
 end
 
 function DictQuickLookup:onReadPrevResult()
     local prev_index = self.dict_index
-    self:changeToPrevDict()
+    self:onChangeToPrevDict()
     if self.dict_index ~= prev_index then
         -- Jump directly to bottom of previous dict definition
         -- to keep "continuous reading with tap" consistent
@@ -1162,9 +1169,9 @@ function DictQuickLookup:onSwipe(arg, ges)
     -- or not ges.pos:intersectWith(self.dict_frame.dimen) then
         local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
         if direction == "west" then
-            self:changeToNextDict()
+            self:onChangeToNextDict()
         elseif direction == "east" then
-            self:changeToPrevDict()
+            self:onChangeToPrevDict()
         else
             if self.refresh_callback then self.refresh_callback() end
             -- update footer (time & battery)

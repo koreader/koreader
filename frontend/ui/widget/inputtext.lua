@@ -595,11 +595,16 @@ function InputText:onKeyPress(key)
     end
     local handled = true
 
-    if not key["Ctrl"] and not key["Shift"] and not key["Alt"] then
+    if not key["Ctrl"] and not key["Shift"] and not key["Alt"] and not key["ScreenKB"] then
         if key["Backspace"] then
             self:delChar()
         elseif key["Del"] then
-            self:delNextChar()
+            -- Kindles with physical keyboards only have a "Del" key (no "Backspace").
+            if Device:hasSymKey() then
+                self:delChar()
+            else
+                self:delNextChar()
+            end
         elseif key["Left"] then
             self:leftChar()
         elseif key["Right"] then
@@ -633,6 +638,31 @@ function InputText:onKeyPress(key)
         end
     else
         handled = false
+    end
+    if not handled and (key["ScreenKB"] or key["Shift"]) then
+        handled = true
+        if key["Back"] then
+            self:delChar()
+        elseif key["Left"] then
+            self:leftChar()
+        elseif key["Right"] then
+            self:rightChar()
+        elseif key["Up"] then
+            self:upLine()
+        elseif key["Down"] then
+            self:downLine()
+        elseif key["Home"] then
+            if self.keyboard:isVisible() then
+                self:onCloseKeyboard()
+            else
+                self:onShowKeyboard()
+            end
+        elseif key["."] and Device:hasSymKey() then
+            -- Kindle does not have a dedicated button for commas
+            self:addChars(",")
+        else
+            handled = false
+        end
     end
     if not handled and Device:hasDPad() then
         -- FocusManager may turn on alternative key maps.
