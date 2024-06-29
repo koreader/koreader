@@ -84,6 +84,10 @@ function OTAManager:getFilename(kind)
     end
 end
 
+function OTAManager:getZsyncFilename()
+    return self:getFilename("ota")
+end
+
 function OTAManager:checkUpdate()
     if Device:isDeprecated() then return -1 end
     local http = require("socket.http")
