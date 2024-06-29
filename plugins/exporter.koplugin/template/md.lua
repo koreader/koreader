@@ -36,7 +36,6 @@ local formatters = {
 }
 
 local function prepareBookContent(book, formatting_options, highlight_formatting)
-    local content = ""
     local tbl = {}
     local current_chapter = nil
     table.insert(tbl, "# " .. book.title)
