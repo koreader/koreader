@@ -1178,8 +1178,12 @@ function ReaderView:getTapZones()
         end
     end
     if self.inverse_reading_order ~= BD.mirroredUILayout() then -- mirrored reading
+        -- left_right
         forward_zone.ratio_x = 1 - forward_zone.ratio_x - forward_zone.ratio_w
         backward_zone.ratio_x = 1 - backward_zone.ratio_x - backward_zone.ratio_w
+        -- top_bottom
+        forward_zone.ratio_y = 1 - forward_zone.ratio_y - forward_zone.ratio_h
+        backward_zone.ratio_y = 1 - backward_zone.ratio_y - backward_zone.ratio_h
     end
     return forward_zone, backward_zone
 end
