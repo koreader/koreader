@@ -648,7 +648,7 @@ function ReaderUI:showReaderCoroutine(file, provider, seamless)
             UIManager:show(InfoMessage:new{
                 text = _("No reader engine for this file or invalid file.")
             })
-            self:showFileManager()
+            self:showFileManager(file)
         end
     end)
 end
@@ -668,7 +668,7 @@ function ReaderUI:doShowReader(file, provider, seamless)
         UIManager:show(InfoMessage:new{
             text = _("No reader engine for this file or invalid file.")
         })
-        self:showFileManager()
+        self:showFileManager(file)
         return
     end
     if document.is_locked then
@@ -678,7 +678,7 @@ function ReaderUI:doShowReader(file, provider, seamless)
         if coroutine.running() then
             local unlock_success = coroutine.yield()
             if not unlock_success then
-                self:showFileManager()
+                self:showFileManager(file)
                 return
             end
         end
@@ -859,8 +859,9 @@ function ReaderUI:dealWithLoadDocumentFailure()
 end
 
 function ReaderUI:onHome()
+    local file = self.document.file
     self:onClose()
-    self:showFileManager()
+    self:showFileManager(file)
     return true
 end
 
