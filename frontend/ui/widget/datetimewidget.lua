@@ -60,6 +60,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -342,7 +343,9 @@ function DateTimeWidget:createLayout()
                     self.sec = self.sec_widget:getValue()
                     self:callback(self)
                 end
-                self:onClose()
+                if not self.keep_shown_on_apply then
+                    self:onClose()
+                end
             end,
         },
     })
@@ -369,17 +372,18 @@ function DateTimeWidget:createLayout()
                     w = self.width,
                     h = math.floor(date_group:getSize().h * 1.2),
                 },
-                date_group
+                date_group,
             },
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.width,
                     h = ok_cancel_buttons:getSize().h,
                 },
-                ok_cancel_buttons
-            }
+                ok_cancel_buttons,
+            },
         }
     }
+
     self[1] = WidgetContainer:new{
         align = "center",
         dimen = Geom:new{
@@ -395,6 +399,21 @@ function DateTimeWidget:createLayout()
     }
     self:refocusWidget()
 end
+
+function DateTimeWidget:addWidget(widget)
+    table.insert(self.layout, #self.layout, {widget})
+    widget = HorizontalGroup:new{
+        align = "center",
+        HorizontalSpan:new{ width = Size.span.horizontal_default },
+        widget,
+    }
+    table.insert(self.date_frame[1],  #self.date_frame[1], widget)
+end
+
+function DateTimeWidget:getAddedWidgetAvailableWidth()
+    return self.date_frame[1][1].width - 2*Size.padding.default
+end
+
 
 function DateTimeWidget:update(year, month, day, hour, min, sec)
     self.year_widget.value = year
