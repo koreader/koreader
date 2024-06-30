@@ -217,7 +217,7 @@ function ReaderPageMap:onShowPageList()
     local items_with_dots = G_reader_settings:nilOrTrue("toc_items_with_dots")
 
     local pl_menu = Menu:new{
-        title = _("Reference page numbers list"),
+        title = _("Conversion table (print to KOReader pages)"),
         item_table = page_list,
         is_borderless = true,
         is_popout = false,
@@ -317,15 +317,15 @@ end
 
 function ReaderPageMap:addToMainMenu(menu_items)
     menu_items.page_map = {
-        -- @translators This and the other related ones refer to alternate page numbers provided in some EPUB books, that usually reference page numbers in a specific hardcopy edition of the book.
+        -- @translators This and the other related ones refer to alternative page numbers provided in some EPUB books, that usually reference page numbers in a specific print edition of the book.
         text = _("Reference pages"),
         sub_item_table ={
             {
-                -- @translators This shows the <dc:source> in the EPUB that usually tells which hardcopy edition the reference page numbers refers to.
-                text = _("Reference source info"),
+                -- @translators This shows the <dc:source> in the EPUB that usually tells which print edition the reference page numbers refers to.
+                text = _("Information source"),
                 enabled_func = function() return self.ui.document:getPageMapSource() ~= nil end,
                 callback = function()
-                    local text = T(_("Source (book hardcopy edition) of reference page numbers:\n\n%1"),
+                    local text = T(_("Reference pages sourced from print edition:\n\n%1"),
                                     self.ui.document:getPageMapSource())
                     local InfoMessage = require("ui/widget/infomessage")
                     local infomsg = InfoMessage:new{
@@ -336,13 +336,13 @@ function ReaderPageMap:addToMainMenu(menu_items)
                 keep_menu_open = true,
             },
             {
-                text = _("Reference page numbers list"),
+                text = _("Conversion table (print to KOReader pages)"),
                 callback = function()
                     self:onShowPageList()
                 end,
             },
             {
-                text = _("Use reference page numbers"),
+                text = _("Use reference page numbers instead"),
                 checked_func = function() return self.use_page_labels end,
                 callback = function()
                     self.use_page_labels = not self.use_page_labels
@@ -376,7 +376,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                 separator = true,
             },
             {
-                text = _("Show reference page labels in margin"),
+                text = _("Show reference page-labels in margins"),
                 checked_func = function() return self.show_page_labels end,
                 callback = function()
                     self.show_page_labels = not self.show_page_labels
@@ -409,7 +409,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    return T(_("Page labels font size: %1"), self.label_font_size)
+                    return T(_("Page-labels font size: %1"), self.label_font_size)
                 end,
                 enabled_func = function() return self.show_page_labels end,
                 callback = function(touchmenu_instance)
@@ -419,7 +419,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                         value_min = 8,
                         value_max = 20,
                         default_value = self.label_default_font_size,
-                        title_text =  _("Page labels font size"),
+                        title_text =  _("Page-labels font size"),
                         keep_shown_on_apply = true,
                         callback = function(spin)
                             self.label_font_size = spin.value
