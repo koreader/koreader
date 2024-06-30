@@ -582,6 +582,7 @@ TARGET:
     #       Just append --suppressions=${PWD/tools/valgrind_amd.supp to your valgrind command.
 
     # Defaults
+    screen_bw=
     screen_width=540
     screen_height=720
     export KODEBUG=1
@@ -685,11 +686,13 @@ TARGET:
                 device_model="${VALUE}"
                 case "${device_model}" in
                     kindle)
+                        screen_bw=1
                         screen_width=600
                         screen_height=800
                         screen_dpi=167
                         ;;
                     legacy-paperwhite)
+                        screen_bw=1
                         screen_width=758
                         screen_height=1024
                         screen_dpi=212
@@ -827,7 +830,7 @@ TARGET:
                 RETURN_VALUE=85
                 while [ "${RETURN_VALUE}" -eq 85 ]; do
                     # shellcheck disable=SC2086
-                    env EMULATE_READER_W="${screen_width}" EMULATE_READER_H="${screen_height}" EMULATE_READER_DPI="${screen_dpi}" \
+                    env EMULATE_BW_SCREEN="${screen_bw}" EMULATE_READER_W="${screen_width}" EMULATE_READER_H="${screen_height}" EMULATE_READER_DPI="${screen_dpi}" \
                         ${KOREADER_COMMAND}
                     RETURN_VALUE=$?
                 done
