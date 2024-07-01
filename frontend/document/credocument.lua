@@ -1812,6 +1812,7 @@ function CreDocument:setupCallCache()
 
             -- Assume all set* may change rendering
             if name == "setBatteryState" then no_wrap = true -- except this one
+            elseif name == "setPageInfoOverride" then no_wrap = true -- and this one
             elseif name:sub(1,3) == "set" then add_reset = true
             elseif name:sub(1,6) == "toggle" then add_reset = true
             elseif name:sub(1,6) == "update" then add_reset = true

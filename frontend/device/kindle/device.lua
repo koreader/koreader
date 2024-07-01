@@ -15,10 +15,212 @@ require("ffi/fbink_input_h")
 local function yes() return true end
 local function no() return false end  -- luacheck: ignore
 
+-- Try to detect WARIO+ Kindle boards (i.MX6 & i.MX7)
+local function isWarioOrMore()
+    local cpu_hw = nil
+    -- Parse cpuinfo line by line, until we find the Hardware description
+    for line in io.lines("/proc/cpuinfo") do
+        if line:find("^Hardware") then
+            cpu_hw = line:match("^Hardware%s*:%s([%g%s]*)$")
+        end
+    end
+    -- NOTE: I couldn't dig up a cpuinfo dump from an Oasis 2 to check the CPU part value,
+    --       but for Wario (Cortex A9), matching that to 0xc09 would work, too.
+    --       On the other hand, I'm already using the Hardware match in MRPI, so, that sealed the deal ;).
+
+    -- If we've got a Hardware string, check if it mentions an i.MX 6 or 7 or a MTK...
+    if cpu_hw then
+        if cpu_hw:find("i%.MX%s?[6-7]") or cpu_hw:find("MT8110") then
+            return true
+        else
+            return false
+        end
+    else
+        return false
+    end
+end
+
+-- Try to detect Kindle running hardfp firmware
+local function isHardFP()
+    local util = require("util")
+    return util.pathExists("/lib/ld-linux-armhf.so.3")
+end
+
+local function kindleGetSavedNetworks()
+    local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
+    local lipc_handle
+    if haslipc then
+        lipc_handle = lipc.open_no_name()
+    end
+    if lipc_handle then
+        local ha_input = lipc_handle:new_hasharray() -- an empty hash array since we only want to read
+        local ha_result = lipc_handle:access_hash_property("com.lab126.wifid", "profileData", ha_input)
+        local profiles = ha_result:to_table()
+        ha_result:destroy()
+        ha_input:destroy()
+        lipc_handle:close()
+        return profiles
+    end
+end
+
+local function kindleGetCurrentProfile()
+    local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
+    local lipc_handle
+    if haslipc then
+        lipc_handle = lipc.open_no_name()
+    end
+    if lipc_handle then
+        local ha_input = lipc_handle:new_hasharray() -- an empty hash array since we only want to read
+        local ha_result = lipc_handle:access_hash_property("com.lab126.wifid", "currentEssid", ha_input)
+        local profile = ha_result:to_table()[1] -- theres only a single element
+        ha_input:destroy()
+        ha_result:destroy()
+        lipc_handle:close()
+        return profile
+    else
+        return nil
+    end
+end
+
+local function kindleAuthenticateNetwork(essid)
+    local haslipc, lipc = pcall(require, "liblipclua")
+    local lipc_handle
+    if haslipc then
+        lipc_handle = lipc.init("com.github.koreader.networkmgr")
+    end
+    if lipc_handle then
+        lipc_handle:set_string_property("com.lab126.cmd", "ensureConnection", "wifi:" .. essid)
+        lipc_handle:close()
+    end
+end
+
+local function kindleSaveNetwork(data)
+    local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
+    local lipc_handle
+    if haslipc then
+        lipc_handle = lipc.open_no_name()
+    end
+    if lipc_handle then
+        local profile = lipc_handle:new_hasharray()
+        profile:add_hash()
+        profile:put_string(0, "essid", data.ssid)
+        if string.find(data.flags, "WPA") then
+            profile:put_string(0, "secured", "yes")
+            profile:put_string(0, "psk", data.password)
+            profile:put_int(0, "store_nw_user_pref", 0) -- tells amazon we don't want them to have our password
+        else
+            profile:put_string(0, "secured", "no")
+        end
+        lipc_handle:access_hash_property("com.lab126.wifid", "createProfile", profile):destroy() -- destroy the returned empty ha
+        profile:destroy()
+        lipc_handle:close()
+    end
+end
+
+local function kindleGetScanList()
+    local _ = require("gettext")
+    local haslipc, lipc = pcall(require, "libopenlipclua") -- use our lua lipc library with access to hasharray properties
+    local lipc_handle
+    if haslipc then
+        lipc_handle = lipc.open_no_name()
+    end
+    if lipc_handle then
+        if lipc_handle:get_string_property("com.lab126.wifid", "cmState") ~= "CONNECTED" then
+            local ha_input = lipc_handle:new_hasharray()
+            local ha_results = lipc_handle:access_hash_property("com.lab126.wifid", "scanList", ha_input)
+            if ha_results == nil then
+                -- Shouldn't really happen, access_hash_property will throw if LipcAccessHasharrayProperty failed
+                ha_input:destroy()
+                lipc_handle:close()
+                -- NetworkMgr will ask for a re-scan on seeing an empty table, the second attempt *should* work ;).
+                return {}, nil
+            end
+            local scan_result = ha_results:to_table()
+            ha_results:destroy()
+            ha_input:destroy()
+            lipc_handle:close()
+            if not scan_result then
+                -- e.g., to_table hit lha->ha == NULL
+                return {}, nil
+            else
+                return scan_result, nil
+            end
+        end
+        lipc_handle:close()
+        -- return a fake scan list containing only the currently connected profile :)
+        local profile = kindleGetCurrentProfile()
+        return { profile }, nil
+    else
+        logger.dbg("kindleGetScanList: Failed to acquire an anonymous lipc handle")
+        return nil, _("Unable to communicate with the Wi-Fi backend")
+    end
+end
+
+local function kindleScanThenGetResults()
+    local _ = require("gettext")
+    local haslipc, lipc = pcall(require, "liblipclua")
+    local lipc_handle
+    if haslipc then
+        lipc_handle = lipc.init("com.github.koreader.networkmgr")
+    end
+    if not lipc_handle then
+        logger.dbg("kindleScanThenGetResults: Failed to acquire a lipc handle for NetworkMgr")
+        return nil, _("Unable to communicate with the Wi-Fi backend")
+    end
+
+    lipc_handle:set_string_property("com.lab126.wifid", "scan", "") -- trigger a scan
+
+    -- Mimic WpaClient:scanThenGetResults: block while waiting for the scan to finish.
+    -- Ideally, we'd do this via a poll/event workflow, but, eh', this is going to be good enough for now ;p.
+    -- For future reference, see `lipc-wait-event -m -s 0 -t com.lab126.wifid '*'`
+    --[[
+        -- For a connection:
+        [00:00:04.675699] cmStateChange "PENDING"
+        [00:00:04.677402] scanning
+        [00:00:05.488043] scanComplete
+        [00:00:05.973188] cmConnected
+        [00:00:05.977862] cmStateChange "CONNECTED"
+        [00:00:05.980698] signalStrength "1/5"
+        [00:00:06.417549] cmConnected
+
+        -- And a disconnection:
+        [00:01:34.094652] cmDisconnected
+        [00:01:34.096088] cmStateChange "NA"
+        [00:01:34.219802] signalStrength "0/5"
+        [00:01:34.221802] cmStateChange "READY"
+        [00:01:35.656375] cmIntfNotAvailable
+        [00:01:35.658710] cmStateChange "NA"
+    --]]
+    local done_scanning = false
+    local wait_cnt = 80 -- 20s in chunks on 250ms
+    while wait_cnt > 0 do
+        local scan_state = lipc_handle:get_string_property("com.lab126.wifid", "scanState")
+
+        if scan_state == "idle" then
+            done_scanning = true
+            logger.dbg("kindleScanThenGetResults: Wi-Fi scan took", (80 - wait_cnt) * 0.25, "seconds")
+            break
+        end
+
+        -- Whether it's still "scanning" or in whatever other state we don't know about,
+        -- try again until it says it's done.
+        wait_cnt = wait_cnt - 1
+        C.usleep(250 * 1000)
+    end
+    lipc_handle:close()
+
+    if done_scanning then
+        return kindleGetScanList()
+    else
+        logger.warn("kindleScanThenGetResults: Timed-out scanning for Wi-Fi networks")
+        return nil, _("Scanning for Wi-Fi networks timed out")
+    end
+end
+
 local function kindleEnableWifi(toggle)
     local haslipc, lipc = pcall(require, "liblipclua")
-    local lipc_handle = nil
-    if haslipc and lipc then
+    local lipc_handle
+    if haslipc then
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
     if lipc_handle then
@@ -44,8 +246,8 @@ end
 --[[
 local function isWifiUp()
     local haslipc, lipc = pcall(require, "liblipclua")
-    local lipc_handle = nil
-    if haslipc and lipc then
+    local lipc_handle
+    if haslipc then
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
     if lipc_handle then
@@ -77,7 +279,7 @@ Test if a kindle device is flagged as a Special Offers device (i.e., ad supporte
 local function isSpecialOffers()
     -- Look at the current blanket modules to see if the SO screensavers are enabled...
     local haslipc, lipc = pcall(require, "liblipclua")
-    if not (haslipc and lipc) then
+    if not haslipc then
         logger.warn("could not load liblipclua:", lipc)
         return true
     end
@@ -115,7 +317,7 @@ end
 local function frameworkStopped()
     if os.getenv("STOP_FRAMEWORK") == "yes" then
         local haslipc, lipc = pcall(require, "liblipclua")
-        if not (haslipc and lipc) then
+        if not haslipc then
             logger.warn("could not load liblibclua")
             return
         end
@@ -168,13 +370,19 @@ local Kindle = Generic:extend{
 }
 
 function Kindle:initNetworkManager(NetworkMgr)
-    function NetworkMgr:turnOnWifi(complete_callback)
-        kindleEnableWifi(1)
-        -- NOTE: As we defer the actual work to lipc,
-        --       we have no guarantee the Wi-Fi state will have changed by the time kindleEnableWifi returns,
-        --       so, delay the callback until we at least can ensure isConnect is true.
-        if complete_callback then
-            NetworkMgr:scheduleConnectivityCheck(complete_callback)
+    local haslipc, _ = pcall(require, "liblipclua")
+    if haslipc then
+        function NetworkMgr:turnOnWifi(complete_callback, interactive)
+            kindleEnableWifi(1)
+            return self:reconnectOrShowNetworkMenu(complete_callback, interactive)
+        end
+    else
+        -- If we can't use the lipc Lua bindings, we can't support any kind of interactive Wi-Fi UI...
+        function NetworkMgr:turnOnWifi(complete_callback, interactive)
+            kindleEnableWifi(1)
+            if complete_callback then
+                complete_callback()
+            end
         end
     end
 
@@ -192,6 +400,66 @@ function Kindle:initNetworkManager(NetworkMgr)
 
     function NetworkMgr:restoreWifiAsync()
         kindleEnableWifi(1)
+    end
+
+    function NetworkMgr:authenticateNetwork(network)
+        kindleAuthenticateNetwork(network.ssid)
+        return true, nil
+    end
+
+    -- NOTE: We don't have a disconnectNetwork & releaseIP implementation,
+    --       which means the "disconnect" button in NetworkSetting kind of does nothing ;p.
+
+    function NetworkMgr:saveNetwork(setting)
+        kindleSaveNetwork(setting)
+    end
+
+    function NetworkMgr:getNetworkList()
+        local scan_list, err = kindleScanThenGetResults()
+        if not scan_list then
+            return nil, err
+        end
+
+         -- trick ui/widget/networksetting into displaying the correct signal strength icon
+        local qualities = {
+            [1] = 0,
+            [2] = 6,
+            [3] = 31,
+            [4] = 56,
+            [5] = 81
+        }
+
+        local network_list = {}
+        local saved_profiles = kindleGetSavedNetworks()
+        local current_profile = kindleGetCurrentProfile()
+        for _, network in ipairs(scan_list) do
+            local password = nil
+            if network.known == "yes" then
+                for _, p in ipairs(saved_profiles) do
+                    -- Earlier FW do not have a netid field at all, fall back to essid as that's the best we'll get (we don't get bssid either)...
+                    if (p.netid and p.netid == network.netid) or (p.netid == nil and p.essid == network.essid) then
+                        password = p.psk
+                        break
+                    end
+                end
+            end
+            table.insert(network_list, {
+                -- signal_level is purely for fun, the widget doesn't do anything with it. The WpaClient backend stores the raw dBa attenuation in it.
+                signal_level = string.format("%d/%d", network.signal, network.signal_max),
+                signal_quality = qualities[network.signal],
+                -- See comment above about netid being unfortunately optional...
+                connected = (current_profile.netid and current_profile.netid ~= -1 and current_profile.netid == network.netid)
+                         or (current_profile.netid == nil and current_profile.essid ~= "" and current_profile.essid == network.essid),
+                flags = network.key_mgmt,
+                ssid = network.essid ~= "" and network.essid,
+                password = password,
+            })
+        end
+        return network_list, nil
+    end
+
+    function NetworkMgr:getCurrentNetwork()
+        return { ssid = kindleGetCurrentProfile().essid }
     end
 
     NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
@@ -256,6 +524,22 @@ function Kindle:openInputDevices()
     end
 
     self.input.open("fake_events")
+end
+
+function Kindle:otaModel()
+    local model
+    if self:isTouchDevice() or self.model == "Kindle4" then
+        if isHardFP() then
+            model = "kindlehf"
+        elseif isWarioOrMore() then
+            model = "kindlepw2"
+        else
+            model = "kindle"
+        end
+    else
+        model = "kindle-legacy"
+    end
+    return model, "ota"
 end
 
 function Kindle:init()
@@ -835,6 +1119,7 @@ function KindlePaperWhite2:init()
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+        batt_status_file = "/sys/class/power_supply/max77696-battery/status",
         hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 
@@ -991,7 +1276,7 @@ function KindleOasis:init()
 
     --- @note See comments in KindleOasis2:init() for details.
     local haslipc, lipc = pcall(require, "liblipclua")
-    if haslipc and lipc then
+    if haslipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
         if lipc_handle then
             local orientation_code = lipc_handle:get_string_property(
@@ -1102,7 +1387,7 @@ function KindleOasis2:init()
     -- NOTE: It'd take some effort to actually start KOReader while in a LANDSCAPE orientation,
     --       since they're only exposed inside the stock reader, and not the Home/KUAL Booklets.
     local haslipc, lipc = pcall(require, "liblipclua")
-    if haslipc and lipc then
+    if haslipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
         if lipc_handle then
             local orientation_code = lipc_handle:get_string_property(
@@ -1170,7 +1455,7 @@ function KindleOasis3:init()
 
     --- @note The same quirks as on the Oasis 2 apply ;).
     local haslipc, lipc = pcall(require, "liblipclua")
-    if haslipc and lipc then
+    if haslipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
         if lipc_handle then
             local orientation_code = lipc_handle:get_string_property(
@@ -1313,7 +1598,7 @@ function KindleScribe:init()
 
     --- @note The same quirks as on the Oasis 2 and 3 apply ;).
     local haslipc, lipc = pcall(require, "liblipclua")
-    if haslipc and lipc then
+    if haslipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
         if lipc_handle then
             local orientation_code = lipc_handle:get_string_property(

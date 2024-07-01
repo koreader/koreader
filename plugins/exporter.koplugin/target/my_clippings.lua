@@ -11,25 +11,37 @@ local ClippingsExporter = require("base"):new {
 }
 
 local function format(booknotes)
-    local content = ""
+    local tbl = {}
+
     for ___, entry in ipairs(booknotes) do
         for ____, clipping in ipairs(entry) do
             if booknotes.title and clipping.text then
-                content = content .. booknotes.title .. "\n"
-                local header = T(_("- Your highlight on page %1 | Added on %2"), clipping.page, os.date("%A, %B %d, %Y %I:%M:%S %p", clipping.time)) .. "\n\n"
-                content = content .. header
-                content = content .. clipping.text
-                content = content .. "\n==========\n"
+                local title_str = booknotes.title .. " (" .. (booknotes.author or "Unknown") .. ")"
+                table.insert(tbl, title_str)
+                local header = T(_("- Your highlight on page %1 | Added on %2"), clipping.page,
+                    os.date("%A, %B %d, %Y %I:%M:%S %p", clipping.time))
+                table.insert(tbl, header)
+                table.insert(tbl, "")
+                table.insert(tbl, clipping.text)
+                table.insert(tbl, "==========")
+
                 if clipping.note then
-                    content = content .. booknotes.title .. "\n"
-                    header = T(_("- Your note on page %1 | Added on %2"), clipping.page, os.date("%A, %B %d, %Y %I:%M:%S %p", clipping.time)) .. "\n\n"
-                    content = content .. header .. clipping.note
-                    content = content .. "\n==========\n"
+                    table.insert(tbl, title_str)
+                    header = T(_("- Your note on page %1 | Added on %2"), clipping.page,
+                        os.date("%A, %B %d, %Y %I:%M:%S %p", clipping.time))
+                    table.insert(tbl, header)
+
+                    table.insert(tbl, "")
+                    table.insert(tbl, clipping.note)
+                    table.insert(tbl, "==========")
                 end
             end
         end
     end
-    return content
+
+    -- Ensure a newline after the last "=========="
+    table.insert(tbl, "")
+    return table.concat(tbl, "\n")
 end
 
 function ClippingsExporter:export(t)

@@ -45,8 +45,9 @@ function ReaderMenu:init()
             remember = false,
             callback = function()
                 self:onTapCloseMenu()
+                local file = self.ui.document.file
                 self.ui:onClose()
-                self.ui:showFileManager()
+                self.ui:showFileManager(file)
             end,
         },
         main = {

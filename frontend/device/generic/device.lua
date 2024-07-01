@@ -516,6 +516,12 @@ function Device:simulateResume() end
 -- Put device into standby, input devices (buttons, touchscreen ...) stay enabled
 function Device:standby(max_duration) end
 
+
+-- Returns a string, used to determine the platform to fetch OTA updates
+function Device:otaModel()
+    return self.ota_model, "ota"
+end
+
 --[[--
 Device specific method for performing haptic feedback.
 
