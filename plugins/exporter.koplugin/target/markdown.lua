@@ -125,10 +125,8 @@ function MarkdownExporter:export(t)
     local file = io.open(path, "w")
     if not file then return false end
     for idx, book in ipairs(t) do
-        file:write(md.prepareBookContent(book, self.settings.formatting_options, self.settings.highlight_formatting))
-        if idx < #t then
-            file:write("\n")
-        end
+        local tbl = md.prepareBookContent(book, self.settings.formatting_options, self.settings.highlight_formatting)
+        file:write(table.concat(tbl, "\n"))
     end
     file:write("\n\n_Generated at: " .. self:getTimeStamp() .. "_")
     file:close()
@@ -136,8 +134,9 @@ function MarkdownExporter:export(t)
 end
 
 function MarkdownExporter:share(t)
-    local content = md.prepareBookContent(t, self.settings.formatting_options, self.settings.highlight_formatting) .. "\n\n_Generated at: " .. self:getTimeStamp() .. "_"
-    self:shareText(content)
+    local tbl = md.prepareBookContent(t, self.settings.formatting_options, self.settings.highlight_formatting)
+    table.insert(tbl, "\n_Generated at: " .. self:getTimeStamp() .. "_")
+    self:shareText(table.concat(tbl, "\n"))
 end
 
 return MarkdownExporter
