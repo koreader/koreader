@@ -572,19 +572,18 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
     -- than pages' xpointers pos, even if ui.dimen.h is a bit
     -- larger than pages' heights
     local cur_view_top = self.document:getCurrentPos()
-    local cur_view_bottom
+    local cur_view_bottom = cur_view_top + self.ui.dimen.h
     if self.view_mode == "page" and self.document:getVisiblePageCount() > 1 then
-        cur_view_bottom = cur_view_top + 2 * self.ui.dimen.h
-    else
-        cur_view_bottom = cur_view_top + self.ui.dimen.h
+        cur_view_bottom = cur_view_bottom + self.ui.dimen.h
     end
     for _, item in ipairs(self.ui.annotation.annotations) do
         if item.drawer then
             -- document:getScreenBoxesFromPositions() is expensive, so we
             -- first check if this item is on current page
             local start_pos = self.document:getPosFromXPointer(item.pos0)
+            if start_pos > cur_view_bottom then return end -- this and all next highlights are after the current page
             local end_pos = self.document:getPosFromXPointer(item.pos1)
-            if start_pos <= cur_view_bottom and end_pos >= cur_view_top then
+            if end_pos >= cur_view_top then
                 local boxes = self.document:getScreenBoxesFromPositions(item.pos0, item.pos1, true) -- get_segments=true
                 if boxes then
                     local draw_note_mark = item.note and self.highlight.note_mark
