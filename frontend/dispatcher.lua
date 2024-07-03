@@ -101,11 +101,11 @@ local settingsList = {
     show_frontlight_dialog = {category="none", event="ShowFlDialog", title=_("Show frontlight dialog"), screen=true, condition=Device:hasFrontlight()},
     toggle_frontlight = {category="none", event="ToggleFrontlight", title=_("Toggle frontlight"), screen=true, condition=Device:hasFrontlight()},
     set_frontlight = {category="absolutenumber", event="SetFlIntensity", min=0, max=Device:getPowerDevice().fl_max, title=_("Set frontlight brightness"), screen=true, condition=Device:hasFrontlight()},
-    increase_frontlight = {category="incrementalnumber", event="IncreaseFlIntensity", min=0, max=Device:getPowerDevice().fl_max, title=_("Increase frontlight brightness"), screen=true, condition=Device:hasFrontlight()},
-    decrease_frontlight = {category="incrementalnumber", event="DecreaseFlIntensity", min=0, max=Device:getPowerDevice().fl_max, title=_("Decrease frontlight brightness"), screen=true, condition=Device:hasFrontlight()},
+    increase_frontlight = {category="incrementalnumber", event="IncreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Increase frontlight brightness"), screen=true, condition=Device:hasFrontlight()},
+    decrease_frontlight = {category="incrementalnumber", event="DecreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Decrease frontlight brightness"), screen=true, condition=Device:hasFrontlight()},
     set_frontlight_warmth = {category="absolutenumber", event="SetFlWarmth", min=0, max=100, title=_("Set frontlight warmth"), screen=true, condition=Device:hasNaturalLight()},
-    increase_frontlight_warmth = {category="incrementalnumber", event="IncreaseFlWarmth", min=0, max=Device:getPowerDevice().fl_warmth_max, title=_("Increase frontlight warmth"), screen=true, condition=Device:hasNaturalLight()},
-    decrease_frontlight_warmth = {category="incrementalnumber", event="DecreaseFlWarmth", min=0, max=Device:getPowerDevice().fl_warmth_max, title=_("Decrease frontlight warmth"), screen=true, condition=Device:hasNaturalLight(), separator=true},
+    increase_frontlight_warmth = {category="incrementalnumber", event="IncreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Increase frontlight warmth"), screen=true, condition=Device:hasNaturalLight()},
+    decrease_frontlight_warmth = {category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Decrease frontlight warmth"), screen=true, condition=Device:hasNaturalLight(), separator=true},
     night_mode = {category="none", event="ToggleNightMode", title=_("Toggle night mode"), screen=true},
     set_night_mode = {category="string", event="SetNightMode", title=_("Set night mode"), screen=true, args={true, false}, toggle={_("on"), _("off")}, separator=true},
     ----
@@ -196,11 +196,11 @@ local settingsList = {
     ----
 
     -- Reflowable documents
-    set_font = {category="string", event="SetFont", title=_("Set font"), rolling=true, args_func=require("fontlist").getFontArgFunc,},
+    set_font = {category="string", event="SetFont", title=_("Font Face"), rolling=true, args_func=require("fontlist").getFontArgFunc,},
     increase_font = {category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size"), rolling=true},
     decrease_font = {category="incrementalnumber", event="DecreaseFontSize", min=0.5, max=255, step=0.5, title=_("Decrease font size"), rolling=true},
 
-    -- Page layout documents
+    -- Fixed layout documents
     toggle_page_flipping = {category="none", event="TogglePageFlipping", title=_("Toggle page flipping"), paging=true},
     toggle_bookmark_flipping = {category="none", event="ToggleBookmarkFlipping", title=_("Toggle bookmark flipping"), paging=true},
     toggle_reflow = {category="none", event="ToggleReflow", title=_("Toggle reflow"), paging=true},
@@ -212,7 +212,7 @@ local settingsList = {
 
     -- parsed from CreOptions
     rotation_mode = {category="string", device=true},
-    font_size = {category="absolutenumber", title=_("Set font size"), rolling=true, step=0.5},
+    font_size = {category="absolutenumber", rolling=true, title=_("Font Size"), step=0.5},
     word_spacing = {category="string", rolling=true},
     word_expansion = {category="string", rolling=true},
     font_gamma = {category="string", rolling=true},
@@ -254,21 +254,21 @@ local settingsList = {
     kopt_line_spacing = {category="configurable", paging=true},
     kopt_justification = {category="configurable", paging=true},
     kopt_font_size = {category="string", paging=true, title=_("Font Size")},
-    kopt_font_fine_tune = {category="string", paging=true},
+    kopt_font_fine_tune = {category="string", paging=true, title=_("Change font size")},
     kopt_word_spacing = {category="configurable", paging=true},
     kopt_text_wrap = {category="string", paging=true},
     kopt_contrast = {category="string", paging=true},
     kopt_page_opt = {category="configurable", paging=true},
-    kopt_hw_dithering = {category="configurable", paging=true, condition=Device:hasEinkScreen() and Device:canHWDither()},
-    kopt_sw_dithering = {category="configurable", paging=true, condition=Device:hasEinkScreen() and not Device:canHWDither() and Device.screen.fb_bpp == 8},
+    kopt_hw_dithering = {category="configurable", paging=true},
+    kopt_sw_dithering = {category="configurable", paging=true},
     kopt_quality = {category="configurable", paging=true},
     kopt_doc_language = {category="string", paging=true},
     kopt_forced_ocr = {category="configurable", paging=true},
     kopt_writing_direction = {category="configurable", paging=true},
-    kopt_defect_size = {category="string", paging=true, condition=false},
-    kopt_auto_straighten = {category="absolutenumber", paging=true},
-    kopt_detect_indent = {category="configurable", paging=true, condition=false},
+    kopt_defect_size = {category="string", paging=true},
+    kopt_detect_indent = {category="configurable", paging=true},
     kopt_max_columns = {category="configurable", paging=true},
+    kopt_auto_straighten = {category="absolutenumber", paging=true},
 
     settings = nil, -- reserved for per instance dispatcher settings
 }
@@ -466,7 +466,7 @@ local dispatcher_menu_order = {
     "kopt_zoom_overlap_h",
     "kopt_zoom_overlap_v",
     "kopt_zoom_mode_type",
-    --"kopt_zoom_range_number", -- can't figure out how this name text func works
+    -- "kopt_zoom_range_number", -- can't figure out how this name text func works
     "kopt_zoom_factor",
     "kopt_zoom_mode_genus",
     "kopt_zoom_direction",
@@ -488,9 +488,9 @@ local dispatcher_menu_order = {
     "kopt_forced_ocr",
     "kopt_writing_direction",
     "kopt_defect_size",
-    "kopt_auto_straighten",
     "kopt_detect_indent",
     "kopt_max_columns",
+    "kopt_auto_straighten",
 }
 
 --[[--
@@ -511,6 +511,9 @@ function Dispatcher:init()
                 end
                 if settingsList[name].title == nil then
                     settingsList[name].title = option.name_text
+                end
+                if settingsList[name].condition == nil then
+                    settingsList[name].condition = option.show
                 end
                 if settingsList[name].category == "string" or settingsList[name].category == "configurable" then
                     if settingsList[name].toggle == nil then
@@ -616,31 +619,34 @@ function Dispatcher:getNameFromItem(item, settings, dont_show_value)
     if settingsList[item] == nil then
         return _("Unknown item")
     end
-    local title, category = settingsList[item].title, settingsList[item].category
     local value = settings and settings[item]
-    if dont_show_value or value == nil or (value == 0 and category == "incrementalnumber") then
+    local title = settingsList[item].title
+    if dont_show_value or value == nil then
         return title
-    else
-        local display_value
-        if category == "string" or category == "configurable" then
-            if type(value) == "table" then
-                display_value = string.format("%d / %d", unpack(value))
-            else
-                if not settingsList[item].args and settingsList[item].args_func then
-                    settingsList[item].args, settingsList[item].toggle = settingsList[item].args_func()
-                end
-                local value_num = util.arrayContains(settingsList[item].args, value)
-                display_value = settingsList[item].toggle[value_num] or string.format("%.1f", value)
+    end
+    local display_value
+    local category = settingsList[item].category
+    if category == "string" or category == "configurable" then
+        if type(value) == "table" then
+            display_value = string.format("%d / %d", unpack(value))
+        else
+            if not settingsList[item].args and settingsList[item].args_func then
+                settingsList[item].args, settingsList[item].toggle = settingsList[item].args_func()
             end
-        elseif category == "absolutenumber" or category == "incrementalnumber" then
-            display_value = tostring(value)
+            local value_num = util.arrayContains(settingsList[item].args, value)
+            display_value = settingsList[item].toggle[value_num] or string.format("%.1f", value)
         end
-        if display_value then
-            if settingsList[item].unit and (type(value) == "table" or tonumber(display_value)) then
-                display_value = display_value .. " " .. settingsList[item].unit
-            end
-            title = title .. ": " .. display_value
+    elseif category == "absolutenumber" then
+        display_value = tostring(value)
+    elseif category == "incrementalnumber" then
+        display_value = value == 0 and _("gesture distance") or tostring(value)
+    end
+    if display_value then
+        if settingsList[item].unit and (type(value) == "table" or tonumber(display_value)) then
+                -- do not show unit when the setting is "none" ^^
+            display_value = display_value .. "\u{202F}" .. settingsList[item].unit
         end
+        title = title .. ": " .. display_value
     end
     return title
 end
@@ -695,19 +701,18 @@ end
 
 -- Get a textual representation of the enabled actions to display in a menu item.
 function Dispatcher:menuTextFunc(settings)
-    local action_name = _("Pass through")
     if settings then
         local count = Dispatcher:_itemsCount(settings)
-        if count == 0 then return _("Nothing") end
-        if count == 1 then
+        if count == 0 then
+            return _("Nothing")
+        elseif count == 1 then
             local item = next(settings)
             if item == "settings" then item = next(settings, item) end
-            action_name = Dispatcher:getNameFromItem(item, settings)
-        else
-            action_name = T(NC_("Dispatcher", "1 action", "%1 actions", count), count)
+            return Dispatcher:getNameFromItem(item, settings)
         end
+        return T(NC_("Dispatcher", "1 action", "%1 actions", count), count)
     end
-    return action_name
+    return _("Pass through")
 end
 
 -- Get a list of all enabled actions to display in a menu.
@@ -749,10 +754,24 @@ function Dispatcher:_sortActions(caller, location, settings, touchmenu_instance)
 end
 
 function Dispatcher:_addItem(caller, menu, location, settings, section)
-    for _, k in ipairs(dispatcher_menu_order) do
-        if settingsList[k][section] == true and
-            (settingsList[k].condition == nil or settingsList[k].condition)
-        then
+    local function setValue(k, value, touchmenu_instance)
+        if value ~= nil then
+            if location[settings] == nil then
+                location[settings] = {}
+            end
+            location[settings][k] = value
+            Dispatcher:_addToOrder(location, settings, k)
+        else
+            location[settings][k] = nil
+            Dispatcher:_removeFromOrder(location, settings, k)
+        end
+        caller.updated = true
+        if touchmenu_instance then
+            touchmenu_instance:updateItems()
+        end
+    end
+    for __, k in ipairs(dispatcher_menu_order) do
+        if settingsList[k][section] == true and settingsList[k].condition ~= false then
             if settingsList[k].category == "none" or settingsList[k].category == "arg" then
                 table.insert(menu, {
                     text = settingsList[k].title,
@@ -760,18 +779,8 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                         return location[settings] ~= nil and location[settings][k] ~= nil
                     end,
                     callback = function(touchmenu_instance)
-                        if location[settings] == nil then
-                            location[settings] = {}
-                        end
-                        if location[settings][k] then
-                            location[settings][k] = nil
-                            Dispatcher:_removeFromOrder(location, settings, k)
-                        else
-                            location[settings][k] = true
-                            Dispatcher:_addToOrder(location, settings, k)
-                        end
-                        caller.updated = true
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                        local value = (location[settings] == nil or location[settings][k] == nil) and true or nil
+                        setValue(k, value, touchmenu_instance)
                     end,
                     separator = settingsList[k].separator,
                 })
@@ -792,34 +801,23 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                         local items = SpinWidget:new{
                             value = location[settings] ~= nil and location[settings][k] or settingsList[k].default or settingsList[k].min,
                             value_min = settingsList[k].min,
-                            value_step = settingsList[k].step or 1,
+                            value_step = settingsList[k].step,
                             precision = precision,
                             value_hold_step = 5,
                             value_max = settingsList[k].max,
-                            default_value = settingsList[k].default,
                             title_text = Dispatcher:getNameFromItem(k, location[settings], true),
+                            unit = settingsList[k].unit,
                             ok_always_enabled = true,
                             callback = function(spin)
-                                if location[settings] == nil then
-                                    location[settings] = {}
-                                end
-                                location[settings][k] = spin.value
-                                Dispatcher:_addToOrder(location, settings, k)
-                                caller.updated = true
-                                if touchmenu_instance then
-                                    touchmenu_instance:updateItems()
-                                end
-                            end
+                                setValue(k, spin.value, touchmenu_instance)
+                            end,
                         }
                         UIManager:show(items)
                     end,
                     hold_callback = function(touchmenu_instance)
                         if location[settings] ~= nil and location[settings][k] ~= nil then
-                            location[settings][k] = nil
-                            Dispatcher:_removeFromOrder(location, settings, k)
-                            caller.updated = true
+                            setValue(k, nil, touchmenu_instance)
                         end
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
                     separator = settingsList[k].separator,
                 })
@@ -832,44 +830,37 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                         return location[settings] ~= nil and location[settings][k] ~= nil
                     end,
                     callback = function(touchmenu_instance)
-                        local _ = require("gettext")
+                        local value = location[settings] and location[settings][k]
+                        if value == nil or value < settingsList[k].min then
+                            value = settingsList[k].min
+                        end
                         local precision
                         if settingsList[k].step and math.floor(settingsList[k].step) ~= settingsList[k].step then
                             precision = "%0.1f"
                         end
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
-                            value = location[settings] ~= nil and location[settings][k] or settingsList[k].min,
+                            value = value,
                             value_min = settingsList[k].min,
-                            value_step = settingsList[k].step or 1,
+                            value_step = settingsList[k].step,
                             precision = precision,
                             value_hold_step = 5,
                             value_max = settingsList[k].max,
                             title_text = Dispatcher:getNameFromItem(k, location[settings], true),
-                            info_text = _([[When set to 0, the gesture's distance (if any) is used]]),
                             ok_always_enabled = true,
                             callback = function(spin)
-                                if location[settings] == nil then
-                                    location[settings] = {}
-                                end
-                                location[settings][k] = spin.value
-                                Dispatcher:_addToOrder(location, settings, k)
-                                caller.updated = true
-                                if touchmenu_instance then
-                                    touchmenu_instance:updateItems()
-                                end
-                            end
+                                setValue(k, spin.value, touchmenu_instance)
+                            end,
+                            option_text = caller.profiles == nil and _("Use gesture distance"), -- Gesture manager only
+                            option_callback = function()
+                                setValue(k, 0, touchmenu_instance)
+                            end,
                         }
                         UIManager:show(items)
                     end,
                     hold_callback = function(touchmenu_instance)
                         if location[settings] ~= nil and location[settings][k] ~= nil then
-                            location[settings][k] = nil
-                            Dispatcher:_removeFromOrder(location, settings, k)
-                            caller.updated = true
-                        end
-                        if touchmenu_instance then
-                            touchmenu_instance:updateItems()
+                            setValue(k, nil, touchmenu_instance)
                         end
                     end,
                     separator = settingsList[k].separator,
@@ -892,12 +883,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                             end
                         end,
                         callback = function()
-                            if location[settings] == nil then
-                                location[settings] = {}
-                            end
-                            location[settings][k] = settingsList[k].args[i]
-                            Dispatcher:_addToOrder(location, settings, k)
-                            caller.updated = true
+                            setValue(k, settingsList[k].args[i])
                         end,
                     })
                 end
@@ -912,12 +898,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                     keep_menu_open = true,
                     hold_callback = function(touchmenu_instance)
                         if location[settings] ~= nil and location[settings][k] ~= nil then
-                            location[settings][k] = nil
-                            Dispatcher:_removeFromOrder(location, settings, k)
-                            caller.updated = true
-                        end
-                        if touchmenu_instance then
-                            touchmenu_instance:updateItems()
+                            setValue(k, nil, touchmenu_instance)
                         end
                     end,
                     separator = settingsList[k].separator,
@@ -966,7 +947,6 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
         {"rolling", _("Reflowable documents (epub, fb2, txt…)")},
         {"paging", _("Fixed layout documents (pdf, djvu, pics…)")},
     }
-    menu.max_per_page = 1 + #section_list -- settings in page 2
     for _, section in ipairs(section_list) do
         local submenu = {}
         Dispatcher:_addItem(caller, submenu, location, settings, section[1])
@@ -996,7 +976,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             sub_item_table = submenu,
         })
     end
-    menu[#menu].separator = true
+    menu.max_per_page = #menu -- next items in page 2
     table.insert(menu, {
         text = _("Arrange actions"),
         checked_func = function()
