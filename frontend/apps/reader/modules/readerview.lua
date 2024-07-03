@@ -572,9 +572,11 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
     -- than pages' xpointers pos, even if ui.dimen.h is a bit
     -- larger than pages' heights
     local cur_view_top = self.document:getCurrentPos()
-    local cur_view_bottom = cur_view_top + self.ui.dimen.h
+    local cur_view_bottom
     if self.view_mode == "page" and self.document:getVisiblePageCount() > 1 then
-        cur_view_bottom = cur_view_bottom + self.ui.dimen.h
+        cur_view_bottom = cur_view_top + 2 * self.ui.dimen.h
+    else
+        cur_view_bottom = cur_view_top + self.ui.dimen.h
     end
     for _, item in ipairs(self.ui.annotation.annotations) do
         if item.drawer then
