@@ -196,7 +196,7 @@ local settingsList = {
     ----
 
     -- Reflowable documents
-    set_font = {category="string", event="SetFont", title=_("Font Face"), rolling=true, args_func=require("fontlist").getFontArgFunc,},
+    set_font = {category="string", event="SetFont", title=_("Font face"), rolling=true, args_func=require("fontlist").getFontArgFunc,},
     increase_font = {category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size"), rolling=true},
     decrease_font = {category="incrementalnumber", event="DecreaseFontSize", min=0.5, max=255, step=0.5, title=_("Decrease font size"), rolling=true},
 
