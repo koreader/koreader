@@ -212,7 +212,7 @@ local settingsList = {
 
     -- parsed from CreOptions
     rotation_mode = {category="string", device=true},
-    font_size = {category="absolutenumber", rolling=true, title=_("Font Size"), step=0.5},
+    font_size = {category="absolutenumber", rolling=true, title=_("Font size"), step=0.5},
     word_spacing = {category="string", rolling=true},
     word_expansion = {category="string", rolling=true},
     font_gamma = {category="string", rolling=true},
