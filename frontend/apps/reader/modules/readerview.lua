@@ -583,8 +583,9 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
             -- document:getScreenBoxesFromPositions() is expensive, so we
             -- first check if this item is on current page
             local start_pos = self.document:getPosFromXPointer(item.pos0)
+            if start_pos > cur_view_bottom then return end -- this and all next highlights are after the current page
             local end_pos = self.document:getPosFromXPointer(item.pos1)
-            if start_pos <= cur_view_bottom and end_pos >= cur_view_top then
+            if end_pos >= cur_view_top then
                 local boxes = self.document:getScreenBoxesFromPositions(item.pos0, item.pos1, true) -- get_segments=true
                 if boxes then
                     local draw_note_mark = item.note and self.highlight.note_mark
