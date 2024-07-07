@@ -770,21 +770,9 @@ This setting allows scaling all monospace fonts by this percentage so they can f
         text = _("Generate font test document"),
         callback = function()
             UIManager:show(ConfirmBox:new{
-                text = _("Generate an HTML document showing a text sample rendered with each available font?"),
+                text = _("Would you like to generate an HTML document showing some sample text rendered with each available font?"),
                 ok_callback = function()
                     self:buildFontsTestDocument()
-                end,
-            })
-        end,
-    })
-    
-    table.insert(settings_table, {
-        text = _("Generate font test document for new fonts"),
-        callback = function()
-            UIManager:show(ConfirmBox:new{
-                text = _("Generate an HTML document showing a text sample rendered with each new font added this session?"),
-                ok_callback = function()
-                    self:buildNewFontsTestDocument()
                 end,
             })
         end,
