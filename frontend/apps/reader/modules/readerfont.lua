@@ -770,7 +770,7 @@ This setting allows scaling all monospace fonts by this percentage so they can f
         text = _("Generate font test document"),
         callback = function()
             UIManager:show(ConfirmBox:new{
-                text = _("Would you like to generate an HTML document showing some sample text rendered with each available font?"),
+                text = _("Generate an HTML document showing a text sample rendered with each available font?"),
                 ok_callback = function()
                     self:buildFontsTestDocument()
                 end,
@@ -914,7 +914,7 @@ a { color: black; }
     f:write("</body></html>\n")
     f:close()
     UIManager:show(ConfirmBox:new{
-        text = T(_("Document created as:\n%1\n\nWould you like to read it now?"), BD.filepath(font_test_final_path)),
+        text = T(_("Document created as:\n%1\n\nWould you like to view it now?"), BD.filepath(font_test_final_path)),
         ok_callback = function()
             UIManager:scheduleIn(1.0, function()
                 self.ui:switchDocument(font_test_final_path)
