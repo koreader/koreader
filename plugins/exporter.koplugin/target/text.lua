@@ -10,43 +10,45 @@ local TextExporter = require("base"):new {
 }
 
 local function format(booknotes)
+    local tbl = {}
+
+    -- Use wide_space to avoid crengine to treat it specially.
     local wide_space = "\227\128\128"
-    local content = ""
+
     if booknotes.title then
-        content = content .. wide_space .. booknotes.title .. "\n" .. wide_space .. "\n"
+        table.insert(tbl, wide_space .. booknotes.title)
+        table.insert(tbl, wide_space)
     end
     for ___, entry in ipairs(booknotes) do
         for ____, clipping in ipairs(entry) do
             if clipping.chapter then
-                content = content .. wide_space .. clipping.chapter .. "\n" .. wide_space .. "\n"
+                table.insert(tbl, wide_space .. clipping.chapter)
+                table.insert(tbl, wide_space)
             end
             local text = T(_("-- Page: %1, added on %2\n"), clipping.page, os.date("%c", clipping.time))
-            content = content .. wide_space .. wide_space .. text
+            table.insert(tbl, wide_space .. wide_space .. text)
             if clipping.text then
-                content = content .. clipping.text
+                table.insert(tbl, clipping.text)
             end
             if clipping.note then
-                content = content .. "\n---\n" .. clipping.note
+                table.insert(tbl, "\n---\n" .. clipping.note)
             end
             if clipping.image then
-                content = content .. _("<An image>")
+                table.insert(tbl, _("<An image>"))
             end
-            content = content .. "\n-=-=-=-=-=-\n"
+            table.insert(tbl, "-=-=-=-=-=-")
         end
     end
-    content = content .. "\n"
-    return content
+    return tbl
 end
 
 function TextExporter:export(t)
-    -- Use wide_space to avoid crengine to treat it specially.
-
     local path = self:getFilePath(t)
     local file = io.open(path, "a")
     if not file then return false end
     for __, booknotes in ipairs(t) do
-        local content = format(booknotes)
-        file:write(content)
+        local tbl = format(booknotes)
+        file:write(table.concat(tbl, "\n"))
     end
     file:close()
     return true

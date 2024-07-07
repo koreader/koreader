@@ -36,29 +36,28 @@ local formatters = {
 }
 
 local function prepareBookContent(book, formatting_options, highlight_formatting)
-    local content = ""
+    local tbl = {}
     local current_chapter = nil
-    content = content .. "# " .. book.title .. "\n"
+    table.insert(tbl, "# " .. book.title)
     local author = book.author or _("N/A")
-    content = content .. "##### " .. author:gsub("\n", ", ") .. "\n\n"
+    table.insert(tbl, "##### " .. author:gsub("\n", ", ") .. "\n")
     for _, note in ipairs(book) do
         local entry = note[1]
         if entry.chapter ~= current_chapter then
             current_chapter = entry.chapter
-            content = content .. "## " .. current_chapter .. "\n"
+            table.insert(tbl, "## " .. current_chapter)
         end
-        content = content .. "### Page " .. entry.page .. " @ " .. os.date("%d %B %Y %I:%M:%S %p", entry.time) .. "\n"
+        table.insert(tbl, "### Page " .. entry.page .. " @ " .. os.date("%d %B %Y %I:%M:%S %p", entry.time))
         if highlight_formatting then
-            content = content .. string.format(formatters[formatting_options[entry.drawer]].formatter, entry.text) .."\n"
+            table.insert(tbl, string.format(formatters[formatting_options[entry.drawer]].formatter, entry.text))
         else
-            content = content .. entry.text .. "\n"
+            table.insert(tbl, entry.text)
         end
         if entry.note then
-            content = content .. "\n---\n" .. entry.note .. "\n"
+            table.insert(tbl, "\n---\n" .. entry.note)
         end
-        content = content .. "\n"
     end
-    return content
+    return tbl
 end
 
 return {
