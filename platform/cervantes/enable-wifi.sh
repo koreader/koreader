@@ -9,7 +9,7 @@
 
 # select wifi driver based on pcb.
 PCB_ID=$(/usr/bin/ntxinfo /dev/mmcblk0 | grep pcb | cut -d ":" -f2)
-if [ "${PCB_ID}" -eq 23 ]; then
+if [ "${PCB_ID}" -eq 22 ] || [ "${PCB_ID}" -eq 23 ]; then
     MODULE="dhd"
     WPA_DRIVER="nl80211"
 else
@@ -28,3 +28,4 @@ ifconfig eth0 up
 sleep 1
 
 wpa_supplicant -i eth0 -C /var/run/wpa_supplicant -B -D ${WPA_DRIVER} 2>/dev/null
+sleep 1
