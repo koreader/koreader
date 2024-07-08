@@ -887,12 +887,12 @@ a { color: black; }
 <h1>%s</h1>
 ]], _("Available fonts test document"), _("AVAILABLE FONTS")))
     local face_list = cre.getFontFaces()
-    if next(newly_added_fonts) then  
+    if next(newly_added_fonts) then
     -- Sort alphabetically, with new fonts first (as done in sortFaceList())
         local move_idx = 1
-        for i=1, #face_list do 
+        for i=1, #face_list do
             if newly_added_fonts[face_list[i]] then
-                face_list[i] = face_list[i] .. " [NEW]" 
+                face_list[i] = face_list[i] .. " [NEW]"
                 table.insert(face_list, move_idx, table.remove(face_list, i))
                 move_idx = move_idx + 1
             end
