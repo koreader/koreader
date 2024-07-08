@@ -7,5 +7,5 @@ killall udhcpc wpa_supplicant 2>/dev/null
 ifconfig eth0 down 2>/dev/null
 if [ "${PCB_ID}" -ne 23 ]; then #For pcb_id==23 we avoid removing the module as it's known to freeze the wifi subsystem
     MODULE="8189fs"
-    modprobe -r $MODULE 2>/dev/null
+    modprobe -r ${MODULE} 2>/dev/null
 fi

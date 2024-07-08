@@ -19,12 +19,12 @@ fi
 
 ./disable-wifi.sh
 
-if ! lsmod | grep -q $MODULE; then
-    modprobe $MODULE
+if ! lsmod | grep -q ${MODULE}; then
+    modprobe ${MODULE}
     sleep 1
 fi
 
 ifconfig eth0 up
 sleep 1
 
-wpa_supplicant -i eth0 -C /var/run/wpa_supplicant -B -D $WPA_DRIVER 2>/dev/null
+wpa_supplicant -i eth0 -C /var/run/wpa_supplicant -B -D ${WPA_DRIVER} 2>/dev/null
