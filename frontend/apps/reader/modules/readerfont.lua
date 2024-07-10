@@ -69,7 +69,7 @@ function ReaderFont:setupFaceMenuTable()
     -- Font list
     cre = require("document/credocument"):engineInit()
     local face_list = cre.getFontFaces()
-    face_list = self:sortFaceList(face_list)
+    face_list = self:setupFaceList(face_list)
     for k, v in ipairs(face_list) do
         local font_filename, font_faceindex, is_monospace = cre.getFontFaceFilenameAndFaceIndex(v)
         table.insert(self.face_table, {
@@ -791,7 +791,8 @@ function ReaderFont:addToRecentlySelectedList(face)
     end
 end
 
-function ReaderFont:sortFaceList(face_list)
+function ReaderFont:setupFaceList(face_list)
+    self.face_table.needs_refresh = true
     self.fonts_recently_selected = G_reader_settings:readSetting("cre_fonts_recently_selected")
     if not self.fonts_recently_selected then
         -- Init this list with the alphabetical list we got
@@ -822,8 +823,12 @@ function ReaderFont:sortFaceList(face_list)
             return seen_fonts[t[i]]
         end)
     end
+    return face_list
+end
+
+function ReaderFont:sortFaceList(face_list)
     if G_reader_settings:isTrue("font_menu_sort_by_recently_selected") then
-        return self.fonts_recently_selected
+        face_list = self.fonts_recently_selected
     end
     -- Otherwise, return face_list as we got it, alphabetically (as sorted by crengine),
     -- but still with newly added fonts first
