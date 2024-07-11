@@ -36,7 +36,7 @@ local metadata = {
             _("Unique Book Map and Page Browser features to navigate your book."),
             _("Special multi-page highlight mode with many local and online export options."),
             _("Can synchronize your reading progress across all your KOReader running devices."),
-            _("Integrated with Calibre, Wallabag, Wikipedia, Google translate and other content providers."),
+            _("Integrated with Calibre, Wallabag, Wikipedia, Google Translate and other content providers."),
         },
     },
     notes = {
