@@ -340,6 +340,10 @@ function ReaderFont:addToMainMenu(menu_items)
             return T(_("Font: %1"), BD.wrap(self.font_face))
         end,
         sub_item_table_func = function()
+			-- move currently set font to the top of the list if sorted by recently selected
+			if G_reader_settings:isTrue("font_menu_sort_by_recently_selected") then
+				self:addToRecentlySelectedList(self.font_face)
+			end
             if self.face_table.needs_refresh and self.face_table.refresh_func then
                 self.face_table.refresh_func()
             end
