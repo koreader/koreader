@@ -31,7 +31,6 @@ local newly_added_fonts = nil -- not yet filled
 
 function ReaderFont:init()
     self:registerKeyEvents()
-    self:setupFaceMenuTable()
     self.ui.menu:registerToMainMenu(self)
     -- NOP our own gesture handling
     self.ges_events = nil
@@ -183,6 +182,8 @@ function ReaderFont:onReadSettings(config)
 
     self.font_family_fonts = config:readSetting("font_family_fonts") or {}
     self:updateFontFamilyFonts()
+    
+    self:setupFaceMenuTable()
 
     -- Dirty hack: we have to add following call in order to set
     -- m_is_rendered(member of LVDocView) to true. Otherwise position inside
