@@ -17,6 +17,7 @@ local Screen = Device.screen
 
 local ScrollHtmlWidget = InputContainer:extend{
     html_body = nil,
+    is_xhtml = false,
     css = nil,
     default_font_size = Screen:scaleBySize(24), -- same as infofont
     htmlbox_widget = nil,
@@ -39,7 +40,7 @@ function ScrollHtmlWidget:init()
         html_link_tapped_callback = self.html_link_tapped_callback,
     }
 
-    self.htmlbox_widget:setContent(self.html_body, self.css, self.default_font_size)
+    self.htmlbox_widget:setContent(self.html_body, self.css, self.default_font_size, self.is_xhtml)
 
     self.v_scroll_bar = VerticalScrollBar:new{
         enable = self.htmlbox_widget.page_count > 1,
