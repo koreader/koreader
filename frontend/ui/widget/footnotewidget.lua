@@ -293,8 +293,11 @@ function FootnoteWidget:init()
     local padding_bottom = Size.padding.large
     local htmlwidget_height = self.height - padding_top - padding_bottom
 
+    -- We always get balanced XHTML from crengine for HTML snippets, so we
+    -- pass is_xhtml=true to avoid side effects from MuPDF's HTML5 parser.
     self.htmlwidget = ScrollHtmlWidget:new{
         html_body = self.html,
+        is_xhtml = true,
         css = css,
         default_font_size = font_size,
         width = htmlwidget_width,

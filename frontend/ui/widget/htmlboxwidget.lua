@@ -36,7 +36,7 @@ function HtmlBoxWidget:init()
     end
 end
 
-function HtmlBoxWidget:setContent(body, css, default_font_size)
+function HtmlBoxWidget:setContent(body, css, default_font_size, is_xhtml)
     -- fz_set_user_css is tied to the context instead of the document so to easily support multiple
     -- HTML dictionaries with different CSS, we embed the stylesheet into the HTML instead of using
     -- that function.
@@ -51,8 +51,14 @@ function HtmlBoxWidget:setContent(body, css, default_font_size)
     -- https://bugs.ghostscript.com/show_bug.cgi?id=698351
     html = html:gsub("%<br ?/?%>", "&nbsp;<div></div>")
 
+    -- We can provide some "magic"/"mimetype" to Mupdf.openDocumentFromText():
+    -- - "html" will get MuPDF to use its bundled gumbo-parser to parse HTML5 according to the specs.
+    -- - "xhtml" will get MuPDF to use its own XML parser, and if it fails, to switch to gumbo-parser.
+    -- When we know the body is balanced XHTML, it's safer to use "xhtml" to avoid the HTML5
+    -- rules to trigger (ie. <title><p>123</p></title>, which is valid in FB2 snippets, parsed
+    -- as title>p, while gumbo-parse would consider "<p>123</p>" as being plain text).
     local ok
-    ok, self.document = pcall(Mupdf.openDocumentFromText, html, "html")
+    ok, self.document = pcall(Mupdf.openDocumentFromText, html, is_xhtml and "xhtml" or "html")
     if not ok then
         -- self.document contains the error
         logger.warn("HTML loading error:", self.document)
