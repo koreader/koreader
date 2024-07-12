@@ -897,7 +897,7 @@ a { color: black; }
 ]], _("Available fonts test document"), _("AVAILABLE FONTS")))
     local face_list = cre.getFontFaces()
     if next(newly_added_fonts) then
-    -- Sort alphabetically, with new fonts first (as done in sortFaceList())
+        -- Sort alphabetically, with new fonts first (as done in sortFaceList())
         local move_idx = 1
         for i=1, #face_list do
             if newly_added_fonts[face_list[i]] then
