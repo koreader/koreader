@@ -643,6 +643,8 @@ function InputText:onKeyPress(key)
         handled = true
         if key["Back"] then
             self:delChar()
+        elseif key["Del"] then
+            self:delWord()
         elseif key["Left"] then
             self:leftChar()
         elseif key["Right"] then
