@@ -379,6 +379,8 @@ function FileManager:registerKeyEvents()
             self.key_events.ToggleWifi = { { "ScreenKB", "Home" } }
         elseif Device:hasKeyboard() then
             self.key_events.ShowFileSearch = { { "Shift", "S" }, event = "ShowFileSearch" }
+            self.key_events.ShowWikipediaLookup = { { "Shift", "W" }, event = "ShowWikipediaLookup" }
+            self.key_events.ShowDictionaryLookup = { { "Shift", "D" }, event = "ShowDictionaryLookup" }
         end
         if not Device:hasFewKeys() then
             -- Also remove the handler assigned to the "Back" key by menu.lua
