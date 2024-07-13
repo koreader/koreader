@@ -235,5 +235,16 @@ if Device:isTouchDevice() then
         end,
     })
 end
+if Device:hasKeyboard() then
+    table.insert(sub_item_table, {
+        text = _("Show Virtual Keyboard"),
+        checked_func = function()
+            return G_reader_settings:nilOrTrue("virtual_keyboard_enabled")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrTrue("virtual_keyboard_enabled")
+        end,
+    })
+end
 
 return sub_item_table
