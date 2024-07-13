@@ -222,6 +222,10 @@ function InputDialog:init()
     if self.fullscreen or self.add_nav_bar then
         self.deny_keyboard_hiding = true
     end
+    if (Device:hasKeyboard() or Device:hasScreenKB())  and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+        self.keyboard_visible = false
+        self.skip_first_show_keyboard = true
+    end
 
     -- Title & description
     self.title_bar = TitleBar:new{
@@ -450,7 +454,7 @@ function InputDialog:init()
         end
     end
 
-    -- If we're fullscreen without a keyboard, make sure only the toggle button can show the keyboard...
+    -- If we're fullscreen without the virtual keyboard, make sure only the toggle button can bring back the keyboard...
     if self.fullscreen and not self.keyboard_visible then
         self:lockKeyboard(true)
     end
@@ -561,6 +565,11 @@ function InputDialog:onCloseWidget()
 end
 
 function InputDialog:onShowKeyboard(ignore_first_hold_release)
+    -- Don't initiate virtual keyboard when user has a physical keyboard and G_setting(vk_enabled) unchecked.
+    if self.skip_first_show_keyboard then
+        self.skip_first_show_keyboard = nil
+        return
+    end
     -- NOTE: There's no VirtualKeyboard widget instantiated at all when readonly,
     --       and our input widget handles that itself, so we don't need any guards here.
     --       (In which case, isKeyboardVisible will return `nil`, same as if we had a VK instantiated but *never* shown).
@@ -580,6 +589,10 @@ function InputDialog:isKeyboardVisible()
 end
 
 function InputDialog:lockKeyboard(toggle)
+    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+        -- do not lock the virtual keyboard when user is hiding it, we still *might* want to activate it via shortcuts ("Shift" + "Home") when in need of special characters or symbols
+        return
+    end
     return self._input_widget:lockKeyboard(toggle)
 end
 

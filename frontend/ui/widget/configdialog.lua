@@ -29,6 +29,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local logger = require("logger")
 local serpent = require("ffi/serpent")
+local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
@@ -894,8 +895,15 @@ function ConfigDialog:init()
     }
     if Device:hasKeys() then
         -- set up keyboard events
-        local close_keys = Device:hasFewKeys() and { "Back", "Left" } or Device.input.group.Back
-        self.key_events.Close = { { close_keys } }
+        local back_group = util.tableDeepCopy(Device.input.group.Back)
+        if Device:hasFewKeys() then
+            table.insert(back_group, "Left")
+            self.key_events.Close = { { back_group } }
+        else
+            table.insert(back_group, "Menu")
+            table.insert(back_group, "AA")
+            self.key_events.Close = { { back_group } }
+        end
     end
 end
 

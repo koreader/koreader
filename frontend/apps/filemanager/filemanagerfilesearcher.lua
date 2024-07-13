@@ -1,14 +1,15 @@
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
+local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local FileChooser = require("ui/widget/filechooser")
 local InfoMessage = require("ui/widget/infomessage")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Utf8Proc = require("ffi/utf8proc")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
@@ -17,11 +18,22 @@ local _ = require("gettext")
 local N_ = _.ngettext
 local T = require("ffi/util").template
 
-local FileSearcher = WidgetContainer:extend{
+local FileSearcher = InputContainer:extend{
     case_sensitive = false,
     include_subfolders = true,
     include_metadata = false,
 }
+
+function FileSearcher:init()
+    self:registerKeyEvents()
+end
+
+function FileSearcher:registerKeyEvents()
+    if Device:hasKeyboard() then
+        self.key_events.ShowFileSearch = { { "Alt", "F" } }
+        self.key_events.ShowFileSearchBlank = { { "Alt", "Shift", "F" }, event = "ShowFileSearch", args = "" }
+    end
+end
 
 function FileSearcher:onShowFileSearch(search_string)
     local search_dialog
@@ -94,6 +106,7 @@ function FileSearcher:onShowFileSearch(search_string)
     end
     UIManager:show(search_dialog)
     search_dialog:onShowKeyboard()
+    return true
 end
 
 function FileSearcher:doSearch()
