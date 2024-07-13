@@ -456,6 +456,10 @@ function InputDialog:init()
     if self.fullscreen and not self.keyboard_visible then
         self:lockKeyboard(true)
     end
+
+    if Device:hasKeyboard() and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+        self.keyboard_visible = false
+    end
 end
 
 function InputDialog:addWidget(widget, re_init)
@@ -561,14 +565,10 @@ function InputDialog:onShowKeyboard(ignore_first_hold_release)
     -- NOTE: There's no VirtualKeyboard widget instantiated at all when readonly,
     --       and our input widget handles that itself, so we don't need any guards here.
     --       (In which case, isKeyboardVisible will return `nil`, same as if we had a VK instantiated but *never* shown).
-    if Device:hasKeyboard() then
-        if G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
-            self._input_widget:onShowKeyboard(ignore_first_hold_release)
-        end
+    if Device:hasKeyboard() and G_reader_settings:isFalse("virtual_keyboard_enabled") then
         return
-    else
-        self._input_widget:onShowKeyboard(ignore_first_hold_release)
     end
+    self._input_widget:onShowKeyboard(ignore_first_hold_release)
     -- There's a bit of a chicken or egg issue in init where we would like to check the actual keyboard's visibility state,
     -- but the widget might not exist or be shown yet, so we'll just have to keep this in sync...
     self.keyboard_visible = self._input_widget:isKeyboardVisible()
