@@ -20,12 +20,12 @@ function ReaderRotation:registerKeyEvents()
         self.key_events = {
             -- these will all generate the same event, just with different arguments
             RotateLeft = {
-                { "J" },
+                { "Shift", "J" },
                 event = "Rotate",
                 args = -90
             },
             RotateRight = {
-                { "K" },
+                { "Shift", "K" },
                 event = "Rotate",
                 args = 90
             },
