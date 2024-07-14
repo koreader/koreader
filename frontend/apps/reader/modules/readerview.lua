@@ -1063,6 +1063,7 @@ function ReaderView:getRenderModeMenuTable()
                 view.render_mode = mode
                 view.document.render_mode = mode
                 view:recalculate()
+                UIManager:broadcastEvent(Event:new("RenderingModeUpdate"))
             end,
         }
     end
