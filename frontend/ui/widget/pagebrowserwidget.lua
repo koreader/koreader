@@ -643,7 +643,7 @@ function PageBrowserWidget:update()
             self:clearTile(idx)
         else
             self.grid[idx].page_idx = p -- go there on Tap
-            local delayed = self.ui.thumbnail:getPageThumbnail(p, self.grid_item_width, self.grid_item_height, self.requests_batch_id, function(tile, batch_id, async_response)
+            local delayed = self:getPageThumbnail(p, function(tile, batch_id, async_response)
                 if batch_id ~= self.requests_batch_id then
                     -- Response from an obsolete request
                     return
@@ -820,13 +820,18 @@ function PageBrowserWidget:showTile(grid_idx, page, tile, do_refresh)
     end
 end
 
+function PageBrowserWidget:getPageThumbnail(page, when_generated_callback)
+    local page_hash = self.ui.document:getFullPageHash(page, 1, 0, 1.0)
+    return self.ui.thumbnail:getPageThumbnail(page, page_hash, self.grid_item_width, self.grid_item_height, self.requests_batch_id, when_generated_callback)
+end
+
 function PageBrowserWidget:preloadThumbnail(page, dbg_msg)
     if page < 1 or page > self.nb_pages then
         return
     end
     logger.dbg(dbg_msg, page)
-    -- We provide a dummy callback as we don't care about the tile
-    self.ui.thumbnail:getPageThumbnail(page, self.grid_item_width, self.grid_item_height, self.requests_batch_id, function() end)
+    -- We provide a dummy callback as we don't care about the tile.
+    self:getPageThumbnail(page, function() end)
 end
 
 function PageBrowserWidget:preloadNextPrevScreenThumbnails()
