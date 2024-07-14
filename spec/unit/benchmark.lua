@@ -18,7 +18,7 @@ describe("PDF rendering benchmark", function()
     local doc = DocumentRegistry:openDocument(sample_pdf)
     for pageno = 1, math.min(10, doc.info.number_of_pages) do
         local secs, usecs = util.gettime()
-        assert.truthy(doc:renderPage(pageno, nil, 1, 0, 1.0, 0))
+        assert.truthy(doc:renderPage(pageno, nil, 1, 0, 1.0))
         local nsecs, nusecs = util.gettime()
         local dur = nsecs - secs + (nusecs - usecs) / 1000000
         logDuration("pdf_rendering.log", pageno, dur)
@@ -32,7 +32,7 @@ describe("PDF reflowing benchmark", function()
     doc.configurable.text_wrap = 1
     for pageno = 1, math.min(10, doc.info.number_of_pages) do
         local secs, usecs = util.gettime()
-        assert.truthy(doc:renderPage(pageno, nil, 1, 0, 1.0, 0))
+        assert.truthy(doc:renderPage(pageno, nil, 1, 0, 1.0))
         local nsecs, nusecs = util.gettime()
         local dur = nsecs - secs + (nusecs - usecs) / 1000000
         logDuration("pdf_reflowing.log", pageno, dur)
