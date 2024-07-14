@@ -387,14 +387,6 @@ function Document:updateColorRendering()
     end
 end
 
-function Document:preRenderPage()
-    return nil
-end
-
-function Document:postRenderPage()
-    return nil
-end
-
 function Document:getTileCacheValidity()
     return self.tile_cache_validity_ts
 end
@@ -407,15 +399,15 @@ function Document:resetTileCacheValidity()
     self.tile_cache_validity_ts = os.time()
 end
 
-function Document:getFullPageHash(pageno, zoom, rotation, gamma, render_mode, color)
+function Document:getFullPageHash(pageno, zoom, rotation, gamma, render_mode)
     return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
-                    ..zoom.."|"..rotation.."|"..gamma.."|"..render_mode..(color and "|color" or "")
+                    ..zoom.."|"..rotation.."|"..gamma.."|"..render_mode..(self.color and "|color" or "")
                     ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
 end
 
 function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, hinting)
     local hash_excerpt
-    local hash = self:getFullPageHash(pageno, zoom, rotation, gamma, render_mode, self.render_color)
+    local hash = self:getFullPageHash(pageno, zoom, rotation, gamma, render_mode)
     local tile = DocCache:check(hash, TileCacheItem)
     if not tile then
         hash_excerpt = hash.."|"..tostring(rect)
@@ -435,7 +427,6 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, h
     if hinting then
         CanvasContext:enableCPUCores(2)
     end
-    self:preRenderPage()
 
     local page_size = self:getPageDimensions(pageno, zoom, rotation)
     -- this will be the size we actually render
@@ -493,7 +484,6 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, h
     page:close()
     DocCache:insert(hash, tile)
 
-    self:postRenderPage()
     if hinting then
         CanvasContext:enableCPUCores(1)
     end
