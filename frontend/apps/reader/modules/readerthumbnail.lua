@@ -542,6 +542,10 @@ function ReaderThumbnail:onCloseDocument()
     end
 end
 
+function ReaderThumbnail:onRenderingModeUpdate()
+    self:resetCache()
+end
+
 function ReaderThumbnail:onColorRenderingUpdate()
     self:setupColor()
     self:resetCache()
