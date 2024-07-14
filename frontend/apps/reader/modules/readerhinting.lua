@@ -18,8 +18,7 @@ function ReaderHinting:onHintPage()
                 self.view.state.page + i,
                 self.zoom:getZoom(self.view.state.page + i),
                 self.view.state.rotation,
-                self.view.state.gamma,
-                self.view.render_mode)
+                self.view.state.gamma)
         end
     end
     return true
