@@ -300,7 +300,9 @@ local function initDPadEvents()
             if self.parent.onSwitchFocus then
                 self.parent:onSwitchFocus(self)
             else
-                self:onShowKeyboard()
+                if not (Device:hasKeyboard() and G_reader_settings:isFalse("virtual_keyboard_enabled")) then
+                    self:onShowKeyboard()
+                end
             end
             self:focus()
             return true
