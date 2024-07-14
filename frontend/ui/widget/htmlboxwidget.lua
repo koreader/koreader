@@ -84,18 +84,11 @@ function HtmlBoxWidget:_render()
     if self.bb then
         return
     end
-
-    -- In pdfdocument.lua, color is activated only at the moment of
-    -- rendering and then immediately disabled, for safety with kopt.
-    -- We do the same here.
-    Mupdf.color = Screen:isColorEnabled()
-
     local page = self.document:openPage(self.page_number)
+    self.document:setColorRendering(Screen:isColorEnabled())
     local dc = DrawContext.new()
     self.bb = page:draw_new(dc, self.dimen.w, self.dimen.h, 0, 0)
     page:close()
-
-    Mupdf.color = false
 end
 
 function HtmlBoxWidget:getSize()
