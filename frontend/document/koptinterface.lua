@@ -170,6 +170,7 @@ function KoptInterface:getContextHash(doc, pageno, bbox, hash_list)
     table.insert(hash_list, doc.file)
     table.insert(hash_list, doc.mod_time)
     table.insert(hash_list, doc.render_color and 'color' or 'bw')
+    table.insert(hash_list, doc.render_mode)
     table.insert(hash_list, pageno)
     doc.configurable:hash(hash_list)
     table.insert(hash_list, bbox.x0)
@@ -211,7 +212,7 @@ function KoptInterface:getAutoBBox(doc, pageno)
     if not cached then
         local page = doc._document:openPage(pageno)
         local kc = self:createContext(doc, pageno, bbox)
-        page:getPagePix(kc)
+        page:getPagePix(kc, doc.render_mode)
         local x0, y0, x1, y1 = kc:getAutoBBox()
         local w, h = native_size.w, native_size.h
         if (x1 - x0)/w > 0.1 or (y1 - y0)/h > 0.1 then
@@ -242,7 +243,7 @@ function KoptInterface:getSemiAutoBBox(doc, pageno)
         local page = doc._document:openPage(pageno)
         local kc = self:createContext(doc, pageno, bbox)
         local auto_bbox = {}
-        page:getPagePix(kc)
+        page:getPagePix(kc, doc.render_mode)
         auto_bbox.x0, auto_bbox.y0, auto_bbox.x1, auto_bbox.y1 = kc:getAutoBBox()
         auto_bbox.x0 = auto_bbox.x0 + bbox.x0
         auto_bbox.y0 = auto_bbox.y0 + bbox.y0
@@ -282,7 +283,7 @@ function KoptInterface:getCachedContext(doc, pageno)
         logger.dbg("reflowing page", pageno, "in foreground")
         -- reflow page
         --local secs, usecs = FFIUtil.gettime()
-        page:reflow(kc, doc.render_mode or G_defaults:readSetting("DRENDER_MODE")) -- Fall backs to a default set to DDJVU_RENDER_COLOR
+        page:reflow(kc, doc.render_mode)
         page:close()
         --local nsecs, nusecs = FFIUtil.gettime()
         --local dur = nsecs - secs + (nusecs - usecs) / 1000000
@@ -333,19 +334,19 @@ function KoptInterface:getCoverPageImage(doc)
     local native_size = Document.getNativePageDimensions(doc, 1)
     local canvas_size = CanvasContext:getSize()
     local zoom = math.min(canvas_size.w / native_size.w, canvas_size.h / native_size.h)
-    local tile = Document.renderPage(doc, 1, nil, zoom, 0, 1, 0)
+    local tile = Document.renderPage(doc, 1, nil, zoom, 0, 1.0)
     if tile then
         return tile.bb:copy()
     end
 end
 
-function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, render_mode, hinting)
+function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, hinting)
     if doc.configurable.text_wrap == 1 then
-        return self:renderReflowedPage(doc, pageno, rect, zoom, rotation, render_mode, hinting)
+        return self:renderReflowedPage(doc, pageno, rect, zoom, rotation, hinting)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
-        return self:renderOptimizedPage(doc, pageno, rect, zoom, rotation, render_mode, hinting)
+        return self:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hinting)
     else
-        return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, render_mode, hinting)
+        return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, hinting)
     end
 end
 
@@ -354,8 +355,7 @@ Render reflowed page into tile cache.
 
 Inherited from common document interface.
 --]]
-function KoptInterface:renderReflowedPage(doc, pageno, rect, zoom, rotation, render_mode)
-    doc.render_mode = render_mode
+function KoptInterface:renderReflowedPage(doc, pageno, rect, zoom, rotation)
     local bbox = doc:getPageBBox(pageno)
     local hash_list = { "renderpg" }
     self:getContextHash(doc, pageno, bbox, hash_list)
@@ -389,8 +389,7 @@ Render optimized page into tile cache.
 
 Inherited from common document interface.
 --]]
-function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, render_mode, hinting)
-    doc.render_mode = render_mode
+function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hinting)
     local bbox = doc:getPageBBox(pageno)
     local hash_list = { "renderoptpg" }
     self:getContextHash(doc, pageno, bbox, hash_list)
@@ -411,7 +410,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
         local kc = self:createContext(doc, pageno, full_page_bbox)
         local page = doc._document:openPage(pageno)
         kc:setZoom(zoom)
-        page:getPagePix(kc)
+        page:getPagePix(kc, doc.render_mode)
         page:close()
         logger.dbg("optimizing page", pageno)
         kc:optimizePage()
@@ -442,16 +441,16 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
     end
 end
 
-function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma, render_mode)
+function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma)
     --- @note: Crappy safeguard around memory issues like in #7627: if we're eating too much RAM, drop half the cache...
     DocCache:memoryPressureCheck()
 
     if doc.configurable.text_wrap == 1 then
-        self:hintReflowedPage(doc, pageno, zoom, rotation, gamma, render_mode, true)
+        self:hintReflowedPage(doc, pageno, zoom, rotation, gamma, true)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
-        self:renderOptimizedPage(doc, pageno, nil, zoom, rotation, gamma, render_mode, true)
+        self:renderOptimizedPage(doc, pageno, nil, zoom, rotation, gamma, true)
     else
-        Document.hintPage(doc, pageno, zoom, rotation, gamma, render_mode)
+        Document.hintPage(doc, pageno, zoom, rotation, gamma)
     end
 end
 
@@ -464,7 +463,7 @@ off by calling self:waitForContext(kctx)
 
 Inherited from common document interface.
 --]]
-function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, render_mode, hinting)
+function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, hinting)
     local bbox = doc:getPageBBox(pageno)
     local hash_list = { "kctx" }
     self:getContextHash(doc, pageno, bbox, hash_list)
@@ -481,7 +480,7 @@ function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, rend
         -- reflow will return immediately and running in background thread
         kc:setPreCache()
         self.bg_thread = true
-        page:reflow(kc, render_mode)
+        page:reflow(kc, doc.render_mode)
         page:close()
         DocCache:insert(hash, ContextCacheItem:new{
             size = self.last_context_size or self.default_context_size,
@@ -493,13 +492,13 @@ function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, rend
     end
 end
 
-function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)
+function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
     if doc.configurable.text_wrap == 1 then
-        self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, render_mode)
+        self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
-        self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, render_mode)
+        self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
     else
-        Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)
+        Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
     end
 end
 
@@ -508,8 +507,8 @@ Draw cached tile pixels into target blitbuffer.
 
 Inherited from common document interface.
 --]]
-function KoptInterface:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, render_mode)
-    local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 0, render_mode)
+function KoptInterface:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
+    local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 1.0)
     target:blitFrom(tile.bb,
         x, y,
         rect.x - tile.excerpt.x,
@@ -650,7 +649,7 @@ function KoptInterface:getPanelFromPage(doc, pageno, ges)
     local kc = self:createContext(doc, pageno, bbox)
     kc:setZoom(1.0)
     local page = doc._document:openPage(pageno)
-    page:getPagePix(kc)
+    page:getPagePix(kc, doc.render_mode)
     local panel = kc:getPanelFromPage(ges)
     page:close()
     kc:free()
@@ -675,7 +674,7 @@ function KoptInterface:getNativeTextBoxesFromScratch(doc, pageno)
         local kc = self:createContext(doc, pageno, bbox)
         kc:setZoom(1.0)
         local page = doc._document:openPage(pageno)
-        page:getPagePix(kc)
+        page:getPagePix(kc, doc.render_mode)
         local boxes, nr_word = kc:getNativeWordBoxes("src", 0, 0, page_size.w, page_size.h)
         if boxes then
             DocCache:insert(hash, CacheItem:new{ scratchnativepgboxes = boxes, size = 192 * nr_word }) -- estimation
@@ -709,7 +708,7 @@ function KoptInterface:getPageBlock(doc, pageno, x, y)
         -- leptonica needs a source image of at least 300dpi
         kc:setZoom(CanvasContext:getWidth() / page_size.w * 300 / CanvasContext:getDPI())
         local page = doc._document:openPage(pageno)
-        page:getPagePix(kc)
+        page:getPagePix(kc, doc.render_mode)
         kc:findPageBlocks()
         DocCache:insert(hash, CacheItem:new{ kctx = kc, size = 3072 }) -- estimation
         page:close()
@@ -786,7 +785,7 @@ function KoptInterface:getNativeOCRWord(doc, pageno, rect)
         local kc = self:createContext(doc, pageno, bbox)
         kc:setZoom(30/rect.h)
         local page = doc._document:openPage(pageno)
-        page:getPagePix(kc)
+        page:getPagePix(kc, doc.render_mode)
         --kc:exportSrcPNGFile({rect}, nil, "ocr-word.png")
         local word_w, word_h = kc:getPageDim()
         local _, word = pcall(
@@ -836,7 +835,7 @@ function KoptInterface:getClipPageContext(doc, pos0, pos1, pboxes, drawer)
     }
     local kc = self:createContext(doc, pos0.page, bbox)
     local page = doc._document:openPage(pos0.page)
-    page:getPagePix(kc)
+    page:getPagePix(kc, doc.render_mode)
     page:close()
     return kc, rect
 end
