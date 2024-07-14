@@ -25,7 +25,6 @@ local function validDjvuFile(filename)
 end
 
 function DjvuDocument:init()
-    self:updateColorRendering()
     local djvu = require("libs/libkoreader-djvu")
     self.koptinterface = require("document/koptinterface")
     self.koptinterface:setDefaultConfigurable(self.configurable)
@@ -38,6 +37,7 @@ function DjvuDocument:init()
     if not ok then
         error(self._document)  -- will contain error message
     end
+    self:updateColorRendering()
     self.is_open = true
     self.info.has_pages = true
     self.info.configurable = true
