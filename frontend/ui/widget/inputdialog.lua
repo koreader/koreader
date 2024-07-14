@@ -222,6 +222,9 @@ function InputDialog:init()
     if self.fullscreen or self.add_nav_bar then
         self.deny_keyboard_hiding = true
     end
+    if Device:hasKeyboard() and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+        self.keyboard_visible = false
+    end
 
     -- Title & description
     self.title_bar = TitleBar:new{
@@ -455,10 +458,6 @@ function InputDialog:init()
     -- If we're fullscreen without a keyboard, make sure only the toggle button can show the keyboard...
     if self.fullscreen and not self.keyboard_visible then
         self:lockKeyboard(true)
-    end
-
-    if Device:hasKeyboard() and G_reader_settings:isFalse("virtual_keyboard_enabled") then
-        self.keyboard_visible = false
     end
 end
 
