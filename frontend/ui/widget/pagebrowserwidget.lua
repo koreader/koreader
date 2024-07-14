@@ -820,6 +820,15 @@ function PageBrowserWidget:showTile(grid_idx, page, tile, do_refresh)
     end
 end
 
+function PageBrowserWidget:preloadThumbnail(page, dbg_msg)
+    if page < 1 or page > self.nb_pages then
+        return
+    end
+    logger.dbg(dbg_msg, page)
+    -- We provide a dummy callback as we don't care about the tile
+    self.ui.thumbnail:getPageThumbnail(page, self.grid_item_width, self.grid_item_height, self.requests_batch_id, function() end)
+end
+
 function PageBrowserWidget:preloadNextPrevScreenThumbnails()
     -- We're here with the page painted - and possibly some thumbnails
     -- not yet there and being generated and going to be updated.
@@ -835,39 +844,21 @@ function PageBrowserWidget:preloadNextPrevScreenThumbnails()
     -- Pre-generate the thumbnails for the next row
     local next_grid_page_start = self.focus_page - self.focus_page_shift + self.nb_grid_items
     for idx=1, self.nb_cols do
-        local p = next_grid_page_start + idx - 1
-        if p >= 1 or p < self.nb_pages then
-            logger.dbg("preload next line", p)
-            -- We provide a dummy callback as we don't care about the tile
-            self.ui.thumbnail:getPageThumbnail(p, self.grid_item_width, self.grid_item_height, self.requests_batch_id, function() end)
-        end
+        self:preloadThumbnail(next_grid_page_start + idx - 1, "preload next line")
     end
     -- Pre-generate the thumbnails for the prev row
     local prev_line_page_start = self.focus_page - self.focus_page_shift - self.nb_cols
     for idx=1, self.nb_cols do
-        local p = prev_line_page_start + idx - 1
-        if p >= 1 or p < self.nb_pages then
-            logger.dbg("preload prev line", p)
-            self.ui.thumbnail:getPageThumbnail(p, self.grid_item_width, self.grid_item_height, self.requests_batch_id, function() end)
-        end
+        self:preloadThumbnail(prev_line_page_start + idx - 1, "preload prev line")
     end
     -- Pre-generate the thumbnails for the next page (minus its top row, already done)
     for idx=self.nb_cols+1, self.nb_grid_items do
-        local p = next_grid_page_start + idx - 1
-        if p >= 1 or p < self.nb_pages then
-            logger.dbg("preload next page remainings", p)
-            -- We provide a dummy callback as we don't care about the tile
-            self.ui.thumbnail:getPageThumbnail(p, self.grid_item_width, self.grid_item_height, self.requests_batch_id, function() end)
-        end
+        self:preloadThumbnail(next_grid_page_start + idx - 1, "preload next page remainings")
     end
     -- Pre-generate the thumbnails for the prev page (minus its bottom row, already done)
     local prev_grid_page_start = self.focus_page - self.focus_page_shift - self.nb_grid_items
     for idx=self.nb_grid_items - self.nb_cols, 1, -1 do
-        local p = prev_grid_page_start + idx - 1
-        if p >= 1 or p < self.nb_pages then
-            logger.dbg("preload prev page remainings", p)
-            self.ui.thumbnail:getPageThumbnail(p, self.grid_item_width, self.grid_item_height, self.requests_batch_id, function() end)
-        end
+        self:preloadThumbnail(prev_grid_page_start + idx - 1, "preload prev page remainings")
     end
 end
 
