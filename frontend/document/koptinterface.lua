@@ -508,7 +508,7 @@ Draw cached tile pixels into target blitbuffer.
 Inherited from common document interface.
 --]]
 function KoptInterface:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, render_mode)
-    local tile = self:renderPage(doc, pageno, rect, zoom, rotation, render_mode)
+    local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 0, render_mode)
     target:blitFrom(tile.bb,
         x, y,
         rect.x - tile.excerpt.x,
