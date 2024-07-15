@@ -456,6 +456,7 @@ function InputDialog:init()
     end
 
     -- If we're fullscreen without a keyboard, make sure only the toggle button can show the keyboard...
+    -- except for kindle, where we still want to activate it via shortcuts ("Shift" + "Home") when in need of symbols
     if self.fullscreen and not self.keyboard_visible and not Device:hasSymKey() then
         self:lockKeyboard(true)
     end
