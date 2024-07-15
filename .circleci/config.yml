@@ -7,7 +7,7 @@ parameters:
     # Bump this to reset all caches.
     cache_epoch:
       type: integer
-      default: 0
+      default: 1
 
 # }}}
 
@@ -17,7 +17,7 @@ executors:
 
   base:
     docker:
-      - image: koreader/kobase:0.3.2-20.04
+      - image: koreader/kobase:0.3.4-20.04
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
@@ -35,7 +35,7 @@ jobs:
     resource_class: medium
     environment:
       BASH_ENV: "~/.bashrc"
-      CCACHE_MAXSIZE: "256M"
+      CCACHE_MAXSIZE: "128M"
       CLICOLOR_FORCE: "1"
       EMULATE_READER: "1"
       MAKEFLAGS: "OUTPUT_DIR=build INSTALL_DIR=install"
@@ -87,7 +87,7 @@ jobs:
             # Trim the build directory.
             rm -rf base/build/{cmake,staging,thirdparty}
             ccache --cleanup >/dev/null
-            ccache --show-stats
+            ccache --show-stats --verbose
       - save_cache:
           name: Save build cache
           key: *CACHE_KEY_BUILD_CACHE
