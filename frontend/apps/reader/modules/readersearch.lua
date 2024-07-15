@@ -82,7 +82,7 @@ SRELL_ERROR_CODES[666] = _("Expression may lead to an extremely long search time
 
 function ReaderSearch:registerKeyEvents()
     if Device:hasKeyboard() then
-        self.key_events.ShowFulltextSearchInput = { { Device.input.group.AlphaNumeric } }
+        self.key_events.ShowFulltextSearchInput = { { Device.input.group.AlphaNumeric }, args = true }
     end
 end
 
@@ -212,7 +212,7 @@ function ReaderSearch:searchCallback(reverse, text)
     end
 end
 
-function ReaderSearch:onShowFulltextSearchInput()
+function ReaderSearch:onShowFulltextSearchInput(empty_input)
     local backward_text = "◁"
     local forward_text = "▷"
     if BD.mirroredUILayout() then
@@ -221,7 +221,7 @@ function ReaderSearch:onShowFulltextSearchInput()
     self.input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
         width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.9),
-        input = self.last_search_text or self.ui.doc_settings:readSetting("fulltext_search_last_search_text"),
+        input = empty_input and "" or self.last_search_text or self.ui.doc_settings:readSetting("fulltext_search_last_search_text"),
         buttons = {
             {
                 {
@@ -234,6 +234,7 @@ function ReaderSearch:onShowFulltextSearchInput()
                 {
                     -- @translators Find all results in entire document, button displayed on the search bar, should be short.
                     text = C_("Search text", "All"),
+                    is_enter_default = true,
                     callback = function()
                         self:searchCallback()
                     end,
@@ -246,7 +247,6 @@ function ReaderSearch:onShowFulltextSearchInput()
                 },
                 {
                     text = forward_text,
-                    is_enter_default = true,
                     callback = function()
                         self:searchCallback(0)
                     end,
