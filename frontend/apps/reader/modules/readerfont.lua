@@ -28,6 +28,7 @@ local ReaderFont = InputContainer:extend{
 
 -- Keep a list of the new fonts seen at launch
 local newly_added_fonts = nil -- not yet filled
+local noto_fonts
 
 function ReaderFont:init()
     self:registerKeyEvents()
@@ -60,10 +61,12 @@ function ReaderFont:decorateFacename(facename)
     return facename
 end
 
+
 function ReaderFont:setupFaceMenuTable()
     logger.dbg("building font face menu table")
     -- Build face_table for menu
     self.face_table = {}
+    noto_fonts = nil
     -- Font settings
     table.insert(self.face_table, {
         text = _("Font settings"),
@@ -91,16 +94,30 @@ function ReaderFont:setupFaceMenuTable()
     })
     -- Font list
     cre = require("document/credocument"):engineInit()
-    local face_list = cre.getFontFaces()
-    face_list = self:setupFaceList(face_list)
+    local face_list = self:setupFaceList(cre.getFontFaces())
+    face_list = self:sortFaceList(face_list)
     for k, v in ipairs(face_list) do
         local lfacename  -- localized facename
         local font_filename, font_faceindex, is_monospace = cre.getFontFaceFilenameAndFaceIndex(v)
         if font_filename and font_faceindex then
             lfacename = FontList:getLocalizedFontName(font_filename, font_faceindex) or v
         end
+
+        local menu_table
         local face_menu_text = self:decorateFacename(lfacename)
-        table.insert(self.face_table, {
+        if string.match(v, "^Noto ") then
+            if noto_fonts == nil then
+                table.insert(self.face_table, {
+                    text = _("Noto fonts"),
+                    sub_item_table_func = function() return noto_fonts end,
+                })
+                noto_fonts = {}  -- prep the Noto fonts submenu table
+            end
+            menu_table = noto_fonts
+        else
+            menu_table = self.face_table
+        end
+        table.insert(menu_table, {
             text_func = function() return face_menu_text end,
             font_func = function(size)
                 if G_reader_settings:nilOrTrue("font_menu_use_font_face") then
@@ -796,21 +813,22 @@ end
 
 function ReaderFont:setupFaceList(face_list)
     self.face_table.needs_refresh = true
+
+    -- Init list of previously known fonts to empty table
+    newly_added_fonts = {}
     self.fonts_recently_selected = G_reader_settings:readSetting("cre_fonts_recently_selected")
     if not self.fonts_recently_selected then
-        -- Init this list with the alphabetical list we got
+        -- Init recent list with the alphabetical list we got from cre
         self.fonts_recently_selected = face_list
         G_reader_settings:saveSetting("cre_fonts_recently_selected", self.fonts_recently_selected)
-        -- We got no list of previously known fonts, so we can't say which are new.
-        newly_added_fonts = {}
-        return face_list
-    end
-    if not newly_added_fonts then
-        -- First call after launch: check for fonts not yet known
-        newly_added_fonts = {}
+    else
         local seen_fonts = {}
+        -- Init seen_fonts with keys from fonts_recently_selected
+        --     nil: new font
+        --    true: previously known font
+        --   false: previously known font that's now gone
         for _, face in ipairs(self.fonts_recently_selected) do
-            seen_fonts[face] = false -- was there last time, might no longer be now
+            seen_fonts[face] = false -- previously known font that's now gone
         end
         for _, face in ipairs(face_list) do
             if seen_fonts[face] == nil then -- not known
@@ -830,20 +848,30 @@ function ReaderFont:setupFaceList(face_list)
 end
 
 function ReaderFont:sortFaceList(face_list)
+    -- Return the given list of font faces, but with newly added fonts first.
+    -- Potentially return list sorted by recently set, per config
+    -- and hide most fallback fonts, per config
+    local new_face_list = {}
+    local wanted_face_list = {}
+
     if G_reader_settings:isTrue("font_menu_sort_by_recently_selected") then
         face_list = self.fonts_recently_selected
     end
-    -- Otherwise, return face_list as we got it, alphabetically (as sorted by crengine),
-    -- but still with newly added fonts first
-    if next(newly_added_fonts) then
-        local move_idx = 1
-        for i=1, #face_list do
-            if newly_added_fonts[face_list[i]] then
-                table.insert(face_list, move_idx, table.remove(face_list, i))
-                move_idx = move_idx + 1
-            end
+
+    -- Iterate the list, move new fonts to the new_face_list and the other
+    -- fonts to wanted_face_list
+    for i=1, #face_list do
+        if next(newly_added_fonts) and newly_added_fonts[face_list[i]] then
+            table.insert(new_face_list, face_list[i])
+        else
+            table.insert(wanted_face_list, face_list[i])
         end
     end
+    face_list = {}
+    face_list = table.move(new_face_list, 1, #new_face_list, #face_list, face_list)
+    face_list = table.move(wanted_face_list, 1, #wanted_face_list, #face_list, face_list)
+
+    self.fonts_recently_selected = face_list
     return face_list
 end
 
