@@ -38,7 +38,7 @@ function ReaderFont:init()
     self.ges_events = nil
 end
 
-function ReaderFont:decorateFacename(facename)
+function ReaderFont:decorateFacename(facename, is_monospace)
     -- defaults are hardcoded in credocument.lua
     local default_font = G_reader_settings:readSetting("cre_font") or self.ui.document.default_font
     local fallback_font = G_reader_settings:readSetting("fallback_font") or self.ui.document.fallback_fonts[1]
@@ -104,7 +104,7 @@ function ReaderFont:setupFaceMenuTable()
         end
 
         local menu_table
-        local face_menu_text = self:decorateFacename(lfacename)
+        local face_menu_text = self:decorateFacename(lfacename, is_monospace)
         if string.match(v, "^Noto ") then
             if noto_fonts == nil then
                 table.insert(self.face_table, {
