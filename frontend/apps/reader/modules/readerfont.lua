@@ -37,6 +37,29 @@ function ReaderFont:init()
     self.ges_events = nil
 end
 
+function ReaderFont:decorateFacename(facename)
+    -- defaults are hardcoded in credocument.lua
+    local default_font = G_reader_settings:readSetting("cre_font") or self.ui.document.default_font
+    local fallback_font = G_reader_settings:readSetting("fallback_font") or self.ui.document.fallback_fonts[1]
+    local monospace_font = G_reader_settings:readSetting("monospace_font") or self.ui.document.monospace_font
+
+    if facename == monospace_font then
+        facename = facename .. " \u{1F13C}" -- Squared Latin Capital Letter M
+    elseif is_monospace then
+        facename = facename .. " \u{1D39}" -- Modified Letter Capital M
+    end
+    if facename == default_font then
+        facename = facename .. "   ★"
+    end
+    if facename == fallback_font then
+        facename = facename .. "   �"
+    end
+    if newly_added_fonts[facename] then
+        facename = facename .. "  \u{EA93}" -- "NEW" in a black square, from nerdfont
+    end
+    return facename
+end
+
 function ReaderFont:setupFaceMenuTable()
     logger.dbg("building font face menu table")
     -- Build face_table for menu
@@ -71,34 +94,14 @@ function ReaderFont:setupFaceMenuTable()
     local face_list = cre.getFontFaces()
     face_list = self:setupFaceList(face_list)
     for k, v in ipairs(face_list) do
+        local lfacename  -- localized facename
         local font_filename, font_faceindex, is_monospace = cre.getFontFaceFilenameAndFaceIndex(v)
+        if font_filename and font_faceindex then
+            lfacename = FontList:getLocalizedFontName(font_filename, font_faceindex) or v
+        end
+        local face_menu_text = self:decorateFacename(lfacename)
         table.insert(self.face_table, {
-            text_func = function()
-                -- defaults are hardcoded in credocument.lua
-                local default_font = G_reader_settings:readSetting("cre_font") or self.ui.document.default_font
-                local fallback_font = G_reader_settings:readSetting("fallback_font") or self.ui.document.fallback_fonts[1]
-                local monospace_font = G_reader_settings:readSetting("monospace_font") or self.ui.document.monospace_font
-                local text = v
-                if font_filename and font_faceindex then
-                    text = FontList:getLocalizedFontName(font_filename, font_faceindex) or text
-                end
-
-                if v == monospace_font then
-                    text = text .. " \u{1F13C}" -- Squared Latin Capital Letter M
-                elseif is_monospace then
-                    text = text .. " \u{1D39}" -- Modified Letter Capital M
-                end
-                if v == default_font then
-                    text = text .. "   ★"
-                end
-                if v == fallback_font then
-                    text = text .. "   �"
-                end
-                if newly_added_fonts[v] then
-                    text = text .. "  \u{EA93}" -- "NEW" in a black square, from nerdfont
-                end
-                return text
-            end,
+            text_func = function() return face_menu_text end,
             font_func = function(size)
                 if G_reader_settings:nilOrTrue("font_menu_use_font_face") then
                     if font_filename and font_faceindex then
