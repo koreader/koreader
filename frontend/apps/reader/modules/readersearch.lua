@@ -234,7 +234,6 @@ function ReaderSearch:onShowFulltextSearchInput(empty_input)
                 {
                     -- @translators Find all results in entire document, button displayed on the search bar, should be short.
                     text = C_("Search text", "All"),
-                    is_enter_default = true,
                     callback = function()
                         self:searchCallback()
                     end,
@@ -247,6 +246,7 @@ function ReaderSearch:onShowFulltextSearchInput(empty_input)
                 },
                 {
                     text = forward_text,
+                    is_enter_default = true,
                     callback = function()
                         self:searchCallback(0)
                     end,
