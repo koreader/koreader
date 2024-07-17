@@ -18,6 +18,7 @@ local HISTORY_DIR = DataStorage:getHistoryDir()
 local DOCSETTINGS_DIR = DataStorage:getDocSettingsDir()
 local DOCSETTINGS_HASH_DIR = DataStorage:getDocSettingsHashDir()
 local custom_metadata_filename = "custom_metadata.lua"
+local sidecar_filename_prefix = "metadata"
 
 function DocSettings.getSidecarStorage(location)
     if location == "dir" then
@@ -142,7 +143,7 @@ end
 
 function DocSettings.getSidecarFilename(doc_path)
     local suffix = doc_path:match(".*%.(.+)") or "_"
-    return "metadata." .. suffix .. ".lua"
+    return sidecar_filename_prefix .. "." .. suffix .. ".lua"
 end
 
 --- Returns `true` if there is a `metadata.lua` file.
@@ -287,6 +288,24 @@ function DocSettings:open(doc_path)
         new.data = stored
         new.candidates = candidates
         new.source_candidate = candidate_path
+
+        if G_reader_settings:isTrue("separate_annotation_file") then
+            local source_dir, source_fname = util.splitFilePathName(candidate_path)
+            local annotation_fname = string.gsub(source_fname, "^" .. sidecar_filename_prefix , "annotations")
+            local annotation_path = source_dir .. annotation_fname
+            if isFile(annotation_path) and lfs.attributes(annotation_path, "size") > 0 then
+                local ok, stored = pcall(dofile, annotation_path)
+                if ok and next(stored) ~= nil then
+                    logger.dbg("DocSettings: annotation data is read from", annotation_path)
+                    for _, k in ipairs({"annotations", "highlight", "bookmarks"}) do
+                        if stored[k] ~= nil then
+                            new.data[k] = stored[k]
+                        end
+                    end
+                end
+            end
+        end
+
     else
         new.data = {}
     end
@@ -360,6 +379,17 @@ function DocSettings:flush(data, no_custom_metadata)
                         self:getCustomMetadataFile(true) -- reset cache
                     end
                 end
+            end
+
+            if G_reader_settings:isTrue("separate_annotation_file") then
+                local annotation_fname = string.gsub(self.sidecar_filename, "^" .. sidecar_filename_prefix, "annotations")
+                local annotation_path = sidecar_dir_slash .. annotation_fname
+                local annotation_data = {}
+                for _, k in ipairs({"annotations", "highlight", "bookmarks"}) do
+                    annotation_data[k] = data[k]
+                end
+                logger.dbg("DocSettings: Writing annotations addintionally to", annotation_path)
+                util.writeToFile(dump(annotation_data, nil, true), annotation_path, true, true)
             end
 
             self:purge(sidecar_file) -- remove old candidates and empty sidecar folders
