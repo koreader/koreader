@@ -132,7 +132,7 @@ function ReaderRolling:registerKeyEvents()
         self.key_events.MoveUp = { { "Up" }, event = "Panning", args = {0, -1}, }
         self.key_events.MoveDown = { { "Down" }, event = "Panning", args = {0,  1}, }
     end
-    if Device:hasKeys() and not (Device:hasScreenKB() or Device:hasSymKey()) then
+    if (Device:hasDPad() and not Device:useDPadAsActionKeys()) or (Device:hasKeys() and not Device:useDPadAsActionKeys()) then
         self.key_events.GotoNextView = { { { "RPgFwd", "LPgFwd", "Right" } }, event = "GotoViewRel", args = 1, }
         self.key_events.GotoPrevView = { { { "RPgBack", "LPgBack", "Left" } }, event = "GotoViewRel", args = -1, }
     end
