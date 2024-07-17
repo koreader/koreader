@@ -1188,9 +1188,4 @@ function VirtualKeyboard:scrollDown()
     self.inputbox:scrollDown()
 end
 
-function VirtualKeyboard:clear()
-    logger.dbg("clear input")
-    self.inputbox:clear()
-end
-
 return VirtualKeyboard
