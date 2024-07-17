@@ -54,10 +54,10 @@ if Device:hasDPad() and Device:useDPadAsActionKeys() then
     table.insert(PhysicalButtons.sub_item_table, {
         text = _("Use left and right keys for page turning"),
         checked_func = function()
-            return G_reader_settings:isTrue("left_right_turn_pages")
+            return G_reader_settings:isTrue("left_right_keys_turn_pages")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("left_right_turn_pages")
+            G_reader_settings:flipNilOrFalse("left_right_keys_turn_pages")
             UIManager:askForRestart()
         end,
     })
