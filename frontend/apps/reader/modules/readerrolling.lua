@@ -116,127 +116,37 @@ end
 function ReaderRolling:onGesture() end
 
 function ReaderRolling:registerKeyEvents()
-    if Device:hasScreenKB() or Device:hasSymKey() then
-        self.key_events.GotoNextView = {
-            { { "RPgFwd", "LPgFwd" } },
-            event = "GotoViewRel",
-            args = 1,
-        }
-        self.key_events.GotoPrevView = {
-            { { "RPgBack", "LPgBack" } },
-            event = "GotoViewRel",
-            args = -1,
-        }
-        if Device:hasKeyboard() then
-            self.key_events.MoveUp = {
-                { "Shift", "RPgBack" },
-                event = "Panning",
-                args = {0, -1},
-            }
-            self.key_events.MoveDown = {
-                { "Shift", "RPgFwd" },
-                event = "Panning",
-                args = {0,  1},
-            }
-        end
-    elseif Device:hasKeys() then
-        self.key_events.GotoNextView = {
-            { { "RPgFwd", "LPgFwd", "Right" } },
-            event = "GotoViewRel",
-            args = 1,
-        }
-        self.key_events.GotoPrevView = {
-            { { "RPgBack", "LPgBack", "Left" } },
-            event = "GotoViewRel",
-            args = -1,
-        }
-    end
     if Device:hasDPad() and Device:useDPadAsActionKeys() then
-        self.key_events.GotoNextChapter = {
-            { "Right" },
-            event = "GotoNextChapter",
-            args = 1,
-        }
-        self.key_events.GotoPrevChapter = {
-            { "Left" },
-            event = "GotoPrevChapter",
-            args = -1,
-        }
+        if G_reader_settings:isTrue("left_right_keys_turn_pages") then
+            self.key_events.GotoNextView = { { { "LPgFwd", "Right" } }, event = "GotoViewRel", args = 1, }
+            self.key_events.GotoPrevView = { { { "LPgBack", "Left" } }, event = "GotoViewRel", args = -1, }
+        elseif G_reader_settings:nilOrFalse("left_right_keys_turn_pages") then
+            self.key_events.GotoNextChapter = { { "Right" }, event = "GotoNextChapter", args = 1, }
+            self.key_events.GotoPrevChapter = { { "Left" }, event = "GotoPrevChapter", args = -1, }
+            self.key_events.GotoNextView = { { "LPgFwd" }, event = "GotoViewRel", args = 1, }
+            self.key_events.GotoPrevView = { { "LPgBack" }, event = "GotoViewRel", args = -1, }
+        end
+        self.key_events.MoveUp = { { "RPgBack" }, event = "Panning", args = {0, -1}, }
+        self.key_events.MoveDown = { { { "RPgFwd", " " } }, event = "Panning", args = {0,  1}, }
     elseif Device:hasDPad() then
-        self.key_events.MoveUp = {
-            { "Up" },
-            event = "Panning",
-            args = {0, -1},
-        }
-        self.key_events.MoveDown = {
-            { "Down" },
-            event = "Panning",
-            args = {0,  1},
-        }
+        self.key_events.MoveUp = { { "Up" }, event = "Panning", args = {0, -1}, }
+        self.key_events.MoveDown = { { "Down" }, event = "Panning", args = {0,  1}, }
     end
-    if Device:hasScreenKB() then
-        self.key_events.MoveUp = {
-            { "ScreenKB", "RPgBack" },
-            event = "Panning",
-            args = {0, -1},
-        }
-        self.key_events.MoveDown = {
-            { "ScreenKB", "RPgFwd" },
-            event = "Panning",
-            args = {0,  1},
-        }
+    if (Device:hasDPad() and not Device:useDPadAsActionKeys()) or (Device:hasKeys() and not Device:useDPadAsActionKeys()) then
+        self.key_events.GotoNextView = { { { "RPgFwd", "LPgFwd", "Right" } }, event = "GotoViewRel", args = 1, }
+        self.key_events.GotoPrevView = { { { "RPgBack", "LPgBack", "Left" } }, event = "GotoViewRel", args = -1, }
     end
     if Device:hasKeyboard() then
-        self.key_events.GotoFirst = {
-            { "1" },
-            event = "GotoPercent",
-            args = 0,
-        }
-        self.key_events.Goto11 = {
-            { "2" },
-            event = "GotoPercent",
-            args = 11,
-        }
-        self.key_events.Goto22 = {
-            { "3" },
-            event = "GotoPercent",
-            args = 22,
-        }
-        self.key_events.Goto33 = {
-            { "4" },
-            event = "GotoPercent",
-            args = 33,
-        }
-        self.key_events.Goto44 = {
-            { "5" },
-            event = "GotoPercent",
-            args = 44,
-        }
-        self.key_events.Goto55 = {
-            { "6" },
-            event = "GotoPercent",
-            args = 55,
-        }
-        self.key_events.Goto66 = {
-            { "7" },
-            event = "GotoPercent",
-            args = 66,
-        }
-        self.key_events.Goto77 = {
-            { "8" },
-            event = "GotoPercent",
-            args = 77,
-        }
-        self.key_events.Goto88 = {
-            { "9" },
-            event = "GotoPercent",
-            args = 88,
-        }
-        self.key_events.GotoLast = {
-            { "0" },
-            event = "GotoPercent",
-            args = 100,
-        }
+        self.key_events.GotoFirst = { { "1" }, event = "GotoPercent", args = 0,   }
+        self.key_events.Goto11    = { { "2" }, event = "GotoPercent", args = 11,  }
+        self.key_events.Goto22    = { { "3" }, event = "GotoPercent", args = 22,  }
+        self.key_events.Goto33    = { { "4" }, event = "GotoPercent", args = 33,  }
+        self.key_events.Goto44    = { { "5" }, event = "GotoPercent", args = 44,  }
+        self.key_events.Goto55    = { { "6" }, event = "GotoPercent", args = 55,  }
+        self.key_events.Goto66    = { { "7" }, event = "GotoPercent", args = 66,  }
+        self.key_events.Goto77    = { { "8" }, event = "GotoPercent", args = 77,  }
+        self.key_events.Goto88    = { { "9" }, event = "GotoPercent", args = 88,  }
+        self.key_events.Goto99    = { { "0" }, event = "GotoPercent", args = 100, }
     end
 end
 
