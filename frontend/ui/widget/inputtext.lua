@@ -23,7 +23,7 @@ local FocusManagerInstance -- Delayed instantiation
 
 local InputText = InputContainer:extend{
     text = "",
-    hint = "demo hint",
+    hint = "",
     input_type = nil, -- "number" or anything else
     text_type = nil, -- "password" or anything else
     show_password_toggle = true,
@@ -143,9 +143,8 @@ local function initTouchEvents()
                     self.keyboard:showKeyboard()
                 end
             end
-            -- zh keyboard with candidates shown here has _frame_textwidget.dimen = nil.
-            -- Check to avoid crash.
-            if #self.charlist > 0 and self._frame_textwidget.dimen then -- Avoid cursor moving within a hint.
+            if self._frame_textwidget.dimen ~= nil -- zh keyboard with candidates shown here has _frame_textwidget.dimen = nil
+                    and #self.charlist > 0 then -- do not move cursor within a hint
                 local textwidget_offset = self.margin + self.bordersize + self.padding
                 local x = ges.pos.x - self._frame_textwidget.dimen.x - textwidget_offset
                 local y = ges.pos.y - self._frame_textwidget.dimen.y - textwidget_offset
@@ -175,6 +174,7 @@ local function initTouchEvents()
                         })
                         self.selection_start_pos = nil
                         self.do_select = false
+                        self:initTextBox()
                     else -- select start
                         self.selection_start_pos = self.charpos
                         UIManager:show(Notification:new{
@@ -249,6 +249,7 @@ local function initTouchEvents()
                                         text = _("Set cursor to start of selection, then long-press in text box."),
                                     })
                                     self.do_select = true
+                                    self:initTextBox()
                                 end,
                             },
                             {
@@ -331,11 +332,10 @@ InputText.initInputEvents()
 
 function InputText:checkTextEditability()
     -- The split of the 'text' string to a table of utf8 chars may not be
-    -- reversible to the same string, if 'text'  comes from a binary file
+    -- reversible to the same string, if 'text' comes from a binary file
     -- (it looks like it does not necessarily need to be proper UTF8 to
     -- be reversible, some text with latin1 chars is reversible).
-    -- As checking that may be costly, we do that only in init(), setText(),
-    -- and clear().
+    -- As checking that may be costly, we do that only in init() and setText().
     -- When not reversible, we prevent adding and deleting chars to not
     -- corrupt the original self.text.
     self.is_text_editable = true
@@ -344,7 +344,7 @@ function InputText:checkTextEditability()
         -- in :initTextBox(), when concatenated back to a string, matches
         -- the original text. (If this turns out too expensive, we could
         -- just compare their lengths)
-        self.is_text_editable = table.concat(self.charlist, "") == self.text
+        self.is_text_editable = table.concat(self.charlist) == self.text
     end
 end
 
@@ -384,6 +384,7 @@ function InputText:init()
             self.hint = tostring(self.hint)
         end
     end
+    self.charlist = util.splitToChars(self.text)
     self:initTextBox(self.text)
     self:checkTextEditability()
     if self.readonly ~= true then
@@ -399,11 +400,12 @@ function InputText:initTextBox(text, char_added)
     if self.text_widget then
         self.text_widget:free(true)
     end
-    self.text = text
-    local fgcolor
-    local show_charlist
-    local show_text = text
-    if show_text == "" or show_text == nil then
+
+    -- 'text' is passed in init() and setText() only, to check editability;
+    -- other methods modify and provide self.charlist
+    self.text = text or table.concat(self.charlist)
+    local show_charlist, show_text, fgcolor
+    if self.text == "" then
         -- no preset value, use hint text if set
         show_text = self.hint
         fgcolor = Blitbuffer.COLOR_DARK_GRAY
@@ -412,14 +414,19 @@ function InputText:initTextBox(text, char_added)
     else
         fgcolor = Blitbuffer.COLOR_BLACK
         if self.text_type == "password" then
-            show_text = self.text:gsub(
-                "(.-).", function() return "*" end)
-            if char_added then
-                show_text = show_text:gsub(
-                    "(.)$", function() return self.text:sub(-1) end)
+            show_charlist = {}
+            for i = 1, #self.charlist do
+                if char_added and i == self.charpos - 1 then -- show last entered char
+                    show_charlist[i] = self.charlist[i]
+                else
+                    show_charlist[i] = "*"
+                end
             end
+            show_text = table.concat(show_charlist)
+        else
+            show_charlist = self.charlist
+            show_text = self.text
         end
-        self.charlist = util.splitToChars(text)
         -- keep previous cursor position if charpos not nil
         if self.charpos == nil then
             if self.cursor_at_end then
@@ -429,6 +436,7 @@ function InputText:initTextBox(text, char_added)
             end
         end
     end
+
     if self.is_password_type and self.show_password_toggle then
         self._check_button = self._check_button or CheckButton:new{
             text = _("Show password"),
@@ -450,7 +458,6 @@ function InputText:initTextBox(text, char_added)
     else
         self._password_toggle = nil
     end
-    show_charlist = util.splitToChars(show_text)
 
     if not self.height then
         -- If no height provided, measure the text widget height
@@ -484,6 +491,7 @@ function InputText:initTextBox(text, char_added)
             charpos = self.charpos,
             top_line_num = self.top_line_num,
             editable = self.focused,
+            select_mode = self.do_select,
             face = self.face,
             fgcolor = fgcolor,
             alignment = self.alignment,
@@ -506,6 +514,7 @@ function InputText:initTextBox(text, char_added)
             charpos = self.charpos,
             top_line_num = self.top_line_num,
             editable = self.focused,
+            select_mode = self.do_select,
             face = self.face,
             fgcolor = fgcolor,
             alignment = self.alignment,
@@ -554,20 +563,11 @@ function InputText:initTextBox(text, char_added)
         self.edit_callback(self.is_text_edited)
     end
 end
-dbg:guard(InputText, "initTextBox",
-    function(self, text, char_added)
-        assert(type(text) == "string",
-            "Wrong text type (expected string)")
-    end)
 
 function InputText:initKeyboard()
-    local keyboard_layer = 2
-    if self.input_type == "number" then
-        keyboard_layer = 4
-    end
     self.key_events = {}
     self.keyboard = Keyboard:new{
-        keyboard_layer = keyboard_layer,
+        keyboard_layer = self.input_type == "number" and 4 or 2,
         inputbox = self,
     }
 end
@@ -755,10 +755,7 @@ function InputText:getLineHeight()
 end
 
 function InputText:getKeyboardDimen()
-    if self.readonly then
-        return Geom:new{w = 0, h = 0}
-    end
-    return self.keyboard.dimen
+    return self.readonly and Geom:new{w = 0, h = 0} or self.keyboard.dimen
 end
 
 -- calculate current and last (original) line numbers
@@ -824,37 +821,29 @@ end
 -- offset is the absolute position, otherwise the offset is added to the current
 -- cursor position (negative offsets are allowed).
 function InputText:getChar(offset, is_absolute)
-    local idx
-    if is_absolute then
-        idx = offset
-    else
-        idx = self.charpos + offset
-    end
-    if idx < 1 or idx > #self.charlist then return end
+    local idx = is_absolute and offset or self.charpos + offset
     return self.charlist[idx]
 end
 
 function InputText:addChars(chars)
-    if not chars then
-        -- VirtualKeyboard:addChar(key) gave us 'nil' once (?!)
-        -- which would crash table.concat()
-        return
-    end
     if self.enter_callback and chars == "\n" then
         UIManager:scheduleIn(0.3, function() self.enter_callback() end)
         return
     end
+
     if self.readonly or not self:isTextEditable(true) then
         return
     end
-
-    self.is_text_edited = true
     if #self.charlist == 0 then -- widget text is empty or a hint text is displayed
         self.charpos = 1 -- move cursor to the first position
     end
-    table.insert(self.charlist, self.charpos, chars)
-    self.charpos = self.charpos + #util.splitToChars(chars)
-    self:initTextBox(table.concat(self.charlist), true)
+    local added_charlist = util.splitToChars(chars)
+    for i = #added_charlist, 1, -1 do
+        table.insert(self.charlist, self.charpos, added_charlist[i])
+    end
+    self.charpos = self.charpos + #added_charlist
+    self.is_text_edited = true
+    self:initTextBox(nil, true)
 end
 dbg:guard(InputText, "addChars",
     function(self, chars)
@@ -868,9 +857,9 @@ function InputText:delChar()
     end
     if self.charpos == 1 then return end
     self.charpos = self.charpos - 1
-    self.is_text_edited = true
     table.remove(self.charlist, self.charpos)
-    self:initTextBox(table.concat(self.charlist))
+    self.is_text_edited = true
+    self:initTextBox()
 end
 
 function InputText:delNextChar()
@@ -878,9 +867,9 @@ function InputText:delNextChar()
         return
     end
     if self.charpos > #self.charlist then return end
-    self.is_text_edited = true
     table.remove(self.charlist, self.charpos)
-    self:initTextBox(table.concat(self.charlist))
+    self.is_text_edited = true
+    self:initTextBox()
 end
 
 function InputText:delWord(left_to_cursor)
@@ -901,7 +890,7 @@ function InputText:delWord(left_to_cursor)
         end
     end
     self.is_text_edited = true
-    self:initTextBox(table.concat(self.charlist))
+    self:initTextBox()
 end
 
 function InputText:delToStartOfLine()
@@ -922,7 +911,7 @@ function InputText:delToStartOfLine()
         end
     end
     self.is_text_edited = true
-    self:initTextBox(table.concat(self.charlist))
+    self:initTextBox()
 end
 
 function InputText:delAll()
@@ -930,8 +919,9 @@ function InputText:delAll()
         return
     end
     if #self.charlist == 0 then return end
+    self.charlist = {}
     self.is_text_edited = true
-    self:initTextBox("")
+    self:initTextBox()
 end
 
 -- For the following cursor/scroll methods, the text_widget deals
@@ -1006,20 +996,13 @@ function InputText:scrollToBottom()
     self:resyncPos()
 end
 
-function InputText:clear()
-    self.charpos = nil
-    self.top_line_num = 1
-    self.is_text_edited = true
-    self:initTextBox("")
-    self:checkTextEditability()
-end
-
 function InputText:getText()
     return self.text
 end
 
 function InputText:setText(text, keep_edited_state)
     -- Keep previous charpos and top_line_num
+    self.charlist = util.splitToChars(text)
     self:initTextBox(text)
     if not keep_edited_state then
         -- assume new text is set by caller, and we start fresh

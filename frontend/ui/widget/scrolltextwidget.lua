@@ -23,6 +23,7 @@ local ScrollTextWidget = InputContainer:extend{
     charpos = nil,
     top_line_num = nil,
     editable = false,
+    select_mode = nil, -- select mode in InputText
     scroll_callback = nil, -- called with (low, high) when view is scrolled
     scroll_by_pan = false, -- allow scrolling by lines with Pan
     face = nil,
@@ -53,6 +54,7 @@ function ScrollTextWidget:init()
         top_line_num = self.top_line_num,
         dialog = self.dialog,
         editable = self.editable,
+        select_mode = self.select_mode,
         face = self.face,
         image_alt_face = self.image_alt_face,
         fgcolor = self.fgcolor,
