@@ -43,9 +43,7 @@ jobs:
             binutils
             cmake
             coreutils
-            gettext
-            gnu-getopt
-            grep
+            findutils
             libtool
             make
             nasm
@@ -53,17 +51,16 @@ jobs:
             p7zip
             pkg-config
             sdl2
-            wget
+            util-linux
           )
           brew install --formula --quiet "${packages[@]}"
 
       - name: Update PATH
         run: >
           printf '%s\n'
-          "$(brew --prefix)/opt/gettext/bin"
-          "$(brew --prefix)/opt/gnu-getopt/bin"
-          "$(brew --prefix)/opt/grep/libexec/gnubin"
+          "$(brew --prefix)/opt/findutils/libexec/gnubin"
           "$(brew --prefix)/opt/make/libexec/gnubin"
+          "$(brew --prefix)/opt/util-linux/bin"
           | tee "${GITHUB_PATH}"
 
       # }}}
