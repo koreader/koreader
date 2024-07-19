@@ -83,15 +83,14 @@ luarocks --lua-version=5.1 --local install busted
 Install the prerequisites using [Homebrew](https://brew.sh/):
 
 ```
-brew install autoconf automake binutils cmake coreutils gettext \
-    gnu-getopt grep libtool make nasm ninja pkg-config sdl2 wget
+brew install autoconf automake binutils cmake coreutils findutils gnu-getopt \
+    libtool make nasm ninja p7zip pkg-config sdl2 util-linux
 ```
 
-You will also have to ensure Homebrew's gettext, gnu-getopt, grep are in your path, e.g., via
+You will also have to ensure Homebrew's findutils, gnu-getopt, make & util-linux are in your path, e.g., via
 ```
-export PATH="$(brew --prefix)/opt/gettext/bin:$(brew --prefix)/opt/gnu-getopt/bin:$(brew --prefix)/opt/grep/libexec/gnubin:${PATH}"
+export PATH="$(brew --prefix)/opt/findutils/libexec/gnubin:$(brew --prefix)/opt/gnu-getopt/bin:$(brew --prefix)/opt/make/libexec/gnubin:$(brew --prefix)/opt/util-linux/bin:${PATH}"
 ```
-See also `brew info gettext` for details on how to make that permanent in your shell.
 
 In the same vein, if that's not already the case, you probably also want to make sure Homebrew's stuff takes precedence:
 ```
