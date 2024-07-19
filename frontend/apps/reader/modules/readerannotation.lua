@@ -272,7 +272,7 @@ function ReaderAnnotation:isItemInPositionOrderRolling(a, b)
     local a_page = self.document:getPageFromXPointer(a.page)
     local b_page = self.document:getPageFromXPointer(b.page)
     if a_page == b_page then -- both items in the same page
-        if not a.drawer ~= not b.drawer then -- comparing a page bookmark and a highlight
+        if (not a.drawer) ~= (not b.drawer) then -- comparing a page bookmark and a highlight
             return not a.drawer -- have page bookmarks before highlights
         end
         local compare_xp = self.document:compareXPointers(a.page, b.page)
