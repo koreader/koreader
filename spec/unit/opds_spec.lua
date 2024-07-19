@@ -188,51 +188,50 @@ One Thousand Mythological Characters Briefly Described
 
 local popular_new_sample = [[
 <?xml version="1.0" encoding="UTF-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom" xmlns:opds4l="http://www.feedbooks.com/opds4l" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xml:lang="en" xmlns:app="http://www.w3.org/2007/app" xmlns:thr="http://purl.org/syndication/thread/1.0" xmlns:opds="http://opds-spec.org/2010/catalog">
-  <id>http://www.feedbooks.com/publicdomain/catalog.atom</id>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xml:lang="en" xmlns:app="http://www.w3.org/2007/app" xmlns:thr="http://purl.org/syndication/thread/1.0" xmlns:opds="http://opds-spec.org/2010/catalog">
+  <id>https://catalog.feedbooks.com/catalog/public_domain.atom</id>
   <title>Public Domain Books</title>
   <updated>2014-11-30T17:54:01Z</updated>
-  <icon>http://assets3.feedbooks.net/images/favicon.ico?t=1417192326</icon>
+  <icon>https://catalog.feedbooks.com/favicon.ico</icon>
   <author>
     <name>Feedbooks</name>
     <uri>http://www.feedbooks.com</uri>
-    <email>support@feedbooks.zendesk.com</email>
+    <email>help@demarque.com</email>
   </author>
-  <link type="application/atom+xml; profile=opds-catalog; kind=navigation" href="http://www.feedbooks.com/publicdomain/catalog.atom" rel="self"/>
-  <link type="application/atom+xml;profile=opds-catalog;kind=navigation" title="Home" href="http://www.feedbooks.com/catalog.atom" rel="start"/>
-  <link type="application/opensearchdescription+xml" title="Search on Feedbooks" href="http://www.feedbooks.com/opensearch.xml" rel="search"/>
-  <link type="application/atom+xml;profile=opds-catalog;kind=acquisition" title="Bookshelf" href="https://www.feedbooks.com/user/bookshelf.atom" rel="http://opds-spec.org/shelf"/>
-<link type="application/atom+xml;profile=opds-catalog;kind=acquisition" title="Featured Books" href="http://www.feedbooks.com/featured.atom?view=books" rel="http://opds-spec.org/featured"/>
-<link type="application/atom+xml;profile=opds-catalog;kind=acquisition" title="Literary" href="http://www.feedbooks.com/books/top.atom?category=FBFIC019000" rel="http://opds-spec.org/sort/popular"/>
-<link type="application/atom+xml;profile=opds-catalog;kind=acquisition" title="Mystery &amp; Detective" href="http://www.feedbooks.com/books/top.atom?category=FBFIC022000" rel="http://opds-spec.org/sort/popular"/>
-<link type="application/atom+xml;profile=opds-catalog;kind=acquisition" title="Science Fiction" href="http://www.feedbooks.com/books/top.atom?category=FBFIC028000" rel="http://opds-spec.org/sort/popular"/>
+  <link rel="self" type="application/atom+xml;profile=opds-catalog;kind=navigation; charset=utf-8" href="https://catalog.feedbooks.com/catalog/public_domain.atom"/>
+  <link rel="start" type="application/atom+xml;profile=opds-catalog;kind=navigation" title="Home" href="https://catalog.feedbooks.com/catalog/index.atom"/>
+  <link rel="search" href="https://catalog.feedbooks.com/opensearch.xml" type="application/opensearchdescription+xml" title="Search on Feedbooks"/>
+<link rel="http://opds-spec.org/featured" type="application/atom+xml;profile=opds-catalog;kind=acquisition" title="Featured books" href="https://catalog.feedbooks.com/publicdomain/browse/homepage_selection.atom?lang=en"/>
+<link rel="http://opds-spec.org/sort/popular" type="application/atom+xml;profile=opds-catalog;kind=acquisition" title="Literary" href="https://catalog.feedbooks.com/publicdomain/browse/best.atom?cat=FBFIC019000&amp;lang=en"/>
+<link rel="http://opds-spec.org/sort/popular" type="application/atom+xml;profile=opds-catalog;kind=acquisition" title="Mystery &amp; detective" href="https://catalog.feedbooks.com/publicdomain/browse/best.atom?cat=FBFIC022000&amp;lang=en"/>
+<link rel="http://opds-spec.org/sort/popular" type="application/atom+xml;profile=opds-catalog;kind=acquisition" title="Science fiction" href="https://catalog.feedbooks.com/publicdomain/browse/best.atom?cat=FBFIC028000&amp;lang=en"/>
 <entry>
-  <title>Most Popular</title>
-  <link type="application/atom+xml;profile=opds-catalog;kind=acquisition" href="http://www.feedbooks.com/books/top.atom" rel="http://opds-spec.org/sort/popular"/>
-  <updated>2014-11-30T17:54:01Z</updated>
-  <id>http://www.feedbooks.com/books/top.atom</id>
+  <title>Most popular</title>
+  <link type="application/atom+xml;profile=opds-catalog;kind=acquisition" rel="http://opds-spec.org/sort/popular" href="https://catalog.feedbooks.com/publicdomain/browse/top.atom?lang=en"/>
+  <updated>2024-07-19T16:19:38Z</updated>
+  <id>https://catalog.feedbooks.com/publicdomain/browse/top.atom?lang=en</id>
   <content type="text">Based on last week's downloads</content>
 </entry>
 <entry>
-  <title>Recently Added</title>
-  <link type="application/atom+xml;profile=opds-catalog;kind=acquisition" href="http://www.feedbooks.com/books/recent.atom" rel="http://opds-spec.org/sort/new"/>
-  <updated>2014-11-30T17:54:01Z</updated>
-  <id>http://www.feedbooks.com/books/recent.atom</id>
+  <title>Recently added</title>
+  <link type="application/atom+xml;profile=opds-catalog;kind=acquisition" rel="http://opds-spec.org/sort/new" href="https://catalog.feedbooks.com/publicdomain/browse/recent.atom?lang=en"/>
+  <updated>2024-07-19T16:19:38Z</updated>
+  <id>https://catalog.feedbooks.com/publicdomain/browse/recent.atom?lang=en</id>
   <content type="text">Find the latest books available</content>
 </entry>
 <entry>
   <title>Fiction</title>
-  <link type="application/atom+xml;profile=opds-catalog;kind=navigation" href="http://www.feedbooks.com/books/categories/FBFIC000000.atom?lang=en" rel="subsection"/>
-  <updated>2014-11-30T17:54:01Z</updated>
-  <id>http://www.feedbooks.com/books/categories.atom</id>
-  <content type="text">Browse book by category</content>
+  <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="subsection" href="https://catalog.feedbooks.com/publicdomain/category/FBFIC000000/sub.atom"/>
+  <updated>2024-07-19T16:19:38Z</updated>
+  <id>https://catalog.feedbooks.com/publicdomain/category/FBFIC000000/sub.atom</id>
+  <content type="text">Browse books by category</content>
 </entry>
 <entry>
-  <title>Non-Fiction</title>
-  <link type="application/atom+xml;profile=opds-catalog;kind=navigation" href="http://www.feedbooks.com/books/categories/FBNFC000000.atom?lang=en" rel="subsection"/>
-  <updated>2014-11-30T17:54:01Z</updated>
-  <id>http://www.feedbooks.com/books/categories.atom</id>
-  <content type="text">Browse book by category</content>
+  <title>Nonfiction</title>
+  <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="subsection" href="https://catalog.feedbooks.com/publicdomain/category/FBNFC000000/sub.atom"/>
+  <updated>2024-07-19T16:19:38Z</updated>
+  <id>https://catalog.feedbooks.com/publicdomain/category/FBNFC000000/sub.atom</id>
+  <content type="text">Browse books by category</content>
 </entry>
 </feed>
 ]]
@@ -342,10 +341,10 @@ describe("OPDS module #nocov", function()
                 local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://www.feedbooks.com/publicdomain/catalog.atom")
 
                 assert.truthy(item_table)
-                assert.are.same(item_table[2].title, "Most Popular")
-                assert.are.same(item_table[2].url, "http://www.feedbooks.com/books/top.atom")
-                assert.are.same(item_table[3].title, "Recently Added")
-                assert.are.same(item_table[3].url, "http://www.feedbooks.com/books/recent.atom")
+                assert.are.same(item_table[2].title, "Most popular")
+                assert.are.same(item_table[2].url, "https://catalog.feedbooks.com/publicdomain/browse/top.atom?lang=en")
+                assert.are.same(item_table[3].title, "Recently added")
+                assert.are.same(item_table[3].url, "https://catalog.feedbooks.com/publicdomain/browse/recent.atom?lang=en")
             end)
             it("should use the main URL for faceted links as long as faceted links aren't properly supported #internet", function()
                 local catalog = OPDSParser:parse(facet_sample)
