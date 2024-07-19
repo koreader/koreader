@@ -37,6 +37,10 @@ jobs:
 
       - name: Install dependencies
         run: |
+          wget -O ninjatracing.zip https://github.com/nico/ninjatracing/archive/a669e3644cf22b29cbece31dbed2cfbf34e5f48e.zip
+          unzip -j ninjatracing.zip '*/ninjatracing'
+          install -m755 ninjatracing /usr/local/bin/
+          rm ninjatracing*
           packages=(
             autoconf
             automake
@@ -123,8 +127,13 @@ jobs:
       # Build. {{{
 
       - name: Build
+        id: build
         if: steps.build-restore.outputs.cache-hit != 'true'
         run: make base
+
+      - name: Dump build timings
+        if: contains('failure success', steps.build.conclusion) && !cancelled()
+        run: make buildstats
 
       - name: Dump binaries runtime path & dependencies
         run: make bindeps
@@ -134,7 +143,7 @@ jobs:
       # Clean / save caches. {{{
 
       - name: Clean caches
-        if: steps.build-restore.outputs.cache-hit != 'true' && always()
+        if: contains('failure success', steps.build.conclusion) && !cancelled()
         run: |
           set -x
           # Trim the build directory.
