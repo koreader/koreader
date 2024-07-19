@@ -29,8 +29,44 @@ jobs:
       MAKEFLAGS: 'OUTPUT_DIR=build INSTALL_DIR=install TARGET=macos'
 
     steps:
+
+      # Install dependencies. {{{
+
       - name: XCode version
         run: xcode-select -p
+
+      - name: Install dependencies
+        run: |
+          packages=(
+            autoconf
+            automake
+            binutils
+            cmake
+            coreutils
+            gettext
+            gnu-getopt
+            grep
+            libtool
+            make
+            nasm
+            ninja
+            p7zip
+            pkg-config
+            sdl2
+            wget
+          )
+          brew install --formula --quiet "${packages[@]}"
+
+      - name: Update PATH
+        run: >
+          printf '%s\n'
+          "$(brew --prefix)/opt/gettext/bin"
+          "$(brew --prefix)/opt/gnu-getopt/bin"
+          "$(brew --prefix)/opt/grep/libexec/gnubin"
+          "$(brew --prefix)/opt/make/libexec/gnubin"
+          | tee "${GITHUB_PATH}"
+
+      # }}}
 
       # Checkout / fetch. {{{
 
@@ -84,28 +120,6 @@ jobs:
           ccache --zero-stats
           ccache --max-size=256M
           ccache --show-config
-
-      # }}}
-
-      # Install dependencies. {{{
-
-      - name: Install homebrew dependencies
-        # Compared to the README, adds p7zip.
-        run: |
-          packages=(
-            nasm binutils coreutils libtool autoconf automake cmake make
-            sdl2 gettext pkg-config wget gnu-getopt grep p7zip ninja
-          )
-          brew install --formula --quiet "${packages[@]}"
-
-      - name: Update PATH
-        run: >
-          printf '%s\n'
-          "$(brew --prefix)/opt/gettext/bin"
-          "$(brew --prefix)/opt/gnu-getopt/bin"
-          "$(brew --prefix)/opt/grep/libexec/gnubin"
-          "$(brew --prefix)/opt/make/libexec/gnubin"
-          | tee "${GITHUB_PATH}"
 
       # }}}
 
