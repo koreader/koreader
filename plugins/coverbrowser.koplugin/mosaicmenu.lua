@@ -408,7 +408,11 @@ function MosaicMenuItem:init()
     -- for compatibility with keyboard navigation
     -- (which does not seem to work well when multiple pages,
     -- even with classic menu)
-    self.underline_h = 5 -- default (3)
+    if Device:isTouchDevice() then
+        self.underline_h = 1 -- smaller than default (3), don't waste space
+    else
+        self.underline_h = 5
+    end
     self._underline_container = UnderlineContainer:new{
         vertical_align = "top",
         padding = 1,
