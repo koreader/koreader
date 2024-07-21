@@ -25,8 +25,8 @@ function ReaderCoptListener:onReadSettings(config)
     -- ReaderView is the holder of the view_mode state
     self.view.view_mode = view_mode_name
 
-    -- crengine top status bar can only show author and title together
     self.title = G_reader_settings:readSetting("cre_header_title", 1)
+    self.author = G_reader_settings:readSetting("cre_header_author", 1)
     self.clock = G_reader_settings:readSetting("cre_header_clock", 1)
     self.header_auto_refresh = G_reader_settings:readSetting("cre_header_auto_refresh", 1)
     self.page_number = G_reader_settings:readSetting("cre_header_page_number", 1)
@@ -37,6 +37,7 @@ function ReaderCoptListener:onReadSettings(config)
     self.chapter_marks = G_reader_settings:readSetting("cre_header_chapter_marks", 1)
 
     self.document._document:setIntProperty("window.status.title", self.title)
+    self.document._document:setIntProperty("window.status.author", self.author)
     self.document._document:setIntProperty("window.status.clock", self.clock)
     self.document._document:setIntProperty("window.status.pos.page.number", self.page_number)
     self.document._document:setIntProperty("window.status.pos.page.count", self.page_count)
@@ -385,13 +386,23 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 separator = true
             },
             {
-                text = _("Book author and title"),
+                text = _("Book title"),
                 checked_func = function()
                     return self.title == 1
                 end,
                 callback = function()
                     self.title = self.title == 0 and 1 or 0
                     self:setAndSave("cre_header_title", "window.status.title", self.title)
+                end,
+            },
+            {
+                text = _("Book author"),
+                checked_func = function()
+                    return self.author == 1
+                end,
+                callback = function()
+                    self.author = self.author == 0 and 1 or 0
+                    self:setAndSave("cre_header_author", "window.status.author", self.author)
                 end,
             },
             {
