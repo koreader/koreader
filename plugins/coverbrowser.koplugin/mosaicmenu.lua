@@ -408,11 +408,7 @@ function MosaicMenuItem:init()
     -- for compatibility with keyboard navigation
     -- (which does not seem to work well when multiple pages,
     -- even with classic menu)
-    if Device:isTouchDevice() then
-        self.underline_h = 1 -- smaller than default (3), don't waste space
-    else
-        self.underline_h = 5
-    end
+    self.underline_h = 1 -- smaller than default (3), don't waste space
     self._underline_container = UnderlineContainer:new{
         vertical_align = "top",
         padding = 1,
@@ -426,6 +422,12 @@ function MosaicMenuItem:init()
     }
     self[1] = self._underline_container
 
+    if not Device:isTouchDevice() then
+        -- Make it bigger on non-touch devices, without affecting our sizing
+        -- we'll keep doing with that small self.underline_h
+        self._underline_container.linesize = 5
+    end
+    
     -- Remaining part of initialization is done in update(), because we may
     -- have to do it more than once if item not found in db
     self:update()
