@@ -350,6 +350,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                     -- Reset a few stuff that may use page labels
                     self.ui.toc:resetToc()
                     self.ui.view.footer:onUpdateFooter()
+                    self.ui.annotation:updatePageNumbers(true)
                     UIManager:setDirty(self.view.dialog, "partial")
                 end,
                 hold_callback = function(touchmenu_instance)

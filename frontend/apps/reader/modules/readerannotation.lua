@@ -24,7 +24,7 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
         if chapter == nil then
             chapter = self.ui.toc:getTocTitleByPage(bm.page)
         end
-        pageno = self.ui.paging and bm.page or self.document:getPageFromXPointer(bm.page)
+        pageno = self.ui.bookmark:getBookmarkPageString(bm.page)
     end
     if self.ui.paging and bm.pos0 and not bm.pos0.page then
         -- old single-page reflow highlights do not have page in position
@@ -53,7 +53,7 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
         text_edited = hl.edited,   -- true if highlighted text has been edited
         note        = note,        -- user's note, editable
         chapter     = chapter,     -- book chapter title
-        pageno      = pageno,      -- book page number
+        pageno      = pageno,      -- book page number (honors reference pages and hidden flows)
         page        = bm.page,     -- highlight location, xPointer or number (pdf)
         pos0        = bm.pos0,     -- highlight start position, xPointer (== page) or table (pdf)
         pos1        = bm.pos1,     -- highlight end position, xPointer or table (pdf)
@@ -227,10 +227,11 @@ end
 
 -- items handling
 
-function ReaderAnnotation:updatePageNumbers()
-    if self.needs_update and self.ui.rolling then -- triggered by ReaderRolling on document layout change
+function ReaderAnnotation:updatePageNumbers(force_update)
+    if self.ui.paging then return end
+    if force_update or self.needs_update then -- triggered by ReaderRolling on document layout change
         for _, item in ipairs(self.annotations) do
-            item.pageno = self.document:getPageFromXPointer(item.page)
+            item.pageno = self.ui.bookmark:getBookmarkPageString(item.page)
         end
     end
     self.needs_update = nil
@@ -265,7 +266,7 @@ function ReaderAnnotation:updateItemByXPointer(item)
         item.text = chapter and T(_("in %1"), chapter) or nil
     end
     item.chapter = chapter
-    item.pageno = self.document:getPageFromXPointer(item.page)
+    item.pageno = self.ui.bookmark:getBookmarkPageString(item.page)
 end
 
 function ReaderAnnotation:isItemInPositionOrderRolling(a, b)
@@ -396,7 +397,7 @@ end
 
 function ReaderAnnotation:addItem(item)
     item.datetime = os.date("%Y-%m-%d %H:%M:%S")
-    item.pageno = self.ui.paging and item.page or self.document:getPageFromXPointer(item.page)
+    item.pageno = self.ui.bookmark:getBookmarkPageString(item.page)
     local index = self:getInsertionIndex(item)
     table.insert(self.annotations, index, item)
     return index
