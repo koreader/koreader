@@ -237,7 +237,7 @@ end
 
 function ToggleSwitch:onHoldSelect(arg, gev)
     local position = self:calculatePosition(gev)
-    if self.toggle[position] == "⋮" then
+    if self.toggle[position] == "⋮" or self.config.onMakeDefault == nil then
         return true
     end
     if self.name == "font_fine_tune" then
