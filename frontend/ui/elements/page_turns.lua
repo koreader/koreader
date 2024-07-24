@@ -1,5 +1,4 @@
 local Device = require("device")
-local Event = require("ui/event")
 local ReaderUI = require("apps/reader/readerui")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
@@ -7,9 +6,10 @@ local T = require("ffi/util").template
 
 local page_turns_tap_zones_sub_items = {} -- build the Tap zones submenu
 local tap_zones = {
-    default = _("Default"),
-    left_right = _("Left/right"),
-    top_bottom = _("Top/bottom"),
+    default    = _("Default"),
+    left_right = _("Left / right"),
+    top_bottom = _("Top / bottom"),
+    bottom_top = _("Bottom / top"),
 }
 local function genTapZonesMenu(tap_zones_type)
     table.insert(page_turns_tap_zones_sub_items, {
@@ -26,27 +26,24 @@ end
 genTapZonesMenu("default")
 genTapZonesMenu("left_right")
 genTapZonesMenu("top_bottom")
+genTapZonesMenu("bottom_top")
 
 local default_size_b = math.floor(G_defaults:readSetting("DTAP_ZONE_BACKWARD").w * 100)
 local default_size_f = math.floor(G_defaults:readSetting("DTAP_ZONE_FORWARD").w * 100)
 local function getTapZonesSize()
-    local size_b, size_f
-    if G_reader_settings:has("page_turns_tap_zone_forward_size_ratio") then
-        size_f = math.floor(G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio") * 100)
-        if G_reader_settings:has("page_turns_tap_zone_backward_size_ratio") then
-            size_b = math.floor(G_reader_settings:readSetting("page_turns_tap_zone_backward_size_ratio") * 100)
-        else
-            size_b = 100 - size_f
-        end
-    else
-        size_b = default_size_b
-        size_f = default_size_f
+    if G_reader_settings:readSetting("page_turns_tap_zones", "default") == "default" or
+            G_reader_settings:hasNot("page_turns_tap_zone_forward_size_ratio") then
+        return default_size_b, default_size_f
     end
+    local size_f = math.floor(G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio") * 100)
+    local size_b = G_reader_settings:readSetting("page_turns_tap_zone_backward_size_ratio")
+    size_b = size_b and math.floor(size_b * 100) or (100 - size_f)
     return size_b, size_f
 end
+
 table.insert(page_turns_tap_zones_sub_items, {
     text_func = function()
-        return T(_("Backward / forward tap zone size: %1 % / %2 %"), getTapZonesSize())
+        return T(_("Backward / forward tap zone size: %1\xE2\x80\xAF% / %2\xE2\x80\xAF%"), getTapZonesSize())
     end,
     enabled_func = function()
         return G_reader_settings:readSetting("page_turns_tap_zones", "default") ~= "default"
@@ -61,7 +58,7 @@ table.insert(page_turns_tap_zones_sub_items, {
             left_text = _("Backward"),
             left_value = size_b,
             left_min = 0,
-            left_max = 100 - size_f,
+            left_max = 100,
             left_default = default_size_b,
             left_hold_step = 5,
             right_text = _("Forward"),
@@ -128,7 +125,7 @@ local PageTurns = {
                 return ReaderUI.instance.view.inverse_reading_order
             end,
             callback = function()
-                UIManager:broadcastEvent(Event:new("ToggleReadingOrder"))
+                ReaderUI.instance.view:onToggleReadingOrder()
             end,
             hold_callback = function(touchmenu_instance)
                 local inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
@@ -167,21 +164,17 @@ local PageTurns = {
             help_text = _([[
 When enabled the UI direction for the Table of Contents, Book Map, and Page Browser dialogs will follow the page turn direction instead of the default UI direction.]]),
             separator = true,
-        }
+        },
+        Device:canDoSwipeAnimation() and {
+            text = _("Page turn animations"),
+            checked_func = function()
+                return G_reader_settings:isTrue("swipe_animations")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("swipe_animations")
+            end,
+        } or nil -- must be the last item
     }
 }
-
-if Device:canDoSwipeAnimation() then
-    table.insert(PageTurns.sub_item_table, {
-        text = _("Page turn animations"),
-        checked_func = function()
-            return G_reader_settings:isTrue("swipe_animations")
-        end,
-        callback = function()
-            UIManager:broadcastEvent(Event:new("TogglePageChangeAnimation"))
-        end,
-        separator = true,
-    })
-end
 
 return PageTurns

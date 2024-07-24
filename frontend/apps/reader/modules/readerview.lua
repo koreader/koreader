@@ -1147,21 +1147,21 @@ end
 
 function ReaderView:getTapZones()
     local forward_zone, backward_zone
+    local DTAP_ZONE_FORWARD = G_defaults:readSetting("DTAP_ZONE_FORWARD")
+    local DTAP_ZONE_BACKWARD = G_defaults:readSetting("DTAP_ZONE_BACKWARD")
     local tap_zones_type = G_reader_settings:readSetting("page_turns_tap_zones", "default")
     if tap_zones_type == "default" then
-        local DTAP_ZONE_FORWARD = G_defaults:readSetting("DTAP_ZONE_FORWARD")
         forward_zone = {
             ratio_x = DTAP_ZONE_FORWARD.x, ratio_y = DTAP_ZONE_FORWARD.y,
             ratio_w = DTAP_ZONE_FORWARD.w, ratio_h = DTAP_ZONE_FORWARD.h,
         }
-        local DTAP_ZONE_BACKWARD = G_defaults:readSetting("DTAP_ZONE_BACKWARD")
         backward_zone = {
             ratio_x = DTAP_ZONE_BACKWARD.x, ratio_y = DTAP_ZONE_BACKWARD.y,
             ratio_w = DTAP_ZONE_BACKWARD.w, ratio_h = DTAP_ZONE_BACKWARD.h,
         }
     else -- user defined page turns tap zones
-        local tap_zone_forward_w = G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", G_defaults:readSetting("DTAP_ZONE_FORWARD").w)
-        local tap_zone_backward_w = G_reader_settings:readSetting("page_turns_tap_zone_backward_size_ratio", G_defaults:readSetting("DTAP_ZONE_BACKWARD").w)
+        local tap_zone_forward_w = G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", DTAP_ZONE_FORWARD.w)
+        local tap_zone_backward_w = G_reader_settings:readSetting("page_turns_tap_zone_backward_size_ratio", DTAP_ZONE_BACKWARD.w)
         if tap_zones_type == "left_right" then
             forward_zone = {
                 ratio_x = 1 - tap_zone_forward_w, ratio_y = 0,
@@ -1171,13 +1171,22 @@ function ReaderView:getTapZones()
                 ratio_x = 0, ratio_y = 0,
                 ratio_w = tap_zone_backward_w, ratio_h = 1,
             }
-        else
+        elseif tap_zones_type == "top_bottom" then
             forward_zone = {
                 ratio_x = 0, ratio_y = 1 - tap_zone_forward_w,
                 ratio_w = 1, ratio_h = tap_zone_forward_w,
             }
             backward_zone = {
                 ratio_x = 0, ratio_y = 0,
+                ratio_w = 1, ratio_h = tap_zone_backward_w,
+            }
+        else -- "bottom_top"
+            forward_zone = {
+                ratio_x = 0, ratio_y = 0,
+                ratio_w = 1, ratio_h = tap_zone_forward_w,
+            }
+            backward_zone = {
+                ratio_x = 0, ratio_y = 1 - tap_zone_backward_w,
                 ratio_w = 1, ratio_h = tap_zone_backward_w,
             }
         end
