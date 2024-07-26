@@ -1155,6 +1155,12 @@ function UIManager:_refresh(mode, region, dither)
             region = HONOR_MY_WFM
         end
     end
+    if mode == "color" or mode == "colortext" then
+        if not Screen:isColorEnabled() then
+            -- If color isn't actually enabled, inject that extra request with the lowest priority mode
+            mode = "ui"
+        end
+    end
 
     -- Handle downgrading flashing modes to non-flashing modes, according to user settings.
     -- NOTE: Do it before "full" promotion and collision checks/update_mode.
