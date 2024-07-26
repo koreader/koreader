@@ -1157,7 +1157,7 @@ function UIManager:_refresh(mode, region, dither)
     end
     if mode == "color" or mode == "colortext" then
         if not Screen:isColorEnabled() then
-            -- If color isn't actually enabled, inject that extra request with the lowest priority mode
+            -- If color isn't actually enabled, inject that extra request with a low priority mode
             mode = "ui"
         end
     end
