@@ -1132,7 +1132,7 @@ function UIManager:_refresh(mode, region, dither)
         -- So use the lowest priority refresh mode (short of fast, because that'd do half-toning).
         if dither then
             mode = "ui"
-            -- Similarly, make sure we don't inject it as full-screen...
+            -- Do honor the original intent of this "mode is unset" branch, by making sure we don't inject it as full-screen...
             region = region or HONOR_MY_WFM
         else
             -- Otherwise, this is most likely from a `show` or `close` that wasn't passed specific refresh details,
@@ -1144,14 +1144,19 @@ function UIManager:_refresh(mode, region, dither)
     if self.currently_scrolling then
         mode = "fast"
     end
-    if not region and mode == "full" then
-        self.refresh_count = 0 -- reset counter on explicit full refresh
+
+    -- Handle a few quirks for explicit full/color refreshes
+    if not region then
+        if mode == "full" then
+            -- Reset counter on explicit full refresh
+            self.refresh_count = 0
+        elseif mode == "color" then
+            -- We have a habit of calling UIManager:setDirty(nil, "color") just to request a color waveform mode,
+            -- but we don't necessarily want that to *also* imply a full-screen region...
+            region = HONOR_MY_WFM
+        end
     end
-    -- We have a habit of calling UIManager:setDirty(nil, "color") just to request a color waveform mode,
-    -- but we don't want that to *also* always imply a full-screen region...
-    if not region and mode == "color" then
-        region = HONOR_MY_WFM
-    end
+
     -- Handle downgrading flashing modes to non-flashing modes, according to user settings.
     -- NOTE: Do it before "full" promotion and collision checks/update_mode.
     if G_reader_settings:isTrue("avoid_flashing_ui") then
@@ -1204,7 +1209,8 @@ function UIManager:_refresh(mode, region, dither)
     --       (e.g., the disappearance of a selection HL with the following menu update).
     for i, refresh in ipairs(self._refresh_stack) do
         logger.dbg("UIManager:_refresh refresh.region:", refresh.region, "@", i)
-        -- Check for our sentinel region used to float up the dither flag or a specific waveform mode...
+        -- First, we make sure that "contagious" mode/dither flags infect the whole queue,
+        -- regardless of their spot in said queue, or of their region.
         if region == HONOR_MY_WFM then
             mode = update_mode(mode, refresh.mode)
             dither = update_dither(dither, refresh.dither)
@@ -1215,7 +1221,8 @@ function UIManager:_refresh(mode, region, dither)
             dither = update_dither(dither, refresh.dither)
             table.remove(self._refresh_stack, i)
             return self:_refresh(mode, region, dither)
-        -- Check for collision with refreshes that are already enqueued
+        -- Then comes the main, not-an-edge-case logic,
+        -- where we check for collisions with refreshes that are already enqueued.
         -- NOTE: intersect *means* intersect: we won't merge edge-to-edge regions (but the EPDC probably will).
         elseif region:intersectWith(refresh.region) then
             -- combine both refreshes' regions
