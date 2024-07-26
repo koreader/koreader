@@ -312,7 +312,16 @@ function ReaderBookmark:onToggleBookmark()
     self:toggleBookmark()
     self.view.footer:onUpdateFooter(self.view.footer_visible)
     self.view.dogear:onSetDogearVisibility(not self.view.dogear_visible)
-    UIManager:setDirty(self.view.dialog, "ui")
+    -- Refresh the dogear
+    UIManager:setDirty(self.view.dialog, function()
+        return "ui",
+        Geom:new{
+            x = self.view.dogear[1].dimen.x,
+            y = self.view.dogear.dogear_y_offset, -- we have no extra padding, forgo the insanity happening in dimen.y
+            w = self.view.dogear.dogear_size, -- because dimen.w is set to the screen's width because RightContainer -_-"
+            h = self.view.dogear.dogear_size, -- because dimen.h includes y_offset
+        }
+    end)
     return true
 end
 
