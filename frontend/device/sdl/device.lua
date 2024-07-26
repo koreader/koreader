@@ -396,6 +396,11 @@ end
 function Device:initNetworkManager(NetworkMgr)
     function NetworkMgr:isWifiOn() return true end
     function NetworkMgr:isConnected()
+        if not Device:hasWifiToggle() then
+            -- NOTE: This is necessary so as not to confuse NetworkMghr's beforeWifiAction framework.
+            --       c.f., the default implementation in `NetworkMgr` itself for more details.
+            return true
+        end
         -- Pull the default gateway first, so we don't even try to ping anything if there isn't one...
         local default_gw = Device:getDefaultRoute()
         if not default_gw then
