@@ -40,13 +40,19 @@ function ReaderFlipping:init()
         alpha = true,
     }
     self[1] = LeftContainer:new{
-        dimen = Geom:new{w = self.flipping_widget:getSize().w, h = self.flipping_widget:getSize().h},
+        dimen = Geom:new{w = Screen:getWidth(), h = self.flipping_widget:getSize().h},
         self.flipping_widget,
     }
 end
 
 function ReaderFlipping:resetLayout()
-    -- Nothing to do, scaleBySize doesn't care about orientation
+    -- NOTE: LeftContainer aligns to the left of its *own* width (and will handle RTL mirroring, so we can't cheat)...
+    self[1].dimen.w = Screen:getWidth()
+end
+
+function ReaderFlipping:getRefreshRegion()
+    -- We can't use self.dimen because of the width/height quirks of Left/RightContainer, so use the IconWidget's...
+    return self[1][1].dimen
 end
 
 function ReaderFlipping:getRollingRenderingStateIconWidget()

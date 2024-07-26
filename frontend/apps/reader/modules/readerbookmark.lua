@@ -314,12 +314,7 @@ function ReaderBookmark:onToggleBookmark()
     -- Refresh the dogear first, because it might inherit ReaderUI refresh hints.
     UIManager:setDirty(self.view.dialog, function()
         return "ui",
-        Geom:new{
-            x = self.view.dogear[1].dimen.x,
-            y = self.view.dogear.dogear_y_offset, -- we have no extra padding, forgo the insanity happening in dimen.y
-            w = self.view.dogear.dogear_size, -- because dimen.w is set to the screen's width because RightContainer -_-"
-            h = self.view.dogear.dogear_size, -- because dimen.h includes y_offset
-        }
+        self.view.dogear:getRefreshRegion()
     end)
     -- And ask for a footer refresh, in case we have bookmark_count enabled.
     -- Assuming the footer is visible, it'll request a refresh regardless, but the EPDC should optimize it out if no content actually changed.

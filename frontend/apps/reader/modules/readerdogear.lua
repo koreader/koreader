@@ -20,6 +20,7 @@ function ReaderDogear:init()
     self.dogear_min_size = math.ceil(math.min(Screen:getWidth(), Screen:getHeight()) * (1/40))
     self.dogear_max_size = math.ceil(math.min(Screen:getWidth(), Screen:getHeight()) * (1/32))
     self.dogear_size = nil
+    self.icon = nil
     self.dogear_y_offset = 0
     self.top_pad = nil
     self:setupDogear()
@@ -35,16 +36,17 @@ function ReaderDogear:setupDogear(new_dogear_size)
         if self[1] then
             self[1]:free()
         end
+        self.icon = IconWidget:new{
+            icon = "dogear.alpha",
+            rotation_angle = BD.mirroredUILayout() and 90 or 0,
+            width = self.dogear_size,
+            height = self.dogear_size,
+            alpha = true, -- Keep the alpha layer intact
+        }
         self.top_pad = VerticalSpan:new{width = self.dogear_y_offset}
         self.vgroup = VerticalGroup:new{
             self.top_pad,
-            IconWidget:new{
-                icon = "dogear.alpha",
-                rotation_angle = BD.mirroredUILayout() and 90 or 0,
-                width = self.dogear_size,
-                height = self.dogear_size,
-                alpha = true, -- Keep the alpha layer intact
-            }
+            self.icon,
         }
         self[1] = RightContainer:new{
             dimen = Geom:new{w = Screen:getWidth(), h = self.dogear_y_offset + self.dogear_size},
@@ -111,13 +113,13 @@ function ReaderDogear:onChangeViewMode()
 end
 
 function ReaderDogear:resetLayout()
-    -- NOTE: RightContainer aligns to the right of its *own* width,
-    --       hence this insanity, as we want to align to the right screen edge...
-    local new_screen_width = Screen:getWidth()
-    if new_screen_width == self._last_screen_width then return end
-    self._last_screen_width = new_screen_width
+    -- NOTE: RightContainer aligns to the right of its *own* width...
+    self[1].dimen.w = Screen:getWidth()
+end
 
-    self[1].dimen.w = new_screen_width
+function ReaderDogear:getRefreshRegion()
+    -- We can't use self.dimen because of the width/height quirks of Left/RightContainer, so use the IconWidget's...
+    return self.icon.dimen
 end
 
 function ReaderDogear:onSetDogearVisibility(visible)

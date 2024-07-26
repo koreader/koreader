@@ -1214,7 +1214,7 @@ function ReaderHighlight:_resetHoldTimer(clear)
         self.long_hold_reached_action = function()
             self.long_hold_reached = true
             -- Have ReaderView redraw and refresh ReaderFlipping and our state icon, avoiding flashes
-            UIManager:setDirty(self.dialog, "ui", self.view.flipping.dimen)
+            UIManager:setDirty(self.dialog, "ui", self.view.flipping:getRefreshRegion())
         end
     end
     -- Unschedule if already set
@@ -1251,7 +1251,7 @@ function ReaderHighlight:_resetHoldTimer(clear)
     if self.long_hold_reached then
         self.long_hold_reached = false
         -- Have ReaderView redraw and refresh ReaderFlipping with our state icon removed
-        UIManager:setDirty(self.dialog, "ui", self.view.flipping.dimen)
+        UIManager:setDirty(self.dialog, "ui", self.view.flipping:getRefreshRegion())
     end
 end
 
