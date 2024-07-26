@@ -1149,15 +1149,15 @@ function UIManager:_refresh(mode, region, dither)
         mode = "fast"
     end
 
-    -- Handle a few quirks for explicit full refreshes
+    -- Reset the refresh counter on any explicit full refresh
     if not region and mode == "full" then
-        -- Reset counter on explicit full refresh
         self.refresh_count = 0
     end
+
+    -- If color isn't actually enabled, match the framebuffer_mxcfb fallback
     if mode == "color" or mode == "colortext" then
         if not Screen:isColorEnabled() then
-            -- If color isn't actually enabled, inject that extra request with a low priority mode
-            mode = "ui"
+            mode = "partial"
         end
     end
 
