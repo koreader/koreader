@@ -1104,14 +1104,6 @@ local function update_dither(dither1, dither2)
     end
 end
 
--- Empty, sentinel `region` used to propagate dither/wfm modes across the queue in `_refresh`...
--- We don't want to rely on a fullscreen region just to pass the intersect check (to make sure the flags propagate),
--- because that would *also* make said fullscreen region propagate,
--- so we need to special-case this via a sentinel value that is otherwise sane and valid, but harmless and invisible...
--- NOTE: As the region is empty, this should only be used for "extra" setDirty(nil, ...) calls,
---       that exceptionally just want to enforce a specific wfm, instead of whatever the current refresh queue requested.
-UIManager.HONOR_MY_WFM = Geom:new{x = 0, y = 0, w = 0, h = 0}
-
 --[[--
 Enqueues a refresh.
 
@@ -1145,13 +1137,6 @@ function UIManager:_refresh(mode, region, dither)
     -- Reset the refresh counter on any explicit full refresh
     if not region and mode == "full" then
         self.refresh_count = 0
-    end
-
-    -- If color isn't actually enabled, match the framebuffer_mxcfb fallback
-    if mode == "color" or mode == "colortext" then
-        if not Screen:isColorEnabled() then
-            mode = "partial"
-        end
     end
 
     -- Handle downgrading flashing modes to non-flashing modes, according to user settings.
@@ -1209,24 +1194,9 @@ function UIManager:_refresh(mode, region, dither)
         logger.dbg("refresh.region is", refresh.region, "@", i)
         logger.dbg("refresh.dither is", refresh.dither, "@", i)
 
-        -- First, we make sure that "contagious" mode/dither flags infect the whole queue,
-        -- regardless of their spot in said queue, or of their region.
-        if region == UIManager.HONOR_MY_WFM then
-            mode = update_mode(mode, refresh.mode)
-            dither = update_dither(dither, refresh.dither)
-            table.remove(self._refresh_stack, i)
-            -- The *caller's* refresh is infectious, use the queued refresh's region
-            return self:_refresh(mode, refresh.region, dither)
-        elseif refresh.region == UIManager.HONOR_MY_WFM then
-            mode = update_mode(mode, refresh.mode)
-            dither = update_dither(dither, refresh.dither)
-            table.remove(self._refresh_stack, i)
-            -- The *queued* refresh is infectious, use the caller's refresh's region
-            return self:_refresh(mode, region, dither)
-        -- Then comes the main, not-an-edge-case logic,
-        -- where we check for collisions with refreshes that are already enqueued.
+        -- Check for collisions with refreshes that are already enqueued.
         -- NOTE: We use the open range variant, as we want to combine rectangles that share an edge (like the EPDC).
-        elseif region:openIntersectWith(refresh.region) then
+        if region:openIntersectWith(refresh.region) then
             -- combine both refreshes' regions
             local combined = region:combine(refresh.region)
             -- update the mode, if needed
