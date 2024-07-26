@@ -1132,17 +1132,9 @@ UIManager that a certain part of the screen is to be refreshed.
 ]]
 function UIManager:_refresh(mode, region, dither)
     if not mode then
-        -- If we're trying to float a dither hint up from a lower widget after a close, mode might be nil...
-        -- So use the lowest priority refresh mode (short of fast, because that'd do half-toning).
-        if dither then
-            mode = "ui"
-            -- Do honor the original intent of this "mode is unset" branch, by making sure we don't inject it as full-screen...
-            region = region or UIManager.HONOR_MY_WFM
-        else
-            -- Otherwise, this is most likely from a `show` or `close` that wasn't passed specific refresh details,
-            -- (which is the vast majority of them), in which case we drop it to avoid enqueuing a useless full-screen refresh.
-            return
-        end
+        -- This is most likely from a `show` or `close` that wasn't passed specific refresh details,
+        -- (which is the vast majority of them), in which case we drop it to avoid enqueuing a useless full-screen refresh.
+        return
     end
 
     -- Downgrade all refreshes to "fast" when ReaderPaging or ReaderScrolling have set this flag

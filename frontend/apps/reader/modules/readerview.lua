@@ -280,7 +280,7 @@ function ReaderView:paintTo(bb, x, y)
             end
             -- Request a flashing update while we're at it, but only if it's the first time we're painting it
             if self.state.drawn == false and G_reader_settings:nilOrTrue("refresh_on_pages_with_images") then
-                UIManager:setDirty(nil, "full", UIManager.HONOR_MY_WFM)
+                UIManager:setDirty(nil, "full")
             end
         end
         self.state.drawn = true
