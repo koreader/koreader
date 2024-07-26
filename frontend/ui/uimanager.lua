@@ -1144,6 +1144,7 @@ function UIManager:_refresh(mode, region, dither)
             return
         end
     end
+
     -- Downgrade all refreshes to "fast" when ReaderPaging or ReaderScrolling have set this flag
     if self.currently_scrolling then
         mode = "fast"
@@ -1205,16 +1206,12 @@ function UIManager:_refresh(mode, region, dither)
     -- if no dithering hint was specified, don't request dithering
     dither = dither or false
 
-    logger.dbg("refresh:", mode, region, dither)
     -- NOTE: While, ideally, we shouldn't merge refreshes w/ different waveform modes,
     --       this allows us to optimize away a number of quirks of our rendering stack
     --       (e.g., multiple setDirty calls queued when showing/closing a widget because of update mechanisms),
     --       as well as a few actually effective merges
     --       (e.g., the disappearance of a selection HL with the following menu update).
     for i, refresh in ipairs(self._refresh_stack) do
-        logger.dbg("refresh.mode is", refresh.mode, "@", i)
-        logger.dbg("refresh.region is", refresh.region, "@", i)
-        logger.dbg("refresh.dither is", refresh.dither, "@", i)
         -- First, we make sure that "contagious" mode/dither flags infect the whole queue,
         -- regardless of their spot in said queue, or of their region.
         if region == UIManager.HONOR_MY_WFM then
