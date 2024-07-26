@@ -183,7 +183,7 @@ function Geom:intersect(rect_b)
 end
 
 --[[--
-Returns true if self does not share any area with rect_b
+Returns true if self does not share any area or edge with rect_b
 
 @tparam Geom rect_b
 ]]
@@ -206,6 +206,32 @@ Returns true if self geom shares area with rect_b.
 ]]
 function Geom:intersectWith(rect_b)
     return not self:notIntersectWith(rect_b)
+end
+
+--[[--
+Returns true if self does not share any area with rect_b
+
+@tparam Geom rect_b
+]]
+function Geom:notOpenIntersectWith(rect_b)
+    if not rect_b or rect_b:area() == 0 then return true end
+
+    if (self.x > (rect_b.x + rect_b.w))
+    or (self.y > (rect_b.y + rect_b.h))
+    or (rect_b.x > (self.x + self.w))
+    or (rect_b.y > (self.y + self.h)) then
+        return true
+    end
+    return false
+end
+
+--[[--
+Returns true if self geom shares area or an edge with rect_b.
+
+@tparam Geom rect_b
+]]
+function Geom:openIntersectWith(rect_b)
+    return not self:notOpenIntersectWith(rect_b)
 end
 
 --[[--

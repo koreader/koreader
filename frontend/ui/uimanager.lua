@@ -1228,8 +1228,8 @@ function UIManager:_refresh(mode, region, dither)
             return self:_refresh(mode, region, dither)
         -- Then comes the main, not-an-edge-case logic,
         -- where we check for collisions with refreshes that are already enqueued.
-        -- NOTE: intersect *means* intersect: we won't merge edge-to-edge regions (but the EPDC probably will).
-        elseif region:intersectWith(refresh.region) then
+        -- NOTE: We use the open range variant, as we want to combine rectangles that share an edge (like the EPDC).
+        elseif region:openIntersectWith(refresh.region) then
             -- combine both refreshes' regions
             local combined = region:combine(refresh.region)
             -- update the mode, if needed
