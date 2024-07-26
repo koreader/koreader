@@ -40,18 +40,13 @@ function ReaderFlipping:init()
         alpha = true,
     }
     self[1] = LeftContainer:new{
-        dimen = Geom:new{w = Screen:getWidth(), h = self.flipping_widget:getSize().h},
+        dimen = Geom:new{w = self.flipping_widget:getSize().w, h = self.flipping_widget:getSize().h},
         self.flipping_widget,
     }
-    self:resetLayout()
 end
 
 function ReaderFlipping:resetLayout()
-    local new_screen_width = Screen:getWidth()
-    if new_screen_width == self._last_screen_width then return end
-    self._last_screen_width = new_screen_width
-
-    self[1].dimen.w = new_screen_width
+    -- Nothing to do, scaleBySize doesn't care about orientation
 end
 
 function ReaderFlipping:getRollingRenderingStateIconWidget()
