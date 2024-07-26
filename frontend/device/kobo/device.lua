@@ -1231,7 +1231,8 @@ end
 -- max_duration ... maximum time for the next standby, can wake earlier (e.g. Tap, Button ...)
 function Kobo:standby(max_duration)
     -- On MTK, any suspend/standby attempt while plugged-in will hang the kernel... -_-"
-    if self:isMTK() and (self.powerd:isCharging() or self.powerd.isCharged()) then
+    -- NOTE: isCharging is still true while isCharged!
+    if self:isMTK() and self.powerd:isCharging() then
         logger.info("Kobo standby: skipping the standby request for now: device is plugged in and would otherwise crash!")
 
         return
@@ -1309,7 +1310,8 @@ end
 
 function Kobo:suspend()
     -- On MTK, any suspend/standby attempt while plugged-in will hang the kernel... -_-"
-    if self:isMTK() and (self.powerd:isCharging() or self.powerd.isCharged()) then
+    -- NOTE: isCharging is still true while isCharged!
+    if self:isMTK() and self.powerd:isCharging() then
         logger.info("Kobo suspend: skipping the suspend request for now: device is plugged in and would otherwise crash!")
 
         -- Do the usual scheduling dance, so we get a chance to fire the UnexpectedWakeupLimit event...
