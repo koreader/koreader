@@ -1104,7 +1104,7 @@ local function update_dither(dither1, dither2)
     end
 end
 
--- Empty, but sentinel `region` used to float up dither/wfm modes in `_refresh`...
+-- Empty, sentinel `region` used to propagate dither/wfm modes across the queue in `_refresh`...
 local HONOR_MY_WFM = Geom:new{x = 0, y = 0, w = 0, h = 0}
 
 --[[--
@@ -1215,11 +1215,13 @@ function UIManager:_refresh(mode, region, dither)
             mode = update_mode(mode, refresh.mode)
             dither = update_dither(dither, refresh.dither)
             table.remove(self._refresh_stack, i)
+            -- The *caller's* refresh is infectious, use the queued refresh's region
             return self:_refresh(mode, refresh.region, dither)
         elseif refresh.region == HONOR_MY_WFM then
             mode = update_mode(mode, refresh.mode)
             dither = update_dither(dither, refresh.dither)
             table.remove(self._refresh_stack, i)
+            -- The *queued* refresh is infectious, use the caller's refresh's region
             return self:_refresh(mode, region, dither)
         -- Then comes the main, not-an-edge-case logic,
         -- where we check for collisions with refreshes that are already enqueued.
