@@ -278,14 +278,17 @@ function ReaderView:paintTo(bb, x, y)
         -- Which is why we remember the stats of the *previous* page.
         self.img_count, self.img_coverage = img_count, img_coverage
         if img_coverage >= 0.075 or coverage_diff >= 0.075 then
-            self.dialog.dithered = true
             -- Request a flashing update while we're at it, but only if it's the first time we're painting it
             if self.state.drawn == false and G_reader_settings:nilOrTrue("refresh_on_pages_with_images") then
                 UIManager:setDirty(nil, "full", UIManager.HONOR_MY_WFM)
             end
-            if Device:hasKaleidoWfm() and img_coverage >= 0.075 then
+            if img_coverage >= 0.075 then
+                self.dialog.dithered = true
+
                 -- On Kaleido panels, we'll want to use GCC16 on the actual image, always...
-                UIManager:setDirty(nil, "color", UIManager.HONOR_MY_WFM)
+                if Device:hasKaleidoWfm() then
+                    UIManager:setDirty(nil, "color", UIManager.HONOR_MY_WFM)
+                end
             end
         end
         self.state.drawn = true
