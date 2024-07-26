@@ -1108,7 +1108,9 @@ end
 -- We don't want to rely on a fullscreen region just to pass the intersect check (to make sure the flags propagate),
 -- because that would *also* make said fullscreen region propagate,
 -- so we need to special-case this via a sentinel value that is otherwise sane and valid, but harmless and invisible...
-local HONOR_MY_WFM = Geom:new{x = 0, y = 0, w = 0, h = 0}
+-- NOTE: As the region is empty, this should only be used for "extra" setDirty(nil, ...) calls,
+--       that exceptionally just want to enforce a specific wfm, instead of whatever the current refresh queue requested.
+UIManager.HONOR_MY_WFM = Geom:new{x = 0, y = 0, w = 0, h = 0}
 
 --[[--
 Enqueues a refresh.
@@ -1135,7 +1137,7 @@ function UIManager:_refresh(mode, region, dither)
         if dither then
             mode = "ui"
             -- Do honor the original intent of this "mode is unset" branch, by making sure we don't inject it as full-screen...
-            region = region or HONOR_MY_WFM
+            region = region or UIManager.HONOR_MY_WFM
         else
             -- Otherwise, this is most likely from a `show` or `close` that wasn't passed specific refresh details,
             -- (which is the vast majority of them), in which case we drop it to avoid enqueuing a useless full-screen refresh.
@@ -1147,16 +1149,10 @@ function UIManager:_refresh(mode, region, dither)
         mode = "fast"
     end
 
-    -- Handle a few quirks for explicit full/color refreshes
-    if not region then
-        if mode == "full" then
-            -- Reset counter on explicit full refresh
-            self.refresh_count = 0
-        elseif mode == "color" then
-            -- We have a habit of calling UIManager:setDirty(nil, "color") just to request a color waveform mode,
-            -- but we don't necessarily want that to *also* imply a full-screen region...
-            region = HONOR_MY_WFM
-        end
+    -- Handle a few quirks for explicit full refreshes
+    if not region and mode == "full" then
+        -- Reset counter on explicit full refresh
+        self.refresh_count = 0
     end
     if mode == "color" or mode == "colortext" then
         if not Screen:isColorEnabled() then
@@ -1209,21 +1205,25 @@ function UIManager:_refresh(mode, region, dither)
     -- if no dithering hint was specified, don't request dithering
     dither = dither or false
 
+    logger.dbg("refresh:", mode, region, dither)
     -- NOTE: While, ideally, we shouldn't merge refreshes w/ different waveform modes,
     --       this allows us to optimize away a number of quirks of our rendering stack
     --       (e.g., multiple setDirty calls queued when showing/closing a widget because of update mechanisms),
     --       as well as a few actually effective merges
     --       (e.g., the disappearance of a selection HL with the following menu update).
     for i, refresh in ipairs(self._refresh_stack) do
+        logger.dbg("refresh.mode is", refresh.mode, "@", i)
+        logger.dbg("refresh.region is", refresh.region, "@", i)
+        logger.dbg("refresh.dither is", refresh.dither, "@", i)
         -- First, we make sure that "contagious" mode/dither flags infect the whole queue,
         -- regardless of their spot in said queue, or of their region.
-        if region == HONOR_MY_WFM then
+        if region == UIManager.HONOR_MY_WFM then
             mode = update_mode(mode, refresh.mode)
             dither = update_dither(dither, refresh.dither)
             table.remove(self._refresh_stack, i)
             -- The *caller's* refresh is infectious, use the queued refresh's region
             return self:_refresh(mode, refresh.region, dither)
-        elseif refresh.region == HONOR_MY_WFM then
+        elseif refresh.region == UIManager.HONOR_MY_WFM then
             mode = update_mode(mode, refresh.mode)
             dither = update_dither(dither, refresh.dither)
             table.remove(self._refresh_stack, i)
