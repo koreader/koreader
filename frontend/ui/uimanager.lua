@@ -1126,7 +1126,6 @@ UIManager that a certain part of the screen is to be refreshed.
 @local Not to be used outside of UIManager!
 ]]
 function UIManager:_refresh(mode, region, dither)
-    logger.dbg("UIManager:_refresh", mode, region, dither)
     if not mode then
         -- If we're trying to float a dither hint up from a lower widget after a close, mode might be nil...
         -- So use the lowest priority refresh mode (short of fast, because that'd do half-toning).
@@ -1201,14 +1200,12 @@ function UIManager:_refresh(mode, region, dither)
     -- if no dithering hint was specified, don't request dithering
     dither = dither or false
 
-    logger.dbg("UIManager:_refresh region:", region)
     -- NOTE: While, ideally, we shouldn't merge refreshes w/ different waveform modes,
     --       this allows us to optimize away a number of quirks of our rendering stack
     --       (e.g., multiple setDirty calls queued when showing/closing a widget because of update mechanisms),
     --       as well as a few actually effective merges
     --       (e.g., the disappearance of a selection HL with the following menu update).
     for i, refresh in ipairs(self._refresh_stack) do
-        logger.dbg("UIManager:_refresh refresh.region:", refresh.region, "@", i)
         -- First, we make sure that "contagious" mode/dither flags infect the whole queue,
         -- regardless of their spot in said queue, or of their region.
         if region == HONOR_MY_WFM then
