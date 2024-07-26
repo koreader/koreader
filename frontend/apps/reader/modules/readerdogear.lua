@@ -111,6 +111,8 @@ function ReaderDogear:onChangeViewMode()
 end
 
 function ReaderDogear:resetLayout()
+    -- NOTE: RightContainer aligns to the right of its *own* width,
+    --       hence this insanity, as we want to align to the right screen edge...
     local new_screen_width = Screen:getWidth()
     if new_screen_width == self._last_screen_width then return end
     self._last_screen_width = new_screen_width
