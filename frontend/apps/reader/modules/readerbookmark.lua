@@ -310,7 +310,6 @@ end
 
 function ReaderBookmark:onToggleBookmark()
     self:toggleBookmark()
-    self.view.footer:onUpdateFooter(self.view.footer_visible)
     self.view.dogear:onSetDogearVisibility(not self.view.dogear_visible)
     -- Refresh the dogear
     UIManager:setDirty(self.view.dialog, function()
@@ -322,6 +321,7 @@ function ReaderBookmark:onToggleBookmark()
             h = self.view.dogear.dogear_size, -- because dimen.h includes y_offset
         }
     end)
+    self.view.footer:onUpdateFooter(self.view.footer_visible)
     return true
 end
 
