@@ -1105,6 +1105,9 @@ local function update_dither(dither1, dither2)
 end
 
 -- Empty, sentinel `region` used to propagate dither/wfm modes across the queue in `_refresh`...
+-- We don't want to rely on a fullscreen region just to pass the intersect check (to make sure the flags propagate),
+-- because that would *also* make said fullscreen region propagate,
+-- so we need to special-case this via a sentinel value...
 local HONOR_MY_WFM = Geom:new{x = 0, y = 0, w = 0, h = 0}
 
 --[[--
