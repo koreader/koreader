@@ -239,16 +239,16 @@ function ListMenuItem:update()
             height_overflow_show_ellipsis = true,
         }
         widget = OverlapGroup:new{
-            dimen = dimen,
+            dimen = dimen:copy(),
             LeftContainer:new{
-                dimen = dimen,
+                dimen = dimen:copy(),
                 HorizontalGroup:new{
                     HorizontalSpan:new{ width = pad_width },
                     wleft,
                 }
             },
             RightContainer:new{
-                dimen = dimen,
+                dimen = dimen:copy(),
                 HorizontalGroup:new{
                     wright,
                     HorizontalSpan:new{ width = pad_width },
@@ -639,7 +639,7 @@ function ListMenuItem:update()
             end
 
             local wmain = LeftContainer:new{
-                dimen = dimen,
+                dimen = dimen:copy(),
                 VerticalGroup:new{
                     wtitle,
                     wauthors,
@@ -648,7 +648,7 @@ function ListMenuItem:update()
 
             -- Build the final widget
             widget = OverlapGroup:new{
-                dimen = dimen,
+                dimen = dimen:copy(),
             }
             if self.do_cover_image then
                 -- add left widget
@@ -673,13 +673,13 @@ function ListMenuItem:update()
             end
             -- add padded main widget
             table.insert(widget, LeftContainer:new{
-                    dimen = dimen,
+                    dimen = dimen:copy(),
                     wmain
                 })
             -- add right widget
             if wright then
                 table.insert(widget, RightContainer:new{
-                    dimen = dimen,
+                    dimen = dimen:copy(),
                     HorizontalGroup:new{
                         wright,
                         HorizontalSpan:new{ width = wright_right_padding },
@@ -758,7 +758,7 @@ function ListMenuItem:update()
                 fontsize_no_bookinfo = fontsize_no_bookinfo - fontsize_dec_step
             until text_widget:getSize().h <= dimen.h
             widget = LeftContainer:new{
-                dimen = dimen,
+                dimen = dimen:copy(),
                 HorizontalGroup:new{
                     HorizontalSpan:new{ width = Screen:scaleBySize(10) },
                     text_widget
@@ -766,10 +766,10 @@ function ListMenuItem:update()
             }
             if wright then -- last read date, in History, even for deleted files
                 widget = OverlapGroup:new{
-                    dimen = dimen,
+                    dimen = dimen:copy(),
                     widget,
                     RightContainer:new{
-                        dimen = dimen,
+                        dimen = dimen:copy(),
                         HorizontalGroup:new{
                             wright,
                             HorizontalSpan:new{ width = wright_right_padding },

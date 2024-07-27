@@ -1863,7 +1863,7 @@ function ReaderRolling:setupRerenderingAutomation()
         if self.rendering_state ~= prev_state then
             logger.dbg("_stepRerenderingAutomation", prev_state, ">", self.rendering_state)
             -- Have ReaderView redraw and refresh ReaderFlipping and our state icon, avoiding flashes
-            UIManager:setDirty(self.view.dialog, "ui", self.view.flipping.dimen)
+            UIManager:setDirty(self.view.dialog, "ui", self.view.flipping:getRefreshRegion())
         end
         if reschedule then
             UIManager:scheduleIn(1, self._stepRerenderingAutomation)
