@@ -332,7 +332,6 @@ ko_do_fbdepth() {
     fi
 
     # On color panels, we target 32bpp for, well, color, and sane addressing (it also happens to be their default) ;o).
-    # Also, the current lineup of MTK + Kaleido devices doesn't even *support* switching to 8bpp anymore.
     eval "$(./fbink -e | tr ';' '\n' | grep -e hasColorPanel | tr '\n' ';')"
     # shellcheck disable=SC2154
     if [ "${hasColorPanel}" = "1" ]; then
