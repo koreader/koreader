@@ -332,12 +332,17 @@ ko_do_fbdepth() {
     fi
 
     # On color panels, we target 32bpp for, well, color, and sane addressing (it also happens to be their default) ;o).
-    # Also, the current lineup of MTK + Kaleido devices doesn't even *support* switching to 8bpp anymore.
     eval "$(./fbink -e | tr ';' '\n' | grep -e hasColorPanel | tr '\n' ';')"
     # shellcheck disable=SC2154
     if [ "${hasColorPanel}" = "1" ]; then
-        echo "Switching fb bitdepth to 32bpp & rotation to Portrait" >>crash.log 2>&1
-        ./fbdepth -d 32 -R UR >>crash.log 2>&1
+        # If color rendering has been disabled by the user, switch to 8bpp to completely skip CFA processing
+        if grep -q '\["color_rendering"\] = false' 'settings.reader.lua' 2>/dev/null; then
+            echo "Switching fb bitdepth to 8bpp (to disable CFA) & rotation to Portrait" >>crash.log 2>&1
+            ./fbdepth -d 8 -R UR >>crash.log 2>&1
+        else
+            echo "Switching fb bitdepth to 32bpp & rotation to Portrait" >>crash.log 2>&1
+            ./fbdepth -d 32 -R UR >>crash.log 2>&1
+        fi
 
         return
     fi

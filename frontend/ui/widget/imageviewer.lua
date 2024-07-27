@@ -369,7 +369,8 @@ function ImageViewer:update()
     self.main_frame.radius = not self.fullscreen and 8 or nil
 
     -- NOTE: We use UI instead of partial, because we do NOT want to end up using a REAGL waveform...
-    local wfm_mode = Device:hasKaleidoWfm() and "color" or "ui"
+    --       ...except on Kaleido panels ;).
+    local wfm_mode = Device:hasKaleidoWfm() and "partial" or "ui"
     -- NOTE: Disabling dithering here makes for a perfect test-case of how well it works:
     --       page turns will show color quantization artefacts (i.e., banding) like crazy,
     --       while a long touch will trigger a dithered, flashing full-refresh that'll make everything shiny :).

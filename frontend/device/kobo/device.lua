@@ -1230,6 +1230,14 @@ end
 --- The function to put the device into standby, with enabled touchscreen.
 -- max_duration ... maximum time for the next standby, can wake earlier (e.g. Tap, Button ...)
 function Kobo:standby(max_duration)
+    -- On MTK, any suspend/standby attempt while plugged-in will hang the kernel... -_-"
+    -- NOTE: isCharging is still true while isCharged!
+    if self:isMTK() and self.powerd:isCharging() then
+        logger.info("Kobo standby: skipping the standby request for now: device is plugged in and would otherwise crash!")
+
+        return
+    end
+
     -- NOTE: Switch to the performance CPU governor, in order to speed up the resume process so as to lower its latency cost...
     --       (It won't have any impact on power efficiency *during* suspend, so there's not really any drawback).
     self:performanceCPUGovernor()
@@ -1301,6 +1309,20 @@ function Kobo:standby(max_duration)
 end
 
 function Kobo:suspend()
+    -- On MTK, any suspend/standby attempt while plugged-in will hang the kernel... -_-"
+    -- NOTE: isCharging is still true while isCharged!
+    if self:isMTK() and self.powerd:isCharging() then
+        logger.info("Kobo suspend: skipping the suspend request for now: device is plugged in and would otherwise crash!")
+
+        -- Do the usual scheduling dance, so we get a chance to fire the UnexpectedWakeupLimit event...
+        UIManager:unschedule(self.checkUnexpectedWakeup)
+        self.unexpected_wakeup_count = self.unexpected_wakeup_count + 1
+        logger.dbg("Kobo suspend: scheduling unexpected wakeup guard")
+        UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
+
+        return
+    end
+
     logger.info("Kobo suspend: going to sleep . . .")
     UIManager:unschedule(self.checkUnexpectedWakeup)
     -- NOTE: Sleep as little as possible here, sleeping has a tendency to make

@@ -138,7 +138,7 @@ For more details about refreshtype, refreshregion & refreshdither see the descri
 If refreshtype is omitted, no refresh will be enqueued at this time.
 
 @param widget a @{ui.widget.widget|widget} object
-@string refreshtype `"color"`, `"colortext"`, `"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"`, `"a2"` (optional)
+@string refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"`, `"a2"` (optional)
 @param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
 @int x horizontal screen offset (optional, `0` if omitted)
 @int y vertical screen offset (optional, `0` if omitted)
@@ -195,7 +195,7 @@ For more details about refreshtype, refreshregion & refreshdither see the descri
 If refreshtype is omitted, no extra refresh will be enqueued at this time, leaving only those from the uncovered widgets.
 
 @param widget a @{ui.widget.widget|widget} object
-@string refreshtype `"color"`, `"colortext"`, `"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"`, `"a2"` (optional)
+@string refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"`, `"a2"` (optional)
 @param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
 @bool refreshdither `true` if the refresh requires dithering (optional, requires refreshtype to be set)
 @see setDirty
@@ -464,10 +464,6 @@ It just appends stuff to the paint and/or refresh queues.
 
 Here's a quick rundown of what each refreshtype should be used for:
 
-* `color`: high-fidelity flashing refresh for color image content on Kaleido panels.
-           Maps to partial on unsupported devices, as such, better used conditionally behind a Device:hasKaleidoWfm check.
-* `colortext`: REAGL refresh for color text (e.g., highlights) on Kaleido panels.
-           Maps to partial on unsupported devices, as such, better used conditionally behind a Device:hasKaleidoWfm check.
 * `full`: high-fidelity flashing refresh (e.g., large images).
           Highest quality, but highest latency.
           Don't abuse if you only want a flash (in this case, prefer `flashui` or `flashpartial`).
@@ -566,7 +562,7 @@ UIManager:setDirty(self.widget, "partial", Geom:new{x=10,y=10,w=100,h=50})
 UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen end)
 
 @param widget a window-level widget object, `"all"`, or `nil`
-@param refreshtype `"color"`, `"colortext"`, `"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"`, `"a2"` (or a lambda, see description above)
+@param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"`, `"a2"` (or a lambda, see description above)
 @param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, omitting it means the region will cover the full screen)
 @bool refreshdither `true` if widget requires dithering (optional)
 ]]
@@ -1058,7 +1054,7 @@ function UIManager:getElapsedTimeSinceBoot()
 end
 
 -- precedence of refresh modes:
-local refresh_modes = { a2 = 1, fast = 2, ui = 3, partial = 4, ["[ui]"] = 5, ["[partial]"] = 6, flashui = 7, flashpartial = 8, full = 9, colortext = 10, color = 11 }
+local refresh_modes = { a2 = 1, fast = 2, ui = 3, partial = 4, ["[ui]"] = 5, ["[partial]"] = 6, flashui = 7, flashpartial = 8, full = 9 }
 -- NOTE: We might want to introduce a "force_a2" that points to fast, but has the highest priority,
 --       for the few cases where we might *really* want to enforce fast (for stuff like panning or skimming?).
 -- refresh methods in framebuffer implementation
@@ -1072,8 +1068,6 @@ local refresh_methods = {
     flashui = Screen.refreshFlashUI,
     flashpartial = Screen.refreshFlashPartial,
     full = Screen.refreshFull,
-    colortext = Screen.refreshColorText,
-    color = Screen.refreshColor,
 }
 
 --[[
@@ -1111,7 +1105,7 @@ Widgets call this in their `paintTo()` method in order to notify
 UIManager that a certain part of the screen is to be refreshed.
 
 @string mode
-    refresh mode (`"color"`, `"colortext"`, `"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"`, `"a2"`)
+    refresh mode (`"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"`, `"a2"`)
 @param region
     A rectangle @{ui.geometry.Geom|Geom} object that specifies the region to be updated.
     Optional, update will affect whole screen if not specified.
@@ -1124,23 +1118,21 @@ UIManager that a certain part of the screen is to be refreshed.
 ]]
 function UIManager:_refresh(mode, region, dither)
     if not mode then
-        -- If we're trying to float a dither hint up from a lower widget after a close, mode might be nil...
-        -- So use the lowest priority refresh mode (short of fast, because that'd do half-toning).
-        if dither then
-            mode = "ui"
-        else
-            -- Otherwise, this is most likely from a `show` or `close` that wasn't passed specific refresh details,
-            -- (which is the vast majority of them), in which case we drop it to avoid enqueuing a useless full-screen refresh.
-            return
-        end
+        -- This is most likely from a `show` or `close` that wasn't passed specific refresh details,
+        -- (which is the vast majority of them), in which case we drop it to avoid enqueuing a useless full-screen refresh.
+        return
     end
+
     -- Downgrade all refreshes to "fast" when ReaderPaging or ReaderScrolling have set this flag
     if self.currently_scrolling then
         mode = "fast"
     end
+
+    -- Reset the refresh counter on any explicit full refresh
     if not region and mode == "full" then
-        self.refresh_count = 0 -- reset counter on explicit full refresh
+        self.refresh_count = 0
     end
+
     -- Handle downgrading flashing modes to non-flashing modes, according to user settings.
     -- NOTE: Do it before "full" promotion and collision checks/update_mode.
     if G_reader_settings:isTrue("avoid_flashing_ui") then
@@ -1191,9 +1183,9 @@ function UIManager:_refresh(mode, region, dither)
     --       as well as a few actually effective merges
     --       (e.g., the disappearance of a selection HL with the following menu update).
     for i, refresh in ipairs(self._refresh_stack) do
-        -- Check for collision with refreshes that are already enqueued
-        -- NOTE: intersect *means* intersect: we won't merge edge-to-edge regions (but the EPDC probably will).
-        if region:intersectWith(refresh.region) then
+        -- Check for collisions with refreshes that are already enqueued.
+        -- NOTE: We use the open range variant, as we want to combine rectangles that share an edge (like the EPDC).
+        if region:openIntersectWith(refresh.region) then
             -- combine both refreshes' regions
             local combined = region:combine(refresh.region)
             -- update the mode, if needed
@@ -1291,8 +1283,8 @@ function UIManager:_repaint()
     end
     self._refresh_func_stack = {}
 
-    -- we should have at least one refresh if we did repaint.  If we don't, we
-    -- add one now and log a warning if we are debugging
+    -- We should have at least one refresh if we did repaint.
+    -- If we don't, add one now and log a warning if we are debugging.
     if dirty and not self._refresh_stack[1] then
         logger.dbg("no refresh got enqueued. Will do a partial full screen refresh, which might be inefficient")
         self:_refresh("partial")

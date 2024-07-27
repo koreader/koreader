@@ -202,14 +202,14 @@ if G_reader_settings:isTrue("color_rendering") and not Device:hasColorScreen() t
         text = _("Color rendering is mistakenly enabled on your grayscale device.\nThis will subtly break some features, and adversely affect performance."),
         cancel_text = _("Ignore"),
         cancel_callback = function()
-                return
+            return
         end,
         ok_text = _("Disable"),
         ok_callback = function()
-                local Event = require("ui/event")
-                G_reader_settings:delSetting("color_rendering")
-                CanvasContext:setColorRenderingEnabled(false)
-                UIManager:broadcastEvent(Event:new("ColorRenderingUpdate"))
+            local Event = require("ui/event")
+            G_reader_settings:delSetting("color_rendering")
+            CanvasContext:setColorRenderingEnabled(false)
+            UIManager:broadcastEvent(Event:new("ColorRenderingUpdate"))
         end,
     })
 end

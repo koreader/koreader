@@ -54,7 +54,7 @@ end
 
 function ScreenSaverWidget:onShow()
     UIManager:setDirty(self, function()
-        return Device:hasKaleidoWfm() and "color" or "full", self.main_frame.dimen
+        return "full", self.main_frame.dimen
     end)
     return true
 end

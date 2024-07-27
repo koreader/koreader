@@ -43,15 +43,16 @@ function ReaderFlipping:init()
         dimen = Geom:new{w = Screen:getWidth(), h = self.flipping_widget:getSize().h},
         self.flipping_widget,
     }
-    self:resetLayout()
 end
 
 function ReaderFlipping:resetLayout()
-    local new_screen_width = Screen:getWidth()
-    if new_screen_width == self._last_screen_width then return end
-    self._last_screen_width = new_screen_width
+    -- NOTE: LeftContainer aligns to the left of its *own* width (and will handle RTL mirroring, so we can't cheat)...
+    self[1].dimen.w = Screen:getWidth()
+end
 
-    self[1].dimen.w = new_screen_width
+function ReaderFlipping:getRefreshRegion()
+    -- We can't use self.dimen because of the width/height quirks of Left/RightContainer, so use the IconWidget's...
+    return self[1][1].dimen
 end
 
 function ReaderFlipping:getRollingRenderingStateIconWidget()

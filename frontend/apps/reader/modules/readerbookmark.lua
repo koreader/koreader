@@ -310,9 +310,15 @@ end
 
 function ReaderBookmark:onToggleBookmark()
     self:toggleBookmark()
-    self.view.footer:onUpdateFooter(self.view.footer_visible)
     self.view.dogear:onSetDogearVisibility(not self.view.dogear_visible)
-    UIManager:setDirty(self.view.dialog, "ui")
+    -- Refresh the dogear first, because it might inherit ReaderUI refresh hints.
+    UIManager:setDirty(self.view.dialog, function()
+        return "ui",
+        self.view.dogear:getRefreshRegion()
+    end)
+    -- And ask for a footer refresh, in case we have bookmark_count enabled.
+    -- Assuming the footer is visible, it'll request a refresh regardless, but the EPDC should optimize it out if no content actually changed.
+    self.view.footer:onUpdateFooter(self.view.footer_visible)
     return true
 end
 
