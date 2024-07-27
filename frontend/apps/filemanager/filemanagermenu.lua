@@ -551,7 +551,7 @@ To:
             },
         },
     }
-    if Device:isKobo() and not Device:isSunxi() then
+    if Device:isKobo() and not Device:isSunxi() and not Device:hasColorScreen() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Disable forced 8-bit pixel depth"),
             checked_func = function()
