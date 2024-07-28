@@ -427,7 +427,6 @@ function MosaicMenuItem:init()
         -- we'll keep doing with that small self.underline_h
         self._underline_container.linesize = Size.line.non_touch_active
     end
-    
     -- Remaining part of initialization is done in update(), because we may
     -- have to do it more than once if item not found in db
     self:update()
