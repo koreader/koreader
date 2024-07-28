@@ -1122,7 +1122,12 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
     -- This happens fairly often on MTK, for instance...
     if Device:hasWifiManager() and not success and not ssid then
         local iter = 0
+        -- We wait 5s at most (FWIW, it takes less than 2s when this is needed on my end)
         while not success and iter < 20 do
+            -- Check every 250ms
+            iter = iter + 1
+            ffiutil.usleep(250 * 1e+3)
+
             local nw = self:getCurrentNetwork()
             if nw then
                 success = true
@@ -1134,10 +1139,6 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
                     end
                 end
                 logger.dbg("NetworkMgr: wpa_supplicant automatically connected to network", util.fixUtf8(ssid, "�"), "(after", iter * 0.25, "seconds)")
-            else
-                -- Try again in 250ms
-                ffiutil.usleep(250 * 1e+3)
-                iter = iter + 1
             end
         end
     end
