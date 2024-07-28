@@ -50,6 +50,9 @@ function WpaSupplicant:getNetworkList()
 
     local saved_networks = self:getAllSavedNetworks()
     local curr_network = self:getCurrentNetwork()
+    local conn_network = wcli:getConnectedNetwork()
+    logger.dbg("curr_network:", curr_network)
+    logger.dbg("conn_network:", conn_network)
 
     for _, network in ipairs(list) do
         network.ssid = decodeSSID(network.ssid)
@@ -63,7 +66,7 @@ function WpaSupplicant:getNetworkList()
             network.password = saved_nw.password
             network.psk = saved_nw.psk
         end
-        if curr_network and curr_network.ssid == network.ssid and curr_network.bssid == network.bssid then
+        if curr_network and curr_network.ssid == network.ssid and (curr_network.bssid == "any" or curr_network.bssid == network.bssid) then
             network.connected = true
             network.wpa_supplicant_id = curr_network.id
             logger.dbg("WpaSupplicant:getNetworkList: automatically connected to network", util.fixUtf8(curr_network.ssid, "�"))

@@ -1112,7 +1112,7 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
                     network.connected = true
                     break
                 else
-                     logger.dbg("NetworkMgr: authentication failed:", err_msg)
+                    logger.dbg("NetworkMgr: authentication failed:", err_msg)
                 end
             end
         end
@@ -1139,11 +1139,7 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
             text = err_msg,
             timeout = 3,
         })
-        if ssid then
-            logger.dbg("NetworkMgr: Failed to connect:", err_msg, "; last attempt on ssid:", util.fixUtf8(ssid, "�"))
-        else
-            logger.dbg("NetworkMgr: Failed to connect:", err_msg, "; no preferred network found")
-        end
+        logger.dbg("NetworkMgr: Failed to connect:", err_msg, "; last attempt on ssid:", ssid and util.fixUtf8(ssid, "�") or "<none>")
     end
 
     if not success then
