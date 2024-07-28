@@ -1118,7 +1118,26 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
         end
     end
 
-    -- FIXME: Or if (somehow) isConnected?
+    -- If we haven't even seen any of our preferred networks, wait a bit to see if wpa_supplicant managed to connect in the background anyway...
+    -- This happens fairly often on MTK, for instance...
+    if Device:hasWifiManager() then
+        if not success and not ssid then
+            ffiutil.usleep(3 * 1e+6)
+            local nw = self:getCurrentNetwork()
+            if nw then
+                success = true
+                ssid = nw.ssid
+                -- Flag it as connected in the list
+                for dummy, network in ipairs(network_list) do
+                    if ssid == network.ssid then
+                        network.connected = true
+                    end
+                end
+                logger.dbg("NetworkMgr: wpa_supplicant automatically connected to network", util.fixUtf8(ssid, "�"))
+            end
+        end
+    end
+
     if success then
         self:obtainIP()
         if complete_callback then
