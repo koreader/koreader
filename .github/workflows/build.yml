@@ -23,7 +23,7 @@ jobs:
 
     env:
       # Bump number to reset all caches.
-      CACHE_EPOCH: '0'
+      CACHE_EPOCH: '1'
       CLICOLOR_FORCE: '1'
       MACOSX_DEPLOYMENT_TARGET: ${{ matrix.platform == 'arm64' && '11.0' || '10.15' }}
       MAKEFLAGS: 'OUTPUT_DIR=build INSTALL_DIR=install TARGET=macos'
@@ -33,7 +33,12 @@ jobs:
       # Install dependencies. {{{
 
       - name: XCode version
-        run: xcode-select -p
+        run: |
+          # NOTE: don't forget to bump `CACHE_EPOCH`
+          # above when changing the XCode version.
+          sudo xcode-select -s /Applications/Xcode_15.2.app
+          xcodebuild -version
+          xcode-select -p
 
       - name: Install dependencies
         run: |
