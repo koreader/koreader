@@ -8,6 +8,8 @@ local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local WpaClient = require("lj-wpaclient/wpaclient")
 local UIManager = require("ui/uimanager")
+local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
 
@@ -54,15 +56,17 @@ function WpaSupplicant:getNetworkList()
         network.signal_quality = network:getSignalQuality()
         local saved_nw = saved_networks:readSetting(network.ssid)
         if saved_nw then
-            --- @todo verify saved_nw.flags == network.flags? This will break if user changed the
-            -- network setting from [WPA-PSK-TKIP+CCMP][WPS][ESS] to [WPA-PSK-TKIP+CCMP][ESS]
+            --- @todo verify saved_nw.flags == network.flags?
+            -- This will break if user changed the network setting, e.g.,
+            -- from [WPA-PSK-TKIP+CCMP][WPS][ESS]
+            --   to [WPA-PSK-TKIP+CCMP][ESS]
             network.password = saved_nw.password
             network.psk = saved_nw.psk
         end
-        --- @todo also verify bssid if it is not set to any
-        if curr_network and curr_network.ssid == network.ssid then
+        if curr_network and curr_network.ssid == network.ssid and curr_network.bssid == network.bssid then
             network.connected = true
             network.wpa_supplicant_id = curr_network.id
+            logger.dbg("WpaSupplicant:getNetworkList: automatically connected to network", util.fixUtf8(curr_network.ssid, "�"))
         end
     end
     return list
