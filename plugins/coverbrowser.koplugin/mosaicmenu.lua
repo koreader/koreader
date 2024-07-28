@@ -411,7 +411,7 @@ function MosaicMenuItem:init()
     self.underline_h = Size.line.thin -- smaller than default (3), don't waste space
     self._underline_container = UnderlineContainer:new{
         vertical_align = "top",
-        padding = 1,
+        padding = Size.padding.tiny,
         dimen = Geom:new{
             x = 0, y = 0,
             w = self.width,
