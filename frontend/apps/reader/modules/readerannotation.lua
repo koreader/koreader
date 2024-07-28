@@ -334,7 +334,7 @@ function ReaderAnnotation:getMatchFunc()
             if a.datetime ~= nil and b.datetime ~= nil and a.datetime ~= b.datetime then
                 return false
             end
-            if a.text ~= b.text or a.pos0 ~= b.pos0 or a.pos1 ~= b.pos1 then
+            if a.pos0 ~= b.pos0 or a.pos1 ~= b.pos1 or (a.text_orig or a.text) ~= (b.text_orig or b.text) then
                 return false
             end
             return true
@@ -344,9 +344,9 @@ function ReaderAnnotation:getMatchFunc()
             if a.datetime ~= nil and b.datetime ~= nil and a.datetime ~= b.datetime then
                 return false
             end
-            if a.text ~= b.text or a.pos0.page ~= b.pos0.page
-                                or a.pos0.x ~= b.pos0.x or a.pos1.x ~= b.pos1.x
-                                or a.pos0.y ~= b.pos0.y or a.pos1.y ~= b.pos1.y then
+            if a.pos0.page ~= b.pos0.page or a.pos0.x ~= b.pos0.x or a.pos1.x ~= b.pos1.x
+                                          or a.pos0.y ~= b.pos0.y or a.pos1.y ~= b.pos1.y
+                                          or (a.text_orig or a.text) ~= (b.text_orig or b.text) then
                 return false
             end
             return true
