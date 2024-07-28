@@ -1122,8 +1122,8 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
     -- This happens fairly often on MTK, for instance...
     if Device:hasWifiManager() and not success and not ssid then
         local iter = 0
-        -- We wait 5s at most (FWIW, it takes less than 2s when this is needed on my end)
-        while not success and iter < 20 do
+        -- We wait 15s at most (like the restore-wifi-async script)
+        while not success and iter < 60 do
             -- Check every 250ms
             iter = iter + 1
             ffiutil.usleep(250 * 1e+3)
