@@ -50,9 +50,7 @@ function WpaSupplicant:getNetworkList()
 
     local saved_networks = self:getAllSavedNetworks()
     local curr_network = self:getCurrentNetwork()
-    local conn_network = wcli:getConnectedNetwork()
-    logger.dbg("curr_network:", curr_network)
-    logger.dbg("conn_network:", conn_network)
+    logger.dbg("WpaSupplicant:getNetworkList: Current network:", curr_network)
 
     for _, network in ipairs(list) do
         network.ssid = decodeSSID(network.ssid)
@@ -202,7 +200,13 @@ function WpaSupplicant:getCurrentNetwork()
     if wcli == nil then
         return nil, T(CLIENT_INIT_ERR_MSG, err)
     end
-    local nw = wcli:getCurrentNetwork()
+
+    -- Start by checking the status before looking for the CURRENT flag...
+    local nw = wcli:getConnectedNetwork()
+    -- Then fall back to the flag check...
+    if nw == nil then
+        nw = wcli:getCurrentNetwork()
+    end
     wcli:close()
     if nw ~= nil then
         nw.ssid = decodeSSID(nw.ssid)
