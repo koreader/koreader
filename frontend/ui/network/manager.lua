@@ -1129,11 +1129,17 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
             text = T(_(Device:isKindle() and "Connecting to network %1…" or "Connected to network %1"), BD.wrap(util.fixUtf8(ssid, "�"))),
             timeout = 3,
         })
+        logger.dbg("NetworkMgr: Connected to network", util.fixUtf8(ssid, "�"))
     else
         UIManager:show(InfoMessage:new{
             text = err_msg,
             timeout = 3,
         })
+        if ssid then
+            logger.dbg("NetworkMgr: Failed to connect:", err_msg, "; last attempt on ssid:", util.fixUtf8(ssid, "�"))
+        else
+            logger.dbg("NetworkMgr: Failed to connect:", err_msg, "; no preferred network found")
+        end
     end
 
     if not success then
