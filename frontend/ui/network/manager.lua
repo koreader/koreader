@@ -176,6 +176,7 @@ function NetworkMgr:isConnected()
     end
 end
 function NetworkMgr:getNetworkInterfaceName() end
+function NetworkMgr:getConfiguredNetworks() end -- as per the *backend*, e.g., wpa_cli list_networks
 function NetworkMgr:getNetworkList() end
 function NetworkMgr:getCurrentNetwork() end
 function NetworkMgr:authenticateNetwork(network) end
@@ -1121,7 +1122,7 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
     -- If we haven't even seen any of our preferred networks, wait a bit to see if wpa_supplicant manages to connect in the background anyway...
     -- This happens when we break too early from re-scans triggered by wpa_supplicant itself,
     -- c.f., WpaClient:scanThenGetResults in lj-wpaclient for more details.
-    if Device:hasWifiManager() and not success and not ssid then
+    if Device:hasWifiManager() and not success and not ssid and self:getConfiguredNetworks() then
         local iter = 0
         -- We wait 15s at most (like the restore-wifi-async script)
         while not success and iter < 60 do

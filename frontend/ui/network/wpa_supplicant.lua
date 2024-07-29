@@ -216,8 +216,22 @@ function WpaSupplicant:getCurrentNetwork()
     return nw
 end
 
+function WpaSupplicant:getConfiguredNetworks()
+    local wcli, err = WpaClient.new(self.wpa_supplicant.ctrl_interface)
+    if wcli == nil then
+        return nil, T(CLIENT_INIT_ERR_MSG, err)
+    end
+
+    local nw
+    nw, err = wcli:listNetworks()
+    wcli:close()
+
+    return nw, err
+end
+
 function WpaSupplicant.init(network_mgr, options)
     network_mgr.wpa_supplicant = {ctrl_interface = options.ctrl_interface}
+    network_mgr.getConfiguredNetworks = WpaSupplicant.getConfiguredNetworks
     network_mgr.getNetworkList = WpaSupplicant.getNetworkList
     network_mgr.getCurrentNetwork = WpaSupplicant.getCurrentNetwork
     network_mgr.authenticateNetwork = WpaSupplicant.authenticateNetwork
