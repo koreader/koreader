@@ -1118,8 +1118,9 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
         end
     end
 
-    -- If we haven't even seen any of our preferred networks, wait a bit to see if wpa_supplicant managed to connect in the background anyway...
-    -- This happens fairly often on MTK, for instance...
+    -- If we haven't even seen any of our preferred networks, wait a bit to see if wpa_supplicant manages to connect in the background anyway...
+    -- This happens when we break too early from re-scans triggered by wpa_supplicant itself,
+    -- c.f., WpaClient:scanThenGetResults in lj-wpaclient for more details.
     if Device:hasWifiManager() and not success and not ssid then
         local iter = 0
         -- We wait 15s at most (like the restore-wifi-async script)
