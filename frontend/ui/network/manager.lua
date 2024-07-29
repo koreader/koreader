@@ -1122,8 +1122,12 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
     -- If we haven't even seen any of our preferred networks, wait a bit to see if wpa_supplicant manages to connect in the background anyway...
     -- This happens when we break too early from re-scans triggered by wpa_supplicant itself,
     -- c.f., WpaClient:scanThenGetResults in lj-wpaclient for more details.
-    if Device:hasWifiManager() and not success and not ssid and self:getConfiguredNetworks() then
-        local iter = 0
+    if Device:hasWifiManager() and not success and not ssid then
+        -- Don't bother if wpa_supplicant doesn't actually have any configured networks...
+        local configured_networks = self:getConfiguredNetworks()
+        local has_preferred_networks = configured_networks and #configured_networks > 0
+
+        local iter = has_preferred_networks and 0 or 60
         -- We wait 15s at most (like the restore-wifi-async script)
         while not success and iter < 60 do
             -- Check every 250ms
