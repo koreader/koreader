@@ -3,7 +3,7 @@ UBUNTUTOUCH_SDL_DIR = $(UBUNTUTOUCH_DIR)/ubuntu-touch-sdl
 
 update: all
 	# ensure that the binaries were built for ARM
-	file --dereference $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
+	file --dereference $(INSTALL_DIR)/koreader/luajit | grep ARM
 	# remove old package if any
 	rm -f koreader-ubuntu-touch-$(MACHINE)-$(VERSION).click
 	$(SYMLINK) $(UBUNTUTOUCH_DIR)/koreader.sh $(INSTALL_DIR)/koreader/
