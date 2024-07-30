@@ -1,8 +1,22 @@
+# Use the git commit count as the (integer) Android version code
+ANDROID_VERSION ?= $(shell git rev-list --count HEAD)
+ANDROID_NAME ?= $(VERSION)
 ANDROID_DIR = $(PLATFORM_DIR)/android
 ANDROID_LAUNCHER_DIR = $(ANDROID_DIR)/luajit-launcher
 ANDROID_ASSETS = $(ANDROID_LAUNCHER_DIR)/assets/module
 ANDROID_LIBS_ROOT = $(ANDROID_LAUNCHER_DIR)/libs
 ANDROID_LIBS_ABI = $(ANDROID_LIBS_ROOT)/$(ANDROID_ABI)
+
+ifeq ($(ANDROID_ARCH), arm64)
+  ANDROID_ABI ?= arm64-v8a
+else ifeq ($(ANDROID_ARCH), x86)
+  ANDROID_ABI ?= $(ANDROID_ARCH)
+else ifeq ($(ANDROID_ARCH), x86_64)
+  ANDROID_ABI ?= $(ANDROID_ARCH)
+else
+  ANDROID_ARCH ?= arm
+  ANDROID_ABI ?= armeabi-v7a
+endif
 
 androiddev: update
 	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) dev
