@@ -64,17 +64,14 @@ all: base
 ifdef ANDROID
 	rm -f android-fdroid-version; echo -e "$(ANDROID_NAME)\n$(ANDROID_VERSION)" > koreader-android-fdroid-latest
 endif
-ifeq ($(IS_RELEASE),1)
-	bash -O extglob -c '$(RCP) -fL $(OUTPUT_DIR_ARTIFACTS) $(INSTALL_DIR)/koreader/'
-else
-	cp -f $(KOR_BASE)/ev_replay.py $(INSTALL_DIR)/koreader/
-	@echo "[*] create symlink instead of copying files in development mode"
+ifeq (,$(IS_RELEASE))
+	$(SYMLINK) $(KOR_BASE)/ev_replay.py $(INSTALL_DIR)/koreader/
+endif
 	bash -O extglob -c '$(SYMLINK) $(OUTPUT_DIR_ARTIFACTS) $(INSTALL_DIR)/koreader/'
-  ifneq (,$(EMULATE_READER))
+ifneq (,$(EMULATE_READER))
 	@echo "[*] install front spec only for the emulator"
 	$(SYMLINK) spec $(INSTALL_DIR)/koreader/spec/front
 	$(SYMLINK) test $(INSTALL_DIR)/koreader/spec/front/unit/data
-  endif
 endif
 	$(SYMLINK) $(INSTALL_FILES) $(INSTALL_DIR)/koreader/
 ifdef ANDROID
@@ -96,10 +93,10 @@ endif
 	$(SYMLINK) plugins $(INSTALL_DIR)/koreader/
 	@echo "[*] Install resources"
 	$(SYMLINK) resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
-	install -d $(INSTALL_DIR)/koreader/{screenshots,data/{dict,tessdata},fonts/host,ota}
-ifeq ($(IS_RELEASE),1)
+	install -d $(INSTALL_DIR)/koreader/{screenshots,fonts/host,ota}
+ifneq (,$(IS_RELEASE))
 	@echo "[*] Clean up, remove unused files for releases"
-	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,cr3skin-format.txt,desktop,devices,manual}
+	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,desktop,devices,dict,manual,tessdata}
 endif
 
 base:
