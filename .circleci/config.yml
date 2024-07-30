@@ -54,15 +54,15 @@ jobs:
       # Restore / setup caches. {{{
       - run:
           name: Generate cache key
-          command: make -C base TARGET= cache-key
+          command: make TARGET= cache-key
       - restore_cache:
           name: Restore build directory
           keys:
-            - &CACHE_KEY_BUILD_DIR '<< pipeline.parameters.cache_epoch >>-{{ .Environment.CIRCLE_JOB }}-build-{{ arch }}-{{ checksum "base/cache-key" }}'
+            - &CACHE_KEY_BUILD_DIR '<< pipeline.parameters.cache_epoch >>-{{ .Environment.CIRCLE_JOB }}-build-{{ arch }}-{{ checksum "cache-key" }}'
       - restore_cache:
           name: Restore build cache
           keys:
-            - &CACHE_KEY_BUILD_CACHE '<< pipeline.parameters.cache_epoch >>-{{ .Environment.CIRCLE_JOB }}-ccache-{{ arch }}-{{ checksum "base/cache-key" }}'
+            - &CACHE_KEY_BUILD_CACHE '<< pipeline.parameters.cache_epoch >>-{{ .Environment.CIRCLE_JOB }}-ccache-{{ arch }}-{{ checksum "cache-key" }}'
             - '<< pipeline.parameters.cache_epoch >>-{{ .Environment.CIRCLE_JOB }}-ccache-{{ arch }}-'
       - run:
           name: Setup build cache
@@ -85,7 +85,7 @@ jobs:
           command: |
             set -x
             # Trim the build directory.
-            rm -rf base/build/{cmake,staging,thirdparty}
+            rm -rf build/{cmake,staging,thirdparty}
             ccache --cleanup >/dev/null
             ccache --show-stats --verbose
       - save_cache:
@@ -97,7 +97,7 @@ jobs:
           name: Save build directory
           key: *CACHE_KEY_BUILD_DIR
           paths:
-            - base/build
+            - build
       # }}}
       # Tests / coverage. {{{
       # Our lovely unit tests.
