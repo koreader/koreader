@@ -23,6 +23,7 @@ To get and compile the source you must have:
 - `nasm`
 - `ninja`: optional, but recommended
 - `patch`
+- `perl`: version 5 or greater
 - `pkg-config` or `pkgconf`
 - `unzip`
 - `wget`
@@ -40,8 +41,8 @@ Install the prerequisites using apk:
 ```
 sudo apk add autoconf automake bash cmake coreutils curl diffutils g++ \
     gcc gettext-dev git grep gzip libtool linux-headers lua5.1-busted \
-    luarocks5.1 make ninja-build ninja-is-really-ninja patch pkgconf \
-    procps-ng sdl2 tar unzip wget
+    luarocks5.1 make ninja-build ninja-is-really-ninja patch perl \
+    pkgconf procps-ng sdl2 tar unzip wget
 ```
 
 ### Arch Linux
@@ -50,7 +51,7 @@ Install the prerequisites using pacman:
 
 ```
 run0 pacman -S base-devel ca-certificates cmake gcc-libs git \
-    lua51-busted luarocks nasm ninja sdl2 unzip wget
+    lua51-busted luarocks nasm ninja perl sdl2 unzip wget
 ```
 
 ### Debian/Ubuntu
@@ -60,7 +61,7 @@ Install the prerequisites using APT:
 ```
 sudo apt-get install autoconf automake build-essential ca-certificates cmake \
     gcc-multilib gettext git libsdl2-2.0-0 libtool libtool-bin lua-busted \
-    lua5.1 luarocks nasm ninja-build patch pkg-config unzip wget
+    lua5.1 luarocks nasm ninja-build patch perl pkg-config unzip wget
 ```
 
 ### Fedora/Red Hat
