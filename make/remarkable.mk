@@ -4,7 +4,7 @@ REMARKABLE_PACKAGE_OTA = koreader-remarkable$(KODEDUG_SUFFIX)-$(VERSION).targz
 
 update: all
 	# ensure that the binaries were built for ARM
-	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
+	file --dereference $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
 	# remove old package if any
 	rm -f $(REMARKABLE_PACKAGE)
 	# Remarkable scripts
