@@ -1,4 +1,4 @@
-PHONY = all android-ndk android-sdk base clean coverage distclean doc fetchthirdparty po pot re static-check test testfront
+PHONY = all android-ndk android-sdk base clean coverage distclean doc fetchthirdparty po pot re static-check test testbase testfront
 SOUND = $(INSTALL_DIR)/%
 
 # koreader-base directory
@@ -103,14 +103,14 @@ $(INSTALL_DIR)/koreader/.busted: .busted
 $(INSTALL_DIR)/koreader/.luacov:
 	$(SYMLINK) .luacov $@
 
-testfront: $(INSTALL_DIR)/koreader/.busted
+testbase: base-test
+
+testfront: all test-data $(INSTALL_DIR)/koreader/.busted
 	# sdr files may have unexpected impact on unit testing
 	-rm -rf spec/unit/data/*.sdr
 	cd $(INSTALL_DIR)/koreader && $(BUSTED_LUAJIT) $(BUSTED_OVERRIDES) $(BUSTED_SPEC_FILE)
 
-test: $(INSTALL_DIR)/koreader/.busted
-	$(MAKE) -C $(KOR_BASE) test
-	$(MAKE) testfront
+test: testbase testfront
 
 coverage: $(INSTALL_DIR)/koreader/.luacov
 	-rm -rf $(INSTALL_DIR)/koreader/luacov.*.out
