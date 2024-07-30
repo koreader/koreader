@@ -48,11 +48,22 @@ PLATFORM_DIR=platform
 COMMON_DIR=$(PLATFORM_DIR)/common
 WIN32_DIR=$(PLATFORM_DIR)/win32
 
+define CR3GUI_DATADIR_EXCLUDES
+%/KoboUSBMS.tar.gz
+%/cr3.ini
+%/cr3skin-format.txt
+%/desktop
+%/devices
+%/manual
+endef
+CR3GUI_DATADIR_FILES = $(filter-out $(CR3GUI_DATADIR_EXCLUDES),$(wildcard $(CR3GUI_DATADIR)/*))
+
 # files to link from main directory
 INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastorage.lua \
 		l10n tools README.md COPYING
 
-OUTPUT_DIR_ARTIFACTS = $(abspath $(OUTPUT_DIR))/!(cache|cmake|history|staging|thirdparty)
+OUTPUT_DIR_ARTIFACTS = $(abspath $(OUTPUT_DIR))/!(cache|cmake|data|history|staging|thirdparty)
+OUTPUT_DIR_DATAFILES = $(wildcard $(OUTPUT_DIR)/data/*)
 
 all: base
 	install -d $(INSTALL_DIR)/koreader
@@ -90,6 +101,10 @@ endif
 	@echo "[*] Install resources"
 	$(SYMLINK) resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
 	install -d $(INSTALL_DIR)/koreader/{screenshots,fonts/host,ota}
+	# Note: the data dir is distinct from the one in base/build/…!
+	@echo "[*] Install data files"
+	install -d $(INSTALL_DIR)/koreader/data
+	$(SYMLINK) $(OUTPUT_DIR_DATAFILES) $(CR3GUI_DATADIR_FILES) $(INSTALL_DIR)/koreader/data/
 ifneq (,$(IS_RELEASE))
 	@echo "[*] Clean up, remove unused files for releases"
 	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,desktop,devices,dict,manual,tessdata}
