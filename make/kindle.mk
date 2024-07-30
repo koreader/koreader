@@ -14,13 +14,13 @@ update: all
 	# remove old package if any
 	rm -f $(KINDLE_PACKAGE)
 	# Kindle launching scripts
-	$(SYMLINK) $(abspath $(KINDLE_DIR)/extensions) $(INSTALL_DIR)/
-	$(SYMLINK) $(abspath $(KINDLE_DIR)/launchpad) $(INSTALL_DIR)/
-	$(SYMLINK) $(abspath $(KINDLE_DIR)/koreader.sh) $(INSTALL_DIR)/koreader/
-	$(SYMLINK) $(abspath $(KINDLE_DIR)/libkohelper.sh) $(INSTALL_DIR)/koreader/
-	$(SYMLINK) $(abspath $(KINDLE_DIR)/libkohelper.sh) $(INSTALL_DIR)/extensions/koreader/bin/
-	$(SYMLINK) $(abspath $(COMMON_DIR)/spinning_zsync) $(INSTALL_DIR)/koreader/
-	$(SYMLINK) $(abspath $(KINDLE_DIR)/wmctrl) $(INSTALL_DIR)/koreader/
+	$(SYMLINK) $(KINDLE_DIR)/extensions $(INSTALL_DIR)/
+	$(SYMLINK) $(KINDLE_DIR)/launchpad $(INSTALL_DIR)/
+	$(SYMLINK) $(KINDLE_DIR)/koreader.sh $(INSTALL_DIR)/koreader/
+	$(SYMLINK) $(KINDLE_DIR)/libkohelper.sh $(INSTALL_DIR)/koreader/
+	$(SYMLINK) $(KINDLE_DIR)/libkohelper.sh $(INSTALL_DIR)/extensions/koreader/bin/
+	$(SYMLINK) $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader/
+	$(SYMLINK) $(KINDLE_DIR)/wmctrl $(INSTALL_DIR)/koreader/
 	# create new package
 	cd $(INSTALL_DIR) && pwd && \
 		zip -9 -r \
