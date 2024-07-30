@@ -1,7 +1,8 @@
-PHONY = all android-ndk android-sdk base clean coverage doc fetchthirdparty po pot static-check test testfront
+PHONY = all android-ndk android-sdk base clean coverage distclean doc fetchthirdparty po pot re static-check test testfront
+SOUND = $(INSTALL_DIR)/%
 
 # koreader-base directory
-KOR_BASE?=base
+KOR_BASE ?= base
 
 include $(KOR_BASE)/Makefile.defs
 
@@ -51,12 +52,7 @@ WIN32_DIR=$(PLATFORM_DIR)/win32
 INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastorage.lua \
 		l10n tools README.md COPYING
 
-ifeq ($(abspath $(OUTPUT_DIR)),$(OUTPUT_DIR))
-  ABSOLUTE_OUTPUT_DIR = $(OUTPUT_DIR)
-else
-  ABSOLUTE_OUTPUT_DIR = $(KOR_BASE)/$(OUTPUT_DIR)
-endif
-OUTPUT_DIR_ARTIFACTS = $(ABSOLUTE_OUTPUT_DIR)/!(cache|cmake|history|staging|thirdparty)
+OUTPUT_DIR_ARTIFACTS = $(abspath $(OUTPUT_DIR))/!(cache|cmake|history|staging|thirdparty)
 
 all: base
 	install -d $(INSTALL_DIR)/koreader
@@ -99,8 +95,7 @@ ifneq (,$(IS_RELEASE))
 	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,desktop,devices,dict,manual,tessdata}
 endif
 
-base:
-	$(MAKE) -C $(KOR_BASE)
+base: base-all
 
 $(INSTALL_DIR)/koreader/.busted: .busted
 	$(SYMLINK) .busted $@
@@ -128,6 +123,9 @@ coverage: $(INSTALL_DIR)/koreader/.luacov
 		+$$(($$(grep -nm1 -e "^Summary$$" luacov.report.out|cut -d: -f1)-1)) \
 		luacov.report.out
 
+ifeq (,$(wildcard $(KOR_BASE)/Makefile))
+$(KOR_BASE)/Makefile: fetchthirdparty
+endif
 ifeq (,$(wildcard $(KOR_BASE)/Makefile.defs))
 $(KOR_BASE)/Makefile.defs: fetchthirdparty
 endif
@@ -149,20 +147,17 @@ else
 endif
 	$(MAKE) -C $(KOR_BASE) fetchthirdparty
 
-VERBOSE ?= @
-Q = $(VERBOSE:1=)
-clean:
+clean: base-clean
 	rm -rf $(INSTALL_DIR)
-	$(Q:@=@echo 'MAKE -C base clean'; &> /dev/null) \
-		$(MAKE) -C $(KOR_BASE) clean
 ifeq ($(TARGET), android)
 	$(MAKE) -C $(CURDIR)/platform/android/luajit-launcher clean
 endif
 
-dist-clean: clean
-	rm -rf $(INSTALL_DIR)
-	$(MAKE) -C $(KOR_BASE) dist-clean
+distclean: clean base-distclean
 	$(MAKE) -C doc clean
+
+re: clean
+	$(MAKE) all
 
 # Include target specific rules.
 ifneq (,$(wildcard make/$(TARGET).mk))
@@ -208,7 +203,4 @@ doc:
 .NOTPARALLEL:
 .PHONY: $(PHONY)
 
-LEFTOVERS = $(filter-out $(PHONY) $(INSTALL_DIR)/%,$(MAKECMDGOALS))
-.PHONY: $(LEFTOVERS)
-$(LEFTOVERS):
-	$(MAKE) -C $(KOR_BASE) $@
+include $(KOR_BASE)/Makefile

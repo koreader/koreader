@@ -92,14 +92,14 @@ jobs:
       # Restore / setup caches. {{{
 
       - name: Generate cache key
-        run: make -C base TARGET= cache-key
+        run: make TARGET= cache-key
 
       - name: Restore build directory
         id: build-restore
         uses: actions/cache/restore@v4
         with:
-          path: base/build
-          key: ${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ runner.arch }}-build-${{ hashFiles('base/cache-key') }}
+          path: build
+          key: ${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ runner.arch }}-build-${{ hashFiles('cache-key') }}
 
       - name: Restore build cache
         id: ccache-restore
@@ -107,7 +107,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: /Users/runner/Library/Caches/ccache
-          key: ${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ runner.arch }}-ccache-${{ hashFiles('base/cache-key') }}
+          key: ${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ runner.arch }}-ccache-${{ hashFiles('cache-key') }}
           restore-keys: ${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ runner.arch }}-ccache-
 
       - name: Install ccache
@@ -152,7 +152,7 @@ jobs:
         run: |
           set -x
           # Trim the build directory.
-          rm -rf base/build/{cmake,staging,thirdparty}
+          rm -rf build/{cmake,staging,thirdparty}
           ccache --cleanup >/dev/null
           ccache --show-stats --verbose
 
@@ -167,7 +167,7 @@ jobs:
         uses: actions/cache/save@v4
         if: steps.build-restore.outputs.cache-hit != 'true'
         with:
-          path: base/build
+          path: build
           key: ${{ steps.build-restore.outputs.cache-primary-key }}
 
       # }}}
