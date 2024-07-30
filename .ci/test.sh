@@ -9,6 +9,6 @@ pushd install/koreader && {
     BUSTED_SPEC_FILE="$(circleci tests glob "spec/front/unit/*_spec.lua" | circleci tests split --split-by=timings --timings-type=filename | tr '\n' ' ')"
 } && popd || exit
 
-make testfront BUSTED_SPEC_FILE="${BUSTED_SPEC_FILE}"
+make testfront --assume-old=all BUSTED_SPEC_FILE="${BUSTED_SPEC_FILE}"
 
 # vim: sw=4
