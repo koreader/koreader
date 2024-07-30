@@ -17,21 +17,6 @@ endif
 IS_RELEASE := $(if $(or $(EMULATE_READER),$(WIN32)),,1)
 IS_RELEASE := $(if $(or $(IS_RELEASE),$(APPIMAGE),$(LINUX),$(MACOS)),1,)
 
-ifeq ($(ANDROID_ARCH), arm64)
-	ANDROID_ABI?=arm64-v8a
-else ifeq ($(ANDROID_ARCH), x86)
-	ANDROID_ABI?=$(ANDROID_ARCH)
-else ifeq ($(ANDROID_ARCH), x86_64)
-	ANDROID_ABI?=$(ANDROID_ARCH)
-else
-	ANDROID_ARCH?=arm
-	ANDROID_ABI?=armeabi-v7a
-endif
-
-# Use the git commit count as the (integer) Android version code
-ANDROID_VERSION?=$(shell git rev-list --count HEAD)
-ANDROID_NAME?=$(VERSION)
-
 LINUX_ARCH?=native
 ifeq ($(LINUX_ARCH), native)
 	LINUX_ARCH_NAME:=$(shell uname -m)
