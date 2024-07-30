@@ -8,6 +8,8 @@ local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local WpaClient = require("lj-wpaclient/wpaclient")
 local UIManager = require("ui/uimanager")
+local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
 
@@ -54,15 +56,17 @@ function WpaSupplicant:getNetworkList()
         network.signal_quality = network:getSignalQuality()
         local saved_nw = saved_networks:readSetting(network.ssid)
         if saved_nw then
-            --- @todo verify saved_nw.flags == network.flags? This will break if user changed the
-            -- network setting from [WPA-PSK-TKIP+CCMP][WPS][ESS] to [WPA-PSK-TKIP+CCMP][ESS]
+            --- @todo verify saved_nw.flags == network.flags?
+            -- This will break if user changed the network setting, e.g.,
+            -- from [WPA-PSK-TKIP+CCMP][WPS][ESS]
+            --   to [WPA-PSK-TKIP+CCMP][ESS]
             network.password = saved_nw.password
             network.psk = saved_nw.psk
         end
-        --- @todo also verify bssid if it is not set to any
-        if curr_network and curr_network.ssid == network.ssid then
+        if curr_network and curr_network.ssid == network.ssid and (curr_network.bssid == "any" or curr_network.bssid == network.bssid) then
             network.connected = true
             network.wpa_supplicant_id = curr_network.id
+            logger.dbg("WpaSupplicant:getNetworkList: automatically connected to network", util.fixUtf8(curr_network.ssid, "�"))
         end
     end
     return list
@@ -195,7 +199,16 @@ function WpaSupplicant:getCurrentNetwork()
     if wcli == nil then
         return nil, T(CLIENT_INIT_ERR_MSG, err)
     end
-    local nw = wcli:getCurrentNetwork()
+
+    -- Start by checking the status before looking for the CURRENT flag...
+    local nw
+    nw, err = wcli:getConnectedNetwork()
+    logger.dbg("WpaSupplicant:getCurrentNetwork: Connected network:", nw and nw or err)
+    -- Then fall back to the flag check...
+    if nw == nil then
+        nw, err = wcli:getCurrentNetwork()
+        logger.dbg("WpaSupplicant:getCurrentNetwork: Current network:", nw and nw or err)
+    end
     wcli:close()
     if nw ~= nil then
         nw.ssid = decodeSSID(nw.ssid)
@@ -203,8 +216,22 @@ function WpaSupplicant:getCurrentNetwork()
     return nw
 end
 
+function WpaSupplicant:getConfiguredNetworks()
+    local wcli, err = WpaClient.new(self.wpa_supplicant.ctrl_interface)
+    if wcli == nil then
+        return nil, T(CLIENT_INIT_ERR_MSG, err)
+    end
+
+    local nw
+    nw, err = wcli:listNetworks()
+    wcli:close()
+
+    return nw, err
+end
+
 function WpaSupplicant.init(network_mgr, options)
     network_mgr.wpa_supplicant = {ctrl_interface = options.ctrl_interface}
+    network_mgr.getConfiguredNetworks = WpaSupplicant.getConfiguredNetworks
     network_mgr.getNetworkList = WpaSupplicant.getNetworkList
     network_mgr.getCurrentNetwork = WpaSupplicant.getCurrentNetwork
     network_mgr.authenticateNetwork = WpaSupplicant.authenticateNetwork
