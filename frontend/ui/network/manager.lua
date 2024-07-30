@@ -176,6 +176,7 @@ function NetworkMgr:isConnected()
     end
 end
 function NetworkMgr:getNetworkInterfaceName() end
+function NetworkMgr:getConfiguredNetworks() end -- From the *backend*, e.g., wpa_cli list_networks (as opposed to `getAllSavedNetworks`)
 function NetworkMgr:getNetworkList() end
 function NetworkMgr:getCurrentNetwork() end
 function NetworkMgr:authenticateNetwork(network) end
@@ -1105,12 +1106,46 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
             if network.password then
                 -- If we hit a preferred network and we're not already connected,
                 -- attempt to connect to said preferred network....
+                logger.dbg("NetworkMgr: Attempting to authenticate on preferred network", util.fixUtf8(ssid, "�"))
                 success, err_msg = self:authenticateNetwork(network)
                 if success then
                     ssid = network.ssid
                     network.connected = true
                     break
+                else
+                    logger.dbg("NetworkMgr: authentication failed:", err_msg)
                 end
+            end
+        end
+    end
+
+    -- If we haven't even seen any of our preferred networks, wait a bit to see if wpa_supplicant manages to connect in the background anyway...
+    -- This happens when we break too early from re-scans triggered by wpa_supplicant itself,
+    -- which shouldn't really ever happen since https://github.com/koreader/lj-wpaclient/pull/11
+    -- c.f., WpaClient:scanThenGetResults in lj-wpaclient for more details.
+    if Device:hasWifiManager() and not success and not ssid then
+        -- Don't bother if wpa_supplicant doesn't actually have any configured networks...
+        local configured_networks = self:getConfiguredNetworks()
+        local has_preferred_networks = configured_networks and #configured_networks > 0
+
+        local iter = has_preferred_networks and 0 or 60
+        -- We wait 15s at most (like the restore-wifi-async script)
+        while not success and iter < 60 do
+            -- Check every 250ms
+            iter = iter + 1
+            ffiutil.usleep(250 * 1e+3)
+
+            local nw = self:getCurrentNetwork()
+            if nw then
+                success = true
+                ssid = nw.ssid
+                -- Flag it as connected in the list
+                for dummy, network in ipairs(network_list) do
+                    if ssid == network.ssid then
+                        network.connected = true
+                    end
+                end
+                logger.dbg("NetworkMgr: wpa_supplicant automatically connected to network", util.fixUtf8(ssid, "�"), "(after", iter * 0.25, "seconds)")
             end
         end
     end
@@ -1129,11 +1164,13 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
             text = T(_(Device:isKindle() and "Connecting to network %1…" or "Connected to network %1"), BD.wrap(util.fixUtf8(ssid, "�"))),
             timeout = 3,
         })
+        logger.dbg("NetworkMgr: Connected to network", util.fixUtf8(ssid, "�"))
     else
         UIManager:show(InfoMessage:new{
             text = err_msg,
             timeout = 3,
         })
+        logger.dbg("NetworkMgr: Failed to connect:", err_msg, "; last attempt on ssid:", ssid and util.fixUtf8(ssid, "�") or "<none>")
     end
 
     if not success then
