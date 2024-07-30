@@ -131,7 +131,11 @@ coverage: $(INSTALL_DIR)/koreader/.luacov
 		+$$(($$(grep -nm1 -e "^Summary$$" luacov.report.out|cut -d: -f1)-1)) \
 		luacov.report.out
 
-$(KOR_BASE)/Makefile.defs fetchthirdparty:
+ifeq (,$(wildcard $(KOR_BASE)/Makefile.defs))
+$(KOR_BASE)/Makefile.defs: fetchthirdparty
+endif
+
+fetchthirdparty:
 	git submodule init
 	git submodule sync
 ifneq (,$(CI))
