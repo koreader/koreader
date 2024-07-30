@@ -6,7 +6,7 @@ source "${CI_DIR}/common.sh"
 
 # Build.
 cmd=(make all)
-if [[ -d base/build ]]; then
+if [[ -d build ]]; then
     cmd+=(--assume-old=base)
 fi
 "${cmd[@]}"
