@@ -311,7 +311,7 @@ function ReadHistory:removeItemByPath(path)
 end
 
 function ReadHistory:removeItem(item, idx, no_flush)
-    local index = idx or self:getIndexByTime(item.time, item.file:gsub(".*/", ""))
+    local index = idx or item.idx or self:getIndexByTime(item.time, item.file:gsub(".*/", ""))
     table.remove(self.hist, index)
     os.remove(DocSettings:getHistoryPath(item.file))
     if not no_flush then
