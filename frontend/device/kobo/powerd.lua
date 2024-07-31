@@ -251,7 +251,7 @@ function KoboPowerD:isFrontlightOnHW()
         return ret
     end
     print("KoboPowerD:isFrontlightOnHW:", self.hw_intensity, self.fl_ramp_down_running, self.fl_ramp_up_running)
-    return self.hw_intensity > 0
+    return self.hw_intensity > 0 and not self.fl_ramp_down_running
 end
 
 function KoboPowerD:_setIntensityHW(intensity)
