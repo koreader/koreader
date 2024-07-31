@@ -362,6 +362,7 @@ describe("Readerfooter module", function()
 
         local old_screen_getwidth = Screen.getWidth
         Screen.getWidth = function() return 900 end
+        horizontal_margin = Screen:scaleBySize(10)*2
         footer:resetLayout()
         expected = is_am() and 362 or 370
         assert.is.same(expected, footer.text_width)
