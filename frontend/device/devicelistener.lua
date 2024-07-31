@@ -308,9 +308,19 @@ function DeviceListener:onToggleFlashOnPagesWithImages()
     G_reader_settings:flipNilOrTrue("refresh_on_pages_with_images")
 end
 
-function DeviceListener:onSwapPageTurnButtons()
+function DeviceListener:onSwapPageTurnButtons(show_notification)
     G_reader_settings:flipNilOrFalse("input_invert_page_turn_keys")
     Device:invertButtons()
+    local new_text
+    if G_reader_settings:isTrue("input_invert_page_turn_keys") then
+        new_text = _("Page-turn buttons inverted.")
+    else
+        new_text = _("Page-turn buttons no longer inverted.")
+    end
+    if show_notification then
+        Notification:notify(new_text)
+    end
+    return true
 end
 
 function DeviceListener:onToggleKeyRepeat(toggle)

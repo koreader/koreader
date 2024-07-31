@@ -48,6 +48,7 @@ local MODE = {
     frontlight_warmth = 16,
     custom_text = 17,
     book_author = 18,
+    page_turning_inverted = 19, -- includes both page-turn-button and swipe-and-tap inversion
 }
 
 local symbol_prefix = {
@@ -68,7 +69,7 @@ local symbol_prefix = {
         -- @translators This is the footer letter prefix for frontlight level.
         frontlight = C_("FooterLetterPrefix", "L:"),
         -- @translators This is the footer letter prefix for frontlight warmth (redshift).
-        frontlight_warmth = C_("FooterLetterPrefix", "R:"),
+        frontlight_warmth = C_("FooterLetterPrefix", "LW:"),
         -- @translators This is the footer letter prefix for memory usage.
         mem_usage = C_("FooterLetterPrefix", "M:"),
         -- @translators This is the footer letter prefix for Wi-Fi status.
@@ -367,6 +368,26 @@ local footerTextGeneratorMap = {
             end
         end
     end,
+    page_turning_inverted = function(footer)
+        local symbol_type = footer.settings.item_prefix
+        local prefix = symbol_prefix[symbol_type].page_turning_inverted
+        if G_reader_settings:isTrue("input_invert_page_turn_keys") or G_reader_settings:isTrue("input_invert_left_page_turn_keys") or
+           G_reader_settings:isTrue("input_invert_right_page_turn_keys") or G_reader_settings:isTrue("inverse_reading_order") then
+            if symbol_type == "icons" or symbol_type == "compact_items" then
+                return symbol_prefix.icons.page_turning_inverted
+            else
+                return T(_("%1".. "I"), prefix)
+            end
+        elseif footer.settings.all_at_once and footer.settings.hide_empty_generators then
+            return ""
+        else
+            if symbol_type == "icons" or symbol_type == "compact_items" then
+                return symbol_prefix.icons.page_turning_regular
+            else
+                return T(_("%1".. "R"), prefix)
+            end
+        end
+    end,
     book_author = function(footer)
         local text = footer.ui.doc_props.authors
         return footer:getFittedText(text, footer.settings.book_author_max_width_pct)
@@ -422,6 +443,7 @@ ReaderFooter.default_settings = {
     frontlight = false,
     mem_usage = false,
     wifi_status = false,
+    page_turning_inverted = false,
     book_author = false,
     book_title = false,
     book_chapter = false,
@@ -945,6 +967,7 @@ function ReaderFooter:textOptionTitles(option)
         frontlight_warmth = T(_("Warmth level (%1)"), symbol_prefix[symbol].frontlight_warmth),
         mem_usage = T(_("KOReader memory usage (%1)"), symbol_prefix[symbol].mem_usage),
         wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
+        page_turning_inverted = T(_("Page turning inverted (%1)"), symbol_prefix[symbol].page_turning_inverted),
         book_author = _("Book author"),
         book_title = _("Book title"),
         book_chapter = _("Chapter title"),
@@ -1338,6 +1361,7 @@ function ReaderFooter:addToMainMenu(menu_items)
     if Device:hasFastWifiStatusQuery() then
         table.insert(footer_items, getMinibarOption("wifi_status"))
     end
+    table.insert(footer_items, getMinibarOption("page_turning_inverted"))
     table.insert(footer_items, getMinibarOption("book_author"))
     table.insert(footer_items, getMinibarOption("book_title"))
     table.insert(footer_items, getMinibarOption("book_chapter"))
