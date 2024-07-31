@@ -489,7 +489,7 @@ function KoboPowerD:beforeSuspend()
     -- to prevent as many things as we can from interfering with the smoothness of the ramp
     if self.fl then
         -- If there's already a resume toggle pending, cancel it.
-        UIManager:unschedule(self._resumeFrontlight)
+        --UIManager:unschedule(self._resumeFrontlight)
         -- Turn off the frontlight
         -- NOTE: Funky delay mainly to yield to the EPDC's refresh on UP systems.
         --       (Neither yieldToEPDC nor nextTick & friends quite cut it here)...
@@ -521,7 +521,7 @@ function KoboPowerD:afterResume()
     -- so we'll delay this ever so slightly so as to appear as smooth as possible...
     if self.fl then
         -- If there's already a suspend toggle pending, cancel it.
-        UIManager:unschedule(self._suspendFrontlight)
+        --UIManager:unschedule(self._suspendFrontlight)
 
         -- Turn the frontlight back on
         -- NOTE: There's quite likely *more* resource contention than on suspend here :/.
