@@ -79,7 +79,7 @@ local symbol_prefix = {
         pages_left_book = BD.mirroredUILayout() and "↢" or "↣",
         pages_left = BD.mirroredUILayout() and "⇐" or "⇒",
         battery = "",
-        bookmark_count = "\u{F097}",
+        bookmark_count = "\u{F097}", -- "empty bookmark", same as in the bookmark list
         percentage = BD.mirroredUILayout() and "⤟" or "⤠",
         book_time_to_read = "⏳",
         chapter_time_to_read = BD.mirroredUILayout() and "⥖" or "⤻",
@@ -434,7 +434,7 @@ ReaderFooter.default_settings = {
     container_height = G_defaults:readSetting("DMINIBAR_CONTAINER_HEIGHT"),
     container_bottom_padding = 1, -- unscaled_size_check: ignore
     progress_margin_width = Device:isAndroid() and Screen:scaleByDPI(16) or 10, -- android: guidelines for rounded corner margins
-    progress_margin = false,
+    progress_margin = false, -- true if progress bar margins same as book margins
     progress_bar_min_width_pct = 20,
     book_author_max_width_pct = 30,
     book_title_max_width_pct = 30,
@@ -535,10 +535,10 @@ function ReaderFooter:init()
         end
     end
 
-    self.face = Font:getFace(self.text_font_face, self.settings.text_font_size)
+    self.footer_text_face = Font:getFace(self.text_font_face, self.settings.text_font_size)
     self.footer_text = TextWidget:new{
         text = "",
-        face = self.face,
+        face = self.footer_text_face,
         bold = self.settings.text_font_bold,
     }
     -- all width related values will be initialized in self:resetLayout()
@@ -647,11 +647,11 @@ end
 
 -- Help text string, or function, to be shown, or executed, on a long press on menu item
 local option_help_text = {
-    ["pages_left_book"] = _("Can be configured to include or exclude the current page."),
-    ["percentage"]      = _("Progress percentage can be shown with zero, one or two decimal places."),
-    ["mem_usage"]       = _("Show memory usage in MiB."),
-    ["reclaim_height"]  = _("When the status bar is hidden, this setting will utilize the entirety of screen real estate (for your book) and will temporarily overlap the text when the status bar is shown."),
-    ["custom_text"]     = ReaderFooter.set_custom_text,
+    pages_left_book = _("Can be configured to include or exclude the current page."),
+    percentage      = _("Progress percentage can be shown with zero, one or two decimal places."),
+    mem_usage       = _("Show memory usage in MiB."),
+    reclaim_height  = _("When the status bar is hidden, this setting will utilize the entirety of screen real estate (for your book) and will temporarily overlap the text when the status bar is shown."),
+    custom_text     = ReaderFooter.set_custom_text,
 }
 
 function ReaderFooter:updateFooterContainer()
@@ -1450,11 +1450,11 @@ With this feature enabled, the current page is factored in, resulting in the cou
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.text_font_size = spin.value
-                                    self.face = Font:getFace(self.text_font_face, self.settings.text_font_size)
+                                    self.footer_text_face = Font:getFace(self.text_font_face, self.settings.text_font_size)
                                     self.footer_text:free()
                                     self.footer_text = TextWidget:new{
                                         text = self.footer_text.text,
-                                        face = self.face,
+                                        face = self.footer_text_face,
                                         bold = self.settings.text_font_bold,
                                     }
                                     self.text_container[1] = self.footer_text
@@ -1476,7 +1476,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                             self.footer_text:free()
                             self.footer_text = TextWidget:new{
                                 text = self.footer_text.text,
-                                face = self.face,
+                                face = self.footer_text_face,
                                 bold = self.settings.text_font_bold,
                             }
                             self.text_container[1] = self.footer_text
@@ -1535,12 +1535,11 @@ With this feature enabled, the current page is factored in, resulting in the cou
                     return T(_("Height: %1"), self.settings.container_height)
                 end,
                 callback = function(touchmenu_instance)
-                    local container_height = self.settings.container_height
-                    local items_font = SpinWidget:new{
-                        value = container_height,
+                    local spin_widget = SpinWidget:new{
+                        value = self.settings.container_height,
                         value_min = 7,
                         value_max = 98,
-                        default_value = G_defaults:readSetting("DMINIBAR_CONTAINER_HEIGHT"),
+                        default_value = self.default_settings.container_height,
                         title_text = _("Items container height"),
                         keep_shown_on_apply = true,
                         callback = function(spin)
@@ -1550,7 +1549,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
                     }
-                    UIManager:show(items_font)
+                    UIManager:show(spin_widget)
                 end,
                 keep_menu_open = true,
             },
@@ -1559,12 +1558,11 @@ With this feature enabled, the current page is factored in, resulting in the cou
                     return T(_("Bottom margin: %1"), self.settings.container_bottom_padding)
                 end,
                 callback = function(touchmenu_instance)
-                    local container_bottom_padding = self.settings.container_bottom_padding
-                    local items_font = SpinWidget:new{
-                        value = container_bottom_padding,
+                    local spin_widget = SpinWidget:new{
+                        value = self.settings.container_bottom_padding,
                         value_min = 0,
                         value_max = 49,
-                        default_value = 1,
+                        default_value = self.default_settings.container_bottom_padding,
                         title_text = _("Container bottom margin"),
                         keep_shown_on_apply = true,
                         callback = function(spin)
@@ -1574,7 +1572,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
                     }
-                    UIManager:show(items_font)
+                    UIManager:show(spin_widget)
                 end,
                 keep_menu_open = true,
             },
@@ -1866,7 +1864,7 @@ function ReaderFooter:getFittedText(text, max_width_pct)
     local text_widget = TextWidget:new{
         text = text:gsub(" ", "\u{00A0}"), -- no-break-space
         max_width = self._saved_screen_width * max_width_pct * (1/100),
-        face = self.face,
+        face = self.footer_text_face,
         bold = self.settings.text_font_bold,
     }
     local fitted_text, add_ellipsis = text_widget:getFittedText()
