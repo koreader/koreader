@@ -126,6 +126,8 @@ function BasePowerD:frontlightIntensity()
 end
 
 function BasePowerD:toggleFrontlight(done_callback)
+    print("BasePowerD:toggleFrontlight")
+    print(debug.traceback())
     if not self.device:hasFrontlight() then return false end
     if self:isFrontlightOn() then
         return self:turnOffFrontlight(done_callback)
@@ -135,6 +137,8 @@ function BasePowerD:toggleFrontlight(done_callback)
 end
 
 function BasePowerD:turnOffFrontlight(done_callback)
+    print("BasePowerD:turnOffFrontlight")
+    print(debug.traceback())
     if not self.device:hasFrontlight() then return end
     if self:isFrontlightOff() then return false end
     local cb_handled = self:turnOffFrontlightHW(done_callback)
@@ -147,6 +151,8 @@ function BasePowerD:turnOffFrontlight(done_callback)
 end
 
 function BasePowerD:turnOnFrontlight(done_callback)
+    print("BasePowerD:turnOnFrontlight")
+    print(debug.traceback())
     if not self.device:hasFrontlight() then return end
     if self:isFrontlightOn() then return false end
     if self.fl_intensity == self.fl_min then return false end  --- @fixme what the hell?

@@ -250,7 +250,8 @@ function KoboPowerD:isFrontlightOnHW()
         self.initial_is_fl_on = nil
         return ret
     end
-    return self.hw_intensity > 0 and not self.fl_ramp_down_running
+    print("KoboPowerD:isFrontlightOnHW:", self.hw_intensity, self.fl_ramp_down_running, self.fl_ramp_up_running)
+    return self.hw_intensity > 0
 end
 
 function KoboPowerD:_setIntensityHW(intensity)
@@ -314,6 +315,11 @@ function KoboPowerD:isChargedHW()
     return false
 end
 
+function KoboPowerD:_startRampDown(start_intensity, done_callback)
+    self:turnOffFrontlightRamp(start_intensity, self.fl_min, done_callback)
+    self.fl_ramp_down_running = true
+end
+
 function KoboPowerD:_endRampDown(end_intensity, done_callback)
     self:_setIntensityHW(end_intensity)
     self.fl_ramp_down_running = false
@@ -328,7 +334,9 @@ function KoboPowerD:_stopFrontlightRamp()
         -- Make sure we have no other ramp running.
         UIManager:unschedule(self.turnOffFrontlightRamp)
         UIManager:unschedule(self.turnOnFrontlightRamp)
+        UIManager:unschedule(self._startRampDown)
         UIManager:unschedule(self._endRampDown)
+        UIManager:unschedule(self._startRampUp)
         UIManager:unschedule(self._endRampUp)
         self.fl_ramp_up_running = false
         self.fl_ramp_down_running = false
@@ -353,7 +361,10 @@ function KoboPowerD:turnOffFrontlightRamp(curr_ramp_intensity, end_intensity, do
 end
 
 function KoboPowerD:turnOffFrontlightHW(done_callback)
+    --print("KoboPowerD:turnOffFrontlightHW")
+    --print(debug.traceback())
     if not self:isFrontlightOnHW() then
+        print("turnOffFrontlightHW: early abort because fl is already off")
         return
     end
 
@@ -371,10 +382,7 @@ function KoboPowerD:turnOffFrontlightHW(done_callback)
                 -- NOTE: Similarly, some controllers *really* don't like to be interleaved with screen refreshes,
                 --       so we wait until the next UI frame for the refreshes to go through first...
                 if self.device.frontlight_settings.delay_ramp_start then
-                    UIManager:nextTick(function()
-                        self:turnOffFrontlightRamp(self.fl_intensity, self.fl_min, done_callback)
-                        self.fl_ramp_down_running = true
-                    end)
+                    UIManager:nextTick(self._startRampDown, self, self.fl_intensity, done_callback)
                 else
                     self:turnOffFrontlightRamp(self.fl_intensity, self.fl_min, done_callback)
                     self.fl_ramp_down_running = true
@@ -390,6 +398,11 @@ function KoboPowerD:turnOffFrontlightHW(done_callback)
     return true
 end
 
+function KoboPowerD:_startRampUp(end_intensity, done_callback)
+    self:turnOnFrontlightRamp(self.fl_min, end_intensity, done_callback)
+    self.fl_ramp_up_running = true
+end
+
 function KoboPowerD:_endRampUp(end_intensity, done_callback)
     self:_setIntensityHW(end_intensity)
     self.fl_ramp_up_running = false
@@ -399,7 +412,7 @@ function KoboPowerD:_endRampUp(end_intensity, done_callback)
     end
 end
 
--- Similar functionality as `Kobo:turnOnFrontlightHW`, but the other way around ;).
+-- Similar functionality as `Kobo:turnOffFrontlightRamp`, but the other way around ;).
 function KoboPowerD:turnOnFrontlightRamp(curr_ramp_intensity, end_intensity, done_callback)
     if curr_ramp_intensity == 0 then
         curr_ramp_intensity = 1
@@ -417,6 +430,8 @@ function KoboPowerD:turnOnFrontlightRamp(curr_ramp_intensity, end_intensity, don
 end
 
 function KoboPowerD:turnOnFrontlightHW(done_callback)
+    --print("KoboPowerD:turnOnFrontlightHW")
+    --print(debug.traceback())
     -- NOTE: Insane workaround for the first toggle after a startup with the FL off.
     -- The light is actually off, but hw_intensity couldn't have been set to a sane value because of a number of interactions.
     -- So, fix it now, so we pass the isFrontlightOnHW check (which checks if hw_intensity > fl_min).
@@ -424,6 +439,7 @@ function KoboPowerD:turnOnFrontlightHW(done_callback)
         self.hw_intensity = self.fl_min
     end
     if self:isFrontlightOnHW() then
+        print("turnOnFrontlightHW: early abort because fl is already on")
         return
     end
 
@@ -437,10 +453,7 @@ function KoboPowerD:turnOnFrontlightHW(done_callback)
             else
                 -- Same deal as in turnOffFrontlightHW
                 if self.device.frontlight_settings.delay_ramp_start then
-                    UIManager:nextTick(function()
-                        self:turnOnFrontlightRamp(self.fl_min, self.fl_intensity, done_callback)
-                        self.fl_ramp_up_running = true
-                    end)
+                    UIManager:nextTick(self._startRampUp, self, self.fl_intensity, done_callback)
                 else
                     self:turnOnFrontlightRamp(self.fl_min, self.fl_intensity, done_callback)
                     self.fl_ramp_up_running = true
@@ -456,25 +469,46 @@ function KoboPowerD:turnOnFrontlightHW(done_callback)
     return true
 end
 
+-- NOTE: We delay those *slightly*, so tracking the fl_was_on state needs to be delayed with it,
+--       or stuff gets wonky if you trip a resume/suspend in quick succession...
+--       c.f., https://github.com/koreader/koreader/issues/12246#issuecomment-2261334603
+function KoboPowerD:_suspendFrontlight()
+    -- Remember the current frontlight state
+    self.fl_was_on = self.is_fl_on
+    print("Setting self.fl_was_on:", self.fl_was_on)
+    self:turnOffFrontlight()
+end
+
 -- Turn off front light before suspend.
 function KoboPowerD:beforeSuspend()
+    print("KoboPowerD:beforeSuspend")
     -- Inhibit user input and emit the Suspend event.
     self.device:_beforeSuspend()
 
     -- Handle the frontlight last,
     -- to prevent as many things as we can from interfering with the smoothness of the ramp
     if self.fl then
-        -- Remember the current frontlight state
-        self.fl_was_on = self.is_fl_on
+        -- If there's already a resume toggle pending, cancel it.
+        UIManager:unschedule(self._resumeFrontlight)
         -- Turn off the frontlight
         -- NOTE: Funky delay mainly to yield to the EPDC's refresh on UP systems.
         --       (Neither yieldToEPDC nor nextTick & friends quite cut it here)...
-        UIManager:scheduleIn(0.001, self.turnOffFrontlight, self)
+        UIManager:scheduleIn(0.001, self._suspendFrontlight, self)
+    end
+end
+
+function KoboPowerD:_resumeFrontlight()
+    -- Don't bother if the light was already off on suspend
+    print("Reading self.fl_was_on:", self.fl_was_on)
+    if self.fl_was_on then
+        -- Turn the frontlight back on
+        self:turnOnFrontlight()
     end
 end
 
 -- Restore front light state after resume.
 function KoboPowerD:afterResume()
+    print("KoboPowerD:afterResume")
     -- Set the system clock to the hardware clock's time.
     RTC:HCToSys()
 
@@ -486,12 +520,12 @@ function KoboPowerD:afterResume()
     -- There's a whole bunch of stuff happening before us in Generic:onPowerEvent,
     -- so we'll delay this ever so slightly so as to appear as smooth as possible...
     if self.fl then
-        -- Don't bother if the light was already off on suspend
-        if self.fl_was_on then
-            -- Turn the frontlight back on
-            -- NOTE: There's quite likely *more* resource contention than on suspend here :/.
-            UIManager:scheduleIn(0.001, self.turnOnFrontlight, self)
-        end
+        -- If there's already a suspend toggle pending, cancel it.
+        UIManager:unschedule(self._suspendFrontlight)
+
+        -- Turn the frontlight back on
+        -- NOTE: There's quite likely *more* resource contention than on suspend here :/.
+        UIManager:scheduleIn(0.001, self._resumeFrontlight, self)
     end
 end
 
