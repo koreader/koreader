@@ -476,6 +476,8 @@ function KoboPowerD:_suspendFrontlight()
     -- Remember the current frontlight state (self.is_fl_on flips to false as soon as we engage the ramp down)
     local fl_was_on = self.is_fl_on
     self:turnOffFrontlight(function()
+        -- In order for it to actually reflect reality, this needs to be delayed until the end of the ramp,
+        -- as _suspendFrontlight (or the ramp itself) can get unscheduled early in afterResume...
         self.fl_was_on = fl_was_on
         print("Setting self.fl_was_on:", fl_was_on)
     end)
@@ -492,6 +494,8 @@ function KoboPowerD:beforeSuspend()
     if self.fl then
         -- If there's already a resume toggle pending, cancel it.
         UIManager:unschedule(self._resumeFrontlight)
+        self:_stopFrontlightRamp()
+
         -- Turn off the frontlight
         -- NOTE: Funky delay mainly to yield to the EPDC's refresh on UP systems.
         --       (Neither yieldToEPDC nor nextTick & friends quite cut it here)...
@@ -524,6 +528,7 @@ function KoboPowerD:afterResume()
     if self.fl then
         -- If there's already a suspend toggle pending, cancel it.
         UIManager:unschedule(self._suspendFrontlight)
+        self:_stopFrontlightRamp()
 
         -- Turn the frontlight back on
         -- NOTE: There's quite likely *more* resource contention than on suspend here :/.
