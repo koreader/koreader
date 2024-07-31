@@ -207,7 +207,7 @@ function FileManagerHistory:onMenuHold(item)
             text = _("Remove from history"),
             callback = function()
                 UIManager:close(self.histfile_dialog)
-                require("readhistory"):removeItem(item)
+                require("readhistory"):removeItem(item, item.idx)
                 self._manager:updateItemTable()
             end,
         },
