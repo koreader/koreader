@@ -314,8 +314,8 @@ function KoboPowerD:isChargedHW()
     return false
 end
 
-function KoboPowerD:_startRampDown(start_intensity, done_callback)
-    self:turnOffFrontlightRamp(start_intensity, self.fl_min, done_callback)
+function KoboPowerD:_startRampDown(done_callback)
+    self:turnOffFrontlightRamp(self.fl_intensity, self.fl_min, done_callback)
     self.fl_ramp_down_running = true
 end
 
@@ -378,7 +378,7 @@ function KoboPowerD:turnOffFrontlightHW(done_callback)
                 -- NOTE: Similarly, some controllers *really* don't like to be interleaved with screen refreshes,
                 --       so we wait until the next UI frame for the refreshes to go through first...
                 if self.device.frontlight_settings.delay_ramp_start then
-                    UIManager:nextTick(self._startRampDown, self, self.fl_intensity, done_callback)
+                    UIManager:nextTick(self._startRampDown, self, done_callback)
                 else
                     self:turnOffFrontlightRamp(self.fl_intensity, self.fl_min, done_callback)
                     self.fl_ramp_down_running = true
@@ -394,8 +394,8 @@ function KoboPowerD:turnOffFrontlightHW(done_callback)
     return true
 end
 
-function KoboPowerD:_startRampUp(end_intensity, done_callback)
-    self:turnOnFrontlightRamp(self.fl_min, end_intensity, done_callback)
+function KoboPowerD:_startRampUp(done_callback)
+    self:turnOnFrontlightRamp(self.fl_min, self.fl_intensity, done_callback)
     self.fl_ramp_up_running = true
 end
 
@@ -446,7 +446,7 @@ function KoboPowerD:turnOnFrontlightHW(done_callback)
             else
                 -- Same deal as in turnOffFrontlightHW
                 if self.device.frontlight_settings.delay_ramp_start then
-                    UIManager:nextTick(self._startRampUp, self, self.fl_intensity, done_callback)
+                    UIManager:nextTick(self._startRampUp, self, done_callback)
                 else
                     self:turnOnFrontlightRamp(self.fl_min, self.fl_intensity, done_callback)
                     self.fl_ramp_up_running = true
