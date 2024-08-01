@@ -362,13 +362,14 @@ describe("Readerfooter module", function()
 
         local old_screen_getwidth = Screen.getWidth
         Screen.getWidth = function() return 900 end
+        local new_horizontal_margin = Screen:scaleBySize(10)*2
         footer:resetLayout()
         expected = is_am() and 362 or 370
         assert.is.same(expected, footer.text_width)
         assert.is.same(900, footer.progress_bar.width
                             + footer.text_width
-                            + horizontal_margin)
-        expected = is_am() and 518 or 510
+                            + new_horizontal_margin)
+        expected = (is_am() and 518 or 510) - (new_horizontal_margin - horizontal_margin)
         assert.is.same(expected, footer.progress_bar.width)
         Screen.getWidth = old_screen_getwidth
         readerui:closeDocument()

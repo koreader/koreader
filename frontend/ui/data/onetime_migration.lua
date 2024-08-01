@@ -10,7 +10,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20240616
+local CURRENT_MIGRATION_DATE = 20240731
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -656,6 +656,18 @@ if last_migration_date < 20240408 then
     if image_file then
         G_reader_settings:saveSetting("screensaver_type", "document_cover")
         G_reader_settings:saveSetting("screensaver_document_cover", image_file)
+    end
+end
+
+-- 20240731, ReaderFooter: store unscaled progress bar margins
+if last_migration_date < 20240731 then
+    logger.info("Performing one-time migration for 20240731")
+
+    local settings = G_reader_settings:readSetting("footer")
+    if (settings ~= nil) and (not settings.progress_margin) and (settings.progress_margin_width ~= 0) then
+        local Device = require("device")
+        settings.progress_margin_width = Device:isAndroid() and Device.screen:scaleByDPI(16) or 10
+        G_reader_settings:saveSetting("footer", settings)
     end
 end
 
