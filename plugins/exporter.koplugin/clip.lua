@@ -240,7 +240,7 @@ function MyClipping:parseAnnotations(annotations, book)
         if item.drawer then
             local clipping = {
                 sort    = "highlight",
-                page    = item.pageno,
+                page    = item.pageref or item.pageno,
                 time    = self:getTime(item.datetime),
                 text    = self:getText(item.text),
                 note    = item.note and self:getText(item.note),
