@@ -58,6 +58,12 @@ define CR3GUI_DATADIR_EXCLUDES
 endef
 CR3GUI_DATADIR_FILES = $(filter-out $(CR3GUI_DATADIR_EXCLUDES),$(wildcard $(CR3GUI_DATADIR)/*))
 
+define DATADIR_FILES
+$(CR3GUI_DATADIR_FILES)
+$(OUTPUT_DIR_DATAFILES)
+$(THIRDPARTY_DIR)/kpvcrlib/cr3.css
+endef
+
 # files to link from main directory
 INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastorage.lua \
 		l10n tools README.md COPYING
@@ -105,7 +111,7 @@ endif
 	@echo "[*] Install data files"
 	! test -L $(INSTALL_DIR)/koreader/data || rm $(INSTALL_DIR)/koreader/data
 	install -d $(INSTALL_DIR)/koreader/data
-	$(SYMLINK) $(OUTPUT_DIR_DATAFILES) $(CR3GUI_DATADIR_FILES) $(INSTALL_DIR)/koreader/data/
+	$(SYMLINK) $(strip $(DATADIR_FILES)) $(INSTALL_DIR)/koreader/data/
 ifneq (,$(IS_RELEASE))
 	@echo "[*] Clean up, remove unused files for releases"
 	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,desktop,devices,dict,manual,tessdata}
