@@ -17,6 +17,7 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
     end
     local chapter = bm.chapter
     local hl, pageno = self:getHighlightForBookmark(highlights, bm)
+    local pageref
     if init then
         if note and self.ui.bookmark:isBookmarkAutoText(bm) then
             note = nil
@@ -24,7 +25,12 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
         if chapter == nil then
             chapter = self.ui.toc:getTocTitleByPage(bm.page)
         end
-        pageno = self.ui.bookmark:getBookmarkPageString(bm.page)
+        if self.ui.rolling then
+            pageno = self.document:getPageFromXPointer(bm.page)
+            pageref = self:getPageRef(bm.page, pageno)
+        else
+            pageno = bm.page
+        end
     end
     if self.ui.paging and bm.pos0 and not bm.pos0.page then
         -- old single-page reflow highlights do not have page in position
@@ -53,7 +59,8 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
         text_edited = hl.edited,   -- true if highlighted text has been edited
         note        = note,        -- user's note, editable
         chapter     = chapter,     -- book chapter title
-        pageno      = pageno,      -- book page number (honors reference pages and hidden flows)
+        pageno      = pageno,      -- book page number (continuous numbering, used by KOHighlights)
+        pageref     = pageref,     -- book page number (iff: reference pages or hidden flows)
         page        = bm.page,     -- highlight location, xPointer or number (pdf)
         pos0        = bm.pos0,     -- highlight start position, xPointer (== page) or table (pdf)
         pos1        = bm.pos1,     -- highlight end position, xPointer or table (pdf)
@@ -231,7 +238,8 @@ function ReaderAnnotation:updatePageNumbers(force_update)
     if self.ui.paging then return end
     if force_update or self.needs_update then -- triggered by ReaderRolling on document layout change
         for _, item in ipairs(self.annotations) do
-            item.pageno = self.ui.bookmark:getBookmarkPageString(item.page)
+            item.pageno = self.document:getPageFromXPointer(item.page)
+            item.pageref = self:getPageRef(item.page, item.pageno)
         end
     end
     self.needs_update = nil
@@ -266,7 +274,8 @@ function ReaderAnnotation:updateItemByXPointer(item)
         item.text = chapter and T(_("in %1"), chapter) or nil
     end
     item.chapter = chapter
-    item.pageno = self.ui.bookmark:getBookmarkPageString(item.page)
+    item.pageno = self.document:getPageFromXPointer(item.page)
+    item.pageref = self:getPageRef(item.page, item.pageno)
 end
 
 function ReaderAnnotation:isItemInPositionOrderRolling(a, b)
@@ -397,13 +406,32 @@ end
 
 function ReaderAnnotation:addItem(item)
     item.datetime = os.date("%Y-%m-%d %H:%M:%S")
-    item.pageno = self.ui.bookmark:getBookmarkPageString(item.page)
+    if self.ui.rolling then
+        item.pageno = self.document:getPageFromXPointer(item.page)
+        item.pageref = self:getPageRef(item.page, item.pageno)
+    else
+        item.pageno = item.page
+    end
     local index = self:getInsertionIndex(item)
     table.insert(self.annotations, index, item)
     return index
 end
 
 -- info
+
+function ReaderAnnotation:getPageRef(xp, pn) -- same as ReaderBookmark:getBookmarkPageString()
+    local pageref
+    if self.ui.pagemap:wantsPageLabels() then
+        pageref = self.ui.pagemap:getXPointerPageLabel(xp, true)
+    elseif self.ui.document:hasHiddenFlows() then
+        pageref = tostring(self.ui.document:getPageNumberInFlow(pn))
+        local flow = self.ui.document:getPageFlow(pn)
+        if flow > 0 then
+            pageref = T("[%1]%2", pageref, flow)
+        end
+    end
+    return pageref
+end
 
 function ReaderAnnotation:hasAnnotations()
     return #self.annotations > 0
