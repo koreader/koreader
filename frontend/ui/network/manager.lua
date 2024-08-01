@@ -1225,8 +1225,9 @@ function NetworkMgr:setWirelessBackend(name, options)
     require("ui/network/"..name).init(self, options)
 end
 
--- set network proxy if global variable G_defaults:readSetting("NETWORK_PROXY") is defined
-if G_defaults:readSetting("NETWORK_PROXY") then
+if G_reader_settings:readSetting("http_proxy_enabled") and G_reader_settings:readSetting("http_proxy") then
+    NetworkMgr:setHTTPProxy(G_reader_settings:readSetting("http_proxy"))
+elseif G_defaults:readSetting("NETWORK_PROXY") then
     NetworkMgr:setHTTPProxy(G_defaults:readSetting("NETWORK_PROXY"))
 end
 
