@@ -146,9 +146,6 @@ jobs:
         if: contains('failure success', steps.build.conclusion) && !cancelled()
         run: make buildstats
 
-      - name: Dump binaries runtime path & dependencies
-        run: make bindeps
-
       # }}}
 
       # Clean / save caches. {{{
@@ -175,6 +172,16 @@ jobs:
         with:
           path: build
           key: ${{ steps.build-restore.outputs.cache-primary-key }}
+
+      # }}}
+
+      # Dump & check binaries. {{{
+
+      - name: Dump binaries runtime path & dependencies
+        run: make bininfo
+
+      - name: Checking binaries for missing dependencies
+        run: make bincheck
 
       # }}}
 
