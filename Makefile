@@ -103,6 +103,7 @@ endif
 	install -d $(INSTALL_DIR)/koreader/{screenshots,fonts/host,ota}
 	# Note: the data dir is distinct from the one in base/build/…!
 	@echo "[*] Install data files"
+	! test -L $(INSTALL_DIR)/koreader/data || rm $(INSTALL_DIR)/koreader/data
 	install -d $(INSTALL_DIR)/koreader/data
 	$(SYMLINK) $(OUTPUT_DIR_DATAFILES) $(CR3GUI_DATADIR_FILES) $(INSTALL_DIR)/koreader/data/
 ifneq (,$(IS_RELEASE))
