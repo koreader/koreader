@@ -34,7 +34,7 @@ update: all
 	rm -vf $(ANDROID_LAUNCHER_DIR)/assets/libs/libluajit.so
 	# binaries are stored as shared libraries to prevent W^X exception on Android 10+
 	# https://developer.android.com/about/versions/10/behavior-changes-10#execute-permission
-	cp -pR $(INSTALL_DIR)/koreader/sdcv $(ANDROID_LIBS_ABI)/libsdcv.so
+	cp -pLR $(INSTALL_DIR)/koreader/sdcv $(ANDROID_LIBS_ABI)/libsdcv.so
 	echo "sdcv libsdcv.so" > $(ANDROID_ASSETS)/map.txt
 	# assets are compressed manually and stored inside the APK.
 	cd $(INSTALL_DIR)/koreader && \
