@@ -1,0 +1,22 @@
+# TODOs for gemini.koplugin
+
+# Easy features
+These could be implemented directly, and might be good ideas:
+* Log of (hashes of) visited URLs.
+* Indication of download progress for large files.
+* Gemsub subscription handling.
+
+# Features requiring changes to upstream projects
+(or clever workarounds I haven't found)
+
+## Dependent on KOReader
+* Addressbar which doesn't try to word-split the URL at punctuation.
+* Gemtext supported from start (currently, if the last file was a .gmi file and you restart KOReader, it won't be able to open it, because it tries before the plugin loads). Best would be to add gemtext support to CoolReader directly.
+* Way to disable reading statistics for gemini pages without disabling plugin.
+* Streaming (might be possible using the progressive rendering architecture?).
+* End of document action (Next, or nav menu)
+
+## Dependent on luasec
+* Session resumption.
+* CA-based verification which checks the hostname.
+* Reliable handling of early Titan response.
