@@ -24,7 +24,7 @@ local Identities = {
 
 local function normaliseIdentUrl(u)
     local purl = url.parse(u, {scheme = "gemini", port = "1965"})
-    if purl.scheme == "titan" then
+    if purl and purl.scheme == "titan" then
         purl.scheme = "gemini"
     end
     if purl == nil or purl.scheme ~= "gemini" then
