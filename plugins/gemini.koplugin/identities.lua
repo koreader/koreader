@@ -194,7 +194,7 @@ local function createIdentityInteractive(callback)
     widget.input_field[1].enter_callback = create_cb
     widget.input_field[2].enter_callback = create_cb
 
-    -- FIXME: Seems checkbuttons added to MultiInputDialog don't appear...
+    --- @fixme: Seems checkbuttons added to MultiInputDialog don't appear...
     rsa_button = CheckButton:new{
         text = _("Use RSA instead of ECDSA"),
         checked = false,

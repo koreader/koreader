@@ -476,7 +476,7 @@ function Client:openUrl(article_url, opts)
             end
             self:openUrl(u, opts)
         end
-        -- Warning: url.parse follows RFC 2396 rather than 3986, so doesn't
+        --- @warning: url.parse follows RFC 2396 rather than 3986, so doesn't
         -- parse valueless parameters like ";edit".
         if purl.path and article_url:match(";edit$") then
             -- This implements the extension to the Titan protocol described
@@ -518,7 +518,7 @@ function Client:openUrl(article_url, opts)
                 if not pnew then
                     return fail(T("BUG: Unparseable URI on redirection: %1"), meta)
                 end
-                -- TODO: automatically edit bookmarks file if permanent?
+                --- @todo: automatically edit bookmarks file if permanent?
                 opts.num_redirects = opts.num_redirects + 1
                 opts.titan_body = nil
                 local function confirm_redir(t)
@@ -684,7 +684,7 @@ function Client:promptInput(purl, prompt, is_secret, repl, initial, openUrl_opts
         checked = false,
         callback = function()
             input_dialog.allow_newline = multiline_button.checked
-            -- FIXME: less hacky way to do this?
+            --- @fixme: less hacky way to do this?
             if multiline_button.checked then
                 input_dialog._input_widget.enter_callback = nil
             else
@@ -841,7 +841,7 @@ function Client:onFollowGeminiLink(u)
 end
 
 function Client:onEndOfBook()
-    -- TODO: seems we can't override the usual reader onEndOfBook handling.
+    --- @todo: seems we can't override the usual reader onEndOfBook handling.
     -- Leaving this as a hidden option for now.
     if G_reader_settings:isTrue("gemini_next_on_end") then
         if self.active and #self.queue > 0 then
@@ -1570,7 +1570,7 @@ To edit bookmarks, please edit the file %1 in the koreader directory manually.
         },
     }
     update_buttons()
-    -- FIXME: less hacky way to do this?
+    --- @fixme: less hacky way to do this?
     nav._input_widget.edit_callback = function(edited)
         if edited then
             update_buttons()

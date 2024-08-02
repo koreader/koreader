@@ -501,7 +501,7 @@ function GeminiPlugin:openUrl(article_url, opts)
     local function trust_modified_cb()
         trust_store_persist:save(self.trust_store)
     end
-    local perm_redir_cb = nil -- TODO: automatically edit bookmarks file?
+    local perm_redir_cb = nil --- @todo: automatically edit bookmarks file?
     local function info_cb(msg, fast)
         return Trapper:info(msg, fast)
     end
@@ -638,7 +638,7 @@ function GeminiPlugin:promptInput(purl, prompt, is_secret, repl, initial)
         checked = false,
         callback = function()
             input_dialog.allow_newline = multiline_button.checked
-            -- FIXME: less hacky way to do this?
+            --- @fixme: less hacky way to do this?
             if multiline_button.checked then
                 input_dialog._input_widget.enter_callback = nil
             else
@@ -795,7 +795,7 @@ function GeminiPlugin:onFollowGeminiLink(u)
 end
 
 function GeminiPlugin:onEndOfBook()
-    -- TODO: seems we can't override the usual reader onEndOfBook handling.
+    --- @todo: seems we can't override the usual reader onEndOfBook handling.
     -- Leaving this as a hidden option for now.
     if G_reader_settings:isTrue("gemini_next_on_end") then
         if self.active and #self.queue > 0 then
@@ -1583,7 +1583,7 @@ To edit bookmarks, please edit the file %1 in the koreader directory manually.
         },
     }
     update_buttons()
-    -- FIXME: less hacky way to do this?
+    --- @fixme: less hacky way to do this?
     nav._input_widget.edit_callback = function(edited)
         if edited then
             update_buttons()
