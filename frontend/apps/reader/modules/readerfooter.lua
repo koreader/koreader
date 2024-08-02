@@ -91,8 +91,8 @@ local symbol_prefix = {
         mem_usage = "",
         wifi_status = "",
         wifi_status_off = "",
-        page_turning_inverted = "PgT:I",
-        page_turning_regular = "PgT:R",
+        page_turning_inverted = "⇄",
+        page_turning_regular = "⇉",
     },
     compact_items = {
         time = nil,
@@ -109,8 +109,8 @@ local symbol_prefix = {
         mem_usage = C_("FooterCompactItemsPrefix", "M"),
         wifi_status = "",
         wifi_status_off = "",
-        page_turning_inverted = "PgT:I",
-        page_turning_regular = "PgT:R",
+        page_turning_inverted = "⇄",
+        page_turning_regular = "⇉",
     }
 }
 if BD.mirroredUILayout() then
