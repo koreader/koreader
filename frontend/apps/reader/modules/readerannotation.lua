@@ -340,22 +340,21 @@ function ReaderAnnotation:getMatchFunc()
     local doesMatch
     if self.ui.rolling then
         doesMatch = function(a, b)
-            if a.datetime ~= nil and b.datetime ~= nil and a.datetime ~= b.datetime then
-                return false
-            end
-            if a.pos0 ~= b.pos0 or a.pos1 ~= b.pos1 or (a.text_orig or a.text) ~= (b.text_orig or b.text) then
+            if (a.datetime ~= nil and b.datetime ~= nil and a.datetime ~= b.datetime)
+                    or (not a.drawer) ~= (not b.drawer)
+                    or a.page ~= b.page
+                    or a.pos1 ~= b.pos1 then
                 return false
             end
             return true
         end
     else
         doesMatch = function(a, b)
-            if a.datetime ~= nil and b.datetime ~= nil and a.datetime ~= b.datetime then
-                return false
-            end
-            if a.pos0.page ~= b.pos0.page or a.pos0.x ~= b.pos0.x or a.pos1.x ~= b.pos1.x
-                                          or a.pos0.y ~= b.pos0.y or a.pos1.y ~= b.pos1.y
-                                          or (a.text_orig or a.text) ~= (b.text_orig or b.text) then
+            if (a.datetime ~= nil and b.datetime ~= nil and a.datetime ~= b.datetime)
+                    or (not a.drawer) ~= (not b.drawer)
+                    or a.page ~= b.page
+                    or (a.pos0 and (a.pos0.x ~= b.pos0.x or a.pos1.x ~= b.pos1.x
+                                 or a.pos0.y ~= b.pos0.y or a.pos1.y ~= b.pos1.y)) then
                 return false
             end
             return true
