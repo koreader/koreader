@@ -207,7 +207,12 @@ function FileManagerHistory:onMenuHold(item)
             text = _("Remove from history"),
             callback = function()
                 UIManager:close(self.histfile_dialog)
-                require("readhistory"):removeItem(item)
+                -- The item's idx field is tied to the current *view*, so we can only pass it as-is when there's no filtering *at all* involved.
+                local index = item.idx
+                if self._manager.search_string or self._manager.selected_colections or self._manager.filter ~= "all" then
+                    index = nil
+                end
+                require("readhistory"):removeItem(item, index)
                 self._manager:updateItemTable()
             end,
         },
