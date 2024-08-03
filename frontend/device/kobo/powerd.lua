@@ -18,6 +18,9 @@ local KoboPowerD = BasePowerD:new{
     aux_battery_sysfs = nil,
     fl_warmth_min = 0, fl_warmth_max = 100,
     fl_was_on = nil,
+
+    concurrent_suspend_requests = 0,
+    concurrent_resume_requests = 0,
 }
 
 --- @todo Remove G_defaults:readSetting("KOBO_LIGHT_ON_START")
@@ -244,8 +247,8 @@ end
 
 function KoboPowerD:isFrontlightOnHW()
     if self.initial_is_fl_on ~= nil then -- happens only once after init()
-        -- give initial state to BasePowerD, which will
-        -- reset our self.hw_intensity to 0 if self.initial_is_fl_on is false
+        -- give initial state to BasePowerD,
+        -- which will reset our self.hw_intensity to 0 if self.initial_is_fl_on is false
         local ret = self.initial_is_fl_on
         self.initial_is_fl_on = nil
         return ret
@@ -264,9 +267,9 @@ function KoboPowerD:_setIntensityHW(intensity)
         self.fl:setNaturalBrightness(intensity, self.fl_warmth)
     end
     self.hw_intensity = intensity
-    -- Now that we have set intensity, we need to let BasePowerD
-    -- know about possibly changed frontlight state (if we came
-    -- from light toggled off to some intensity > 0).
+    -- Now that we have set the intensity,
+    -- we need to let BasePowerD know about the possibly new frontlight state
+    -- (if we came from light toggled off to some intensity > 0).
     self:_decideFrontlightState()
 end
 
@@ -474,22 +477,24 @@ end
 --       c.f., https://github.com/koreader/koreader/issues/12246#issuecomment-2261334603
 function KoboPowerD:_suspendFrontlight()
     print("KoboPowerD:_suspendFrontlight")
+    self.concurrent_suspend_requests = self.concurrent_suspend_requests - 1
+    print("concurrent suspends:", self.concurrent_suspend_requests)
+    print("concurrent resumes:", self.concurrent_resume_requests)
     -- Remember the current frontlight state
     -- NOTE: self.is_fl_on flips to false as soon as we engage the ramp down, so, ideally,
     --       we'd delay setting self.fl_was_on to the pre-ramp value at the end of the ramp (via the ramp's done_callback),
     --       except for the fact that if the frontlight is off, turnOffFrontlight will abort early, so we can't ;).
-    -- FIXME: Only update self.fl_was_on if we're the *only*/*last* scheduled task?
-    --        I was thinking of keeping a counter, and only doing this at 0;
-    --        but the unschedule dance should effectively achieve the same (except we skip the actual fl change, too).
-    --        Possibly leave the actual ramps alone, just unschedule _suspend/_resumeFrontlight?
-    self.fl_was_on = self.is_fl_on
-    print("==> Setting self.fl_was_on:", self.fl_was_on)
-    self:turnOffFrontlight()
+    if self.concurrent_resume_requests == 0 then
+        self.fl_was_on = self.is_fl_on
+        print("==> Setting self.fl_was_on:", self.fl_was_on)
+        self:turnOffFrontlight()
+    end
 end
 
 -- Turn off front light before suspend.
 function KoboPowerD:beforeSuspend()
     print("KoboPowerD:beforeSuspend")
+    self.concurrent_suspend_requests = self.concurrent_suspend_requests + 1
     -- Inhibit user input and emit the Suspend event.
     self.device:_beforeSuspend()
 
@@ -498,7 +503,7 @@ function KoboPowerD:beforeSuspend()
     if self.fl then
         -- NOTE: We *cannot* cancel any pending frontlight tasks,
         --       because it risks breaking self.fl_was_on tracking...
-        UIManager:unschedule(self._suspendFrontlight)
+        --UIManager:unschedule(self._suspendFrontlight)
         self:_stopFrontlightRamp()
 
         -- Turn off the frontlight
@@ -510,17 +515,29 @@ end
 
 function KoboPowerD:_resumeFrontlight()
     print("KoboPowerD:_resumeFrontlight")
-    -- Don't bother if the light was already off on suspend
-    print("<== Reading self.fl_was_on:", self.fl_was_on)
-    if self.fl_was_on then
-        -- Turn the frontlight back on
-        self:turnOnFrontlight()
+    self.concurrent_resume_requests = self.concurrent_resume_requests - 1
+    print("concurrent suspends:", self.concurrent_suspend_requests)
+    print("concurrent resumes:", self.concurrent_resume_requests)
+
+    if self.concurrent_suspend_requests == 0 then
+        -- Don't bother if the light was already off on suspend
+        print("<== Reading self.fl_was_on:", self.fl_was_on)
+        if self.fl_was_on then
+            -- If the frontlight is actually on because of concurrent suspend/resume madness,
+            -- turn it off first so we jump to the right intensity...
+            if self.is_fl_on then
+                self:setIntensityHW(self.fl_min)
+            end
+            -- Turn the frontlight back on
+            self:turnOnFrontlight()
+        end
     end
 end
 
 -- Restore front light state after resume.
 function KoboPowerD:afterResume()
     print("KoboPowerD:afterResume")
+    self.concurrent_resume_requests = self.concurrent_resume_requests + 1
     -- Set the system clock to the hardware clock's time.
     RTC:HCToSys()
 
@@ -533,7 +550,7 @@ function KoboPowerD:afterResume()
     -- so we'll delay this ever so slightly so as to appear as smooth as possible...
     if self.fl then
         -- NOTE: Same as above, can't cancel any pending fl tasks.
-        UIManager:unschedule(self._resumeFrontlight)
+        --UIManager:unschedule(self._resumeFrontlight)
         self:_stopFrontlightRamp()
 
         -- Turn the frontlight back on
