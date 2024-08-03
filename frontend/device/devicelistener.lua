@@ -311,13 +311,13 @@ end
 function DeviceListener:onSwapPageTurnButtons(show_notification)
     G_reader_settings:flipNilOrFalse("input_invert_page_turn_keys")
     Device:invertButtons()
-    local new_text
-    if G_reader_settings:isTrue("input_invert_page_turn_keys") then
-        new_text = _("Page-turn buttons inverted.")
-    else
-        new_text = _("Page-turn buttons no longer inverted.")
-    end
     if show_notification then
+        local new_text
+        if G_reader_settings:isTrue("input_invert_page_turn_keys") then
+            new_text = _("Page-turn buttons inverted.")
+        else
+            new_text = _("Page-turn buttons no longer inverted.")
+        end
         Notification:notify(new_text)
     end
     return true
