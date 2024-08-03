@@ -84,14 +84,10 @@ function ReadTimer:init()
 
     if self.show_value_in_header then
         self:addAdditionalHeaderContent()
-    else
-        self:removeAdditionalHeaderContent()
     end
 
     if self.show_value_in_footer then
         self:addAdditionalFooterContent()
-    else
-        self:removeAdditionalFooterContent()
     end
 
     self.ui.menu:registerToMainMenu(self)
@@ -155,23 +151,32 @@ function ReadTimer:remainingTime(round)
 end
 
 function ReadTimer:addAdditionalHeaderContent()
-    self.ui.crelistener:addAdditionalHeaderContent(self.additional_header_content_func)
-    self:update_status_bars(-1)
+    if self.ui.crelistener then
+        self.ui.crelistener:addAdditionalHeaderContent(self.additional_header_content_func)
+        self:update_status_bars(-1)
+    end
 end
 function ReadTimer:addAdditionalFooterContent()
-    self.ui.view.footer:addAdditionalFooterContent(self.additional_footer_content_func)
-    self:update_status_bars(-1)
+    if self.ui.view then
+        self.ui.view.footer:addAdditionalFooterContent(self.additional_footer_content_func)
+        self:update_status_bars(-1)
+    end
 end
 
 function ReadTimer:removeAdditionalHeaderContent()
-    self.ui.crelistener:removeAdditionalHeaderContent(self.additional_header_content_func)
-    self:update_status_bars(-1)
-    UIManager:broadcastEvent(Event:new("UpdateHeader"))
+    if self.ui.crelistener then
+        self.ui.crelistener:removeAdditionalHeaderContent(self.additional_header_content_func)
+        self:update_status_bars(-1)
+        UIManager:broadcastEvent(Event:new("UpdateHeader"))
+    end
 end
+
 function ReadTimer:removeAdditionalFooterContent()
-    self.ui.view.footer:removeAdditionalFooterContent(self.additional_footer_content_func)
-    self:update_status_bars(-1)
-    UIManager:broadcastEvent(Event:new("UpdateFooter", true))
+    if self.ui.view then
+        self.ui.view.footer:removeAdditionalFooterContent(self.additional_footer_content_func)
+        self:update_status_bars(-1)
+        UIManager:broadcastEvent(Event:new("UpdateFooter", true))
+    end
 end
 
 function ReadTimer:unschedule()
