@@ -382,6 +382,7 @@ local footerTextGeneratorMap = {
             if symbol_type == "icons" or symbol_type == "compact_items" then
                 return symbol_prefix.icons.page_turning_inverted
             else
+                -- @translators This is the invert reading order indicator.
                 return T(_("%1I"), prefix)
             end
         elseif footer.settings.all_at_once and footer.settings.hide_empty_generators then
@@ -390,6 +391,7 @@ local footerTextGeneratorMap = {
             if symbol_type == "icons" or symbol_type == "compact_items" then
                 return symbol_prefix.icons.page_turning_regular
             else
+                -- @translators This is the normal reading order indicator.
                 return T(_("%1N"), prefix)
             end
         end
