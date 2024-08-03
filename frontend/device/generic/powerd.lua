@@ -108,8 +108,10 @@ function BasePowerD:isFrontlightOn()
 end
 
 function BasePowerD:_decideFrontlightState()
+    print("BasePowerD:_decideFrontlightState")
     assert(self.device:hasFrontlight())
     self.is_fl_on = self:isFrontlightOnHW()
+    print("Setting self.is_fl_on to", self.is_fl_on)
 end
 
 function BasePowerD:isFrontlightOff()
@@ -126,6 +128,8 @@ function BasePowerD:frontlightIntensity()
 end
 
 function BasePowerD:toggleFrontlight(done_callback)
+    print("BasePowerD:toggleFrontlight")
+    print(debug.traceback())
     if not self.device:hasFrontlight() then return false end
     if self:isFrontlightOn() then
         return self:turnOffFrontlight(done_callback)
@@ -135,10 +139,13 @@ function BasePowerD:toggleFrontlight(done_callback)
 end
 
 function BasePowerD:turnOffFrontlight(done_callback)
+    print("BasePowerD:turnOffFrontlight")
+    print(debug.traceback())
     if not self.device:hasFrontlight() then return end
     if self:isFrontlightOff() then return false end
     local cb_handled = self:turnOffFrontlightHW(done_callback)
     self.is_fl_on = false
+    print("Setting self.is_fl_on to", self.is_fl_on)
     self:stateChanged()
     if not cb_handled and done_callback then
         done_callback()
@@ -147,11 +154,14 @@ function BasePowerD:turnOffFrontlight(done_callback)
 end
 
 function BasePowerD:turnOnFrontlight(done_callback)
+    print("BasePowerD:turnOnFrontlight")
+    print(debug.traceback())
     if not self.device:hasFrontlight() then return end
     if self:isFrontlightOn() then return false end
     if self.fl_intensity == self.fl_min then return false end  --- @fixme what the hell?
     local cb_handled = self:turnOnFrontlightHW(done_callback)
     self.is_fl_on = true
+    print("Setting self.is_fl_on to", self.is_fl_on)
     self:stateChanged()
     if not cb_handled and done_callback then
         done_callback()
