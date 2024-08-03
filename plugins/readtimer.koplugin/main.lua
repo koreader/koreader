@@ -84,14 +84,10 @@ function ReadTimer:init()
 
     if self.show_value_in_header then
         self:addAdditionalHeaderContent()
-    else
-        self:removeAdditionalHeaderContent()
     end
 
     if self.show_value_in_footer then
         self:addAdditionalFooterContent()
-    else
-        self:removeAdditionalFooterContent()
     end
 
     self.ui.menu:registerToMainMenu(self)
