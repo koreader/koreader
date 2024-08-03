@@ -390,7 +390,7 @@ local footerTextGeneratorMap = {
             if symbol_type == "icons" or symbol_type == "compact_items" then
                 return symbol_prefix.icons.page_turning_regular
             else
-                return T(_("%1".. "R"), prefix)
+                return T(_("%1".. "N"), prefix)
             end
         end
     end,
