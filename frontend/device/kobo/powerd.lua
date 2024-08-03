@@ -473,12 +473,17 @@ end
 --       or stuff gets wonky if you trip a resume/suspend in quick succession...
 --       c.f., https://github.com/koreader/koreader/issues/12246#issuecomment-2261334603
 function KoboPowerD:_suspendFrontlight()
+    print("KoboPowerD:_suspendFrontlight")
     -- Remember the current frontlight state
     -- NOTE: self.is_fl_on flips to false as soon as we engage the ramp down, so, ideally,
     --       we'd delay setting self.fl_was_on to the pre-ramp value at the end of the ramp (via the ramp's done_callback),
     --       except for the fact that if the frontlight is off, turnOffFrontlight will abort early, so we can't ;).
+    -- FIXME: Only update self.fl_was_on if we're the *only*/*last* scheduled task?
+    --        I was thinking of keeping a counter, and only doing this at 0;
+    --        but the unschedule dance should effectively achieve the same (except we skip the actual fl change, too).
+    --        Possibly leave the actual ramps alone, just unschedule _suspend/_resumeFrontlight?
     self.fl_was_on = self.is_fl_on
-    print("Setting self.fl_was_on:", self.fl_was_on)
+    print("==> Setting self.fl_was_on:", self.fl_was_on)
     self:turnOffFrontlight()
 end
 
@@ -493,10 +498,8 @@ function KoboPowerD:beforeSuspend()
     if self.fl then
         -- NOTE: We *cannot* cancel any pending frontlight tasks,
         --       because it risks breaking self.fl_was_on tracking...
-        --[[
-        UIManager:unschedule(self._resumeFrontlight)
+        UIManager:unschedule(self._suspendFrontlight)
         self:_stopFrontlightRamp()
-        --]]
 
         -- Turn off the frontlight
         -- NOTE: Funky delay mainly to yield to the EPDC's refresh on UP systems.
@@ -506,8 +509,9 @@ function KoboPowerD:beforeSuspend()
 end
 
 function KoboPowerD:_resumeFrontlight()
+    print("KoboPowerD:_resumeFrontlight")
     -- Don't bother if the light was already off on suspend
-    print("Reading self.fl_was_on:", self.fl_was_on)
+    print("<== Reading self.fl_was_on:", self.fl_was_on)
     if self.fl_was_on then
         -- Turn the frontlight back on
         self:turnOnFrontlight()
@@ -529,10 +533,8 @@ function KoboPowerD:afterResume()
     -- so we'll delay this ever so slightly so as to appear as smooth as possible...
     if self.fl then
         -- NOTE: Same as above, can't cancel any pending fl tasks.
-        --[[
-        UIManager:unschedule(self._suspendFrontlight)
+        UIManager:unschedule(self._resumeFrontlight)
         self:_stopFrontlightRamp()
-        --]]
 
         -- Turn the frontlight back on
         -- NOTE: There's quite likely *more* resource contention than on suspend here :/.
