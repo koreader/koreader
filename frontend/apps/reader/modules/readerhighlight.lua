@@ -1592,7 +1592,7 @@ dbg:guard(ReaderHighlight, "lookup",
 function ReaderHighlight:getSelectedWordContext(nb_words)
     if not self.selected_text then return end
     local ok, prev_context, next_context = pcall(self.ui.document.getSelectedWordContext, self.ui.document,
-                                                 self.selected_text.text, nb_words, self.selected_text.pos0, self.selected_text.pos1)
+                                                 self.selected_text.text, nb_words, self.selected_text.pos0, self.selected_text.pos1, true)
     if ok then
         return prev_context, next_context
     end
