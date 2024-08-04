@@ -495,6 +495,11 @@ function KoboPowerD:beforeSuspend()
     -- Handle the frontlight last,
     -- to prevent as many things as we can from interfering with the smoothness of the ramp
     if self.fl then
+        -- We only want the *last* scheduled suspend/resume frontlight task to run to avoid ramps running amok...
+        UIManager:unschedule(self._suspendFrontlight)
+        UIManager:unschedule(self._resumeFrontlight)
+        self:_stopFrontlightRamp()
+
         -- Turn off the frontlight
         -- NOTE: Funky delay mainly to yield to the EPDC's refresh on UP systems.
         --       (Neither yieldToEPDC nor nextTick & friends quite cut it here)...
@@ -534,6 +539,11 @@ function KoboPowerD:afterResume()
     -- There's a whole bunch of stuff happening before us in Generic:onPowerEvent,
     -- so we'll delay this ever so slightly so as to appear as smooth as possible...
     if self.fl then
+        -- Same reasoning as on suspend
+        UIManager:unschedule(self._suspendFrontlight)
+        UIManager:unschedule(self._resumeFrontlight)
+        self:_stopFrontlightRamp()
+
         -- Turn the frontlight back on
         -- NOTE: There's quite likely *more* resource contention than on suspend here :/.
         UIManager:scheduleIn(0.001, self._resumeFrontlight, self)
