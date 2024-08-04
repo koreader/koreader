@@ -98,6 +98,7 @@ local MultiInputDialog = InputDialog:extend{
     description_padding = Size.padding.default,
     description_margin = Size.margin.small,
     bottom_v_padding = Size.padding.default,
+    enter_callback = nil, -- applied to all fields
 }
 
 function MultiInputDialog:init()
@@ -132,6 +133,7 @@ function MultiInputDialog:init()
             para_direction_rtl = field.para_direction_rtl or self.para_direction_rtl,
             auto_para_direction = field.auto_para_direction or self.auto_para_direction,
             alignment_strict = field.alignment_strict or self.alignment_strict,
+            enter_callback = self.enter_callback,
         }
         table.insert(self.input_fields, input_field_tmp)
         table.insert(self.layout, { input_field_tmp })
