@@ -750,13 +750,15 @@ common_settings.units = {
     }
 }
 
-common_settings.screenshot = {
-    text = _("Screenshot folder"),
-    callback = function()
-        local Screenshoter = require("ui/widget/screenshoter")
-        Screenshoter:chooseFolder()
-    end,
-    keep_menu_open = true,
-}
+if Device:isTouchDevice() or Device:hasKeyboard() or Device:hasScreenKB() then
+    common_settings.screenshot = {
+        text = _("Screenshot folder"),
+        callback = function()
+            local Screenshoter = require("ui/widget/screenshoter")
+            Screenshoter:chooseFolder()
+        end,
+        keep_menu_open = true,
+    }
+end
 
 return common_settings
