@@ -487,7 +487,8 @@ function KoboPowerD:_suspendFrontlight()
     if self.concurrent_resume_requests == 0 then
         -- Things gan go sideways quick when you mix the userland ramp,
         -- delays all over the place, and quick successions of suspend/resume requests (e.g., jittery sleepcovers),
-        -- so trust previous fl_was_on values over the actual current state.
+        -- so trust previous fl_was_on values over the actual current state,
+        -- as the current state might not actually represent the pre-suspend reality...
         -- Yes, this means this'll effectively snapshot the state at the *first* suspend each KOReader run,
         -- but having only *manual* toggles update this is a bit of a nightmare, so I'm okay with the status quo.
         if self.fl_was_on == nil then
