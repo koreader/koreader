@@ -721,9 +721,9 @@ If you wish your highlights to be saved in the document, just move it to a writa
     end
     table.insert(menu_items.long_press.sub_item_table, {
         text_func = function()
-            local action = G_reader_settings:readSetting("default_highlight_action")
+            local multi_word = G_reader_settings:readSetting("default_highlight_action")
             for __, v in ipairs(long_press_action) do
-                if v[2] == action then
+                if v[2] == multi_word then
                     return T(_("Multi-word selection: %1"), v[1]:lower())
                 end
             end
