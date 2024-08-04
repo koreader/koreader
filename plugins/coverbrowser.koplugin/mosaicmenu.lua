@@ -426,7 +426,6 @@ function MosaicMenuItem:init()
     -- in a Container with a fixed height=item_height, so it will overflow it
     -- on the bottom, in the room made by item_margin=Screen:scaleBySize(10),
     -- so we should ensure underline_h + underline_padding stays below that.)
-    
     -- Remaining part of initialization is done in update(), because we may
     -- have to do it more than once if item not found in db
     self:update()
