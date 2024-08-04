@@ -363,7 +363,7 @@ function InputDialog:init()
             end
         end,
         strike_callback = self.strike_callback,
-        edit_callback = self._buttons_edit_callback, -- nil if no Save/Close buttons
+        edit_callback = self._buttons_edit_callback or self.edited_callback, -- self._buttons_edit_callback is nil if no Save/Close buttons
         scroll_callback = self._buttons_scroll_callback, -- nil if no Nav or Scroll buttons
         scroll = true,
         scroll_by_pan = self.scroll_by_pan,
@@ -734,7 +734,7 @@ function InputDialog:_addSaveCloseButtons()
             self:refreshButtons()
         end
         if self.edited_callback then
-            self.edited_callback()
+            self.edited_callback(edited)
         end
     end
     if self.reset_callback then
