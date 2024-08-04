@@ -250,7 +250,6 @@ function KoboPowerD:isFrontlightOnHW()
         self.initial_is_fl_on = nil
         return ret
     end
-    print("KoboPowerD:isFrontlightOnHW:", self.hw_intensity, self.fl_intensity, self.fl_ramp_down_running, self.fl_ramp_up_running)
     return self.hw_intensity > 0 and not self.fl_ramp_down_running
 end
 
@@ -361,10 +360,7 @@ function KoboPowerD:turnOffFrontlightRamp(curr_ramp_intensity, end_intensity, do
 end
 
 function KoboPowerD:turnOffFrontlightHW(done_callback)
-    --print("KoboPowerD:turnOffFrontlightHW")
-    --print(debug.traceback())
     if not self:isFrontlightOnHW() then
-        print("turnOffFrontlightHW: early abort because fl is already off")
         return
     end
 
@@ -430,8 +426,6 @@ function KoboPowerD:turnOnFrontlightRamp(curr_ramp_intensity, end_intensity, don
 end
 
 function KoboPowerD:turnOnFrontlightHW(done_callback)
-    --print("KoboPowerD:turnOnFrontlightHW")
-    --print(debug.traceback())
     -- NOTE: Insane workaround for the first toggle after a startup with the FL off.
     -- The light is actually off, but hw_intensity couldn't have been set to a sane value because of a number of interactions.
     -- So, fix it now, so we pass the isFrontlightOnHW check (which checks if hw_intensity > fl_min).
@@ -439,7 +433,6 @@ function KoboPowerD:turnOnFrontlightHW(done_callback)
         self.hw_intensity = self.fl_min
     end
     if self:isFrontlightOnHW() then
-        print("turnOnFrontlightHW: early abort because fl is already on")
         return
     end
 
@@ -473,7 +466,6 @@ end
 --       or stuff gets wonky if you trip a resume/suspend in quick succession...
 --       c.f., https://github.com/koreader/koreader/issues/12246#issuecomment-2261334603
 function KoboPowerD:_suspendFrontlight()
-    print("KoboPowerD:_suspendFrontlight")
     -- Things gan go sideways quick when you mix the userland ramp,
     -- delays all over the place, and quick successions of suspend/resume requests (e.g., jittery sleepcovers),
     -- so trust fl_was_on over the actual current state,
@@ -482,14 +474,12 @@ function KoboPowerD:_suspendFrontlight()
     -- which is why we only need to handle it when it has not yet been set.
     if self.fl_was_on == nil then
         self.fl_was_on = self.is_fl_on
-        print("==> Setting self.fl_was_on:", self.fl_was_on)
     end
     self:turnOffFrontlight()
 end
 
 -- Turn off front light before suspend.
 function KoboPowerD:beforeSuspend()
-    print("KoboPowerD:beforeSuspend")
     -- Inhibit user input and emit the Suspend event.
     self.device:_beforeSuspend()
 
@@ -509,10 +499,7 @@ function KoboPowerD:beforeSuspend()
 end
 
 function KoboPowerD:_resumeFrontlight()
-    print("KoboPowerD:_resumeFrontlight")
-
     -- Don't bother if the light was already off on suspend
-    print("<== Reading self.fl_was_on:", self.fl_was_on)
     if self.fl_was_on then
         -- If the frontlight is actually on because of concurrent suspend/resume madness,
         -- but at the wrong intensity, turn it straight off first so that turnOnFrontlight doesn't abort early...
@@ -527,7 +514,6 @@ end
 
 -- Restore front light state after resume.
 function KoboPowerD:afterResume()
-    print("KoboPowerD:afterResume")
     -- Set the system clock to the hardware clock's time.
     RTC:HCToSys()
 
