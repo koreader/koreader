@@ -33,9 +33,6 @@ local ReaderSearch = WidgetContainer:extend{
     -- Setting max_hits higher, does not mean to require more memory. More hits means smaller single hits.
     max_hits = 2048, -- maximum hits for findText search; timinges tested on a Tolino
     findall_max_hits = 5000, -- maximum hits for findAllText search
-     -- number of words before and after the search string in All search results
-    findall_nb_context_words = G_reader_settings:readSetting("fulltext_search_nb_context_words") or 3,
-    findall_results_per_page = G_reader_settings:readSetting("fulltext_search_results_per_page") or 10,
 
     -- internal: whether we expect results on previous pages
     -- (can be different from self.direction, if, from a page in the
@@ -44,6 +41,11 @@ local ReaderSearch = WidgetContainer:extend{
 }
 
 function ReaderSearch:init()
+     -- number of words before and after the search string in All search results
+    self.findall_nb_context_words = G_reader_settings:readSetting("fulltext_search_nb_context_words") or 5
+    self.findall_results_per_page = G_reader_settings:readSetting("fulltext_search_results_per_page") or 10
+    self.findall_results_max_lines = G_reader_settings:readSetting("fulltext_search_results_max_lines")
+
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -103,8 +105,9 @@ function ReaderSearch:addToMainMenu(menu_items)
                         title_text =  _("Words in context"),
                         value = self.findall_nb_context_words,
                         value_min = 1,
-                        value_max = 20,
-                        default_value = 3,
+                        value_max = 50,
+                        default_value = 5,
+                        value_hold_step = 5,
                         callback = function(spin)
                             self.last_search_hash = nil
                             self.findall_nb_context_words = spin.value
@@ -117,14 +120,50 @@ function ReaderSearch:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    return T(_("Results per page: %1"), self.findall_results_per_page)
+                    return T(_("Max lines per result: %1"), self.findall_results_max_lines or _("disabled"))
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local default_value = 4
+                    local widget = SpinWidget:new{
+                        title_text = _("Max lines per result"),
+                        info_text = _("Set maximum number of lines to enable flexible item heights."),
+                        value = self.findall_results_max_lines or default_value,
+                        value_min = 1,
+                        value_max = 10,
+                        default_value = default_value,
+                        ok_always_enabled = true,
+                        callback = function(spin)
+                            G_reader_settings:saveSetting("fulltext_search_results_max_lines", spin.value)
+                            self.findall_results_max_lines = spin.value
+                            self.last_search_hash = nil
+                            touchmenu_instance:updateItems()
+                        end,
+                        extra_text = _("Disable"),
+                        extra_callback = function()
+                            G_reader_settings:delSetting("fulltext_search_results_max_lines")
+                            self.findall_results_max_lines = nil
+                            self.last_search_hash = nil
+                            touchmenu_instance:updateItems()
+                        end,
+                    }
+                    UIManager:show(widget)
+                end,
+            },
+            {
+                text_func = function()
+                    local curr_perpage = self.findall_results_max_lines and _("flexible") or self.findall_results_per_page
+                    return T(_("Results per page: %1"), curr_perpage)
+                end,
+                enabled_func = function()
+                    return not self.findall_results_max_lines
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local widget = SpinWidget:new{
                         title_text =  _("Results per page"),
                         value = self.findall_results_per_page,
-                        value_min = 6,
+                        value_min = 2,
                         value_max = 24,
                         default_value = 10,
                         callback = function(spin)
@@ -369,7 +408,7 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                     -- in scroll mode, the view can scroll a bit when showing results, and we want to
                     -- allow "go back" to restore the original viewport.
                     if self.ui.rolling and self.view.view_mode == "page" then
-                        if current_page == (self.ui.rolling and self.ui.document:getCurrentPage() or self.ui.paging.current_page) then
+                        if current_page == self.ui.document:getCurrentPage() then
                             self.ui.link:popFromLocationStack()
                             neglect_current_location = false
                         else
@@ -555,7 +594,8 @@ function ReaderSearch:findAllText(search_text)
         UIManager:forceRePaint()
         local completed, res = Trapper:dismissableRunInSubprocess(function()
             return self.ui.document:findAllText(search_text,
-                self.case_insensitive, self.findall_nb_context_words, self.findall_max_hits, self.use_regex)
+                self.case_insensitive, self.findall_nb_context_words, self.findall_max_hits,
+                self.ui.paging and self.ui.paging.current_page or self.use_regex)
         end, info)
         if not completed then return end
         UIManager:close(info)
@@ -578,47 +618,43 @@ function ReaderSearch:onShowFindAllResults(not_cached)
     end
 
     if self.ui.rolling and not_cached then -- for ui.paging: items are built in KoptInterface:findAllText()
+        local current_page = self.ui.document:getCurrentPage()
         for _, item in ipairs(self.findall_results) do
+            local text = { TextBoxWidget.PTF_HEADER } -- use Poor Text Formatting provided by TextBoxWidget
+            table.insert(text, item.prev_text) -- append context before the word
+            if not item.prev_text:find("%s$") then -- separate prev context
+                table.insert(text, " ")
+            end
+            table.insert(text, TextBoxWidget.PTF_BOLD_START) -- start of the word in bold
             -- PDF/Kopt shows full words when only some part matches; let's do the same with CRE
-            local word = item.matched_text or ""
-            if item.matched_word_prefix then
-                word = item.matched_word_prefix .. word
+            table.insert(text, item.matched_word_prefix)
+            table.insert(text, item.matched_text)
+            table.insert(text, item.matched_word_suffix)
+            table.insert(text, TextBoxWidget.PTF_BOLD_END) -- end of the word in bold
+            if not item.next_text:find("^[%s%p]") then -- separate next context
+                table.insert(text, " ")
             end
-            if item.matched_word_suffix then
-                word = word .. item.matched_word_suffix
-            end
-            -- Make this word bolder, using Poor Text Formatting provided by TextBoxWidget
-            -- (we know this text ends up in a TextBoxWidget).
-            local text = TextBoxWidget.PTF_BOLD_START .. word .. TextBoxWidget.PTF_BOLD_END
-            -- append context before and after the word
-            if item.prev_text then
-                if not item.prev_text:find("%s$") then
-                    text = " " .. text
-                end
-                text = item.prev_text .. text
-            end
-            if item.next_text then
-                if not item.next_text:find("^[%s%p]") then
-                    text = text .. " "
-                end
-                text = text .. item.next_text
-            end
-            text = TextBoxWidget.PTF_HEADER .. text -- enable handling of our bold tags
-            item.text = text
-            item.mandatory = self.ui.bookmark:getBookmarkPageString(item.start)
+            table.insert(text, item.next_text) -- append context after the word
+            item.text = table.concat(text)
+
+            local pageno = self.ui.document:getPageFromXPointer(item.start)
+            item.mandatory = self.ui.annotation:getPageRef(item.start, pageno) or pageno
+            item.mandatory_dim = pageno > current_page or nil
         end
     end
 
-    local menu
-    menu = Menu:new{
-        title = T(_("Search results (%1)"), #self.findall_results),
+    self.result_menu = Menu:new{
         subtitle = T(_("Query: %1"), self.last_search_text),
+        item_table = self.findall_results,
         items_per_page = self.findall_results_per_page,
+        items_max_lines = self.findall_results_max_lines,
         covers_fullscreen = true,
         is_borderless = true,
         is_popout = false,
         title_bar_fm_style = true,
-        onMenuChoice = function(_, item)
+        title_bar_left_icon = "appbar.menu",
+        onLeftButtonTap = function() self:showAllResultsMenuDialog() end,
+        onMenuChoice = function(_menu_self, item)
             if self.ui.rolling then
                 self.ui.link:addCurrentLocationToStack()
                 self.ui.rolling:onGotoXPointer(item.start, item.start) -- show target line marker
@@ -633,14 +669,99 @@ function ReaderSearch:onShowFindAllResults(not_cached)
                 self.view.highlight.temp[page] = boxes
             end
         end,
+        onMenuHold = function(_menu_self, item)
+            local chapter = self.ui.toc:getTocTitleByPage(item.start or item.mandatory)
+            UIManager:show(InfoMessage:new{ text = T(_("Page: %1"), item.mandatory) .. "\n" .. chapter })
+            return true
+        end,
         close_callback = function()
-            self.findall_results_item_index = menu.page * menu.perpage -- save page number to reopen
-            UIManager:close(menu)
+            self.findall_results_item_index = self.result_menu:getFirstVisibleItemIndex() -- save page number to reopen
+            UIManager:close(self.result_menu)
         end,
     }
-    menu:switchItemTable(nil, self.findall_results, self.findall_results_item_index)
-    UIManager:show(menu)
+    self:updateAllResultsMenu(nil, self.findall_results_item_index)
+    UIManager:show(self.result_menu)
     self:showErrorNotification(#self.findall_results)
+end
+
+function ReaderSearch:updateAllResultsMenu(item_table, item_index)
+    local items_nb = item_table and #item_table or #self.result_menu.item_table
+    local title = T(_("Search results (%1)"), items_nb)
+    self.result_menu:switchItemTable(title, item_table, item_index)
+end
+
+function ReaderSearch:showAllResultsMenuDialog()
+    local item_table = self.result_menu.item_table
+    local button_dialog
+    local buttons = {
+        {
+            {
+                text = _("Filter by current chapter"),
+                callback = function()
+                    UIManager:close(button_dialog)
+                    local current_chapter = self.ui.toc:getTocTitleOfCurrentPage()
+                    local new_item_table = {}
+                    local chapter_started
+                    for _, item in ipairs(item_table) do
+                        local item_chapter = self.ui.toc:getTocTitleByPage(item.start or item.mandatory)
+                        if item_chapter == current_chapter then
+                            table.insert(new_item_table, item)
+                            chapter_started = true
+                        elseif chapter_started then -- chapter ended
+                            break
+                        end
+                    end
+                    self:updateAllResultsMenu(new_item_table)
+                end,
+            },
+        },
+        {
+            {
+                text_func = function()
+                    local current_page = self.ui:getCurrentPage()
+                    if self.ui.rolling then
+                        local current_xp = self.ui.rolling:getLastProgress()
+                        current_page = self.ui.annotation:getPageRef(current_xp, current_page) or current_page
+                    end
+                    return T(_("Current page: %1"), current_page)
+                end,
+                callback = function()
+                    UIManager:close(button_dialog)
+                    local current_page = self.ui:getCurrentPage()
+                    local index
+                    for i = 1, #item_table do
+                        local item = item_table[i]
+                        local item_page = item.start and self.ui.document:getPageFromXPointer(item.start) or item.mandatory
+                        if item_page == current_page then
+                            index = i
+                            break
+                        elseif item.mandatory_dim then -- no search results in current page
+                            index = i - 1
+                            break
+                        end
+                    end
+                    self:updateAllResultsMenu(nil, index or #item_table)
+                end,
+            },
+        },
+        {}, -- separator
+        {
+            {
+                text = _("Refresh search results"),
+                callback = function()
+                    UIManager:close(button_dialog)
+                    self.last_search_hash = nil
+                    self.result_menu:onClose()
+                    self:findAllText(self.last_search_text)
+                end,
+            },
+        },
+    }
+    button_dialog = ButtonDialog:new{
+        title_align = "center",
+        buttons = buttons,
+    }
+    UIManager:show(button_dialog)
 end
 
 return ReaderSearch
