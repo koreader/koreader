@@ -33,7 +33,15 @@ function ReaderStatus:addToMainMenu(menu_items)
     }
 end
 
+function ReaderStatus:setOnEndOfBookDisabled(disabled)
+    self._onEndOfBookDisabled = disabled
+end
+
 function ReaderStatus:onEndOfBook()
+    if self._onEndOfBookDisabled then
+        return
+    end
+
     Device:performHapticFeedback("CONTEXT_CLICK")
     local QuickStart = require("ui/quickstart")
     local last_file = G_reader_settings:readSetting("lastfile")
