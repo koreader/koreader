@@ -408,25 +408,25 @@ function MosaicMenuItem:init()
     -- for compatibility with keyboard navigation
     -- (which does not seem to work well when multiple pages,
     -- even with classic menu)
-    self.underline_h = Size.line.thin -- smaller than default (3), don't waste space
+    local underline_h = Size.line.non_touch_active
+    local underline_padding = Size.padding.tiny
     self._underline_container = UnderlineContainer:new{
         vertical_align = "top",
-        padding = Size.padding.tiny,
+        padding = underline_padding,
         dimen = Geom:new{
             x = 0, y = 0,
             w = self.width,
-            h = self.height
+            h = self.height + underline_h + underline_padding,
         },
-        linesize = self.underline_h,
+        linesize = underline_h,
         -- widget : will be filled in self:update()
     }
     self[1] = self._underline_container
-
-    if not Device:isTouchDevice() then
-        -- Make it bigger on non-touch devices, without affecting our sizing
-        -- we'll keep doing with that small self.underline_h
-        self._underline_container.linesize = Size.line.non_touch_active
-    end
+    -- (This MosaicMenuItem will be taller than self.height, but will be put
+    -- in a Container with a fixed height=item_height, so it will overflow it
+    -- on the bottom, in the room made by item_margin=Screen:scaleBySize(10),
+    -- so we should ensure underline_h + underline_padding stays below that.)
+    
     -- Remaining part of initialization is done in update(), because we may
     -- have to do it more than once if item not found in db
     self:update()
@@ -440,7 +440,7 @@ function MosaicMenuItem:update()
 
     local dimen = Geom:new{
         w = self.width,
-        h = self.height - self.underline_h
+        h = self.height,
     }
 
     -- We'll draw a border around cover images, it may not be
