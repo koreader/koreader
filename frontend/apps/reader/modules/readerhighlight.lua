@@ -510,9 +510,9 @@ function ReaderHighlight:addToMainMenu(menu_items)
         },
     }
     -- actions
-    local sub_item_table = {}
+    local sub_item_table_actions = {}
     for i, v in ipairs(long_press_action) do
-        table.insert(sub_item_table, {
+        table.insert(sub_item_table_actions, {
             text = v[1],
             checked_func = function()
                 return G_reader_settings:readSetting("default_highlight_action", "ask") == v[2]
@@ -525,14 +525,14 @@ function ReaderHighlight:addToMainMenu(menu_items)
     end
     table.insert(menu_items.long_press.sub_item_table, {
         text_func = function()
-            local multi_word = G_reader_settings:readSetting("default_highlight_action")
+            local action = G_reader_settings:readSetting("default_highlight_action")
             for __, v in ipairs(long_press_action) do
-                if v[2] == multi_word then
+                if v[2] == action then
                     return T(_("Multi-word selection: %1"), v[1]:lower())
                 end
             end
         end,
-        sub_item_table = sub_item_table,
+        sub_item_table = sub_item_table_actions,
     })
     -- highlight dialog position
     local sub_item_table = {}
