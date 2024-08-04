@@ -471,11 +471,7 @@ function KoboPowerD:_suspendFrontlight()
     -- so trust fl_was_on over the actual current state,
     -- as the current state might no longer actually represent the pre-suspend reality...
     -- c.f., #12246
-    -- Note that fl_was_on is also updated by *interactive* callers via `BasePowerD:updateResumeFrontlightState`,
-    -- which is why we only need to handle it when it has not yet been set.
-    if self.fl_was_on == nil then
-        self.fl_was_on = self.is_fl_on
-    end
+    -- Note that fl_was_on is updated by *interactive* callers via `BasePowerD:updateResumeFrontlightState`.
     self:turnOffFrontlight()
 end
 

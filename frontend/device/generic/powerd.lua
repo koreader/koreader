@@ -30,6 +30,7 @@ function BasePowerD:new(o)
     if o.device and o.device:hasFrontlight() then
         o.fl_intensity = o:frontlightIntensityHW()
         o:_decideFrontlightState()
+        o.fl_was_on = o.is_fl_on
     end
     --- @note: Post-init, as the min/max values may be computed at runtime on some platforms
     assert(o.fl_warmth_min < o.fl_warmth_max)
