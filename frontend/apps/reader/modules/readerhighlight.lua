@@ -706,8 +706,9 @@ If you wish your highlights to be saved in the document, just move it to a writa
         },
     }
     -- actions
+    local sub_item_table = {}
     for i, v in ipairs(long_press_action) do
-        table.insert(menu_items.long_press.sub_item_table, {
+        table.insert(sub_item_table, {
             text = v[1],
             checked_func = function()
                 return G_reader_settings:readSetting("default_highlight_action", "ask") == v[2]
@@ -718,6 +719,17 @@ If you wish your highlights to be saved in the document, just move it to a writa
             end,
         })
     end
+    table.insert(menu_items.long_press.sub_item_table, {
+        text_func = function()
+            local multi_word = G_reader_settings:readSetting("default_highlight_action")
+            for __, v in ipairs(long_press_action) do
+                if v[2] == multi_word then
+                    return T(_("Multi-word selection: %1"), v[1]:lower())
+                end
+            end
+        end,
+        sub_item_table = sub_item_table,
+    })
     -- highlight dialog position
     local sub_item_table = {}
     for i, v in ipairs(highlight_dialog_position) do
