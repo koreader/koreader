@@ -201,6 +201,13 @@ function MultiInputDialog:init()
         ignore_if_over = "height",
         self.dialog_frame,
     }
+
+    if self._added_widgets then
+        for _, widget in ipairs(self._added_widgets) do
+            self:addWidget(widget, true)
+        end
+    end
+
     UIManager:setDirty(self, function()
         return "ui", self.dialog_frame.dimen
     end)
@@ -239,6 +246,13 @@ function MultiInputDialog:onKeyboardHeightChanged()
     local fields = self.input_fields -- backup entered text
     self:onClose() -- will close keyboard and save view position
     self._input_widget:onCloseWidget() -- proper cleanup of InputText and its keyboard
+    if self._added_widgets then
+        -- prevent these externally added widgets from being freed as :init() will re-add them
+        local vgroup = self.dialog_frame[1]
+        for i = 1, #self._added_widgets do
+            table.remove(vgroup, #vgroup-2)
+        end
+    end
     self:free()
     self.keyboard_visible = visible
     for i, field in ipairs(self.fields) do -- restore entered text
@@ -249,6 +263,26 @@ function MultiInputDialog:onKeyboardHeightChanged()
         self:onShowKeyboard()
     end
     UIManager:setDirty("all", "flashui")
+end
+
+function InputDialog:addWidget(widget, re_init)
+    table.insert(self.layout, #self.layout, {widget})
+    if not re_init then -- backup widget for re-init
+        widget = CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width,
+                h = widget:getSize().h,
+            },
+            widget,
+        }
+        if not self._added_widgets then
+            self._added_widgets = {}
+        end
+        table.insert(self._added_widgets, widget)
+    end
+    -- insert widget before the bottom buttons
+    local vgroup = self.dialog_frame[1]
+    table.insert(vgroup, #vgroup-1, widget)
 end
 
 return MultiInputDialog
