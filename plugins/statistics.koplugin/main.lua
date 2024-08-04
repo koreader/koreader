@@ -105,6 +105,16 @@ function ReaderStatistics:init()
         return -- disable in PIC documents
     end
 
+    if self.document and self.document.file and self.document.file:match("^/tmp/") then
+        -- entirely disable for temporary files, including disabling event handlers
+        for n,v in pairs(ReaderStatistics) do
+            if n:match("^on") and type(v) == "function" then
+                self[n] = function() end
+            end
+        end
+        return
+    end
+
     self.is_doc = false
     self.is_doc_not_frozen = false -- freeze finished books statistics
 
