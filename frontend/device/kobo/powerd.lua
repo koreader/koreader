@@ -509,9 +509,9 @@ function KoboPowerD:_resumeFrontlight()
     print("<== Reading self.fl_was_on:", self.fl_was_on)
     if self.fl_was_on then
         -- If the frontlight is actually on because of concurrent suspend/resume madness,
-        -- turn it straight off first so that turnOnFrontlight doesn't abort early...
+        -- but at the wrong intensity, turn it straight off first so that turnOnFrontlight doesn't abort early...
         --[[
-        if self.is_fl_on then
+        if self.hw_intensity ~= self.fl_intensity then
             self:setIntensityHW(self.fl_min)
         end
         --]]
