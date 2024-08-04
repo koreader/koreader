@@ -469,7 +469,7 @@ function KoboPowerD:_suspendFrontlight()
     -- Things gan go sideways quick when you mix the userland ramp,
     -- delays all over the place, and quick successions of suspend/resume requests (e.g., jittery sleepcovers),
     -- so trust fl_was_on over the actual current state,
-    -- as the current state might not actually represent the pre-suspend reality...
+    -- as the current state might no longer actually represent the pre-suspend reality...
     -- Note that fl_was_on is also updated by *interactive* callers via `BasePowerD:updateResumeFrontlightState`,
     -- which is why we only need to handle it when it has not yet been set.
     if self.fl_was_on == nil then
