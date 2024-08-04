@@ -766,7 +766,7 @@ function CreDocument:getNextVisibleChar(xp)
     return self._document:getNextVisibleChar(xp)
 end
 
-function CreDocument:getSelectedWordContext(word, nb_words, pos0, pos1)
+function CreDocument:getSelectedWordContext(word, nb_words, pos0, pos1, restore_selection)
     local pos_start = pos0
     local pos_end = pos1
 
@@ -784,6 +784,15 @@ function CreDocument:getSelectedWordContext(word, nb_words, pos0, pos1)
 
     local prev = self:getTextFromXPointers(pos_start, pos0)
     local next = self:getTextFromXPointers(pos1, pos_end)
+
+    if restore_selection then
+        -- If pos0..pos1 was highlighted by crengine, getTextFromXPointers()
+        -- will have cleared this original selection, and crengine would then
+        -- not draw it any longer on next refresh.
+        -- If requested because it was highlighted, have crengine know again
+        -- about what should be selected and drawn.
+        self:getTextFromXPointers(pos0, pos1, true)
+    end
 
     return prev, next
 end
