@@ -517,7 +517,7 @@ function KoboPowerD:_resumeFrontlight()
         -- If the frontlight is actually on because of concurrent suspend/resume madness,
         -- but at the wrong intensity, turn it straight off first so that turnOnFrontlight doesn't abort early...
         if self.is_fl_on and self.hw_intensity ~= self.fl_intensity then
-            logger.warn("KoboPowerD:_resumeFrontlight: frontlight is at", self.hw_intensity, "intensity instead of the expected", self.fl_intensity)
+            logger.warn("KoboPowerD:_resumeFrontlight: frontlight intensity is at", self.hw_intensity, "instead of the expected", self.fl_intensity)
             self:setIntensityHW(self.fl_min)
         end
         -- Turn the frontlight back on
