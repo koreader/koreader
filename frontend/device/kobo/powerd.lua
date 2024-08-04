@@ -244,7 +244,7 @@ end
 
 function KoboPowerD:isFrontlightOnHW()
     if self.initial_is_fl_on ~= nil then -- happens only once after init()
-        -- give initial state to BasePowerD,
+        -- Pass our initial state to BasePowerD,
         -- which will reset our self.hw_intensity to 0 if self.initial_is_fl_on is false
         local ret = self.initial_is_fl_on
         self.initial_is_fl_on = nil
