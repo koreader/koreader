@@ -1495,7 +1495,7 @@ function KoptInterface:findText(doc, pattern, origin, reverse, case_insensitive,
     end
 end
 
-function KoptInterface:findAllText(doc, pattern, case_insensitive, nb_context_words, max_hits)
+function KoptInterface:findAllText(doc, pattern, case_insensitive, nb_context_words, max_hits, current_page)
     local plist = get_pattern_list(pattern, case_insensitive)
     local res = {}
     for page = 1, doc:getPageCount() do
@@ -1505,6 +1505,7 @@ function KoptInterface:findAllText(doc, pattern, case_insensitive, nb_context_wo
                 local res_item = { -- item of the Menu item_table
                     text = nil,
                     mandatory = page,
+                    mandatory_dim = page > current_page or nil,
                     boxes = {}, -- to draw temp highlight in onMenuSelect
                 }
                 local text = {}
