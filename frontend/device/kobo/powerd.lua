@@ -3,6 +3,7 @@ local Math = require("optmath")
 local NickelConf = require("device/kobo/nickel_conf")
 local SysfsLight = require ("device/sysfs_light")
 local UIManager
+local logger = require("logger")
 local RTC = require("ffi/rtc")
 
 -- Here, we only deal with the real hw intensity.
@@ -515,11 +516,10 @@ function KoboPowerD:_resumeFrontlight()
     if self.fl_was_on then
         -- If the frontlight is actually on because of concurrent suspend/resume madness,
         -- but at the wrong intensity, turn it straight off first so that turnOnFrontlight doesn't abort early...
-        --[[
         if self.hw_intensity ~= self.fl_intensity then
+            logger.warn("KoboPowerD:_resumeFrontlight: frontlight is at", self.hw_intensity, "intensity instead of the expected", self.is_fl_on and self.fl_intensity or self.fl_min)
             self:setIntensityHW(self.fl_min)
         end
-        --]]
         -- Turn the frontlight back on
         self:turnOnFrontlight()
     end
