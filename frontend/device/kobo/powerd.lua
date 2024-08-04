@@ -314,6 +314,9 @@ function KoboPowerD:isChargedHW()
     return false
 end
 
+-- NOTE: When ramping down, we start from the *actual* intensity (hw_intensity),
+--       instead of the expected one (fl_intensity),
+--       in case a previously incomplete ramp was canceled and left us in an inconsistent state.
 function KoboPowerD:_startRampDown(done_callback)
     self:turnOffFrontlightRamp(self.hw_intensity, self.fl_min, done_callback)
     self.fl_ramp_down_running = true
