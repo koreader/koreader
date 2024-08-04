@@ -315,7 +315,7 @@ function KoboPowerD:isChargedHW()
 end
 
 function KoboPowerD:_startRampDown(done_callback)
-    self:turnOffFrontlightRamp(self.fl_intensity, self.fl_min, done_callback)
+    self:turnOffFrontlightRamp(self.hw_intensity, self.fl_min, done_callback)
     self.fl_ramp_down_running = true
 end
 
