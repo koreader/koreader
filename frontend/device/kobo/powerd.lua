@@ -17,7 +17,6 @@ local KoboPowerD = BasePowerD:new{
     battery_sysfs = nil,
     aux_battery_sysfs = nil,
     fl_warmth_min = 0, fl_warmth_max = 100,
-    fl_was_on = nil,
 
     concurrent_suspend_requests = 0,
     concurrent_resume_requests = 0,
@@ -489,8 +488,6 @@ function KoboPowerD:_suspendFrontlight()
         -- delays all over the place, and quick successions of suspend/resume requests (e.g., jittery sleepcovers),
         -- so trust previous fl_was_on values over the actual current state,
         -- as the current state might not actually represent the pre-suspend reality...
-        -- Yes, this means this'll effectively snapshot the state at the *first* suspend each KOReader run,
-        -- but having only *manual* toggles update this is a bit of a nightmare, so I'm okay with the status quo.
         if self.fl_was_on == nil then
             self.fl_was_on = self.is_fl_on
             print("==> Setting self.fl_was_on:", self.fl_was_on)
