@@ -84,7 +84,7 @@ function KoboPowerD:_syncKoboLightOnStart()
         self.fl_warmth = new_warmth
     end
 
-    -- In any case frontlight is off, ensure intensity is non-zero so untoggle works
+    -- In case frontlight is off, ensure hw_intensity is non-zero so toggle on works
     if self.initial_is_fl_on == false and self.hw_intensity == 0 then
         self.hw_intensity = 1
     end
@@ -372,7 +372,7 @@ function KoboPowerD:turnOffFrontlightHW(done_callback)
             --       otherwise you just see a single delayed step (1%) or two stuttery ones (2%) ;).
             -- FWIW, modern devices with a different PWM controller (i.e., with no controller-specific ramp_off_delay workarounds)
             -- deal with our 2% ramp without stuttering.
-            if self.device.frontlight_settings.ramp_off_delay > 0.0 and self.fl_intensity <= 2 then
+            if self.device.frontlight_settings.ramp_off_delay > 0.0 and self.hw_intensity <= 2 then
                 UIManager:scheduleIn(self.device.frontlight_settings.ramp_delay, self._endRampDown, self, self.fl_min, done_callback)
             else
                 -- NOTE: Similarly, some controllers *really* don't like to be interleaved with screen refreshes,
@@ -380,7 +380,7 @@ function KoboPowerD:turnOffFrontlightHW(done_callback)
                 if self.device.frontlight_settings.delay_ramp_start then
                     UIManager:nextTick(self._startRampDown, self, done_callback)
                 else
-                    self:turnOffFrontlightRamp(self.fl_intensity, self.fl_min, done_callback)
+                    self:turnOffFrontlightRamp(self.hw_intensity, self.fl_min, done_callback)
                     self.fl_ramp_down_running = true
                 end
             end
