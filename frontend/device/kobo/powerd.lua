@@ -462,14 +462,12 @@ function KoboPowerD:turnOnFrontlightHW(done_callback)
     return true
 end
 
--- NOTE: We delay those *slightly*, so tracking the fl_was_on state needs to be delayed with it,
---       or stuff gets wonky if you trip a resume/suspend in quick succession...
---       c.f., https://github.com/koreader/koreader/issues/12246#issuecomment-2261334603
 function KoboPowerD:_suspendFrontlight()
     -- Things gan go sideways quick when you mix the userland ramp,
     -- delays all over the place, and quick successions of suspend/resume requests (e.g., jittery sleepcovers),
     -- so trust fl_was_on over the actual current state,
     -- as the current state might no longer actually represent the pre-suspend reality...
+    -- c.f., #12246
     -- Note that fl_was_on is also updated by *interactive* callers via `BasePowerD:updateResumeFrontlightState`,
     -- which is why we only need to handle it when it has not yet been set.
     if self.fl_was_on == nil then
@@ -501,7 +499,7 @@ end
 function KoboPowerD:_resumeFrontlight()
     -- Don't bother if the light was already off on suspend
     if self.fl_was_on then
-        -- If the frontlight is actually on because of concurrent suspend/resume madness,
+        -- If the frontlight is currently on because of madness resulting from multiple concurrent suspend/resume requests,
         -- but at the wrong intensity, turn it straight off first so that turnOnFrontlight doesn't abort early...
         if self.is_fl_on and self.hw_intensity ~= self.fl_intensity then
             logger.warn("KoboPowerD:_resumeFrontlight: frontlight intensity is at", self.hw_intensity, "instead of the expected", self.fl_intensity)
