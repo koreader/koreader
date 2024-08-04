@@ -336,6 +336,16 @@ function InputDialog:init()
             self._top_line_num, self._charpos = top_line_num, charpos
         end
     end
+    self.enter_callback = self.enter_callback or function()
+        for _, btn_row in ipairs(self.buttons) do
+            for _, btn in ipairs(btn_row) do
+                if btn.is_enter_default then
+                    btn.callback()
+                    return
+                end
+            end
+        end
+    end
     self._input_widget = self.inputtext_class:new{
         text = self.input,
         hint = self.input_hint,
@@ -352,16 +362,7 @@ function InputDialog:init()
         margin = self.input_margin,
         input_type = self.input_type,
         text_type = self.text_type,
-        enter_callback = self.enter_callback or function()
-            for _,btn_row in ipairs(self.buttons) do
-                for _,btn in ipairs(btn_row) do
-                    if btn.is_enter_default then
-                        btn.callback()
-                        return
-                    end
-                end
-            end
-        end,
+        enter_callback = not self.allow_newline and self.enter_callback,
         strike_callback = self.strike_callback,
         edit_callback = self._buttons_edit_callback or self.edited_callback, -- self._buttons_edit_callback is nil if no Save/Close buttons
         scroll_callback = self._buttons_scroll_callback, -- nil if no Nav or Scroll buttons
@@ -375,9 +376,6 @@ function InputDialog:init()
         charpos = self._charpos,
     }
     table.insert(self.layout[1], self._input_widget)
-    if self.allow_newline then -- remove any enter_callback
-        self._input_widget.enter_callback = nil
-    end
     self:mergeLayoutInVertical(self.button_table)
     self:refocusWidget()
     -- Complementary setup for some of our added buttons
@@ -542,6 +540,11 @@ end
 
 function InputDialog:isTextEdited()
     return self._input_widget:isTextEdited()
+end
+
+function InputDialog:setAllowNewline(allow)
+    self.allow_newline = allow
+    self._input_widget.enter_callback = not allow and self.enter_callback
 end
 
 function InputDialog:onShow()
