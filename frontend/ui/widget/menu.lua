@@ -184,6 +184,7 @@ function MenuItem:init()
     local text_mandatory_padding = 0
     local text_ellipsis_mandatory_padding = 0
     local mandatory = self.mandatory_func and self.mandatory_func() or self.mandatory
+    local mandatory_dim = self.mandatory_dim_func and self.mandatory_dim_func() or self.mandatory_dim
     if mandatory then
         text_mandatory_padding = Size.span.horizontal_default
         -- Smaller padding when ellipsis for better visual feeling
@@ -193,7 +194,7 @@ function MenuItem:init()
         text = mandatory or "",
         face = self.info_face,
         bold = self.bold,
-        fgcolor = self.mandatory_dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+        fgcolor = mandatory_dim and Blitbuffer.COLOR_DARK_GRAY or nil,
     }
     local mandatory_w = mandatory_widget:getWidth()
 
@@ -1087,6 +1088,7 @@ function Menu:updateItems(select_number, no_recalculate_dimen)
             mandatory = item.mandatory,
             mandatory_func = item.mandatory_func,
             mandatory_dim = item.mandatory_dim or item.dim,
+            mandatory_dim_func = item.mandatory_dim_func,
             bold = self.item_table.current == index or item.bold == true,
             dim = item.dim,
             font_size = self.font_size,
