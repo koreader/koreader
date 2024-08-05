@@ -165,16 +165,19 @@ function NextcloudNotesExporter:export(t)
     -- setup Nextcloud variables
     local url_base = string.format("%s/index.php/apps/notes/api/v1/", self.settings.host)
     local auth = mime.b64(self.settings.username .. ":" .. self.settings.password)
-    local note_id = nil
-    local verb = nil
-    local request_body = nil
-    local response = nil
-    local err = nil
-    local i
+    local note_id
+    local verb
+    local request_body
+    local response
+    local err
 
     -- fetch existing notes from Nextcloud
     local url = url_base .. "notes?category=" .. self.category
     notes_cache, err = makeRequest(url, auth, "GET")
+    if not notes_cache then
+        logger.warn("Error fetching existing notes from Nextcloud", err)
+        return false
+    end
 
     -- export each note
     for _, booknotes in pairs(t) do
