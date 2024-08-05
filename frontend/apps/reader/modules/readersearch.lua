@@ -594,8 +594,7 @@ function ReaderSearch:findAllText(search_text)
         UIManager:forceRePaint()
         local completed, res = Trapper:dismissableRunInSubprocess(function()
             return self.ui.document:findAllText(search_text,
-                self.case_insensitive, self.findall_nb_context_words, self.findall_max_hits,
-                self.ui.paging and self.ui.paging.current_page or self.use_regex)
+                self.case_insensitive, self.findall_nb_context_words, self.findall_max_hits, self.use_regex)
         end, info)
         if not completed then return end
         UIManager:close(info)
@@ -617,8 +616,7 @@ function ReaderSearch:onShowFindAllResults(not_cached)
         return
     end
 
-    if self.ui.rolling and not_cached then -- for ui.paging: items are built in KoptInterface:findAllText()
-        local current_page = self.ui.document:getCurrentPage()
+    if not_cached then
         for _, item in ipairs(self.findall_results) do
             local text = { TextBoxWidget.PTF_HEADER } -- use Poor Text Formatting provided by TextBoxWidget
             table.insert(text, item.prev_text) -- append context before the word
@@ -637,9 +635,17 @@ function ReaderSearch:onShowFindAllResults(not_cached)
             table.insert(text, item.next_text) -- append context after the word
             item.text = table.concat(text)
 
-            local pageno = self.ui.document:getPageFromXPointer(item.start)
-            item.mandatory = self.ui.annotation:getPageRef(item.start, pageno) or pageno
-            item.mandatory_dim = pageno > current_page or nil
+            local pageno, pageref
+            if self.ui.rolling then
+                pageno = self.ui.document:getPageFromXPointer(item.start)
+                pageref = self.ui.annotation:getPageRef(item.start, pageno)
+            else
+                pageno = item.start
+            end
+            item.mandatory = pageref or pageno
+            item.mandatory_dim_func = function()
+                return pageno > self.ui:getCurrentPage()
+            end
         end
     end
 
@@ -660,7 +666,7 @@ function ReaderSearch:onShowFindAllResults(not_cached)
                 self.ui.rolling:onGotoXPointer(item.start, item.start) -- show target line marker
                 self.ui.document:getTextFromXPointers(item.start, item["end"], true) -- highlight
             else
-                local page = item.mandatory
+                local page = item.start
                 local boxes = {}
                 for i, box in ipairs(item.boxes) do
                     boxes[i] = self.ui.document:nativeToPageRectTransform(page, box)
@@ -670,7 +676,7 @@ function ReaderSearch:onShowFindAllResults(not_cached)
             end
         end,
         onMenuHold = function(_menu_self, item)
-            local chapter = self.ui.toc:getTocTitleByPage(item.start or item.mandatory)
+            local chapter = self.ui.toc:getTocTitleByPage(item.start)
             UIManager:show(InfoMessage:new{ text = T(_("Page: %1"), item.mandatory) .. "\n" .. chapter })
             return true
         end,
@@ -703,7 +709,7 @@ function ReaderSearch:showAllResultsMenuDialog()
                     local new_item_table = {}
                     local chapter_started
                     for _, item in ipairs(item_table) do
-                        local item_chapter = self.ui.toc:getTocTitleByPage(item.start or item.mandatory)
+                        local item_chapter = self.ui.toc:getTocTitleByPage(item.start)
                         if item_chapter == current_chapter then
                             table.insert(new_item_table, item)
                             chapter_started = true
@@ -731,28 +737,16 @@ function ReaderSearch:showAllResultsMenuDialog()
                     local index
                     for i = 1, #item_table do
                         local item = item_table[i]
-                        local item_page = item.start and self.ui.document:getPageFromXPointer(item.start) or item.mandatory
+                        local item_page = self.ui.rolling and self.ui.document:getPageFromXPointer(item.start) or item.start
                         if item_page == current_page then
                             index = i
                             break
-                        elseif item.mandatory_dim then -- no search results in current page
+                        elseif item_page > current_page then -- no search results in current page
                             index = i - 1
                             break
                         end
                     end
                     self:updateAllResultsMenu(nil, index or #item_table)
-                end,
-            },
-        },
-        {}, -- separator
-        {
-            {
-                text = _("Refresh search results"),
-                callback = function()
-                    UIManager:close(button_dialog)
-                    self.last_search_hash = nil
-                    self.result_menu:onClose()
-                    self:findAllText(self.last_search_text)
                 end,
             },
         },
