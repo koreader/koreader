@@ -408,7 +408,7 @@ function MosaicMenuItem:init()
     -- for compatibility with keyboard navigation
     -- (which does not seem to work well when multiple pages,
     -- even with classic menu)
-    local underline_h = Size.line. focus_indicator
+    local underline_h = Size.line.focus_indicator
     local underline_padding = Size.padding.tiny
     self._underline_container = UnderlineContainer:new{
         vertical_align = "top",
