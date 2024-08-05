@@ -676,7 +676,7 @@ function ReaderSearch:onShowFindAllResults(not_cached)
             end
         end,
         onMenuHold = function(_menu_self, item)
-            local chapter = self.ui.toc:getTocTitleByPage(item.start)
+            local chapter = "▼ " .. table.concat(self.ui.toc:getFullTocTitleByPage(item.start), "\n▼ ")
             UIManager:show(InfoMessage:new{ text = T(_("Page: %1"), item.mandatory) .. "\n" .. chapter })
             return true
         end,
