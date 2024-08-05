@@ -1106,7 +1106,7 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
             if network.password then
                 -- If we hit a preferred network and we're not already connected,
                 -- attempt to connect to said preferred network....
-                logger.dbg("NetworkMgr: Attempting to authenticate on preferred network", util.fixUtf8(ssid, "�"))
+                logger.dbg("NetworkMgr: Attempting to authenticate on preferred network", util.fixUtf8(network.ssid, "�"))
                 success, err_msg = self:authenticateNetwork(network)
                 if success then
                     ssid = network.ssid
