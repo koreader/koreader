@@ -420,6 +420,27 @@ function ReaderToc:getTocTitleByPage(pn_or_xp)
     end
 end
 
+function ReaderToc:getFullTocTitleByPage(pn_or_xp)
+    local chapters = {}
+    local toc_ticks_ignored_levels_orig = {}
+    local toc_chapter_title_bind_to_ticks_orig = self.toc_chapter_title_bind_to_ticks -- backup the flag
+    self.toc_chapter_title_bind_to_ticks = true -- honor self.toc_ticks_ignored_levels
+    local max_depth = self:getMaxDepth()
+    for depth = max_depth, 1, -1 do
+        toc_ticks_ignored_levels_orig[depth] = self.toc_ticks_ignored_levels[depth] -- backup the level
+        -- ignore the level if it should be ignored due to original settings
+        self.toc_ticks_ignored_levels[depth] = self.toc_ticks_ignored_levels[depth] and toc_chapter_title_bind_to_ticks_orig
+        local chapter = self:getTocTitleByPage(pn_or_xp)
+        if chapter ~= "" and chapter ~= chapters[1] then
+            table.insert(chapters, 1, chapter)
+        end
+        self.toc_ticks_ignored_levels[depth] = true -- ignore the level on next iterations
+    end
+    self.toc_chapter_title_bind_to_ticks = toc_chapter_title_bind_to_ticks_orig -- restore the flag
+    table.move(toc_ticks_ignored_levels_orig, 1, max_depth, 1, self.toc_ticks_ignored_levels) -- restore all levels
+    return chapters
+end
+
 function ReaderToc:getTocTitleOfCurrentPage()
     if self.pageno then
         return self:getTocTitleByPage(self.pageno)
