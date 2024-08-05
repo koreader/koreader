@@ -64,6 +64,7 @@ local Size = {
         thin = Screen:scaleBySize(0.5),
         medium = Screen:scaleBySize(1),
         thick = Screen:scaleBySize(1.5),
+        focus_indicator = Screen:scaleBySize(5),
         progress = Screen:scaleBySize(7),
     },
     item = {
