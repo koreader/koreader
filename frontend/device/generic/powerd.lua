@@ -18,6 +18,7 @@ local BasePowerD = {
     last_aux_capacity_pull_time = time.s(-61),  -- timestamp of last pull
 
     is_fl_on = false,                 -- whether the frontlight is on
+    fl_was_on = nil,                  -- whether the frontlight *was* on before suspend
 }
 
 function BasePowerD:new(o)
@@ -29,6 +30,7 @@ function BasePowerD:new(o)
     if o.device and o.device:hasFrontlight() then
         o.fl_intensity = o:frontlightIntensityHW()
         o:_decideFrontlightState()
+        o:updateResumeFrontlightState()
     end
     --- @note: Post-init, as the min/max values may be computed at runtime on some platforms
     assert(o.fl_warmth_min < o.fl_warmth_max)
@@ -110,6 +112,11 @@ end
 function BasePowerD:_decideFrontlightState()
     assert(self.device:hasFrontlight())
     self.is_fl_on = self:isFrontlightOnHW()
+end
+
+-- Separate from _decideFrontlightState, as this is only called by *interactive* codepaths
+function BasePowerD:updateResumeFrontlightState()
+    self.fl_was_on = self:isFrontlightOn()
 end
 
 function BasePowerD:isFrontlightOff()

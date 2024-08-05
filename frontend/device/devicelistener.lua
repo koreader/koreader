@@ -116,6 +116,7 @@ if Device:hasFrontlight() then
         else
             powerd:setIntensity(new_intensity)
         end
+        powerd:updateResumeFrontlightState()
         return true
     end
 
@@ -183,6 +184,7 @@ if Device:hasFrontlight() then
         if not powerd:toggleFrontlight(notif_cb) then
             Notification:notify(_("Frontlight unchanged."), notif_source)
         end
+        powerd:updateResumeFrontlightState()
     end
 
     function DeviceListener:onShowFlDialog()
