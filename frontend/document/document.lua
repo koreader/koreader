@@ -541,7 +541,11 @@ function Document:getPagePart(pageno, rect, rotation)
     }
     local tile = self:renderPage(pageno, scaled_rect, zoom, rotation, 1.0)
     local target = Blitbuffer.new(scaled_rect.w, scaled_rect.h, self.render_color and self.color_bb_type or nil)
-    target:blitFrom(tile.bb, 0, 0, scaled_rect.x, scaled_rect.y, scaled_rect.w, scaled_rect.h)
+    target:blitFrom(tile.bb,
+        0, 0,
+        scaled_rect.x - tile.excerpt.x,
+        scaled_rect.y - tile.excerpt.y,
+        scaled_rect.w, scaled_rect.h)
     return target
 end
 
