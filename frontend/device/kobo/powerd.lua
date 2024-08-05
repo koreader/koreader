@@ -466,12 +466,6 @@ function KoboPowerD:turnOnFrontlightHW(done_callback)
 end
 
 function KoboPowerD:_suspendFrontlight()
-    -- Things gan go sideways quick when you mix the userland ramp,
-    -- delays all over the place, and quick successions of suspend/resume requests (e.g., jittery sleepcovers),
-    -- so trust fl_was_on over the actual current state,
-    -- as the current state might no longer actually represent the pre-suspend reality...
-    -- c.f., #12246
-    -- Note that fl_was_on is updated by *interactive* callers via `BasePowerD:updateResumeFrontlightState`.
     self:turnOffFrontlight()
 end
 
@@ -497,6 +491,12 @@ end
 
 function KoboPowerD:_resumeFrontlight()
     -- Don't bother if the light was already off on suspend
+    -- NOTE: Things gan go sideways quick when you mix the userland ramp,
+    --       delays all over the place, and quick successions of suspend/resume requests (e.g., jittery sleepcovers),
+    --       so trust fl_was_on over the actual state on beforeSuspend,
+    --       as said state might no longer actually represent the pre-suspend reality...
+    --       c.f., #12246
+    -- Note that fl_was_on is updated by *interactive* callers via `BasePowerD:updateResumeFrontlightState`
     if self.fl_was_on then
         -- If the frontlight is currently on because of madness resulting from multiple concurrent suspend/resume requests,
         -- but at the wrong intensity, turn it straight off first so that turnOnFrontlight doesn't abort early...
