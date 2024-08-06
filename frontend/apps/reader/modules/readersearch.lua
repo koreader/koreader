@@ -676,8 +676,17 @@ function ReaderSearch:onShowFindAllResults(not_cached)
             end
         end,
         onMenuHold = function(_menu_self, item)
-            local chapter = "▼ " .. table.concat(self.ui.toc:getFullTocTitleByPage(item.start), "\n▼ ")
-            UIManager:show(InfoMessage:new{ text = T(_("Page: %1"), item.mandatory) .. "\n" .. chapter })
+            local text = T(_("Page: %1"), item.mandatory) .. "\n"
+            local chapters = self.ui.toc:getFullTocTitleByPage(item.start)
+            local last = "• " .. (table.remove(chapters) or "")
+            local indent = ""
+            if next(chapters) ~= nil then
+                for _, level in ipairs(chapters) do
+                    text = text .. indent .. "▾ " .. level .. "\n"
+                    indent = indent .. " "
+                end
+            end
+            UIManager:show(InfoMessage:new{ text = text .. indent .. last })
             return true
         end,
         close_callback = function()
