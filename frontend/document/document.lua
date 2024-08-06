@@ -284,9 +284,6 @@ function Document:getPageDimensions(pageno, zoom, rotation)
     return self:transformRect(native_rect, zoom, rotation)
 end
 
--- calculates rect dimensions
-
-
 function Document:getPageBBox(pageno)
     local bbox = self.bbox[pageno] -- exact
     if bbox ~= nil then
@@ -423,10 +420,8 @@ function Document:getPagePartHash(pageno, zoom, rotation, gamma, rect)
 end
 
 function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
-    print("Document:renderPage", pageno, rect, zoom, rotation, gamma, hinting)
     -- If rect contains a nested scaled_rect object, our caller handled scaling itself (e.g., drawPagePart)
     local is_prescaled = rect and rect.scaled_rect ~= nil or false
-    print("is_prescaled:", is_prescaled)
 
     local hash, hash_excerpt, tile
     if is_prescaled then
@@ -444,8 +439,6 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
             tile = DocCache:check(hash_excerpt)
         end
     end
-    print("hash:", hash)
-    print("cache hit:", tile ~= nil)
     if tile then
         if self.tile_cache_validity_ts then
             if tile.created_ts and tile.created_ts >= self.tile_cache_validity_ts then
@@ -489,7 +482,6 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
             size = rect
         end
     end
-    logger.info("Document:renderPage", is_prescaled, page_size, size)
 
     -- Prepare our BB, and wrap it in a cache item for DocCache
     tile = TileCacheItem:new{
@@ -579,25 +571,21 @@ end
 function Document:drawPagePart(pageno, native_rect, rotation)
     -- native_rect is straight from base, so not a Geom
     local rect = Geom:new(native_rect)
-    logger.info("Document:drawPagePart:", pageno, rect, rotation)
 
     local canvas_size = CanvasContext:getSize()
     -- Compute a zoom in order to scale to best fit, so that ImageViewer doesn't have to rescale further.
     -- Optionally, based on ImageViewer settings, we'll auto-rotate for the best resolution.
-    logger.info("canvas_size:", canvas_size)
     local rotate = false
     if G_reader_settings:isTrue("imageviewer_rotate_auto_for_best_fit") then
         rotate = (canvas_size.w > canvas_size.h) ~= (rect.w > rect.h)
     end
-    print("rotate:", rotate)
     local zoom = rotate and math.min(canvas_size.w / rect.h, canvas_size.h / rect.w) or math.min(canvas_size.w / rect.w, canvas_size.h / rect.h)
     local scaled_rect = self:transformRect(rect, zoom, rotation)
     -- Stuff it inside rect so renderPage knows we're handling scaling ourselves
     rect.scaled_rect = scaled_rect
-    logger.info("Document:getPagePart", rect, zoom, scaled_rect)
+
     -- Enable SMP via the hinting flag
     local tile = self:renderPage(pageno, rect, zoom, rotation, 1.0, true)
-
     return tile.bb, rotate
 end
 
