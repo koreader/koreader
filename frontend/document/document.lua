@@ -266,20 +266,8 @@ function Document:getPageNumberInFlow(page)
     return page
 end
 
--- calculates page dimensions
-function Document:getPageDimensions(pageno, zoom, rotation)
-    local native_dimen = self:getNativePageDimensions(pageno):copy()
-    if rotation == 90 or rotation == 270 then
-        -- switch orientation
-        native_dimen.w, native_dimen.h = native_dimen.h, native_dimen.w
-    end
-    -- Apply the zoom factor, and round to integer in a sensible manner
-    native_dimen:transformByScale(zoom)
-    return native_dimen
-end
-
--- calculates rect dimensions
-function Document:getPagePartDimensions(native_rect, zoom, rotation)
+-- Transform a given rect according to the specified zoom & rotation
+function Document:transformRect(native_rect, zoom, rotation)
     local native_dimen = native_rect:copy()
     if rotation == 90 or rotation == 270 then
         -- switch orientation
@@ -289,6 +277,15 @@ function Document:getPagePartDimensions(native_rect, zoom, rotation)
     native_dimen:transformByScale(zoom)
     return native_dimen
 end
+
+-- Ditto, but for the given page number
+function Document:getPageDimensions(pageno, zoom, rotation)
+    local rect = self:getNativePageDimensions(pageno)
+    return self:transformRect(rect, zoom, rotation)
+end
+
+-- calculates rect dimensions
+
 
 function Document:getPageBBox(pageno)
     local bbox = self.bbox[pageno] -- exact
@@ -581,7 +578,7 @@ function Document:drawPagePart(pageno, native_rect, rotation)
 
     local canvas_size = CanvasContext:getSize()
     local zoom = math.min(canvas_size.w*2 / rect.w, canvas_size.h*2 / rect.h)
-    local scaled_rect = self:getPagePartDimensions(rect, zoom, rotation)
+    local scaled_rect = self:transformRect(rect, zoom, rotation)
     -- Stuff it inside rect so renderPage knows we're handling scaling ourselves
     rect.scaled_rect = scaled_rect
     logger.info("Document:getPagePart", rect, zoom, scaled_rect)
