@@ -268,20 +268,20 @@ end
 
 -- Transform a given rect according to the specified zoom & rotation
 function Document:transformRect(native_rect, zoom, rotation)
-    local native_dimen = native_rect:copy()
+    local rect = native_rect:copy()
     if rotation == 90 or rotation == 270 then
         -- switch orientation
-        native_dimen.w, native_dimen.h = native_dimen.h, native_dimen.w
+        rect.w, rect.h = rect.h, rect.w
     end
     -- Apply the zoom factor, and round to integer in a sensible manner
-    native_dimen:transformByScale(zoom)
-    return native_dimen
+    rect:transformByScale(zoom)
+    return rect
 end
 
 -- Ditto, but for the given page number
 function Document:getPageDimensions(pageno, zoom, rotation)
-    local rect = self:getNativePageDimensions(pageno)
-    return self:transformRect(rect, zoom, rotation)
+    local native_rect = self:getNativePageDimensions(pageno)
+    return self:transformRect(native_rect, zoom, rotation)
 end
 
 -- calculates rect dimensions
