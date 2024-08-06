@@ -586,7 +586,7 @@ function InputText:focus()
     self._frame_textwidget.color = Blitbuffer.COLOR_BLACK
 end
 
--- NOTE: This key_map is to be used by kindles with keyboards, it is loosely 'inspired' by the symbol layer on the virtual keyboard but,
+-- NOTE: This key_map can be used for keyboards without numeric keys, such as on Kindles with keyboards. It is loosely 'inspired' by the symbol layer on the virtual keyboard but,
 --       we have taken the liberty of making some adjustments since:
 --       * K3 does not have numeric keys (top row) and,
 --       * we want to prioritise the most-likely-used characters for "style tweaks" and note taking

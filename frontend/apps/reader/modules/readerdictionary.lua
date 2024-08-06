@@ -100,7 +100,6 @@ end
 
 function ReaderDictionary:init()
     self:registerKeyEvents()
-    
     self.disable_lookup_history = G_reader_settings:isTrue("disable_lookup_history")
     self.dicts_order = G_reader_settings:readSetting("dicts_order", {})
     self.dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {})

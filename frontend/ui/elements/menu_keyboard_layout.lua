@@ -227,8 +227,7 @@ local sub_item_table = {
         end,
     },
 }
--- until SDL shenanigans are fixed (no input from physical keys when vk not visible), we won't make it available there
-if (Device:hasKeyboard() and not Device.isSDL()) or Device:hasScreenKB() then
+if Device:hasKeyboard() or Device:hasScreenKB() then
     -- we use same pos. 4 as below so we are always above "keyboard apperance settings"
     table.insert(sub_item_table, 4, {
         text = _("Show virtual keyboard"),
