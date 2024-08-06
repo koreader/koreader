@@ -160,7 +160,7 @@ function ReaderUI:init()
         view = self.view,
         ui = self
     })
-    -- rotation controller
+    -- (legacy, and defunct) rotation controller
     self:registerModule("rotation", ReaderRotation:new{
         dialog = self.dialog,
         view = self.view,
