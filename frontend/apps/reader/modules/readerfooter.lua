@@ -383,7 +383,7 @@ local footerTextGeneratorMap = {
                 return symbol_prefix.icons.page_turning_inverted
             else
                 -- @translators This is the invert reading order indicator.
-                return T(_("%1I"), prefix)
+                return T(_("%1On"), prefix)
             end
         elseif footer.settings.all_at_once and footer.settings.hide_empty_generators then
             return ""
@@ -392,7 +392,7 @@ local footerTextGeneratorMap = {
                 return symbol_prefix.icons.page_turning_regular
             else
                 -- @translators This is the normal reading order indicator.
-                return T(_("%1N"), prefix)
+                return T(_("%1Off"), prefix)
             end
         end
     end,
