@@ -399,19 +399,28 @@ function Document:resetTileCacheValidity()
     self.tile_cache_validity_ts = os.time()
 end
 
-function Document:getFullPageHash(pageno, zoom, rotation, gamma)
-    return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
-                    ..zoom.."|"..rotation.."|"..gamma.."|"..self.render_mode..(self.render_color and "|color" or "|bw")
-                    ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
+function Document:getFullPageHash(pageno, zoom, rotation, gamma, rect, volatile)
+    if volatile then
+        return "renderpgpart|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
+                        ..tostring(rect).."|"
+                        ..zoom.."|"..rotation.."|"..gamma.."|"..self.render_mode..(self.render_color and "|color" or "|bw")
+                        ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
+    else
+        return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
+                        ..zoom.."|"..rotation.."|"..gamma.."|"..self.render_mode..(self.render_color and "|color" or "|bw")
+                        ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
+    end
 end
 
 function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting, volatile)
     print("Document:renderPage", pageno, rect, zoom, rotation, gamma, hinting, volatile)
-    print(debug.traceback())
     local hash_excerpt
-    local hash = self:getFullPageHash(pageno, zoom, rotation, gamma)
+    local hash = self:getFullPageHash(pageno, zoom, rotation, gamma, rect, volatile)
     local tile = DocCache:check(hash, TileCacheItem)
-    if not tile then
+    print("hash:", hash)
+    print("cache hit:", tile ~= nil)
+    -- We already add rect to volatile in getFullPageHash
+    if not tile and not volatile then
         hash_excerpt = hash.."|"..tostring(rect)
         tile = DocCache:check(hash_excerpt)
     end
@@ -430,7 +439,8 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting, volat
         CanvasContext:enableCPUCores(2)
     end
 
-    local page_size = self:getPageDimensions(pageno, zoom, rotation)
+    -- Volatile is set for panel-zoom, where we abso-fucking-lutely do *NOT* want to apply the insane zoom to the full page!
+    local page_size = volatile and rect or self:getPageDimensions(pageno, zoom, rotation)
     -- this will be the size we actually render
     local size = page_size
     -- we prefer to render the full page, if it fits into cache
@@ -536,7 +546,7 @@ function Document:getPagePart(pageno, rect, rotation)
     local canvas_size = CanvasContext:getSize()
     local zoom = math.min(canvas_size.w*2 / rect.w, canvas_size.h*2 / rect.h)
     -- it's really, really important to do math.floor, otherwise we get image projection
-    local scaled_rect = {
+    local scaled_rect = Geom:new{
         x = math.floor(rect.x * zoom),
         y = math.floor(rect.y * zoom),
         w = math.floor(rect.w * zoom),
