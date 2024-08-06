@@ -574,18 +574,8 @@ function Document:drawPagePart(pageno, native_rect, rotation)
     -- Stuff it inside rect so renderPage knows we're handling scaling ourselves
     rect.scaled_rect = scaled_rect
     logger.info("Document:getPagePart", rect, zoom, scaled_rect)
-    -- Flag these as volatile, as we do *NOT* want to let DocCache dump it to disk
-    local tile = self:renderPage(pageno, rect, zoom, rotation, 1.0, true, true)
-
-    --[[
-    local target = Blitbuffer.new(scaled_rect.w, scaled_rect.h, self.render_color and self.color_bb_type or nil)
-    target:blitFrom(tile.bb,
-        0, 0,
-        scaled_rect.x - tile.excerpt.x,
-        scaled_rect.y - tile.excerpt.y,
-        scaled_rect.w, scaled_rect.h)
-    return target
-    --]]
+    -- Enable SMP via the hinting flag
+    local tile = self:renderPage(pageno, rect, zoom, rotation, 1.0, true)
 
     return tile.bb
 

@@ -132,8 +132,8 @@ function DjvuDocument:findAllText(pattern, case_insensitive, nb_context_words, m
     return self.koptinterface:findAllText(self, pattern, case_insensitive, nb_context_words, max_hits)
 end
 
-function DjvuDocument:renderPage(pageno, rect, zoom, rotation, gamma, hinting, volatile)
-    return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, gamma, hinting, volatile)
+function DjvuDocument:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
+    return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, gamma, hinting)
 end
 
 function DjvuDocument:hintPage(pageno, zoom, rotation, gamma)
