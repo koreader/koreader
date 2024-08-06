@@ -1079,7 +1079,9 @@ function Dispatcher:_showAsMenu(settings, exec_props)
             font_size = 22,
             callback = function()
                 UIManager:close(quickmenu)
-                Dispatcher:execute(settings, { qm_show = false })
+                UIManager:nextTick(function()
+                    Dispatcher:execute(settings, { qm_show = false })
+                end)
             end,
         }})
     end
@@ -1093,7 +1095,9 @@ function Dispatcher:_showAsMenu(settings, exec_props)
             font_bold = false,
             callback = function()
                 UIManager:close(quickmenu)
-                Dispatcher:execute({[v.key] = settings[v.key]})
+                UIManager:nextTick(function()
+                    Dispatcher:execute({[v.key] = settings[v.key]})
+                end)
                 if keep_open_on_apply and not util.stringStartsWith(v.key, "touch_input") then
                     quickmenu:setTitle(title)
                     UIManager:show(quickmenu)
@@ -1102,7 +1106,9 @@ function Dispatcher:_showAsMenu(settings, exec_props)
             hold_callback = function()
                 if v.key:sub(1, 13) == "profile_exec_" then
                     UIManager:close(quickmenu)
-                    UIManager:sendEvent(Event:new(settingsList[v.key].event, settingsList[v.key].arg, { qm_show = true }))
+                    UIManager:nextTick(function()
+                        UIManager:sendEvent(Event:new(settingsList[v.key].event, settingsList[v.key].arg, { qm_show = true }))
+                    end)
                 end
             end,
         }})
