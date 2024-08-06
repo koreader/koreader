@@ -68,7 +68,7 @@ local symbol_prefix = {
         chapter_time_to_read = C_("FooterLetterPrefix", "TC:"),
         -- @translators This is the footer letter prefix for frontlight level.
         frontlight = C_("FooterLetterPrefix", "L:"),
-        -- @translators This is the footer letter prefix for frontlight warmth (redshift).
+        -- @translators This is the footer letter prefix for light warmth of the frontlight (redshift).
         frontlight_warmth = C_("FooterLetterPrefix", "LW:"),
         -- @translators This is the footer letter prefix for memory usage.
         mem_usage = C_("FooterLetterPrefix", "M:"),
