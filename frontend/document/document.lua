@@ -405,7 +405,9 @@ function Document:getFullPageHash(pageno, zoom, rotation, gamma)
                     ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
 end
 
-function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
+function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting, volatile)
+    print("Document:renderPage", pageno, rect, zoom, rotation, gamma, hinting, volatile)
+    print(debug.traceback())
     local hash_excerpt
     local hash = self:getFullPageHash(pageno, zoom, rotation, gamma)
     local tile = DocCache:check(hash, TileCacheItem)
@@ -448,10 +450,11 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
         hash = hash_excerpt
         size = rect
     end
+    logger.info("Document:renderPage", volatile, page_size, size)
 
     -- prepare cache item with contained blitbuffer
     tile = TileCacheItem:new{
-        persistent = true,
+        persistent = not volatile,
         doc_path = self.file,
         created_ts = os.time(),
         excerpt = size,
@@ -539,7 +542,9 @@ function Document:getPagePart(pageno, rect, rotation)
         w = math.floor(rect.w * zoom),
         h = math.floor(rect.h * zoom),
     }
-    local tile = self:renderPage(pageno, scaled_rect, zoom, rotation, 1.0)
+    logger.info("Document:getPagePart", rect, zoom, scaled_rect)
+    -- Flag these as volatile, as we do *NOT* want to cache it
+    local tile = self:renderPage(pageno, scaled_rect, zoom, rotation, 1.0, true, true)
     local target = Blitbuffer.new(scaled_rect.w, scaled_rect.h, self.render_color and self.color_bb_type or nil)
     target:blitFrom(tile.bb,
         0, 0,

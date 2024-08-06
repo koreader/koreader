@@ -340,13 +340,13 @@ function KoptInterface:getCoverPageImage(doc)
     end
 end
 
-function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, hinting)
+function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, hinting, volatile)
     if doc.configurable.text_wrap == 1 then
-        return self:renderReflowedPage(doc, pageno, rect, zoom, rotation, hinting)
+        return self:renderReflowedPage(doc, pageno, rect, zoom, rotation, hinting, volatile)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
-        return self:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hinting)
+        return self:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hinting, volatile)
     else
-        return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, hinting)
+        return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, hinting, volatile)
     end
 end
 

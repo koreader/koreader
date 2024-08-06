@@ -340,8 +340,8 @@ function PdfDocument:findAllText(pattern, case_insensitive, nb_context_words, ma
     return self.koptinterface:findAllText(self, pattern, case_insensitive, nb_context_words, max_hits)
 end
 
-function PdfDocument:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
-    return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, gamma, hinting)
+function PdfDocument:renderPage(pageno, rect, zoom, rotation, gamma, hinting, volatile)
+    return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, gamma, hinting, volatile)
 end
 
 function PdfDocument:hintPage(pageno, zoom, rotation, gamma)
