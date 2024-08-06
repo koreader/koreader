@@ -577,7 +577,8 @@ function Document:drawPagePart(pageno, native_rect, rotation)
     logger.info("Document:drawPagePart:", pageno, rect, rotation)
 
     local canvas_size = CanvasContext:getSize()
-    local zoom = math.min(canvas_size.w*2 / rect.w, canvas_size.h*2 / rect.h)
+    -- Compute a zoom in order to scale to best fit, so that ImageViewer doesn't have to rescale further
+    local zoom = math.min(canvas_size.w / rect.w, canvas_size.h / rect.h)
     local scaled_rect = self:transformRect(rect, zoom, rotation)
     -- Stuff it inside rect so renderPage knows we're handling scaling ourselves
     rect.scaled_rect = scaled_rect
