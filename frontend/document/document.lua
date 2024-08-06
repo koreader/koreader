@@ -508,6 +508,9 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
     dc:setRotate(rotation)
     -- Make the context match the rotation,
     -- by pointing at the rotated origin via coordinates offsets.
+    -- NOTE: We rotate our *Screen* bb on rotation (SetRotationMode), not the document,
+    --       so we hardly ever exercize this codepath...
+    --       AFAICT, the only thing that will *ever* rotate the document is ReaderRotation's key bindings (RotationUpdate).
     if rotation == 90 then
         dc:setOffset(page_size.w, 0)
     elseif rotation == 180 then

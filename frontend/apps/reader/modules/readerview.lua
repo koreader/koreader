@@ -923,6 +923,7 @@ function ReaderView:onBBoxUpdate(bbox)
 end
 
 function ReaderView:onRotationUpdate(rotation)
+    print("ReaderView:onRotationUpdate", rotation)
     self.state.rotation = rotation
     self:recalculate()
 end
