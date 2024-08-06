@@ -411,34 +411,43 @@ function Document:resetTileCacheValidity()
     self.tile_cache_validity_ts = os.time()
 end
 
-function Document:getFullPageHash(pageno, zoom, rotation, gamma, rect, is_page_part)
-    if is_page_part then
-        return "renderpgpart|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
-                        ..tostring(rect).."|"..zoom.."|"..tostring(rect.scaled_rect).."|"
-                        ..rotation.."|"..gamma.."|"..self.render_mode..(self.render_color and "|color" or "|bw")
-                        ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
-    else
-        return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
-                        ..zoom.."|"..rotation.."|"..gamma.."|"..self.render_mode..(self.render_color and "|color" or "|bw")
-                        ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
-    end
+function Document:getFullPageHash(pageno, zoom, rotation, gamma)
+    return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
+                    ..zoom.."|"
+                    ..rotation.."|"..gamma.."|"..self.render_mode..(self.render_color and "|color" or "|bw")
+                    ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
+end
+
+function Document:getPagePartHash(pageno, zoom, rotation, gamma, rect)
+    return "renderpgpart|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
+                    ..tostring(rect).."|"..zoom.."|"..tostring(rect.scaled_rect).."|"
+                    ..rotation.."|"..gamma.."|"..self.render_mode..(self.render_color and "|color" or "|bw")
+                    ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
 end
 
 function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
     print("Document:renderPage", pageno, rect, zoom, rotation, gamma, hinting)
-    -- If rect contains a nested scaled_rect object, our caller handled scaling itself (e.g., getPagePart)
-    local is_page_part = rect and rect.scaled_rect ~= nil or false
-    print("is_page_part:", is_page_part)
+    -- If rect contains a nested scaled_rect object, our caller handled scaling itself (e.g., drawPagePart)
+    local is_prescaled = rect and rect.scaled_rect ~= nil or false
+    print("is_prescaled:", is_prescaled)
 
-    local hash_excerpt
-    local hash = self:getFullPageHash(pageno, zoom, rotation, gamma, rect, is_page_part)
-    local tile = DocCache:check(hash, TileCacheItem)
-    print("hash:", hash)
-    -- We already add rect when is_page_part in getFullPageHash
-    if not tile and not is_page_part then
-        hash_excerpt = hash.."|"..tostring(rect)
-        tile = DocCache:check(hash_excerpt)
+    local hash, hash_excerpt, tile
+    if is_prescaled then
+        hash = self:getPagePartHash(pageno, zoom, rotation, gamma, rect)
+
+        tile = DocCache:check(hash, TileCacheItem)
+    else
+        hash = self:getFullPageHash(pageno, zoom, rotation, gamma)
+
+        tile = DocCache:check(hash, TileCacheItem)
+
+        -- In the is_prescaled case, we're *already* only rendering part of the page
+        if not tile then
+            hash_excerpt = hash.."|"..tostring(rect)
+            tile = DocCache:check(hash_excerpt)
+        end
     end
+    print("hash:", hash)
     print("cache hit:", tile ~= nil)
     if tile then
         if self.tile_cache_validity_ts then
@@ -456,15 +465,16 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
     end
 
     local page_size = self:getPageDimensions(pageno, zoom, rotation)
-    -- this will be the size we actually render
+
+    -- This will be the size we actually render
     local size
-    -- We only want to show the panel in question for panel-zoom
-    if is_page_part then
+    if is_prescaled then
+        -- Our caller already handled the scaling, honor it.
+        -- And we don't particulalry care whether DocCache will be able to cache it in RAM, so no need to double-check.
         size = rect.scaled_rect
     else
+        -- We prefer to render the full page, if it fits into cache
         size = page_size
-
-        -- we prefer to render the full page, if it fits into cache
         if not DocCache:willAccept(size.w * size.h * (self.render_color and 4 or 1) + 512) then
             -- whole page won't fit into cache
             logger.dbg("rendering only part of the page")
@@ -482,11 +492,11 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
             size = rect
         end
     end
-    logger.info("Document:renderPage", is_page_part, page_size, size)
+    logger.info("Document:renderPage", is_prescaled, page_size, size)
 
     -- prepare cache item with contained blitbuffer
     tile = TileCacheItem:new{
-        persistent = not is_page_part, -- we don't want to dump page fragments to disk (and confuse DocCache's heuristics)
+        persistent = not is_prescaled, -- we don't want to dump page fragments to disk (unnecessary, and it would confuse DocCache's heuristics)
         doc_path = self.file,
         created_ts = os.time(),
         excerpt = size,
@@ -568,6 +578,7 @@ function Document:drawPagePart(pageno, native_rect, rotation)
     -- native_rect is straight from base, so not a Geom
     local rect = Geom:new(native_rect)
     logger.info("Document:drawPagePart:", pageno, rect, rotation)
+
     local canvas_size = CanvasContext:getSize()
     local zoom = math.min(canvas_size.w*2 / rect.w, canvas_size.h*2 / rect.h)
     local scaled_rect = self:getPagePartDimensions(rect, zoom, rotation)
@@ -578,7 +589,6 @@ function Document:drawPagePart(pageno, native_rect, rotation)
     local tile = self:renderPage(pageno, rect, zoom, rotation, 1.0, true)
 
     return tile.bb
-
 end
 
 function Document:getPageText(pageno)
