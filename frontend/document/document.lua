@@ -439,7 +439,8 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting, volat
         CanvasContext:enableCPUCores(2)
     end
 
-    -- Volatile is set for panel-zoom, where we abso-fucking-lutely do *NOT* want to apply the insane zoom to the full page!
+    -- Volatile is set for panel-zoom, where we abso-fucking-lutely do *NOT* want to apply the insane zoom to the full page,
+    -- as rect is *already* scaled in that case.
     local page_size = volatile and rect or self:getPageDimensions(pageno, zoom, rotation)
     -- this will be the size we actually render
     local size = page_size
