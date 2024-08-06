@@ -553,7 +553,7 @@ function Document:getPagePart(pageno, rect, rotation)
         h = math.floor(rect.h * zoom),
     }
     logger.info("Document:getPagePart", rect, zoom, scaled_rect)
-    -- Flag these as volatile, as we do *NOT* want to cache it
+    -- Flag these as volatile, as we do *NOT* want to let DocCache dump it to disk
     local tile = self:renderPage(pageno, scaled_rect, zoom, rotation, 1.0, true, true)
     local target = Blitbuffer.new(scaled_rect.w, scaled_rect.h, self.render_color and self.color_bb_type or nil)
     target:blitFrom(tile.bb,
