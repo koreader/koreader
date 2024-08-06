@@ -99,6 +99,8 @@ local function getDictionaryFixHtmlFunc(path)
 end
 
 function ReaderDictionary:init()
+    self:registerKeyEvents()
+    
     self.disable_lookup_history = G_reader_settings:isTrue("disable_lookup_history")
     self.dicts_order = G_reader_settings:readSetting("dicts_order", {})
     self.dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {})
@@ -156,8 +158,6 @@ function ReaderDictionary:init()
     end
     -- Prepare the -u options to give to sdcv the dictionary order and if some are disabled
     self:updateSdcvDictNamesOptions()
-
-    self:registerKeyEvents()
 
     if not lookup_history then
         lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", "LookupHistory")
