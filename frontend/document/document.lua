@@ -278,6 +278,18 @@ function Document:getPageDimensions(pageno, zoom, rotation)
     return native_dimen
 end
 
+-- calculates rect dimensions
+function Document:getPagePartDimensions(native_rect, zoom, rotation)
+    local native_dimen = native_rect:copy()
+    if rotation == 90 or rotation == 270 then
+        -- switch orientation
+        native_dimen.w, native_dimen.h = native_dimen.h, native_dimen.w
+    end
+    -- Apply the zoom factor, and round to integer in a sensible manner
+    native_dimen:transformByScale(zoom)
+    return native_dimen
+end
+
 function Document:getPageBBox(pageno)
     local bbox = self.bbox[pageno] -- exact
     if bbox ~= nil then
@@ -399,11 +411,11 @@ function Document:resetTileCacheValidity()
     self.tile_cache_validity_ts = os.time()
 end
 
-function Document:getFullPageHash(pageno, zoom, rotation, gamma, rect, volatile)
-    if volatile then
+function Document:getFullPageHash(pageno, zoom, rotation, gamma, rect, is_page_part)
+    if is_page_part then
         return "renderpgpart|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
-                        ..tostring(rect).."|"
-                        ..zoom.."|"..rotation.."|"..gamma.."|"..self.render_mode..(self.render_color and "|color" or "|bw")
+                        ..tostring(rect).."|"..zoom.."|"..tostring(rect.scaled_rect).."|"
+                        ..rotation.."|"..gamma.."|"..self.render_mode..(self.render_color and "|color" or "|bw")
                         ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
     else
         return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
@@ -412,18 +424,22 @@ function Document:getFullPageHash(pageno, zoom, rotation, gamma, rect, volatile)
     end
 end
 
-function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting, volatile)
-    print("Document:renderPage", pageno, rect, zoom, rotation, gamma, hinting, volatile)
+function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
+    print("Document:renderPage", pageno, rect, zoom, rotation, gamma, hinting)
+    -- If rect contains a nested scaled_rect object, our caller handled scaling itself (e.g., getPagePart)
+    local is_page_part = rect and rect.scaled_rect ~= nil or false
+    print("is_page_part:", is_page_part)
+
     local hash_excerpt
-    local hash = self:getFullPageHash(pageno, zoom, rotation, gamma, rect, volatile)
+    local hash = self:getFullPageHash(pageno, zoom, rotation, gamma, rect, is_page_part)
     local tile = DocCache:check(hash, TileCacheItem)
     print("hash:", hash)
-    print("cache hit:", tile ~= nil)
-    -- We already add rect to volatile in getFullPageHash
-    if not tile and not volatile then
+    -- We already add rect when is_page_part in getFullPageHash
+    if not tile and not is_page_part then
         hash_excerpt = hash.."|"..tostring(rect)
         tile = DocCache:check(hash_excerpt)
     end
+    print("cache hit:", tile ~= nil)
     if tile then
         if self.tile_cache_validity_ts then
             if tile.created_ts and tile.created_ts >= self.tile_cache_validity_ts then
@@ -439,33 +455,38 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting, volat
         CanvasContext:enableCPUCores(2)
     end
 
-    -- Volatile is set for panel-zoom, where we abso-fucking-lutely do *NOT* want to apply the insane zoom to the full page,
-    -- as rect is *already* scaled in that case.
-    local page_size = volatile and rect or self:getPageDimensions(pageno, zoom, rotation)
+    local page_size = self:getPageDimensions(pageno, zoom, rotation)
     -- this will be the size we actually render
-    local size = page_size
-    -- we prefer to render the full page, if it fits into cache
-    if not DocCache:willAccept(size.w * size.h * (self.render_color and 4 or 1) + 512) then
-        -- whole page won't fit into cache
-        logger.dbg("rendering only part of the page")
-        --- @todo figure out how to better segment the page
-        if not rect then
-            logger.warn("aborting, since we do not have a specification for that part")
-            -- required part not given, so abort
-            if hinting then
-                CanvasContext:enableCPUCores(1)
+    local size
+    -- We only want to show the panel in question for panel-zoom
+    if is_page_part then
+        size = rect.scaled_rect
+    else
+        size = page_size
+
+        -- we prefer to render the full page, if it fits into cache
+        if not DocCache:willAccept(size.w * size.h * (self.render_color and 4 or 1) + 512) then
+            -- whole page won't fit into cache
+            logger.dbg("rendering only part of the page")
+            --- @todo figure out how to better segment the page
+            if not rect then
+                logger.warn("aborting, since we do not have a specification for that part")
+                -- required part not given, so abort
+                if hinting then
+                    CanvasContext:enableCPUCores(1)
+                end
+                return
             end
-            return
+            -- only render required part
+            hash = hash_excerpt
+            size = rect
         end
-        -- only render required part
-        hash = hash_excerpt
-        size = rect
     end
-    logger.info("Document:renderPage", volatile, page_size, size)
+    logger.info("Document:renderPage", is_page_part, page_size, size)
 
     -- prepare cache item with contained blitbuffer
     tile = TileCacheItem:new{
-        persistent = not volatile,
+        persistent = not is_page_part, -- we don't want to dump page fragments to disk (and confuse DocCache's heuristics)
         doc_path = self.file,
         created_ts = os.time(),
         excerpt = size,
@@ -543,19 +564,20 @@ function Document:getDrawnImagesStatistics()
     return self._drawn_images_count, self._drawn_images_surface_ratio
 end
 
-function Document:getPagePart(pageno, rect, rotation)
+function Document:drawPagePart(pageno, native_rect, rotation)
+    -- native_rect is straight from base, so not a Geom
+    local rect = Geom:new(native_rect)
+    logger.info("Document:drawPagePart:", pageno, rect, rotation)
     local canvas_size = CanvasContext:getSize()
     local zoom = math.min(canvas_size.w*2 / rect.w, canvas_size.h*2 / rect.h)
-    -- it's really, really important to do math.floor, otherwise we get image projection
-    local scaled_rect = Geom:new{
-        x = math.floor(rect.x * zoom),
-        y = math.floor(rect.y * zoom),
-        w = math.floor(rect.w * zoom),
-        h = math.floor(rect.h * zoom),
-    }
+    local scaled_rect = self:getPagePartDimensions(rect, zoom, rotation)
+    -- Stuff it inside rect so renderPage knows we're handling scaling ourselves
+    rect.scaled_rect = scaled_rect
     logger.info("Document:getPagePart", rect, zoom, scaled_rect)
     -- Flag these as volatile, as we do *NOT* want to let DocCache dump it to disk
-    local tile = self:renderPage(pageno, scaled_rect, zoom, rotation, 1.0, true, true)
+    local tile = self:renderPage(pageno, rect, zoom, rotation, 1.0, true, true)
+
+    --[[
     local target = Blitbuffer.new(scaled_rect.w, scaled_rect.h, self.render_color and self.color_bb_type or nil)
     target:blitFrom(tile.bb,
         0, 0,
@@ -563,6 +585,10 @@ function Document:getPagePart(pageno, rect, rotation)
         scaled_rect.y - tile.excerpt.y,
         scaled_rect.w, scaled_rect.h)
     return target
+    --]]
+
+    return tile.bb
+
 end
 
 function Document:getPageText(pageno)
