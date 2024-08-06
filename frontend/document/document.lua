@@ -466,35 +466,35 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
 
     local page_size = self:getPageDimensions(pageno, zoom, rotation)
 
-    -- This will be the size we actually render
+    -- This will be the actual render size (i.e., the BB's dimensions)
     local size
     if is_prescaled then
         -- Our caller already handled the scaling, honor it.
         -- And we don't particulalry care whether DocCache will be able to cache it in RAM, so no need to double-check.
         size = rect.scaled_rect
     else
-        -- We prefer to render the full page, if it fits into cache
+        -- We prefer to render the full page, if it fits into cache...
         size = page_size
         if not DocCache:willAccept(size.w * size.h * (self.render_color and 4 or 1) + 512) then
-            -- whole page won't fit into cache
-            logger.dbg("rendering only part of the page")
+            -- ...and if it doesn't...
+            logger.dbg("Attempting to render only part of the page:", rect)
             --- @todo figure out how to better segment the page
             if not rect then
-                logger.warn("aborting, since we do not have a specification for that part")
-                -- required part not given, so abort
+                logger.warn("No render region was specified, we won't render the page at all!")
+                -- no rect specified, abort
                 if hinting then
                     CanvasContext:enableCPUCores(1)
                 end
                 return
             end
-            -- only render required part
+            -- ...only render the requested rect
             hash = hash_excerpt
             size = rect
         end
     end
     logger.info("Document:renderPage", is_prescaled, page_size, size)
 
-    -- prepare cache item with contained blitbuffer
+    -- Prepare our BB, and wrap it in a cache item for DocCache
     tile = TileCacheItem:new{
         persistent = not is_prescaled, -- we don't want to dump page fragments to disk (unnecessary, and it would confuse DocCache's heuristics)
         doc_path = self.file,
@@ -505,11 +505,11 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
     }
     tile.size = tonumber(tile.bb.stride) * tile.bb.h + 512 -- estimation
 
-    -- create a draw context
+    -- We need a draw context
     local dc = DrawContext.new()
 
     dc:setRotate(rotation)
-    -- correction of rotation
+    -- Make the context match the rotation
     if rotation == 90 then
         dc:setOffset(page_size.w, 0)
     elseif rotation == 180 then
@@ -523,7 +523,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
         dc:setGamma(gamma)
     end
 
-    -- render
+    -- And finally, render the page in our BB
     local page = self._document:openPage(pageno)
     page:draw(dc, tile.bb, size.x, size.y, self.render_mode)
     page:close()
