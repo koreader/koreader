@@ -139,7 +139,7 @@ function MenuItem:init()
     if self.infont_size > max_font_size then
         self.infont_size = max_font_size
     end
-    if not self.single_line and not self.multilines_show_more_text then
+    if not self.single_line and not self.multilines_show_more_text and not self.items_max_lines then
         -- For non single line menus (File browser, Bookmarks), if the
         -- user provided font size is large and would not allow showing
         -- more than one line in our item height, just switch to single
@@ -184,17 +184,17 @@ function MenuItem:init()
     local text_mandatory_padding = 0
     local text_ellipsis_mandatory_padding = 0
     local mandatory = self.mandatory_func and self.mandatory_func() or self.mandatory
+    local mandatory_dim = self.mandatory_dim_func and self.mandatory_dim_func() or self.mandatory_dim
     if mandatory then
         text_mandatory_padding = Size.span.horizontal_default
         -- Smaller padding when ellipsis for better visual feeling
         text_ellipsis_mandatory_padding = Size.span.horizontal_small
     end
-    mandatory = mandatory and ""..mandatory or ""
     local mandatory_widget = TextWidget:new{
-        text = mandatory,
+        text = mandatory or "",
         face = self.info_face,
         bold = self.bold,
-        fgcolor = self.mandatory_dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+        fgcolor = mandatory_dim and Blitbuffer.COLOR_DARK_GRAY or nil,
     }
     local mandatory_w = mandatory_widget:getWidth()
 
@@ -1079,6 +1079,7 @@ function Menu:updateItems(select_number, no_recalculate_dimen)
             self.item_dimen.h = item.height
         end
         local item_tmp = MenuItem:new{
+            idx = index,
             show_parent = self.show_parent,
             state_w = self.state_w,
             text = Menu.getMenuText(item),
@@ -1087,6 +1088,7 @@ function Menu:updateItems(select_number, no_recalculate_dimen)
             mandatory = item.mandatory,
             mandatory_func = item.mandatory_func,
             mandatory_dim = item.mandatory_dim or item.dim,
+            mandatory_dim_func = item.mandatory_dim_func,
             bold = self.item_table.current == index or item.bold == true,
             dim = item.dim,
             font_size = self.font_size,
@@ -1099,6 +1101,7 @@ function Menu:updateItems(select_number, no_recalculate_dimen)
             linesize = self.linesize,
             single_line = self.single_line,
             multilines_show_more_text = multilines_show_more_text,
+            items_max_lines = self.items_max_lines,
             truncate_left = self.truncate_left,
             align_baselines = self.align_baselines,
             with_dots = self.with_dots,
@@ -1240,12 +1243,13 @@ function Menu:setupItemHeights()
         local item = self.item_table[i]
         -- exact item height can be calculated by building the TextBoxWidget for item text,
         -- but it is slow, so estimate the number of lines by building the TextWidget
+        -- empirical 8% is added to consider unjustified unhyphenated multilines text layout
         local item_text_width = TextWidget:new{
             text = item.text,
             face = face,
             bold = item.bold,
-        }:getSize().w
-        local item_available_width = available_width - infont_char_width * (item.mandatory and #item.mandatory or 0)
+        }:getSize().w * 1.08
+        local item_available_width = available_width - infont_char_width * (item.mandatory and #tostring(item.mandatory) or 0)
         local lines_nb = math.min(math.ceil(item_text_width / item_available_width), self.items_max_lines)
         item.height = lines_nb * line_height + 2 * Size.span.vertical_default + self.linesize
         item.shortcut_icon_width = line_height -- letter shortcuts of fixed size (1 line)
@@ -1469,6 +1473,10 @@ function Menu:onLeftButtonTap() -- to be overriden and implemented by the caller
 end
 
 function Menu:onLeftButtonHold() -- to be overriden and implemented by the caller
+end
+
+function Menu:getFirstVisibleItemIndex()
+    return self.item_group[1].idx
 end
 
 function Menu.getItemFontSize(perpage)

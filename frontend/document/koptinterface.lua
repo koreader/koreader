@@ -12,7 +12,6 @@ local FFIUtil = require("ffi/util")
 local Geom = require("ui/geometry")
 local KOPTContext = require("ffi/koptcontext")
 local Persist = require("persist")
-local TextBoxWidget = require("ui/widget/textboxwidget")
 local TileCacheItem = require("document/tilecacheitem")
 local Utf8Proc = require("ffi/utf8proc")
 local logger = require("logger")
@@ -1502,9 +1501,8 @@ function KoptInterface:findAllText(doc, pattern, case_insensitive, nb_context_wo
         local text_boxes = doc:getPageTextBoxes(page)
         if text_boxes then
             for indices in all_matches(text_boxes, plist, case_insensitive) do -- each found pattern in the page
-                local res_item = { -- item of the Menu item_table
-                    text = nil,
-                    mandatory = page,
+                local res_item = {
+                    start = page,
                     boxes = {}, -- to draw temp highlight in onMenuSelect
                 }
                 local text = {}
@@ -1525,19 +1523,9 @@ function KoptInterface:findAllText(doc, pattern, case_insensitive, nb_context_wo
                         i_next, j_next = i, j
                     end
                 end
-                -- Make this word bolder, using Poor Text Formatting provided by TextBoxWidget
-                -- (we know this text ends up in a TextBoxWidget).
-                text = TextBoxWidget.PTF_BOLD_START .. table.concat(text, " ") .. TextBoxWidget.PTF_BOLD_END
-                local prev_text = get_prev_text(text_boxes, i_prev, j_prev, nb_context_words)
-                if prev_text then
-                    text = prev_text .. " " .. text
-                end
-                local next_text = get_next_text(text_boxes, i_next, j_next, nb_context_words)
-                if next_text then
-                    text = text .. " " .. next_text
-                end
-                text = TextBoxWidget.PTF_HEADER .. text -- enable handling of our bold tags
-                res_item.text = text
+                res_item.matched_text = table.concat(text, " ")
+                res_item.prev_text = get_prev_text(text_boxes, i_prev, j_prev, nb_context_words)
+                res_item.next_text = get_next_text(text_boxes, i_next, j_next, nb_context_words)
                 table.insert(res, res_item)
                 if #res == max_hits then
                     return res
