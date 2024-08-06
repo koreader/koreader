@@ -506,7 +506,8 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
     local dc = DrawContext.new()
 
     dc:setRotate(rotation)
-    -- Make the context match the rotation
+    -- Make the context match the rotation,
+    -- by pointing at the rotated origin via coordinates offset.
     if rotation == 90 then
         dc:setOffset(page_size.w, 0)
     elseif rotation == 180 then
