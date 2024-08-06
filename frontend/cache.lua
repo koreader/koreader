@@ -136,9 +136,9 @@ function Cache:get(key)
 end
 
 function Cache:willAccept(size)
-    -- We only allow a single object to fill 75% of the cache
-    logger.info("Cache:willAccept", size, size*4, self.size*3, size*4 < self.size*3)
-    return size*4 < self.size*3
+    -- We only allow a single object to fill 50% of the cache
+    logger.info("Cache:willAccept", size, size*4, self.size*2, size*4 < self.size*2)
+    return size*4 < self.size*2
 end
 
 -- Blank the cache
