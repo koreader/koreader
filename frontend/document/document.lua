@@ -278,7 +278,7 @@ function Document:transformRect(native_rect, zoom, rotation)
     return rect
 end
 
--- Ditto, but for the given page number
+-- Ditto, but we get the input rect from the full page dimensions for a given page number
 function Document:getPageDimensions(pageno, zoom, rotation)
     local native_rect = self:getNativePageDimensions(pageno)
     return self:transformRect(native_rect, zoom, rotation)
