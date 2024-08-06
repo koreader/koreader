@@ -36,9 +36,8 @@ end
 ReaderRotation.onPhysicalKeyboardConnected = ReaderRotation.registerKeyEvents
 
 --- @todo Reset rotation on new document, maybe on new page?
-
+--- @fixme: More importantly, this breaks rendering, c.f., `Document:renderPage`
 function ReaderRotation:onRotate(rotate_by)
-    print("ReaderRotation:onRotate", rotate_by)
     self.current_rotation = (self.current_rotation + rotate_by) % 360
     self.ui:handleEvent(Event:new("RotationUpdate", self.current_rotation))
     return true
