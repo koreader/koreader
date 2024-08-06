@@ -433,7 +433,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
 
         tile = DocCache:check(hash, TileCacheItem)
 
-        -- In the is_prescaled case above, we're *already* only rendering part of the page
+        -- In the is_prescaled branch above, we're *already* only rendering part of the page
         if not tile and rect then
             hash_excerpt = hash.."|"..tostring(rect)
             tile = DocCache:check(hash_excerpt)
