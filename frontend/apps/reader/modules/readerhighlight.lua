@@ -1281,7 +1281,6 @@ function ReaderHighlight:onPanelZoom(arg, ges)
             with_title_bar = false,
             fullscreen = true,
             rotated = rotate,
-            scale_factor = 1, -- drawPagePart already computes a best fit
         }
         UIManager:show(imgviewer)
         return true
