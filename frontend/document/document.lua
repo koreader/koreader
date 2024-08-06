@@ -577,8 +577,15 @@ function Document:drawPagePart(pageno, native_rect, rotation)
     logger.info("Document:drawPagePart:", pageno, rect, rotation)
 
     local canvas_size = CanvasContext:getSize()
-    -- Compute a zoom in order to scale to best fit, so that ImageViewer doesn't have to rescale further
-    local zoom = math.min(canvas_size.w / rect.w, canvas_size.h / rect.h)
+    -- Compute a zoom in order to scale to best fit, so that ImageViewer doesn't have to rescale further.
+    -- Optionally, based on ImageViewer settings, we'll auto-rotate for the best resolution.
+    logger.info("canvas_size:", canvas_size)
+    local rotate = false
+    if G_reader_settings:isTrue("imageviewer_rotate_auto_for_best_fit") then
+        rotate = (canvas_size.w > canvas_size.h) ~= (rect.w > rect.h)
+    end
+    print("rotate:", rotate)
+    local zoom = rotate and math.min(canvas_size.w / rect.h, canvas_size.h / rect.w) or math.min(canvas_size.w / rect.w, canvas_size.h / rect.h)
     local scaled_rect = self:transformRect(rect, zoom, rotation)
     -- Stuff it inside rect so renderPage knows we're handling scaling ourselves
     rect.scaled_rect = scaled_rect
@@ -586,7 +593,7 @@ function Document:drawPagePart(pageno, native_rect, rotation)
     -- Enable SMP via the hinting flag
     local tile = self:renderPage(pageno, rect, zoom, rotation, 1.0, true)
 
-    return tile.bb
+    return tile.bb, rotate
 end
 
 function Document:getPageText(pageno)

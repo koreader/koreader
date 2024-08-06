@@ -1271,7 +1271,7 @@ function ReaderHighlight:onPanelZoom(arg, ges)
     if not hold_pos then return false end -- outside page boundary
     local rect = self.ui.document:getPanelFromPage(hold_pos.page, hold_pos)
     if not rect then return false end -- panel not found, return
-    local image = self.ui.document:drawPagePart(hold_pos.page, rect, 0)
+    local image, rotate = self.ui.document:drawPagePart(hold_pos.page, rect, 0)
 
     if image then
         local ImageViewer = require("ui/widget/imageviewer")
@@ -1280,6 +1280,8 @@ function ReaderHighlight:onPanelZoom(arg, ges)
             image_disposable = false, -- It's a TileCache item
             with_title_bar = false,
             fullscreen = true,
+            rotated = rotate,
+            scale_factor = 1, -- drawPagePart already computes a best fit
         }
         UIManager:show(imgviewer)
         return true
