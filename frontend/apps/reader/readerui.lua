@@ -160,12 +160,15 @@ function ReaderUI:init()
         view = self.view,
         ui = self
     })
-    -- rotation controller
+    -- (legacy, and defunct) rotation controller
+    --- @fixme: Tripping this would break rendering, c.f., `Document:renderPage`
+    --[[
     self:registerModule("rotation", ReaderRotation:new{
         dialog = self.dialog,
         view = self.view,
         ui = self
     })
+    --]]
     -- Handmade/custom ToC and hidden flows
     self:registerModule("handmade", ReaderHandMade:new{
         dialog = self.dialog,
