@@ -300,6 +300,8 @@ local function initDPadEvents()
             -- Event called by the focusmanager
             if self.parent.onSwitchFocus then
                 self.parent:onSwitchFocus(self)
+            elseif (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+                do end -- luacheck: ignore 541
             else
                 self:onShowKeyboard()
             end
@@ -584,6 +586,17 @@ function InputText:focus()
     self._frame_textwidget.color = Blitbuffer.COLOR_BLACK
 end
 
+-- NOTE: This key_map can be used for keyboards without numeric keys, such as on Kindles with keyboards. It is loosely 'inspired' by the symbol layer on the virtual keyboard but,
+--       we have taken the liberty of making some adjustments since:
+--       * K3 does not have numeric keys (top row) and,
+--       * we want to prioritise the most-likely-used characters for "style tweaks" and note taking
+--       (in English, sorry everybody else, there are just not enough keys)
+local sym_key_map = {
+    ["Q"] = "!", ["W"] = "?", ["E"] = "-", ["R"] = "_", ["T"] = "%", ["Y"] = "=", ["U"] = "7", ["I"] = "8",  ["O"] = "9", ["P"] = "0",
+    ["A"] = "<", ["S"] = ">", ["D"] = "(", ["F"] = ")", ["G"] = "#", ["H"] = "'", ["J"] = "4", ["K"] = "5",  ["L"] = "6",
+    ["Z"] = "{", ["X"] = "}", ["C"] = "[", ["V"] = "]", ["B"] = "1", ["N"] = "2", ["M"] = "3", ["."] = ":", ["AA"] = ";",
+}
+
 -- Handle real keypresses from a physical keyboard, even if the virtual keyboard
 -- is shown. Mostly likely to be in the emulator, but could be Android + BT
 -- keyboard, or a "coder's keyboard" Android input method.
@@ -609,9 +622,11 @@ function InputText:onKeyPress(key)
             self:leftChar()
         elseif key["Right"] then
             self:rightChar()
-        elseif key["Up"] then
+        -- NOTE: When we are not showing the virtual keyboard, let focusmanger handle up/down keys, as they  are used to directly move around the widget
+        --       seemlessly in and out of text fields and onto virtual buttons like `[cancel] [search dict]`, no need to unfocus first.
+        elseif key["Up"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
             self:upLine()
-        elseif key["Down"] then
+        elseif key["Down"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
             self:downLine()
         elseif key["End"] then
             self:goToEnd()
@@ -621,7 +636,8 @@ function InputText:onKeyPress(key)
             self:addChars("\n")
         elseif key["Tab"] then
             self:addChars("    ")
-        elseif key["Back"] then
+        -- as stated before, we also don't need to unfocus when there is no keyboard, one less key press to exit widgets, yay!
+        elseif key["Back"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
             if self.focused then
                 self:unfocus()
             end
@@ -641,8 +657,12 @@ function InputText:onKeyPress(key)
     end
     if not handled and (key["ScreenKB"] or key["Shift"]) then
         handled = true
-        if key["Back"] then
+        if key["Back"] and Device:hasScreenKB() then
             self:delChar()
+        elseif key["Back"] and Device:hasSymKey() then
+            self:delToStartOfLine()
+        elseif key["Del"] and Device:hasSymKey() then
+            self:delWord()
         elseif key["Left"] then
             self:leftChar()
         elseif key["Right"] then
@@ -664,6 +684,15 @@ function InputText:onKeyPress(key)
             handled = false
         end
     end
+    if not handled and Device:hasSymKey() then
+        local symkey = sym_key_map[key.key]
+        -- Do not match Shift + Sym + 'Alphabet keys'
+        if symkey and key.modifiers["Sym"] and not key.modifiers["Shift"] then
+            self:addChars(symkey)
+        else
+            handled = false
+        end
+    end
     if not handled and Device:hasDPad() then
         -- FocusManager may turn on alternative key maps.
         -- These key map maybe single text keys.
@@ -680,6 +709,10 @@ function InputText:onKeyPress(key)
         -- if it is single text char, insert it
         local key_code = key.key -- is in upper case
         if not Device.isSDL() and #key_code == 1 then
+            if key["Shift"] and key["Alt"] and key["G"] then
+                -- Allow the screenshot keyboard-shortcut to work when focus is on InputText
+                return false
+            end
             if not key["Shift"] then
                 key_code = string.lower(key_code)
             end

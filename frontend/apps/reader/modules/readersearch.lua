@@ -3,6 +3,7 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local Notification = require("ui/widget/notification")
@@ -10,7 +11,6 @@ local SpinWidget = require("ui/widget/spinwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 local C_ = _.pgettext
@@ -19,7 +19,7 @@ local T = require("ffi/util").template
 
 local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
 
-local ReaderSearch = WidgetContainer:extend{
+local ReaderSearch = InputContainer:extend{
     direction = 0, -- 0 for search forward, 1 for search backward
     case_insensitive = true, -- default to case insensitive
 
@@ -41,6 +41,8 @@ local ReaderSearch = WidgetContainer:extend{
 }
 
 function ReaderSearch:init()
+    self:registerKeyEvents()
+
      -- number of words before and after the search string in All search results
     self.findall_nb_context_words = G_reader_settings:readSetting("fulltext_search_nb_context_words") or 5
     self.findall_results_per_page = G_reader_settings:readSetting("fulltext_search_results_per_page") or 10
@@ -80,6 +82,13 @@ SRELL_ERROR_CODES[108] = _("Invalid character range")
 SRELL_ERROR_CODES[110] = _("No preceding expression in repetition.")
 SRELL_ERROR_CODES[111] = _("Expression too complex, some hits will not be shown.")
 SRELL_ERROR_CODES[666] = _("Expression may lead to an extremely long search time.")
+
+function ReaderSearch:registerKeyEvents()
+    if Device:hasKeyboard() then
+        self.key_events.ShowFulltextSearchInputBlank = { { "Alt", "Shift", "S" }, event = "ShowFulltextSearchInput", args = "" }
+        self.key_events.ShowFulltextSearchInputRecent = { { "Alt", "S" }, event = "ShowFulltextSearchInput" }
+    end
+end
 
 function ReaderSearch:addToMainMenu(menu_items)
     menu_items.fulltext_search_settings = {
@@ -244,7 +253,7 @@ function ReaderSearch:searchCallback(reverse, text)
     end
 end
 
-function ReaderSearch:onShowFulltextSearchInput()
+function ReaderSearch:onShowFulltextSearchInput(search_string)
     local backward_text = "◁"
     local forward_text = "▷"
     if BD.mirroredUILayout() then
@@ -253,7 +262,7 @@ function ReaderSearch:onShowFulltextSearchInput()
     self.input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
         width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.9),
-        input = self.last_search_text or self.ui.doc_settings:readSetting("fulltext_search_last_search_text"),
+        input = search_string or self.last_search_text or self.ui.doc_settings:readSetting("fulltext_search_last_search_text"),
         buttons = {
             {
                 {
@@ -310,6 +319,7 @@ function ReaderSearch:onShowFulltextSearchInput()
 
     UIManager:show(self.input_dialog)
     self.input_dialog:onShowKeyboard()
+    return true
 end
 
 function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitive)

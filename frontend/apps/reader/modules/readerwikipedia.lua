@@ -1,5 +1,6 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local Device = require("device")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -28,10 +29,17 @@ local ReaderWikipedia = ReaderDictionary:extend{
 }
 
 function ReaderWikipedia:init()
+    self:registerKeyEvents()
     self.wiki_languages = {}
     self.ui.menu:registerToMainMenu(self)
     if not wikipedia_history then
         wikipedia_history = LuaData:open(DataStorage:getSettingsDir() .. "/wikipedia_history.lua", "WikipediaHistory")
+    end
+end
+
+function ReaderWikipedia:registerKeyEvents()
+    if Device:hasKeyboard() then
+        self.key_events.ShowWikipediaLookup = { { "Alt", "W" } }
     end
 end
 

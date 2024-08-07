@@ -1886,7 +1886,7 @@ function TextBoxWidget:moveCursorDown()
 end
 
 function TextBoxWidget:moveCursorHome()
-    self:moveCursorToCharPos(self.vertical_string_list[self.current_line_num].offset)
+    self:moveCursorToCharPos(self.vertical_string_list[self.current_line_num] and self.vertical_string_list[self.current_line_num].offset or #self.charlist)
 end
 
 function TextBoxWidget:moveCursorEnd()

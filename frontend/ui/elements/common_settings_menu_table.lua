@@ -463,7 +463,8 @@ common_settings.back_in_reader = {
         genGenericMenuEntry(_("Go to previous read page"), "back_in_reader", "previous_read_page"),
     },
 }
-if Device:hasKeyboard() then
+-- Kindle keyboard does not have a 'Backspace' key
+if Device:hasKeyboard() and not Device:hasSymKey() then
     common_settings.backspace_as_back = {
         text = _("Backspace works as back button"),
         checked_func = function()

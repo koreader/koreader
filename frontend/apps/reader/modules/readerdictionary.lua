@@ -6,6 +6,7 @@ local DictQuickLookup = require("ui/widget/dictquicklookup")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local JSON = require("json")
 local KeyValuePage = require("ui/widget/keyvaluepage")
@@ -15,7 +16,6 @@ local NetworkMgr = require("ui/network/manager")
 local SortWidget = require("ui/widget/sortwidget")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffi = require("ffi")
 local C = ffi.C
 local ffiUtil  = require("ffi/util")
@@ -60,7 +60,7 @@ local function getIfosInDir(path)
     return ifos
 end
 
-local ReaderDictionary = WidgetContainer:extend{
+local ReaderDictionary = InputContainer:extend{
     data_dir = nil,
     lookup_msg = _("Searching dictionary for:\n%1"),
 }
@@ -99,6 +99,8 @@ local function getDictionaryFixHtmlFunc(path)
 end
 
 function ReaderDictionary:init()
+    self:registerKeyEvents()
+
     self.disable_lookup_history = G_reader_settings:isTrue("disable_lookup_history")
     self.dicts_order = G_reader_settings:readSetting("dicts_order", {})
     self.dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {})
@@ -159,6 +161,12 @@ function ReaderDictionary:init()
 
     if not lookup_history then
         lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", "LookupHistory")
+    end
+end
+
+function ReaderDictionary:registerKeyEvents()
+    if Device:hasKeyboard() then
+        self.key_events.ShowDictionaryLookup = { { "Alt", "D" } }
     end
 end
 
