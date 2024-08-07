@@ -160,8 +160,7 @@ function ReaderUI:init()
         view = self.view,
         ui = self
     })
-    -- (legacy, and defunct) rotation controller
-    --- @fixme: Tripping this would break rendering, c.f., `Document:renderPage`
+    -- rotation controller
     self:registerModule("rotation", ReaderRotation:new{
         dialog = self.dialog,
         view = self.view,
