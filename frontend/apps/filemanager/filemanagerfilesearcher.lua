@@ -290,13 +290,16 @@ function FileSearcher:showFileDialog(item)
     local buttons = {}
     if item.is_file then
         local is_currently_opened = self.ui.document and self.ui.document.file == file
-        if DocumentRegistry:hasProvider(file) or DocSettings:hasSidecarFile(file) then
+        local has_provider = DocumentRegistry:hasProvider(file)
+        local has_sidecar = DocSettings:hasSidecarFile(file)
+        local doc_settings_or_file = is_currently_opened and self.ui.doc_settings
+            or (has_sidecar and DocSettings:open(file) or file)
+        if has_provider or has_sidecar then
             bookinfo = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
-            local doc_settings_or_file = is_currently_opened and self.ui.doc_settings or file
             table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_callback))
             table.insert(buttons, {}) -- separator
             table.insert(buttons, {
-                filemanagerutil.genResetSettingsButton(file, close_dialog_callback, is_currently_opened),
+                filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_callback, is_currently_opened),
                 self.ui.collections:genAddToCollectionButton(file, close_dialog_callback, update_item_callback),
             })
         end
@@ -314,7 +317,7 @@ function FileSearcher:showFileDialog(item)
                     FileManager:showDeleteFileDialog(file, post_delete_callback)
                 end,
             },
-            filemanagerutil.genBookInformationButton(file, bookinfo, close_dialog_callback),
+            filemanagerutil.genBookInformationButton(doc_settings_or_file, bookinfo, close_dialog_callback),
         })
     end
     table.insert(buttons, {
