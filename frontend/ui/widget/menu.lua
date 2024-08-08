@@ -191,7 +191,7 @@ function MenuItem:init()
         text_ellipsis_mandatory_padding = Size.span.horizontal_small
     end
     local mandatory_widget = TextWidget:new{
-        text = mandatory or "",
+        text = tostring(mandatory) or "",
         face = self.info_face,
         bold = self.bold,
         fgcolor = mandatory_dim and Blitbuffer.COLOR_DARK_GRAY or nil,
