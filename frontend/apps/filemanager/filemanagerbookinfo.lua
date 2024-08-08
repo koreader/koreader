@@ -154,7 +154,7 @@ function BookInfo:show(doc_settings_or_file, book_props)
     -- pages
     local is_doc = self.document and true or false
     table.insert(kv_pairs, { self.prop_text["pages"], book_props["pages"] or _("N/A"), separator = true })
-    
+
     -- Summary section
     local summary = has_sidecar and doc_settings_or_file:readSetting("summary") or {}
     local rating = summary.rating or 0
