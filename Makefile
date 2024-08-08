@@ -167,9 +167,6 @@ endif
 
 clean: base-clean
 	rm -rf $(INSTALL_DIR)
-ifeq ($(TARGET), android)
-	$(MAKE) -C $(CURDIR)/platform/android/luajit-launcher clean
-endif
 
 distclean: clean base-distclean
 	$(MAKE) -C doc clean
