@@ -145,35 +145,28 @@ coverage: $(INSTALL_DIR)/koreader/.luacov
 		+$$(($$(grep -nm1 -e "^Summary$$" luacov.report.out|cut -d: -f1)-1)) \
 		luacov.report.out
 
-ifeq (,$(wildcard $(KOR_BASE)/Makefile))
-$(KOR_BASE)/Makefile: fetchthirdparty
-endif
-ifeq (,$(wildcard $(KOR_BASE)/Makefile.defs))
-$(KOR_BASE)/Makefile.defs: fetchthirdparty
+ifeq (,$(wildcard $(KOR_BASE)/Makefile $(KOR_BASE)/Makefile.defs))
+$(KOR_BASE)/Makefile $(KOR_BASE)/Makefile.defs: fetchthirdparty
+	# Need a recipe, even if empty, or make won't know how to remake `base-all`.
 endif
 
 fetchthirdparty:
-	git submodule init
-	git submodule sync
+	git submodule sync --recursive
 ifneq (,$(CI))
-	git submodule update --depth 1 --jobs 3
+	git submodule update --depth 1 --jobs 3 --init --recursive
 else
 	# Force shallow clones of submodules configured as such.
-	git submodule update --jobs 3 --depth 1 $(shell \
+	git submodule update --jobs 3 --depth 1 --init $(shell \
 		git config --file=.gitmodules --name-only --get-regexp '^submodule\.[^.]+\.shallow$$' true \
 		| sed 's/\.shallow$$/.path/' \
 		| xargs -n1 git config --file=.gitmodules \
 		)
 	# Update the rest.
-	git submodule update --jobs 3
+	git submodule update --jobs 3 --init --recursive
 endif
-	$(MAKE) -C $(KOR_BASE) fetchthirdparty
 
 clean: base-clean
 	rm -rf $(INSTALL_DIR)
-ifeq ($(TARGET), android)
-	$(MAKE) -C $(CURDIR)/platform/android/luajit-launcher clean
-endif
 
 distclean: clean base-distclean
 	$(MAKE) -C doc clean
