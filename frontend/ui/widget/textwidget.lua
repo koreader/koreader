@@ -178,7 +178,7 @@ function TextWidget:updateSize()
 end
 dbg:guard(TextWidget, "updateSize",
     function(self)
-        assert(type(self.text) == "string",
+        assert(type(self.text) == "string" or type(self.text) == "number",
             "Wrong text type (expected string)")
     end)
 
