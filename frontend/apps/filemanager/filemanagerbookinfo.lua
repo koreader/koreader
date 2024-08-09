@@ -21,6 +21,7 @@ local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
+local Screen = Device.screen
 local T = require("ffi/util").template
 
 local BookInfo = WidgetContainer:extend{
@@ -169,12 +170,9 @@ function BookInfo:show(doc_settings_or_file, book_props)
     -- Page section
     if is_doc then
         local lines_nb, words_nb = self.ui.view:getCurrentPageLineWordCounts()
-        if lines_nb == 0 then
-            lines_nb = _("N/A")
-            words_nb = _("N/A")
-        end
-        table.insert(kv_pairs, { _("Page lines:"), lines_nb })
-        table.insert(kv_pairs, { _("Page words:"), words_nb })
+        local text = lines_nb == 0 and _("number of lines and words not available")
+            or T(N_("1 line", "%1 lines", lines_nb), lines_nb) .. ", " .. T(N_("1 word", "%1 words", words_nb), words_nb)
+        table.insert(kv_pairs, { _("Current page:"), text })
     end
 
     local KeyValuePage = require("ui/widget/keyvaluepage")
@@ -624,7 +622,9 @@ function BookInfo:editSummary(doc_settings_or_file, book_props)
                 no_vertical_sep = true,
                 callback = function()
                     UIManager:close(input_dialog)
-                    summary.rating = i
+                    local note = input_dialog:getInputText()
+                    summary.note = note ~= "" and note or nil
+                    summary.rating = (i == 1 and summary.rating == 1) and 0 or i
                     doc_settings_or_file = filemanagerutil.saveSummary(doc_settings_or_file, summary)
                     self.summary_updated = true
                     self.kvp_widget:onClose()
@@ -636,7 +636,7 @@ function BookInfo:editSummary(doc_settings_or_file, book_props)
     input_dialog = InputDialog:new{
         title = _("Edit book review"),
         input = summary.note,
-        input_hint = _("A few words about the book"),
+        text_height = Screen:scaleBySize(150),
         allow_newline = true,
         buttons = {
             rating_buttons_row,
