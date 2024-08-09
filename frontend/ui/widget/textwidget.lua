@@ -179,7 +179,7 @@ end
 dbg:guard(TextWidget, "updateSize",
     function(self)
         assert(type(self.text) == "string" or type(self.text) == "number",
-            "Wrong text type (expected string)")
+            "Wrong self.text type (expected string or number)")
     end)
 
 function TextWidget:_measureWithXText()
@@ -324,8 +324,8 @@ function TextWidget:setText(text)
 end
 dbg:guard(TextWidget, "setText",
     function(self, text)
-        assert(type(text) == "string",
-            "Wrong text type (expected string)")
+        assert(type(text) == "string" or type(text) == "number",
+            "Wrong text type (expected string or number)")
     end)
 
 function TextWidget:setMaxWidth(max_width)
