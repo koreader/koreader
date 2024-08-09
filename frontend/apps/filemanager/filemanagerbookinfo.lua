@@ -636,7 +636,7 @@ function BookInfo:editSummary(doc_settings_or_file, book_props)
     input_dialog = InputDialog:new{
         title = _("Edit book review"),
         input = summary.note,
-        text_height = Screen:scaleBySize(150),
+        text_height = Screen:scaleBySize(160),
         allow_newline = true,
         buttons = {
             rating_buttons_row,
