@@ -428,14 +428,16 @@ function AutoWarmth:setFrontlight(enable, keep_user_toggle)
         return
     end
 
-    if enable then
-        Powerd:turnOnFrontlight()
-        AutoWarmth.fl_turned_off = false
-    else
-        Powerd:turnOffFrontlight()
-        AutoWarmth.fl_turned_off = true
-        UIManager:broadcastEvent(Event:new("FrontlightTurnedOff")) -- used e.g. in AutoDim
-    end
+    UIManager:scheduleIn(0.01, function()
+        if enable then
+            Powerd:turnOnFrontlight()
+            AutoWarmth.fl_turned_off = false
+        else
+            Powerd:turnOffFrontlight()
+            AutoWarmth.fl_turned_off = true
+            UIManager:broadcastEvent(Event:new("FrontlightTurnedOff")) -- used e.g. in AutoDim
+        end
+    end)
 end
 
 -- toggles Frontlight on or off, depending on `now_s`
