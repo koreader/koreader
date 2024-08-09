@@ -114,19 +114,15 @@ function filemanagerutil.getStatus(file)
     return "new"
 end
 
--- Set a document status ("reading", "complete", or "abandoned")
-function filemanagerutil.setStatus(doc_settings_or_file, status)
+function filemanagerutil.saveSummary(doc_settings_or_file, summary)
     -- In case the book doesn't have a sidecar file, this'll create it
-    local doc_settings
-    if type(doc_settings_or_file) == "table" then
-        doc_settings = doc_settings_or_file
-    else
-        doc_settings = DocSettings:open(doc_settings_or_file)
+    if type(doc_settings_or_file) ~= "table" then
+        doc_settings_or_file = DocSettings:open(doc_settings_or_file)
     end
-    local summary = doc_settings:readSetting("summary", {})
-    summary.status = status
     summary.modified = os.date("%Y-%m-%d", os.time())
-    doc_settings:flush()
+    doc_settings_or_file:saveSetting("summary", summary)
+    doc_settings_or_file:flush()
+    return doc_settings_or_file
 end
 
 function filemanagerutil.statusToString(status)
@@ -158,7 +154,7 @@ function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callba
             enabled = status ~= to_status,
             callback = function()
                 summary.status = to_status
-                filemanagerutil.setStatus(doc_settings_or_file, to_status)
+                filemanagerutil.saveSummary(doc_settings_or_file, summary)
                 UIManager:broadcastEvent(Event:new("DocSettingsItemsChanged", file, { summary = summary })) -- for CoverBrowser
                 caller_callback()
             end,
@@ -260,14 +256,14 @@ function filemanagerutil.genShowFolderButton(file, caller_callback, button_disab
     }
 end
 
-function filemanagerutil.genBookInformationButton(file, book_props, caller_callback, button_disabled)
+function filemanagerutil.genBookInformationButton(doc_settings_or_file, book_props, caller_callback, button_disabled)
     return {
         text = _("Book information"),
         enabled = not button_disabled,
         callback = function()
             caller_callback()
             local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
-            FileManagerBookInfo:show(file, book_props and FileManagerBookInfo.extendProps(book_props))
+            FileManagerBookInfo:show(doc_settings_or_file, book_props and FileManagerBookInfo.extendProps(book_props))
         end,
     }
 end

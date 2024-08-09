@@ -115,7 +115,7 @@ function ButtonTable:init()
             end
             local button_dim = button:getSize()
             local vertical_sep = LineWidget:new{
-                background = Blitbuffer.COLOR_GRAY,
+                background = btn_entry.no_vertical_sep and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_GRAY,
                 dimen = Geom:new{
                     w = self.sep_width,
                     h = button_dim.h,

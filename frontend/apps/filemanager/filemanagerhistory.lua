@@ -219,7 +219,7 @@ function FileManagerHistory:onMenuHold(item)
     })
     table.insert(buttons, {
         filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback, item.dim),
-        filemanagerutil.genBookInformationButton(file, self.book_props, close_dialog_callback, item.dim),
+        filemanagerutil.genBookInformationButton(doc_settings_or_file, self.book_props, close_dialog_callback, item.dim),
     })
     table.insert(buttons, {
         filemanagerutil.genBookCoverButton(file, self.book_props, close_dialog_callback, item.dim),
