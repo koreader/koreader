@@ -1197,6 +1197,7 @@ end
 -- NOTE: We overload this to make sure checkUnexpectedWakeup doesn't trip *before* the newly scheduled suspend
 function Kobo:rescheduleSuspend()
     UIManager:unschedule(self.suspend)
+    UIManager:unschedule(self._doSuspend)
     UIManager:unschedule(self.checkUnexpectedWakeup)
     UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
 end
@@ -1318,6 +1319,12 @@ function Kobo:standby(max_duration)
 end
 
 function Kobo:suspend()
+    -- If there's a _doSuspend still scheduled, something is going seriously wrong
+    -- (e.g., we caught multiple Suspend events without a Resume in between)...
+    if UIManager:unschedule(self._doSuspend) then
+        logger.warn("Kobo suspend: cancelled a pending suspend request via *suspend*. This most likely is a bug.")
+    end
+
     -- On MTK, any suspend/standby attempt while plugged-in will hang the kernel... -_-"
     -- NOTE: isCharging is still true while isCharged!
     if self:isMTK() and self.powerd:isCharging() then
@@ -1365,9 +1372,12 @@ function Kobo:suspend()
 
     -- NOTE: As nonsensical as it looks given that the above just flips a global,
     --       I have traumatic memories of things going awry if we don't sleep between the two writes...
-    ffiUtil.sleep(2)
-    logger.dbg("Kobo suspend: waited for 2s because of reasons...")
+    logger.dbg("Kobo suspend: waiting for 2s because of reasons...")
+    -- We keep polling for input in order to be able to catch power events with extremely unlucky timing (#12325)...
+    UIManager:scheduleIn(2, self._doSuspend, self)
+end
 
+function Kobo:_doSuspend()
     os.execute("sync")
     logger.dbg("Kobo suspend: synced FS")
 
@@ -1389,7 +1399,7 @@ function Kobo:suspend()
     logger.dbg("Kobo suspend: asking for a suspend to RAM . . .")
     local suspend_time = time.boottime_or_realtime_coarse()
 
-    ret = ffiUtil.writeToSysfs("mem", "/sys/power/state")
+    local ret = ffiUtil.writeToSysfs("mem", "/sys/power/state")
 
     -- NOTE: At this point, we *should* be in suspend to RAM, as such,
     --       execution should only resume on wakeup...
@@ -1436,6 +1446,10 @@ function Kobo:resume()
     -- Unschedule the checkUnexpectedWakeup shenanigans.
     UIManager:unschedule(self.checkUnexpectedWakeup)
     UIManager:unschedule(self.suspend)
+    -- Cancel any pending suspend request
+    if UIManager:unschedule(self._doSuspend) then
+        logger.info("Kobo resume: cancelled a pending suspend request")
+    end
 
     -- Now that we're up, unflag subsystems for suspend...
     -- NOTE: Sets gSleep_Mode_Suspend to 0. Used as a flag throughout the
