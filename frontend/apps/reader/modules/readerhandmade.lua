@@ -117,6 +117,7 @@ function ReaderHandMade:onToggleHandmadeFlows()
     self:setupFlows()
     -- Have footer updated, so we may see this took effect
     self.view.footer:onUpdateFooter(self.view.footer_visible)
+    self.ui.annotation:setNeedsUpdateFlag()
 end
 
 function ReaderHandMade:addToMainMenu(menu_items)
@@ -259,6 +260,7 @@ Hidden flows are shown with gray or hatched background in Book map and Page brow
                                 self.ui:handleEvent(Event:new("InitScrollPageStates"))
                                 -- The footer may be visible, so have it update its dependant items
                                 self.view.footer:onUpdateFooter(self.view.footer_visible)
+                                self.ui.annotation:setNeedsUpdateFlag()
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
                                 end
@@ -282,6 +284,7 @@ Hidden flows are shown with gray or hatched background in Book map and Page brow
                                 self.ui:handleEvent(Event:new("InitScrollPageStates"))
                                 -- The footer may be visible, so have it update its dependant items
                                 self.view.footer:onUpdateFooter(self.view.footer_visible)
+                                self.ui.annotation:setNeedsUpdateFlag()
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
                                 end
@@ -552,6 +555,7 @@ function ReaderHandMade:isInHiddenFlow(pageno)
 end
 
 function ReaderHandMade:toggleHiddenFlow(pageno)
+    self.ui.annotation:setNeedsUpdateFlag()
     local idx, is_match = self:_getItemIndex(self.flow_points, pageno)
     if is_match then
         -- Just remove the item (it feels we can, and that we don't
