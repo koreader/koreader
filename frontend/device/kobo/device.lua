@@ -727,6 +727,9 @@ function Kobo:init()
         end
     end
 
+    -- Just to be safe, we absolutely don't want to call open on this, so just use stat
+    self.has_wakeup_count = util.pathExists("/sys/power/wakeup_count")
+
     -- Automagic sysfs discovery
     if self.automagic_sysfs then
         -- Battery
@@ -1337,22 +1340,10 @@ function Kobo:suspend()
     -- So, unless that changes, unconditionally disable it.
 
     --[[
-    local f, re, err_msg, err_code
-    local has_wakeup_count = false
-    f = io.open("/sys/power/wakeup_count", "re")
-    if f ~= nil then
-        f:close()
-        has_wakeup_count = true
-    end
-
-    -- Clear the kernel ring buffer... (we're missing a proper -C flag...)
-    --dmesg -c >/dev/null
-
     -- Go to sleep
-    local curr_wakeup_count
-    if has_wakeup_count then
-        curr_wakeup_count = "$(cat /sys/power/wakeup_count)"
-        logger.dbg("Kobo suspend: Current WakeUp count:", curr_wakeup_count)
+    if self.has_wakeup_count then
+        self.curr_wakeup_count = self.powerd.read_int_file("/sys/power/wakeup_count")
+        logger.dbg("Kobo suspend: Current WakeUp count:", self.curr_wakeup_count)
     end
     -]]
 
@@ -1366,6 +1357,8 @@ function Kobo:suspend()
         logger.warn("Kobo suspend: the kernel refused to flag subsystems for suspend!")
     end
 
+    -- NOTE: As nonsensical as it looks given that the above just flips a global,
+    --       I have traumatic memories of things going awry if we don't sleep between the two writes...
     ffiUtil.sleep(2)
     logger.dbg("Kobo suspend: waited for 2s because of reasons...")
 
@@ -1373,20 +1366,13 @@ function Kobo:suspend()
     logger.dbg("Kobo suspend: synced FS")
 
     --[[
-    if has_wakeup_count then
-        f = io.open("/sys/power/wakeup_count", "we")
-        if not f then
-            logger.err("cannot open /sys/power/wakeup_count")
-            return false
+    if self.has_wakeup_count then
+        local ret = ffiUtil.writeToSysfs(self.curr_wakeup_count, "/sys/power/wakeup_count")
+        if ret then
+            logger.dbg("Kobo suspend: WakeUp count matched")
+        else
+            logger.err("Kobo suspend: WakeUp count mismatch!")
         end
-        re, err_msg, err_code = f:write(tostring(curr_wakeup_count), "\n")
-        logger.dbg("Kobo suspend: wrote WakeUp count:", curr_wakeup_count)
-        if not re then
-            logger.err("Kobo suspend: failed to write WakeUp count:",
-                       err_msg,
-                       err_code)
-        end
-        f:close()
     end
     --]]
 
@@ -1427,12 +1413,10 @@ function Kobo:suspend()
     --       /sys/kernel/debug/suspend_stats & /sys/kernel/debug/wakeup_sources
 
     --[[
-    if has_wakeup_count then
-        logger.dbg("wakeup count: $(cat /sys/power/wakeup_count)")
+    if self.has_wakeup_count then
+        self.curr_wakeup_count = self.powerd.read_int_file("/sys/power/wakeup_count")
+        logger.dbg("Kobo suspend: WakeUp count on resume:", self.curr_wakeup_count)
     end
-
-    -- Print tke kernel log since our attempt to sleep...
-    --dmesg -c
     --]]
 
     -- NOTE: We unflag /sys/power/state-extended in Kobo:resume() to keep

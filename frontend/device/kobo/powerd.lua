@@ -1,7 +1,7 @@
 local BasePowerD = require("device/generic/powerd")
 local Math = require("optmath")
 local NickelConf = require("device/kobo/nickel_conf")
-local SysfsLight = require ("device/sysfs_light")
+local SysfsLight = require("device/sysfs_light")
 local UIManager
 local logger = require("logger")
 local RTC = require("ffi/rtc")
