@@ -122,9 +122,13 @@ function ReaderAnnotation:onReadSettings(config)
             config:delSetting("annotations_externally_modified")
         end
     else -- first run
-        self.ui:registerPostReaderReadyCallback(function()
+        if self.ui.rolling then
+            self.ui:registerPostInitCallback(function()
+                self:migrateToAnnotations(config)
+            end)
+        else
             self:migrateToAnnotations(config)
-        end)
+        end
     end
 end
 
