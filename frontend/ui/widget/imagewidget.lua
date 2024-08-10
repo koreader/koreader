@@ -480,6 +480,10 @@ function ImageWidget:getPanByCenterRatio(x, y)
 end
 
 function ImageWidget:panBy(x, y)
+    if not self._bb then
+        return
+    end
+
     -- update center ratio from new offset
     self.center_x_ratio = (x + self._offset_x + self.width/2) / self._bb_w
     self.center_y_ratio = (y + self._offset_y + self.height/2) / self._bb_h
@@ -595,8 +599,10 @@ end
 -- BlitBuffer zombies
 function ImageWidget:free()
     --print("ImageWidget:free on", self, "for BB?", self._bb, self._bb_disposable)
-    if self._bb and self._bb_disposable and self._bb.free then
-        self._bb:free()
+    if self._bb then
+        if self._bb_disposable and self._bb.free then
+            self._bb:free()
+        end
         self._bb = nil
     end
     -- reset self.scale_factor to its initial value, in case
