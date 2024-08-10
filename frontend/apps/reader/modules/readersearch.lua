@@ -645,14 +645,8 @@ function ReaderSearch:onShowFindAllResults(not_cached)
             table.insert(text, item.next_text) -- append context after the word
             item.text = table.concat(text)
 
-            local pageno, pageref
-            if self.ui.rolling then
-                pageno = self.ui.document:getPageFromXPointer(item.start)
-                pageref = self.ui.annotation:getPageRef(item.start, pageno)
-            else
-                pageno = item.start
-            end
-            item.mandatory = pageref or pageno
+            local pageno = self.ui.rolling and self.ui.document:getPageFromXPointer(item.start) or item.start
+            item.mandatory = self.ui.annotation:getPageRef(item.start, pageno) or pageno
             item.mandatory_dim_func = function()
                 return pageno > self.ui:getCurrentPage()
             end
@@ -743,12 +737,9 @@ function ReaderSearch:showAllResultsMenuDialog()
         {
             {
                 text_func = function()
-                    local current_page = self.ui:getCurrentPage()
-                    if self.ui.rolling then
-                        local current_xp = self.ui.rolling:getLastProgress()
-                        current_page = self.ui.annotation:getPageRef(current_xp, current_page) or current_page
-                    end
-                    return T(_("Current page: %1"), current_page)
+                    local pn = self.ui:getCurrentPage()
+                    local pn_or_xp = self.ui.rolling and self.ui.rolling:getLastProgress() or pn
+                    return T(_("Current page: %1"), self.ui.annotation:getPageRef(pn_or_xp, pn) or pn)
                 end,
                 callback = function()
                     UIManager:close(button_dialog)
