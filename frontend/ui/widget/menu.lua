@@ -1127,6 +1127,10 @@ end
 
 -- merge TitleBar layout into self FocusManager layout
 function Menu:mergeTitleBarIntoLayout()
+    if Device:hasSymKey() or Device:hasScreenKB() then
+        -- Title bar items can be accessed through key mappings on kindle
+        return
+    end
     local menu_item_layout_start_row = 1
     local titlebars = {self.title_bar, self.outer_title_bar}
     for _, v in ipairs(titlebars) do
