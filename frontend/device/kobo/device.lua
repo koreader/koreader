@@ -1201,6 +1201,12 @@ function Kobo:rescheduleSuspend()
     UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
 end
 
+function Kobo:scheduleUnexpectedWakeupGuard()
+    self.unexpected_wakeup_count = self.unexpected_wakeup_count + 1
+    logger.dbg("Kobo suspend: scheduling unexpected wakeup guard")
+    UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
+end
+
 function Kobo:checkUnexpectedWakeup()
     -- Just in case another event like SleepCoverClosed also scheduled a suspend
     UIManager:unschedule(self.suspend)
@@ -1319,10 +1325,7 @@ function Kobo:suspend()
 
         -- Do the usual scheduling dance, so we get a chance to fire the UnexpectedWakeupLimit event...
         UIManager:unschedule(self.checkUnexpectedWakeup)
-        self.unexpected_wakeup_count = self.unexpected_wakeup_count + 1
-        logger.dbg("Kobo suspend: scheduling unexpected wakeup guard")
-        UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
-
+        self:scheduleUnexpectedWakeupGuard()
         return
     end
 
@@ -1354,7 +1357,10 @@ function Kobo:suspend()
     if ret then
         logger.dbg("Kobo suspend: successfully asked the kernel to put subsystems to sleep")
     else
-        logger.warn("Kobo suspend: the kernel refused to flag subsystems for suspend!")
+        logger.err("Kobo suspend: the kernel refused to flag subsystems for suspend, aborting this attempt!")
+        -- We'd be going to standby instead of suspend, so, just try again later.
+        self:scheduleUnexpectedWakeupGuard()
+        return
     end
 
     -- NOTE: As nonsensical as it looks given that the above just flips a global,
@@ -1372,8 +1378,10 @@ function Kobo:suspend()
             logger.dbg("Kobo suspend: WakeUp count matched")
         else
             logger.err("Kobo suspend: WakeUp count mismatch, aborting this suspend attempt!")
-            -- TODO: This means that there was at least one wakeup event since our read,
-            --       abort this attempt (i.e., don't write to state) and just schedule the wakeup guard.
+            -- This means that there was at least one wakeup event since our read,
+            -- abort this attempt (i.e., don't write to state for now) and just schedule the wakeup guard.
+            self:scheduleUnexpectedWakeupGuard()
+            return
         end
     end
     --]]
@@ -1418,9 +1426,7 @@ function Kobo:suspend()
     --       things tidy and easier to follow
 
     -- Kobo:resume() will reset unexpected_wakeup_count and unschedule the check to signal a sane wakeup.
-    self.unexpected_wakeup_count = self.unexpected_wakeup_count + 1
-    logger.dbg("Kobo suspend: scheduling unexpected wakeup guard")
-    UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
+    self:scheduleUnexpectedWakeupGuard()
 end
 
 function Kobo:resume()
