@@ -1371,7 +1371,9 @@ function Kobo:suspend()
         if ret then
             logger.dbg("Kobo suspend: WakeUp count matched")
         else
-            logger.err("Kobo suspend: WakeUp count mismatch!")
+            logger.err("Kobo suspend: WakeUp count mismatch, aborting this suspend attempt!")
+            -- TODO: This means that there was at least one wakeup event since our read,
+            --       abort this attempt (i.e., don't write to state) and just schedule the wakeup guard.
         end
     end
     --]]
@@ -1411,13 +1413,6 @@ function Kobo:suspend()
     --       cf. nickel_suspend_strace.txt for more details.
     -- NOTE: On recent enough kernels, with debugfs enabled and mounted, see also
     --       /sys/kernel/debug/suspend_stats & /sys/kernel/debug/wakeup_sources
-
-    --[[
-    if self.has_wakeup_count then
-        self.curr_wakeup_count = self.powerd.read_int_file("/sys/power/wakeup_count")
-        logger.dbg("Kobo suspend: WakeUp count on resume:", self.curr_wakeup_count)
-    end
-    --]]
 
     -- NOTE: We unflag /sys/power/state-extended in Kobo:resume() to keep
     --       things tidy and easier to follow
