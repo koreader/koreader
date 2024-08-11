@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [[ "${BASH_VERSINFO[0]}" -lt 4 ]]; then
+    echo "incompatible bash version: ${BASH_VERSION}, need >=4.0"
+    exit 1
+fi
+
 ANSI_GREEN="\033[32;1m"
 ANSI_RED="\033[31;1m"
 
