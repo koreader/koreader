@@ -1476,7 +1476,7 @@ function Menu:onLeftButtonHold() -- to be overriden and implemented by the calle
 end
 
 function Menu:getFirstVisibleItemIndex()
-    return self.item_group[1].idx
+    return self.item_group[1] and self.item_group[1].idx or 1
 end
 
 function Menu.getItemFontSize(perpage)
