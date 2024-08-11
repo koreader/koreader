@@ -299,7 +299,7 @@ function FileManager:setupLayout()
                         file_manager:showOpenWithDialog(file)
                     end,
                 },
-                filemanagerutil.genBookInformationButton(doc_settings_or_file or file, self.book_props, close_dialog_callback),
+                filemanagerutil.genBookInformationButton(doc_settings_or_file, self.book_props, close_dialog_callback),
             })
             if has_provider then
                 table.insert(buttons, {
