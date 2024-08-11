@@ -23,6 +23,7 @@ end
 -- Keep this in perfect chronological order, with a reference to the PR that implemented the change.
 
 -- NOTE: From 20220914, as we may need it earlier when loading stuff that depends on the font cache
+--       (Basically, anything that pulls in widgets, because we need it for ui/font).
 local function drop_fontcache()
     local cache_path = DataStorage:getDataDir() .. "/cache/fontlist"
     local ok, err = os.remove(cache_path .. "/fontinfo.dat")
