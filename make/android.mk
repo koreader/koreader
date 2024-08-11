@@ -34,6 +34,7 @@ update: all
 	rm -rfv $(ANDROID_LIBS)
 	# APK version
 	mkdir -p $(ANDROID_ASSETS)/module $(ANDROID_LIBS)
+	echo $(VERSION) >$(ANDROID_ASSETS)/module/version.txt
 	# We need strip the version, or versioned
 	# libraries won't be included in the APK.
 	for src in $(INSTALL_DIR)/koreader/libs/*; do \
