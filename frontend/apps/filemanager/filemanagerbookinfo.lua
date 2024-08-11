@@ -21,6 +21,7 @@ local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
+local Screen = Device.screen
 local T = require("ffi/util").template
 
 local BookInfo = WidgetContainer:extend{
@@ -37,7 +38,7 @@ local BookInfo = WidgetContainer:extend{
     prop_text = {
         cover        = _("Cover image:"),
         title        = _("Title:"),
-        authors      = _("Authors:"),
+        authors      = _("Author(s):"),
         series       = _("Series:"),
         series_index = _("Series index:"),
         language     = _("Language:"),
@@ -45,6 +46,7 @@ local BookInfo = WidgetContainer:extend{
         description  = _("Description:"),
         pages        = _("Pages:"),
     },
+    rating_max = 5,
 }
 
 function BookInfo:init()
@@ -63,11 +65,14 @@ function BookInfo:addToMainMenu(menu_items)
 end
 
 -- Shows book information.
-function BookInfo:show(file, book_props)
+function BookInfo:show(doc_settings_or_file, book_props)
     self.prop_updated = nil
+    self.summary_updated = nil
     local kv_pairs = {}
 
     -- File section
+    local has_sidecar = type(doc_settings_or_file) == "table"
+    local file = has_sidecar and doc_settings_or_file:readSetting("doc_path") or doc_settings_or_file
     local folder, filename = util.splitFilePathName(file)
     local __, filetype = filemanagerutil.splitFileNameType(filename)
     local attr = lfs.attributes(file)
@@ -149,17 +154,25 @@ function BookInfo:show(file, book_props)
     end
     -- pages
     local is_doc = self.document and true or false
-    table.insert(kv_pairs, { self.prop_text["pages"], book_props["pages"] or _("N/A"), separator = is_doc })
+    table.insert(kv_pairs, { self.prop_text["pages"], book_props["pages"] or _("N/A"), separator = true })
+
+    -- Summary section
+    local summary = has_sidecar and doc_settings_or_file:readSetting("summary") or {}
+    local rating = summary.rating or 0
+    local summary_hold_callback = function()
+        self:editSummary(doc_settings_or_file, book_props)
+    end
+    table.insert(kv_pairs, { _("Rating:"), ("★"):rep(rating) .. ("☆"):rep(self.rating_max - rating),
+        hold_callback = summary_hold_callback })
+    table.insert(kv_pairs, { _("Review:"), summary.note or _("N/A"),
+        hold_callback = summary_hold_callback, separator = is_doc })
 
     -- Page section
     if is_doc then
         local lines_nb, words_nb = self.ui.view:getCurrentPageLineWordCounts()
-        if lines_nb == 0 then
-            lines_nb = _("N/A")
-            words_nb = _("N/A")
-        end
-        table.insert(kv_pairs, { _("Current page lines:"), lines_nb })
-        table.insert(kv_pairs, { _("Current page words:"), words_nb })
+        local text = lines_nb == 0 and _("number of lines and words not available")
+            or T(N_("1 line", "%1 lines", lines_nb), lines_nb) .. ", " .. T(N_("1 word", "%1 words", words_nb), words_nb)
+        table.insert(kv_pairs, { _("Current page:"), text })
     end
 
     local KeyValuePage = require("ui/widget/keyvaluepage")
@@ -174,6 +187,9 @@ function BookInfo:show(file, book_props)
             if self.prop_updated then
                 UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
                 UIManager:broadcastEvent(Event:new("BookMetadataChanged", self.prop_updated))
+            end
+            if self.summary_updated then -- refresh file browser, sdr folder may appear
+                UIManager:broadcastEvent(Event:new("BookMetadataChanged"))
             end
         end,
     }
@@ -295,7 +311,7 @@ end
 function BookInfo:onShowBookInfo()
     if self.document then
         self.ui.doc_props.pages = self.ui.doc_settings:readSetting("doc_pages")
-        self:show(self.document.file, self.ui.doc_props)
+        self:show(self.ui.doc_settings, self.ui.doc_props)
     end
 end
 
@@ -585,6 +601,70 @@ function BookInfo:showCustomDialog(file, book_props, prop_key)
         buttons = buttons,
     }
     UIManager:show(button_dialog)
+end
+
+function BookInfo:editSummary(doc_settings_or_file, book_props)
+    local has_sidecar = type(doc_settings_or_file) == "table"
+    local summary = has_sidecar and doc_settings_or_file:readSetting("summary") or {}
+    local rating = summary.rating or 0
+    local input_dialog
+    local rating_buttons_row = {}
+    for i = -1, self.rating_max + 2 do -- 2 empty buttons on each side
+        if i < 1 or i > self.rating_max then
+            table.insert(rating_buttons_row, {
+                text = "",
+                no_vertical_sep = true,
+                enabled = false,
+            })
+        else
+            table.insert(rating_buttons_row, {
+                text = i <= rating and "★" or "☆",
+                no_vertical_sep = true,
+                callback = function()
+                    UIManager:close(input_dialog)
+                    local note = input_dialog:getInputText()
+                    summary.note = note ~= "" and note or nil
+                    summary.rating = (i == 1 and summary.rating == 1) and 0 or i
+                    doc_settings_or_file = filemanagerutil.saveSummary(doc_settings_or_file, summary)
+                    self.summary_updated = true
+                    self.kvp_widget:onClose()
+                    self:show(doc_settings_or_file, book_props)
+                end,
+            })
+        end
+    end
+    input_dialog = InputDialog:new{
+        title = _("Edit book review"),
+        input = summary.note,
+        text_height = Screen:scaleBySize(160),
+        allow_newline = true,
+        buttons = {
+            rating_buttons_row,
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(input_dialog)
+                    end,
+                },
+                {
+                    text = _("Save review"),
+                    callback = function()
+                        UIManager:close(input_dialog)
+                        local note = input_dialog:getInputText()
+                        summary.note = note ~= "" and note or nil
+                        doc_settings_or_file = filemanagerutil.saveSummary(doc_settings_or_file, summary)
+                        self.summary_updated = true
+                        self.kvp_widget:onClose()
+                        self:show(doc_settings_or_file, book_props)
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard(true)
 end
 
 function BookInfo:moveBookMetadata()

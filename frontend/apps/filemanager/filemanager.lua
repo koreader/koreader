@@ -271,9 +271,9 @@ function FileManager:setupLayout()
             self.book_props = nil -- in 'self' to provide access to it in CoverBrowser
             local has_provider = DocumentRegistry:hasProvider(file)
             local has_sidecar = DocSettings:hasSidecarFile(file)
+            local doc_settings_or_file
             if has_provider or has_sidecar then
                 self.book_props = file_manager.coverbrowser and file_manager.coverbrowser:getBookInfo(file)
-                local doc_settings_or_file
                 if has_sidecar then
                     doc_settings_or_file = DocSettings:open(file)
                     if not self.book_props then
@@ -299,7 +299,7 @@ function FileManager:setupLayout()
                         file_manager:showOpenWithDialog(file)
                     end,
                 },
-                filemanagerutil.genBookInformationButton(file, self.book_props, close_dialog_callback),
+                filemanagerutil.genBookInformationButton(doc_settings_or_file or file, self.book_props, close_dialog_callback),
             })
             if has_provider then
                 table.insert(buttons, {
