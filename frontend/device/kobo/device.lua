@@ -1366,7 +1366,6 @@ function Kobo:_doSuspend()
     logger.dbg("Kobo suspend: synced FS")
 
     -- Depending on device/FW version, some kernels do not support wakeup_count, account for that.
-    --
     -- NOTE: ...and of course, it appears to be broken on older devices,
     --       which probably explains why nickel doesn't use this facility there...
     --       (By broken, I mean that the system wakes up right away despite the successful write).
