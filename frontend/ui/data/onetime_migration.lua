@@ -235,6 +235,9 @@ end
 -- 20210518, ReaderFooter, https://github.com/koreader/koreader/pull/7702
 -- 20210622, ReaderFooter, https://github.com/koreader/koreader/pull/7876
 -- 20240616, ReaderFooter, https://github.com/koreader/koreader/pull/11999
+-- NOTE: Used when we add new default settings.
+--       May need to be run multiple times, as other upgrade steps may attempt to load readerfooter,
+--       and missing defaults would break that.
 local function readerfooter_defaults(date)
     logger.info("Performing one-time migration for", date)
 
