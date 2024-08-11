@@ -21,7 +21,7 @@ fi
 ANDROID_ARCH="${ANDROID_ARCH:-arm}"
 
 # Default android flavor
-ANDROID_FLAVOR="${ANDROID_FLAVOR:-rocks}"
+ANDROID_FLAVOR="${ANDROID_FLAVOR:-Rocks}"
 export ANDROID_FLAVOR
 
 function assert_ret_zero() {
