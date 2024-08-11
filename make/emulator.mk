@@ -1,3 +1,32 @@
+# Run. {{{
+
+PHONY += run run-prompt run-wbuilder
+
+define run_script
+for a in $(RARGS); do
+    [[ "$$a" = [-/]* ]] || a="$${PWD}/$$a";
+    set -- "$$@" "$$a";
+done;
+cd $(INSTALL_DIR)/koreader &&
+while true; do
+    code=0;
+    $(RWRAP) ./luajit reader.lua "$$@" || code=$$?;
+    [ $${code} -eq 85 ] || exit $${code};
+    set --;
+done
+endef
+
+run: all
+	$(strip $(run_script))
+
+run-prompt: all
+	cd $(INSTALL_DIR)/koreader && ./luajit -i setupkoenv.lua
+
+run-wbuilder: all
+	cd $(INSTALL_DIR)/koreader && EMULATE_READER_W=540 EMULATE_READER_H=720 ./luajit tools/wbuilder.lua
+
+# }}}
+
 # Testing & coverage. {{{
 
 PHONY += coverage test testbase testfront
