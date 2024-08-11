@@ -1339,23 +1339,7 @@ function Kobo:suspend()
     logger.info("Kobo suspend: going to sleep . . .")
     UIManager:unschedule(self.checkUnexpectedWakeup)
     -- NOTE: Sleep as little as possible here, sleeping has a tendency to make
-    -- everything mysteriously hang...
-
-    -- Depending on device/FW version, some kernels do not support
-    -- wakeup_count, account for that
-    --
-    -- NOTE: ... and of course, it appears to be broken, which probably
-    -- explains why nickel doesn't use this facility...
-    -- (By broken, I mean that the system wakes up right away).
-    -- So, unless that changes, unconditionally disable it.
-
-    --[[
-    -- Go to sleep
-    if self.has_wakeup_count then
-        self.curr_wakeup_count = self.powerd.read_int_file("/sys/power/wakeup_count")
-        logger.dbg("Kobo suspend: Current WakeUp count:", self.curr_wakeup_count)
-    end
-    -]]
+    --       everything mysteriously hang...
 
     -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
     --       kernel to suspend/resume various subsystems
@@ -1381,8 +1365,18 @@ function Kobo:_doSuspend()
     os.execute("sync")
     logger.dbg("Kobo suspend: synced FS")
 
+    -- Depending on device/FW version, some kernels do not support wakeup_count, account for that.
+    --
+    -- NOTE: ... and of course, it appears to be broken,
+    --       which probably explains why nickel doesn't use this facility...
+    --       (By broken, I mean that the system wakes up right away).
+    --       So, unless that changes, unconditionally disable it.
+
     --[[
     if self.has_wakeup_count then
+        self.curr_wakeup_count = self.powerd.read_int_file("/sys/power/wakeup_count")
+        logger.dbg("Kobo suspend: Current WakeUp count:", self.curr_wakeup_count)
+
         local ret = ffiUtil.writeToSysfs(self.curr_wakeup_count, "/sys/power/wakeup_count")
         if ret then
             logger.dbg("Kobo suspend: WakeUp count matched")
