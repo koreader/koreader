@@ -1405,30 +1405,24 @@ function Kobo:_doSuspend()
             self:toggleChargingLED(false)
         end
     else
+        -- Most of the potential failures ought to be -EBUSY
+        -- (usually, because of the EPDC or touch panel).
+        -- NOTE: On recent enough kernels, with debugfs enabled and mounted, see also
+        --       /sys/kernel/debug/suspend_stats & /sys/kernel/debug/wakeup_sources
         logger.warn("Kobo suspend: the kernel refused to enter suspend!")
-        -- Reset state-extended back to 0 since we are giving up.
+        -- NOTE: Despite it making little sense,
+        --       we reset state-extended back to 0 to mimic Nickel's own
+        --       1 -> mem -> 0 loop in case of suspend failures...
+        --       c.f., nickel_suspend_strace.txt for more details.
         ffiUtil.writeToSysfs("0", "/sys/power/state-extended")
         if G_reader_settings:isTrue("pm_debug_entry_failure") then
             self:toggleChargingLED(true)
         end
     end
 
-    -- NOTE: Ideally, we'd need a way to warn the user that suspending
-    --       gloriously failed at this point...
-    --       We can safely assume that just from a non-zero return code, without
-    --       looking at the detailed stderr message
-    --       (most of the failures we'll see are -EBUSY anyway)
-    --       For reference, when that happens to nickel, it appears to keep retrying
-    --       to wakeup & sleep ad nauseam,
-    --       which is where the non-sensical 1 -> mem -> 0 loop idea comes from...
-    --       cf. nickel_suspend_strace.txt for more details.
-    -- NOTE: On recent enough kernels, with debugfs enabled and mounted, see also
-    --       /sys/kernel/debug/suspend_stats & /sys/kernel/debug/wakeup_sources
-
     -- NOTE: We unflag /sys/power/state-extended in Kobo:resume() to keep
     --       things tidy and easier to follow
-
-    -- Kobo:resume() will reset unexpected_wakeup_count and unschedule the check to signal a sane wakeup.
+    -- Kobo:resume() will also reset unexpected_wakeup_count and unschedule the check to signal a sane wakeup.
     self:scheduleUnexpectedWakeupGuard()
 end
 
