@@ -1369,7 +1369,7 @@ function Kobo:_doSuspend()
     --
     -- NOTE: ...and of course, it appears to be broken on older devices,
     --       which probably explains why nickel doesn't use this facility there...
-    --       (By broken, I mean that the system wakes up right away).
+    --       (By broken, I mean that the system wakes up right away despite the successful write).
     --       As we can't really divine where and when it'll work properly, unconditionally disable it.
     --[[
     if self.has_wakeup_count then
