@@ -1322,7 +1322,7 @@ function Kobo:suspend()
     -- If there's a _doSuspend still scheduled, something is going seriously wrong
     -- (e.g., we caught multiple Suspend events without a Resume in between)...
     if UIManager:unschedule(self._doSuspend) then
-        logger.warn("Kobo suspend: cancelled a pending suspend request via *suspend*. This most likely is a bug.")
+        logger.warn("Kobo suspend: cancelled a pending suspend request via *suspend*. This is most likely a bug.")
     end
 
     -- On MTK, any suspend/standby attempt while plugged-in will hang the kernel... -_-"
