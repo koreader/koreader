@@ -22,6 +22,15 @@ end
 
 -- Keep this in perfect chronological order, with a reference to the PR that implemented the change.
 
+-- NOTE: From 20220914, as we may need it earlier when loading stuff that depends on the font cache
+local function drop_fontcache()
+    local cache_path = DataStorage:getDataDir() .. "/cache/fontlist"
+    local ok, err = os.remove(cache_path .. "/fontinfo.dat")
+    if not ok then
+       logger.warn("os.remove:", err)
+    end
+end
+
 -- Global settings, https://github.com/koreader/koreader/pull/4945 & https://github.com/koreader/koreader/pull/5655
 -- Limit the check to the most recent update. ReaderUI calls this one unconditionally to update docsettings, too.
 if last_migration_date < 20191129 then
@@ -38,11 +47,7 @@ if last_migration_date < 20200421 then
     -- Drop the Fontlist cache early, in case it's in an incompatible format for some reason...
     -- c.f., https://github.com/koreader/koreader/issues/9771#issuecomment-1546308746
     -- (This is basically the 20220914 migration step applied preemptively, as readertypography *will* attempt to load it).
-    local cache_path = DataStorage:getDataDir() .. "/cache/fontlist"
-    local ok, err = os.remove(cache_path .. "/fontinfo.dat")
-    if not ok then
-       logger.warn("os.remove:", err)
-    end
+    drop_fontcache()
 
     local ReaderTypography = require("apps/reader/modules/readertypography")
     -- Migrate old readerhyphenation settings
@@ -241,6 +246,9 @@ end
 local function readerfooter_defaults(date)
     logger.info("Performing one-time migration for", date)
 
+    -- fontcache may be in an older format, drop it
+    drop_fontcache()
+
     local ReaderFooter = require("apps/reader/modules/readerfooter")
     local settings = G_reader_settings:readSetting("footer", ReaderFooter.default_settings)
 
@@ -276,6 +284,9 @@ if last_migration_date < 20210531 then
     logger.info("Performing one-time migration for 20210531")
 
     if G_reader_settings:has("zoom_mode") then
+        -- fontcache may be in an older format, drop it
+        drop_fontcache()
+
         local ReaderZooming = require("apps/reader/modules/readerzooming")
         -- NOTE: For simplicity's sake, this will overwrite potentially existing genus/type globals,
         --       as they were ignored in this specific case anyway...
@@ -467,11 +478,7 @@ end
 if last_migration_date < 20220914 then
     logger.info("Performing one-time migration for 20220914")
 
-    local cache_path = DataStorage:getDataDir() .. "/cache/fontlist"
-    local ok, err = os.remove(cache_path .. "/fontinfo.dat")
-    if not ok then
-       logger.warn("os.remove:", err)
-    end
+    drop_fontcache()
 end
 
 -- The great defaults.persistent.lua migration to LuaDefaults (#9546)
