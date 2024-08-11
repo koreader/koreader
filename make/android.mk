@@ -35,8 +35,8 @@ update: all
 	# APK version
 	mkdir -p $(ANDROID_ASSETS)/module $(ANDROID_LIBS)
 	echo $(VERSION) >$(ANDROID_ASSETS)/module/version.txt
-	# We need strip the version, or versioned
-	# libraries won't be included in the APK.
+	# We need to strip version numbers, as gradle will ignore
+	# versioned libraries and not include them in the APK.
 	for src in $(INSTALL_DIR)/koreader/libs/*; do \
 	  dst="$${src##*/}"; \
 	  dst="$${dst%%.[0-9]*}"; \
