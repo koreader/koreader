@@ -2,6 +2,42 @@
 ANDROID_VERSION ?= $(shell git rev-list --count HEAD)
 ANDROID_NAME ?= $(VERSION)
 ANDROID_APK = koreader-android-$(ANDROID_ARCH)$(KODEDUG_SUFFIX)-$(VERSION).apk
+
+# Run. {{{
+
+PHONY += run
+
+# Tools
+APKANALYZER ?= $(word 1,$(wildcard $(shell command -v apkanalyzer) $(ANDROID_SDK_ROOT)/tools/bin/apkanalyzer))
+
+run: update
+	# get android app id
+ifneq (,$(DRY_RUN))
+	$(eval ANDROID_APP_ID := $$$$(ANDROID_APP_ID))
+	ANDROID_APP_ID="$$($(APKANALYZER) manifest application-id $(ANDROID_APK))"
+else
+	$(eval ANDROID_APP_ID := $(shell $(APKANALYZER) manifest application-id $(ANDROID_APK)))
+	[[ -n '$(ANDROID_APP_ID)' ]]
+endif
+	# clear logcat to get rid of useless cruft
+	adb logcat -c
+	# uninstall existing package to make sure *everything* is gone from memory
+	-adb uninstall $(ANDROID_APP_ID)
+	# wake up target
+	-adb shell input keyevent KEYCODE_WAKEUP '&'
+	# install
+	adb install $(ADB_INSTALL_FLAGS) '$(ANDROID_APK)'
+	# there's no adb run so we do this…
+	adb shell monkey -p $(ANDROID_APP_ID) -c android.intent.category.LAUNCHER 1
+	# monitor logs
+	adb logcat KOReader:V k2pdfopt:V luajit-launcher:V dlopen:V '*:E'
+
+# }}}
+
+# Update. {{{
+
+PHONY += androiddev update
+
 ANDROID_DIR = $(PLATFORM_DIR)/android
 ANDROID_LAUNCHER_DIR = $(ANDROID_DIR)/luajit-launcher
 ANDROID_LAUNCHER_BUILD = $(INSTALL_DIR)/luajit-launcher
@@ -100,4 +136,6 @@ update: all
 		'app:assemble$(ANDROID_ARCH)$(ANDROID_FLAVOR)$(if $(KODEBUG),Debug,Release)'
 	cp $(ANDROID_LAUNCHER_BUILD)/outputs/apk/$(ANDROID_ARCH)$(ANDROID_FLAVOR)/$(if $(KODEBUG),debug,release)/NativeActivity.apk $(ANDROID_APK)
 
-PHONY += androiddev update
+# }}}
+
+# vim: foldmethod=marker foldlevel=0
