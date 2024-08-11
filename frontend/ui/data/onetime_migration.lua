@@ -20,7 +20,7 @@ if last_migration_date == CURRENT_MIGRATION_DATE then
     return
 end
 
--- Keep this in rough chronological order, with a reference to the PR that implemented the change.
+-- Keep this in perfect chronological order, with a reference to the PR that implemented the change.
 
 -- Global settings, https://github.com/koreader/koreader/pull/4945 & https://github.com/koreader/koreader/pull/5655
 -- Limit the check to the most recent update. ReaderUI calls this one unconditionally to update docsettings, too.
@@ -235,8 +235,8 @@ end
 -- 20210518, ReaderFooter, https://github.com/koreader/koreader/pull/7702
 -- 20210622, ReaderFooter, https://github.com/koreader/koreader/pull/7876
 -- 20240616, ReaderFooter, https://github.com/koreader/koreader/pull/11999
-if last_migration_date < 20240616 then
-    logger.info("Performing one-time migration for 20240616")
+local function readerfooter_defaults(date)
+    logger.info("Performing one-time migration for", date)
 
     local ReaderFooter = require("apps/reader/modules/readerfooter")
     local settings = G_reader_settings:readSetting("footer", ReaderFooter.default_settings)
@@ -248,6 +248,11 @@ if last_migration_date < 20240616 then
         end
     end
     G_reader_settings:saveSetting("footer", settings)
+end
+
+-- https://github.com/koreader/koreader/pull/7702
+if last_migration_date < 20210518 then
+    readerfooter_defaults("20210518")
 end
 
 -- 20210521, ReaderZooming, zoom_factor -> kopt_zoom_factor, https://github.com/koreader/koreader/pull/7728
@@ -276,6 +281,11 @@ if last_migration_date < 20210531 then
         G_reader_settings:saveSetting("kopt_zoom_mode_type", zoom_mode_type)
         G_reader_settings:delSetting("zoom_mode")
     end
+end
+
+-- https://github.com/koreader/koreader/pull/7876
+if last_migration_date < 20210622 then
+    readerfooter_defaults("20210622")
 end
 
 -- 20210629, Moves Duration Format to Date Time settings for other plugins to use, https://github.com/koreader/koreader/pull/7897
@@ -657,6 +667,11 @@ if last_migration_date < 20240408 then
         G_reader_settings:saveSetting("screensaver_type", "document_cover")
         G_reader_settings:saveSetting("screensaver_document_cover", image_file)
     end
+end
+
+-- https://github.com/koreader/koreader/pull/11999
+if last_migration_date < 20240616 then
+    readerfooter_defaults("20240616")
 end
 
 -- 20240731, ReaderFooter: store unscaled progress bar margins
