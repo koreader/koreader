@@ -29,7 +29,7 @@ run-wbuilder: all
 
 # Testing & coverage. {{{
 
-PHONY += coverage test testbase testfront
+PHONY += coverage coverage-full coverage-run coverage-summary test testbase testfront
 
 $(INSTALL_DIR)/koreader/.busted: .busted
 	$(SYMLINK) .busted $@
@@ -46,12 +46,16 @@ testfront: all test-data $(INSTALL_DIR)/koreader/.busted
 
 test: testbase testfront
 
-coverage: $(INSTALL_DIR)/koreader/.luacov
+coverage: coverage-summary
+
+coverage-run: all test-data $(INSTALL_DIR)/koreader/.busted $(INSTALL_DIR)/koreader/.luacov
 	-rm -rf $(INSTALL_DIR)/koreader/luacov.*.out
-	cd $(INSTALL_DIR)/koreader && \
-		./luajit $(shell which busted) --output=gtest \
-			--sort-files \
-			--coverage --exclude-tags=nocov
+	cd $(INSTALL_DIR)/koreader && $(BUSTED_LUAJIT) --coverage --exclude-tags=nocov
+
+coverage-full: coverage-run
+	cd $(INSTALL_DIR)/koreader && cat luacov.report.out
+
+coverage-summary: coverage-run
 	# coverage report summary
 	cd $(INSTALL_DIR)/koreader && tail -n \
 		+$$(($$(grep -nm1 -e "^Summary$$" luacov.report.out|cut -d: -f1)-1)) \
