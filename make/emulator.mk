@@ -37,12 +37,13 @@ $(INSTALL_DIR)/koreader/.busted: .busted
 $(INSTALL_DIR)/koreader/.luacov:
 	$(SYMLINK) .luacov $@
 
-testbase: base-test
+testbase: all test-data $(OUTPUT_DIR)/.busted $(OUTPUT_DIR)/spec/base
+	cd $(OUTPUT_DIR) && $(BUSTED_LUAJIT) $(or $(BUSTED_OVERRIDES),./spec/base/unit)
 
 testfront: all test-data $(INSTALL_DIR)/koreader/.busted
 	# sdr files may have unexpected impact on unit testing
 	-rm -rf spec/unit/data/*.sdr
-	cd $(INSTALL_DIR)/koreader && $(BUSTED_LUAJIT) $(BUSTED_OVERRIDES) $(BUSTED_SPEC_FILE)
+	cd $(INSTALL_DIR)/koreader && $(BUSTED_LUAJIT) $(BUSTED_OVERRIDES)
 
 test: testbase testfront
 
