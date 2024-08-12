@@ -844,6 +844,7 @@ function ImageViewer:onCloseWidget()
         self._scaled_image_func(false) -- invoke :free() on the creimage object
         self._scaled_image_func = nil
     end
+    self._image_wg = nil
 
     -- Those, on the other hand, are always initialized, but may not actually be in our widget tree right now,
     -- depending on what we needed to show, so they might not get sent a CloseWidget event.
