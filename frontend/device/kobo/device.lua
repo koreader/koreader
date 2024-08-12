@@ -727,6 +727,9 @@ function Kobo:init()
         end
     end
 
+    -- Just to be safe, we absolutely don't want to call open on this, so just use stat
+    self.has_wakeup_count = util.pathExists("/sys/power/wakeup_count")
+
     -- Automagic sysfs discovery
     if self.automagic_sysfs then
         -- Battery
@@ -1194,8 +1197,15 @@ end
 -- NOTE: We overload this to make sure checkUnexpectedWakeup doesn't trip *before* the newly scheduled suspend
 function Kobo:rescheduleSuspend()
     UIManager:unschedule(self.suspend)
+    UIManager:unschedule(self._doSuspend)
     UIManager:unschedule(self.checkUnexpectedWakeup)
     UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
+end
+
+function Kobo:scheduleUnexpectedWakeupGuard()
+    self.unexpected_wakeup_count = self.unexpected_wakeup_count + 1
+    logger.dbg("Kobo suspend: scheduling unexpected wakeup guard")
+    UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
 end
 
 function Kobo:checkUnexpectedWakeup()
@@ -1309,6 +1319,12 @@ function Kobo:standby(max_duration)
 end
 
 function Kobo:suspend()
+    -- If there's a _doSuspend still scheduled, something is going seriously wrong
+    -- (e.g., we caught multiple Suspend events without a Resume in between)...
+    if UIManager:unschedule(self._doSuspend) then
+        logger.warn("Kobo suspend: cancelled a pending suspend request via *suspend*. This is most likely a bug.")
+    end
+
     -- On MTK, any suspend/standby attempt while plugged-in will hang the kernel... -_-"
     -- NOTE: isCharging is still true while isCharged!
     if self:isMTK() and self.powerd:isCharging() then
@@ -1316,45 +1332,14 @@ function Kobo:suspend()
 
         -- Do the usual scheduling dance, so we get a chance to fire the UnexpectedWakeupLimit event...
         UIManager:unschedule(self.checkUnexpectedWakeup)
-        self.unexpected_wakeup_count = self.unexpected_wakeup_count + 1
-        logger.dbg("Kobo suspend: scheduling unexpected wakeup guard")
-        UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
-
+        self:scheduleUnexpectedWakeupGuard()
         return
     end
 
     logger.info("Kobo suspend: going to sleep . . .")
     UIManager:unschedule(self.checkUnexpectedWakeup)
     -- NOTE: Sleep as little as possible here, sleeping has a tendency to make
-    -- everything mysteriously hang...
-
-    -- Depending on device/FW version, some kernels do not support
-    -- wakeup_count, account for that
-    --
-    -- NOTE: ... and of course, it appears to be broken, which probably
-    -- explains why nickel doesn't use this facility...
-    -- (By broken, I mean that the system wakes up right away).
-    -- So, unless that changes, unconditionally disable it.
-
-    --[[
-    local f, re, err_msg, err_code
-    local has_wakeup_count = false
-    f = io.open("/sys/power/wakeup_count", "re")
-    if f ~= nil then
-        f:close()
-        has_wakeup_count = true
-    end
-
-    -- Clear the kernel ring buffer... (we're missing a proper -C flag...)
-    --dmesg -c >/dev/null
-
-    -- Go to sleep
-    local curr_wakeup_count
-    if has_wakeup_count then
-        curr_wakeup_count = "$(cat /sys/power/wakeup_count)"
-        logger.dbg("Kobo suspend: Current WakeUp count:", curr_wakeup_count)
-    end
-    -]]
+    --       everything mysteriously hang...
 
     -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
     --       kernel to suspend/resume various subsystems
@@ -1363,37 +1348,50 @@ function Kobo:suspend()
     if ret then
         logger.dbg("Kobo suspend: successfully asked the kernel to put subsystems to sleep")
     else
-        logger.warn("Kobo suspend: the kernel refused to flag subsystems for suspend!")
+        logger.err("Kobo suspend: the kernel refused to flag subsystems for suspend, aborting this attempt!")
+        -- We'd be going to standby instead of suspend, so, just try again later.
+        self:scheduleUnexpectedWakeupGuard()
+        return
     end
 
-    ffiUtil.sleep(2)
-    logger.dbg("Kobo suspend: waited for 2s because of reasons...")
+    -- NOTE: As nonsensical as it looks given that the above just flips a global,
+    --       I have traumatic memories of things going awry if we don't sleep between the two writes...
+    logger.dbg("Kobo suspend: waiting for 2s because of reasons...")
+    -- We keep polling for input in order to be able to catch power events with extremely unlucky timing (#12325)...
+    UIManager:scheduleIn(2, self._doSuspend, self)
+end
 
+function Kobo:_doSuspend()
     os.execute("sync")
     logger.dbg("Kobo suspend: synced FS")
 
+    -- Depending on device/FW version, some kernels do not support wakeup_count, account for that.
+    -- NOTE: ...and of course, it appears to be broken on older devices,
+    --       which probably explains why nickel doesn't use this facility there...
+    --       (By broken, I mean that the system wakes up right away despite the successful write).
+    --       As we can't really divine where and when it'll work properly, unconditionally disable it.
     --[[
-    if has_wakeup_count then
-        f = io.open("/sys/power/wakeup_count", "we")
-        if not f then
-            logger.err("cannot open /sys/power/wakeup_count")
-            return false
+    if self.has_wakeup_count then
+        self.curr_wakeup_count = self.powerd:read_int_file("/sys/power/wakeup_count")
+        logger.dbg("Kobo suspend: Current WakeUp count:", self.curr_wakeup_count)
+
+        local ret = ffiUtil.writeToSysfs(self.curr_wakeup_count, "/sys/power/wakeup_count")
+        if ret then
+            logger.dbg("Kobo suspend: WakeUp count matched")
+        else
+            logger.err("Kobo suspend: WakeUp count mismatch, aborting this suspend attempt!")
+            -- This means that there was at least one wakeup event since our read,
+            -- abort this attempt (i.e., don't write to state for now) and just schedule the wakeup guard.
+            self:scheduleUnexpectedWakeupGuard()
+            return
         end
-        re, err_msg, err_code = f:write(tostring(curr_wakeup_count), "\n")
-        logger.dbg("Kobo suspend: wrote WakeUp count:", curr_wakeup_count)
-        if not re then
-            logger.err("Kobo suspend: failed to write WakeUp count:",
-                       err_msg,
-                       err_code)
-        end
-        f:close()
     end
     --]]
 
     logger.dbg("Kobo suspend: asking for a suspend to RAM . . .")
     local suspend_time = time.boottime_or_realtime_coarse()
 
-    ret = ffiUtil.writeToSysfs("mem", "/sys/power/state")
+    local ret = ffiUtil.writeToSysfs("mem", "/sys/power/state")
 
     -- NOTE: At this point, we *should* be in suspend to RAM, as such,
     --       execution should only resume on wakeup...
@@ -1406,42 +1404,25 @@ function Kobo:suspend()
             self:toggleChargingLED(false)
         end
     else
+        -- Most of the potential failures ought to be -EBUSY
+        -- (usually, because of the EPDC or touch panel).
+        -- NOTE: On recent enough kernels, with debugfs enabled and mounted, see also
+        --       /sys/kernel/debug/suspend_stats & /sys/kernel/debug/wakeup_sources
         logger.warn("Kobo suspend: the kernel refused to enter suspend!")
-        -- Reset state-extended back to 0 since we are giving up.
+        -- NOTE: Despite it making little sense,
+        --       we reset state-extended back to 0 to mimic Nickel's own
+        --       1 -> mem -> 0 loop in case of suspend failures...
+        --       c.f., nickel_suspend_strace.txt for more details.
         ffiUtil.writeToSysfs("0", "/sys/power/state-extended")
         if G_reader_settings:isTrue("pm_debug_entry_failure") then
             self:toggleChargingLED(true)
         end
     end
 
-    -- NOTE: Ideally, we'd need a way to warn the user that suspending
-    --       gloriously failed at this point...
-    --       We can safely assume that just from a non-zero return code, without
-    --       looking at the detailed stderr message
-    --       (most of the failures we'll see are -EBUSY anyway)
-    --       For reference, when that happens to nickel, it appears to keep retrying
-    --       to wakeup & sleep ad nauseam,
-    --       which is where the non-sensical 1 -> mem -> 0 loop idea comes from...
-    --       cf. nickel_suspend_strace.txt for more details.
-    -- NOTE: On recent enough kernels, with debugfs enabled and mounted, see also
-    --       /sys/kernel/debug/suspend_stats & /sys/kernel/debug/wakeup_sources
-
-    --[[
-    if has_wakeup_count then
-        logger.dbg("wakeup count: $(cat /sys/power/wakeup_count)")
-    end
-
-    -- Print tke kernel log since our attempt to sleep...
-    --dmesg -c
-    --]]
-
     -- NOTE: We unflag /sys/power/state-extended in Kobo:resume() to keep
     --       things tidy and easier to follow
-
-    -- Kobo:resume() will reset unexpected_wakeup_count and unschedule the check to signal a sane wakeup.
-    self.unexpected_wakeup_count = self.unexpected_wakeup_count + 1
-    logger.dbg("Kobo suspend: scheduling unexpected wakeup guard")
-    UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
+    -- Kobo:resume() will also reset unexpected_wakeup_count and unschedule the check to signal a sane wakeup.
+    self:scheduleUnexpectedWakeupGuard()
 end
 
 function Kobo:resume()
@@ -1451,6 +1432,10 @@ function Kobo:resume()
     -- Unschedule the checkUnexpectedWakeup shenanigans.
     UIManager:unschedule(self.checkUnexpectedWakeup)
     UIManager:unschedule(self.suspend)
+    -- Cancel any pending suspend request
+    if UIManager:unschedule(self._doSuspend) then
+        logger.info("Kobo resume: cancelled a pending suspend request")
+    end
 
     -- Now that we're up, unflag subsystems for suspend...
     -- NOTE: Sets gSleep_Mode_Suspend to 0. Used as a flag throughout the
