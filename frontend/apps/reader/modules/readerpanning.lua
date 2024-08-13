@@ -21,7 +21,7 @@ end
 function ReaderPanning:onGesture() end
 
 function ReaderPanning:registerKeyEvents()
-    if Device:hasKeyboard() then
+    if Device:hasKeyboard() and Device:hasDPad() and not Device:useDPadAsActionKeys() then
         self.key_events = {
             -- these will all generate the same event, just with different arguments
             MoveUp = {
