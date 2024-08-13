@@ -63,7 +63,7 @@ function ReaderToc:registerKeyEvents()
     if Device:hasScreenKB() then
         self.key_events.ShowToc = { { "ScreenKB", "Up" } }
     elseif Device:hasKeyboard() then
-        self.key_events.ShowToc = { { "T" } }
+        self.key_events.ShowToc = { { "T" }, { "Shift", "Up" } }
     end
 end
 
