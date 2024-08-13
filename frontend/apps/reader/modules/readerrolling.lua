@@ -1030,6 +1030,8 @@ function ReaderRolling:updatePos(force)
         if self.ui.document:isRerenderingDelayed(true) then
             -- Partial rerendering is enabled, rerendering is delayed
             logger.dbg("  but rendering delayed, will do partial renderings on draw")
+            -- annotation page numbers must be updated after self.ui:reloadDocument()
+            self.ui.doc_settings:makeTrue("annotations_externally_modified")
             self:handleRenderingDelayed()
             return
         end

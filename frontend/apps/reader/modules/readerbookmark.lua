@@ -586,16 +586,15 @@ end
 function ReaderBookmark:getBookmarkPageString(page)
     if self.ui.rolling then
         if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
-            page = self.ui.pagemap:getXPointerPageLabel(page, true)
-        else
-            page = self.ui.document:getPageFromXPointer(page)
-            if self.ui.document:hasHiddenFlows() then
-                local flow = self.ui.document:getPageFlow(page)
-                page = self.ui.document:getPageNumberInFlow(page)
-                if flow > 0 then
-                    page = T("[%1]%2", page, flow)
-                end
-            end
+            return self.ui.pagemap:getXPointerPageLabel(page, true)
+        end
+        page = self.ui.document:getPageFromXPointer(page)
+    end
+    if self.ui.document:hasHiddenFlows() then
+        local flow = self.ui.document:getPageFlow(page)
+        page = self.ui.document:getPageNumberInFlow(page)
+        if flow > 0 then
+            page = T("[%1]%2", page, flow)
         end
     end
     return tostring(page)

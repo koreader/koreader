@@ -25,12 +25,8 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
         if chapter == nil then
             chapter = self.ui.toc:getTocTitleByPage(bm.page)
         end
-        if self.ui.rolling then
-            pageno = self.document:getPageFromXPointer(bm.page)
-            pageref = self:getPageRef(bm.page, pageno)
-        else
-            pageno = bm.page
-        end
+        pageno = self.ui.rolling and self.document:getPageFromXPointer(bm.page) or bm.page
+        pageref = self:getPageRef(bm.page, pageno)
     end
     if self.ui.paging and bm.pos0 and not bm.pos0.page then
         -- old single-page reflow highlights do not have page in position
@@ -120,13 +116,9 @@ function ReaderAnnotation:onReadSettings(config)
         end
         self.annotations = annotations
         if needs_update or needs_sort then
-            if self.ui.rolling then
-                self.ui:registerPostInitCallback(function()
-                    self:updateAnnotations(needs_update, needs_sort)
-                end)
-            else
+            self.ui:registerPostReaderReadyCallback(function()
                 self:updateAnnotations(needs_update, needs_sort)
-            end
+            end)
             config:delSetting("annotations_externally_modified")
         end
     else -- first run
@@ -219,9 +211,11 @@ function ReaderAnnotation:migrateToAnnotations(config)
     self.annotations = self:getAnnotationsFromBookmarksHighlights(bookmarks, highlights, true)
 end
 
-function ReaderAnnotation:onDocumentRerendered()
+function ReaderAnnotation:setNeedsUpdateFlag()
     self.needs_update = true
 end
+
+ReaderAnnotation.onDocumentRerendered = ReaderAnnotation.setNeedsUpdateFlag
 
 function ReaderAnnotation:onCloseDocument()
     self:updatePageNumbers()
@@ -235,10 +229,9 @@ end
 -- items handling
 
 function ReaderAnnotation:updatePageNumbers(force_update)
-    if self.ui.paging then return end
-    if force_update or self.needs_update then -- triggered by ReaderRolling on document layout change
+    if force_update or self.needs_update then
         for _, item in ipairs(self.annotations) do
-            item.pageno = self.document:getPageFromXPointer(item.page)
+            item.pageno = self.ui.rolling and self.document:getPageFromXPointer(item.page) or item.page
             item.pageref = self:getPageRef(item.page, item.pageno)
         end
     end
@@ -405,12 +398,8 @@ end
 
 function ReaderAnnotation:addItem(item)
     item.datetime = os.date("%Y-%m-%d %H:%M:%S")
-    if self.ui.rolling then
-        item.pageno = self.document:getPageFromXPointer(item.page)
-        item.pageref = self:getPageRef(item.page, item.pageno)
-    else
-        item.pageno = item.page
-    end
+    item.pageno = self.ui.rolling and self.document:getPageFromXPointer(item.page) or item.page
+    item.pageref = self:getPageRef(item.page, item.pageno)
     local index = self:getInsertionIndex(item)
     table.insert(self.annotations, index, item)
     return index
@@ -418,18 +407,21 @@ end
 
 -- info
 
-function ReaderAnnotation:getPageRef(xp, pn) -- same as ReaderBookmark:getBookmarkPageString()
-    local pageref
-    if self.ui.pagemap:wantsPageLabels() then
-        pageref = self.ui.pagemap:getXPointerPageLabel(xp, true)
-    elseif self.ui.document:hasHiddenFlows() then
-        pageref = tostring(self.ui.document:getPageNumberInFlow(pn))
-        local flow = self.ui.document:getPageFlow(pn)
-        if flow > 0 then
-            pageref = T("[%1]%2", pageref, flow)
-        end
+function ReaderAnnotation:getPageRef(pn_or_xp, pn)
+    -- same as ReaderBookmark:getBookmarkPageString(page)
+    -- but gets pn (page number already calculated in the caller)
+    -- and returns nil if there are no reference pages and hidden flows
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+        return self.ui.pagemap:getXPointerPageLabel(pn_or_xp, true)
     end
-    return pageref
+    if self.document:hasHiddenFlows() then
+        local page = self.document:getPageNumberInFlow(pn)
+        local flow = self.document:getPageFlow(pn)
+        if flow > 0 then
+            return T("[%1]%2", page, flow)
+        end
+        return tostring(page)
+    end
 end
 
 function ReaderAnnotation:hasAnnotations()
