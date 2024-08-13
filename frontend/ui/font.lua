@@ -268,7 +268,7 @@ end
 -- @treturn table @{FontFaceObj}
 function Font:getFace(font, size, faceindex)
     -- default to content font
-    if not font then font = self.cfont end
+    if not font then font = self.fontmap["cfont"] end
 
     if not size then size = self.sizemap[font] end
     -- original size before scaling by screen DPI
