@@ -166,7 +166,7 @@ end
 
 function ReaderDictionary:registerKeyEvents()
     if Device:hasKeyboard() then
-        self.key_events.ShowDictionaryLookup = { { "Alt", "D" } }
+        self.key_events.ShowDictionaryLookup = { { "Alt", "D" }, { "Ctrl", "D" } }
     end
 end
 

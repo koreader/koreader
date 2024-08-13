@@ -39,7 +39,7 @@ end
 
 function ReaderWikipedia:registerKeyEvents()
     if Device:hasKeyboard() then
-        self.key_events.ShowWikipediaLookup = { { "Alt", "W" } }
+        self.key_events.ShowWikipediaLookup = { { "Alt", "W" }, { "Ctrl", "W" } }
     end
 end
 

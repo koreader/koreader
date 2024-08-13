@@ -30,8 +30,8 @@ end
 
 function FileSearcher:registerKeyEvents()
     if Device:hasKeyboard() then
-        self.key_events.ShowFileSearch = { { "Alt", "F" } }
-        self.key_events.ShowFileSearchBlank = { { "Alt", "Shift", "F" }, event = "ShowFileSearch", args = "" }
+        self.key_events.ShowFileSearch = { { "Alt", "F" }, { "Ctrl", "F" } }
+        self.key_events.ShowFileSearchBlank = { { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" }, event = "ShowFileSearch", args = "" }
     end
 end
 
