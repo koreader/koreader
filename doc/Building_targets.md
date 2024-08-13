@@ -43,13 +43,13 @@ Some platforms will require additional packages:
 
 #### for Android
 
-Building for Android requires `openjdk-8-jdk` and `p7zip-full`.
+Building for Android requires `openjdk-17-jdk-headless` and `p7zip-full`.
 
 
 For both Ubuntu and Debian, install the packages:
 
 ```
-sudo apt-get install openjdk-8-jdk p7zip-full
+sudo apt-get install openjdk-17-jdk-headless p7zip-full
 ```
 
 #### for Debian
