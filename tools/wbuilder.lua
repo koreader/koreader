@@ -389,10 +389,7 @@ function testBookStatus()
         document = doc
     }
 
-    local status_page = require("ui/widget/bookstatuswidget"):new {
-        thumbnail = doc:getCoverPageImage(),
-        props = reader.doc_props,
-        document = doc,
+    local status_page = require("ui/widget/bookstatuswidget"):new{
         ui = reader,
     }
     UIManager:show(status_page)
