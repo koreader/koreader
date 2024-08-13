@@ -400,7 +400,6 @@ function ReaderUI:init()
     self:registerModule("status", ReaderStatus:new{
         ui = self,
         document = self.document,
-        view = self.view,
     })
     -- thumbnails service (book map, page browser)
     self:registerModule("thumbnail", ReaderThumbnail:new{
