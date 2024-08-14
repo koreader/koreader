@@ -81,8 +81,8 @@ function RenderText:getGlyph(face, charcode, bold)
     if face.is_real_bold then
         bold = false -- don't embolden glyphs already bold
     end
-    -- nil is falsy, cache it as such
-    local hash = "glyph|"..face.hash.."|"..charcode.."|"..(bold and "bold" or "regular")
+    -- nil is falsy, cache it as such (i.e., we don't want to use tostring here, as that would make it tristate: true/false/nil)
+    local hash = "glyph|"..face.hash.."|"..charcode.."|"..(bold and "1" or "0")
     local glyph = GlyphCache:check(hash)
     if glyph then
         -- cache hit
@@ -295,7 +295,7 @@ function RenderText:getGlyphByIndex(face, glyphindex, bold, bolder)
     if face.is_real_bold then
         bold = false -- don't embolden glyphs already bold
     end
-    local hash = "xglyph|"..face.hash.."|"..glyphindex.."|"..(bold and "bold" or "regular").."|"..(bolder and "bolder" or "standard")
+    local hash = "xglyph|"..face.hash.."|"..glyphindex.."|"..(bold and "1" or "0")..(bolder and "x" or "")
     local glyph = GlyphCache:check(hash)
     if glyph then
         -- cache hit
