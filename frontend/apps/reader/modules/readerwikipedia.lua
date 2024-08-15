@@ -38,7 +38,11 @@ function ReaderWikipedia:init()
 end
 
 function ReaderWikipedia:registerKeyEvents()
-    if Device:hasKeyboard() then
+    if Device:hasKeyboard() and Device.model == "Kindle3" then
+        -- Any user facing documentation should advertise this shortcut as Alt+W, as that is what
+        -- the user must input in order to use it.
+        self.key_events.ShowWikipediaLookup = { { "2" } }
+    elseif Device:hasKeyboard() then
         self.key_events.ShowWikipediaLookup = { { "Alt", "W" }, { "Ctrl", "W" } }
     end
 end
