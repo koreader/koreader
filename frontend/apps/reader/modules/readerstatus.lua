@@ -8,7 +8,6 @@ local util = require("util")
 local _ = require("gettext")
 
 local ReaderStatus = WidgetContainer:extend{
-    title = _("Book status"),
 }
 
 function ReaderStatus:init()
@@ -17,7 +16,7 @@ end
 
 function ReaderStatus:addToMainMenu(menu_items)
     menu_items.book_status = {
-        text = self.title,
+        text = _("Book status"),
         callback = function()
             self:onShowBookStatus()
         end,
@@ -74,7 +73,7 @@ function ReaderStatus:onEndOfBook()
                     end,
                 },
                 {
-                    text = self.title,
+                    text = _("Book status"),
                     callback = function()
                         UIManager:close(button_dialog)
                         self:onShowBookStatus()
