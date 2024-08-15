@@ -349,9 +349,9 @@ function SortWidget:nextPage()
     if self.show_page < self.pages then
         self.show_page = self.show_page + 1
         if self.marked > 0 then -- put selected item first in the page
-            self:moveItem(self.items_per_page * (self.show_page - 1) + 1 - self.marked)
+            self:moveItem(self.items_per_page * (self.show_page - 1) + 1 - self.marked, true)
         else
-            self:_populateItems()
+            self:_populateItems(true)
         end
     end
 end
@@ -360,19 +360,19 @@ function SortWidget:prevPage()
     if self.show_page > 1 then
         self.show_page = self.show_page - 1
         if self.marked > 0 then -- put selected item first in the page
-            self:moveItem(self.items_per_page * (self.show_page - 1) + 1 - self.marked)
+            self:moveItem(self.items_per_page * (self.show_page - 1) + 1 - self.marked, true)
         else
-            self:_populateItems()
+            self:_populateItems(true)
         end
     end
 end
 
 function SortWidget:goToPage(page)
     self.show_page = page
-    self:_populateItems()
+    self:_populateItems(true)
 end
 
-function SortWidget:moveItem(diff)
+function SortWidget:moveItem(diff, reset_focus)
     local move_to = self.marked + diff
     if move_to > 0 and move_to <= #self.item_table then
         -- Remember the original state to support Cancel
@@ -380,14 +380,15 @@ function SortWidget:moveItem(diff)
             self.orig_item_table = util.tableDeepCopy(self.item_table)
         end
         table.insert(self.item_table, move_to, table.remove(self.item_table, self.marked))
+        local current_page = self.show_page
         self.show_page = math.ceil(move_to / self.items_per_page)
         self.marked = move_to
-        self:_populateItems()
+        self:_populateItems(reset_focus or current_page ~= self.show_page)
     end
 end
 
 -- make sure self.item_margin and self.item_height are set before calling this
-function SortWidget:_populateItems()
+function SortWidget:_populateItems(reset_focus)
     self.main_content:clear()
     self.layout = { self.layout[#self.layout] } -- keep footer
     local idx_offset = (self.show_page - 1) * self.items_per_page
@@ -412,11 +413,16 @@ function SortWidget:_populateItems()
             show_parent = self,
         }
         table.insert(self.layout, #self.layout, {item})
-        table.insert(
-            self.main_content,
-            item
-        )
+        table.insert(self.main_content, item)
     end
+    -- Reset the focus on page changes (#12342)
+    -- NOTE: We can't really know whether a page turn button was clicked via a key or a touch,
+    --       so this *will* also move the focus to the top of the item list instead of re-focusing the footer
+    --       when moving an item and changing pages via the button...
+    if reset_focus then
+        self:moveFocusTo(1, 1) -- reset selected for the re-created layout
+    end
+
     -- NOTE: We forgo our usual "Page x of y" wording because of space constraints given the way the widget is currently built
     self.footer_page:setText(T(C_("Pagination", "%1 / %2"), self.show_page, self.pages), self.footer_center_width)
     if self.pages > 1 then
@@ -536,7 +542,7 @@ function SortWidget:sortItems(collate, reverse_collate)
     table.sort(self.item_table, sort_func)
     self.show_page = 1
     self.marked = 1 -- enable cancel button
-    self:_populateItems()
+    self:_populateItems(true)
 end
 
 function SortWidget:onClose()
