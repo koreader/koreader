@@ -69,13 +69,13 @@ local settingsList = {
     -- Device
     exit_screensaver = {category="none", event="ExitScreensaver", title=_("Exit sleep screen"), device=true},
     start_usbms = {category="none", event="RequestUSBMS", title=_("Start USB storage"), device=true, condition=Device:canToggleMassStorage()},
-    suspend = {category="none", event="RequestSuspend", title=_("Suspend"), device=true, condition=Device:canSuspend()},
+    suspend = {category="none", event="RequestSuspend", title=_("Sleep"), device=true, condition=Device:canSuspend()},
     restart = {category="none", event="Restart", title=_("Restart KOReader"), device=true, condition=Device:canRestart()},
     reboot = {category="none", event="RequestReboot", title=_("Reboot the device"), device=true, condition=Device:canReboot()},
     poweroff = {category="none", event="RequestPowerOff", title=_("Power off"), device=true, condition=Device:canPowerOff()},
     exit = {category="none", event="Exit", title=_("Exit KOReader"), device=true, separator=true},
     ----
-    toggle_hold_corners = {category="none", event="IgnoreHoldCorners", title=_("Toggle hold corners"), device=true},
+    toggle_hold_corners = {category="none", event="IgnoreHoldCorners", title=_("Toggle long-press on corners"), device=true},
     touch_input_on = {category="none", event="IgnoreTouchInput", arg=false, title=_("Enable touch input"), device=true},
     touch_input_off = {category="none", event="IgnoreTouchInput", arg=true, title=_("Disable touch input"), device=true},
     toggle_touch_input = {category="none", event="IgnoreTouchInput", title=_("Toggle touch input"), device=true, separator=true},
