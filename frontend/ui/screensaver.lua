@@ -506,7 +506,7 @@ function Screensaver:show()
 
     -- We mostly always suspend in Portrait/Inverted Portrait mode...
     -- ... except when we just show an InfoMessage or when the screensaver
-    -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5290).
+    -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5920).
     -- We also exclude full-screen widgets that work fine in Landscape mode,
     -- like ReadingProgress and BookStatus (c.f., #5724)
     if self:modeExpectsPortrait() then
