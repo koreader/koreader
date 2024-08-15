@@ -131,6 +131,7 @@ local FootnoteWidget = InputContainer:extend{
     on_tap_close_callback = nil,
     close_callback = nil,
     dialog = nil,
+    covers_footer = true,
 }
 
 function FootnoteWidget:init()
