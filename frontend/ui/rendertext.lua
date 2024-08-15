@@ -81,7 +81,8 @@ function RenderText:getGlyph(face, charcode, bold)
     if face.is_real_bold then
         bold = false -- don't embolden glyphs already bold
     end
-    local hash = "glyph|"..face.hash.."|"..charcode.."|"..(bold and 1 or 0)
+    -- nil is falsy, cache it as such (i.e., we don't want to use tostring here, as that would make it tristate: true/false/nil)
+    local hash = "glyph|"..face.hash.."|"..charcode.."|"..(bold and "1" or "0")
     local glyph = GlyphCache:check(hash)
     if glyph then
         -- cache hit
@@ -288,12 +289,13 @@ end
 -- @tparam ui.font.FontFaceObj face font face for the text
 -- @int glyph index
 -- @bool[opt=false] bold whether the glyph should be artificially boldened
+-- @bool[opt=false] bolder whether the glyph should be *even more* artificially boldened (*can* stack with bold, but can also be used solo)
 -- @treturn glyph
 function RenderText:getGlyphByIndex(face, glyphindex, bold, bolder)
     if face.is_real_bold then
         bold = false -- don't embolden glyphs already bold
     end
-    local hash = "xglyph|"..face.hash.."|"..glyphindex.."|"..(bold and 1 or 0)..(bolder and "x" or "")
+    local hash = "xglyph|"..face.hash.."|"..glyphindex.."|"..(bold and "1" or "0")..(bolder and "x" or "")
     local glyph = GlyphCache:check(hash)
     if glyph then
         -- cache hit
