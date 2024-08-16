@@ -438,11 +438,14 @@ function SortWidget:_populateItems()
         chevron_first, chevron_last = chevron_last, chevron_first
     end
     if self.marked > 0 then
+        -- setIcon will recreate the frame, but we want to preserve the focus inversion
+        self.footer_cancel.preselect = self.footer_cancel.frame.invert
         self.footer_cancel:setIcon("cancel", self.footer_button_width)
         self.footer_cancel.callback = function() self:onCancel() end
         self.footer_first_up:setIcon("move.up", self.footer_button_width)
         self.footer_last_down:setIcon("move.down", self.footer_button_width)
     else
+        self.footer_cancel.preselect = self.footer_cancel.frame.invert
         self.footer_cancel:setIcon("exit", self.footer_button_width)
         self.footer_cancel.callback = function() self:onClose() end
         self.footer_first_up:setIcon(chevron_first, self.footer_button_width)
