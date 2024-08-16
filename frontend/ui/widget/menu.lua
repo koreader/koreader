@@ -477,11 +477,15 @@ end
 
 function MenuItem:onFocus()
     self._underline_container.color = Blitbuffer.COLOR_BLACK
+    self._underline_container.unfocused_linesize = self._underline_container.linesize
+    -- Medium is really, really, really thin; so swap to something thicker
+    self._underline_container.linesize = Size.line.thick
     return true
 end
 
 function MenuItem:onUnfocus()
     self._underline_container.color = self.line_color
+    self._underline_container.linesize = self._underline_container.unfocused_linesize or Size.line.medium
     return true
 end
 
