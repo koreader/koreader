@@ -731,8 +731,8 @@ function DictQuickLookup:init()
         -- ButtonTable calls refocusWidget on init, but we'll mangle the layout,
         -- so kill the initial highlight while FocusManager can still find the current focused item...
         self.button_table:handleEvent(Event:new("Unfocus"))
-        table.insert(self.button_table.layout, 1, { self.dict_title.left_button });
-        table.insert(self.button_table.layout, 2, { lookup_edit_button });
+        table.insert(self.button_table.layout, 1, { self.dict_title.left_button })
+        table.insert(self.button_table.layout, 2, { lookup_edit_button })
         -- And refocus manually on the *actual* layout
         self.button_table:refocusWidget()
     end
