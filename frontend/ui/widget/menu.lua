@@ -485,7 +485,7 @@ end
 
 function MenuItem:onUnfocus()
     self._underline_container.color = self.line_color
-    self._underline_container.linesize = self._underline_container.unfocused_linesize or Size.line.medium
+    self._underline_container.linesize = self._underline_container.unfocused_linesize or self.linesize
     return true
 end
 
