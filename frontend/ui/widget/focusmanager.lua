@@ -318,10 +318,10 @@ function FocusManager:moveFocusTo(x, y, focus_flags)
         self.selected.y = y
         -- widget create new layout on update, previous may be removed from new layout.
         if Device:hasDPad() then
-            if not bit.band(focus_flags, FocusManager.NOT_UNFOCUS) and current_item and current_item ~= target_item then
+            if bit.band(focus_flags, FocusManager.NOT_UNFOCUS) ~= FocusManager.NOT_UNFOCUS and current_item and current_item ~= target_item then
                 current_item:handleEvent(Event:new("Unfocus"))
             end
-            if not bit.band(focus_flags, FocusManager.NOT_FOCUS) then
+            if bit.band(focus_flags, FocusManager.NOT_FOCUS) ~= FocusManager.NOT_FOCUS then
                 target_item:handleEvent(Event:new("Focus"))
                 UIManager:setDirty(self.show_parent or self, "fast")
             end

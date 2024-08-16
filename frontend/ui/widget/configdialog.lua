@@ -910,7 +910,7 @@ end
 function ConfigDialog:updateConfigPanel(index) end
 
 function ConfigDialog:update()
-    self:moveFocusTo(1, 1) -- reset selected for re-created layout
+    self:moveFocusTo(1, 1, FocusManager.NOT_FOCUS) -- reset selected for re-created layout
     self.layout = {}
 
     if self.config_menubar then
