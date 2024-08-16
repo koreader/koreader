@@ -1134,6 +1134,11 @@ function ConfigDialog:onConfigMoreChoose(values, default_value_orig, name, event
                 UIManager:setDirty(self, function()
                     return "ui", self.dialog_frame.dimen
                 end)
+                -- FocusManager loses its marbles if we don't update the widget *again*...
+                -- (possibly because of the layout nastiness happening in ConfigOption:init)
+                if Device:hasDPad() then
+                    self:update()
+                end
             end
         end
         local hide_on_picker_show = more_options_param.hide_on_picker_show
