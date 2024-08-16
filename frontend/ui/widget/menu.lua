@@ -1145,7 +1145,9 @@ function Menu:mergeTitleBarIntoLayout()
     if menu_item_layout_start_row > #self.layout then -- no menu items
         menu_item_layout_start_row = #self.layout -- avoid index overflow
     end
-    self:moveFocusTo(1, menu_item_layout_start_row, FocusManager.NOT_FOCUS) -- move focus to first menu item if any, keep original behavior
+    if Device:hasDPad() then
+        self:moveFocusTo(1, menu_item_layout_start_row, FocusManager.NOT_FOCUS) -- move focus to first menu item if any, keep original behavior
+    end
 end
 
 --[[
