@@ -472,20 +472,20 @@ FocusManager.RENDER_IN_NEXT_TICK = true
 
 --- Container calls this method to re-set focus widget style
 --- Some container regenerate layout on update and lose focus style
-function FocusManager:refocusWidget(nextTick)
+function FocusManager:refocusWidget(nextTick, focus_flags)
     if not self._parent then
         if not nextTick then
-            self:moveFocusTo(self.selected.x, self.selected.y)
+            self:moveFocusTo(self.selected.x, self.selected.y, focus_flags)
         else
             -- sometimes refocusWidget called in widget's action callback
             -- widget may force repaint after callback, like Button with vsync = true
             -- then focus style will be lost, set focus style to next tick to make sure focus style painted
             UIManager:nextTick(function()
-                self:moveFocusTo(self.selected.x, self.selected.y)
+                self:moveFocusTo(self.selected.x, self.selected.y, focus_flags)
             end)
         end
     else
-        self._parent:refocusWidget(nextTick)
+        self._parent:refocusWidget(nextTick, focus_flags)
     end
 end
 
