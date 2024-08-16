@@ -475,20 +475,8 @@ function MenuItem:getDotsText(face)
     return _dots_cached_info.text, _dots_cached_info.min_width
 end
 
-function MenuItem:onFocus(initial_focus)
-    if Device:isTouchDevice() then
-        -- Devices which are Keys capable will get this onFocus called by
-        -- updateItems(), which will toggle the underline color of first item.
-        -- If the device is also Touch capable, let's not show the initial
-        -- underline for a prettier display (it will be shown only when keys
-        -- are used).
-        if not initial_focus or self.menu.did_focus_with_keys then
-            self._underline_container.color = Blitbuffer.COLOR_BLACK
-            self.menu.did_focus_with_keys = true
-        end
-    else
-        self._underline_container.color = Blitbuffer.COLOR_BLACK
-    end
+function MenuItem:onFocus()
+    self._underline_container.color = Blitbuffer.COLOR_BLACK
     return true
 end
 
