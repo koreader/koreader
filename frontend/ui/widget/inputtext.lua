@@ -655,7 +655,7 @@ function InputText:onKeyPress(key)
     else
         handled = false
     end
-    -- This primarily targets Kindle. When a virtual keyboard is shown on screen, mod+dpad allows controlling the cursor, as dpad alone 
+    -- This primarily targets Kindle. When a virtual keyboard is shown on screen, mod+dpad allows controlling the cursor, as dpad alone
     -- (see previous ‘if’) is now occupied handling the virtual keyboard.
     if not handled and (key["ScreenKB"] or key["Shift"]) then
         handled = true
