@@ -711,7 +711,7 @@ function TermInputText:rightChar(skip_callback)
     end
     if self.charpos > #self.charlist then return end
     local right_char = self.charlist[self.charpos + 1]
-    if not right_char and right_char == "\n" then
+    if not right_char or right_char == "\n" then
         return
     end
     InputText.rightChar(self)
