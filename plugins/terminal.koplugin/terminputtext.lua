@@ -453,6 +453,7 @@ function TermInputText:scrollRegionUp(column)
     end
 end
 
+-- @fixme: This interacts badly with the wrapping of addChars in e.g. ja_keyboard.
 function TermInputText:addChars(chars, skip_callback, skip_table_concat)
     -- the same as in inputtext.lua
     if not chars then
@@ -575,6 +576,8 @@ dbg:guard(TermInputText, "addChars",
             "TermInputText: Wrong chars value type (expected string)!")
     end)
 
+-- @fixme: this secondary buffer mode has nothing to do with the meaning of
+-- escape codes ^[= and ^[> according to VT52/VT100 documentation. Delete?
 function TermInputText:enterAlternateKeypad()
     self.store_position = self.charpos
     self:formatTerminal(true)
@@ -595,6 +598,7 @@ end
 -- @param maxr number of rows
 -- @param maxc number of columns
 -- @param clear if true, fill the matrix ' '
+-- @fixme: may invalidate store_pos_dec and store_pos_sco
 function TermInputText:formatTerminal(clear)
     local i = self.store_position or 1
     -- so we end up in a maxr x maxc array for positioning
@@ -666,6 +670,13 @@ function TermInputText:delToEndOfLine()
     end
 end
 
+-- @fixme This function doesn't implement the documented behaviour of ^[I.
+-- According to the DECscope User's Manual EK-VT5X-OP-001:
+-- "The cursor is moved up one character position to the same column of the
+-- line above the one it was on. If the cursor was on the top line to begin
+-- with, it stays where it was, but all the information on the screen appears
+-- to move down one line. The information that was on the bottom line of the
+-- screen is lost; a new blank line appears at the top line."
 function TermInputText:reverseLineFeed(skip_callback)
     if self.strike_callback and not skip_callback then
         self.strike_callback(esc_seq.page_down)
