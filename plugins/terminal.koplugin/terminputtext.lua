@@ -5,7 +5,6 @@ module used for terminal emulator to override InputText
 ]]
 
 local InputText = require("ui/widget/inputtext")
-local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
 local logger = require("logger")
 local util = require("util")
@@ -461,7 +460,7 @@ function TermInputText:addChars(chars, skip_callback, skip_table_concat)
         return
     end
     if self.enter_callback and chars == "\n" and not skip_callback then
-        UIManager:scheduleIn(0.3, function() self.enter_callback() end)
+        self.enter_callback()
         return
     end
 
