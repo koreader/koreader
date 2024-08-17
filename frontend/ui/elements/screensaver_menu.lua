@@ -64,6 +64,16 @@ return {
                             Screensaver:setStretchLimit(touchmenu_instance)
                         end,
                     },
+                    {
+                        text = _("Rotate cover to fit screen"),
+                        checked_func = function()
+                            return G_reader_settings:isTrue("screensaver_autorotate_images")
+                        end,
+                        callback = function(touchmenu_instance)
+                            G_reader_settings:flipNilOrFalse("screensaver_autorotate_images")
+                            touchmenu_instance:updateItems()
+                        end,
+                    }
                 },
             },
             {
