@@ -452,6 +452,7 @@ function TermInputText:scrollRegionUp(column)
     end
 end
 
+-- @fixme: This interacts badly with the wrapping of addChars in e.g. ja_keyboard.
 function TermInputText:addChars(chars, skip_callback, skip_table_concat)
     -- the same as in inputtext.lua
     if not chars then
@@ -574,6 +575,8 @@ dbg:guard(TermInputText, "addChars",
             "TermInputText: Wrong chars value type (expected string)!")
     end)
 
+-- @fixme: this secondary buffer mode has nothing to do with the meaning of
+-- escape codes ^[= and ^[> according to VT52/VT100 documentation. Delete?
 function TermInputText:enterAlternateKeypad()
     self.store_position = self.charpos
     self:formatTerminal(true)
@@ -594,6 +597,7 @@ end
 -- @param maxr number of rows
 -- @param maxc number of columns
 -- @param clear if true, fill the matrix ' '
+-- @fixme: may invalidate store_pos_dec and store_pos_sco
 function TermInputText:formatTerminal(clear)
     local i = self.store_position or 1
     -- so we end up in a maxr x maxc array for positioning
