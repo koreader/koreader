@@ -415,7 +415,10 @@ function Terminal:generateInputDialog()
         end,
         strike_callback = function(chars)
             if self.ctrl and #chars == 1 then
-                chars = string.char(chars:upper():byte() - ("A"):byte()+1)
+                local n = chars:upper():byte() - ("A"):byte()+1
+                if n >= 0 then
+                    chars = string.char(n)
+                end
                 self.ctrl = false
             end
             if chars == "\n" then
