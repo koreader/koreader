@@ -3,7 +3,8 @@ local logger = require("logger")
 local MessageQueue = require("ui/message/messagequeue")
 
 local _ = require("ffi/zeromq_h")
-local czmq = ffi.load("libs/libczmq.so.1")
+local zmq = ffi.load("libs/libzmq.so.5")
+local czmq = ffi.load("libs/libczmq.so.4")
 local C = ffi.C
 
 local StreamMessageQueueServer = MessageQueue:extend{
@@ -12,15 +13,18 @@ local StreamMessageQueueServer = MessageQueue:extend{
 }
 
 function StreamMessageQueueServer:start()
-    self.context = czmq.zctx_new()
-    self.socket = czmq.zsocket_new(self.context, C.ZMQ_STREAM)
-    self.poller = czmq.zpoller_new(self.socket, nil)
     local endpoint = string.format("tcp://%s:%d", self.host, self.port)
-    logger.dbg("StreamMessageQueueServer: Binding to endpoint", endpoint)
-    local rc = czmq.zsocket_bind(self.socket, endpoint)
-    -- If success, rc is port number
-    if rc == -1 then
-        logger.err("StreamMessageQueueServer: Cannot bind to ", endpoint)
+    self.socket = czmq.zsock_new(C.ZMQ_STREAM)
+    if not self.socket then
+        error("cannot create socket for endpoint " .. endpoint)
+    end
+    logger.dbg("binding to endpoint", endpoint)
+    if czmq.zsock_bind(self.socket, endpoint) == -1 then
+        error("cannot bind to " .. endpoint)
+    end
+    self.poller = czmq.zpoller_new(self.socket, nil)
+    if not self.poller then
+        error("cannot create poller for endpoint " .. endpoint)
     end
 end
 
@@ -29,10 +33,7 @@ function StreamMessageQueueServer:stop()
         czmq.zpoller_destroy(ffi.new('zpoller_t *[1]', self.poller))
     end
     if self.socket ~= nil then
-        czmq.zsocket_destroy(self.context, self.socket)
-    end
-    if self.context ~= nil then
-        czmq.zctx_destroy(ffi.new('zctx_t *[1]', self.context))
+        czmq.zsock_destroy(ffi.new('zsock_t *[1]', self.socket))
     end
 end
 
@@ -74,13 +75,13 @@ end
 
 function StreamMessageQueueServer:send(data, id_frame)
     czmq.zframe_send(ffi.new('zframe_t *[1]', id_frame), self.socket, C.ZFRAME_MORE + C.ZFRAME_REUSE)
-    czmq.zmq_send(self.socket, ffi.cast("unsigned char*", data), #data, C.ZFRAME_MORE)
+    zmq.zmq_send(czmq.zsock_resolve(self.socket), ffi.cast("unsigned char*", data), #data, C.ZFRAME_MORE)
     -- Note: We can't use czmq.zstr_send(self.socket, data), which would stop on the first
     -- null byte in data (Lua strings can have null bytes inside).
 
     -- Close connection
     czmq.zframe_send(ffi.new('zframe_t *[1]', id_frame), self.socket, C.ZFRAME_MORE)
-    czmq.zmq_send(self.socket, nil, 0, 0)
+    zmq.zmq_send(czmq.zsock_resolve(self.socket), nil, 0, 0)
 end
 
 return StreamMessageQueueServer
