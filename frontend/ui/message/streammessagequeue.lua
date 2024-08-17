@@ -3,8 +3,8 @@ local logger = require("logger")
 local MessageQueue = require("ui/message/messagequeue")
 
 local _ = require("ffi/zeromq_h")
-local zmq = ffi.load("libs/libzmq.so.4")
-local czmq = ffi.load("libs/libczmq.so.1")
+local zmq = ffi.load("libs/libzmq.so.5")
+local czmq = ffi.load("libs/libczmq.so.4")
 local C = ffi.C
 
 local StreamMessageQueue = MessageQueue:extend{
@@ -13,21 +13,25 @@ local StreamMessageQueue = MessageQueue:extend{
 }
 
 function StreamMessageQueue:start()
-    self.context = czmq.zctx_new()
-    self.socket = czmq.zsocket_new(self.context, C.ZMQ_STREAM)
-    self.poller = czmq.zpoller_new(self.socket, nil)
     local endpoint = string.format("tcp://%s:%d", self.host, self.port)
+    self.socket = czmq.zsock_new(C.ZMQ_STREAM)
+    if not self.socket then
+        error("cannot create socket for endpoint " .. endpoint)
+    end
     logger.dbg("connecting to endpoint", endpoint)
-    local rc = czmq.zsocket_connect(self.socket, endpoint)
-    if rc ~= 0 then
+    if czmq.zsock_connect(self.socket, endpoint) ~= 0 then
         error("cannot connect to " .. endpoint)
     end
-    local id_size = ffi.new("size_t[1]", 256)
+    local id_size = ffi.new("size_t[1]", 255)
     local buffer = ffi.new("uint8_t[?]", id_size[0])
-    --- @todo: Check return of zmq_getsockopt()
-    zmq.zmq_getsockopt(self.socket, C.ZMQ_IDENTITY, buffer, id_size)
+    if zmq.zmq_getsockopt(czmq.zsock_resolve(self.socket), C.ZMQ_IDENTITY, buffer, id_size) ~= 0 then
+        error("cannot get socket identity for endpoint " .. endpoint)
+    end
     self.id = ffi.string(buffer, id_size[0])
-    logger.dbg("id", #self.id, self.id)
+    self.poller = czmq.zpoller_new(self.socket, nil)
+    if not self.poller then
+        error("cannot create poller for endpoint " .. endpoint)
+    end
 end
 
 function StreamMessageQueue:stop()
@@ -35,10 +39,7 @@ function StreamMessageQueue:stop()
         czmq.zpoller_destroy(ffi.new('zpoller_t *[1]', self.poller))
     end
     if self.socket ~= nil then
-        czmq.zsocket_destroy(self.context, self.socket)
-    end
-    if self.context ~= nil then
-        czmq.zctx_destroy(ffi.new('zctx_t *[1]', self.context))
+        czmq.zsock_destroy(ffi.new('zsock_t *[1]', self.socket))
     end
 end
 
