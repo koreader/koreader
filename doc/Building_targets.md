@@ -14,15 +14,15 @@ Each target has its own architecture and you'll need to setup a proper cross-com
 
 #### for Android
 
-A compatible version of the Android NDK and SDK will be downloaded automatically by `./kodev release android` if no NDK or SDK is provided in environment variables. For that purpose you can use:
+If you want to use your own NDK / SDK installs, the build system honor the standard environment variables:
+- NDK location: `ANDROID_NDK_HOME` or `ANDROID_NDK_ROOT`
+- SDK location: `ANDROID_HOME` or `ANDROID_SDK_ROOT`
 
-```
-ANDROID_NDK_HOME=/ndk/location ANDROID_HOME=/sdk/location ./kodev release android
-```
+Otherwise, compatible versions of the Android NDK and SDK will be downloaded and setup automatically (under `base/toolchain`) as part of the build.
 
-If you want to use your own installed tools please make sure that you have the **NDKr23c** and the SDK for Android 9 (**API level 28**) already installed.
+NOTE: If you want to use your own installed tools, please make sure to use the following supported versions: **NDKr23c** and the SDK for Android 9 (**API level 28**).
 
-#### for embedded linux devices
+#### for embedded Linux devices
 
 Cross compile toolchains are available for Ubuntu users through these commands:
 
@@ -63,14 +63,14 @@ You can check out our [nightlybuild script][nb-script] to see how to build a pac
 ### Android
 
 ```
-./kodev release android
+./kodev release ANDROID_TARGET
 ```
 
-### Android (x86)
-
-```
-ANDROID_ARCH=x86 ./kodev release android
-```
+Where `ANDROID_TARGET` is one of the supported targets:
+- `android-arm`
+- `android-arm64`
+- `android-x86`
+- `android-x86_64`
 
 ### Desktop Linux
 
