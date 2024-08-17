@@ -273,7 +273,7 @@ function TermInputText:interpretAnsiSeq(text)
                 self:addChars(text:sub(pos, printable_ends), true, true)
                 pos = printable_ends
             elseif next_byte == "\008" then
-                self.charpos = self.charpos - 1
+                self:leftChar(true)
             end
         elseif self.sequence_state == "esc" then
             self.sequence_state = ""
