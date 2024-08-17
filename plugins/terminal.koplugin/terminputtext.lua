@@ -79,48 +79,33 @@ function TermInputText:trimBuffer(new_size)
         new_size = self.min_buffer_size
     end
     if #self.charlist > new_size then
-        local old_pos = self.charpos -- for adjusting saved positions
-        -- remove char from beginning
-        while #self.charlist > new_size do
-            table.remove(self.charlist, 1)
-            self.charpos = self.charpos - 1
+        -- delete whole lines from beginning
+        local n = #self.charlist - new_size
+        while self.charlist[n+1] and self.charlist[n+1] ~= "\n" do
+            n = n + 1
         end
-        -- remove the (rest) of the first line
-        while self.charlist[1] and self.charlist[1] ~= "\n" do
-            table.remove(self.charlist, 1)
-            self.charpos = self.charpos - 1
+        if self.charlist[n+1] == "\n" then
+            n = n + 1
         end
-        -- remove newline at the first line
-        if self.charlist[1] and self.charlist[1] == "\n" then
-            table.remove(self.charlist, 1)
-            self.charpos = self.charpos - 1
+        -- remove first n chars
+        table.move(self.charlist, n+1, #self.charlist, 1)
+        for dummy = 1, n do
+            self.charlist[#self.charlist] = nil
         end
 
-        -- IMPORTANT: update stored positions if the buffer has to be trimmed
-        local shift_pos = old_pos - self.charpos
+        self.charpos = math.max(1, self.charpos - n)
+
+        -- update stored positions
         if self.store_position then
-            self.store_position = self.store_position - shift_pos
-            if self.store_position < 1 then
-                self.store_position = 1
-            end
+            self.store_position = math.max(1, self.store_position - n)
         end
         if self.store_pos_dec then
-            self.store_pos_dec = self.store_pos_dec - shift_pos
-            if self.store_pos_dec < 1 then
-                self.store_pos_dec = 1
-            end
+            self.store_pos_dec = math.max(1, self.store_pos_dec - n)
         end
         if self.store_pos_sco then
-            self.store_pos_sco = self.store_pos_sco - shift_pos
-            if self.store_pos_sco < 1 then
-                self.store_pos_sco = 1
-            end
+            self.store_pos_sco = math.max(1, self.store_pos_sco - n)
         end
-        -- unlikely but this could happen if the cursor is at the beginning
-        -- and the buffer has to be trimmed
-        if self.charpos < 1 then
-            self.charpos = 1
-        end
+
         self:initTextBox(table.concat(self.charlist), true)
     end
 end
@@ -282,16 +267,12 @@ function TermInputText:interpretAnsiSeq(text)
             if next_byte == esc then
                 self.sequence_state = "esc"
             elseif isPrintable(next_byte) then
-                local part = next_byte
-                -- all bytes up to the next control sequence
-                while pos < #text and isPrintable(next_byte) do
-                    next_byte = text:sub(pos+1, pos+1)
-                    if next_byte ~= "" and pos < #text and isPrintable(next_byte) then
-                        part = part .. next_byte
-                        pos = pos + 1
-                    end
+                local printable_ends = pos
+                while printable_ends < #text and isPrintable(text:sub(printable_ends+1,printable_ends+1)) do
+                    printable_ends = printable_ends + 1
                 end
-                self:addChars(part, true, true)
+                self:addChars(text:sub(pos, printable_ends), true, true)
+                pos = printable_ends
             elseif next_byte == "\008" then
                 self.charpos = self.charpos - 1
             end
@@ -500,6 +481,16 @@ function TermInputText:addChars(chars, skip_callback, skip_table_concat)
         self.charpos = 1 -- move cursor to the first position
     end
 
+    local function insertSpaces(n)
+        if n > 0 then
+            table.move(self.charlist, self.charpos, #self.charlist, self.charpos+n)
+            for i = self.charpos, self.charpos+n-1 do
+                self.charlist[i] = " "
+            end
+        end
+        return self.charpos + math.max(0, n)
+    end
+
     -- this is a modification of inputtext.lua
     local chars_list = util.splitToChars(chars) -- for UTF8
     for i = 1, #chars_list do
@@ -526,13 +517,8 @@ function TermInputText:addChars(chars, skip_callback, skip_table_concat)
             end
 
             -- go to column in next line
-            for j = 1, column-1 do
-                if not self.charlist[self.charpos] then
-                    table.insert(self.charlist, self.charpos, " ")
-                    self.charpos = self.charpos + 1
-                else
-                    break
-                end
+            if not self.charlist[self.charpos] then
+                self.charpos = insertSpaces(column - 1)
             end
 
             if self.charlist[self.charpos] then
@@ -540,15 +526,9 @@ function TermInputText:addChars(chars, skip_callback, skip_table_concat)
             end
 
             -- fill line
-            pos = self.charpos
-            for j = column, self.maxc do
-                if not self.charlist[pos] then
-                    table.insert(self.charlist, pos, " ")
-                end
-                pos = pos + 1
-            end
-            if not self.charlist[pos] then
-                table.insert(self.charlist, pos, "\n")
+            if not self.charlist[self.charpos] then
+                local p = insertSpaces(self.maxc + 1 - column)
+                table.insert(self.charlist, p, "\n")
             end
         elseif chars_list[i] == "\r" then
             if self.charlist[self.charpos] == "\n" then
@@ -564,10 +544,8 @@ function TermInputText:addChars(chars, skip_callback, skip_table_concat)
             if self.wrap then
                 if self.charlist[self.charpos] == "\n" then
                     self.charpos = self.charpos + 1
-                    for j = 0, self.maxc-1 do
-                        if not self.charlist[self.charpos + j] then
-                            table.insert(self.charlist, self.charpos + j, " ")
-                        end
+                    if not self.charlist[self.charpos] then
+                        insertSpaces(self.maxc)
                     end
                 end
             else
@@ -581,8 +559,7 @@ function TermInputText:addChars(chars, skip_callback, skip_table_concat)
                     self.charpos = self.charpos - 1
                 end
             end
-            table.remove(self.charlist, self.charpos)
-            table.insert(self.charlist, self.charpos, chars_list[i])
+            self.charlist[self.charpos] = chars_list[i]
             self.charpos = self.charpos + 1
         end
     end
