@@ -67,7 +67,7 @@ androiddev: update
 update: all
 	# Note: do not remove the module directory so there's no need
 	# for `mk7z.sh` to always recreate `assets.7z` from scratch.
-	rm -rfv $(ANDROID_LIBS)
+	rm -rf $(ANDROID_LIBS)
 	# APK version
 	mkdir -p $(ANDROID_ASSETS)/module $(ANDROID_LIBS)
 	echo $(VERSION) >$(ANDROID_ASSETS)/module/version.txt
