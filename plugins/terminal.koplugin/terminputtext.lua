@@ -650,7 +650,6 @@ function TermInputText:clearToEndOfScreen()
         pos = pos + 1
     end
     self.is_text_edited = true
-    self:initTextBox(table.concat(self.charlist))
 --    self:moveCursorToCharPos(self.charpos)
 end
 
@@ -664,7 +663,6 @@ function TermInputText:delToEndOfLine()
         self.charlist[cur_pos] = " "
         cur_pos = cur_pos + 1
     end
-    self:initTextBox(table.concat(self.charlist))
 end
 
 function TermInputText:reverseLineFeed(skip_callback)
