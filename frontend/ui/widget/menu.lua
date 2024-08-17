@@ -1122,6 +1122,10 @@ function Menu:mergeTitleBarIntoLayout()
         -- Title bar items can be accessed through key mappings on kindle
         return
     end
+    if Device:hasDPad() then
+        -- We'll mangle layout, drop the current focus while FocusManager can still find it
+        self:handleEvent(Event:new("Unfocus"))
+    end
     local menu_item_layout_start_row = 1
     local titlebars = {self.title_bar, self.outer_title_bar}
     for _, v in ipairs(titlebars) do
