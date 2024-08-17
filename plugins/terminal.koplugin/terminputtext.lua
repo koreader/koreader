@@ -461,7 +461,7 @@ function TermInputText:addChars(chars, skip_callback, skip_table_concat)
         return
     end
     if self.enter_callback and chars == "\n" and not skip_callback then
-        UIManager:scheduleIn(0.3, function() self.enter_callback() end)
+        UIManager:nextTick(self.enter_callback)
         return
     end
 
