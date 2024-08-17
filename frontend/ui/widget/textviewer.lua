@@ -15,6 +15,7 @@ local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
+local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -111,6 +112,7 @@ function TextViewer:init(reinit)
 
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.ShowMenu = { { "Menu" } }
     end
 
     if Device:isTouchDevice() then
@@ -176,7 +178,7 @@ function TextViewer:init(reinit)
         title_multilines = self.title_multilines,
         title_shrink_font_to_fit = self.title_shrink_font_to_fit,
         left_icon = self.show_menu and "appbar.menu",
-        left_icon_tap_callback = function() self:showMenu() end,
+        left_icon_tap_callback = function() self:onShowMenu() end,
         close_callback = function() self:onClose() end,
         show_parent = self,
     }
@@ -271,6 +273,16 @@ function TextViewer:init(reinit)
         zero_sep = true,
         show_parent = self,
     }
+
+    -- NT: add titlebar.left_button (hamburger menu) to FocusManager.
+    if Device:hasDPad() and not (Device:hasSymKey() or Device:hasScreenKB()) then
+        -- ButtonTable calls refocusWidget on init, but we'll mangle the layout,
+        -- so kill the initial highlight while FocusManager can still find the current focused item...
+        self.button_table:handleEvent(Event:new("Unfocus"))
+        table.insert(self.button_table.layout, 1, { self.titlebar.left_button })
+        -- And refocus manually on the *actual* layout
+        self.button_table:refocusWidget()
+    end
 
     local textw_height = self.height - self.titlebar:getHeight() - self.button_table:getSize().h
 
@@ -589,7 +601,7 @@ function TextViewer:setTextBold(start_pos, len)
     self.text = text -- restore original text
 end
 
-function TextViewer:showMenu()
+function TextViewer:onShowMenu()
     local dialog
     local buttons = {
         {{
