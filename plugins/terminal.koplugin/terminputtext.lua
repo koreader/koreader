@@ -11,9 +11,9 @@ local logger = require("logger")
 local util = require("util")
 
 local esc = "\027"
+local backspace = "\008"
 
 local esc_seq = {
-    backspace = "\008",
     cursor_left =  "\027[D",
     cursor_right = "\027[C",
     cursor_up =    "\027[A",
@@ -273,8 +273,8 @@ function TermInputText:interpretAnsiSeq(text)
                 end
                 self:addChars(text:sub(pos, printable_ends), true, true)
                 pos = printable_ends
-            elseif next_byte == "\008" then
-                self.charpos = self.charpos - 1
+            elseif next_byte == backspace then
+                self:leftChar(true)
             end
         elseif self.sequence_state == "esc" then
             self.sequence_state = ""
@@ -762,7 +762,7 @@ function TermInputText:delChar()
     if self.charpos == 1 then return end
 
     if self.strike_callback then
-        self.strike_callback(esc_seq.backspace)
+        self.strike_callback(backspace)
         return
     end
     InputText.delChar(self)
