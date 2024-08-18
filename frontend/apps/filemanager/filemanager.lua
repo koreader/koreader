@@ -159,11 +159,8 @@ function FileManager:setupLayout()
         return_arrow_propagation = true,
         -- allow Menu widget to delegate handling of some gestures to GestureManager
         filemanager = self,
-        -- We don't actually display Menu's own title bar, we use our own
-        no_title = true,
-        -- Let Menu widget merge our title_bar into its own TitleBar's FocusManager layout
-        -- i.e., since we don't actually use its titlebar, make sure ours is in its layout
-        outer_title_bar = self.title_bar,
+        -- We don't actually display Menu's own title bar, we use our own (FileChooser extends Menu w/ no_title set)
+        custom_title_bar = self.title_bar,
     }
     self.file_chooser = file_chooser
     self.focused_file = nil -- use it only once
@@ -355,6 +352,7 @@ function FileManager:setupLayout()
         padding = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
+        -- Becase FileChooser sets no_title, we need to do this ourselves
         VerticalGroup:new{
             self.title_bar,
             file_chooser,
@@ -367,7 +365,7 @@ function FileManager:setupLayout()
         ui = self
     }
 
-    -- FileChooser already adds self.title_bar to layout via outer_title_bar through Menu:mergeTitleBarIntoLayout
+    -- No need to reinvent the wheel, use FileChooser's layout
     self.layout = file_chooser.layout
 
     self:registerKeyEvents()
