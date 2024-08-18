@@ -67,10 +67,10 @@ return {
                     {
                         text = _("Rotate cover to fit screen"),
                         checked_func = function()
-                            return G_reader_settings:isTrue("screensaver_autorotate_images")
+                            return G_reader_settings:isTrue("screensaver_rotate_auto_for_best_fit")
                         end,
                         callback = function(touchmenu_instance)
-                            G_reader_settings:flipNilOrFalse("screensaver_autorotate_images")
+                            G_reader_settings:flipNilOrFalse("screensaver_rotate_auto_for_best_fit")
                             touchmenu_instance:updateItems()
                         end,
                     }

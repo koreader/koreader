@@ -49,8 +49,8 @@ end
 if G_reader_settings:hasNot("screensaver_stretch_images") then
     G_reader_settings:makeFalse("screensaver_stretch_images")
 end
-if G_reader_settings:hasNot("screensaver_autorotate_images") then
-    G_reader_settings:makeFalse("screensaver_autorotate_images")
+if G_reader_settings:hasNot("screensaver_rotate_auto_for_best_fit") then
+    G_reader_settings:makeFalse("screensaver_rotate_auto_for_best_fit")
 end
 if G_reader_settings:hasNot("screensaver_delay") then
     G_reader_settings:saveSetting("screensaver_delay", "disable")
@@ -512,7 +512,7 @@ function Screensaver:show()
 
     -- We mostly always suspend in Portrait/Inverted Portrait mode...
     -- ... except when we just show an InfoMessage or when the screensaver
-    -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5920).
+    -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5290).
     -- We also exclude full-screen widgets that work fine in Landscape mode,
     -- like ReadingProgress and BookStatus (c.f., #5724)
     if self:modeExpectsPortrait() then
@@ -556,7 +556,7 @@ function Screensaver:show()
             widget_settings.image = self.image
             widget_settings.image_disposable = true
         elseif self.image_file then
-            if G_reader_settings:isTrue("screensaver_autorotate_images") then
+            if G_reader_settings:isTrue("screensaver_rotate_auto_for_best_fit") then
                 -- We need to load the image here to determine whether to rotate
                 if util.getFileNameSuffix(self.image_file) == "svg" then
                     widget_settings.image = RenderImage:renderSVGImageFile(self.image_file, nil, nil, 1)
@@ -573,10 +573,9 @@ function Screensaver:show()
             end
             widget_settings.alpha = true
         end
-        if G_reader_settings:isTrue("screensaver_autorotate_images") then
+        if G_reader_settings:isTrue("screensaver_rotate_auto_for_best_fit") then
             local angle = rotation_mode == 3 and 180 or 0 -- match mode if possible
-            if (widget_settings.image:getWidth() < widget_settings.image:getHeight())
-                ~= (widget_settings.width < widget_settings.height) then
+            if (widget_settings.image:getWidth() < widget_settings.image:getHeight()) ~= (widget_settings.width < widget_settings.height) then
                 angle = angle + 90
             end
             widget_settings.rotation_angle = angle
