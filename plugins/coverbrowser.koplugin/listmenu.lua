@@ -229,7 +229,7 @@ function ListMenuItem:update()
         local pad_width = Screen:scaleBySize(10) -- on the left, in between, and on the right
         local wleft_width = dimen.w - wright:getWidth() - 3*pad_width
         local wleft = TextBoxWidget:new{
-            text = BD.directory(self.text),
+            text = BD.directory(self.text:sub(1, -2)),
             face = Font:getFace("cfont", _fontSize(20, 24)),
             width = wleft_width,
             alignment = "left",
