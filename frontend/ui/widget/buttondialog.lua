@@ -44,10 +44,10 @@ local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Font = require("ui/font")
+local FocusManager = require("ui/widget/focusmanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local ScrollableContainer = require("ui/widget/container/scrollablecontainer")
@@ -59,7 +59,7 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
 local util = require("util")
 
-local ButtonDialog = InputContainer:extend{
+local ButtonDialog = FocusManager:extend{
     buttons = nil,
     width = nil,
     width_factor = nil, -- number between 0 and 1, factor to the smallest of screen width and height
@@ -234,6 +234,11 @@ function ButtonDialog:init()
         }
     }
 
+    -- No need to reinvent the wheel, ButtonTable's layout is perfect as-is
+    self.layout = self.buttontable.layout
+    -- But we'll want to control focus in its place, though
+    self.buttontable.layout = nil
+
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
         self.movable,
@@ -295,25 +300,27 @@ function ButtonDialog:onTapClose(arg, ges)
 end
 
 function ButtonDialog:paintTo(...)
-    InputContainer.paintTo(self, ...)
+    FocusManager.paintTo(self, ...)
     self.dimen = self.movable.dimen
 end
 
-function ButtonDialog:_onFocusMove(args)
-    if not self.cropping_widget then
-        return
+function ButtonDialog:onFocusMove(args)
+    local ret = FocusManager.onFocusMove(self, args)
+
+    if self.cropping_widget then
+        local focus = self:getFocusItem()
+        if self.dimen and focus and focus.dimen then
+            local button_y_offset = focus.dimen.y - self.dimen.y - self.top_to_content_offset
+            self.cropping_widget:_scrollBy(0, button_y_offset, true)
+        end
     end
 
-    local focus = self.buttontable:getFocusItem()
-    if self.dimen and focus and focus.dimen then
-        local button_y_offset = focus.dimen.y - self.dimen.y - self.top_to_content_offset
-        self.cropping_widget:_scrollBy(0, button_y_offset, true)
-    end
+    return ret
 end
 
 function ButtonDialog:_onPageScrollToRow(row)
     -- ScrollableContainer will pass us the row number of the top widget at the current scroll offset
-    self.buttontable:moveFocusTo(1, row)
+    self:moveFocusTo(1, row)
 end
 
 return ButtonDialog
