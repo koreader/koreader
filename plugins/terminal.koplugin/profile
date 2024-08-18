@@ -7,6 +7,11 @@
 
 # shellcheck source=/dev/null
 
+if [ -x "${SHELL}" ] && [ "${SHELL}" != "$0" ]; then
+    exec "${SHELL}" "$@"
+    exit 0
+fi
+
 TERMINAL_HOME="$(pwd)"
 # make TERMINAL_DATA an absolute path
 cd "${TERMINAL_DATA}" || exit
