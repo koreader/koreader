@@ -636,7 +636,7 @@ function ScrollableContainer:_notifyParentOfPageScroll()
     -- For ButtonDialog's focus shenanigans, as we ourselves are not a FocusManager
     if self.show_parent and self.show_parent._onPageScrollToRow then
         local top_row = self:_getStepScrollRowAtY(self._scroll_offset_y, true)
-        self.show_parent:_onPageScrollToRow(top_row.row_num)
+        self.show_parent:_onPageScrollToRow(top_row and top_row.row_num or 1)
     end
 end
 
