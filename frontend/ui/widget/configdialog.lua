@@ -687,7 +687,7 @@ function ConfigOption:_itemGroupToLayoutLine(option_items_group)
             if v.layout and v.disableFocusManagement then -- it is a FocusManager
                 -- merge child layout to one row layout
                 -- currently child widgets are all one row
-                -- need improved if two or more rows widget existed
+                -- needs improvement if we ever implement widgets with two or more rows
                 for _, row in ipairs(v.layout) do
                     for _, widget in ipairs(row) do
                         layout_line[j] = widget

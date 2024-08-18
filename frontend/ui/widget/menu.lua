@@ -1123,10 +1123,6 @@ function Menu:mergeTitleBarIntoLayout()
         -- Title bar items can be accessed through key mappings on kindle
         return
     end
-    if Device:hasDPad() then
-        -- We'll mangle layout, drop the current focus while FocusManager can still find it
-        self:handleEvent(Event:new("Unfocus"))
-    end
     local menu_item_layout_start_row = 1
     -- On hasFewKeys devices, Menu uses the "Right" key to trigger the context menu: we can't use it to move focus in horizontal directions.
     -- So, add title bar buttons to FocusManager's layout in a vertical-only layout
@@ -1139,7 +1135,8 @@ function Menu:mergeTitleBarIntoLayout()
         menu_item_layout_start_row = #self.layout -- avoid index overflow
     end
     if Device:hasDPad() then
-        self:moveFocusTo(1, menu_item_layout_start_row, FocusManager.NOT_FOCUS) -- move focus to first menu item if any, keep original behavior
+        -- Move focus to the first menu item, if any, in keeping with the pre-FocusManager behavior
+        self:moveFocusTo(1, menu_item_layout_start_row, FocusManager.NOT_FOCUS)
     end
 end
 
