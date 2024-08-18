@@ -1,5 +1,5 @@
 --[[--
-This plugin provides a terminal emulator (VT52 (+some ANSI))
+This plugin provides a terminal emulator (VT52 (+some ANSI and some VT100))
 
 @module koplugin.terminal
 ]]
@@ -182,7 +182,21 @@ function Terminal:spawnShell(cols, rows)
         if Device:isAndroid() then
             C.setenv("ANDROID", "ANDROID", 1)
         end
-        if C.execlp(shell, shell) ~= 0 then
+
+        local function get_readline_wrapper()
+            if os.execute("which rlfe") == 0 then
+                return "rlfe"
+            elseif os.execute("which rlwrap") == 0 then
+                return "rlwrap"
+            else
+                return
+            end
+        end
+
+        -- Here we use an existing readline wrapper
+        local rlw = get_readline_wrapper()
+
+        if (rlw and C.execlp(rlw, rlw, shell)) or C.execlp(shell, shell) ~= 0 then
             -- the following two prints are shown in the terminal emulator.
             print("Terminal: something has gone really wrong in spawning the shell\n\n:-(\n")
             print("Maybe an incorrect shell: '" .. shell .. "'\n")
