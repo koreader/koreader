@@ -72,6 +72,10 @@ function ReaderFont:setupFaceMenuTable()
     face_list = self:sortFaceList(face_list)
     for k, v in ipairs(face_list) do
         local font_filename, font_faceindex, is_monospace = cre.getFontFaceFilenameAndFaceIndex(v)
+        if not font_filename then
+            -- The font may be available only in italic, for example script/cursive fonts
+            font_filename, font_faceindex, is_monospace = cre.getFontFaceFilenameAndFaceIndex(v, nil, true)
+        end
         table.insert(self.face_table, {
             text_func = function()
                 -- defaults are hardcoded in credocument.lua
@@ -572,6 +576,9 @@ Enabling this will ignore such font names and make sure your preferred family fo
         }
         for k, v in ipairs(face_list) do
             local font_filename, font_faceindex, is_monospace, has_ot_math, has_emojis = cre.getFontFaceFilenameAndFaceIndex(v)
+            if not font_filename then
+                font_filename, font_faceindex, is_monospace, has_ot_math, has_emojis = cre.getFontFaceFilenameAndFaceIndex(v, nil, true)
+            end
             if i == 1 then
                 face_to_filename[v] = { font_filename, font_faceindex }
             end
