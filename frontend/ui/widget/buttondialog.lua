@@ -152,6 +152,7 @@ function ButtonDialog:init()
         title_widget = VerticalSpan:new{}
         title_widget_height = 0
     end
+    self.top_to_content_offset = Size.padding.buttontable + Size.margin.default + title_widget_height
 
     -- If the ButtonTable ends up being taller than the screen, wrap it inside a ScrollableContainer.
     -- Ensure some small top and bottom padding, so the scrollbar stand out, and some outer margin
@@ -305,8 +306,8 @@ function ButtonDialog:_onFocusMove(args)
 
     local focus = self.buttontable:getFocusItem()
     if self.dimen and focus and focus.dimen then
-        local button_y_offset = focus.dimen.y - self.dimen.y
-        self.cropping_widget:_scrollBy(0, button_y_offset)
+        local button_y_offset = focus.dimen.y - self.dimen.y - self.top_to_content_offset
+        self.cropping_widget:_scrollBy(0, button_y_offset, true)
     end
 end
 
