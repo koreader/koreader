@@ -92,7 +92,36 @@ local Terminal = WidgetContainer:extend{
     terminal_data = ".",
 }
 
+function Terminal:isExecutable(file)
+    if os.execute(string.format("test -x %s", file)) == 0 then -- full path
+        return true
+    elseif os.execute(string.format("which %s 2>/dev/null 1>/dev/null", file)) == 0 then
+        return true
+    end
+end
+
+-- Try SHELL environment variable and some standard shells
+function Terminal:determineShellExecutable()
+    if self.default_shell_executable then return self.default_shell_executable end
+
+    local shell = {"mksh", "ksh", "zsh", "ash", "dash", "sh", "bash"}
+    table.insert(shell, os.getenv("SHELL"))
+
+    while #shell >= 1  do
+        if self:isExecutable(shell[#shell]) then
+            self.default_shell_executable = shell[#shell]
+            break
+        else
+            shell[#shell] = nil
+        end
+    end
+
+    return self.default_shell_executable
+end
+
 function Terminal:init()
+    G_reader_settings:readSetting("terminal_shell", self:determineShellExecutable())
+
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 
@@ -110,8 +139,6 @@ function Terminal:spawnShell(cols, rows)
         self.input_widget:interpretAnsiSeq(self:receive())
         return true
     end
-
-    local shell = G_reader_settings:readSetting("terminal_shell", "sh")
 
     local ptmx_name = "/dev/ptmx"
     self.ptmx = C.open(ptmx_name, bit.bor(C.O_RDWR, C.O_NONBLOCK, C.O_CLOEXEC))
@@ -175,18 +202,19 @@ function Terminal:spawnShell(cols, rows)
             end
         end
 
+        local profile_file = "./plugins/terminal.koplugin/profile"
         C.setenv("TERM", "vt52", 1)
-        C.setenv("ENV", "./plugins/terminal.koplugin/profile", 1)
-        C.setenv("BASH_ENV", "./plugins/terminal.koplugin/profile", 1)
+        C.setenv("ENV", profile_file, 1) -- when bash is started as sh
+        C.setenv("BASH_ENV", profile_file, 1) -- when bash is started non-interactive
         C.setenv("TERMINAL_DATA", self.terminal_data, 1)
         if Device:isAndroid() then
             C.setenv("ANDROID", "ANDROID", 1)
         end
 
         local function get_readline_wrapper()
-            if os.execute("which rlfe") == 0 then
+            if self:isExecutable("rlfe") then
                 return "rlfe"
-            elseif os.execute("which rlwrap") == 0 then
+            elseif self:isExecutable("rlwrap") then
                 return "rlwrap"
             else
                 return
@@ -195,11 +223,20 @@ function Terminal:spawnShell(cols, rows)
 
         -- Here we use an existing readline wrapper
         local rlw = get_readline_wrapper()
+        local shell = G_reader_settings:readSetting("terminal_shell")
 
-        if (rlw and C.execlp(rlw, rlw, shell)) or C.execlp(shell, shell) ~= 0 then
+        local args = {}
+        if shell:find("bash") then
+            args = { "--rcfile", profile_file}
+        end
+
+        if not self:isExecutable(shell)
+            or (rlw and C.execlp(rlw, rlw, shell, unpack(args)) ~= 0)
+            or C.execlp(shell, shell, unpack(args)) ~= 0 then
+
             -- the following two prints are shown in the terminal emulator.
             print("Terminal: something has gone really wrong in spawning the shell\n\n:-(\n")
-            print("Maybe an incorrect shell: '" .. shell .. "'\n")
+            print("Maybe an incorrect shell: '" .. shell .. "'\nor  an incorrect wrapper: " .. tostring(rlw) .. "'\n")
             os.exit()
         end
         os.exit()
@@ -576,14 +613,14 @@ Aliases (shortcuts) to frequently used commands can be placed in:
             },
             {
                 text_func = function()
-                    return T(_("Shell executable: %1"),
-                        G_reader_settings:readSetting("terminal_shell", "sh"))
+                    return T(_("Shell executable: %1"), G_reader_settings:readSetting("terminal_shell"))
                 end,
                 callback = function(touchmenu_instance)
                     self.shell_dialog = InputDialog:new{
                         title = _("Shell to use"),
-                        description = _("Here you can select the startup shell.\nDefault: sh"),
-                        input = G_reader_settings:readSetting("terminal_shell", "sh"),
+                        description = T(_("Here you can select the startup shell.\nDefault: %1"),
+                                      self:determineShellExecutable()),
+                        input = G_reader_settings:readSetting("terminal_shell"),
                         buttons = {{
                             {
                                 text = _("Cancel"),
@@ -594,7 +631,7 @@ Aliases (shortcuts) to frequently used commands can be placed in:
                             {
                                 text = _("Default"),
                                 callback = function()
-                                    G_reader_settings:saveSetting("terminal_shell", "sh")
+                                    G_reader_settings:saveSetting("terminal_shell", self:determineShellExecutable())
                                     UIManager:close(self.shell_dialog)
                                     if touchmenu_instance then
                                         touchmenu_instance:updateItems()
