@@ -350,11 +350,9 @@ function SkimToWidget:init()
             bottom_buttons_row,
         }
     }
-    if full_mode then
-        self.movable = MovableContainer:new{
-            self.skimto_frame,
-        }
-    end
+    self.movable = MovableContainer:new{
+        self.skimto_frame,
+    }
     self[1] = WidgetContainer:new{
         align = skim_dialog_position or "center",
         dimen = Geom:new{
@@ -362,7 +360,7 @@ function SkimToWidget:init()
             w = screen_width,
             h = screen_height,
         },
-        self.movable or self.skimto_frame,
+        self.movable,
     }
 
     if Device:hasDPad() then
