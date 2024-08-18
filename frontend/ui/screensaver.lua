@@ -576,7 +576,7 @@ function Screensaver:show()
         if G_reader_settings:isTrue("screensaver_rotate_auto_for_best_fit") then
             local angle = rotation_mode == 3 and 180 or 0 -- match mode if possible
             if (widget_settings.image:getWidth() < widget_settings.image:getHeight()) ~= (widget_settings.width < widget_settings.height) then
-                angle = angle + 90
+                angle = angle + (G_reader_settings:isTrue("imageviewer_rotation_landscape_invert") and -90 or 90)
             end
             widget_settings.rotation_angle = angle
         end
