@@ -59,6 +59,8 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
 local util = require("util")
 
+local logger = require("logger")
+
 local ButtonDialog = InputContainer:extend{
     buttons = nil,
     width = nil,
@@ -296,6 +298,30 @@ end
 function ButtonDialog:paintTo(...)
     InputContainer.paintTo(self, ...)
     self.dimen = self.movable.dimen
+end
+
+function ButtonDialog:_onFocusMove(args)
+    if not self.cropping_widget then
+        return
+    end
+
+    local dx, dy = unpack(args)
+    print("ButtonDialog:_onFocusMove", dx, dy)
+    local focus = self.buttontable:getFocusItem()
+    if self.dimen and focus and focus.dimen then
+        logger.dbg("focus dimen:", focus.dimen)
+        logger.dbg("self dimen:", self.dimen)
+        local button_y_offset = focus.dimen.y - self.dimen.y
+        logger.dbg("button y offset:", button_y_offset)
+
+        self.cropping_widget:_scrollBy(0, button_y_offset)
+    end
+end
+
+function ButtonDialog:_onPageScrollToRow(row)
+    print("ButtonDialog:_onPageScrollToRow", row)
+    -- ScrollableContainer will pass us the row number of the top widget at the current scroll offset
+    self.buttontable:moveFocusTo(1, row)
 end
 
 return ButtonDialog
