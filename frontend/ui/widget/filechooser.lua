@@ -494,7 +494,6 @@ end
 
 function FileChooser:updateItems(select_number, no_recalculate_dimen)
     Menu.updateItems(self, select_number, no_recalculate_dimen) -- call parent's updateItems()
-    self:mergeTitleBarIntoLayout()
     self.path_items[self.path] = (self.page - 1) * self.perpage + (select_number or 1)
 end
 
