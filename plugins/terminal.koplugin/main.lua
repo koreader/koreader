@@ -393,6 +393,7 @@ function Terminal:generateInputDialog()
                         end
 
                         UIManager:close(self.input_dialog)
+                        UIManager:unschedule(Terminal.refresh)
                         if self.touchmenu_instance then
                             self.touchmenu_instance:updateItems()
                         end
@@ -402,6 +403,7 @@ function Terminal:generateInputDialog()
                         self.history = ""
                         self:killShell()
                         UIManager:close(self.input_dialog)
+                        UIManager:unschedule(Terminal.refresh)
                         if self.touchmenu_instance then
                             self.touchmenu_instance:updateItems()
                         end
