@@ -1128,15 +1128,12 @@ function Menu:mergeTitleBarIntoLayout()
         self:handleEvent(Event:new("Unfocus"))
     end
     local menu_item_layout_start_row = 1
-    local titlebars = {self.title_bar, self.outer_title_bar}
-    for _, v in ipairs(titlebars) do
-        -- Menu uses the right key to trigger the context menu: we can't use it to move focus in horizontal directions.
-        -- So, add title bar buttons to FocusManager's layout in a vertical-only layout
-        local title_bar_layout = v:generateVerticalLayout()
-        for _, row in ipairs(title_bar_layout) do
-            table.insert(self.layout, menu_item_layout_start_row, row)
-            menu_item_layout_start_row = menu_item_layout_start_row + 1
-        end
+    -- Menu uses the right key to trigger the context menu: we can't use it to move focus in horizontal directions.
+    -- So, add title bar buttons to FocusManager's layout in a vertical-only layout
+    local title_bar_layout = self.title_bar:generateVerticalLayout()
+    for _, row in ipairs(title_bar_layout) do
+        table.insert(self.layout, menu_item_layout_start_row, row)
+        menu_item_layout_start_row = menu_item_layout_start_row + 1
     end
     if menu_item_layout_start_row > #self.layout then -- no menu items
         menu_item_layout_start_row = #self.layout -- avoid index overflow
