@@ -572,7 +572,7 @@ function Screensaver:show()
                 widget_settings.file_do_cache = false
             end
             widget_settings.alpha = true
-        end
+        end -- set cover or file
         if G_reader_settings:isTrue("screensaver_rotate_auto_for_best_fit") then
             local angle = rotation_mode == 3 and 180 or 0 -- match mode if possible
             if (widget_settings.image:getWidth() < widget_settings.image:getHeight()) ~= (widget_settings.width < widget_settings.height) then
