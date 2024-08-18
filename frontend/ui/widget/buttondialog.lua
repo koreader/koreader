@@ -318,11 +318,9 @@ function ButtonDialog:onFocusMove(args)
     return ret
 end
 
-function ButtonDialog:onContainerPageScrollToRow(row)
+function ButtonDialog:_onPageScrollToRow(row)
     -- ScrollableContainer will pass us the row number of the top widget at the current scroll offset
     self:moveFocusTo(1, row)
-
-    return true
 end
 
 return ButtonDialog
