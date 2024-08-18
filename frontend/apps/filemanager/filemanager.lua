@@ -158,7 +158,7 @@ function FileManager:setupLayout()
         return_arrow_propagation = true,
         -- allow Menu widget to delegate handling of some gestures to GestureManager
         filemanager = self,
-        -- We don't actually display Menu's own title bar, we use our own (FileChooser extends Menu w/ no_title set)
+        -- Tell FileChooser (i.e., Menu) to use our own title bar instead of Menu's default one
         custom_title_bar = self.title_bar,
     }
     self.file_chooser = file_chooser
