@@ -146,11 +146,10 @@ function FileManager:setupLayout()
     self:updateTitleBarPath(self.root_path)
 
     local file_chooser = FileChooser:new{
-        -- remember to adjust the height when new item is added to the group
         path = self.root_path,
         focused_path = self.focused_file,
         show_parent = self.show_parent,
-        height = Screen:getHeight() - self.title_bar:getHeight(),
+        height = Screen:getHeight(),
         is_popout = false,
         is_borderless = true,
         file_filter = function(filename) return DocumentRegistry:hasProvider(filename) end,
@@ -352,11 +351,7 @@ function FileManager:setupLayout()
         padding = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
-        -- Becase FileChooser sets no_title, we need to do this ourselves
-        VerticalGroup:new{
-            self.title_bar,
-            file_chooser,
-        }
+        file_chooser,
     }
 
     self[1] = fm_ui

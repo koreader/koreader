@@ -17,8 +17,8 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = ffiUtil.template
 
+-- NOTE: It's our caller's responsibility to setup a title bar and pass it to us via custom_title_bar (c.f., FileManager)
 local FileChooser = Menu:extend{
-    no_title = true,
     path = lfs.currentdir(),
     show_path = true,
     parent = nil,
