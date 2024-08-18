@@ -512,6 +512,7 @@ function ListMenuItem:update()
             local wtitle, wauthors
             local title, authors
             local series_mode = BookInfoManager:getSetting("series_mode")
+            local show_series = bookinfo.series and bookinfo.series_index and bookinfo.series_index ~= 0
 
             -- whether to use or not title and authors
             -- (We wrap each metadata text with BD.auto() to get for each of them
@@ -534,7 +535,7 @@ function ListMenuItem:update()
                     for i=1, #authors do
                         authors[i] = BD.auto(authors[i])
                     end
-                    if #authors > 1 and bookinfo.series and series_mode == "series_in_separate_line" then
+                    if #authors > 1 and show_series and series_mode == "series_in_separate_line" then
                         authors = { T(_("%1 et al."), authors[1]) }
                     elseif #authors > 2 then
                         authors = { authors[1], T(_("%1 et al."), authors[2]) }
