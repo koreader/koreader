@@ -418,6 +418,7 @@ function ListMenuItem:update()
             if fn_page_count then
                 local unread_chr = "◽"
                 local read_chr = "◾"
+				local finished_chr = "★"
                 local fn_pages = tonumber(fn_page_count)
 
                 -- 125 pages per 1cm in avg hardcover
@@ -427,7 +428,9 @@ function ListMenuItem:update()
                 -- minimum of 2 blocks otherwise book goes from ◽ to ◾ immediately
                 local total_blocks = math.max((math.min(math.floor((fn_pages/25)+0.5), 30)), 2)
 
-                if status == "complete" or status == "abandoned" then
+				if status == "complete" then
+                    pages_str = string.rep(read_chr, total_blocks) .. finished_chr
+                elseif status == "abandoned" then
                     pages_str = string.rep(read_chr, total_blocks)
                 elseif percent_finished then
                     local finished_blocks = math.max(math.floor(total_blocks * percent_finished), 1)
