@@ -319,11 +319,29 @@ function FocusManager:moveFocusTo(x, y, focus_flags)
         self.selected.x = x
         self.selected.y = y
         -- widget create new layout on update, previous may be removed from new layout.
+        print("current_item:", current_item)
+        print("target_item:", target_item)
         if Device:hasDPad() then
-            if bit.band(focus_flags, FocusManager.NOT_UNFOCUS) ~= FocusManager.NOT_UNFOCUS and current_item and current_item ~= target_item then
-                current_item:handleEvent(Event:new("Unfocus"))
+            if bit.band(focus_flags, FocusManager.NOT_UNFOCUS) ~= FocusManager.NOT_UNFOCUS then
+                print("Need unfocus old")
+                -- NOTE: We can't necessarily guarantee the integrity of self.layout,
+                --       as some callers *will* mangle it and call us expecting to fix things ;).
+                --       Since we do not want to leave *multiple* items (visually) focused,
+                --       we potentially need to be a bit heavy-handed ;).
+                if current_item and current_item ~= target_item then
+                    -- This is the absolute best-case scenario, when self.layout's integrity is sound
+                    print("Unfocus current_item")
+                    current_item:handleEvent(Event:new("Unfocus"))
+                else
+                    -- Couldn't find the current item, or it matches the target_item: blast the whole widget container,
+                    -- just in case we still have a different, older widget visually focused.
+                    -- Can easily happen if caller calls refocusWidget *after* having manually mangled self.layout.
+                    print("Unfocus whole widget")
+                    self:handleEvent(Event:new("Unfocus"))
+                end
             end
             if bit.band(focus_flags, FocusManager.NOT_FOCUS) ~= FocusManager.NOT_FOCUS then
+                print("Need focus new")
                 target_item:handleEvent(Event:new("Focus"))
                 UIManager:setDirty(self.show_parent or self, "fast")
             end
@@ -488,6 +506,7 @@ function FocusManager:refocusWidget(nextTick, focus_flags)
         end
     else
         self._parent:refocusWidget(nextTick, focus_flags)
+        self._parent = nil
     end
 end
 

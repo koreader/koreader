@@ -276,11 +276,8 @@ function TextViewer:init(reinit)
 
     -- NT: add titlebar.left_button (hamburger menu) to FocusManager.
     if Device:hasDPad() and not (Device:hasSymKey() or Device:hasScreenKB()) then
-        -- ButtonTable calls refocusWidget on init, but we'll mangle the layout,
-        -- so kill the initial highlight while FocusManager can still find the current focused item...
-        self.button_table:handleEvent(Event:new("Unfocus"))
         table.insert(self.button_table.layout, 1, { self.titlebar.left_button })
-        -- And refocus manually on the *actual* layout
+        -- Refocus on the updated layout
         self.button_table:refocusWidget()
     end
 
