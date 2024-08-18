@@ -4,7 +4,14 @@ local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local TitleBar = require("ui/widget/titlebar")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Blitbuffer = require("ffi/blitbuffer")
+local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local _ = require("gettext")
+local Device = require("device")
+local Screen = Device.screen
 
 local BookInfoManager = require("bookinfomanager")
 
@@ -543,6 +550,53 @@ function CoverMenu:tapPlus()
         buttons = orig_buttons,
     }
     UIManager:show(self.file_dialog)
+    return true
+end
+
+function CoverMenu:setupLayout()
+    CoverMenu._FileManager_setupLayout_orig(self)
+    
+    self.title_bar = TitleBar:new{
+        show_parent = self.show_parent,
+        fullscreen = "true",
+        align = "center",
+        title = self.title,
+        title_top_padding = Screen:scaleBySize(6),
+        subtitle = "",
+        subtitle_truncate_left = true,
+        subtitle_fullwidth = true,
+        button_padding = Screen:scaleBySize(5),
+        left_icon = "direction.RLTB",
+        left_icon_size_ratio = 1,
+        left_icon_tap_callback = function() self:goHome() end,
+        left_icon_hold_callback = function() self:onShowFolderMenu() end,
+        right_icon = self.selected_files and "check" or "plus",
+        right_icon_size_ratio = 1,
+        right_icon_tap_callback = function() self:onShowPlusMenu() end,
+        right_icon_hold_callback = false, -- propagate long-press to dispatcher
+    }
+    self:updateTitleBarPath(self.root_path)
+
+    
+    self.layout = VerticalGroup:new{
+        self.title_bar,
+        self.file_chooser,
+    }
+
+    local fm_ui = FrameContainer:new{
+        padding = 0,
+        bordersize = 0,
+        background = Blitbuffer.COLOR_WHITE,
+        self.layout,
+    }
+
+    self[1] = fm_ui
+
+    self.menu = FileManagerMenu:new{
+        ui = self
+    }
+
+
     return true
 end
 

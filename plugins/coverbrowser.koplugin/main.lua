@@ -28,6 +28,7 @@ local _FileManagerCollection_updateItemTable_orig = FileManagerCollection.update
 
 local FileManager = require("apps/filemanager/filemanager")
 local _FileManager_tapPlus_orig = FileManager.tapPlus
+local _FileManager_setupLayout_orig = FileManager.setupLayout
 
 -- Available display modes
 local DISPLAY_MODES = {
@@ -47,7 +48,7 @@ local collection_display_mode = false -- not initialized yet
 local series_mode = nil -- defaults to not display series
 
 local CoverBrowser = WidgetContainer:extend{
-    name = "coverbrowser",
+    name = "coverbrowserclean",
     modes = {
         { _("Classic (filename only)") },
         { _("Mosaic with cover images"), "mosaic_image" },
@@ -571,6 +572,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser.onCloseWidget = _FileChooser_onCloseWidget_orig
         FileChooser._recalculateDimen = _FileChooser__recalculateDimen_orig
         FileManager.tapPlus = _FileManager_tapPlus_orig
+        FileManager.setupLayout = _FileManager_setupLayout_orig
         -- Also clean-up what we added, even if it does not bother original code
         FileChooser.updateCache = nil
         FileChooser._updateItemsBuildUI = nil
@@ -614,6 +616,10 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
     -- to CoverMenu)
     CoverMenu._FileManager_tapPlus_orig = _FileManager_tapPlus_orig
     FileManager.tapPlus = CoverMenu.tapPlus
+
+    
+    CoverMenu._FileManager_setupLayout_orig = _FileManager_setupLayout_orig
+    FileManager.setupLayout = CoverMenu.setupLayout
 
     if init_done then
         self:refreshFileManagerInstance()
