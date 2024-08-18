@@ -244,16 +244,4 @@ function ButtonTable:getButtonById(id)
     return self.button_by_id[id] -- nil if not found
 end
 
-function ButtonTable:onFocusMove(args)
-    FocusManager.onFocusMove(self, args)
-
-    -- For ButtonDialog's ScrollableContainer shenanigans
-    if self.show_parent and self.show_parent._onFocusMove then
-        self.show_parent:_onFocusMove(args)
-    end
-
-    -- Don't stop the event here, as layout may in fact be handled by our parent.
-end
-
-
 return ButtonTable
