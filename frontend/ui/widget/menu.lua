@@ -1128,7 +1128,7 @@ function Menu:mergeTitleBarIntoLayout()
         self:handleEvent(Event:new("Unfocus"))
     end
     local menu_item_layout_start_row = 1
-    -- Menu uses the right key to trigger the context menu: we can't use it to move focus in horizontal directions.
+    -- On hasFewKeys devices, Menu uses the "Right" key to trigger the context menu: we can't use it to move focus in horizontal directions.
     -- So, add title bar buttons to FocusManager's layout in a vertical-only layout
     local title_bar_layout = self.title_bar:generateVerticalLayout()
     for _, row in ipairs(title_bar_layout) do
