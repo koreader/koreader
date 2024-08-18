@@ -105,7 +105,7 @@ function MultiInputDialog:init()
     -- init title and buttons in base class
     InputDialog.init(self)
     -- Reset layout, we're not using InputDialog's own field
-    self.layout = {{}}
+    self.layout = {}
     local VerticalGroupData = VerticalGroup:new{
         align = "left",
         self.title_bar,
