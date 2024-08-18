@@ -73,7 +73,7 @@ function ReaderFont:setupFaceMenuTable()
     for k, v in ipairs(face_list) do
         local font_filename, font_faceindex, is_monospace = cre.getFontFaceFilenameAndFaceIndex(v)
         if not font_filename then
-            -- The font may be available only in italic, for example script fonts
+            -- The font may be available only in italic, for example script/cursive fonts
             font_filename, font_faceindex, is_monospace = cre.getFontFaceFilenameAndFaceIndex(v, nil, true)
         end
         table.insert(self.face_table, {
