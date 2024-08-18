@@ -257,7 +257,7 @@ function ReaderBookmark:genShowInItemsMenuItems(value)
     local strings = {
         text = _("highlighted text"),
         all  = _("highlighted text and note"),
-        note = _("note, or highlighted text"),
+        note = _("note if set, otherwise highlighted text"),
     }
     if value == nil then
         value = G_reader_settings:readSetting("bookmarks_items_text_type", "note")
