@@ -633,8 +633,6 @@ function ScrollableContainer:onScrollablePanRelease(_, ges)
 end
 
 function ScrollableContainer:_notifyParentOfPageScroll()
-    logger.dbg("New offsets:", self:getScrolledOffset())
-
     -- For ButtonDialog's focus shenanigans, as we ourselves are not a FocusManager
     if self.show_parent and self.show_parent._onPageScrollToRow then
         local top_row = self:_getStepScrollRowAtY(self._scroll_offset_y, true)
@@ -643,7 +641,6 @@ function ScrollableContainer:_notifyParentOfPageScroll()
 end
 
 function ScrollableContainer:onScrollPageUp()
-    print("ScrollableContainer:onScrollPageUp")
     if not self._is_scrollable then
         return false
     end
@@ -653,7 +650,6 @@ function ScrollableContainer:onScrollPageUp()
 end
 
 function ScrollableContainer:onScrollPageDown()
-    print("ScrollableContainer:onScrollPageDown")
     if not self._is_scrollable then
         return false
     end

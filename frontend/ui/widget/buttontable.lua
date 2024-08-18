@@ -246,7 +246,6 @@ function ButtonTable:getButtonById(id)
 end
 
 function ButtonTable:onFocusMove(args)
-    print("ButtonTable:onFocusMove")
     FocusManager.onFocusMove(self, args)
 
     -- For ButtonDialog's ScrollableContainer shenanigans
