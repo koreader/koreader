@@ -571,6 +571,7 @@ local Menu = FocusManager:extend{
 
     no_title = false,
     title = "",
+    custom_title_bar = nil,
     subtitle = nil,
     show_path = nil, -- path in titlebar subtitle
     -- default width and height
@@ -689,7 +690,7 @@ function Menu:init()
         if self.subtitle == nil and (self.show_path or self.title_bar_fm_style) then
             self.subtitle = ""
         end
-        self.title_bar = TitleBar:new{
+        self.title_bar = self.custom_title_bar or TitleBar:new{
             width = self.dimen.w,
             fullscreen = "true",
             align = "center",
