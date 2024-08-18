@@ -252,7 +252,7 @@ function ButtonTable:onFocusMove(args)
         self.show_parent:_onFocusMove(args)
     end
 
-    return true
+    -- Don't stop the event here, as layout may in fact be handled by our parent.
 end
 
 
