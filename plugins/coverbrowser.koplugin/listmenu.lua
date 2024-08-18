@@ -414,6 +414,30 @@ function ListMenuItem:update()
                 end
             end
 
+            local fn_page_count = string.match(filename_without_suffix, "P%((%d+)%)")
+            if fn_page_count then
+                local unread_chr = "◽"
+                local read_chr = "◾"
+                local fn_pages = tonumber(fn_page_count)
+
+                -- 125 pages per 1cm in avg hardcover
+                -- 5 ◽ per cm on 16x12cm eINK display
+                -- thus 25 pages per ◽
+                -- maximum of 30 blocks (750 pages) to leave room for title
+                -- minimum of 2 blocks otherwise book goes from ◽ to ◾ immediately
+                local total_blocks = math.max((math.min(math.floor((fn_pages/25)+0.5), 30)), 2)
+
+                if status == "complete" or status == "abandoned" then
+                    pages_str = string.rep(read_chr, total_blocks)
+                elseif percent_finished then
+                    local finished_blocks = math.max(math.floor(total_blocks * percent_finished), 1)
+                    local unfinished_blocks = total_blocks - finished_blocks
+                    pages_str = string.rep(read_chr, finished_blocks) .. string.rep(unread_chr, unfinished_blocks)
+                else
+                    pages_str = string.rep(unread_chr, total_blocks)
+                end
+            end
+
             -- Build the right widget
 
             local fontsize_info = _fontSize(14, 18)
