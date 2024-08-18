@@ -90,6 +90,10 @@ function ItemShortCutIcon:init()
     }
 end
 
+function findLast(haystack, needle)
+    local i=haystack:match(".*"..needle.."()")
+    if i==nil then return nil else return i-1 end
+end
 
 -- Based on menu.lua's MenuItem
 local ListMenuItem = InputContainer:extend{
@@ -549,7 +553,10 @@ function ListMenuItem:update()
                 end
             end
             -- add Series metadata if requested
-            if bookinfo.series then
+            if show_series then			
+				if string.match(bookinfo.series,": ") then
+					bookinfo.series = string.sub(bookinfo.series,findLast(bookinfo.series,": ") + 1, -1)
+				end
                 if bookinfo.series_index then
                     bookinfo.series = BD.auto(bookinfo.series .. " #" .. bookinfo.series_index)
                 else
