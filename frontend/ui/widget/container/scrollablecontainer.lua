@@ -14,7 +14,6 @@ widget to some of the inner widgets: chase the missing ones and add them.
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
-local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalScrollBar = require("ui/widget/horizontalscrollbar")
@@ -635,10 +634,9 @@ end
 
 function ScrollableContainer:_notifyParentOfPageScroll()
     -- For ButtonDialog's focus shenanigans, as we ourselves are not a FocusManager
-    if self.show_parent then
+    if self.show_parent and self.show_parent._onPageScrollToRow then
         local top_row = self:_getStepScrollRowAtY(self._scroll_offset_y, true)
-        local row = top_row and top_row.row_num or 1
-        self.show_parent:handleEvent(Event:new("ContainerPageScrollToRow", row))
+        self.show_parent:_onPageScrollToRow(top_row and top_row.row_num or 1)
     end
 end
 
