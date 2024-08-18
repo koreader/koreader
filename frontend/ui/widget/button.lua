@@ -61,6 +61,7 @@ local Button = InputContainer:extend{
     -- 'max_width' to allow it to be smaller if text or icon is smaller.
     width = nil,
     max_width = nil,
+    height = nil, -- if not set, depends on the font size
     avoid_text_truncation = true,
     text_font_face = "cfont",
     text_font_size = 20,
@@ -98,7 +99,7 @@ function Button:init()
     -- We will give the button the height it would have if no such tweaks were
     -- made. LeftContainer and CenterContainer will vertically center the
     -- TextWidget or TextBoxWidget in that height (hopefully no ink will overflow)
-    local reference_height
+    local reference_height = self.height
     if self.text then
         local text = self.checked_func == nil and self.text or self:getDisplayText()
         local fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY
@@ -115,7 +116,7 @@ function Button:init()
             bold = self.text_font_bold,
             face = face,
         }
-        reference_height = self.label_widget:getSize().h
+        reference_height = reference_height or self.label_widget:getSize().h
         if not self.label_widget:isTruncated() then
             local checkmark_width = 0
             if self.checked_func and not self.checked_func() then
