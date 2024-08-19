@@ -123,7 +123,7 @@ function MultiInputDialog:init()
             text = field.text,
             hint = field.hint,
             input_type = field.input_type,
-            text_type =  field.text_type, -- "password"
+            text_type = field.text_type, -- "password"
             face = self.input_face,
             width = content_width,
             idx = i,
@@ -142,6 +142,8 @@ function MultiInputDialog:init()
             enter_callback = self.enter_callback,
         }
         table.insert(self.input_fields, input_field_tmp)
+        --- @fixme: This is semi-broken when text_type is password, as we actually end up with the checkbox instead of the field,
+        --          and a "Press" on the ehckbox will actually focus the password field and *not* check the box.
         table.insert(self.layout, { input_field_tmp })
         if field.description then
             input_description[i] = FrameContainer:new{
@@ -170,6 +172,8 @@ function MultiInputDialog:init()
             input_field_tmp,
         })
     end
+    print("#self.layout", #self.layout)
+    print("#self.layout[#self.layout]", #self.layout[#self.layout])
 
     -- Add same vertical space after than before InputText
     table.insert(VerticalGroupData,CenterContainer:new{
