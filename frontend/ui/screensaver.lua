@@ -463,7 +463,7 @@ function Screensaver:setup(event, event_message)
         end
     end
     if self.screensaver_type == "bookstatus" then
-        if not ui or not lastfile or lfs.attributes(lastfile, "mode") ~= "file" or (ui.doc_settings and ui.doc_settings:isTrue("exclude_screensaver")) then
+        if not (ui and ui.doc_settings and ui.doc_settings:nilOrFalse("exclude_screensaver")) then
             self.screensaver_type = "random_image"
         end
     end
@@ -557,15 +557,8 @@ function Screensaver:show()
         widget = ImageWidget:new(widget_settings)
     elseif self.screensaver_type == "bookstatus" then
         local ReaderUI = require("apps/reader/readerui")
-        local ui = ReaderUI.instance
-        local doc = ui.document
-        local doc_settings = ui.doc_settings
         widget = BookStatusWidget:new{
-            thumbnail = FileManagerBookInfo:getCoverImage(doc),
-            props = ui.doc_props,
-            document = doc,
-            settings = doc_settings,
-            ui = ui,
+            ui = ReaderUI.instance,
             readonly = true,
         }
     elseif self.screensaver_type == "readingprogress" then
