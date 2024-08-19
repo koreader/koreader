@@ -581,6 +581,7 @@ function InputDialog:onShowKeyboard(ignore_first_hold_release)
 end
 
 function InputDialog:onCloseKeyboard()
+    print("InputDialog:onCloseKeyboard")
     self._input_widget:onCloseKeyboard()
     self.keyboard_visible = self._input_widget:isKeyboardVisible()
 end
@@ -652,6 +653,22 @@ function InputDialog:toggleKeyboard(force_toggle)
     self:refreshButtons()
 end
 
+function InputDialog:onKeyboardClosed()
+    print("InputDialog:onKeyboardClosed")
+    if self.add_nav_bar and self.fullscreen then
+        -- If the keyboard was closed via a key event (Back), make sure we reinit properly like in toggleKeyboard...
+        self.input = self:getInputText()
+        self:onClose()
+        self:free()
+
+        self._manual_vk_toggle = true
+        self:init()
+        self._manual_vk_toggle = nil
+
+        self:refreshButtons()
+    end
+end
+
 function InputDialog:onKeyboardHeightChanged()
     local visible = self:isKeyboardVisible()
     self.input = self:getInputText() -- re-init with up-to-date text
@@ -678,6 +695,7 @@ function InputDialog:onKeyboardHeightChanged()
 end
 
 function InputDialog:onCloseDialog()
+    print("InputDialog:onCloseDialog")
     local close_button = self.button_table:getButtonById("close")
     if close_button and close_button.enabled then
         close_button.callback()
@@ -687,6 +705,7 @@ function InputDialog:onCloseDialog()
 end
 
 function InputDialog:onClose()
+    print("InputDialog:onClose")
     -- Tell our input widget to poke its text widget so that we'll pickup up to date values
     self._input_widget:resyncPos()
     -- Remember current view & position in case of re-init
