@@ -172,8 +172,6 @@ function MultiInputDialog:init()
             input_field_tmp,
         })
     end
-    print("#self.layout", #self.layout)
-    print("#self.layout[#self.layout]", #self.layout[#self.layout])
 
     -- Add same vertical space after than before InputText
     table.insert(VerticalGroupData,CenterContainer:new{
@@ -233,7 +231,6 @@ function MultiInputDialog:getFields()
 end
 
 function MultiInputDialog:onSwitchFocus(inputbox)
-    print("MultiInputDialog:onSwitchFocus, from", self._input_widget, "to", inputbox)
     -- unfocus current inputbox
     self._input_widget:unfocus()
     -- and close its existing keyboard (via InputDialog's thin wrapper around _input_widget's own method)
