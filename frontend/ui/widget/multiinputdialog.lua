@@ -104,8 +104,8 @@ local MultiInputDialog = InputDialog:extend{
 function MultiInputDialog:init()
     -- init title and buttons in base class
     InputDialog.init(self)
-    -- Reset layout, we're not using InputDialog's own field
-    self.layout = {}
+    -- Kick InputDialog's own field out of the layout, we're not using it
+    table.remove(self.layout, 1)
     -- Also murder said input field *and* its VK, or we get two of them and shit gets hilariously broken real fast...
     self:onCloseKeyboard()
     self._input_widget:onCloseWidget()
