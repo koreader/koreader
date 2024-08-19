@@ -297,13 +297,21 @@ end
 local function initDPadEvents()
     if Device:hasDPad() then
         function InputText:onFocus()
-            -- Event called by the focusmanager
+            -- Event sent by focusmanager
             if self.parent.onSwitchFocus then
                 self.parent:onSwitchFocus(self)
             elseif (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
                 do end -- luacheck: ignore 541
             else
-                self:onShowKeyboard()
+                print("InputText:onFocus; VK visible:", self:isKeyboardVisible())
+                if not self:isKeyboardVisible() then
+                    -- Don't break InputDialog:toggleKeyboard...
+                    local skip_vk = self.parent and self.parent._manual_vk_toggle
+                    print("skip_vk:", skip_vk)
+                    if not skip_vk then
+                        self:onShowKeyboard()
+                    end
+                end
             end
             self:focus()
             return true
