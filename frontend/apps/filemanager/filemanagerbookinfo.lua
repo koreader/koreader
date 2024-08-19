@@ -153,8 +153,15 @@ function BookInfo:show(doc_settings_or_file, book_props)
         })
     end
     -- pages
-    local is_doc = self.document and true or false
     table.insert(kv_pairs, { self.prop_text["pages"], book_props["pages"] or _("N/A"), separator = true })
+
+    -- Current page
+    if self.document then
+        local lines_nb, words_nb = self.ui.view:getCurrentPageLineWordCounts()
+        local text = lines_nb == 0 and _("number of lines and words not available")
+            or T(N_("1 line", "%1 lines", lines_nb), lines_nb) .. ", " .. T(N_("1 word", "%1 words", words_nb), words_nb)
+        table.insert(kv_pairs, { _("Current page:"), text, separator = true })
+    end
 
     -- Summary section
     local summary = has_sidecar and doc_settings_or_file:readSetting("summary") or {}
@@ -165,15 +172,7 @@ function BookInfo:show(doc_settings_or_file, book_props)
     table.insert(kv_pairs, { _("Rating:"), ("★"):rep(rating) .. ("☆"):rep(self.rating_max - rating),
         hold_callback = summary_hold_callback })
     table.insert(kv_pairs, { _("Review:"), summary.note or _("N/A"),
-        hold_callback = summary_hold_callback, separator = is_doc })
-
-    -- Page section
-    if is_doc then
-        local lines_nb, words_nb = self.ui.view:getCurrentPageLineWordCounts()
-        local text = lines_nb == 0 and _("number of lines and words not available")
-            or T(N_("1 line", "%1 lines", lines_nb), lines_nb) .. ", " .. T(N_("1 word", "%1 words", words_nb), words_nb)
-        table.insert(kv_pairs, { _("Current page:"), text })
-    end
+        hold_callback = summary_hold_callback })
 
     local KeyValuePage = require("ui/widget/keyvaluepage")
     self.kvp_widget = KeyValuePage:new{

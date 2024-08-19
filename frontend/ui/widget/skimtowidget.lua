@@ -52,9 +52,10 @@ function SkimToWidget:init()
 
     local frame_border_size = Size.border.window
     local button_span_unit_width = Size.span.horizontal_small
-    local button_font_size, frame_padding, frame_width, inner_width, nb_buttons, larger_span_units, progress_bar_height
+    local button_font_size, button_height, frame_padding, frame_width, inner_width, nb_buttons, larger_span_units, progress_bar_height
     if full_mode then
         button_font_size = nil -- use default
+        button_height = nil
         frame_padding = Size.padding.fullscreen -- large padding for airy feeling
         frame_width = math.floor(math.min(screen_width, screen_height) * 0.95)
         inner_width = frame_width - 2 * (frame_border_size + frame_padding)
@@ -62,7 +63,8 @@ function SkimToWidget:init()
         larger_span_units = 3 -- 3 x small span width
         progress_bar_height = Size.item.height_big
     else
-        button_font_size = 14
+        button_font_size = 16
+        button_height = Screen:scaleBySize(32)
         frame_padding = Size.padding.default
         frame_width = screen_width + 2 * frame_border_size -- hide side borders
         inner_width = frame_width - 2 * frame_padding
@@ -95,6 +97,7 @@ function SkimToWidget:init()
         text_font_size = button_font_size,
         radius = 0,
         width = button_width,
+        height = button_height,
         show_parent = self,
         vsync = true,
         callback = function()
@@ -106,6 +109,7 @@ function SkimToWidget:init()
         text_font_size = button_font_size,
         radius = 0,
         width = button_width,
+        height = button_height,
         show_parent = self,
         vsync = true,
         callback = function()
@@ -117,6 +121,7 @@ function SkimToWidget:init()
         text_font_size = button_font_size,
         radius = 0,
         width = button_width,
+        height = button_height,
         show_parent = self,
         vsync = true,
         callback = function()
@@ -128,6 +133,7 @@ function SkimToWidget:init()
         text_font_size = button_font_size,
         radius = 0,
         width = button_width,
+        height = button_height,
         show_parent = self,
         vsync = true,
         callback = function()
@@ -146,6 +152,7 @@ function SkimToWidget:init()
         padding = 0,
         bordersize = 0,
         width = button_width,
+        height = button_height,
         show_parent = self,
         callback = function()
             self.callback_switch_to_goto()
@@ -160,6 +167,7 @@ function SkimToWidget:init()
         text_font_size = button_font_size,
         radius = 0,
         width = button_width,
+        height = button_height,
         show_parent = self,
         vsync = true,
         callback = function()
@@ -168,8 +176,8 @@ function SkimToWidget:init()
     }
 
     -- Top row buttons
-    local chapter_next_text = "   ▷▏"
-    local chapter_prev_text = "▕◁   "
+    local chapter_next_text = "  ▷▏"
+    local chapter_prev_text = "▕◁  "
     local bookmark_next_text = "\u{F097}\u{202F}▷"
     local bookmark_prev_text = "◁\u{202F}\u{F097}"
     local bookmark_enabled_text = "\u{F02E}"
@@ -183,6 +191,7 @@ function SkimToWidget:init()
         text_font_size = button_font_size,
         radius = 0,
         width = button_width,
+        height = button_height,
         show_parent = self,
         vsync = true,
         callback = function()
@@ -200,6 +209,7 @@ function SkimToWidget:init()
         text_font_size = button_font_size,
         radius = 0,
         width = button_width,
+        height = button_height,
         show_parent = self,
         vsync = true,
         callback = function()
@@ -217,6 +227,7 @@ function SkimToWidget:init()
         text_font_size = button_font_size,
         radius = 0,
         width = button_width,
+        height = button_height,
         show_parent = self,
         vsync = true,
         callback = function()
@@ -231,6 +242,7 @@ function SkimToWidget:init()
         text_font_size = button_font_size,
         radius = 0,
         width = button_width,
+        height = button_height,
         show_parent = self,
         vsync = true,
         callback = function()
@@ -247,6 +259,7 @@ function SkimToWidget:init()
         text_font_size = button_font_size,
         radius = 0,
         width = button_width,
+        height = button_height,
         show_parent = self,
         callback = function()
             self.ui:handleEvent(Event:new("ToggleBookmark"))
@@ -337,11 +350,9 @@ function SkimToWidget:init()
             bottom_buttons_row,
         }
     }
-    if full_mode then
-        self.movable = MovableContainer:new{
-            self.skimto_frame,
-        }
-    end
+    self.movable = MovableContainer:new{
+        self.skimto_frame,
+    }
     self[1] = WidgetContainer:new{
         align = skim_dialog_position or "center",
         dimen = Geom:new{
@@ -349,7 +360,7 @@ function SkimToWidget:init()
             w = screen_width,
             h = screen_height,
         },
-        self.movable or self.skimto_frame,
+        self.movable,
     }
 
     if Device:hasDPad() then
