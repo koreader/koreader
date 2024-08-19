@@ -101,7 +101,7 @@ function Terminal:isExecutable(file)
 end
 
 -- Try SHELL environment variable and some standard shells
-function Terminal:determineShellExecutable()
+function Terminal:getDefaultShellExecutable()
     if self.default_shell_executable then return self.default_shell_executable end
 
     local shell = {"mksh", "ksh", "zsh", "ash", "dash", "sh", "bash"}
@@ -120,7 +120,7 @@ function Terminal:determineShellExecutable()
 end
 
 function Terminal:init()
-    G_reader_settings:readSetting("terminal_shell", self:determineShellExecutable())
+    G_reader_settings:readSetting("terminal_shell", self:getDefaultShellExecutable())
 
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
@@ -619,7 +619,7 @@ Aliases (shortcuts) to frequently used commands can be placed in:
                     self.shell_dialog = InputDialog:new{
                         title = _("Shell to use"),
                         description = T(_("Here you can select the startup shell.\nDefault: %1"),
-                                      self:determineShellExecutable()),
+                                      self:getDefaultShellExecutable()),
                         input = G_reader_settings:readSetting("terminal_shell"),
                         buttons = {{
                             {
@@ -631,7 +631,7 @@ Aliases (shortcuts) to frequently used commands can be placed in:
                             {
                                 text = _("Default"),
                                 callback = function()
-                                    G_reader_settings:saveSetting("terminal_shell", self:determineShellExecutable())
+                                    G_reader_settings:saveSetting("terminal_shell", self:getDefaultShellExecutable())
                                     UIManager:close(self.shell_dialog)
                                     if touchmenu_instance then
                                         touchmenu_instance:updateItems()
