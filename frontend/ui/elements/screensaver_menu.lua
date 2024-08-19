@@ -38,7 +38,7 @@ return {
             genMenuItem(_("Leave screen as-is"), "screensaver_type", "disable", nil, true),
             separator = true,
             {
-                text = _("Border fill and fit"),
+                text = _("Border fill, rotation, and fit"),
                 enabled_func = function()
                     return G_reader_settings:readSetting("screensaver_type") == "cover"
                            or G_reader_settings:readSetting("screensaver_type") == "document_cover"
