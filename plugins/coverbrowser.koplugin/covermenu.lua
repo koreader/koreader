@@ -4,7 +4,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
-local TitleBar = require("ui/widget/titlebar")
+local TitleBar = require("titlebar")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Blitbuffer = require("ffi/blitbuffer")
@@ -566,7 +566,7 @@ function CoverMenu:setupLayout()
         subtitle_truncate_left = true,
         subtitle_fullwidth = true,
         button_padding = Screen:scaleBySize(5),
-        left_icon = "direction.RLTB",
+        left_icon = "home",
         left_icon_size_ratio = 1,
         left_icon_tap_callback = function() self:goHome() end,
         left_icon_hold_callback = function() self:onShowFolderMenu() end,
