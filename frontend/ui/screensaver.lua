@@ -11,6 +11,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local ImageWidget = require("ui/widget/imagewidget")
 local Math = require("optmath")
 local OverlapGroup = require("ui/widget/overlapgroup")
+local RenderImage = require("ui/renderimage")
 local ScreenSaverWidget = require("ui/widget/screensaverwidget")
 local ScreenSaverLockWidget = require("ui/widget/screensaverlockwidget")
 local SpinWidget = require("ui/widget/spinwidget")
@@ -47,6 +48,9 @@ if G_reader_settings:hasNot("screensaver_message_position") then
 end
 if G_reader_settings:hasNot("screensaver_stretch_images") then
     G_reader_settings:makeFalse("screensaver_stretch_images")
+end
+if G_reader_settings:hasNot("screensaver_rotate_auto_for_best_fit") then
+    G_reader_settings:makeFalse("screensaver_rotate_auto_for_best_fit")
 end
 if G_reader_settings:hasNot("screensaver_delay") then
     G_reader_settings:saveSetting("screensaver_delay", "disable")
@@ -504,13 +508,15 @@ function Screensaver:show()
         return
     end
 
+    local rotation_mode = Screen:getRotationMode()
+
     -- We mostly always suspend in Portrait/Inverted Portrait mode...
     -- ... except when we just show an InfoMessage or when the screensaver
     -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5920).
     -- We also exclude full-screen widgets that work fine in Landscape mode,
     -- like ReadingProgress and BookStatus (c.f., #5724)
     if self:modeExpectsPortrait() then
-        Device.orig_rotation_mode = Screen:getRotationMode()
+        Device.orig_rotation_mode = rotation_mode
         -- Leave Portrait & Inverted Portrait alone, that works just fine.
         if bit.band(Device.orig_rotation_mode, 1) == 1 then
             -- i.e., only switch to Portrait if we're currently in *any* Landscape orientation (odd number)
@@ -550,9 +556,29 @@ function Screensaver:show()
             widget_settings.image = self.image
             widget_settings.image_disposable = true
         elseif self.image_file then
-            widget_settings.file = self.image_file
-            widget_settings.file_do_cache = false
+            if G_reader_settings:isTrue("screensaver_rotate_auto_for_best_fit") then
+                -- We need to load the image here to determine whether to rotate
+                if util.getFileNameSuffix(self.image_file) == "svg" then
+                    widget_settings.image = RenderImage:renderSVGImageFile(self.image_file, nil, nil, 1)
+                else
+                    widget_settings.image = RenderImage:renderImageFile(self.image_file, false, nil, nil)
+                end
+                if not widget_settings.image then
+                    widget_settings.image = RenderImage:renderCheckerboard(Screen:getWidth(), Screen:getHeight(), Screen.bb:getType())
+                end
+                widget_settings.image_disposable = true
+            else
+                widget_settings.file = self.image_file
+                widget_settings.file_do_cache = false
+            end
             widget_settings.alpha = true
+        end -- set cover or file
+        if G_reader_settings:isTrue("screensaver_rotate_auto_for_best_fit") then
+            local angle = rotation_mode == 3 and 180 or 0 -- match mode if possible
+            if (widget_settings.image:getWidth() < widget_settings.image:getHeight()) ~= (widget_settings.width < widget_settings.height) then
+                angle = angle + (G_reader_settings:isTrue("imageviewer_rotation_landscape_invert") and -90 or 90)
+            end
+            widget_settings.rotation_angle = angle
         end
         widget = ImageWidget:new(widget_settings)
     elseif self.screensaver_type == "bookstatus" then

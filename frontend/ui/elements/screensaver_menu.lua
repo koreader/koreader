@@ -38,7 +38,7 @@ return {
             genMenuItem(_("Leave screen as-is"), "screensaver_type", "disable", nil, true),
             separator = true,
             {
-                text = _("Border fill"),
+                text = _("Border fill, rotation, and fit"),
                 enabled_func = function()
                     return G_reader_settings:readSetting("screensaver_type") == "cover"
                            or G_reader_settings:readSetting("screensaver_type") == "document_cover"
@@ -64,6 +64,16 @@ return {
                             Screensaver:setStretchLimit(touchmenu_instance)
                         end,
                     },
+                    {
+                        text = _("Rotate cover for best fit"),
+                        checked_func = function()
+                            return G_reader_settings:isTrue("screensaver_rotate_auto_for_best_fit")
+                        end,
+                        callback = function(touchmenu_instance)
+                            G_reader_settings:flipNilOrFalse("screensaver_rotate_auto_for_best_fit")
+                            touchmenu_instance:updateItems()
+                        end,
+                    }
                 },
             },
             {
