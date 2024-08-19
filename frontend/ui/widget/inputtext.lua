@@ -638,7 +638,9 @@ function InputText:onKeyPress(key)
             self:addChars("    ")
         -- as stated before, we also don't need to unfocus when there is no keyboard, one less key press to exit widgets, yay!
         elseif key["Back"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
+            print("Back")
             if self.focused then
+                print("Focused -> unfocus")
                 self:unfocus()
             end
         else
@@ -672,9 +674,12 @@ function InputText:onKeyPress(key)
         elseif key["Down"] then
             self:downLine()
         elseif key["Home"] then
+            print("VK + Home")
             if self.keyboard:isVisible() then
+                print("Visible => close")
                 self:onCloseKeyboard()
             else
+                print("Hidden => show")
                 self:onShowKeyboard()
             end
         elseif key["."] and Device:hasSymKey() then

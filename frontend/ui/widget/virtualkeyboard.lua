@@ -843,6 +843,8 @@ local VirtualKeyboard = FocusManager:extend{
 }
 
 function VirtualKeyboard:init()
+    print("VirtualKeyboard:init")
+    print(debug.traceback())
     if self.uwrap_func then
         self.uwrap_func()
         self.uwrap_func = nil
@@ -960,6 +962,8 @@ function VirtualKeyboard:_refresh(want_flash, fullscreen)
 end
 
 function VirtualKeyboard:onShow()
+    print("VirtualKeyboard:onShow")
+    print(debug.traceback())
     self:_refresh(true)
     self.visible = true
     Device:startTextInput()
