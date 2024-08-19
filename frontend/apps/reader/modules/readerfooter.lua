@@ -1684,11 +1684,6 @@ With this feature enabled, the current page is factored in, resulting in the cou
             end,
         })
     end
-
-    -- Settings menu: keep the same parent page for going up from submenu
-    for i = 1, #configure_items_sub_table do
-        configure_items_sub_table[i].menu_item_id = i
-    end
 end
 
 -- settings menu item generators
