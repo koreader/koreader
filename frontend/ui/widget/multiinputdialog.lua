@@ -143,8 +143,8 @@ function MultiInputDialog:init()
         }
         table.insert(self.input_fields, input_field_tmp)
         --- @fixme: This is semi-broken when text_type is password, as we actually end up with the checkbox instead of the field,
-        --          and a "Press" on the ehckbox will actually focus the password field and *not* check the box.
-        table.insert(self.layout, { input_field_tmp })
+        --          and a "Press" on the checkbox will actually focus the password field and *not* check the box.
+        table.insert(self.layout, i, { input_field_tmp })
         if field.description then
             input_description[i] = FrameContainer:new{
                 padding = self.description_padding,
