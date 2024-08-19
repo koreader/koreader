@@ -65,7 +65,7 @@ return {
                         end,
                     },
                     {
-                        text = _("Auto-rotate cover for best fit"),
+                        text = _("Rotate cover for best fit"),
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_rotate_auto_for_best_fit")
                         end,
