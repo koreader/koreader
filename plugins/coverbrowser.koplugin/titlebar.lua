@@ -84,7 +84,7 @@ local TitleBar = OverlapGroup:extend{
 }
 
 function TitleBar:init()
-    
+
     if self.close_callback then
         self.right_icon = "close"
         self.right_icon_tap_callback = self.close_callback
@@ -142,7 +142,7 @@ function TitleBar:init()
     else
         while true do
             self.title_widget = TextWidget:new{
-                text = self.title,
+                text = "KoЯnReader",
                 face = title_face,
                 padding = 0,
                 lang = self.lang,
