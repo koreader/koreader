@@ -303,6 +303,7 @@ function InputDialog:init()
         local line_height = input_widget:getLineHeight()
         local input_pad_height = input_widget:getSize().h - text_height
         local keyboard_height = self.keyboard_visible and input_widget:getKeyboardDimen().h or 0
+        input_widget:onCloseKeyboard() -- we don't want multiple VKs, as the show/hide tracking assumes there's only one
         input_widget:onCloseWidget() -- free() textboxwidget and keyboard
         -- Find out available height
         local available_height = self.screen_height
@@ -599,8 +600,10 @@ end
 -- NOTE: Only called by fullscreen and/or add_nav_bar codepaths
 --       We do not currently have !fullscreen add_nav_bar callers...
 function InputDialog:toggleKeyboard(force_toggle)
+    print("InputDialog:toggleKeyboard", force_toggle)
     -- Remember the *current* visibility, as the following close will reset it
     local visible = self:isKeyboardVisible()
+    print("visible:", visible)
 
     -- When we forcibly close the keyboard, remember its current visiblity state, so that we can properly restore it later.
     -- (This is used by some buttons in fullscreen mode, where we might want to keep the original keyboard hidden when popping up a new one for another InputDialog).
@@ -629,7 +632,11 @@ function InputDialog:toggleKeyboard(force_toggle)
     else
         self.keyboard_visible = not visible
     end
+    -- NOTE: If Device:hasDPad(), InputText may call onShowKeyboard in its onFocus handler, wreaking havoc on this...
+    --       Dirty hack to neuter this codepath ahead!
+    self._manual_vk_toggle = true
     self:init()
+    self._manual_vk_toggle = nil
 
     -- NOTE: If we ever have non-fullscreen add_nav_bar callers, it might make sense *not* to lock the keyboard there?
     if self.keyboard_visible then
