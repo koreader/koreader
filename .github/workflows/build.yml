@@ -47,11 +47,13 @@ jobs:
 
       - name: Install dependencies
         run: |
+          set -x
           python3 -m pip install --disable-pip-version-check meson ruamel.yaml
           wget -O ninjatracing.zip https://github.com/nico/ninjatracing/archive/a669e3644cf22b29cbece31dbed2cfbf34e5f48e.zip
           unzip -j ninjatracing.zip '*/ninjatracing'
           install -m755 ninjatracing /usr/local/bin/
           rm ninjatracing*
+          # Install brew packages.
           packages=(
             autoconf
             automake
@@ -68,6 +70,13 @@ jobs:
             sdl2
             util-linux
           )
+          # Don't auto-update.
+          export HOMEBREW_NO_AUTO_UPDATE=1
+          # Don't upgrade already installed formulas.
+          export HOMEBREW_NO_INSTALL_UPGRADE=1
+          # Remove some installed packages to prevent brew
+          # from attempting (and failing) to upgrade them.
+          brew uninstall gradle maven
           brew install --formula --quiet "${packages[@]}"
 
       - name: Update PATH
