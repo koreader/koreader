@@ -766,6 +766,7 @@ function InputText:onShowKeyboard(ignore_first_hold_release)
 end
 
 function InputText:onCloseKeyboard()
+    print("InputText:onCloseKeyboard")
     if self.keyboard then
         self.keyboard:hideKeyboard()
     end
@@ -784,6 +785,7 @@ function InputText:lockKeyboard(toggle)
 end
 
 function InputText:onCloseWidget()
+    print("InputText:onCloseWidget")
     if self.keyboard then
         self.keyboard:free()
     end
