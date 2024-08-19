@@ -293,10 +293,12 @@ function FocusManager:onPhysicalKeyboardDisconnected()
 end
 
 -- constant, used to reset focus widget after layout recreation
--- not send Unfocus event
+-- do not send an Unfocus event
 FocusManager.NOT_UNFOCUS = 1
--- not need to send Focus event
+-- do not send a Focus event
 FocusManager.NOT_FOCUS = 2
+-- In some cases, we may only want to send Focus events on non-Touch devices
+FocusManager.FOCUS_ONLY_ON_NT = (Device:hasDPad() and not Device:isTouchDevice()) and 0 or FocusManager.NOT_FOCUS
 
 --- Move focus to specified widget
 function FocusManager:moveFocusTo(x, y, focus_flags)
