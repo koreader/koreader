@@ -106,6 +106,10 @@ function MultiInputDialog:init()
     InputDialog.init(self)
     -- Reset layout, we're not using InputDialog's own field
     self.layout = {}
+    -- Also murder said input field *and* its VK, or we get two of them and shit gets hilariously broken real fast...
+    self:onCloseKeyboard()
+    self._input_widget:onCloseWidget()
+
     local VerticalGroupData = VerticalGroup:new{
         align = "left",
         self.title_bar,
@@ -225,6 +229,7 @@ function MultiInputDialog:getFields()
 end
 
 function MultiInputDialog:onSwitchFocus(inputbox)
+    print("MultiInputDialog:onSwitchFocus, from", self._input_widget, "to", inputbox)
     -- unfocus current inputbox
     self._input_widget:unfocus()
     -- and close its existing keyboard (via InputDialog's thin wrapper around _input_widget's own method)
