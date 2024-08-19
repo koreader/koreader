@@ -144,6 +144,7 @@ function MultiInputDialog:init()
         table.insert(self.input_fields, input_field_tmp)
         --- @fixme: This is semi-broken when text_type is password, as we actually end up with the checkbox instead of the field,
         --          and a "Press" on the checkbox will actually focus the password field and *not* check the box.
+        -- addWidget may have added stuff below us, so make sure we insert above that...
         table.insert(self.layout, i, { input_field_tmp })
         if field.description then
             input_description[i] = FrameContainer:new{
