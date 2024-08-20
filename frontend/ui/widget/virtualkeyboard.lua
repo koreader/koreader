@@ -980,6 +980,8 @@ function VirtualKeyboard:onCloseWidget()
     --       this could be moved to InputDialog's onShow/onCloseWidget handlers (but, it would allow input on unfocused fields).
     -- NOTE: But something more complex, possibly based on an in-class ref count would have to be implemented in order to be able to deal
     --       with multiple InputDialogs being shown and closed in asymmetric fashion... Ugh.
+    -- NOTE: You would also have to deal with the fact that, once InputText loses focus,
+    --       it will stop dealing with key events because it wouldn't know where to send them when there are multiple live instances of it.
     Device:stopTextInput()
 end
 
