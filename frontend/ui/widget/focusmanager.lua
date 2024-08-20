@@ -482,6 +482,7 @@ function FocusManager:disableFocusManagement(parent)
 end
 
 -- constant for refocusWidget method to ease code reading
+FocusManager.RENDER_NOW = false
 FocusManager.RENDER_IN_NEXT_TICK = true
 
 --- Container calls this method to re-set focus widget style
