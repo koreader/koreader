@@ -191,7 +191,7 @@ function Terminal:spawnShell(cols, rows)
 
     if not self:isExecutable(shell) then
         UIManager:show(InfoMessage:new{
-            text = -("Shell is not executable"),
+            text = _("Shell is not executable"),
         })
         return false
     end
@@ -659,7 +659,7 @@ Aliases (shortcuts) to frequently used commands can be placed in:
                                         end
                                     else
                                         UIManager:show(InfoMessage:new{
-                                            text = _("Shell not executable"),
+                                            text = _("Shell is not executable"),
                                         })
                                     end
                                 end
