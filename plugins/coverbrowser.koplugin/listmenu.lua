@@ -899,7 +899,9 @@ function ListMenu:_recalculateDimen()
             self.others_height = self.others_height + 2
         end
         if not self.no_title then
-            self.others_height = self.others_height + self.header_padding
+            if not self.title_bar_fm_style then
+                self.others_height = self.others_height + self.header_padding
+            end
             self.others_height = self.others_height + self.title_bar.dimen.h
         end
         if self.page_info then
