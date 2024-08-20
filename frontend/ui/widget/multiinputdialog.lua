@@ -116,6 +116,12 @@ function MultiInputDialog:init()
     }
     local content_width = math.floor(self.width * 0.9)
 
+    -- In case of reinit, murder our previous input widget to prevent stale VK instances from lingering
+    if self.input_fields then
+        for i, widget in ipairs(self.input_fields) do
+            widget:onCloseWidget()
+        end
+    end
     self.input_fields = {}
     local input_description = {}
     for i, field in ipairs(self.fields) do
