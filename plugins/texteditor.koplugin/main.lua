@@ -1,5 +1,3 @@
-local Device = require("device")
-
 local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
