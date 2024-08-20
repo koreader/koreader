@@ -303,11 +303,9 @@ local function initDPadEvents()
             elseif (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
                 do end -- luacheck: ignore 541
             else
-                print("InputText:onFocus; VK visible:", self:isKeyboardVisible())
                 if not self:isKeyboardVisible() then
                     -- Don't break InputDialog:toggleKeyboard...
                     local skip_vk = self.parent and self.parent._manual_vk_toggle
-                    print("skip_vk:", skip_vk)
                     if not skip_vk then
                         self:onShowKeyboard()
                     end
@@ -766,7 +764,6 @@ function InputText:onShowKeyboard(ignore_first_hold_release)
 end
 
 function InputText:onCloseKeyboard()
-    print("InputText:onCloseKeyboard")
     if self.keyboard then
         self.keyboard:hideKeyboard()
     end
@@ -785,7 +782,6 @@ function InputText:lockKeyboard(toggle)
 end
 
 function InputText:onCloseWidget()
-    print("InputText:onCloseWidget")
     if self.keyboard then
         self.keyboard:free()
     end
