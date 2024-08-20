@@ -602,13 +602,10 @@ local sym_key_map = {
 -- Handle real keypresses from a physical keyboard, even if the virtual keyboard
 -- is shown. Mostly likely to be in the emulator, but could be Android + BT
 -- keyboard, or a "coder's keyboard" Android input method.
-local logger = require("logger")
 function InputText:onKeyPress(key)
-    logger.dbg("InputText:onKeyPress", key)
     -- only handle key on focused status, otherwise there are more than one InputText
     -- the first one always handle key pressed
     if not self.focused then
-        print("Oh, noes, i'm unfocused")
         return false
     end
     local handled = true
