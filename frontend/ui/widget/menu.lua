@@ -641,7 +641,7 @@ function Menu:_recalculateDimen(no_recalculate_dimen)
     end
     local bottom_height = 0
     if self.page_return_arrow and self.page_info_text then
-        -- The extra padding is for UX reasons only
+        -- The extra padding is for UX reasons only, to leave a bit of space above the footer.
         bottom_height = math.max(self.page_return_arrow:getSize().h, self.page_info_text:getSize().h)
                       + Size.padding.button
     end
