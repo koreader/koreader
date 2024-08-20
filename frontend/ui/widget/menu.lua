@@ -605,7 +605,7 @@ local Menu = FocusManager:extend{
     items_font_size = nil,
     items_mandatory_font_size = nil,
     multilines_show_more_text = nil,
-        -- Global settings or default values will be used if not provided
+    -- Global settings or default values will be used if not provided
     -- Setting this to a number enables flexible height of items
     -- and sets the maximum number of lines in an item, longer items are truncated
     items_max_lines = nil,
@@ -1111,6 +1111,8 @@ function Menu:updateItems(select_number, no_recalculate_dimen)
             items_padding = self.items_padding,
             handle_hold_on_hold_release = self.handle_hold_on_hold_release,
         }
+        print("item:", item_tmp.text)
+        print("item.dimen.h", item_tmp.dimen.h)
         table.insert(self.item_group, item_tmp)
         -- this is for focus manager
         table.insert(self.layout, {item_tmp})
