@@ -377,8 +377,10 @@ local footerTextGeneratorMap = {
     page_turning_inverted = function(footer)
         local symbol_type = footer.settings.item_prefix
         local prefix = symbol_prefix[symbol_type].page_turning_inverted
-        if G_reader_settings:isTrue("input_invert_page_turn_keys") or G_reader_settings:isTrue("input_invert_left_page_turn_keys") or
-           G_reader_settings:isTrue("input_invert_right_page_turn_keys") or G_reader_settings:isTrue("inverse_reading_order") then
+        if G_reader_settings:isTrue("input_invert_page_turn_keys") or
+           G_reader_settings:isTrue("input_invert_left_page_turn_keys") or
+           G_reader_settings:isTrue("input_invert_right_page_turn_keys") or
+           footer.ui.view.inverse_reading_order then
             if symbol_type == "icons" or symbol_type == "compact_items" then
                 return symbol_prefix.icons.page_turning_inverted
             else
