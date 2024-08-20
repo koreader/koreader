@@ -942,11 +942,11 @@ function VirtualKeyboard:onClose()
     print(debug.traceback())
     UIManager:close(self)
     if self.inputbox and Device:hasDPad() then
-        -- Let InputText handle this Back event to unfocus, otherwise, another extra Back event is needed.
-        -- NOTE: Keep in mind InputText is a special snowflake, and implements the raw onKeyPress handler to handle this!
-        -- Also, notify another widget that can actually use this, i.e., the parent (Input*Dialog*).
+        -- Let InputText handle this KeyPress "Back" event to unfocus, otherwise, another extra Back event is needed.
+        -- NOTE: Keep in mind InputText is a special snowflake, and implements the raw onKeyPress handler for this!
+        -- Also, notify another widget that actually may want to know when *we* get closed, i.e., the parent (Input*Dialog*).
         -- We need to do this manually because InputText's onKeyPress handler will very likely return true,
-        -- stopping event propagation (c.f., the last hasDpad branch of said handler).
+        -- stopping event propagation (c.f., the last hasDPad branch of said handler).
         if self.inputbox and self.inputbox.parent and self.inputbox.parent.onKeyboardClosed then
             self.inputbox.parent:onKeyboardClosed()
         end
