@@ -655,6 +655,8 @@ function InputText:onKeyPress(key)
     else
         handled = false
     end
+    -- This primarily targets Kindle. When a virtual keyboard is shown on screen, mod+dpad allows controlling the cursor, as dpad alone
+    -- (see previous ‘if’) is now occupied handling the virtual keyboard.
     if not handled and (key["ScreenKB"] or key["Shift"]) then
         handled = true
         if key["Back"] and Device:hasScreenKB() then
@@ -685,6 +687,7 @@ function InputText:onKeyPress(key)
         end
     end
     if not handled and Device:hasSymKey() then
+        handled = true
         local symkey = sym_key_map[key.key]
         -- Do not match Shift + Sym + 'Alphabet keys'
         if symkey and key.modifiers["Sym"] and not key.modifiers["Shift"] then
