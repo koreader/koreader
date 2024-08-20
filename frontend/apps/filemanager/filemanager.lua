@@ -159,9 +159,6 @@ function FileManager:setupLayout()
         filemanager = self,
         -- Tell FileChooser (i.e., Menu) to use our own title bar instead of Menu's default one
         custom_title_bar = self.title_bar,
-        -- And to keep doing its weird maths in Menu:_recalculateDimen so that we get matching dimensions
-        -- across all other title_bar_fm_style callers, even when they don't pass a custom_title_bar
-        title_bar_fm_style = true,
     }
     self.file_chooser = file_chooser
     self.focused_file = nil -- use it only once
