@@ -305,12 +305,7 @@ local function initDPadEvents()
             else
                 print("InputText:onFocus; VK visible:", self:isKeyboardVisible())
                 if not self:isKeyboardVisible() then
-                    -- Don't break InputDialog:toggleKeyboard...
-                    local skip_vk = self.parent and self.parent._manual_vk_toggle
-                    print("skip_vk:", skip_vk)
-                    if not skip_vk then
-                        self:onShowKeyboard()
-                    end
+                    self:onShowKeyboard()
                 end
             end
             self:focus()
@@ -787,6 +782,7 @@ end
 function InputText:onCloseWidget()
     print("InputText:onCloseWidget")
     if self.keyboard then
+        print("Free VirtualKeyboard", self.keyboard)
         self.keyboard:free()
     end
     self:free()

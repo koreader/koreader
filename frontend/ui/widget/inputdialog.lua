@@ -351,6 +351,10 @@ function InputDialog:init()
             end
         end
     end
+    -- In case of reinit, murder our previous input widget to prevent stale VK instances from lingering
+    if self._input_widget then
+        self._input_widget:onCloseWidget()
+    end
     self._input_widget = self.inputtext_class:new{
         text = self.input,
         hint = self.input_hint,
@@ -382,7 +386,10 @@ function InputDialog:init()
     }
     table.insert(self.layout[1], self._input_widget)
     self:mergeLayoutInVertical(self.button_table)
-    self:refocusWidget()
+    -- NOTE: Never send a Focus event, as, on hasDPad device, InputText's onFocus *will* call onShowKeyboard,
+    --       and that will wreak havoc on toggleKeyboard...
+    --       Plus, the widget at (1, 1) will not have changed, so we don't actually need to change the visual focus anyway?
+    self:refocusWidget(false, FocusManager.NOT_FOCUS)
     -- Complementary setup for some of our added buttons
     if self.save_callback then
         local save_button = self.button_table:getButtonById("save")
@@ -633,11 +640,7 @@ function InputDialog:toggleKeyboard(force_toggle)
     else
         self.keyboard_visible = not visible
     end
-    -- NOTE: If Device:hasDPad(), InputText may call onShowKeyboard in its onFocus handler, wreaking havoc on this...
-    --       Dirty hack to neuter this codepath ahead!
-    self._manual_vk_toggle = true
     self:init()
-    self._manual_vk_toggle = nil
 
     -- NOTE: If we ever have non-fullscreen add_nav_bar callers, it might make sense *not* to lock the keyboard there?
     if self.keyboard_visible then
@@ -665,9 +668,7 @@ function InputDialog:onKeyboardClosed()
         self:onClose()
         self:free()
 
-        self._manual_vk_toggle = true
         self:init()
-        self._manual_vk_toggle = nil
 
         self:refreshButtons()
     end
