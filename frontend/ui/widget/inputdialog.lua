@@ -197,7 +197,6 @@ local InputDialog = FocusManager:extend{
     _buttons_scroll_callback = nil,
     _buttons_backup_done = false,
     _buttons_backup = nil,
-    _shown_dialogs = 0,
 }
 
 function InputDialog:init()
@@ -565,15 +564,6 @@ function InputDialog:onShow()
     UIManager:setDirty(self, function()
         return "ui", self.dialog_frame.dimen
     end)
-
-    -- Keep a count of the amount of visible instances so we can toggle SDL text input in a possibly sane fashion...
-    InputDialog._shown_dialogs = InputDialog._shown_dialogs + 1
-    print("InputDialog:onShow", InputDialog._shown_dialogs)
-    -- First dialog? Start SDL text input.
-    if InputDialog._shown_dialogs == 1 then
-        print("Device:startTextInput")
-        Device:startTextInput()
-    end
 end
 
 function InputDialog:onCloseWidget()
@@ -581,15 +571,6 @@ function InputDialog:onCloseWidget()
     UIManager:setDirty(nil, self.fullscreen and "full" or function()
         return "ui", self.dialog_frame.dimen
     end)
-
-    InputDialog._shown_dialogs = InputDialog._shown_dialogs - 1
-     print("InputDialog:onCloseWidget", InputDialog._shown_dialogs)
-    assert(InputDialog._shown_dialogs >= 0, "InputDialog show/close mismatch!")
-    -- No more dialogs? Disable SDL text input.
-    if InputDialog._shown_dialogs == 0 then
-        print("Device:stopTextInput")
-        Device:stopTextInput()
-    end
 end
 
 function InputDialog:onShowKeyboard(ignore_first_hold_release)

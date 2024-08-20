@@ -968,12 +968,19 @@ end
 function VirtualKeyboard:onShow()
     self:_refresh(true)
     self.visible = true
+    Device:startTextInput()
     return true
 end
 
 function VirtualKeyboard:onCloseWidget()
     self:_refresh(true)
     self.visible = false
+    -- NOTE: This effectively stops SDL text input when a keyboard is hidden (... but navigational stuff still works).
+    --       If you instead wanted it to be enabled as long as an input dialog is displayed, regardless of VK's state,
+    --       this could be moved to InputDialog's onShow/onCloseWidget handlers (but, it would allow input on unfocused fields).
+    -- NOTE: But something more complex, possibly based on an in-class ref count would have to be implemented in order to be able to deal
+    --       with multiple InputDialogs being shown and closed in asymmetric fashion... Ugh.
+    Device:stopTextInput()
 end
 
 function VirtualKeyboard:lockVisibility(toggle)
