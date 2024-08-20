@@ -303,7 +303,6 @@ local function initDPadEvents()
             elseif (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
                 do end -- luacheck: ignore 541
             else
-                print("InputText:onFocus; VK visible:", self:isKeyboardVisible())
                 if not self:isKeyboardVisible() then
                     self:onShowKeyboard()
                 end
@@ -313,8 +312,6 @@ local function initDPadEvents()
         end
 
         function InputText:onUnfocus()
-            print("InputText:onUnfocus")
-            print(debug.traceback())
             -- Event called by the focusmanager
             self:unfocus()
             return true
@@ -643,7 +640,6 @@ function InputText:onKeyPress(key)
             self:addChars("    ")
         -- as stated before, we also don't need to unfocus when there is no keyboard, one less key press to exit widgets, yay!
         elseif key["Back"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
-            print("InputText:onKeyPress Back")
             if self.focused then
                 self:unfocus()
             end
@@ -764,7 +760,6 @@ function InputText:onShowKeyboard(ignore_first_hold_release)
 end
 
 function InputText:onCloseKeyboard()
-    print("InputText:onCloseKeyboard")
     if self.keyboard then
         self.keyboard:hideKeyboard()
     end
@@ -783,9 +778,7 @@ function InputText:lockKeyboard(toggle)
 end
 
 function InputText:onCloseWidget()
-    print("InputText:onCloseWidget")
     if self.keyboard then
-        print("Free VirtualKeyboard", self.keyboard)
         self.keyboard:free()
     end
     self:free()
