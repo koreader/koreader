@@ -581,7 +581,6 @@ function InputDialog:onShowKeyboard(ignore_first_hold_release)
 end
 
 function InputDialog:onCloseKeyboard()
-    print("InputDialog:onCloseKeyboard")
     self._input_widget:onCloseKeyboard()
     self.keyboard_visible = self._input_widget:isKeyboardVisible()
 end
@@ -601,10 +600,8 @@ end
 -- NOTE: Only called by fullscreen and/or add_nav_bar codepaths
 --       We do not currently have !fullscreen add_nav_bar callers...
 function InputDialog:toggleKeyboard(force_toggle)
-    print("InputDialog:toggleKeyboard", force_toggle)
     -- Remember the *current* visibility, as the following close will reset it
     local visible = self:isKeyboardVisible()
-    print("visible:", visible)
 
     -- When we forcibly close the keyboard, remember its current visiblity state, so that we can properly restore it later.
     -- (This is used by some buttons in fullscreen mode, where we might want to keep the original keyboard hidden when popping up a new one for another InputDialog).
@@ -656,8 +653,8 @@ function InputDialog:toggleKeyboard(force_toggle)
     self:refreshButtons()
 end
 
+-- fullscreen mode & add_nav_bar breaks some of our usual assumptions about what should happen on "Back" input events...
 function InputDialog:onKeyboardClosed()
-    print("InputDialog:onKeyboardClosed")
     if self.add_nav_bar and self.fullscreen then
         -- If the keyboard was closed via a key event (Back), make sure we reinit properly like in toggleKeyboard...
         self.input = self:getInputText()
@@ -698,7 +695,6 @@ function InputDialog:onKeyboardHeightChanged()
 end
 
 function InputDialog:onCloseDialog()
-    print("InputDialog:onCloseDialog")
     local close_button = self.button_table:getButtonById("close")
     if close_button and close_button.enabled then
         close_button.callback()
@@ -708,7 +704,6 @@ function InputDialog:onCloseDialog()
 end
 
 function InputDialog:onClose()
-    print("InputDialog:onClose")
     -- Tell our input widget to poke its text widget so that we'll pickup up to date values
     self._input_widget:resyncPos()
     -- Remember current view & position in case of re-init
