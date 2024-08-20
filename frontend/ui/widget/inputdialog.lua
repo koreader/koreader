@@ -574,6 +574,8 @@ function InputDialog:onCloseWidget()
 end
 
 function InputDialog:onShowKeyboard(ignore_first_hold_release)
+    print("InputDialog:onShowKeyboard")
+    print(debug.traceback())
     -- Don't initiate virtual keyboard when user has a physical keyboard and G_setting(vk_enabled) unchecked.
     if self.skip_first_show_keyboard then
         self.skip_first_show_keyboard = nil
