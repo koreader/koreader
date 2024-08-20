@@ -704,6 +704,7 @@ end
 
 function InputDialog:onCloseDialog()
     print("InputDialog:onCloseDialog")
+    print(debug.traceback())
     local close_button = self.button_table:getButtonById("close")
     if close_button and close_button.enabled then
         close_button.callback()

@@ -313,6 +313,8 @@ local function initDPadEvents()
         end
 
         function InputText:onUnfocus()
+            print("InputText:onUnfocus")
+            print(debug.traceback())
             -- Event called by the focusmanager
             self:unfocus()
             return true
@@ -641,6 +643,7 @@ function InputText:onKeyPress(key)
             self:addChars("    ")
         -- as stated before, we also don't need to unfocus when there is no keyboard, one less key press to exit widgets, yay!
         elseif key["Back"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
+            print("InputText:onKeyPress Back")
             if self.focused then
                 self:unfocus()
             end
