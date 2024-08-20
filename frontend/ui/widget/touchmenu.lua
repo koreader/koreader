@@ -928,7 +928,7 @@ function TouchMenu:onMenuSelect(item, tap_on_checkmark)
             end
         else
             table.insert(self.item_table_stack, self.item_table)
-            item.menu_item_id = item.menu_item_id or os.time() -- unique id
+            item.menu_item_id = item.menu_item_id or tostring(item) -- unique id
             self.parent_id = item.menu_item_id
             self.item_table = sub_item_table
             self.page = 1
