@@ -93,7 +93,7 @@ local Terminal = WidgetContainer:extend{
 }
 
 function Terminal:isExecutable(file)
-    if os.execute(string.format("test -x %s", file)) == 0 then -- full path
+    if not Device:isAndroid() and os.execute(string.format("test -x %s", file)) == 0 then -- full path
         return true
     elseif os.execute(string.format("which %s 2>/dev/null 1>/dev/null", file)) == 0 then
         return true
@@ -104,10 +104,10 @@ end
 function Terminal:getDefaultShellExecutable()
     if self.default_shell_executable then return self.default_shell_executable end
 
-    local shell = {"mksh", "ksh", "zsh", "ash", "dash", "sh", "bash"}
+    local shell = {"hush", "mksh", "ksh", "zsh", "ash", "dash", "sh", "bash"}
     table.insert(shell, os.getenv("SHELL"))
 
-    while #shell >= 1  do
+    while #shell >= 1 do
         if self:isExecutable(shell[#shell]) then
             self.default_shell_executable = shell[#shell]
             break
