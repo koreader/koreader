@@ -488,6 +488,12 @@ FocusManager.RENDER_IN_NEXT_TICK = true
 --- Container calls this method to re-set focus widget style
 --- Some container regenerate layout on update and lose focus style
 function FocusManager:refocusWidget(nextTick, focus_flags)
+    -- On touch devices, we do *not* want to show visual focus changes generated programmatically,
+    -- we only want to see them for actual user input events (#12361).
+    if not focus_flags then
+        focus_flags = FocusManager.FOCUS_ONLY_ON_NT
+    end
+
     if not self._parent then
         if not nextTick then
             self:moveFocusTo(self.selected.x, self.selected.y, focus_flags)
