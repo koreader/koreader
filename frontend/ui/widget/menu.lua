@@ -581,7 +581,6 @@ local Menu = FocusManager:extend{
     width = nil,
     -- height will be calculated according to item number if not given
     height = nil,
-    header_padding = Size.padding.default,
     dimen = nil,
     item_table = nil, -- NOT mandatory (will be empty)
     item_table_stack = nil,
@@ -639,9 +638,6 @@ function Menu:_recalculateDimen(no_recalculate_dimen)
     local top_height = 0
     if self.title_bar and not self.no_title then
         top_height = self.title_bar:getHeight()
-        if not self.title_bar_fm_style then
-            top_height = top_height + self.header_padding
-        end
     end
     local bottom_height = 0
     if self.page_return_arrow and self.page_info_text then
@@ -651,7 +647,6 @@ function Menu:_recalculateDimen(no_recalculate_dimen)
     print("self.inner_dimen.h", self.inner_dimen.h)
     print("top_height", top_height)
     print("self.title_bar:getHeight()", self.title_bar:getHeight())
-    print("self.header_padding", self.header_padding)
     print("self.title_bar_fm_style", self.title_bar_fm_style)
     print("bottom_height", bottom_height)
     print("self.available_height", self.available_height)
