@@ -996,8 +996,10 @@ end
 function Menu:updatePageInfo(select_number)
     if #self.item_table > 0 then
         if Device:hasDPad() then
-            -- reset focus manager accordingly
-            self:moveFocusTo(1, select_number)
+            -- Reset focus manager accordingly.
+            -- NOTE: Since this runs automatically on init,
+            --       we use FOCUS_ONLY_ON_NT as we don't want to see the initial underline on Touch devices.
+            self:moveFocusTo(1, select_number, FocusManager.FOCUS_ONLY_ON_NT)
         end
         -- update page information
         self.page_info_text:setText(T(_("Page %1 of %2"), self.page, self.page_num))
