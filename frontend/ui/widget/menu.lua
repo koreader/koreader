@@ -644,18 +644,11 @@ function Menu:_recalculateDimen(no_recalculate_dimen)
         bottom_height = math.max(self.page_return_arrow:getSize().h, self.page_info_text:getSize().h)
     end
     self.available_height = self.inner_dimen.h - top_height - bottom_height
-    print("self.inner_dimen.h", self.inner_dimen.h)
-    print("top_height", top_height)
-    print("self.title_bar:getHeight()", self.title_bar:getHeight())
-    print("self.title_bar_fm_style", self.title_bar_fm_style)
-    print("bottom_height", bottom_height)
-    print("self.available_height", self.available_height)
     self.item_dimen = Geom:new{
         x = 0, y = 0,
         w = self.inner_dimen.w,
         h = math.floor(self.available_height / perpage),
     }
-    print("self.item_dimen.h", self.item_dimen.h)
 
     if self.items_max_lines then
         self:setupItemHeights()
@@ -1106,8 +1099,6 @@ function Menu:updateItems(select_number, no_recalculate_dimen)
             items_padding = self.items_padding,
             handle_hold_on_hold_release = self.handle_hold_on_hold_release,
         }
-        print("item:", item_tmp.text)
-        print("item.dimen.h", item_tmp.dimen.h)
         table.insert(self.item_group, item_tmp)
         -- this is for focus manager
         table.insert(self.layout, {item_tmp})
