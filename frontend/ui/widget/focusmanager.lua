@@ -302,8 +302,6 @@ FocusManager.FOCUS_ONLY_ON_NT = (Device:hasDPad() and not Device:isTouchDevice()
 
 --- Move focus to specified widget
 function FocusManager:moveFocusTo(x, y, focus_flags)
-    print("moveFocusTo:", x, y, focus_flags)
-    print(debug.traceback())
     focus_flags = focus_flags or 0
     if not self.layout then
         return false
