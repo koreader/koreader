@@ -614,7 +614,7 @@ local Menu = FocusManager:extend{
     -- if you want to embed the menu widget into another widget, set
     -- this to false
     is_popout = true,
-    title_bar_fm_style = nil, -- set to true to build increased title bar like in FileManager
+    title_bar_fm_style = nil, -- set to true to mimic FileManager's custom title bar (extra padding & subtitle)
     -- set icon to add title bar left button
     title_bar_left_icon = nil,
     -- close_callback is a function, which is executed when menu is closed
