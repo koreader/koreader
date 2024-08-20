@@ -396,6 +396,9 @@ end
 
 function TitleBar:setSubTitle(subtitle, no_refresh)
     if self.subtitle_widget and not self.subtitle_multilines then -- no TextBoxWidget:setText() available
+        if string.match(subtitle, "/")  then
+            subtitle = subtitle:gsub("/", ": ")
+        end
         self.subtitle_widget:setText(subtitle)
         if self.inner_subtitle_group then
             self.inner_subtitle_group:resetLayout()
