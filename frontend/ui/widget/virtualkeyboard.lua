@@ -843,8 +843,6 @@ local VirtualKeyboard = FocusManager:extend{
 }
 
 function VirtualKeyboard:init()
-    print("VirtualKeyboard:init", self)
-    print(debug.traceback())
     if self.uwrap_func then
         self.uwrap_func()
         self.uwrap_func = nil
@@ -938,8 +936,6 @@ function VirtualKeyboard:setKeyboardLayout(layout)
 end
 
 function VirtualKeyboard:onClose()
-    print("VirtualKeyboard:onClose", self)
-    print(debug.traceback())
     UIManager:close(self)
     if self.inputbox and Device:hasDPad() then
         -- Let InputText handle this KeyPress "Back" event to unfocus, otherwise, another extra Back event is needed.
@@ -970,8 +966,6 @@ function VirtualKeyboard:_refresh(want_flash, fullscreen)
 end
 
 function VirtualKeyboard:onShow()
-    print("VirtualKeyboard:onShow", self)
-    print(debug.traceback())
     self:_refresh(true)
     self.visible = true
     Device:startTextInput()
@@ -979,8 +973,6 @@ function VirtualKeyboard:onShow()
 end
 
 function VirtualKeyboard:onCloseWidget()
-    print("VirtualKeyboard:onCloseWidget", self)
-    print(debug.traceback())
     self:_refresh(true)
     self.visible = false
     -- NOTE: This effectively stops SDL text input when a keyboard is hidden (... but navigational stuff still works).
@@ -1008,13 +1000,10 @@ function VirtualKeyboard:setVisibility(toggle)
 end
 
 function VirtualKeyboard:isVisible()
-     print("VirtualKeyboard:isVisible", self, self.visible)
     return self.visible
 end
 
 function VirtualKeyboard:showKeyboard(ignore_first_hold_release)
-    print("VirtualKeyboard:showKeyboard", self)
-    print(debug.traceback())
     if not self:isVisible() then
         self.ignore_first_hold_release = ignore_first_hold_release
         self:setVisibility(true)
@@ -1022,8 +1011,6 @@ function VirtualKeyboard:showKeyboard(ignore_first_hold_release)
 end
 
 function VirtualKeyboard:hideKeyboard()
-    print("VirtualKeyboard:hideKeyboard", self)
-    print(debug.traceback())
     if self:isVisible() then
         self:setVisibility(false)
     end
