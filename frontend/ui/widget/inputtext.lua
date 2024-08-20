@@ -142,6 +142,8 @@ local function initTouchEvents()
                 if self.keyboard then
                     self.keyboard:showKeyboard()
                 end
+                -- Make sure we're flagged as in focus again
+                self:focus()
             end
             if self._frame_textwidget.dimen ~= nil -- zh keyboard with candidates shown here has _frame_textwidget.dimen = nil
                     and #self.charlist > 0 then -- do not move cursor within a hint
