@@ -649,6 +649,13 @@ function Menu:_recalculateDimen(no_recalculate_dimen)
             + 2 * Size.padding.button
     end
     self.available_height = self.inner_dimen.h - top_height - bottom_height
+    print("self.inner_dimen.h", self.inner_dimen.h)
+    print("top_height", top_height)
+    print("self.title_bar:getHeight()", self.title_bar:getHeight())
+    print("self.header_padding", self.header_padding)
+    print("self.title_bar_fm_style", self.title_bar_fm_style)
+    print("bottom_height", bottom_height)
+    print("self.available_height", self.available_height)
     self.item_dimen = Geom:new{
         x = 0, y = 0,
         w = self.inner_dimen.w,
