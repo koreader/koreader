@@ -104,7 +104,7 @@ function DictQuickLookup:init()
         self.key_events.ReadPrevResult = { { Input.group.PgBack } }
         self.key_events.ReadNextResult = { { Input.group.PgFwd } }
         self.key_events.Close = { { Input.group.Back } }
-        self.key_events.ShowResultsMenu = { { "Menu" } }
+        self.key_events.MenuKeyPress = { { "Menu" } }
         if Device:hasKeyboard() then
             self.key_events.ChangeToPrevDict = { { "Shift", "Left" } }
             self.key_events.ChangeToNextDict = { { "Shift", "Right" } }
@@ -1098,6 +1098,10 @@ function DictQuickLookup:onReadPrevResult()
         self.definition_widget[1]:scrollToRatio(1) -- 1 = 100% = bottom
     end
     return true
+end
+
+function DictQuickLookup:onMenuKeyPress()
+    return self.dict_title.left_icon_tap_callback()
 end
 
 function DictQuickLookup:onTap(arg, ges_ev)
