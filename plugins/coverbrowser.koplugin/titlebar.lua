@@ -131,55 +131,10 @@ function TitleBar:init()
     if not title_face then
         title_face = self.fullscreen and self.title_face_fullscreen or self.title_face_not_fullscreen
     end
-    if self.title_multilines then
-        self.title_widget = TextBoxWidget:new{
-            text = self.title,
-            alignment = self.align,
-            width = title_max_width,
-            face = title_face,
-            lang = self.lang,
-        }
-    else
-        while true do
-            self.title_widget = TextWidget:new{
-                text = "KoЯnReader",
-                face = title_face,
-                padding = 0,
-                lang = self.lang,
-                max_width = not self.title_shrink_font_to_fit and title_max_width,
-                    -- truncate if not self.title_shrink_font_to_fit
-            }
-            if not self.title_shrink_font_to_fit then
-                break -- truncation allowed, no loop needed
-            end
-            if self.title_widget:getWidth() <= title_max_width then
-                break -- text with normal font fits, no loop needed
-            end
-            -- Text doesn't fit
-            if not self._initial_titlebar_height then
-                -- We're with title_shrink_font_to_fit and in the first :init():
-                -- we don't want to go on measuring with this too long text.
-                -- We want metrics proper for when text fits, so if later :setTitle()
-                -- is called with a text that fits, this text will look allright.
-                -- Longer title with a smaller font size should be laid out on the
-                -- baseline of a fitted text.
-                -- So, go on computing sizes with an empty title. When all is
-                -- gathered, we'll re :init() ourselves with the original title,
-                -- using the metrics we're computing now (self._initial*).
-                self._initial_re_init_needed = true
-                self.title_widget:free(true)
-                self.title_widget = TextWidget:new{
-                    text = "",
-                    face = title_face,
-                    padding = 0,
-                }
-                break
-            end
-            -- otherwise, loop and do the same with a smaller font size
-            self.title_widget:free(true)
-            title_face = Font:getFace(title_face.orig_font, title_face.orig_size - 1)
-        end
-    end
+    -- Dummy text widget to enforce vertical height
+    self.title_widget = TextWidget:new{
+        face = title_face,
+    }
     local title_top_padding = self.title_top_padding
     if not title_top_padding then
         -- Compute it so baselines of the text and of the icons align.
@@ -238,8 +193,7 @@ function TitleBar:init()
     if self.align == "left" then
         -- we need to :resetLayout() both VerticalGroup and HorizontalGroup in :setTitle()
         self.inner_title_group = HorizontalGroup:new{
-            HorizontalSpan:new{ width = left_icon_reserved_width + self.title_h_padding },
-            self.title_widget,
+            HorizontalSpan:new{ width = left_icon_reserved_width + self.title_h_padding }
         }
         table.insert(self.title_group, self.inner_title_group)
     else
@@ -430,7 +384,6 @@ function TitleBar:setTitle(title, no_refresh)
         end
     else
         -- TextWidget with max-width: we can just update its text
-        self.title_widget:setText(title)
         if self.inner_title_group then
             self.inner_title_group:resetLayout()
         end
