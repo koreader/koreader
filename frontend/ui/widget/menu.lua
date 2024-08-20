@@ -646,7 +646,6 @@ function Menu:_recalculateDimen(no_recalculate_dimen)
     local bottom_height = 0
     if self.page_return_arrow and self.page_info_text then
         bottom_height = math.max(self.page_return_arrow:getSize().h, self.page_info_text:getSize().h)
-            + 2 * Size.padding.button
     end
     self.available_height = self.inner_dimen.h - top_height - bottom_height
     print("self.inner_dimen.h", self.inner_dimen.h)
@@ -661,6 +660,7 @@ function Menu:_recalculateDimen(no_recalculate_dimen)
         w = self.inner_dimen.w,
         h = math.floor(self.available_height / perpage),
     }
+    print("self.item_dimen.h", self.item_dimen.h)
 
     if self.items_max_lines then
         self:setupItemHeights()
