@@ -983,6 +983,7 @@ function VirtualKeyboard:onCloseWidget()
     -- NOTE: You would also have to deal with the fact that, once InputText loses focus,
     --       it will stop dealing with key events because it wouldn't know where to send them when there are multiple live instances of it,
     --       specifically because, given how we propagate events, the key event will go to whichever inputtext comes earlier in the container's array...
+    -- c.f., 2ccf7601fe1cbd9794aea0be754ea4166b9767d7 in #12361 and the comments surrounding it ;).
     Device:stopTextInput()
 end
 
