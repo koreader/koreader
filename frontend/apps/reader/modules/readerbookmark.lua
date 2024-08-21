@@ -1113,7 +1113,6 @@ function ReaderBookmark:showBookmarkDetails(item)
         text_type = "bookmark",
         close_callback = function()
             _updateBookmarkList()
-            UIManager:close(textviewer)
         end,
         buttons_table = {
             {
