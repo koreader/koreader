@@ -1133,7 +1133,7 @@ function ReaderView:setupTouchZones()
     (self.ui.rolling or self.ui.paging):setupTouchZones()
 end
 
-function ReaderView:onToggleReadingOrder()
+function ReaderView:onToggleReadingOrder(show_notification)
     self.inverse_reading_order = not self.inverse_reading_order
     self:setupTouchZones()
     local is_rtl = self.inverse_reading_order ~= BD.mirroredUILayout() -- mirrored reading
