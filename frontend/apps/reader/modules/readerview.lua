@@ -1137,7 +1137,6 @@ function ReaderView:onToggleReadingOrder(show_notification)
     self.inverse_reading_order = not self.inverse_reading_order
     self:setupTouchZones()
     local is_rtl = self.inverse_reading_order ~= BD.mirroredUILayout() -- mirrored reading
-    G_reader_settings:flipNilOrFalse("inverse_reading_order")
     if show_notification then
         Notification:notify(is_rtl and _("RTL page turning.") or _("LTR page turning."))
     end
