@@ -1,7 +1,7 @@
 --[[
 Kindle's kernel designates Alt+'QWERTYUIOP' as numerical values on kindle 3.
 This map is intended to make shortcut writting more readable, for example Alt+W
-would be: self.key_events = { Device.CrapMapAlt["W"] } instead of self.key_events = { "2" }
+would be: self.key_events = { Device.AltPlusQWER["Q"] } instead of self.key_events = { "2" }
 --]]
 
 return {

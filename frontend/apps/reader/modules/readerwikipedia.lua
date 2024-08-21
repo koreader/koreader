@@ -44,7 +44,7 @@ function ReaderWikipedia:registerKeyEvents()
             -- Override previous shortcut on kindle3 as the kernel designates Alt+W as "2".
             -- Any user-facing documentation should _still_ advertise this shortcut as Alt+W, as
             -- that is what the user must input in order to use it.
-            self.key_events.ShowWikipediaLookup = { { "2" } }
+            self.key_events.ShowWikipediaLookup = { { Device.AltPlusQWER["W"] } }
         end
     end
 end
