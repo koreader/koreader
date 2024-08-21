@@ -1440,6 +1440,7 @@ function BookMapWidget:onClose(close_all_parents)
         -- As we're getting back to Reader, update the footer and do a full flashing
         -- refresh to remove any ghost trace of thumbnails or black page slots
         UIManager:broadcastEvent(Event:new("UpdateFooter"))
+        self.ui.bookmark:onPageUpdate(self.ui:getCurrentPage())
         UIManager:setDirty(self.ui.dialog, "full")
     end
     return true
