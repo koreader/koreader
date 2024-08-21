@@ -4,7 +4,7 @@ This map is intended to make shortcut writting more readable, for example Alt+W
 would be: self.key_events = { Device.CrapMapAlt["W"] } instead of self.key_events = { "2" }
 --]]
 
-return = {
+return {
     ["Q"] = {"1"}, ["W"] = {"2"},
     ["E"] = {"3"}, ["R"] = {"4"},
     ["T"] = {"5"}, ["Y"] = {"6"},
