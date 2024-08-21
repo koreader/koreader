@@ -1198,6 +1198,8 @@ end
 
 -- Refresh the bookmark list whenever details may have been edited
 function ReaderBookmark:refreshBookmarkDetails()
+    local bm_menu = self.bookmark_menu[1]
+    local item_table = bm_menu.item_table
     if self.details_updated then
         self.details_updated = nil
         if self.show_edited_only then
