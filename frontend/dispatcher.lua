@@ -184,7 +184,7 @@ local settingsList = {
     translate_page = {category="none", event="TranslateCurrentPage", title=_("Translate current page"), reader=true, separator=true},
     ----
     toggle_page_change_animation = {category="none", event="TogglePageChangeAnimation", title=_("Toggle page turn animations"), reader=true, condition=Device:canDoSwipeAnimation()},
-    toggle_inverse_reading_order = {category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), reader=true},
+    toggle_inverse_reading_order = {category="none", event="ToggleReadingOrder", arg=true, title=_("Toggle page turn direction"), reader=true},
     toggle_handmade_toc = {category="none", event="ToggleHandmadeToc", title=_("Toggle custom TOC"), reader=true},
     toggle_handmade_flows = {category="none", event="ToggleHandmadeFlows", title=_("Toggle custom hidden flows"), reader=true, separator=true},
     ----
