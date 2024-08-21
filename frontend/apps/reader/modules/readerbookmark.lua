@@ -1090,11 +1090,28 @@ function ReaderBookmark:showBookmarkDetails(item)
         self:updateBookmarkList(nil, idx)
         self:showBookmarkDetails(item_table[idx])
     end
+    -- Refresh the bookmark list whenever details may have been edited
+    local _updateBookmarkList = function()
+        if self.details_updated then
+            self.details_updated = nil
+            if self.show_edited_only then
+                for i = #item_table, 1, -1 do
+                    if not item_table[i].text_edited then
+                        table.remove(item_table, i)
+                    end
+                end
+            end
+            self:updateBookmarkList(item_table, -1)
+        end
+    end
 
     textviewer = TextViewer:new{
         title = T(_("Bookmark details (%1/%2)"), item.idx, #item_table),
         text = text,
         text_type = "bookmark",
+        close_callback = function()
+            _updateBookmarkList()
+        end,
         buttons_table = {
             {
                 {
@@ -1141,17 +1158,7 @@ function ReaderBookmark:showBookmarkDetails(item)
                 {
                     text = _("Close"),
                     callback = function()
-                        if self.details_updated then
-                            self.details_updated = nil
-                            if self.show_edited_only then
-                                for i = #item_table, 1, -1 do
-                                    if not item_table[i].text_edited then
-                                        table.remove(item_table, i)
-                                    end
-                                end
-                            end
-                            self:updateBookmarkList(item_table, -1)
-                        end
+                        _updateBookmarkList()
                         UIManager:close(textviewer)
                     end,
                 },
