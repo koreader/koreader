@@ -40,10 +40,7 @@ end
 function ReaderWikipedia:registerKeyEvents()
     if Device:hasKeyboard() then
         self.key_events.ShowWikipediaLookup = { { "Alt", "W" }, { "Ctrl", "W" } }
-        if Device.model == "Kindle3" then
-            -- Override previous shortcut on kindle3 as the kernel designates Alt+W as "2".
-            -- Any user-facing documentation should _still_ advertise this shortcut as Alt+W, as
-            -- that is what the user must input in order to use it.
+        if Device.AltPlusQWER then
             self.key_events.ShowWikipediaLookup = { { Device.AltPlusQWER["W"] } }
         end
     end
