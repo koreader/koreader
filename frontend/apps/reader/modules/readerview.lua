@@ -955,12 +955,14 @@ function ReaderView:onReaderFooterVisibilityChange()
     end
 end
 
-function ReaderView:onGammaUpdate(gamma)
+function ReaderView:onGammaUpdate(gamma, no_notification)
     self.state.gamma = gamma
     if self.page_scroll then
         self.ui:handleEvent(Event:new("UpdateScrollPageGamma", gamma))
     end
-    Notification:notify(T(_("Contrast set to: %1."), gamma))
+    if not no_notification then
+        Notification:notify(T(_("Contrast set to: %1."), gamma))
+    end
 end
 
 -- For ReaderKOptListener
