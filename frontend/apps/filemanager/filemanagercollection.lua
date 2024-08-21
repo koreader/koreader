@@ -154,13 +154,22 @@ function FileManagerCollection:onMenuHold(item)
     table.insert(buttons, {}) -- separator
     table.insert(buttons, {
         filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_update_callback, is_currently_opened),
+        self._manager:genAddToCollectionButton(file, close_dialog_callback, close_dialog_update_callback),
+    })
+    table.insert(buttons, {
+        {
+            text = _("Delete"),
+            enabled = not is_currently_opened,
+            callback = function()
+                local FileManager = require("apps/filemanager/filemanager")
+                FileManager:showDeleteFileDialog(file, close_dialog_update_callback)
+            end,
+        },
         {
             text = _("Remove from collection"),
             callback = function()
-                UIManager:close(self.collfile_dialog)
                 ReadCollection:removeItem(file, self.collection_name)
-                self._manager:updateItemTable()
-                self._manager.files_updated = true
+                close_dialog_update_callback()
             end,
         },
     })
@@ -583,7 +592,7 @@ end
 
 function FileManagerCollection:genAddToCollectionButton(file_or_files, caller_pre_callback, caller_post_callback, button_disabled)
     return {
-        text = _("Add to collection"),
+        text = _("Collections…"),
         enabled = not button_disabled,
         callback = function()
             if caller_pre_callback then
