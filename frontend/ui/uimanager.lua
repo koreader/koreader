@@ -686,7 +686,7 @@ Clear the full repaint & refresh queues.
 
 NOTE: Beware! This doesn't take any prisonners!
 You shouldn't have to resort to this unless in very specific circumstances!
-plugins/coverbrowser.koplugin/covermenu.lua building a franken-menu out of buttondialogtitle & buttondialog
+plugins/coverbrowser.koplugin/covermenu.lua building a franken-menu out of buttondialog
 and wanting to avoid inheriting their original paint/refresh cycle being a prime example.
 --]]
 function UIManager:clearRenderStack()
