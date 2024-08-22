@@ -553,6 +553,13 @@ function CoverMenu:tapPlus()
     return true
 end
 
+function onFolderUp()
+    if not (G_reader_settings:isTrue("lock_home_folder") and
+            self.path == G_reader_settings:readSetting("home_dir")) then
+        self:changeToPath(string.format("%s/..", self.path), self.path)
+    end
+end
+
 function CoverMenu:setupLayout()
     CoverMenu._FileManager_setupLayout_orig(self)
     
@@ -570,10 +577,26 @@ function CoverMenu:setupLayout()
         left_icon_size_ratio = 1,
         left_icon_tap_callback = function() self:goHome() end,
         left_icon_hold_callback = function() self:onShowFolderMenu() end,
+        left2_icon = "appbar.pokeball",
+        left2_icon_size_ratio = 1,
+        left2_icon_tap_callback = function() self:goHome() end,
+        left2_icon_hold_callback = function() self:onShowFolderMenu() end,
+        left3_icon = "book.opened",
+        left3_icon_size_ratio = 1,
+        left3_icon_tap_callback = function() self:goHome() end,
+        left3_icon_hold_callback = function() self:onShowFolderMenu() end,
         right_icon = self.selected_files and "check" or "plus",
         right_icon_size_ratio = 1,
         right_icon_tap_callback = function() self:onShowPlusMenu() end,
         right_icon_hold_callback = false, -- propagate long-press to dispatcher
+        right2_icon = "appbar.filebrowser",
+        right2_icon_size_ratio = 1,
+        right2_icon_tap_callback = function() self:goHome() end,
+        right2_icon_hold_callback = function() self:onShowFolderMenu() end,
+        right3_icon = "appbar.settings",
+        right3_icon_size_ratio = 1,
+        right3_icon_tap_callback = function() self:goHome() end,
+        right3_icon_hold_callback = function() self:onShowFolderMenu() end,
     }
     self:updateTitleBarPath(self.root_path)
 
