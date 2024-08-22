@@ -83,6 +83,17 @@ local T = require("ffi/util").template
 
 local CHUNK_SIZE = 80 * 40 -- max. nb of read bytes (reduce this, if taps are not detected)
 
+-- This should be moved inside `platform/android/luajit-launcher/assets/android.lua`
+-- once we now it works as expected
+if Device:isAndroid() and not os.getenv("SHELL") and os.execute() == nil then
+    local dummy, android = pcall(require, "android")
+    os.execute = function(command) -- luacheck: ignore 122
+        command = command .. "; exit $?"
+        return android.execute("sh", "-c", command)
+    end
+end
+
+
 local Terminal = WidgetContainer:extend{
     name = "terminal",
     history = "",
@@ -93,10 +104,10 @@ local Terminal = WidgetContainer:extend{
 }
 
 function Terminal:isExecutable(file)
-    logger.dbg("Terminal: test executable status of : '" .. file .. "'")
-    if os.execute(string.format("test -x %s", file)) == 0 then -- full path
+    logger.dbg("Terminal: test executable status of: '" .. file .. "'")
+    if os.execute(string.format("test -x %s", file)) == 0 then -- full path given
         return true
-    elseif os.execute(string.format("which %s", file)) == 0 then
+    elseif os.execute(string.format("which %s", file)) == 0 then -- search in path
         return true
     end
 end
@@ -246,20 +257,20 @@ function Terminal:spawnShell(cols, rows)
         end
         os.exit()
         return
+    else
+        self.is_shell_open = true
+        if Device:isAndroid() then
+            -- feed the following commands to the running shell
+            self:transmit("export TERM=vt52\n")
+            self:transmit("stty cols " .. cols .. " rows " .. rows .."\n")
+        end
+
+        self.input_widget:resize(rows, cols)
+        self.input_widget:interpretAnsiSeq(self:receive())
+
+        logger.info("Terminal: spawn done")
+        return true
     end
-
-    self.is_shell_open = true
-    if Device:isAndroid() then
-        -- feed the following commands to the running shell
-        self:transmit("export TERM=vt52\n")
-        self:transmit("stty cols " .. cols .. " rows " .. rows .."\n")
-    end
-
-    self.input_widget:resize(rows, cols)
-    self.input_widget:interpretAnsiSeq(self:receive())
-
-    logger.info("Terminal: spawn done")
-    return true
 end
 
 function Terminal:receive()
