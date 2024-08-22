@@ -8,6 +8,7 @@ local Version = require("version")
 local FFIUtil = require("ffi/util")
 local T = FFIUtil.template
 local lfs = require("libs/libkoreader-lfs")
+local util = require("util")
 local _ = require("gettext")
 
 local QuickStart = {
@@ -262,7 +263,7 @@ function QuickStart:getQuickStart()
                 quickstart_html = quickstart_html:gsub('<html>', '<html dir="rtl">')
             end
             -- Write the fixed HTML content
-            FileConverter:writeStringToFile(quickstart_html, quickstart_filename)
+            util.writeToFile(quickstart_html, quickstart_filename)
         end
     end
     -- remember filename for file manager
