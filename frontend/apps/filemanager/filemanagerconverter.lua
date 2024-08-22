@@ -2,7 +2,7 @@
 This module is responsible for converting files.
 ]]
 
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
@@ -64,31 +64,22 @@ function FileConverter:_mdFileToHtml(file, title)
     return html
 end
 
-function FileConverter:writeStringToFile(content, file)
-    local f = io.open(file, "w")
-    if f == nil then
-        return
-    end
-    f:write(content)
-    f:close()
-end
-
 function FileConverter:isSupported(file)
-    return FileConverter.formats_from[util.getFileNameSuffix(file)] and true or false
+    return self.formats_from[util.getFileNameSuffix(file)] and true or false
 end
 
 function FileConverter:showConvertButtons(file, ui)
     local __, filename_pure = util.splitFilePathName(file)
     local filename_suffix = util.getFileNameSuffix(file)
     local filetype_name = self.formats_from[filename_suffix].name
-    self.convert_dialog = ButtonDialogTitle:new{
+    self.convert_dialog = ButtonDialog:new{
         title = T(_("Convert %1 to:"), filetype_name),
         buttons = {
             {
                 {
                     text = _("HTML"),
                     callback = function()
-                        local html = FileConverter:_mdFileToHtml(file, filename_pure)
+                        local html = self:_mdFileToHtml(file, filename_pure)
                         if not html then return end
                         local filename_html = file..".html"
                         if lfs.attributes(filename_html, "mode") == "file" then
@@ -96,12 +87,12 @@ function FileConverter:showConvertButtons(file, ui)
                                 text = _("Overwrite existing HTML file?"),
                                 ok_text = _("Overwrite"),
                                 ok_callback = function()
-                                    FileConverter:writeStringToFile(html, filename_html)
+                                    util.writeToFile(html, filename_html)
                                     UIManager:close(self.convert_dialog)
                                 end,
                             })
                         else
-                            FileConverter:writeStringToFile(html, filename_html)
+                            util.writeToFile(html, filename_html)
                             ui:refreshPath()
                             UIManager:close(self.convert_dialog)
                         end
