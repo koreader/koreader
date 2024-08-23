@@ -19,6 +19,7 @@ local FileChooser = require("ui/widget/filechooser")
 local _FileChooser__recalculateDimen_orig = FileChooser._recalculateDimen
 local _FileChooser_updateItems_orig = FileChooser.updateItems
 local _FileChooser_onCloseWidget_orig = FileChooser.onCloseWidget
+local _FileChooser_genItemTable_orig = FileChooser.genItemTable
 
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local _FileManagerHistory_updateItemTable_orig = FileManagerHistory.updateItemTable
@@ -571,6 +572,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser.updateItems = _FileChooser_updateItems_orig
         FileChooser.onCloseWidget = _FileChooser_onCloseWidget_orig
         FileChooser._recalculateDimen = _FileChooser__recalculateDimen_orig
+        FileChooser.genItemTable = _FileChooser_genItemTable_orig
         FileManager.tapPlus = _FileManager_tapPlus_orig
         FileManager.setupLayout = _FileManager_setupLayout_orig
         -- Also clean-up what we added, even if it does not bother original code
@@ -617,6 +619,9 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
     CoverMenu._FileManager_tapPlus_orig = _FileManager_tapPlus_orig
     FileManager.tapPlus = CoverMenu.tapPlus
 
+    
+    CoverMenu._FileChooser_genItemTable_orig = _FileChooser_genItemTable_orig
+    FileChooser.genItemTable = CoverMenu.genItemTable
     
     CoverMenu._FileManager_setupLayout_orig = _FileManager_setupLayout_orig
     FileManager.setupLayout = CoverMenu.setupLayout

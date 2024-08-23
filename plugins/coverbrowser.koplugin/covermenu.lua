@@ -2,6 +2,7 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local DocSettings = require("docsettings")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
+local FileChooser = require("ui/widget/filechooser")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local TitleBar = require("titlebar")
@@ -511,6 +512,13 @@ function CoverMenu:onCloseWidget()
 
     -- Call the object's original onCloseWidget (i.e., Menu's, as none our our expected subclasses currently implement it)
     Menu.onCloseWidget(self)
+end
+
+function CoverMenu:genItemTable(dirs, files, path)
+    -- Call the object's original genItemTable 
+    local item_table = CoverMenu._FileChooser_genItemTable_orig(self, dirs, files, path)
+    if item_table[1].text == "⬆ ../" then table.remove(item_table,1) end
+    return item_table
 end
 
 function CoverMenu:tapPlus()
