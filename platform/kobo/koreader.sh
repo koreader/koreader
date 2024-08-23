@@ -14,7 +14,7 @@ cd "${KOREADER_DIR:-/dev/null}" || exit
 # To make USBMS behave, relocalize ourselves outside of onboard. Additionally,
 # this is used by KOReader to detect if the original script has changed after
 # an update (requiring a complete restart from the parent launcher).
-if [ "${SCRIPT_DIR}" != "/tmp" ]; then
+if [ "${SCRIPT_DIR}" != "/tmp" ] && [ "${SCRIPT_DIR}" != "/var/volatile/tmp" ]; then
     cp -pf "${0}" "/tmp/koreader.sh"
     chmod 777 "/tmp/koreader.sh"
     exec "/tmp/koreader.sh" "$@"
