@@ -562,6 +562,7 @@ end
 
 function CoverMenu:setupLayout()
     CoverMenu._FileManager_setupLayout_orig(self)
+    local FileManager = require("apps/filemanager/filemanager")
     
     self.title_bar = TitleBar:new{
         show_parent = self.show_parent,
@@ -573,30 +574,36 @@ function CoverMenu:setupLayout()
         subtitle_truncate_left = true,
         subtitle_fullwidth = true,
         button_padding = Screen:scaleBySize(5),
+        -- home
         left_icon = "home",
         left_icon_size_ratio = 1,
         left_icon_tap_callback = function() self:goHome() end,
         left_icon_hold_callback = function() self:onShowFolderMenu() end,
+        -- favorites
         left2_icon = "appbar.pokeball",
         left2_icon_size_ratio = 1,
-        left2_icon_tap_callback = function() self:goHome() end,
-        left2_icon_hold_callback = function() self:onShowFolderMenu() end,
+        left2_icon_tap_callback = function() FileManager.instance.collections:onShowColl() end,
+        left2_icon_hold_callback = false,
+        -- history
         left3_icon = "book.opened",
         left3_icon_size_ratio = 1,
-        left3_icon_tap_callback = function() self:goHome() end,
-        left3_icon_hold_callback = function() self:onShowFolderMenu() end,
+        left3_icon_tap_callback = function() FileManager.instance.history:onShowHist() end,
+        left3_icon_hold_callback = false,
+        -- stupid plus menu
         right_icon = self.selected_files and "check" or "plus",
         right_icon_size_ratio = 1,
         right_icon_tap_callback = function() self:onShowPlusMenu() end,
         right_icon_hold_callback = false, -- propagate long-press to dispatcher
+        -- up folder
         right2_icon = "appbar.filebrowser",
         right2_icon_size_ratio = 1,
         right2_icon_tap_callback = function() self:goHome() end,
-        right2_icon_hold_callback = function() self:onShowFolderMenu() end,
+        right2_icon_hold_callback = false,
+        -- open last file
         right3_icon = "appbar.settings",
         right3_icon_size_ratio = 1,
         right3_icon_tap_callback = function() self:goHome() end,
-        right3_icon_hold_callback = function() self:onShowFolderMenu() end,
+        right3_icon_hold_callback = false,
     }
     self:updateTitleBarPath(self.root_path)
 
