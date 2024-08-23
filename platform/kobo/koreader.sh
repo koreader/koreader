@@ -10,7 +10,7 @@ export KOREADER_DIR="${KOREADER_DIR:-${SCRIPT_DIR}}"
 cd "${KOREADER_DIR:-/dev/null}" || exit
 
 # To make USBMS behave, relocalize ourselves outside of onboard
-if [ "${SCRIPT_DIR}" != "/tmp" ]; then
+if [ "${SCRIPT_DIR}" != "/tmp" ] && [ "${SCRIPT_DIR}" != "/var/volatile/tmp" ]; then
     cp -pf "${0}" "/tmp/koreader.sh"
     chmod 777 "/tmp/koreader.sh"
     exec "/tmp/koreader.sh" "$@"
