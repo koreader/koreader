@@ -546,7 +546,8 @@ function TermInputText:addChars(chars, skip_callback, skip_table_concat)
                 if self.charlist[self.charpos] == "\n" then
                     self.charpos = self.charpos + 1
                     if not self.charlist[self.charpos] then
-                        insertSpaces(self.maxc)
+                        local p = insertSpaces(self.maxc)
+                        table.insert(self.charlist, p, "\n")
                     end
                 end
             else
@@ -598,7 +599,6 @@ end
 -- @param maxr number of rows
 -- @param maxc number of columns
 -- @param clear if true, fill the matrix ' '
--- @fixme: may invalidate store_pos_dec and store_pos_sco
 function TermInputText:formatTerminal(clear)
     local i = self.store_position or 1
     -- so we end up in a maxr x maxc array for positioning
