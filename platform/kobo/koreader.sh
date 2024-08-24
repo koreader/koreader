@@ -241,6 +241,11 @@ if [ -z "${PRODUCT}" ]; then
     export PRODUCT
 fi
 
+if [ -z "${PRODUCT}" ]; then
+    PRODUCT="$(/usr/bin/hwdetect.sh 2>/dev/null)"
+    export PRODUCT
+fi
+
 # PLATFORM is used in koreader for the path to the Wi-Fi drivers (as well as when restarting nickel)
 if [ -z "${PLATFORM}" ]; then
     # shellcheck disable=SC2046
