@@ -610,7 +610,7 @@ function CoverMenu:setupLayout()
         -- open last file
         right3_icon = "go_back_book",
         right3_icon_size_ratio = 1,
-        right3_icon_tap_callback = function() self:goHome() end,
+        right3_icon_tap_callback = function() FileManager.instance.menu:onOpenLastDoc() end,
         right3_icon_hold_callback = false,
     }
     self:updateTitleBarPath(self.root_path)
