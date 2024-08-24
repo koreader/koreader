@@ -1064,6 +1064,7 @@ function Kindle3:init()
         event_map = require("device/kindle/event_map_kindle4"),
     }
     self.keyboard_layout = require("device/kindle/keyboard_layout")
+    self.k3_alt_plus_key_kernel_translated = dofile("frontend/device/kindle/k3_alt_and_top_row.lua")
     Kindle.init(self)
 end
 

@@ -67,7 +67,7 @@ function ReaderPaging:registerKeyEvents()
         self.key_events.GotoNextPos = { { "Down" }, event = "GotoPosRel", args = 1, }
         self.key_events.GotoPrevPos = { { "Up" }, event = "GotoPosRel", args = -1, }
     end
-    if Device:hasKeyboard() then
+    if Device:hasKeyboard() and not Device.k3_alt_plus_key_kernel_translated then
         self.key_events.GotoFirst = { { "1" }, event = "GotoPercent", args = 0,   }
         self.key_events.Goto11    = { { "2" }, event = "GotoPercent", args = 11,  }
         self.key_events.Goto22    = { { "3" }, event = "GotoPercent", args = 22,  }
