@@ -307,10 +307,13 @@ end
 function ButtonDialog:onFocusMove(args)
     local ret = FocusManager.onFocusMove(self, args)
 
+    -- If we're using a ScrollableContainer, ask it to scroll to the focused item
     if self.cropping_widget then
         local focus = self:getFocusItem()
         if self.dimen and focus and focus.dimen then
             local button_y_offset = focus.dimen.y - self.dimen.y - self.top_to_content_offset
+            -- NOTE: The final argument ensures we'll always keep the neighboring item visible.
+            --       (i.e., the top/bottom of the scrolled view is actually the previous/next item).
             self.cropping_widget:_scrollBy(0, button_y_offset, true)
         end
     end
