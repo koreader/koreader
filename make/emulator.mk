@@ -20,10 +20,10 @@ run: all
 	$(strip $(run_script))
 
 run-prompt: all
-	cd $(INSTALL_DIR)/koreader && ./luajit -i setupkoenv.lua
+	cd $(INSTALL_DIR)/koreader && $(RWRAP) ./luajit -i setupkoenv.lua
 
 run-wbuilder: all
-	cd $(INSTALL_DIR)/koreader && EMULATE_READER_W=540 EMULATE_READER_H=720 ./luajit tools/wbuilder.lua
+	cd $(INSTALL_DIR)/koreader && EMULATE_READER_W=540 EMULATE_READER_H=720 $(RWRAP) ./luajit tools/wbuilder.lua
 
 # }}}
 
