@@ -1443,7 +1443,7 @@ function TextBoxWidget:_getXYForCharPos(charpos)
         charpos = self.charpos
     end
     if self.text == nil or string.len(self.text) == 0 then
-        return 0, 0
+        return 0, 0, 1
     end
     -- Find the line number: scan up/down from current virtual_line_num
     local ln = self.height == nil and 1 or self.virtual_line_num
@@ -1644,7 +1644,7 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
     self.charpos = charpos
     self.prev_virtual_line_num = self.virtual_line_num
     local x, y, screen_line_num = self:_getXYForCharPos() -- we can get y outside current view
-    self.current_line_num = screen_line_num
+    self.current_line_num = screen_line_num + self.virtual_line_num - 1
     -- adjust self.virtual_line_num for overflowed y to have y in current view
     if y < 0 then
         local scroll_lines = math.ceil( -y / self.line_height_px )
@@ -1886,7 +1886,7 @@ function TextBoxWidget:moveCursorDown()
 end
 
 function TextBoxWidget:moveCursorHome()
-    self:moveCursorToCharPos(self.vertical_string_list[self.current_line_num] and self.vertical_string_list[self.current_line_num].offset or #self.charlist)
+    self:moveCursorToCharPos(self.vertical_string_list[self.current_line_num] and self.vertical_string_list[self.current_line_num].offset or 1)
 end
 
 function TextBoxWidget:moveCursorEnd()
