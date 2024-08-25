@@ -402,7 +402,11 @@ $(build_options_help_msg '' 'use existing build' 'default' '')
 "
     parse_options "${BUILD_GETOPT_SHORT}" "${BUILD_GETOPT_LONG}" '0' "$@"
     setup_target 'emulator'
-    run_make ${NO_BUILD:+--assume-old=all} run-prompt
+    local margs=()
+    if command -v rlwrap >/dev/null; then
+        margs+=(RWRAP='rlwrap')
+    fi
+    run_make ${NO_BUILD:+--assume-old=all} "${margs[@]}" run-prompt
 }
 
 function kodev-run() {
