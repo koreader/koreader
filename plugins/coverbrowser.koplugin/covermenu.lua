@@ -605,7 +605,7 @@ function CoverMenu:setupLayout()
         left3_icon_tap_callback = function() FileManager.instance.history:onShowHist() end,
         left3_icon_hold_callback = false,
         -- stupid plus menu
-        right_icon = self.selected_files and "check" or "menu_open",
+        right_icon = self.selected_files and "check" or "plus",
         right_icon_size_ratio = 1,
         right_icon_tap_callback = function() self:onShowPlusMenu() end,
         right_icon_hold_callback = false, -- propagate long-press to dispatcher
