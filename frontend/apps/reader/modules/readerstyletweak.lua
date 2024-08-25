@@ -1171,16 +1171,15 @@ function ReaderStyleTweak:editBookTweak(touchmenu_instance)
             editor.save_callback_called = true
             return true, msg
         end,
-        close_callback = function()
+        close_callback = function(close_status)
             -- save_callback() will always have shown some notification,
-            -- so don't add another one
-            if not editor.save_callback_called then
+            -- so don't add another one.
+            -- If close_status is false, text was modified but then discarded, and
+            -- InputDialog will show our close_discarded_notif_text
+            if not editor.save_callback_called and close_status ~= false then
                 UIManager:show(Notification:new{
-                    text = NOT_MODIFIED_MSG,
+                    text = NOT_MODIFIED_MSG
                 })
-                -- This has to be the same message above and below: when
-                -- discarding, we can't prevent these 2 notifications from
-                -- being shown: having them identical will hide that.
             end
         end,
         close_discarded_notif_text = NOT_MODIFIED_MSG,
