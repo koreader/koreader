@@ -389,7 +389,7 @@ function InputDialog:init()
     -- NOTE: Never send a Focus event, as, on hasDPad device, InputText's onFocus *will* call onShowKeyboard,
     --       and that will wreak havoc on toggleKeyboard...
     --       Plus, the widget at (1, 1) will not have changed, so we don't actually need to change the visual focus anyway?
-    -- If it turns out something actually needed this, make this conditional on a new `reinit` passed to `init`, for toggleKeyboard & co.
+    -- If it turns out something actually needed this, make this conditional on a new `reinit` arg passed to `init`, for toggleKeyboard & co.
     self:refocusWidget(FocusManager.RENDER_NOW, FocusManager.NOT_FOCUS)
     -- Complementary setup for some of our added buttons
     if self.save_callback then
