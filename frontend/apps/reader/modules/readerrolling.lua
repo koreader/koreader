@@ -968,8 +968,8 @@ function ReaderRolling:onBatchedUpdateDone()
     if self.batched_update_count <= 0 then
         self.batched_update_count = 0
         -- Be sure any Notification gets a chance to be painted before
-        -- a blocking rerendering
-        UIManager:nextTick(self.onUpdatePos, self)
+        -- a blocking rerendering (:nextTick() is not enough)
+        UIManager:tickAfterNext(self.onUpdatePos, self)
     end
 end
 
