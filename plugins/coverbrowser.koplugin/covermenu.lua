@@ -3,6 +3,7 @@ local DocSettings = require("docsettings")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local FileChooser = require("ui/widget/filechooser")
+local FileManager = require("apps/filemanager/filemanager")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local TitleBar = require("titlebar")
@@ -562,15 +563,19 @@ function CoverMenu:tapPlus()
 end
 
 function onFolderUp()
-    if not (G_reader_settings:isTrue("lock_home_folder") and
-            self.path == G_reader_settings:readSetting("home_dir")) then
-        self:changeToPath(string.format("%s/..", self.path), self.path)
+    if current_path then -- file browser or PathChooser
+        if current_path ~= "/" and not (G_reader_settings:isTrue("lock_home_folder") and
+                        current_path == G_reader_settings:readSetting("home_dir")) then
+            FileManager.instance.file_chooser:changeToPath(string.format("%s/..", current_path))
+        else
+            FileManager.instance.file_chooser:goHome()
+        end
     end
+
 end
 
 function CoverMenu:setupLayout()
     CoverMenu._FileManager_setupLayout_orig(self)
-    local FileManager = require("apps/filemanager/filemanager")
     
     self.title_bar = TitleBar:new{
         show_parent = self.show_parent,
@@ -605,7 +610,7 @@ function CoverMenu:setupLayout()
         -- up folder
         right2_icon = "back_up",
         right2_icon_size_ratio = 1,
-        right2_icon_tap_callback = function() self:goHome() end,
+        right2_icon_tap_callback = function() onFolderUp() end,
         right2_icon_hold_callback = false,
         -- open last file
         right3_icon = "go_back_book",
