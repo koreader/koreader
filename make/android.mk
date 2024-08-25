@@ -30,7 +30,7 @@ endif
 	# there's no adb run so we do this…
 	adb shell monkey -p $(ANDROID_APP_ID) -c android.intent.category.LAUNCHER 1
 	# monitor logs
-	adb logcat KOReader:V k2pdfopt:V luajit-launcher:V dlopen:V '*:E'
+	./tools/logcat.py
 
 # }}}
 
