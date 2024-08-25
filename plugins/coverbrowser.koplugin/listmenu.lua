@@ -1011,7 +1011,6 @@ end
 
 function ListMenu:_updateItemsBuildUI()
     -- Build our list
-    --if getMenuText(self.item_table[1]) == "⬆ ../" then table.remove(self.item_table,1) end
     local line_widget = LineWidget:new{
         dimen = Geom:new{ w = self.width or self.screen_w, h = Size.line.thin },
         background = Blitbuffer.COLOR_DARK_GRAY,

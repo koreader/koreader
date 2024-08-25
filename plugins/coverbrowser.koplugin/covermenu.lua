@@ -518,7 +518,9 @@ end
 function CoverMenu:genItemTable(dirs, files, path)
     -- Call the object's original genItemTable 
     local item_table = CoverMenu._FileChooser_genItemTable_orig(self, dirs, files, path)
-    if item_table[1].text == "⬆ ../" then table.remove(item_table,1) end
+    if #item_table > 0 then
+        if item_table[1].text == "⬆ ../" then table.remove(item_table,1) end
+    end
     return item_table
 end
 
