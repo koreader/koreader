@@ -36,13 +36,27 @@ function HtmlBoxWidget:init()
     end
 end
 
-function HtmlBoxWidget:setContent(body, css, default_font_size, is_xhtml)
+-- These are generic "fixes" to MuPDF HTML stylesheet:
+-- - MuPDF doesn't set some elements as being display:block, and would
+--   consider them inline, and would badly handle <BR/> inside them.
+--   Note: this is a generic issue with <BR/> inside inline elements, see:
+--   https://github.com/koreader/koreader/issues/12258#issuecomment-2267629234
+local mupdf_css_fixes = [[
+article, aside, button, canvas, datalist, details, dialog, dir, fieldset, figcaption,
+figure, footer, form, frame, frameset, header, hgroup, iframe, legend, listing,
+main, map, marquee, multicol, nav, noembed, noframes, noscript, optgroup, output,
+plaintext, search, select, summary, template, textarea, video, xmp {
+  display: block;
+}
+]]
+
+function HtmlBoxWidget:setContent(body, css, default_font_size, is_xhtml, no_css_fixes)
     -- fz_set_user_css is tied to the context instead of the document so to easily support multiple
     -- HTML dictionaries with different CSS, we embed the stylesheet into the HTML instead of using
     -- that function.
     local head = ""
-    if css then
-        head = string.format("<head><style>%s</style></head>", css)
+    if css or not no_css_fixes then
+        head = string.format("<head><style>\n%s\n%s</style></head>", mupdf_css_fixes, css or "")
     end
     local html = string.format("<html>%s<body>%s</body></html>", head, body)
 

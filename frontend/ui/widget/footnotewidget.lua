@@ -72,6 +72,10 @@ body > li { list-style-type: none; }
 /* Remove any (possibly multiple) backlinks in Wikipedia EPUBs footnotes */
 .noprint { display: none; }
 
+/* Let MuPDF know about crengine internal block elements,
+ * so it doesn't render them inline */
+autoBoxing, floatBox, tabularBox { display: block; }
+
 /* Style some FB2 tags not known to MuPDF */
 strike, strikethrough { text-decoration: line-through; }
 underline   { text-decoration: underline; }
