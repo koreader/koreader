@@ -677,27 +677,7 @@ $(build_options_help_msg 'BUILD' 'use existing build' '' 'default')
 # Command: log. {{{
 
 function kodev-log() {
-    HELP="
-USAGE: $0 ${CMD} <OPTIONS>
-
-OPTIONS:
-
-    -d, --debug               more verbose logs (e.g., debug builds)
-"
-    parse_options 'd' '--debug' '0' "$@"
-    if command -v pidcat >/dev/null; then
-        if [[ -n "${KODEBUG}" ]]; then
-            pidcat "org.koreader.launcher"
-        else
-            pidcat org.koreader.launcher --min-level=I
-        fi
-    else
-        if [[ -n "${KODEBUG}" ]]; then
-            adb logcat 'KOReader:V ApkUpdater:V Assets:V Device:V dlopen:V EPD:V EventReceiver:V Lights:V Surface:V LuaJIT:V MainActivity:V NativeGlue:V NativeThread:V Timeout:V ActivityManager:V AndroidRuntime:V DEBUG:* *:F'
-        else
-            adb logcat 'KOReader:I MainActivity:V NativeGlue:V NativeThread:V ActivityManager:W AndroidRuntime:E DEBUG:* *:F'
-        fi
-    fi
+    env PYTHONEXECUTABLE="$0 ${CMD}" ./tools/logcat.py "$@"
 }
 
 # }}}
