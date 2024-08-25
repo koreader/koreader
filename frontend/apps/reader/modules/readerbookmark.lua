@@ -1241,7 +1241,9 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note, ca
                     text = _("Cancel"),
                     id = "close",
                     callback = function()
-                        UIManager:close(input_dialog)
+                        -- NOTE: We'll want a full refresh on close, as the CRe highlight may extend past our own dimensions,
+                        --       especially if we're closed separately from our VirtualKeyboard.
+                        UIManager:close(input_dialog, "flashui")
                         if is_new_note then -- "Add note" called from highlight dialog and cancelled, remove saved highlight
                             self:removeItemByIndex(index)
                         end

@@ -222,7 +222,7 @@ function ButtonTable:getStepScrollGrid()
         local row_num = 1
         while idx <= #self.container do
             local row = {
-                row_num = row_num, -- (not used, but may help with debugging)
+                row_num = row_num, -- (used by ScrollableContainer, and generally helpful for debugging)
                 top = offsets[idx].y, -- top of our vspan above text
                 content_top = offsets[idx+1].y, -- top of our text widget
                 content_bottom = offsets[idx+2].y - 1, -- bottom of our text widget

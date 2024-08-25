@@ -104,7 +104,7 @@ function DictQuickLookup:init()
         self.key_events.ReadPrevResult = { { Input.group.PgBack } }
         self.key_events.ReadNextResult = { { Input.group.PgFwd } }
         self.key_events.Close = { { Input.group.Back } }
-        self.key_events.ShowResultsMenu = { { "Menu" } }
+        self.key_events.MenuKeyPress = { { "Menu" } }
         if Device:hasKeyboard() then
             self.key_events.ChangeToPrevDict = { { "Shift", "Left" } }
             self.key_events.ChangeToNextDict = { { "Shift", "Right" } }
@@ -726,10 +726,12 @@ function DictQuickLookup:init()
 
     -- NT: add dict_title.left_button and lookup_edit_button to FocusManager.
     -- It is better to add these two buttons into self.movable, but it is not a FocusManager.
-    -- Only self.button_table is a FocusManager, so workaground is inserting these two buttons into self.button_table.layout.
+    -- Only self.button_table is a FocusManager, so the workaround is inserting these two buttons into self.button_table.layout.
     if Device:hasDPad() then
-        table.insert(self.button_table.layout, 1, { self.dict_title.left_button });
-        table.insert(self.button_table.layout, 2, { lookup_edit_button });
+        table.insert(self.button_table.layout, 1, { self.dict_title.left_button })
+        table.insert(self.button_table.layout, 2, { lookup_edit_button })
+        -- Refocus on the updated layout
+        self.button_table:refocusWidget()
     end
 
     -- We're a new window
@@ -1096,6 +1098,10 @@ function DictQuickLookup:onReadPrevResult()
         self.definition_widget[1]:scrollToRatio(1) -- 1 = 100% = bottom
     end
     return true
+end
+
+function DictQuickLookup:onMenuKeyPress()
+    return self.dict_title.left_icon_tap_callback()
 end
 
 function DictQuickLookup:onTap(arg, ges_ev)

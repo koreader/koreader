@@ -475,25 +475,19 @@ function MenuItem:getDotsText(face)
     return _dots_cached_info.text, _dots_cached_info.min_width
 end
 
-function MenuItem:onFocus(initial_focus)
-    if Device:isTouchDevice() then
-        -- Devices which are Keys capable will get this onFocus called by
-        -- updateItems(), which will toggle the underline color of first item.
-        -- If the device is also Touch capable, let's not show the initial
-        -- underline for a prettier display (it will be shown only when keys
-        -- are used).
-        if not initial_focus or self.menu.did_focus_with_keys then
-            self._underline_container.color = Blitbuffer.COLOR_BLACK
-            self.menu.did_focus_with_keys = true
-        end
-    else
-        self._underline_container.color = Blitbuffer.COLOR_BLACK
-    end
+function MenuItem:onFocus()
+    self._underline_container.color = Blitbuffer.COLOR_BLACK
+    -- NOTE: Medium is really, really, really thin; so we'd ideally swap to something thicker...
+    --       Unfortunately, this affects vertical text positioning,
+    --       leading to an unsightly refresh of the item :/.
+    --self._underline_container.linesize = Size.line.thick
     return true
 end
 
 function MenuItem:onUnfocus()
     self._underline_container.color = self.line_color
+    -- See above for reasoning.
+    --self._underline_container.linesize = self.linesize
     return true
 end
 
@@ -580,13 +574,13 @@ local Menu = FocusManager:extend{
 
     no_title = false,
     title = "",
+    custom_title_bar = nil,
     subtitle = nil,
     show_path = nil, -- path in titlebar subtitle
     -- default width and height
     width = nil,
     -- height will be calculated according to item number if not given
     height = nil,
-    header_padding = Size.padding.default,
     dimen = nil,
     item_table = nil, -- NOT mandatory (will be empty)
     item_table_stack = nil,
@@ -610,7 +604,7 @@ local Menu = FocusManager:extend{
     items_font_size = nil,
     items_mandatory_font_size = nil,
     multilines_show_more_text = nil,
-        -- Global settings or default values will be used if not provided
+    -- Global settings or default values will be used if not provided
     -- Setting this to a number enables flexible height of items
     -- and sets the maximum number of lines in an item, longer items are truncated
     items_max_lines = nil,
@@ -620,7 +614,7 @@ local Menu = FocusManager:extend{
     -- if you want to embed the menu widget into another widget, set
     -- this to false
     is_popout = true,
-    title_bar_fm_style = nil, -- set to true to build increased title bar like in FileManager
+    title_bar_fm_style = nil, -- set to true to mimic FileManager's custom title bar (extra padding & subtitle)
     -- set icon to add title bar left button
     title_bar_left_icon = nil,
     -- close_callback is a function, which is executed when menu is closed
@@ -644,14 +638,12 @@ function Menu:_recalculateDimen(no_recalculate_dimen)
     local top_height = 0
     if self.title_bar and not self.no_title then
         top_height = self.title_bar:getHeight()
-        if not self.title_bar_fm_style then
-            top_height = top_height + self.header_padding
-        end
     end
     local bottom_height = 0
     if self.page_return_arrow and self.page_info_text then
+        -- The extra padding is for UX reasons only, to leave a bit of space above the footer.
         bottom_height = math.max(self.page_return_arrow:getSize().h, self.page_info_text:getSize().h)
-            + 2 * Size.padding.button
+                      + Size.padding.button
     end
     self.available_height = self.inner_dimen.h - top_height - bottom_height
     self.item_dimen = Geom:new{
@@ -698,7 +690,7 @@ function Menu:init()
         if self.subtitle == nil and (self.show_path or self.title_bar_fm_style) then
             self.subtitle = ""
         end
-        self.title_bar = TitleBar:new{
+        self.title_bar = self.custom_title_bar or TitleBar:new{
             width = self.dimen.w,
             fullscreen = "true",
             align = "center",
@@ -1004,8 +996,10 @@ end
 function Menu:updatePageInfo(select_number)
     if #self.item_table > 0 then
         if Device:hasDPad() then
-            -- reset focus manager accordingly
-            self:moveFocusTo(1, select_number)
+            -- Reset focus manager accordingly.
+            -- NOTE: Since this runs automatically on init,
+            --       we use FOCUS_ONLY_ON_NT as we don't want to see the initial underline on Touch devices.
+            self:moveFocusTo(1, select_number, FocusManager.FOCUS_ONLY_ON_NT)
         end
         -- update page information
         self.page_info_text:setText(T(_("Page %1 of %2"), self.page, self.page_num))
@@ -1132,20 +1126,20 @@ function Menu:mergeTitleBarIntoLayout()
         return
     end
     local menu_item_layout_start_row = 1
-    local titlebars = {self.title_bar, self.outer_title_bar}
-    for _, v in ipairs(titlebars) do
-        -- Menu uses the right key to trigger the context menu: we can't use it to move focus in horizontal directions.
-        -- So, add title bar buttons to FocusManager's layout in a vertical-only layout
-        local title_bar_layout = v:generateVerticalLayout()
-        for _, row in ipairs(title_bar_layout) do
-            table.insert(self.layout, menu_item_layout_start_row, row)
-            menu_item_layout_start_row = menu_item_layout_start_row + 1
-        end
+    -- On hasFewKeys devices, Menu uses the "Right" key to trigger the context menu: we can't use it to move focus in horizontal directions.
+    -- So, add title bar buttons to FocusManager's layout in a vertical-only layout
+    local title_bar_layout = self.title_bar:generateVerticalLayout()
+    for _, row in ipairs(title_bar_layout) do
+        table.insert(self.layout, menu_item_layout_start_row, row)
+        menu_item_layout_start_row = menu_item_layout_start_row + 1
     end
     if menu_item_layout_start_row > #self.layout then -- no menu items
         menu_item_layout_start_row = #self.layout -- avoid index overflow
     end
-    self:moveFocusTo(1, menu_item_layout_start_row) -- move focus to first menu item if any, keep original behavior
+    if Device:hasDPad() then
+        -- Move focus to the first menu item, if any, in keeping with the pre-FocusManager behavior
+        self:moveFocusTo(1, menu_item_layout_start_row, FocusManager.NOT_FOCUS)
+    end
 end
 
 --[[

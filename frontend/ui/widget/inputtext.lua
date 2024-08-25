@@ -142,6 +142,8 @@ local function initTouchEvents()
                 if self.keyboard then
                     self.keyboard:showKeyboard()
                 end
+                -- Make sure we're flagged as in focus again
+                self:focus()
             end
             if self._frame_textwidget.dimen ~= nil -- zh keyboard with candidates shown here has _frame_textwidget.dimen = nil
                     and #self.charlist > 0 then -- do not move cursor within a hint
@@ -297,13 +299,15 @@ end
 local function initDPadEvents()
     if Device:hasDPad() then
         function InputText:onFocus()
-            -- Event called by the focusmanager
+            -- Event sent by focusmanager
             if self.parent.onSwitchFocus then
                 self.parent:onSwitchFocus(self)
             elseif (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
                 do end -- luacheck: ignore 541
             else
-                self:onShowKeyboard()
+                if not self:isKeyboardVisible() then
+                    self:onShowKeyboard()
+                end
             end
             self:focus()
             return true

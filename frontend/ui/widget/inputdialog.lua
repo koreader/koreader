@@ -303,6 +303,7 @@ function InputDialog:init()
         local line_height = input_widget:getLineHeight()
         local input_pad_height = input_widget:getSize().h - text_height
         local keyboard_height = self.keyboard_visible and input_widget:getKeyboardDimen().h or 0
+        input_widget:onCloseKeyboard() -- we don't want multiple VKs, as the show/hide tracking assumes there's only one
         input_widget:onCloseWidget() -- free() textboxwidget and keyboard
         -- Find out available height
         local available_height = self.screen_height
@@ -350,6 +351,10 @@ function InputDialog:init()
             end
         end
     end
+    -- In case of reinit, murder our previous input widget to prevent stale VK instances from lingering
+    if self._input_widget then
+        self._input_widget:onCloseWidget()
+    end
     self._input_widget = self.inputtext_class:new{
         text = self.input,
         hint = self.input_hint,
@@ -381,7 +386,11 @@ function InputDialog:init()
     }
     table.insert(self.layout[1], self._input_widget)
     self:mergeLayoutInVertical(self.button_table)
-    self:refocusWidget()
+    -- NOTE: Never send a Focus event, as, on hasDPad device, InputText's onFocus *will* call onShowKeyboard,
+    --       and that will wreak havoc on toggleKeyboard...
+    --       Plus, the widget at (1, 1) will not have changed, so we don't actually need to change the visual focus anyway?
+    -- If it turns out something actually needed this, make this conditional on a new `reinit` arg passed to `init`, for toggleKeyboard & co.
+    self:refocusWidget(FocusManager.RENDER_NOW, FocusManager.NOT_FOCUS)
     -- Complementary setup for some of our added buttons
     if self.save_callback then
         local save_button = self.button_table:getButtonById("save")
@@ -641,8 +650,25 @@ function InputDialog:toggleKeyboard(force_toggle)
         self:lockKeyboard(true)
     end
 
+    -- Clear the FocusManager highlight, because that gets lost in the mess somehow...
+    self.button_table:getButtonById("keyboard"):onUnfocus()
+
     -- Make sure we refresh the nav bar, as it will have moved, and it belongs to us, not to VK or our input widget...
     self:refreshButtons()
+end
+
+-- fullscreen mode & add_nav_bar breaks some of our usual assumptions about what should happen on "Back" input events...
+function InputDialog:onKeyboardClosed()
+    if self.add_nav_bar and self.fullscreen then
+        -- If the keyboard was closed via a key event (Back), make sure we reinit properly like in toggleKeyboard...
+        self.input = self:getInputText()
+        self:onClose()
+        self:free()
+
+        self:init()
+
+        self:refreshButtons()
+    end
 end
 
 function InputDialog:onKeyboardHeightChanged()

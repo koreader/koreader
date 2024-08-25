@@ -32,7 +32,6 @@ local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local ReadHistory = require("readhistory")
 local Screenshoter = require("ui/widget/screenshoter")
 local TitleBar = require("ui/widget/titlebar")
-local VerticalGroup = require("ui/widget/verticalgroup")
 local UIManager = require("ui/uimanager")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
@@ -146,11 +145,10 @@ function FileManager:setupLayout()
     self:updateTitleBarPath(self.root_path)
 
     local file_chooser = FileChooser:new{
-        -- remember to adjust the height when new item is added to the group
         path = self.root_path,
         focused_path = self.focused_file,
         show_parent = self.show_parent,
-        height = Screen:getHeight() - self.title_bar:getHeight(),
+        height = Screen:getHeight(),
         is_popout = false,
         is_borderless = true,
         file_filter = function(filename) return DocumentRegistry:hasProvider(filename) end,
@@ -159,8 +157,8 @@ function FileManager:setupLayout()
         return_arrow_propagation = true,
         -- allow Menu widget to delegate handling of some gestures to GestureManager
         filemanager = self,
-        -- let Menu widget merge our title_bar into its own TitleBar's FocusManager layout
-        outer_title_bar = self.title_bar,
+        -- Tell FileChooser (i.e., Menu) to use our own title bar instead of Menu's default one
+        custom_title_bar = self.title_bar,
     }
     self.file_chooser = file_chooser
     self.focused_file = nil -- use it only once
@@ -348,16 +346,11 @@ function FileManager:setupLayout()
         return true
     end
 
-    self.layout = VerticalGroup:new{
-        self.title_bar,
-        file_chooser,
-    }
-
     local fm_ui = FrameContainer:new{
         padding = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
-        self.layout,
+        file_chooser,
     }
 
     self[1] = fm_ui
@@ -365,6 +358,9 @@ function FileManager:setupLayout()
     self.menu = FileManagerMenu:new{
         ui = self
     }
+
+    -- No need to reinvent the wheel, use FileChooser's layout
+    self.layout = file_chooser.layout
 
     self:registerKeyEvents()
 end

@@ -293,10 +293,12 @@ function FocusManager:onPhysicalKeyboardDisconnected()
 end
 
 -- constant, used to reset focus widget after layout recreation
--- not send Unfocus event
+-- do not send an Unfocus event
 FocusManager.NOT_UNFOCUS = 1
--- not need to send Focus event
+-- do not send a Focus event
 FocusManager.NOT_FOCUS = 2
+-- In some cases, we may only want to send Focus events on non-Touch devices
+FocusManager.FOCUS_ONLY_ON_NT = (Device:hasDPad() and not Device:isTouchDevice()) and 0 or FocusManager.NOT_FOCUS
 
 --- Move focus to specified widget
 function FocusManager:moveFocusTo(x, y, focus_flags)
@@ -318,10 +320,22 @@ function FocusManager:moveFocusTo(x, y, focus_flags)
         self.selected.y = y
         -- widget create new layout on update, previous may be removed from new layout.
         if Device:hasDPad() then
-            if not bit.band(focus_flags, FocusManager.NOT_UNFOCUS) and current_item and current_item ~= target_item then
-                current_item:handleEvent(Event:new("Unfocus"))
+            if bit.band(focus_flags, FocusManager.NOT_UNFOCUS) ~= FocusManager.NOT_UNFOCUS then
+                -- NOTE: We can't necessarily guarantee the integrity of self.layout,
+                --       as some callers *will* mangle it and call us expecting to fix things ;).
+                --       Since we do not want to leave *multiple* items (visually) focused,
+                --       we potentially need to be a bit heavy-handed ;).
+                if current_item and current_item ~= target_item then
+                    -- This is the absolute best-case scenario, when self.layout's integrity is sound
+                    current_item:handleEvent(Event:new("Unfocus"))
+                else
+                    -- Couldn't find the current item, or it matches the target_item: blast the whole widget container,
+                    -- just in case we still have a different, older widget visually focused.
+                    -- Can easily happen if caller calls refocusWidget *after* having manually mangled self.layout.
+                    self:handleEvent(Event:new("Unfocus"))
+                end
             end
-            if not bit.band(focus_flags, FocusManager.NOT_FOCUS) then
+            if bit.band(focus_flags, FocusManager.NOT_FOCUS) ~= FocusManager.NOT_FOCUS then
                 target_item:handleEvent(Event:new("Focus"))
                 UIManager:setDirty(self.show_parent or self, "fast")
             end
@@ -468,24 +482,32 @@ function FocusManager:disableFocusManagement(parent)
 end
 
 -- constant for refocusWidget method to ease code reading
+FocusManager.RENDER_NOW = false
 FocusManager.RENDER_IN_NEXT_TICK = true
 
 --- Container calls this method to re-set focus widget style
 --- Some container regenerate layout on update and lose focus style
-function FocusManager:refocusWidget(nextTick)
+function FocusManager:refocusWidget(nextTick, focus_flags)
+    -- On touch devices, we do *not* want to show visual focus changes generated programmatically,
+    -- we only want to see them for actual user input events (#12361).
+    if not focus_flags then
+        focus_flags = FocusManager.FOCUS_ONLY_ON_NT
+    end
+
     if not self._parent then
         if not nextTick then
-            self:moveFocusTo(self.selected.x, self.selected.y)
+            self:moveFocusTo(self.selected.x, self.selected.y, focus_flags)
         else
             -- sometimes refocusWidget called in widget's action callback
             -- widget may force repaint after callback, like Button with vsync = true
             -- then focus style will be lost, set focus style to next tick to make sure focus style painted
             UIManager:nextTick(function()
-                self:moveFocusTo(self.selected.x, self.selected.y)
+                self:moveFocusTo(self.selected.x, self.selected.y, focus_flags)
             end)
         end
     else
-        self._parent:refocusWidget(nextTick)
+        self._parent:refocusWidget(nextTick, focus_flags)
+        self._parent = nil
     end
 end
 

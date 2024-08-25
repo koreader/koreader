@@ -104,12 +104,24 @@ local MultiInputDialog = InputDialog:extend{
 function MultiInputDialog:init()
     -- init title and buttons in base class
     InputDialog.init(self)
+    -- Kick InputDialog's own field out of the layout, we're not using it
+    table.remove(self.layout, 1)
+    -- Also murder said input field *and* its VK, or we get two of them and shit gets hilariously broken real fast...
+    self:onCloseKeyboard()
+    self._input_widget:onCloseWidget()
+
     local VerticalGroupData = VerticalGroup:new{
         align = "left",
         self.title_bar,
     }
     local content_width = math.floor(self.width * 0.9)
 
+    -- In case of reinit, murder our previous input widgets to prevent stale VK instances from lingering
+    if self.input_fields then
+        for i, widget in ipairs(self.input_fields) do
+            widget:onCloseWidget()
+        end
+    end
     self.input_fields = {}
     local input_description = {}
     for i, field in ipairs(self.fields) do
@@ -117,7 +129,7 @@ function MultiInputDialog:init()
             text = field.text,
             hint = field.hint,
             input_type = field.input_type,
-            text_type =  field.text_type, -- "password"
+            text_type = field.text_type, -- "password"
             face = self.input_face,
             width = content_width,
             idx = i,
@@ -136,7 +148,10 @@ function MultiInputDialog:init()
             enter_callback = self.enter_callback,
         }
         table.insert(self.input_fields, input_field_tmp)
-        table.insert(self.layout, { input_field_tmp })
+        --- @fixme: This is semi-broken when text_type is password, as we actually end up with the checkbox instead of the field,
+        --          and a "Press" on the checkbox will actually focus the password field and *not* check the box.
+        -- addWidget may have added stuff below us, so make sure we insert above that...
+        table.insert(self.layout, i, { input_field_tmp })
         if field.description then
             input_description[i] = FrameContainer:new{
                 padding = self.description_padding,

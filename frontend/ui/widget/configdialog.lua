@@ -687,7 +687,7 @@ function ConfigOption:_itemGroupToLayoutLine(option_items_group)
             if v.layout and v.disableFocusManagement then -- it is a FocusManager
                 -- merge child layout to one row layout
                 -- currently child widgets are all one row
-                -- need improved if two or more rows widget existed
+                -- needs improvement if we ever implement widgets with two or more rows
                 for _, row in ipairs(v.layout) do
                     for _, widget in ipairs(row) do
                         layout_line[j] = widget
@@ -910,7 +910,7 @@ end
 function ConfigDialog:updateConfigPanel(index) end
 
 function ConfigDialog:update()
-    self:moveFocusTo(1, 1) -- reset selected for re-created layout
+    self:moveFocusTo(1, 1, FocusManager.NOT_FOCUS) -- reset selected for re-created layout
     self.layout = {}
 
     if self.config_menubar then
@@ -1134,6 +1134,11 @@ function ConfigDialog:onConfigMoreChoose(values, default_value_orig, name, event
                 UIManager:setDirty(self, function()
                     return "ui", self.dialog_frame.dimen
                 end)
+                -- FocusManager loses its marbles (we can only navigate on the row of the selected option) if we don't update the widget *again*...
+                -- (possibly because of the layout nastiness happening in ConfigOption:init)
+                if Device:hasDPad() then
+                    self:update()
+                end
             end
         end
         local hide_on_picker_show = more_options_param.hide_on_picker_show

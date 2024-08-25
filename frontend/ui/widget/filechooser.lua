@@ -17,8 +17,8 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = ffiUtil.template
 
+-- NOTE: It's our caller's responsibility to setup a title bar and pass it to us via custom_title_bar (c.f., FileManager)
 local FileChooser = Menu:extend{
-    no_title = true,
     path = lfs.currentdir(),
     show_path = true,
     parent = nil,
@@ -494,7 +494,6 @@ end
 
 function FileChooser:updateItems(select_number, no_recalculate_dimen)
     Menu.updateItems(self, select_number, no_recalculate_dimen) -- call parent's updateItems()
-    self:mergeTitleBarIntoLayout()
     self.path_items[self.path] = (self.page - 1) * self.perpage + (select_number or 1)
 end
 
