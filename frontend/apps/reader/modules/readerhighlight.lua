@@ -462,6 +462,8 @@ function ReaderHighlight:addToMainMenu(menu_items)
                     UIManager:setDirty(self.dialog, "ui")
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
+                -- This ensures the waveform mode will be upgraded to a Kaleido wfm on compatible devices
+                colorful = true,
                 dithered = true,
             })
         end,
@@ -2144,6 +2146,7 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color)
         callback = function(radio)
             caller_callback(radio.provider)
         end,
+        colorful = true,
         dithered = true,
     })
 end

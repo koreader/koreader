@@ -64,12 +64,11 @@ local RadioButtonWidget = FocusManager:extend{
     default_provider = nil,
     extra_text = nil,
     extra_callback = nil,
+    colorful = false, -- should be set to true if any of the buttons' text is colorful
     -- output
     provider = nil, -- provider of the checked button
     row = nil, -- row of the checked button
     col = nil, -- column of the checked button
-    -- for internal use
-    colorful = false, -- used to change waveform mode if any of our text is colorful
 }
 
 function RadioButtonWidget:init()
@@ -95,6 +94,8 @@ function RadioButtonWidget:init()
     }
 
     -- Check if any of our buttons use color text...
+    -- NOTE: There are so few callers that require this, that we just let them set the colorful field themselves...
+    --[[
     for row, t in ipairs(self.radio_buttons) do
         for col, w in ipairs(t) do
             if w.fgcolor and not Blitbuffer.isColor8(w.fgcolor) then
@@ -110,6 +111,8 @@ function RadioButtonWidget:init()
             break
         end
     end
+    --]]
+
     self:update()
 end
 
