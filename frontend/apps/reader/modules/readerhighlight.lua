@@ -451,7 +451,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
                     },
                 })
             end
-            UIManager:show(RadioButtonWidget:new{
+            local rbw = RadioButtonWidget:new{
                 title_text = _("Highlight color"),
                 width_factor = 0.5,
                 keep_shown_on_apply = false,
@@ -462,7 +462,9 @@ function ReaderHighlight:addToMainMenu(menu_items)
                     UIManager:setDirty(self.dialog, "ui")
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
-            })
+                dithered = true,
+            }
+            UIManager:show(rbw)
         end,
         hold_callback = function(touchmenu_instance)
             G_reader_settings:saveSetting("highlight_color", self.view.highlight.saved_color)
@@ -2134,7 +2136,7 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color)
             },
         })
     end
-    UIManager:show(RadioButtonWidget:new{
+    local rbw = RadioButtonWidget:new{
         title_text = _("Highlight color"),
         width_factor = 0.5,
         keep_shown_on_apply = keep_shown_on_apply,
@@ -2143,7 +2145,17 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color)
         callback = function(radio)
             caller_callback(radio.provider)
         end,
-    })
+        dithered = true,
+    }
+    -- Mangle the widget's onShow method to swap to a waveform mode that will actually be upgraded to a Kaleido waveform on supported devices...
+    -- (i.e., partial instead of ui)
+    rbw.onShow = function(this)
+        UIManager:setDirty(this, function()
+            return "partial", this.widget_frame.dimen
+        end)
+        return true
+    end
+    UIManager:show(rbw)
 end
 
 function ReaderHighlight:startSelection()
