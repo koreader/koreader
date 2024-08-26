@@ -451,7 +451,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
                     },
                 })
             end
-            UIManager:show(require("ui/widget/radiobuttonwidget"):new{
+            UIManager:show(RadioButtonWidget:new{
                 title_text = _("Highlight color"),
                 width_factor = 0.5,
                 keep_shown_on_apply = false,
@@ -2134,7 +2134,6 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color)
             },
         })
     end
-    local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
     UIManager:show(RadioButtonWidget:new{
         title_text = _("Highlight color"),
         width_factor = 0.5,
