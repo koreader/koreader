@@ -584,7 +584,7 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
             if end_pos >= cur_view_top then
                 local boxes = self.document:getScreenBoxesFromPositions(item.pos0, item.pos1, true) -- get_segments=true
                 if boxes then
-                    local color = self:lookupHighlightColor(item.color)
+                    local color = Blitbuffer.colorFromName(item.color)
                     local draw_note_mark = item.note and self.highlight.note_mark
                     for _, box in ipairs(boxes) do
                         if box.h ~= 0 then
