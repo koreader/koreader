@@ -2052,32 +2052,27 @@ function ReaderHighlight:editHighlightStyle(index)
         UIManager:setDirty(self.dialog, "ui")
         self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
     end
-    self:showHighlightStyleDialog(apply_drawer, item.drawer, page, i)
+    self:showHighlightStyleDialog(apply_drawer, item.drawer, index)
 end
 
-function ReaderHighlight:editHighlightColor(page, i)
-    local item = self.view.highlight.saved[page][i]
+function ReaderHighlight:editHighlightColor(index)
+    local item = self.ui.annotation.annotations[index]
     local apply_color = function(color)
-        self:writePdfAnnotation("delete", page, item)
+        self:writePdfAnnotation("delete", item)
         item.color = color
         if self.ui.paging then
-            self:writePdfAnnotation("save", page, item)
-            local bm_note = self.ui.bookmark:getBookmarkNote(item)
-            if bm_note then
-                self:writePdfAnnotation("content", page, item, bm_note)
+            self:writePdfAnnotation("save", item)
+            if item.note then
+                self:writePdfAnnotation("content", item, item.note)
             end
         end
         UIManager:setDirty(self.dialog, "ui")
-        self.ui:handleEvent(Event:new("BookmarkUpdated",
-                self.ui.bookmark:getBookmarkForHighlight({
-                    page = self.ui.paging and page or item.pos0,
-                    datetime = item.datetime,
-                })))
+        self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
     end
     self:showHighlightColorDialog(apply_color, item.color)
 end
 
-function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer, page, i)
+function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer, index)
     local default_drawer, keep_shown_on_apply
     if item_drawer then -- called from ReaderHighlight:editHighlightStyle()
         default_drawer = self.view.highlight.saved_drawer or
@@ -2104,17 +2099,17 @@ function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer, 
             caller_callback(radio.provider)
         end,
     }
-    if page and i then
+    if index then
         -- called from editHighlightStyle
         ctor.extra_text = _("Highlight color")
         ctor.extra_callback = function(this)
-            local item = self.view.highlight.saved[page][i]
+            local item = self.ui.annotation.annotations[index]
             if item.drawer == "invert" then
                 UIManager:show(InfoMessage:new{ text = _("Colors unavailable when highlight style is set to 'Invert'") })
             else
                 -- Close the style dialog before showing the color dialog
                 this:onClose()
-                self:editHighlightColor(page, i)
+                self:editHighlightColor(index)
             end
         end
     end
