@@ -524,6 +524,7 @@ function CoverBrowser:refreshFileManagerInstance(cleanup, post_init)
         end
         if filemanager_display_mode then
             if post_init then
+                self.ui:setupLayout()
                 -- FileBrowser was initialized in classic mode, but we changed
                 -- display mode: items per page may have changed, and we want
                 -- to re-position on the focused_file
