@@ -111,7 +111,7 @@ check_submodules() {
     # due to `git submodule status` returning an error
     # on `grep -q …` early exit (broken pipe).
     if grep -qE '^-' <<<"$(git submodule status)"; then
-        run_make fetchthirdparty
+        TARGET='' run_make fetchthirdparty
     fi
 }
 
@@ -192,6 +192,15 @@ function setup_target() {
     if [[ -z ${KODEBUG+x} && -z "${TARGET}" && "${CMD}" != 'release' ]]; then
         # For the emulator, build a debug build by default.
         KODEBUG=1
+    fi
+    # Fetch third party as needed.
+    check_submodules
+    # Automatically install Android NDK / SDK when not configured.
+    if [[ "${TARGET}" == 'android' ]]; then
+        local wanted=()
+        [[ -n "${ANDROID_NDK_HOME}${ANDROID_NDK_ROOT}" ]] || wanted+=('android-ndk')
+        [[ -n "${ANDROID_HOME}${ANDROID_SDK_ROOT}" ]] || wanted+=('android-sdk')
+        [[ ${#wanted} -eq 0 ]] || TARGET='' run_make "${wanted[@]}"
     fi
 }
 
@@ -334,10 +343,6 @@ ${TARGETS_HELP_MSG}
 "
     parse_options "${BUILD_GETOPT_SHORT}" "${BUILD_GETOPT_LONG}" '?' "$@"
     setup_target "${ARGS[0]}"
-    check_submodules
-    if [[ "${TARGET}" == 'android' && -z "${ANDROID_NDK_HOME}${ANDROID_NDK_ROOT}" ]]; then
-        TARGET='' run_make android-ndk
-    fi
     run_make ${NO_BUILD:+setup}
 }
 
@@ -376,16 +381,12 @@ ${RELEASE_TARGETS_HELP_MSG}
         esac
     done
     setup_target "${ARGS[0]}"
-    check_submodules
     if [[ "${ignore_translation}" -eq 0 ]]; then
-        if ! run_make po; then
+        if ! TARGET='' run_make po; then
             err "ERROR: failed to fetch translation."
             echo "Tip: Use --ignore-translation OPTION if you want to build a release without translation." 2>&1
             exit 1
         fi
-    fi
-    if [[ "${TARGET}" == 'android' ]] && [[ -z "${ANDROID_NDK_HOME}${ANDROID_NDK_ROOT}" || -z "${ANDROID_HOME}${ANDROID_SDK_ROOT}" ]]; then
-        TARGET='' run_make android-ndk android-sdk
     fi
     run_make ${NO_BUILD:+--assume-old=all} update
 }
@@ -579,7 +580,7 @@ ANDROID TARGET:
     fi
     # Build the final make command.
     local margs=()
-    if [[ "${target}" = android-* ]]; then
+    if [[ "${TARGET}" == 'android' ]]; then
         if [[ "$1" = *.apk ]]; then
             margs+=(ANDROID_APK="$1")
             NO_BUILD=1
@@ -644,7 +645,6 @@ $(build_options_help_msg 'BUILD' 'use existing build' '' 'default')
         esac
     done
     setup_target 'emulator'
-    check_submodules
     run_make ${NO_BUILD:+--assume-old=all} ${show_previous:+--assume-old=coverage-run} coverage${show_full:+-full}
 }
 
@@ -672,7 +672,6 @@ $(build_options_help_msg 'BUILD' 'use existing build' '' 'default')
     fi
     # The rest (custom options included) is forwarded to busted.
     setup_target 'emulator'
-    check_submodules
     run_make ${NO_BUILD:+--assume-old=all} "test${suite}" BUSTED_OVERRIDES="$(print_quoted "${OPTS[@]}" "${ARGS[@]}")"
 }
 
