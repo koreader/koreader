@@ -16,6 +16,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local Math = require("optmath")
 local OverlapGroup = require("ui/widget/overlapgroup")
+local RenderImage = require("ui/renderimage")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -44,6 +45,7 @@ local BookInfoManager = require("bookinfomanager")
 -- recreated if height changes)
 local corner_mark_size = -1
 local corner_mark
+local PLUGIN_ROOT = package.path:match('([^;]*coverbrowserclean%.koplugin/)')
 
 local scale_by_size = Screen:scaleBySize(1000000) * (1/1000000)
 
@@ -432,9 +434,7 @@ function ListMenuItem:update()
                 -- minimum of 2 blocks otherwise book goes from ◽ to ◾ immediately
                 local total_blocks = math.max((math.min(math.floor((fn_pages/25)+0.5), 30)), 2)
 
-				if status == "complete" then
-                    pages_str = string.rep(read_chr, total_blocks) .. finished_chr
-                elseif status == "abandoned" then
+                if status == "complete" or status == "abandoned" then
                     pages_str = string.rep(read_chr, total_blocks)
                 elseif percent_finished then
                     local finished_blocks = math.max(math.floor(total_blocks * percent_finished), 1)
@@ -454,6 +454,15 @@ function ListMenuItem:update()
             local wright_width = 0
             local wright
 
+
+            local trophy_widget = ImageWidget:new({
+                image = RenderImage:renderImageFile(tostring(PLUGIN_ROOT) .. "icons/trophy.svg"),
+                width = 50,
+                height = 50,
+                scale_factor = self.scale_factor,
+                alpha = true
+            })
+
             if not BookInfoManager:getSetting("hide_file_info") then
                 local wfileinfo = TextWidget:new{
                     text = fileinfo_str,
@@ -470,6 +479,9 @@ function ListMenuItem:update()
                     fgcolor = fgcolor,
                 }
                 table.insert(wright_items, wpageinfo)
+				if status == "complete" then
+                    table.insert(wright_items, trophy_widget)
+                end
             end
 
             if #wright_items > 0 then
