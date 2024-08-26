@@ -1143,9 +1143,9 @@ function ReaderHighlight:onShowHighlightDialog(index)
                 end,
             },
             {
-                text = is_auto_text and _("Add note") or _("Edit note"),
+                text = item.note and _("Edit note") or _("Add note"),
                 callback = function()
-                    self:editHighlight(page, index)
+                    self:editHighlight(index)
                     UIManager:close(self.edit_highlight_dialog)
                     self.edit_highlight_dialog = nil
                 end,
@@ -1153,8 +1153,8 @@ function ReaderHighlight:onShowHighlightDialog(index)
             {
                 text = "…",
                 callback = function()
-                    self.selected_text = self.view.highlight.saved[page][index]
-                    self:onShowHighlightMenu(page, index)
+                    self.selected_text = util.tableDeepCopy(item)
+                    self:onShowHighlightMenu(index)
                     UIManager:close(self.edit_highlight_dialog)
                     self.edit_highlight_dialog = nil
                 end,
@@ -2315,7 +2315,7 @@ function ReaderHighlight:onReadSettings(config)
     self.view.highlight.saved_drawer = config:readSetting("highlight_drawer")
         or G_reader_settings:readSetting("highlight_drawing_style") or self.view.highlight.saved_drawer
     self.view.highlight.saved_color = config:readSetting("highlight_color")
-        or G_reader_settings:readSetting("highlight_color") or self.view.highlight.saved_colo
+        or G_reader_settings:readSetting("highlight_color") or self.view.highlight.saved_color
     self.view.highlight.disabled = G_reader_settings:readSetting("default_highlight_action") == "nothing"
 
     self.allow_corner_scroll = G_reader_settings:nilOrTrue("highlight_corner_scroll")
