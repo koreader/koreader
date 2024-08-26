@@ -68,6 +68,8 @@ local RadioButtonWidget = FocusManager:extend{
     provider = nil, -- provider of the checked button
     row = nil, -- row of the checked button
     col = nil, -- column of the checked button
+    -- for internal use
+    colorful = false, -- used to change waveform mode if any of our text is colorful
 }
 
 function RadioButtonWidget:init()
@@ -91,6 +93,23 @@ function RadioButtonWidget:init()
             }
         },
     }
+
+    -- Check if any of our buttons use color text...
+    for row, t in ipairs(self.radio_buttons) do
+        for col, w in ipairs(t) do
+            if w.fgcolor and not Blitbuffer.isColor8(w.fgcolor) then
+                self.colorful = true
+                break
+            end
+            if w.bgcolor and not Blitbuffer.isColor8(w.bgcolor) then
+                self.colorful = true
+                break
+            end
+        end
+        if self.colorful then
+            break
+        end
+    end
     self:update()
 end
 
@@ -215,7 +234,7 @@ function RadioButtonWidget:update()
         self.movable,
     }
     UIManager:setDirty(self, function()
-        return "ui", self.widget_frame.dimen
+        return self.colorful and "partial" or "ui", self.widget_frame.dimen
     end)
 end
 
@@ -242,7 +261,7 @@ end
 
 function RadioButtonWidget:onShow()
     UIManager:setDirty(self, function()
-        return "ui", self.widget_frame.dimen
+        return self.colorful and "partial" or "ui", self.widget_frame.dimen
     end)
     return true
 end
