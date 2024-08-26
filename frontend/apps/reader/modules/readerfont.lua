@@ -31,7 +31,6 @@ local newly_added_fonts = nil -- not yet filled
 
 function ReaderFont:init()
     self:registerKeyEvents()
-    self:setupFaceMenuTable()
     self.ui.menu:registerToMainMenu(self)
     -- NOP our own gesture handling
     self.ges_events = nil
@@ -70,6 +69,14 @@ function ReaderFont:setupFaceMenuTable()
     cre = require("document/credocument"):engineInit()
     local face_list = cre.getFontFaces()
     face_list = self:sortFaceList(face_list)
+    -- list current font on top if sorted by recently selected
+    if G_reader_settings:isTrue("font_menu_sort_by_recently_selected") then
+        local idx = util.arrayContains(face_list, self.font_face)
+        if idx then
+            table.remove(face_list, idx)
+            table.insert(face_list, 1, self.font_face)
+        end
+    end
     for k, v in ipairs(face_list) do
         local font_filename, font_faceindex, is_monospace = cre.getFontFaceFilenameAndFaceIndex(v)
         if not font_filename then
@@ -187,6 +194,8 @@ function ReaderFont:onReadSettings(config)
 
     self.font_family_fonts = config:readSetting("font_family_fonts") or {}
     self:updateFontFamilyFonts()
+
+    self:setupFaceMenuTable()
 
     -- Dirty hack: we have to add following call in order to set
     -- m_is_rendered(member of LVDocView) to true. Otherwise position inside
@@ -777,7 +786,7 @@ This setting allows scaling all monospace fonts by this percentage so they can f
         text = _("Generate font test document"),
         callback = function()
             UIManager:show(ConfirmBox:new{
-                text = _("Would you like to generate an HTML document showing some sample text rendered with each available font?"),
+                text = _("Would you like to generate an HTML document showing a text sample rendered with each available font?"),
                 ok_callback = function()
                     self:buildFontsTestDocument()
                 end,
@@ -894,6 +903,17 @@ a { color: black; }
 <h1>%s</h1>
 ]], _("Available fonts test document"), _("AVAILABLE FONTS")))
     local face_list = cre.getFontFaces()
+    if next(newly_added_fonts) then
+        -- Sort alphabetically, with new fonts first (as done in sortFaceList())
+        local move_idx = 1
+        for i=1, #face_list do
+            if newly_added_fonts[face_list[i]] then
+                face_list[i] = face_list[i] .. " [NEW]"
+                table.insert(face_list, move_idx, table.remove(face_list, i))
+                move_idx = move_idx + 1
+            end
+        end
+    end
     f:write("<div style='margin: 2em'>\n")
     for _, font_name in ipairs(face_list) do
         local font_id = font_name:gsub(" ", "_"):gsub("'", "_")
@@ -910,7 +930,7 @@ a { color: black; }
     f:write("</body></html>\n")
     f:close()
     UIManager:show(ConfirmBox:new{
-        text = T(_("Document created as:\n%1\n\nWould you like to read it now?"), BD.filepath(font_test_final_path)),
+        text = T(_("Document created as:\n%1\n\nWould you like to view it now?"), BD.filepath(font_test_final_path)),
         ok_callback = function()
             UIManager:scheduleIn(1.0, function()
                 self.ui:switchDocument(font_test_final_path)
