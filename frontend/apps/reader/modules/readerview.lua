@@ -231,9 +231,10 @@ function ReaderView:paintTo(bb, x, y)
         end
     end
 
-    -- draw saved highlight
+    -- draw saved highlight (will return true if any of them are in color)
+    local colorful
     if self.highlight_visible then
-        self:drawSavedHighlight(bb, x, y)
+        colorful = self:drawSavedHighlight(bb, x, y)
     end
     -- draw temporary highlight
     if self.highlight.temp then
@@ -260,8 +261,9 @@ function ReaderView:paintTo(bb, x, y)
     -- stop activity indicator
     self.ui:handleEvent(Event:new("StopActivityIndicator"))
 
-    -- Most pages should not require dithering
-    self.dialog.dithered = nil
+    -- Most pages should not require dithering, but the dithering flag is also used to engage Kaleido waveform modes,
+    -- so we'll set the flag to true if any of our drawn highlights were in color.
+    self.dialog.dithered = colorful
     -- For KOpt, let the user choose.
     if self.ui.paging then
         if self.document.hw_dithering then
@@ -530,13 +532,14 @@ end
 function ReaderView:drawSavedHighlight(bb, x, y)
     if #self.ui.annotation.annotations == 0 then return end
     if self.ui.paging then
-        self:drawPageSavedHighlight(bb, x, y)
+        return self:drawPageSavedHighlight(bb, x, y)
     else
-        self:drawXPointerSavedHighlight(bb, x, y)
+        return self:drawXPointerSavedHighlight(bb, x, y)
     end
 end
 
 function ReaderView:drawPageSavedHighlight(bb, x, y)
+    local colorful
     local pages = self:getCurrentPageList()
     for _, page in ipairs(pages) do
         local items = self.ui.highlight:getPageSavedHighlights(page)
@@ -544,6 +547,9 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
             local boxes = self.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
             if boxes then
                 local color = Blitbuffer.colorFromName(item.color)
+                if not Blitbuffer.isColor8(color) then
+                    colorful = true
+                end
                 local draw_note_mark = item.note and self.highlight.note_mark
                 for _, box in ipairs(boxes) do
                     local rect = self:pageToScreenTransform(page, box)
@@ -557,6 +563,7 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
             end
         end
     end
+    return colorful
 end
 
 function ReaderView:drawXPointerSavedHighlight(bb, x, y)
@@ -574,6 +581,7 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
     else
         cur_view_bottom = cur_view_top + self.ui.dimen.h
     end
+    local colorful
     for _, item in ipairs(self.ui.annotation.annotations) do
         if item.drawer then
             -- document:getScreenBoxesFromPositions() is expensive, so we
@@ -585,6 +593,9 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
                 local boxes = self.document:getScreenBoxesFromPositions(item.pos0, item.pos1, true) -- get_segments=true
                 if boxes then
                     local color = Blitbuffer.colorFromName(item.color)
+                    if not Blitbuffer.isColor8(color) then
+                        colorful = true
+                    end
                     local draw_note_mark = item.note and self.highlight.note_mark
                     for _, box in ipairs(boxes) do
                         if box.h ~= 0 then
@@ -598,6 +609,7 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
             end
         end
     end
+    return colorful
 end
 
 function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note_mark)
