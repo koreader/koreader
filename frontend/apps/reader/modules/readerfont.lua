@@ -31,7 +31,6 @@ local newly_added_fonts = nil -- not yet filled
 
 function ReaderFont:init()
     self:registerKeyEvents()
-    self:setupFaceMenuTable()
     self.ui.menu:registerToMainMenu(self)
     -- NOP our own gesture handling
     self.ges_events = nil
@@ -70,6 +69,14 @@ function ReaderFont:setupFaceMenuTable()
     cre = require("document/credocument"):engineInit()
     local face_list = cre.getFontFaces()
     face_list = self:sortFaceList(face_list)
+    -- list current font on top if sorted by recently selected
+    if G_reader_settings:isTrue("font_menu_sort_by_recently_selected") then
+        local idx = util.arrayContains(face_list, self.font_face)
+        if idx then
+            table.remove(face_list, idx)
+            table.insert(face_list, 1, self.font_face)
+        end
+    end
     for k, v in ipairs(face_list) do
         local font_filename, font_faceindex, is_monospace = cre.getFontFaceFilenameAndFaceIndex(v)
         if not font_filename then
@@ -187,6 +194,8 @@ function ReaderFont:onReadSettings(config)
 
     self.font_family_fonts = config:readSetting("font_family_fonts") or {}
     self:updateFontFamilyFonts()
+    
+    self:setupFaceMenuTable()
 
     -- Dirty hack: we have to add following call in order to set
     -- m_is_rendered(member of LVDocView) to true. Otherwise position inside
