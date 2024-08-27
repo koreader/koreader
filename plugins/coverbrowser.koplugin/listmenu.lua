@@ -375,6 +375,7 @@ function ListMenuItem:update()
                 self.menu.cover_info_cache = {}
             end
             local pages_str = ""
+            local progress_str = ""
             local pages = bookinfo.pages -- default to those in bookinfo db
             local percent_finished, status, has_highlight
             if DocSettings:hasSidecarFile(self.filepath) then
@@ -397,34 +398,22 @@ function ListMenuItem:update()
                 fileinfo_str = mark .. BD.wrap(filetype) .. "  " .. BD.wrap(self.mandatory)
             end
             -- right widget, second line
-            if status == "complete" or status == "abandoned" then
-                -- Display these instead of the read %
-                if pages then
-                    if status == "complete" then
-                        pages_str = T(N_("Finished – 1 page", "Finished – %1 pages", pages), pages)
-                    else
-                        pages_str = T(N_("On hold – 1 page", "On hold – %1 pages", pages), pages)
-                    end
-                else
-                    pages_str = status == "complete" and _("Finished") or _("On hold")
-                end
+            if status == "complete" then
+                progress_str = "Finished"
+            elseif status == "abandoned" then
+                progress_str = "On Hold"
             elseif percent_finished then
+                progress_str = math.floor(100 * percent_finished) .. "% Read"
                 if pages then
                     if BookInfoManager:getSetting("show_pages_read_as_progress") then
                         pages_str = T(_("Page %1 of %2"), Math.round(percent_finished * pages), pages)
-                    else
-                        pages_str = T(_("%1 % of %2 pages"), math.floor(100 * percent_finished), pages)
                     end
                     if BookInfoManager:getSetting("show_pages_left_in_progress") then
                         pages_str = T(_("%1, %2 to read"), pages_str, Math.round(pages - percent_finished * pages), pages)
                     end
-                else
-                    pages_str = string.format("%d %%", 100 * percent_finished)
                 end
             else
-                if pages then
-                    pages_str = T(N_("1 page", "%1 pages", pages), pages)
-                end
+                progress_str = "Unread"
             end
 
             local fontsize_info = _fontSize(14, 18)
@@ -463,17 +452,22 @@ function ListMenuItem:update()
                     --tick_width = 1,
                 }
 
+                local progress_text = ""
                 if status == "complete" then
                     progress_bar.percentage = 1
+                    progress_text = "Finished"
                     table.insert(progressbar_items, progress_bar)
                     table.insert(progressbar_items, trophy_widget)
                 elseif status == "abandoned" then
+                    progress_text = "On Hold"
                     progress_bar.percentage = 1
                     table.insert(progressbar_items, progress_bar)
                 elseif percent_finished then
+                    progress_text = tostring(math.floor(percent_finished * 100)) .. "% Read"
                     progress_bar.percentage = percent_finished
                     table.insert(progressbar_items, progress_bar)
                 else
+                    progress_text = "Unread"
                     progress_bar.percentage = 0
                     table.insert(progressbar_items, progress_bar)
                 end
@@ -488,13 +482,11 @@ function ListMenuItem:update()
 
                 local wright_items = { align = "right" }
                 table.insert(wright_items, progress)
-                if percent_finished then
-                    table.insert(wright_items, TextWidget:new {
-                        text = tostring(math.floor(percent_finished * 100)) .. "% Read",
-                        face = Font:getFace("cfont", fontsize_info),
-                        fgcolor = fgcolor,
-                    })
-                end
+                table.insert(wright_items, TextWidget:new {
+                    text = progress_text,
+                    face = Font:getFace("cfont", fontsize_info),
+                    fgcolor = fgcolor,
+                })
                 wright = RightContainer:new {
                     dimen = Geom:new { w = wright_width, h = dimen.h },
                     VerticalGroup:new(wright_items),
@@ -502,6 +494,22 @@ function ListMenuItem:update()
                 wright_right_padding = Screen:scaleBySize(10)
             else
                 local wright_items = { align = "right" }
+
+                if not BookInfoManager:getSetting("hide_page_info") then
+                    local wprogressinfo = TextWidget:new {
+                        text = progress_str,
+                        face = Font:getFace("cfont", fontsize_info),
+                        fgcolor = fgcolor,
+                    }
+                    table.insert(wright_items, wprogressinfo)
+                    local wpageinfo = TextWidget:new {
+                        text = pages_str,
+                        face = Font:getFace("cfont", fontsize_info),
+                        fgcolor = fgcolor,
+                    }
+                    table.insert(wright_items, wpageinfo)
+                end
+
                 if not BookInfoManager:getSetting("hide_file_info") then
                     local wfileinfo = TextWidget:new {
                         text = fileinfo_str,
@@ -509,15 +517,6 @@ function ListMenuItem:update()
                         fgcolor = fgcolor,
                     }
                     table.insert(wright_items, wfileinfo)
-                end
-
-                if not BookInfoManager:getSetting("hide_page_info") then
-                    local wpageinfo = TextWidget:new {
-                        text = pages_str,
-                        face = Font:getFace("cfont", fontsize_info),
-                        fgcolor = fgcolor,
-                    }
-                    table.insert(wright_items, wpageinfo)
                 end
 
                 if #wright_items > 0 then
