@@ -45,7 +45,6 @@ local BookInfoManager = require("bookinfomanager")
 -- recreated if height changes)
 local corner_mark_size = -1
 local corner_mark
-local PLUGIN_ROOT = package.path:match('([^;]*coverbrowserclean%.koplugin/)')
 
 local scale_by_size = Screen:scaleBySize(1000000) * (1/1000000)
 
@@ -58,6 +57,13 @@ local ItemShortCutIcon = WidgetContainer:extend{
     radius = 0,
     style = "square",
 }
+
+local function getSourceDir()
+    local callerSource = debug.getinfo(2, "S").source
+    if callerSource:find("^@") then
+        return callerSource:gsub("^@(.*)/[^/]*", "%1")
+    end
+end
 
 function ItemShortCutIcon:init()
     if not self.key then
@@ -456,7 +462,7 @@ function ListMenuItem:update()
 
 
             local trophy_widget = ImageWidget:new({
-                image = RenderImage:renderImageFile(tostring(PLUGIN_ROOT) .. "icons/trophy.svg"),
+                image = RenderImage:renderImageFile(getSourceDir() .. "/icons/trophy.svg"),
                 width = 50,
                 height = 50,
                 scale_factor = self.scale_factor,
