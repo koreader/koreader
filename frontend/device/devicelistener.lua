@@ -206,7 +206,7 @@ if Device:hasGSensor() then
         Notification:notify(new_text)
         return true
     end
-    
+
     function DeviceListener:onTempGSensorOn()
         if not G_reader_settings:isTrue("input_ignore_gsensor") then
             Notification:notify("Accelerometer rotation events already on.")
