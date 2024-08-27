@@ -25,6 +25,7 @@ local T = ffiUtil.template
 local Screen = Device.screen
 
 local ReaderHighlight = InputContainer:extend{
+    -- Matches what is available in BlitBuffer.HIGHLIGHT_COLORS
     highlight_colors = {
         {_("Red"), "red"},
         {_("Orange"), "orange"},
@@ -69,6 +70,7 @@ function ReaderHighlight:init()
     self._current_indicator_pos = nil
     self._previous_indicator_pos = nil
     self._last_indicator_move_args = {dx = 0, dy = 0, distance = 0, time = time:now()}
+    -- NOTE: Unfortunately, yellow tends to look like absolute ass on Kaleido panels...
     self._fallback_color = Screen:isColorEnabled() and "yellow" or "gray"
 
     self:registerKeyEvents()
@@ -552,7 +554,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
         text = _("Apply default style to all highlights"),
         callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
-                text = _("Are you sure you want to edit all highlights."),
+                text = _("Are you sure you want to update all highlights?"),
                 icon = "texture-box",
                 ok_callback = function()
                     local count = 0
