@@ -2293,7 +2293,7 @@ end
 function ReaderHighlight:getSavedExtendedHighlightPage(highlight, page, index)
     local item = {
         datetime = highlight.datetime,
-        drawer   = highlight.drawer or self.highlight.saved_drawer,
+        drawer   = highlight.drawer,
         color    = highlight.color or self.highlight.saved_color,
         text     = highlight.text,
         note     = highlight.note,
