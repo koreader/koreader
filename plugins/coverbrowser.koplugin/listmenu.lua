@@ -438,7 +438,7 @@ function ListMenuItem:update()
                 local progressbar_items = { align = "center" }
 
                 local trophy_widget = ImageWidget:new({
-                    file = getSourceDir() .. "icons/trophy.svg",
+                    file = getSourceDir() .. "/icons/trophy.svg",
                     width = 40,
                     height = 40,
                     alpha = true
