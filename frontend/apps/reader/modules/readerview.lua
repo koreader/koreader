@@ -659,11 +659,9 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
             color = Blitbuffer.COLOR_BLACK
         end
         if self.highlight.note_mark == "underline" then
-            if Blitbuffer.isColor8(color) then
-                bb:paintRect(x, y + h - 1, w, Size.line.medium, color)
-            else
-                bb:paintRectRGB32(x, y + h - 1, w, Size.line.medium, color)
-            end
+            -- With most annotation styles, we'd risk making this invisible if we used the same color,
+            -- so, always draw this in black.
+            bb:paintRect(x, y + h - 1, w, Size.line.medium, Blitbuffer.COLOR_BLACK)
         else
             local note_mark_pos_x
             if self.ui.paging or
