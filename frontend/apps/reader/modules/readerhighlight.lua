@@ -558,14 +558,11 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 icon = "texture-box",
                 ok_callback = function()
                     local count = 0
-                    for _, items in pairs(self.view.highlight.saved) do
-                        if items then
-                            count = count + #items
-                            for i = 1, #items do
-                                local item = items[i]
-                                item.drawer = self.view.highlight.saved_drawer
-                                item.color = self.view.highlight.saved_color
-                            end
+                    for _, item in ipairs(self.ui.annotation.annotations) do
+                        if item.drawer then
+                            count = count + 1
+                            item.drawer = self.view.highlight.saved_drawer
+                            item.color = self.view.highlight.saved_color
                         end
                     end
                     if count > 0 then
