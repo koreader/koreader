@@ -8,11 +8,19 @@ local Screen = require("device").screen
 local lfs = require("libs/libkoreader-lfs")
 
 local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
-local PLUGIN_ROOT = package.path:match('([^;]*coverbrowserclean%.koplugin/)')
+
+
+
+local function getSourceDir()
+    local callerSource = debug.getinfo(2, "S").source
+    if callerSource:find("^@") then
+        return callerSource:gsub("^@(.*)/[^/]*", "%1")
+    end
+end
 
 -- Directories to look for icons by name, with any of the accepted suffixes
 local ICONS_DIRS = {}
-table.insert(ICONS_DIRS, PLUGIN_ROOT .. "/icons")
+table.insert(ICONS_DIRS, getSourceDir() .. "/icons")
 local user_icons_dir = DataStorage:getDataDir() .. "/icons"
 if lfs.attributes(user_icons_dir, "mode") == "directory" then
     table.insert(ICONS_DIRS, user_icons_dir)
@@ -48,6 +56,7 @@ local IconWidget = ImageWidget:extend{
                    ---        the alpha layer will be kept intact, and we'll do alpha-blending at blitting time.
     is_icon = true, -- avoid dithering in ImageWidget:paintTo()
 }
+
 
 function IconWidget:init()
     if self.image or self.file then
