@@ -236,8 +236,14 @@ function RadioButtonWidget:update()
         },
         self.movable,
     }
+
+    -- If the device doesn't support Kaleido wfm, or color is disabled, don't bother tweaking the wfm
+    if self.colorful and not (Screen:isColorEnabled() and Device:hasKaleidoWfm()) then
+        self.colorful = false
+    end
+
     UIManager:setDirty(self, function()
-        return self.colorful and "partial" or "ui", self.widget_frame.dimen
+        return self.colorful and "full" or "ui", self.widget_frame.dimen
     end)
 end
 
@@ -264,7 +270,7 @@ end
 
 function RadioButtonWidget:onShow()
     UIManager:setDirty(self, function()
-        return self.colorful and "partial" or "ui", self.widget_frame.dimen
+        return self.colorful and "full" or "ui", self.widget_frame.dimen
     end)
     return true
 end
