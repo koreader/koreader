@@ -98,7 +98,7 @@ function ReadTimer:update_status_bars(seconds)
         UIManager:broadcastEvent(Event:new("UpdateHeader"))
     end
     if self.show_value_in_footer then
-        UIManager:broadcastEvent(Event:new("UpdateFooter", true))
+        UIManager:broadcastEvent(Event:new("RefreshAdditionalContent"))
     end
     -- if seconds schedule 1ms later
     if seconds and seconds >= 0 then
