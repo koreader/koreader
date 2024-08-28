@@ -235,12 +235,39 @@ function ListMenuItem:update()
     self.is_directory = not (self.entry.is_file or self.entry.file)
     if self.is_directory then
         -- nb items on the right, directory name on the left
-        local wright = TextWidget:new {
-            text = self.mandatory or "",
-            face = Font:getFace("infont", _fontSize(14, 18)),
-        }
+        local wright
+        local wright_width = 0
+        local wright_items = { align = "right" }
+        local folder_count = string.match(self.mandatory, "(%d+) \u{F114}")
+        local files_count = string.match(self.mandatory, "(%d+) \u{F016}")
+
+        if folder_count then
+            local wfoldercount = TextWidget:new {
+                text = folder_count .. " Folders",
+                face = Font:getFace("cfont", _fontSize(14, 18)),
+            }
+            table.insert(wright_items, wfoldercount)
+        end
+        if files_count then
+            local wfilecount = TextWidget:new {
+                text = files_count.. " Documents",
+                face = Font:getFace("cfont", _fontSize(14, 18)),
+            }
+            table.insert(wright_items, wfilecount)
+        end
+
+        if #wright_items > 0 then
+            for i, w in ipairs(wright_items) do
+                wright_width = math.max(wright_width, w:getSize().w)
+            end
+            wright = CenterContainer:new {
+                dimen = Geom:new { w = wright_width, h = dimen.h },
+                VerticalGroup:new(wright_items),
+            }
+        end
+
         local pad_width = Screen:scaleBySize(10) -- on the left, in between, and on the right
-        local wleft_width = dimen.w - wright:getWidth() - 3 * pad_width
+        local wleft_width = dimen.w - wright_width - 3 * pad_width
         local wleft = TextBoxWidget:new {
             text = BD.directory(self.text:sub(1, -2)),
             face = Font:getFace("cfont", _fontSize(20, 24)),
@@ -251,12 +278,22 @@ function ListMenuItem:update()
             height_adjust = true,
             height_overflow_show_ellipsis = true,
         }
+
+        local folder_cover = ImageWidget:new({
+            file = getSourceDir() .. "/icons/folder.svg",
+            alpha = true,
+            scale_factor = 0,
+            width = 250,
+            height = dimen.h,
+        })
+
         widget = OverlapGroup:new {
-            dimen = dimen:copy(),
             LeftContainer:new {
                 dimen = dimen:copy(),
                 HorizontalGroup:new {
-                    HorizontalSpan:new { width = pad_width },
+                    HorizontalSpan:new { width = Screen:scaleBySize(5) },
+                    folder_cover,
+                    HorizontalSpan:new { width = Screen:scaleBySize(5) },
                     wleft,
                 }
             },
@@ -430,6 +467,7 @@ function ListMenuItem:update()
                     file = getSourceDir() .. "/icons/trophy.svg",
                     width = 40,
                     height = 40,
+                    scale_factor = 0,
                     alpha = true
                 })
 
@@ -496,18 +534,18 @@ function ListMenuItem:update()
                 local wright_items = { align = "right" }
 
                 if not BookInfoManager:getSetting("hide_page_info") then
-                    local wprogressinfo = TextWidget:new {
-                        text = progress_str,
-                        face = Font:getFace("cfont", fontsize_info),
-                        fgcolor = fgcolor,
-                    }
-                    table.insert(wright_items, wprogressinfo)
                     local wpageinfo = TextWidget:new {
                         text = pages_str,
                         face = Font:getFace("cfont", fontsize_info),
                         fgcolor = fgcolor,
                     }
                     table.insert(wright_items, wpageinfo)
+                    local wprogressinfo = TextWidget:new {
+                        text = progress_str,
+                        face = Font:getFace("cfont", fontsize_info),
+                        fgcolor = fgcolor,
+                    }
+                    table.insert(wright_items, wprogressinfo)
                 end
 
                 if not BookInfoManager:getSetting("hide_file_info") then
