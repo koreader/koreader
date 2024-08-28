@@ -2464,7 +2464,7 @@ end
 
 function ReaderFooter:onBookMetadataChanged(prop_updated)
     if prop_updated and (prop_updated.metadata_key_updated == "title" or prop_updated.metadata_key_updated == "authors") then
-        self:updateFooterText()
+        self:maybeUpdateFooter()
     end
 end
 
