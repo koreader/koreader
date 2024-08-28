@@ -142,6 +142,8 @@ function TitleBar:init()
     local right_icon_reserved_width = 0
     local right2_icon_reserved_width = 0
     local right3_icon_reserved_width = 0
+    local icon_reserved_width = 0
+    local icon_padding_width = 0
     if self.left_icon then
         self.has_left_icon = true
         left_icon_reserved_width = left_icon_size + self.button_padding
@@ -175,6 +177,7 @@ function TitleBar:init()
         right_icon_reserved_width = left_icon_reserved_width
         right2_icon_reserved_width = left_icon_reserved_width
         right3_icon_reserved_width = left_icon_reserved_width
+        icon_reserved_width = left_icon_reserved_width
     end
     local title_max_width = self.width - 2*self.title_h_padding - left_icon_reserved_width - left2_icon_reserved_width - left3_icon_reserved_width - right_icon_reserved_width - right2_icon_reserved_width - right3_icon_reserved_width
     local subtitle_max_width = self.width - 2*self.title_h_padding
@@ -197,7 +200,7 @@ function TitleBar:init()
         -- Our icons' baselines looks like they could be at 83% to 90% of their height.
         local text_baseline = self.title_widget:getBaseline()
         local icon_height = math.max(left_icon_size, left2_icon_size, left3_icon_size, right_icon_size, right2_icon_size, right3_icon_size)
-        local icon_baseline = icon_height * 0.85 + self.button_padding
+        local icon_baseline = icon_height * 0.8 + self.button_padding
         title_top_padding = Math.round(math.max(0,  icon_baseline - text_baseline))
         if self.title_shrink_font_to_fit then
             -- Use, or store, the first top padding and baseline we have computed,
@@ -249,7 +252,7 @@ function TitleBar:init()
     if self.align == "left" then
         -- we need to :resetLayout() both VerticalGroup and HorizontalGroup in :setTitle()
         self.inner_title_group = HorizontalGroup:new{
-            HorizontalSpan:new{ width = left_icon_reserved_width + self.title_h_padding }
+            HorizontalSpan:new{ width = icon_reserved_width + self.title_h_padding }
         }
         table.insert(self.title_group, self.inner_title_group)
     else
@@ -260,7 +263,7 @@ function TitleBar:init()
         if self.align == "left" then
             local span_width = self.title_h_padding
             if not self.subtitle_fullwidth then
-                span_width = span_width + left_icon_reserved_width
+                span_width = span_width + icon_reserved_width
             end
             self.inner_subtitle_group = HorizontalGroup:new{
                 HorizontalSpan:new{ width = span_width },
@@ -364,15 +367,21 @@ function TitleBar:init()
         h = self.titlebar_height, -- buttons can overflow this
     }
 
+    icon_padding_width = icon_reserved_width * 0.65
+    local icon_padding_height = Screen:scaleBySize(6)
+    local icon_padding_side_offset = Screen:scaleBySize(14)
+
     if self.has_left_icon then
         self.left_button = IconButton:new{
             icon = self.left_icon,
             icon_rotation_angle = self.left_icon_rotation_angle,
-            width = left_icon_reserved_width,
+            width = icon_reserved_width,
             height = left_icon_size,
             padding = self.button_padding,
-            padding_right = left_icon_reserved_width, -- extend button tap zone
-            padding_bottom = left_icon_size,
+            padding_left = icon_padding_side_offset, -- extend button tap zone
+            padding_right = icon_padding_width / 2, -- extend button tap zone
+            padding_bottom = left_icon_size * 0.8,
+            padding_top = icon_padding_height,
             overlap_align = "left",
             callback = self.left_icon_tap_callback,
             hold_callback = self.left_icon_hold_callback,
@@ -385,12 +394,13 @@ function TitleBar:init()
         self.left2_button = IconButton:new{
             icon = self.left2_icon,
             icon_rotation_angle = self.left2_icon_rotation_angle,
-            width = left_icon_reserved_width,
+            width = icon_reserved_width,
             height = left2_icon_size,
             padding = self.button_padding,
-            padding_left = left_icon_reserved_width + self.left_button.padding_right, -- extend button tap zone
-            padding_right = left_icon_reserved_width, -- extend button tap zone
-            padding_bottom = left2_icon_size,
+            padding_left = icon_padding_side_offset + icon_reserved_width + icon_padding_width, -- extend button tap zone
+            padding_right = icon_padding_width / 2, -- extend button tap zone
+            padding_bottom = left2_icon_size * 0.8,
+            padding_top = icon_padding_height,
             overlap_align = "left",
             callback = self.left2_icon_tap_callback,
             hold_callback = self.left2_icon_hold_callback,
@@ -403,12 +413,13 @@ function TitleBar:init()
         self.left3_button = IconButton:new{
             icon = self.left3_icon,
             icon_rotation_angle = self.left3_icon_rotation_angle,
-            width = left_icon_reserved_width,
+            width = icon_reserved_width,
             height = left3_icon_size,
             padding = self.button_padding,
-            padding_left = left_icon_reserved_width + left_icon_reserved_width + self.left_button.padding_right + self.left2_button.padding_right, -- extend button tap zone
-            padding_right = left_icon_reserved_width, -- extend button tap zone
-            padding_bottom = left3_icon_size,
+            padding_left = icon_padding_side_offset + (2 * icon_reserved_width) + (2 * icon_padding_width), -- extend button tap zone
+            padding_right = icon_padding_width / 2, -- extend button tap zone
+            padding_bottom = left3_icon_size * 0.8,
+            padding_top = icon_padding_height,
             overlap_align = "left",
             callback = self.left3_icon_tap_callback,
             hold_callback = self.left3_icon_hold_callback,
@@ -416,16 +427,18 @@ function TitleBar:init()
             show_parent = self.show_parent,
         }
         table.insert(self, self.left3_button)
-    end     
+    end
     if self.has_right_icon then
         self.right_button = IconButton:new{
             icon = self.right_icon,
             icon_rotation_angle = self.right_icon_rotation_angle,
-            width = left_icon_reserved_width,
+            width = icon_reserved_width,
             height = right_icon_size,
             padding = self.button_padding,
-            padding_left = left_icon_reserved_width, -- extend button tap zone
-            padding_bottom = right_icon_size,
+            padding_left = icon_padding_width / 2, -- extend button tap zone
+            padding_right = icon_padding_side_offset,
+            padding_bottom = right_icon_size * 0.8,
+            padding_top = icon_padding_height,
             overlap_align = "right",
             callback = self.right_icon_tap_callback,
             hold_callback = self.right_icon_hold_callback,
@@ -438,12 +451,13 @@ function TitleBar:init()
         self.right2_button = IconButton:new{
             icon = self.right2_icon,
             icon_rotation_angle = self.right2_icon_rotation_angle,
-            width = left_icon_reserved_width,
+            width = icon_reserved_width,
             height = right2_icon_size,
             padding = self.button_padding,
-            padding_left = left_icon_reserved_width, -- extend button tap zone
-            padding_right = left_icon_reserved_width + self.right_button.padding_left, -- extend button tap zone
-            padding_bottom = right2_icon_size,
+            padding_left = icon_padding_width / 2, -- extend button tap zone
+            padding_right = icon_padding_side_offset + icon_reserved_width + icon_padding_width, -- extend button tap zone
+            padding_bottom = right2_icon_size * 0.8,
+            padding_top = icon_padding_height,
             overlap_align = "right",
             callback = self.right2_icon_tap_callback,
             hold_callback = self.right2_icon_hold_callback,
@@ -456,12 +470,13 @@ function TitleBar:init()
         self.right3_button = IconButton:new{
             icon = self.right3_icon,
             icon_rotation_angle = self.right3_icon_rotation_angle,
-            width = left_icon_reserved_width,
+            width = icon_reserved_width,
             height = right3_icon_size,
             padding = self.button_padding,
-            padding_left = left_icon_reserved_width, -- extend button tap zone
-            padding_right = left_icon_reserved_width + left_icon_reserved_width + self.right_button.padding_left + self.right2_button.padding_left, -- extend button tap zone
-            padding_bottom = right3_icon_size,
+            padding_left = icon_padding_width / 2, -- extend button tap zone
+            padding_right = icon_padding_side_offset + (2 * left_icon_reserved_width) + (2 * icon_padding_width), -- extend button tap zone
+            padding_bottom = right3_icon_size * 0.8,
+            padding_top = icon_padding_height,
             overlap_align = "right",
             callback = self.right3_icon_tap_callback,
             hold_callback = self.right3_icon_hold_callback,
