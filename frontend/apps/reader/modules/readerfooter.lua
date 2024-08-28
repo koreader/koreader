@@ -486,7 +486,7 @@ ReaderFooter.default_settings = {
 function ReaderFooter:init()
     self.settings = G_reader_settings:readSetting("footer", self.default_settings)
 
-    self.additional_footer_content = {} -- place, where additional header content can be inserted.
+    self.additional_footer_content = {} -- array, where additional header content can be inserted.
 
     -- Remove items not supported by the current device
     if not Device:hasFastWifiStatusQuery() then
@@ -2464,6 +2464,13 @@ end
 
 function ReaderFooter:onBookMetadataChanged(prop_updated)
     if prop_updated and (prop_updated.metadata_key_updated == "title" or prop_updated.metadata_key_updated == "authors") then
+        self:maybeUpdateFooter()
+    end
+end
+
+function ReaderFooter:onRefreshAdditionalContent()
+    if #self.additional_footer_content > 0 then
+        -- Can be sent an any time, so we need to be careful about the repaint/refresh
         self:maybeUpdateFooter()
     end
 end
