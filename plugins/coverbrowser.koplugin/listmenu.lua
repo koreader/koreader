@@ -217,7 +217,7 @@ function ListMenuItem:update()
     -- We'll draw a border around cover images, it may not be
     -- needed with some covers, but it's nicer when cover is
     -- a pure white background (like rendered text page)
-    local border_size = Size.border.thin
+    local border_size = Size.border.thick
     local max_img_w = dimen.h - 2 * border_size -- width = height, squared
     local max_img_h = dimen.h - 2 * border_size
     local cover_specs = {
@@ -266,8 +266,16 @@ function ListMenuItem:update()
             }
         end
 
+        local folder_cover = ImageWidget:new({
+            file = getSourceDir() .. "/icons/folder.svg",
+            alpha = true,
+            scale_factor = 0,
+            width = 250,
+            height = dimen.h,
+        })
+
         local pad_width = Screen:scaleBySize(10) -- on the left, in between, and on the right
-        local wleft_width = dimen.w - wright_width - 3 * pad_width
+        local wleft_width = dimen.w - folder_cover.width - wright_width - 3 * pad_width
         local wleft = TextBoxWidget:new {
             text = BD.directory(self.text:sub(1, -2)),
             face = Font:getFace("cfont", _fontSize(20, 24)),
@@ -278,14 +286,6 @@ function ListMenuItem:update()
             height_adjust = true,
             height_overflow_show_ellipsis = true,
         }
-
-        local folder_cover = ImageWidget:new({
-            file = getSourceDir() .. "/icons/folder.svg",
-            alpha = true,
-            scale_factor = 0,
-            width = 250,
-            height = dimen.h,
-        })
 
         widget = OverlapGroup:new {
             LeftContainer:new {
@@ -360,6 +360,7 @@ function ListMenuItem:update()
                             height = image_size.h + 2 * border_size,
                             margin = 0,
                             padding = 0,
+                            color = Blitbuffer.COLOR_WHITE,
                             bordersize = border_size,
                             dim = self.file_deleted,
                             wimage,
@@ -950,7 +951,7 @@ function ListMenuItem:paintTo(bb, x, y)
             ix = self.width - corner_mark:getSize().w
         end
         local iy = self.height - corner_mark:getSize().h
-        corner_mark:paintTo(bb, x + ix, y + iy)
+        -- corner_mark:paintTo(bb, x + ix, y + iy)
     end
 
     -- to which we paint a small indicator if this book has a description
@@ -1096,9 +1097,10 @@ end
 
 function ListMenu:_updateItemsBuildUI()
     -- Build our list
+    local line_width = self.width or self.screen_w
     local line_widget = LineWidget:new {
-        dimen = Geom:new { w = self.width or self.screen_w, h = Size.line.thin },
-        background = Blitbuffer.COLOR_DARK_GRAY,
+        dimen = Geom:new { w = line_width, h = Size.line.medium },
+        background = Blitbuffer.COLOR_GRAY,
     }
     table.insert(self.item_group, line_widget)
     local idx_offset = (self.page - 1) * self.perpage
@@ -1130,7 +1132,14 @@ function ListMenu:_updateItemsBuildUI()
             do_filename_only = self._do_filename_only,
         }
         table.insert(self.item_group, item_tmp)
-        table.insert(self.item_group, line_widget)
+        if idx < self.perpage then
+            local small_line_width = line_width * 0.80
+            local small_line_widget = LineWidget:new {
+                dimen = Geom:new { w = small_line_width, h = Size.line.thin },
+                background = Blitbuffer.COLOR_GRAY,
+            }
+            table.insert(self.item_group, small_line_widget)
+        end
 
         -- this is for focus manager
         table.insert(self.layout, { item_tmp })
