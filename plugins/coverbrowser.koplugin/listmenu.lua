@@ -217,7 +217,7 @@ function ListMenuItem:update()
     -- We'll draw a border around cover images, it may not be
     -- needed with some covers, but it's nicer when cover is
     -- a pure white background (like rendered text page)
-    local border_size = Size.border.thick
+    local border_size = Screen:scaleBySize(4)
     local max_img_w = dimen.h - 2 * border_size -- width = height, squared
     local max_img_h = dimen.h - 2 * border_size
     local cover_specs = {
@@ -240,17 +240,21 @@ function ListMenuItem:update()
         local wright_items = { align = "right" }
         local folder_count = string.match(self.mandatory, "(%d+) \u{F114}")
         local files_count = string.match(self.mandatory, "(%d+) \u{F016}")
+        local folder_string = "Folder"
+        local file_string = "Book"
 
         if folder_count then
+            if tonumber(folder_count) > 1 then folder_string = folder_string .. "s" end
             local wfoldercount = TextWidget:new {
-                text = folder_count .. " Folders",
+                text = folder_count .. " " .. folder_string,
                 face = Font:getFace("cfont", _fontSize(14, 18)),
             }
             table.insert(wright_items, wfoldercount)
         end
         if files_count then
+            if tonumber(files_count) > 1 then file_string = file_string .. "s" end
             local wfilecount = TextWidget:new {
-                text = files_count.. " Documents",
+                text = files_count.. " " .. file_string,
                 face = Font:getFace("cfont", _fontSize(14, 18)),
             }
             table.insert(wright_items, wfilecount)
@@ -435,12 +439,17 @@ function ListMenuItem:update()
                 fileinfo_str = mark .. BD.wrap(filetype) .. "  " .. BD.wrap(self.mandatory)
             end
             -- right widget, second line
+            local finished_string = "Finished"
+            local abandoned_string = "On Hold"
+            local read_string = "Read"
+            local unread_string = "New"
+
             if status == "complete" then
-                progress_str = "Finished"
+                progress_str = finished_string
             elseif status == "abandoned" then
-                progress_str = "On Hold"
+                progress_str = abandoned_string
             elseif percent_finished then
-                progress_str = math.floor(100 * percent_finished) .. "% Read"
+                progress_str = math.floor(100 * percent_finished) .. "% " .. read_string
                 if pages then
                     if BookInfoManager:getSetting("show_pages_read_as_progress") then
                         pages_str = T(_("Page %1 of %2"), Math.round(percent_finished * pages), pages)
@@ -450,7 +459,7 @@ function ListMenuItem:update()
                     end
                 end
             else
-                progress_str = "Unread"
+                progress_str = unread_string
             end
 
             local fontsize_info = _fontSize(14, 18)
