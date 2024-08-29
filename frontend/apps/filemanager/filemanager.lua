@@ -761,6 +761,11 @@ function FileManager:onClose()
     return true
 end
 
+function FileManager:onFlushSettings()
+    self:handleEvent(Event:new("SaveSettings"))
+    G_reader_settings:flush()
+end
+
 function FileManager:onCloseWidget()
     if FileManager.instance == self then
         logger.dbg("Tearing down FileManager", tostring(self))
