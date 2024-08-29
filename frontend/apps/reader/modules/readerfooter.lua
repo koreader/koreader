@@ -2446,7 +2446,10 @@ end
 ReaderFooter.onNetworkDisconnected = ReaderFooter.onNetworkConnected
 
 function ReaderFooter:onSwapPageTurnButtons()
-    UIManager:scheduleIn(0.1, self.autoRefreshFooter)
+    if self.settings.page_turning_inverted then
+        -- We may receive the event *before* DeviceListener, so delay this to make sure it had a chance to actually swap the settings.
+        UIManager:nextTick(self.maybeUpdateFooter, self)
+    end
 end
 ReaderFooter.onToggleReadingOrder = ReaderFooter.onSwapPageTurnButtons
 
