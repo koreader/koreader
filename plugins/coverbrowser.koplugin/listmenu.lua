@@ -270,7 +270,7 @@ function ListMenuItem:update()
             file = getSourceDir() .. "/icons/folder.svg",
             alpha = true,
             scale_factor = 0,
-            width = 250,
+            width = dimen.h,
             height = dimen.h,
         })
 
@@ -291,7 +291,6 @@ function ListMenuItem:update()
             LeftContainer:new {
                 dimen = dimen:copy(),
                 HorizontalGroup:new {
-                    HorizontalSpan:new { width = Screen:scaleBySize(5) },
                     folder_cover,
                     HorizontalSpan:new { width = Screen:scaleBySize(5) },
                     wleft,
