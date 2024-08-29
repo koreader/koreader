@@ -272,7 +272,7 @@ In addition to transferring files the same way you would with the built-in reade
 ..
 _([[## Shortcuts <a id="short"></a>
 
-The following is a non-exhaustive list of shortcuts available. 
+The following is a non-exhaustive list of shortcuts available.
 
 When inside the reading module:
 
@@ -431,7 +431,7 @@ In addition to transferring files the same way you would with the built-in reade
 ..
 _([[## Shortcuts <a id="short"></a>
 
-The following is a non-exhaustive list of shortcuts available. 
+The following is a non-exhaustive list of shortcuts available.
 
 When inside the reading module:
 
