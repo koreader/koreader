@@ -2445,7 +2445,13 @@ function ReaderFooter:onNetworkConnected()
 end
 ReaderFooter.onNetworkDisconnected = ReaderFooter.onNetworkConnected
 
-function ReaderFooter:onPageTurningInverted()
+function ReaderFooter:onSwapPageTurnButtons()
+    if self.settings.page_turning_inverted then
+        self:maybeUpdateFooter()
+    end
+end
+
+function ReaderFooter:onToggleReadingOrder()
     if self.settings.page_turning_inverted then
         self:maybeUpdateFooter()
     end
