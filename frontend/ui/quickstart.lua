@@ -1,6 +1,7 @@
 --[[--This module is responsible for generating the quickstart guide.
 ]]
 local DataStorage = require("datastorage")
+local Device = require("device")
 local FileConverter = require("apps/filemanager/filemanagerconverter")
 local DocSettings = require("docsettings")
 local Language = require("ui/language")
@@ -192,6 +193,326 @@ You can find other KOReader users on MobileRead forums
 ]]),
     rev)
 
+local quickstart_guide_kindle4 = T(_([[
+<div class="logo">![KOReader](resources/koreader.svg)</div>
+
+# Quickstart guide
+
+* [User interface](#ui)
+* [User interface tips](#uitips)
+* [Accessing files](#afiles)
+* [Transferring files](#tfiles)
+* [Shortcuts](#short)
+* [While reading](#reading)
+* [Installing dictionaries](#dicts)
+* [More info](#more)
+
+---
+You can access the complete user manual from [our GitHub page](https://github.com/koreader/koreader).
+]])
+..
+_([[## User interface <a id="ui"></a>
+
+<div class="img-block">![Touch zones](resources/quickstart/K4.png)</div>
+
+- To show the **TOP MENU** or **BOTTOM MENU** press the **Menu** or **Press** keys respectively.
+- The **STATUS BAR** can be set to show a multitude of information regarding your reading progress or device state.
+]])
+..
+_([[## User interface tips <a id="uitips"></a>
+
+- You can change the interface language using:
+
+> **Menu ➔ ![Settings](resources/icons/mdlight/appbar.settings.svg) ➔ Language**
+
+- If you press both **ScreenKB** + **Press** on an option or menu item (font weight, line spacing etc.), you can set its value as **DEFAULT**.  The new value will only be applied to documents opened from now on. Previously opened documents will keep their settings. You can identify default values as a STAR in menu or as a black border around indicators as seen below:
+
+<div class="img-block break-before-avoid">![Default setting 1](resources/quickstart/defaultsetting1.png)</div>
+<div class="img-block break-before-avoid">![Default setting 2](resources/quickstart/defaultsetting2.png)</div>
+
+- You can see explanations for some items on the **TOP MENU** by pressing both **ScreenKB** + **Press** on the name of the option.
+- You can **CLOSE** full screen dialogs (History, Table of Contents, Bookmarks, Reading Statistics etc.) by pressing the **Back** key.
+- **SCREENSHOTS** can be taken by pressing the **ScreenKB** + **Menu** keys
+
+<div class="img-block break-after-avoid">![Number picker](resources/quickstart/numberpicker.png)</div>
+
+- In dialogs containing adjustment arrow buttons like the one above, you can use the directional keys to move around. If widgets have menus, pressing the **Menu** key should open them.
+- You can toggle content selection mode by pressing either the **Up** or **Down** keys. The selection tool becomes available so you can select one or multiple words, for either dictionary, wikipedia or text look ups.
+- You can highlight blocks of text by selecting multiple words with the content selection tool.
+- You can move through your document with the **Left** or **Right** cursor keys which, should take you to the previous or next chapter respectively.
+- The content selection tool's sensitivity can be adjusted in the **TOP MENU**.
+
+> **Menu ➔ ![Typesettings](resources/icons/mdlight/appbar.typeset.svg) ➔ Selection on text**
+]])
+..
+_([[## Accessing files <a id="afiles"></a>
+
+The following methods are available for accessing your books and articles:
+
+* File Browser
+* Favorites
+* History
+
+You can also set KOReader to open with any of these dialogs on startup via:
+
+> **Menu (in File Browser) ➔ ![Filebrowser](resources/icons/mdlight/appbar.filebrowser.svg) ➔ Start with**
+]])
+..
+_([[## Transferring files <a id="tfiles"></a>
+
+In addition to transferring files the same way you would with the built-in reader application, other options are available depending on your device:
+
+1. USB Mass Storage mode within KOReader
+2. Cloud storage (Dropbox/FTP/Webdav)
+3. SSH/SFTP access
+4. Calibre transfer
+5. News downloader
+6. Wallabag
+]])
+..
+_([[## Shortcuts <a id="short"></a>
+
+The following is a non-exhaustive list of shortcuts available. 
+
+When inside the reading module:
+
+- **ScreenKB** + **Up**: Table of contents
+- **ScreenKB** + **Right**: Add a bookmark
+- **ScreenKB** + **Down**: Book map
+- **ScreenKB** + **Left**: Bookmarks, notes and highlights
+- **ScreenKB** + **Press**: Save current page to location history
+- **ScreenKB** + **Home**: Toggle wifi on/off
+- **ScreenKB** + **Back**: Switch to previosly opened book
+
+When using a virtual keyboard:
+
+- **ScreenKB** + **Right**: Move cursor to right char
+- **ScreenKB** + **Left**: Move cursor to left char
+- **ScreenKB** + **Press**: Show special characters behind virtual keyboard keys
+- **ScreenKB** + **Home**: Toggle virtual keyboard on/off
+- **ScreenKB** + **Back**: Delete char
+]])
+..
+_([[## While reading <a id="reading"></a>
+
+<div class="table"><div>
+
+You can change the font
+
+**Menu ➔ ![Typesettings](resources/icons/mdlight/appbar.typeset.svg) ➔ Font**
+
+</div><div>
+
+Make font bigger
+
+**Press ➔ ![Textsize](resources/icons/mdlight/appbar.textsize.svg)**
+
+</div><div>
+
+Make font bolder
+
+**Press ➔ ![Contrast](resources/icons/mdlight/appbar.contrast.svg)**
+
+</div><div>
+
+Invert the colors (white text on black)
+
+**Menu ➔ ![Settings](resources/icons/mdlight/appbar.settings.svg) ➔ Night mode**
+
+</div><div>
+
+Change many formatting options
+
+**Menu ➔ ![Typesettings](resources/icons/mdlight/appbar.typeset.svg) ➔ Style tweaks**
+
+</div></div>
+]])
+..
+_([[## Installing dictionaries <a id="dicts"></a>
+
+KOReader supports dictionary lookup in EPUB and even in scanned PDF/DJVU documents. To see the dictionary definition or translation, tap and hold a word.
+
+To use the dictionary lookup function, first you need to install one or more dictionaries in the StarDict format. KOReader has an inbuilt dictionary installation system:
+
+**Menu ➔ ![Search](resources/icons/mdlight/appbar.search.svg) ➔ Dictionary Settings > Download dictionaries**
+]])
+..
+_([[## More info <a id="more"></a>
+
+You can find more information on our GitHub page
+
+[https://github.com/koreader/koreader](https://github.com/koreader/koreader)
+
+You can find other KOReader users on MobileRead forums
+
+[https://www.mobileread.com/forums/forumdisplay.php?f=276](https://www.mobileread.com/forums/forumdisplay.php?f=276)
+
+---
+<div class="generated">Generated by KOReader %1.</div>
+]]),
+  rev)
+
+local quickstart_guide_kindle_legacy = T(_([[
+<div class="logo">![KOReader](resources/koreader.svg)</div>
+
+# Quickstart guide
+
+* [User interface](#ui)
+* [User interface tips](#uitips)
+* [Accessing files](#afiles)
+* [Transferring files](#tfiles)
+* [Shortcuts](#short)
+* [While reading](#reading)
+* [Installing dictionaries](#dicts)
+* [More info](#more)
+
+---
+You can access the complete user manual from [our GitHub page](https://github.com/koreader/koreader).
+]])
+..
+_([[## User interface <a id="ui"></a>
+
+<div class="img-block">![Touch zones](resources/quickstart/K3.png)</div>
+
+- To show the **TOP MENU** or **BOTTOM MENU** press the **Menu** or **AA** keys respectively.
+- The **STATUS BAR** can be set to show a multitude of information regarding your reading progress or device state.
+]])
+..
+_([[## User interface tips <a id="uitips"></a>
+
+- You can change the interface language using:
+
+> **Menu ➔ ![Settings](resources/icons/mdlight/appbar.settings.svg) ➔ Language**
+
+- If you press both **ScreenKB** + **Press** on an option or menu item (font weight, line spacing etc.), you can set its value as **DEFAULT**.  The new value will only be applied to documents opened from now on. Previously opened documents will keep their settings. You can identify default values as a STAR in menu or as a black border around indicators as seen below:
+
+<div class="img-block break-before-avoid">![Default setting 1](resources/quickstart/defaultsetting1.png)</div>
+<div class="img-block break-before-avoid">![Default setting 2](resources/quickstart/defaultsetting2.png)</div>
+
+- You can see explanations for some items on the **TOP MENU** by pressing both **Shift** + **Press** on the name of the option.
+- You can **CLOSE** full screen dialogs (History, Table of Contents, Bookmarks, Reading Statistics etc.) by pressing the **Back** key.
+- **SCREENSHOTS** can be taken by pressing the **Alt** + **Shift** + **G** keys
+
+<div class="img-block break-after-avoid">![Number picker](resources/quickstart/numberpicker.png)</div>
+
+- In dialogs containing adjustment arrow buttons like the one above, you can use the directional keys to move around. If widgets have menus, pressing the **Menu** key should open them.
+- You can toggle content selection mode by pressing either the **Up** or **Down** keys. The selection tool becomes available so you can select one or multiple words, for either dictionary, wikipedia or text look ups.
+- You can highlight blocks of text by selecting multiple words with the content selection tool.
+- You can move through your document with the **Left** or **Right** cursor keys which, should take you to the previous or next chapter respectively.
+- The content selection tool's sensitivity can be adjusted in the **TOP MENU**.
+
+> **Menu ➔ ![Typesettings](resources/icons/mdlight/appbar.typeset.svg) ➔ Selection on text**
+]])
+..
+_([[## Accessing files <a id="afiles"></a>
+
+The following methods are available for accessing your books and articles:
+
+* File Browser
+* Favorites
+* History
+
+You can also set KOReader to open with any of these dialogs on startup via:
+
+> **Menu (in File Browser) ➔ ![Filebrowser](resources/icons/mdlight/appbar.filebrowser.svg) ➔ Start with**
+]])
+..
+_([[## Transferring files <a id="tfiles"></a>
+
+In addition to transferring files the same way you would with the built-in reader application, other options are available depending on your device:
+
+1. USB Mass Storage mode within KOReader
+2. Cloud storage (Dropbox/FTP/Webdav)
+3. SSH/SFTP access
+4. Calibre transfer
+5. News downloader
+6. Wallabag
+]])
+..
+_([[## Shortcuts <a id="short"></a>
+
+The following is a non-exhaustive list of shortcuts available. 
+
+When inside the reading module:
+
+- **T**: Table of contents
+- **Shift** + **Right**: Add a bookmark
+- **Shift** + **Down**: Book map
+- **B**: Bookmarks, notes and highlights
+- **Shift** + **Press**: Save current page to location history
+- **Shift** + **Home**: Toggle wifi on/off
+- **Shift** + **Back**: Switch to previosly opened book
+
+When using a virtual keyboard:
+
+- **Shift** + **Right**: Move cursor to right char
+- **Shift** + **Left**: Move cursor to left char
+- **Shift** + **Press**: Show special characters behind virtual keyboard keys
+- **Shift** + **Home**: Toggle virtual keyboard on/off
+- **Shift** + **Del**: Delete word
+- **Shift** + **Back**: Delete whole line
+- **Sym** + **Alphabet keys**: symbols, numbers and special characters
+]])
+..
+_([[## While reading <a id="reading"></a>
+
+<div class="table"><div>
+
+You can change the font
+
+**Menu ➔ ![Typesettings](resources/icons/mdlight/appbar.typeset.svg) ➔ Font**
+
+</div><div>
+
+Make font bigger
+
+**Press ➔ ![Textsize](resources/icons/mdlight/appbar.textsize.svg)**
+
+</div><div>
+
+Make font bolder
+
+**Press ➔ ![Contrast](resources/icons/mdlight/appbar.contrast.svg)**
+
+</div><div>
+
+Invert the colors (white text on black)
+
+**Menu ➔ ![Settings](resources/icons/mdlight/appbar.settings.svg) ➔ Night mode**
+
+</div><div>
+
+Change many formatting options
+
+**Menu ➔ ![Typesettings](resources/icons/mdlight/appbar.typeset.svg) ➔ Style tweaks**
+
+</div></div>
+]])
+..
+_([[## Installing dictionaries <a id="dicts"></a>
+
+KOReader supports dictionary lookup in EPUB and even in scanned PDF/DJVU documents. To see the dictionary definition or translation, tap and hold a word.
+
+To use the dictionary lookup function, first you need to install one or more dictionaries in the StarDict format. KOReader has an inbuilt dictionary installation system:
+
+**Menu ➔ ![Search](resources/icons/mdlight/appbar.search.svg) ➔ Dictionary Settings > Download dictionaries**
+]])
+..
+_([[## More info <a id="more"></a>
+
+You can find more information on our GitHub page
+
+[https://github.com/koreader/koreader](https://github.com/koreader/koreader)
+
+You can find other KOReader users on MobileRead forums
+
+[https://www.mobileread.com/forums/forumdisplay.php?f=276](https://www.mobileread.com/forums/forumdisplay.php?f=276)
+
+---
+<div class="generated">Generated by KOReader %1.</div>
+]]),
+  rev)
+
 --[[-- Returns `true` if shown, `false` if the quickstart guide hasn't been
 shown yet or if display is forced through a higher version number than when
 it was first shown.
@@ -227,7 +548,15 @@ function QuickStart:getQuickStart()
             end
         end
 
-        local quickstart_html = FileConverter:mdToHtml(quickstart_guide, _("KOReader Quickstart Guide"), stylesheet)
+        local quickstart_html = function()
+            if Device:isTouchDevice() then
+                FileConverter:mdToHtml(quickstart_guide, _("KOReader Quickstart Guide"), stylesheet)
+            elseif Device:hasScreenKB() then
+                FileConverter:mdToHtml(quickstart_guide_kindle4, _("KOReader Quickstart Guide"), stylesheet)
+            elseif Device:hasSymKey() then
+                FileConverter:mdToHtml(quickstart_guide_kindle_legacy, _("KOReader Quickstart Guide"), stylesheet)
+            end
+        end
         if quickstart_html then
             -- Fix links to images, which are in KOReader install directory, which may not
             -- be alongside help/ on some platforms like Android.
