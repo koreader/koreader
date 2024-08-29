@@ -86,10 +86,18 @@ You can access the complete user manual from [our GitHub page](https://github.co
 ]])
 end
 ..
-if Device:hasScreenKB() or Device:hasSymKey() then
+if Device:hasScreenKB() then
     _([[## User interface <a id="ui"></a>
 
-<div class="img-block">![Touch zones](resources/quickstart/K4.png)</div>
+<div class="img-block">![Touch zones](resources/quickstart/kindle4.png)</div>
+
+- To show the **TOP MENU** or **BOTTOM MENU** press the **Menu** or **Press** keys respectively.
+- The **STATUS BAR** can be set to show a multitude of information regarding your reading progress or device state.
+]])
+elseif Device:hasSymKey() then
+    _([[## User interface <a id="ui"></a>
+
+<div class="img-block">![Touch zones](resources/quickstart/kindle3.png)</div>
 
 - To show the **TOP MENU** or **BOTTOM MENU** press the **Menu** or **Press** keys respectively.
 - The **STATUS BAR** can be set to show a multitude of information regarding your reading progress or device state.
