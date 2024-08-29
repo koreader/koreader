@@ -548,12 +548,13 @@ function QuickStart:getQuickStart()
             end
         end
 
+        local quickstart_html
         if Device:hasScreenKB() then
-            local quickstart_html = FileConverter:mdToHtml(quickstart_guide_kindle4, _("KOReader Quickstart Guide"), stylesheet)
+            quickstart_html = FileConverter:mdToHtml(quickstart_guide_kindle4, _("KOReader Quickstart Guide"), stylesheet)
         elseif Device:hasSymKey() then
-            local quickstart_html = FileConverter:mdToHtml(quickstart_guide_kindle_legacy, _("KOReader Quickstart Guide"), stylesheet)
+            quickstart_html = FileConverter:mdToHtml(quickstart_guide_kindle_legacy, _("KOReader Quickstart Guide"), stylesheet)
         else
-            local quickstart_html = FileConverter:mdToHtml(quickstart_guide, _("KOReader Quickstart Guide"), stylesheet)
+            quickstart_html = FileConverter:mdToHtml(quickstart_guide, _("KOReader Quickstart Guide"), stylesheet)
         end
         if quickstart_html then
             -- Fix links to images, which are in KOReader install directory, which may not
