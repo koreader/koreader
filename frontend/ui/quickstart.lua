@@ -145,7 +145,7 @@ elseif Device:hasSymKey() then
 
 > **Menu ➔ ![Settings](resources/icons/mdlight/appbar.settings.svg) ➔ Language**
 
-- If you press both **ScreenKB** + **Press** on an option or menu item (font weight, line spacing etc.), you can set its value as **DEFAULT**.  The new value will only be applied to documents opened from now on. Previously opened documents will keep their settings. You can identify default values as a STAR in menu or as a black border around indicators as seen below:
+- If you press both **Shift** + **Press** on an option or menu item (font weight, line spacing etc.), you can set its value as **DEFAULT**.  The new value will only be applied to documents opened from now on. Previously opened documents will keep their settings. You can identify default values as a STAR in menu or as a black border around indicators as seen below:
 
 <div class="img-block break-before-avoid">![Default setting 1](resources/quickstart/defaultsetting1.png)</div>
 <div class="img-block break-before-avoid">![Default setting 2](resources/quickstart/defaultsetting2.png)</div>
