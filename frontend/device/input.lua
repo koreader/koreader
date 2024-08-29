@@ -898,26 +898,6 @@ function Input:handleTouchEv(ev)
         if ev.code == C.ABS_MT_SLOT then
             self:setupSlotData(ev.value)
         elseif ev.code == C.ABS_MT_TRACKING_ID then
-            if self.snow_protocol then
-                -- NOTE: We'll never get an ABS_MT_SLOT event, instead we have a slot-like ABS_MT_TRACKING_ID value...
-                --       This also means that, unlike on sane devices, this will *never* be set to -1 on contact lift,
-                --       which is why we instead have to rely on EV_KEY:BTN_TOUCH:0 for that (c.f., handleKeyBoardEv).
-                if ev.value == -1 then
-                    -- NOTE: While *actual* snow_protocol devices will *never* emit an EV_ABS:ABS_MT_TRACKING_ID:-1 event,
-                    --       we've seen brand new revisions of snow_protocol devices shipping with sane panels instead,
-                    --       so we'll need to disable the quirks at runtime to handle these properly...
-                    --       (c.f., https://www.mobileread.com/forums/showpost.php?p=4383629&postcount=997).
-                    -- NOTE: Simply skipping the slot storage setup for -1 would not be enough, as it would only fix ST handling.
-                    --       MT would be broken, because buddy contact detection in GestureDetector looks at slot +/- 1,
-                    --       whereas we'd be having the main contact point at a stupidly large slot number
-                    --       (because it would match ABS_MT_TRACKING_ID, given the lack of ABS_MT_SLOT, at least for the first input frame),
-                    --       while the second contact would be at slot 1, because it would immediately have required emitting a proper ABS_MT_SLOT event...
-                    logger.warn("Input: Disabled snow_protocol quirks because your device's hardware revision doesn't appear to need them!")
-                    self.snow_protocol = false
-                else
-                    self:setupSlotData(ev.value)
-                end
-            end
             self:setCurrentMtSlotChecked("id", ev.value)
         elseif ev.code == C.ABS_MT_TOOL_TYPE then
             -- NOTE: On the Elipsa: Finger == 0; Pen == 1
@@ -991,8 +971,73 @@ function Input:handleMixedTouchEv(ev)
     end
 end
 
+-- Slightly mangled variant of handleTouchEv to deal with the various quirks of the so-called "snow" protocol over the years...
+function Input:handleTouchEvSnow(ev)
+    if ev.type == C.EV_ABS then
+        -- NOTE: Ideally, an input frame starts with either ABS_MT_SLOT or ABS_MT_TRACKING_ID,
+        --       but they *both* may be omitted if the last contact point just moved without lift.
+        --       The use of setCurrentMtSlotChecked instead of setCurrentMtSlot ensures
+        --       we actually setup the slot data storage and/or reference for the current slot in this case,
+        --       as the reference list is empty at the beginning of an input frame (c.f., Input:newFrame).
+        --       The most common platforms where you'll see this happen are:
+        --       * PocketBook, because of our InkView EVT_POINTERMOVE translation
+        --         (c.f., translateEvent @ ffi/input_pocketbook.lua).
+        --       * SDL, because of our SDL_MOUSEMOTION/SDL_FINGERMOTION translation
+        --         (c.f., waitForEvent @ ffi/SDL2_0.lua).
+        if ev.code == C.ABS_MT_SLOT then
+            self:setupSlotData(ev.value)
+        elseif ev.code == C.ABS_MT_TRACKING_ID then
+            -- NOTE: We'll never get an ABS_MT_SLOT event, instead we have a slot-like ABS_MT_TRACKING_ID value...
+            --       This also means that, unlike on sane devices, this will *never* be set to -1 on contact lift,
+            --       which is why we instead have to rely on EV_KEY:BTN_TOUCH:0 for that (c.f., handleKeyBoardEv).
+            if ev.value == -1 then
+                -- NOTE: While *actual* snow_protocol devices will *never* emit an EV_ABS:ABS_MT_TRACKING_ID:-1 event,
+                --       we've seen brand new revisions of snow_protocol devices shipping with sane panels instead,
+                --       so we'll need to disable the quirks at runtime to handle these properly...
+                --       (c.f., https://www.mobileread.com/forums/showpost.php?p=4383629&postcount=997).
+                -- NOTE: Simply skipping the slot storage setup for -1 would not be enough, as it would only fix ST handling.
+                --       MT would be broken, because buddy contact detection in GestureDetector looks at slot +/- 1,
+                --       whereas we'd be having the main contact point at a stupidly large slot number
+                --       (because it would match ABS_MT_TRACKING_ID, given the lack of ABS_MT_SLOT, at least for the first input frame),
+                --       while the second contact would be at slot 1, because it would immediately have required emitting a proper ABS_MT_SLOT event...
+                logger.warn("Input: Disabled snow_protocol quirks because your device's hardware revision doesn't appear to need them!")
+                self.snow_protocol = false
+                self.handleTouchEv = Input.handleTouchEv
+            else
+                self:setupSlotData(ev.value)
+            end
+            self:setCurrentMtSlotChecked("id", ev.value)
+        elseif ev.code == C.ABS_MT_TOOL_TYPE then
+            -- NOTE: On the Elipsa: Finger == 0; Pen == 1
+            self:setCurrentMtSlot("tool", ev.value)
+        -- NOTE: We ignore ABS_X & ABS_Y, as they may be reported for *multiple* contacts on the BTN_TOUCH:0 frame...
+        --       ...without a corresponding ABS_MT_SLOT or ABS_MT_TRACKING_ID, of course... (#11910)
+        elseif ev.code == C.ABS_MT_POSITION_X then
+            self:setCurrentMtSlotChecked("x", ev.value)
+        elseif ev.code == C.ABS_MT_POSITION_Y then
+            self:setCurrentMtSlotChecked("y", ev.value)
+        -- NOTE: Similarly, we can't honor ABS_PRESSURE for the same reason as ABS_X & ABS_Y...
+        end
+    elseif ev.type == C.EV_SYN then
+        if ev.code == C.SYN_REPORT then
+            for _, MTSlot in ipairs(self.MTSlots) do
+                self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
+            end
+            -- feed ev in all slots to state machine
+            local touch_gestures = self.gesture_detector:feedEvent(self.MTSlots)
+            self:newFrame()
+            local ges_evs = {}
+            for _, touch_ges in ipairs(touch_gestures) do
+                self:gestureAdjustHook(touch_ges)
+                table.insert(ges_evs, Event:new("Gesture", self.gesture_detector:adjustGesCoordinate(touch_ges)))
+            end
+            return ges_evs
+        end
+    end
+end
+
 function Input:handleTouchEvPhoenix(ev)
-    -- Hack on handleTouchEV for the Kobo Aura
+    -- Hack on handleTouchEv for the Kobo Aura
     -- It seems to be using a custom protocol:
     --        finger 0 down:
     --            input_report_abs(elan_touch_data.input, C.ABS_MT_TRACKING_ID, 0);
