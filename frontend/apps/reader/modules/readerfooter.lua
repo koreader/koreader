@@ -2446,16 +2446,9 @@ end
 ReaderFooter.onNetworkDisconnected = ReaderFooter.onNetworkConnected
 
 function ReaderFooter:onSwapPageTurnButtons()
-    if self.settings.page_turning_inverted then
-        self:maybeUpdateFooter()
-    end
+    UIManager:scheduleIn(0.1, self.autoRefreshFooter)
 end
-
-function ReaderFooter:onToggleReadingOrder()
-    if self.settings.page_turning_inverted then
-        self:maybeUpdateFooter()
-    end
-end
+ReaderFooter.onToggleReadingOrder = ReaderFooter.onSwapPageTurnButtons
 
 function ReaderFooter:onSetRotationMode()
     self:updateFooterContainer()
