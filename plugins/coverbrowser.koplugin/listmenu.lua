@@ -474,29 +474,27 @@ function ListMenuItem:update()
 
                 local trophy_widget = ImageWidget:new({
                     file = getSourceDir() .. "/icons/trophy.svg",
-                    width = 40,
-                    height = 40,
+                    width = Screen:scaleBySize(17),
+                    height = Screen:scaleBySize(17),
                     scale_factor = 0,
                     alpha = true
                 })
 
                 local fn_pages = tonumber(fn_page_count)
-                local max_progress_size = 500
-                local pixels_per_page = 1.5
+                local max_progress_size = 250
+                local pixels_per_page = 3
                 local min_progress_size = 25
                 local total_pixels = math.max((math.min(math.floor((fn_pages / pixels_per_page) + 0.5), max_progress_size)), min_progress_size)
                 local progress_bar = ProgressWidget:new {
-                    width = total_pixels,
-                    height = 30,
+                    width = Screen:scaleBySize(total_pixels),
+                    height = Screen:scaleBySize(15),
                     margin_v = 0,
                     margin_h = 0,
-                    bordersize = 1,
+                    bordersize = Screen:scaleBySize(0.5),
                     bordercolor = Blitbuffer.COLOR_BLACK,
                     bgcolor = Blitbuffer.COLOR_GRAY_E,
                     fillcolor = Blitbuffer.COLOR_GRAY_6,
-                    --ticks = {25, 50, 75},
-                    --last = 100,
-                    --tick_width = 1,
+                    percentage = 0,
                 }
 
                 local progress_text = ""
@@ -515,7 +513,6 @@ function ListMenuItem:update()
                     table.insert(progressbar_items, progress_bar)
                 else
                     progress_text = "Unread"
-                    progress_bar.percentage = 0
                     table.insert(progressbar_items, progress_bar)
                 end
 
