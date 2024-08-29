@@ -49,7 +49,7 @@ div.table > div > *:nth-child(3) { white-space: nowrap; }
 
 local quickstart_guide
 if Device:hasScreenKB() or Device:hasSymKey() then
-    quickstart_guide = T(_([[
+    quickstart_guide = _([[
 <div class="logo">![KOReader](resources/koreader.svg)</div>
 
 # Quickstart guide
@@ -67,7 +67,7 @@ if Device:hasScreenKB() or Device:hasSymKey() then
 You can access the complete user manual from [our GitHub page](https://github.com/koreader/koreader).
 ]])
 else
-    quickstart_guide = T(_([[
+    quickstart_guide = _([[
 <div class="logo">![KOReader](resources/koreader.svg)</div>
 
 # Quickstart guide
@@ -336,7 +336,7 @@ To use the dictionary lookup function, first you need to install one or more dic
 **TOP MENU ➔ ![Search](resources/icons/mdlight/appbar.search.svg) ➔ Dictionary Settings > Download dictionaries**
 ]])
 ..
-_([[## More info <a id="more"></a>
+T(_([[## More info <a id="more"></a>
 
 You can find more information on our GitHub page
 
