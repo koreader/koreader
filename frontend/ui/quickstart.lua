@@ -549,12 +549,12 @@ function QuickStart:getQuickStart()
         end
 
         local quickstart_html = function()
-            if Device:isTouchDevice() then
-                FileConverter:mdToHtml(quickstart_guide, _("KOReader Quickstart Guide"), stylesheet)
-            elseif Device:hasScreenKB() then
+            if Device:hasScreenKB() then
                 FileConverter:mdToHtml(quickstart_guide_kindle4, _("KOReader Quickstart Guide"), stylesheet)
             elseif Device:hasSymKey() then
                 FileConverter:mdToHtml(quickstart_guide_kindle_legacy, _("KOReader Quickstart Guide"), stylesheet)
+            else
+                FileConverter:mdToHtml(quickstart_guide, _("KOReader Quickstart Guide"), stylesheet)
             end
         end
         if quickstart_html then
