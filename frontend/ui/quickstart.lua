@@ -99,7 +99,7 @@ elseif Device:hasSymKey() then
 
 <div class="img-block">![Touch zones](resources/quickstart/kindle3.png)</div>
 
-- To show the **TOP MENU** or **BOTTOM MENU** press the **Menu** or **Press** keys respectively.
+- To show the **TOP MENU** or **BOTTOM MENU** press the **Menu** or **Aa** keys respectively.
 - The **STATUS BAR** can be set to show a multitude of information regarding your reading progress or device state.
 ]])
 else
