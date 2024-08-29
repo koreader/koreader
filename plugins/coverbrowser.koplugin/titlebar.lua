@@ -180,7 +180,8 @@ function TitleBar:init()
         icon_reserved_width = left_icon_reserved_width
     end
     local title_max_width = self.width - 2*self.title_h_padding - left_icon_reserved_width - left2_icon_reserved_width - left3_icon_reserved_width - right_icon_reserved_width - right2_icon_reserved_width - right3_icon_reserved_width
-    local subtitle_max_width = self.width - 2*self.title_h_padding
+    -- local subtitle_max_width = self.width - 2*self.title_h_padding
+    local subtitle_max_width = self.width * 0.94
     if not self.subtitle_fullwidth then
         subtitle_max_width = subtitle_max_width - left_icon_reserved_width - left2_icon_reserved_width - left3_icon_reserved_width - right_icon_reserved_width - right2_icon_reserved_width - right3_icon_reserved_width
     end
@@ -331,7 +332,7 @@ function TitleBar:init()
             self.bottom_v_padding = Size.padding.large
         end
     end
-    self.titlebar_height = self.titlebar_height + self.bottom_v_padding
+    self.titlebar_height = self.titlebar_height -- + self.bottom_v_padding
 
     if self._initial_re_init_needed then
         -- We have computed all the self._initial_ metrics needed.
@@ -351,13 +352,14 @@ function TitleBar:init()
                 TextBoxWidget:new{
                     text = self.info_text,
                     face = self.info_text_face,
-                    width = self.width - 2 * h_padding,
+                    -- width = self.width - 2 * h_padding,
+                    width = self.width * 0.94,
                     lang = self.lang,
                 }
             }
         }
         table.insert(self, filler_and_info_text)
-        self.titlebar_height = filler_and_info_text:getSize().h + self.bottom_v_padding
+        self.titlebar_height = filler_and_info_text:getSize().h -- + self.bottom_v_padding
     end
 
     self.dimen = Geom:new{
