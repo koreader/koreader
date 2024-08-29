@@ -1107,8 +1107,8 @@ function ListMenu:_updateItemsBuildUI()
     -- Build our list
     local line_width = self.width or self.screen_w
     local line_widget = LineWidget:new {
-        dimen = Geom:new { w = line_width, h = Size.line.medium },
-        background = Blitbuffer.COLOR_GRAY,
+        dimen = Geom:new { w = line_width * 0.94, h = Size.line.medium },
+        background = Blitbuffer.COLOR_BLACK,
     }
     table.insert(self.item_group, line_widget)
     local idx_offset = (self.page - 1) * self.perpage
