@@ -43,6 +43,19 @@ function SetDefaultsWidget:init()
             default_value = v,
         }
     end
+
+    -- Slight bit of nastiness, because we have a couple of (string) defaults whose value is `nil` (#11679)...
+    local nil_defaults = { "NETWORK_PROXY", "STARDICT_DATA_DIR" }
+    for i, v in ipairs(nil_defaults) do
+        self.state[v] = {
+            idx = 1,
+            value = nil,
+            custom = false,
+            dirty = false,
+            default_value = nil,
+        }
+    end
+
     for k, v in pairs(rw_defaults) do
         self.state[k].value = v
         self.state[k].custom = true
@@ -80,7 +93,7 @@ function SetDefaultsWidget:init()
                                 enabled = self.state[k].value ~= self.state[k].default_value,
                                 callback = function()
                                     UIManager:close(set_dialog)
-                                    self:update_menu_entry(k, self.state[k].default_value, value_type)
+                                    self:update_menu_entry(k, self.state[k].default_value, type(self.state[k].default_value))
                                 end
                             },
                             {
@@ -136,7 +149,7 @@ function SetDefaultsWidget:init()
                                 enabled = not util.tableEquals(self.state[k].value, self.state[k].default_value),
                                 callback = function()
                                     UIManager:close(set_dialog)
-                                    self:update_menu_entry(k, self.state[k].default_value, value_type)
+                                    self:update_menu_entry(k, self.state[k].default_value, type(self.state[k].default_value))
                                 end
                             },
                             {
@@ -179,7 +192,7 @@ function SetDefaultsWidget:init()
                                 enabled = self.state[k].value ~= self.state[k].default_value,
                                 callback = function()
                                     UIManager:close(set_dialog)
-                                    self:update_menu_entry(k, self.state[k].default_value, value_type)
+                                    self:update_menu_entry(k, self.state[k].default_value, type(self.state[k].default_value))
                                 end
                             },
                             {
@@ -189,6 +202,15 @@ function SetDefaultsWidget:init()
                                 callback = function()
                                     UIManager:close(set_dialog)
                                     local new_value = set_dialog:getInputValue()
+                                    -- We have a few strings whose default value is nil, make sure they can properly swap between types
+                                    if type(self.state[k].default_value) == "nil" then
+                                        if new_value == "nil" then
+                                            new_value = nil
+                                            value_type = "nil"
+                                        else
+                                            value_type = "string"
+                                        end
+                                    end
                                     self:update_menu_entry(k, new_value, value_type)
                                 end,
                             },
@@ -236,6 +258,8 @@ function SetDefaultsWidget:gen_menu_entry(k, v, v_type)
         return ret .. tostring(v)
     elseif v_type == "table" then
         return ret .. "{...}"
+    elseif v_type == "nil" then
+        return ret .. "nil"
     elseif tonumber(v) then
         return ret .. tostring(tonumber(v))
     else
@@ -249,10 +273,14 @@ function SetDefaultsWidget:update_menu_entry(k, v, v_type)
     self.state[k].dirty = true
     self.settings_changed = true
     self.menu_entries[idx].text = self:gen_menu_entry(k, v, v_type)
-    if util.tableEquals(v, self.state[k].default_value) then
-        self.menu_entries[idx].bold = false
+    if v_type == "nil" then
+        self.menu_entries[idx].bold = v ~= self.state[k].default_value
     else
-        self.menu_entries[idx].bold = true
+        if util.tableEquals(v, self.state[k].default_value) then
+            self.menu_entries[idx].bold = false
+        else
+            self.menu_entries[idx].bold = true
+        end
     end
     self.defaults_menu:switchItemTable(nil, self.menu_entries, idx)
 end
