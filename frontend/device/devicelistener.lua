@@ -328,7 +328,7 @@ function DeviceListener:onSwapPageTurnButtons(show_notification, side)
             or G_reader_settings:isTrue("input_invert_right_page_turn_keys") then
             new_text = _("Page-turn buttons inverted.")
         else
-            new_text = _("Page-turn buttons no longer inverted inverted.")
+            new_text = _("Page-turn buttons no longer inverted.")
         end
         Notification:notify(new_text)
     end
