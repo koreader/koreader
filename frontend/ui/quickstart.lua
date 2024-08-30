@@ -85,9 +85,9 @@ else
 You can access the complete user manual from [our GitHub page](https://github.com/koreader/koreader).
 ]])
 end
-..
+-- User interface
 if Device:hasScreenKB() then
-    _([[## User interface <a id="ui"></a>
+    quickstart_guide = quickstart_guide .. _([[## User interface <a id="ui"></a>
 
 <div class="img-block">![Touch zones](resources/quickstart/kindle4.png)</div>
 
@@ -95,7 +95,7 @@ if Device:hasScreenKB() then
 - The **STATUS BAR** can be set to show a multitude of information regarding your reading progress or device state.
 ]])
 elseif Device:hasSymKey() then
-    _([[## User interface <a id="ui"></a>
+    quickstart_guide = quickstart_guide .. _([[## User interface <a id="ui"></a>
 
 <div class="img-block">![Touch zones](resources/quickstart/kindle3.png)</div>
 
@@ -103,7 +103,7 @@ elseif Device:hasSymKey() then
 - The **STATUS BAR** can be set to show a multitude of information regarding your reading progress or device state.
 ]])
 else
-    _([[## User interface <a id="ui"></a>
+    quickstart_guide = quickstart_guide .. _([[## User interface <a id="ui"></a>
 
 <div class="img-block">![Touch zones](resources/quickstart/touchzones.png)</div>
 
@@ -111,9 +111,9 @@ else
 - The **STATUS BAR** zone can be used to cycle between STATUS BAR items if one item is visible. This will also hide and show the STATUS BAR if you tap enough times.
 ]])
 end
-..
+-- User interface tips
 if Device:hasScreenKB() then
-    _([[## User interface tips <a id="uitips"></a>
+    quickstart_guide = quickstart_guide .. _([[## User interface tips <a id="uitips"></a>
 
 - You can change the interface language using:
 
@@ -139,7 +139,7 @@ if Device:hasScreenKB() then
 > **Menu ➔ ![Typesettings](resources/icons/mdlight/appbar.typeset.svg) ➔ Selection on text**
 ]])
 elseif Device:hasSymKey() then
-    _([[## User interface tips <a id="uitips"></a>
+    quickstart_guide = quickstart_guide .. _([[## User interface tips <a id="uitips"></a>
 
 - You can change the interface language using:
 
@@ -165,7 +165,7 @@ elseif Device:hasSymKey() then
 > **Menu ➔ ![Typesettings](resources/icons/mdlight/appbar.typeset.svg) ➔ Selection on text**
 ]])
 else
-    _([[## User interface tips <a id="uitips"></a>
+    quickstart_guide = quickstart_guide .. _([[## User interface tips <a id="uitips"></a>
 
 - You can change the interface language using:
 
@@ -192,9 +192,9 @@ else
 > **TOP MENU ➔ ![Navigation](resources/icons/mdlight/appbar.navigation.svg) ➔ Skim document**
 ]])
 end
-..
+-- Accessing files
 if Device:hasScreenKB() or Device:hasSymKey() then
-    _([[## Accessing files <a id="afiles"></a>
+    quickstart_guide = quickstart_guide .. _([[## Accessing files <a id="afiles"></a>
 
 The following methods are available for accessing your books and articles:
 
@@ -207,7 +207,7 @@ You can also set KOReader to open with any of these dialogs on startup via:
 > **Menu (in File Browser) ➔ ![Filebrowser](resources/icons/mdlight/appbar.filebrowser.svg) ➔ Start with**
 ]])
 else
-    _([[## Accessing files <a id="afiles"></a>
+    quickstart_guide = quickstart_guide .. _([[## Accessing files <a id="afiles"></a>
 
 The following methods are available for accessing your books and articles:
 
@@ -222,8 +222,8 @@ You can also set KOReader to open with any of these dialogs on startup via:
 > **TOP MENU (in File Browser) ➔ ![Filebrowser](resources/icons/mdlight/appbar.filebrowser.svg) ➔ Start with**
 ]])
 end
-..
-_([[## Transferring files <a id="tfiles"></a>
+-- TRansferring files
+quickstart_guide = quickstart_guide .. _([[## Transferring files <a id="tfiles"></a>
 
 In addition to transferring files the same way you would with the built-in reader application, other options are available depending on your device:
 
@@ -234,9 +234,9 @@ In addition to transferring files the same way you would with the built-in reade
 5. News downloader
 6. Wallabag
 ]])
-..
+-- Frontlight (shortcuts on NT)
 if Device:hasScreenKB() then
-    _([[## Shortcuts <a id="short"></a>
+    quickstart_guide = quickstart_guide .. _([[## Shortcuts <a id="short"></a>
 
 The following is a non-exhaustive list of shortcuts available.
 
@@ -259,7 +259,7 @@ When using a virtual keyboard:
 - **ScreenKB** + **Back**: Delete char
 ]])
 elseif Device:hasSymKey() then
-    _([[## Shortcuts <a id="short"></a>
+    quickstart_guide = quickstart_guide .. _([[## Shortcuts <a id="short"></a>
 
 The following is a non-exhaustive list of shortcuts available.
 
@@ -284,15 +284,15 @@ When using a virtual keyboard:
 - **Sym** + **Alphabet keys**: symbols, numbers and special characters
 ]])
 else
-    _([[## Frontlight/backlight <a id="flight"></a>
+    quickstart_guide = quickstart_guide .. _([[## Frontlight/backlight <a id="flight"></a>
 
 You can control your screen light via this menu. If you have warm lighting (normal white LEDs+orange ones) you can control them separately from this dialog:
 
 > **TOP MENU ➔ ![Settings](resources/icons/mdlight/appbar.settings.svg) ➔ Frontlight**
 ]])
 end
-..
-_([[## While reading <a id="reading"></a>
+-- While reading
+quickstart_guide = quickstart_guide .. _([[## While reading <a id="reading"></a>
 
 <div class="table"><div>
 
@@ -326,8 +326,8 @@ Change many formatting options
 
 </div></div>
 ]])
-..
-_([[## Installing dictionaries <a id="dicts"></a>
+-- Dictionaries
+quickstart_guide = quickstart_guide .. _([[## Installing dictionaries <a id="dicts"></a>
 
 KOReader supports dictionary lookup in EPUB and even in scanned PDF/DJVU documents. To see the dictionary definition or translation, tap and hold a word.
 
@@ -335,8 +335,8 @@ To use the dictionary lookup function, first you need to install one or more dic
 
 **TOP MENU ➔ ![Search](resources/icons/mdlight/appbar.search.svg) ➔ Dictionary Settings > Download dictionaries**
 ]])
-..
-T(_([[## More info <a id="more"></a>
+-- More information
+quickstart_guide = quickstart_guide .. T(_([[## More info <a id="more"></a>
 
 You can find more information on our GitHub page
 
