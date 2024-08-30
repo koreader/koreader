@@ -276,6 +276,7 @@ function ListMenuItem:update()
             scale_factor = 0,
             width = dimen.h,
             height = dimen.h,
+            original_in_nightmode = false,
         })
 
         local pad_width = Screen:scaleBySize(10) -- on the left, in between, and on the right
@@ -412,6 +413,12 @@ function ListMenuItem:update()
             -- We use a cache (cleaned at end of this browsing session) to store
             -- page, percent read and book status from sidecar files, to avoid
             -- re-parsing them when re-rendering a visited page
+
+            local finished_string = "Finished"
+            local abandoned_string = "On Hold"
+            local read_string = "Read"
+            local unread_string = "New"
+
             if not self.menu.cover_info_cache then
                 self.menu.cover_info_cache = {}
             end
@@ -439,11 +446,6 @@ function ListMenuItem:update()
                 fileinfo_str = mark .. BD.wrap(filetype) .. "  " .. BD.wrap(self.mandatory)
             end
             -- right widget, second line
-            local finished_string = "Finished"
-            local abandoned_string = "On Hold"
-            local read_string = "Read"
-            local unread_string = "New"
-
             if status == "complete" then
                 progress_str = finished_string
             elseif status == "abandoned" then
@@ -477,7 +479,8 @@ function ListMenuItem:update()
                     width = Screen:scaleBySize(23),
                     height = Screen:scaleBySize(23),
                     scale_factor = 0,
-                    alpha = true
+                    alpha = true,
+                    original_in_nightmode = false,
                 })
 
                 local fn_pages = tonumber(fn_page_count)
@@ -500,7 +503,7 @@ function ListMenuItem:update()
                 local progress_text = ""
                 if status == "complete" then
                     progress_bar.percentage = 1
-                    progress_text = "Finished"
+                    progress_text = finished_string
                     local progress_dimen =  Geom:new{
                         x = 0,
                         y = 0,
@@ -522,15 +525,15 @@ function ListMenuItem:update()
                                                         },
                                                     })
                 elseif status == "abandoned" then
-                    progress_text = "On Hold"
+                    progress_text = abandoned_string
                     progress_bar.percentage = 1
                     table.insert(progressbar_items, progress_bar)
                 elseif percent_finished then
-                    progress_text = tostring(math.floor(percent_finished * 100)) .. "% Read"
+                    progress_text = tostring(math.floor(percent_finished * 100)) .. "% " .. read_string
                     progress_bar.percentage = percent_finished
                     table.insert(progressbar_items, progress_bar)
                 else
-                    progress_text = "Unread"
+                    progress_text = unread_string
                     table.insert(progressbar_items, progress_bar)
                 end
 
