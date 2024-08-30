@@ -47,9 +47,10 @@ div.table > div > *:nth-child(2) { text-align: left; hyphens: none; background-c
 div.table > div > *:nth-child(3) { white-space: nowrap; }
 ]]
 
-local quickstart_guide
+local quickstart_guide = {}
 if Device:hasScreenKB() or Device:hasSymKey() then
-    quickstart_guide = _([[
+    -- On Non-Touch kindle, not showing "Frontlight", showing specific section "Shortcuts"
+    table.insert(quickstart_guide, _([[
 <div class="logo">![KOReader](resources/koreader.svg)</div>
 
 # Quickstart guide
@@ -66,8 +67,9 @@ if Device:hasScreenKB() or Device:hasSymKey() then
 ---
 You can access the complete user manual from [our GitHub page](https://github.com/koreader/koreader).
 ]])
+    ) --insert toc
 else
-    quickstart_guide = _([[
+    table.insert(quickstart_guide, _([[
 <div class="logo">![KOReader](resources/koreader.svg)</div>
 
 # Quickstart guide
@@ -84,36 +86,44 @@ else
 ---
 You can access the complete user manual from [our GitHub page](https://github.com/koreader/koreader).
 ]])
+    ) -- insert toc
 end
+
 -- User interface
 if Device:hasScreenKB() then
-    quickstart_guide = quickstart_guide .. _([[## User interface <a id="ui"></a>
+    -- Use correct k4 illustration and appropriate button mapping
+    table.insert(quickstart_guide, _([[## User interface <a id="ui"></a>
 
 <div class="img-block">![Touch zones](resources/quickstart/kindle4.png)</div>
 
 - To show the **TOP MENU** or **BOTTOM MENU** press the **Menu** or **Press** keys respectively.
 - The **STATUS BAR** can be set to show a multitude of information regarding your reading progress or device state.
 ]])
+    ) -- inset user interface
 elseif Device:hasSymKey() then
-    quickstart_guide = quickstart_guide .. _([[## User interface <a id="ui"></a>
+    -- Use correct k3 illustration and appropriate button mapping
+    table.insert(quickstart_guide, _([[## User interface <a id="ui"></a>
 
 <div class="img-block">![Touch zones](resources/quickstart/kindle3.png)</div>
 
 - To show the **TOP MENU** or **BOTTOM MENU** press the **Menu** or **Aa** keys respectively.
 - The **STATUS BAR** can be set to show a multitude of information regarding your reading progress or device state.
 ]])
+    ) -- insert user interface
 else
-    quickstart_guide = quickstart_guide .. _([[## User interface <a id="ui"></a>
+    table.insert(quickstart_guide, _([[## User interface <a id="ui"></a>
 
 <div class="img-block">![Touch zones](resources/quickstart/touchzones.png)</div>
 
 - To show the **TOP MENU** or **BOTTOM MENU** you can click the indicated zones. You can click or swipe down the upper zone to show the **TOP MENU**.
 - The **STATUS BAR** zone can be used to cycle between STATUS BAR items if one item is visible. This will also hide and show the STATUS BAR if you tap enough times.
 ]])
+    ) -- insert user interface
 end
+
 -- User interface tips
 if Device:hasScreenKB() then
-    quickstart_guide = quickstart_guide .. _([[## User interface tips <a id="uitips"></a>
+    table.insert(quickstart_guide, _([[## User interface tips <a id="uitips"></a>
 
 - You can change the interface language using:
 
@@ -138,8 +148,9 @@ if Device:hasScreenKB() then
 
 > **Menu ➔ ![Typesettings](resources/icons/mdlight/appbar.typeset.svg) ➔ Selection on text**
 ]])
+    ) -- insert UI tips
 elseif Device:hasSymKey() then
-    quickstart_guide = quickstart_guide .. _([[## User interface tips <a id="uitips"></a>
+    table.insert(quickstart_guide, _([[## User interface tips <a id="uitips"></a>
 
 - You can change the interface language using:
 
@@ -164,8 +175,9 @@ elseif Device:hasSymKey() then
 
 > **Menu ➔ ![Typesettings](resources/icons/mdlight/appbar.typeset.svg) ➔ Selection on text**
 ]])
+    ) -- insert UI tips
 else
-    quickstart_guide = quickstart_guide .. _([[## User interface tips <a id="uitips"></a>
+    table.insert(quickstart_guide, _([[## User interface tips <a id="uitips"></a>
 
 - You can change the interface language using:
 
@@ -191,10 +203,13 @@ else
 
 > **TOP MENU ➔ ![Navigation](resources/icons/mdlight/appbar.navigation.svg) ➔ Skim document**
 ]])
+    ) -- insert UI tips
 end
+
 -- Accessing files
 if Device:hasScreenKB() or Device:hasSymKey() then
-    quickstart_guide = quickstart_guide .. _([[## Accessing files <a id="afiles"></a>
+    -- This NT version removes mentions of gestures
+    table.insert(quickstart_guide, _([[## Accessing files <a id="afiles"></a>
 
 The following methods are available for accessing your books and articles:
 
@@ -206,8 +221,9 @@ You can also set KOReader to open with any of these dialogs on startup via:
 
 > **Menu (in File Browser) ➔ ![Filebrowser](resources/icons/mdlight/appbar.filebrowser.svg) ➔ Start with**
 ]])
+    ) -- insert Accessing files
 else
-    quickstart_guide = quickstart_guide .. _([[## Accessing files <a id="afiles"></a>
+    table.insert(quickstart_guide, _([[## Accessing files <a id="afiles"></a>
 
 The following methods are available for accessing your books and articles:
 
@@ -221,9 +237,11 @@ You can also set KOReader to open with any of these dialogs on startup via:
 
 > **TOP MENU (in File Browser) ➔ ![Filebrowser](resources/icons/mdlight/appbar.filebrowser.svg) ➔ Start with**
 ]])
+    ) -- insert accessing files
 end
--- TRansferring files
-quickstart_guide = quickstart_guide .. _([[## Transferring files <a id="tfiles"></a>
+
+-- Transferring files
+table.insert(quickstart_guide, _([[## Transferring files <a id="tfiles"></a>
 
 In addition to transferring files the same way you would with the built-in reader application, other options are available depending on your device:
 
@@ -234,9 +252,11 @@ In addition to transferring files the same way you would with the built-in reade
 5. News downloader
 6. Wallabag
 ]])
+) -- insert
+
 -- Frontlight (shortcuts on NT)
 if Device:hasScreenKB() then
-    quickstart_guide = quickstart_guide .. _([[## Shortcuts <a id="short"></a>
+    table.insert(quickstart_guide, _([[## Shortcuts <a id="short"></a>
 
 The following is a non-exhaustive list of shortcuts available.
 
@@ -258,8 +278,9 @@ When using a virtual keyboard:
 - **ScreenKB** + **Home**: Toggle virtual keyboard on/off
 - **ScreenKB** + **Back**: Delete char
 ]])
+    ) -- insert shortcuts
 elseif Device:hasSymKey() then
-    quickstart_guide = quickstart_guide .. _([[## Shortcuts <a id="short"></a>
+    table.insert(quickstart_guide, _([[## Shortcuts <a id="short"></a>
 
 The following is a non-exhaustive list of shortcuts available.
 
@@ -283,16 +304,19 @@ When using a virtual keyboard:
 - **Shift** + **Back**: Delete whole line
 - **Sym** + **Alphabet keys**: symbols, numbers and special characters
 ]])
+    ) -- insert shortcuts
 else
-    quickstart_guide = quickstart_guide .. _([[## Frontlight/backlight <a id="flight"></a>
+    table.insert(quickstart_guide, _([[## Frontlight/backlight <a id="flight"></a>
 
 You can control your screen light via this menu. If you have warm lighting (normal white LEDs+orange ones) you can control them separately from this dialog:
 
 > **TOP MENU ➔ ![Settings](resources/icons/mdlight/appbar.settings.svg) ➔ Frontlight**
 ]])
+    ) -- insert frontlight
 end
+
 -- While reading
-quickstart_guide = quickstart_guide .. _([[## While reading <a id="reading"></a>
+table.insert(quickstart_guide, _([[## While reading <a id="reading"></a>
 
 <div class="table"><div>
 
@@ -326,8 +350,10 @@ Change many formatting options
 
 </div></div>
 ]])
+) -- insert while reading
+
 -- Dictionaries
-quickstart_guide = quickstart_guide .. _([[## Installing dictionaries <a id="dicts"></a>
+table.insert(quickstart_guide, _([[## Installing dictionaries <a id="dicts"></a>
 
 KOReader supports dictionary lookup in EPUB and even in scanned PDF/DJVU documents. To see the dictionary definition or translation, tap and hold a word.
 
@@ -335,8 +361,10 @@ To use the dictionary lookup function, first you need to install one or more dic
 
 **TOP MENU ➔ ![Search](resources/icons/mdlight/appbar.search.svg) ➔ Dictionary Settings > Download dictionaries**
 ]])
+) -- insert dictionaries
+
 -- More information
-quickstart_guide = quickstart_guide .. T(_([[## More info <a id="more"></a>
+table.insert(quickstart_guide, T(_([[## More info <a id="more"></a>
 
 You can find more information on our GitHub page
 
@@ -350,6 +378,9 @@ You can find other KOReader users on MobileRead forums
 <div class="generated">Generated by KOReader %1.</div>
 ]]),
     rev)
+) -- insert more information
+
+quickstart_guide = table.concat(quickstart_guide, "\n")
 
 --[[-- Returns `true` if shown, `false` if the quickstart guide hasn't been
 shown yet or if display is forced through a higher version number than when
