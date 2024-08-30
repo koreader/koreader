@@ -313,12 +313,15 @@ end
 function DeviceListener:onSwapPageTurnButtons(show_notification, side)
     local key_name
     if side == "left" then
+        G_reader_settings:flipNilOrFalse("input_invert_left_page_turn_keys")
         Device:invertButtonsLeft()
         key_name = _("Left-side page-turn buttons")
     elseif side == "right" then
+        G_reader_settings:flipNilOrFalse("input_invert_right_page_turn_keys")
         Device:invertButtonsRight()
         key_name = _("Right-side page-turn buttons")
     else
+        G_reader_settings:flipNilOrFalse("input_invert_page_turn_keys")
         Device:invertButtons()
         key_name = _("Page-turn buttons")
     end
