@@ -30,6 +30,7 @@ local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local MyClipping = require("clip")
 local NetworkMgr = require("ui/network/manager")
+local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
@@ -236,28 +237,49 @@ function Exporter:exportClippings(clippings)
 end
 
 function Exporter:addToMainMenu(menu_items)
-    local submenu = {}
-    local sharemenu = {}
+    local formats_submenu, share_submenu, styles_submenu = {}, {}, {}
     for k, v in pairs(self.targets) do
-        submenu[#submenu + 1] = v:getMenuTable()
+        formats_submenu[#formats_submenu + 1] = v:getMenuTable()
         if v.shareable then
-            sharemenu[#sharemenu + 1] = { text = T(_("Share as %1."), v.name), callback = function()
-                local clippings = self:getDocumentClippings()
-                local document
-                for _, notes in pairs(clippings) do
-                    document = notes or {}
-                end
-
-                if #document > 0 then
-                    v:share(document)
-                end
-            end
+            share_submenu[#share_submenu + 1] = {
+                text = T(_("Share as %1"), v.name),
+                callback = function()
+                    local clippings = self:getDocumentClippings()
+                    local document
+                    for _, notes in pairs(clippings) do
+                        document = notes or {}
+                    end
+                    if #document > 0 then
+                        v:share(document)
+                    end
+                end,
             }
         end
     end
-    table.sort(submenu, function(v1, v2)
+    table.sort(formats_submenu, function(v1, v2)
         return v1.text < v2.text
     end)
+    local settings = G_reader_settings:readSetting("exporter", {})
+    for i, v in ipairs(ReaderHighlight.getHighlightStyles()) do
+        local style = v[2]
+        styles_submenu[i] = {
+            text = v[1],
+            checked_func = function() -- all styles checked by default
+                return not (settings.highlight_styles and settings.highlight_styles[style] == false)
+            end,
+            callback = function()
+                if settings.highlight_styles and settings.highlight_styles[style] == false then
+                    settings.highlight_styles[style] = nil
+                    if next(settings.highlight_styles) == nil then
+                        settings.highlight_styles = nil
+                    end
+                else
+                    settings.highlight_styles = settings.highlight_styles or {}
+                    settings.highlight_styles[style] = false
+                end
+            end,
+        }
+    end
     local menu = {
         text = _("Export highlights"),
         sub_item_table = {
@@ -271,18 +293,22 @@ function Exporter:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Export all notes in your library"),
+                text = _("Export all notes in all books in history"),
                 enabled_func = function()
                     return self:isReady()
                 end,
                 callback = function()
                     self:exportAllNotes()
                 end,
-                separator = #sharemenu == 0,
+                separator = #share_submenu == 0,
             },
             {
                 text = _("Choose formats and services"),
-                sub_item_table = submenu,
+                sub_item_table = formats_submenu,
+            },
+            {
+                text = _("Choose highlight styles"),
+                sub_item_table = styles_submenu,
             },
             {
                 text = _("Choose export folder"),
@@ -291,10 +317,10 @@ function Exporter:addToMainMenu(menu_items)
                     self:chooseFolder()
                 end,
             },
-        }
+        },
     }
-    if #sharemenu > 0 then
-        table.sort(sharemenu, function(v1, v2)
+    if #share_submenu > 0 then
+        table.sort(share_submenu, function(v1, v2)
             return v1.text < v2.text
         end)
         table.insert(menu.sub_item_table, 3, {
@@ -302,7 +328,7 @@ function Exporter:addToMainMenu(menu_items)
             enabled_func = function()
                 return self:isDocReady()
             end,
-            sub_item_table = sharemenu,
+            sub_item_table = share_submenu,
             separator = true,
         })
     end
