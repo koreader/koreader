@@ -310,7 +310,7 @@ function DeviceListener:onToggleFlashOnPagesWithImages()
     G_reader_settings:flipNilOrTrue("refresh_on_pages_with_images")
 end
 
-function DeviceListener:onSwapPageTurnButtons(show_notification)
+function DeviceListener:onSwapPageTurnButtons(show_notification, side)
     local key_name
     if side == "left" then
         Device:invertButtonsLeft()
