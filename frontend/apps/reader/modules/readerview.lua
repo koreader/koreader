@@ -95,6 +95,7 @@ function ReaderView:init()
         temp_drawer = "invert",
         temp = {},
         saved_drawer = "lighten",
+        saved_color = Screen:isColorEnabled() and "yellow" or "gray",
         indicator = nil, -- geom: non-touch highlight position indicator: {x = 50, y=50}
     }
     self.page_states = {}
@@ -212,7 +213,8 @@ function ReaderView:paintTo(bb, x, y)
     -- mark last read area of overlapped pages
     if not self.dim_area:isEmpty() and self:isOverlapAllowed() then
         if self.page_overlap_style == "dim" then
-            bb:dimRect(self.dim_area.x, self.dim_area.y, self.dim_area.w, self.dim_area.h)
+            -- NOTE: "dim", as in make black text fainter, e.g., lighten the rect
+            bb:lightenRect(self.dim_area.x, self.dim_area.y, self.dim_area.w, self.dim_area.h)
         else
             -- Paint at the proper y origin depending on whether we paged forward (dim_area.y == 0) or backward
             local paint_y = self.dim_area.y == 0 and self.dim_area.h or self.dim_area.y
@@ -229,9 +231,10 @@ function ReaderView:paintTo(bb, x, y)
         end
     end
 
-    -- draw saved highlight
+    -- draw saved highlight (will return true if any of them are in color)
+    local colorful
     if self.highlight_visible then
-        self:drawSavedHighlight(bb, x, y)
+        colorful = self:drawSavedHighlight(bb, x, y)
     end
     -- draw temporary highlight
     if self.highlight.temp then
@@ -258,8 +261,9 @@ function ReaderView:paintTo(bb, x, y)
     -- stop activity indicator
     self.ui:handleEvent(Event:new("StopActivityIndicator"))
 
-    -- Most pages should not require dithering
-    self.dialog.dithered = nil
+    -- Most pages should not require dithering, but the dithering flag is also used to engage Kaleido waveform modes,
+    -- so we'll set the flag to true if any of our drawn highlights were in color.
+    self.dialog.dithered = colorful
     -- For KOpt, let the user choose.
     if self.ui.paging then
         if self.document.hw_dithering then
@@ -528,24 +532,29 @@ end
 function ReaderView:drawSavedHighlight(bb, x, y)
     if #self.ui.annotation.annotations == 0 then return end
     if self.ui.paging then
-        self:drawPageSavedHighlight(bb, x, y)
+        return self:drawPageSavedHighlight(bb, x, y)
     else
-        self:drawXPointerSavedHighlight(bb, x, y)
+        return self:drawXPointerSavedHighlight(bb, x, y)
     end
 end
 
 function ReaderView:drawPageSavedHighlight(bb, x, y)
+    local colorful
     local pages = self:getCurrentPageList()
     for _, page in ipairs(pages) do
         local items = self.ui.highlight:getPageSavedHighlights(page)
         for _, item in ipairs(items) do
             local boxes = self.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
             if boxes then
+                local color = Blitbuffer.colorFromName(item.color)
+                if color and not Blitbuffer.isColor8(color) then
+                    colorful = true
+                end
                 local draw_note_mark = item.note and self.highlight.note_mark
                 for _, box in ipairs(boxes) do
                     local rect = self:pageToScreenTransform(page, box)
                     if rect then
-                        self:drawHighlightRect(bb, x, y, rect, item.drawer, draw_note_mark)
+                        self:drawHighlightRect(bb, x, y, rect, item.drawer, color, draw_note_mark)
                         if draw_note_mark and self.highlight.note_mark == "sidemark" then
                             draw_note_mark = false -- side mark in the first line only
                         end
@@ -554,6 +563,7 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
             end
         end
     end
+    return colorful
 end
 
 function ReaderView:drawXPointerSavedHighlight(bb, x, y)
@@ -571,20 +581,25 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
     else
         cur_view_bottom = cur_view_top + self.ui.dimen.h
     end
+    local colorful
     for _, item in ipairs(self.ui.annotation.annotations) do
         if item.drawer then
             -- document:getScreenBoxesFromPositions() is expensive, so we
             -- first check if this item is on current page
             local start_pos = self.document:getPosFromXPointer(item.pos0)
-            if start_pos > cur_view_bottom then return end -- this and all next highlights are after the current page
+            if start_pos > cur_view_bottom then return colorful end -- this and all next highlights are after the current page
             local end_pos = self.document:getPosFromXPointer(item.pos1)
             if end_pos >= cur_view_top then
                 local boxes = self.document:getScreenBoxesFromPositions(item.pos0, item.pos1, true) -- get_segments=true
                 if boxes then
+                    local color = Blitbuffer.colorFromName(item.color)
+                    if color and not Blitbuffer.isColor8(color) then
+                        colorful = true
+                    end
                     local draw_note_mark = item.note and self.highlight.note_mark
                     for _, box in ipairs(boxes) do
                         if box.h ~= 0 then
-                            self:drawHighlightRect(bb, x, y, box, item.drawer, draw_note_mark)
+                            self:drawHighlightRect(bb, x, y, box, item.drawer, color, draw_note_mark)
                             if draw_note_mark and self.highlight.note_mark == "sidemark" then
                                 draw_note_mark = false -- side mark in the first line only
                             end
@@ -594,25 +609,58 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
             end
         end
     end
+    return colorful
 end
 
-function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, draw_note_mark)
+function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note_mark)
     local x, y, w, h = rect.x, rect.y, rect.w, rect.h
     if drawer == "lighten" then
-        bb:lightenRect(x, y, w, h, self.highlight.lighten_factor)
+        if not color then
+            bb:darkenRect(x, y, w, h, self.highlight.lighten_factor)
+        else
+            if bb:getInverse() == 1 then
+                -- MUL doesn't really work on a black background, so, switch to OVER if we're in software nightmode...
+                -- NOTE: If we do *not* invert the color here, it *will* get inverted by the blitter given that the target bb is inverted.
+                --       While not particularly pretty, this (roughly) matches with hardware nightmode, *and* how MuPDF renders highlights...
+                --       But it's *really* not pretty (https://github.com/koreader/koreader/pull/11044#issuecomment-1902886069), so we'll fix it ;p.
+                local c = Blitbuffer.ColorRGB32(color.r, color.g, color.b, 0xFF * self.highlight.lighten_factor):invert()
+                bb:blendRectRGB32(x, y, w, h, c)
+            else
+                bb:multiplyRectRGB(x, y, w, h, color)
+            end
+        end
     elseif drawer == "underscore" then
-        bb:paintRect(x, y + h - 1, w, Size.line.thick, Blitbuffer.COLOR_GRAY_4)
+        if not color then
+            color = Blitbuffer.COLOR_GRAY_4
+        end
+        if Blitbuffer.isColor8(color) then
+            bb:paintRect(x, y + h - 1, w, Size.line.thick, color)
+        else
+            bb:paintRectRGB32(x, y + h - 1, w, Size.line.thick, color)
+        end
     elseif drawer == "strikeout" then
+        if not color then
+            color = Blitbuffer.COLOR_BLACK
+        end
         local line_y = y + math.floor(h / 2) + 1
         if self.ui.paging then
             line_y = line_y + 2
         end
-        bb:paintRect(x, line_y, w, Size.line.medium, Blitbuffer.COLOR_BLACK)
+        if Blitbuffer.isColor8(color) then
+            bb:paintRect(x, line_y, w, Size.line.medium, color)
+        else
+            bb:paintRectRGB32(x, line_y, w, Size.line.medium, color)
+        end
     elseif drawer == "invert" then
         bb:invertRect(x, y, w, h)
     end
     if draw_note_mark then
+        if not color then
+            color = Blitbuffer.COLOR_BLACK
+        end
         if self.highlight.note_mark == "underline" then
+            -- With most annotation styles, we'd risk making this invisible if we used the same color,
+            -- so, always draw this in black.
             bb:paintRect(x, y + h - 1, w, Size.line.medium, Blitbuffer.COLOR_BLACK)
         else
             local note_mark_pos_x
@@ -624,7 +672,11 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, draw_note_mark)
                 note_mark_pos_x = self.note_mark_pos_x2
             end
             if self.highlight.note_mark == "sideline" then
-                bb:paintRect(note_mark_pos_x, y, self.note_mark_line_w, h, Blitbuffer.COLOR_BLACK)
+                if Blitbuffer.isColor8(color) then
+                    bb:paintRect(note_mark_pos_x, y, self.note_mark_line_w, h, color)
+                else
+                    bb:paintRectRGB32(note_mark_pos_x, y, self.note_mark_line_w, h, color)
+                end
             elseif self.highlight.note_mark == "sidemark" then
                 self.note_mark_sign:paintTo(bb, note_mark_pos_x, y)
             end

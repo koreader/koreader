@@ -64,6 +64,7 @@ local RadioButtonWidget = FocusManager:extend{
     default_provider = nil,
     extra_text = nil,
     extra_callback = nil,
+    colorful = false, -- should be set to true if any of the buttons' text is colorful
     -- output
     provider = nil, -- provider of the checked button
     row = nil, -- row of the checked button
@@ -91,6 +92,27 @@ function RadioButtonWidget:init()
             }
         },
     }
+
+    -- Check if any of our buttons use color text...
+    -- NOTE: There are so few callers that require this, that we just let them set the colorful field themselves...
+    --[[
+    for row, t in ipairs(self.radio_buttons) do
+        for col, w in ipairs(t) do
+            if w.fgcolor and not Blitbuffer.isColor8(w.fgcolor) then
+                self.colorful = true
+                break
+            end
+            if w.bgcolor and not Blitbuffer.isColor8(w.bgcolor) then
+                self.colorful = true
+                break
+            end
+        end
+        if self.colorful then
+            break
+        end
+    end
+    --]]
+
     self:update()
 end
 
@@ -214,8 +236,14 @@ function RadioButtonWidget:update()
         },
         self.movable,
     }
+
+    -- If the device doesn't support Kaleido wfm, or color is disabled, don't bother tweaking the wfm
+    if self.colorful and not (Screen:isColorEnabled() and Device:hasKaleidoWfm()) then
+        self.colorful = false
+    end
+
     UIManager:setDirty(self, function()
-        return "ui", self.widget_frame.dimen
+        return self.colorful and "full" or "ui", self.widget_frame.dimen
     end)
 end
 
@@ -242,7 +270,7 @@ end
 
 function RadioButtonWidget:onShow()
     UIManager:setDirty(self, function()
-        return "ui", self.widget_frame.dimen
+        return self.colorful and "full" or "ui", self.widget_frame.dimen
     end)
     return true
 end

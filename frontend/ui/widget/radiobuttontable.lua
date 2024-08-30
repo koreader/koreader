@@ -66,6 +66,10 @@ function RadioButtonTable:init()
                 radio = true,
                 provider = btn_entry.provider,
 
+                bold = btn_entry.bold,
+                fgcolor = btn_entry.fgcolor,
+                bgcolor = btn_entry.bgcolor,
+
                 width = (self.width - sizer_space) / column_cnt,
                 bordersize = 0,
                 margin = 0,

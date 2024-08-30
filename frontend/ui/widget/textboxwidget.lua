@@ -836,11 +836,18 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     h = h + self.line_glyph_extra_height
     if self._bb then self._bb:free() end
     local bbtype = nil
-    if self.line_num_to_image and self.line_num_to_image[start_row_idx] then
+    local color_fg = not Blitbuffer.isColor8(self.fgcolor)
+    local color_bg = not Blitbuffer.isColor8(self.bgcolor)
+    -- Color, whether from images or fg or bg, means we'll need an RGB32 buffer (if it makes sense, e.g., on a color screen).
+    if (self.line_num_to_image and self.line_num_to_image[start_row_idx]) or color_fg or color_bg then
         bbtype = Screen:isColorEnabled() and Blitbuffer.TYPE_BBRGB32 or Blitbuffer.TYPE_BB8
     end
     self._bb = Blitbuffer.new(self.width, h, bbtype)
-    self._bb:fill(self.bgcolor)
+    if not color_bg then
+        self._bb:fill(self.bgcolor)
+    else
+        self._bb:paintRectRGB32(0, 0, self._bb:getWidth(), self._bb:getHeight(), self.bgcolor)
+    end
 
     local y = self.line_glyph_baseline
     if self.use_xtext then
@@ -875,10 +882,17 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
                         if self._alt_color_for_rtl then
                             color = xglyph.is_rtl and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK
                         end
-                        self._bb:colorblitFrom(glyph.bb,
-                                    xglyph.x0 + glyph.l + xglyph.x_offset,
-                                    y - glyph.t - xglyph.y_offset,
-                                    0, 0, glyph.bb:getWidth(), glyph.bb:getHeight(), color)
+                        if not color_fg then
+                            self._bb:colorblitFrom(glyph.bb,
+                                        xglyph.x0 + glyph.l + xglyph.x_offset,
+                                        y - glyph.t - xglyph.y_offset,
+                                        0, 0, glyph.bb:getWidth(), glyph.bb:getHeight(), color)
+                        else
+                            self._bb:colorblitFromRGB32(glyph.bb,
+                                        xglyph.x0 + glyph.l + xglyph.x_offset,
+                                        y - glyph.t - xglyph.y_offset,
+                                        0, 0, glyph.bb:getWidth(), glyph.bb:getHeight(), color)
+                        end
                     end
                 end
             end
