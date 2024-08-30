@@ -80,7 +80,9 @@ local settingsList = {
     touch_input_off = {category="none", event="IgnoreTouchInput", arg=true, title=_("Disable touch input"), device=true, condition=Device:isTouchDevice()},
     toggle_touch_input = {category="none", event="IgnoreTouchInput", title=_("Toggle touch input"), device=true, separator=true, condition=Device:isTouchDevice()},
     ----
-    swap_page_turn_buttons = {category="none", event="SwapPageTurnButtons", arg=true, title=_("Invert page turn buttons"), device=true, condition=Device:hasKeys(), separator=true},
+    swap_left_page_turn_buttons = {category="none", event="SwapPageTurnButtons", args={true, "left"}, title=_("Invert left-side page-turn buttons"), device=true, condition= Device:hasDPad() and Device:useDPadAsActionKeys()},
+    swap_right_page_turn_buttons = {category="none", event="SwapPageTurnButtons", args={true, "right"}, title=_("Invert right-side page-turn buttons"), device=true, condition= Device:hasDPad() and Device:useDPadAsActionKeys()},
+    swap_page_turn_buttons = {category="none", event="SwapPageTurnButtons", arg=true, title=_("Invert page-turn buttons"), device=true, condition=Device:hasKeys(), separator=true},
     ----
     toggle_key_repeat = {category="none", event="ToggleKeyRepeat", title=_("Toggle key repeat"), device=true, condition=Device:hasKeys() and Device:canKeyRepeat(), separator=true},
     toggle_gsensor = {category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:hasGSensor()},
@@ -310,6 +312,8 @@ local dispatcher_menu_order = {
     "toggle_touch_input",
     ----
     "swap_page_turn_buttons",
+    "swap_left_page_turn_buttons",
+    "swap_right_page_turn_buttons",
     ----
     "toggle_key_repeat",
     "toggle_gsensor",
