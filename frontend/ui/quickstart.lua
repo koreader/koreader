@@ -265,10 +265,10 @@ The following is a non-exhaustive list of shortcuts available.
 
 When inside the reading module:
 
-- **T**: Table of contents
+- **T** or **Shift** + **Up**: Table of contents
 - **Shift** + **Right**: Add a bookmark
 - **Shift** + **Down**: Book map
-- **B**: Bookmarks, notes and highlights
+- **B** or **Shift** + **Left**: Bookmarks, notes and highlights
 - **Shift** + **Press**: Save current page to location history
 - **Shift** + **Home**: Toggle wifi on/off
 - **Shift** + **Back**: Switch to previosly opened book
