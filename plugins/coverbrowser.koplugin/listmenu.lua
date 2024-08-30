@@ -474,8 +474,8 @@ function ListMenuItem:update()
 
                 local trophy_widget = ImageWidget:new({
                     file = getSourceDir() .. "/icons/trophy.svg",
-                    width = Screen:scaleBySize(17),
-                    height = Screen:scaleBySize(17),
+                    width = Screen:scaleBySize(23),
+                    height = Screen:scaleBySize(23),
                     scale_factor = 0,
                     alpha = true
                 })
@@ -501,8 +501,26 @@ function ListMenuItem:update()
                 if status == "complete" then
                     progress_bar.percentage = 1
                     progress_text = "Finished"
-                    table.insert(progressbar_items, progress_bar)
-                    table.insert(progressbar_items, trophy_widget)
+                    local progress_dimen =  Geom:new{
+                        x = 0,
+                        y = 0,
+                        w = progress_bar:getSize().w + trophy_widget.width,
+                        --Make this the width of the progress bar then add the width of the trophy
+                        --Center the progress bar inside it and set the trophy to the far right 
+                        --The trophy will hang exactly halfway over the edge of the bar
+                        h = trophy_widget:getSize().h,
+                    }
+                    table.insert(progressbar_items, OverlapGroup:new{
+                                                        dimen = progress_dimen,
+                                                        CenterContainer:new{
+                                                            dimen = progress_dimen,
+                                                            progress_bar,
+                                                        },
+                                                        RightContainer:new{
+                                                            dimen = progress_dimen,
+                                                            trophy_widget,
+                                                        },
+                                                    })
                 elseif status == "abandoned" then
                     progress_text = "On Hold"
                     progress_bar.percentage = 1
