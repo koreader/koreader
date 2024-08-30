@@ -311,14 +311,23 @@ function DeviceListener:onToggleFlashOnPagesWithImages()
 end
 
 function DeviceListener:onSwapPageTurnButtons(show_notification)
-    G_reader_settings:flipNilOrFalse("input_invert_page_turn_keys")
-    Device:invertButtons()
+    local key_name
+    if side == "left" then
+        Device:invertButtonsLeft()
+        key_name = _("Left-side page-turn buttons")
+    elseif side == "right" then
+        Device:invertButtonsRight()
+        key_name = _("Right-side page-turn buttons")
+    else
+        Device:invertButtons()
+        key_name = _("Page-turn buttons")
+    end
     if show_notification then
         local new_text
         if G_reader_settings:isTrue("input_invert_page_turn_keys") then
-            new_text = _("Page-turn buttons inverted.")
+            new_text = key_name .. " " .. _("inverted.")
         else
-            new_text = _("Page-turn buttons no longer inverted.")
+            new_text = key_name .. " " .. _("no longer inverted.")
         end
         Notification:notify(new_text)
     end
