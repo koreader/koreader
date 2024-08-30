@@ -1054,6 +1054,7 @@ end
 function Kobo:setTouchEventHandler()
     if self.touch_snow_protocol then
         self.input.snow_protocol = true
+        self.input.handleTouchEv = self.input.handleTouchEvSnow
     elseif self.touch_phoenix_protocol then
         self.input.handleTouchEv = self.input.handleTouchEvPhoenix
     elseif not self:hasMultitouch() then

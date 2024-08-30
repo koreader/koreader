@@ -1538,6 +1538,7 @@ function KindleBasic3:init()
     -- so we have to rely on contact lift detection via BTN_TOUCH:0,
     -- c.f., https://github.com/koreader/koreader/issues/5070
     self.input.snow_protocol = true
+    self.input.handleTouchEv = self.input.handleTouchEvSnow
 end
 
 function KindlePaperWhite5:init()
