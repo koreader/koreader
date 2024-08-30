@@ -1770,6 +1770,10 @@ function ReaderHighlight:onCycleHighlightAction()
     return true
 end
 
+function ReaderHighlight.getHighlightStyles()
+    return highlight_style
+end
+
 function ReaderHighlight:getHighlightStyleString(style) -- for bookmark list
     for _, v in ipairs(highlight_style) do
         if v[2] == style then
