@@ -16,7 +16,6 @@ local PhysicalButtons = {
                 return G_reader_settings:isTrue("input_invert_page_turn_keys")
             end,
             callback = function()
-                G_reader_settings:flipNilOrFalse("input_invert_page_turn_keys")
                 UIManager:broadcastEvent(Event:new("SwapPageTurnButtons"))
             end,
             separator = true,
@@ -34,7 +33,6 @@ if Device:hasDPad() and Device:useDPadAsActionKeys() then
             return G_reader_settings:isTrue("input_invert_left_page_turn_keys")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("input_invert_left_page_turn_keys")
             UIManager:broadcastEvent(Event:new("SwapPageTurnButtons", false, "left"))
         end,
     })
@@ -47,7 +45,6 @@ if Device:hasDPad() and Device:useDPadAsActionKeys() then
             return G_reader_settings:isTrue("input_invert_right_page_turn_keys")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("input_invert_right_page_turn_keys")
             UIManager:broadcastEvent(Event:new("SwapPageTurnButtons", false, "right"))
         end,
         separator = true,
