@@ -1424,7 +1424,11 @@ function PageBrowserWidget:onTap(arg, ges)
                     local orig_bordersize = thumb_frame.bordersize
                     thumb_frame.bordersize = Size.border.thick * 2
                     local b_inc = thumb_frame.bordersize - orig_bordersize
-                    UIManager:widgetRepaint(thumb_frame, thumb_frame.dimen.x-b_inc, thumb_frame.dimen.y-b_inc)
+                    thumb_frame.dimen.x = thumb_frame.dimen.x - b_inc
+                    thumb_frame.dimen.y = thumb_frame.dimen.y - b_inc
+                    thumb_frame.dimen.w = thumb_frame.dimen.w + 2*b_inc
+                    thumb_frame.dimen.h = thumb_frame.dimen.h + 2*b_inc
+                    UIManager:widgetRepaint(thumb_frame, thumb_frame.dimen.x, thumb_frame.dimen.y)
                     Screen:refreshFast(thumb_frame.dimen.x, thumb_frame.dimen.y, thumb_frame.dimen.w, thumb_frame.dimen.h)
                         -- (refresh "fast" will make gray drawn black and may make the
                         -- thumbnail a little uglier - but this enhances the effect
