@@ -259,22 +259,6 @@ function TitleBar:init()
     else
         table.insert(self.title_group, self.title_widget)
     end
-    if self.subtitle_widget then
-        table.insert(self.title_group, VerticalSpan:new{width = self.title_subtitle_v_padding})
-        if self.align == "left" then
-            local span_width = self.title_h_padding
-            if not self.subtitle_fullwidth then
-                span_width = span_width + icon_reserved_width
-            end
-            self.inner_subtitle_group = HorizontalGroup:new{
-                HorizontalSpan:new{ width = span_width },
-                self.subtitle_widget,
-            }
-            table.insert(self.title_group, self.inner_subtitle_group)
-        else
-            table.insert(self.title_group, self.subtitle_widget)
-        end
-    end
     table.insert(self, self.title_group)
 
     -- This TitleBar widget is an OverlapGroup: all sub elements overlap,

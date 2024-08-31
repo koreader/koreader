@@ -1,22 +1,28 @@
+local Blitbuffer = require("ffi/blitbuffer")
+local BottomContainer = require("ui/widget/container/bottomcontainer")
 local ButtonDialog = require("ui/widget/buttondialog")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
+local OverlapGroup = require("ui/widget/overlapgroup")
+local Font = require("ui/font")
 local FileChooser = require("ui/widget/filechooser")
 local FileManager = require("apps/filemanager/filemanager")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local TitleBar = require("titlebar")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local FrameContainer = require("ui/widget/container/framecontainer")
-local Blitbuffer = require("ffi/blitbuffer")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Device = require("device")
-local Screen = Device.screen
 
+local Screen = Device.screen
 local BookInfoManager = require("bookinfomanager")
 
 -- This is a kind of "base class" for both MosaicMenu and ListMenu.
@@ -665,6 +671,73 @@ function CoverMenu:setupLayout()
 
 
     return true
+end
+
+function CoverMenu:menuInit()
+    CoverMenu._Menu_init_orig(self)
+
+    self.page_info = HorizontalGroup:new{
+        self.page_info_first_chev,
+        self.page_info_left_chev,
+        self.page_info_text,
+        self.page_info_right_chev,
+        self.page_info_last_chev,
+    }
+
+    --local subtitle_max_width = self.inner_dimen.width * 0.94
+
+    local footer = BottomContainer:new{
+        dimen = self.inner_dimen:copy(),
+        -- TextBoxWidget:new{
+        --     text = "Test",
+        --     alignment = "right",
+        --     --width = subtitle_max_width,
+        --     face = Font:getFace("xx_smallinfofont"),
+        -- },
+        self.page_info,
+    }
+
+
+    local page_return = BottomContainer:new{
+        dimen = self.inner_dimen:copy(),
+        WidgetContainer:new{
+            dimen = Geom:new{
+                x = 0, y = 0,
+                w = self.screen_w,
+                h = self.page_return_arrow:getSize().h,
+            },
+            self.return_button,
+        }
+    }
+    
+    local content = OverlapGroup:new{
+        -- This unique allow_mirroring=false looks like it's enough
+        -- to have this complex Menu, and all widgets based on it,
+        -- be mirrored correctly with RTL languages
+        allow_mirroring = false,
+        dimen = self.inner_dimen:copy(),
+        self.content_group,
+        page_return,
+        footer,
+    }
+
+    
+    self[1] = FrameContainer:new{
+        background = Blitbuffer.COLOR_WHITE,
+        bordersize = self.border_size,
+        padding = 0,
+        margin = 0,
+        radius = self.is_popout and math.floor(self.dimen.w * (1/20)) or 0,
+        content
+    }
+    
+    if self.item_table.current then
+        self.page = self:getPageNumber(self.item_table.current)
+    end
+    if not self.path_items then -- not FileChooser
+        self:updateItems(1, true)
+    end
+
 end
 
 return CoverMenu
