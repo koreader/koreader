@@ -194,13 +194,8 @@ function FileManagerHistory:onMenuHold(item)
             text = _("Delete"),
             enabled = not (item.dim or is_currently_opened),
             callback = function()
-                local function post_delete_callback()
-                    UIManager:close(self.histfile_dialog)
-                    self._manager:updateItemTable()
-                    self._manager.files_updated = true
-                end
                 local FileManager = require("apps/filemanager/filemanager")
-                FileManager:showDeleteFileDialog(file, post_delete_callback)
+                FileManager:showDeleteFileDialog(file, close_dialog_update_callback)
             end,
         },
         {
