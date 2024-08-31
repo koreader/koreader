@@ -247,6 +247,7 @@ function MyClipping:parseAnnotations(annotations, book)
                 note    = item.note and self:getText(item.note),
                 chapter = item.chapter,
                 drawer  = item.drawer,
+                color   = item.color,
             }
             table.insert(book, { clipping })
         end
