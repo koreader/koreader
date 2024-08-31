@@ -1286,9 +1286,12 @@ function ReaderHighlight:_getHighlightMenuAnchor()
     elseif position == "bottom" then
         anchor_y = self.screen_h - Size.padding.small
     else -- "gesture"
-        local text_box = self.ui.document:getWordFromPosition(self.gest_pos).sbox
-        if self.ui.paging then
-            text_box = self.view:pageToScreenTransform(self.ui.paging.current_page, text_box)
+        local text_box = self.ui.document:getWordFromPosition(self.gest_pos)
+        if text_box then
+            text_box = text_box.sbox
+            if text_box and self.ui.paging then
+                text_box = self.view:pageToScreenTransform(self.ui.paging.current_page, text_box)
+            end
         end
         if text_box == nil then return end -- fallback to "center"
         anchor_y = text_box.y + text_box.h + Size.padding.small -- do not stick to the box
