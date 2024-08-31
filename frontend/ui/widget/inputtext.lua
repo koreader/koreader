@@ -917,6 +917,7 @@ function InputText:delWord(left_to_cursor)
         return
     end
     local start_pos, end_pos = self:getStringPos(true, left_to_cursor)
+    start_pos = math.min(start_pos, end_pos)
     for i = end_pos, start_pos, -1 do
         table.remove(self.charlist, i)
     end
