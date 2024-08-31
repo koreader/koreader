@@ -546,7 +546,7 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
         for _, item in ipairs(items) do
             local boxes = self.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
             if boxes then
-                local color = Blitbuffer.colorFromName(item.color)
+                local color = item.color and Blitbuffer.colorFromName(item.color)
                 if color and not Blitbuffer.isColor8(color) then
                     colorful = true
                 end
@@ -592,7 +592,7 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
             if end_pos >= cur_view_top then
                 local boxes = self.document:getScreenBoxesFromPositions(item.pos0, item.pos1, true) -- get_segments=true
                 if boxes then
-                    local color = Blitbuffer.colorFromName(item.color)
+                    local color = item.color and Blitbuffer.colorFromName(item.color)
                     if color and not Blitbuffer.isColor8(color) then
                         colorful = true
                     end
