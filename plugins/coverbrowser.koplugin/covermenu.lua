@@ -1,5 +1,7 @@
 local ButtonDialog = require("ui/widget/buttondialog")
 local DocSettings = require("docsettings")
+local DocumentRegistry = require("document/documentregistry")
+local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local FileChooser = require("ui/widget/filechooser")
@@ -621,6 +623,26 @@ function CoverMenu:setupLayout()
         right3_icon_hold_callback = false,
     }
     self:updateTitleBarPath(self.root_path)
+
+
+    local file_chooser = FileChooser:new{
+        -- remember to adjust the height when new item is added to the group
+        path = self.root_path,
+        focused_path = self.focused_file,
+        show_parent = self.show_parent,
+        height = Screen:getHeight() - self.title_bar:getHeight(),
+        is_popout = false,
+        is_borderless = true,
+        file_filter = function(filename) return DocumentRegistry:hasProvider(filename) end,
+        close_callback = function() return self:onClose() end,
+        -- allow left bottom tap gesture, otherwise it is eaten by hidden return button
+        return_arrow_propagation = true,
+        -- allow Menu widget to delegate handling of some gestures to GestureManager
+        filemanager = self,
+        -- let Menu widget merge our title_bar into its own TitleBar's FocusManager layout
+        outer_title_bar = self.title_bar,
+    }
+    self.file_chooser = file_chooser
 
     
     self.layout = VerticalGroup:new{
