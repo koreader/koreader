@@ -629,9 +629,11 @@ function ReaderSearch:onShowFindAllResults(not_cached)
     if not_cached then
         for _, item in ipairs(self.findall_results) do
             local text = { TextBoxWidget.PTF_HEADER } -- use Poor Text Formatting provided by TextBoxWidget
-            table.insert(text, item.prev_text) -- append context before the word
-            if not item.prev_text:find("%s$") then -- separate prev context
-                table.insert(text, " ")
+            if item.prev_text then
+                table.insert(text, item.prev_text) -- append context before the word
+                if not item.prev_text:find("%s$") then -- separate prev context
+                    table.insert(text, " ")
+                end
             end
             table.insert(text, TextBoxWidget.PTF_BOLD_START) -- start of the word in bold
             -- PDF/Kopt shows full words when only some part matches; let's do the same with CRE
@@ -639,10 +641,12 @@ function ReaderSearch:onShowFindAllResults(not_cached)
             table.insert(text, item.matched_text)
             table.insert(text, item.matched_word_suffix)
             table.insert(text, TextBoxWidget.PTF_BOLD_END) -- end of the word in bold
-            if not item.next_text:find("^[%s%p]") then -- separate next context
-                table.insert(text, " ")
+            if item.next_text then
+                if not item.next_text:find("^[%s%p]") then -- separate next context
+                    table.insert(text, " ")
+                end
+                table.insert(text, item.next_text) -- append context after the word
             end
-            table.insert(text, item.next_text) -- append context after the word
             item.text = table.concat(text)
 
             local pageno = self.ui.rolling and self.ui.document:getPageFromXPointer(item.start) or item.start
