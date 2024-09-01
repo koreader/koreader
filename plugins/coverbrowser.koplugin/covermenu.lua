@@ -1,19 +1,24 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local ButtonDialog = require("ui/widget/buttondialog")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
+local LeftContainer = require("ui/widget/container/leftcontainer")
 local Menu = require("ui/widget/menu")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Font = require("ui/font")
 local FileChooser = require("ui/widget/filechooser")
 local FileManager = require("apps/filemanager/filemanager")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local RightContainer = require("ui/widget/container/rightcontainer")
 local TextBoxWidget = require("ui/widget/textboxwidget")
+local TextWidget = require("ui/widget/textwidget")
 local TitleBar = require("titlebar")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -586,7 +591,7 @@ end
 
 function CoverMenu:setupLayout()
     CoverMenu._FileManager_setupLayout_orig(self)
-    
+
     self.title_bar = TitleBar:new{
         show_parent = self.show_parent,
         fullscreen = "true",
@@ -676,6 +681,7 @@ end
 function CoverMenu:menuInit()
     CoverMenu._Menu_init_orig(self)
 
+    local pagination_width = self.page_info:getSize().w
     self.page_info = HorizontalGroup:new{
         self.page_info_first_chev,
         self.page_info_left_chev,
@@ -684,19 +690,34 @@ function CoverMenu:menuInit()
         self.page_info_last_chev,
     }
 
-    --local subtitle_max_width = self.inner_dimen.width * 0.94
+    self.subtitle = TextWidget:new{
+        text = self.path,
+        face = Font:getFace("x_smallinfofont"),
+        max_width = self.inner_dimen.w * 0.94 - pagination_width,
+        truncate_with_ellipsis = true,
+    }
 
     local footer = BottomContainer:new{
         dimen = self.inner_dimen:copy(),
-        -- TextBoxWidget:new{
-        --     text = "Test",
-        --     alignment = "right",
-        --     --width = subtitle_max_width,
-        --     face = Font:getFace("xx_smallinfofont"),
-        -- },
-        self.page_info,
+        HorizontalGroup:new{
+            HorizontalSpan:new { width = self.inner_dimen.w * 0.03 },
+            LeftContainer:new{
+                dimen = Geom:new{
+                    w = self.inner_dimen.w * 0.94 - pagination_width,
+                    h = self.subtitle:getSize().h,
+                },
+                self.subtitle,
+            },
+            RightContainer:new{
+                dimen = Geom:new{
+                    w = pagination_width,
+                    h = self.page_info:getSize().h,
+                },
+                self.page_info,
+            },
+            HorizontalSpan:new { width = self.inner_dimen.w * 0.03 },
+        }
     }
-
 
     local page_return = BottomContainer:new{
         dimen = self.inner_dimen:copy(),
@@ -709,7 +730,7 @@ function CoverMenu:menuInit()
             self.return_button,
         }
     }
-    
+
     local content = OverlapGroup:new{
         -- This unique allow_mirroring=false looks like it's enough
         -- to have this complex Menu, and all widgets based on it,
@@ -721,7 +742,6 @@ function CoverMenu:menuInit()
         footer,
     }
 
-    
     self[1] = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
         bordersize = self.border_size,
@@ -730,7 +750,7 @@ function CoverMenu:menuInit()
         radius = self.is_popout and math.floor(self.dimen.w * (1/20)) or 0,
         content
     }
-    
+
     if self.item_table.current then
         self.page = self:getPageNumber(self.item_table.current)
     end
