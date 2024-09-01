@@ -760,4 +760,11 @@ function CoverMenu:menuInit()
 
 end
 
+
+
+function CoverMenu:updatePageInfo(select_number)
+    CoverMenu._Menu_updatePageInfo_orig(self, select_number)
+    self.page_info_text:setText(_("hello"))
+end
+
 return CoverMenu

@@ -33,6 +33,7 @@ local _FileManager_setupLayout_orig = FileManager.setupLayout
 
 local Menu = require("ui/widget/menu")
 local _Menu_init_orig = Menu.init
+local _Menu_updatePageInfo_orig = Menu.updatePageInfo
 
 -- Available display modes
 local DISPLAY_MODES = {
@@ -580,6 +581,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileManager.tapPlus = _FileManager_tapPlus_orig
         FileManager.setupLayout = _FileManager_setupLayout_orig
         Menu.init = _Menu_init_orig
+        Menu.updatePageInfo = _Menu_updatePageInfo_orig
         -- Also clean-up what we added, even if it does not bother original code
         FileChooser.updateCache = nil
         FileChooser._updateItemsBuildUI = nil
@@ -633,7 +635,9 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
 
     
     CoverMenu._Menu_init_orig = _Menu_init_orig
+    CoverMenu._Menu_updatePageInfo_orig = _Menu_updatePageInfo_orig
     Menu.init = CoverMenu.menuInit
+    Menu.updatePageInfo = CoverMenu.updatePageInfo
 
     if init_done then
         self:refreshFileManagerInstance()
