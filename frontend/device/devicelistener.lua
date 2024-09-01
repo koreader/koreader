@@ -207,6 +207,21 @@ if Device:hasGSensor() then
         return true
     end
 
+    function DeviceListener:onTempGSensorOn()
+        local new_text
+        if G_reader_settings:nilOrFalse("input_ignore_gsensor") then
+            new_text = _("Accelerometer rotation events already on.")
+        else
+            Device:toggleGSensor(true)
+            new_text = _("Accelerometer rotation events on for 5 seconds.")
+            UIManager:scheduleIn(5.0, function()
+                Device:toggleGSensor(false)
+            end)
+        end
+        Notification:notify(new_text)
+        return true
+    end
+
     function DeviceListener:onLockGSensor()
         G_reader_settings:flipNilOrFalse("input_lock_gsensor")
         Device:lockGSensor(G_reader_settings:isTrue("input_lock_gsensor"))
