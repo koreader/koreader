@@ -803,15 +803,19 @@ function CoverMenu:updatePageInfo(select_number)
     self.page_info_text:setText(no_page_text)
 
     if self.cur_folder_text and self.path then
-        local crumbs = {}
-        for crumb in string.gmatch(self.path, "[^/]+") do
-            table.insert(crumbs,crumb)
-        end
-        local folder_name = table.concat(crumbs, "", #crumbs, #crumbs)
-        if folder_name then
-            self.cur_folder_text:setText(folder_name)
+        if self.path == G_reader_settings:readSetting("home_dir") then
+            self.cur_folder_text:setText("Home")
         else
-            self.cur_folder_text:setText("")
+            local crumbs = {}
+            for crumb in string.gmatch(self.path, "[^/]+") do
+                table.insert(crumbs, crumb)
+            end
+            local folder_name = table.concat(crumbs, "", #crumbs, #crumbs)
+            if folder_name then
+                self.cur_folder_text:setText(folder_name)
+            else
+                self.cur_folder_text:setText("")
+            end
         end
     end
 end
