@@ -631,7 +631,6 @@ local Menu = FocusManager:extend{
 }
 
 function Menu:_recalculateDimen(no_recalculate_dimen)
-    logger.info("Live recal Run: ", true)
     local perpage = self.items_per_page or G_reader_settings:readSetting("items_per_page") or self.items_per_page_default
     local font_size = self.items_font_size or G_reader_settings:readSetting("items_font_size") or Menu.getItemFontSize(perpage)
     if self.perpage ~= perpage or self.font_size ~= font_size then
@@ -655,8 +654,6 @@ function Menu:_recalculateDimen(no_recalculate_dimen)
             + 2 * Size.padding.button
     end
     self.available_height = self.inner_dimen.h - top_height - bottom_height
-    logger.info("available_height = self.inner_dimen.h - top_height - bottom_height: ", tostring(self.available_height) .. " = " .. tostring(self.inner_dimen.h) .. " - " .. tostring(top_height) .. " - " .. tostring(bottom_height))
-
     self.item_dimen = Geom:new{
         x = 0, y = 0,
         w = self.inner_dimen.w,
@@ -682,8 +679,6 @@ function Menu:init()
     self.screen_w = Screen:getWidth()
     self.screen_h = Screen:getHeight()
     self.dimen = Geom:new{ x = 0, y = 0, w = self.width or self.screen_w, h = self.height or self.screen_h }
-    logger.info("Value checks Menu init : ", "Screen.getHeight(): " .. tostring(Screen:getHeight()) .. " self.height " .. tostring(self.height) .. " self.screen_h " .. tostring(self.screen_h) .. " self.border_size, " .. tostring(self.border_size))
-
     if self.dimen.h > self.screen_h then
         self.dimen.h = self.screen_h
     end
@@ -693,8 +688,6 @@ function Menu:init()
         w = self.dimen.w - 2 * self.border_size,
         h = self.dimen.h - 2 * self.border_size,
     }
-    logger.info("inner_dimen Menu init: ", self.inner_dimen.h)
-
 
     self.paths = {}  -- per instance table to trace navigation path
 
@@ -903,7 +896,6 @@ function Menu:init()
     }
 
     self:_recalculateDimen()
-    logger.info("recal Called menu.lua 899: ", true)
     self.content_group = VerticalGroup:new{
         align = "left",
         header,
@@ -1054,7 +1046,6 @@ function Menu:updateItems(select_number, no_recalculate_dimen)
     self.return_button:resetLayout()
     self.content_group:resetLayout()
     self:_recalculateDimen(no_recalculate_dimen)
-    logger.info("recal Called menu.lua 1050: ", true)
     -- default to select the first item
     if not select_number then
         select_number = 1
