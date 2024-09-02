@@ -802,12 +802,17 @@ function CoverMenu:updatePageInfo(select_number)
     local no_page_text = string.gsub(self.page_info_text.text, "Page ", "")
     self.page_info_text:setText(no_page_text)
 
-    if self.cur_folder_text then
+    if self.cur_folder_text and self.path then
         local crumbs = {}
         for crumb in string.gmatch(self.path, "[^/]+") do
             table.insert(crumbs,crumb)
         end
-        self.cur_folder_text:setText(table.concat(crumbs, "", #crumbs, #crumbs))
+        local folder_name = table.concat(crumbs, "", #crumbs, #crumbs)
+        if folder_name then
+            self.cur_folder_text:setText(folder_name)
+        else
+            self.cur_folder_text:setText("")
+        end
     end
 end
 
