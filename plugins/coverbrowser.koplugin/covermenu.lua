@@ -645,26 +645,6 @@ function CoverMenu:setupLayout()
     }
     self:updateTitleBarPath(self.root_path)
 
-
-    local file_chooser = FileChooser:new{
-        -- remember to adjust the height when new item is added to the group
-        path = self.root_path,
-        focused_path = self.focused_file,
-        show_parent = self.show_parent,
-        height = Screen:getHeight() - self.title_bar:getHeight(),
-        is_popout = false,
-        is_borderless = true,
-        file_filter = function(filename) return DocumentRegistry:hasProvider(filename) end,
-        close_callback = function() return self:onClose() end,
-        -- allow left bottom tap gesture, otherwise it is eaten by hidden return button
-        return_arrow_propagation = true,
-        -- allow Menu widget to delegate handling of some gestures to GestureManager
-        filemanager = self,
-        -- let Menu widget merge our title_bar into its own TitleBar's FocusManager layout
-        outer_title_bar = self.title_bar,
-    }
-    self.file_chooser = file_chooser
-
     self.layout = VerticalGroup:new{
         self.title_bar,
         self.file_chooser,
@@ -700,8 +680,14 @@ function CoverMenu:menuInit()
         self.page_info_last_chev,
     }
 
+    local folder_text
+
+    if self.path then
+        folder_text = self.path
+    end
+
     self.cur_folder_text = TextWidget:new{
-        text = self.path,
+        text = folder_text,
         face = Font:getFace("x_smallinfofont"),
         max_width = self.inner_dimen.w * 0.94 - pagination_width,
         truncate_with_ellipsis = true,

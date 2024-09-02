@@ -843,6 +843,7 @@ end
 -- so let's not do it
 -- Also, no need for 2nd arg 'pos' (only used in readertoc.lua)
 function MosaicMenuItem:onTapSelect(arg)
+    logger.info("MosaicMenuItem:onTapSelect(arg): ", tostring(arg))
     self.menu:onMenuSelect(self.entry)
     return true
 end

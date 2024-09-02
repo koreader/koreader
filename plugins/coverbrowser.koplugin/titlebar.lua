@@ -194,6 +194,7 @@ function TitleBar:init()
     -- Dummy text widget to enforce vertical height
     self.title_widget = TextWidget:new{
         face = title_face,
+        text = "",
     }
     local title_top_padding = self.title_top_padding
     if not title_top_padding then
@@ -253,7 +254,8 @@ function TitleBar:init()
     if self.align == "left" then
         -- we need to :resetLayout() both VerticalGroup and HorizontalGroup in :setTitle()
         self.inner_title_group = HorizontalGroup:new{
-            HorizontalSpan:new{ width = icon_reserved_width + self.title_h_padding }
+            HorizontalSpan:new{ width = icon_reserved_width + self.title_h_padding },
+            self.title_widget,
         }
         table.insert(self.title_group, self.inner_title_group)
     else
@@ -266,6 +268,7 @@ function TitleBar:init()
     -- the one we set as self.dimen.h.
 
     self.titlebar_height = self.title_group:getSize().h
+
     if self.title_shrink_font_to_fit then
         -- Use, or store, the first title_group height we have computed,
         -- so the TitleBar geometry and the bottom line position stay stable
