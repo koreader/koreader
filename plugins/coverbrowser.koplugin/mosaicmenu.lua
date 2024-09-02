@@ -858,6 +858,7 @@ end
 local MosaicMenu = {}
 
 function MosaicMenu:_recalculateDimen()
+    logger.info("CoverMenu Mosaic recal Run: ", true)
     self.portrait_mode = Screen:getWidth() <= Screen:getHeight()
     if self.portrait_mode then
         self.nb_cols = self.nb_cols_portrait

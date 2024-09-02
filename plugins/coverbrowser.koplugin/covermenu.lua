@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local ButtonDialog = require("ui/widget/buttondialog")
@@ -10,6 +11,8 @@ local OverlapGroup = require("ui/widget/overlapgroup")
 local Font = require("ui/font")
 local FileChooser = require("ui/widget/filechooser")
 local FileManager = require("apps/filemanager/filemanager")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
+local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
@@ -18,10 +21,13 @@ local TitleBar = require("titlebar")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
+local BaseUtil = require("ffi/util")
 local Device = require("device")
 
+local C_ = _.pgettext
 local Screen = Device.screen
 local BookInfoManager = require("bookinfomanager")
 
@@ -103,7 +109,8 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
     --       so we have to run it *first*, unlike in Menu.
     --       Otherwise, various layout issues arise (e.g., MosaicMenu's page_info is misaligned).
     if not no_recalculate_dimen then
-        self:_recalculateDimen()
+        self:_recalculateDimen(self.title_bar)
+        logger.info("recal Called covermenu.lua 112: ", true)
     end
     self.page_info:resetLayout()
     self.return_button:resetLayout()
@@ -572,7 +579,7 @@ function CoverMenu:tapPlus()
     return true
 end
 
-function onFolderUp()
+local function onFolderUp()
     if current_path then -- file browser or PathChooser
         if current_path ~= "/" and not (G_reader_settings:isTrue("lock_home_folder") and
                         current_path == G_reader_settings:readSetting("home_dir")) then
@@ -586,6 +593,9 @@ end
 
 function CoverMenu:setupLayout()
     CoverMenu._FileManager_setupLayout_orig(self)
+    
+    local logger = require("logger")                
+    logger.info("Title Bar Height Before New Title Bar: ", self.title_bar:getHeight())
     
     self.title_bar = TitleBar:new{
         show_parent = self.show_parent,
@@ -630,27 +640,13 @@ function CoverMenu:setupLayout()
     }
     self:updateTitleBarPath(self.root_path)
 
+    -- self.file_chooser.outer_title_bar = self.title_bar
+    -- self.file_chooser.height = Screen:getHeight() - self.title_bar:getHeight()
 
-    local file_chooser = FileChooser:new{
-        -- remember to adjust the height when new item is added to the group
-        path = self.root_path,
-        focused_path = self.focused_file,
-        show_parent = self.show_parent,
-        height = Screen:getHeight() - self.title_bar:getHeight(),
-        is_popout = false,
-        is_borderless = true,
-        file_filter = function(filename) return DocumentRegistry:hasProvider(filename) end,
-        close_callback = function() return self:onClose() end,
-        -- allow left bottom tap gesture, otherwise it is eaten by hidden return button
-        return_arrow_propagation = true,
-        -- allow Menu widget to delegate handling of some gestures to GestureManager
-        filemanager = self,
-        -- let Menu widget merge our title_bar into its own TitleBar's FocusManager layout
-        outer_title_bar = self.title_bar,
-    }
-    self.file_chooser = file_chooser
+    local logger = require("logger")                
+    logger.info("Title Bar Height After New Title Bar: ", self.title_bar:getHeight())
 
-    
+
     self.layout = VerticalGroup:new{
         self.title_bar,
         self.file_chooser,
@@ -669,6 +665,8 @@ function CoverMenu:setupLayout()
         ui = self
     }
 
+    //self:registerKeyEvents()
+
 
     return true
 end
@@ -684,6 +682,12 @@ function CoverMenu:menuInit()
         self.page_info_last_chev,
     }
 
+    -- local new_inner_dimen = Geom:new{
+    --     x = 0, y = 0,
+    --     w = self.screen_w,
+    --     h = self.screen_h,
+    -- }
+    
     --local subtitle_max_width = self.inner_dimen.width * 0.94
 
     local footer = BottomContainer:new{
@@ -720,6 +724,13 @@ function CoverMenu:menuInit()
         page_return,
         footer,
     }
+
+    
+    logger.info("self.content_group Height: ", self.content_group.height)
+    
+    logger.info("page_return Height: ", page_return.height)
+    
+    logger.info("footer Height: ", footer.height)
 
     
     self[1] = FrameContainer:new{

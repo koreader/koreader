@@ -1037,21 +1037,35 @@ end
 -- in the real Menu class or instance
 local ListMenu = {}
 
-function ListMenu:_recalculateDimen()
+function ListMenu:_recalculateDimen(title_bar)
+    logger.info("CoverMenu recal Run: ", true)
     self.portrait_mode = Screen:getWidth() <= Screen:getHeight()
     -- Find out available height from other UI elements made in Menu
     self.others_height = 0
+
+    if(title_bar) then
+        logger.info("title bar set: ", true)
+        self.title_bar = title_bar
+        self.no_title = false
+    end
+    
+    local logger = require("logger")            
     if self.title_bar then -- Menu:init() has been done
-        if not self.is_borderless then
+        if not self.is_borderless then            
             self.others_height = self.others_height + 2
+            logger.info("self.is_borderless: ", tostring(self.others_height))
         end
         if not self.no_title then
             self.others_height = self.others_height + self.header_padding
+            logger.info("self.no_title 1: ", tostring(self.others_height))
             self.others_height = self.others_height + self.title_bar.dimen.h
+            logger.info("self.no_title 2: ", tostring(self.others_height))
         end
         if self.page_info then
             self.others_height = self.others_height + self.page_info:getSize().h
+            logger.info("self.page_info: ", tostring(self.others_height))
         end
+        self.page_recalc_needed = true
     else
         -- Menu:init() not yet done: other elements used to calculate self.others_heights
         -- are not yet defined, so next calculations will be wrong, and we may get
@@ -1063,7 +1077,9 @@ function ListMenu:_recalculateDimen()
         self.itemnum_orig = self.path_items[self.path]
         self.focused_path_orig = self.focused_path
     end
-    local available_height = self.inner_dimen.h - self.others_height - Size.line.thin
+    local available_height = self.screen_h - self.others_height - Size.line.thin
+    logger.info("available_height = self.inner_dimen.h - self.others_height - Size.line.thin: ", tostring(available_height) .. " = " .. tostring(self.inner_dimen.h) .. " - " .. tostring(self.others_height) .. " - " .. tostring(Size.line.thin))
+    logger.info("Value checks CoverMenu recal : ", "Screen.getHeight(): " .. tostring(Screen:getHeight()) .. " self.height " .. tostring(self.height) .. " self.screen_h " .. tostring(self.screen_h) .. " self.border_size, " .. tostring(self.border_size))
 
     if self.files_per_page == nil then -- first drawing
         -- Default perpage is computed from a base of 64px per ListMenuItem,
@@ -1084,12 +1100,16 @@ function ListMenu:_recalculateDimen()
 
     self.page_num = math.ceil(#self.item_table / self.perpage)
     -- fix current page if out of range
-    if self.page_num > 0 and self.page > self.page_num then self.page = self.page_num end
+    if self.page_num > 0 and self.page > self.page_num
+    then 
+        self.page = self.page_num
+    end
 
     -- menu item height based on number of items per page
     -- add space for the separator
     self.item_height = math.floor(available_height / self.perpage) - Size.line.thin
     self.item_width = self.inner_dimen.w
+    logger.info("self.item_height: ", tostring(self.item_height))
     self.item_dimen = Geom:new {
         x = 0, y = 0,
         w = self.item_width,
