@@ -655,7 +655,6 @@ function CoverMenu:setupLayout()
     }
     self.file_chooser = file_chooser
 
-    
     self.layout = VerticalGroup:new{
         self.title_bar,
         self.file_chooser,
@@ -690,7 +689,8 @@ function CoverMenu:menuInit()
         self.page_info_last_chev,
     }
 
-    self.subtitle = TextWidget:new{
+    logger.info("path: ", self.path)
+    local cur_folder = TextWidget:new{
         text = self.path,
         face = Font:getFace("x_smallinfofont"),
         max_width = self.inner_dimen.w * 0.94 - pagination_width,
@@ -704,9 +704,9 @@ function CoverMenu:menuInit()
             LeftContainer:new{
                 dimen = Geom:new{
                     w = self.inner_dimen.w * 0.94 - pagination_width,
-                    h = self.subtitle:getSize().h,
+                    h = cur_folder:getSize().h,
                 },
-                self.subtitle,
+                cur_folder,
             },
             RightContainer:new{
                 dimen = Geom:new{
@@ -760,11 +760,10 @@ function CoverMenu:menuInit()
 
 end
 
-
-
 function CoverMenu:updatePageInfo(select_number)
     CoverMenu._Menu_updatePageInfo_orig(self, select_number)
-    self.page_info_text:setText(_("hello"))
+    local no_page_text = string.gsub(self.page_info_text.text, "Page ", "")
+    self.page_info_text:setText(no_page_text)
 end
 
 return CoverMenu
