@@ -693,7 +693,7 @@ function CoverMenu:setupLayout()
         ui = self
     }
 
-    //self:registerKeyEvents()
+    --self:registerKeyEvents()
 
 
     return true
