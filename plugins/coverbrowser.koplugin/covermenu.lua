@@ -693,7 +693,7 @@ function CoverMenu:setupLayout()
         ui = self
     }
 
-    self:registerKeyEvents()
+    --self:registerKeyEvents()
 
 
     return true
@@ -715,37 +715,39 @@ function CoverMenu:menuInit()
     --     w = self.screen_w,
     --     h = self.screen_h,
     -- }
-
-
-    logger.info("path: ", self.path)
-    local cur_folder = TextWidget:new{
-        text = "Back To Testing A Really Long Folder Name",
+    self.cur_folder_text = TextWidget:new{
+        text = self.path,
         face = Font:getFace("x_smallinfofont"),
         max_width = self.inner_dimen.w * 0.94 - pagination_width,
         truncate_with_ellipsis = true,
     }
-    --local subtitle_max_width = self.inner_dimen.width * 0.94
+
+    self.cur_folder = HorizontalGroup:new{
+        self.cur_folder_text,
+    }
+
+    self.footer_group = HorizontalGroup:new{
+        HorizontalSpan:new { width = self.inner_dimen.w * 0.03 },
+        LeftContainer:new{
+            dimen = Geom:new{
+                w = self.inner_dimen.w * 0.94 - pagination_width,
+                h = self.cur_folder:getSize().h,
+            },
+            self.cur_folder,
+        },
+        RightContainer:new{
+            dimen = Geom:new{
+                w = pagination_width,
+                h = self.page_info:getSize().h,
+            },
+            self.page_info,
+        },
+        HorizontalSpan:new { width = self.inner_dimen.w * 0.03 },
+    }
 
     local footer = BottomContainer:new{
         dimen = self.inner_dimen:copy(),
-        HorizontalGroup:new{
-            HorizontalSpan:new { width = self.inner_dimen.w * 0.03 },
-            LeftContainer:new{
-                dimen = Geom:new{
-                    w = self.inner_dimen.w * 0.94 - pagination_width,
-                    h = cur_folder:getSize().h,
-                },
-                cur_folder,
-            },
-            RightContainer:new{
-                dimen = Geom:new{
-                    w = pagination_width,
-                    h = self.page_info:getSize().h,
-                },
-                self.page_info,
-            },
-            HorizontalSpan:new { width = self.inner_dimen.w * 0.03 },
-        }
+        self.footer_group
     }
 
     local page_return = BottomContainer:new{
@@ -798,6 +800,10 @@ function CoverMenu:updatePageInfo(select_number)
     CoverMenu._Menu_updatePageInfo_orig(self, select_number)
     local no_page_text = string.gsub(self.page_info_text.text, "Page ", "")
     self.page_info_text:setText(no_page_text)
+
+    if self.cur_folder_text then
+        self.cur_folder_text:setText(self.path)
+    end
 end
 
 return CoverMenu
