@@ -329,7 +329,8 @@ function JoplinExporter:export(t)
     local markdown_settings = plugin_settings.markdown
     local notebook_id = self.settings.notebook_guid
     for _, booknotes in pairs(t) do
-        local note = md.prepareBookContent(booknotes, markdown_settings.formatting_options, markdown_settings.highlight_formatting)
+        local note_tbl = md.prepareBookContent(booknotes, markdown_settings.formatting_options, markdown_settings.highlight_formatting)
+        local note = table.concat(note_tbl, "\n")
         local note_id = self:findNoteByTitle(booknotes.title, notebook_id)
 
         local response
