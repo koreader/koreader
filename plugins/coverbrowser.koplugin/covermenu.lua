@@ -702,7 +702,8 @@ end
 function CoverMenu:menuInit()
     CoverMenu._Menu_init_orig(self)
 
-    local pagination_width = self.page_info:getSize().w
+    --local pagination_width = self.page_info:getSize().w
+    local pagination_width = Screen:scaleBySize(250)
     self.page_info = HorizontalGroup:new{
         self.page_info_first_chev,
         self.page_info_left_chev,
@@ -802,7 +803,11 @@ function CoverMenu:updatePageInfo(select_number)
     self.page_info_text:setText(no_page_text)
 
     if self.cur_folder_text then
-        self.cur_folder_text:setText(self.path)
+        local crumbs = {}
+        for crumb in string.gmatch(self.path, "[^/]+") do
+            table.insert(crumbs,crumb)
+        end
+        self.cur_folder_text:setText(table.concat(crumbs, "", #crumbs, #crumbs))
     end
 end
 
