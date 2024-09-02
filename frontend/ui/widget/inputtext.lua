@@ -142,8 +142,11 @@ local function initTouchEvents()
                 if self.keyboard then
                     self.keyboard:showKeyboard()
                 end
-                -- Make sure we're flagged as in focus again
-                self:focus()
+                -- Make sure we're flagged as in focus again.
+                -- NOTE: self:focus() does a full free/reinit cycle, which is completely unnecessary to begin with,
+                --       *and* resets cursor position, which is problematic when tapping on an already in-focus field (#12444).
+                --       So, just flip our own focused flag, that's the only thing we need ;).
+                self.focused = true
             end
             if self._frame_textwidget.dimen ~= nil -- zh keyboard with candidates shown here has _frame_textwidget.dimen = nil
                     and #self.charlist > 0 then -- do not move cursor within a hint
