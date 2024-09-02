@@ -36,6 +36,8 @@ local C_ = _.pgettext
 local Screen = Device.screen
 local BookInfoManager = require("bookinfomanager")
 
+local MassStorage = require("ui/elements/mass_storage")
+
 -- This is a kind of "base class" for both MosaicMenu and ListMenu.
 -- It implements the common code shared by these, mostly the non-UI
 -- work : the updating of items and the management of backgrouns jobs.
@@ -617,9 +619,11 @@ function CoverMenu:setupLayout()
         left_icon_tap_callback = function() self:goHome() end,
         left_icon_hold_callback = function() self:onShowFolderMenu() end,
         -- favorites
-        left2_icon = "favorite",
+        --left2_icon = "favorite",
+        left2_icon = "usb-svgrepo-com",
         left2_icon_size_ratio = 1,
-        left2_icon_tap_callback = function() FileManager.instance.collections:onShowColl() end,
+        --left2_icon_tap_callback = function() FileManager.instance.collections:onShowColl() end,
+        left2_icon_tap_callback = function() MassStorage:start(true) end,
         left2_icon_hold_callback = false,
         -- history
         left3_icon = "history",
