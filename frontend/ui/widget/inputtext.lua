@@ -144,7 +144,7 @@ local function initTouchEvents()
                 end
                 -- Make sure we're flagged as in focus again.
                 -- NOTE: self:focus() does a full free/reinit cycle, which is completely unnecessary to begin with,
-                --       *and* resets cursor position, which is problematic when tapping on an already in-focus field (#1244).
+                --       *and* resets cursor position, which is problematic when tapping on an already in-focus field (#12444).
                 --       So, just flip our own focused flag, that's the only thing we need ;).
                 self.focused = true
             end
