@@ -116,8 +116,7 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
     --       so we have to run it *first*, unlike in Menu.
     --       Otherwise, various layout issues arise (e.g., MosaicMenu's page_info is misaligned).
     if not no_recalculate_dimen then
-        self:_recalculateDimen(self.title_bar)
-        logger.info("recal Called covermenu.lua 112: ", true)
+        self:_recalculateDimen()
     end
     self.page_info:resetLayout()
     self.return_button:resetLayout()
@@ -600,8 +599,6 @@ end
 
 function CoverMenu:setupLayout()
     CoverMenu._FileManager_setupLayout_orig(self)
-    local logger = require("logger")                
-    logger.info("Title Bar Height Before New Title Bar: ", self.title_bar:getHeight())
 
     self.title_bar = TitleBar:new{
         show_parent = self.show_parent,
@@ -648,12 +645,6 @@ function CoverMenu:setupLayout()
     }
     self:updateTitleBarPath(self.root_path)
 
-    -- self.file_chooser.outer_title_bar = self.title_bar
-    -- self.file_chooser.height = Screen:getHeight() - self.title_bar:getHeight()
-
-    local logger = require("logger")                
-    logger.info("Title Bar Height After New Title Bar: ", self.title_bar:getHeight())
-
 
     local file_chooser = FileChooser:new{
         -- remember to adjust the height when new item is added to the group
@@ -674,7 +665,6 @@ function CoverMenu:setupLayout()
     }
     self.file_chooser = file_chooser
 
-    
     self.layout = VerticalGroup:new{
         self.title_bar,
         self.file_chooser,
@@ -693,8 +683,6 @@ function CoverMenu:setupLayout()
         ui = self
     }
 
-    --self:registerKeyEvents()
-
 
     return true
 end
@@ -711,11 +699,7 @@ function CoverMenu:menuInit()
         self.page_info_right_chev,
         self.page_info_last_chev,
     }
-    -- local new_inner_dimen = Geom:new{
-    --     x = 0, y = 0,
-    --     w = self.screen_w,
-    --     h = self.screen_h,
-    -- }
+
     self.cur_folder_text = TextWidget:new{
         text = self.path,
         face = Font:getFace("x_smallinfofont"),

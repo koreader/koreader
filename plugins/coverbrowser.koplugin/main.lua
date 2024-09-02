@@ -52,10 +52,6 @@ local history_display_mode = false -- not initialized yet
 local collection_display_mode = false -- not initialized yet
 local series_mode = nil -- defaults to not display series
 
-
-local Device = require("device")
-local Screen = Device.screen
-
 local CoverBrowser = WidgetContainer:extend{
     name = "coverbrowserclean",
     modes = {
@@ -536,25 +532,7 @@ function CoverBrowser:refreshFileManagerInstance(cleanup, post_init)
                 -- FileBrowser was initialized in classic mode, but we changed
                 -- display mode: items per page may have changed, and we want
                 -- to re-position on the focused_file
-
-                
-                local logger = require("logger")            
-                logger.info("File Chooser Height At Redraw Time: ", tostring(fc.height))
-
-                local logger = require("logger")            
-                logger.info("Screen Height At Redraw Time: ", tostring(Screen:getHeight()))
-
-                local logger = require("logger")            
-                logger.info("Title Bar Height At Redraw Time: ", tostring(self.ui.title_bar:getHeight()))
-
-                fc.outer_title_bar = self.ui.title_bar
-                fc.height = Screen:getHeight() - self.ui.title_bar:getHeight()
-                
-                local logger = require("logger")            
-                logger.info("File Chooser Height At Redraw Time Part Two: ", tostring(fc.height))
-
-                fc:_recalculateDimen(self.ui.title_bar)
-                logger.info("recal Called main.lua 555: ", true)
+                fc:_recalculateDimen()
                 fc:changeToPath(fc.path, fc.prev_focused_path)
             else
                 fc:updateItems()
@@ -786,7 +764,6 @@ local function _FileManagerCollections_updateItemTable(self)
         elseif coll_menu.display_mode_type == "list" then
             -- Replace some other original methods with those from our ListMenu
             local ListMenu = require("listmenu")
-            logger.info("_recalculateDimen listmenu 2", true)
             coll_menu._recalculateDimen = ListMenu._recalculateDimen
             coll_menu._updateItemsBuildUI = ListMenu._updateItemsBuildUI
             -- Set ListMenu behaviour:
