@@ -693,7 +693,7 @@ function CoverMenu:setupLayout()
         ui = self
     }
 
-    //self:registerKeyEvents()
+    self:registerKeyEvents()
 
 
     return true
@@ -715,11 +715,11 @@ function CoverMenu:menuInit()
     --     w = self.screen_w,
     --     h = self.screen_h,
     -- }
-    
-    
+
+
     logger.info("path: ", self.path)
     local cur_folder = TextWidget:new{
-        text = self.path,
+        text = "Back To Testing A Really Long Folder Name",
         face = Font:getFace("x_smallinfofont"),
         max_width = self.inner_dimen.w * 0.94 - pagination_width,
         truncate_with_ellipsis = true,
