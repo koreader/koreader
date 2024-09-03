@@ -33,7 +33,7 @@ if Device:hasDPad() and Device:useDPadAsActionKeys() then
             return G_reader_settings:isTrue("input_invert_left_page_turn_keys")
         end,
         callback = function()
-            UIManager:broadcastEvent(Event:new("SwapPageTurnButtons", false, "left"))
+            UIManager:broadcastEvent(Event:new("SwapPageTurnButtons", "left"))
         end,
     })
     table.insert(PhysicalButtons.sub_item_table, {
@@ -45,7 +45,7 @@ if Device:hasDPad() and Device:useDPadAsActionKeys() then
             return G_reader_settings:isTrue("input_invert_right_page_turn_keys")
         end,
         callback = function()
-            UIManager:broadcastEvent(Event:new("SwapPageTurnButtons", false, "right"))
+            UIManager:broadcastEvent(Event:new("SwapPageTurnButtons", "right"))
         end,
         separator = true,
     })
