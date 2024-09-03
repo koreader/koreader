@@ -109,8 +109,6 @@ local TitleBar = OverlapGroup:extend{
 }
 
 function TitleBar:init()
-
-	logger.info("New titlebar init: ", true)
     if self.close_callback then
         self.right_icon = "close"
         self.right_icon_tap_callback = self.close_callback
@@ -278,7 +276,6 @@ function TitleBar:init()
     -- and can overflow or underflow. Its height for its containers is
     -- the one we set as self.dimen.h.
 
-	logger.info("New titlebar height set: ", true)
     self.titlebar_height = self.title_group:getSize().h - self.subtitle_widget:getSize().h
 
     -- if self.title_shrink_font_to_fit then

@@ -1024,7 +1024,6 @@ end
 -- so let's not do it
 -- Also, no need for 2nd arg 'pos' (only used in readertoc.lua)
 function ListMenuItem:onTapSelect(arg)
-    logger.info("ListMenuItem:onTapSelect(arg): ", tostring(arg))
     self.menu:onMenuSelect(self.entry)
     return true
 end
