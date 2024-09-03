@@ -1168,7 +1168,7 @@ function ListMenu:_updateItemsBuildUI()
             }
             table.insert(self.item_group, small_line_widget)
         elseif idx == self.perpage then
-            table.insert(self.item_group, line_widget)
+            --table.insert(self.item_group, line_widget)
         end
 
         -- this is for focus manager

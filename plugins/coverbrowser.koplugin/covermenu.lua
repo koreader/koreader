@@ -18,6 +18,7 @@ local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local UIManager = require("ui/uimanager")
+local LineWidget = require("ui/widget/linewidget")
 local logger = require("logger")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
@@ -689,8 +690,7 @@ end
 function CoverMenu:menuInit()
     CoverMenu._Menu_init_orig(self)
 
-    --local pagination_width = self.page_info:getSize().w
-    local pagination_width = Screen:scaleBySize(250)
+    local pagination_width = self.page_info:getSize().w
     self.page_info = HorizontalGroup:new{
         self.page_info_first_chev,
         self.page_info_left_chev,
@@ -699,45 +699,41 @@ function CoverMenu:menuInit()
         self.page_info_last_chev,
     }
 
-    local folder_text
-
-    if self.path then
-        folder_text = self.path
-    end
+    local page_info_container = RightContainer:new{
+        dimen = Geom:new{
+            w = self.screen_w * 0.94,
+            h = self.page_info:getSize().h,
+        },
+        self.page_info,
+    }
 
     self.cur_folder_text = TextWidget:new{
-        text = folder_text,
+        text = self.path,
         face = Font:getFace("x_smallinfofont"),
-        max_width = self.inner_dimen.w * 0.94 - pagination_width,
+        max_width = self.screen_w * 0.94 - pagination_width,
         truncate_with_ellipsis = true,
     }
 
-    self.cur_folder = HorizontalGroup:new{
+    local cur_folder = HorizontalGroup:new{
         self.cur_folder_text,
     }
 
-    self.footer_group = HorizontalGroup:new{
-        HorizontalSpan:new { width = self.inner_dimen.w * 0.03 },
-        LeftContainer:new{
-            dimen = Geom:new{
-                w = self.inner_dimen.w * 0.94 - pagination_width,
-                h = self.cur_folder:getSize().h,
-            },
-            self.cur_folder,
+    local cur_folder_container = LeftContainer:new{
+        dimen = Geom:new{
+            w = self.screen_w * 0.94,
+            h = self.page_info:getSize().h,
         },
-        RightContainer:new{
-            dimen = Geom:new{
-                w = pagination_width,
-                h = self.page_info:getSize().h,
-            },
-            self.page_info,
-        },
-        HorizontalSpan:new { width = self.inner_dimen.w * 0.03 },
+        cur_folder,
     }
 
-    local footer = BottomContainer:new{
+    local footer_left = BottomContainer:new{
         dimen = self.inner_dimen:copy(),
-        self.footer_group
+        cur_folder_container
+    }
+
+    local footer_right = BottomContainer:new{
+        dimen = self.inner_dimen:copy(),
+        page_info_container
     }
 
     local page_return = BottomContainer:new{
@@ -745,12 +741,26 @@ function CoverMenu:menuInit()
         WidgetContainer:new{
             dimen = Geom:new{
                 x = 0, y = 0,
-                w = self.screen_w,
+                w = self.screen_w * 0.94,
                 h = self.page_return_arrow:getSize().h,
             },
             self.return_button,
         }
     }
+
+    --logger.info("innerh: ", self.inner_dimen.h)
+    --logger.info("innerw: ", self.inner_dimen.w)
+    local line_pos = self.screen_h - 200
+    local line_widget = LineWidget:new {
+        dimen = Geom:new {
+            x = 0,
+            y = line_pos,
+            w = self.screen_w * 0.94,
+            h = Size.line.medium
+        },
+        background = Blitbuffer.COLOR_BLACK,
+    }
+
     local content = OverlapGroup:new{
         -- This unique allow_mirroring=false looks like it's enough
         -- to have this complex Menu, and all widgets based on it,
@@ -759,19 +769,24 @@ function CoverMenu:menuInit()
         dimen = self.inner_dimen:copy(),
         self.content_group,
         page_return,
-        footer,
+        footer_left,
+        footer_right,
     }
-    logger.info("self.content_group Height: ", self.content_group.height)
-    
-    logger.info("page_return Height: ", page_return.height)
-    
-    logger.info("footer Height: ", footer.height)
-    
+
+    --logger.info("self.content_group Height: ", self.content_group.height)
+    --logger.info("page_return Height: ", page_return.height)
+    --logger.info("footer Height: ", footer.height)
+
     self[1] = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
         padding = 0,
         margin = 0,
-        content
+        radius = self.is_popout and math.floor(self.dimen.w * (1/20)) or 0,
+        OverlapGroup:new{
+            dimen = Geom:new{x = 0, y = 0, w = self.screen_w, h = self.screen_h},
+            content,
+            line_widget,
+        }
     }
 
     if self.item_table.current then
@@ -789,15 +804,20 @@ function CoverMenu:updatePageInfo(select_number)
     self.page_info_text:setText(no_page_text)
 
     if self.cur_folder_text and self.path then
-        local crumbs = {}
-        for crumb in string.gmatch(self.path, "[^/]+") do
-            table.insert(crumbs,crumb)
-        end
-        local folder_name = table.concat(crumbs, "", #crumbs, #crumbs)
-        if folder_name then
-            self.cur_folder_text:setText(folder_name)
+        self.cur_folder_text:setMaxWidth(self.screen_w * 0.94 - self.page_info:getSize().w)
+        if self.path == G_reader_settings:readSetting("home_dir") then
+            self.cur_folder_text:setText("Home")
         else
-            self.cur_folder_text:setText("")
+            local crumbs = {}
+            for crumb in string.gmatch(self.path, "[^/]+") do
+                table.insert(crumbs, crumb)
+            end
+            local folder_name = table.concat(crumbs, "", #crumbs, #crumbs)
+            if folder_name then
+                self.cur_folder_text:setText(folder_name)
+            else
+                self.cur_folder_text:setText("")
+            end
         end
     end
 end
