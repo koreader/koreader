@@ -278,6 +278,8 @@ function ListMenuItem:update()
             height = dimen.h,
             original_in_nightmode = false,
         })
+        self.menu._has_cover_images = true
+        self._has_cover_image = true
 
         local pad_width = Screen:scaleBySize(10) -- on the left, in between, and on the right
         local wleft_width = dimen.w - folder_cover.width - wright_width - 3 * pad_width
@@ -374,26 +376,37 @@ function ListMenuItem:update()
                     self.menu._has_cover_images = true
                     self._has_cover_image = true
                 else
-                    local fake_cover_w = max_img_w * 0.6
-                    local fake_cover_h = max_img_h
+                    -- use generic file icon insteaed of cover image
+                    cover_bb_used = true
+                    local file_cover = ImageWidget:new({
+                        file = getSourceDir() .. "/icons/file.svg",
+                        alpha = true,
+                        scale_factor = 0,
+                        width = dimen.h,
+                        height = dimen.h,
+                        original_in_nightmode = false,
+                    })
+                    -- Let ImageWidget do the scaling and give us the final size
+                    --local _, _, scale_factor = BookInfoManager.getCachedCoverSize(bookinfo.cover_w, bookinfo.cover_h, max_img_w, max_img_h)
+                    local wimage = file_cover
+                    wimage:_render()
+                    local image_size = wimage:getSize() -- get final widget size
                     wleft = CenterContainer:new {
                         dimen = Geom:new { w = wleft_width, h = wleft_height },
                         FrameContainer:new {
-                            width = fake_cover_w + 2 * border_size,
-                            height = fake_cover_h + 2 * border_size,
+                            width = image_size.w + 2 * border_size,
+                            height = image_size.h + 2 * border_size,
                             margin = 0,
                             padding = 0,
+                            color = Blitbuffer.COLOR_WHITE,
                             bordersize = border_size,
                             dim = self.file_deleted,
-                            CenterContainer:new {
-                                dimen = Geom:new { w = fake_cover_w, h = fake_cover_h },
-                                TextWidget:new {
-                                    text = "⛶", -- U+26F6 Square four corners
-                                    face = Font:getFace("cfont", _fontSize(20)),
-                                },
-                            },
-                        },
+                            wimage,
+                        }
                     }
+                    -- Let menu know it has some item with images
+                    self.menu._has_cover_images = true
+                    self._has_cover_image = true
                 end
             end
             -- In case we got a blitbuffer and didnt use it (ignore_cover), free it
