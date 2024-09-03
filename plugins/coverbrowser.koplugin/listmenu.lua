@@ -620,8 +620,7 @@ function ListMenuItem:update()
                 wmain_left_padding = Screen:scaleBySize(5)
             end
             local wmain_right_padding = Screen:scaleBySize(10) -- used only for next calculation
-            local wmain_width = dimen.w - wleft_width - wmain_left_padding - wmain_right_padding - wright_width -
-            wright_right_padding
+            local wmain_width = dimen.w - wleft_width - wmain_left_padding - wmain_right_padding - wright_width - wright_right_padding
 
             local fontname_title = "cfont"
             local fontname_authors = "cfont"
@@ -1041,7 +1040,7 @@ function ListMenu:_recalculateDimen()
     self.portrait_mode = Screen:getWidth() <= Screen:getHeight()
     -- Find out available height from other UI elements made in Menu
     self.others_height = 0
-    
+
     if self.title_bar then -- Menu:init() has been done
         if not self.is_borderless then            
             self.others_height = self.others_height + 2
@@ -1160,7 +1159,7 @@ function ListMenu:_updateItemsBuildUI()
         }
         table.insert(self.item_group, item_tmp)
         if idx < self.perpage then
-            local small_line_width = line_width * 0.80
+            local small_line_width = line_width * 0.60
             local small_line_widget = LineWidget:new {
                 dimen = Geom:new { w = small_line_width, h = Size.line.thin },
                 background = Blitbuffer.COLOR_GRAY,

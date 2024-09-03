@@ -25,6 +25,7 @@ local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local TitleBar = require("titlebar")
+local TopContainer = require("ui/widget/container/topcontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
@@ -701,7 +702,7 @@ function CoverMenu:menuInit()
 
     local page_info_container = RightContainer:new{
         dimen = Geom:new{
-            w = self.screen_w * 0.94,
+            w = self.screen_w * 0.98,
             h = self.page_info:getSize().h,
         },
         self.page_info,
@@ -748,17 +749,18 @@ function CoverMenu:menuInit()
         }
     }
 
-    --logger.info("innerh: ", self.inner_dimen.h)
-    --logger.info("innerw: ", self.inner_dimen.w)
-    local line_pos = self.screen_h - 200
-    local line_widget = LineWidget:new {
-        dimen = Geom:new {
-            x = 0,
-            y = line_pos,
-            w = self.screen_w * 0.94,
-            h = Size.line.medium
+    local footer_line = BottomContainer:new{
+        dimen = Geom:new{
+            x = 0, y = 0,
+            w = self.inner_dimen.w,
+            h = self.inner_dimen.h - self.page_info:getSize().h,
         },
-        background = Blitbuffer.COLOR_BLACK,
+        LineWidget:new {
+            dimen = Geom:new {
+                w = self.screen_w * 0.94,
+                h = Size.line.medium },
+            background = Blitbuffer.COLOR_BLACK,
+        },
     }
 
     local content = OverlapGroup:new{
@@ -771,6 +773,7 @@ function CoverMenu:menuInit()
         page_return,
         footer_left,
         footer_right,
+        footer_line,
     }
 
     --logger.info("self.content_group Height: ", self.content_group.height)
@@ -781,12 +784,9 @@ function CoverMenu:menuInit()
         background = Blitbuffer.COLOR_WHITE,
         padding = 0,
         margin = 0,
+        bordersize = 0,
         radius = self.is_popout and math.floor(self.dimen.w * (1/20)) or 0,
-        OverlapGroup:new{
-            dimen = Geom:new{x = 0, y = 0, w = self.screen_w, h = self.screen_h},
-            content,
-            line_widget,
-        }
+        content
     }
 
     if self.item_table.current then
