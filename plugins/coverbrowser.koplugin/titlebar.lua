@@ -4,6 +4,7 @@ local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local IconButton = require("iconbutton")
+local logger = require("logger")
 local LineWidget = require("ui/widget/linewidget")
 local Math = require("optmath")
 local OverlapGroup = require("ui/widget/overlapgroup")
@@ -20,7 +21,7 @@ local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
 local TitleBar = OverlapGroup:extend{
     width = nil, -- default to screen width
     fullscreen = false, -- larger font and small adjustments if fullscreen
-    align = "center", -- or "left": title & subtitle alignment inside TitleBar ("right" nor supported)
+    align = "center", -- or "left": title alignment inside TitleBar ("right" nor supported)
 
     with_bottom_line = false,
     bottom_line_color = nil, -- default to black
@@ -48,7 +49,7 @@ local TitleBar = OverlapGroup:extend{
 
     title_top_padding = nil, -- computed if none provided
     title_h_padding = Size.padding.large, -- horizontal padding (this replaces button_padding on the inner/title side)
-    title_subtitle_v_padding = Screen:scaleBySize(3),
+    title_subtitle_v_padding = 0,
     bottom_v_padding = nil, -- hardcoded default values, different whether with_bottom_line true or false
 
     button_padding = Screen:scaleBySize(11), -- fine to keep exit/cross icon diagonally aligned with screen corners
@@ -109,6 +110,7 @@ local TitleBar = OverlapGroup:extend{
 
 function TitleBar:init()
 
+	logger.info("New titlebar init: ", true)
     if self.close_callback then
         self.right_icon = "close"
         self.right_icon_tap_callback = self.close_callback
@@ -170,7 +172,7 @@ function TitleBar:init()
     end
 
     if self.align == "center" then
-        -- Keep title and subtitle text centered even if single button
+        -- Keep title text centered even if single button
         left_icon_reserved_width = math.max(left_icon_reserved_width, left2_icon_reserved_width,  left3_icon_reserved_width,  right_icon_reserved_width, right2_icon_reserved_width,  right3_icon_reserved_width)
         left2_icon_reserved_width = left_icon_reserved_width
         left3_icon_reserved_width = left_icon_reserved_width
@@ -181,12 +183,12 @@ function TitleBar:init()
     end
     local title_max_width = self.width - 2*self.title_h_padding - left_icon_reserved_width - left2_icon_reserved_width - left3_icon_reserved_width - right_icon_reserved_width - right2_icon_reserved_width - right3_icon_reserved_width
     -- local subtitle_max_width = self.width - 2*self.title_h_padding
-    local subtitle_max_width = self.width * 0.94
+    local subtitle_max_width = 0
     if not self.subtitle_fullwidth then
-        subtitle_max_width = subtitle_max_width - left_icon_reserved_width - left2_icon_reserved_width - left3_icon_reserved_width - right_icon_reserved_width - right2_icon_reserved_width - right3_icon_reserved_width
+        subtitle_max_width = 0
     end
 
-    -- Title, subtitle, and their alignment
+    -- Title alignment
     local title_face = self.title_face
     if not title_face then
         title_face = self.fullscreen and self.title_face_fullscreen or self.title_face_not_fullscreen
@@ -224,27 +226,19 @@ function TitleBar:init()
     if self.subtitle then
         if self.subtitle_multilines then
             self.subtitle_widget = TextBoxWidget:new{
-                text = self.subtitle,
-                alignment = self.align,
-                width = subtitle_max_width,
+                text = "",
                 face = self.subtitle_face,
-                lang = self.lang,
             }
         else
             self.subtitle_widget = TextWidget:new{
-                text = self.subtitle,
+                text = "",
                 face = self.subtitle_face,
-                max_width = subtitle_max_width,
-                truncate_left = self.subtitle_truncate_left,
-                padding = 0,
-                lang = self.lang,
             }
         end
     end
     -- To debug vertical positionning:
     -- local FrameContainer = require("ui/widget/container/framecontainer")
     -- self.title_widget = FrameContainer:new{ padding=0, margin=0, bordersize=1, self.title_widget}
-    -- self.subtitle_widget = FrameContainer:new{ padding=0, margin=0, bordersize=1, self.subtitle_widget}
 
     self.title_group = VerticalGroup:new{
         align = self.align,
@@ -261,25 +255,43 @@ function TitleBar:init()
     else
         table.insert(self.title_group, self.title_widget)
     end
+
+    if self.subtitle_widget then
+        --table.insert(self.title_group, VerticalSpan:new{width = 0})
+        if self.align == "left" then
+            local span_width = 0
+            if not self.subtitle_fullwidth then
+                span_width = 0
+            end
+            self.inner_subtitle_group = HorizontalGroup:new{
+                HorizontalSpan:new{ width = 0 },
+                self.subtitle_widget,
+            }
+            table.insert(self.title_group, self.inner_subtitle_group)
+        else
+            table.insert(self.title_group, self.subtitle_widget)
+        end
+    end
     table.insert(self, self.title_group)
 
     -- This TitleBar widget is an OverlapGroup: all sub elements overlap,
     -- and can overflow or underflow. Its height for its containers is
     -- the one we set as self.dimen.h.
 
-    self.titlebar_height = self.title_group:getSize().h
+	logger.info("New titlebar height set: ", true)
+    self.titlebar_height = self.title_group:getSize().h - self.subtitle_widget:getSize().h
 
-    if self.title_shrink_font_to_fit then
-        -- Use, or store, the first title_group height we have computed,
-        -- so the TitleBar geometry and the bottom line position stay stable
-        -- (face height may have changed, even after we kept the baseline
-        -- stable, as we did above).
-        if self._initial_titlebar_height then
-            self.titlebar_height = self._initial_titlebar_height
-        else
-            self._initial_titlebar_height = self.titlebar_height
-        end
-    end
+    -- if self.title_shrink_font_to_fit then
+    --     -- Use, or store, the first title_group height we have computed,
+    --     -- so the TitleBar geometry and the bottom line position stay stable
+    --     -- (face height may have changed, even after we kept the baseline
+    --     -- stable, as we did above).
+    --     if self._initial_titlebar_height then
+    --         self.titlebar_height = self._initial_titlebar_height
+    --     else
+    --         self._initial_titlebar_height = self.titlebar_height
+    --     end
+    -- end
 
     if self.with_bottom_line then
         -- Be sure we add between the text and the line at least as much padding
@@ -492,6 +504,7 @@ function TitleBar:getHeight()
 end
 
 function TitleBar:setTitle(title, no_refresh)
+	logger.info("New TitleBar:setTitle: ", true)
     if self.title_multilines or self.title_shrink_font_to_fit then
         -- We need to re-init the whole widget as its height or
         -- padding may change.
@@ -518,7 +531,9 @@ function TitleBar:setTitle(title, no_refresh)
         if self.inner_title_group then
             self.inner_title_group:resetLayout()
         end
-        self.title_group:resetLayout()
+        if self.title_group then
+            self.title_group:resetLayout()
+        end
         if not no_refresh then
             UIManager:setDirty(self.show_parent, "ui", self.dimen)
         end

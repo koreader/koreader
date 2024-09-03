@@ -20,6 +20,7 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local RightContainer = require("ui/widget/container/rightcontainer")
+local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local TitleBar = require("titlebar")
@@ -597,53 +598,71 @@ local function onFolderUp()
 
 end
 
+function CoverMenu:updateTitleBarPath(path)
+    -- We dont need the original updateTitleBarPath
+    -- We dont use that title bar and we dont use the subtitle
+    -- CoverMenu:_FileManager_updateTitleBarPath_orig(path)
+
+    -- As ugly as it seems from the name, 
+    -- this is the best point to check if we have our new title bar
+    -- and generate it if we do not
+
+    -- filemanager.lua forces this by creating the filechooser right after
+    -- creating the original title bar 
+    -- This function call is the only thing in between
+    -- And we want the new title bar to be ready for that filechooser
+
+    if self.title_bar.title == "KOReader" then
+        self.title_bar = TitleBar:new{
+            show_parent = self.show_parent,
+            fullscreen = "true",
+            align = "center",
+            title = "",
+            title_top_padding = Screen:scaleBySize(6),
+            subtitle = "",
+            subtitle_truncate_left = true,
+            subtitle_fullwidth = true,
+            button_padding = Screen:scaleBySize(5),
+            -- home
+            left_icon = "other_houses",
+            left_icon_size_ratio = 1,
+            left_icon_tap_callback = function() self:goHome() end,
+            left_icon_hold_callback = function() self:onShowFolderMenu() end,
+            -- favorites
+            --left2_icon = "favorite",
+            left2_icon = "usb-svgrepo-com",
+            left2_icon_size_ratio = 1,
+            --left2_icon_tap_callback = function() FileManager.instance.collections:onShowColl() end,
+            left2_icon_tap_callback = function() MassStorage:start(true) end,
+            left2_icon_hold_callback = false,
+            -- history
+            left3_icon = "history",
+            left3_icon_size_ratio = 1,
+            left3_icon_tap_callback = function() FileManager.instance.history:onShowHist() end,
+            left3_icon_hold_callback = false,
+            -- stupid plus menu
+            right_icon = self.selected_files and "check" or "plus",
+            right_icon_size_ratio = 1,
+            right_icon_tap_callback = function() self:onShowPlusMenu() end,
+            right_icon_hold_callback = false, -- propagate long-press to dispatcher
+            -- up folder
+            right2_icon = "back_up",
+            right2_icon_size_ratio = 1,
+            right2_icon_tap_callback = function() onFolderUp() end,
+            right2_icon_hold_callback = false,
+            -- open last file
+            right3_icon = "go_back_book",
+            right3_icon_size_ratio = 1,
+            right3_icon_tap_callback = function() FileManager.instance.menu:onOpenLastDoc() end,
+            right3_icon_hold_callback = false,
+        }
+        self:updateTitleBarPath(self.root_path)
+
+    end
+end
+
 function CoverMenu:setupLayout()
     CoverMenu._FileManager_setupLayout_orig(self)
-
-    self.title_bar = TitleBar:new{
-        show_parent = self.show_parent,
-        fullscreen = "true",
-        align = "center",
-        title = self.title,
-        title_top_padding = Screen:scaleBySize(6),
-        subtitle = "",
-        subtitle_truncate_left = true,
-        subtitle_fullwidth = true,
-        button_padding = Screen:scaleBySize(5),
-        -- home
-        left_icon = "other_houses",
-        left_icon_size_ratio = 1,
-        left_icon_tap_callback = function() self:goHome() end,
-        left_icon_hold_callback = function() self:onShowFolderMenu() end,
-        -- favorites
-        --left2_icon = "favorite",
-        left2_icon = "usb-svgrepo-com",
-        left2_icon_size_ratio = 1,
-        --left2_icon_tap_callback = function() FileManager.instance.collections:onShowColl() end,
-        left2_icon_tap_callback = function() MassStorage:start(true) end,
-        left2_icon_hold_callback = false,
-        -- history
-        left3_icon = "history",
-        left3_icon_size_ratio = 1,
-        left3_icon_tap_callback = function() FileManager.instance.history:onShowHist() end,
-        left3_icon_hold_callback = false,
-        -- stupid plus menu
-        right_icon = self.selected_files and "check" or "plus",
-        right_icon_size_ratio = 1,
-        right_icon_tap_callback = function() self:onShowPlusMenu() end,
-        right_icon_hold_callback = false, -- propagate long-press to dispatcher
-        -- up folder
-        right2_icon = "back_up",
-        right2_icon_size_ratio = 1,
-        right2_icon_tap_callback = function() onFolderUp() end,
-        right2_icon_hold_callback = false,
-        -- open last file
-        right3_icon = "go_back_book",
-        right3_icon_size_ratio = 1,
-        right3_icon_tap_callback = function() FileManager.instance.menu:onOpenLastDoc() end,
-        right3_icon_hold_callback = false,
-    }
-    self:updateTitleBarPath(self.root_path)
 
     self.layout = VerticalGroup:new{
         self.title_bar,
@@ -732,7 +751,6 @@ function CoverMenu:menuInit()
             self.return_button,
         }
     }
-
     local content = OverlapGroup:new{
         -- This unique allow_mirroring=false looks like it's enough
         -- to have this complex Menu, and all widgets based on it,
@@ -751,10 +769,8 @@ function CoverMenu:menuInit()
     
     self[1] = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
-        bordersize = self.border_size,
         padding = 0,
         margin = 0,
-        radius = self.is_popout and math.floor(self.dimen.w * (1/20)) or 0,
         content
     }
 
