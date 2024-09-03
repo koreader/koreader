@@ -378,17 +378,16 @@ function ListMenuItem:update()
                 else
                     -- use generic file icon insteaed of cover image
                     cover_bb_used = true
-                    local file_cover = ImageWidget:new({
+                    -- Let ImageWidget do the scaling and give us the final size
+                    local _, _, scale_factor = BookInfoManager.getCachedCoverSize(250, 500, max_img_w, max_img_h)
+                    local wimage = ImageWidget:new({
                         file = getSourceDir() .. "/icons/file.svg",
                         alpha = true,
-                        scale_factor = 0,
-                        width = dimen.h,
-                        height = dimen.h,
+                        scale_factor = scale_factor,
+                        --width = dimen.h,
+                        --height = dimen.h,
                         original_in_nightmode = false,
                     })
-                    -- Let ImageWidget do the scaling and give us the final size
-                    --local _, _, scale_factor = BookInfoManager.getCachedCoverSize(bookinfo.cover_w, bookinfo.cover_h, max_img_w, max_img_h)
-                    local wimage = file_cover
                     wimage:_render()
                     local image_size = wimage:getSize() -- get final widget size
                     wleft = CenterContainer:new {
