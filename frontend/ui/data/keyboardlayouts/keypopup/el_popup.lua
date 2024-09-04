@@ -269,9 +269,9 @@ return {
         south = "ῗ",
         southeast = "ἴ",
         southwest = "ἵ",
-        "ΐ",
         "ϊ",
         "ῖ",
+        "ΐ",
     },
     _J_el = {
         "Ξ",
@@ -513,9 +513,9 @@ return {
         south = "ῧ",
         southeast = "ὔ",
         southwest = "ὕ",
-        "ΰ",
         "ϋ",
         "ῦ",
+        "ΰ",
     },
     _Z_el = {
         "Ζ",
