@@ -1009,10 +1009,6 @@ function ReaderView:onReaderFooterVisibilityChange()
             --       We don't actually want to move here, so save & restore our current visible_area *coordinates*.
             local x, y = self.visible_area.x, self.visible_area.y
             self.ui:handleEvent(Event:new("SetDimensions", Screen:getSize()))
-            -- NOTE: Scroll mode's behavior after this might be suboptimal (until next page),
-            --       but I'm not familiar enough with it to make it behave...
-            --       Possibly because we're not updating the right state? (e.g., we'd want the last in self.page_states?)
-            --       (e.g., RedrawCurrentPage & co will snap to the top of the "current" page).
             logger.dbg("after:", self.visible_area, self.page_area, self.state.offset)
             for page, state in ipairs(self.page_states) do
                 logger.dbg(page, state)
@@ -1020,8 +1016,19 @@ function ReaderView:onReaderFooterVisibilityChange()
             self.visible_area.x = x
             self.visible_area.y = y
 
-            local bottom_state = self.page_states[#self.page_states]
-            bottom_state.visible_area.h = bottom_state.visible_area.h + 20
+            -- Now, for scroll mode, ReaderView:recalculate does *not* affect any of the actual page_states,
+            -- so we'll fudge the bottom page's visible area ourselves,
+            -- so as not to leave a blank area behind the footer when hiding it...
+            -- This might cause the next scroll to scroll a footer height's less than expected,
+            -- but that shouldn't be a real issue in practice...
+            if self.page_scroll then
+                local bottom_state = self.page_states[#self.page_states]
+                if self.footer_visible then
+                    bottom_state.visible_area.h = bottom_state.visible_area.h - self.footer:getHeight()
+                else
+                    bottom_state.visible_area.h = bottom_state.visible_area.h + self.footer:getHeight()
+                end
+            end
         end
     end
 end
