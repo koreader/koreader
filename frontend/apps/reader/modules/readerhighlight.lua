@@ -9,6 +9,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Notification = require("ui/widget/notification")
 local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
+local SpinWidget = require("ui/widget/spinwidget")
 local TextViewer = require("ui/widget/textviewer")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
@@ -36,7 +37,7 @@ local ReaderHighlight = InputContainer:extend{
         {_("Blue"), "blue"},
         {_("Purple"), "purple"},
         {_("Gray"), "gray"},
-    }
+    },
 }
 
 local function inside_box(pos, box)
@@ -70,8 +71,8 @@ function ReaderHighlight:init()
     self._current_indicator_pos = nil
     self._previous_indicator_pos = nil
     self._last_indicator_move_args = {dx = 0, dy = 0, distance = 0, time = time:now()}
-    -- NOTE: Unfortunately, yellow tends to look like absolute ass on Kaleido panels...
-    self._fallback_color = Screen:isColorEnabled() and "yellow" or "gray"
+    self._fallback_drawer = self.view.highlight.saved_drawer -- "lighten"
+    self._fallback_color = self.view.highlight.saved_color -- "yellow" or "gray"
 
     self:registerKeyEvents()
 
@@ -408,7 +409,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
         table.insert(menu_items.highlight_options.sub_item_table, {
             text_func = function()
                 local text = v[1]
-                if v[2] == G_reader_settings:readSetting("highlight_drawing_style") then
+                if v[2] == G_reader_settings:readSetting("highlight_drawing_style", self._fallback_drawer) then
                     text = text .. "   ★"
                 end
                 return text
@@ -429,53 +430,35 @@ function ReaderHighlight:addToMainMenu(menu_items)
     end
     table.insert(menu_items.highlight_options.sub_item_table, {
         text_func = function()
-            local saved_color = self.view.highlight.saved_color or self._fallback_color
-            for __, v in ipairs(self.highlight_colors) do
+            local saved_color = self.view.highlight.saved_color
+            local text
+            for _, v in ipairs(self.highlight_colors) do
                 if v[2] == saved_color then
-                    return T(_("Highlight color: %1"), string.lower(v[1]))
+                    text = v[1]:lower()
+                    break
                 end
             end
-            return T(_("Highlight color: %1"), saved_color)
+            text = text or saved_color -- nonstandard color
+            local default_color = G_reader_settings:readSetting("highlight_color", self._fallback_color)
+            if saved_color == default_color then
+                text = text .. "   ★"
+            end
+            return T(_("Highlight color: %1"), text)
         end,
         enabled_func = function()
             return self.view.highlight.saved_drawer ~= "invert"
         end,
-        callback = function(touchmenu_instance)
-            local default_color = G_reader_settings:readSetting("highlight_color", self._fallback_color)
-            local saved_color = self.view.highlight.saved_color or self._fallback_color
-            local radio_buttons = {}
-            for _, v in ipairs(self.highlight_colors) do
-                table.insert(radio_buttons, {
-                    {
-                        text = v[1],
-                        checked = v[2] == saved_color,
-                        bgcolor = BlitBuffer.colorFromName(v[2]) or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF)),
-                        provider = v[2],
-                    },
-                })
+        keep_menu_open = true,
+        callback = function(touchmenu_instance) -- set color for new highlights in this book
+            local function apply_color(color)
+                self.view.highlight.saved_color = color
+                touchmenu_instance:updateItems()
             end
-            UIManager:show(RadioButtonWidget:new{
-                title_text = _("Highlight color"),
-                width_factor = 0.5,
-                keep_shown_on_apply = false,
-                radio_buttons = radio_buttons,
-                default_provider = default_color,
-                callback = function(radio)
-                    self.view.highlight.saved_color = radio.provider
-                    UIManager:setDirty(self.dialog, "ui")
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                end,
-                -- This ensures the waveform mode will be upgraded to a Kaleido wfm on compatible devices
-                colorful = true,
-                dithered = true,
-            })
+            self:showHighlightColorDialog(apply_color)
         end,
-        hold_callback = function(touchmenu_instance)
+        hold_callback = function(touchmenu_instance) -- set color for new highlights in new books
             G_reader_settings:saveSetting("highlight_color", self.view.highlight.saved_color)
-            UIManager:show(Notification:new{
-                text = T(_("Default highlight color changed to '%1'."), self.view.highlight.saved_color),
-            })
-            if touchmenu_instance then touchmenu_instance:updateItems() end
+            touchmenu_instance:updateItems()
         end,
     })
     table.insert(menu_items.highlight_options.sub_item_table, {
@@ -486,8 +469,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
             return self.view.highlight.saved_drawer == "lighten"
         end,
         callback = function(touchmenu_instance)
-            local SpinWidget = require("ui/widget/spinwidget")
-            local curr_val = G_reader_settings:readSetting("highlight_lighten_factor", 0.2)
+            local curr_val = G_reader_settings:readSetting("highlight_lighten_factor")
             local spin_widget = SpinWidget:new{
                 value = curr_val,
                 value_min = 0,
@@ -549,10 +531,11 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 end,
             })
         end,
+        separator = true,
     })
     table.insert(menu_items.highlight_options.sub_item_table, {
-        text = _("Apply default style to all highlights"),
-        callback = function(touchmenu_instance)
+        text = _("Apply current style and color to all highlights"),
+        callback = function()
             UIManager:show(ConfirmBox:new{
                 text = _("Are you sure you want to update all highlights?"),
                 icon = "texture-box",
@@ -568,11 +551,11 @@ function ReaderHighlight:addToMainMenu(menu_items)
                     if count > 0 then
                         UIManager:setDirty(self.dialog, "ui")
                         UIManager:show(Notification:new{
-                            text = T(N_("Applied default style to 1 highlight",
-                                "Applied default style to %1 highlights", count), count),
+                            text = T(N_("Applied style and color to 1 highlight",
+                                "Applied style and color to %1 highlights", count), count),
                         })
                     end
-                end
+                end,
             })
         end,
     })
@@ -648,7 +631,6 @@ function ReaderHighlight:addToMainMenu(menu_items)
             end,
             keep_menu_open = true,
             callback = function(touchmenu_instance)
-                local SpinWidget = require("ui/widget/spinwidget")
                 local items = SpinWidget:new{
                     title_text = _("Highlight very-long-press interval"),
                     info_text = _("If a long-press is not released in this interval, it is considered a very-long-press. On document text, single word selection will not be triggered."),
@@ -698,7 +680,6 @@ Except when in two columns mode, where this is limited to showing only the previ
                 return T(_("Rate of movement in content selection: %1"), G_reader_settings:readSetting("highlight_non_touch_factor") or 4)
             end,
             callback = function(touchmenu_instance)
-                local SpinWidget = require("ui/widget/spinwidget")
                 local curr_val = G_reader_settings:readSetting("highlight_non_touch_factor") or 4
                 local spin_widget = SpinWidget:new{
                     value = curr_val,
@@ -738,7 +719,6 @@ Except when in two columns mode, where this is limited to showing only the previ
                 return not self.view.highlight.disabled and G_reader_settings:nilOrTrue("highlight_non_touch_spedup")
             end,
             callback = function(touchmenu_instance)
-                local SpinWidget = require("ui/widget/spinwidget")
                 local curr_val = G_reader_settings:readSetting("highlight_non_touch_interval") or 1
                 local spin_widget = SpinWidget:new{
                     value = curr_val,
@@ -1127,39 +1107,51 @@ end
 
 function ReaderHighlight:onShowHighlightDialog(index)
     local item = self.ui.annotation.annotations[index]
+    local dialog
     local buttons = {
         {
             {
                 text = _("Delete"),
                 callback = function()
+                    UIManager:close(dialog)
                     self:deleteHighlight(index)
-                    UIManager:close(self.edit_highlight_dialog)
-                    self.edit_highlight_dialog = nil
                 end,
             },
             {
                 text = C_("Highlight", "Style"),
                 callback = function()
+                    UIManager:close(dialog)
                     self:editHighlightStyle(index)
-                    UIManager:close(self.edit_highlight_dialog)
-                    self.edit_highlight_dialog = nil
                 end,
             },
             {
-                text = item.note and _("Edit note") or _("Add note"),
+                text = C_("Highlight", "Color"),
+                enabled = item.drawer ~= "invert",
                 callback = function()
+                    UIManager:close(dialog)
+                    self:editHighlightColor(index)
+                end,
+            },
+            {
+                text = _("Note"),
+                callback = function()
+                    UIManager:close(dialog)
                     self:editHighlight(index)
-                    UIManager:close(self.edit_highlight_dialog)
-                    self.edit_highlight_dialog = nil
+                end,
+            },
+            {
+                text = _("Details"),
+                callback = function()
+                    UIManager:close(dialog)
+                    self.ui.bookmark:showBookmarkDetails(index)
                 end,
             },
             {
                 text = "…",
                 callback = function()
+                    UIManager:close(dialog)
                     self.selected_text = util.tableDeepCopy(item)
                     self:onShowHighlightMenu(index)
-                    UIManager:close(self.edit_highlight_dialog)
-                    self.edit_highlight_dialog = nil
                 end,
             },
         },
@@ -1186,7 +1178,7 @@ function ReaderHighlight:onShowHighlightDialog(index)
                 hold_callback = function()
                     self:updateHighlight(index, 0, -1, true)
                     return true
-                end
+                end,
             },
             {
                 text = start_next,
@@ -1197,7 +1189,7 @@ function ReaderHighlight:onShowHighlightDialog(index)
                 hold_callback = function()
                     self:updateHighlight(index, 0, 1, true)
                     return true
-                end
+                end,
             },
             {
                 text = end_prev,
@@ -1207,7 +1199,7 @@ function ReaderHighlight:onShowHighlightDialog(index)
                 end,
                 hold_callback = function()
                     self:updateHighlight(index, 1, -1, true)
-                end
+                end,
             },
             {
                 text = end_next,
@@ -1217,14 +1209,14 @@ function ReaderHighlight:onShowHighlightDialog(index)
                 end,
                 hold_callback = function()
                     self:updateHighlight(index, 1, 1, true)
-                end
+                end,
             }
         })
     end
-    self.edit_highlight_dialog = ButtonDialog:new{
+    dialog = ButtonDialog:new{
         buttons = buttons,
     }
-    UIManager:show(self.edit_highlight_dialog)
+    UIManager:show(dialog)
     return true
 end
 
@@ -1946,7 +1938,7 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             self:writePdfAnnotation("save", item)
         end
         local index = self.ui.annotation:addItem(item)
-        self.view.footer:onUpdateFooter(self.view.footer_visible)
+        self.view.footer:maybeUpdateFooter()
         self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = 1 }))
         return index
     end
@@ -2033,14 +2025,10 @@ function ReaderHighlight:addNote(text)
         self:clear()
     end
     self:editHighlight(index, true, text)
-    UIManager:close(self.edit_highlight_dialog)
-    self.edit_highlight_dialog = nil
 end
 
 function ReaderHighlight:editHighlight(index, is_new_note, text)
     local note_updated_callback = function()
-        local item = self.ui.annotation.annotations[index]
-        self:writePdfAnnotation("content", item, item.note)
         if self.view.highlight.note_mark then -- refresh note marker
             UIManager:setDirty(self.dialog, "ui")
         end
@@ -2079,14 +2067,14 @@ function ReaderHighlight:editHighlightColor(index)
         UIManager:setDirty(self.dialog, "ui")
         self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
     end
-    self:showHighlightColorDialog(apply_color, item.color)
+    self:showHighlightColorDialog(apply_color, item)
 end
 
-function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer, index)
+function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer)
     local default_drawer, keep_shown_on_apply
     if item_drawer then -- called from ReaderHighlight:editHighlightStyle()
         default_drawer = self.view.highlight.saved_drawer or
-            G_reader_settings:readSetting("highlight_drawing_style", "lighten")
+            G_reader_settings:readSetting("highlight_drawing_style", self._fallback_drawer)
         keep_shown_on_apply = true
     end
     local radio_buttons = {}
@@ -2099,7 +2087,7 @@ function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer, 
             },
         })
     end
-    local ctor = {
+    UIManager:show(RadioButtonWidget:new{
         title_text = _("Highlight style"),
         width_factor = 0.5,
         keep_shown_on_apply = keep_shown_on_apply,
@@ -2108,38 +2096,27 @@ function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer, 
         callback = function(radio)
             caller_callback(radio.provider)
         end,
-    }
-    if index then
-        -- called from editHighlightStyle
-        ctor.extra_text = _("Highlight color")
-        ctor.extra_callback = function(this)
-            local item = self.ui.annotation.annotations[index]
-            if item.drawer == "invert" then
-                UIManager:show(InfoMessage:new{ text = _("Colors unavailable when highlight style is set to 'Invert'") })
-            else
-                -- Close the style dialog before showing the color dialog
-                this:onClose()
-                self:editHighlightColor(index)
-            end
-        end
-    end
-    UIManager:show(RadioButtonWidget:new(ctor))
+    })
 end
 
-function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color)
-    local default_color, keep_shown_on_apply
-    if item_color then -- called from editHighlightColor
-        default_color = self.view.highlight.saved_color or
-            G_reader_settings:readSetting("highlight_color", self._fallback_color)
+function ReaderHighlight:showHighlightColorDialog(caller_callback, item)
+    local default_color, curr_color, keep_shown_on_apply
+    if item then -- called from editHighlightColor
+        default_color = self.view.highlight.saved_color
+        curr_color = item.color or default_color
         keep_shown_on_apply = true
+    else
+        default_color = G_reader_settings:readSetting("highlight_color", self._fallback_color)
+        curr_color = self.view.highlight.saved_color
     end
     local radio_buttons = {}
     for _, v in ipairs(self.highlight_colors) do
         table.insert(radio_buttons, {
             {
                 text = v[1],
-                checked = item_color == v[2],
-                bgcolor = BlitBuffer.colorFromName(v[2]) or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF)),
+                checked = curr_color == v[2],
+                bgcolor = BlitBuffer.colorFromName(v[2])
+                       or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF)),
                 provider = v[2],
             },
         })
@@ -2153,6 +2130,7 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, item_color)
         callback = function(radio)
             caller_callback(radio.provider)
         end,
+        -- This ensures the waveform mode will be upgraded to a Kaleido wfm on compatible devices
         colorful = true,
         dithered = true,
     })
