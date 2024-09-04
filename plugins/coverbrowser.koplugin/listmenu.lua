@@ -47,6 +47,8 @@ local BookInfoManager = require("bookinfomanager")
 local corner_mark_size = -1
 local corner_mark
 
+local is_pathchooser = false
+
 local scale_by_size = Screen:scaleBySize(1000000) * (1 / 1000000)
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
@@ -65,6 +67,10 @@ local function getSourceDir()
         return callerSource:gsub("^@(.*)/[^/]*", "%1")
     end
 end
+
+function string.starts(String,Start)
+    return string.sub(String,1,string.len(Start))==Start
+ end
 
 function ItemShortCutIcon:init()
     if not self.key then
@@ -283,8 +289,17 @@ function ListMenuItem:update()
 
         local pad_width = Screen:scaleBySize(10) -- on the left, in between, and on the right
         local wleft_width = dimen.w - folder_cover.width - wright_width - 3 * pad_width
+        local wlefttext = BD.directory(self.text:sub(1, -2))
+
+        if self.title_bar and string.starts(self.title_bar.title, "Long-press to choose") then
+            is_pathchooser = true
+        end
+
+        if is_pathchooser then
+            wlefttext = BD.directory(self.text)
+        end
         local wleft = TextBoxWidget:new {
-            text = BD.directory(self.text:sub(1, -2)),
+            text = wlefttext,
             face = Font:getFace("cfont", _fontSize(20, 24)),
             width = wleft_width,
             alignment = "left",
@@ -1053,9 +1068,18 @@ function ListMenu:_recalculateDimen()
     -- Find out available height from other UI elements made in Menu
     self.others_height = 0
 
+    
+    if self.title_bar and string.starts(self.title_bar.title, "Long-press to choose") then
+        is_pathchooser = true
+    end
+
     if self.title_bar then -- Menu:init() has been done
         if not self.is_borderless then            
             self.others_height = self.others_height + 2
+        end
+        if not self.no_title and is_pathchooser then
+            self.others_height = self.others_height + self.header_padding
+            self.others_height = self.others_height + self.title_bar.dimen.h
         end
         if self.page_info then
             self.others_height = self.others_height + self.page_info:getSize().h

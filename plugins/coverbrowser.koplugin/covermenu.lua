@@ -62,6 +62,7 @@ local MassStorage = require("ui/elements/mass_storage")
 -- we can't store them in 'self' if we want another one to use it)
 local current_path = nil
 local current_cover_specs = false
+local is_pathchooser = false
 
 -- Do some collectgarbage() every few drawings
 local NB_DRAWINGS_BETWEEN_COLLECTGARBAGE = 5
@@ -542,6 +543,9 @@ end
 function CoverMenu:genItemTable(dirs, files, path)
     -- Call the object's original genItemTable 
     local item_table = CoverMenu._FileChooser_genItemTable_orig(self, dirs, files, path)
+    -- if #item_table > 0 and not is_pathchooser then
+    --     if item_table[1].text == "⬆ ../" then table.remove(item_table,1) end
+    -- end
     if #item_table > 0 then
         if item_table[1].text == "⬆ ../" then table.remove(item_table,1) end
     end
@@ -788,6 +792,10 @@ function CoverMenu:menuInit()
         radius = self.is_popout and math.floor(self.dimen.w * (1/20)) or 0,
         content
     }
+
+    if string.starts(self.title_bar.title, "Long-press to choose") then
+        is_pathchooser = true
+    end
 
     if self.item_table.current then
         self.page = self:getPageNumber(self.item_table.current)
