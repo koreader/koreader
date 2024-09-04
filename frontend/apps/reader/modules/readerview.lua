@@ -1009,8 +1009,8 @@ function ReaderView:onReaderFooterVisibilityChange()
             -- Now, for scroll mode, ReaderView:recalculate does *not* affect any of the actual page_states,
             -- so we'll fudge the bottom page's visible area ourselves,
             -- so as not to leave a blank area behind the footer when hiding it...
-            -- This might cause the next scroll to scroll a footer height's less than expected,
-            -- but that shouldn't be a real issue in practice...
+            -- This might cause the next scroll to scroll a footer height's *less* than expected,
+            -- but that should be hardly noticeable, and since we scroll less, it won't skip over anything.
             if self.page_scroll then
                 local bottom_state = self.page_states[#self.page_states]
                 if self.footer_visible then
