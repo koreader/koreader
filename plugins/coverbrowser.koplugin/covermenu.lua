@@ -514,6 +514,7 @@ function CoverMenu:onCloseWidget()
     BookInfoManager:terminateBackgroundJobs()
     BookInfoManager:closeDbConnection() -- sqlite connection no more needed
     BookInfoManager:cleanUp() -- clean temporary resources
+    is_pathchooser = false
 
     -- Cancel any still scheduled update
     if self.items_update_action then
@@ -793,6 +794,7 @@ function CoverMenu:menuInit()
         content
     }
 
+    is_pathchooser = false
     if string.starts(self.title_bar.title, "Long-press to choose") then
         is_pathchooser = true
     end

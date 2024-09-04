@@ -291,13 +291,19 @@ function ListMenuItem:update()
         local wleft_width = dimen.w - folder_cover.width - wright_width - 3 * pad_width
         local wlefttext = BD.directory(self.text:sub(1, -2))
 
-        if self.title_bar and string.starts(self.title_bar.title, "Long-press to choose") then
-            is_pathchooser = true
-        end
-
-        if is_pathchooser then
+        if (self.title_bar and string.starts(self.title_bar.title, "Long-press to choose")) or 
+                (self.menu and string.starts(self.menu.title, "Long-press to choose")) then
             wlefttext = BD.directory(self.text)
         end
+
+        logger.info("wlefttext: ", wlefttext)
+        if self.title_bar then
+            logger.info("self.title_bar.title: ", self.title_bar.title)
+        else
+            logger.info("self.title_bar.title: ", "unknown")
+
+        end
+
         local wleft = TextBoxWidget:new {
             text = wlefttext,
             face = Font:getFace("cfont", _fontSize(20, 24)),
@@ -1068,7 +1074,7 @@ function ListMenu:_recalculateDimen()
     -- Find out available height from other UI elements made in Menu
     self.others_height = 0
 
-    
+    is_pathchooser = false
     if self.title_bar and string.starts(self.title_bar.title, "Long-press to choose") then
         is_pathchooser = true
     end
