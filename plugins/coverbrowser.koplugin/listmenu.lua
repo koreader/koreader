@@ -307,7 +307,7 @@ function ListMenuItem:update()
             face = Font:getFace(good_serif, _fontSize(22, 22)),
             width = wleft_width,
             alignment = "left",
-            bold = true,
+            bold = false,
             height = dimen.h,
             height_adjust = true,
             height_overflow_show_ellipsis = true,
@@ -655,6 +655,7 @@ function ListMenuItem:update()
 
             local fontname_title = title_serif
             local fontname_authors = good_serif
+            local bold_title = false
             --local fontsize_title = _fontSize(20, 24)
             --local fontsize_authors = _fontSize(18, 22)
             local fontsize_title = _fontSize(22, 22)
@@ -745,6 +746,11 @@ function ListMenuItem:update()
                 -- to save as nil (NULL) metadata that were an empty string
                 -- We provide the book language to get a chance to render title
                 -- and authors with alternate glyphs for that language.
+
+                if authors == nil then
+                    fontname_title = good_serif
+                    bold_title = true
+                end
                 wtitle = TextBoxWidget:new {
                     text = title,
                     lang = bookinfo.language,
@@ -754,7 +760,7 @@ function ListMenuItem:update()
                     height_adjust = true,
                     height_overflow_show_ellipsis = true,
                     alignment = "left",
-                    bold = false,
+                    bold = bold_title,
                     fgcolor = fgcolor,
                 }
             end
@@ -772,7 +778,8 @@ function ListMenuItem:update()
                     height_adjust = true,
                     height_overflow_show_ellipsis = true,
                     alignment = "left",
-                    fgcolor = fgcolor,
+                    fgcolor = Blitbuffer.COLOR_GRAY_2,
+                    --fgcolor = fgcolor,
                 }
             end
             while true do
