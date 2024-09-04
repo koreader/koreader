@@ -700,7 +700,6 @@ function ReaderView:recalculate()
     self.dialog.dithered = nil
 
     if self.ui.paging and self.state.page then
-        print("recalculate for",  self.ui.paging, self.state.page)
         self.page_area = self:getPageArea(
             self.state.page,
             self.state.zoom,
@@ -994,25 +993,16 @@ function ReaderView:onTogglePageChangeAnimation()
 end
 
 function ReaderView:onReaderFooterVisibilityChange()
-    print("ReaderView:onReaderFooterVisibilityChange", self.ui.paging, self.state.page)
     -- Don't bother ReaderRolling with this nonsense, the footer's height is NOT handled via visible_area there ;)
     if self.ui.paging and self.state.page then
         -- We don't need to do anything if reclaim is enabled ;).
         if not self.footer.settings.reclaim_height then
             -- NOTE: Mimic what onSetFullScreen does, since, without reclaim, toggling the footer affects the available area,
             --       so we need to recompute the full layout.
-            logger.dbg("before:", self.visible_area, self.page_area, self.state.offset)
-            for page, state in ipairs(self.page_states) do
-                logger.dbg(page, state)
-            end
             -- NOTE: ReaderView:recalculate will snap visible_area to page_area edges (depending on zoom direction).
-            --       We don't actually want to move here, so save & restore our current visible_area *coordinates*.
+            --       We don't actually want to move here, so save & restore our current visible_area *coordinates*...
             local x, y = self.visible_area.x, self.visible_area.y
             self.ui:handleEvent(Event:new("SetDimensions", Screen:getSize()))
-            logger.dbg("after:", self.visible_area, self.page_area, self.state.offset)
-            for page, state in ipairs(self.page_states) do
-                logger.dbg(page, state)
-            end
             self.visible_area.x = x
             self.visible_area.y = y
 
