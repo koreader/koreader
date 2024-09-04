@@ -409,7 +409,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
         table.insert(menu_items.highlight_options.sub_item_table, {
             text_func = function()
                 local text = v[1]
-                if v[2] == G_reader_settings:readSetting("highlight_drawing_style", self._fallback_drawer) then
+                if v[2] == (G_reader_settings:readSetting("highlight_drawing_style") or self._fallback_drawer) then
                     text = text .. "   ★"
                 end
                 return text
@@ -439,7 +439,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 end
             end
             text = text or saved_color -- nonstandard color
-            local default_color = G_reader_settings:readSetting("highlight_color", self._fallback_color)
+            local default_color = G_reader_settings:readSetting("highlight_color") or self._fallback_color
             if saved_color == default_color then
                 text = text .. "   ★"
             end
@@ -2078,8 +2078,7 @@ end
 function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer)
     local default_drawer, keep_shown_on_apply
     if item_drawer then -- called from ReaderHighlight:editHighlightStyle()
-        default_drawer = self.view.highlight.saved_drawer or
-            G_reader_settings:readSetting("highlight_drawing_style", self._fallback_drawer)
+        default_drawer = self.view.highlight.saved_drawer
         keep_shown_on_apply = true
     end
     local radio_buttons = {}
@@ -2106,12 +2105,12 @@ end
 
 function ReaderHighlight:showHighlightColorDialog(caller_callback, item)
     local default_color, curr_color, keep_shown_on_apply
-    if item then -- called from editHighlightColor
+    if item then -- called from ReaderHighlight:editHighlightColor()
         default_color = self.view.highlight.saved_color
         curr_color = item.color or default_color
         keep_shown_on_apply = true
     else
-        default_color = G_reader_settings:readSetting("highlight_color", self._fallback_color)
+        default_color = G_reader_settings:readSetting("highlight_color") or self._fallback_color
         curr_color = self.view.highlight.saved_color
     end
     local radio_buttons = {}
