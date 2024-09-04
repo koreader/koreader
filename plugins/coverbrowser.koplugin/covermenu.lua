@@ -64,6 +64,10 @@ local current_path = nil
 local current_cover_specs = false
 local is_pathchooser = false
 
+local title_serif = "source/SourceSerif4-BoldIt.ttf"
+local good_serif = "source/SourceSerif4-Regular.ttf"
+local good_sans = "source/SourceSans3-Regular"
+
 -- Do some collectgarbage() every few drawings
 local NB_DRAWINGS_BETWEEN_COLLECTGARBAGE = 5
 local nb_drawings_since_last_collectgarbage = 0
@@ -714,7 +718,7 @@ function CoverMenu:menuInit()
 
     self.cur_folder_text = TextWidget:new{
         text = self.path,
-        face = Font:getFace("x_smallinfofont"),
+        face = Font:getFace(good_serif, 20),
         max_width = self.screen_w * 0.94 - pagination_width,
         truncate_with_ellipsis = true,
     }

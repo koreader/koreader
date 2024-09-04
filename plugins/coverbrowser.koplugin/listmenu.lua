@@ -49,6 +49,10 @@ local corner_mark
 
 local is_pathchooser = false
 
+local title_serif = "source/SourceSerif4-BoldIt.ttf"
+local good_serif = "source/SourceSerif4-Regular.ttf"
+local good_sans = "source/SourceSans3-Regular"
+
 local scale_by_size = Screen:scaleBySize(1000000) * (1 / 1000000)
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
@@ -253,7 +257,7 @@ function ListMenuItem:update()
             if tonumber(folder_count) > 1 then folder_string = folder_string .. "s" end
             local wfoldercount = TextWidget:new {
                 text = folder_count .. " " .. folder_string,
-                face = Font:getFace("cfont", _fontSize(14, 18)),
+                face = Font:getFace(good_sans, _fontSize(14, 18)),
             }
             table.insert(wright_items, wfoldercount)
         end
@@ -261,7 +265,7 @@ function ListMenuItem:update()
             if tonumber(files_count) > 1 then file_string = file_string .. "s" end
             local wfilecount = TextWidget:new {
                 text = files_count.. " " .. file_string,
-                face = Font:getFace("cfont", _fontSize(14, 18)),
+                face = Font:getFace(good_sans, _fontSize(14, 18)),
             }
             table.insert(wright_items, wfilecount)
         end
@@ -300,7 +304,7 @@ function ListMenuItem:update()
         end
         local wleft = TextBoxWidget:new {
             text = wlefttext,
-            face = Font:getFace("cfont", _fontSize(20, 24)),
+            face = Font:getFace(good_serif, _fontSize(22, 22)),
             width = wleft_width,
             alignment = "left",
             bold = true,
@@ -576,7 +580,7 @@ function ListMenuItem:update()
                 table.insert(wright_items, progress)
                 table.insert(wright_items, TextWidget:new {
                     text = progress_text,
-                    face = Font:getFace("cfont", fontsize_info),
+                    face = Font:getFace(good_sans, fontsize_info),
                     fgcolor = fgcolor,
                 })
                 wright = RightContainer:new {
@@ -590,13 +594,13 @@ function ListMenuItem:update()
                 if not BookInfoManager:getSetting("hide_page_info") then
                     local wpageinfo = TextWidget:new {
                         text = pages_str,
-                        face = Font:getFace("cfont", fontsize_info),
+                        face = Font:getFace(good_sans, fontsize_info),
                         fgcolor = fgcolor,
                     }
                     table.insert(wright_items, wpageinfo)
                     local wprogressinfo = TextWidget:new {
                         text = progress_str,
-                        face = Font:getFace("cfont", fontsize_info),
+                        face = Font:getFace(good_sans, fontsize_info),
                         fgcolor = fgcolor,
                     }
                     table.insert(wright_items, wprogressinfo)
@@ -605,7 +609,7 @@ function ListMenuItem:update()
                 if not BookInfoManager:getSetting("hide_file_info") then
                     local wfileinfo = TextWidget:new {
                         text = fileinfo_str,
-                        face = Font:getFace("cfont", fontsize_info),
+                        face = Font:getFace(good_sans, fontsize_info),
                         fgcolor = fgcolor,
                     }
                     table.insert(wright_items, wfileinfo)
@@ -649,10 +653,12 @@ function ListMenuItem:update()
             local wmain_right_padding = Screen:scaleBySize(10) -- used only for next calculation
             local wmain_width = dimen.w - wleft_width - wmain_left_padding - wmain_right_padding - wright_width - wright_right_padding
 
-            local fontname_title = "cfont"
-            local fontname_authors = "cfont"
-            local fontsize_title = _fontSize(20, 24)
-            local fontsize_authors = _fontSize(18, 22)
+            local fontname_title = title_serif
+            local fontname_authors = good_serif
+            --local fontsize_title = _fontSize(20, 24)
+            --local fontsize_authors = _fontSize(18, 22)
+            local fontsize_title = _fontSize(22, 22)
+            local fontsize_authors = _fontSize(16, 16)
             local wtitle, wauthors
             local title, authors
             local series_mode = BookInfoManager:getSetting("series_mode")
@@ -686,8 +692,8 @@ function ListMenuItem:update()
                     end
                     authors = table.concat(authors, "\n")
                     -- as we'll fit 3 lines instead of 2, we can avoid some loops by starting from a lower font size
-                    fontsize_title = _fontSize(17, 21)
-                    fontsize_authors = _fontSize(15, 19)
+                    --fontsize_title = _fontSize(17, 21)
+                    --fontsize_authors = _fontSize(15, 19)
                 elseif authors then
                     authors = BD.auto(authors)
                 end
@@ -719,8 +725,8 @@ function ListMenuItem:update()
                     elseif series_mode == "series_in_separate_line" then
                         authors = bookinfo.series .. "\n" .. authors
                         -- as we'll fit 3 lines instead of 2, we can avoid some loops by starting from a lower font size
-                        fontsize_title = _fontSize(17, 21)
-                        fontsize_authors = _fontSize(15, 19)
+                        --fontsize_title = _fontSize(17, 21)
+                        --fontsize_authors = _fontSize(15, 19)
                     end
                 end
             end
@@ -748,7 +754,7 @@ function ListMenuItem:update()
                     height_adjust = true,
                     height_overflow_show_ellipsis = true,
                     alignment = "left",
-                    bold = true,
+                    bold = false,
                     fgcolor = fgcolor,
                 }
             end
@@ -890,12 +896,12 @@ function ListMenuItem:update()
                 local fontsize_info = _fontSize(14, 18)
                 local wfileinfo = TextWidget:new {
                     text = fileinfo_str,
-                    face = Font:getFace("cfont", fontsize_info),
+                    face = Font:getFace(good_sans, fontsize_info),
                     fgcolor = fgcolor,
                 }
                 local wpageinfo = TextWidget:new { -- Empty but needed for similar positionning
                     text = "",
-                    face = Font:getFace("cfont", fontsize_info),
+                    face = Font:getFace(good_sans, fontsize_info),
                 }
                 wright_width = wfileinfo:getSize().w
                 wright = CenterContainer:new {
@@ -923,7 +929,7 @@ function ListMenuItem:update()
                 end
                 text_widget = TextBoxWidget:new {
                     text = text .. hint,
-                    face = Font:getFace("cfont", fontsize_no_bookinfo),
+                    face = Font:getFace(good_sans, fontsize_no_bookinfo),
                     width = dimen.w - 2 * Screen:scaleBySize(10) - wright_width - wright_right_padding,
                     alignment = "left",
                     fgcolor = fgcolor,
