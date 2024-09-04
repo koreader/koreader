@@ -1012,11 +1012,14 @@ function ReaderView:onReaderFooterVisibilityChange()
             -- This might cause the next scroll to scroll a footer height's *less* than expected,
             -- but that should be hardly noticeable, and since we scroll less, it won't skip over anything.
             if self.page_scroll then
-                local bottom_state = self.page_states[#self.page_states]
-                if self.footer_visible then
-                    bottom_state.visible_area.h = bottom_state.visible_area.h - self.footer:getHeight()
-                else
-                    bottom_state.visible_area.h = bottom_state.visible_area.h + self.footer:getHeight()
+                local bottom_page = self.page_states[#self.page_states]
+                -- Not sure if this can ever be `nil`...
+                if bottom_page then
+                    if self.footer_visible then
+                        bottom_page.visible_area.h = bottom_page.visible_area.h - self.footer:getHeight()
+                    else
+                        bottom_page.visible_area.h = bottom_page.visible_area.h + self.footer:getHeight()
+                    end
                 end
             end
         end
