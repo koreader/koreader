@@ -1107,51 +1107,56 @@ end
 
 function ReaderHighlight:onShowHighlightDialog(index)
     local item = self.ui.annotation.annotations[index]
-    local dialog
     local buttons = {
         {
             {
                 text = _("Delete"),
                 callback = function()
-                    UIManager:close(dialog)
                     self:deleteHighlight(index)
+                    UIManager:close(self.edit_highlight_dialog)
+                    self.edit_highlight_dialog = nil
                 end,
             },
             {
                 text = C_("Highlight", "Style"),
                 callback = function()
-                    UIManager:close(dialog)
                     self:editHighlightStyle(index)
+                    UIManager:close(self.edit_highlight_dialog)
+                    self.edit_highlight_dialog = nil
                 end,
             },
             {
                 text = C_("Highlight", "Color"),
                 enabled = item.drawer ~= "invert",
                 callback = function()
-                    UIManager:close(dialog)
                     self:editHighlightColor(index)
+                    UIManager:close(self.edit_highlight_dialog)
+                    self.edit_highlight_dialog = nil
                 end,
             },
             {
                 text = _("Note"),
                 callback = function()
-                    UIManager:close(dialog)
                     self:editHighlight(index)
+                    UIManager:close(self.edit_highlight_dialog)
+                    self.edit_highlight_dialog = nil
                 end,
             },
             {
                 text = _("Details"),
                 callback = function()
-                    UIManager:close(dialog)
                     self.ui.bookmark:showBookmarkDetails(index)
+                    UIManager:close(self.edit_highlight_dialog)
+                    self.edit_highlight_dialog = nil
                 end,
             },
             {
                 text = "…",
                 callback = function()
-                    UIManager:close(dialog)
                     self.selected_text = util.tableDeepCopy(item)
                     self:onShowHighlightMenu(index)
+                    UIManager:close(self.edit_highlight_dialog)
+                    self.edit_highlight_dialog = nil
                 end,
             },
         },
@@ -1213,10 +1218,10 @@ function ReaderHighlight:onShowHighlightDialog(index)
             }
         })
     end
-    dialog = ButtonDialog:new{
+    self.edit_highlight_dialog = ButtonDialog:new{ -- in self for unit tests
         buttons = buttons,
     }
-    UIManager:show(dialog)
+    UIManager:show(self.edit_highlight_dialog)
     return true
 end
 
