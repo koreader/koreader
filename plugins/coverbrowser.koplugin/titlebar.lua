@@ -377,7 +377,7 @@ function TitleBar:init()
             padding = self.button_padding,
             padding_left = icon_padding_side_offset, -- extend button tap zone
             padding_right = icon_padding_width / 2, -- extend button tap zone
-            padding_bottom = left_icon_size * 0.8,
+            padding_bottom = left_icon_size * 0.2,
             padding_top = icon_padding_height,
             overlap_align = "left",
             callback = self.left_icon_tap_callback,
@@ -396,7 +396,7 @@ function TitleBar:init()
             padding = self.button_padding,
             padding_left = icon_padding_side_offset + icon_reserved_width + icon_padding_width, -- extend button tap zone
             padding_right = icon_padding_width / 2, -- extend button tap zone
-            padding_bottom = left2_icon_size * 0.8,
+            padding_bottom = left2_icon_size * 0.2,
             padding_top = icon_padding_height,
             overlap_align = "left",
             callback = self.left2_icon_tap_callback,
@@ -415,7 +415,7 @@ function TitleBar:init()
             padding = self.button_padding,
             padding_left = icon_padding_side_offset + (2 * icon_reserved_width) + (2 * icon_padding_width), -- extend button tap zone
             padding_right = icon_padding_width / 2, -- extend button tap zone
-            padding_bottom = left3_icon_size * 0.8,
+            padding_bottom = left3_icon_size * 0.2,
             padding_top = icon_padding_height,
             overlap_align = "left",
             callback = self.left3_icon_tap_callback,
@@ -434,7 +434,7 @@ function TitleBar:init()
             padding = self.button_padding,
             padding_left = icon_padding_width / 2, -- extend button tap zone
             padding_right = icon_padding_side_offset,
-            padding_bottom = right_icon_size * 0.8,
+            padding_bottom = right_icon_size * 0.2,
             padding_top = icon_padding_height,
             overlap_align = "right",
             callback = self.right_icon_tap_callback,
@@ -453,7 +453,7 @@ function TitleBar:init()
             padding = self.button_padding,
             padding_left = icon_padding_width / 2, -- extend button tap zone
             padding_right = icon_padding_side_offset + icon_reserved_width + icon_padding_width, -- extend button tap zone
-            padding_bottom = right2_icon_size * 0.8,
+            padding_bottom = right2_icon_size * 0.2,
             padding_top = icon_padding_height,
             overlap_align = "right",
             callback = self.right2_icon_tap_callback,
@@ -472,7 +472,7 @@ function TitleBar:init()
             padding = self.button_padding,
             padding_left = icon_padding_width / 2, -- extend button tap zone
             padding_right = icon_padding_side_offset + (2 * left_icon_reserved_width) + (2 * icon_padding_width), -- extend button tap zone
-            padding_bottom = right3_icon_size * 0.8,
+            padding_bottom = right3_icon_size * 0.2,
             padding_top = icon_padding_height,
             overlap_align = "right",
             callback = self.right3_icon_tap_callback,
