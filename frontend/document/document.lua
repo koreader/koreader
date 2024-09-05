@@ -173,8 +173,10 @@ end
 
 function Document:getProps(cached_doc_metadata)
     local function makeNilIfEmpty(str)
-        if str == "" then
+        if str == nil or str == "" then
             return nil
+        elseif str:sub(-1) == "\0" then
+            return str:sub(1, -2)
         end
         return str
     end
