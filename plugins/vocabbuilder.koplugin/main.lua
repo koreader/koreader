@@ -63,6 +63,19 @@ local function saveSettings()
     G_reader_settings:saveSetting("vocabulary_builder", settings)
 end
 
+-- copied from readerhighlight.lua
+local function cleanupSelectedText(text)
+    -- Trim spaces and new lines at start and end
+    text = text:gsub("^[\n%s]*", "")
+    text = text:gsub("[\n%s]*$", "")
+    -- Trim spaces around newlines
+    text = text:gsub("%s*\n%s*", "\n")
+    -- Trim consecutive spaces (that would probably have collapsed
+    -- in rendered CreDocuments)
+    text = text:gsub("%s%s+", " ")
+    return text
+end
+
 --[[--
 Menu dialogue widget
 --]]--
@@ -498,6 +511,7 @@ Individual word info dialogue widget
 --]]--
 local WordInfoDialog = FocusManager:extend{
     title = nil,
+    highlighted_word = nil,
     book_title = nil,
     dates = nil,
     padding = Size.padding.large,
@@ -636,7 +650,7 @@ function WordInfoDialog:init()
                             VerticalSpan:new{width= Size.padding.default},
                             has_context and
                             TextBoxWidget:new{
-                                text = "..." .. (self.prev_context or ""):gsub("\n", " ") .. "【" ..self.title.."】" .. (self.next_context or ""):gsub("\n", " ") .. "...",
+                                text = "..." .. (self.prev_context or ""):gsub("\n", " ") .. "【" ..(self.highlighted_word or self.title).."】" .. (self.next_context or ""):gsub("\n", " ") .. "...",
                                 width = width,
                                 face = Font:getFace("smallffont"),
                                 alignment = self.title_align or "left",
@@ -1035,6 +1049,7 @@ end
 function VocabItemWidget:showMore()
     local dialogue = WordInfoDialog:new{
         title = self.item.word,
+        highlighted_word = self.item.highlight,
         book_title = self.item.book_title,
         dates = _("Added on") .. " " .. os.date("%Y-%m-%d", self.item.create_time) .. " | " ..
         _("Review scheduled at") .. " " .. os.date("%Y-%m-%d %H:%M", self.item.due_time),
@@ -2062,15 +2077,18 @@ function VocabBuilder:onWordLookedUp(word, title, is_manual)
     if self.widget and self.widget.current_lookup_word == word then return true end
     local prev_context
     local next_context
+    local highlight
     if settings.with_context and self.ui.highlight then
         prev_context, next_context = self.ui.highlight:getSelectedWordContext(15)
+        highlight = cleanupSelectedText(self.ui.highlight.selected_text.text)
     end
     DB:insertOrUpdate({
         book_title = title,
         time = os.time(),
         word = word,
         prev_context = prev_context,
-        next_context = next_context
+        next_context = next_context,
+        highlight = highlight ~= word and highlight or nil
     })
     return true
 end
