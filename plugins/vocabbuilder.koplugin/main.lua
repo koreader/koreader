@@ -234,6 +234,7 @@ function MenuDialog:setupPluginMenu()
                     text = _("Delete"),
                     callback = function()
                         settings.server = nil
+                        SyncService.removeLastSyncDB(DB.path)
                         UIManager:close(self.sync_dialogue)
                     end
                 },
@@ -248,6 +249,11 @@ function MenuDialog:setupPluginMenu()
                         end
 
                         sync_settings.onConfirm = function(chosen_server)
+                            if settings.server.type ~= chosen_server.type
+                                or settings.server.url ~= chosen_server.url
+                                or settings.server.address ~= chosen_server.address then
+                                    SyncService.removeLastSyncDB(DB.path)
+                            end
                             settings.server = chosen_server
                         end
                         UIManager:show(sync_settings)
