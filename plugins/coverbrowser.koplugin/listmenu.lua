@@ -248,26 +248,31 @@ function ListMenuItem:update()
         local wright
         local wright_width = 0
         local wright_items = { align = "right" }
-        local folder_count = string.match(self.mandatory, "(%d+) \u{F114}")
-        local files_count = string.match(self.mandatory, "(%d+) \u{F016}")
+
+        local folder_count = "0"
+        local files_count = "0"
         local folder_string = "Folder"
         local file_string = "Book"
+        if self.mandatory ~= nil then
+            folder_count = string.match(self.mandatory, "(%d+) \u{F114}")
+            files_count = string.match(self.mandatory, "(%d+) \u{F016}")
 
-        if folder_count then
-            if tonumber(folder_count) > 1 then folder_string = folder_string .. "s" end
-            local wfoldercount = TextWidget:new {
-                text = folder_count .. " " .. folder_string,
-                face = Font:getFace(good_sans, _fontSize(14, 18)),
-            }
-            table.insert(wright_items, wfoldercount)
-        end
-        if files_count then
-            if tonumber(files_count) > 1 then file_string = file_string .. "s" end
-            local wfilecount = TextWidget:new {
-                text = files_count.. " " .. file_string,
-                face = Font:getFace(good_sans, _fontSize(14, 18)),
-            }
-            table.insert(wright_items, wfilecount)
+            if folder_count then
+                if tonumber(folder_count) > 1 then folder_string = folder_string .. "s" end
+                local wfoldercount = TextWidget:new {
+                    text = folder_count .. " " .. folder_string,
+                    face = Font:getFace(good_sans, _fontSize(14, 18)),
+                }
+                table.insert(wright_items, wfoldercount)
+            end
+            if files_count then
+                if tonumber(files_count) > 1 then file_string = file_string .. "s" end
+                local wfilecount = TextWidget:new {
+                    text = files_count .. " " .. file_string,
+                    face = Font:getFace(good_sans, _fontSize(14, 18)),
+                }
+                table.insert(wright_items, wfilecount)
+            end
         end
 
         if #wright_items > 0 then
