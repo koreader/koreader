@@ -2080,7 +2080,9 @@ function VocabBuilder:onWordLookedUp(word, title, is_manual)
     local highlight
     if settings.with_context and self.ui.highlight then
         prev_context, next_context = self.ui.highlight:getSelectedWordContext(15)
-        highlight = cleanupSelectedText(self.ui.highlight.selected_text.text)
+        if self.ui.highlight.selected_text and self.ui.highlight.selected_text.text then
+            highlight = cleanupSelectedText(self.ui.highlight.selected_text.text)
+        end
     end
     DB:insertOrUpdate({
         book_title = title,
