@@ -175,7 +175,7 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
     -- These are used only by extractBooksInDirectory(), which should
     -- use the cover_specs set for FileBrowser, and not those from History.
     -- Hopefully, we get self.path=nil when called fro History
-    if self.path then
+    if self.path and is_pathchooser == false then
         current_path = self.path
         current_cover_specs = self.cover_specs
     end
