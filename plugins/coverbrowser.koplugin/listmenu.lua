@@ -249,11 +249,12 @@ function ListMenuItem:update()
         local wright_width = 0
         local wright_items = { align = "right" }
 
-        local folder_count = "0"
-        local files_count = "0"
-        local folder_string = "Folder"
-        local file_string = "Book"
-        if self.mandatory ~= nil then
+        if is_pathchooser == false then
+            local folder_count = "0"
+            local files_count = "0"
+            local folder_string = "Folder"
+            local file_string = "Book"
+
             folder_count = string.match(self.mandatory, "(%d+) \u{F114}")
             files_count = string.match(self.mandatory, "(%d+) \u{F016}")
 
@@ -273,6 +274,12 @@ function ListMenuItem:update()
                 }
                 table.insert(wright_items, wfilecount)
             end
+        else
+            local wmandatory = TextWidget:new{
+                text = self.mandatory or "",
+                face = Font:getFace(good_sans, _fontSize(14, 18)),
+            }
+            table.insert(wright_items, wmandatory)
         end
 
         if #wright_items > 0 then
