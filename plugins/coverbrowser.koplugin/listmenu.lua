@@ -312,14 +312,6 @@ function ListMenuItem:update()
             wlefttext = BD.directory(self.text)
         end
 
-        logger.info("wlefttext: ", wlefttext)
-        if self.title_bar then
-            logger.info("self.title_bar.title: ", self.title_bar.title)
-        else
-            logger.info("self.title_bar.title: ", "unknown")
-
-        end
-
         local wleft = TextBoxWidget:new {
             text = wlefttext,
             face = Font:getFace(good_serif, _fontSize(22, 22)),
