@@ -999,10 +999,29 @@ function ReaderView:onReaderFooterVisibilityChange()
         if not self.footer.settings.reclaim_height then
             -- NOTE: Mimic what onSetFullScreen does, since, without reclaim, toggling the footer affects the available area,
             --       so we need to recompute the full layout.
+            -- NOTE: ReaderView:recalculate will snap visible_area to page_area edges (depending on zoom direction).
+            --       We don't actually want to move here, so save & restore our current visible_area *coordinates*...
+            local x, y = self.visible_area.x, self.visible_area.y
             self.ui:handleEvent(Event:new("SetDimensions", Screen:getSize()))
-            -- NOTE: Scroll mode's behavior after this might be suboptimal (until next page),
-            --       but I'm not familiar enough with it to make it behave...
-            --       (e.g., RedrawCurrentPage & co will snap to the top of the "current" page).
+            self.visible_area.x = x
+            self.visible_area.y = y
+
+            -- Now, for scroll mode, ReaderView:recalculate does *not* affect any of the actual page_states,
+            -- so we'll fudge the bottom page's visible area ourselves,
+            -- so as not to leave a blank area behind the footer when hiding it...
+            -- This might cause the next scroll to scroll a footer height's *less* than expected,
+            -- but that should be hardly noticeable, and since we scroll less, it won't skip over anything.
+            if self.page_scroll then
+                local bottom_page = self.page_states[#self.page_states]
+                -- Not sure if this can ever be `nil`...
+                if bottom_page then
+                    if self.footer_visible then
+                        bottom_page.visible_area.h = bottom_page.visible_area.h - self.footer:getHeight()
+                    else
+                        bottom_page.visible_area.h = bottom_page.visible_area.h + self.footer:getHeight()
+                    end
+                end
+            end
         end
     end
 end
