@@ -395,7 +395,7 @@ local dispatcher_menu_order = {
     "follow_nearest_link",
     "follow_nearest_internal_link",
     "select_prev_page_link",
-    "select_next_page_link"
+    "select_next_page_link",
     "add_location_to_history",
     "clear_location_history",
     ----
