@@ -891,7 +891,7 @@ elseif codename == "633" then
 elseif codename == "634" then
     return PocketBook634
 elseif codename == "634K3" then
-    return PocketBook634K3    
+    return PocketBook634K3
 elseif codename == "640" then
     return PocketBook640
 elseif codename == "641" then
