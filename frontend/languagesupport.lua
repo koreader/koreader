@@ -23,6 +23,7 @@ of a text fragment).
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local dbg = require("dbg")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 
 -- Shared among all LanguageSupport instances to make sure we don't lose
@@ -150,20 +151,6 @@ function LanguageSupport:_findAndCallPlugin(language_code, handler_name, ...)
     end
 end
 
--- @fixme This was copied from readerhighlight, but it should probably live in
---        util or some textutil module.
-local function cleanupSelectedText(text)
-    -- Trim spaces and new lines at start and end
-    text = text:gsub("^[\n%s]*", "")
-    text = text:gsub("[\n%s]*$", "")
-    -- Trim spaces around newlines
-    text = text:gsub("%s*\n%s*", "\n")
-    -- Trim consecutive spaces (that would probably have collapsed
-    -- in rendered CreDocuments)
-    text = text:gsub("%s%s+", " ")
-    return text
-end
-
 local function createDocumentCallbacks(document)
     if not document or document.info.has_pages then
         -- We need document:get{Prev,Next}VisibleChar at a minimum and there
@@ -236,7 +223,7 @@ function LanguageSupport:improveWordSelection(selection)
     end
 
     return {
-        text = cleanupSelectedText(new_text),
+        text = util.cleanupSelectedText(new_text),
         pos0 = new_pos0,
         pos1 = new_pos1,
         sboxes = self.document:getScreenBoxesFromPositions(new_pos0, new_pos1, true),
