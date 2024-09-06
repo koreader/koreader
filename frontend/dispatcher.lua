@@ -164,8 +164,8 @@ local settingsList = {
     next_location = {category="none", event="GoForwardLink", arg=true, title=_("Forward to next location"), reader=true},
     follow_nearest_link = {category="arg", event="GoToPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest link"), reader=true},
     follow_nearest_internal_link = {category="arg", event="GoToInternalPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest internal link"), reader=true},
-    select_prev_page_link = { category="none", event = "SelectPrevPageLink", title=_("Clear previous page-link"), reader=true, condition=not Device:isTouchDevice()},
-    select_next_page_link = { category="none", event = "SelectNextPageLink", title=_("Select next page-link"), reader=true, condition=not Device:isTouchDevice()},
+    select_prev_page_link = { category="none", event = "SelectPrevPageLink", title=_("Select previous link in current page"), reader=true, condition=not Device:isTouchDevice()},
+    select_next_page_link = { category="none", event = "SelectNextPageLink", title=_("Select next link in current page"), reader=true, condition=not Device:isTouchDevice()},
     add_location_to_history = {category="none", event="AddCurrentLocationToStack", arg=true, title=_("Add current location to history"), reader=true},
     clear_location_history = {category="none", event="ClearLocationStack", arg=true, title=_("Clear location history"), reader=true, separator=true},
     ----
