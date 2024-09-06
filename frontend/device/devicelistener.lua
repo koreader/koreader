@@ -328,6 +328,12 @@ end
 function DeviceListener:onSwapPageTurnButtons(side)
     local new_text
     if side == "left" then
+        if G_reader_settings:isTrue("input_invert_page_turn_keys") then
+            UIManager:show(InfoMessage:new{
+                text = _("Not possible to invert left-side page-turn buttons at this moment. Please revert global page-turn inversion first.")
+            })
+            return true
+        end
         G_reader_settings:flipNilOrFalse("input_invert_left_page_turn_keys")
         Device:invertButtonsLeft()
         if G_reader_settings:isTrue("input_invert_left_page_turn_keys") then
@@ -336,6 +342,12 @@ function DeviceListener:onSwapPageTurnButtons(side)
             new_text = _("Left-side page-turn buttons no longer inverted.")
         end
     elseif side == "right" then
+        if G_reader_settings:isTrue("input_invert_page_turn_keys") then
+            UIManager:show(InfoMessage:new{
+                text = _("Not possible to invert right-side page-turn buttons at this moment. Please revert global page-turn inversions first.")
+            })
+            return true
+        end
         G_reader_settings:flipNilOrFalse("input_invert_right_page_turn_keys")
         Device:invertButtonsRight()
         if G_reader_settings:isTrue("input_invert_right_page_turn_keys") then
@@ -344,6 +356,12 @@ function DeviceListener:onSwapPageTurnButtons(side)
             new_text = _("Right-side page-turn buttons no longer inverted.")
         end
     else
+        if G_reader_settings:isTrue("input_invert_left_page_turn_keys") or G_reader_settings:isTrue("input_invert_right_page_turn_keys") then
+            UIManager:show(InfoMessage:new{
+                text = _("Not possible to invert page-turn buttons at this moment. Please revert other page-turn inversions first.")
+            })
+            return true
+        end
         G_reader_settings:flipNilOrFalse("input_invert_page_turn_keys")
         Device:invertButtons()
         if G_reader_settings:isTrue("input_invert_page_turn_keys") then
