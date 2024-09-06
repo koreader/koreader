@@ -317,6 +317,7 @@ function DeviceListener:onSwapPageTurnButtons(side)
         Device:invertButtonsLeft()
         if G_reader_settings:isTrue("input_invert_left_page_turn_keys") then
             new_text = _("Left-side page-turn buttons inverted.")
+            G_reader_settings:makeFalse("input_invert_page_turn_keys")
         else
             new_text = _("Left-side page-turn buttons no longer inverted.")
         end
@@ -325,6 +326,7 @@ function DeviceListener:onSwapPageTurnButtons(side)
         Device:invertButtonsRight()
         if G_reader_settings:isTrue("input_invert_right_page_turn_keys") then
             new_text = _("Right-side page-turn buttons inverted.")
+            G_reader_settings:makeFalse("input_invert_page_turn_keys")
         else
             new_text = _("Right-side page-turn buttons no longer inverted.")
         end
@@ -333,6 +335,8 @@ function DeviceListener:onSwapPageTurnButtons(side)
         Device:invertButtons()
         if G_reader_settings:isTrue("input_invert_page_turn_keys") then
             new_text = _("Page-turn buttons inverted.")
+            G_reader_settings:makeFalse("input_invert_left_page_turn_keys")
+            G_reader_settings:makeFalse("input_invert_right_page_turn_keys")
         else
             new_text = _("Page-turn buttons no longer inverted.")
         end
