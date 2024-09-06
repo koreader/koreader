@@ -749,6 +749,21 @@ Adjust the size of each fallback font so they all get the same x-height, and low
 This may help with Greek words among Latin text (as Latin fonts often do not have all the Greek characters), but may make Chinese or Indic characters smaller when picked from fallback fonts.]]),
         separator = true,
     })
+    table.insert(settings_table, {
+        text = _("Set normal line height based on font size"),
+        checked_func = function()
+            return G_reader_settings:nilOrTrue("cre_size_based_normal_line_height")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrTrue("cre_size_based_normal_line_height")
+            self.ui.document:setMinNormalLineHeight(G_reader_settings:nilOrTrue("cre_size_based_normal_line_height"))
+            self.ui:handleEvent(Event:new("UpdatePos"))
+        end,
+        help_text = _([[
+Automatically set line height based on font size, instead of font metrics.
+            ]]),
+        separator = true,
+    })
 
     table.insert(settings_table, {
         text_func = function()
