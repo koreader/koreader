@@ -641,6 +641,24 @@ local PocketBook634 = PocketBook:extend{
     hasNaturalLight = yes,
 }
 
+-- PocketBook Verse Pro Color (PB634K3)
+local PocketBook634K3 = PocketBook:extend{
+    model = "PBVerseProColor",
+    display_dpi = 300,
+    hasColorScreen = yes,
+    canHWDither = yes, -- Adjust color saturation with inkview
+    canUseCBB = no, -- 24bpp
+    isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
+    -- c.f., https://github.com/koreader/koreader/issues/9556
+    inkview_translates_buttons = true,
+}
+
+function PocketBook634K3._fb_init(fb, finfo, vinfo)
+    -- Pocketbook Color Lux reports bits_per_pixel = 8, but actually uses an RGB24 framebuffer
+    vinfo.bits_per_pixel = 24
+end
+
 -- PocketBook Aqua (640)
 local PocketBook640 = PocketBook:extend{
     model = "PBAqua",
@@ -872,6 +890,8 @@ elseif codename == "633" then
     return PocketBook633
 elseif codename == "634" then
     return PocketBook634
+elseif codename == "634K3" then
+    return PocketBook634K3    
 elseif codename == "640" then
     return PocketBook640
 elseif codename == "641" then
