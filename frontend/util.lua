@@ -50,8 +50,23 @@ end
 ---- @string s the string to be trimmed
 ---- @treturn string trimmed text
 function util.trim(s)
-   local from = s:match"^%s*()"
-   return from > #s and "" or s:match(".*%S", from)
+    local from = s:match"^%s*()"
+    return from > #s and "" or s:match(".*%S", from)
+end
+
+---- Variant tailored for text selection purposes (originally implemented in ReaderHighlight).
+---- @string text the text to be trimmed
+---- @treturn string trimmed text
+function util.cleanupSelectedText(text)
+    -- Trim spaces and new lines at start and end
+    text = text:gsub("^[\n%s]*", "")
+    text = text:gsub("[\n%s]*$", "")
+    -- Trim spaces around newlines
+    text = text:gsub("%s*\n%s*", "\n")
+    -- Trim consecutive spaces (that would probably have collapsed
+    -- in rendered CreDocuments)
+    text = text:gsub("%s%s+", " ")
+    return text
 end
 
 --[[

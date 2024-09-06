@@ -50,18 +50,6 @@ local function inside_box(pos, box)
     end
 end
 
-local function cleanupSelectedText(text)
-    -- Trim spaces and new lines at start and end
-    text = text:gsub("^[\n%s]*", "")
-    text = text:gsub("[\n%s]*$", "")
-    -- Trim spaces around newlines
-    text = text:gsub("%s*\n%s*", "\n")
-    -- Trim consecutive spaces (that would probably have collapsed
-    -- in rendered CreDocuments)
-    text = text:gsub("%s%s+", " ")
-    return text
-end
-
 function ReaderHighlight:init()
     self.screen_w = Screen:getWidth()
     self.screen_h = Screen:getHeight()
@@ -103,7 +91,7 @@ function ReaderHighlight:init()
                 text = C_("Text", "Copy"),
                 enabled = Device:hasClipboard(),
                 callback = function()
-                    Device.input.setClipboardText(cleanupSelectedText(this.selected_text.text))
+                    Device.input.setClipboardText(util.cleanupSelectedText(this.selected_text.text))
                     this:onClose()
                     UIManager:show(Notification:new{
                         text = _("Selection copied to clipboard."),
@@ -180,7 +168,7 @@ function ReaderHighlight:init()
             return {
                 text = action,
                 callback = function()
-                    local text = cleanupSelectedText(this.selected_text.text)
+                    local text = util.cleanupSelectedText(this.selected_text.text)
                     -- call self:onClose() before calling the android framework
                     this:onClose()
                     Device:doShareText(text, action)
@@ -1035,7 +1023,7 @@ function ReaderHighlight:updateHighlight(index, side, direction, move_by_char)
     local new_beginning = highlight.pos0
     local new_end = highlight.pos1
     local new_text = self.ui.document:getTextFromXPointers(new_beginning, new_end)
-    highlight.text = cleanupSelectedText(new_text)
+    highlight.text = util.cleanupSelectedText(new_text)
     self.ui:handleEvent(Event:new("AnnotationsModified", { highlight, highlight_before }))
     if side == 0 then
         -- Ensure we show the page with the new beginning of highlight
@@ -1935,7 +1923,7 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             page = self.ui.paging and self.selected_text.pos0.page or self.selected_text.pos0,
             pos0 = self.selected_text.pos0,
             pos1 = self.selected_text.pos1,
-            text = cleanupSelectedText(self.selected_text.text),
+            text = util.cleanupSelectedText(self.selected_text.text),
             drawer = self.view.highlight.saved_drawer,
             color = self.view.highlight.saved_color,
             chapter = self.ui.toc:getTocTitleByPage(pg_or_xp),
@@ -1993,7 +1981,7 @@ end
 
 function ReaderHighlight:lookupWikipedia()
     if self.selected_text then
-        self.ui:handleEvent(Event:new("LookupWikipedia", cleanupSelectedText(self.selected_text.text)))
+        self.ui:handleEvent(Event:new("LookupWikipedia", util.cleanupSelectedText(self.selected_text.text)))
     end
 end
 
@@ -2006,7 +1994,7 @@ function ReaderHighlight:onHighlightSearch()
     end
     self:highlightFromHoldPos()
     if self.selected_text then
-        local text = util.stripPunctuation(cleanupSelectedText(self.selected_text.text))
+        local text = util.stripPunctuation(util.cleanupSelectedText(self.selected_text.text))
         self.ui.search:searchText(text)
     end
 end
@@ -2015,7 +2003,7 @@ function ReaderHighlight:onHighlightDictLookup()
     logger.dbg("dictionary lookup highlight")
     self:highlightFromHoldPos()
     if self.selected_text then
-        self.ui:handleEvent(Event:new("LookupWord", cleanupSelectedText(self.selected_text.text)))
+        self.ui:handleEvent(Event:new("LookupWord", util.cleanupSelectedText(self.selected_text.text)))
     end
 end
 
