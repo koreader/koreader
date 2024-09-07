@@ -551,6 +551,13 @@ function CoverMenu:genItemTable(dirs, files, path)
     if #item_table > 0 and is_pathchooser == false then
         if item_table[1].text == "⬆ ../" then table.remove(item_table,1) end
     end
+    if path ~= "/" and (G_reader_settings:isTrue("lock_home_folder") and path == G_reader_settings:readSetting("home_dir")) and is_pathchooser then
+            table.insert(item_table, 1, {
+            text = BD.mirroredUILayout() and BD.ltr("../ ⬆") or "⬆ ../",
+            path = path .. "/..",
+            is_go_up = true,
+        })
+    end
     return item_table
 end
 
