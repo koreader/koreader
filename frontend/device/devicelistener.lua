@@ -330,9 +330,8 @@ function DeviceListener:onSwapPageTurnButtons(side)
     local new_text
     if side == "left" then
         if G_reader_settings:isTrue("input_invert_page_turn_keys") then
-            UIManager:show(InfoMessage:new{
-                text = _("Not possible to invert left-side page-turn buttons at this moment. Please revert global page-turn inversion first.")
-            })
+            new_text = _("Currently, inverting the left-side page-turn buttons is not possible. Please revert the global page-turn inversion first.")
+            UIManager:show(InfoMessage:new{text = new_text})
             return true
         end
         G_reader_settings:flipNilOrFalse("input_invert_left_page_turn_keys")
@@ -344,9 +343,8 @@ function DeviceListener:onSwapPageTurnButtons(side)
         end
     elseif side == "right" then
         if G_reader_settings:isTrue("input_invert_page_turn_keys") then
-            UIManager:show(InfoMessage:new{
-                text = _("Not possible to invert right-side page-turn buttons at this moment. Please revert global page-turn inversions first.")
-            })
+            new_text = _("Currently, inverting the right-side page-turn buttons is not possible. Please revert the global page-turn inversion first.")
+            UIManager:show(InfoMessage:new{text = new_text})
             return true
         end
         G_reader_settings:flipNilOrFalse("input_invert_right_page_turn_keys")
@@ -358,9 +356,8 @@ function DeviceListener:onSwapPageTurnButtons(side)
         end
     else
         if G_reader_settings:isTrue("input_invert_left_page_turn_keys") or G_reader_settings:isTrue("input_invert_right_page_turn_keys") then
-            UIManager:show(InfoMessage:new{
-                text = _("Not possible to invert page-turn buttons at this moment. Please revert other page-turn inversions first.")
-            })
+            new_text = _("Currently, inverting the page-turn buttons is not possible. Please revert other page-turn inversions first.")
+            UIManager:show(InfoMessage:new{text = new_text})
             return true
         end
         G_reader_settings:flipNilOrFalse("input_invert_page_turn_keys")
