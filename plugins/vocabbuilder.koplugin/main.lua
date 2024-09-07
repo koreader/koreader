@@ -63,19 +63,6 @@ local function saveSettings()
     G_reader_settings:saveSetting("vocabulary_builder", settings)
 end
 
--- copied from readerhighlight.lua
-local function cleanupSelectedText(text)
-    -- Trim spaces and new lines at start and end
-    text = text:gsub("^[\n%s]*", "")
-    text = text:gsub("[\n%s]*$", "")
-    -- Trim spaces around newlines
-    text = text:gsub("%s*\n%s*", "\n")
-    -- Trim consecutive spaces (that would probably have collapsed
-    -- in rendered CreDocuments)
-    text = text:gsub("%s%s+", " ")
-    return text
-end
-
 --[[--
 Menu dialogue widget
 --]]--
@@ -2081,7 +2068,7 @@ function VocabBuilder:onWordLookedUp(word, title, is_manual)
     if settings.with_context and self.ui.highlight then
         prev_context, next_context = self.ui.highlight:getSelectedWordContext(15)
         if self.ui.highlight.selected_text and self.ui.highlight.selected_text.text then
-            highlight = cleanupSelectedText(self.ui.highlight.selected_text.text)
+            highlight = util.cleanupSelectedText(self.ui.highlight.selected_text.text)
         end
     end
     DB:insertOrUpdate({
