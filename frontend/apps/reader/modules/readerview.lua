@@ -95,6 +95,7 @@ function ReaderView:init()
         temp_drawer = "invert",
         temp = {},
         saved_drawer = "lighten",
+        -- NOTE: Unfortunately, yellow tends to look like absolute ass on Kaleido panels...
         saved_color = Screen:isColorEnabled() and "yellow" or "gray",
         indicator = nil, -- geom: non-touch highlight position indicator: {x = 50, y=50}
     }
@@ -547,7 +548,7 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
             local boxes = self.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
             if boxes then
                 local color = item.color and Blitbuffer.colorFromName(item.color)
-                if color and not Blitbuffer.isColor8(color) then
+                if not colorful and color and not Blitbuffer.isColor8(color) then
                     colorful = true
                 end
                 local draw_note_mark = item.note and self.highlight.note_mark
@@ -593,7 +594,7 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
                 local boxes = self.document:getScreenBoxesFromPositions(item.pos0, item.pos1, true) -- get_segments=true
                 if boxes then
                     local color = item.color and Blitbuffer.colorFromName(item.color)
-                    if color and not Blitbuffer.isColor8(color) then
+                    if not colorful and color and not Blitbuffer.isColor8(color) then
                         colorful = true
                     end
                     local draw_note_mark = item.note and self.highlight.note_mark
