@@ -1,4 +1,3 @@
-local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -18,7 +17,6 @@ local LineWidget = require("ui/widget/linewidget")
 local ProgressWidget = require("ui/widget/progresswidget")
 local RenderImage = require("ui/renderimage")
 local Size = require("ui/size")
-local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local TitleBar = require("ui/widget/titlebar")
@@ -26,13 +24,11 @@ local ToggleSwitch = require("ui/widget/toggleswitch")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local VerticalScrollBar = require("ui/widget/verticalscrollbar")
 local datetime = require("datetime")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
-local logger = require("logger")
 
 local stats_book = {}
 
@@ -44,15 +40,8 @@ local stats_book = {}
     ["status"] = "Reading"
     ["modified"] = "24.01.2016"
 },]]
-
-local function findLast(haystack, needle)
-    local i = haystack:match(".*" .. needle .. "()")
-    if i == nil then return nil else return i - 1 end
-end
-
 local BookStatusWidget = FocusManager:extend{
-    --padding = Size.padding.fullscreen,
-    padding = Screen:getSize().w * 0.03,
+    padding = Size.padding.fullscreen,
     settings = nil,
     thumbnail = nil,
     props = nil,
@@ -91,9 +80,9 @@ function BookStatusWidget:init()
     self.total_pages = self.ui.document:getPageCount()
     stats_book = self:getStats()
 
-    self.small_font_face = Font:getFace("source/SourceSerif4-Regular.ttf", 18)
-    self.medium_font_face = Font:getFace("source/SourceSerif4-Regular.ttf", 22)
-    self.large_font_face = Font:getFace("source/SourceSerif4-BoldIt.ttf", 30)
+    self.small_font_face = Font:getFace("smallffont")
+    self.medium_font_face = Font:getFace("ffont")
+    self.large_font_face = Font:getFace("largeffont")
 
     local button_enabled = true
     if self.readonly then
@@ -182,12 +171,12 @@ function BookStatusWidget:getStatusContent(width)
         align = "left",
         title_bar,
         self:genBookInfoGroup(),
-        self:genHeader(_("Progress")),
+        self:genHeader(_("Statistics")),
         self:genStatisticsGroup(width),
-        self:genHeader(_("Description")),
+        self:genHeader(_("Review")),
         self:genSummaryGroup(width),
-        --self:genHeader(self.readonly and _("Book Status") or _("Update Status")),
-        --self:generateSwitchGroup(width),
+        self:genHeader(self.readonly and _("Book Status") or _("Update Status")),
+        self:generateSwitchGroup(width),
     }
     return content
 end
@@ -202,7 +191,7 @@ function BookStatusWidget:genHeader(title)
     }
 
     local padding_span = HorizontalSpan:new{ width = self.padding }
-    local line_width = (width - header_title:getSize().w) / 2  - self.padding * 2
+    local line_width = (width - header_title:getSize().w) / 2 - self.padding * 2
     local line_container = LeftContainer:new{
         dimen = Geom:new{ w = line_width, h = height },
         LineWidget:new{
@@ -319,50 +308,18 @@ function BookStatusWidget:genBookInfoGroup()
             text = self.props.display_title,
             lang = lang,
             width = width,
-            face = self.large_font_face,
+            face = self.medium_font_face,
             alignment = "center",
         },
-    }
-    -- series and author
-    local author_block = ""
-    local author = ""
-    if self.props.authors then
-        local authors = self.props.authors
-        if authors and authors:find("\n") then
-            authors = util.splitToArray(authors, "\n")
-            for i = 1, #authors do
-                authors[i] = BD.auto(authors[i])
-            end
-            if #authors > 2 then
-                authors = { authors[1], T(_("%1 et al."), authors[2]) }
-            end
-            author = table.concat(authors, "\n")
-        elseif authors then
-            author = BD.auto(authors)
-        end
-    end
-    local series = ""
-    if self.props.series and self.props.series_index > 0 then
-        if string.match(self.props.series, ": ") then
-            series = string.sub(self.props.series, findLast(self.props.series, ": ") + 1, -1)
-        else
-            series = self.props.series
-        end
-        if self.props.series_index then
-            series = series .. " #" .. self.props.series_index
-        end
-        author_block = series .. "\n" .. author
-    else
-        author_block = author
-    end
 
+    }
+    -- author
     local text_author = TextBoxWidget:new{
-        text =  author_block,
+        text = self.props.authors,
         lang = lang,
         face = self.small_font_face,
         width = width,
         alignment = "center",
-        fgcolor = Blitbuffer.COLOR_GRAY_2
     }
     table.insert(book_meta_info_group,
         CenterContainer:new{
@@ -370,22 +327,15 @@ function BookStatusWidget:genBookInfoGroup()
             text_author
         }
     )
-
     -- progress bar
     local read_percentage = self.ui:getCurrentPage() / self.total_pages
     local progress_bar = ProgressWidget:new{
         width = math.floor(width * 0.7),
-        height = Screen:scaleBySize(18),
+        height = Screen:scaleBySize(10),
         percentage = read_percentage,
-        margin_v = 0,
-        margin_h = 0,
-        bordersize = Screen:scaleBySize(0.5),
-        bordercolor = Blitbuffer.COLOR_BLACK,
-        bgcolor = Blitbuffer.COLOR_GRAY_E,
-        fillcolor = Blitbuffer.COLOR_GRAY_6,
+        ticks = nil,
+        last = nil,
     }
-    table.insert(book_meta_info_group,
-        VerticalSpan:new{ width = Screen:scaleBySize(90) })
     table.insert(book_meta_info_group,
         CenterContainer:new{
             dimen = Geom:new{ w = width, h = progress_bar:getSize().h },
@@ -394,7 +344,7 @@ function BookStatusWidget:genBookInfoGroup()
     )
     -- complete text
     local text_complete = TextWidget:new{
-        text = T(_("%1% Read"),
+        text = T(_("%1% Completed"),
                         string.format("%1.f", read_percentage * 100)),
         face = self.small_font_face,
     }
@@ -405,11 +355,11 @@ function BookStatusWidget:genBookInfoGroup()
         }
     )
     -- rating
-    -- table.insert(book_meta_info_group,
-    --              VerticalSpan:new{ width = Screen:scaleBySize(30) })
-    -- local rateHeight = Screen:scaleBySize(60)
-    -- table.insert(book_meta_info_group,
-    --              self:generateRateGroup(screen_width, rateHeight, self.summary.rating))
+    table.insert(book_meta_info_group,
+                 VerticalSpan:new{ width = Screen:scaleBySize(30) })
+    local rateHeight = Screen:scaleBySize(60)
+    table.insert(book_meta_info_group,
+                 self:generateRateGroup(screen_width, rateHeight, self.summary.rating))
 
     -- build the final group
     local book_info_group = HorizontalGroup:new{
@@ -520,60 +470,23 @@ function BookStatusWidget:genSummaryGroup(width)
     if Screen:getScreenMode() == "landscape" then
         height = Screen:scaleBySize(80)
     else
-        height = Screen:scaleBySize(265) --value increased by 105 due to no status toggles
+        height = Screen:scaleBySize(160)
     end
 
-    local html_contents
-    if self.props.description then
-        html_contents = "<html lang='" .. self.props.language .. "'><body>" .. self.props.description .. "</body></html>"
-        --html_contents = "<html><body>" .. self.props.description .. "</body></html>"
-    else
-        html_contents = "<html><body><h2 style='font-style: italic; color: #CCCCCC;'>No description.</h3></body></html>"
-    end
-    self.input_note = ScrollHtmlWidget:new{
-        width = width - Screen:scaleBySize(60),
-        height = height,
-        css = [[
-            @page {
-                margin: 0;
-                font-family: 'Source Serif 4', serif;
-                font-size: 18px;
-                line-height: 1.00;
-                text-align: justify;
-            }
-            body {
-                margin: 0;
-                padding: 0;
-            }
-            p {
-                margin-top: 0;
-                margin-bottom: 0;
-                text-indent: 1.2em;
-            }
-            p + p {
-                margin-top: 0.5em;
-            }
-        ]],
-        default_font_size = Screen:scaleBySize(18),
-        html_body = html_contents,
-        text_scroll_span = Screen:scaleBySize(20),
-        scroll_bar_width = Screen:scaleBySize(10),
-        dialog = self,
+    local text_padding = Size.padding.default
+    self.input_note = InputText:new{
+        text = self.summary.note,
+        face = self.medium_font_face,
+        width = width - self.padding * 3,
+        height = math.floor(height * 0.75),
+        scroll = true,
+        bordersize = Size.border.default,
+        focused = false,
+        padding = text_padding,
+        parent = self,
+        readonly = self.readonly,
+        hint = _("A few words about the book"),
     }
-    -- local text_padding = Size.padding.default
-    -- self.input_note = InputText:new{
-    --     text = self.props.description,
-    --     face = self.medium_font_face,
-    --     width = width - self.padding * 3,
-    --     height = math.floor(height * 0.75),
-    --     scroll = true,
-    --     bordersize = Size.border.default,
-    --     focused = false,
-    --     padding = text_padding,
-    --     parent = self,
-    --     readonly = self.readonly,
-    --     hint = _("A few words about the book"),
-    -- }
     table.insert(self.layout, {self.input_note})
 
     return VerticalGroup:new{
