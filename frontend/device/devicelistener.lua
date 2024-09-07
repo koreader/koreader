@@ -1,7 +1,6 @@
 local Device = require("device")
 local Event = require("ui/event")
 local EventListener = require("ui/widget/eventlistener")
-local InfoMessage = require("ui/widget/infomessage")
 local Notification = require("ui/widget/notification")
 local Screen = Device.screen
 local UIManager = require("ui/uimanager")
@@ -314,10 +313,10 @@ end
 function DeviceListener:onSwapPageTurnButtons(side)
     local new_text
     if side == "left" then
+        -- revert any prior global inversions first. No shenanigans please, as we could end up with an all greyed out menu.
         if G_reader_settings:isTrue("input_invert_page_turn_keys") then
-            new_text = _("Currently, inverting the left-side page-turn buttons is not possible. Please revert the global page-turn inversion first.")
-            UIManager:show(InfoMessage:new{text = new_text})
-            return true
+            G_reader_settings:makeFalse("input_invert_page_turn_keys")
+            Device:invertButtons()
         end
         G_reader_settings:flipNilOrFalse("input_invert_left_page_turn_keys")
         Device:invertButtonsLeft()
@@ -327,10 +326,10 @@ function DeviceListener:onSwapPageTurnButtons(side)
             new_text = _("Left-side page-turn buttons no longer inverted.")
         end
     elseif side == "right" then
+        -- revert any prior global inversions first. No shenanigans please, as we could end up with an all greyed out menu.
         if G_reader_settings:isTrue("input_invert_page_turn_keys") then
-            new_text = _("Currently, inverting the right-side page-turn buttons is not possible. Please revert the global page-turn inversion first.")
-            UIManager:show(InfoMessage:new{text = new_text})
-            return true
+            G_reader_settings:makeFalse("input_invert_page_turn_keys")
+            Device:invertButtons()
         end
         G_reader_settings:flipNilOrFalse("input_invert_right_page_turn_keys")
         Device:invertButtonsRight()
@@ -340,10 +339,21 @@ function DeviceListener:onSwapPageTurnButtons(side)
             new_text = _("Right-side page-turn buttons no longer inverted.")
         end
     else
-        if G_reader_settings:isTrue("input_invert_left_page_turn_keys") or G_reader_settings:isTrue("input_invert_right_page_turn_keys") then
-            new_text = _("Currently, inverting the page-turn buttons is not possible. Please revert other page-turn inversions first.")
-            UIManager:show(InfoMessage:new{text = new_text})
+        -- revert any prior inversions first. No shenanigans please, as we could end up with an all greyed out menu.
+        if G_reader_settings:isTrue("input_invert_left_page_turn_keys") and G_reader_settings:isTrue("input_invert_right_page_turn_keys") then
+            G_reader_settings:makeFalse("input_invert_left_page_turn_keys")
+            G_reader_settings:makeFalse("input_invert_right_page_turn_keys")
+            G_reader_settings:makeFalse("input_invert_page_turn_keys")
+            Device:invertButtons()
+            new_text = _("Page-turn buttons no longer inverted.")
+            Notification:notify(new_text)
             return true
+        elseif G_reader_settings:isTrue("input_invert_left_page_turn_keys") then
+            G_reader_settings:makeFalse("input_invert_left_page_turn_keys")
+            Device:invertButtonsLeft()
+        elseif G_reader_settings:isTrue("input_invert_right_page_turn_keys") then
+            G_reader_settings:makeFalse("input_invert_right_page_turn_keys")
+            Device:invertButtonsRight()
         end
         G_reader_settings:flipNilOrFalse("input_invert_page_turn_keys")
         Device:invertButtons()
