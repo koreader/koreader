@@ -160,6 +160,9 @@ function HotKeyShortcuts:registerKeyEvents()
             self.key_events.ModPlusRPgB = { { "Shift", "RPgBack" }, event = "HotkeyAction", args = "modifier_plus_right_page_back" }
             self.key_events.ModPlusRPgF = { { "Shift",  "RPgFwd" }, event = "HotkeyAction", args = "modifier_plus_right_page_forward" }
             self.key_events.ModPlusPrss = { { "Shift",   "Press" }, event = "HotkeyAction", args = "modifier_plus_press" }
+            if G_reader_settings:isTrue("press_key_does_hotkeyshortcuts") then
+                self.key_events.Press = { { "Press" }, event = "HotkeyAction", args = "press" }
+            end
         end
         self.key_events.ModPlusBack = { { "Shift", "Back" }, event = "HotkeyAction", args = "modifier_plus_back" }
         self.key_events.ModPlusHome = { { "Shift", "Home" }, event = "HotkeyAction", args = "modifier_plus_home" }
