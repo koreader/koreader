@@ -674,6 +674,10 @@ function CoverMenu:updateTitleBarPath(path)
     end
 end
 
+function CoverMenu:registerKeyEvents()
+    logger.info("CoverMenu:registerKeyEvents()")
+    --FileManager:registerKeyEvents()
+end
 function CoverMenu:setupLayout()
     CoverMenu._FileManager_setupLayout_orig(self)
 
@@ -694,7 +698,6 @@ function CoverMenu:setupLayout()
     self.menu = FileManagerMenu:new{
         ui = self
     }
-
 
     return true
 end
