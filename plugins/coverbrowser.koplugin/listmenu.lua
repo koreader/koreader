@@ -44,8 +44,8 @@ local BookInfoManager = require("bookinfomanager")
 -- opened files (the dogear will make it look like a "used book")
 -- The ImageWidget Will be created when we know the available height (and
 -- recreated if height changes)
-local corner_mark_size = -1
-local corner_mark
+-- local corner_mark_size = -1
+-- local corner_mark
 
 local is_pathchooser = false
 
@@ -639,20 +639,20 @@ function ListMenuItem:update()
             end
 
             -- Create or replace corner_mark if needed
-            local mark_size = math.floor(dimen.h * (1 / 6))
-            -- Just fits under the page info text, which in turn adapts to the ListMenuItem height.
-            if mark_size ~= corner_mark_size then
-                corner_mark_size = mark_size
-                if corner_mark then
-                    corner_mark:free()
-                end
-                corner_mark = IconWidget:new {
-                    icon = "dogear.opaque",
-                    rotation_angle = BD.mirroredUILayout() and 180 or 270,
-                    width = corner_mark_size,
-                    height = corner_mark_size,
-                }
-            end
+            -- local mark_size = math.floor(dimen.h * (1 / 6))
+            -- -- Just fits under the page info text, which in turn adapts to the ListMenuItem height.
+            -- if mark_size ~= corner_mark_size then
+            --     corner_mark_size = mark_size
+            --     if corner_mark then
+            --         corner_mark:free()
+            --     end
+            --     corner_mark = IconWidget:new {
+            --         icon = "dogear.opaque",
+            --         rotation_angle = BD.mirroredUILayout() and 180 or 270,
+            --         width = corner_mark_size,
+            --         height = corner_mark_size,
+            --     }
+            -- end
 
             -- Build the middle main widget, in the space available
             local wmain_left_padding = Screen:scaleBySize(10)
@@ -1017,45 +1017,45 @@ function ListMenuItem:paintTo(bb, x, y)
         self.shortcut_icon:paintTo(bb, x + ix, y + iy)
     end
 
-    -- to which we paint over a dogear if needed
-    if corner_mark and self.do_hint_opened and self.been_opened then
-        -- align it on bottom right corner of widget
-        local ix
-        if BD.mirroredUILayout() then
-            ix = 0
-        else
-            ix = self.width - corner_mark:getSize().w
-        end
-        local iy = self.height - corner_mark:getSize().h
-        -- corner_mark:paintTo(bb, x + ix, y + iy)
-    end
+    -- -- to which we paint over a dogear if needed
+    -- if corner_mark and self.do_hint_opened and self.been_opened then
+    --     -- align it on bottom right corner of widget
+    --     local ix
+    --     if BD.mirroredUILayout() then
+    --         ix = 0
+    --     else
+    --         ix = self.width - corner_mark:getSize().w
+    --     end
+    --     local iy = self.height - corner_mark:getSize().h
+    --     -- corner_mark:paintTo(bb, x + ix, y + iy)
+    -- end
 
     -- to which we paint a small indicator if this book has a description
-    if self.has_description and not BookInfoManager:getSetting("no_hint_description") then
-        local target = self[1][1][2]
-        local d_w = Screen:scaleBySize(3)
-        local d_h = math.ceil(target.dimen.h / 4)
-        if self.do_cover_image and target[1][1][1] then
-            -- it has an image, align it on image's framecontainer's right border
-            target = target[1][1]
-            local ix
-            if BD.mirroredUILayout() then
-                ix = target.dimen.x - d_w + 1
-            else
-                ix = target.dimen.x + target.dimen.w - 1
-            end
-            bb:paintBorder(ix, target.dimen.y, d_w, d_h, 1)
-        else
-            -- no image, align it to the left border
-            local ix
-            if BD.mirroredUILayout() then
-                ix = target.dimen.x + target.dimen.w - d_w
-            else
-                ix = x
-            end
-            bb:paintBorder(ix, y, d_w, d_h, 1)
-        end
-    end
+    -- if self.has_description and not BookInfoManager:getSetting("no_hint_description") then
+    --     local target = self[1][1][2]
+    --     local d_w = Screen:scaleBySize(3)
+    --     local d_h = math.ceil(target.dimen.h / 4)
+    --     if self.do_cover_image and target[1][1][1] then
+    --         -- it has an image, align it on image's framecontainer's right border
+    --         target = target[1][1]
+    --         local ix
+    --         if BD.mirroredUILayout() then
+    --             ix = target.dimen.x - d_w + 1
+    --         else
+    --             ix = target.dimen.x + target.dimen.w - 1
+    --         end
+    --         bb:paintBorder(ix, target.dimen.y, d_w, d_h, 1)
+    --     else
+    --         -- no image, align it to the left border
+    --         local ix
+    --         if BD.mirroredUILayout() then
+    --             ix = target.dimen.x + target.dimen.w - d_w
+    --         else
+    --             ix = x
+    --         end
+    --         bb:paintBorder(ix, y, d_w, d_h, 1)
+    --     end
+    -- end
 end
 
 -- As done in MenuItem
