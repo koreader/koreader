@@ -72,10 +72,6 @@ local function getSourceDir()
     end
 end
 
-function string.starts(String,Start)
-    return string.sub(String,1,string.len(Start))==Start
- end
-
 function ItemShortCutIcon:init()
     if not self.key then
         return

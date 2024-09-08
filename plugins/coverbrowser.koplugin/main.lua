@@ -64,6 +64,9 @@ local CoverBrowser = WidgetContainer:extend{
         { _("Detailed list with cover images and filenames"), "list_image_filename" },
     },
 }
+function string.starts(String,Start)
+    return string.sub(String,1,string.len(Start))==Start
+ end
 
 function CoverBrowser:init()
     if self.ui.file_chooser then -- FileManager menu only
