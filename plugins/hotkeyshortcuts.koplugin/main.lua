@@ -1,7 +1,6 @@
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
-local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LuaSettings = require("luasettings")
@@ -299,11 +298,11 @@ function HotKeyShortcuts:genSubItemTable(hotkeyshortcuts)
     return sub_item_table
 end
 
-function HotKeyShortcuts:appendToTable(orig_table, second_table)
-    for _, v in ipairs(second_table) do 
+function HotKeyShortcuts:attachNewTableToExistingTable(orig_table, second_table)
+    for _, v in ipairs(second_table) do
         table.insert(orig_table, v)
     end
-end 
+end
 
 function HotKeyShortcuts:addToMainMenu(menu_items)
     local cursor_keys = {
@@ -321,7 +320,7 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
     local fn_keys = {
         "modifier_plus_back",
         "modifier_plus_home",
-        "modifier_plus_press" 
+        "modifier_plus_press"
     }
     if G_reader_settings:isTrue("press_key_does_hotkeyshortcuts") then
         table.insert(fn_keys, 1, "press")
@@ -333,14 +332,14 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
             "alt_plus_left",
             "alt_plus_right",
         }
-        self:appendToTable(cursor_keys, cursor_keys_haskeyboard)
+        self:attachNewTableToExistingTable(cursor_keys, cursor_keys_haskeyboard)
         local pg_turn_haskeyboard = {
             "alt_plus_left_page_back",
             "alt_plus_left_page_forward",
             "alt_plus_right_page_back",
             "alt_plus_right_page_back",
         }
-        self:appendToTable(pg_turn, pg_turn_haskeyboard)
+        self:attachNewTableToExistingTable(pg_turn, pg_turn_haskeyboard)
         local fn_keys_haskeyboard = {
             "modifier_plus_menu",
             "alt_plus_back",
@@ -348,7 +347,7 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
             "alt_plus_press",
             "alt_plus_menu"
         }
-        self:appendToTable(fn_keys, fn_keys_haskeyboard)
+        self:attachNewTableToExistingTable(fn_keys, fn_keys_haskeyboard)
     end
     menu_items.hotkeyshortcuts = {
         text = _("Shortcuts"),
