@@ -613,6 +613,14 @@ local function onFolderUp()
 
 end
 
+local function onShowFolderShortcutsDialog(self)
+    local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
+    local select_callback = function(path)
+        self:changeToPath(path)
+    end
+    FileManagerShortcuts:onShowFolderShortcutsDialog(select_callback)
+end
+
 function CoverMenu:updateTitleBarPath(path)
     -- We dont need the original updateTitleBarPath
     -- We dont use that title bar and we dont use the subtitle
@@ -644,12 +652,10 @@ function CoverMenu:updateTitleBarPath(path)
             left_icon_tap_callback = function() self:goHome() end,
             left_icon_hold_callback = function() self:onShowFolderMenu() end,
             -- favorites
-            --left2_icon = "favorite",
-            left2_icon = "usb-svgrepo-com",
+            left2_icon = "favorite",
             left2_icon_size_ratio = 1,
-            --left2_icon_tap_callback = function() FileManager.instance.collections:onShowColl() end,
-            left2_icon_tap_callback = function() MassStorage:start(true) end,
-            left2_icon_hold_callback = false,
+            left2_icon_tap_callback = function() FileManager.instance.collections:onShowColl() end,
+            left2_icon_hold_callback = function() onShowFolderShortcutsDialog(self) end,
             -- history
             left3_icon = "history",
             left3_icon_size_ratio = 1,
@@ -659,7 +665,7 @@ function CoverMenu:updateTitleBarPath(path)
             right_icon = self.selected_files and "check" or "plus",
             right_icon_size_ratio = 1,
             right_icon_tap_callback = function() self:onShowPlusMenu() end,
-            right_icon_hold_callback = false, -- propagate long-press to dispatcher
+            right_icon_hold_callback = function() MassStorage:start(true) end, -- propagate long-press to dispatcher
             -- up folder
             right2_icon = "back_up",
             right2_icon_size_ratio = 1,
