@@ -1,0 +1,117 @@
+-- typed on my Commodore 64 ;)
+local Device = require("device")
+
+return {
+    hotkeyshortcuts_fm = {
+        modifier_plus_up                 = nil,
+        modifier_plus_down               = nil, -- keep nil.
+        modifier_plus_left               = nil,
+        modifier_plus_right              = nil,
+        modifier_plus_left_page_back     = nil, -- keep nil.
+        modifier_plus_left_page_forward  = nil, -- keep nil.
+        modifier_plus_right_page_back    = nil, -- keep nil.
+        modifier_plus_right_page_forward = nil, -- keep nil.
+        modifier_plus_back               = {open_previous_document = true,},
+        modifier_plus_home               = Device:hasWifiToggle() and {toggle_wifi = true,} or {},
+        modifier_plus_press              = nil, -- keep nil.
+        modifier_plus_menu               = nil, -- keep nil.
+        -- optional
+        press = nil, -- keep nil
+        -- alt
+        alt_plus_up                 = nil,
+        alt_plus_down               = nil,
+        alt_plus_left               = nil,
+        alt_plus_right              = nil,
+        alt_plus_left_page_back     = nil,
+        alt_plus_left_page_forward  = nil,
+        alt_plus_right_page_back    = nil,
+        alt_plus_right_page_forward = nil,
+        alt_plus_back               = nil,
+        alt_plus_home               = nil,
+        alt_plus_press              = nil,
+        alt_plus_menu               = nil,
+        -- alt+alphabet
+        alt_plus_a = nil,
+        alt_plus_b = nil,
+        alt_plus_c = nil,
+        alt_plus_d = {dictionary_lookup = true,},
+        alt_plus_e = nil,
+        alt_plus_f = {file_search = true,},
+        alt_plus_g = nil,
+        alt_plus_h = nil,
+        alt_plus_i = nil,
+        alt_plus_j = nil,
+        alt_plus_k = nil,
+        alt_plus_l = nil,
+        alt_plus_m = nil,
+        alt_plus_n = nil,
+        alt_plus_o = nil,
+        alt_plus_p = nil,
+        alt_plus_q = nil,
+        alt_plus_r = nil,
+        alt_plus_s = nil,
+        alt_plus_t = nil,
+        alt_plus_u = nil,
+        alt_plus_v = nil,
+        alt_plus_w = {wikipedia_lookup = true,},
+        alt_plus_x = nil,
+        alt_plus_y = nil,
+        alt_plus_z = nil,
+    },
+    hotkeyshortcuts_reader = {
+        modifier_plus_up                 = {toc = true,},
+        modifier_plus_down               = {book_map = true,},
+        modifier_plus_left               = {bookmarks = true,},
+        modifier_plus_right              = {toggle_bookmark = true,},
+        modifier_plus_left_page_back     = not Device:isTouchDevice() and {select_prev_page_link = true,} or {},
+        modifier_plus_left_page_forward  = not Device:isTouchDevice() and {select_next_page_link = true,} or {},
+        modifier_plus_right_page_back    = not Device:isTouchDevice() and {select_prev_page_link = true,} or {},
+        modifier_plus_right_page_forward = not Device:isTouchDevice() and {select_next_page_link = true,} or {},
+        modifier_plus_back               = {open_previous_document = true,},
+        modifier_plus_home               = Device:hasWifiToggle() and {toggle_wifi = true,} or {},
+        modifier_plus_press              = {full_refresh = true,},
+        modifier_plus_menu               = nil, -- keep nil.
+        -- optional
+        press = {show_config_menu = true,},
+        -- alt
+        alt_plus_up                 = nil,
+        alt_plus_down               = nil,
+        alt_plus_left               = nil,
+        alt_plus_right              = nil,
+        alt_plus_left_page_forward  = nil,
+        alt_plus_left_page_back     = nil,
+        alt_plus_right_page_forward = nil,
+        alt_plus_right_page_back    = nil,
+        alt_plus_back               = nil,
+        alt_plus_home               = nil,
+        alt_plus_press              = nil,
+        alt_plus_menu               = nil,
+        -- alt+alphabet
+        alt_plus_a = nil,
+        alt_plus_b = nil,
+        alt_plus_c = nil,
+        alt_plus_d = {dictionary_lookup = true,},
+        alt_plus_e = nil,
+        alt_plus_f = {file_search = true,},
+        alt_plus_g = nil,
+        alt_plus_h = nil,
+        alt_plus_i = nil,
+        alt_plus_j = nil,
+        alt_plus_k = nil,
+        alt_plus_l = nil,
+        alt_plus_m = nil,
+        alt_plus_n = nil,
+        alt_plus_o = nil,
+        alt_plus_p = nil,
+        alt_plus_q = nil,
+        alt_plus_r = nil,
+        alt_plus_s = {fulltext_search = true,},
+        alt_plus_t = nil,
+        alt_plus_u = nil,
+        alt_plus_v = nil,
+        alt_plus_w = {wikipedia_lookup = true,},
+        alt_plus_x = nil,
+        alt_plus_y = nil,
+        alt_plus_z = nil,
+    },
+}
