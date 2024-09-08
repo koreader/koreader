@@ -290,7 +290,7 @@ function ListMenuItem:update()
 
         local pad_width = Screen:scaleBySize(10) -- on the left, in between, and on the right
         local folder_cover = nil
-        if self.do_cover_image then
+        if self.do_cover_image and is_pathchooser == false then
             folder_cover = ImageWidget:new({
                 file = getSourceDir() .. "/icons/folder.svg",
                 alpha = true,
@@ -513,7 +513,7 @@ function ListMenuItem:update()
             local wright
 
             local fn_page_count = string.match(filename_without_suffix, "P%((%d+)%)")
-            if fn_page_count then
+            if fn_page_count and is_pathchooser == false then
                 local progressbar_items = { align = "center" }
 
                 local trophy_widget = ImageWidget:new({
@@ -599,7 +599,7 @@ function ListMenuItem:update()
                     VerticalGroup:new(wright_items),
                 }
                 wright_right_padding = Screen:scaleBySize(10)
-            else
+            elseif is_pathchooser == false then
                 local wright_items = { align = "right" }
 
                 if not BookInfoManager:getSetting("hide_page_info") then
