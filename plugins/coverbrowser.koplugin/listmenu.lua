@@ -1103,7 +1103,6 @@ function ListMenu:_recalculateDimen()
         if self.page_info then
             self.others_height = self.others_height + self.page_info:getSize().h
         end
-        self.page_recalc_needed = true
     else
         -- Menu:init() not yet done: other elements used to calculate self.others_heights
         -- are not yet defined, so next calculations will be wrong, and we may get
