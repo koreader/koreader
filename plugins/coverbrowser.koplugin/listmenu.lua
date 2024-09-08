@@ -288,22 +288,27 @@ function ListMenuItem:update()
             }
         end
 
-        local folder_cover = ImageWidget:new({
-            file = getSourceDir() .. "/icons/folder.svg",
-            alpha = true,
-            scale_factor = 0,
-            width = dimen.h,
-            height = dimen.h,
-            original_in_nightmode = false,
-        })
-        self.menu._has_cover_images = true
-        self._has_cover_image = true
-
         local pad_width = Screen:scaleBySize(10) -- on the left, in between, and on the right
+        local folder_cover = nil
+        if self.do_cover_image then
+            folder_cover = ImageWidget:new({
+                file = getSourceDir() .. "/icons/folder.svg",
+                alpha = true,
+                scale_factor = 0,
+                width = dimen.h,
+                height = dimen.h,
+                original_in_nightmode = false,
+            })
+            self.menu._has_cover_images = true
+            self._has_cover_image = true
+        else
+            folder_cover = HorizontalSpan:new { width = Screen:scaleBySize(5) }
+        end
+
         local wleft_width = dimen.w - folder_cover.width - wright_width - 3 * pad_width
         local wlefttext = BD.directory(self.text:sub(1, -2))
 
-        if (self.title_bar and string.starts(self.title_bar.title, "Long-press to choose")) or 
+        if (self.title_bar and string.starts(self.title_bar.title, "Long-press to choose")) or
                 (self.menu and string.starts(self.menu.title, "Long-press to choose")) then
             wlefttext = BD.directory(self.text)
         end
