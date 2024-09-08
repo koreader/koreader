@@ -613,14 +613,6 @@ local function onFolderUp()
 
 end
 
-local function onShowFolderShortcutsDialog(self)
-    local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
-    local select_callback = function(path)
-        self:changeToPath(path)
-    end
-    FileManagerShortcuts:onShowFolderShortcutsDialog(select_callback)
-end
-
 function CoverMenu:updateTitleBarPath(path)
     -- We dont need the original updateTitleBarPath
     -- We dont use that title bar and we dont use the subtitle
@@ -655,7 +647,7 @@ function CoverMenu:updateTitleBarPath(path)
             left2_icon = "favorite",
             left2_icon_size_ratio = 1,
             left2_icon_tap_callback = function() FileManager.instance.collections:onShowColl() end,
-            left2_icon_hold_callback = function() onShowFolderShortcutsDialog(self) end,
+            left2_icon_hold_callback = function() FileManager.instance.folder_shortcuts:onShowFolderShortcutsDialog() end,
             -- history
             left3_icon = "history",
             left3_icon_size_ratio = 1,
