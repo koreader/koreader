@@ -650,8 +650,6 @@ local PocketBook634K3 = PocketBook:extend{
     canUseCBB = no, -- 24bpp
     isAlwaysPortrait = yes,
     hasNaturalLight = yes,
-    -- c.f., https://github.com/koreader/koreader/issues/9556
-    inkview_translates_buttons = true,
 }
 
 function PocketBook634K3._fb_init(fb, finfo, vinfo)
