@@ -296,7 +296,7 @@ function CreDocument:setupDefaultView()
     self:setAdjustedFallbackFontSizes(G_reader_settings:nilOrTrue("cre_adjusted_fallback_font_sizes"))
 
     -- Adjust or not fallback font sizes
-    self:setMinNormalLineHeight(G_reader_settings:nilOrTrue("cre_size_based_normal_line_height"))
+    self:setNormalLineHeight(G_reader_settings:nilOrTrue("cre_size_based_normal_line_height"))
 
     -- set monospace fonts size scaling
     self:setMonospaceFontScaling(G_reader_settings:readSetting("cre_monospace_scaling") or 100)
@@ -1214,7 +1214,7 @@ end
 function CreDocument:setNormalLineHeight(toggle)
     -- pixel line height for "normal" line height in adition to font size
     if toggle then
-        height = Screen:scaleBySize(3)
+        height = (G_reader_settings:readSetting("cre_normal_line_height") or 1.2) * self:getFontSize()
     else
         height = 0
     end
@@ -1235,6 +1235,7 @@ function CreDocument:setFontSize(new_font_size)
     if new_font_size then
         logger.dbg("CreDocument: set font size", new_font_size)
         self._document:setFontSize(new_font_size)
+        self:setNormalLineHeight(G_reader_settings:nilOrTrue("cre_size_based_normal_line_height"))
     end
 end
 
