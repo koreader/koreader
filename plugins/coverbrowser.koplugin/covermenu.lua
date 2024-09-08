@@ -657,7 +657,7 @@ function CoverMenu:updateTitleBarPath(path)
             right_icon = self.selected_files and "check" or "plus",
             right_icon_size_ratio = 1,
             right_icon_tap_callback = function() self:onShowPlusMenu() end,
-            right_icon_hold_callback = function() MassStorage:start(true) end, -- propagate long-press to dispatcher
+            right_icon_hold_callback = false, -- propagate long-press to dispatcher
             -- up folder
             right2_icon = "back_up",
             right2_icon_size_ratio = 1,
