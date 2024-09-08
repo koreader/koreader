@@ -340,7 +340,7 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
             "alt_plus_left_page_back",
             "alt_plus_left_page_forward",
             "alt_plus_right_page_back",
-            "alt_plus_right_page_back",
+            "alt_plus_right_page_forward",
         }
         self:attachNewTableToExistingTable(pg_turn, pg_turn_haskeyboard)
         local fn_keys_haskeyboard = {
