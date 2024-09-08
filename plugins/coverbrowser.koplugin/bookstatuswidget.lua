@@ -371,6 +371,12 @@ function BookStatusWidget:genBookInfoGroup()
         }
     )
 
+    if Screen:getScreenMode() == "landscape" then
+        table.insert(book_meta_info_group, VerticalSpan:new{ width = Screen:scaleBySize(50) })
+    else
+        table.insert(book_meta_info_group, VerticalSpan:new{ width = Screen:scaleBySize(90) })
+    end
+
     -- progress bar
     local read_percentage = self.ui:getCurrentPage() / self.total_pages
     local progress_bar = ProgressWidget:new{
@@ -384,8 +390,6 @@ function BookStatusWidget:genBookInfoGroup()
         bgcolor = Blitbuffer.COLOR_GRAY_E,
         fillcolor = Blitbuffer.COLOR_GRAY_6,
     }
-    table.insert(book_meta_info_group,
-        VerticalSpan:new{ width = Screen:scaleBySize(90) })
     table.insert(book_meta_info_group,
         CenterContainer:new{
             dimen = Geom:new{ w = width, h = progress_bar:getSize().h },
@@ -518,7 +522,7 @@ end
 function BookStatusWidget:genSummaryGroup(width)
     local height
     if Screen:getScreenMode() == "landscape" then
-        height = Screen:scaleBySize(80)
+        height = Screen:scaleBySize(165) --value increased by 60 due to no status toggles (and another 25 because that looks better)
     else
         height = Screen:scaleBySize(265) --value increased by 105 due to no status toggles
     end
