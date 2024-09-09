@@ -11,6 +11,12 @@ local ReaderAnnotation = WidgetContainer:extend{
 
 function ReaderAnnotation:buildAnnotation(bm, highlights, init)
     -- bm: associated single bookmark ; highlights: tables with all highlights
+    if self.ui.rolling and
+            (not self.document:isXPointerInDocument(bm.page) or
+            (bm.pos1 and not self.document:isXPointerInDocument(bm.pos1))) then
+        logger.warn("Invalid xpointer in old highlight, skipping")
+        return
+    end
     local note = bm.text
     if note == "" then
         note = nil
@@ -80,7 +86,10 @@ end
 function ReaderAnnotation:getAnnotationsFromBookmarksHighlights(bookmarks, highlights, init)
     local annotations = {}
     for i = #bookmarks, 1, -1 do
-        table.insert(annotations, self:buildAnnotation(bookmarks[i], highlights, init))
+        local annotation = self:buildAnnotation(bookmarks[i], highlights, init)
+        if annotation then
+            table.insert(annotations, annotation)
+        end
     end
     if init then
         self:sortItems(annotations)
