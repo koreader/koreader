@@ -1102,11 +1102,11 @@ function Dispatcher:_showAsMenu(settings, exec_props)
                 UIManager:close(quickmenu)
                 UIManager:nextTick(function()
                     Dispatcher:execute({[v.key] = settings[v.key]})
+                    if keep_open_on_apply and not util.stringStartsWith(v.key, "touch_input") then
+                        quickmenu:setTitle(title)
+                        UIManager:show(quickmenu)
+                    end
                 end)
-                if keep_open_on_apply and not util.stringStartsWith(v.key, "touch_input") then
-                    quickmenu:setTitle(title)
-                    UIManager:show(quickmenu)
-                end
             end,
             hold_callback = function()
                 if v.key:sub(1, 13) == "profile_exec_" then
