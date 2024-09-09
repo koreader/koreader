@@ -410,14 +410,26 @@ function ListMenuItem:update()
                     cover_bb_used = true
                     -- Let ImageWidget do the scaling and give us the final size
                     local _, _, scale_factor = BookInfoManager.getCachedCoverSize(250, 500, max_img_w, max_img_h)
-                    local wimage = ImageWidget:new({
-                        file = getSourceDir() .. "/icons/file.svg",
-                        alpha = true,
-                        scale_factor = scale_factor,
-                        --width = dimen.h,
-                        --height = dimen.h,
-                        original_in_nightmode = false,
-                    })
+                    local wimage = nil
+                    if bookinfo._no_provider then
+                        wimage = ImageWidget:new({
+                            file = getSourceDir() .. "/icons/file-unsupported.svg",
+                            alpha = true,
+                            scale_factor = scale_factor,
+                            --width = dimen.h,
+                            --height = dimen.h,
+                            original_in_nightmode = false,
+                        })
+                    else
+                        wimage = ImageWidget:new({
+                            file = getSourceDir() .. "/icons/file.svg",
+                            alpha = true,
+                            scale_factor = scale_factor,
+                            --width = dimen.h,
+                            --height = dimen.h,
+                            original_in_nightmode = false,
+                        })
+                    end
                     wimage:_render()
                     local image_size = wimage:getSize() -- get final widget size
                     wleft = CenterContainer:new {
