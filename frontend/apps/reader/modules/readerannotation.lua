@@ -283,11 +283,14 @@ function ReaderAnnotation:isItemInPositionOrderRolling(a, b)
     end
     local compare_xp = self.document:compareXPointers(a.page, b.page)
     if not compare_xp then
-        -- if compare_xp is nil, some xpointer is invalid and "a" will be sorted first to page 1
+        -- if compare_xp is nil, some xpointer is invalid. Fallback to compare
+        -- xpointer raw strings to avoid crashing table.sort.
         logger.warn("Invalid start xpointer in highlight:", a.page, b.page)
         return a.page < b.page
     end
     if not a.drawer or compare_xp ~= 0 then
+        -- Note, compareXPointers compares b.page to a.page, so the result
+        -- needs to be reversed.
         return compare_xp > 0
     end
     -- both highlights with the same start, compare ends
