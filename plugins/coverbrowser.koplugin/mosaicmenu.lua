@@ -797,34 +797,34 @@ function MosaicMenuItem:paintTo(bb, x, y)
     end
 
     -- to which we paint a small indicator if this book has a description
-    if self.has_description and not BookInfoManager:getSetting("no_hint_description") then
-        -- On book's right (for similarity to ListMenuItem)
-        local d_w = Screen:scaleBySize(3)
-        local d_h = math.ceil(target.dimen.h / 8)
-        -- Paint it directly relative to target.dimen.x/y which has been computed at this point
-        local ix
-        if BD.mirroredUILayout() then
-            ix = - d_w + 1
-            -- Set alternate dimen to be marked as dirty to include this description in refresh
-            local x_overflow_left = x - target.dimen.x+ix -- positive if overflow
-            if x_overflow_left > 0 then
-                self.refresh_dimen = self[1].dimen:copy()
-                self.refresh_dimen.x = self.refresh_dimen.x - x_overflow_left
-                self.refresh_dimen.w = self.refresh_dimen.w + x_overflow_left
-            end
-        else
-            ix = target.dimen.w - 1
-            -- Set alternate dimen to be marked as dirty to include this description in refresh
-            local x_overflow_right = target.dimen.x+ix+d_w - x - self.dimen.w
-            if x_overflow_right > 0 then
-                self.refresh_dimen = self[1].dimen:copy()
-                self.refresh_dimen.w = self.refresh_dimen.w + x_overflow_right
-            end
-        end
-        local iy = 0
-        bb:paintBorder(target.dimen.x+ix, target.dimen.y+iy, d_w, d_h, 1)
+    -- if self.has_description and not BookInfoManager:getSetting("no_hint_description") then
+    --     -- On book's right (for similarity to ListMenuItem)
+    --     local d_w = Screen:scaleBySize(3)
+    --     local d_h = math.ceil(target.dimen.h / 8)
+    --     -- Paint it directly relative to target.dimen.x/y which has been computed at this point
+    --     local ix
+    --     if BD.mirroredUILayout() then
+    --         ix = - d_w + 1
+    --         -- Set alternate dimen to be marked as dirty to include this description in refresh
+    --         local x_overflow_left = x - target.dimen.x+ix -- positive if overflow
+    --         if x_overflow_left > 0 then
+    --             self.refresh_dimen = self[1].dimen:copy()
+    --             self.refresh_dimen.x = self.refresh_dimen.x - x_overflow_left
+    --             self.refresh_dimen.w = self.refresh_dimen.w + x_overflow_left
+    --         end
+    --     else
+    --         ix = target.dimen.w - 1
+    --         -- Set alternate dimen to be marked as dirty to include this description in refresh
+    --         local x_overflow_right = target.dimen.x+ix+d_w - x - self.dimen.w
+    --         if x_overflow_right > 0 then
+    --             self.refresh_dimen = self[1].dimen:copy()
+    --             self.refresh_dimen.w = self.refresh_dimen.w + x_overflow_right
+    --         end
+    --     end
+    --     local iy = 0
+    --     bb:paintBorder(target.dimen.x+ix, target.dimen.y+iy, d_w, d_h, 1)
 
-    end
+    -- end
 end
 
 -- As done in MenuItem

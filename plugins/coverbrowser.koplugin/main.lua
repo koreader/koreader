@@ -345,35 +345,35 @@ function CoverBrowser:addToMainMenu(menu_items)
                     },
                 },
             },
-            -- {
-            --     text = _("Display hints"),
-            --     sub_item_table = {
-            --         {
-            --             text = _("Show hint for books with description"),
-            --             checked_func = function() return not BookInfoManager:getSetting("no_hint_description") end,
-            --             callback = function()
-            --                 BookInfoManager:toggleSetting("no_hint_description")
-            --                 fc:updateItems(1, true)
-            --             end,
-            --         },
-            --         {
-            --             text = _("Show hint for book status in history"),
-            --             checked_func = function() return BookInfoManager:getSetting("history_hint_opened") end,
-            --             callback = function()
-            --                 BookInfoManager:toggleSetting("history_hint_opened")
-            --                 fc:updateItems(1, true)
-            --             end,
-            --         },
-            --         {
-            --             text = _("Show hint for book status in collections"),
-            --             checked_func = function() return BookInfoManager:getSetting("collections_hint_opened") end,
-            --             callback = function()
-            --                 BookInfoManager:toggleSetting("collections_hint_opened")
-            --                 fc:updateItems(1, true)
-            --             end,
-            --         }
-            --     }
-            -- },
+            {
+                text = _("Display hints"),
+                sub_item_table = {
+                    -- {
+                    --     text = _("Show hint for books with description"),
+                    --     checked_func = function() return not BookInfoManager:getSetting("no_hint_description") end,
+                    --     callback = function()
+                    --         BookInfoManager:toggleSetting("no_hint_description")
+                    --         fc:updateItems(1, true)
+                    --     end,
+                    -- },
+                    {
+                        text = _("Show hint for book status in history"),
+                        checked_func = function() return BookInfoManager:getSetting("history_hint_opened") end,
+                        callback = function()
+                            BookInfoManager:toggleSetting("history_hint_opened")
+                            fc:updateItems(1, true)
+                        end,
+                    },
+                    {
+                        text = _("Show hint for book status in collections"),
+                        checked_func = function() return BookInfoManager:getSetting("collections_hint_opened") end,
+                        callback = function()
+                            BookInfoManager:toggleSetting("collections_hint_opened")
+                            fc:updateItems(1, true)
+                        end,
+                    }
+                }
+            },
             {
                 text = _("Series"),
                 sub_item_table = {
