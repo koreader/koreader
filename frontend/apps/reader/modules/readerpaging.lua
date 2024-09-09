@@ -53,13 +53,13 @@ function ReaderPaging:onGesture() end
 function ReaderPaging:registerKeyEvents()
     if Device:hasDPad() and Device:useDPadAsActionKeys() then
         if G_reader_settings:isTrue("left_right_keys_turn_pages") then
-            self.key_events.GotoNextPos = { { { "RPgFwd", "LPgFwd", "Right", " " } }, event = "GotoPosRel", args = 1, }
-            self.key_events.GotoPrevPos = { { { "RPgBack", "LPgBack", "Left" } }, event = "GotoPosRel", args = -1, }
+            self.key_events.GotoNextPage = { { { "RPgFwd", "LPgFwd", "Right", " " } }, event = "GotoViewRel", args = 1, }
+            self.key_events.GotoPrevPage = { { { "RPgBack", "LPgBack", "Left" } }, event = "GotoViewRel", args = -1, }
         elseif G_reader_settings:nilOrFalse("left_right_keys_turn_pages") then
             self.key_events.GotoNextChapter = { { "Right" }, event = "GotoNextChapter", args = 1, }
             self.key_events.GotoPrevChapter = { { "Left" }, event = "GotoPrevChapter", args = -1, }
-            self.key_events.GotoNextPos = { { { "RPgFwd", "LPgFwd", " " } }, event = "GotoPosRel", args = 1, }
-            self.key_events.GotoPrevPos = { { { "RPgBack", "LPgBack" } }, event = "GotoPosRel", args = -1, }
+            self.key_events.GotoNextPage = { { { "RPgFwd", "LPgFwd", " " } }, event = "GotoViewRel", args = 1, }
+            self.key_events.GotoPrevPage = { { { "RPgBack", "LPgBack" } }, event = "GotoViewRel", args = -1, }
         end
     elseif Device:hasKeys() then
         self.key_events.GotoNextPage = { { { "RPgFwd", "LPgFwd", not Device:hasFewKeys() and "Right" } }, event = "GotoViewRel", args = 1, }
