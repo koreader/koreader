@@ -274,27 +274,29 @@ end
 function ReaderAnnotation:isItemInPositionOrderRolling(a, b)
     local a_page = self.document:getPageFromXPointer(a.page)
     local b_page = self.document:getPageFromXPointer(b.page)
-    if a_page == b_page then -- both items in the same page
-        if (not a.drawer) ~= (not b.drawer) then -- comparing a page bookmark and a highlight
-            return not a.drawer -- have page bookmarks before highlights
-        end
-        local compare_xp = self.document:compareXPointers(a.page, b.page)
-        if compare_xp then
-            if a.drawer and compare_xp == 0 then -- both highlights with the same start, compare ends
-                compare_xp = self.document:compareXPointers(a.pos1, b.pos1)
-                if compare_xp then
-                    return compare_xp > 0
-                end
-                logger.warn("Invalid xpointer in highlight:", a.pos1, b.pos1)
-                return true
-            end
-            return compare_xp > 0
-        end
-        -- if compare_xp is nil, some xpointer is invalid and "a" will be sorted first to page 1
-        logger.warn("Invalid xpointer in highlight:", a.page, b.page)
-        return true
+    if a_page ~= b_page then
+        return a_page < b_page
     end
-    return a_page < b_page
+    -- both items in the same page
+    if a.drawer ~= b.drawer then -- comparing a page bookmark and a highlight
+        return not a.drawer -- have page bookmarks before highlights
+    end
+    local compare_xp = self.document:compareXPointers(a.page, b.page)
+    if not compare_xp then
+        -- if compare_xp is nil, some xpointer is invalid and "a" will be sorted first to page 1
+        logger.warn("Invalid start xpointer in highlight:", a.page, b.page)
+        return a.page < b.page
+    end
+    if not a.drawer or compare_xp ~= 0 then
+        return compare_xp > 0
+    end
+    -- both highlights with the same start, compare ends
+    compare_xp = self.document:compareXPointers(a.pos1, b.pos1)
+    if compare_xp then
+        return compare_xp > 0
+    end
+    logger.warn("Invalid end xpointer in highlight:", a.pos1, b.pos1)
+    return a.pos1 < b.pos1
 end
 
 function ReaderAnnotation:isItemInPositionOrderPaging(a, b)
