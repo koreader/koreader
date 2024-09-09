@@ -725,11 +725,14 @@ function KoptInterface:getOCRWord(doc, pageno, wbox)
     if not DocCache:check(self.ocrengine) then
         DocCache:insert(self.ocrengine, OCREngine:new{ ocrengine = KOPTContext.new(), size = 3072 }) -- estimation
     end
+    local word
     if doc.configurable.text_wrap == 1 then
-        return self:getReflewOCRWord(doc, pageno, wbox.sbox)
+        word = self:getReflewOCRWord(doc, pageno, wbox.sbox)
     else
-        return self:getNativeOCRWord(doc, pageno, wbox.sbox)
+        word = self:getNativeOCRWord(doc, pageno, wbox.sbox)
     end
+    logger.dbg("word", word)
+    return word
 end
 
 --[[--
@@ -755,11 +758,13 @@ function KoptInterface:getReflewOCRWord(doc, pageno, rect)
         else
             kc = self:waitForContext(cached.kctx)
         end
-        local _, word = pcall(
-            kc.getTOCRWord, kc, "dst",
+        local word = kc.getTOCRWord(
+            kc, "dst",
             rect.x, rect.y, rect.w, rect.h,
             self.tessocr_data, self.ocr_lang, self.ocr_type, 0, 1)
-        DocCache:insert(hash, CacheItem:new{ rfocrword = word, size = #word + 64 }) -- estimation
+        if word then
+            DocCache:insert(hash, CacheItem:new{ rfocrword = word, size = #word + 64 }) -- estimation
+        end
         return word
     else
         return cached.rfocrword
@@ -787,12 +792,13 @@ function KoptInterface:getNativeOCRWord(doc, pageno, rect)
         page:getPagePix(kc, doc.render_mode)
         --kc:exportSrcPNGFile({rect}, nil, "ocr-word.png")
         local word_w, word_h = kc:getPageDim()
-        local _, word = pcall(
-            kc.getTOCRWord, kc, "src",
+        local word = kc.getTOCRWord(
+            kc, "src",
             0, 0, word_w, word_h,
             self.tessocr_data, self.ocr_lang, self.ocr_type, 0, 1)
-        DocCache:insert(hash, CacheItem:new{ ocrword = word, size = #word + 64 }) -- estimation
-        logger.dbg("word", word)
+        if word then
+            DocCache:insert(hash, CacheItem:new{ ocrword = word, size = #word + 64 }) -- estimation
+        end
         page:close()
         kc:free()
         return word

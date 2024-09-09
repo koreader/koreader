@@ -370,7 +370,7 @@ function Document:getTextBoxes(pageno)
 end
 
 function Document:getOCRWord(pageno, rect)
-    return nil
+    return ""
 end
 
 function Document:getCoverPageImage()

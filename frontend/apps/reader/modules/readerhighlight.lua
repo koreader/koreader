@@ -1620,14 +1620,16 @@ function ReaderHighlight:onHoldPan(_, ges)
     UIManager:setDirty(self.dialog, "ui")
 end
 
-local info_message_ocr_text = _([[
-No OCR results or no language data.
+local info_message_ocr_error = _([[
+No OCR language data.
 
 KOReader has a built-in OCR engine for recognizing words in scanned PDF and DjVu documents. In order to use OCR in scanned pages, you need to install tesseract trained data for your document language.
 
 You can download language data files for Tesseract version 5.3.4 from https://tesseract-ocr.github.io/tessdoc/Data-Files
 
 Copy the language data files (e.g., eng.traineddata for English and spa.traineddata for Spanish) into koreader/data/tessdata]])
+
+local info_message_ocr_miss = _("No OCR results.")
 
 function ReaderHighlight:lookup(selected_text, selected_link)
     -- convert sboxes to word boxes
@@ -1646,23 +1648,27 @@ function ReaderHighlight:lookup(selected_text, selected_link)
             -- getOCRText is not implemented in some document backends, but
             -- getOCRWord is implemented everywhere. As such, fall back to
             -- getOCRWord.
-            text = ""
+            text = nil
             for _, sbox in ipairs(selected_text.sboxes) do
                 local word = self.ui.document:getOCRWord(self.hold_pos.page, { sbox = sbox })
                 logger.dbg("OCRed word:", word)
                 --- @fixme This might produce incorrect results on RTL text.
-                if word and word ~= "" then
-                    text = text .. word
+                if word then
+                    text = (text or "") .. word
                 end
             end
         end
         logger.dbg("OCRed text:", text)
-        if text and text ~= "" then
-            self.ui:handleEvent(Event:new("LookupWord", text, false, word_boxes, self, selected_link))
-        else
+        if not text then
             UIManager:show(InfoMessage:new{
-                text = info_message_ocr_text,
+                text = info_message_ocr_error,
             })
+        elseif text == "" then
+            UIManager:show(InfoMessage:new{
+                text = info_message_ocr_miss,
+            })
+        else
+            self.ui:handleEvent(Event:new("LookupWord", text, false, word_boxes, self, selected_link))
         end
     end
 end
