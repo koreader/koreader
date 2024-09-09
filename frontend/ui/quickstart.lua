@@ -1,6 +1,7 @@
 --[[--This module is responsible for generating the quickstart guide.
 ]]
 local DataStorage = require("datastorage")
+local Device = require("device")
 local FileConverter = require("apps/filemanager/filemanagerconverter")
 local DocSettings = require("docsettings")
 local Language = require("ui/language")
@@ -47,7 +48,29 @@ div.table > div > *:nth-child(2) { text-align: left; hyphens: none; background-c
 div.table > div > *:nth-child(3) { white-space: nowrap; }
 ]]
 
-local quickstart_guide = T(_([[
+local quickstart_guide = {}
+if Device:hasScreenKB() or Device:hasSymKey() then
+    -- On Non-Touch kindle, not showing "Frontlight", showing specific section "Shortcuts"
+    table.insert(quickstart_guide, _([[
+<div class="logo">![KOReader](resources/koreader.svg)</div>
+
+# Quickstart guide
+
+* [User interface](#ui)
+* [User interface tips](#uitips)
+* [Accessing files](#afiles)
+* [Transferring files](#tfiles)
+* [Shortcuts](#short)
+* [While reading](#reading)
+* [Installing dictionaries](#dicts)
+* [More info](#more)
+
+---
+You can access the complete user manual from [our GitHub page](https://github.com/koreader/koreader).
+]])
+    ) --insert toc
+else
+    table.insert(quickstart_guide, _([[
 <div class="logo">![KOReader](resources/koreader.svg)</div>
 
 # Quickstart guide
@@ -64,16 +87,98 @@ local quickstart_guide = T(_([[
 ---
 You can access the complete user manual from [our GitHub page](https://github.com/koreader/koreader).
 ]])
-..
-_([[## User interface <a id="ui"></a>
+    ) -- insert toc
+end
+
+-- User interface
+if Device:hasScreenKB() then
+    -- Use correct k4 illustration and appropriate button mapping
+    table.insert(quickstart_guide, _([[## User interface <a id="ui"></a>
+
+<!-- <div class="img-block">![Touch zones](resources/quickstart/kindle4.png)</div> -->
+
+- To show the **TOP MENU** or **BOTTOM MENU** press the **Menu** or **Press** keys respectively.
+- The **STATUS BAR** can be set to show a multitude of information regarding your reading progress or device state.
+]])
+    ) -- inset user interface
+elseif Device:hasSymKey() then
+    -- Use correct k3 illustration and appropriate button mapping
+    table.insert(quickstart_guide, _([[## User interface <a id="ui"></a>
+
+<!-- <div class="img-block">![Touch zones](resources/quickstart/kindle3.png)</div> -->
+
+- To show the **TOP MENU** or **BOTTOM MENU** press the **Menu** or **Aa** keys respectively.
+- The **STATUS BAR** can be set to show a multitude of information regarding your reading progress or device state.
+]])
+    ) -- insert user interface
+else
+    table.insert(quickstart_guide, _([[## User interface <a id="ui"></a>
 
 <div class="img-block">![Touch zones](resources/quickstart/touchzones.png)</div>
 
 - To show the **TOP MENU** or **BOTTOM MENU** you can click the indicated zones. You can click or swipe down the upper zone to show the **TOP MENU**.
 - The **STATUS BAR** zone can be used to cycle between STATUS BAR items if one item is visible. This will also hide and show the STATUS BAR if you tap enough times.
 ]])
-..
-_([[## User interface tips <a id="uitips"></a>
+    ) -- insert user interface
+end
+
+-- User interface tips
+if Device:hasScreenKB() then
+    table.insert(quickstart_guide, _([[## User interface tips <a id="uitips"></a>
+
+- You can change the interface language using:
+
+> **Menu ➔ ![Settings](resources/icons/mdlight/appbar.settings.svg) ➔ Language**
+
+- If you press both **ScreenKB** + **Press** on an option or menu item (font weight, line spacing etc.), you can set its value as **DEFAULT**.  The new value will only be applied to documents opened from now on. Previously opened documents will keep their settings. You can identify default values as a STAR in menu or as a black border around indicators as seen below:
+
+<div class="img-block break-before-avoid">![Default setting 1](resources/quickstart/defaultsetting1.png)</div>
+<div class="img-block break-before-avoid">![Default setting 2](resources/quickstart/defaultsetting2.png)</div>
+
+- You can see explanations for some items on the **TOP MENU** by pressing both **ScreenKB** + **Press** on the name of the option.
+- You can **CLOSE** full screen dialogs (History, Table of Contents, Bookmarks, Reading Statistics etc.) by pressing the **Back** key.
+- **SCREENSHOTS** can be taken by pressing the **ScreenKB** + **Menu** keys
+
+<div class="img-block break-after-avoid">![Number picker](resources/quickstart/numberpicker.png)</div>
+
+- In dialogs containing adjustment arrow buttons like the one above, you can use the directional keys to move around. If widgets have menus, pressing the **Menu** key should open them.
+- You can toggle content selection mode by pressing either the **Up** or **Down** keys. The selection tool becomes available so you can select one or multiple words, for either dictionary, wikipedia or text look ups.
+- You can highlight blocks of text by selecting multiple words with the content selection tool.
+- You can move through your document with the **Left** or **Right** cursor keys which, should take you to the previous or next chapter respectively.
+- The content selection tool's sensitivity can be adjusted in the **TOP MENU**.
+
+> **Menu ➔ ![Typesettings](resources/icons/mdlight/appbar.typeset.svg) ➔ Selection on text**
+]])
+    ) -- insert UI tips
+elseif Device:hasSymKey() then
+    table.insert(quickstart_guide, _([[## User interface tips <a id="uitips"></a>
+
+- You can change the interface language using:
+
+> **Menu ➔ ![Settings](resources/icons/mdlight/appbar.settings.svg) ➔ Language**
+
+- If you press both **Shift** + **Press** on an option or menu item (font weight, line spacing etc.), you can set its value as **DEFAULT**.  The new value will only be applied to documents opened from now on. Previously opened documents will keep their settings. You can identify default values as a STAR in menu or as a black border around indicators as seen below:
+
+<div class="img-block break-before-avoid">![Default setting 1](resources/quickstart/defaultsetting1.png)</div>
+<div class="img-block break-before-avoid">![Default setting 2](resources/quickstart/defaultsetting2.png)</div>
+
+- You can see explanations for some items on the **TOP MENU** by pressing both **Shift** + **Press** on the name of the option.
+- You can **CLOSE** full screen dialogs (History, Table of Contents, Bookmarks, Reading Statistics etc.) by pressing the **Back** key.
+- **SCREENSHOTS** can be taken by pressing the **Alt** + **Shift** + **G** keys
+
+<div class="img-block break-after-avoid">![Number picker](resources/quickstart/numberpicker.png)</div>
+
+- In dialogs containing adjustment arrow buttons like the one above, you can use the directional keys to move around. If widgets have menus, pressing the **Menu** key should open them.
+- You can toggle content selection mode by pressing either the **Up** or **Down** keys. The selection tool becomes available so you can select one or multiple words, for either dictionary, wikipedia or text look ups.
+- You can highlight blocks of text by selecting multiple words with the content selection tool.
+- You can move through your document with the **Left** or **Right** cursor keys which, should take you to the previous or next chapter respectively.
+- The content selection tool's sensitivity can be adjusted in the **TOP MENU**.
+
+> **Menu ➔ ![Typesettings](resources/icons/mdlight/appbar.typeset.svg) ➔ Selection on text**
+]])
+    ) -- insert UI tips
+else
+    table.insert(quickstart_guide, _([[## User interface tips <a id="uitips"></a>
 
 - You can change the interface language using:
 
@@ -99,8 +204,27 @@ _([[## User interface tips <a id="uitips"></a>
 
 > **TOP MENU ➔ ![Navigation](resources/icons/mdlight/appbar.navigation.svg) ➔ Skim document**
 ]])
-..
-_([[## Accessing files <a id="afiles"></a>
+    ) -- insert UI tips
+end
+
+-- Accessing files
+if Device:hasScreenKB() or Device:hasSymKey() then
+    -- This NT version removes mentions of gestures
+    table.insert(quickstart_guide, _([[## Accessing files <a id="afiles"></a>
+
+The following methods are available for accessing your books and articles:
+
+* File Browser
+* Favorites
+* History
+
+You can also set KOReader to open with any of these dialogs on startup via:
+
+> **Menu (in File Browser) ➔ ![Filebrowser](resources/icons/mdlight/appbar.filebrowser.svg) ➔ Start with**
+]])
+    ) -- insert Accessing files
+else
+    table.insert(quickstart_guide, _([[## Accessing files <a id="afiles"></a>
 
 The following methods are available for accessing your books and articles:
 
@@ -114,8 +238,11 @@ You can also set KOReader to open with any of these dialogs on startup via:
 
 > **TOP MENU (in File Browser) ➔ ![Filebrowser](resources/icons/mdlight/appbar.filebrowser.svg) ➔ Start with**
 ]])
-..
-_([[## Transferring files <a id="tfiles"></a>
+    ) -- insert accessing files
+end
+
+-- Transferring files
+table.insert(quickstart_guide, _([[## Transferring files <a id="tfiles"></a>
 
 In addition to transferring files the same way you would with the built-in reader application, other options are available depending on your device:
 
@@ -126,15 +253,71 @@ In addition to transferring files the same way you would with the built-in reade
 5. News downloader
 6. Wallabag
 ]])
-..
-_([[## Frontlight/backlight <a id="flight"></a>
+) -- insert
+
+-- Frontlight (shortcuts on NT)
+if Device:hasScreenKB() then
+    table.insert(quickstart_guide, _([[## Shortcuts <a id="short"></a>
+
+The following is a non-exhaustive list of shortcuts available.
+
+When inside the reading module:
+
+- **ScreenKB** + **Up**: Table of contents
+- **ScreenKB** + **Right**: Add a bookmark
+- **ScreenKB** + **Down**: Book map
+- **ScreenKB** + **Left**: Bookmarks, notes and highlights
+- **ScreenKB** + **Press**: Save current page to location history
+- **ScreenKB** + **Home**: Toggle wifi on/off
+- **ScreenKB** + **Back**: Switch to previosly opened book
+
+When using a virtual keyboard:
+
+- **ScreenKB** + **Right**: Move cursor to right char
+- **ScreenKB** + **Left**: Move cursor to left char
+- **ScreenKB** + **Press**: Show special characters behind virtual keyboard keys
+- **ScreenKB** + **Home**: Toggle virtual keyboard on/off
+- **ScreenKB** + **Back**: Delete char
+]])
+    ) -- insert shortcuts
+elseif Device:hasSymKey() then
+    table.insert(quickstart_guide, _([[## Shortcuts <a id="short"></a>
+
+The following is a non-exhaustive list of shortcuts available.
+
+When inside the reading module:
+
+- **T** or **Shift** + **Up**: Table of contents
+- **Shift** + **Right**: Add a bookmark
+- **Shift** + **Down**: Book map
+- **B** or **Shift** + **Left**: Bookmarks, notes and highlights
+- **Shift** + **Press**: Save current page to location history
+- **Shift** + **Home**: Toggle wifi on/off
+- **Shift** + **Back**: Switch to previosly opened book
+
+When using a virtual keyboard:
+
+- **Shift** + **Right**: Move cursor to right char
+- **Shift** + **Left**: Move cursor to left char
+- **Shift** + **Press**: Show special characters behind virtual keyboard keys
+- **Shift** + **Home**: Toggle virtual keyboard on/off
+- **Shift** + **Del**: Delete word
+- **Shift** + **Back**: Delete whole line
+- **Sym** + **Alphabet keys**: symbols, numbers and special characters
+]])
+    ) -- insert shortcuts
+else
+    table.insert(quickstart_guide, _([[## Frontlight/backlight <a id="flight"></a>
 
 You can control your screen light via this menu. If you have warm lighting (normal white LEDs+orange ones) you can control them separately from this dialog:
 
 > **TOP MENU ➔ ![Settings](resources/icons/mdlight/appbar.settings.svg) ➔ Frontlight**
 ]])
-..
-_([[## While reading <a id="reading"></a>
+    ) -- insert frontlight
+end
+
+-- While reading
+table.insert(quickstart_guide, _([[## While reading <a id="reading"></a>
 
 <div class="table"><div>
 
@@ -168,8 +351,10 @@ Change many formatting options
 
 </div></div>
 ]])
-..
-_([[## Installing dictionaries <a id="dicts"></a>
+) -- insert while reading
+
+-- Dictionaries
+table.insert(quickstart_guide, _([[## Installing dictionaries <a id="dicts"></a>
 
 KOReader supports dictionary lookup in EPUB and even in scanned PDF/DJVU documents. To see the dictionary definition or translation, tap and hold a word.
 
@@ -177,8 +362,10 @@ To use the dictionary lookup function, first you need to install one or more dic
 
 **TOP MENU ➔ ![Search](resources/icons/mdlight/appbar.search.svg) ➔ Dictionary Settings > Download dictionaries**
 ]])
-..
-_([[## More info <a id="more"></a>
+) -- insert dictionaries
+
+-- More information
+table.insert(quickstart_guide, T(_([[## More info <a id="more"></a>
 
 You can find more information on our GitHub page
 
@@ -192,6 +379,9 @@ You can find other KOReader users on MobileRead forums
 <div class="generated">Generated by KOReader %1.</div>
 ]]),
     rev)
+) -- insert more information
+
+quickstart_guide = table.concat(quickstart_guide, "\n")
 
 --[[-- Returns `true` if shown, `false` if the quickstart guide hasn't been
 shown yet or if display is forced through a higher version number than when
