@@ -10,7 +10,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20240731
+local CURRENT_MIGRATION_DATE = 20240911
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -695,6 +695,17 @@ if last_migration_date < 20240731 then
         settings.progress_margin_width = Device:isAndroid() and Device.screen:scaleByDPI(16) or 10
         G_reader_settings:saveSetting("footer", settings)
     end
+end
+
+-- 20240911, Defaults: Deprecate DKOPTREADER_CONFIG_DOC_LANGS_TEXT after #11977, https://github.com/koreader/koreader/pull/12504
+if last_migration_date < 20240911 then
+    logger.info("Performing one-time migration for 20240911")
+
+    if G_defaults:hasBeenCustomized("DKOPTREADER_CONFIG_DOC_LANGS_TEXT") then
+        G_defaults:delSetting("DKOPTREADER_CONFIG_DOC_LANGS_TEXT")
+    end
+
+    G_defaults:flush()
 end
 
 -- We're done, store the current migration date
