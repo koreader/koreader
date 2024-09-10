@@ -15,6 +15,7 @@ local FileChooser = require("ui/widget/filechooser")
 local FileManager = require("apps/filemanager/filemanager")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
+local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local UIManager = require("ui/uimanager")
@@ -825,6 +826,10 @@ function CoverMenu:updatePageInfo(select_number)
                 end
                 local folder_name = table.concat(crumbs, "", #crumbs, #crumbs)
                 if folder_name then
+                    if FileManagerShortcuts:hasFolderShortcut(self.path) then
+                        -- folder_name = "☆ " .. folder_name
+                        folder_name = "★ " .. folder_name
+                    end
                     self.cur_folder_text:setText(folder_name)
                 else
                     self.cur_folder_text:setText("")

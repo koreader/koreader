@@ -82,7 +82,7 @@ function CoverBrowser:init()
         -- Only if no display mode has been set yet
         if not BookInfoManager:getSetting("filemanager_display_mode")
             and not BookInfoManager:getSetting("history_display_mode") then
-            logger.info("CoverBrowser: setting default display modes")
+            -- logger.info("CoverBrowser: setting default display modes")
             BookInfoManager:saveSetting("filemanager_display_mode", "list_image_meta")
             BookInfoManager:saveSetting("history_display_mode", "mosaic_image")
             BookInfoManager:saveSetting("collection_display_mode", "mosaic_image")
