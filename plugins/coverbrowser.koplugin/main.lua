@@ -649,7 +649,16 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
     Menu.init = CoverMenu.menuInit
     Menu.updatePageInfo = CoverMenu.updatePageInfo
 
-    self:refreshFileManagerInstance(false, true)
+    if init_done then
+        self:refreshFileManagerInstance(false, true)
+    else
+        -- If KOReader has started directly to FileManager, the FileManager
+        -- instance is being init()'ed and there is no FileManager.instance yet,
+        -- but there'll be one at next tick.
+        UIManager:nextTick(function()
+            self:refreshFileManagerInstance(false, true)
+        end)
+    end
 end
 
 local function _FileManagerHistory_updateItemTable(self)
