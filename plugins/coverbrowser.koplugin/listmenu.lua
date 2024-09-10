@@ -410,14 +410,26 @@ function ListMenuItem:update()
                     cover_bb_used = true
                     -- Let ImageWidget do the scaling and give us the final size
                     local _, _, scale_factor = BookInfoManager.getCachedCoverSize(250, 500, max_img_w, max_img_h)
-                    local wimage = ImageWidget:new({
-                        file = getSourceDir() .. "/icons/file.svg",
-                        alpha = true,
-                        scale_factor = scale_factor,
-                        --width = dimen.h,
-                        --height = dimen.h,
-                        original_in_nightmode = false,
-                    })
+                    local wimage = nil
+                    if bookinfo._no_provider then
+                        wimage = ImageWidget:new({
+                            file = getSourceDir() .. "/icons/file-unsupported.svg",
+                            alpha = true,
+                            scale_factor = scale_factor,
+                            --width = dimen.h,
+                            --height = dimen.h,
+                            original_in_nightmode = false,
+                        })
+                    else
+                        wimage = ImageWidget:new({
+                            file = getSourceDir() .. "/icons/file.svg",
+                            alpha = true,
+                            scale_factor = scale_factor,
+                            --width = dimen.h,
+                            --height = dimen.h,
+                            original_in_nightmode = false,
+                        })
+                    end
                     wimage:_render()
                     local image_size = wimage:getSize() -- get final widget size
                     wleft = CenterContainer:new {
@@ -460,12 +472,15 @@ function ListMenuItem:update()
             local abandoned_string = "On Hold"
             local read_string = "Read"
             local unread_string = "New"
+            local inprogress_string = "Reading"
 
             if not self.menu.cover_info_cache then
                 self.menu.cover_info_cache = {}
             end
             local pages_str = ""
+            local pages_left_str = ""
             local progress_str = ""
+            local percent_str = ""
             local pages = bookinfo.pages -- default to those in bookinfo db
             local percent_finished, status, has_highlight
             if DocSettings:hasSidecarFile(self.filepath) then
@@ -488,32 +503,19 @@ function ListMenuItem:update()
                 fileinfo_str = mark .. BD.wrap(filetype) .. "  " .. BD.wrap(self.mandatory)
             end
             -- right widget, second line
-            if status == "complete" then
-                progress_str = finished_string
-            elseif status == "abandoned" then
-                progress_str = abandoned_string
-            elseif percent_finished then
-                progress_str = math.floor(100 * percent_finished) .. "% " .. read_string
-                if pages then
-                    if BookInfoManager:getSetting("show_pages_read_as_progress") then
-                        pages_str = T(_("Page %1 of %2"), Math.round(percent_finished * pages), pages)
-                    end
-                    if BookInfoManager:getSetting("show_pages_left_in_progress") then
-                        pages_str = T(_("%1, %2 to read"), pages_str, Math.round(pages - percent_finished * pages), pages)
-                    end
-                end
-            else
-                progress_str = unread_string
-            end
-
+            local fn_page_count = string.match(filename_without_suffix, "P%((%d+)%)")
             local fontsize_info = _fontSize(14, 18)
 
             local wright_right_padding = 0
             local wright_width = 0
             local wright
+            local wright_items = { align = "right" }
 
-            local fn_page_count = string.match(filename_without_suffix, "P%((%d+)%)")
-            if fn_page_count and is_pathchooser == false then
+            -- show P(XXX) progress bar if possible
+            if fn_page_count and
+                        not BookInfoManager:getSetting("hide_page_info") and
+                        not BookInfoManager:getSetting("show_pages_read_as_progress") and
+                        is_pathchooser == false then
                 local progressbar_items = { align = "center" }
 
                 local trophy_widget = ImageWidget:new({
@@ -542,10 +544,8 @@ function ListMenuItem:update()
                     percentage = 0,
                 }
 
-                local progress_text = ""
                 if status == "complete" then
                     progress_bar.percentage = 1
-                    progress_text = finished_string
                     local progress_dimen =  Geom:new{
                         x = 0,
                         y = 0,
@@ -567,15 +567,12 @@ function ListMenuItem:update()
                                                         },
                                                     })
                 elseif status == "abandoned" then
-                    progress_text = abandoned_string
                     progress_bar.percentage = 1
                     table.insert(progressbar_items, progress_bar)
                 elseif percent_finished then
-                    progress_text = tostring(math.floor(percent_finished * 100)) .. "% " .. read_string
                     progress_bar.percentage = percent_finished
                     table.insert(progressbar_items, progress_bar)
                 else
-                    progress_text = unread_string
                     table.insert(progressbar_items, progress_bar)
                 end
 
@@ -587,36 +584,69 @@ function ListMenuItem:update()
                     HorizontalGroup:new(progressbar_items),
                 }
 
-                local wright_items = { align = "right" }
                 table.insert(wright_items, progress)
-                table.insert(wright_items, TextWidget:new {
-                    text = progress_text,
-                    face = Font:getFace(good_sans, fontsize_info),
-                    fgcolor = fgcolor,
-                })
-                wright = RightContainer:new {
-                    dimen = Geom:new { w = wright_width, h = dimen.h },
-                    VerticalGroup:new(wright_items),
-                }
-                wright_right_padding = Screen:scaleBySize(10)
-            elseif is_pathchooser == false then
-                local wright_items = { align = "right" }
+            end
 
-                if not BookInfoManager:getSetting("hide_page_info") then
-                    local wpageinfo = TextWidget:new {
-                        text = pages_str,
-                        face = Font:getFace(good_sans, fontsize_info),
-                        fgcolor = fgcolor,
-                    }
-                    table.insert(wright_items, wpageinfo)
-                    local wprogressinfo = TextWidget:new {
-                        text = progress_str,
-                        face = Font:getFace(good_sans, fontsize_info),
-                        fgcolor = fgcolor,
-                    }
-                    table.insert(wright_items, wprogressinfo)
+            -- show progress text, page text, or file info text
+            if is_pathchooser == false then
+                if status == "complete" then
+                    progress_str = finished_string
+                elseif status == "abandoned" then
+                    progress_str = abandoned_string
+                elseif percent_finished then
+                    progress_str = ""
+                    percent_str = math.floor(100 * percent_finished) .. "% " .. read_string
+                    if pages then
+                        if BookInfoManager:getSetting("show_pages_read_as_progress") then
+                            pages_str = T(_("Page %1 of %2"), Math.round(percent_finished * pages), pages)
+                        end
+                        if BookInfoManager:getSetting("show_pages_left_in_progress") then
+                            pages_left_str = T(_("%1 pages left"), Math.round(pages - percent_finished * pages), pages)
+                        end
+                    end
+                else
+                    progress_str = unread_string
                 end
 
+                if not BookInfoManager:getSetting("hide_page_info") then
+                    if progress_str ~= "" then
+                        local wprogressinfo = TextWidget:new {
+                            text = progress_str,
+                            face = Font:getFace(good_sans, fontsize_info),
+                            fgcolor = fgcolor,
+                        }
+                        table.insert(wright_items, wprogressinfo)
+                    end
+                    if BookInfoManager:getSetting("show_pages_read_as_progress") then
+                        if pages_str ~= "" then
+                            local wpageinfo = TextWidget:new {
+                                text = pages_str,
+                                face = Font:getFace(good_sans, fontsize_info),
+                                fgcolor = fgcolor,
+                            }
+                            table.insert(wright_items, wpageinfo)
+                        end
+                    else
+                        if percent_str ~= "" then
+                            local wpercentinfo = TextWidget:new {
+                                text = percent_str,
+                                face = Font:getFace(good_sans, fontsize_info),
+                                fgcolor = fgcolor,
+                            }
+                            table.insert(wright_items, wpercentinfo)
+                        end
+                    end
+                    if BookInfoManager:getSetting("show_pages_left_in_progress") then
+                        if pages_left_str ~= "" then
+                            local wpagesleftinfo = TextWidget:new {
+                                text = pages_left_str,
+                                face = Font:getFace(good_sans, fontsize_info),
+                                fgcolor = fgcolor,
+                            }
+                            table.insert(wright_items, wpagesleftinfo)
+                        end
+                    end
+                end
                 if not BookInfoManager:getSetting("hide_file_info") then
                     local wfileinfo = TextWidget:new {
                         text = fileinfo_str,
@@ -625,17 +655,17 @@ function ListMenuItem:update()
                     }
                     table.insert(wright_items, wfileinfo)
                 end
+            end
 
-                if #wright_items > 0 then
-                    for i, w in ipairs(wright_items) do
-                        wright_width = math.max(wright_width, w:getSize().w)
-                    end
-                    wright = CenterContainer:new {
-                        dimen = Geom:new { w = wright_width, h = dimen.h },
-                        VerticalGroup:new(wright_items),
-                    }
-                    wright_right_padding = Screen:scaleBySize(10)
+            if #wright_items > 0 then
+                for i, w in ipairs(wright_items) do
+                    wright_width = math.max(wright_width, w:getSize().w)
                 end
+                wright = RightContainer:new {
+                    dimen = Geom:new { w = wright_width, h = dimen.h },
+                    VerticalGroup:new(wright_items),
+                }
+                wright_right_padding = Screen:scaleBySize(10)
             end
 
             -- Create or replace corner_mark if needed

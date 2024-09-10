@@ -1,0 +1,10 @@
+Additional licenses for files bundled with this plugin:
+
+Fonts:
+https://github.com/adobe-fonts/source-serif?tab=License-1-ov-file
+https://github.com/adobe-fonts/source-sans?tab=OFL-1.1-1-ov-file
+
+SVG Icons:
+Material Design Light: https://pictogrammers.com/docs/general/license/
+SVG Repo CC0: https://www.svgrepo.com/page/licensing/#CC0
+Anton Kalashnyk CC BY 4.0: https://www.iconfinder.com/Kalash
