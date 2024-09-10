@@ -274,14 +274,14 @@ function CoverBrowser:addToMainMenu(menu_items)
                     return T(_("Items per page in portrait list mode: %1"), fc.files_per_page or 10)
                 end,
                 callback = function()
-                    local files_per_page = fc.files_per_page or 10
+                    local files_per_page = fc.files_per_page or 7
                     local SpinWidget = require("ui/widget/spinwidget")
                     local widget = SpinWidget:new{
                         title_text = _("Portrait list mode"),
                         value = files_per_page,
                         value_min = 4,
-                        value_max = 20,
-                        default_value = 10,
+                        value_max = 12,
+                        default_value = 7,
                         keep_shown_on_apply = true,
                         callback = function(spin)
                             fc.files_per_page = spin.value
