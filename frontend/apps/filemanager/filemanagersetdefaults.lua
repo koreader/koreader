@@ -57,8 +57,15 @@ function SetDefaultsWidget:init()
     end
 
     for k, v in pairs(rw_defaults) do
-        self.state[k].value = v
-        self.state[k].custom = true
+        -- Warn if we encounter a deprecated (or unknown) customized key
+        if not self.state[k] then
+            logger.warn("G_defaults: Found an unknown key in custom settings:", k)
+            -- Should we just delete it?
+            --G_defaults:delSetting(k)
+        else
+            self.state[k].value = v
+            self.state[k].custom = true
+        end
     end
 
     -- Prepare our menu entires
