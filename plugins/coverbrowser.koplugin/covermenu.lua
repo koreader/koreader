@@ -669,15 +669,10 @@ function CoverMenu:updateTitleBarPath(path)
             right3_icon_tap_callback = function() FileManager.instance.menu:onOpenLastDoc() end,
             right3_icon_hold_callback = false,
         }
-        self:updateTitleBarPath(self.root_path)
 
     end
 end
 
-function CoverMenu:registerKeyEvents()
-    logger.info("CoverMenu:registerKeyEvents()")
-    --FileManager:registerKeyEvents()
-end
 function CoverMenu:setupLayout()
     CoverMenu._FileManager_setupLayout_orig(self)
 
@@ -789,10 +784,6 @@ function CoverMenu:menuInit()
         footer_right,
         footer_line,
     }
-
-    --logger.info("self.content_group Height: ", self.content_group.height)
-    --logger.info("page_return Height: ", page_return.height)
-    --logger.info("footer Height: ", footer.height)
 
     self[1] = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,

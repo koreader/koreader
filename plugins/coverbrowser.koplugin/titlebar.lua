@@ -501,7 +501,6 @@ function TitleBar:getHeight()
 end
 
 function TitleBar:setTitle(title, no_refresh)
-	logger.info("New TitleBar:setTitle: ", true)
     if self.title_multilines or self.title_shrink_font_to_fit then
         -- We need to re-init the whole widget as its height or
         -- padding may change.

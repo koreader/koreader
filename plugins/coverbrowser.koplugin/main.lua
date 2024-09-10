@@ -539,7 +539,6 @@ function CoverBrowser:refreshFileManagerInstance(cleanup, post_init)
                 -- to re-position on the focused_file
                 fc:_recalculateDimen()
                 fc:changeToPath(fc.path, fc.prev_focused_path)
-                --FileManager.instance:reinit(fc.path, fc.prev_focused_path)
             else
                 fc:updateItems()
             end
@@ -578,9 +577,6 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         return -- starting in classic mode, nothing to patch
     end
 
-    if not self.key_events then
-        self.key_events = {}
-    end
 
     if not display_mode then -- classic mode
         -- Put back original methods
@@ -653,23 +649,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
     Menu.init = CoverMenu.menuInit
     Menu.updatePageInfo = CoverMenu.updatePageInfo
 
-    if init_done then
-        --logger.info("init_done self:refreshFileManagerInstance()")
-        self:refreshFileManagerInstance()
-    
-        --CoverMenu:updateTitleBarPath(self.ui.file_chooser.path)
-    else
-        --CoverMenu:setupLayout()
-        -- If KOReader has started directly to FileManager, the FileManager
-        -- instance is being init()'ed and there is no FileManager.instance yet,
-        -- but there'll be one at next tick.
-        UIManager:nextTick(function()
-            --logger.info("not init_done self:refreshFileManagerInstance()")
-            self:refreshFileManagerInstance(false, true)
-    
-            --CoverMenu:updateTitleBarPath(self.ui.file_chooser.path)
-        end)
-    end
+    self:refreshFileManagerInstance(false, true)
 end
 
 local function _FileManagerHistory_updateItemTable(self)
