@@ -1128,10 +1128,10 @@ function ListMenu:_recalculateDimen()
     end
 
     if self.title_bar then -- Menu:init() has been done
-        if not self.is_borderless then            
+        if not self.is_borderless then
             self.others_height = self.others_height + 2
         end
-        if not self.no_title and is_pathchooser then
+        if not self.no_title then
             self.others_height = self.others_height + self.header_padding
             self.others_height = self.others_height + self.title_bar.dimen.h
         end
