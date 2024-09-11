@@ -44,6 +44,13 @@ local function real_size_string(ko_size, unit)
         shown_unit = C_("Length", "mm")
     elseif unit == "in" then
         shown_unit = C_("Length", "in")
+    elseif unit == "px" then
+        shown_unit = C_("Pixels", "px")
+        if ko_size then
+            return string.format(" (%d %s)", Screen:scaleBySize(ko_size), shown_unit)
+        else
+            return ""
+        end
     else
         shown_unit = unit -- for future units
     end
@@ -58,11 +65,15 @@ function optionsutil.showValues(configurable, option, prefix, document, unit)
     local default = G_reader_settings:readSetting(prefix.."_"..option.name)
     local current = configurable[option.name]
     local value_default, value_current
+    unit = unit or option.name_text_unit
+    if unit and unit ~= "pt" and unit ~= "px" then
+        unit = G_reader_settings:nilOrTrue("metric_length") and "mm" or "in"
+    end
     if option.toggle and option.values then
         -- build a table so we can see if current/default settings map
         -- to a known setting with a name (in option.toggle)
         local arg_table = {}
-        for i=1,#option.values do
+        for i=1, #option.values do
             local val = option.values[i]
             -- flatten table to a string for easy lookup via arg_table
             if type(val) == "table" then val = table.concat(val, ",") end
@@ -97,14 +108,14 @@ function optionsutil.showValues(configurable, option, prefix, document, unit)
             end
         else
             if default then
-                for i=1,#option.labels do
+                for i=1, #option.labels do
                     if default == option.values[i] then
                         default = option.labels[i]
                         break
                     end
                 end
             end
-            for i=1,#option.labels do
+            for i=1, #option.labels do
                 if current == option.values[i] then
                     current = option.labels[i]
                     break
@@ -138,19 +149,19 @@ function optionsutil.showValues(configurable, option, prefix, document, unit)
     if option.name_text_true_values and option.toggle and option.values then
         local nb_current, nb_default = tonumber(current), tonumber(default)
         if nb_current == nil or nb_default == nil then
-            text = T(_("%1\n%2\nCurrent value: %3\nDefault value: %4"), name_text, help_text,
-                                            value_current or current, value_default or default)
+            text = T(_("%1\n%2\nCurrent value: %3%4\nDefault value: %5%6"), name_text, help_text,
+                                            value_current or current, real_size_string(value_current or current, unit),
+                                            value_default or default, real_size_string(value_default or default, unit))
         elseif value_default then
-            text = T(_("%1\n%2\nCurrent value: %3 (%4)\nDefault value: %5 (%6)"), name_text, help_text,
-                                            current, value_current, default, value_default)
+            text = T(_("%1\n%2\nCurrent value: %3 (%4%5)\nDefault value: %6 (%7%8)"), name_text, help_text,
+                                            current, value_current, real_size_string(value_current, unit),
+                                            default, value_default, real_size_string(value_default, unit))
         else
-            text = T(_("%1\n%2\nCurrent value: %3 (%4)\nDefault value: %5"), name_text, help_text,
-                                            current, value_current, default)
+            text = T(_("%1\n%2\nCurrent value: %3 (%4%5)\nDefault value: %6"), name_text, help_text,
+                                            current, value_current, real_size_string(value_current, unit),
+                                            default)
         end
     else
-        if unit and unit ~= "pt" then
-            unit = G_reader_settings:nilOrTrue("metric_length") and "mm" or "in"
-        end
         text = T(_("%1\n%2\nCurrent value: %3%4\nDefault value: %5%6"), name_text, help_text,
                                             current, real_size_string(current, unit),
                                             default, real_size_string(default, unit))
