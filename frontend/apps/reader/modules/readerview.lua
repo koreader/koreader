@@ -1092,12 +1092,9 @@ function ReaderView:onSetViewMode(new_mode)
     end
 end
 
---Refresh after changing a variable done by koptoptions.lua since all of them
---requires full screen refresh. If this handler used for changing page gap from
---another source (eg. coptions.lua) triggering a redraw is needed.
 function ReaderView:onPageGapUpdate(page_gap)
-    self.page_gap.height = page_gap
-    Notification:notify(T(_("Page gap set to %1."), page_gap))
+    self.page_gap.height = Screen:scaleBySize(page_gap)
+    Notification:notify(T(_("Page gap set to %1 (%2 px)."), page_gap, self.page_gap.height))
     return true
 end
 
