@@ -261,7 +261,7 @@ function HotKeyShortcuts:genMenu(hotkey)
     })
     Dispatcher:addSubMenu(self, sub_items, self.hotkeyshortcuts, hotkey)
     sub_items.max_per_page = nil -- restore default, settings in page 2
-    table.remove(sub_items, 13) -- removes 'Keep QuickMenu open' as it acts out on NT.
+    -- table.remove(sub_items, 13) -- removes 'Keep QuickMenu open' as it acts out on NT.
     return sub_items
 end
 
