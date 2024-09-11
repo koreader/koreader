@@ -10,6 +10,13 @@ local BookInfoManager = require("bookinfomanager")
     and History).
     It does that by dynamically replacing some methods code to their classes
     or instances.
+
+    The fonts and icons folders included with this plugin should be placed in /fonts and /icons folder
+    within the main /koreader folder your instalation lives in
+
+    /koreader/fonts/source/SourceSans*.ttf
+    /koreader/icons/*.svg
+    
 --]]
 
 -- We need to save the original methods early here as locals.
