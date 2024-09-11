@@ -349,16 +349,25 @@ left to right or reverse, top to bottom or reverse.]]),
             {
                 name = "page_gap_height",
                 name_text = _("Page Gap"),
-                toggle = {C_("Page gap", "none"), C_("Page gap", "small"), C_("Page gap", "medium"), C_("Page gap", "large")},
-                values = {0, 8, 16, 32},
+                buttonprogress = true,
+                values = {0, 2, 4, 8, 16, 32, 64},
+                default_pos = 4,
                 default_value = 8,
-                args = {0, 8, 16, 32},
                 event = "PageGapUpdate",
+                args = {0, 2, 4, 8, 16, 32, 64},
                 enabled_func = function (configurable)
                     return optionsutil.enableIfEquals(configurable, "page_scroll", 1)
                 end,
                 name_text_hold_callback = optionsutil.showValues,
+                name_text_true_values = true,
+                name_text_unit = "px", -- values go through scaleBySize in the event handler
                 help_text = _([[In continuous view mode, sets the thickness of the separator between document pages.]]),
+                more_options = true,
+                more_options_param = {
+                    value_step = 1, value_hold_step = 10,
+                    value_min = 0, value_max = 256,
+                    precision = "%.1f",
+                },
             },
             {
                 name = "full_screen",
