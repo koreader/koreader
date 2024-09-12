@@ -1221,9 +1221,13 @@ end
 function ListMenu:_updateItemsBuildUI()
     -- Build our list
     local line_width = self.width or self.screen_w
-    local line_widget = LineWidget:new {
-        dimen = Geom:new { w = line_width * 0.94, h = Size.line.medium },
-        background = Blitbuffer.COLOR_BLACK,
+    local line_widget = HorizontalGroup:new{
+        HorizontalSpan:new { width = line_width * 0.03 },
+        LineWidget:new {
+            dimen = Geom:new { w = line_width * 0.94, h = Size.line.medium },
+            background = Blitbuffer.COLOR_BLACK,
+        },
+        HorizontalSpan:new { width = line_width * 0.03 },
     }
     table.insert(self.item_group, line_widget)
     local idx_offset = (self.page - 1) * self.perpage
@@ -1262,8 +1266,6 @@ function ListMenu:_updateItemsBuildUI()
                 background = Blitbuffer.COLOR_GRAY,
             }
             table.insert(self.item_group, small_line_widget)
-        elseif idx == self.perpage then
-            --table.insert(self.item_group, line_widget)
         end
 
         -- this is for focus manager
