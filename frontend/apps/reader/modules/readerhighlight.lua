@@ -565,7 +565,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
             sub_item_table = {
                 {
                     text_func = function()
-                        local text = _("on")
+                        local text = _("On")
                         return G_reader_settings:isTrue("highlight_write_into_pdf") and text .. star or text
                     end,
                     checked_func = function()
@@ -597,7 +597,7 @@ If you wish your highlights to be saved in the document, just move it to a writa
                 },
                 {
                     text_func = function()
-                        local text = _("off")
+                        local text = _("Off")
                         return G_reader_settings:hasNot("highlight_write_into_pdf") and text .. star or text
                     end,
                     checked_func = function()
