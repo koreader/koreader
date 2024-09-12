@@ -1094,7 +1094,7 @@ end
 
 function ReaderView:onPageGapUpdate(page_gap)
     self.page_gap.height = Screen:scaleBySize(page_gap)
-    Notification:notify(T(_("Page gap set to %1 (%2 px)."), page_gap, self.page_gap.height))
+    Notification:notify(T(_("Page gap set to %1."), optionsutil.formatFlexSize(page_gap, G_reader_settings:readSetting("dimension_units", "mm"))))
     return true
 end
 

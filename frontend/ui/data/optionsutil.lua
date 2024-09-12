@@ -36,7 +36,7 @@ local function convertSizeTo(px, format)
     return Screen:scaleBySize(px) / display_dpi * 25.4 * format_factor
 end
 
-local function real_size_string(value, unit)
+function optionsutil.formatFlexSize(value, unit)
     if not value then
         -- This shouldn't really ever happen...
         return ""
@@ -155,21 +155,21 @@ function optionsutil.showValues(configurable, option, prefix, document, unit)
         local nb_current, nb_default = tonumber(current), tonumber(default)
         if nb_current == nil or nb_default == nil then
             text = T(_("%1\n%2\nCurrent value: %3\nDefault value: %4"), name_text, help_text,
-                                            real_size_string(value_current or current, unit),
-                                            real_size_string(value_default or default, unit))
+                                            optionsutil.formatFlexSize(value_current or current, unit),
+                                            optionsutil.formatFlexSize(value_default or default, unit))
         elseif value_default then
             text = T(_("%1\n%2\nCurrent value: %3 (%4)\nDefault value: %5 (%6)"), name_text, help_text,
-                                            current, real_size_string(value_current, unit),
-                                            default, real_size_string(value_default, unit))
+                                            current, optionsutil.formatFlexSize(value_current, unit),
+                                            default, optionsutil.formatFlexSize(value_default, unit))
         else
             text = T(_("%1\n%2\nCurrent value: %3 (%4)\nDefault value: %5"), name_text, help_text,
-                                            current, real_size_string(value_current, unit),
+                                            current, optionsutil.formatFlexSize(value_current, unit),
                                             default)
         end
     else
         text = T(_("%1\n%2\nCurrent value: %3\nDefault value: %4"), name_text, help_text,
-                                            real_size_string(current, unit),
-                                            real_size_string(default, unit))
+                                            optionsutil.formatFlexSize(current, unit),
+                                            optionsutil.formatFlexSize(default, unit))
     end
     UIManager:show(InfoMessage:new{ text=text })
 end
@@ -185,8 +185,8 @@ Current margins:
   left: %1
   right: %2
 Default margins: not set]]),
-                real_size_string(current[1], unit),
-                real_size_string(current[2], unit))
+                optionsutil.formatFlexSize(current[1], unit),
+                optionsutil.formatFlexSize(current[2], unit))
         })
     else
         UIManager:show(InfoMessage:new{
@@ -197,10 +197,10 @@ Current margins:
 Default margins:
   left: %3
   right: %4]]),
-                real_size_string(current[1], unit),
-                real_size_string(current[2], unit),
-                real_size_string(default[1], unit),
-                real_size_string(default[2], unit))
+                optionsutil.formatFlexSize(current[1], unit),
+                optionsutil.formatFlexSize(current[2], unit),
+                optionsutil.formatFlexSize(default[1], unit),
+                optionsutil.formatFlexSize(default[2], unit))
         })
     end
 end
