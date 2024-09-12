@@ -553,7 +553,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
         end,
         separator = self.ui.paging and true,
     })
-    if self.ui.paging then
+    if not self.document.is_djvu and self.ui.paging then
         table.insert(hl_sub_item_table, {
             text_func = function()
                 local text = self.highlight_write_into_pdf and _("on") or _("off")
@@ -678,7 +678,9 @@ If you wish your highlights to be saved in the document, just move it to a writa
                 },
             },
         })
+    end
 
+    if self.ui.paging then
         menu_items.panel_zoom_options = {
             text = _("Panel zoom (manga/comic)"),
             sub_item_table = self:genPanelZoomMenu(),
@@ -2418,7 +2420,7 @@ function ReaderHighlight:onReadSettings(config)
 
     -- panel zoom settings isn't supported in EPUB
     if self.ui.paging then
-        if self.document:_checkIfWritable() then
+        if not self.document.is_djvu and self.document:_checkIfWritable() then
             if config:has("highlight_write_into_pdf") then
                 self.highlight_write_into_pdf = config:isTrue("highlight_write_into_pdf") -- true or false
             else
