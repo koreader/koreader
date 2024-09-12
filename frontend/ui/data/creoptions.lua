@@ -221,9 +221,8 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                     G_defaults:readSetting("DCREREADER_CONFIG_T_MARGIN_SIZES_XX_HUGE"),
                 },
                 hide_on_apply = true,
-                name_text_hold_callback = function(configurable, opt, prefix)
-                    optionsutil.showValues(configurable, opt, prefix, nil, "mm")
-                end,
+                name_text_hold_callback = optionsutil.showValues,
+                name_text_unit = true,
                 more_options = true,
                 more_options_param = {
                     -- Allow this to tune both top and bottom margins, handling
@@ -275,9 +274,8 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                     G_defaults:readSetting("DCREREADER_CONFIG_B_MARGIN_SIZES_XX_HUGE"),
                 },
                 hide_on_apply = true,
-                name_text_hold_callback = function(configurable, opt, prefix)
-                    optionsutil.showValues(configurable, opt, prefix, nil, "mm")
-                end,
+                name_text_hold_callback = optionsutil.showValues,
+                name_text_unit = true,
                 help_text = _([[In the top menu → Settings → Status bar, you can choose whether the bottom margin applies from the bottom of the screen, or from above the status bar.]]),
                 more_options = true,
                 more_options_param = {
@@ -450,8 +448,9 @@ Note that your selected font size is not affected by this setting.]]),
                     local opt = {
                         name = "font_size",
                         name_text = _("Font Size"),
+                        name_text_unit = "pt",
                     }
-                    optionsutil.showValues(configurable, opt, prefix, nil, "pt")
+                    optionsutil.showValues(configurable, opt, prefix)
                 end,
             },
             {   -- ReaderFont
