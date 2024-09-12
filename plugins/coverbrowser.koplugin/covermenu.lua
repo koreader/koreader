@@ -640,12 +640,12 @@ function CoverMenu:updateTitleBarPath(path)
             subtitle_fullwidth = true,
             button_padding = Screen:scaleBySize(5),
             -- home
-            left_icon = "other_houses",
+            left_icon = "home",
             left_icon_size_ratio = 1,
             left_icon_tap_callback = function() self:goHome() end,
             left_icon_hold_callback = function() self:onShowFolderMenu() end,
             -- favorites
-            left2_icon = "favorite",
+            left2_icon = "favorites",
             left2_icon_size_ratio = 1,
             left2_icon_tap_callback = function() FileManager.instance.collections:onShowColl() end,
             left2_icon_hold_callback = function() FileManager.instance.folder_shortcuts:onShowFolderShortcutsDialog() end,
@@ -654,18 +654,18 @@ function CoverMenu:updateTitleBarPath(path)
             left3_icon_size_ratio = 1,
             left3_icon_tap_callback = function() FileManager.instance.history:onShowHist() end,
             left3_icon_hold_callback = false,
-            -- stupid plus menu
+            -- plus menu
             right_icon = self.selected_files and "check" or "plus",
             right_icon_size_ratio = 1,
             right_icon_tap_callback = function() self:onShowPlusMenu() end,
             right_icon_hold_callback = false, -- propagate long-press to dispatcher
             -- up folder
-            right2_icon = "back_up",
+            right2_icon = "go_up",
             right2_icon_size_ratio = 1,
             right2_icon_tap_callback = function() onFolderUp() end,
             right2_icon_hold_callback = false,
             -- open last file
-            right3_icon = "go_back_book",
+            right3_icon = "last_document",
             right3_icon_size_ratio = 1,
             right3_icon_tap_callback = function() FileManager.instance.menu:onOpenLastDoc() end,
             right3_icon_hold_callback = false,
