@@ -359,8 +359,7 @@ left to right or reverse, top to bottom or reverse.]]),
                     return optionsutil.enableIfEquals(configurable, "page_scroll", 1)
                 end,
                 name_text_hold_callback = optionsutil.showValues,
-                name_text_true_values = true,
-                name_text_unit = "px", -- values go through scaleBySize in the event handler
+                name_text_unit = true,
                 help_text = _([[In continuous view mode, sets the thickness of the separator between document pages.]]),
                 more_options = true,
                 more_options_param = {
