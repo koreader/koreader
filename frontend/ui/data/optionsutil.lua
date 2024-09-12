@@ -185,7 +185,7 @@ function optionsutil.showValuesHMargins(configurable, option)
         UIManager:show(InfoMessage:new{
             text = T(_([[
 Current margins:
-  left:  %1
+  left: %1
   right: %2
 Default margins: not set]]),
                 real_size_string(current[1], unit),
@@ -195,10 +195,10 @@ Default margins: not set]]),
         UIManager:show(InfoMessage:new{
             text = T(_([[
 Current margins:
-  left:  %1
+  left: %1
   right: %2
 Default margins:
-  left:  %3
+  left: %3
   right: %4]]),
                 real_size_string(current[1], unit),
                 real_size_string(current[2], unit),
