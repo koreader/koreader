@@ -39,18 +39,18 @@ local function convertSizeTo(px, format)
     return Screen:scaleBySize(px) / display_dpi * 25.4 * format_factor
 end
 
-local function real_size_string(ko_size, unit)
-    if not ko_size then
+local function real_size_string(value, unit)
+    if not value then
         -- This shouldn't really ever happen...
         return ""
     end
     if not unit then
-        return tostring(ko_size)
+        return tostring(value)
     end
 
-    ko_size = tonumber(ko_size)
-    if not ko_size then
-        return tostring(ko_size)
+    local size = tonumber(value)
+    if not size then
+        return tostring(value)
     end
 
     local shown_unit = unit
@@ -66,7 +66,7 @@ local function real_size_string(ko_size, unit)
         -- We don't so subpixel positioning ;)
         fmt = "%d (%d %s)"
     end
-    return string.format(fmt, ko_size, convertSizeTo(ko_size, unit), shown_unit)
+    return string.format(fmt, size, convertSizeTo(size, unit), shown_unit)
 end
 
 function optionsutil.showValues(configurable, option, prefix, document, unit)
@@ -74,7 +74,7 @@ function optionsutil.showValues(configurable, option, prefix, document, unit)
     local current = configurable[option.name]
     local value_default, value_current
     unit = unit or option.name_text_unit
-    if unit and unit ~= "pt" and unit ~= "px" then
+    if unit and unit ~= "pt" then
         unit = G_reader_settings:nilOrTrue("metric_length") and "mm" or "in"
     end
     if option.toggle and option.values then
