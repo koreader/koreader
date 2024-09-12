@@ -557,7 +557,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
         table.insert(hl_sub_item_table, {
             text_func = function()
                 local text = self.highlight_write_into_pdf and _("on") or _("off")
-                if not self.highlight_write_into_pdf == not G_reader_settings:isTrue("highlight_write_into_pdf") then
+                if (not self.highlight_write_into_pdf) == (not G_reader_settings:isTrue("highlight_write_into_pdf")) then
                     text = text .. star
                 end
                 return T(_("Write highlights into PDF: %1"), text)
@@ -2082,13 +2082,12 @@ function ReaderHighlight:writePdfAnnotation(action, item, content)
             return self.ui.document:updateHighlightContents(page_, item_, content_)
         end
     end
-    local can_write
     if item.pos0.page == item.pos1.page then -- single-page highlight
-        can_write = doAction(action, item.pos0.page, item, content)
+        doAction(action, item.pos0.page, item, content)
     else -- multi-page highlight
         for hl_page = item.pos0.page, item.pos1.page do
             local hl_part = self:getSavedExtendedHighlightPage(item, hl_page)
-            can_write = doAction(action, hl_page, hl_part, content)
+            local can_write = doAction(action, hl_page, hl_part, content)
             if can_write == false then break end
             if action == "save" then -- update pboxes from quadpoints
                 item.ext[hl_page].pboxes = hl_part.pboxes
