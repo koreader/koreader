@@ -63,7 +63,14 @@ function optionsutil.formatFlexSize(value, unit)
         -- We don't so subpixel positioning ;)
         fmt = "%d (%d %s)"
     end
-    return string.format(fmt, size, convertSizeTo(size, unit), shown_unit)
+
+    if G_reader_settings:isTrue("dimension_units_append_px") and unit ~= "px" then
+        local px_str = C_("Pixels", "px")
+        return string.format(fmt .. " [%d %s]", size, convertSizeTo(size, unit), shown_unit,
+                                                      convertSizeTo(size, "px"), px_str)
+    else
+        return string.format(fmt, size, convertSizeTo(size, unit), shown_unit)
+    end
 end
 
 function optionsutil.showValues(configurable, option, prefix, document, unit)
