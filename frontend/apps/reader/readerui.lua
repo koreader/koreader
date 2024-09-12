@@ -5,7 +5,6 @@ It works using data gathered from a document interface.
 ]]--
 
 local BD = require("ui/bidi")
-local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DeviceListener = require("device/devicelistener")
 local DocCache = require("document/doccache")
