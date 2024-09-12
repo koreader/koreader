@@ -1118,6 +1118,14 @@ end
 local ListMenu = {}
 
 function ListMenu:_recalculateDimen()
+    local Menu = require("ui/widget/menu")
+    local perpage = self.items_per_page or G_reader_settings:readSetting("items_per_page") or self.items_per_page_default
+    local font_size = self.items_font_size or G_reader_settings:readSetting("items_font_size") or Menu.getItemFontSize(perpage)
+    if self.perpage ~= perpage or self.font_size ~= font_size then
+        self.perpage = perpage
+        self.font_size = font_size
+    end
+
     self.portrait_mode = Screen:getWidth() <= Screen:getHeight()
     -- Find out available height from other UI elements made in Menu
     self.others_height = 0
