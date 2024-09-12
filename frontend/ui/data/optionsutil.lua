@@ -24,16 +24,20 @@ local function convertSizeTo(px, format)
     if format == "px" then
         return Screen:scaleBySize(px)
     elseif format == "pt" then
-        format_factor = 1 * (2660 / 1000) -- see https://www.wikiwand.com/en/Metric_typographic_units
+        -- PostScript point,
+        -- c.f., https://en.wikipedia.org/wiki/Metric_typographic_units
+        --     & https://freetype.org/freetype2/docs/glyphs/glyphs-2.html
+        format_factor = 72
     elseif format == "in" then
-        format_factor = 1 / 25.4
+        format_factor = 1
     else
         -- i.e., Metric
-        format_factor = 1
+        format_factor = 25.4
     end
 
-    local display_dpi = Device:getDeviceScreenDPI() or Screen:getDPI() -- use device hardcoded dpi if available
-    return Screen:scaleBySize(px) / display_dpi * 25.4 * format_factor
+    -- We want the actual physical screen DPI if available, not a user override
+    local display_dpi = Device:getDeviceScreenDPI() or Screen:getDPI()
+    return Screen:scaleBySize(px) / display_dpi * format_factor
 end
 
 function optionsutil.formatFlexSize(value, unit)
