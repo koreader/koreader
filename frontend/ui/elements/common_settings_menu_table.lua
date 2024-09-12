@@ -737,20 +737,15 @@ common_settings.keyboard_layout = {
 common_settings.font_ui_fallbacks = require("ui/elements/font_ui_fallbacks")
 
 common_settings.units = {
-    text = _("Units"),
+    text_func = function()
+        local unit = G_reader_settings:readSetting("dimension_units", "mm")
+        return T(_("Dimension units: %1"), unit)
+    end,
     sub_item_table = {
-        {
-            text = _("Metric length"),
-            checked_func = function()
-                return G_reader_settings:readSetting("metric_length", true)
-            end,
-            callback = function(touchmenu_instance)
-                G_reader_settings:toggle("metric_length")
-                if touchmenu_instance then touchmenu_instance:updateItems() end
-            end,
-            keep_menu_open = true,
-        },
-    },
+        genGenericMenuEntry(_("Metric system"),   "dimension_units", "mm", nil, true),
+        genGenericMenuEntry(_("Imperial system"), "dimension_units", "in", nil, true),
+        genGenericMenuEntry(_("Pixels"),          "dimension_units", "px", nil, true),
+    }
 }
 
 common_settings.screenshot = {

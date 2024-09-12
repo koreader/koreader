@@ -17,10 +17,7 @@ function optionsutil.enableIfEquals(configurable, option, value)
     return configurable[option] == value
 end
 
--- Converts px size to mm, inch or pt
--- if the `metric_length`-setting is not set or true -> mm
--- if the `metric_length`-setting is false -> inch
--- if format == "pt" -> pt
+-- Converts flex px/pt sizes to absolute px, mm, inch or pt
 local function convertSizeTo(px, format)
     local format_factor
 
@@ -75,7 +72,7 @@ function optionsutil.showValues(configurable, option, prefix, document, unit)
     local value_default, value_current
     unit = unit or option.name_text_unit
     if unit and unit ~= "pt" then
-        unit = G_reader_settings:nilOrTrue("metric_length") and "mm" or "in"
+        unit = G_reader_settings:readSetting("dimension_units", "mm")
     end
     if option.toggle and option.values then
         -- build a table so we can see if current/default settings map
@@ -180,7 +177,7 @@ end
 function optionsutil.showValuesHMargins(configurable, option)
     local default = G_reader_settings:readSetting("copt_"..option.name)
     local current = configurable[option.name]
-    local unit = G_reader_settings:nilOrTrue("metric_length") and "mm" or "in"
+    local unit = G_reader_settings:readSetting("dimension_units", "mm")
     if not default then
         UIManager:show(InfoMessage:new{
             text = T(_([[

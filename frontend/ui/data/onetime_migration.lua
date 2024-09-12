@@ -10,7 +10,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20240911
+local CURRENT_MIGRATION_DATE = 20240913
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -706,6 +706,16 @@ if last_migration_date < 20240911 then
     end
 
     G_defaults:flush()
+end
+
+-- 20240913, metric_length -> dimension_units, https://github.com/koreader/koreader/pull/12507
+if last_migration_date < 20240913 then
+    logger.info("Performing one-time migration for 20240913")
+
+    if G_reader_settings:has("metric_length") then
+        G_reader_settings:saveSetting("dimension_units", G_reader_settings:nilOrTrue("metric_length") and "mm" or "in")
+        G_reader_settings:delSetting("metric_length")
+    end
 end
 
 -- We're done, store the current migration date
