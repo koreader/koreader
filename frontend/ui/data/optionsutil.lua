@@ -22,12 +22,17 @@ end
 -- if the `metric_length`-setting is false -> inch
 -- if format == "pt" -> pt
 local function convertSizeTo(px, format)
-    local format_factor = 1 -- we are defaulting on mm
+    local format_factor
 
-    if format == "pt" then
-        format_factor =  format_factor * (2660 / 1000) -- see https://www.wikiwand.com/en/Metric_typographic_units
+    if format == "px" then
+        return Screen:scaleBySize(px)
+    elseif format == "pt" then
+        format_factor = 1 * (2660 / 1000) -- see https://www.wikiwand.com/en/Metric_typographic_units
     elseif format == "in" then
         format_factor = 1 / 25.4
+    else
+        -- i.e., Metric
+        format_factor = 1
     end
 
     local display_dpi = Device:getDeviceScreenDPI() or Screen:getDPI() -- use device hardcoded dpi if available
@@ -35,9 +40,21 @@ local function convertSizeTo(px, format)
 end
 
 local function real_size_string(ko_size, unit)
-    if not ko_size or not unit then return "" end
+    if not ko_size then
+        -- This shouldn't really ever happen...
+        return ""
+    end
+    if not unit then
+        return tostring(ko_size)
+    end
+
     ko_size = tonumber(ko_size)
-    local shown_unit
+    if not ko_size then
+        return tostring(ko_size)
+    end
+
+    local shown_unit = unit
+    local fmt = "%d (%.2f %s)"
     if unit == "pt" then
         shown_unit = C_("Font size", "pt")
     elseif unit == "mm" then
@@ -46,19 +63,10 @@ local function real_size_string(ko_size, unit)
         shown_unit = C_("Length", "in")
     elseif unit == "px" then
         shown_unit = C_("Pixels", "px")
-        if ko_size then
-            return string.format(" (%d %s)", Screen:scaleBySize(ko_size), shown_unit)
-        else
-            return ""
-        end
-    else
-        shown_unit = unit -- for future units
+        -- We don't so subpixel positioning ;)
+        fmt = "%d (%d %s)"
     end
-    if ko_size then
-        return string.format(" (%.2f %s)", convertSizeTo(ko_size, unit), shown_unit)
-    else
-        return ""
-    end
+    return string.format(fmt, ko_size, convertSizeTo(ko_size, unit), shown_unit)
 end
 
 function optionsutil.showValues(configurable, option, prefix, document, unit)
@@ -149,22 +157,22 @@ function optionsutil.showValues(configurable, option, prefix, document, unit)
     if option.name_text_true_values and option.toggle and option.values then
         local nb_current, nb_default = tonumber(current), tonumber(default)
         if nb_current == nil or nb_default == nil then
-            text = T(_("%1\n%2\nCurrent value: %3%4\nDefault value: %5%6"), name_text, help_text,
-                                            value_current or current, real_size_string(value_current or current, unit),
-                                            value_default or default, real_size_string(value_default or default, unit))
+            text = T(_("%1\n%2\nCurrent value: %3\nDefault value: %4"), name_text, help_text,
+                                            real_size_string(value_current or current, unit),
+                                            real_size_string(value_default or default, unit))
         elseif value_default then
-            text = T(_("%1\n%2\nCurrent value: %3 (%4%5)\nDefault value: %6 (%7%8)"), name_text, help_text,
-                                            current, value_current, real_size_string(value_current, unit),
-                                            default, value_default, real_size_string(value_default, unit))
+            text = T(_("%1\n%2\nCurrent value: %3 (%4)\nDefault value: %5 (%6)"), name_text, help_text,
+                                            current, real_size_string(value_current, unit),
+                                            default, real_size_string(value_default, unit))
         else
-            text = T(_("%1\n%2\nCurrent value: %3 (%4%5)\nDefault value: %6"), name_text, help_text,
-                                            current, value_current, real_size_string(value_current, unit),
+            text = T(_("%1\n%2\nCurrent value: %3 (%4)\nDefault value: %5"), name_text, help_text,
+                                            current, real_size_string(value_current, unit),
                                             default)
         end
     else
-        text = T(_("%1\n%2\nCurrent value: %3%4\nDefault value: %5%6"), name_text, help_text,
-                                            current, real_size_string(current, unit),
-                                            default, real_size_string(default, unit))
+        text = T(_("%1\n%2\nCurrent value: %3\nDefault value: %4"), name_text, help_text,
+                                            real_size_string(current, unit),
+                                            real_size_string(default, unit))
     end
     UIManager:show(InfoMessage:new{ text=text })
 end
@@ -177,25 +185,25 @@ function optionsutil.showValuesHMargins(configurable, option)
         UIManager:show(InfoMessage:new{
             text = T(_([[
 Current margins:
-  left:  %1%2
-  right: %3%4
+  left:  %1
+  right: %2
 Default margins: not set]]),
-                current[1], real_size_string(current[1], unit),
-                current[2], real_size_string(current[2], unit))
+                real_size_string(current[1], unit),
+                real_size_string(current[2], unit))
         })
     else
         UIManager:show(InfoMessage:new{
             text = T(_([[
 Current margins:
-  left:  %1%2
-  right: %3%4
+  left:  %1
+  right: %2
 Default margins:
-  left:  %5%6
-  right: %7%8]]),
-                current[1], real_size_string(current[1], unit),
-                current[2], real_size_string(current[2], unit),
-                default[1], real_size_string(default[1], unit),
-                default[2], real_size_string(default[2], unit))
+  left:  %3
+  right: %4]]),
+                real_size_string(current[1], unit),
+                real_size_string(current[2], unit),
+                real_size_string(default[1], unit),
+                real_size_string(default[2], unit))
         })
     end
 end
