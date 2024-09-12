@@ -933,8 +933,6 @@ function FileManagerMenu:getStartWithMenuTable()
 end
 
 function FileManagerMenu:exitOrRestart(callback, force)
-    UIManager:close(self.menu_container)
-
     -- Only restart sets a callback, which suits us just fine for this check ;)
     if callback and not force and not Device:isStartupScriptUpToDate() then
         UIManager:show(ConfirmBox:new{
@@ -947,6 +945,7 @@ function FileManagerMenu:exitOrRestart(callback, force)
         return
     end
 
+    UIManager:close(self.menu_container)
     self.ui:onClose()
     if callback then
         callback()
