@@ -769,6 +769,11 @@ function ReaderUI:onFlushSettings(show_notification)
     end
 end
 
+function ReaderUI:closeDocument()
+    self.document:close()
+    self.document = nil
+end
+
 function ReaderUI:onClose(full_refresh)
     logger.dbg("closing reader")
     PluginLoader:finalize()
@@ -787,8 +792,7 @@ function ReaderUI:onClose(full_refresh)
         if self.document:isEdited() and not self.highlight.highlight_write_into_pdf then
             self.document:discardChange()
         end
-        self.document:close()
-        self.document = nil
+        self:closeDocument()
     end
     UIManager:close(self.dialog, full_refresh ~= false and "full")
 end
