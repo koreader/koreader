@@ -742,6 +742,19 @@ common_settings.units = {
         return T(_("Dimension units: %1"), unit)
     end,
     sub_item_table = {
+        {
+            text = _("Also show values in pixels"),
+            checked_func = function()
+                return G_reader_settings:isTrue("dimension_units_append_px")
+            end,
+            enabled_func = function()
+                return G_reader_settings:readSetting("dimension_units") ~= "px"
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("dimension_units_append_px")
+            end,
+            separator = true,
+        },
         genGenericMenuEntry(_("Metric system"),   "dimension_units", "mm", nil, true),
         genGenericMenuEntry(_("Imperial system"), "dimension_units", "in", nil, true),
         genGenericMenuEntry(_("Pixels"),          "dimension_units", "px", nil, true),
