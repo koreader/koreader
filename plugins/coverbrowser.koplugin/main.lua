@@ -667,7 +667,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
     Menu.init = CoverMenu.menuInit
     Menu.updatePageInfo = CoverMenu.updatePageInfo
 
-    local AltBookStatusWidget = require("BookStatusWidget")
+    local AltBookStatusWidget = require("AltBookStatusWidget")
     BookStatusWidget.genHeader = AltBookStatusWidget.genHeader
     BookStatusWidget.genStatusContent = AltBookStatusWidget.genStatusContent
     BookStatusWidget.genBookInfoGroup = AltBookStatusWidget.genBookInfoGroup
