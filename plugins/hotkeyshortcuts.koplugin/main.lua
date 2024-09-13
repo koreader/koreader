@@ -4,6 +4,7 @@ local Dispatcher = require("dispatcher")
 local FFIUtil = require("ffi/util")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LuaSettings = require("luasettings")
+local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local T = FFIUtil.template
@@ -355,10 +356,9 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
         }
         self:attachNewTableToExistingTable(fn_keys, fn_keys_haskeyboard)
     end
-    -- table.insert(PhysicalButtons.sub_item_table, {
-    menu_items.press_key_does_hotkeyshortcuts = {
+    menu_items.button_press_does_hotkeyshortcuts = {
         text = _("Use press key for shortcuts"),
-        sorting_hint = ("physical_buttons_setup")
+        sorting_hint = ("physical_buttons_setup"),
         checked_func = function()
             return G_reader_settings:isTrue("press_key_does_hotkeyshortcuts")
         end,
@@ -369,7 +369,7 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
     }
     menu_items.hotkeyshortcuts = {
         text = _("Shortcuts"),
-        sorting_hint = ("physical_buttons_setup")
+        sorting_hint = ("physical_buttons_setup"),
         sub_item_table = {
             {
                 text = _("Cursor keys"),
