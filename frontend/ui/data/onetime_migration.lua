@@ -708,7 +708,7 @@ if last_migration_date < 20240911 then
     G_defaults:flush()
 end
 
--- 20240912, Write highlights to PDF: revisited
+-- 20240912, Write highlights to PDF: revisited, https://github.com/koreader/koreader/pull/12509
 if last_migration_date < 20240912 then
     logger.info("Performing one-time migration for 20240912")
 
