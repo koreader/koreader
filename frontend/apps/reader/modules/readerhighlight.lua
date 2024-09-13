@@ -629,7 +629,7 @@ If you wish your highlights to be saved in the document, just move it to a writa
                     end,
                     callback = function()
                         UIManager:show(ConfirmBox:new{
-                            text = _("Are you sure you want to write all highlights into pdf file?"),
+                            text = _("Are you sure you want to write all KOReader highlights into pdf file?"),
                             icon = "texture-box",
                             ok_callback = function()
                                 local count = 0
@@ -658,7 +658,7 @@ If you wish your highlights to be saved in the document, just move it to a writa
                     end,
                     callback = function()
                         UIManager:show(ConfirmBox:new{
-                            text = _("Are you sure you want to delete all highlights from pdf file?"),
+                            text = _("Are you sure you want to delete all KOReader highlights from pdf file?"),
                             icon = "texture-box",
                             ok_callback = function()
                                 local count = 0
