@@ -2077,11 +2077,11 @@ function ReaderHighlight:writePdfAnnotation(action, item, content)
     logger.dbg("write to pdf document", action, item)
     local function doAction(action_, page_, item_, content_)
         if action_ == "save" then
-            return self.ui.document:saveHighlight(page_, item_)
+            self.document:saveHighlight(page_, item_)
         elseif action_ == "delete" then
-            return self.ui.document:deleteHighlight(page_, item_)
+            self.document:deleteHighlight(page_, item_)
         elseif action_ == "content" then
-            return self.ui.document:updateHighlightContents(page_, item_, content_)
+            self.document:updateHighlightContents(page_, item_, content_)
         end
     end
     if item.pos0.page == item.pos1.page then -- single-page highlight
@@ -2089,8 +2089,7 @@ function ReaderHighlight:writePdfAnnotation(action, item, content)
     else -- multi-page highlight
         for hl_page = item.pos0.page, item.pos1.page do
             local hl_part = self:getSavedExtendedHighlightPage(item, hl_page)
-            local can_write = doAction(action, hl_page, hl_part, content)
-            if can_write == false then break end
+            doAction(action, hl_page, hl_part, content)
             if action == "save" then -- update pboxes from quadpoints
                 item.ext[hl_page].pboxes = hl_part.pboxes
             end
