@@ -756,42 +756,8 @@ This may help with Greek words among Latin text (as Latin fonts often do not hav
         end,
         callback = function()
             G_reader_settings:flipNilOrTrue("cre_size_based_normal_line_height")
-            self.ui.document:setNormalLineHeight(G_reader_settings:nilOrTrue("cre_size_based_normal_line_height"))
+            self.ui.document:setMinNormalLineHeight(G_reader_settings:nilOrTrue("cre_size_based_normal_line_height"))
             self.ui:handleEvent(Event:new("UpdatePos"))
-        end,
-        help_text = _([[
-Automatically set line height based on font size, instead of font metrics.
-            ]]),
-        separator = true,
-    })
-    table.insert(settings_table, {
-        text = _("Normal line height factor"),
-        text_func = function()
-            return T(_("Normal line height: %1"), G_reader_settings:readSetting("cre_normal_line_height") or 1.2)
-        end,
-        enabled_func = function()
-            return G_reader_settings:nilOrTrue("cre_size_based_normal_line_height")
-        end,
-        callback = function(touchmenu_instance)
-            local SpinWidget = require("ui/widget/spinwidget")
-            UIManager:show(SpinWidget:new{
-                title_text =  _("Normal line height"),
-                info_text = _([[
-Set normal line height at the selected font size.
-Line heights for lines with different font sizes are scaled slightly to account for the font size difference.]]),
-                value = G_reader_settings:readSetting("cre_normal_line_height") or 1.2,
-                value_min = 1,
-                value_max = 5,
-                value_step = 0.01,
-                value_hold_step = 0.1,
-                default_value = 1.2,
-                precision = "%.2f",
-                callback = function(spin)
-                    G_reader_settings:saveSetting("cre_normal_line_height", spin.value)
-                    self.ui.document:setNormalLineHeight(G_reader_settings:nilOrTrue("cre_size_based_normal_line_height"))
-                    touchmenu_instance:updateItems()
-                end,
-            })
         end,
         help_text = _([[
 Automatically set line height based on font size, instead of font metrics.
