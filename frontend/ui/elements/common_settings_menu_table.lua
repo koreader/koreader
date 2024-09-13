@@ -566,7 +566,7 @@ local metadata_folder_help_table = {
 }
 local metadata_folder_help_text = table.concat(metadata_folder_help_table, "\n")
 
-local hash_filemod_warn = T(_("%1 requires calculating partial file hashes of documents which may slow down file browser navigation. Any file modifications (such as embedding annotations into PDF files or downloading from calibre) may change the partial hash, thereby losing track of any highlights, bookmarks, and progress data. Embedding PDF annotations can be set at menu Typeset - Highlights - Write highlights into PDF."), metadata_folder_str.hash)
+local hash_filemod_warn = T(_("%1 requires calculating partial file hashes of documents which may slow down file browser navigation. Any file modifications (such as embedding annotations into PDF files or downloading from calibre) may change the partial hash, thereby losing track of any highlights, bookmarks, and progress data. Embedding PDF annotations can be set at menu Typeset → Highlights → Write highlights into PDF."), metadata_folder_str.hash)
 local leaving_hash_sdr_warn = _("Warning: You currently have documents with hash-based metadata. Until this metadata is moved by opening those documents, or deleted, file browser navigation may remain slower.")
 
 local function genMetadataFolderMenuItem(value)
