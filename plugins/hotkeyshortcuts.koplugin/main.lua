@@ -24,14 +24,17 @@ local hotkeyshortcuts_path = FFIUtil.joinPath(DataStorage:getSettingsDir(), "hot
 
 -- mofifier *here* refers to either screenkb or shift
 local hotkeyshortcuts_list = {
+    -- cursor keys
     modifier_plus_up                 = Device:hasScreenKB() and _("ScreenKB + Up")      or _("Shift + Up"),
     modifier_plus_down               = Device:hasScreenKB() and _("ScreenKB + Down")    or _("Shift + Down"),
     modifier_plus_left               = Device:hasScreenKB() and _("ScreenKB + Left")    or _("Shift + Left"),
     modifier_plus_right              = Device:hasScreenKB() and _("ScreenKB + Right")   or _("Shift + Right"),
+    -- page turn buttons
     modifier_plus_left_page_back     = Device:hasScreenKB() and _("ScreenKB + LPgBack") or _("Shift + LPgBack"),
     modifier_plus_left_page_forward  = Device:hasScreenKB() and _("ScreenKB + LPgFwd")  or _("Shift + LPgFwd"),
     modifier_plus_right_page_back    = Device:hasScreenKB() and _("ScreenKB + RPgBack") or _("Shift + RPgBack"),
     modifier_plus_right_page_forward = Device:hasScreenKB() and _("ScreenKB + RPgFwd")  or _("Shift + RPgFwd"),
+    -- function keys
     modifier_plus_back               = Device:hasScreenKB() and _("ScreenKB + Back")    or _("Shift + Back"),
     modifier_plus_home               = Device:hasScreenKB() and _("ScreenKB + Home")    or _("Shift + Home"),
     modifier_plus_press              = Device:hasScreenKB() and _("ScreenKB + Press")   or _("Shift + Press"),
@@ -352,8 +355,21 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
         }
         self:attachNewTableToExistingTable(fn_keys, fn_keys_haskeyboard)
     end
+    -- table.insert(PhysicalButtons.sub_item_table, {
+    menu_items.press_key_does_hotkeyshortcuts = {
+        text = _("Use press key for shortcuts"),
+        sorting_hint = ("physical_buttons_setup")
+        checked_func = function()
+            return G_reader_settings:isTrue("press_key_does_hotkeyshortcuts")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("press_key_does_hotkeyshortcuts")
+            UIManager:askForRestart()
+        end,
+    }
     menu_items.hotkeyshortcuts = {
         text = _("Shortcuts"),
+        sorting_hint = ("physical_buttons_setup")
         sub_item_table = {
             {
                 text = _("Cursor keys"),
