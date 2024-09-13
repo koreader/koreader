@@ -40,7 +40,7 @@ local function convertSizeTo(px, format)
     return Screen:scaleBySize(px) / display_dpi * format_factor
 end
 
-function optionsutil.formatFlexSize(value, unit)
+local function formatFlexSize(value, unit)
     if not value then
         -- This shouldn't really ever happen...
         return ""
@@ -75,6 +75,12 @@ function optionsutil.formatFlexSize(value, unit)
     else
         return string.format(fmt, size, convertSizeTo(size, unit), shown_unit)
     end
+end
+
+-- Public wrapper for callers outside of ConfigOption, where we can't pull name_text_unit from option
+function optionsutil.formatFlexSize(value, unit)
+    unit = unit or G_reader_settings:readSetting("dimension_units", "mm")
+    return formatFlexSize(value, unit)
 end
 
 function optionsutil.showValues(configurable, option, prefix, document, unit)
@@ -166,21 +172,21 @@ function optionsutil.showValues(configurable, option, prefix, document, unit)
         local nb_current, nb_default = tonumber(current), tonumber(default)
         if nb_current == nil or nb_default == nil then
             text = T(_("%1\n%2\nCurrent value: %3\nDefault value: %4"), name_text, help_text,
-                                            optionsutil.formatFlexSize(value_current or current, unit),
-                                            optionsutil.formatFlexSize(value_default or default, unit))
+                                            formatFlexSize(value_current or current, unit),
+                                            formatFlexSize(value_default or default, unit))
         elseif value_default then
             text = T(_("%1\n%2\nCurrent value: %3 (%4)\nDefault value: %5 (%6)"), name_text, help_text,
-                                            current, optionsutil.formatFlexSize(value_current, unit),
-                                            default, optionsutil.formatFlexSize(value_default, unit))
+                                            current, formatFlexSize(value_current, unit),
+                                            default, formatFlexSize(value_default, unit))
         else
             text = T(_("%1\n%2\nCurrent value: %3 (%4)\nDefault value: %5"), name_text, help_text,
-                                            current, optionsutil.formatFlexSize(value_current, unit),
+                                            current, formatFlexSize(value_current, unit),
                                             default)
         end
     else
         text = T(_("%1\n%2\nCurrent value: %3\nDefault value: %4"), name_text, help_text,
-                                            optionsutil.formatFlexSize(current, unit),
-                                            optionsutil.formatFlexSize(default, unit))
+                                            formatFlexSize(current, unit),
+                                            formatFlexSize(default, unit))
     end
     UIManager:show(InfoMessage:new{ text=text })
 end
@@ -196,8 +202,8 @@ Current margins:
   left: %1
   right: %2
 Default margins: not set]]),
-                optionsutil.formatFlexSize(current[1], unit),
-                optionsutil.formatFlexSize(current[2], unit))
+                formatFlexSize(current[1], unit),
+                formatFlexSize(current[2], unit))
         })
     else
         UIManager:show(InfoMessage:new{
@@ -208,10 +214,10 @@ Current margins:
 Default margins:
   left: %3
   right: %4]]),
-                optionsutil.formatFlexSize(current[1], unit),
-                optionsutil.formatFlexSize(current[2], unit),
-                optionsutil.formatFlexSize(default[1], unit),
-                optionsutil.formatFlexSize(default[2], unit))
+                formatFlexSize(current[1], unit),
+                formatFlexSize(current[2], unit),
+                formatFlexSize(default[1], unit),
+                formatFlexSize(default[2], unit))
         })
     end
 end
