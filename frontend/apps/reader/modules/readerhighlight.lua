@@ -342,6 +342,11 @@ end
 
 function ReaderHighlight:onReaderReady()
     self:setupTouchZones()
+    if self.ui.paging and G_reader_settings:isTrue("highlight_write_into_pdf_notify") then
+        UIManager:show(Notification:new{
+            text = T(_("Write highlights into PDF: %1"), self.highlight_write_into_pdf and _("on") or _("off")),
+        })
+    end
 end
 
 local highlight_style = {
@@ -389,34 +394,34 @@ function ReaderHighlight:addToMainMenu(menu_items)
     end
 
     -- main menu Typeset
+    local star = "   ★"
+    local hl_sub_item_table = {}
     menu_items.highlight_options = {
-        text = _("Highlight style"),
-        sub_item_table = {},
+        text = _("Highlights"),
+        sub_item_table = hl_sub_item_table,
     }
-    for i, v in ipairs(highlight_style) do
-        table.insert(menu_items.highlight_options.sub_item_table, {
+    for _, v in ipairs(highlight_style) do
+        local style_text, style = unpack(v)
+        table.insert(hl_sub_item_table, {
             text_func = function()
-                local text = v[1]
-                if v[2] == (G_reader_settings:readSetting("highlight_drawing_style") or self._fallback_drawer) then
-                    text = text .. "   ★"
-                end
-                return text
+                return style == (G_reader_settings:readSetting("highlight_drawing_style") or self._fallback_drawer)
+                    and style_text .. star or style_text
             end,
             checked_func = function()
-                return self.view.highlight.saved_drawer == v[2]
+                return self.view.highlight.saved_drawer == style
             end,
             radio = true,
             callback = function()
-                self.view.highlight.saved_drawer = v[2]
+                self.view.highlight.saved_drawer = style
             end,
             hold_callback = function(touchmenu_instance)
-                G_reader_settings:saveSetting("highlight_drawing_style", v[2])
-                if touchmenu_instance then touchmenu_instance:updateItems() end
+                G_reader_settings:saveSetting("highlight_drawing_style", style)
+                touchmenu_instance:updateItems()
             end,
-            separator = i == #highlight_style,
         })
     end
-    table.insert(menu_items.highlight_options.sub_item_table, {
+    hl_sub_item_table[#highlight_style].separator = true
+    table.insert(hl_sub_item_table, {
         text_func = function()
             local saved_color = self.view.highlight.saved_color
             local text
@@ -429,7 +434,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
             text = text or saved_color -- nonstandard color
             local default_color = G_reader_settings:readSetting("highlight_color") or self._fallback_color
             if saved_color == default_color then
-                text = text .. "   ★"
+                text = text .. star
             end
             return T(_("Highlight color: %1"), text)
         end,
@@ -449,7 +454,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
             touchmenu_instance:updateItems()
         end,
     })
-    table.insert(menu_items.highlight_options.sub_item_table, {
+    table.insert(hl_sub_item_table, {
         text_func = function()
             return T(_("Gray highlight opacity: %1"), G_reader_settings:readSetting("highlight_lighten_factor", 0.2))
         end,
@@ -457,14 +462,13 @@ function ReaderHighlight:addToMainMenu(menu_items)
             return self.view.highlight.saved_drawer == "lighten"
         end,
         callback = function(touchmenu_instance)
-            local curr_val = G_reader_settings:readSetting("highlight_lighten_factor")
             local spin_widget = SpinWidget:new{
-                value = curr_val,
+                value = G_reader_settings:readSetting("highlight_lighten_factor"),
                 value_min = 0,
                 value_max = 1,
                 precision = "%.2f",
                 value_step = 0.1,
-                value_hold_step = 0.25,
+                value_hold_step = 0.2,
                 default_value = 0.2,
                 keep_shown_on_apply = true,
                 title_text =  _("Gray highlight opacity"),
@@ -473,18 +477,18 @@ function ReaderHighlight:addToMainMenu(menu_items)
                     G_reader_settings:saveSetting("highlight_lighten_factor", spin.value)
                     self.view.highlight.lighten_factor = spin.value
                     UIManager:setDirty(self.dialog, "ui")
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                    touchmenu_instance:updateItems()
                 end,
             }
             UIManager:show(spin_widget)
         end,
     })
-    table.insert(menu_items.highlight_options.sub_item_table, {
+    table.insert(hl_sub_item_table, {
         text_func = function()
             local notemark = self.view.highlight.note_mark or "none"
             for __, v in ipairs(note_mark) do
                 if v[2] == notemark then
-                    return T(_("Note marker: %1"), string.lower(v[1]))
+                    return T(_("Note marker: %1"), v[1]:lower())
                 end
             end
         end,
@@ -515,13 +519,13 @@ function ReaderHighlight:addToMainMenu(menu_items)
                     end
                     self.view:setupNoteMarkPosition()
                     UIManager:setDirty(self.dialog, "ui")
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                    touchmenu_instance:updateItems()
                 end,
             })
         end,
         separator = true,
     })
-    table.insert(menu_items.highlight_options.sub_item_table, {
+    table.insert(hl_sub_item_table, {
         text = _("Apply current style and color to all highlights"),
         callback = function()
             UIManager:show(ConfirmBox:new{
@@ -546,7 +550,135 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 end,
             })
         end,
+        separator = self.ui.paging and true,
     })
+    if self.document.is_pdf then
+        table.insert(hl_sub_item_table, {
+            text_func = function()
+                local text = self.highlight_write_into_pdf and _("on") or _("off")
+                if (not self.highlight_write_into_pdf) == (not G_reader_settings:isTrue("highlight_write_into_pdf")) then
+                    text = text .. star
+                end
+                return T(_("Write highlights into PDF: %1"), text)
+            end,
+            sub_item_table = {
+                {
+                    text_func = function()
+                        local text = _("On")
+                        return G_reader_settings:isTrue("highlight_write_into_pdf") and text .. star or text
+                    end,
+                    checked_func = function()
+                        return self.highlight_write_into_pdf
+                    end,
+                    radio = true,
+                    callback = function()
+                        if self.document:_checkIfWritable() then
+                            self.highlight_write_into_pdf = true
+                            if G_reader_settings:readSetting("document_metadata_folder") == "hash" then
+                                UIManager:show(InfoMessage:new{
+                                    text = _("Warning: Book metadata location is set to hash-based storage. Writing highlights into a PDF modifies the file which may change the partial hash, resulting in its metadata (e.g., highlights and progress) being unlinked and lost."),
+                                    icon = "notice-warning",
+                                })
+                            end
+                        else
+                            UIManager:show(InfoMessage:new{
+                            text = _([[
+Highlights in this document will be saved in the settings file, but they won't be written in the document itself because the file is in a read-only location.
+
+If you wish your highlights to be saved in the document, just move it to a writable directory first.]]),
+                            })
+                        end
+                    end,
+                    hold_callback = function(touchmenu_instance)
+                        G_reader_settings:makeTrue("highlight_write_into_pdf")
+                        touchmenu_instance:updateItems()
+                    end,
+                },
+                {
+                    text_func = function()
+                        local text = _("Off")
+                        return G_reader_settings:hasNot("highlight_write_into_pdf") and text .. star or text
+                    end,
+                    checked_func = function()
+                        return not self.highlight_write_into_pdf
+                    end,
+                    radio = true,
+                    callback = function()
+                        self.highlight_write_into_pdf = false
+                    end,
+                    hold_callback = function(touchmenu_instance)
+                        G_reader_settings:delSetting("highlight_write_into_pdf")
+                        touchmenu_instance:updateItems()
+                    end,
+                },
+                {
+                    text = _("Show reminder on book opening"),
+                    checked_func = function()
+                        return G_reader_settings:isTrue("highlight_write_into_pdf_notify")
+                    end,
+                    callback = function()
+                        G_reader_settings:flipNilOrFalse("highlight_write_into_pdf_notify")
+                    end,
+                    separator = true,
+                },
+                {
+                    text = _("Write all highlights into pdf file"),
+                    enabled_func = function()
+                        return self.highlight_write_into_pdf and self.ui.annotation:getNumberOfHighlightsAndNotes() > 0
+                    end,
+                    callback = function()
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Are you sure you want to write all KOReader highlights into pdf file?"),
+                            icon = "texture-box",
+                            ok_callback = function()
+                                local count = 0
+                                for _, item in ipairs(self.ui.annotation.annotations) do
+                                    if item.drawer then
+                                        count = count + 1
+                                        self:writePdfAnnotation("delete", item)
+                                        self:writePdfAnnotation("save", item)
+                                        if item.note then
+                                            self:writePdfAnnotation("content", item, item.note)
+                                        end
+                                    end
+                                end
+                                UIManager:show(Notification:new{
+                                    text = T(N_("1 highlight written into pdf file",
+                                        "%1 highlights written into pdf file", count), count),
+                                })
+                            end,
+                        })
+                    end,
+                },
+                {
+                    text = _("Delete all highlights from pdf file"),
+                    enabled_func = function()
+                        return self.highlight_write_into_pdf and self.ui.annotation:getNumberOfHighlightsAndNotes() > 0
+                    end,
+                    callback = function()
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Are you sure you want to delete all KOReader highlights from pdf file?"),
+                            icon = "texture-box",
+                            ok_callback = function()
+                                local count = 0
+                                for _, item in ipairs(self.ui.annotation.annotations) do
+                                    if item.drawer then
+                                        count = count + 1
+                                        self:writePdfAnnotation("delete", item)
+                                    end
+                                end
+                                UIManager:show(Notification:new{
+                                    text = T(N_("1 highlight deleted from pdf file",
+                                        "%1 highlights deleted from pdf file", count), count),
+                                })
+                            end,
+                        })
+                    end,
+                },
+            },
+        })
+    end
+
     if self.ui.paging then
         menu_items.panel_zoom_options = {
             text = _("Panel zoom (manga/comic)"),
@@ -1938,41 +2070,29 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
 end
 
 function ReaderHighlight:writePdfAnnotation(action, item, content)
-    if self.ui.rolling or G_reader_settings:readSetting("save_document") == "disable" then
+    if self.ui.rolling or not self.highlight_write_into_pdf then
         return
     end
     logger.dbg("write to pdf document", action, item)
     local function doAction(action_, page_, item_, content_)
         if action_ == "save" then
-            return self.ui.document:saveHighlight(page_, item_)
+            self.document:saveHighlight(page_, item_)
         elseif action_ == "delete" then
-            return self.ui.document:deleteHighlight(page_, item_)
+            self.document:deleteHighlight(page_, item_)
         elseif action_ == "content" then
-            return self.ui.document:updateHighlightContents(page_, item_, content_)
+            self.document:updateHighlightContents(page_, item_, content_)
         end
     end
-    local can_write
     if item.pos0.page == item.pos1.page then -- single-page highlight
-        can_write = doAction(action, item.pos0.page, item, content)
+        doAction(action, item.pos0.page, item, content)
     else -- multi-page highlight
         for hl_page = item.pos0.page, item.pos1.page do
             local hl_part = self:getSavedExtendedHighlightPage(item, hl_page)
-            can_write = doAction(action, hl_page, hl_part, content)
-            if can_write == false then break end
+            doAction(action, hl_page, hl_part, content)
             if action == "save" then -- update pboxes from quadpoints
                 item.ext[hl_page].pboxes = hl_part.pboxes
             end
         end
-    end
-    if can_write == false and not self.warned_once then
-        self.warned_once = true
-        UIManager:show(InfoMessage:new{
-            text = _([[
-Highlights in this document will be saved in the settings file, but they won't be written in the document itself because the file is in a read-only location.
-
-If you wish your highlights to be saved in the document, just move it to a writable directory first.]]),
-            timeout = 5,
-        })
     end
 end
 
@@ -2298,6 +2418,13 @@ function ReaderHighlight:onReadSettings(config)
 
     -- panel zoom settings isn't supported in EPUB
     if self.ui.paging then
+        if self.document.is_pdf and self.document:_checkIfWritable() then
+            if config:has("highlight_write_into_pdf") then
+                self.highlight_write_into_pdf = config:isTrue("highlight_write_into_pdf") -- true or false
+            else
+                self.highlight_write_into_pdf = G_reader_settings:readSetting("highlight_write_into_pdf") -- true or nil
+            end
+        end
         local ext = util.getFileNameSuffix(self.ui.document.file)
         G_reader_settings:initializeExtSettings("panel_zoom_enabled", {cbz = true, cbt = true})
         G_reader_settings:initializeExtSettings("panel_zoom_fallback_to_text_selection", {pdf = true})
@@ -2321,6 +2448,7 @@ end
 function ReaderHighlight:onSaveSettings()
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
     self.ui.doc_settings:saveSetting("highlight_color", self.view.highlight.saved_color)
+    self.ui.doc_settings:saveSetting("highlight_write_into_pdf", self.highlight_write_into_pdf)
     self.ui.doc_settings:saveSetting("panel_zoom_enabled", self.panel_zoom_enabled)
 end
 

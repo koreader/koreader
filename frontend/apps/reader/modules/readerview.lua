@@ -1103,10 +1103,7 @@ end
 
 function ReaderView:onSaveSettings()
     if self.ui.paging then
-        if self.document:isEdited() and G_reader_settings:readSetting("save_document") ~= "always" then
-            -- Either "disable" (and the current tiles will be wrong) or "prompt" (but the
-            -- prompt will happen later, too late to catch "Don't save"), so force cached
-            -- tiles to be ignored on next opening.
+        if self.document:isEdited() and not self.ui.highlight.highlight_write_into_pdf then
             self.document:resetTileCacheValidity()
         end
         self.ui.doc_settings:saveSetting("tile_cache_validity_ts", self.document:getTileCacheValidity())

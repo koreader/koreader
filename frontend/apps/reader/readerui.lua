@@ -5,7 +5,6 @@ It works using data gathered from a document interface.
 ]]--
 
 local BD = require("ui/bidi")
-local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DeviceListener = require("device/devicelistener")
 local DocCache = require("document/doccache")
@@ -775,41 +774,10 @@ function ReaderUI:closeDocument()
     self.document = nil
 end
 
-function ReaderUI:notifyCloseDocument()
-    self:handleEvent(Event:new("CloseDocument"))
-    if self.document:isEdited() then
-        local setting = G_reader_settings:readSetting("save_document")
-        if setting == "always" then
-            self:closeDocument()
-        elseif setting == "disable" then
-            self.document:discardChange()
-            self:closeDocument()
-        else
-            UIManager:show(ConfirmBox:new{
-                text = _("Write highlights into this PDF?"),
-                ok_text = _("Write"),
-                dismissable = false,
-                ok_callback = function()
-                    self:closeDocument()
-                end,
-                cancel_callback = function()
-                    self.document:discardChange()
-                    self:closeDocument()
-                end,
-            })
-        end
-    else
-        self:closeDocument()
-    end
-end
-
 function ReaderUI:onClose(full_refresh)
     logger.dbg("closing reader")
     PluginLoader:finalize()
     Device:notifyBookState(nil, nil)
-    if full_refresh == nil then
-        full_refresh = true
-    end
     -- if self.dialog is us, we'll have our onFlushSettings() called
     -- by UIManager:close() below, so avoid double save
     if self.dialog ~= self then
@@ -820,9 +788,13 @@ function ReaderUI:onClose(full_refresh)
         -- Serialize the most recently displayed page for later launch
         DocCache:serialize(self.document.file)
         logger.dbg("closing document")
-        self:notifyCloseDocument()
+        self:handleEvent(Event:new("CloseDocument"))
+        if self.document:isEdited() and not self.highlight.highlight_write_into_pdf then
+            self.document:discardChange()
+        end
+        self:closeDocument()
     end
-    UIManager:close(self.dialog, full_refresh and "full")
+    UIManager:close(self.dialog, full_refresh ~= false and "full")
 end
 
 function ReaderUI:onCloseWidget()

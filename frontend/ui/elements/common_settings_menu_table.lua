@@ -566,7 +566,7 @@ local metadata_folder_help_table = {
 }
 local metadata_folder_help_text = table.concat(metadata_folder_help_table, "\n")
 
-local hash_filemod_warn = T(_("%1 requires calculating partial file hashes of documents which may slow down file browser navigation. Any file modifications (such as embedding annotations into PDF files or downloading from calibre) may change the partial hash, thereby losing track of any highlights, bookmarks, and progress data. Embedding PDF annotations is currently set to \"%s\" and can be disabled at (⚙ → Document → Save Document (write highlights into PDF))."), metadata_folder_str.hash)
+local hash_filemod_warn = T(_("%1 requires calculating partial file hashes of documents which may slow down file browser navigation. Any file modifications (such as embedding annotations into PDF files or downloading from calibre) may change the partial hash, thereby losing track of any highlights, bookmarks, and progress data. Embedding PDF annotations can be set at menu Typeset → Highlights → Write highlights into PDF."), metadata_folder_str.hash)
 local leaving_hash_sdr_warn = _("Warning: You currently have documents with hash-based metadata. Until this metadata is moved by opening those documents, or deleted, file browser navigation may remain slower.")
 
 local function genMetadataFolderMenuItem(value)
@@ -581,8 +581,7 @@ local function genMetadataFolderMenuItem(value)
                 G_reader_settings:saveSetting("document_metadata_folder", value)
                 if value == "hash" then
                     DocSettings.setIsHashLocationEnabled(true)
-                    local save_document_setting = G_reader_settings:readSetting("save_document")
-                    UIManager:show(InfoMessage:new{ text = string.format(hash_filemod_warn, save_document_setting), icon = "notice-warning" })
+                    UIManager:show(InfoMessage:new{ text = hash_filemod_warn, icon = "notice-warning" })
                 else
                     DocSettings.setIsHashLocationEnabled(nil) -- reset
                     if DocSettings.isHashLocationEnabled() then
@@ -664,26 +663,6 @@ common_settings.document_auto_save = {
         } or nil,
     },
     separator = true,
-}
-
-common_settings.document_save = {
-    text = _("Save document (write highlights into PDF)"),
-    sub_item_table = {
-        genGenericMenuEntry(_("Prompt"), "save_document", "prompt", "prompt"), -- set "save_document" to "prompt"
-        {
-            text = _("Always"),
-            checked_func = function()
-                return G_reader_settings:readSetting("save_document") == "always"
-            end,
-            callback = function()
-                if G_reader_settings:readSetting("document_metadata_folder") == "hash" then
-                    UIManager:show(InfoMessage:new{ text = _("Warning: Book metadata location is set to hash-based storage. Writing highlights into a PDF modifies the file which may change the partial hash, resulting in its metadata (e.g., highlights and progress) being unlinked and lost."), icon = "notice-warning"  })
-                end
-                G_reader_settings:saveSetting("save_document", "always")
-            end,
-        },
-        genGenericMenuEntry(_("Disable"), "save_document", "disable"),
-    },
 }
 
 common_settings.document_end_action = {
