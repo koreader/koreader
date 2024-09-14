@@ -369,7 +369,7 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
     }
     menu_items.hotkeyshortcuts = {
         sorting_hint = "physical_buttons_setup",
-        text = _("Shortcuts"),
+        text = _("Keyboard shortcuts"),
         sub_item_table = {
             {
                 text = _("Cursor keys"),
