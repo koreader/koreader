@@ -2,7 +2,7 @@ describe("menu table screen color module", function()
     local menu, Screen, CanvasContext
     setup(function()
         require("commonrequire")
-        menu = require("ui/elements/screen_color_menu_table")
+        menu = dofile("frontend/ui/elements/screen_color_menu_table.lua")
         Screen = require("device").screen
         CanvasContext = require("document/canvascontext")
     end)
