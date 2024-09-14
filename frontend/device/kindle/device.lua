@@ -578,6 +578,13 @@ function Kindle:init()
     -- Auto-detect & open input devices
     self:openInputDevices()
 
+    -- Follow user preference for the hall effect sensor's state
+    if self.powerd:hasHallSensor() then
+        if G_reader_settings:has("kindle_hall_effect_sensor_enabled") then
+            self.powerd:onToggleHallSensor(G_reader_settings:readSetting("kindle_hall_effect_sensor_enabled"))
+        end
+    end
+
     Generic.init(self)
 end
 
