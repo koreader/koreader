@@ -56,7 +56,7 @@ function SonyPRSTUX:init()
     self.powerd = require("device/sony-prstux/powerd"):new{device = self}
     self.input = require("device/input"):new{
         device = self,
-        event_map = require("device/sony-prstux/event_map"),
+        event_map = dofile("frontend/device/sony-prstux/event_map.lua"),
     }
 
     self.input.open("/dev/input/event0") -- Keys

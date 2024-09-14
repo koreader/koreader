@@ -6,7 +6,6 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local event_map_keyboard = require("event_map_keyboard")
 local util = require("util")
 local _ = require("gettext")
 
@@ -398,7 +397,7 @@ function ExternalKeyboard:setupKeyboard(data)
     -- Using a new table avoids mutating the original event map.
     local event_map = {}
     util.tableMerge(event_map, Device.input.event_map)
-    util.tableMerge(event_map, event_map_keyboard)
+    util.tableMerge(event_map, dofile("plugins/externalkeyboard.koplugin/event_map_keyboard.lua"))
     Device.input.event_map = event_map
     Device.hasKeyboard = yes
     Device.hasKeys = yes
