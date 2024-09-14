@@ -11,11 +11,17 @@ local ReaderAnnotation = WidgetContainer:extend{
 
 function ReaderAnnotation:buildAnnotation(bm, highlights, init)
     -- bm: associated single bookmark ; highlights: tables with all highlights
-    if self.ui.rolling and
-            (not self.document:isXPointerInDocument(bm.page) or
-            (bm.pos1 and not self.document:isXPointerInDocument(bm.pos1))) then
-        logger.warn("Invalid xpointer in old highlight, skipping")
-        return
+    if self.ui.rolling then
+        local is_invalid
+        if not self.document:isXPointerInDocument(bm.page) then
+            logger.warn("Skipping old bookmark, invalid start xpointer:", bm.page)
+            is_invalid = true
+        end
+        if bm.pos1 and not self.document:isXPointerInDocument(bm.pos1) then
+            logger.warn("Skipping old bookmark, invalid end xpointer:", bm.page)
+            is_invalid = true
+        end
+        if is_invalid then return end
     end
     local note = bm.text
     if note == "" then
