@@ -24,9 +24,8 @@ function MenuSorter:readMSSettings(config_prefix)
         local menu_order = string.format(
             "%s/%s_menu_order.lua", DataStorage:getSettingsDir(), config_prefix)
 
-        if lfs.attributes(menu_order) then
-            return dofile(menu_order) or {}
-        end
+        local ok, data = pcall(dofile, menu_order)
+        return ok and data or {}
     end
     return {}
 end
