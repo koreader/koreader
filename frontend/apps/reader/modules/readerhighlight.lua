@@ -344,8 +344,7 @@ function ReaderHighlight:onReaderReady()
     self:setupTouchZones()
     if self.ui.paging and G_reader_settings:isTrue("highlight_write_into_pdf_notify") then
         UIManager:show(Notification:new{
-            text = self.highlight_write_into_pdf and _("Highlights will be written into pdf file")
-                                                  or _("Highlights will not be written into pdf file"),
+            text = T(_("Write highlights into PDF: %1"), self.highlight_write_into_pdf and _("on") or _("off")),
         })
     end
 end
