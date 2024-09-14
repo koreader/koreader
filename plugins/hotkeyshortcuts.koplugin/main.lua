@@ -357,8 +357,8 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
         self:attachNewTableToExistingTable(fn_keys, fn_keys_haskeyboard)
     end
     menu_items.button_press_does_hotkeyshortcuts = {
-        text = _("Use press key for shortcuts"),
-        sorting_hint = ("physical_buttons_setup"),
+        sorting_hint = "physical_buttons_setup",
+        text = _("Use the press key for shortcuts"),
         checked_func = function()
             return G_reader_settings:isTrue("press_key_does_hotkeyshortcuts")
         end,
@@ -368,8 +368,8 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
         end,
     }
     menu_items.hotkeyshortcuts = {
+        sorting_hint = "physical_buttons_setup",
         text = _("Shortcuts"),
-        sorting_hint = ("physical_buttons_setup"),
         sub_item_table = {
             {
                 text = _("Cursor keys"),
