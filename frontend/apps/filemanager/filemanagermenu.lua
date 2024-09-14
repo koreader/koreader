@@ -858,7 +858,8 @@ Tap a book in the search results to open it.]]),
         }
     end
 
-    local order = dofile("frontend/ui/elements/filemanager_menu_order.lua")
+    -- NOTE: This is cached via require for ui/plugin/insert_menu's sake...
+    local order = require("ui/elements/filemanager_menu_order")
 
     local MenuSorter = require("ui/menusorter")
     self.tab_item_table = MenuSorter:mergeAndSort("filemanager", self.menu_items, order)
