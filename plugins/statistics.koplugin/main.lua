@@ -1229,6 +1229,11 @@ Time is in hours and minutes.]]),
                                     UIManager:close(this)
                                 end
                                 sync_settings.onConfirm = function(sv)
+                                    if server and (server.type ~= sv.type
+                                        or server.url ~= sv.url
+                                        or server.address ~= sv.address) then
+                                            SyncService.removeLastSyncDB(db_location)
+                                    end
                                     self.settings.sync_server = sv
                                     touchmenu_instance:updateItems()
                                 end
@@ -1252,6 +1257,7 @@ Time is in hours and minutes.]]),
                                         ok_text = _("Delete"),
                                         ok_callback = function()
                                             self.settings.sync_server = nil
+                                            SyncService.removeLastSyncDB(db_location)
                                             touchmenu_instance:updateItems()
                                         end,
                                     })

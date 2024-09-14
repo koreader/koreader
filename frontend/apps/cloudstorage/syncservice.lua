@@ -97,6 +97,10 @@ function SyncService.getReadablePath(server)
     return url
 end
 
+function SyncService.removeLastSyncDB(path)
+    os.remove(path .. ".sync")
+end
+
 -- Prepares three files for sync_cb to call to do the actual syncing:
 -- * local_file (one that is being used)
 -- * income_file (one that has just been downloaded from Cloud to be merged, then to be deleted)
