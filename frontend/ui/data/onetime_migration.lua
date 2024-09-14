@@ -10,7 +10,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20240912
+local CURRENT_MIGRATION_DATE = 20240914
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -708,9 +708,9 @@ if last_migration_date < 20240911 then
     G_defaults:flush()
 end
 
--- 20240912, Write highlights to PDF: revisited, https://github.com/koreader/koreader/pull/12509
-if last_migration_date < 20240912 then
-    logger.info("Performing one-time migration for 20240912")
+-- 20240914, Write highlights to PDF: revisited, https://github.com/koreader/koreader/pull/12509
+if last_migration_date < 20240914 then
+    logger.info("Performing one-time migration for 20240914")
 
     local setting = G_reader_settings:readSetting("save_document")
     if setting == "always" then
