@@ -64,7 +64,7 @@ local function formatFlexSize(value, unit)
         shown_unit = C_("Length", "in")
     elseif unit == "px" then
         shown_unit = C_("Pixels", "px")
-        -- We don't so subpixel positioning ;)
+        -- We don't do subpixel positioning ;)
         fmt = "%d (%d %s)"
     end
 
@@ -83,6 +83,14 @@ function optionsutil.formatFlexSize(value, unit)
     return formatFlexSize(value, unit)
 end
 
+-- This is used extensively in ui/data/(cre|kopt)options as a `name_text_hold_callback`.
+-- `ConfigOption` will *never* pass the `unit` argument, though,
+-- so if it's unset, we'll try to pull it from `option`'s `name_text_unit` field.
+-- This field can be left unset (which is the vast majority of cases),
+-- in which case we don't do anything fancy with the value,
+-- or it can be set to an explicit unit (e.g., "pt" or "px"),
+-- in which case we append the results of a conversion to that unit in the final string.
+-- It can also be set to `true`, in which case the unit is pulled from user settings ("dimension_units").
 function optionsutil.showValues(configurable, option, prefix, document, unit)
     local default = G_reader_settings:readSetting(prefix.."_"..option.name)
     local current = configurable[option.name]
