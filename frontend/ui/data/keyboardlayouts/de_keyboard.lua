@@ -1,5 +1,5 @@
--- Start with the english keyboard layout (deep copy, to not alter it)
-local de_keyboard = require("util").tableDeepCopy(require("ui/data/keyboardlayouts/en_keyboard"))
+-- Start with the english keyboard layout
+local de_keyboard = dofile("frontend/ui/data/keyboardlayouts/en_keyboard.lua")
 
 local keys = de_keyboard.keys
 

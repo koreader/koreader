@@ -103,7 +103,7 @@ local wrapInputBox = function(inputbox)
 end
 
 -- Belows are just same as the English keyboard popup
-local en_popup = require("ui/data/keyboardlayouts/keypopup/en_popup")
+local en_popup = dofile("frontend/ui/data/keyboardlayouts/keypopup/en_popup.lua")
 local com = en_popup.com -- comma (,)
 local prd = en_popup.prd -- period (.)
 local _at = en_popup._at

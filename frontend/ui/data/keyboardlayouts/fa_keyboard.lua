@@ -1,5 +1,5 @@
-local en_popup = require("ui/data/keyboardlayouts/keypopup/en_popup")
-local fa_popup = require("ui/data/keyboardlayouts/keypopup/fa_popup")
+local en_popup = dofile("frontend/ui/data/keyboardlayouts/keypopup/en_popup.lua")
+local fa_popup = dofile("frontend/ui/data/keyboardlayouts/keypopup/fa_popup.lua")
 local prd = en_popup.prd -- period (.)
 local _at = en_popup._at
 local alef = fa_popup.alef

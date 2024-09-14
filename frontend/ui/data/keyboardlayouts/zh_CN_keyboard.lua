@@ -1,12 +1,12 @@
-local IME = require("frontend/ui/data/keyboardlayouts/generic_ime")
+local IME = require("ui/data/keyboardlayouts/generic_ime")
 local util = require("util")
 local _ = require("gettext")
 
--- Start with the english keyboard layout (deep copy, to not alter it)
-local py_keyboard = require("util").tableDeepCopy(require("ui/data/keyboardlayouts/en_keyboard"))
+-- Start with the english keyboard layout
+local py_keyboard = dofile("frontend/ui/data/keyboardlayouts/en_keyboard.lua")
 local SETTING_NAME = "keyboard_chinese_pinyin_settings"
 
-local code_map = require("frontend/ui/data/keyboardlayouts/zh_pinyin_data")
+local code_map = dofile("frontend/ui/data/keyboardlayouts/zh_pinyin_data.lua")
 local settings = G_reader_settings:readSetting(SETTING_NAME, {show_candi=true})
 local ime = IME:new {
     code_map = code_map,
