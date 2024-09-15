@@ -5,6 +5,7 @@ menu_items and a separate menu order.
 
 local DataStorage = require("datastorage")
 local FFIUtil = require("ffi/util")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
 
@@ -23,8 +24,9 @@ function MenuSorter:readMSSettings(config_prefix)
         local menu_order = string.format(
             "%s/%s_menu_order.lua", DataStorage:getSettingsDir(), config_prefix)
 
-        local ok, data = pcall(dofile, menu_order)
-        return ok and data or {}
+        if lfs.attributes(menu_order) then
+            return dofile(menu_order) or {}
+        end
     end
     return {}
 end
