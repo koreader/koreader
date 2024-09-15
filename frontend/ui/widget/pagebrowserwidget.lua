@@ -1498,10 +1498,21 @@ function PageBrowserWidget:onTap(arg, ges)
 end
 
 function PageBrowserWidget:onHold(arg, ges)
-    -- ignore in emulator: no pos information triggered by ContextMenu key
-    if not ges or not ges.pos then
-        return false
+    if not ges.pos then
+        if self:getFocusItem() then
+            -- emulator: triggered by ContextMenu key with focused widget, no pos inforamtion in event
+            -- set pos to center of widget
+            local pos = self:getFocusItem().dimen:copy()
+            pos.x = pos.x + pos.w / 2
+            pos.y = pos.y + pos.h / 2
+            pos.w = 0
+            pos.h = 0
+            ges.pos = pos;
+        else
+            return false
+        end
     end
+    
     -- If hold in the bottom BookMapRow, open a new BookMapWidget
     -- and focus on this page. We'll show a rounded square below
     -- our current focus_page to help locating where we were (it's
