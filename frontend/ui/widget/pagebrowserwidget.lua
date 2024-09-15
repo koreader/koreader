@@ -57,6 +57,7 @@ function PageBrowserWidget:init()
 
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.ShowMenu = { { "Menu" } }
         self.key_events.ScrollPageUp = { { Input.group.PgBack } }
         self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
     end
@@ -135,10 +136,6 @@ function PageBrowserWidget:init()
         close_hold_callback = function() self:onClose(true) end,
         show_parent = self,
     }
-    local title_bar_layout = self.title_bar:generateHorizontalLayout()
-    for _, row in ipairs(title_bar_layout) do
-        table.insert(self.layout, row)
-    end
     self.title_bar_h = self.title_bar:getHeight()
 
     -- Guess grid TOC span height from its font size
@@ -257,11 +254,8 @@ function PageBrowserWidget:updateLayout()
     -- And put its bottom rounded corner outside of screen
     self.view_finder_h = self.row_height + 2*self.view_finder_bw + Size.radius.window
 
-    -- reset focus layout: keep title bar
-    for i = 2, #self.layout do
-        self.layout[i] = nil
-    end
-    self:moveFocusTo(1, 1, FocusManager.FOCUS_ONLY_ON_NT)
+    -- reset focus layout
+    self.layout = {}
 
     if self.grid then
         self.grid:free()
@@ -625,14 +619,9 @@ function PageBrowserWidget:update()
     }
     self.row[1] = row
     -- NT: update layout
-    -- calc rows number except BookMapRow
-    local layout_rows_except_book_map_row = 1 -- title bar
-    if (self.nb_rows) then
-        layout_rows_except_book_map_row = layout_rows_except_book_map_row + self.nb_rows
-    end
     -- remove existed MapBookRow in layout
-    if (#self.layout > layout_rows_except_book_map_row) then
-        for i=layout_rows_except_book_map_row+1, #self.layout do
+    if #self.layout > self.nb_rows then
+        for i = self.nb_rows + 1, #self.layout do
             self.layout[i] = nil
         end
     end
@@ -905,6 +894,10 @@ function PageBrowserWidget:preloadNextPrevScreenThumbnails()
     for idx=self.nb_grid_items - self.nb_cols, 1, -1 do
         self:preloadThumbnail(prev_grid_page_start + idx - 1, "preload prev page remainings")
     end
+end
+
+function PageBrowserWidget:onShowMenu()
+    self:showMenu()
 end
 
 function PageBrowserWidget:showMenu()
