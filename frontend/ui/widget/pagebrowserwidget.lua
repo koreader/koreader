@@ -4,6 +4,7 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Event = require("ui/event")
+local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -31,7 +32,7 @@ local BookMapWidget = require("ui/widget/bookmapwidget")
 local BookMapRow = BookMapWidget.BookMapRow
 
 -- PageBrowserWidget: shows thumbnails of pages
-local PageBrowserWidget = InputContainer:extend{
+local PageBrowserWidget = FocusManager:extend{
     title = _("Page browser"),
     -- Focus page: will be put at the best place in the thumbnail grid
     -- (that is, the grid will pick thumbnails from pages before and
@@ -42,6 +43,7 @@ local PageBrowserWidget = InputContainer:extend{
 }
 
 function PageBrowserWidget:init()
+    self.layout = {}
     if self.ui.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
@@ -54,13 +56,9 @@ function PageBrowserWidget:init()
     self.covers_fullscreen = true -- hint for UIManager:_repaint()
 
     if Device:hasKeys() then
-        self.key_events = {
-            Close = { { Device.input.group.Back } },
-            ScrollRowUp = { { "Up" } },
-            ScrollRowDown = { { "Down" } },
-            ScrollPageUp = { { Input.group.PgBack } },
-            ScrollPageDown = { { Input.group.PgFwd } },
-        }
+        self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.ScrollPageUp = { { Input.group.PgBack } }
+        self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
     end
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -107,6 +105,16 @@ function PageBrowserWidget:init()
                 }
             },
         }
+    else
+        -- NT: needed for selection
+        self.ges_events = {
+            Tap = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = self.dimen,
+                }
+            }
+        } 
     end
 
     -- Put the BookMapRow left and right border outside of screen
@@ -127,6 +135,10 @@ function PageBrowserWidget:init()
         close_hold_callback = function() self:onClose(true) end,
         show_parent = self,
     }
+    local title_bar_layout = self.title_bar:generateHorizontalLayout()
+    for _, row in ipairs(title_bar_layout) do
+        table.insert(self.layout, row)
+    end
     self.title_bar_h = self.title_bar:getHeight()
 
     -- Guess grid TOC span height from its font size
@@ -245,6 +257,12 @@ function PageBrowserWidget:updateLayout()
     -- And put its bottom rounded corner outside of screen
     self.view_finder_h = self.row_height + 2*self.view_finder_bw + Size.radius.window
 
+    -- reset focus layout: keep title bar
+    for i = 2, #self.layout do
+        self.layout[i] = nil
+    end
+    self:moveFocusTo(1, 1, FocusManager.FOCUS_ONLY_ON_NT)
+
     if self.grid then
         self.grid:free()
     end
@@ -316,7 +334,8 @@ function PageBrowserWidget:updateLayout()
     grid_item_outer_h_margin = math.floor((self.grid_width - self.nb_cols * self.grid_item_width - (self.nb_cols-1)*grid_item_inner_h_margin) / 2)
 
     self.grid:clear()
-
+    local focus_row = nil
+    local focus_row_index = 0
     for idx = 1, self.nb_grid_items do
         local row = math.floor((idx-1)/self.nb_cols) -- start from 0
         local col = (idx-1) % self.nb_cols
@@ -334,15 +353,23 @@ function PageBrowserWidget:updateLayout()
         local grid_item = CenterContainer:new{
             dimen = self.grid_item_dimen:copy(),
         }
-        table.insert(self.grid, FrameContainer:new{
+        local grid_item_frame = FrameContainer:new{
             show_pagenum = show_pagenum,
             overlap_offset = {offset_x, offset_y},
             margin = 0,
             padding = 0,
             bordersize = 0,
+            focusable = true,
             background = Blitbuffer.COLOR_WHITE,
             grid_item,
-        })
+        }
+        table.insert(self.grid, grid_item_frame)
+        if (not focus_row or focus_row_index ~= row) then
+            focus_row = {}
+            focus_row_index = row
+            table.insert(self.layout, focus_row)
+        end
+        table.insert(focus_row, grid_item_frame)
     end
 
     -- Put the focused (requested) page at some appropriate place in the grid
@@ -595,6 +622,22 @@ function PageBrowserWidget:update()
         -- extended_sep_pages = extended_sep_pages,
     }
     self.row[1] = row
+    -- NT: update layout
+    -- calc rows number except BookMapRow
+    local layout_rows_except_book_map_row = 1 -- title bar
+    if (self.nb_rows) then
+        layout_rows_except_book_map_row = layout_rows_except_book_map_row + self.nb_rows
+    end
+    -- remove existed MapBookRow in layout
+    if (#self.layout > layout_rows_except_book_map_row) then
+        for i=layout_rows_except_book_map_row+1, #self.layout do
+            self.layout[i] = nil
+        end
+    end
+    -- add new MapBookRow layout
+    for _, focus_row in ipairs(row.focus_layout) do
+        table.insert(self.layout, focus_row)
+    end
 
     local bd_mirrored_left_spacing = 0
     if BD.mirroredUILayout() and blank_page_slots_after_end > 0 then
@@ -1460,6 +1503,10 @@ function PageBrowserWidget:onTap(arg, ges)
 end
 
 function PageBrowserWidget:onHold(arg, ges)
+    -- ignore in emulator: no pos information triggered by ContextMenu key
+    if not ges or not ges.pos then
+        return false
+    end
     -- If hold in the bottom BookMapRow, open a new BookMapWidget
     -- and focus on this page. We'll show a rounded square below
     -- our current focus_page to help locating where we were (it's
