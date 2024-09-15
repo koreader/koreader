@@ -360,7 +360,7 @@ function PageBrowserWidget:updateLayout()
             padding = Size.border.thin,
             bordersize = 0,
             focusable = true,
-            focus_border_size = Size.border.thin,
+            focus_border_size = Size.border.thin * 2,
             focus_inner_border = true,
             background = Blitbuffer.COLOR_WHITE,
             grid_item,
