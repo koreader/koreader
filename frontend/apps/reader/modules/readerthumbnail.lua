@@ -22,13 +22,14 @@ local ReaderThumbnail = InputContainer:extend{}
 
 function ReaderThumbnail:init()
     self:registerKeyEvents()
-    if not Device:isTouchDevice() and not Device:useDPadAsActionKeys() then 
-        -- The BookMap and PageBrowser widgets depend too much on gestures, 
-        -- making them work with not enough keys on Non-Touch would be hard and very limited, so 
-        -- just don't make them available. 
-        -- We will only let BookMap run on useDPadAsActionKeys devices. 
-        return 
-    end 
+    if not Device:isTouchDevice() and not Device:useDPadAsActionKeys() then
+        -- The BookMap and PageBrowser widgets depend too much on gestures,
+        -- making them work with not enough keys on Non-Touch would be hard and very limited, so
+        -- just don't make them available.
+        -- We will only let them run on useDPadAsActionKeys devices.
+        return
+    end
+
     self.ui.menu:registerToMainMenu(self)
 
     -- Use LuaJIT fast buffer.encode()/decode() when serializing BlitBuffer
