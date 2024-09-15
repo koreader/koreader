@@ -637,7 +637,6 @@ local BookMapWidget = InputContainer:extend{
 
 function BookMapWidget:init()
     self.layout = {}
-    self.title_bar_layout = {}
     self.scroll_row_layout = {}
     if self.ui.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
@@ -745,11 +744,6 @@ function BookMapWidget:init()
         close_hold_callback = function() self:onClose(true) end,
         show_parent = self,
     }
-    self.title_bar_layout = {}
-    local title_bar_layout = self.title_bar:generateHorizontalLayout()
-    for _, row in ipairs(title_bar_layout) do
-        table.insert(self.title_bar_layout, row)
-    end
     self.title_bar_h = self.title_bar:getHeight()
     self.crop_height = self.dimen.h - self.title_bar_h - Size.margin.small - self.swipe_hint_bar_width
 
@@ -1854,9 +1848,6 @@ function BookMapWidget:paintTo(bb, x, y)
     -- widgets already have screen position
     -- NT: build focus layout, ignore invisible row in ScrollContainer
     self.layout = {}
-    for _, focus_row in ipairs(self.title_bar_layout) do
-        table.insert(self.layout, focus_row)
-    end
     for _, focus_row in ipairs(self.scroll_row_layout) do
         if #focus_row > 0 then
             -- widgets in row has same height, so just check one widget
