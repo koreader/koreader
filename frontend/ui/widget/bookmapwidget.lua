@@ -651,19 +651,7 @@ function BookMapWidget:init()
     }
     self.covers_fullscreen = true -- hint for UIManager:_repaint()
 
-    if Device:hasKeys() then
-        self.key_events.Close = { { Device.input.group.Back } }
-        self.key_events.ShowBookMapMenu = { { "Menu" } }
-        self.key_events.ScrollPageUp = { { Input.group.PgBack } }
-        self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
-        if Device:hasSymKey() then
-            self.key_events.ScrollRowUp = { { "Shift", "Up" } }
-            self.key_events.ScrollRowDown = { { "Shift", "Down" } }
-        elseif Device:hasScreenKB() then
-            self.key_events.ScrollRowUp = { { "ScreenKB", "Up" } }
-            self.key_events.ScrollRowDown = { { "ScreenKB", "Down" } }
-        end
-    end
+    self:registerKeyEvents()
     if Device:isTouchDevice() then
         self.ges_events = {
             Swipe = {
@@ -829,6 +817,23 @@ function BookMapWidget:init()
     -- Compute settings-dependant sizes and options, and build the inner widgets
     self:update()
 end
+
+function BookMapWidget:registerKeyEvents()
+    if Device:hasKeys() then
+        self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.ShowBookMapMenu = { { "Menu" } }
+        self.key_events.ScrollPageUp = { { Input.group.PgBack } }
+        self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
+        if Device:hasKeyboard() then
+            self.key_events.ScrollRowUp = { { "Shift", "Up" } }
+            self.key_events.ScrollRowDown = { { "Shift", "Down" } }
+        elseif Device:hasScreenKB() then
+            self.key_events.ScrollRowUp = { { "ScreenKB", "Up" } }
+            self.key_events.ScrollRowDown = { { "ScreenKB", "Down" } }
+        end
+    end
+end
+BookMapWidget.onPhysicalKeyboardConnected = BookMapWidget.registerKeyEvents
 
 function BookMapWidget:updateEditableStuff(update_view)
     -- Toc, bookmarks and hidden flows may be edited
