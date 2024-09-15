@@ -20,8 +20,8 @@ local order = {
         "page_map",
         "hide_nonlinear_flows",
         "----------------------------",
-        "book_map", -- if Device:isTouchDevice()
-        "page_browser", -- if Device:isTouchDevice()
+        "book_map",
+        "page_browser",
         "----------------------------",
         "go_to",
         "skim_to",
