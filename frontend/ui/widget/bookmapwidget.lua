@@ -12,6 +12,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local FocusManager = require("ui/widget/focusmanager")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local Menu = require("ui/widget/menu")
 local OverlapGroup = require("ui/widget/overlapgroup")
@@ -111,6 +112,7 @@ function BookMapRow:getLeftSpacingForNumberOfPageSlots(nb_pages, pages_per_row, 
 end
 
 function BookMapRow:init()
+    self.focus_layout = {}
     local _mirroredUI = BD.mirroredUILayout()
     self.dimen = Geom:new{ x = 0, y = 0, w = self.width, h = self.height }
 
@@ -167,6 +169,8 @@ function BookMapRow:init()
     local tspan_margin = Size.margin.tiny
     local tspan_padding_h = Size.padding.tiny
     local tspan_height = self.span_height - 2 * (tspan_margin + self.toc_span_border)
+    local focus_row = nil
+    local focus_row_offset_y = 0
     if self.toc_items then
         for lvl, items in pairs(self.toc_items) do
             local offset_y = self.pages_frame_border + self.span_height * (lvl - 1) + tspan_margin
@@ -247,6 +251,8 @@ function BookMapRow:init()
                     padding = 0,
                     bordersize = self.toc_span_border,
                     background = bgcolor,
+                    focusable = true,
+                    focus_border_size = self.toc_span_border * 2,
                     CenterContainer:new{
                         dimen = Geom:new{
                             w = width - 2 * self.toc_span_border,
@@ -256,6 +262,12 @@ function BookMapRow:init()
                     }
                 }
                 table.insert(self.pages_frame, span_w)
+                if (not focus_row or focus_row_offset_y ~= offset_y) then
+                    focus_row = {}
+                    focus_row_offset_y = offset_y
+                    table.insert(self.focus_layout, focus_row)
+                end
+                table.insert(focus_row, span_w)
             end
         end
     end
@@ -602,7 +614,7 @@ function BookMapRow:paintTo(bb, x, y)
 end
 
 -- BookMapWidget: shows a map of content, including TOC, boomarks, read pages, non-linear flows...
-local BookMapWidget = InputContainer:extend{
+local BookMapWidget = FocusManager:extend{
     -- Focus page: show the BookMapRow containing this page
     -- in the middle of screen
     focus_page = nil,
@@ -618,6 +630,7 @@ local BookMapWidget = InputContainer:extend{
 }
 
 function BookMapWidget:init()
+    self.layout = {}
     if self.ui.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
@@ -642,9 +655,6 @@ function BookMapWidget:init()
         elseif Device:hasScreenKB() then
             self.key_events.ScrollRowUp = { { "ScreenKB", "Up" } }
             self.key_events.ScrollRowDown = { { "ScreenKB", "Down" } }
-        else
-            self.key_events.ScrollRowUp = { { "Up" } }
-            self.key_events.ScrollRowDown = { { "Down" } }
         end
     end
     if Device:isTouchDevice() then
@@ -692,6 +702,16 @@ function BookMapWidget:init()
         -- and allow us to get where we want.
         -- (Also, handling "hold" is a bit more complicated when we have our
         -- ScrollableContainer that would also like to handle it.)
+    else
+        -- NT: needed for selection
+        self.ges_events = {
+            Tap = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = self.dimen,
+                }
+            }
+        }
     end
 
     -- No real need for any explicite edge and inter-row padding:
@@ -717,6 +737,10 @@ function BookMapWidget:init()
         close_hold_callback = function() self:onClose(true) end,
         show_parent = self,
     }
+    local title_bar_layout = self.title_bar:generateHorizontalLayout()
+    for _, row in ipairs(title_bar_layout) do
+        table.insert(self.layout, row)
+    end
     self.title_bar_h = self.title_bar:getHeight()
     self.crop_height = self.dimen.h - self.title_bar_h - Size.margin.small - self.swipe_hint_bar_width
 
@@ -849,6 +873,11 @@ function BookMapWidget:update()
     -- Reset main widgets
     self.vgroup:clear()
     self.cropping_widget:reset()
+    -- reset focus layout: remove all except title bar
+    for i = 2, #self.layout do
+        self.layout[i] = nil
+    end
+    self:moveFocusTo(1, 1, FocusManager.FOCUS_ONLY_ON_NT)
 
     self.alt_theme = G_reader_settings:isTrue("book_map_alt_theme")
 
@@ -1143,6 +1172,9 @@ function BookMapWidget:update()
             extended_sep_pages = extended_sep_pages,
         }
         table.insert(self.vgroup, row)
+        for _, focus_row in ipairs(row.focus_layout) do
+            table.insert(self.layout, focus_row)
+        end
         if not self.page_slot_width then
             self.page_slot_width = row.page_slot_width
         end
