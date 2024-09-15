@@ -43,6 +43,7 @@ local FrameContainer = WidgetContainer:extend{
     focusable = false,
     focus_border_size = Size.border.window * 2,
     focus_border_color = Blitbuffer.COLOR_BLACK,
+    focus_inner_border = false, -- use inner border for focus style
     -- paint hatched background if provided
     stripe_color = nil,
     stripe_width = nil,
@@ -71,7 +72,11 @@ function FrameContainer:onFocus()
     end
     self._origin_bordersize = self.bordersize
     self._origin_border_color = self.color
-    self.bordersize = self.focus_border_size
+    if not self.focus_inner_border then
+        self.bordersize = self.focus_border_size
+    else
+        self.inner_bordersize = self.focus_border_size
+    end
     self.color = self.focus_border_color
     self._focused = true
     return true
@@ -82,7 +87,11 @@ function FrameContainer:onUnfocus()
         return false
     end
     if self._focused then
-        self.bordersize = self._origin_bordersize
+        if not self.focus_inner_border then
+            self.bordersize = self._origin_bordersize
+        else
+            self.inner_bordersize = self._origin_bordersize
+        end
         self.color = self._origin_border_color
         self._focused = nil
         return true

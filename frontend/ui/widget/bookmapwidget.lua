@@ -253,6 +253,7 @@ function BookMapRow:init()
                     background = bgcolor,
                     focusable = true,
                     focus_border_size = self.toc_span_border * 2,
+                    focus_inner_border = true,
                     CenterContainer:new{
                         dimen = Geom:new{
                             w = width - 2 * self.toc_span_border,
@@ -1007,15 +1008,25 @@ function BookMapWidget:update()
                     if item.page == p_start then
                         cur_left_spacing = self.row_left_spacing + self.flat_toc_level_indent * (item.depth-1)
                         local txt_max_width = self.row_width - cur_left_spacing
-                        table.insert(self.vgroup, HorizontalGroup:new{
-                            HorizontalSpan:new{
-                                width = cur_left_spacing,
-                            },
+                        local toc_title = FrameContainer:new{
+                            margin = 0,
+                            padding = Size.border.thin,
+                            bordersize = 0,
+                            focusable = true,
+                            focus_border_size = Size.border.thin,
+                            focus_inner_border = true,
                             TextBoxWidget:new{
                                 text = self.ui.toc:cleanUpTocTitle(item.title, true),
                                 width = txt_max_width,
                                 face = self.flat_toc_depth_faces[item.depth],
+                            }
+                        }
+                        table.insert(self.layout, {toc_title})
+                        table.insert(self.vgroup, HorizontalGroup:new{
+                            HorizontalSpan:new{
+                                width = cur_left_spacing,
                             },
+                            toc_title,
                             -- Store this TOC item page, so we can tap on it to launch PageBrowser on its page
                             toc_item_page = item.page,
                         })

@@ -357,9 +357,11 @@ function PageBrowserWidget:updateLayout()
             show_pagenum = show_pagenum,
             overlap_offset = {offset_x, offset_y},
             margin = 0,
-            padding = 0,
+            padding = Size.border.thin,
             bordersize = 0,
             focusable = true,
+            focus_border_size = Size.border.thin,
+            focus_inner_border = true,
             background = Blitbuffer.COLOR_WHITE,
             grid_item,
         }
