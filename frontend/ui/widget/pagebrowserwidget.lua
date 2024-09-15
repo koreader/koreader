@@ -55,12 +55,7 @@ function PageBrowserWidget:init()
     }
     self.covers_fullscreen = true -- hint for UIManager:_repaint()
 
-    if Device:hasKeys() then
-        self.key_events.Close = { { Device.input.group.Back } }
-        self.key_events.ShowMenu = { { "Menu" } }
-        self.key_events.ScrollPageUp = { { Input.group.PgBack } }
-        self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
-    end
+    self:registerKeyEvents()
     if Device:isTouchDevice() then
         self.ges_events = {
             Swipe = {
@@ -125,7 +120,7 @@ function PageBrowserWidget:init()
         fullscreen = true,
         title = self.title,
         left_icon = "appbar.menu",
-        left_icon_tap_callback = function() self:showMenu() end,
+        left_icon_tap_callback = function() self:onShowMenu() end,
         left_icon_hold_callback = function()
             -- Cycle nb of toc span levels shown in bottom row
             if self:updateNbTocSpans(-1, true, true) then
@@ -193,6 +188,23 @@ function PageBrowserWidget:init()
     -- (this will call self:update())
     self:updateLayout()
 end
+
+function PageBrowserWidget:registerKeyEvents()
+    if Device:hasKeys() then
+        self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.ShowMenu = { { "Menu" } }
+        self.key_events.ScrollPageUp = { { Input.group.PgBack } }
+        self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
+        if Device:hasKeyboard() then
+            self.key_events.ScrollRowUp = { { "Shift", "Left" }, { "Shift", "Up" } }
+            self.key_events.ScrollRowDown = { { "Shift", "Right" }, { "Shift", "Down" } }
+        elseif Device:hasScreenKB() then
+            self.key_events.ScrollRowUp = { { "ScreenKB", "Left" }, { "ScreenKB", "Up" } }
+            self.key_events.ScrollRowDown = { { "ScreenKB", "Right" }, { "ScreenKB", "Down" } }
+        end
+    end
+end
+PageBrowserWidget.onPhysicalKeyboardConnected = PageBrowserWidget.registerKeyEvents
 
 function PageBrowserWidget:updateEditableStuff(update_view)
     -- Toc, bookmarks and hidden flows may be edited
@@ -897,10 +909,6 @@ function PageBrowserWidget:preloadNextPrevScreenThumbnails()
 end
 
 function PageBrowserWidget:onShowMenu()
-    self:showMenu()
-end
-
-function PageBrowserWidget:showMenu()
     local button_dialog
     -- Width of our -/+ buttons, so it looks fine with Button's default font size of 20
     local plus_minus_width = Screen:scaleBySize(60)
@@ -1056,13 +1064,13 @@ end
 function PageBrowserWidget:showAbout()
     UIManager:show(InfoMessage:new{
         text = _([[
-Page browser shows thumbnails of pages.
+Page browser shows thumbnails of a book's pages.
 
 The bottom ribbon displays an extract of the book map around the pages displayed:
 
-If statistics are enabled, black bars are shown for already read pages (gray for pages read in the current reading session). Their heights vary depending on the time spent reading the page.
-Chapters are shown above the pages they encompass.
-Under the pages, these indicators may be shown:
+If statistics are enabled, black bars indicate pages that have already been read (gray bars for pages read in the current session). The height of these bars varies based on the time spent reading each page.
+Chapters are indicated above the pages they cover.
+Below the pages, the following indicators may appear
 ▲ current page
 ❶ ❷ … previous locations
 ▒ highlighted text
@@ -1072,8 +1080,9 @@ Under the pages, these indicators may be shown:
 end
 
 function PageBrowserWidget:showGestures()
-    UIManager:show(InfoMessage:new{
-        text = _([[
+    local text
+        if Device:isTouchDevice() then
+            text = _([[
 Swipe along the top or left screen edge to change the number of columns or rows of thumbnails.
 
 Swipe vertically to move one row, horizontally to move one screen.
@@ -1086,8 +1095,27 @@ Tap on a thumbnail to read this page.
 
 Long-press on ≡ to decrease or reset the number of chapter levels shown in the bottom ribbon.
 
-Any multiswipe will close the page browser.]]),
-    })
+Any multiswipe will close the page browser.]])
+        elseif Device:hasKeyboard() then
+            text = _([[
+Use settings in this menu to change the number of columns and rows to be shown, whether to display page numbers and, different chapter-levels in bottom ribbon.
+
+Press Shift+Up to move up by one row, or LPgBack/RPgBack to move one screen.
+
+Press Shift+Down to move down by one row, or LPgFwd/RPgFwd to move one screen.
+
+Select a thumbnail to read this page.]])
+        elseif Device:hasScreenKB() then
+            text = _([[
+Use settings in this menu to change the number of columns and rows to be shown, whether to display page numbers and, different chapter-levels in bottom ribbon.
+            
+Press ScreenKB+Up to move up by one row, or LPgBack/RPgBack to move one screen.
+            
+Press ScreenKB+Down to move down by one row, or LPgFwd/RPgFwd to move one screen.
+            
+Select a thumbnail to read this page.]])
+        end
+    UIManager:show(InfoMessage:new{text = text})
 end
 
 function PageBrowserWidget:onClose(close_all_parents)
