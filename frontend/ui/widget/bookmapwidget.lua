@@ -252,7 +252,7 @@ function BookMapRow:init()
                     bordersize = self.toc_span_border,
                     background = bgcolor,
                     focusable = true,
-                    focus_border_size = self.toc_span_border * 2,
+                    focus_border_size = self.toc_span_border * 3,
                     focus_inner_border = true,
                     CenterContainer:new{
                         dimen = Geom:new{
@@ -632,6 +632,8 @@ local BookMapWidget = FocusManager:extend{
 
 function BookMapWidget:init()
     self.layout = {}
+    self.title_bar_layout = {}
+    self.scroll_row_layout = {}
     if self.ui.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
@@ -738,9 +740,10 @@ function BookMapWidget:init()
         close_hold_callback = function() self:onClose(true) end,
         show_parent = self,
     }
+    self.title_bar_layout = {}
     local title_bar_layout = self.title_bar:generateHorizontalLayout()
     for _, row in ipairs(title_bar_layout) do
-        table.insert(self.layout, row)
+        table.insert(self.title_bar_layout, row)
     end
     self.title_bar_h = self.title_bar:getHeight()
     self.crop_height = self.dimen.h - self.title_bar_h - Size.margin.small - self.swipe_hint_bar_width
@@ -854,6 +857,7 @@ function BookMapWidget:updateEditableStuff(update_view)
 end
 
 function BookMapWidget:update()
+    self.scroll_row_layout = {}
     if not self.focus_page then -- Initial display
         -- Focus (show at the middle of screen) on the BookMapRow that contains
         -- current page
@@ -874,10 +878,6 @@ function BookMapWidget:update()
     -- Reset main widgets
     self.vgroup:clear()
     self.cropping_widget:reset()
-    -- reset focus layout: remove all except title bar
-    for i = 2, #self.layout do
-        self.layout[i] = nil
-    end
     self:moveFocusTo(1, 1, FocusManager.FOCUS_ONLY_ON_NT)
 
     self.alt_theme = G_reader_settings:isTrue("book_map_alt_theme")
@@ -1005,10 +1005,10 @@ function BookMapWidget:update()
                         local txt_max_width = self.row_width - cur_left_spacing
                         local toc_title = FrameContainer:new{
                             margin = 0,
-                            padding = Size.border.thin,
+                            padding = Size.border.thin * 3,
                             bordersize = 0,
                             focusable = true,
-                            focus_border_size = Size.border.thin,
+                            focus_border_size = Size.border.thin * 3,
                             focus_inner_border = true,
                             TextBoxWidget:new{
                                 text = self.ui.toc:cleanUpTocTitle(item.title, true),
@@ -1016,7 +1016,7 @@ function BookMapWidget:update()
                                 face = self.flat_toc_depth_faces[item.depth],
                             }
                         }
-                        table.insert(self.layout, {toc_title})
+                        table.insert(self.scroll_row_layout, {toc_title})
                         table.insert(self.vgroup, HorizontalGroup:new{
                             HorizontalSpan:new{
                                 width = cur_left_spacing,
@@ -1184,7 +1184,7 @@ function BookMapWidget:update()
         }
         table.insert(self.vgroup, row)
         for _, focus_row in ipairs(row.focus_layout) do
-            table.insert(self.layout, focus_row)
+            table.insert(self.scroll_row_layout, focus_row)
         end
         if not self.page_slot_width then
             self.page_slot_width = row.page_slot_width
@@ -1845,6 +1845,26 @@ function BookMapWidget:paintTo(bb, x, y)
     self:paintLeftVerticalSwipeHint(bb, x, y)
     if not self.overview_mode then
         self:paintBottomHorizontalSwipeHint(bb, x, y)
+    end
+    -- widgets already have screen position
+    -- NT: build focus layout, ignore invisible row in ScrollContainer
+    self.layout = {}
+    for _, focus_row in ipairs(self.title_bar_layout) do
+        table.insert(self.layout, focus_row)
+    end
+    for _, focus_row in ipairs(self.scroll_row_layout) do
+        if #focus_row > 0 then
+            -- widgets in row has same height, so just check one widget
+            local dimen = focus_row[1].dimen
+            local widget_invisiable = dimen:notIntersectWith(self.cropping_widget.dimen)
+            if not widget_invisiable then
+                local row, row_idx, row_y, row_h = self:getVGroupRowAtY(dimen.y-self.title_bar_h) -- luacheck: no unused
+                widget_invisiable = not row
+            end
+            if not widget_invisiable then
+                table.insert(self.layout, focus_row)
+            end
+        end
     end
 end
 
