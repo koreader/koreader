@@ -18,7 +18,7 @@ local C_ = _.pgettext
 local N_ = _.ngettext
 local T = require("ffi/util").template
 
-local K = require("frontend/ui/data/keyboardlayouts/ja_keyboard_keys")
+local K = dofile("frontend/ui/data/keyboardlayouts/ja_keyboard_keys.lua")
 
 local DEFAULT_KEITAI_TAP_INTERVAL_S = 2
 

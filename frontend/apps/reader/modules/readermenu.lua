@@ -231,7 +231,7 @@ function ReaderMenu:setUpdateItemTable()
         },
     }
 
-    self.menu_items.page_overlap = require("ui/elements/page_overlap")
+    self.menu_items.page_overlap = dofile("frontend/ui/elements/page_overlap.lua")
 
     -- settings tab
     -- insert common settings
@@ -241,11 +241,11 @@ function ReaderMenu:setUpdateItemTable()
 
     if Device:isTouchDevice() then
         -- Settings > Taps & Gestures; mostly concerns touch related page turn stuff, and only applies to Reader
-        self.menu_items.page_turns = require("ui/elements/page_turns")
+        self.menu_items.page_turns = dofile("frontend/ui/elements/page_turns.lua")
     end
     -- Settings > Navigation; while also related to page turns, this mostly concerns physical keys, and applies *everywhere*
     if Device:hasKeys() then
-        self.menu_items.physical_buttons_setup = require("ui/elements/physical_buttons")
+        self.menu_items.physical_buttons_setup = dofile("frontend/ui/elements/physical_buttons.lua")
     end
     -- insert DjVu render mode submenu just before the last entry (show advanced)
     -- this is a bit of a hack
@@ -275,15 +275,8 @@ function ReaderMenu:setUpdateItemTable()
                 end
                 self.ui:saveSettings()
             end,
-            added_by_readermenu_flag = true,
         }
-        local screensaver_sub_item_table = require("ui/elements/screensaver_menu")
-        -- Before inserting this new item, remove any previously added one
-        for i = #screensaver_sub_item_table, 1, -1 do
-            if screensaver_sub_item_table[i].added_by_readermenu_flag then
-                table.remove(screensaver_sub_item_table, i)
-            end
-        end
+        local screensaver_sub_item_table = dofile("frontend/ui/elements/screensaver_menu.lua")
         table.insert(screensaver_sub_item_table, ss_book_settings)
         self.menu_items.screensaver = {
             text = _("Sleep screen"),
@@ -333,6 +326,7 @@ function ReaderMenu:setUpdateItemTable()
         end
     }
 
+    -- NOTE: This is cached via require for ui/plugin/insert_menu's sake...
     local order = require("ui/elements/reader_menu_order")
 
     local MenuSorter = require("ui/menusorter")
@@ -452,19 +446,6 @@ function ReaderMenu:onSetDimensions(dimen)
     -- update gesture zones according to new screen dimen
     -- (On CRe, this will get called a second time by ReaderReady once the document is reloaded).
     self:initGesListener()
-end
-
-function ReaderMenu:onCloseDocument()
-    if Device:supportsScreensaver() then
-        -- Remove the item we added (which cleans up references to document
-        -- and doc_settings embedded in functions)
-        local screensaver_sub_item_table = require("ui/elements/screensaver_menu")
-        for i = #screensaver_sub_item_table, 1, -1 do
-            if screensaver_sub_item_table[i].added_by_readermenu_flag then
-                table.remove(screensaver_sub_item_table, i)
-            end
-        end
-    end
 end
 
 function ReaderMenu:_getTabIndexFromLocation(ges)

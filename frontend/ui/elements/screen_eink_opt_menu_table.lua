@@ -13,8 +13,8 @@ local eink_settings_table = {
                 G_reader_settings:saveSetting("low_pan_rate", Screen.low_pan_rate)
             end,
         },
-        require("ui/elements/flash_ui"),
-        require("ui/elements/flash_keyboard"),
+        dofile("frontend/ui/elements/flash_ui.lua"),
+        dofile("frontend/ui/elements/flash_keyboard.lua"),
         {
             text = _("Avoid mandatory black flashes in UI"),
             checked_func = function() return G_reader_settings:isTrue("avoid_flashing_ui") end,
@@ -26,9 +26,9 @@ local eink_settings_table = {
 }
 
 if Device:hasEinkScreen() then
-    table.insert(eink_settings_table.sub_item_table, 1, require("ui/elements/refresh_menu_table"))
+    table.insert(eink_settings_table.sub_item_table, 1, dofile("frontend/ui/elements/refresh_menu_table.lua"))
     if (Screen.wf_level_max or 0) > 0 then
-        table.insert(eink_settings_table.sub_item_table, require("ui/elements/waveform_level"))
+        table.insert(eink_settings_table.sub_item_table, dofile("frontend/ui/elements/waveform_level.lua"))
     end
 end
 

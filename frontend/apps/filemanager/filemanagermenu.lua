@@ -458,7 +458,7 @@ To:
     if Device:supportsScreensaver() then
         self.menu_items.screensaver = {
             text = _("Sleep screen"),
-            sub_item_table = require("ui/elements/screensaver_menu"),
+            sub_item_table = dofile("frontend/ui/elements/screensaver_menu.lua"),
         }
     end
 
@@ -469,7 +469,7 @@ To:
 
     -- Settings > Navigation; this mostly concerns physical keys, and applies *everywhere*
     if Device:hasKeys() then
-        self.menu_items.physical_buttons_setup = require("ui/elements/physical_buttons")
+        self.menu_items.physical_buttons_setup = dofile("frontend/ui/elements/physical_buttons.lua")
     end
 
     -- settings tab - Document submenu
@@ -858,6 +858,7 @@ Tap a book in the search results to open it.]]),
         }
     end
 
+    -- NOTE: This is cached via require for ui/plugin/insert_menu's sake...
     local order = require("ui/elements/filemanager_menu_order")
 
     local MenuSorter = require("ui/menusorter")

@@ -1,11 +1,11 @@
--- Start with the english keyboard layout (deep copy, to not alter it)
-local vi_keyboard = require("util").tableDeepCopy(require("ui/data/keyboardlayouts/en_keyboard"))
+-- Start with the english keyboard layout
+local vi_keyboard = dofile("frontend/ui/data/keyboardlayouts/en_keyboard.lua")
 
-local IME = require("frontend/ui/data/keyboardlayouts/generic_ime")
+local IME = require("ui/data/keyboardlayouts/generic_ime")
 local util = require("util")
 
 -- see https://www.hieuthi.com/blog/2017/03/21/all-vietnamese-syllables.html
-local code_map = require("frontend/ui/data/keyboardlayouts/vi_telex_data")
+local code_map = dofile("frontend/ui/data/keyboardlayouts/vi_telex_data.lua")
 local ime = IME:new{
     code_map = code_map,
     partial_separators = {},

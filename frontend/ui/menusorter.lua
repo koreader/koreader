@@ -22,10 +22,10 @@ local MenuSorter = {
 function MenuSorter:readMSSettings(config_prefix)
     if config_prefix then
         local menu_order = string.format(
-            "%s/%s_menu_order", DataStorage:getSettingsDir(), config_prefix)
+            "%s/%s_menu_order.lua", DataStorage:getSettingsDir(), config_prefix)
 
-        if lfs.attributes(menu_order..".lua") then
-            return require(menu_order) or {}
+        if lfs.attributes(menu_order) then
+            return dofile(menu_order) or {}
         end
     end
     return {}

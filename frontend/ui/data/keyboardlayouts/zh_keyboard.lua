@@ -15,9 +15,9 @@ rf. https://en.wikipedia.org/wiki/Stroke_count_method
 
 --]]
 
-local IME = require("frontend/ui/data/keyboardlayouts/generic_ime")
+local IME = require("ui/data/keyboardlayouts/generic_ime")
 local util = require("util")
-local JA = require("ui/data/keyboardlayouts/ja_keyboard_keys")
+local JA = dofile("frontend/ui/data/keyboardlayouts/ja_keyboard_keys.lua")
 local _ = require("gettext")
 
 local SHOW_CANDI_KEY = "keyboard_chinese_stroke_show_candidates"
@@ -73,7 +73,7 @@ local genMenuItems = function(self)
     }
 end
 
-local code_map = require("frontend/ui/data/keyboardlayouts/zh_stroke_data")
+local code_map = dofile("frontend/ui/data/keyboardlayouts/zh_stroke_data.lua")
 local ime = IME:new{
     code_map = code_map,
     key_map = {

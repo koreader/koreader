@@ -136,7 +136,7 @@ function Device:init()
     self.screen = require("ffi/framebuffer_android"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/android/powerd"):new{device = self}
 
-    local event_map = require("device/android/event_map")
+    local event_map = dofile("frontend/device/android/event_map.lua")
 
     if android.prop.is_tolino then
         -- dpad left/right as page back/forward
