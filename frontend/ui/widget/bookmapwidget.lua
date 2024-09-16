@@ -822,6 +822,7 @@ function BookMapWidget:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.ShowBookMapMenu = { { "Menu" } }
+        self.key_events.BookMapToHome = { { "Home" } }
         self.key_events.ScrollPageUp = { { Input.group.PgBack } }
         self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
         if Device:hasKeyboard() then
@@ -1494,6 +1495,11 @@ function BookMapWidget:onClose(close_all_parents)
         UIManager:setDirty(self.ui.dialog, "full")
     end
     return true
+end
+
+function BookMapWidget:onBookMapToHome()
+    self:onClose(true)
+    self.ui:onHome()
 end
 
 function BookMapWidget:getMatchingVGroupRow(check_func)

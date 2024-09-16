@@ -193,6 +193,7 @@ function PageBrowserWidget:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.ShowMenu = { { "Menu" } }
+        self.key_events.PageBrowserToHome = { { "Home" } }
         self.key_events.ScrollPageUp = { { Input.group.PgBack } }
         self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
         if Device:hasKeyboard() then
@@ -1160,6 +1161,11 @@ function PageBrowserWidget:onClose(close_all_parents)
         UIManager:setDirty(self.ui.dialog, "full")
     end
     return true
+end
+
+function PageBrowserWidget:onPageBrowserToHome()
+    self:onClose(true)
+    self.ui:onHome()
 end
 
 function PageBrowserWidget:saveSettings(reset)
