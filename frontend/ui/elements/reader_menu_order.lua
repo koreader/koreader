@@ -13,15 +13,15 @@ local order = {
     navi = {
         "table_of_contents",
         "bookmarks",
-        "toggle_bookmark", -- if not Device:isTouchDevice()
+        "toggle_bookmark", -- if not Device:isTouchDevice() and not useDPadAsActionKeys()
         "bookmark_browsing_mode",
         "navi_settings",
         "----------------------------",
         "page_map",
         "hide_nonlinear_flows",
         "----------------------------",
-        "book_map",
-        "page_browser",
+        "book_map", -- if Device:isTouchDevice() or useDPadAsActionKeys()
+        "page_browser", -- if Device:isTouchDevice() or useDPadAsActionKeys()
         "----------------------------",
         "go_to",
         "skim_to",
