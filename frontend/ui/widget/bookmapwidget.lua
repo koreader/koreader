@@ -354,6 +354,21 @@ function BookMapRow:init()
     self.pages_markers = {}
     self.indicators = {}
     self.bottom_texts = {}
+    local enable_invisiable_focus_page_slot = Device:hasDPad()
+    local invisible_focusable_page_slots = nil
+    local focus_border_size = Size.border.thin * 3;
+    local invisiable_widget = nil
+    if enable_invisiable_focus_page_slot then
+        invisible_focusable_page_slots = {}
+        invisiable_widget = Widget:new{
+            dimen = Geom:new{
+                w = self.page_slot_width + 1 - focus_border_size * 2,
+                h = self.span_height - focus_border_size * 2,
+            }
+        }
+        table.insert(self.focus_layout, invisible_focusable_page_slots)
+    end
+
     local prev_page_was_read = true -- avoid one at start of row
     local extended_marker_h = { -- maps to extended_marker.SMALL/MEDIUM/LARGE
         math.ceil(self.span_height * 0.12),
@@ -414,6 +429,26 @@ function BookMapRow:init()
                 })
             end
             prev_page_was_read = false
+        end
+        if enable_invisiable_focus_page_slot then
+            local x
+            if _mirroredUI then
+                x = self:getPageX(page, true) - Size.line.thin
+            else
+                x = self:getPageX(page)
+            end
+            local invisible_focusable_page_slot = FrameContainer:new{
+                overlap_offset = {x, self.pages_frame_height - self.span_height},
+                margin = 0,
+                padding = focus_border_size,
+                bordersize = 0,
+                focusable = true,
+                focus_border_size = focus_border_size,
+                focus_inner_border = true,
+                invisiable_widget
+            }
+            table.insert(self.pages_frame, invisible_focusable_page_slot)
+            table.insert(invisible_focusable_page_slots, invisible_focusable_page_slot)
         end
         -- Extended separators below the baseline if requested (by PageBrowser
         -- to show the start of thumbnail rows)
