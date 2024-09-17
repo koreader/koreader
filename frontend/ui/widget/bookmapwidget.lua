@@ -861,7 +861,10 @@ function BookMapWidget:registerKeyEvents()
         self.key_events.BookMapToHome = { { "Home" } }
         self.key_events.ScrollPageUp = { { Input.group.PgBack } }
         self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
-        if Device:hasKeyboard() then
+        if Device:isTouchDevice() then
+            self.key_events.ScrollRowUp = { { "Up" } }
+            self.key_events.ScrollRowDown = { { "Down" } }
+        elseif Device:hasKeyboard() then
             self.key_events.ScrollRowUp = { { "Shift", "Up" } }
             self.key_events.ScrollRowDown = { { "Shift", "Down" } }
             self.key_events.CloseAll = { { "Shift", "Back" }, event = "Close", args = true }
