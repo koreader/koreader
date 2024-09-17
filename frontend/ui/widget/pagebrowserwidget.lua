@@ -200,12 +200,18 @@ function PageBrowserWidget:registerKeyEvents()
             self.key_events.ScrollRowUp = { { "Up" } }
             self.key_events.ScrollRowDown = { { "Down" } }
         elseif Device:hasKeyboard() then
-            self.key_events.ScrollRowUp = { { "Shift", "Left" }, { "Shift", "Up" } }
-            self.key_events.ScrollRowDown = { { "Shift", "Right" }, { "Shift", "Down" } }
+            self.key_events.ScrollRowUp = { { "Shift", "Up" } }
+            self.key_events.ScrollRowDown = { { "Shift", "Down" } }
+            -- same events as page turn buttons for mod+up/down. it gives the impression of movement through the bottom ribbon
+            self.key_events.SwipeRibbonLeftNT = { { "Shift", "Left" }, event = "ScrollPageUp" }
+            self.key_events.SwipeRibbonRightNT = { { "Shift", "Right" }, event = "ScrollPageDown" }
             self.key_events.CloseAll = { { "Shift", "Back" }, event = "Close", args = true }
         elseif Device:hasScreenKB() then
-            self.key_events.ScrollRowUp = { { "ScreenKB", "Left" }, { "ScreenKB", "Up" } }
-            self.key_events.ScrollRowDown = { { "ScreenKB", "Right" }, { "ScreenKB", "Down" } }
+            self.key_events.ScrollRowUp = { { "ScreenKB", "Up" } }
+            self.key_events.ScrollRowDown = { { "ScreenKB", "Down" } }
+            -- ditto last comment.
+            self.key_events.SwipeRibbonLeftNT = { { "ScreenKB", "Left" }, event = "ScrollPageUp" }
+            self.key_events.SwipeRibbonRightNT = { { "ScreenKB", "Right" }, event = "ScrollPageDown" }
             self.key_events.CloseAll = { { "ScreenKB", "Back" }, event = "Close", args = true }
         end
     end
