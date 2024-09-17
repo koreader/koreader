@@ -141,7 +141,7 @@ function ProgressWidget:paintTo(bb, x, y)
         -- Otherwise, we have to start with the background.
         bb:paintRoundedRect(x, y, my_size.w, my_size.h, self.bgcolor, self.radius)
         -- Then the border around that.
-        bb:paintBorder(x, y,
+        bb:paintBorder(math.floor(x), math.floor(y),
                        my_size.w, my_size.h,
                        self.bordersize, self.bordercolor, self.radius)
     end
@@ -159,8 +159,8 @@ function ProgressWidget:paintTo(bb, x, y)
             tick_x = math.floor(tick_x)
             width = math.ceil(width)
 
-            bb:paintRect(math.ceil(x + self.margin_h + self.bordersize + tick_x),
-                         math.ceil(fill_y),
+            bb:paintRect(x + self.margin_h + self.bordersize + tick_x,
+                         fill_y,
                          width,
                          math.ceil(fill_height),
                          self.altcolor)
@@ -175,8 +175,8 @@ function ProgressWidget:paintTo(bb, x, y)
             fill_x = math.floor(fill_x)
         end
 
-        bb:paintRect(math.ceil(fill_x),
-                     math.ceil(fill_y),
+        bb:paintRect(fill_x,
+                     fill_y,
                      math.ceil(fill_width * self.percentage),
                      math.ceil(fill_height),
                      self.fillcolor)
@@ -200,8 +200,8 @@ function ProgressWidget:paintTo(bb, x, y)
             end
             tick_x = math.floor(tick_x)
 
-            bb:paintRect(math.ceil(x + self.margin_h + self.bordersize + tick_x),
-                         math.ceil(fill_y),
+            bb:paintRect(x + self.margin_h + self.bordersize + tick_x,
+                         fill_y,
                          self.tick_width,
                          math.ceil(fill_height),
                          self.bordercolor)
