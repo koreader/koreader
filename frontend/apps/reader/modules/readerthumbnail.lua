@@ -27,7 +27,10 @@ function ReaderThumbnail:init()
         -- making them work with not enough keys on Non-Touch would be hard and very limited, so
         -- just don't make them available.
         -- We will only let them run on useDPadAsActionKeys devices.
-        return
+        if not Device:hasKeyboard() then
+            -- allow simulator run with DISABLE_TOUCH=1
+            return
+        end
     end
 
     self.ui.menu:registerToMainMenu(self)
