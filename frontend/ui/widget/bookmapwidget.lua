@@ -1861,6 +1861,7 @@ function BookMapWidget:paintTo(bb, x, y)
     -- widgets already have screen position
     -- NT: build focus layout, ignore invisible row in ScrollContainer
     self.layout = {}
+    local row_added_to_focus_layout = false
     for _, focus_row in ipairs(self.scroll_row_layout) do
         if #focus_row > 0 then
             -- widgets in row has same height, so just check one widget
@@ -1872,6 +1873,9 @@ function BookMapWidget:paintTo(bb, x, y)
             end
             if not widget_invisiable then
                 table.insert(self.layout, focus_row)
+                row_added_to_focus_layout = true
+            elseif row_added_to_focus_layout then -- reached end of ScrollContainer
+                break
             end
         end
     end
