@@ -673,6 +673,7 @@ local BookMapWidget = InputContainer:extend{
 function BookMapWidget:init()
     self.layout = {}
     self.scroll_row_layout = {}
+    self.need_foucs_print = false
     if self.ui.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
@@ -1267,6 +1268,8 @@ function BookMapWidget:update()
     end
     self.initial_scroll_offset_y = self.cropping_widget._scroll_offset_y
 
+    self:moveFocusTo(1, 1, FocusManager.FOCUS_ONLY_ON_NT)
+    self.need_foucs_print = true
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
@@ -1913,6 +1916,10 @@ function BookMapWidget:paintTo(bb, x, y)
                 break
             end
         end
+    end
+    if self.need_foucs_print then
+        self.need_foucs_print = false
+        self:refocusWidget(true, FocusManager.FOCUS_ONLY_ON_NT)
     end
 end
 
