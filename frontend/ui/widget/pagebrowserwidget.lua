@@ -710,6 +710,7 @@ function PageBrowserWidget:update()
             end
         end
     end
+    self:moveFocusTo(1, 1, FocusManager.FOCUS_ONLY_ON_NT)
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
