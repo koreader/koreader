@@ -159,8 +159,8 @@ function ProgressWidget:paintTo(bb, x, y)
             tick_x = math.floor(tick_x)
             width = math.ceil(width)
 
-            bb:paintRect(x + self.margin_h + self.bordersize + tick_x,
-                         fill_y,
+            bb:paintRect(math.ceil(x + self.margin_h + self.bordersize + tick_x),
+                         math.ceil(fill_y),
                          width,
                          math.ceil(fill_height),
                          self.altcolor)
@@ -175,8 +175,8 @@ function ProgressWidget:paintTo(bb, x, y)
             fill_x = math.floor(fill_x)
         end
 
-        bb:paintRect(fill_x,
-                     fill_y,
+        bb:paintRect(math.ceil(fill_x),
+                     math.ceil(fill_y),
                      math.ceil(fill_width * self.percentage),
                      math.ceil(fill_height),
                      self.fillcolor)
@@ -200,8 +200,8 @@ function ProgressWidget:paintTo(bb, x, y)
             end
             tick_x = math.floor(tick_x)
 
-            bb:paintRect(x + self.margin_h + self.bordersize + tick_x,
-                         fill_y,
+            bb:paintRect(math.ceil(x + self.margin_h + self.bordersize + tick_x),
+                         math.ceil(fill_y),
                          self.tick_width,
                          math.ceil(fill_height),
                          self.bordercolor)
