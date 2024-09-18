@@ -328,7 +328,7 @@ end
 function DeviceListener:onSwapPageTurnButtons(side)
     local new_text
     if side == "left" then
-        -- revert any prior global inversions first. No shenanigans please, as we could end up with an all greyed out menu.
+        -- Revert any prior global inversions first, as we could end up with an all greyed out menu.
         if G_reader_settings:isTrue("input_invert_page_turn_keys") then
             G_reader_settings:makeFalse("input_invert_page_turn_keys")
             Device:invertButtons()
@@ -341,7 +341,7 @@ function DeviceListener:onSwapPageTurnButtons(side)
             new_text = _("Left-side page-turn buttons no longer inverted.")
         end
     elseif side == "right" then
-        -- revert any prior global inversions first. No shenanigans please, as we could end up with an all greyed out menu.
+        -- Revert any prior global inversions first, as we could end up with an all greyed out menu.
         if G_reader_settings:isTrue("input_invert_page_turn_keys") then
             G_reader_settings:makeFalse("input_invert_page_turn_keys")
             Device:invertButtons()
@@ -354,7 +354,7 @@ function DeviceListener:onSwapPageTurnButtons(side)
             new_text = _("Right-side page-turn buttons no longer inverted.")
         end
     else
-        -- revert any prior inversions first. No shenanigans please, as we could end up with an all greyed out menu.
+        -- Revert any prior inversions first, as we could end up with an all greyed out menu.
         if G_reader_settings:isTrue("input_invert_left_page_turn_keys") and G_reader_settings:isTrue("input_invert_right_page_turn_keys") then
             G_reader_settings:makeFalse("input_invert_left_page_turn_keys")
             G_reader_settings:makeFalse("input_invert_right_page_turn_keys")
