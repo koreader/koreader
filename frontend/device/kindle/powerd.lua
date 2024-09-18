@@ -189,9 +189,17 @@ function KindlePowerD:isHallSensorEnabled()
     return int == 1
 end
 
-function KindlePowerD:onToggleHallSensor()
-    local stat = self:isHallSensorEnabled()
-    ffiUtil.writeToSysfs(stat and 0 or 1, self.hall_file)
+function KindlePowerD:onToggleHallSensor(toggle)
+    if toggle == nil then
+        -- Flip it
+        toggle = self:isHallSensorEnabled() and 0 or 1
+    else
+        -- Honor the requested state
+        toggle = toggle and 1 or 0
+    end
+    ffiUtil.writeToSysfs(toggle, self.hall_file)
+
+    G_reader_settings:saveSetting("kindle_hall_effect_sensor_enabled", toggle == 1 and true or false)
 end
 
 function KindlePowerD:_readFLIntensity()
