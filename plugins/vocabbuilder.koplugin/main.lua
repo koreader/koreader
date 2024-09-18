@@ -2038,7 +2038,7 @@ function VocabBuilder:onDictButtonsReady(dict_popup, buttons)
         font_bold = false,
         callback = function()
             local book_title = (dict_popup.ui.doc_props and dict_popup.ui.doc_props.display_title) or _("Dictionary lookup")
-            dict_popup.ui:handleEvent(Event:new("WordLookedUp", dict_popup.word, book_title, true)) -- is_manual: true
+            dict_popup.ui:handleEvent(Event:new("WordLookedUp", dict_popup.lookupword, book_title, true)) -- is_manual: true
             local button = dict_popup.button_table.button_by_id["vocabulary"]
             if button then
                 button:disable()
