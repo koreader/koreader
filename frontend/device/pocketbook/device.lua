@@ -653,7 +653,6 @@ local PocketBook634K3 = PocketBook:extend{
 }
 
 function PocketBook634K3._fb_init(fb, finfo, vinfo)
-    -- Pocketbook Color Lux reports bits_per_pixel = 8, but actually uses an RGB24 framebuffer
     vinfo.bits_per_pixel = 24
 end
 
