@@ -124,14 +124,14 @@ function Profiles:getSubMenuItems()
                 text = _("Execute"),
                 callback = function(touchmenu_instance)
                     touchmenu_instance:onClose()
-                    UIManager:nextTick(self.onProfileExecute, self, k, { qm_show = false })
+                    self:onProfileExecute(k, { qm_show = false })
                 end,
             },
             {
                 text = _("Show as QuickMenu"),
                 callback = function(touchmenu_instance)
                     touchmenu_instance:onClose()
-                    UIManager:nextTick(self.onProfileExecute, self, k, { qm_show = true })
+                    self:onProfileExecute(k, { qm_show = true })
                 end,
             },
             {
