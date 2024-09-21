@@ -116,6 +116,7 @@ function Screensaver:expandSpecial(message, fallback)
     -- %h time left in chapter
     -- %H time left in document (if there are hidden flows, time left in current flow)
     -- %b battery level
+    -- %B battery symbol
 
     if G_reader_settings:hasNot("lastfile") then
         return fallback
@@ -192,8 +193,10 @@ function Screensaver:expandSpecial(message, fallback)
         local powerd = Device:getPowerDevice()
         if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
             batt_lvl = powerd:getCapacity() + powerd:getAuxCapacity()
+            batt_symbol = powerd:getBatterySymbol(powerd:isAuxCharged(), powerd:isAuxCharging(), aux_batt_lvl)
         else
             batt_lvl = powerd:getCapacity()
+            batt_symbol = powerd:getBatterySymbol(powerd:isCharged(), powerd:isCharging(), batt_lvl)
         end
     end
 
@@ -207,6 +210,7 @@ function Screensaver:expandSpecial(message, fallback)
         ["%h"] = time_left_chapter,
         ["%H"] = time_left_document,
         ["%b"] = batt_lvl,
+        ["%B"] = batt_symbol,
     }
     ret = ret:gsub("(%%%a)", replace)
 
@@ -329,7 +333,8 @@ Enter a custom message to be displayed on the sleep screen. The following escape
   %p percentage read
   %h time left in chapter
   %H time left in document
-  %b battery level]]),
+  %b battery level
+  %B battery symbol]]),
         input = screensaver_message,
         buttons = {
             {
