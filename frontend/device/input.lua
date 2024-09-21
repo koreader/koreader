@@ -9,7 +9,6 @@ local GestureDetector = require("device/gesturedetector")
 local Key = require("device/key")
 local UIManager
 local framebuffer = require("ffi/framebuffer")
-local input = require("ffi/input")
 local logger = require("logger")
 local time = require("ui/time")
 local _ = require("gettext")
@@ -211,6 +210,31 @@ function Input:new(o)
 end
 
 function Input:init()
+    -- Setup underlying input implementation.
+    if self.input then -- luacheck: ignore 542
+        -- Already setup (e.g. stubbed by the testsuite).
+    elseif self.device:isSDL() then
+        self.input = require("ffi/input_SDL2_0")
+        self.hasClipboardText = function()
+            return self.input.hasClipboardText()
+        end
+        self.getClipboardText = function()
+            return self.input.getClipboardText()
+        end
+        self.setClipboardText = function(text)
+            return self.input.setClipboardText(text)
+        end
+        self.gameControllerRumble = function(left_intensity, right_intensity, duration)
+            return self.input.gameControllerRumble(left_intensity, right_intensity, duration)
+        end
+    elseif self.device:isAndroid() then
+        self.input = require("ffi/input_android")
+    elseif self.device:isPocketBook() then
+        self.input = require("ffi/input_pocketbook")
+    else
+        self.input = require("libs/libkoreader-input")
+    end
+
     -- Initialize instance-specific tables
     -- NOTE: All of these arrays may be destroyed & recreated at runtime, so we don't want a parent/class object for those.
     self.timer_callbacks = {}
@@ -306,10 +330,13 @@ Note that we adhere to the "." syntax here for compatibility.
 
 The `name` argument is optional, and used for logging purposes only.
 --]]
-function Input.open(path, name)
+function Input:open(path, name)
+    if self.input.is_ffi then
+        return self.input.open(path, name)
+    end
     -- Make sure we don't open the same device twice.
     if not Input.opened_devices[path] then
-        local fd = input.open(path)
+        local fd = self.input.open(path)
         if fd then
             Input.opened_devices[path] = fd
             if name then
@@ -332,10 +359,10 @@ Note that we adhere to the "." syntax here for compatibility.
 The `name` argument is optional, and used for logging purposes only.
 `path` is mandatory, though!
 --]]
-function Input.fdopen(fd, path, name)
+function Input:fdopen(fd, path, name)
     -- Make sure we don't open the same device twice.
     if not Input.opened_devices[path] then
-        input.fdopen(fd)
+        self.input.fdopen(fd)
         -- As with input.open, it will throw on error (closing the fd first)
         Input.opened_devices[path] = fd
         if name then
@@ -352,11 +379,14 @@ Wrapper for our Lua/C input module's close.
 
 Note that we adhere to the "." syntax here for compatibility.
 --]]
-function Input.close(path)
+function Input:close(path)
+    if self.input.is_ffi then
+        return self.input.close(path)
+    end
     -- Make sure we actually know about this device
     local fd = Input.opened_devices[path]
     if fd then
-        local ok, err = input.close(fd)
+        local ok, err = self.input.close(fd)
         if ok or err == C.ENODEV then
             -- Either the call succeeded,
             -- or the backend had already caught an ENODEV in waitForInput and closed the fd internally.
@@ -374,23 +404,9 @@ Wrapper for our Lua/C input module's closeAll.
 
 Note that we adhere to the "." syntax here for compatibility.
 --]]
-function Input.teardown()
-    input.closeAll()
+function Input:teardown()
+    self.input.closeAll()
     Input.opened_devices = {}
-end
-
--- Wrappers for the custom FFI implementations with no concept of paths or fd
-if input.is_ffi then
-    -- Pass args as-is. None of 'em actually *take* arguments, but some may be invoked as methods...
-    function Input.open(...)
-        return input.open(...)
-    end
-    function Input.close(...)
-        return input.close(...)
-    end
-    function Input.teardown(...)
-        return input.closeAll(...)
-    end
 end
 
 --[[--
@@ -536,7 +552,7 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
 
     -- If we're on a platform with the timerfd backend, handle that
     local timerfd
-    if input.setTimer then
+    if self.input.setTimer then
         -- If GestureDetector's clock source probing was inconclusive, do this on the UI timescale instead.
         if clock_id == -1 then
             deadline = time.now() + delay
@@ -548,7 +564,7 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
         -- instead of ensuring that ourselves via a polling timeout.
         -- This ensures perfect accuracy, and allows it to be computed in the event's own timescale.
         local sec, usec = time.split_s_us(deadline)
-        timerfd = input.setTimer(clock_id, sec, usec)
+        timerfd = self.input.setTimer(clock_id, sec, usec)
     end
     if timerfd then
             -- It worked, tweak the table a bit to make it clear the deadline will be handled by the kernel
@@ -582,7 +598,7 @@ function Input:clearTimeout(slot, ges)
         if item.slot == slot and (not ges or item.gesture == ges) then
             -- If the timerfd backend is in use, close the fd and free the list's node, too.
             if item.timerfd then
-                input.clearTimer(item.timerfd)
+                self.input.clearTimer(item.timerfd)
             end
             table.remove(self.timer_callbacks, i)
         end
@@ -591,10 +607,10 @@ end
 
 function Input:clearTimeouts()
     -- If the timerfd backend is in use, close the fds, too
-    if input.setTimer then
+    if self.input.setTimer then
         for _, item in ipairs(self.timer_callbacks) do
             if item.timerfd then
-                input.clearTimer(item.timerfd)
+                self.input.clearTimer(item.timerfd)
             end
         end
     end
@@ -1354,7 +1370,7 @@ function Input:waitEvent(now, deadline)
 
                 local timerfd
                 local sec, usec = time.split_s_us(poll_timeout)
-                ok, ev, timerfd = input.waitForEvent(sec, usec)
+                ok, ev, timerfd = self.input.waitForEvent(sec, usec)
                 -- We got an actual input event, go and process it
                 if ok then break end
 
@@ -1404,7 +1420,7 @@ function Input:waitEvent(now, deadline)
                         -- GestureDetector has guards in place to avoid double frees in case the callback itself
                         -- affected the timerfd or timer_callbacks list (e.g., by dropping a contact).
                         if timerfd then
-                            input.clearTimer(timerfd)
+                            self.input.clearTimer(timerfd)
                         end
                         table.remove(self.timer_callbacks, timer_idx)
 
@@ -1441,7 +1457,7 @@ function Input:waitEvent(now, deadline)
             end
 
             local sec, usec = time.split_s_us(poll_timeout)
-            ok, ev = input.waitForEvent(sec, usec)
+            ok, ev = self.input.waitForEvent(sec, usec)
         end -- if #timer_callbacks > 0
 
         -- Handle errors
