@@ -880,9 +880,9 @@ function Kobo:init()
                 -- We need to single out whichever device provides pagination buttons or sleep cover events, as we'll want to tweak key repeat there...
                 -- The first one will do, as it's extremely likely to be event0, and that's pretty fairly set in stone on NTX boards.
                 if (bit.band(dev.type, C.INPUT_PAGINATION_BUTTONS) ~= 0 or bit.band(dev.type, C.INPUT_SLEEP_COVER) ~= 0) and not self.ntx_fd then
-                    self.ntx_fd = self.input.fdopen(tonumber(dev.fd), ffi.string(dev.path), ffi.string(dev.name))
+                    self.ntx_fd = self.input:fdopen(tonumber(dev.fd), ffi.string(dev.path), ffi.string(dev.name))
                 else
-                    self.input.fdopen(tonumber(dev.fd), ffi.string(dev.path), ffi.string(dev.name))
+                    self.input:fdopen(tonumber(dev.fd), ffi.string(dev.path), ffi.string(dev.name))
                 end
             end
         end
@@ -891,9 +891,9 @@ function Kobo:init()
         -- Auto-detection failed, warn and fall back to defaults
         logger.warn("We failed to auto-detect the proper input devices, input handling may be inconsistent!")
         -- Various HW Buttons, Switches & Synthetic NTX events
-        self.ntx_fd = self.input.open(self.ntx_dev)
+        self.ntx_fd = self.input:open(self.ntx_dev)
         -- Touch panel
-        self.input.open(self.touch_dev)
+        self.input:open(self.touch_dev)
     end
 
     -- NOTE: On devices with a gyro, there may be a dedicated input device outputting the raw accelerometer data
