@@ -608,7 +608,7 @@ function Device:exit()
     G_reader_settings:close()
 
     -- I/O teardown
-    self.input.teardown()
+    self.input:teardown()
 end
 
 -- Lifted from busybox's libbb/inet_cksum.c

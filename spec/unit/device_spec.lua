@@ -41,6 +41,7 @@ describe("device module", function()
     before_each(function()
         package.loaded["ffi/framebuffer_mxcfb"] = mock_fb
         mock_input = require("device/input")
+        mock_input.force_sdl = true
         stub(mock_input, "open")
         stub(os, "getenv")
         stub(os, "execute")
@@ -53,6 +54,7 @@ describe("device module", function()
         package.unload("device/generic/powerd")
         package.unload("ui/uimanager")
         package.unload("apps/reader/readerui")
+        mock_input.force_sdl = false
         mock_input.open:revert()
         os.getenv:revert()
         os.execute:revert()
@@ -308,7 +310,7 @@ describe("device module", function()
             package.unload("device/kindle/device")
             io.open = make_io_open_kindle_model_override("G0B0GCXXX")
 
-            mock_ffi_input = require("ffi/input")
+            mock_ffi_input = require("ffi/input_SDL2_0")
             stub(mock_ffi_input, "waitForEvent")
             mock_ffi_input.waitForEvent.returns(true, {
                 {
