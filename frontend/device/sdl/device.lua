@@ -308,7 +308,6 @@ function Device:init()
         gameControllerRumble = function(left_intensity, right_intensity, duration)
             return input.gameControllerRumble(left_intensity, right_intensity, duration)
         end,
-        file_chooser = input.file_chooser,
     }
 
     self.keyboard_layout = dofile("frontend/device/sdl/keyboard_layout.lua")
