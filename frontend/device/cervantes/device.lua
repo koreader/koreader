@@ -123,9 +123,9 @@ function Cervantes:init()
             [116] = "Power",
         }
     }
-    self.input.open("/dev/input/event0") -- Keys
-    self.input.open("/dev/input/event1") -- touchscreen
-    self.input.open("fake_events") -- usb events
+    self.input:open("/dev/input/event0") -- Keys
+    self.input:open("/dev/input/event1") -- touchscreen
+    self.input:open("fake_events") -- usb events
     self:initEventAdjustHooks()
     Generic.init(self)
 end
