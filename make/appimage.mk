@@ -11,7 +11,7 @@ update: all
 	$(SYMLINK) resources/koreader.png $(INSTALL_DIR)/koreader/
 	sed -e 's/%%VERSION%%/$(VERSION)/' -e 's/%%DATE%%/$(RELEASE_DATE)/' $(PLATFORM_DIR)/common/koreader.metainfo.xml >$(INSTALL_DIR)/koreader/koreader.appdata.xml
 	# TODO at best this is DebUbuntu specific
-	$(SYMLINK) /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 $(INSTALL_DIR)/koreader/libs/libSDL2.so
+	$(SYMLINK) /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 $(INSTALL_DIR)/koreader/libs/
 	# required for our stock Ubuntu SDL even though we don't use sound
 	# the readlink is a half-hearted attempt at being generic; the echo libsndio.so.7.0 is specific to the nightly builds
 	$(SYMLINK) /usr/lib/x86_64-linux-gnu/$(shell readlink /usr/lib/x86_64-linux-gnu/libsndio.so || echo libsndio.so.7.0) $(INSTALL_DIR)/koreader/libs/
