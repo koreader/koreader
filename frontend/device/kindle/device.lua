@@ -489,7 +489,7 @@ function Kindle:openInputDevices()
         for i = 0, tonumber(dev_count[0]) - 1 do
             local dev = devices[i]
             if dev.matched then
-                self.input.fdopen(tonumber(dev.fd), ffi.string(dev.path), ffi.string(dev.name))
+                self.input:fdopen(tonumber(dev.fd), ffi.string(dev.path), ffi.string(dev.name))
             end
         end
         C.free(devices)
@@ -498,11 +498,11 @@ function Kindle:openInputDevices()
         logger.warn("We failed to auto-detect the proper input devices, input handling may be inconsistent!")
         if self.touch_dev then
             -- We've got a preferred path specified for the touch panel
-            self.input.open(self.touch_dev)
+            self.input:open(self.touch_dev)
         else
             -- That generally works out well enough on legacy devices...
-            self.input.open("/dev/input/event0")
-            self.input.open("/dev/input/event1")
+            self.input:open("/dev/input/event0")
+            self.input:open("/dev/input/event1")
         end
     end
 
@@ -516,14 +516,14 @@ function Kindle:openInputDevices()
             for i = 0, tonumber(dev_count[0]) - 1 do
                 local dev = devices[i]
                 if dev.matched then
-                    self.input.fdopen(tonumber(dev.fd), ffi.string(dev.path), ffi.string(dev.name))
+                    self.input:fdopen(tonumber(dev.fd), ffi.string(dev.path), ffi.string(dev.name))
                 end
             end
             C.free(devices)
         end
     end
 
-    self.input.open("fake_events")
+    self.input:open("fake_events")
 end
 
 function Kindle:otaModel()
