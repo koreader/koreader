@@ -862,7 +862,7 @@ function Kobo:init()
     self:initEventAdjustHooks()
 
     -- Auto-detect input devices (via FBInk's fbink_input_scan)
-    local ok, FBInkInput = pcall(ffi.load, "fbink_input")
+    local ok, FBInkInput = pcall(ffi.loadlib, "fbink_input")
     if not ok then
         -- NOP fallback for the testsuite...
         FBInkInput = { fbink_input_scan = NOP }
