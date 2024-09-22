@@ -41,6 +41,8 @@ describe("device module", function()
     before_each(function()
         package.loaded["ffi/framebuffer_mxcfb"] = mock_fb
         mock_input = require("device/input")
+        mock_input.input = {}
+        mock_input.gameControllerRumble = function() return false end
         stub(mock_input, "open")
         stub(os, "getenv")
         stub(os, "execute")
@@ -53,6 +55,7 @@ describe("device module", function()
         package.unload("device/generic/powerd")
         package.unload("ui/uimanager")
         package.unload("apps/reader/readerui")
+        mock_input.force_sdl = false
         mock_input.open:revert()
         os.getenv:revert()
         os.execute:revert()
@@ -308,9 +311,8 @@ describe("device module", function()
             package.unload("device/kindle/device")
             io.open = make_io_open_kindle_model_override("G0B0GCXXX")
 
-            mock_ffi_input = require("ffi/input")
-            stub(mock_ffi_input, "waitForEvent")
-            mock_ffi_input.waitForEvent.returns(true, {
+            stub(mock_input.input, "waitForEvent")
+            mock_input.input.waitForEvent.returns(true, {
                 {
                     type = C.EV_ABS,
                     time = {
@@ -333,7 +335,7 @@ describe("device module", function()
             kindle_dev.input:waitEvent()
             assert.stub(UIManager.onRotation).was_called()
 
-            mock_ffi_input.waitForEvent:revert()
+            mock_input.input.waitForEvent:revert()
             UIManager.onRotation:revert()
         end)
     end)

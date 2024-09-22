@@ -243,7 +243,7 @@ function PocketBook:init()
     self._model_init()
     -- NOTE: This is the odd one out actually calling input.open as a *method*,
     --       which the imp supports to get access to self.input.raw_input
-    if (not self.input.raw_input) or (not pcall(self.input.open, self.input)) then
+    if (not self.input.raw_input) or (not pcall(self.input.open, self.input, self.input)) then
         inkview.OpenScreen()
         -- Raw mode open failed (no permissions?), so we'll run the usual way.
         -- Disable touch coordinate translation as inkview will do that.
