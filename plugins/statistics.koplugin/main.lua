@@ -94,6 +94,7 @@ ReaderStatistics.default_settings = {
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
+    Dispatcher:registerAction("toggle_statistics", {category="none", event="ToggleStatistics", title=_("Toggle statistics"), general=true})
     Dispatcher:registerAction("stats_calendar_view", {category="none", event="ShowCalendarView", title=_("Statistics calendar view"), general=true})
     Dispatcher:registerAction("stats_calendar_day_view", {category="none", event="ShowCalendarDayView", title=_("Statistics today's timeline"), general=true})
     Dispatcher:registerAction("stats_sync", {category="none", event="SyncBookStats", title=_("Synchronize book statistics"), general=true, separator=true})
@@ -613,8 +614,8 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
             SELECT count(id)
             FROM   book
             WHERE  title = ?
-                AND    authors = ?
-                AND    md5 = ?;
+              AND  authors = ?
+              AND  md5 = ?;
         ]]
         local stmt = conn:prepare(sql_stmt)
         local result = stmt:reset():bind(self.data.title, self.data.authors, self.doc_md5):step()
@@ -634,8 +635,8 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
                 SELECT id
                 FROM   book
                 WHERE  title = ?
-                    AND authors = ?
-                    AND md5 = ?;
+                  AND  authors = ?
+                  AND  md5 = ?;
             ]]
             stmt = conn:prepare(sql_stmt)
             result = stmt:reset():bind(self.data.title, self.data.authors, self.doc_md5):step()
@@ -753,12 +754,28 @@ function ReaderStatistics:getIdBookDB()
         SELECT count(id)
         FROM   book
         WHERE  title = ?
-            AND authors = ?
-            AND md5 = ?;
+          AND  authors = ?
+          AND  md5 = ?;
     ]]
     local stmt = conn:prepare(sql_stmt)
-    local result = stmt:reset():bind(self.data.title, self.data.authors, self.doc_md5):step()
+    local title, authors = self.data.title, self.data.authors
+    local result = stmt:reset():bind(title, authors, self.doc_md5):step()
     local nr_id = tonumber(result[1])
+    if nr_id == 0 and self.ui.paging then -- old strings are null-terminated
+        title = title .. "\0"
+        result = stmt:reset():bind(title, authors, self.doc_md5):step()
+        nr_id = tonumber(result[1])
+        if nr_id == 0 then
+            authors = authors .. "\0"
+            result = stmt:reset():bind(title, authors, self.doc_md5):step()
+            nr_id = tonumber(result[1])
+            if nr_id == 0 then
+                title = self.data.title
+                result = stmt:reset():bind(title, authors, self.doc_md5):step()
+                nr_id = tonumber(result[1])
+            end
+        end
+    end
     if nr_id == 0 then
         if not self.is_doc_not_frozen then return end
         -- Not in the DB yet, initialize it
@@ -775,11 +792,11 @@ function ReaderStatistics:getIdBookDB()
             SELECT id
             FROM   book
             WHERE  title = ?
-                AND    authors = ?
-                AND    md5 = ?;
+              AND  authors = ?
+              AND  md5 = ?;
         ]]
         stmt = conn:prepare(sql_stmt)
-        result = stmt:reset():bind(self.data.title, self.data.authors, self.doc_md5):step()
+        result = stmt:reset():bind(title, authors, self.doc_md5):step()
         id_book = result[1]
     end
     stmt:close()
@@ -1027,37 +1044,39 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
     return total_pages, total_time
 end
 
-function ReaderStatistics:getStatisticEnabledMenuItem()
-    return {
-        text = _("Enabled"),
-        checked_func = function() return self.settings.is_enabled end,
-        callback = function()
-            -- if was enabled, have to save data to file
-            if self.settings.is_enabled then
-                self:insertDB()
-            end
-
-            self.settings.is_enabled = not self.settings.is_enabled
-            -- if was disabled have to get data from db
-            if self:isEnabled() then
-                self:initData()
-                self.start_current_period = os.time()
-                self.curr_page = self.ui:getCurrentPage()
-                self:resetVolatileStats(self.start_current_period)
-            end
-
-            if self.is_doc then
-                self.view.footer:onUpdateFooter()
-            end
-        end,
-    }
+function ReaderStatistics:onToggleStatistics(no_notification)
+    if self.settings.is_enabled then -- save data to file
+        self:insertDB()
+    end
+    self.settings.is_enabled = not self.settings.is_enabled
+    if self.is_doc then
+        if self.settings.is_enabled then
+            self:initData()
+            self.start_current_period = os.time()
+            self.curr_page = self.ui:getCurrentPage()
+            self:resetVolatileStats(self.start_current_period)
+        end
+        self.view.footer:maybeUpdateFooter()
+    end
+    if not no_notification then
+        local Notification = require("ui/widget/notification")
+        Notification:notify(self.settings.is_enabled and _("Statistics enabled") or _("Statistics disabled"))
+    end
 end
 
 function ReaderStatistics:addToMainMenu(menu_items)
     menu_items.statistics = {
         text = _("Reading statistics"),
         sub_item_table = {
-            self:getStatisticEnabledMenuItem(),
+            {
+                text = _("Enabled"),
+                checked_func = function()
+                    return self.settings.is_enabled
+                end,
+                callback = function()
+                    self:onToggleStatistics(true)
+                end,
+            },
             {
                 text = _("Settings"),
                 sub_item_table = {
@@ -2803,7 +2822,7 @@ function ReaderStatistics:onReaderReady(config)
     self.doc_md5 = config:readSetting("partial_md5_checksum")
     -- we have correct page count now, do the actual initialization work
     self:initData()
-    self.view.footer:onUpdateFooter()
+    self.view.footer:maybeUpdateFooter()
 end
 
 function ReaderStatistics:onShowCalendarView()
