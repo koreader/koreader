@@ -761,7 +761,9 @@ function ReaderStatistics:getIdBookDB()
     local title, authors = self.data.title, self.data.authors
     local result = stmt:reset():bind(title, authors, self.doc_md5):step()
     local nr_id = tonumber(result[1])
-    if nr_id == 0 and self.ui.paging then -- old strings are null-terminated
+    if nr_id == 0 and self.ui.paging then
+        -- In the past, title and/or authors strings, got from MuPDF, may have been or not null terminated.
+        -- We need to check with all combinations if a book with these null terminated exists, and use it.
         title = title .. "\0"
         result = stmt:reset():bind(title, authors, self.doc_md5):step()
         nr_id = tonumber(result[1])
