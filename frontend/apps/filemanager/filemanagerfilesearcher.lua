@@ -38,10 +38,10 @@ end
 function FileSearcher:onShowFileSearch(search_string)
     local search_dialog, check_button_case, check_button_subfolders, check_button_metadata
     local function _doSearch()
-        local search_string = search_dialog:getInputText()
-        if search_string == "" then return end
-        self.search_string = search_string
-        G_reader_settings:saveSetting("file_search_string", search_string)
+        local search_str = search_dialog:getInputText()
+        if search_str == "" then return end
+        self.search_string = search_str
+        G_reader_settings:saveSetting("file_search_string", search_str)
         UIManager:close(search_dialog)
         self.case_sensitive = check_button_case.checked
         self.include_subfolders = check_button_subfolders.checked
