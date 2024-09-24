@@ -36,11 +36,24 @@ function FileSearcher:registerKeyEvents()
 end
 
 function FileSearcher:onShowFileSearch(search_string)
-    local search_dialog
-    local check_button_case, check_button_subfolders, check_button_metadata
+    local search_dialog, check_button_case, check_button_subfolders, check_button_metadata
+    local function _doSearch()
+        local search_string = search_dialog:getInputText()
+        if search_string == "" then return end
+        self.search_string = search_string
+        G_reader_settings:saveSetting("file_search_string", search_string)
+        UIManager:close(search_dialog)
+        self.case_sensitive = check_button_case.checked
+        self.include_subfolders = check_button_subfolders.checked
+        self.include_metadata = check_button_metadata and check_button_metadata.checked
+        local Trapper = require("ui/trapper")
+        Trapper:wrap(function()
+            self:doSearch()
+        end)
+    end
     search_dialog = InputDialog:new{
         title = _("Enter text to search for in filename"),
-        input = search_string or self.search_string,
+        input = search_string or self.search_string or G_reader_settings:readSetting("file_search_string"),
         buttons = {
             {
                 {
@@ -54,22 +67,16 @@ function FileSearcher:onShowFileSearch(search_string)
                     text = _("Home folder"),
                     enabled = G_reader_settings:has("home_dir"),
                     callback = function()
-                        self.search_string = search_dialog:getInputText()
-                        if self.search_string == "" then return end
-                        UIManager:close(search_dialog)
                         self.path = G_reader_settings:readSetting("home_dir")
-                        self:doSearch()
+                        _doSearch()
                     end,
                 },
                 {
                     text = self.ui.file_chooser and _("Current folder") or _("Book folder"),
                     is_enter_default = true,
                     callback = function()
-                        self.search_string = search_dialog:getInputText()
-                        if self.search_string == "" then return end
-                        UIManager:close(search_dialog)
                         self.path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile()
-                        self:doSearch()
+                        _doSearch()
                     end,
                 },
             },
@@ -79,18 +86,12 @@ function FileSearcher:onShowFileSearch(search_string)
         text = _("Case sensitive"),
         checked = self.case_sensitive,
         parent = search_dialog,
-        callback = function()
-            self.case_sensitive = check_button_case.checked
-        end,
     }
     search_dialog:addWidget(check_button_case)
     check_button_subfolders = CheckButton:new{
         text = _("Include subfolders"),
         checked = self.include_subfolders,
         parent = search_dialog,
-        callback = function()
-            self.include_subfolders = check_button_subfolders.checked
-        end,
     }
     search_dialog:addWidget(check_button_subfolders)
     if self.ui.coverbrowser then
@@ -98,9 +99,6 @@ function FileSearcher:onShowFileSearch(search_string)
             text = _("Also search in book metadata"),
             checked = self.include_metadata,
             parent = search_dialog,
-            callback = function()
-                self.include_metadata = check_button_metadata.checked
-            end,
         }
         search_dialog:addWidget(check_button_metadata)
     end
@@ -110,24 +108,49 @@ function FileSearcher:onShowFileSearch(search_string)
 end
 
 function FileSearcher:doSearch()
-    local dirs, files = self:getList()
-    -- If we have a FileChooser instance, use it, to be able to make use of its natsort cache
-    local results = (self.ui.file_chooser or FileChooser):genItemTable(dirs, files)
-    if #results > 0 then
-        self:showSearchResults(results)
+    local last_search_hash = self.path .. (self.search_string or "") ..
+        tostring(self.case_sensitive) .. tostring(self.include_subfolders) .. tostring(self.include_metadata)
+    local not_cached = self.last_search_hash ~= last_search_hash
+    if not_cached then
+        local Trapper = require("ui/trapper")
+        local info = InfoMessage:new{ text = _("Searching… (tap to cancel)") }
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        local completed, dirs, files, no_metadata_count = Trapper:dismissableRunInSubprocess(function()
+            return self:getList()
+        end, info)
+        if not completed then return end
+        UIManager:close(info)
+        self.last_search_hash = last_search_hash
+        self.no_metadata_count = no_metadata_count
+        -- Cannot do this in getList() within Trapper (cannot serialize function)
+        local collate = FileChooser:getCollate()
+        for i, v in ipairs(dirs) do
+            local f, fullpath, attributes = unpack(v)
+            dirs[i] = FileChooser:getListItem(nil, f, fullpath, attributes, collate)
+        end
+        for i, v in ipairs(files) do
+            local f, fullpath, attributes = unpack(v)
+            files[i] = FileChooser:getListItem(nil, f, fullpath, attributes, collate)
+        end
+        -- If we have a FileChooser instance, use it, to be able to make use of its natsort cache
+        self.search_results = (self.ui.file_chooser or FileChooser):genItemTable(dirs, files)
+    end
+    if #self.search_results > 0 then
+        self:onShowSearchResults(not_cached)
     else
         self:showSearchResultsMessage(true)
     end
 end
 
 function FileSearcher:getList()
-    self.no_metadata_count = 0
+    self.no_metadata_count = 0 -- in subprocess
     local sys_folders = { -- do not search in sys_folders
         ["/dev"] = true,
         ["/proc"] = true,
         ["/sys"] = true,
+        ["/mnt/base-us"] = true, -- Kindle
     }
-    local collate = FileChooser:getCollate()
     local search_string = self.search_string
     if search_string ~= "*" then -- one * to show all files
         if not self.case_sensitive then
@@ -164,14 +187,14 @@ function FileSearcher:getList()
                             table.insert(new_dirs, fullpath)
                         end
                         if self:isFileMatch(f, fullpath, search_string) then
-                            table.insert(dirs, FileChooser:getListItem(nil, f, fullpath, attributes, collate))
+                            table.insert(dirs, { f, fullpath, attributes })
                         end
                     -- Always ignore macOS resource forks, too.
                     elseif attributes.mode == "file" and not util.stringStartsWith(f, "._")
                             and (FileChooser.show_unsupported or DocumentRegistry:hasProvider(fullpath))
                             and FileChooser:show_file(f) then
                         if self:isFileMatch(f, fullpath, search_string, true) then
-                            table.insert(files, FileChooser:getListItem(nil, f, fullpath, attributes, collate))
+                            table.insert(files, { f, fullpath, attributes })
                         end
                     end
                 end
@@ -179,7 +202,7 @@ function FileSearcher:getList()
         end
         scan_dirs = new_dirs
     end
-    return dirs, files
+    return dirs, files, self.no_metadata_count
 end
 
 function FileSearcher:isFileMatch(filename, fullpath, search_string, is_file)
@@ -227,7 +250,12 @@ function FileSearcher:showSearchResultsMessage(no_results)
     end
 end
 
-function FileSearcher:showSearchResults(results)
+function FileSearcher:onShowSearchResults(not_cached)
+    if (not not_cached and self.search_results == nil) then
+        self:onShowFileSearch()
+        return
+    end
+
     self.search_menu = Menu:new{
         subtitle = T(_("Query: %1"), self.search_string),
         covers_fullscreen = true, -- hint for UIManager:_repaint()
@@ -249,7 +277,7 @@ function FileSearcher:showSearchResults(results)
             self.ui.file_chooser:refreshPath()
         end
     end
-    self:updateMenu(results)
+    self:updateMenu(self.search_results)
     UIManager:show(self.search_menu)
     if self.no_metadata_count ~= 0 then
         self:showSearchResultsMessage()
