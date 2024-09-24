@@ -128,13 +128,14 @@ local settingsList = {
     set_reverse_sorting = {category="string", event="SetReverseSorting", title=_("Reverse sorting"), args={true, false}, toggle={_("on"), _("off")}, filemanager=true},
     set_mixed_sorting = {category="string", event="SetMixedSorting", title=_("Folders and files mixed"), args={true, false}, toggle={_("on"), _("off")}, filemanager=true, separator=true},
     ----
-    folder_up = {category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
     show_plus_menu = {category="none", event="ShowPlusMenu", title=_("Show plus menu"), filemanager=true},
     toggle_select_mode = {category="none", event="ToggleSelectMode", title=_("Toggle select mode"), filemanager=true},
     refresh_content = {category="none", event="RefreshContent", title=_("Refresh content"), filemanager=true},
     folder_shortcuts = {category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true},
     file_search = {category="none", event="ShowFileSearch", title=_("File search"), filemanager=true},
+    file_search_results = {category="none", event="ShowSearchResults", title=_("Last file search results"), filemanager=true},
     ----
+    folder_up = {category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
     -- go_to
     -- back
 
@@ -358,13 +359,14 @@ local dispatcher_menu_order = {
     "set_reverse_sorting",
     "set_mixed_sorting",
     ----
-    "folder_up",
     "show_plus_menu",
     "toggle_select_mode",
     "refresh_content",
     "folder_shortcuts",
     "file_search",
+    "file_search_results",
     ----
+    "folder_up",
     -- "go_to"
     -- "back"
 
