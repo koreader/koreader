@@ -3,7 +3,7 @@ local Event = require("ui/event")
 local logger = require("logger")
 
 local _ = require("ffi/zeromq_h")
-local czmq = ffi.load("libs/libczmq.so.4")
+local czmq = ffi.loadlib("czmq", "4")
 
 local MessageQueue = {}
 
