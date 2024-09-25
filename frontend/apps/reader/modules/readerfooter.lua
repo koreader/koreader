@@ -2445,6 +2445,15 @@ function ReaderFooter:onNetworkConnected()
 end
 ReaderFooter.onNetworkDisconnected = ReaderFooter.onNetworkConnected
 
+function ReaderFooter:onSwapPageTurnButtons()
+    if self.settings.page_turning_inverted then
+        -- We may receive the event *before* DeviceListener, so delay this to make sure it had a chance to actually swap the settings.
+        -- Also delay it further to avoid screwing with TouchMenu highlights...
+        UIManager:scheduleIn(0.5, self.maybeUpdateFooter, self)
+    end
+end
+ReaderFooter.onToggleReadingOrder = ReaderFooter.onSwapPageTurnButtons
+
 function ReaderFooter:onSetRotationMode()
     self:updateFooterContainer()
     self:resetLayout(true)

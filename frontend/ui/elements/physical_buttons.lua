@@ -8,7 +8,7 @@ local PhysicalButtons = {
     text = _("Physical buttons"), -- Mainly so as to differentiate w/ "Page Turns" when in readermenu...
     sub_item_table = {
         {
-            text = _("Invert page turn buttons"),
+            text = _("Invert page-turn buttons"),
             enabled_func = function()
                 return not (G_reader_settings:isTrue("input_invert_left_page_turn_keys") or G_reader_settings:isTrue("input_invert_right_page_turn_keys"))
             end,
@@ -25,7 +25,7 @@ local PhysicalButtons = {
 
 if Device:hasDPad() and Device:useDPadAsActionKeys() then
     table.insert(PhysicalButtons.sub_item_table, {
-        text = _("Invert left-side page turn buttons"),
+        text = _("Invert left-side page-turn buttons"),
         enabled_func = function()
             return not G_reader_settings:isTrue("input_invert_page_turn_keys")
         end,
@@ -33,12 +33,11 @@ if Device:hasDPad() and Device:useDPadAsActionKeys() then
             return G_reader_settings:isTrue("input_invert_left_page_turn_keys")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("input_invert_left_page_turn_keys")
-            Device:invertButtonsLeft()
+            UIManager:broadcastEvent(Event:new("SwapPageTurnButtons", "left"))
         end,
     })
     table.insert(PhysicalButtons.sub_item_table, {
-        text = _("Invert right-side page turn buttons"),
+        text = _("Invert right-side page-turn buttons"),
         enabled_func = function()
             return not G_reader_settings:isTrue("input_invert_page_turn_keys")
         end,
@@ -46,8 +45,7 @@ if Device:hasDPad() and Device:useDPadAsActionKeys() then
             return G_reader_settings:isTrue("input_invert_right_page_turn_keys")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("input_invert_right_page_turn_keys")
-            Device:invertButtonsRight()
+            UIManager:broadcastEvent(Event:new("SwapPageTurnButtons", "right"))
         end,
         separator = true,
     })
