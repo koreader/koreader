@@ -40,8 +40,7 @@ function FileSearcher:onShowFileSearch(search_string)
     local function _doSearch()
         local search_str = search_dialog:getInputText()
         if search_str == "" then return end
-        self.search_string = search_str
-        G_reader_settings:saveSetting("file_search_string", search_str)
+        FileSearcher.search_string = search_str
         UIManager:close(search_dialog)
         self.case_sensitive = check_button_case.checked
         self.include_subfolders = check_button_subfolders.checked
@@ -53,7 +52,7 @@ function FileSearcher:onShowFileSearch(search_string)
     end
     search_dialog = InputDialog:new{
         title = _("Enter text to search for in filename"),
-        input = search_string or self.search_string or G_reader_settings:readSetting("file_search_string"),
+        input = search_string or FileSearcher.search_string,
         buttons = {
             {
                 {
@@ -108,9 +107,9 @@ function FileSearcher:onShowFileSearch(search_string)
 end
 
 function FileSearcher:doSearch()
-    local last_search_hash = self.path .. (self.search_string or "") ..
+    local search_hash = self.path .. (FileSearcher.search_string or "") ..
         tostring(self.case_sensitive) .. tostring(self.include_subfolders) .. tostring(self.include_metadata)
-    local not_cached = self.last_search_hash ~= last_search_hash
+    local not_cached = FileSearcher.search_hash ~= search_hash
     if not_cached then
         local Trapper = require("ui/trapper")
         local info = InfoMessage:new{ text = _("Searching… (tap to cancel)") }
@@ -121,7 +120,7 @@ function FileSearcher:doSearch()
         end, info)
         if not completed then return end
         UIManager:close(info)
-        self.last_search_hash = last_search_hash
+        FileSearcher.search_hash = search_hash
         self.no_metadata_count = no_metadata_count
         -- Cannot do this in getList() within Trapper (cannot serialize function)
         local collate = FileChooser:getCollate()
@@ -134,9 +133,9 @@ function FileSearcher:doSearch()
             files[i] = FileChooser:getListItem(nil, f, fullpath, attributes, collate)
         end
         -- If we have a FileChooser instance, use it, to be able to make use of its natsort cache
-        self.search_results = (self.ui.file_chooser or FileChooser):genItemTable(dirs, files)
+        FileSearcher.search_results = (self.ui.file_chooser or FileChooser):genItemTable(dirs, files)
     end
-    if #self.search_results > 0 then
+    if #FileSearcher.search_results > 0 then
         self:onShowSearchResults(not_cached)
     else
         self:showSearchResultsMessage(true)
@@ -151,7 +150,7 @@ function FileSearcher:getList()
         ["/sys"] = true,
         ["/mnt/base-us"] = true, -- Kindle
     }
-    local search_string = self.search_string
+    local search_string = FileSearcher.search_string
     if search_string ~= "*" then -- one * to show all files
         if not self.case_sensitive then
             search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
@@ -229,9 +228,16 @@ function FileSearcher:isFileMatch(filename, fullpath, search_string, is_file)
 end
 
 function FileSearcher:showSearchResultsMessage(no_results)
-    local text = no_results and T(_("No results for '%1'."), self.search_string)
+    local text = no_results and T(_("No results for '%1'."), FileSearcher.search_string)
     if self.no_metadata_count == 0 then
-        UIManager:show(InfoMessage:new{ text = text })
+        UIManager:show(ConfirmBox:new{
+            text = text,
+            icon = "notice-info",
+            ok_text = _("New search"),
+            ok_callback = function()
+                self:onShowFileSearch()
+            end,
+        })
     else
         local txt = T(N_("1 book has been skipped.", "%1 books have been skipped.",
             self.no_metadata_count), self.no_metadata_count) .. "\n" ..
@@ -245,19 +251,19 @@ function FileSearcher:showSearchResultsMessage(no_results)
                     self.search_menu.close_callback()
                 end
                 self.ui.coverbrowser:extractBooksInDirectory(self.path)
-            end
+            end,
         })
     end
 end
 
 function FileSearcher:onShowSearchResults(not_cached)
-    if (not not_cached and self.search_results == nil) then
+    if not not_cached and FileSearcher.search_results == nil then
         self:onShowFileSearch()
         return
     end
 
     self.search_menu = Menu:new{
-        subtitle = T(_("Query: %1"), self.search_string),
+        subtitle = T(_("Query: %1"), FileSearcher.search_string),
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         is_borderless = true,
         is_popout = false,
@@ -277,9 +283,9 @@ function FileSearcher:onShowSearchResults(not_cached)
             self.ui.file_chooser:refreshPath()
         end
     end
-    self:updateMenu(self.search_results)
+    self:updateMenu(FileSearcher.search_results)
     UIManager:show(self.search_menu)
-    if self.no_metadata_count ~= 0 then
+    if not_cached and self.no_metadata_count ~= 0 then
         self:showSearchResultsMessage()
     end
 end
@@ -290,6 +296,7 @@ function FileSearcher:updateMenu(item_table)
 end
 
 function FileSearcher:onMenuSelect(item)
+    if lfs.attributes(item.path) == nil then return end
     if self._manager.selected_files then
         if item.is_file then
             item.dim = not item.dim and true or nil
@@ -338,6 +345,7 @@ function FileSearcher:showFileDialog(item)
                 callback = function()
                     local function post_delete_callback()
                         UIManager:close(dialog)
+                        table.remove(FileSearcher.search_results, item.idx)
                         table.remove(self.search_menu.item_table, item.idx)
                         self:updateMenu()
                     end
@@ -377,7 +385,7 @@ function FileSearcher:showFileDialog(item)
 end
 
 function FileSearcher:onMenuHold(item)
-    if self._manager.selected_files then return true end
+    if self._manager.selected_files or lfs.attributes(item.path) == nil then return true end
     if item.is_file then
         if DocumentRegistry:hasProvider(item.path, nil, true) then
             self.close_callback()
