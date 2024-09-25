@@ -246,6 +246,11 @@ function Device:init()
         end,
     }
 
+    -- disable translation map for specific models
+    if android.prop.model == "xiaomi_reader" or android.prop.model == "moaanmix7" then
+        self.input:disableRotationMap()
+    end
+
     -- check if we have a keyboard
     if android.lib.AConfiguration_getKeyboard(android.app.config)
        == C.ACONFIGURATION_KEYBOARD_QWERTY
