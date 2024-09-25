@@ -902,7 +902,7 @@ function Kobo:init()
     --       and it's usually *extremely* verbose, so it'd just be a waste of processing power.
     -- fake_events is only used for usb plug & charge events so far (generated via uevent, c.f., input/iput-kobo.h in base).
     -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status (... but only when Nickel is running ;p)
-    self.input.open("fake_events")
+    self.input:open("fake_events")
 
     -- See if the device supports key repeat
     -- This is *not* behind a hasKeys check, because we mainly use it to stop SleepCover chatter,
