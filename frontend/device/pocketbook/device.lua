@@ -241,14 +241,17 @@ function PocketBook:init()
     -- NOTE: This all happens in ffi/input_pocketbook.lua
 
     self._model_init()
-    -- NOTE: This is the odd one out actually calling input.open as a *method*,
-    --       which the imp supports to get access to self.input.raw_input
+    -- NOTE: `self.input.open` is a method, and we want it to call `self.input.input.open`
+    -- with `self.input` as first argument, which the imp supports to get access to
+    -- `self.input.raw_input`, hence the double `self.input` arguments.
     if (not self.input.raw_input) or (not pcall(self.input.open, self.input, self.input)) then
         inkview.OpenScreen()
         -- Raw mode open failed (no permissions?), so we'll run the usual way.
         -- Disable touch coordinate translation as inkview will do that.
         self.input.raw_input = nil
-        self.input:open()
+        -- Same as above, `self.input.open` will call `self.input.input.open`
+        -- with `self.input` as first argument.
+        self.input:open(self.input)
         touch_rotation = 0
     else
         self.canSuspend = yes
