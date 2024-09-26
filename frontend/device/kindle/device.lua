@@ -476,8 +476,9 @@ end
 
 function Kindle:openInputDevices()
     -- Auto-detect input devices (via FBInk's fbink_input_scan)
-    local ok, FBInkInput = pcall(ffi.loadlib, "fbink_input")
+    local ok, FBInkInput = pcall(ffi.loadlib, "fbink_input", 1)
     if not ok then
+        print("fbink_input not loaded:", FBInkInput)
         -- NOP fallback for the testsuite...
         FBInkInput = { fbink_input_scan = function() end }
     end
