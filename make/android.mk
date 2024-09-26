@@ -8,7 +8,7 @@ ANDROID_APK = koreader-android-$(ANDROID_ARCH)$(KODEDUG_SUFFIX)-$(ANDROID_NAME).
 PHONY += run
 
 # Tools
-APKANALYZER ?= $(word 1,$(wildcard $(shell command -v apkanalyzer) $(ANDROID_SDK_ROOT)/tools/bin/apkanalyzer))
+APKANALYZER ?= $(ANDROID_SDK_ROOT)/cmdline-tools/latest/bin/apkanalyzer
 
 run: update
 	# get android app id
