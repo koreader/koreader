@@ -83,6 +83,17 @@ local T = require("ffi/util").template
 
 local CHUNK_SIZE = 80 * 40 -- max. nb of read bytes (reduce this, if taps are not detected)
 
+-- This should be moved inside `platform/android/luajit-launcher/assets/android.lua`
+-- once we now it works as expected
+if Device:isAndroid() and not os.getenv("SHELL") and os.execute() == nil then
+    local dummy, android = pcall(require, "android")
+    os.execute = function(command) -- luacheck: ignore 122
+        command = command .. "; exit $?"
+        return android.execute("sh", "-c", command)
+    end
+end
+
+
 local Terminal = WidgetContainer:extend{
     name = "terminal",
     history = "",
@@ -93,9 +104,10 @@ local Terminal = WidgetContainer:extend{
 }
 
 function Terminal:isExecutable(file)
-    if os.execute(string.format("test -x %s", file)) == 0 then -- full path
+    logger.dbg("Terminal: test executable status of: '" .. file .. "'")
+    if os.execute(string.format("test -x %s", file)) == 0 then -- full path given
         return true
-    elseif os.execute(string.format("which %s 2>/dev/null 1>/dev/null", file)) == 0 then
+    elseif os.execute(string.format("which %s", file)) == 0 then -- search in path
         return true
     end
 end
@@ -104,10 +116,10 @@ end
 function Terminal:getDefaultShellExecutable()
     if self.default_shell_executable then return self.default_shell_executable end
 
-    local shell = {"mksh", "ksh", "zsh", "ash", "dash", "sh", "bash"}
+    local shell = {"sh", "hush", "mksh", "ksh", "zsh", "ash", "dash", "bash"}
     table.insert(shell, os.getenv("SHELL"))
 
-    while #shell >= 1  do
+    while #shell >= 1 do
         if self:isExecutable(shell[#shell]) then
             self.default_shell_executable = shell[#shell]
             break
@@ -154,7 +166,7 @@ function Terminal:spawnShell(cols, rows)
         return false
     end
     if C.unlockpt(self.ptmx) ~= 0 then
-        logger.err("Terminal: can not unockpt:", ffi.string(C.strerror(ffi.errno())))
+        logger.err("Terminal: can not unlockpt:", ffi.string(C.strerror(ffi.errno())))
         C.close(self.ptmx)
         return false
     end
@@ -169,6 +181,31 @@ function Terminal:spawnShell(cols, rows)
     end
 
     logger.dbg("Terminal: slave_pty", self.slave_pty)
+
+    -- Prepare shell call
+    local function get_readline_wrapper()
+        if self:isExecutable("rlfe") then
+            return "rlfe"
+        elseif self:isExecutable("rlwrap") then
+            return "rlwrap"
+        end
+    end
+
+    local profile_file = "./plugins/terminal.koplugin/profile"
+    local rlw = get_readline_wrapper()
+    local shell = G_reader_settings:readSetting("terminal_shell")
+
+    local args = {}
+    if shell:find("bash") then
+        args = { "--rcfile", profile_file}
+    end
+
+    if not self:isExecutable(shell) then
+        UIManager:show(InfoMessage:new{
+            text = _("Shell is not executable"),
+        })
+        return false
+    end
 
     local pid = C.fork()
     if pid < 0 then
@@ -202,7 +239,6 @@ function Terminal:spawnShell(cols, rows)
             end
         end
 
-        local profile_file = "./plugins/terminal.koplugin/profile"
         C.setenv("TERM", "vt52", 1)
         C.setenv("ENV", profile_file, 1) -- when bash is started as sh
         C.setenv("BASH_ENV", profile_file, 1) -- when bash is started non-interactive
@@ -211,27 +247,7 @@ function Terminal:spawnShell(cols, rows)
             C.setenv("ANDROID", "ANDROID", 1)
         end
 
-        local function get_readline_wrapper()
-            if self:isExecutable("rlfe") then
-                return "rlfe"
-            elseif self:isExecutable("rlwrap") then
-                return "rlwrap"
-            else
-                return
-            end
-        end
-
-        -- Here we use an existing readline wrapper
-        local rlw = get_readline_wrapper()
-        local shell = G_reader_settings:readSetting("terminal_shell")
-
-        local args = {}
-        if shell:find("bash") then
-            args = { "--rcfile", profile_file}
-        end
-
-        if not self:isExecutable(shell)
-            or (rlw and C.execlp(rlw, rlw, shell, unpack(args)) ~= 0)
+        if (rlw and C.execlp(rlw, rlw, shell, unpack(args)) ~= 0)
             or C.execlp(shell, shell, unpack(args)) ~= 0 then
 
             -- the following two prints are shown in the terminal emulator.
@@ -241,20 +257,20 @@ function Terminal:spawnShell(cols, rows)
         end
         os.exit()
         return
+    else
+        self.is_shell_open = true
+        if Device:isAndroid() then
+            -- feed the following commands to the running shell
+            self:transmit("export TERM=vt52\n")
+            self:transmit("stty cols " .. cols .. " rows " .. rows .."\n")
+        end
+
+        self.input_widget:resize(rows, cols)
+        self.input_widget:interpretAnsiSeq(self:receive())
+
+        logger.info("Terminal: spawn done")
+        return true
     end
-
-    self.is_shell_open = true
-    if Device:isAndroid() then
-        -- feed the following commands to the running shell
-        self:transmit("export TERM=vt52\n")
-        self:transmit("stty cols " .. cols .. " rows " .. rows .."\n")
-    end
-
-    self.input_widget:resize(rows, cols)
-    self.input_widget:interpretAnsiSeq(self:receive())
-
-    logger.info("Terminal: spawn done")
-    return true
 end
 
 function Terminal:receive()
@@ -651,10 +667,16 @@ Aliases (shortcuts) to frequently used commands can be placed in:
                                     if new_shell == "" then
                                         new_shell = "sh"
                                     end
-                                    G_reader_settings:saveSetting("terminal_shell", new_shell)
-                                    UIManager:close(self.shell_dialog)
-                                    if touchmenu_instance then
-                                        touchmenu_instance:updateItems()
+                                    if self:isExecutable(new_shell) then
+                                        G_reader_settings:saveSetting("terminal_shell", new_shell)
+                                        UIManager:close(self.shell_dialog)
+                                        if touchmenu_instance then
+                                            touchmenu_instance:updateItems()
+                                        end
+                                    else
+                                        UIManager:show(InfoMessage:new{
+                                            text = _("Shell is not executable"),
+                                        })
                                     end
                                 end
                             },
