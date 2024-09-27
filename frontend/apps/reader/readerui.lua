@@ -502,6 +502,7 @@ function ReaderUI:init()
         v()
     end
     self.postReaderReadyCallback = nil
+    self.reloading = nil
 
     Device:setIgnoreInput(false) -- Allow processing of events (on Android).
     Input:inhibitInputUntil(0.2)
@@ -688,6 +689,7 @@ function ReaderUI:doShowReader(file, provider, seamless)
         dimen = Screen:getSize(),
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         document = document,
+        reloading = self.reloading,
     }
 
     Screen:setWindowTitle(reader.doc_props.display_title)
@@ -850,6 +852,7 @@ function ReaderUI:reloadDocument(after_close_callback, seamless)
     -- Mimic onShowingReader's refresh optimizations
     self.tearing_down = true
     self.dithered = nil
+    self.reloading = true
 
     self:handleEvent(Event:new("CloseReaderMenu"))
     self:handleEvent(Event:new("CloseConfigMenu"))
