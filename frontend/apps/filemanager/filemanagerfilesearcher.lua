@@ -143,7 +143,7 @@ function FileSearcher:doSearch()
 end
 
 function FileSearcher:getList()
-    self.no_metadata_count = 0 -- in subprocess
+    self.no_metadata_count = 0 -- will be updated in doSearch() with result from subprocess
     local sys_folders = { -- do not search in sys_folders
         ["/dev"] = true,
         ["/proc"] = true,
@@ -233,7 +233,7 @@ function FileSearcher:showSearchResultsMessage(no_results)
         UIManager:show(ConfirmBox:new{
             text = text,
             icon = "notice-info",
-            ok_text = _("New search"),
+            ok_text = _("File search"),
             ok_callback = function()
                 self:onShowFileSearch()
             end,
