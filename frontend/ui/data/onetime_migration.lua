@@ -10,7 +10,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20240927
+local CURRENT_MIGRATION_DATE = 20240928
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -732,16 +732,18 @@ if last_migration_date < 20240915 then
     end
 end
 
--- 20240927, Profiles auto-execute, https://github.com/koreader/koreader/pull/12564
-if last_migration_date < 20240927 then
-    logger.info("Performing one-time migration for 20240927")
+-- 20240928, Profiles auto-execute, https://github.com/koreader/koreader/pull/12564
+if last_migration_date < 20240928 then
+    logger.info("Performing one-time migration for 20240928")
 
     if G_reader_settings:has("autostart_profiles") then
         local profiles = G_reader_settings:readSetting("autostart_profiles")
-        local autoexec = G_reader_settings:readSetting("profiles_autoexec", {})
-        autoexec.Start = autoexec.Start or {}
-        for profile in pairs(profiles) do
-            autoexec.Start[profile] = true
+        if next(profiles) then
+            local autoexec = G_reader_settings:readSetting("profiles_autoexec", {})
+            autoexec.Start = autoexec.Start or {}
+            for profile in pairs(profiles) do
+                autoexec.Start[profile] = true
+            end
         end
         G_reader_settings:delSetting("autostart_profiles")
     end
