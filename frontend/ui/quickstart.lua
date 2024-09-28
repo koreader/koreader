@@ -269,7 +269,7 @@ When inside the reading module:
 - **ScreenKB** + **Left**: Bookmarks, notes and highlights
 - **ScreenKB** + **Press**: Save current page to location history
 - **ScreenKB** + **Home**: Toggle wifi on/off
-- **ScreenKB** + **Back**: Switch to previosly opened book
+- **ScreenKB** + **Back**: Switch to previously opened book
 
 When using a virtual keyboard:
 
@@ -293,7 +293,7 @@ When inside the reading module:
 - **B** or **Shift** + **Left**: Bookmarks, notes and highlights
 - **Shift** + **Press**: Save current page to location history
 - **Shift** + **Home**: Toggle wifi on/off
-- **Shift** + **Back**: Switch to previosly opened book
+- **Shift** + **Back**: Switch to previously opened book
 
 When using a virtual keyboard:
 
