@@ -978,6 +978,12 @@ function Kobo:init()
         self:toggleKeyRepeat(false)
     end
 
+    -- Switch to the proper packages on FW 5.x
+    -- NOTE: We don't distribute kobov4 binaries, the omission is on purpose.
+    if util.fileExists("/usr/bin/hwdetect.sh") then
+        self.ota_model = "kobov5"
+    end
+
     -- Finally, Let Generic properly setup the standard stuff.
     -- (Of particular import, this needs to come *after* we've set our input hooks, so that the viewport translation runs last).
     Generic.init(self)
