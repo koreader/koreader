@@ -141,6 +141,8 @@ TARGET:
     kindlepw2                 With compiler optimizations for Kindle models >= Paperwhite 2
     kindle-legacy             Needed only for Kindle2/3/DXG
     kobo
+    kobov4                    Compatible with Mk.7+ Kobo devices on FW 4.x
+    kobov5                    Compatible with all Kobo & Tolino devices on FW 5.x
     linux
     macos                     MacOS app bundle
     pocketbook
@@ -174,7 +176,7 @@ function setup_target() {
             ;;
         cervantes) ;;
         kindle | kindlehf | kindlepw2 | kindle-legacy) ;;
-        kobo) ;;
+        kobo | kobov4 | kobov5) ;;
         pocketbook) ;;
         remarkable) ;;
         sony-prstux) ;;

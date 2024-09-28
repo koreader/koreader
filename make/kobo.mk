@@ -1,6 +1,6 @@
 KOBO_DIR = $(PLATFORM_DIR)/kobo
-KOBO_PACKAGE = koreader-kobo$(KODEDUG_SUFFIX)-$(VERSION).zip
-KOBO_PACKAGE_OTA = koreader-kobo$(KODEDUG_SUFFIX)-$(VERSION).targz
+KOBO_PACKAGE = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).zip
+KOBO_PACKAGE_OTA = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).targz
 
 update: all
 	# ensure that the binaries were built for ARM
