@@ -487,7 +487,13 @@ sub { font-size: 50% !important; vertical-align: sub !important; }
                         id = T("normal_line-height_%1", height * 100),
                         conflicts_with = function(id) return util.stringStartsWith(id, "normal_line-height_") end,
                         title = T(_("Normal line height: %1"), height),
-                        css = T([[body { -cr-normal-line-height: %1; }]], height),
+                        css = T([[
+* {
+    -cr-hint: late;
+    -cr-only-if: line-height-normal;
+    line-height: %1 !important;
+}
+                        ]], height),
                     })
                 end
                 return sub_table
