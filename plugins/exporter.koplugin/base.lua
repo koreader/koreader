@@ -6,12 +6,13 @@ Each target should inherit from this class and implement *at least* an `export` 
 @module baseexporter
 ]]
 
+local DataStorage = require("datastorage")
 local Device = require("device")
-local getSafeFilename = require("util").getSafeFilename
+local util = require("util")
 local _ = require("gettext")
 
 local BaseExporter = {
-    clipping_dir = require("datastorage"):getDataDir() .. "/clipboard"
+    clipping_dir = DataStorage:getFullDataDir() .. "/clipboard"
 }
 
 function BaseExporter:new(o)
@@ -63,9 +64,6 @@ Loads settings for the exporter
 function BaseExporter:loadSettings()
     local plugin_settings = G_reader_settings:readSetting("exporter") or {}
     self.settings = plugin_settings[self.name] or {}
-    if plugin_settings.clipping_dir then
-        self.clipping_dir = plugin_settings.clipping_dir
-    end
 end
 
 --[[--
@@ -93,13 +91,20 @@ File path where the exporter writes its output
 @treturn string absolute path or nil
 ]]
 function BaseExporter:getFilePath(t)
-    if not self.is_remote then
-        local filename = string.format("%s-%s.%s",
-            self:getTimeStamp(),
-            #t == 1 and t[1].output_filename or self.all_books_title or "all-books",
-            self.extension)
-        return self.clipping_dir .. "/" .. getSafeFilename(filename)
+    if self.is_remote then return end
+    local plugin_settings = G_reader_settings:readSetting("exporter") or {}
+    local clipping_dir = plugin_settings.clipping_dir or self.clipping_dir
+    local title
+    if #t == 1 then
+        title = t[1].output_filename
+        if plugin_settings.clipping_dir_book then
+            clipping_dir = util.splitFilePathName(t[1].file):sub(1, -2)
+        end
+    else
+        title = self.all_books_title or "all-books"
     end
+    local filename = string.format("%s-%s.%s", self:getTimeStamp(), title, self.extension)
+    return clipping_dir .. "/" .. util.getSafeFilename(filename)
 end
 
 --[[--
