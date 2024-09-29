@@ -105,7 +105,6 @@ function DictQuickLookup:init()
         self.key_events.ReadNextResult = { { Input.group.PgFwd } }
         self.key_events.Close = { { Input.group.Back } }
         self.key_events.MenuKeyPress = { { "Menu" } }
-        self.key_event.DictQuickLookupToHome = { { "Home" } }
         if Device:hasKeyboard() then
             self.key_events.ChangeToPrevDict = { { "Shift", "Left" } }
             self.key_events.ChangeToNextDict = { { "Shift", "Right" } }
@@ -1174,11 +1173,6 @@ function DictQuickLookup:onHoldClose(no_clear)
         window:onClose(no_clear)
     end
     return true
-end
-
-function DictQuickLookup:onDictQuickLookupToHome()
-    self:onHoldClose()
-    self.ui:onHome()
 end
 
 function DictQuickLookup:onSwipe(arg, ges)
