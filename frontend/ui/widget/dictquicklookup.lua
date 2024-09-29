@@ -108,9 +108,15 @@ function DictQuickLookup:init()
         if Device:hasKeyboard() then
             self.key_events.ChangeToPrevDict = { { "Shift", "Left" } }
             self.key_events.ChangeToNextDict = { { "Shift", "Right" } }
+            self.key_events.LookupInputWordClear = { { Input.group.Alphabet }, event = "LookupInputWord" }
+            -- We need to concat here so that the 'del' event press, which propagates to inputText (desirable for previous key_event,
+            -- i.e., LookupInputWordClear) does not remove the last char of self.word
+            self.key_events.LookupInputWord = { { Device:hasSymKey() and "Del" or "Backspace" }, args = self.word .." " }
         elseif Device:hasScreenKB() then
             self.key_events.ChangeToPrevDict = { { "ScreenKB", "Left" } }
             self.key_events.ChangeToNextDict = { { "ScreenKB", "Right" } }
+            -- same case as hasKeyboard
+            self.key_events.LookupInputWord = { { "ScreenKB", "Back" }, args = self.word .." " }
         end
     end
     if Device:isTouchDevice() then
@@ -284,11 +290,11 @@ function DictQuickLookup:init()
         padding_left = Size.padding.small,
         callback = function()
             -- allow adjusting the queried word
-            self:lookupInputWord(self.word)
+            self:onLookupInputWord(self.word)
         end,
         hold_callback = function()
             -- allow adjusting the current result word
-            self:lookupInputWord(self.lookupword)
+            self:onLookupInputWord(self.lookupword)
         end,
         overlap_align = "right",
         show_parent = self,
@@ -1255,7 +1261,7 @@ function DictQuickLookup:onForwardingPanRelease(arg, ges)
     return self.movable:onMovablePanRelease(arg, ges)
 end
 
-function DictQuickLookup:lookupInputWord(hint)
+function DictQuickLookup:onLookupInputWord(hint)
     self.input_dialog = InputDialog:new{
         title = _("Enter a word or phrase to look up"),
         input = hint,
