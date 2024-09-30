@@ -95,7 +95,7 @@ if Device:hasScreenKB() then
     -- Use correct k4 illustration and appropriate button mapping
     table.insert(quickstart_guide, _([[## User interface <a id="ui"></a>
 
-<!-- <div class="img-block">![Touch zones](resources/quickstart/kindle4.png)</div> -->
+<div class="img-block">![Touch zones](resources/quickstart/kindle4.png)</div>
 
 - To show the **TOP MENU** or **BOTTOM MENU** press the **Menu** or **Press** keys respectively.
 - The **STATUS BAR** can be set to show a multitude of information regarding your reading progress or device state.
@@ -105,7 +105,7 @@ elseif Device:hasSymKey() then
     -- Use correct k3 illustration and appropriate button mapping
     table.insert(quickstart_guide, _([[## User interface <a id="ui"></a>
 
-<!-- <div class="img-block">![Touch zones](resources/quickstart/kindle3.png)</div> -->
+<div class="img-block">![Touch zones](resources/quickstart/kindle3.png)</div>
 
 - To show the **TOP MENU** or **BOTTOM MENU** press the **Menu** or **Aa** keys respectively.
 - The **STATUS BAR** can be set to show a multitude of information regarding your reading progress or device state.
