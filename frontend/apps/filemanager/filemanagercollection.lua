@@ -73,8 +73,9 @@ function FileManagerCollection:onShowColl(collection_name)
         onLeftButtonTap = function() self:showCollDialog() end,
         onMenuChoice = self.onMenuChoice,
         onMenuHold = self.onMenuHold,
-        onSetRotationMode = self.MenuSetRotationModeHandler,
         _manager = self,
+        _show = self.onShowColl,
+        _args = { collection_name },
         collection_name = collection_name,
     }
     self.coll_menu.close_callback = function()
@@ -99,6 +100,10 @@ function FileManagerCollection:updateItemTable(show_last_item)
     title = T("%1 (%2)", title, #item_table)
     local item_number = show_last_item and #item_table or -1
     self.coll_menu:switchItemTable(title, item_table, item_number)
+end
+
+function FileManagerCollection:onSetDimensions(dimen)
+    self.dimen = dimen
 end
 
 function FileManagerCollection:onMenuChoice(item)
@@ -274,21 +279,6 @@ function FileManagerCollection:sortCollection()
     UIManager:show(sort_widget)
 end
 
-function FileManagerCollection:MenuSetRotationModeHandler(rotation)
-    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
-        UIManager:close(self._manager.coll_menu)
-        if self._manager.ui.view and self._manager.ui.view.onSetRotationMode then
-            self._manager.ui.view:onSetRotationMode(rotation)
-        elseif self._manager.ui.onSetRotationMode then
-            self._manager.ui:onSetRotationMode(rotation)
-        else
-            Screen:setRotationMode(rotation)
-        end
-        self._manager:onShowColl()
-    end
-    return true
-end
-
 function FileManagerCollection:onBookMetadataChanged()
     if self.coll_menu then
         self.coll_menu:updateItems()
@@ -316,8 +306,9 @@ function FileManagerCollection:onShowCollList(file_or_files, caller_callback, no
         onLeftButtonTap = function() self:showCollListDialog(caller_callback, no_dialog) end,
         onMenuChoice = self.onCollListChoice,
         onMenuHold = self.onCollListHold,
-        onSetRotationMode = self.MenuSetRotationModeHandler,
         _manager = self,
+        _show = self.onShowCollList,
+        _args = { file_or_files, caller_callback, no_dialog },
     }
     self.coll_list.close_callback = function(force_close)
         if force_close or self.selected_colections == nil then
