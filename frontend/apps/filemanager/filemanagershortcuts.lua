@@ -202,8 +202,7 @@ function FileManagerShortcuts:onShowFolderShortcutsDialog(select_callback)
         onMenuChoice = self.onMenuChoice,
         onMenuHold = not select_callback and self.onMenuHold or nil,
         _manager = self,
-        _show = self.onShowFolderShortcutsDialog,
-        _args = { select_callback },
+        _recreate_func = function() self:onShowFolderShortcutsDialog(select_callback) end,
     }
     self.shortcuts_menu.close_callback = function()
         UIManager:close(self.shortcuts_menu)
