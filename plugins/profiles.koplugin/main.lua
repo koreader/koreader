@@ -11,7 +11,7 @@ local _ = require("gettext")
 local T = FFIUtil.template
 local util = require("util")
 
-local autostart_done = false
+local autostart_done
 
 local Profiles = WidgetContainer:extend{
     name = "profiles",
@@ -24,9 +24,10 @@ local Profiles = WidgetContainer:extend{
 
 function Profiles:init()
     Dispatcher:init()
+    self.autoexec = G_reader_settings:readSetting("profiles_autoexec", {})
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
-    self:executeAutostart()
+    self:onStart()
 end
 
 function Profiles:loadProfiles()
@@ -135,15 +136,12 @@ function Profiles:getSubMenuItems()
                 end,
             },
             {
-                text = _("Autostart"),
-                help_text = _("Execute this profile when KOReader is started with 'file browser' or 'last file'."),
-                checked_func = function()
-                    return G_reader_settings:getSettingForExt("autostart_profiles", k)
-                end,
-                callback = function()
-                    local new_value = not G_reader_settings:getSettingForExt("autostart_profiles", k) or nil
-                    G_reader_settings:saveSettingForExt("autostart_profiles", new_value, k)
-                end,
+                text = _("Auto-execute"),
+                sub_item_table = {
+                    self:genAutoExecMenuItem(_("on KOReader start"), "Start", k),
+                    self:genAutoExecMenuItem(_("on document opening"), "ReaderReady", k),
+                    self:genAutoExecMenuItem(_("on document closing"), "CloseDocument", k),
+                },
                 separator = true,
             },
             {
@@ -179,7 +177,7 @@ function Profiles:getSubMenuItems()
                     local function editCallback(new_name)
                         self.data[new_name] = util.tableDeepCopy(v)
                         self.data[new_name].settings.name = new_name
-                        self:updateAutostart(k, new_name)
+                        self:updateAutoExec(k, new_name)
                         if v.settings.registered then
                             dispatcherUnregisterProfile(k)
                             dispatcherRegisterProfile(new_name)
@@ -221,7 +219,7 @@ function Profiles:getSubMenuItems()
                         text = _("Do you want to delete this profile?"),
                         ok_text = _("Delete"),
                         ok_callback = function()
-                            self:updateAutostart(k)
+                            self:updateAutoExec(k)
                             if v.settings.registered then
                                 dispatcherUnregisterProfile(k)
                                 self:updateProfiles(self.prefix..k)
@@ -394,29 +392,79 @@ function Profiles:updateProfiles(action_old_name, action_new_name)
     end
 end
 
-function Profiles:updateAutostart(old_name, new_name)
-    if G_reader_settings:getSettingForExt("autostart_profiles", old_name) then
-        G_reader_settings:saveSettingForExt("autostart_profiles", nil, old_name)
-        if new_name then
-            G_reader_settings:saveSettingForExt("autostart_profiles", true, new_name)
+-- AutoExec
+
+function Profiles:genAutoExecMenuItem(text, event, profile_name)
+    return {
+        text = text,
+        checked_func = function()
+            return self.autoexec[event] and self.autoexec[event][profile_name]
+        end,
+        callback = function()
+            if self.autoexec[event] and self.autoexec[event][profile_name] then
+                self.autoexec[event][profile_name] = nil
+                if next(self.autoexec[event]) == nil then
+                    self.autoexec[event] = nil
+                end
+            else
+                self.autoexec[event] = self.autoexec[event] or {}
+                self.autoexec[event][profile_name] = true
+            end
+        end,
+    }
+end
+
+function Profiles:updateAutoExec(old_name, new_name)
+    for event, profiles in pairs(self.autoexec) do
+        local found
+        for profile_name in pairs(profiles) do
+            if profile_name == old_name then
+                profiles[old_name] = nil
+                found = true
+                break
+            end
+        end
+        if found then
+            if new_name then
+                profiles[new_name] = true
+            else
+                if next(profiles) == nil then
+                    self.autoexec[event] = nil
+                end
+            end
         end
     end
 end
 
-function Profiles:executeAutostart()
-    if autostart_done then return end
-    self:loadProfiles()
-    local autostart_table = G_reader_settings:readSetting("autostart_profiles") or {}
-    for autostart_profile_name, profile_enabled in pairs(autostart_table) do
-        if self.data[autostart_profile_name] and profile_enabled then
-            UIManager:nextTick(function()
-                Dispatcher:execute(self.data[autostart_profile_name])
-            end)
-        else
-            self:updateAutostart(autostart_profile_name) -- remove deleted profile from autostart_profile
+function Profiles:executeAutoExec(event)
+    if self.autoexec[event] then
+        for profile_name in pairs(self.autoexec[event]) do
+            if self.data[profile_name] then
+                UIManager:nextTick(function()
+                    Dispatcher:execute(self.data[profile_name])
+                end)
+            end
         end
     end
-    autostart_done = true
+end
+
+function Profiles:onStart()
+    if not autostart_done then
+        self:executeAutoExec("Start")
+        autostart_done = true
+    end
+end
+
+function Profiles:onReaderReady()
+    if not self.ui.reloading then
+        self:executeAutoExec("ReaderReady")
+    end
+end
+
+function Profiles:onCloseDocument()
+    if not self.ui.reloading then
+        self:executeAutoExec("CloseDocument")
+    end
 end
 
 return Profiles
