@@ -244,8 +244,7 @@ function FileManagerHistory:onShowHist(search_info)
         onMenuChoice = self.onMenuChoice,
         onMenuHold = self.onMenuHold,
         _manager = self,
-        _show = self.onShowHist,
-        _args = { search_info },
+        _recreate_func = function() self:onShowHist(search_info) end,
     }
 
     if search_info then
