@@ -1273,7 +1273,7 @@ function Menu:onScreenResize(dimen)
 end
 
 function Menu:onSetRotationMode(rotation)
-    if self._show and rotation ~= nil and rotation ~= Screen:getRotationMode() then
+    if self._recreate_func and rotation ~= nil and rotation ~= Screen:getRotationMode() then
         UIManager:close(self)
         -- Also re-layout ReaderView or FileManager itself
         if self._manager.ui.view then
@@ -1281,7 +1281,7 @@ function Menu:onSetRotationMode(rotation)
         else
             self._manager.ui:onSetRotationMode(rotation)
         end
-        self._show(self._manager, unpack(self._args))
+        self._recreate_func()
         return true
     end
 end
