@@ -73,8 +73,7 @@ function FileManagerCollection:onShowColl(collection_name)
         onMenuChoice = self.onMenuChoice,
         onMenuHold = self.onMenuHold,
         _manager = self,
-        _show = self.onShowColl,
-        _args = { collection_name },
+        _recreate_func = function() self:onShowColl(collection_name) end,
         collection_name = collection_name,
     }
     self.coll_menu.close_callback = function()
@@ -306,8 +305,7 @@ function FileManagerCollection:onShowCollList(file_or_files, caller_callback, no
         onMenuChoice = self.onCollListChoice,
         onMenuHold = self.onCollListHold,
         _manager = self,
-        _show = self.onShowCollList,
-        _args = { file_or_files, caller_callback, no_dialog },
+        _recreate_func = function() self:onShowCollList(file_or_files, caller_callback, no_dialog) end,
     }
     self.coll_list.close_callback = function(force_close)
         if force_close or self.selected_colections == nil then
