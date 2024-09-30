@@ -191,21 +191,6 @@ function FileManagerShortcuts:onSetDimensions(dimen)
     self.dimen = dimen
 end
 
-function FileManagerShortcuts:MenuSetRotationModeHandler(rotation)
-    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
-        UIManager:close(self._manager.shortcuts_menu)
-        if self._manager.ui.view and self._manager.ui.view.onSetRotationMode then
-            self._manager.ui.view:onSetRotationMode(rotation)
-        elseif self._manager.ui.onSetRotationMode then
-            self._manager.ui:onSetRotationMode(rotation)
-        else
-            Screen:setRotationMode(rotation)
-        end
-        self._manager:onShowFolderShortcutsDialog()
-    end
-    return true
-end
-
 function FileManagerShortcuts:onShowFolderShortcutsDialog(select_callback)
     self.shortcuts_menu = Menu:new{
         title = self.title,
@@ -217,8 +202,9 @@ function FileManagerShortcuts:onShowFolderShortcutsDialog(select_callback)
         onLeftButtonTap = function() self:addShortcut() end,
         onMenuChoice = self.onMenuChoice,
         onMenuHold = not select_callback and self.onMenuHold or nil,
-        onSetRotationMode = self.MenuSetRotationModeHandler,
         _manager = self,
+        _show = self.onShowFolderShortcutsDialog,
+        _args = { select_callback },
     }
     self.shortcuts_menu.close_callback = function()
         UIManager:close(self.shortcuts_menu)
