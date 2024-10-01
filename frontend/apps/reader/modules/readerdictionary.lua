@@ -26,6 +26,7 @@ local util  = require("util")
 local _ = require("gettext")
 local Input = Device.input
 local T = ffiUtil.template
+local android = Device:isAndroid() and require("android")
 
 -- We'll store the list of available dictionaries as a module local
 -- so we only have to look for them on the first :init()
@@ -785,7 +786,14 @@ function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progre
             break -- don't do any more lookup on additional dict_dirs
         end
 
-        local args = {"./sdcv", "--utf8-input", "--utf8-output", "--json-output", "--non-interactive", "--data-dir", dict_dir}
+        local args = {
+            android and (android.nativeLibraryDir .. "/libsdcv.so") or "./sdcv",
+            "--utf8-input",
+            "--utf8-output",
+            "--json-output",
+            "--non-interactive",
+            "--data-dir", dict_dir,
+        }
         if not fuzzy_search then
             table.insert(args, "--exact-search")
         end
@@ -820,11 +828,11 @@ function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progre
         cmd = cmd .. "; echo"
         -- NOTE: Bionic doesn't support rpath, but does honor LD_LIBRARY_PATH...
         --       Give it a shove so it can actually find the STL.
-        if Device:isAndroid() then
-            C.setenv("LD_LIBRARY_PATH", "./libs", 1)
+        if android then
+            C.setenv("LD_LIBRARY_PATH", android.nativeLibraryDir, 1)
         end
         local completed, results_str = Trapper:dismissablePopen(cmd, lookup_progress_msg)
-        if Device:isAndroid() then
+        if android then
             -- NOTE: It's unset by default, so this is perfectly fine.
             C.unsetenv("LD_LIBRARY_PATH")
         end
