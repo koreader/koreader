@@ -1,1 +1,1 @@
-E-könyv olvasó több formátum támogatásával, például PDF, DjVu, EPUB, FB2, CBZ.
+Ebook olvasó

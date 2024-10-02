@@ -1,1 +1,1 @@
-Un lecteur de livres numériques prenant en charge de nombreux formats comme PDF, DjVu, EPUB, FB2, CBZ.
+Liseuse

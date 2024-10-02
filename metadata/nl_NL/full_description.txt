@@ -1,14 +1,11 @@
-* portabel: draait op embedded apparaten (Cervantes, Kindle, Kobo, PocketBook), Android en Linux-computers. Ontwikkelaars kunnen een KOReader-emulator draaien in Linux en MacOS.
-
-* multi-format documenten: ondersteunt vaste paginaformaten (PDF, DjVu, CBT, CBZ) en herschikbare e-book formaten (EPUB, FB2, Mobi, DOC, CHM, TXT). Gescande PDF/DjVu-documenten kunnen ook worden herschikt met de ingebouwde K2pdfopt-bibliotheek.
-
-* volledige leesfunctie: meertalige gebruikersinterface met een zeer aanpasbare leesweergave en vele zetopties. U kunt willekeurige paginamarges instellen, regelafstand overschrijven en externe lettertypen en stijlen kiezen. Meertalige afbreekwoordenboeken zijn gebundeld in de applicatie.
-
-* geïntegreerd met calibre (metadata zoeken, ebooks draadloos ontvangen, bibliotheek doorzoeken via OPDS), Wallabag, Wikipedia, Google Translate en andere contentproviders.
-
-* geoptimaliseerd voor e-ink apparaten: aangepaste UI zonder animatie, met gepagineerde menu's, instelbaar tekstcontrast, en eenvoudige zoom om inhoud of pagina in gepagineerde media te passen.
-
-* uitbreidbaar via plugins
-
-* en nog veel meer: woorden opzoeken met StarDict woordenboeken / Wikipedia, uw eigen online OPDS catalogi en RSS feeds toevoegen, online over-the-air software updates, een FTP client, een SSH server, ...
-
+<p>KOReader is een ebooklezer die is geoptimaliseerd voor e-inkschermen. Het kan veel formaten openen en biedt geavanceerde tekstaanpassingen.</p>
+<p>Bekijk hieronder een selectie van de talrijke functies:</p>
+<ul>
+  <li>Ondersteunt zowel vaste paginaformaten (PDF, DjVu, CBT, CBZ) als reflowable e-bookformaten (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Gescande PDF&#47;DjVu-documenten kunnen gereflowed worden. Speciale leesrichtingen voor het lezen van PDF&#39;s met dubbele kolommen en manga.</li>
+  <li>Meertalige gebruikersinterface geoptimaliseerd voor e-inkschermen. Zeer aanpasbare leesweergave met complete zetopties. Meertalige afbreekwoordenboeken zijn gebundeld.</li>
+  <li>Ondersteuning van niet-Latijns schrift voor boeken, waaronder Hebreeuws, Arabisch, Perzisch, Russisch, Chinees, Japans en Koreaans.</li>
+  <li>Unieke boekkaart- en paginaverkennerfuncties om door je boek te navigeren.</li>
+  <li>Speciale markeermodus voor meerdere pagina&#39;s met veel lokale en online exportopties.</li>
+  <li>Kan leesvoortgang over meerdere KOReader-apparaten synchroniseren.</li>
+  <li>Integrated with Calibre, Wallabag, Wikipedia, Google Translate and other content providers.</li>
+</ul>

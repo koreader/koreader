@@ -1,1 +1,1 @@
-Czytnik e-booków z obsługą wielu formatów, takich jak PDF, DjVu, EPUB, FB2, CBZ.
+Czytnik e-booków

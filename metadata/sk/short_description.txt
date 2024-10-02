@@ -1,1 +1,1 @@
-Čítačka elektronických kníh s podporou mnohých formátov, ako sú PDF, DjVu, EPUB, FB2, CBZ.
+Čítačka elektronických kníh
