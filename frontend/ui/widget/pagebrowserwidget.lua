@@ -1082,7 +1082,7 @@ The bottom ribbon displays an extract of the book map around the pages displayed
 
 If statistics are enabled, black bars indicate pages that have already been read (gray bars for pages read in the current session). The height of these bars varies based on the time spent reading each page.
 Chapters are indicated above the pages they cover.
-Below the pages, the following indicators may appear
+Below the pages, the following indicators may appear:
 ▲ current page
 ❶ ❷ … previous locations
 ▒ highlighted text
@@ -1103,29 +1103,29 @@ Swipe horizontally in the bottom ribbon to move by the full stripe.
 
 Tap in the bottom ribbon on a page to focus thumbnails on this page.
 
-Tap on a thumbnail to read this page.
+Tap on a thumbnail to read that page.
 
 Long-press on ≡ to decrease or reset the number of chapter levels shown in the bottom ribbon.
 
 Any multiswipe will close the page browser.]])
         elseif Device:hasKeyboard() then
             text = _([[
-Use settings in this menu to change the number of columns and rows to be shown, whether to display page numbers and, different chapter-levels in bottom ribbon.
+The settings (in this menu) can be used to change the number of rows and columns, whether to display page numbers, and to display different chapter-levels in the bottom ribbon.
 
 Press Shift+Up to move up by one row, or LPgBack/RPgBack to move one screen.
 
-Press Shift+Down to move down by one row, or LPgFwd/RPgFwd to move one screen.
+Press Shift+Down to move down by one row, or either next-page-button to move one screen.
 
-Select a thumbnail to read this page.]])
+Select a thumbnail to read that page.]])
         elseif Device:hasScreenKB() then
             text = _([[
-Use settings in this menu to change the number of columns and rows to be shown, whether to display page numbers and, different chapter-levels in bottom ribbon.
+The settings (in this menu) can be used to change the number of rows and columns, whether to display page numbers, and to display different chapter-levels in the bottom ribbon.
 
 Press ScreenKB+Up to move up by one row, or LPgBack/RPgBack to move one screen.
 
-Press ScreenKB+Down to move down by one row, or LPgFwd/RPgFwd to move one screen.
+Press ScreenKB+Down to move down by one row, or either next-page-button to move one screen.
 
-Select a thumbnail to read this page.]])
+Select a thumbnail to read that page.]])
         end
     UIManager:show(InfoMessage:new{text = text})
 end
