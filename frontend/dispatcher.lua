@@ -546,10 +546,14 @@ function Dispatcher:init()
                     end
                 elseif settingsList[name].category == "absolutenumber" then
                     if settingsList[name].min == nil then
-                        settingsList[name].min = option.args and option.args[1] or option.values[1]
+                        settingsList[name].min =
+                            (option.more_options_param and (option.more_options_param.value_min or option.more_options_param.left_min))
+                            or (option.args and option.args[1]) or option.values[1]
                     end
                     if settingsList[name].max == nil then
-                        settingsList[name].max = option.args and option.args[#option.args] or option.values[#option.values]
+                        settingsList[name].max =
+                            (option.more_options_param and (option.more_options_param.value_max or option.more_options_param.left_max))
+                            or (option.args and option.args[#option.args]) or option.values[#option.values]
                     end
                     if settingsList[name].default == nil then
                         settingsList[name].default = option.default_value
