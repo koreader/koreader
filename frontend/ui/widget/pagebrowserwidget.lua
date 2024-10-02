@@ -110,7 +110,7 @@ function PageBrowserWidget:init()
                     range = self.dimen,
                 }
             }
-        } 
+        }
     end
 
     -- Put the BookMapRow left and right border outside of screen
@@ -193,7 +193,6 @@ function PageBrowserWidget:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.ShowMenu = { { "Menu" } }
-        self.key_events.PageBrowserToHome = { { "Home" } }
         self.key_events.ScrollPageUp = { { Input.group.PgBack } }
         self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
         if Device:isTouchDevice() then
@@ -1121,11 +1120,11 @@ Select a thumbnail to read this page.]])
         elseif Device:hasScreenKB() then
             text = _([[
 Use settings in this menu to change the number of columns and rows to be shown, whether to display page numbers and, different chapter-levels in bottom ribbon.
-            
+
 Press ScreenKB+Up to move up by one row, or LPgBack/RPgBack to move one screen.
-            
+
 Press ScreenKB+Down to move down by one row, or LPgFwd/RPgFwd to move one screen.
-            
+
 Select a thumbnail to read this page.]])
         end
     UIManager:show(InfoMessage:new{text = text})
@@ -1171,11 +1170,6 @@ function PageBrowserWidget:onClose(close_all_parents)
         UIManager:setDirty(self.ui.dialog, "full")
     end
     return true
-end
-
-function PageBrowserWidget:onPageBrowserToHome()
-    self:onClose(true)
-    self.ui:onHome()
 end
 
 function PageBrowserWidget:saveSettings(reset)
@@ -1558,7 +1552,7 @@ function PageBrowserWidget:onHold(arg, ges)
             return false
         end
     end
-    
+
     -- If hold in the bottom BookMapRow, open a new BookMapWidget
     -- and focus on this page. We'll show a rounded square below
     -- our current focus_page to help locating where we were (it's
