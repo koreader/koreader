@@ -1112,18 +1112,18 @@ Any multiswipe will close the page browser.]])
             text = _([[
 The settings (in this menu) can be used to change the number of rows and columns, whether to display page numbers, and to display different chapter-levels in the bottom ribbon.
 
-Press Shift+Up to move up by one row, or LPgBack/RPgBack to move one screen.
+Press Shift+Up to move up by one row, or either previous-page-turn-button to move one screen.
 
-Press Shift+Down to move down by one row, or either next-page-button to move one screen.
+Press Shift+Down to move down by one row, or either next-page-turn-button to move one screen.
 
 Select a thumbnail to read that page.]])
         elseif Device:hasScreenKB() then
             text = _([[
 The settings (in this menu) can be used to change the number of rows and columns, whether to display page numbers, and to display different chapter-levels in the bottom ribbon.
 
-Press ScreenKB+Up to move up by one row, or LPgBack/RPgBack to move one screen.
+Press ScreenKB+Up to move up by one row, or either previous-page-turn-button to move one screen.
 
-Press ScreenKB+Down to move down by one row, or either next-page-button to move one screen.
+Press ScreenKB+Down to move down by one row, or either next-page-turn-button to move one screen.
 
 Select a thumbnail to read that page.]])
         end
