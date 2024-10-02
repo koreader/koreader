@@ -246,6 +246,11 @@ function Device:init()
         end,
     }
 
+    -- disable translation for specific models, where media keys follow gravity, see https://github.com/koreader/koreader/issues/12423
+    if android.prop.model == "moaanmix7" or android.prop.model == "xiaomi_reader" then
+        self.input:disableRotationMap()
+    end
+
     -- check if we have a keyboard
     if android.lib.AConfiguration_getKeyboard(android.app.config)
        == C.ACONFIGURATION_KEYBOARD_QWERTY
