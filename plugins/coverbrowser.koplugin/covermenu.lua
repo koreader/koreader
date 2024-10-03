@@ -91,10 +91,6 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
     self.page_info:resetLayout()
     self.return_button:resetLayout()
     self.content_group:resetLayout()
-    -- default to select the first item
-    if not select_number then
-        select_number = 1
-    end
 
     -- Reset the list of items not found in db that will need to
     -- be updated by a scheduled action
@@ -131,8 +127,7 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
 
     -- Specific UI building implementation (defined in some other module)
     self._has_cover_images = false
-    self:_updateItemsBuildUI()
-
+    select_number = self:_updateItemsBuildUI() or select_number
     -- Set the local variables with the things we know
     -- These are used only by extractBooksInDirectory(), which should
     -- use the cover_specs set for FileBrowser, and not those from History.
