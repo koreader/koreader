@@ -299,6 +299,7 @@ FocusManager.NOT_UNFOCUS = 1
 FocusManager.NOT_FOCUS = 2
 -- In some cases, we may only want to send Focus events on non-Touch devices
 FocusManager.FOCUS_ONLY_ON_NT = (Device:hasDPad() and not Device:isTouchDevice()) and 0 or FocusManager.NOT_FOCUS
+FocusManager.FORCED_FOCUS = 3
 
 --- Move focus to specified widget
 function FocusManager:moveFocusTo(x, y, focus_flags)
@@ -319,8 +320,9 @@ function FocusManager:moveFocusTo(x, y, focus_flags)
         self.selected.x = x
         self.selected.y = y
         -- widget create new layout on update, previous may be removed from new layout.
-        if Device:hasDPad() then
-            if bit.band(focus_flags, FocusManager.NOT_UNFOCUS) ~= FocusManager.NOT_UNFOCUS then
+        local is_forced = focus_flags == FocusManager.FORCED_FOCUS
+        if is_forced or Device:hasDPad() then
+            if is_forced or bit.band(focus_flags, FocusManager.NOT_UNFOCUS) ~= FocusManager.NOT_UNFOCUS then
                 -- NOTE: We can't necessarily guarantee the integrity of self.layout,
                 --       as some callers *will* mangle it and call us expecting to fix things ;).
                 --       Since we do not want to leave *multiple* items (visually) focused,
@@ -335,7 +337,7 @@ function FocusManager:moveFocusTo(x, y, focus_flags)
                     self:handleEvent(Event:new("Unfocus"))
                 end
             end
-            if bit.band(focus_flags, FocusManager.NOT_FOCUS) ~= FocusManager.NOT_FOCUS then
+            if is_forced or bit.band(focus_flags, FocusManager.NOT_FOCUS) ~= FocusManager.NOT_FOCUS then
                 target_item:handleEvent(Event:new("Focus"))
                 UIManager:setDirty(self.show_parent or self, "fast")
             end
