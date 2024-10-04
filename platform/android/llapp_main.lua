@@ -1,5 +1,4 @@
 local android = require("android")
-android.dl.library_path = android.dl.library_path .. ":" .. android.dir .. "/libs"
 
 -- setup Lua paths, and ffi helper / override
 require("setupkoenv")
