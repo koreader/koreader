@@ -293,7 +293,7 @@ function Exporter:addToMainMenu(menu_items)
         text = _("Export highlights"),
         sub_item_table = {
             {
-                text = _("Export all notes in curent book"),
+                text = _("Export all notes in current book"),
                 enabled_func = function()
                     return self:isReadyToExport()
                 end,
