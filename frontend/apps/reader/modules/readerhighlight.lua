@@ -1340,6 +1340,7 @@ function ReaderHighlight:onShowHighlightDialog(index)
     end
     self.edit_highlight_dialog = ButtonDialog:new{ -- in self for unit tests
         buttons = buttons,
+        anchor = function() return self:_getDialogAnchor(self.edit_highlight_dialog, item.pos1) end,
     }
     UIManager:show(self.edit_highlight_dialog)
     return true
@@ -1378,7 +1379,7 @@ function ReaderHighlight:onShowHighlightMenu(index)
 
     self.highlight_dialog = ButtonDialog:new{
         buttons = highlight_buttons,
-        anchor = function() return self:_getHighlightMenuAnchor() end,
+        anchor = function() return self:_getDialogAnchor(self.highlight_dialog) end,
         tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
     }
     -- NOTE: Disable merging for this update,
@@ -1391,10 +1392,20 @@ dbg:guard(ReaderHighlight, "onShowHighlightMenu",
             "onShowHighlightMenu must not be called with nil self.selected_text!")
     end)
 
-function ReaderHighlight:_getHighlightMenuAnchor()
+function ReaderHighlight:_getDialogAnchor(dialog, pos)
     local position = G_reader_settings:readSetting("highlight_dialog_position", "center")
-    if position == "center" or not self.gest_pos then return end
-    local dialog_box = self.highlight_dialog:getContentSize()
+    if position == "center" then return end
+    if pos then
+        if self.ui.rolling then
+            local y, x = self.ui.document:getScreenPositionFromXPointer(pos)
+            pos = x ~= nil and y ~= nil and { x = x, y = y } or nil
+        end
+    else
+        pos = self.gest_pos
+        self.gest_pos = nil
+    end
+    if pos == nil then return end
+    local dialog_box = dialog:getContentSize()
     local anchor_x = math.floor((self.screen_w - dialog_box.w) / 2) -- center by width
     local anchor_y, prefers_pop_down
     if position == "top" then
@@ -1403,7 +1414,7 @@ function ReaderHighlight:_getHighlightMenuAnchor()
     elseif position == "bottom" then
         anchor_y = self.screen_h - Size.padding.small
     else -- "gesture"
-        local text_box = self.ui.document:getWordFromPosition(self.gest_pos)
+        local text_box = self.ui.document:getWordFromPosition(pos)
         if text_box then
             text_box = text_box.sbox
             if text_box and self.ui.paging then
@@ -1418,7 +1429,6 @@ function ReaderHighlight:_getHighlightMenuAnchor()
             anchor_y = text_box.y - Size.padding.small
         end
     end
-    self.gest_pos = nil
     return { x = anchor_x, y = anchor_y, h = 0, w = 0 }, prefers_pop_down
 end
 
