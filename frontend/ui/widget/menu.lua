@@ -1011,7 +1011,7 @@ function Menu:updatePageInfo(select_number)
             -- Reset focus manager accordingly.
             -- NOTE: Since this runs automatically on init,
             --       we use FOCUS_ONLY_ON_NT as we don't want to see the initial underline on Touch devices.
-            self:moveFocusTo(x, y, is_focused and FocusManager.FORCED_FOCUS or FocusManager.FOCUS_ONLY_ON_NT)
+            self:moveFocusTo(x, y, bit.bor(is_focused and FocusManager.FORCED_FOCUS or 0, FocusManager.FOCUS_ONLY_ON_NT))
         end
         -- update page information
         self.page_info_text:setText(T(_("Page %1 of %2"), self.page, self.page_num))
