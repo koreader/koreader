@@ -989,11 +989,13 @@ function Menu:init()
         self.page = self:getPageNumber(self.item_table.current)
     end
     if not self.path_items then -- not FileChooser
+        print("init called updateItems")
         self:updateItems(1, true)
     end
 end
 
 function Menu:updatePageInfo(select_number)
+    print("Menu:updatePageInfo", select_number, self.itemnumber)
     if #self.item_table > 0 then
         local is_focused = self.itemnumber and self.itemnumber > 0
         if is_focused or Device:hasDPad() then
@@ -1011,6 +1013,7 @@ function Menu:updatePageInfo(select_number)
             -- Reset focus manager accordingly.
             -- NOTE: Since this runs automatically on init,
             --       we use FOCUS_ONLY_ON_NT as we don't want to see the initial underline on Touch devices.
+            -- FIXME: FORCED_FOCUS completely obliterates that, though...
             self:moveFocusTo(x, y, bit.bor(is_focused and FocusManager.FORCED_FOCUS or 0, FocusManager.FOCUS_ONLY_ON_NT))
         end
         -- update page information
@@ -1044,6 +1047,7 @@ function Menu:updatePageInfo(select_number)
 end
 
 function Menu:updateItems(select_number, no_recalculate_dimen)
+    print("Menu:updateItems", select_number, no_recalculate_dimen)
     local old_dimen = self.dimen and self.dimen:copy()
     -- self.layout must be updated for focusmanager
     self.layout = {}
@@ -1168,6 +1172,8 @@ end
     which item.key = value
 --]]
 function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch, new_subtitle)
+    print("Menu:switchItemTable", new_title, new_item_table, itemnumber, itemmatch, new_subtitle)
+    print(debug.traceback())
     local no_recalculate_dimen = true
 
     if new_item_table then
