@@ -1399,16 +1399,6 @@ dbg:guard(ReaderHighlight, "onShowHighlightMenu",
 function ReaderHighlight:_getDialogAnchor(dialog, pos)
     local position = G_reader_settings:readSetting("highlight_dialog_position", "center")
     if position == "center" then return end
-    if pos then
-        if self.ui.rolling then
-            local y, x = self.ui.document:getScreenPositionFromXPointer(pos)
-            pos = x ~= nil and y ~= nil and { x = x, y = y } or nil
-        end
-    else
-        pos = self.gest_pos
-        self.gest_pos = nil
-    end
-    if pos == nil then return end
     local dialog_box = dialog:getContentSize()
     local anchor_x = math.floor((self.screen_w - dialog_box.w) / 2) -- center by width
     local anchor_y, prefers_pop_down
@@ -1418,6 +1408,16 @@ function ReaderHighlight:_getDialogAnchor(dialog, pos)
     elseif position == "bottom" then
         anchor_y = self.screen_h - Size.padding.small
     else -- "gesture"
+        if pos then -- highlight end
+            if self.ui.rolling then
+                local y, x = self.ui.document:getScreenPositionFromXPointer(pos)
+                pos = x ~= nil and y ~= nil and { x = x, y = y } or nil
+            end
+        else -- gesture
+            pos = self.gest_pos
+            self.gest_pos = nil
+        end
+        if pos == nil then return end -- fallback to "center"
         local text_box = self.ui.document:getWordFromPosition(pos, true)
         if text_box then
             text_box = text_box.sbox
