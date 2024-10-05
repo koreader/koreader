@@ -628,7 +628,7 @@ function CreDocument:getImageFromPosition(pos, want_frames, accept_cre_scalable_
     end
 end
 
-function CreDocument:getWordFromPosition(pos)
+function CreDocument:getWordFromPosition(pos, do_not_draw_selection)
     local wordbox = {
         page = self._document:getCurrentPage(),
     }
@@ -641,7 +641,11 @@ function CreDocument:getWordFromPosition(pos)
     local word_found = false
     local box_found = false
 
-    local text_range = self._document:getTextFromPositions(pos.x, pos.y, pos.x, pos.y)
+    local drawSelection, drawSegmentedSelection
+    if do_not_draw_selection then
+        drawSelection, drawSegmentedSelection = false, false
+    end
+    local text_range = self._document:getTextFromPositions(pos.x, pos.y, pos.x, pos.y, drawSelection, drawSegmentedSelection)
     logger.dbg("CreDocument: get text range", text_range)
     if text_range then
         if text_range.text and text_range.text ~= "" then
