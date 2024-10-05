@@ -1340,7 +1340,9 @@ function ReaderHighlight:onShowHighlightDialog(index)
     end
     self.edit_highlight_dialog = ButtonDialog:new{ -- in self for unit tests
         buttons = buttons,
-        anchor = function() return self:_getDialogAnchor(self.edit_highlight_dialog, item.pos1) end,
+        anchor = function()
+            return self:_getDialogAnchor(self.edit_highlight_dialog, item.pos1)
+        end,
     }
     UIManager:show(self.edit_highlight_dialog)
     return true
@@ -1379,7 +1381,9 @@ function ReaderHighlight:onShowHighlightMenu(index)
 
     self.highlight_dialog = ButtonDialog:new{
         buttons = highlight_buttons,
-        anchor = function() return self:_getDialogAnchor(self.highlight_dialog) end,
+        anchor = function()
+            return self:_getDialogAnchor(self.highlight_dialog, not self.gest_pos and self.ui.annotation.annotations[index].pos1)
+        end,
         tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
     }
     -- NOTE: Disable merging for this update,
@@ -1414,7 +1418,7 @@ function ReaderHighlight:_getDialogAnchor(dialog, pos)
     elseif position == "bottom" then
         anchor_y = self.screen_h - Size.padding.small
     else -- "gesture"
-        local text_box = self.ui.document:getWordFromPosition(pos)
+        local text_box = self.ui.document:getWordFromPosition(pos, true)
         if text_box then
             text_box = text_box.sbox
             if text_box and self.ui.paging then
