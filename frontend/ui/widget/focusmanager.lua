@@ -321,7 +321,7 @@ function FocusManager:moveFocusTo(x, y, focus_flags)
         self.selected.x = x
         self.selected.y = y
         -- widget create new layout on update, previous may be removed from new layout.
-        if focus_flags == FocusManager.FORCED_FOCUS or Device:hasDPad() then
+        if bit.band(focus_flags, FocusManager.FORCED_FOCUS) == FocusManager.FORCED_FOCUS or Device:hasDPad() then
             if bit.band(focus_flags, FocusManager.NOT_UNFOCUS) ~= FocusManager.NOT_UNFOCUS then
                 -- NOTE: We can't necessarily guarantee the integrity of self.layout,
                 --       as some callers *will* mangle it and call us expecting to fix things ;).
