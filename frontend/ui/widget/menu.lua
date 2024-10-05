@@ -995,7 +995,8 @@ end
 
 function Menu:updatePageInfo(select_number)
     if #self.item_table > 0 then
-        local is_focused = self.itemnumber and self.itemnumber > 0
+        -- See note below, as we treat FileChooser differently here.
+        local is_focused = self.itemnumber and self.itemnumber > (self.path and 1 or 0)
         if is_focused or Device:hasDPad() then
             self.itemnumber = nil -- focus only once
             select_number = select_number or 1 -- default to select the first item
@@ -1011,6 +1012,9 @@ function Menu:updatePageInfo(select_number)
             -- Reset focus manager accordingly.
             -- NOTE: Since this runs automatically on init,
             --       we use FOCUS_ONLY_ON_NT as we don't want to see the initial underline on Touch devices.
+            -- NOTE: This gets completely obliterated by FORCED_FOCUS,
+            --       so we fudge the itemnumber check for FileChooser to avoid ever focusing the first item (..),
+            --       to salvage the expected behavior in *that* widget, at least...
             self:moveFocusTo(x, y, bit.bor(is_focused and FocusManager.FORCED_FOCUS or 0, FocusManager.FOCUS_ONLY_ON_NT))
         end
         -- update page information
