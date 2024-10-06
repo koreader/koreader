@@ -1341,7 +1341,7 @@ function ReaderHighlight:onShowHighlightDialog(index)
     self.edit_highlight_dialog = ButtonDialog:new{ -- in self for unit tests
         buttons = buttons,
         anchor = function()
-            return self:_getDialogAnchor(self.edit_highlight_dialog, item.pos1)
+            return self:_getDialogAnchor(self.edit_highlight_dialog, item)
         end,
     }
     UIManager:show(self.edit_highlight_dialog)
@@ -1382,7 +1382,7 @@ function ReaderHighlight:onShowHighlightMenu(index)
     self.highlight_dialog = ButtonDialog:new{
         buttons = highlight_buttons,
         anchor = function()
-            return self:_getDialogAnchor(self.highlight_dialog, not self.gest_pos and self.ui.annotation.annotations[index].pos1)
+            return self:_getDialogAnchor(self.highlight_dialog, not self.gest_pos and self.ui.annotation.annotations[index])
         end,
         tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
     }
@@ -1396,7 +1396,7 @@ dbg:guard(ReaderHighlight, "onShowHighlightMenu",
             "onShowHighlightMenu must not be called with nil self.selected_text!")
     end)
 
-function ReaderHighlight:_getDialogAnchor(dialog, pos)
+function ReaderHighlight:_getDialogAnchor(dialog, item)
     local position = G_reader_settings:readSetting("highlight_dialog_position", "center")
     if position == "center" then return end
     local dialog_box = dialog:getContentSize()
@@ -1408,17 +1408,25 @@ function ReaderHighlight:_getDialogAnchor(dialog, pos)
     elseif position == "bottom" then
         anchor_y = self.screen_h - Size.padding.small
     else -- "gesture"
-        if pos then -- highlight end
+        local pos0, pos1
+        if item then -- highlight
             if self.ui.rolling then
-                local y, x = self.ui.document:getScreenPositionFromXPointer(pos)
-                pos = x ~= nil and y ~= nil and { x = x, y = y } or nil
+                local y, x = self.ui.document:getScreenPositionFromXPointer(item.pos0)
+                pos0 = x ~= nil and y ~= nil and { x = x, y = y } or nil
+                y, x = self.ui.document:getScreenPositionFromXPointer(item.pos1)
+                pos1 = x ~= nil and y ~= nil and { x = x, y = y } or nil
+            else
+                pos0, pos1 = item.pos0, item.pos1
             end
         else -- gesture
-            pos = self.gest_pos
+            pos0, pos1 = unpack(self.gest_pos)
             self.gest_pos = nil
         end
-        if pos == nil then return end -- fallback to "center"
-        local text_box = self.ui.document:getWordFromPosition(pos, true)
+        if pos0 == nil or pos1 == nil then return end -- fallback to "center"
+        if pos0.y > pos1.y then -- try to show the dialog below the highlight
+            pos0, pos1 = pos1, pos0
+        end
+        local text_box = self.ui.document:getWordFromPosition(pos1, true)
         if text_box then
             text_box = text_box.sbox
             if text_box and self.ui.paging then
@@ -1530,7 +1538,7 @@ function ReaderHighlight:onHold(arg, ges)
         logger.dbg("not inside page area")
         return false
     end
-    self.gest_pos = self.hold_pos
+    self.gest_pos = { self.hold_pos, self.hold_pos }
 
     self.allow_hold_pan_corner_scroll = false -- reset this, don't allow that yet
 
@@ -1737,7 +1745,7 @@ function ReaderHighlight:onHoldPan(_, ges)
 
     local old_text = self.selected_text and self.selected_text.text
     self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.holdpan_pos)
-    self.gest_pos = self.holdpan_pos
+    self.gest_pos = { self.hold_pos, self.holdpan_pos }
     self.is_word_selection = false
 
     if self.selected_text and self.selected_text.pos0 then
