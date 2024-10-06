@@ -1895,6 +1895,12 @@ function BookMapWidget:paintTo(bb, x, y)
     end
     -- widgets already have screen position
     -- NT: build focus layout, ignore invisible row in ScrollContainer
+    local focused_widget = self:getFocusItem()
+    if focused_widget then
+        -- clear existed focused widget style before new layout(scroll up or down)
+        -- not a perfect solution
+        focused_widget:handleEvent(Event:new("Unfocus"))
+    end
     self.layout = {}
     local row_added_to_focus_layout = false
     for _, focus_row in ipairs(self.scroll_row_layout) do
@@ -1916,7 +1922,7 @@ function BookMapWidget:paintTo(bb, x, y)
     end
     if self.need_foucs_print then
         self.need_foucs_print = false
-        self:refocusWidget(true, FocusManager.FOCUS_ONLY_ON_NT)
+        self:refocusWidget(FocusManager.RENDER_IN_NEXT_TICK, FocusManager.FOCUS_ONLY_ON_NT)
     end
 end
 
