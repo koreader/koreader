@@ -415,7 +415,10 @@ function FocusManager:getFocusItem()
     if not self.layout then
         return nil
     end
-    return self.layout[self.selected.y][self.selected.x]
+    if self.layout[self.selected.y] then
+        return self.layout[self.selected.y][self.selected.x]
+    end
+    return nil
 end
 
 function FocusManager:_sendGestureEventToFocusedWidget(gesture)
