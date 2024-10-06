@@ -6,14 +6,26 @@
 
 # Do not run this script twice (ie: when no wireless is available or wireless
 # association to ap failed.
+
+# select wifi driver based on pcb.
+PCB_ID=$(/usr/bin/ntxinfo /dev/mmcblk0 | grep pcb | cut -d ":" -f2)
+if [ "${PCB_ID}" -eq 22 ] || [ "${PCB_ID}" -eq 23 ]; then
+    MODULE="dhd"
+    WPA_DRIVER="nl80211"
+else
+    MODULE="8189fs"
+    WPA_DRIVER="wext"
+fi
+
 ./disable-wifi.sh
 
-if ! lsmod | grep -q 8189fs; then
-    modprobe 8189fs
+if ! lsmod | grep -q ${MODULE}; then
+    modprobe ${MODULE}
     sleep 1
 fi
 
 ifconfig eth0 up
 sleep 1
 
-wpa_supplicant -i eth0 -C /var/run/wpa_supplicant -B -D wext 2>/dev/null
+wpa_supplicant -i eth0 -C /var/run/wpa_supplicant -B -D ${WPA_DRIVER} 2>/dev/null
+sleep 1
