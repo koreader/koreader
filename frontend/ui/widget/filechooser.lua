@@ -510,7 +510,7 @@ function FileChooser:refreshPath()
         self.focused_path = nil
     end
     local subtitle = BD.directory(filemanagerutil.abbreviate(self.path))
-    self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path] or 1, itemmatch, subtitle)
+    self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path], itemmatch, subtitle)
 end
 
 function FileChooser:changeToPath(path, focused_path)
