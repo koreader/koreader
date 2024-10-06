@@ -1424,7 +1424,7 @@ function ReaderHighlight:_getDialogAnchor(dialog, item)
         end
         if pos0 == nil or pos1 == nil then return end -- fallback to "center"
         if pos0.y > pos1.y then -- try to show the dialog below the highlight
-            pos0, pos1 = pos1, pos0
+            pos1 = pos0
         end
         local text_box = self.ui.document:getWordFromPosition(pos1, true)
         if text_box then
