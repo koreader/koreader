@@ -1072,7 +1072,7 @@ function BookMapWidget:update()
                         })
                         -- Add a bit more spacing for the BookMapRow(s) underneath this Toc item title
                         -- (so the page number painted in this spacing feels included in the indentation)
-                        cur_left_spacing = cur_left_spacing + Size.span.horizontal_default
+                        cur_left_spacing = cur_left_spacing + Size.span.horizontal_default + toc_title.padding
                         -- Note: this variable indentation may make the page slot widths variable across
                         -- rows from different levels (and self.fit_pages_per_row not really accurate) :/
                         -- Hopefully, it won't be noticeable.
