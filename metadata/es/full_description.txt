@@ -1,14 +1,11 @@
-* portable: se ejecuta en dispositivos integrados (Cervantes, Kindle, Kobo, PocketBook), Android y ordenadores Linux. Los desarrolladores pueden ejecutar un emulador de KOReader en Linux y MacOS.
-
-* documentos multiformato: admite formatos de página de maquetación fija (PDF, DjVu, CBT, CBZ) y de maquetación fluida (EPUB, FB2, Mobi, DOC, CHM, TXT). También se puede modificar la maquetación de los documentos PDF/DjVu escaneados, y redistribuir su contenido, gracias a la biblioteca K2pdfopt incorporada.
-
-* lectura con todas las funciones: interfaz de usuario multilingüe con una vista de lectura altamente personalizable y muchas opciones de composición tipográfica. Es posible establecer márgenes de página arbitrarios, anular el interlineado y elegir fuentes y estilos externos. La aplicación también dispone de diccionarios de separación de sílabas multilingües integrados.
-
-* integración con calibre (búsqueda de metadatos, recepción inalámbrica de libros electrónicos, exploración de la biblioteca a través de OPDS), y con Wallabag, Wikipedia, Google Translate y otros proveedores de contenido.
-
-* optimizado para dispositivos de tinta electrónica: interfaz de usuario personalizada sin animaciones, con menús paginados, contraste de texto ajustable y zoom que permite ajustar fácilmente la página o el contenido de los medios paginados.
-
-* extensible mediante complementos
-
-* y mucho más: búsqueda de palabras en diccionarios StarDict / Wikipedia, añadir catálogos OPDS y canales RSS propios en línea, actualizaciones de software en línea, cliente FTP, servidor SSH, ...
-
+<p>KOReader es un lector de libros electrónicos optimizado para pantallas de tinta electrónica. Puede abrir muchos formatos y proporciona ajustes avanzados de texto.</p>
+<p>Vea a continuación una selección de sus muchas características:</p>
+<ul>
+  <li>Admite formatos de página fija (PDF, DjVu, CBR, CBZ) y formatos de libros electrónicos ajustables (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Los documentos PDF&#47;DjVu escaneados se pueden refluir. Instrucciones de flujo especiales para leer PDFs y manga de doble columna.</li>
+  <li>Interfaz de usuario multilingüe optimizada para pantallas de tinta electrónica. Vista de lector altamente personalizable con opciones completas de composición tipográfica. Los diccionarios multilingües de separación silábica están incluidos.</li>
+  <li>Soporte de escritura no latina para libros, incluidos los idiomas Hebreo, Árabe, Persa, Ruso, Chino, Japonés y Coreano.</li>
+  <li>Funciones únicas de Mapa de Libros y Navegador de Páginas para navegar por su libro.</li>
+  <li>Modo especial de resaltado de varias páginas con muchas opciones de exportación locales y en línea.</li>
+  <li>Can synchronize your reading progress across all your KOReader running devices.</li>
+  <li>Integrated with Calibre, Wallabag, Wikipedia, Google Translate and other content providers.</li>
+</ul>

@@ -1,14 +1,11 @@
-* Portátil: roda em dispositivos embarcados (Cervantes, Kindle, Kobo, PocketBook), computadores Android e Linux. Os desenvolvedores podem executar um emulador KOReader no Linux e MacOS. 
- 
-* Documentos multiformato: suporta formatos de página fixa (PDF, DjVu, CBT, CBZ) e formatos de livro eletrônico refluíveis (EPUB, FB2, Mobi, DOC, CHM, TXT). Documentos PDF/DjVu digitalizados também podem ser refluídos com a biblioteca K2pdfopt integrada. 
- 
-* Leitura completa: interface de usuário multilíngue com visualização do leitor altamente personalizável e muitas opções tipográficas. Você pode definir margens de página arbitrárias, substituir o espaçamento entre linhas e escolher fontes e estilos externos. Possui dicionários de hifenização multilíngues incluídos no aplicativo. 
-  
-* Integrado com o calibre (buscar metadados, receber livros eletrônicos sem fio, navegar na biblioteca via OPDS),  Wallabag, Wikipédia, Google Tradutor e outros provedores de conteúdo. 
- 
-* Otimizado para dispositivos de tinta eletrônica: interface do usuário personalizada sem animação, com menus paginados, contraste de texto ajustável e ampliação fácil para ajustar o conteúdo ou a página na mídia paginada. 
- 
-* Extensível através de plugins 
- 
-* E muito mais: busque palavras com dicionários StarDict / Wikipédia, adicione seus próprios catálogos OPDS online e canais de RSS, atualizações de software on-line, um cliente FTP, um servidor SSH, …
-
+<p>O KOReader é um leitor de livros eletrônicos otimizado para telas de tinta eletrônica. Ele pode abrir vários formatos e fornece ajustes de texto avançados.</p>
+<p>Veja abaixo uma seleção de suas muitas funcionalidades:</p>
+<ul>
+  <li>Suporta tanto a formatos de página fixa (PDF, DjVu, CBT, CBZ) quanto a formatos refluíveis de livro eletrônico (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Documentos digitalizados em formato PDF&#47;DjVu podem ser refluídos. Direções de fluxo especiais para leitura de PDFs com duas colunas e mangás.</li>
+  <li>Interface de usuário multilíngue otimizada para telas de tinta eletrônica. Leitor altamente personalizável com opções completas de tipografia. Dicionários de hifenização multilíngue já estão incluídos.</li>
+  <li>Suporte para livro com escrita não latina, incluindo as línguas hebraica, árabe, persa, russa, chinesa, japonesa e coreana.</li>
+  <li>Recursos únicos de Mapa do Livro e no Navegador de Páginas para navegar pelo seu livro.</li>
+  <li>Modo especial de destaque de múltiplas páginas com várias opções para exportar localmente e online.</li>
+  <li>Consegue sincronizar seu progresso de leitura através de todos os seus dispositivos com KOReader.</li>
+  <li>Integrado com Calibre, Wallabag, Wikipedia, Google Tradutor e outros provedores de conteúdo.</li>
+</ul>

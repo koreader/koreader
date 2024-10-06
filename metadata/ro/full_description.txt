@@ -1,14 +1,11 @@
-* portabil: rulează pe dispozitive încorporate (Cervantes, Kindle, Kobo, PocketBook), Android și calculatoare cu Linux. Dezvoltatorii pot rula un emulator KOReader în Linux și MacOS.
-
-* documente de formate diferite: suportă formate cu pagini fixe (PDF, DjVu, CBT, CBZ) și pagini flexibile de tip e-book (EPUB, FB2, Mobi, DOC, CHM, TXT). Documentele PDF/DjVu scanate pot de asemenea să fie făcute flexibile cu biblioteca K2pdfopt.
-
-* citire cu multe facilități: interfață cu utilizatorul disponibilă în multe limbi, cu un grad crescut de particularizare și opțiune de ajustare a fonturilor și aspectului. Poți seta margini de pagină arbitrare, schimba spațierea, fonturile, stilurile. Are prezente și dicționare de despărțire în silabe.
-
-* integrat cu Calibre (caută metadate, primește cărți prin wireless, navighează prin biblioteci cu OPDS), Wallabag, Wikipedia, Google Translate și alte servicii.
-
-* optimizat pentru dispozitive e-ink: interfață particularizată fără animații, cu meniuri paginate, contrast ajustabil și ușurință la panoramare, mărire, cuprindere conținut sau navigare pagină cu pagină.
-
-* extensibil cu ajutorul plugin-urilor.
-
-* și multe altele: caută cuvinte în dicționarele StarDict / Wikipedia, adaugă cataloagele tale online OPDS, fluxuri RSS, actualizări de software online, client FTP, sever SSH…
-
+<p>KOReader este un cititor de cărți digitale optimizat pentru ecrane e-ink. Poate deschide multe formate diferite și oferă multiple ajustări de text avansate.</p>
+<p>Vezi mai jos pentru o selecție a multiplelor funcții:</p>
+<ul>
+  <li>Suportă formatele cu pagini fixe (PDF, DjVu, CBT, CBZ) și formatele cu text rearanjabil (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Documentele PDF&#47;DjVu scanate pot fi rearanjate. Direcții speciale de rearanjare pentru citirea documentelor cu două coloane sau manga.</li>
+  <li>Interfață utilizator în numeroase limbi, optimizată pentru ecranele e-ink. Afișare cu multe posibilități de particularizare cu opțiuni complete de tipografie. Dicționarele de despărțire în silabe pentru numeroase limbi sunt incluse.</li>
+  <li>Suport lingvistic non-latin pentru cărți incluzând ebraică, arabă, persană, rusă, chineză, japoneză și koreană.</li>
+  <li>Funcții unicat pentru Harta cărții, Navigatorul de pagini, pentru a face navigarea cărții mai facilă.</li>
+  <li>Mod special de evidențiere multi-pagină cu multiple opțiuni locale și online de export.</li>
+  <li>Poate sincroniza progresul de citire între toate dispozitivele tale cu KOReader.</li>
+  <li>Integrat cu Calibre, Wallabag, Wikipedia, Google Translate și alți furnizori de conținut.</li>
+</ul>

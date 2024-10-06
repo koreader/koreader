@@ -1,14 +1,11 @@
-Portable : fonctionne sur des appareils intégrés (Cervantes, Kindle, Kobo, PocketBook), des ordinateurs Android et Linux. Les développeurs peuvent exécuter un émulateur KOReader sur Linux et MacOS.
-
-    Documents multi-formats : prend en charge les formats de pages fixes (PDF, DjVu, CBT, CBZ) et les formats de livres électroniques à reflow (EPUB, FB2, Mobi, DOC, CHM, TXT). Les documents PDF/DjVu scannés peuvent également être mis en forme avec la bibliothèque K2pdfopt intégrée.
-
-    Lecture complète : interface utilisateur multilingue avec une vue de lecteur hautement personnalisable et de nombreuses options de mise en page. Vous pouvez définir des marges de page arbitraires, remplacer l'espacement des lignes et choisir des polices et styles externes. Il a des dictionnaires de césure multilingues intégrés dans l'application.
-
-    Intégré à calibre (recherche de métadonnées, réception de livres numériques sans fil, navigation de la bibliothèque via OPDS), Wallabag, Wikipédia, Google Translate et d'autres fournisseurs de contenu.
-
-    Optimisé pour les appareils à encre électronique : interface utilisateur personnalisée sans animation, avec des menus pagination, un contraste de texte réglable et un zoom facile pour s'adapter au contenu ou à la page dans les médias paginés.
-
-    Extensible via des modules d'extension
-
-    Et beaucoup plus : recherchez des mots avec les dictionnaires StarDict / Wikipédia, ajoutez vos propres catalogues OPDS et flux RSS en ligne, mises à jour logicielles en ligne sans fil, un client FTP, un serveur SSH…
-
+<p>KOReader is an ebook reader optimized for e-ink screens. It can open many formats and provides advanced text adjustments.</p>
+<p>See below for a selection of its many features:</p>
+<ul>
+  <li>Supports both fixed page formats (PDF, DjVu, CBT, CBZ) and reflowable e-book formats (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Scanned PDF&#47;DjVu documents can be reflowed. Special flow directions for reading double column PDFs and manga.</li>
+  <li>Multi-lingual user interface optimized for e-ink screens. Highly customizable reader view with complete typesetting options. Multi-lingual hyphenation dictionaries are bundled in.</li>
+  <li>Non-Latin script support for books, including the Hebrew, Arabic, Persian, Russian, Chinese, Japanese and Korean languages.</li>
+  <li>Fonctionnalités Plan du livre et Navigateur de pages uniques pour naviguer dans votre livre.</li>
+  <li>Special multi-page highlight mode with many local and online export options.</li>
+  <li>Can synchronize your reading progress across all your KOReader running devices.</li>
+  <li>Integrated with Calibre, Wallabag, Wikipedia, Google Translate and other content providers.</li>
+</ul>

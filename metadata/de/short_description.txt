@@ -1,1 +1,1 @@
-E-Buch-Anwendung mit Unterstützung für viele Formate wie PDF, DjVu, EPUB, FB2, CBZ.
+E-Book-Reader

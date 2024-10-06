@@ -1,14 +1,11 @@
-* prenosný: funguje na prenosných zariadeniach (Cervantes, Kindle, Kobo, PocketBook), zariadeniach so systémom Android a Linux. Vývojári môžu spustiť emulátor KOReader v systémoch Linux a MacOS.
-
-* viac-formátové dokumenty: podporuje formáty s pevnou štruktúrou strán (PDF, DjVu, CBT, CBZ) a preformátovateľné typy elektronických kníh (EPUB, FB2, Mobi, DOC, CHM, TXT). Naskenované dokumenty PDF/DjVu možno tiež preformátovať pomocou zabudovanej knižnice K2pdfopt.
-
-* Plnohodnotné čítanie: viacjazyčné používateľské rozhranie s vysoko prispôsobiteľným zobrazením čítačky a mnohými možnosťami prispôsobenia textu. Môžete nastaviť ľubovoľné okraje strany, prepísať riadkovanie a vybrať externé písma a štýly. Má viacjazyčné pomlčkové slovníky, ktoré sú súčasťou aplikácie.
-
-* integrovaný s Calibre (vyhľadávanie metadát, bezdrôtové prijímanie elektronických kníh, prehliadanie knižnice prostredníctvom OPDS), Wallabag, Wikipedia, Google Translate a ďalšími poskytovateľmi obsahu.
-
-* optimalizované pre displej zariadenia s elektronickým atramentom (e-ink): vlastné používateľské rozhranie bez animácií, so stránkovanými ponukami menu, nastaviteľným kontrastom textu a jednoduchým priblížením na prispôsobenie obsahu alebo stránky v stránkovaných médiách.
-
-* rozšíriteľný prostredníctvom zásuvných modulov
-
-* a oveľa viac: vyhľadávanie slov pomocou slovníkov StarDict / Wikipédie, pridanie vlastných online katalógov OPDS a kanálov RSS, online aktualizácie softvéru cez internet, klient FTP, server SSH, ...
-
+<p>KOReader je čítačka elektronických kníh optimalizovaná pre obrazovky s elektronickým atramentom. Dokáže otvoriť mnoho formátov a poskytuje pokročilé úpravy textu.</p>
+<p>Nižšie nájdete výber z mnohých funkcií:</p>
+<ul>
+  <li>Podporuje ako pevné formáty stránok (PDF, DjVu, CBT, CBZ), tak aj formáty elektronických kníh (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Naskenované dokumenty PDF&#47;DjVu je možné preformátovať. Špeciálne smery toku na čítanie dvojstĺpcových PDF a manga.</li>
+  <li>Viacjazyčné používateľské rozhranie optimalizované pre obrazovky s elektronickým atramentom. Vysoko prispôsobiteľný vzhľad čítačky s kompletnými možnosťami sadzby textu. Súčasťou sú viacjazyčné slovníky delenia slov.</li>
+  <li>Podpora nelatinského písma pre knihy vrátane hebrejčiny, arabčiny, perzštiny, ruštiny, čínštiny, japončiny a kórejčiny.</li>
+  <li>Jedinečné funkcie knižnej mapy a prehliadača stránok pre navigáciu v knihe.</li>
+  <li>Špeciálny viacstránkový režim zvýraznenia s mnohými lokálnymi a online možnosťami exportu.</li>
+  <li>Dokáže synchronizovať váš priebeh čítania na všetkých vašich zariadeniach, na ktorých beží KOReader.</li>
+  <li>Integrované s Calibre, Wallabag, Wikipediou, Google Prekladačom a ďalšími poskytovateľmi obsahu.</li>
+</ul>
