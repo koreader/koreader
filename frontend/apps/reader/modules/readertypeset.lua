@@ -515,8 +515,8 @@ Margins set to:
 
 Tap to dismiss.]]),
             optionsutil.formatFlexSize(margins[1]),
-            optionsutil.formatFlexSize(margins[2]),
             optionsutil.formatFlexSize(margins[3]),
+            optionsutil.formatFlexSize(margins[2]),
             optionsutil.formatFlexSize(margins[4]),
             self.view.footer.reclaim_height and 0 or self.view.footer:getHeight()),
             dismiss_callback = when_applied_callback,
