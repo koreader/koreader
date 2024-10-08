@@ -48,48 +48,50 @@ end
 if Device:hasKeyboard() then
     local hotkeyshortcuts_list_haskeyboard = {
         modifier_plus_menu          = _("Shift + Menu"),
+        -- NOTE: we will use 'alt' for kindles and 'ctrl' for other devices with keyboards
+        -- but for simplicity we will use in code 'alt+keys' as the array's key for all.
         -- alt+cursor
-        alt_plus_up                 = Device:hasSymKey() and _("Alt + Up")      or _("Alt or Ctrl + Up"),
-        alt_plus_down               = Device:hasSymKey() and _("Alt + Down")    or _("Alt or Ctrl + Down"),
-        alt_plus_left               = Device:hasSymKey() and _("Alt + Left")    or _("Alt or Ctrl + Left"),
-        alt_plus_right              = Device:hasSymKey() and _("Alt + Right")   or _("Alt or Ctrl + Right"),
+        alt_plus_up                 = Device:hasSymKey() and _("Alt + Up")      or _("Ctrl + Up"),
+        alt_plus_down               = Device:hasSymKey() and _("Alt + Down")    or _("Ctrl + Down"),
+        alt_plus_left               = Device:hasSymKey() and _("Alt + Left")    or _("Ctrl + Left"),
+        alt_plus_right              = Device:hasSymKey() and _("Alt + Right")   or _("Ctrl + Right"),
         -- alt+page_turn
-        alt_plus_left_page_back     = Device:hasSymKey() and _("Alt + LPgBack") or _("Alt or Ctrl + LPgBack"),
-        alt_plus_left_page_forward  = Device:hasSymKey() and _("Alt + LPgFwd")  or _("Alt or Ctrl + LPgFwd"),
-        alt_plus_right_page_back    = Device:hasSymKey() and _("Alt + RPgBack") or _("Alt or Ctrl + RPgBack"),
-        alt_plus_right_page_forward = Device:hasSymKey() and _("Alt + RPgFwd")  or _("Alt or Ctrl + RPgFwd"),
+        alt_plus_left_page_back     = Device:hasSymKey() and _("Alt + LPgBack") or _("Ctrl + LPgBack"),
+        alt_plus_left_page_forward  = Device:hasSymKey() and _("Alt + LPgFwd")  or _("Ctrl + LPgFwd"),
+        alt_plus_right_page_back    = Device:hasSymKey() and _("Alt + RPgBack") or _("Ctrl + RPgBack"),
+        alt_plus_right_page_forward = Device:hasSymKey() and _("Alt + RPgFwd")  or _("Ctrl + RPgFwd"),
         -- alt+fn_keys
-        alt_plus_back               = Device:hasSymKey() and _("Alt + Back")    or _("Alt or Ctrl + Back"),
-        alt_plus_home               = Device:hasSymKey() and _("Alt + Home")    or _("Alt or Ctrl + Home"),
-        alt_plus_press              = Device:hasSymKey() and _("Alt + Press")   or _("Alt or Ctrl + Press"),
-        alt_plus_menu               = Device:hasSymKey() and _("Alt + Menu")    or _("Alt or Ctrl + Menu"),
+        alt_plus_back               = Device:hasSymKey() and _("Alt + Back")    or _("Ctrl + Back"),
+        alt_plus_home               = Device:hasSymKey() and _("Alt + Home")    or _("Ctrl + Home"),
+        alt_plus_press              = Device:hasSymKey() and _("Alt + Press")   or _("Ctrl + Press"),
+        alt_plus_menu               = Device:hasSymKey() and _("Alt + Menu")    or _("Ctrl + Menu"),
         -- alt+alphabet
-        alt_plus_a = Device:hasSymKey() and _("Alt + A") or _("Alt or Ctrl + A"),
-        alt_plus_b = Device:hasSymKey() and _("Alt + B") or _("Alt or Ctrl + B"),
-        alt_plus_c = Device:hasSymKey() and _("Alt + C") or _("Alt or Ctrl + C"),
-        alt_plus_d = Device:hasSymKey() and _("Alt + D") or _("Alt or Ctrl + D"),
-        alt_plus_e = Device:hasSymKey() and _("Alt + E") or _("Alt or Ctrl + E"),
-        alt_plus_f = Device:hasSymKey() and _("Alt + F") or _("Alt or Ctrl + F"),
-        alt_plus_g = Device:hasSymKey() and _("Alt + G") or _("Alt or Ctrl + G"),
-        alt_plus_h = Device:hasSymKey() and _("Alt + H") or _("Alt or Ctrl + H"),
-        alt_plus_i = Device:hasSymKey() and _("Alt + I") or _("Alt or Ctrl + I"),
-        alt_plus_j = Device:hasSymKey() and _("Alt + J") or _("Alt or Ctrl + J"),
-        alt_plus_k = Device:hasSymKey() and _("Alt + K") or _("Alt or Ctrl + K"),
-        alt_plus_l = Device:hasSymKey() and _("Alt + L") or _("Alt or Ctrl + L"),
-        alt_plus_m = Device:hasSymKey() and _("Alt + M") or _("Alt or Ctrl + M"),
-        alt_plus_n = Device:hasSymKey() and _("Alt + N") or _("Alt or Ctrl + N"),
-        alt_plus_o = Device:hasSymKey() and _("Alt + O") or _("Alt or Ctrl + O"),
-        alt_plus_p = Device:hasSymKey() and _("Alt + P") or _("Alt or Ctrl + P"),
-        alt_plus_q = Device:hasSymKey() and _("Alt + Q") or _("Alt or Ctrl + Q"),
-        alt_plus_r = Device:hasSymKey() and _("Alt + R") or _("Alt or Ctrl + R"),
-        alt_plus_s = Device:hasSymKey() and _("Alt + S") or _("Alt or Ctrl + S"),
-        alt_plus_t = Device:hasSymKey() and _("Alt + T") or _("Alt or Ctrl + T"),
-        alt_plus_u = Device:hasSymKey() and _("Alt + U") or _("Alt or Ctrl + U"),
-        alt_plus_v = Device:hasSymKey() and _("Alt + V") or _("Alt or Ctrl + V"),
-        alt_plus_w = Device:hasSymKey() and _("Alt + W") or _("Alt or Ctrl + W"),
-        alt_plus_x = Device:hasSymKey() and _("Alt + X") or _("Alt or Ctrl + X"),
-        alt_plus_y = Device:hasSymKey() and _("Alt + Y") or _("Alt or Ctrl + Y"),
-        alt_plus_z = Device:hasSymKey() and _("Alt + Z") or _("Alt or Ctrl + Z"),
+        alt_plus_a = Device:hasSymKey() and _("Alt + A") or _("Ctrl + A"),
+        alt_plus_b = Device:hasSymKey() and _("Alt + B") or _("Ctrl + B"),
+        alt_plus_c = Device:hasSymKey() and _("Alt + C") or _("Ctrl + C"),
+        alt_plus_d = Device:hasSymKey() and _("Alt + D") or _("Ctrl + D"),
+        alt_plus_e = Device:hasSymKey() and _("Alt + E") or _("Ctrl + E"),
+        alt_plus_f = Device:hasSymKey() and _("Alt + F") or _("Ctrl + F"),
+        alt_plus_g = Device:hasSymKey() and _("Alt + G") or _("Ctrl + G"),
+        alt_plus_h = Device:hasSymKey() and _("Alt + H") or _("Ctrl + H"),
+        alt_plus_i = Device:hasSymKey() and _("Alt + I") or _("Ctrl + I"),
+        alt_plus_j = Device:hasSymKey() and _("Alt + J") or _("Ctrl + J"),
+        alt_plus_k = Device:hasSymKey() and _("Alt + K") or _("Ctrl + K"),
+        alt_plus_l = Device:hasSymKey() and _("Alt + L") or _("Ctrl + L"),
+        alt_plus_m = Device:hasSymKey() and _("Alt + M") or _("Ctrl + M"),
+        alt_plus_n = Device:hasSymKey() and _("Alt + N") or _("Ctrl + N"),
+        alt_plus_o = Device:hasSymKey() and _("Alt + O") or _("Ctrl + O"),
+        alt_plus_p = Device:hasSymKey() and _("Alt + P") or _("Ctrl + P"),
+        alt_plus_q = Device:hasSymKey() and _("Alt + Q") or _("Ctrl + Q"),
+        alt_plus_r = Device:hasSymKey() and _("Alt + R") or _("Ctrl + R"),
+        alt_plus_s = Device:hasSymKey() and _("Alt + S") or _("Ctrl + S"),
+        alt_plus_t = Device:hasSymKey() and _("Alt + T") or _("Ctrl + T"),
+        alt_plus_u = Device:hasSymKey() and _("Alt + U") or _("Ctrl + U"),
+        alt_plus_v = Device:hasSymKey() and _("Alt + V") or _("Ctrl + V"),
+        alt_plus_w = Device:hasSymKey() and _("Alt + W") or _("Ctrl + W"),
+        alt_plus_x = Device:hasSymKey() and _("Alt + X") or _("Ctrl + X"),
+        alt_plus_y = Device:hasSymKey() and _("Alt + Y") or _("Ctrl + Y"),
+        alt_plus_z = Device:hasSymKey() and _("Alt + Z") or _("Ctrl + Z"),
     }
     util.tableMerge(hotkeyshortcuts_list, hotkeyshortcuts_list_haskeyboard)
 end
@@ -135,97 +137,87 @@ end
 }, ]]
 
 function HotKeyShortcuts:registerKeyEvents()
+    self.key_events = {}
+    local key_name_mapping = {
+        LPgBack = "left_page_back",   RPgBack = "right_page_back",
+        LPgFwd = "left_page_forward",  RPgFwd = "right_page_forward",
+    }
+
+    local function addKeyEvent(modifier, key, event, args)
+        self.key_events[modifier .. key] = { { modifier, key }, event = event, args = args }
+    end
+    
+    local function addKeyEvents(modifier, keys, event, args_prefix)
+        for _, key in ipairs(keys) do
+            local mapped_key = key_name_mapping[key] or key:lower()
+            addKeyEvent(modifier, key, event, args_prefix .. mapped_key)
+        end
+    end
+
+    local cursor_keys = { "Up", "Down", "Left", "Right" }
+    local page_turn_keys = { "LPgBack", "LPgFwd", "RPgBack", "RPgFwd" }
+    local function_keys = { "Back", "Home", "Press" }
+
     if Device:hasScreenKB() then
-        self.key_events.ModPlusUp   = { { "ScreenKB",    "Up" }, event = "HotkeyAction", args = "modifier_plus_up" }
-        self.key_events.ModPlusDown = { { "ScreenKB",  "Down" }, event = "HotkeyAction", args = "modifier_plus_down" }
-        self.key_events.ModPlusLeft = { { "ScreenKB",  "Left" }, event = "HotkeyAction", args = "modifier_plus_left" }
-        self.key_events.ModPlusRght = { { "ScreenKB", "Right" }, event = "HotkeyAction", args = "modifier_plus_right" }
+        addKeyEvents("ScreenKB", cursor_keys, "HotkeyAction", "modifier_plus_")
         if not self.is_docless then
-            self.key_events.ModPlusLPgB = { { "ScreenKB", "LPgBack" }, event = "HotkeyAction", args = "modifier_plus_left_page_back" }
-            self.key_events.ModPlusLPgF = { { "ScreenKB",  "LPgFwd" }, event = "HotkeyAction", args = "modifier_plus_left_page_forward" }
-            self.key_events.ModPlusRPgB = { { "ScreenKB", "RPgBack" }, event = "HotkeyAction", args = "modifier_plus_right_page_back" }
-            self.key_events.ModPlusRPgF = { { "ScreenKB",  "RPgFwd" }, event = "HotkeyAction", args = "modifier_plus_right_page_forward" }
-            self.key_events.ModPlusPrss = { { "ScreenKB",   "Press" }, event = "HotkeyAction", args = "modifier_plus_press" }
+            addKeyEvents("ScreenKB", page_turn_keys, "HotkeyAction", "modifier_plus_")
+            addKeyEvent("ScreenKB", "Press", "HotkeyAction", "modifier_plus_press")
             if G_reader_settings:isTrue("press_key_does_hotkeyshortcuts") then
                 self.key_events.Press = { { "Press" }, event = "HotkeyAction", args = "press" }
             end
         end
-        self.key_events.ModPlusBack = { { "ScreenKB", "Back" }, event = "HotkeyAction", args = "modifier_plus_back" }
-        self.key_events.ModPlusHome = { { "ScreenKB", "Home" }, event = "HotkeyAction", args = "modifier_plus_home" }
-        -- no event for screenkb+menu
+        addKeyEvent("ScreenKB", "Back", "HotkeyAction", "modifier_plus_back")
+        addKeyEvent("ScreenKB", "Home", "HotkeyAction", "modifier_plus_home")
     else
-        self.key_events.ModPlusUp   = { { "Shift",    "Up" }, event = "HotkeyAction", args = "modifier_plus_up" }
-        self.key_events.ModPlusDown = { { "Shift",  "Down" }, event = "HotkeyAction", args = "modifier_plus_down" }
-        self.key_events.ModPlusLeft = { { "Shift",  "Left" }, event = "HotkeyAction", args = "modifier_plus_left" }
-        self.key_events.ModPlusRght = { { "Shift", "Right" }, event = "HotkeyAction", args = "modifier_plus_right" }
+        addKeyEvents("Shift", cursor_keys, "HotkeyAction", "modifier_plus_")
         if not self.is_docless then
-            self.key_events.ModPlusLPgB = { { "Shift", "LPgBack" }, event = "HotkeyAction", args = "modifier_plus_left_page_back" }
-            self.key_events.ModPlusLPgF = { { "Shift",  "LPgFwd" }, event = "HotkeyAction", args = "modifier_plus_left_page_forward" }
-            self.key_events.ModPlusRPgB = { { "Shift", "RPgBack" }, event = "HotkeyAction", args = "modifier_plus_right_page_back" }
-            self.key_events.ModPlusRPgF = { { "Shift",  "RPgFwd" }, event = "HotkeyAction", args = "modifier_plus_right_page_forward" }
-            self.key_events.ModPlusPrss = { { "Shift",   "Press" }, event = "HotkeyAction", args = "modifier_plus_press" }
+            addKeyEvents("Shift", page_turn_keys, "HotkeyAction", "modifier_plus_")
+            addKeyEvent("Shift", "Press", "HotkeyAction", "modifier_plus_press")
             if G_reader_settings:isTrue("press_key_does_hotkeyshortcuts") then
                 self.key_events.Press = { { "Press" }, event = "HotkeyAction", args = "press" }
             end
         end
-        self.key_events.ModPlusBack = { { "Shift", "Back" }, event = "HotkeyAction", args = "modifier_plus_back" }
-        self.key_events.ModPlusHome = { { "Shift", "Home" }, event = "HotkeyAction", args = "modifier_plus_home" }
-        self.key_events.ModPlusMenu = { { "Shift", "Menu" }, event = "HotkeyAction", args = "modifier_plus_menu" }
+        addKeyEvent("Shift", "Back", "HotkeyAction", "modifier_plus_back")
+        addKeyEvent("Shift", "Home", "HotkeyAction", "modifier_plus_home")
+        addKeyEvent("Shift", "Menu", "HotkeyAction", "modifier_plus_menu")
     end
 
     if Device:hasKeyboard() then
-        self.key_events.AltPlusUp   = { { "Alt",      "Up" }, { "Ctrl",      "Up" }, event = "HotkeyAction", args = "alt_plus_up" }
-        self.key_events.AltPlusDown = { { "Alt",    "Down" }, { "Ctrl",    "Down" }, event = "HotkeyAction", args = "alt_plus_down" }
-        self.key_events.AltPlusLeft = { { "Alt",    "Left" }, { "Ctrl",    "Left" }, event = "HotkeyAction", args = "alt_plus_left" }
-        self.key_events.AltPlusRght = { { "Alt",   "Right" }, { "Ctrl",   "Right" }, event = "HotkeyAction", args = "alt_plus_right" }
-        self.key_events.AltPlusLPgB = { { "Alt", "LPgBack" }, { "Ctrl", "LPgBack" }, event = "HotkeyAction", args = "alt_plus_left_page_back" }
-        self.key_events.AltPlusLPgF = { { "Alt",  "LPgFwd" }, { "Ctrl",  "LPgFwd" }, event = "HotkeyAction", args = "alt_plus_left_page_forward" }
-        self.key_events.AltPlusRPgB = { { "Alt", "RPgBack" }, { "Ctrl", "RPgBack" }, event = "HotkeyAction", args = "alt_plus_right_page_back" }
-        self.key_events.AltPlusRPgF = { { "Alt",  "RPgFwd" }, { "Ctrl",  "RPgFwd" }, event = "HotkeyAction", args = "alt_plus_right_page_forward" }
-        self.key_events.AltPlusPrss = { { "Alt",   "Press" }, { "Ctrl",   "Press" }, event = "HotkeyAction", args = "alt_plus_press" }
-        self.key_events.AltPlusBack = { { "Alt",    "Back" }, { "Ctrl",    "Back" }, event = "HotkeyAction", args = "alt_plus_back" }
-        self.key_events.AltPlusHome = { { "Alt",    "Home" }, { "Ctrl",    "Home" }, event = "HotkeyAction", args = "alt_plus_home" }
-        self.key_events.AltPlusMenu = { { "Alt",    "Menu" }, { "Ctrl",    "Menu" }, event = "HotkeyAction", args = "alt_plus_menu" }
-        -- alphabet keys
         if Device.k3_alt_plus_key_kernel_translated then
-            self.key_events.AltPlusQ = { { Device.k3_alt_plus_key_kernel_translated["Q"] }, event = "HotkeyAction", args = "alt_plus_q" }
-            self.key_events.AltPlusW = { { Device.k3_alt_plus_key_kernel_translated["W"] }, event = "HotkeyAction", args = "alt_plus_w" }
-            self.key_events.AltPlusE = { { Device.k3_alt_plus_key_kernel_translated["E"] }, event = "HotkeyAction", args = "alt_plus_e" }
-            self.key_events.AltPlusR = { { Device.k3_alt_plus_key_kernel_translated["R"] }, event = "HotkeyAction", args = "alt_plus_r" }
-            self.key_events.AltPlusT = { { Device.k3_alt_plus_key_kernel_translated["T"] }, event = "HotkeyAction", args = "alt_plus_t" }
-            self.key_events.AltPlusY = { { Device.k3_alt_plus_key_kernel_translated["Y"] }, event = "HotkeyAction", args = "alt_plus_y" }
-            self.key_events.AltPlusU = { { Device.k3_alt_plus_key_kernel_translated["U"] }, event = "HotkeyAction", args = "alt_plus_u" }
-            self.key_events.AltPlusI = { { Device.k3_alt_plus_key_kernel_translated["I"] }, event = "HotkeyAction", args = "alt_plus_i" }
-            self.key_events.AltPlusO = { { Device.k3_alt_plus_key_kernel_translated["O"] }, event = "HotkeyAction", args = "alt_plus_o" }
-            self.key_events.AltPlusP = { { Device.k3_alt_plus_key_kernel_translated["P"] }, event = "HotkeyAction", args = "alt_plus_p" }
+            addKeyEvents("Alt", cursor_keys, "HotkeyAction", "alt_plus_")
+            addKeyEvents("Alt", page_turn_keys, "HotkeyAction", "alt_plus_")
+            addKeyEvents("Alt", function_keys, "HotkeyAction", "alt_plus_")
+            addKeyEvent("Alt", "Menu", "HotkeyAction", "alt_plus_menu")
+            -- Add the infamous top row keys, with kernel issues
+            local top_row_keys = { "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P" }
+            for _, key in ipairs(top_row_keys) do
+                self.key_events["AltPlus" .. key] = {
+                    { Device.k3_alt_plus_key_kernel_translated[key] },
+                    event = "HotkeyAction",
+                    args = "alt_plus_" .. key:lower()
+                }
+            end
+            -- Add the rest of the alphabet keys
+            local remaining_keys = { "A", "S", "D", "F", "G", "H", "J", "K", "L", "Z", "X", "C", "V", "B", "N", "M" }
+            addKeyEvents("Alt", remaining_keys, "HotkeyAction", "alt_plus_")
+        elseif Device:hasSymKey() then
+            local alphabet_keys = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
+                "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" }
+            addKeyEvents("Alt", cursor_keys, "HotkeyAction", "alt_plus_")
+            addKeyEvents("Alt", page_turn_keys, "HotkeyAction", "alt_plus_")
+            addKeyEvents("Alt", function_keys, "HotkeyAction", "alt_plus_")
+            addKeyEvent("Alt", "Menu", "HotkeyAction", "alt_plus_menu")
+            addKeyEvents("Alt", alphabet_keys, "HotkeyAction", "alt_plus_")
         else
-            self.key_events.AltPlusQ = { { "Alt", "Q" }, { "Ctrl", "Q" }, event = "HotkeyAction", args = "alt_plus_q" }
-            self.key_events.AltPlusW = { { "Alt", "W" }, { "Ctrl", "W" }, event = "HotkeyAction", args = "alt_plus_w" }
-            self.key_events.AltPlusE = { { "Alt", "E" }, { "Ctrl", "E" }, event = "HotkeyAction", args = "alt_plus_e" }
-            self.key_events.AltPlusR = { { "Alt", "R" }, { "Ctrl", "R" }, event = "HotkeyAction", args = "alt_plus_r" }
-            self.key_events.AltPlusT = { { "Alt", "T" }, { "Ctrl", "T" }, event = "HotkeyAction", args = "alt_plus_t" }
-            self.key_events.AltPlusY = { { "Alt", "Y" }, { "Ctrl", "Y" }, event = "HotkeyAction", args = "alt_plus_y" }
-            self.key_events.AltPlusU = { { "Alt", "U" }, { "Ctrl", "U" }, event = "HotkeyAction", args = "alt_plus_u" }
-            self.key_events.AltPlusI = { { "Alt", "I" }, { "Ctrl", "I" }, event = "HotkeyAction", args = "alt_plus_i" }
-            self.key_events.AltPlusO = { { "Alt", "O" }, { "Ctrl", "O" }, event = "HotkeyAction", args = "alt_plus_o" }
-            self.key_events.AltPlusP = { { "Alt", "P" }, { "Ctrl", "P" }, event = "HotkeyAction", args = "alt_plus_p" }
+            local alphabet_keys = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
+                "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" }
+            addKeyEvents("Ctrl", cursor_keys, "HotkeyAction", "alt_plus_")
+            addKeyEvents("Ctrl", page_turn_keys, "HotkeyAction", "alt_plus_")
+            addKeyEvents("Ctrl", function_keys, "HotkeyAction", "alt_plus_")
+            addKeyEvent("Ctrl", "Menu", "HotkeyAction", "alt_plus_menu")
+            addKeyEvents("Ctrl", alphabet_keys, "HotkeyAction", "alt_plus_")
         end
-        self.key_events.AltPlusA = { { "Alt", "A" }, { "Ctrl", "A" }, event = "HotkeyAction", args = "alt_plus_a" }
-        self.key_events.AltPlusS = { { "Alt", "S" }, { "Ctrl", "S" }, event = "HotkeyAction", args = "alt_plus_s" }
-        self.key_events.AltPlusD = { { "Alt", "D" }, { "Ctrl", "D" }, event = "HotkeyAction", args = "alt_plus_d" }
-        self.key_events.AltPlusF = { { "Alt", "F" }, { "Ctrl", "F" }, event = "HotkeyAction", args = "alt_plus_f" }
-        self.key_events.AltPlusG = { { "Alt", "G" }, { "Ctrl", "G" }, event = "HotkeyAction", args = "alt_plus_g" }
-        self.key_events.AltPlusH = { { "Alt", "H" }, { "Ctrl", "H" }, event = "HotkeyAction", args = "alt_plus_h" }
-        self.key_events.AltPlusJ = { { "Alt", "J" }, { "Ctrl", "J" }, event = "HotkeyAction", args = "alt_plus_j" }
-        self.key_events.AltPlusK = { { "Alt", "K" }, { "Ctrl", "K" }, event = "HotkeyAction", args = "alt_plus_k" }
-        self.key_events.AltPlusL = { { "Alt", "L" }, { "Ctrl", "L" }, event = "HotkeyAction", args = "alt_plus_l" }
-        self.key_events.AltPlusZ = { { "Alt", "Z" }, { "Ctrl", "Z" }, event = "HotkeyAction", args = "alt_plus_z" }
-        self.key_events.AltPlusX = { { "Alt", "X" }, { "Ctrl", "X" }, event = "HotkeyAction", args = "alt_plus_x" }
-        self.key_events.AltPlusC = { { "Alt", "C" }, { "Ctrl", "C" }, event = "HotkeyAction", args = "alt_plus_c" }
-        self.key_events.AltPlusV = { { "Alt", "V" }, { "Ctrl", "V" }, event = "HotkeyAction", args = "alt_plus_v" }
-        self.key_events.AltPlusB = { { "Alt", "B" }, { "Ctrl", "B" }, event = "HotkeyAction", args = "alt_plus_b" }
-        self.key_events.AltPlusN = { { "Alt", "N" }, { "Ctrl", "N" }, event = "HotkeyAction", args = "alt_plus_n" }
-        self.key_events.AltPlusM = { { "Alt", "M" }, { "Ctrl", "M" }, event = "HotkeyAction", args = "alt_plus_m" }
     end
 end
 
