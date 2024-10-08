@@ -78,10 +78,10 @@ When unchecked, the default rotation of the file browser and the default/saved r
         })
 
         if FileManager.instance then
-            table.insert(rotation_table, genMenuItem(C_("Rotation", "⤹ 90°"), Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE))
-            table.insert(rotation_table, genMenuItem(C_("Rotation", "↑ 0°"), Screen.DEVICE_ROTATED_UPRIGHT))
-            table.insert(rotation_table, genMenuItem(C_("Rotation", "⤸ 90°"), Screen.DEVICE_ROTATED_CLOCKWISE))
-            table.insert(rotation_table, genMenuItem(C_("Rotation", "↓ 180°"), Screen.DEVICE_ROTATED_UPSIDE_DOWN))
+            local optionsutil = require("ui/data/optionsutil")
+            for i, mode in ipairs(optionsutil.rotation_modes) do
+                table.insert(rotation_table, genMenuItem(optionsutil.rotation_labels[i], mode))
+            end
         end
 
         rotation_table[#rotation_table].separator = true
