@@ -138,12 +138,30 @@ function Profiles:getSubMenuItems()
             },
             {
                 text = _("Auto-execute"),
+                checked_func = function()
+                    for _, profiles in pairs(self.autoexec) do
+                        if profiles[k] then
+                            return true
+                        end
+                    end
+                end,
                 sub_item_table = {
                     self:genAutoExecMenuItem(_("on KOReader start"), "Start", k),
                     self:genAutoExecMenuItem(_("on document opening"), "ReaderReady", k),
                     self:genAutoExecMenuItem(_("on document closing"), "CloseDocument", k),
                     self:genAutoExecMenuItem(_("on rotation"), "SetRotationMode", k),
                 },
+                hold_callback = function(touchmenu_instance)
+                    for event, profiles in pairs(self.autoexec) do
+                        if profiles[k] then
+                            self.autoexec[event][k] = nil
+                            if next(self.autoexec[event]) == nil then
+                                self.autoexec[event] = nil
+                            end
+                        end
+                    end
+                    touchmenu_instance:updateItems()
+                end,
                 separator = true,
             },
             {
