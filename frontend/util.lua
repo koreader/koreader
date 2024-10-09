@@ -1071,6 +1071,17 @@ function util.partialMD5(filepath)
     return update()
 end
 
+function util.readFromFile(filepath, mode)
+    if not filepath then return end
+    local file, err = io.open(filepath, mode)
+    if not file then
+        return nil, err
+    end
+    local data = file:read("*all")
+    file:close()
+    return data
+end
+
 function util.writeToFile(data, filepath, force_flush, lua_dofile_ready, directory_updated)
     if not filepath then return end
     if lua_dofile_ready then
