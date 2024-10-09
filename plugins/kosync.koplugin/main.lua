@@ -626,7 +626,7 @@ function KOSync:syncToProgress(progress)
     end
 end
 
-function KOSync:updateProgress(ensure_networking, interactive, refresh_on_success)
+function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
     if not self.settings.username or not self.settings.userkey then
         if interactive then
             promptLogin()
@@ -640,7 +640,7 @@ function KOSync:updateProgress(ensure_networking, interactive, refresh_on_succes
         return
     end
 
-    if ensure_networking and NetworkMgr:willRerunWhenOnline(function() self:updateProgress(ensure_networking, interactive, refresh_on_success) end) then
+    if ensure_networking and NetworkMgr:willRerunWhenOnline(function() self:updateProgress(ensure_networking, interactive, on_suspend) end) then
         return
     end
 
@@ -680,7 +680,7 @@ function KOSync:updateProgress(ensure_networking, interactive, refresh_on_succes
         if err then logger.dbg("err:", err) end
     else
         -- This is solely for onSuspend's sake, to clear the ghosting left by the "Connected" InfoMessage
-        if refresh_on_success then
+        if on_suspend then
             -- Our top-level widget should be the "Connected to network" InfoMessage from NetworkMgr's reconnectOrShowNetworkMenu
             local widget = UIManager:getTopmostVisibleWidget()
             if widget and widget.modal and widget.tag == "NetworkMgr" and not widget.dismiss_callback then
@@ -690,6 +690,15 @@ function KOSync:updateProgress(ensure_networking, interactive, refresh_on_succes
                     UIManager:setDirty(nil, "full")
                 end
             end
+        end
+    end
+
+    if on_suspend then
+        -- NOTE: We want to murder Wi-Fi once we're done in this specific case (i.e., Suspend),
+        --       because some of our hasWifiManager targets will horribly implode when attempting to suspend with the Wi-Fi chip powered on,
+        --       and they'll have attempted to kill Wi-Fi well before *we* run (e.g., in `Device:onPowerEvent`, *before* actually sending the Suspend Event)...
+        if Device:hasWifiManager() then
+            NetworkMgr:disableWifi()
         end
     end
 
