@@ -49,7 +49,7 @@ if Device:hasKeyboard() then
     local hotkeyshortcuts_list_haskeyboard = {
         modifier_plus_menu          = _("Shift + Menu"),
         -- NOTE: we will use 'alt' for kindles and 'ctrl' for other devices with keyboards
-        -- but for simplicity we will use in code 'alt+keys' as the array's key for all.
+        --       but for simplicity we will use in code 'alt+keys' as the array's key for all.
         -- alt+cursor
         alt_plus_up                 = Device:hasSymKey() and _("Alt + Up")      or _("Ctrl + Up"),
         alt_plus_down               = Device:hasSymKey() and _("Alt + Down")    or _("Ctrl + Down"),
@@ -146,7 +146,7 @@ function HotKeyShortcuts:registerKeyEvents()
     local function addKeyEvent(modifier, key, event, args)
         self.key_events[modifier .. key] = { { modifier, key }, event = event, args = args }
     end
-    
+
     local function addKeyEvents(modifier, keys, event, args_prefix)
         for _, key in ipairs(keys) do
             local mapped_key = key_name_mapping[key] or key:lower()
@@ -399,7 +399,7 @@ end
 
 function HotKeyShortcuts:updateProfiles(action_old_name, action_new_name)
     for _, section in ipairs({ "hotkeyshortcuts_fm", "hotkeyshortcuts_reader" }) do
-        local hotkeyshortcuts = self.settings_data.data[section]
+       local hotkeyshortcuts = self.settings_data.data[section]
         for shortcut_name, shortcut in pairs(hotkeyshortcuts) do
             if shortcut[action_old_name] then
                 if shortcut.settings and shortcut.settings.order then
