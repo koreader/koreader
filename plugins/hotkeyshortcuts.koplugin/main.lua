@@ -138,6 +138,7 @@ end
 
 function HotKeyShortcuts:registerKeyEvents()
     self.key_events = {}
+    self:overwriteConflictingFunctions()
     local key_name_mapping = {
         LPgBack = "left_page_back",   RPgBack = "right_page_back",
         LPgFwd = "left_page_forward",  RPgFwd = "right_page_forward",
@@ -204,16 +205,15 @@ function HotKeyShortcuts:registerKeyEvents()
         else
             local alphabet_keys = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
                 "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" }
-            local second_modifier = Device:hasSymKey() and "Alt" or "Ctrl" 
+            local second_modifier = Device:hasSymKey() and "Alt" or "Ctrl"
             addKeyEvents(second_modifier, cursor_keys, "HotkeyAction", "alt_plus_")
             addKeyEvents(second_modifier, page_turn_keys, "HotkeyAction", "alt_plus_")
             addKeyEvents(second_modifier, function_keys, "HotkeyAction", "alt_plus_")
             addKeyEvent(second_modifier, "Menu", "HotkeyAction", "alt_plus_menu")
             addKeyEvents(second_modifier, alphabet_keys, "HotkeyAction", "alt_plus_")
         end
-    end
-    self:shortcutPriority()
-end
+    end -- if hasKeyboard()
+end -- registerKeyEvents()
 
 HotKeyShortcuts.onPhysicalKeyboardConnected = HotKeyShortcuts.registerKeyEvents
 
@@ -384,10 +384,97 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
     end
 end
 
-function HotKeyShortcuts:shortcutPriority()
-    -- Overwrite existing shortcuts with our own hotkeyshortcuts
+function HotKeyShortcuts:overwriteConflictingFunctions()
+    -- Overwrite existing registerKeyEvents() functions where conflict occur
+    local ReaderBookmark = require("apps/reader/modules/readerbookmark")
+    ReaderBookmark.registerKeyEvents = function(self)
+    end
 
-end
+    local ReaderConfig = require("apps/reader/modules/readerconfig")
+    ReaderConfig.registerKeyEvents = function(self)
+        if Device:hasKeys() then
+            if G_reader_settings:isTrue("press_key_does_hotkeyshortcuts") then
+                self.key_events.ShowConfigMenu = { { { "AA" } } }
+            elseif G_reader_settings:nilOrFalse("press_key_does_hotkeyshortcuts") then
+                self.key_events.ShowConfigMenu = { { { "Press", "AA" } } }
+            end
+        end
+    end
+
+    local ReaderDictionary= require("apps/reader/modules/readerdictionary")
+    ReaderDictionary.registerKeyEvents = function(self)
+    end
+
+    local ReaderLink = require("apps/reader/modules/readerlink")
+    ReaderLink.registerKeyEvents = function(self)
+        if Device:hasScreenKB() or Device:hasSymKey() then
+            self.key_events.GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" }
+        end
+    end
+
+    local ReaderSearch = require("apps/reader/modules/readersearch")
+    ReaderSearch.registerKeyEvents = function(self)
+        if Device:hasKeyboard() then
+            self.key_events.ShowFulltextSearchInputBlank = {
+                { "Alt", "Shift", "S" }, { "Ctrl", "Shift", "S" },
+                event = "ShowFulltextSearchInput",
+                args = ""
+            }
+        end
+    end
+
+    local ReaderToc = require("apps/reader/modules/readertoc")
+    ReaderToc.registerKeyEvents = function(self)
+    end
+
+    local ReaderThumbnail = require("apps/reader/modules/readerthumbnail")
+    ReaderToc.registerKeyEvents = function(self)
+    end
+
+    local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
+    ReaderWikipedia.registerKeyEvents = function(self)
+    end
+
+    local ReaderUI = require("apps/reader/readerui")
+    ReaderUI.registerKeyEvents = function(self)
+        if Device:hasKeys() then
+            self.key_events.Home = { { "Home" } }
+            if Device:hasDPad() and Device:useDPadAsActionKeys() then
+                self.key_events.KeyContentSelection = { { { "Up", "Down" } }, event = "StartHighlightIndicator" }
+            end
+        end
+    end
+
+    local FileManager = require("apps/filemanager/filemanager")
+    FileManager.registerKeyEvents = function(self)
+        if Device:hasKeys() then
+            self.key_events.Home = { { "Home" } }
+            -- Override the menu.lua way of handling the back key
+            self.file_chooser.key_events.Back = { { Device.input.group.Back } }
+            if not Device:hasFewKeys() then
+                -- Also remove the handler assigned to the "Back" key by menu.lua
+                self.file_chooser.key_events.Close = nil
+            end
+        end
+    end
+
+    local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
+    FileSearcher.registerKeyEvents = function(self)
+        if Device:hasKeys() then
+            self.key_events.Home = { { "Home" } }
+            if Device:hasDPad() and Device:useDPadAsActionKeys() then
+                self.key_events.KeyContentSelection = { { { "Up", "Down" } }, event = "StartHighlightIndicator" }
+            end
+        end
+    end
+
+    local FileManagerMenu = require("apps/filemanager/filemanagermenu")
+    FileManagerMenu.registerKeyEvents = function(self)
+        if Device:hasKeys() then
+            self.key_events.ShowMenu = { { "Menu" } }
+        end
+    end
+end -- overwriteConflictingFunctions()
 
 function HotKeyShortcuts:onFlushSettings()
     if self.settings_data and self.updated then
