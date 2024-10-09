@@ -201,24 +201,18 @@ function HotKeyShortcuts:registerKeyEvents()
             -- Add the rest of the alphabet keys
             local remaining_keys = { "A", "S", "D", "F", "G", "H", "J", "K", "L", "Z", "X", "C", "V", "B", "N", "M" }
             addKeyEvents("Alt", remaining_keys, "HotkeyAction", "alt_plus_")
-        elseif Device:hasSymKey() then
-            local alphabet_keys = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
-                "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" }
-            addKeyEvents("Alt", cursor_keys, "HotkeyAction", "alt_plus_")
-            addKeyEvents("Alt", page_turn_keys, "HotkeyAction", "alt_plus_")
-            addKeyEvents("Alt", function_keys, "HotkeyAction", "alt_plus_")
-            addKeyEvent("Alt", "Menu", "HotkeyAction", "alt_plus_menu")
-            addKeyEvents("Alt", alphabet_keys, "HotkeyAction", "alt_plus_")
         else
             local alphabet_keys = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
                 "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" }
-            addKeyEvents("Ctrl", cursor_keys, "HotkeyAction", "alt_plus_")
-            addKeyEvents("Ctrl", page_turn_keys, "HotkeyAction", "alt_plus_")
-            addKeyEvents("Ctrl", function_keys, "HotkeyAction", "alt_plus_")
-            addKeyEvent("Ctrl", "Menu", "HotkeyAction", "alt_plus_menu")
-            addKeyEvents("Ctrl", alphabet_keys, "HotkeyAction", "alt_plus_")
+            local second_modifier = Device:hasSymKey() and "Alt" or "Ctrl" 
+            addKeyEvents(second_modifier, cursor_keys, "HotkeyAction", "alt_plus_")
+            addKeyEvents(second_modifier, page_turn_keys, "HotkeyAction", "alt_plus_")
+            addKeyEvents(second_modifier, function_keys, "HotkeyAction", "alt_plus_")
+            addKeyEvent(second_modifier, "Menu", "HotkeyAction", "alt_plus_menu")
+            addKeyEvents(second_modifier, alphabet_keys, "HotkeyAction", "alt_plus_")
         end
     end
+    self:shortcutPriority()
 end
 
 HotKeyShortcuts.onPhysicalKeyboardConnected = HotKeyShortcuts.registerKeyEvents
@@ -388,6 +382,11 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
             }),
         })
     end
+end
+
+function HotKeyShortcuts:shortcutPriority()
+    -- Overwrite existing shortcuts with our own hotkeyshortcuts
+
 end
 
 function HotKeyShortcuts:onFlushSettings()
