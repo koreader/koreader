@@ -1344,6 +1344,14 @@ function Kobo:suspend()
         return
     end
 
+    -- Murder Wi-Fi (again, c.f., `Device:onPowerEvent`) if NetworkMgr is attempting to connect or currently connected...
+    -- (Most likely because of a rerunWhenOnline in a Suspend handler)
+    local network_mgr = require("ui/network/manager")
+    if network_mgr:isWifiOn() or network_mgr.pending_connection then
+        logger.info("Kobo suspend: had to kill Wi-Fi")
+        network_mgr:disableWifi()
+    end
+
     logger.info("Kobo suspend: going to sleep . . .")
     UIManager:unschedule(self.checkUnexpectedWakeup)
     -- NOTE: Sleep as little as possible here, sleeping has a tendency to make
