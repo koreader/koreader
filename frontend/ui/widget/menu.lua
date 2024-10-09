@@ -1202,8 +1202,8 @@ function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch, 
     elseif itemnumber >= 0 then
         itemnumber = math.min(itemnumber, #self.item_table)
         self.page = self:getPageNumber(itemnumber)
-        -- FileChooser should draw focus only when it has focused_path (i.e. itemmatch)
-        if self.path == nil or type(itemmatch) == "table" then
+        -- Draw the focus in FileChooser when it has focused_path (i.e. itemmatch)
+        if self.path ~= nil and type(itemmatch) == "table" then
             self.itemnumber = itemnumber
         end
     end
