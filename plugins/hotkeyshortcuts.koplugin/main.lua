@@ -115,6 +115,11 @@ function HotKeyShortcuts:init()
 end
 
 
+--[[
+    Handles the action triggered by a hotkey press.
+    @param hotkey (string) The identifier for the hotkey that was pressed.
+    @return (boolean) Returns true if the hotkey action was successfully executed, otherwise returns nil.
+]]
 function HotKeyShortcuts:onHotkeyAction(hotkey)
     local action_list = self.hotkeyshortcuts[hotkey]
     if action_list == nil then
@@ -136,9 +141,14 @@ end
     ["swap_right_page_turn_buttons"] = true,
 }, ]]
 
+--[[
+    Description:
+    This function registers key events for the HotKeyShortcuts plugin. It initializes the key events table,
+    overrides conflicting functions, and maps various keys to specific events based on the device's capabilities.
+]]
 function HotKeyShortcuts:registerKeyEvents()
     self.key_events = {}
-    self:overwriteConflictingFunctions()
+    self:overrideConflictingFunctions()
     local key_name_mapping = {
         LPgBack = "left_page_back",   RPgBack = "right_page_back",
         LPgFwd = "left_page_forward",  RPgFwd = "right_page_forward",
@@ -296,6 +306,18 @@ function HotKeyShortcuts:attachNewTableToExistingTable(orig_table, second_table)
     end
 end
 
+--[[
+    This function configures and adds various hotkey shortcuts to the main menu based on the device's capabilities 
+    and user settings. It supports different sets of keys for devices with and without keyboards.
+
+    The function performs the following steps:
+    1. Defines sets of cursor keys, page-turn buttons, and function keys.
+    2. Adds the "press" key to function keys if the corresponding setting is enabled.
+    3. If the device has a keyboard, additional sets of keys (cursor, page-turn, and function keys) are appended.
+    4. Adds a menu item for enabling/disabling the use of the press key for shortcuts.
+    5. Adds a menu item for configuring keyboard shortcuts, including cursor keys, page-turn buttons, and function keys.
+    6. If the device has a keyboard, an additional menu item for alphabet keys is added.
+--]]
 function HotKeyShortcuts:addToMainMenu(menu_items)
     local cursor_keys = {
         "modifier_plus_up",
@@ -384,8 +406,26 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
     end
 end
 
-function HotKeyShortcuts:overwriteConflictingFunctions()
-    -- Overwrite existing registerKeyEvents() functions where conflict occurs
+--[[
+    Description:
+    This function overrides existing `registerKeyEvents()` functions in various modules to resolve conflicts and customize key event handling. 
+    It modifies the key event registration for several reader and file manager modules based on device capabilities and user settings.
+
+    Modules and their modifications:
+    - ReaderBookmark: Overrides `registerKeyEvents()` with an empty function.
+    - ReaderConfig: Customizes `ShowConfigMenu` key event based on user settings.
+    - ReaderDictionary: Overrides `registerKeyEvents()` with an empty function.
+    - ReaderLink: Customizes `GotoSelectedPageLink` key event for devices with screen keyboard or symbol key.
+    - ReaderSearch: Customizes `ShowFulltextSearchInputBlank` key event for devices with a keyboard.
+    - ReaderToc: Overrides `registerKeyEvents()` with an empty function.
+    - ReaderThumbnail: Overrides `registerKeyEvents()` with an empty function.
+    - ReaderWikipedia: Overrides `registerKeyEvents()` with an empty function.
+    - ReaderUI: Customizes `Home` and `KeyContentSelection` key events based on device capabilities.
+    - FileManager: Customizes `Home` and `Back` key events, and conditionally removes `Close` key event.
+    - FileSearcher: Customizes `Home` and `KeyContentSelection` key events based on device capabilities.
+    - FileManagerMenu: Customizes `ShowMenu` key event for devices with keys.
+]]
+function HotKeyShortcuts:overrideConflictingFunctions()
     local ReaderBookmark = require("apps/reader/modules/readerbookmark")
     ReaderBookmark.registerKeyEvents = function(self)
     end
@@ -474,8 +514,12 @@ function HotKeyShortcuts:overwriteConflictingFunctions()
             self.key_events.ShowMenu = { { "Menu" } }
         end
     end
-end -- overwriteConflictingFunctions()
+end -- overrideConflictingFunctions()
 
+--[[
+    This function checks if the `settings_data` exists and if it has been marked as updated.
+    If both conditions are met, it flushes the `settings_data` and resets the `updated` flag to false.
+--]]
 function HotKeyShortcuts:onFlushSettings()
     if self.settings_data and self.updated then
         self.settings_data:flush()
