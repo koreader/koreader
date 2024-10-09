@@ -385,13 +385,13 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
 end
 
 function HotKeyShortcuts:overwriteConflictingFunctions()
-    -- Overwrite existing registerKeyEvents() functions where conflict occur
+    -- Overwrite existing registerKeyEvents() functions where conflict occurs
     local ReaderBookmark = require("apps/reader/modules/readerbookmark")
-    ReaderBookmark.registerKeyEvents = function(self)
+    ReaderBookmark.registerKeyEvents = function()
     end
 
     local ReaderConfig = require("apps/reader/modules/readerconfig")
-    ReaderConfig.registerKeyEvents = function(self)
+    ReaderConfig.registerKeyEvents = function()
         if Device:hasKeys() then
             if G_reader_settings:isTrue("press_key_does_hotkeyshortcuts") then
                 self.key_events.ShowConfigMenu = { { { "AA" } } }
@@ -402,18 +402,18 @@ function HotKeyShortcuts:overwriteConflictingFunctions()
     end
 
     local ReaderDictionary= require("apps/reader/modules/readerdictionary")
-    ReaderDictionary.registerKeyEvents = function(self)
+    ReaderDictionary.registerKeyEvents = function()
     end
 
     local ReaderLink = require("apps/reader/modules/readerlink")
-    ReaderLink.registerKeyEvents = function(self)
+    ReaderLink.registerKeyEvents = function()
         if Device:hasScreenKB() or Device:hasSymKey() then
             self.key_events.GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" }
         end
     end
 
     local ReaderSearch = require("apps/reader/modules/readersearch")
-    ReaderSearch.registerKeyEvents = function(self)
+    ReaderSearch.registerKeyEvents = function()
         if Device:hasKeyboard() then
             self.key_events.ShowFulltextSearchInputBlank = {
                 { "Alt", "Shift", "S" }, { "Ctrl", "Shift", "S" },
@@ -424,19 +424,19 @@ function HotKeyShortcuts:overwriteConflictingFunctions()
     end
 
     local ReaderToc = require("apps/reader/modules/readertoc")
-    ReaderToc.registerKeyEvents = function(self)
+    ReaderToc.registerKeyEvents = function()
     end
 
     local ReaderThumbnail = require("apps/reader/modules/readerthumbnail")
-    ReaderToc.registerKeyEvents = function(self)
+    ReaderThumbnail.registerKeyEvents = function()
     end
 
     local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
-    ReaderWikipedia.registerKeyEvents = function(self)
+    ReaderWikipedia.registerKeyEvents = function()
     end
 
     local ReaderUI = require("apps/reader/readerui")
-    ReaderUI.registerKeyEvents = function(self)
+    ReaderUI.registerKeyEvents = function()
         if Device:hasKeys() then
             self.key_events.Home = { { "Home" } }
             if Device:hasDPad() and Device:useDPadAsActionKeys() then
@@ -446,7 +446,7 @@ function HotKeyShortcuts:overwriteConflictingFunctions()
     end
 
     local FileManager = require("apps/filemanager/filemanager")
-    FileManager.registerKeyEvents = function(self)
+    FileManager.registerKeyEvents = function()
         if Device:hasKeys() then
             self.key_events.Home = { { "Home" } }
             -- Override the menu.lua way of handling the back key
@@ -459,7 +459,7 @@ function HotKeyShortcuts:overwriteConflictingFunctions()
     end
 
     local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
-    FileSearcher.registerKeyEvents = function(self)
+    FileSearcher.registerKeyEvents = function()
         if Device:hasKeys() then
             self.key_events.Home = { { "Home" } }
             if Device:hasDPad() and Device:useDPadAsActionKeys() then
@@ -469,7 +469,7 @@ function HotKeyShortcuts:overwriteConflictingFunctions()
     end
 
     local FileManagerMenu = require("apps/filemanager/filemanagermenu")
-    FileManagerMenu.registerKeyEvents = function(self)
+    FileManagerMenu.registerKeyEvents = function()
         if Device:hasKeys() then
             self.key_events.ShowMenu = { { "Menu" } }
         end
