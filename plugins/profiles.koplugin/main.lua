@@ -9,6 +9,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local T = FFIUtil.template
+local logger = require("logger")
 local util = require("util")
 
 local autostart_done
@@ -488,6 +489,7 @@ function Profiles:executeAutoExec(event)
     if self.autoexec[event] then
         for profile_name in pairs(self.autoexec[event]) do
             if self.data[profile_name] then
+                logger.dbg("Profiles - auto executing:", profile_name)
                 UIManager:nextTick(function()
                     Dispatcher:execute(self.data[profile_name])
                 end)
@@ -522,6 +524,7 @@ function Profiles:onSetRotationMode(rotation)
                 if self.ui.config then -- close bottom menu to let Dispatcher execute profile
                     self.ui.config:onCloseConfigMenu()
                 end
+                logger.dbg("Profiles - auto executing:", profile_name)
                 UIManager:nextTick(function()
                     Dispatcher:execute(self.data[profile_name])
                 end)
