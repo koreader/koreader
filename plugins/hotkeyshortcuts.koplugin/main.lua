@@ -150,12 +150,15 @@ function HotKeyShortcuts:registerKeyEvents()
     self.key_events = {}
     self:overrideConflictingFunctions()
     local key_name_mapping = {
-        LPgBack = "left_page_back",   RPgBack = "right_page_back",
-        LPgFwd = "left_page_forward",  RPgFwd = "right_page_forward",
+        LPgBack = "left_page_back",    RPgBack = "right_page_back",
+        LPgFwd  = "left_page_forward", RPgFwd  = "right_page_forward",
     }
+    local cursor_keys = { "Up", "Down", "Left", "Right" }
+    local page_turn_keys = { "LPgBack", "LPgFwd", "RPgBack", "RPgFwd" }
+    local function_keys = { "Back", "Home", "Press" }
 
     local function addKeyEvent(modifier, key, event, args)
-        self.key_events[modifier .. key] = { { modifier, key }, event = event, args = args }
+        self.key_events[modifier .."Plus".. key] = { { modifier, key }, event = event, args = args }
     end
 
     local function addKeyEvents(modifier, keys, event, args_prefix)
@@ -164,10 +167,6 @@ function HotKeyShortcuts:registerKeyEvents()
             addKeyEvent(modifier, key, event, args_prefix .. mapped_key)
         end
     end
-
-    local cursor_keys = { "Up", "Down", "Left", "Right" }
-    local page_turn_keys = { "LPgBack", "LPgFwd", "RPgBack", "RPgFwd" }
-    local function_keys = { "Back", "Home", "Press" }
 
     if Device:hasScreenKB() then
         addKeyEvents("ScreenKB", cursor_keys, "HotkeyAction", "modifier_plus_")
@@ -195,11 +194,12 @@ function HotKeyShortcuts:registerKeyEvents()
     end
 
     if Device:hasKeyboard() then
+        local second_modifier = Device:hasSymKey() and "Alt" or "Ctrl"
+        addKeyEvents(second_modifier, cursor_keys, "HotkeyAction", "alt_plus_")
+        addKeyEvents(second_modifier, page_turn_keys, "HotkeyAction", "alt_plus_")
+        addKeyEvents(second_modifier, function_keys, "HotkeyAction", "alt_plus_")
+        addKeyEvent(second_modifier, "Menu", "HotkeyAction", "alt_plus_menu")
         if Device.k3_alt_plus_key_kernel_translated then
-            addKeyEvents("Alt", cursor_keys, "HotkeyAction", "alt_plus_")
-            addKeyEvents("Alt", page_turn_keys, "HotkeyAction", "alt_plus_")
-            addKeyEvents("Alt", function_keys, "HotkeyAction", "alt_plus_")
-            addKeyEvent("Alt", "Menu", "HotkeyAction", "alt_plus_menu")
             -- Add the infamous top row keys, with kernel issues
             local top_row_keys = { "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P" }
             for _, key in ipairs(top_row_keys) do
@@ -215,11 +215,6 @@ function HotKeyShortcuts:registerKeyEvents()
         else
             local alphabet_keys = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
                 "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" }
-            local second_modifier = Device:hasSymKey() and "Alt" or "Ctrl"
-            addKeyEvents(second_modifier, cursor_keys, "HotkeyAction", "alt_plus_")
-            addKeyEvents(second_modifier, page_turn_keys, "HotkeyAction", "alt_plus_")
-            addKeyEvents(second_modifier, function_keys, "HotkeyAction", "alt_plus_")
-            addKeyEvent(second_modifier, "Menu", "HotkeyAction", "alt_plus_menu")
             addKeyEvents(second_modifier, alphabet_keys, "HotkeyAction", "alt_plus_")
         end
     end -- if hasKeyboard()
@@ -307,7 +302,7 @@ function HotKeyShortcuts:attachNewTableToExistingTable(orig_table, second_table)
 end
 
 --[[
-    This function configures and adds various hotkey shortcuts to the main menu based on the device's capabilities 
+    This function configures and adds various hotkey shortcuts to the main menu based on the device's capabilities
     and user settings. It supports different sets of keys for devices with and without keyboards.
 
     The function performs the following steps:
@@ -408,7 +403,7 @@ end
 
 --[[
     Description:
-    This function overrides existing `registerKeyEvents()` functions in various modules to resolve conflicts and customize key event handling. 
+    This function overrides existing `registerKeyEvents()` functions in various modules to resolve conflicts and customize key event handling.
     It modifies the key event registration for several reader and file manager modules based on device capabilities and user settings.
 
     Modules and their modifications:
