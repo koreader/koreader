@@ -9,6 +9,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local T = FFIUtil.template
+local logger = require("logger")
 local util = require("util")
 
 local autostart_done
@@ -137,11 +138,30 @@ function Profiles:getSubMenuItems()
             },
             {
                 text = _("Auto-execute"),
+                checked_func = function()
+                    for _, profiles in pairs(self.autoexec) do
+                        if profiles[k] then
+                            return true
+                        end
+                    end
+                end,
                 sub_item_table = {
                     self:genAutoExecMenuItem(_("on KOReader start"), "Start", k),
                     self:genAutoExecMenuItem(_("on document opening"), "ReaderReady", k),
                     self:genAutoExecMenuItem(_("on document closing"), "CloseDocument", k),
+                    self:genAutoExecMenuItem(_("on rotation"), "SetRotationMode", k),
                 },
+                hold_callback = function(touchmenu_instance)
+                    for event, profiles in pairs(self.autoexec) do
+                        if profiles[k] then
+                            self.autoexec[event][k] = nil
+                            if next(self.autoexec[event]) == nil then
+                                self.autoexec[event] = nil
+                            end
+                        end
+                    end
+                    touchmenu_instance:updateItems()
+                end,
                 separator = true,
             },
             {
@@ -395,6 +415,9 @@ end
 -- AutoExec
 
 function Profiles:genAutoExecMenuItem(text, event, profile_name)
+    if event == "SetRotationMode" then
+        return self:genAutoExecSetRotationModeMenuItem(text, event, profile_name)
+    end
     return {
         text = text,
         checked_func = function()
@@ -414,19 +437,63 @@ function Profiles:genAutoExecMenuItem(text, event, profile_name)
     }
 end
 
+function Profiles:genAutoExecSetRotationModeMenuItem(text, event, profile_name)
+    return {
+        text = text,
+        checked_func = function()
+            return self.autoexec[event] and self.autoexec[event][profile_name] and true
+        end,
+        sub_item_table_func = function()
+            local sub_item_table = {}
+            local optionsutil = require("ui/data/optionsutil")
+            for i, mode in ipairs(optionsutil.rotation_modes) do
+                sub_item_table[i] = {
+                    text = optionsutil.rotation_labels[i],
+                    checked_func = function()
+                        return self.autoexec[event] and self.autoexec[event][profile_name] and self.autoexec[event][profile_name][mode]
+                    end,
+                    callback = function()
+                        if self.autoexec[event] and self.autoexec[event][profile_name] and self.autoexec[event][profile_name][mode] then
+                            self.autoexec[event][profile_name][mode] = nil
+                            if next(self.autoexec[event][profile_name]) == nil then
+                                self.autoexec[event][profile_name] = nil
+                                if next(self.autoexec[event]) == nil then
+                                    self.autoexec[event] = nil
+                                end
+                            end
+                        else
+                            self.autoexec[event] = self.autoexec[event] or {}
+                            self.autoexec[event][profile_name] = self.autoexec[event][profile_name] or {}
+                            self.autoexec[event][profile_name][mode] = true
+                        end
+                    end,
+                }
+            end
+            return sub_item_table
+        end,
+        hold_callback = function(touchmenu_instance)
+            self.autoexec[event][profile_name] = nil
+            if next(self.autoexec[event]) == nil then
+                self.autoexec[event] = nil
+            end
+            touchmenu_instance:updateItems()
+        end,
+    }
+end
+
 function Profiles:updateAutoExec(old_name, new_name)
     for event, profiles in pairs(self.autoexec) do
-        local found
+        local old_value
         for profile_name in pairs(profiles) do
             if profile_name == old_name then
+                old_value = profiles[old_name]
                 profiles[old_name] = nil
-                found = true
                 break
             end
         end
-        if found then
+        if old_value then
             if new_name then
-                profiles[new_name] = true
+                profiles[new_name] = old_value
             else
                 if next(profiles) == nil then
                     self.autoexec[event] = nil
@@ -440,6 +507,7 @@ function Profiles:executeAutoExec(event)
     if self.autoexec[event] then
         for profile_name in pairs(self.autoexec[event]) do
             if self.data[profile_name] then
+                logger.dbg("Profiles - auto executing:", profile_name)
                 UIManager:nextTick(function()
                     Dispatcher:execute(self.data[profile_name])
                 end)
@@ -464,6 +532,22 @@ end
 function Profiles:onCloseDocument()
     if not self.ui.reloading then
         self:executeAutoExec("CloseDocument")
+    end
+end
+
+function Profiles:onSetRotationMode(rotation)
+    if self.autoexec.SetRotationMode and rotation ~= nil then
+        for profile_name, modes in pairs(self.autoexec.SetRotationMode) do
+            if modes[rotation] and self.data[profile_name] then
+                if self.ui.config then -- close bottom menu to let Dispatcher execute profile
+                    self.ui.config:onCloseConfigMenu()
+                end
+                logger.dbg("Profiles - auto executing:", profile_name)
+                UIManager:nextTick(function()
+                    Dispatcher:execute(self.data[profile_name])
+                end)
+            end
+        end
     end
 end
 

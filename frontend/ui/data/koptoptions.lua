@@ -76,11 +76,11 @@ local KoptOptions = {
                     end
                 end,
                 -- For Dispatcher & onMakeDefault's sake
-                labels = {C_("Rotation", "⤹ 90°"), C_("Rotation", "↑ 0°"), C_("Rotation", "⤸ 90°"), C_("Rotation", "↓ 180°")},
+                labels = optionsutil.rotation_labels,
                 alternate = false,
-                values = {Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE, Screen.DEVICE_ROTATED_UPRIGHT, Screen.DEVICE_ROTATED_CLOCKWISE, Screen.DEVICE_ROTATED_UPSIDE_DOWN},
+                values = optionsutil.rotation_modes,
                 default_value = Screen.DEVICE_ROTATED_UPRIGHT,
-                args = {Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE, Screen.DEVICE_ROTATED_UPRIGHT, Screen.DEVICE_ROTATED_CLOCKWISE, Screen.DEVICE_ROTATED_UPSIDE_DOWN},
+                args = optionsutil.rotation_modes,
                 current_func = function() return Screen:getRotationMode() end,
                 event = "SetRotationMode",
                 name_text_hold_callback = optionsutil.showValues,

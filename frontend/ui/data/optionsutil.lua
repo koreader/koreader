@@ -11,7 +11,20 @@ local T = require("ffi/util").template
 local logger = require("logger")
 local Screen = Device.screen
 
-local optionsutil = {}
+local optionsutil = {
+    rotation_labels = {
+        C_("Rotation", "⤹ 90°"),
+        C_("Rotation", "↑ 0°"),
+        C_("Rotation", "⤸ 90°"),
+        C_("Rotation", "↓ 180°"),
+    },
+    rotation_modes = {
+        Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE, -- 3
+        Screen.DEVICE_ROTATED_UPRIGHT,           -- 0
+        Screen.DEVICE_ROTATED_CLOCKWISE,         -- 1
+        Screen.DEVICE_ROTATED_UPSIDE_DOWN,       -- 2
+    },
+}
 
 function optionsutil.enableIfEquals(configurable, option, value)
     return configurable[option] == value
