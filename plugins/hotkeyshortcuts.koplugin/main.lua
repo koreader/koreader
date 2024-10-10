@@ -110,8 +110,8 @@ function HotKeyShortcuts:init()
     self.hotkeyshortcuts = self.settings_data.data[self.hotkey_mode]
 
     self.ui.menu:registerToMainMenu(self)
-    self:registerKeyEvents()
     Dispatcher:init()
+    self:registerKeyEvents()
 end
 
 
@@ -429,7 +429,7 @@ function HotKeyShortcuts:overrideConflictingFunctions()
     ReaderConfig.registerKeyEvents = function(self)
         if Device:hasKeys() then
             if G_reader_settings:isTrue("press_key_does_hotkeyshortcuts") then
-                self.key_events.ShowConfigMenu = { { { "AA" } } }
+                self.key_events.ShowConfigMenu = { { "AA" } }
             elseif G_reader_settings:nilOrFalse("press_key_does_hotkeyshortcuts") then
                 self.key_events.ShowConfigMenu = { { { "Press", "AA" } } }
             end
@@ -444,6 +444,21 @@ function HotKeyShortcuts:overrideConflictingFunctions()
     ReaderLink.registerKeyEvents = function(self)
         if Device:hasScreenKB() or Device:hasSymKey() then
             self.key_events.GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" }
+        elseif Device:hasKeys() then
+            self.key_events = {
+                SelectNextPageLink = {
+                    { "Tab" },
+                    event = "SelectNextPageLink",
+                },
+                SelectPrevPageLink = {
+                    { "Shift", "Tab" },
+                    event = "SelectPrevPageLink",
+                },
+                GotoSelectedPageLink = {
+                    { "Press" },
+                    event = "GotoSelectedPageLink",
+                },
+            }
         end
     end
 
@@ -476,6 +491,8 @@ function HotKeyShortcuts:overrideConflictingFunctions()
             self.key_events.Home = { { "Home" } }
             if Device:hasDPad() and Device:useDPadAsActionKeys() then
                 self.key_events.KeyContentSelection = { { { "Up", "Down" } }, event = "StartHighlightIndicator" }
+            elseif Device:hasKeyboard() then
+                self.key_events.Reload = { { "F5" } }
             end
         end
     end
@@ -495,11 +512,12 @@ function HotKeyShortcuts:overrideConflictingFunctions()
 
     local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
     FileSearcher.registerKeyEvents = function(self)
-        if Device:hasKeys() then
-            self.key_events.Home = { { "Home" } }
-            if Device:hasDPad() and Device:useDPadAsActionKeys() then
-                self.key_events.KeyContentSelection = { { { "Up", "Down" } }, event = "StartHighlightIndicator" }
-            end
+        if Device:hasKeyboard() then
+            self.key_events.ShowFileSearchBlank = {
+                { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" },
+                event = "ShowFileSearch",
+                args = ""
+            }
         end
     end
 
