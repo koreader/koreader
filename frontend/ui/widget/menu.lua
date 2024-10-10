@@ -1272,6 +1272,20 @@ function Menu:onScreenResize(dimen)
     return false
 end
 
+function Menu:onSetRotationMode(rotation)
+    if self._recreate_func and rotation ~= nil and rotation ~= Screen:getRotationMode() then
+        UIManager:close(self)
+        -- Also re-layout ReaderView or FileManager itself
+        if self._manager.ui.view then
+            self._manager.ui.view:onSetRotationMode(rotation)
+        else
+            self._manager.ui:onSetRotationMode(rotation)
+        end
+        self._recreate_func()
+        return true
+    end
+end
+
 function Menu:onSelectByShortCut(_, keyevent)
     for k,v in ipairs(self.item_shortcuts) do
         if k > self.perpage then

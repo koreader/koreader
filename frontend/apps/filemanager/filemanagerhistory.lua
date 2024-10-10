@@ -9,7 +9,6 @@ local Menu = require("ui/widget/menu")
 local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local Screen = require("device").screen
 local Utf8Proc = require("ffi/utf8proc")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("util")
@@ -230,23 +229,6 @@ function FileManagerHistory:onMenuHold(item)
     return true
 end
 
--- Can't *actually* name it onSetRotationMode, or it also fires in FM itself ;).
-function FileManagerHistory:MenuSetRotationModeHandler(rotation)
-    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
-        UIManager:close(self._manager.hist_menu)
-        -- Also re-layout ReaderView or FileManager itself
-        if self._manager.ui.view and self._manager.ui.view.onSetRotationMode then
-            self._manager.ui.view:onSetRotationMode(rotation)
-        elseif self._manager.ui.onSetRotationMode then
-            self._manager.ui:onSetRotationMode(rotation)
-        else
-            Screen:setRotationMode(rotation)
-        end
-        self._manager:onShowHist()
-    end
-    return true
-end
-
 function FileManagerHistory:onShowHist(search_info)
     self.hist_menu = Menu:new{
         ui = self.ui,
@@ -261,8 +243,8 @@ function FileManagerHistory:onShowHist(search_info)
         onLeftButtonTap = function() self:showHistDialog() end,
         onMenuChoice = self.onMenuChoice,
         onMenuHold = self.onMenuHold,
-        onSetRotationMode = self.MenuSetRotationModeHandler,
         _manager = self,
+        _recreate_func = function() self:onShowHist(search_info) end,
     }
 
     if search_info then
