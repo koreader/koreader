@@ -198,9 +198,10 @@ function HotKeyShortcuts:registerKeyEvents()
         addKeyEvents(second_modifier, cursor_keys, "HotkeyAction", "alt_plus_")
         addKeyEvents(second_modifier, page_turn_keys, "HotkeyAction", "alt_plus_")
         addKeyEvents(second_modifier, function_keys, "HotkeyAction", "alt_plus_")
+        local top_row_keys = { "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P" }
+        local remaining_keys = { "A", "S", "D", "F", "G", "H", "J", "K", "L", "Z", "X", "C", "V", "B", "N", "M" }
         if Device.k3_alt_plus_key_kernel_translated then
             -- Add the infamous top row keys, with kernel issues
-            local top_row_keys = { "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P" }
             for _, key in ipairs(top_row_keys) do
                 self.key_events["AltPlus" .. key] = {
                     { Device.k3_alt_plus_key_kernel_translated[key] },
@@ -208,14 +209,10 @@ function HotKeyShortcuts:registerKeyEvents()
                     args = "alt_plus_" .. key:lower()
                 }
             end
-            -- Add the rest of the alphabet keys
-            local remaining_keys = { "A", "S", "D", "F", "G", "H", "J", "K", "L", "Z", "X", "C", "V", "B", "N", "M" }
-            addKeyEvents("Alt", remaining_keys, "HotkeyAction", "alt_plus_")
         else
-            local alphabet_keys = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
-                "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" }
-            addKeyEvents(second_modifier, alphabet_keys, "HotkeyAction", "alt_plus_")
+            addKeyEvents(second_modifier, top_row_keys, "HotkeyAction", "alt_plus_")
         end
+        addKeyEvents(second_modifier, remaining_keys, "HotkeyAction", "alt_plus_")
     end -- if hasKeyboard()
 end -- registerKeyEvents()
 
