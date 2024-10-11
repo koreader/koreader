@@ -494,10 +494,13 @@ function HotKeyShortcuts:overrideConflictingFunctions()
     end
 
     local FileManager = require("apps/filemanager/filemanager")
-    local FileChooser = require("ui/widget/filechooser")
     FileManager.registerKeyEvents = function(_self)
         if Device:hasKeys() then
             self.key_events.Home = { { "Home" } }
+            -- Ensure file_chooser is initialized before accessing it
+            if not self.file_chooser then
+                self.file_chooser = FileChooser:new()
+            end
             -- Override the menu.lua way of handling the back key
             self.file_chooser.key_events.Back = { { Device.input.group.Back } }
             if not Device:hasFewKeys() then
