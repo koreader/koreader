@@ -494,6 +494,7 @@ function HotKeyShortcuts:overrideConflictingFunctions()
     end
 
     local FileManager = require("apps/filemanager/filemanager")
+    local FileChooser = require("ui/widget/filechooser")
     FileManager.registerKeyEvents = function(_self)
         if Device:hasKeys() then
             self.key_events.Home = { { "Home" } }
