@@ -155,7 +155,7 @@ function HotKeyShortcuts:registerKeyEvents()
     }
     local cursor_keys = { "Up", "Down", "Left", "Right" }
     local page_turn_keys = { "LPgBack", "LPgFwd", "RPgBack", "RPgFwd" }
-    local function_keys = { "Back", "Home", "Press" }
+    local function_keys = { "Back", "Home", "Press", "Menu" }
 
     local function addKeyEvent(modifier, key, event, args)
         self.key_events[modifier .."Plus".. key] = { { modifier, key }, event = event, args = args }
@@ -198,7 +198,6 @@ function HotKeyShortcuts:registerKeyEvents()
         addKeyEvents(second_modifier, cursor_keys, "HotkeyAction", "alt_plus_")
         addKeyEvents(second_modifier, page_turn_keys, "HotkeyAction", "alt_plus_")
         addKeyEvents(second_modifier, function_keys, "HotkeyAction", "alt_plus_")
-        addKeyEvent(second_modifier, "Menu", "HotkeyAction", "alt_plus_menu")
         if Device.k3_alt_plus_key_kernel_translated then
             -- Add the infamous top row keys, with kernel issues
             local top_row_keys = { "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P" }
@@ -417,7 +416,7 @@ end
     - ReaderWikipedia: Overrides `registerKeyEvents()` with an empty function.
     - ReaderUI: Customizes `Home` and `KeyContentSelection` key events based on device capabilities.
     - FileManager: Customizes `Home` and `Back` key events, and conditionally removes `Close` key event.
-    - FileSearcher: Customizes `Home` and `KeyContentSelection` key events based on device capabilities.
+    - FileSearcher: CCustomizes `ShowFileSearchBlank` key event for devices with keyboards.
     - FileManagerMenu: Customizes `ShowMenu` key event for devices with keys.
 ]]
 function HotKeyShortcuts:overrideConflictingFunctions()
