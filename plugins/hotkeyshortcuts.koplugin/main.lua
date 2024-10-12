@@ -418,16 +418,16 @@ end
 ]]
 function HotKeyShortcuts:overrideConflictingFunctions()
     local ReaderBookmark = require("apps/reader/modules/readerbookmark")
-    ReaderBookmark.registerKeyEvents = function(_self)
+    ReaderBookmark.registerKeyEvents = function(readerbookmark)
     end
 
     local ReaderConfig = require("apps/reader/modules/readerconfig")
-    ReaderConfig.registerKeyEvents = function(_self)
+    ReaderConfig.registerKeyEvents = function(readerconfig)
         if Device:hasKeys() then
             if G_reader_settings:isTrue("press_key_does_hotkeyshortcuts") then
-                _self.key_events.ShowConfigMenu = { { "AA" } }
+                readerconfig.key_events.ShowConfigMenu = { { "AA" } }
             elseif G_reader_settings:nilOrFalse("press_key_does_hotkeyshortcuts") then
-                _self.key_events.ShowConfigMenu = { { { "Press", "AA" } } }
+                readerconfig.key_events.ShowConfigMenu = { { { "Press", "AA" } } }
             end
         end
     end
