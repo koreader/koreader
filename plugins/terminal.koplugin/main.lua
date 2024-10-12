@@ -93,28 +93,35 @@ local Terminal = WidgetContainer:extend{
 }
 
 function Terminal:isExecutable(file)
-    if os.execute(string.format("test -x %s", file)) == 0 then -- full path
-        return true
-    elseif os.execute(string.format("which %s 2>/dev/null 1>/dev/null", file)) == 0 then
-        return true
-    end
+    -- check if file is an executable or a command in PATH
+    return os.execute(string.format("test -x %s || command -v %s", file, file)) == 0
 end
 
 -- Try SHELL environment variable and some standard shells
 function Terminal:getDefaultShellExecutable()
     if self.default_shell_executable then return self.default_shell_executable end
 
-    local shell = {"mksh", "ksh", "zsh", "ash", "dash", "sh", "bash"}
-    table.insert(shell, os.getenv("SHELL"))
+    local shell = {
+        "bash",
+        "sh",
+        "dash",
+        "ash",
+        "zsh",
+        "ksh",
+        "mksh",
+    }
+    local env_shell = os.getenv("SHELL")
+    if env_shell then
+        table.insert(shell, 1, env_shell)
+    end
 
-    while #shell >= 1  do
-        if self:isExecutable(shell[#shell]) then
-            self.default_shell_executable = shell[#shell]
+    for dummy, file in ipairs(shell) do
+        if self:isExecutable(file) then
+            self.default_shell_executable = file
             break
-        else
-            shell[#shell] = nil
         end
     end
+    logger.info("Terminal: default shell is", self.default_shell_executable)
 
     return self.default_shell_executable
 end
