@@ -425,9 +425,9 @@ function HotKeyShortcuts:overrideConflictingFunctions()
     ReaderConfig.registerKeyEvents = function(_self)
         if Device:hasKeys() then
             if G_reader_settings:isTrue("press_key_does_hotkeyshortcuts") then
-                self.key_events.ShowConfigMenu = { { "AA" } }
+                _self.key_events.ShowConfigMenu = { { "AA" } }
             elseif G_reader_settings:nilOrFalse("press_key_does_hotkeyshortcuts") then
-                self.key_events.ShowConfigMenu = { { { "Press", "AA" } } }
+                _self.key_events.ShowConfigMenu = { { { "Press", "AA" } } }
             end
         end
     end
@@ -439,9 +439,9 @@ function HotKeyShortcuts:overrideConflictingFunctions()
     local ReaderLink = require("apps/reader/modules/readerlink")
     ReaderLink.registerKeyEvents = function(_self)
         if Device:hasScreenKB() or Device:hasSymKey() then
-            self.key_events.GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" }
+            _self.key_events.GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" }
         elseif Device:hasKeys() then
-            self.key_events = {
+            _self.key_events = {
                 SelectNextPageLink = {
                     { "Tab" },
                     event = "SelectNextPageLink",
@@ -461,7 +461,7 @@ function HotKeyShortcuts:overrideConflictingFunctions()
     local ReaderSearch = require("apps/reader/modules/readersearch")
     ReaderSearch.registerKeyEvents = function(_self)
         if Device:hasKeyboard() then
-            self.key_events.ShowFulltextSearchInputBlank = {
+            _self.key_events.ShowFulltextSearchInputBlank = {
                 { "Alt", "Shift", "S" }, { "Ctrl", "Shift", "S" },
                 event = "ShowFulltextSearchInput",
                 args = ""
@@ -484,11 +484,11 @@ function HotKeyShortcuts:overrideConflictingFunctions()
     local ReaderUI = require("apps/reader/readerui")
     ReaderUI.registerKeyEvents = function(_self)
         if Device:hasKeys() then
-            self.key_events.Home = { { "Home" } }
+            _self.key_events.Home = { { "Home" } }
             if Device:hasDPad() and Device:useDPadAsActionKeys() then
-                self.key_events.KeyContentSelection = { { { "Up", "Down" } }, event = "StartHighlightIndicator" }
+                _self.key_events.KeyContentSelection = { { { "Up", "Down" } }, event = "StartHighlightIndicator" }
             elseif Device:hasKeyboard() then
-                self.key_events.Reload = { { "F5" } }
+                _self.key_events.Reload = { { "F5" } }
             end
         end
     end
@@ -497,16 +497,16 @@ function HotKeyShortcuts:overrideConflictingFunctions()
     local FileChooser = require("ui/widget/filechooser")
     FileManager.registerKeyEvents = function(_self)
         if Device:hasKeys() then
-            self.key_events.Home = { { "Home" } }
+            _self.key_events.Home = { { "Home" } }
             -- Ensure file_chooser is initialized before accessing it
-            if not self.file_chooser then
-                self.file_chooser = FileChooser:new()
+            if not _self.file_chooser then
+                _self.file_chooser = FileChooser:new()
             end
             -- Override the menu.lua way of handling the back key
-            self.file_chooser.key_events.Back = { { Device.input.group.Back } }
+            _self.file_chooser.key_events.Back = { { Device.input.group.Back } }
             if not Device:hasFewKeys() then
                 -- Also remove the handler assigned to the "Back" key by menu.lua
-                self.file_chooser.key_events.Close = nil
+                _self.file_chooser.key_events.Close = nil
             end
         end
     end
@@ -514,7 +514,7 @@ function HotKeyShortcuts:overrideConflictingFunctions()
     local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
     FileSearcher.registerKeyEvents = function(_self)
         if Device:hasKeyboard() then
-            self.key_events.ShowFileSearchBlank = {
+            _self.key_events.ShowFileSearchBlank = {
                 { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" },
                 event = "ShowFileSearch",
                 args = ""
@@ -525,7 +525,7 @@ function HotKeyShortcuts:overrideConflictingFunctions()
     local FileManagerMenu = require("apps/filemanager/filemanagermenu")
     FileManagerMenu.registerKeyEvents = function(_self)
         if Device:hasKeys() then
-            self.key_events.ShowMenu = { { "Menu" } }
+            _self.key_events.ShowMenu = { { "Menu" } }
         end
     end
 end -- overrideConflictingFunctions()
