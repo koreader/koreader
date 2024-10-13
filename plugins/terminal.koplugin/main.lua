@@ -103,11 +103,11 @@ function Terminal:getDefaultShellExecutable()
 
     local shell = {
         "bash",
-        "sh",
-        "dash",
         "ash",
+        "sh",
+        "zsh",  -- RPROMPTs aren't really handled well, so we deprioritize it a bit
+        "dash",
         "hush",
-        "zsh",
         "ksh",
         "mksh",
     }
@@ -201,6 +201,7 @@ function Terminal:spawnShell(cols, rows)
         return false
     end
 
+    logger.info("Terminal: spawning shell", shell)
     local pid = C.fork()
     if pid < 0 then
         logger.err("Terminal: fork failed:", ffi.string(C.strerror(ffi.errno())))
