@@ -77,6 +77,9 @@ function InputText:onUnfocus() end
 -- Resync our position state with our text widget's actual state
 function InputText:resyncPos()
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
+    if self.strike_callback then
+        self.strike_callback()
+    end
 end
 
 local function initTouchEvents()
@@ -803,16 +806,16 @@ end
 
 -- calculate current and last (original) line numbers
 function InputText:getLineNums()
-    local cur_line_num, last_line_num = 1, 1
+    local curr_line_num, last_line_num = 1, 1
     for i = 1, #self.charlist do
         if self.text_widget.charlist[i] == "\n" then
             if i < self.charpos then
-                cur_line_num = cur_line_num + 1
+                curr_line_num = curr_line_num + 1
             end
             last_line_num = last_line_num + 1
         end
     end
-    return cur_line_num, last_line_num
+    return curr_line_num, last_line_num
 end
 
 -- calculate charpos for the beginning of (original) line
