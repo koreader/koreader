@@ -7,7 +7,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
-local logger = require("logger")
 local BD = require("ui/bidi")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -72,7 +71,7 @@ end
 
 local function genFontSelectMenu(category)
     local select_menu = {}
-    local use_bold = custom_fonts[category] and (custom_fonts[category].bold_filename == custom_filenames[category])
+    local show_bold = custom_fonts[category] and (custom_fonts[category].bold_filename == custom_filenames[category])
     table.insert(select_menu, {
         text_func = function()
             if category == "content" or category == "title" then
@@ -132,10 +131,10 @@ local function genFontSelectMenu(category)
     table.insert(select_menu, {
         text = _("Show bold variants"),
         checked_func = function()
-            return use_bold
+            return show_bold
         end,
         callback = function(touchmenu_instance)
-            use_bold = not use_bold
+            show_bold = not show_bold
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
         separator = true
@@ -143,28 +142,28 @@ local function genFontSelectMenu(category)
     local get_filename = function(font, use_bold) return (use_bold and font.bold_filename) or font.filename end
 
     -- first, show the current font so it's easy to switch regular<->bold
-    local font = custom_fonts[category]
-    if not font and (category == "title" or category == "content") then
-        font = custom_fonts.primary
+    local curfont = custom_fonts[category]
+    if not curfont and (category == "title" or category == "content") then
+        curfont = custom_fonts.primary
     end
-    if font then
+    if curfont then
         table.insert(select_menu, {
             ignored_by_menu_search = true,
-            text = font.name,
+            text = curfont.name,
             font_func = function()
                 if G_reader_settings:nilOrTrue("font_menu_use_font_face") then
-                    return Font:getFace(get_filename(font, use_bold), prevSize(nil, 0))
+                    return Font:getFace(get_filename(curfont, show_bold), prevSize(nil, 0))
                 end
             end,
             checked_func = function()
-                return custom_filenames[category] == get_filename(font, use_bold)
+                return custom_filenames[category] == get_filename(curfont, show_bold)
             end,
             callback = function()
-                saveFont(category, font, use_bold)
+                saveFont(category, curfont, show_bold)
             end,
             enabled_func = function()
                 -- no bold available -> grayed out
-                return font.from_file or not use_bold or font.bold_filename ~= nil
+                return curfont.from_file or not show_bold or curfont.bold_filename ~= nil
             end,
             separator = true
         })
@@ -178,18 +177,18 @@ local function genFontSelectMenu(category)
             text = font.name,
             font_func = function()
                 if G_reader_settings:nilOrTrue("font_menu_use_font_face") then
-                    return Font:getFace(get_filename(font, use_bold), prevSize(nil, 0))
+                    return Font:getFace(get_filename(font, show_bold), prevSize(nil, 0))
                 end
             end,
             checked_func = function()
-                return custom_filenames[category] == get_filename(font, use_bold)
+                return custom_filenames[category] == get_filename(font, show_bold)
             end,
             callback = function()
-                saveFont(category, font, use_bold)
+                saveFont(category, font, show_bold)
             end,
             enabled_func = function()
                 -- no bold available -> grayed out
-                return not use_bold or font.bold_filename ~= nil
+                return not show_bold or font.bold_filename ~= nil
             end,
         })
         ::continue::
@@ -271,17 +270,17 @@ for i, face in ipairs(cre.getFontFaces()) do
         is_monospace = is_monospace
     }
     -- get bold too, if it exists
-    local bold_filename, bold_faceindex = cre.getFontFaceFilenameAndFaceIndex(face, true)
+    local bold_filename = cre.getFontFaceFilenameAndFaceIndex(face, true)
     if not bold_filename then
-        bold_filename, bold_faceindex = cre.getFontFaceFilenameAndFaceIndex(face, true, true)
+        bold_filename = cre.getFontFaceFilenameAndFaceIndex(face, true, true)
     end
     if bold_filename ~= entry.filename then
         entry.bold_filename = bold_filename
         -- entry.bold_faceindex = bold_faceindex
     end
 
-    for category, filename in pairs(custom_filenames) do
-        if filename == entry.filename or filename == entry.bold_filename then
+    for category, curfilename in pairs(custom_filenames) do
+        if curfilename == entry.filename or curfilename == entry.bold_filename then
             -- for use in the menus
             custom_fonts[category] = entry
         end
