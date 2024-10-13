@@ -113,7 +113,7 @@ local function genFontSelectMenu(category)
                 saveFont(category, new_entry)
             else
                 UIManager:show(InfoMessage:new{
-                    text = T(_("The chosen file is not a supported font file, or it not is in KOReader's or your system's fonts folders. To install fonts, put them in %1"), BD.wrap(string.gsub(FontList.fontdir, "^%.", DataStorage:getFullDataDir())))
+                    text = T(_("The chosen file is not a supported font file, or it is not in KOReader's or your system's fonts folders. To install fonts, put them in %1"), BD.wrap(string.gsub(FontList.fontdir, "^%.", DataStorage:getFullDataDir())))
                 })
             end
         end
