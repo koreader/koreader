@@ -46,6 +46,7 @@ local order = {
     device = {
         "keyboard_layout",
         "external_keyboard",
+        "font_ui_customize",
         "font_ui_fallbacks",
         "----------------------------",
         "time",

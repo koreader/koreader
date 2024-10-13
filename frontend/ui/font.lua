@@ -8,6 +8,16 @@ local Screen = require("device").screen
 local logger = require("logger")
 local util = require("util")
 
+if not G_reader_settings:has("font_ui_custom") then
+    G_reader_settings:makeFalse("font_ui_custom")
+end
+if not G_reader_settings:has("font_ui_custom_font_filenames") then
+    G_reader_settings:saveSetting("font_ui_custom_font_filenames", {primary=nil, content=nil, title=nil, monospace=nil})
+end
+if not G_reader_settings:has("font_ui_custom_font_size_offsets") then
+    G_reader_settings:saveSetting("font_ui_custom_font_size_offsets", {primary=0, content=0, title=0, monospace=0})
+end
+
 -- Known regular (and italic) fonts with an available bold font file
 local _bold_font_variant = {}
 _bold_font_variant["NotoSans-Regular.ttf"] = "NotoSans-Bold.ttf"
@@ -36,6 +46,8 @@ local Font = {
     -- of "bold = true" to explicitely request synthetized bold, which,
     -- with XText, makes a bold string the same width as itself non-bold.
     FORCE_SYNTHETIZED_BOLD = "FORCE_SYNTHETIZED_BOLD",
+
+    use_custom_fonts = G_reader_settings:isTrue("font_ui_custom"),
 
     fontmap = {
         -- default font for menu contents
@@ -134,6 +146,37 @@ if G_reader_settings and G_reader_settings:has("font_ui_fallbacks") then
         table.insert(Font.fallbacks, Font.additional_fallback_insert_indice, additional_fallbacks[i])
     end
     logger.dbg("updated Font.fallbacks:", Font.fallbacks)
+end
+
+if Font.use_custom_fonts then
+    local fonts = G_reader_settings:readSetting("font_ui_custom_font_filenames")
+    local offs = G_reader_settings:readSetting("font_ui_custom_font_size_offsets")
+    Font.custom_primary_font = fonts.primary
+    Font.custom_primary_sizeoff = offs.primary
+    -- anything not defined here will fall back to either primary or the default
+    Font.custom_fontmap = {
+        cfont =        fonts.content or fonts.primary,
+        tfont =        fonts.title or fonts.primary,
+        smalltfont =   fonts.title or fonts.primary,
+        x_smalltfont = fonts.title or fonts.primary,
+        scfont =       fonts.monospace or Font.fontmap.scfont,
+        hpkfont =      fonts.monospace or Font.fontmap.hpkfont,
+        infont =       fonts.monospace or Font.fontmap.infont,
+        smallinfont =  fonts.monospace or Font.fontmap.smallinfont,
+    }
+    local button_off = fonts.content and offs.content or offs.primary
+    local title_off = fonts.title and offs.title or offs.primary
+    local monospace_off = offs.monospace or 0
+    Font.custom_sizeoffmap = {
+        cfont =        button_off,
+        tfont =        title_off,
+        smalltfont =   title_off,
+        x_smalltfont = title_off,
+        scfont =       monospace_off,
+        hpkfont =      monospace_off,
+        infont =       monospace_off,
+        smallinfont =  monospace_off,
+    }
 end
 
 -- We don't ship a bold variant for some of our fallback fonts.
@@ -265,20 +308,35 @@ end
 -- @string font
 -- @int size optional size
 -- @int faceindex optional index of font face in font file
+-- @boolean no_custom optional flag to disable use of custom fonts
 -- @treturn table @{FontFaceObj}
-function Font:getFace(font, size, faceindex)
+function Font:getFace(font, size, faceindex, no_custom)
     -- default to content font
-    if not font then font = self.fontmap.cfont end
-
-    if not size then size = self.sizemap[font] end
-    -- original size before scaling by screen DPI
+    if not font then font = "cfont" end
+    if not size then size = self.sizemap[font] or self.sizemap.cfont end
+    -- original size before DPI scaling or user size adjustment
     local orig_size = size
-    size = Screen:scaleBySize(size)
 
-    local realname = self.fontmap[font]
-    if not realname then
-        realname = font
+    local realname
+    local used_custom = false
+
+    if self.use_custom_fonts and not no_custom then
+        if self.fontmap[font] then
+            used_custom = true;
+            realname = self.custom_fontmap[font] or self.custom_primary_font or self.fontmap[font]
+            -- user-specified size adjustments
+            size = size + (self.custom_sizeoffmap[font] or self.custom_primary_sizeoff or 0)
+            if size < 8 then size = 8 end
+            if size > 40 then size = 40 end
+        else -- font is filename
+            realname = font
+        end
+    else
+        realname = self.fontmap[font] or font
     end
+
+    -- DPI scaling
+    size = Screen:scaleBySize(size)
 
     -- Avoid emboldening already bold fonts
     local is_real_bold = self:isRealBoldFont(realname)
@@ -322,8 +380,14 @@ function Font:getFace(font, size, faceindex)
             end
         end
         if not ok then
-            logger.err("#! Font ", font, " (", realname, ") not supported: ", ftsize)
-            return nil
+            if used_custom then
+                -- try again without custom fonts
+                logger.dbg("Custom font ", font, " (", realname, ") not supported - falling back to default")
+                return self:getFace(font, orig_size, faceindex, true)
+            else
+                logger.err("#! Font ", font, " (", realname, ") not supported: ", ftsize)
+                return nil
+            end
         end
         --- Freetype font face wrapper object
         -- @table FontFaceObj
@@ -340,6 +404,7 @@ function Font:getFace(font, size, faceindex)
             ftsize = ftsize,
             hash = hash,
             is_real_bold = is_real_bold,
+            _used_custom = used_custom, -- only for getAdjustedFace()
         }
         self.faces[hash] = face_obj
 
@@ -407,7 +472,12 @@ function Font:getAdjustedFace(face, bold)
         -- See if a bold font file exists for that regular font.
         local bold_variant_name = self:getBoldVariantName(face.realname)
         if bold_variant_name then
-            face = Font:getFace(bold_variant_name, face.orig_size)
+            local size = face.orig_size
+            if face._used_custom then
+                -- add the offset here since passing the bold variant as a filename will undo it
+                size = size + (self.custom_sizeoffmap[face.orig_font] or self.custom_primary_sizeoff or 0)
+            end
+            face = Font:getFace(bold_variant_name, size, nil, face._used_custom)
             -- It has is_real_bold=true: no adjustment needed
             return face, true
         end

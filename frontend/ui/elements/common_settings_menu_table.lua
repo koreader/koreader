@@ -713,6 +713,8 @@ common_settings.keyboard_layout = {
     sub_item_table = dofile("frontend/ui/elements/menu_keyboard_layout.lua"),
 }
 
+common_settings.font_ui_customize = dofile("frontend/ui/elements/font_ui_customize.lua")
+
 common_settings.font_ui_fallbacks = dofile("frontend/ui/elements/font_ui_fallbacks.lua")
 
 common_settings.units = {
