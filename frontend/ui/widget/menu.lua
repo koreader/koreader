@@ -995,11 +995,23 @@ end
 
 function Menu:updatePageInfo(select_number)
     if #self.item_table > 0 then
-        if Device:hasDPad() then
+        local is_focused = self.itemnumber and self.itemnumber > 0
+        if is_focused or Device:hasDPad() then
+            self.itemnumber = nil -- focus only once
+            select_number = select_number or 1 -- default to select the first item
+            local x, y
+            local nb_cols = self.layout[1] and #self.layout[1] or 1
+            if nb_cols == 1 then
+                x = 1
+                y = select_number
+            else -- mosaic
+                x = select_number % nb_cols
+                y = (select_number - x) / nb_cols + 1
+            end
             -- Reset focus manager accordingly.
             -- NOTE: Since this runs automatically on init,
             --       we use FOCUS_ONLY_ON_NT as we don't want to see the initial underline on Touch devices.
-            self:moveFocusTo(1, select_number, FocusManager.FOCUS_ONLY_ON_NT)
+            self:moveFocusTo(x, y, is_focused and FocusManager.FORCED_FOCUS or FocusManager.FOCUS_ONLY_ON_NT)
         end
         -- update page information
         self.page_info_text:setText(T(_("Page %1 of %2"), self.page, self.page_num))
@@ -1040,10 +1052,6 @@ function Menu:updateItems(select_number, no_recalculate_dimen)
     self.return_button:resetLayout()
     self.content_group:resetLayout()
     self:_recalculateDimen(no_recalculate_dimen)
-    -- default to select the first item
-    if not select_number then
-        select_number = 1
-    end
 
     local items_nb -- number of items in the visible page
     local idx_offset, multilines_show_more_text
@@ -1063,6 +1071,9 @@ function Menu:updateItems(select_number, no_recalculate_dimen)
         local item = self.item_table[index]
         if item == nil then break end
         item.idx = index -- index is valid only for items that have been displayed
+        if index == self.itemnumber then -- focused item
+            select_number = idx
+        end
         local item_shortcut, shortcut_style
         if self.is_enable_shortcut then
             item_shortcut = self.item_shortcuts[idx]
@@ -1189,7 +1200,12 @@ function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch, 
     if itemnumber == nil then
         self.page = 1
     elseif itemnumber >= 0 then
+        itemnumber = math.min(itemnumber, #self.item_table)
         self.page = self:getPageNumber(itemnumber)
+        -- Draw the focus in FileChooser when it has focused_path (i.e. itemmatch)
+        if self.path ~= nil and type(itemmatch) == "table" then
+            self.itemnumber = itemnumber
+        end
     end
 
     self:updateItems(1, no_recalculate_dimen)
