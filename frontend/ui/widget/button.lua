@@ -133,8 +133,9 @@ function Button:init()
         if self.avoid_text_truncation and self.label_widget:isTruncated() then
             self.did_truncation_tweaks = true
             local font_size_2_lines = TextBoxWidget:getFontSizeToFitHeight(reference_height, 2, 0)
+            local new_size = self.label_widget.face.orig_size
             while self.label_widget:isTruncated() do
-                local new_size = self.label_widget.face.orig_size - 1
+                new_size = new_size - 1
                 if new_size <= font_size_2_lines then
                     -- Switch to a 2-lines TextBoxWidget
                     self.label_widget:free(true)

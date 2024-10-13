@@ -217,8 +217,9 @@ function VirtualKey:init()
         }
         -- Make long labels fit by decreasing font size
         local max_width = self.width - 2*self.bordersize - 2*Size.padding.small
+        local new_size = label_widget.face.orig_size
         while label_widget:getWidth() > max_width do
-            local new_size = label_widget.face.orig_size - 1
+            new_size = new_size - 1
             label_widget:free()
             if new_size < 8 then break end -- don't go too small
             label_widget = TextWidget:new{

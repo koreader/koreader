@@ -154,6 +154,9 @@ function TitleBar:init()
             if self.title_widget:getWidth() <= title_max_width then
                 break -- text with normal font fits, no loop needed
             end
+            if title_face.orig_size < 10 then
+                break -- too small; give up
+            end
             -- Text doesn't fit
             if not self._initial_titlebar_height then
                 -- We're with title_shrink_font_to_fit and in the first :init():

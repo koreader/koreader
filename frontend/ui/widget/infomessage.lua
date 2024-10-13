@@ -189,7 +189,7 @@ function InfoMessage:init()
                     -- scaleBySize() in Font:getFace() may give the same
                     -- real font size even if we decreased orig_size,
                     -- so check we really got a smaller real font size
-                    if self.face.size < real_size then
+                    if self.face.size < real_size or orig_size <= 10 then
                         break
                     end
                 end
