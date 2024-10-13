@@ -404,7 +404,7 @@ function InputDialog:init()
     if self.add_nav_bar then
         self.curr_line_num = self._input_widget:getLineNums()
         self.go_button = self.button_table:getButtonById("go")
-        self.go_button:setText("\u{f452}\u{202F}" .. self.curr_line_num, self.go_button.width)
+        self.go_button:setText("\u{250B}\u{202F}" .. self.curr_line_num, self.go_button.width)
     end
 
     -- Combine all
@@ -1030,7 +1030,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                 local curr_line_num = self._input_widget:getLineNums()
                 if self.curr_line_num ~= curr_line_num then
                     self.curr_line_num = curr_line_num
-                    self.go_button:setText("\u{f452}\u{202F}" .. curr_line_num, self.go_button.width)
+                    self.go_button:setText("\u{250B}\u{202F}" .. curr_line_num, self.go_button.width)
                     self.go_button:refresh()
                 end
             end
