@@ -1,5 +1,6 @@
 local DocumentRegistry = require("document/documentregistry")
 local JSON = require("json")
+local ffiUtil = require("ffi/util")
 local http = require("socket.http")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -7,7 +8,6 @@ local ltn12 = require("ltn12")
 local socket = require("socket")
 local socketutil = require("socketutil")
 local util = require("util")
-local BaseUtil = require("ffi/util")
 local _ = require("gettext")
 
 local DropBoxApi = {
@@ -126,7 +126,7 @@ function DropBoxApi:downloadFile(path, token, local_path)
 end
 
 function DropBoxApi:uploadFile(path, token, file_path, etag, overwrite)
-    local data = "{\"path\": \"" .. path .. "/" .. BaseUtil.basename(file_path) ..
+    local data = "{\"path\": \"" .. path .. "/" .. ffiUtil.basename(file_path) ..
         "\",\"mode\":" .. (overwrite and "\"overwrite\"" or "\"add\"") ..
         ",\"autorename\": " .. (overwrite and "false" or "true") ..
         ",\"mute\": false,\"strict_conflict\": false}"
@@ -202,10 +202,10 @@ function DropBoxApi:listFolder(path, token, folder_mode)
     end
     --sort
     table.sort(dropbox_list, function(v1,v2)
-        return v1.text < v2.text
+        return ffiUtil.strcoll(v1.text, v2.text)
     end)
     table.sort(dropbox_file, function(v1,v2)
-        return v1.text < v2.text
+        return ffiUtil.strcoll(v1.text, v2.text)
     end)
     -- Add special folder.
     if folder_mode then
