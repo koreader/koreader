@@ -1,4 +1,5 @@
 local DocumentRegistry = require("document/documentregistry")
+local ffiUtil = require("ffi/util")
 local ftp = require("socket.ftp")
 local ltn12 = require("ltn12")
 local util = require("util")
@@ -71,10 +72,10 @@ function FtpApi:listFolder(address_path, folder_path)
     end
     --sort
     table.sort(ftp_list, function(v1,v2)
-        return v1.text < v2.text
+        return ffiUtil.strcoll(v1.text, v2.text)
     end)
     table.sort(ftp_file, function(v1,v2)
-        return v1.text < v2.text
+        return ffiUtil.strcoll(v1.text, v2.text)
     end)
     for _, files in ipairs(ftp_file) do
         table.insert(ftp_list, {
