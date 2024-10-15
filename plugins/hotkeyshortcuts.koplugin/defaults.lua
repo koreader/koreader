@@ -4,19 +4,19 @@ local Device = require("device")
 return {
     hotkeyshortcuts_fm = {
         modifier_plus_up                 = nil,
-        modifier_plus_down               = nil, -- keep nil.
+        modifier_plus_down               = nil, -- keep nil, already assigned outside this plugin.
         modifier_plus_left               = nil,
         modifier_plus_right              = nil,
-        modifier_plus_left_page_back     = nil, -- keep nil.
-        modifier_plus_left_page_forward  = nil, -- keep nil.
-        modifier_plus_right_page_back    = nil, -- keep nil.
-        modifier_plus_right_page_forward = nil, -- keep nil.
+        modifier_plus_left_page_back     = nil, -- keep nil, already assigned outside this plugin.
+        modifier_plus_left_page_forward  = nil, -- keep nil, already assigned outside this plugin.
+        modifier_plus_right_page_back    = nil, -- keep nil, already assigned outside this plugin.
+        modifier_plus_right_page_forward = nil, -- keep nil, already assigned outside this plugin.
         modifier_plus_back               = {open_previous_document = true,},
         modifier_plus_home               = Device:hasWifiToggle() and {toggle_wifi = true,} or {},
-        modifier_plus_press              = nil, -- keep nil.
-        modifier_plus_menu               = nil, -- keep nil.
-        -- optional
-        press = nil, -- keep nil
+        modifier_plus_press              = nil, -- keep nil, already assigned outside this plugin.
+        modifier_plus_menu               = nil, -- keep nil, already assigned outside this plugin.
+        -- optional, user can select whether or not to enable it.
+        press = nil, -- keep nil, already assigned outside this plugin.
         -- alt
         alt_plus_up                 = nil,
         alt_plus_down               = nil,
@@ -70,7 +70,7 @@ return {
         modifier_plus_back               = {open_previous_document = true,},
         modifier_plus_home               = Device:hasWifiToggle() and {toggle_wifi = true,} or {},
         modifier_plus_press              = {full_refresh = true,},
-        modifier_plus_menu               = nil, -- keep nil.
+        modifier_plus_menu               = nil, -- keep nil, already assigned outside this plugin.
         -- optional
         press = {show_config_menu = true,},
         -- alt
