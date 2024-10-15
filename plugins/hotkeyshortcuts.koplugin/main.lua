@@ -149,14 +149,13 @@ end
 function HotKeyShortcuts:registerKeyEvents()
     self.key_events = {}
     self:overrideConflictingFunctions()
+    local cursor_keys = { "Up", "Down", "Left", "Right" }
+    local page_turn_keys = { "LPgBack", "LPgFwd", "RPgBack", "RPgFwd" }
+    local function_keys = { "Back", "Home", "Press", "Menu" }
     local key_name_mapping = {
         LPgBack = "left_page_back",    RPgBack = "right_page_back",
         LPgFwd  = "left_page_forward", RPgFwd  = "right_page_forward",
     }
-    local cursor_keys = { "Up", "Down", "Left", "Right" }
-    local page_turn_keys = { "LPgBack", "LPgFwd", "RPgBack", "RPgFwd" }
-    local function_keys = { "Back", "Home", "Press", "Menu" }
-
     local function addKeyEvent(modifier, key, event, args)
         self.key_events[modifier .."Plus".. key] = { { modifier, key }, event = event, args = args }
     end
@@ -413,13 +412,12 @@ end
     - ReaderWikipedia: Overrides `registerKeyEvents()` with an empty function.
     - ReaderUI: Customizes `Home` and `KeyContentSelection` key events based on device capabilities.
     - FileManager: Customizes `Home` and `Back` key events, and conditionally removes `Close` key event.
-    - FileSearcher: CCustomizes `ShowFileSearchBlank` key event for devices with keyboards.
+    - FileSearcher: Customizes `ShowFileSearchBlank` key event for devices with keyboards.
     - FileManagerMenu: Customizes `ShowMenu` key event for devices with keys.
 ]]
 function HotKeyShortcuts:overrideConflictingFunctions()
     local ReaderBookmark = require("apps/reader/modules/readerbookmark")
-    ReaderBookmark.registerKeyEvents = function(readerbookmark)
-    end
+    ReaderBookmark.registerKeyEvents = function(readerbookmark) end
 
     local ReaderConfig = require("apps/reader/modules/readerconfig")
     ReaderConfig.registerKeyEvents = function(readerconfig)
@@ -433,8 +431,7 @@ function HotKeyShortcuts:overrideConflictingFunctions()
     end
 
     local ReaderDictionary= require("apps/reader/modules/readerdictionary")
-    ReaderDictionary.registerKeyEvents = function(readerdictionary)
-    end
+    ReaderDictionary.registerKeyEvents = function(readerdictionary) end
 
     local ReaderLink = require("apps/reader/modules/readerlink")
     ReaderLink.registerKeyEvents = function(readerlink)
@@ -470,16 +467,13 @@ function HotKeyShortcuts:overrideConflictingFunctions()
     end
 
     local ReaderToc = require("apps/reader/modules/readertoc")
-    ReaderToc.registerKeyEvents = function(readertoc)
-    end
+    ReaderToc.registerKeyEvents = function(readertoc) end
 
     local ReaderThumbnail = require("apps/reader/modules/readerthumbnail")
-    ReaderThumbnail.registerKeyEvents = function(readerthumbnail)
-    end
+    ReaderThumbnail.registerKeyEvents = function(readerthumbnail) end
 
     local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
-    ReaderWikipedia.registerKeyEvents = function(readerwikipedia)
-    end
+    ReaderWikipedia.registerKeyEvents = function(readerwikipedia) end
 
     local ReaderUI = require("apps/reader/readerui")
     ReaderUI.registerKeyEvents = function(readerui)
