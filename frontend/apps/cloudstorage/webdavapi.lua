@@ -1,5 +1,5 @@
 local DocumentRegistry = require("document/documentregistry")
-local FFIUtil = require("ffi/util")
+local ffiUtil = require("ffi/util")
 local http = require("socket.http")
 local ltn12 = require("ltn12")
 local socket = require("socket")
@@ -103,7 +103,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
             --logger.dbg("WebDav catalog item=", item)
             -- <d:href> is the path and filename of the entry.
             local item_fullpath = item:match("<[^:]*:href[^>]*>(.*)</[^:]*:href>")
-            local item_name = FFIUtil.basename(util.htmlEntitiesToUtf8(util.urlDecode(item_fullpath)))
+            local item_name = ffiUtil.basename(util.htmlEntitiesToUtf8(util.urlDecode(item_fullpath)))
             local is_current_dir = item_name == string.sub(folder_path, -#item_name)
             local is_not_collection = item:find("<[^:]*:resourcetype%s*/>") or
                                       item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
@@ -133,10 +133,10 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
 
     --sort
     table.sort(webdav_list, function(v1,v2)
-        return v1.text < v2.text
+        return ffiUtil.strcoll(v1.text, v2.text)
     end)
     table.sort(webdav_file, function(v1,v2)
-        return v1.text < v2.text
+        return ffiUtil.strcoll(v1.text, v2.text)
     end)
     for _, files in ipairs(webdav_file) do
         table.insert(webdav_list, {
