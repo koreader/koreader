@@ -77,7 +77,7 @@ function InputText:onUnfocus() end
 -- Resync our position state with our text widget's actual state
 function InputText:resyncPos()
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
-    if self.strike_callback then
+    if self.strike_callback and self.min_buffer_size == nil then -- not Terminal plugin input
         self.strike_callback()
     end
 end
