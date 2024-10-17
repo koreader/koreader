@@ -640,8 +640,8 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                             sub_item_table[i] = {
                                 text_func = function()
                                     local title = self.ui.bookinfo.prop_text[prop]:lower()
-                                    local text = self:getAutoExecValue(event, profile_name, condition, prop)
-                                    return text and title .. " " .. text or title:sub(1, -2)
+                                    local txt = self:getAutoExecValue(event, profile_name, condition, prop)
+                                    return txt and title .. " " .. txt or title:sub(1, -2)
                                 end,
                                 checked_func = function()
                                     return self:getAutoExecValue(event, profile_name, condition, prop) and true
@@ -655,8 +655,8 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                                                 return prop == "title" or self.ui.doc_props[prop] ~= nil
                                             end,
                                             callback = function()
-                                                local text = self.ui.doc_props[prop == "title" and "display_title" or prop]
-                                                dialog:addTextToInput(text)
+                                                local txt = self.ui.doc_props[prop == "title" and "display_title" or prop]
+                                                dialog:addTextToInput(txt)
                                             end,
                                         },
                                     }}
@@ -671,11 +671,11 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                                         {
                                             text = _("Save"),
                                             callback = function()
-                                                local text = dialog:getInputText()
-                                                if text == "" then
+                                                local txt = dialog:getInputText()
+                                                if txt == "" then
                                                     self:delAutoExecValue(event, profile_name, condition, prop)
                                                 else
-                                                    self:setAutoExecValue(text, event, profile_name, condition, prop)
+                                                    self:setAutoExecValue(txt, event, profile_name, condition, prop)
                                                 end
                                                 UIManager:close(dialog)
                                                 touchmenu_instance:updateItems()
@@ -705,9 +705,9 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                 },
                 {
                     text_func = function() -- filepath
-                        local text = conditions[3][1]
+                        local txt = conditions[3][1]
                         local value = self:getAutoExecValue(event, profile_name, conditions[3][2])
-                        return value and text .. ": " .. value or text
+                        return value and txt .. ": " .. value or txt
                     end,
                     enabled_func = function()
                         return not self:getAutoExecValue(event_always, profile_name)
@@ -737,11 +737,11 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                             {
                                 text = _("Save"),
                                 callback = function()
-                                    local text = dialog:getInputText()
-                                    if text == "" then
+                                    local txt = dialog:getInputText()
+                                    if txt == "" then
                                         self:delAutoExecValue(event, profile_name, condition)
                                     else
-                                        self:setAutoExecValue(text, event, profile_name, condition)
+                                        self:setAutoExecValue(txt, event, profile_name, condition)
                                     end
                                     UIManager:close(dialog)
                                     touchmenu_instance:updateItems()
