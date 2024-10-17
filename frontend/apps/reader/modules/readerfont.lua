@@ -903,26 +903,33 @@ a { color: black; }
 <h1>%s</h1>
 ]], _("Available fonts test document"), _("AVAILABLE FONTS")))
     local face_list = cre.getFontFaces()
+    local new_font_idx = 1
     if next(newly_added_fonts) then
         -- Sort alphabetically, with new fonts first (as done in sortFaceList())
-        local move_idx = 1
         for i=1, #face_list do
             if newly_added_fonts[face_list[i]] then
-                face_list[i] = face_list[i] .. " [NEW]"
-                table.insert(face_list, move_idx, table.remove(face_list, i))
-                move_idx = move_idx + 1
+                table.insert(face_list, new_font_idx, table.remove(face_list, i))
+                new_font_idx = new_font_idx + 1
             end
         end
     end
     f:write("<div style='margin: 2em'>\n")
-    for _, font_name in ipairs(face_list) do
+    for i, font_name in ipairs(face_list) do
         local font_id = font_name:gsub(" ", "_"):gsub("'", "_")
-        f:write(string.format("  <div><a href='#%s'>%s</a></div>\n", font_id, font_name))
+        if i < new_font_idx then -- New fonts prepended with NEW on summary page
+            f:write(string.format("  <div><a href='#%s'>NEW: %s</a></div>\n", font_id, font_name))
+        else
+            f:write(string.format("  <div><a href='#%s'>%s</a></div>\n", font_id, font_name))
+        end
     end
     f:write("</div>\n\n")
-    for _, font_name in ipairs(face_list) do
+    for i, font_name in ipairs(face_list) do
         local font_id = font_name:gsub(" ", "_"):gsub("'", "_")
-        f:write(string.format("<h1 id='%s'>%s</h1>\n", font_id, font_name))
+        if i < new_font_idx then -- New fonts prepended with NEW in titles and TOC
+            f:write(string.format("<h1 id='%s'>NEW: %s</h1>\n", font_id, font_name))
+        else
+            f:write(string.format("<h1 id='%s'>%s</h1>\n", font_id, font_name))
+        end
         f:write(string.format("<div style='font-family: %s'>\n", font_name))
         f:write(html_sample)
         f:write("\n</div>\n\n")
