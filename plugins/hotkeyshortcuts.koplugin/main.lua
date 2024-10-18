@@ -403,17 +403,17 @@ end
 
     Modules and their modifications:
     - ReaderBookmark: Overrides `registerKeyEvents()` with an empty function.
-    - ReaderConfig: Customizes `ShowConfigMenu` key event based on user settings.
+    - ReaderConfig: Soft-override that keeps `ShowConfigMenu` key event based on user settings.
     - ReaderDictionary: Overrides `registerKeyEvents()` with an empty function.
-    - ReaderLink: Customizes `GotoSelectedPageLink` key event for devices with screen keyboard or symbol key.
-    - ReaderSearch: Customizes `ShowFulltextSearchInputBlank` key event for devices with a keyboard.
+    - ReaderLink: Soft-override that keeps `GotoSelectedPageLink` key event for devices with screenkb or symbol key.
+    - ReaderSearch: Soft-override that keeps `ShowFulltextSearchInputBlank` key event for devices with a keyboard.
     - ReaderToc: Overrides `registerKeyEvents()` with an empty function.
     - ReaderThumbnail: Overrides `registerKeyEvents()` with an empty function.
     - ReaderWikipedia: Overrides `registerKeyEvents()` with an empty function.
-    - ReaderUI: Customizes `Home` and `KeyContentSelection` key events based on device capabilities.
-    - FileManager: Customizes `Home` and `Back` key events, and conditionally removes `Close` key event.
-    - FileSearcher: Customizes `ShowFileSearchBlank` key event for devices with keyboards.
-    - FileManagerMenu: Customizes `ShowMenu` key event for devices with keys.
+    - ReaderUI: Soft-override that keeps `Home` and `KeyContentSelection` key events based on device capabilities.
+    - FileManager: Soft-override that keeps `Home` and `Back` key events, and conditionally removes `Close` key event.
+    - FileSearcher: Soft-override that keeps `ShowFileSearchBlank` key event for devices with keyboards.
+    - FileManagerMenu: Soft-override that keeps `ShowMenu` key event for devices with keys.
 ]]
 function HotKeyShortcuts:overrideConflictingFunctions()
     local ReaderBookmark = require("apps/reader/modules/readerbookmark")

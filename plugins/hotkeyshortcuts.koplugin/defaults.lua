@@ -71,7 +71,7 @@ return {
         modifier_plus_home               = Device:hasWifiToggle() and {toggle_wifi = true,} or {},
         modifier_plus_press              = {full_refresh = true,},
         modifier_plus_menu               = nil, -- keep nil, already assigned outside this plugin.
-        -- optional
+        -- optional, user can select whether or not to enable it.
         press = {show_config_menu = true,},
         -- alt
         alt_plus_up                 = nil,
