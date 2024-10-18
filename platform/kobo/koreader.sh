@@ -10,7 +10,7 @@ export KOREADER_DIR="${KOREADER_DIR:-${SCRIPT_DIR}}"
 cd "${KOREADER_DIR:-/dev/null}" || exit
 
 # To make USBMS behave, relocalize ourselves outside of onboard
-if [ "${SCRIPT_DIR}" != "/tmp" ]; then
+if [ "${SCRIPT_DIR}" != "/tmp" ] && [ "${SCRIPT_DIR}" != "/var/volatile/tmp" ]; then
     cp -pf "${0}" "/tmp/koreader.sh"
     chmod 777 "/tmp/koreader.sh"
     exec "/tmp/koreader.sh" "$@"
@@ -209,7 +209,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     #       as we want to be able to use our own per-if processes w/ custom args later on.
     #       A SIGTERM does not break anything, it'll just prevent automatic lease renewal until the time
     #       KOReader actually sets the if up itself (i.e., it'll do)...
-    killall -q -TERM nickel hindenburg sickel fickel strickel fontickel adobehost foxitpdf iink dhcpcd-dbus dhcpcd bluealsa bluetoothd fmon nanoclock.lua
+    killall -q -TERM nickel hindenburg sickel fickel strickel fontickel adobehost foxitpdf iink dhcpcd-dbus dhcpcd bluealsa bluetoothd fmon nanoclock.lua memorylogger QtWebEngineProcess
 
     # Wait for Nickel to die... (oh, procps with killall -w, how I miss you...)
     kill_timeout=0
@@ -223,6 +223,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     done
     # Remove Nickel's FIFO to avoid udev & udhcpc scripts hanging on open() on it...
     rm -f /tmp/nickel-hardware-status
+    rm -f /var/volatile/tmp/nickel-hardware-status
 
     # We don't need to grab input devices (unless MiniClock is running, in which case that neatly inhibits it while we run).
     if [ ! -d "/tmp/MiniClock" ]; then
@@ -238,6 +239,11 @@ fi
 
 if [ -z "${PRODUCT}" ]; then
     PRODUCT="$(/bin/kobo_config.sh 2>/dev/null)"
+    export PRODUCT
+fi
+
+if [ -z "${PRODUCT}" ]; then
+    PRODUCT="$(/usr/bin/hwdetect.sh 2>/dev/null)"
     export PRODUCT
 fi
 
