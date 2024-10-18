@@ -69,9 +69,82 @@ local function filter(text, element)
     return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
 end
 
+-- From https://github.com/lunarmodules/luasocket/blob/1fad1626900a128be724cba9e9c19a6b2fe2bf6b/samples/cookie.lua
+local token_class =  '[^%c%s%(%)%<%>%@%,%;%:%\\%"%/%[%]%?%=%{%}]'
+
+local function unquote(t, quoted)
+    local n = string.match(t, "%$(%d+)$")
+    if n then n = tonumber(n) end
+    if quoted[n] then return quoted[n]
+    else return t end
+end
+
+local function parse_set_cookie(c, quoted, cookie_table)
+    c = c .. ";$last=last;"
+    local _, _, n, v, i = string.find(c, "(" .. token_class ..
+                                      "+)%s*=%s*(.-)%s*;%s*()")
+    local cookie = {
+        name = n,
+        value = unquote(v, quoted),
+        attributes = {}
+    }
+    while 1 do
+        _, _, n, v, i = string.find(c, "(" .. token_class ..
+                                    "+)%s*=?%s*(.-)%s*;%s*()", i)
+        if not n or n == "$last" then break end
+        cookie.attributes[#cookie.attributes+1] = {
+            name = n,
+            value = unquote(v, quoted)
+        }
+    end
+    cookie_table[#cookie_table+1] = cookie
+end
+local function split_set_cookie(s, cookie_table)
+    cookie_table = cookie_table or {}
+    -- remove quoted strings from cookie list
+    local quoted = {}
+    s = string.gsub(s, '"(.-)"', function(q)
+        quoted[#quoted+1] = q
+        return "$" .. #quoted
+    end)
+    -- add sentinel
+    s = s .. ",$last="
+    -- split into individual cookies
+    local i = 1
+    while 1 do
+        local _, _, cookie, next_token
+        _, _, cookie, i, next_token = string.find(s, "(.-)%s*%,%s*()(" ..
+            token_class .. "+)%s*=", i)
+        if not next_token then break end
+        parse_set_cookie(cookie, quoted, cookie_table)
+        if next_token == "$last" then break end
+    end
+    return cookie_table
+end
+
+local function quote(s)
+    if string.find(s, "[ %,%;]") then return '"' .. s .. '"'
+    else return s end
+end
+
+local _empty = {}
+local function build_cookies(cookies)
+    local s = ""
+    for i,v in ipairs(cookies or _empty) do
+        if v.name then
+            s = s .. v.name
+            if v.value and v.value ~= "" then
+                s = s .. '=' .. quote(v.value)
+            end
+        end
+        if i < #cookies then s = s .. "; " end
+    end
+    return s
+end
+
 -- Get URL content
-local function getUrlContent(url, timeout, maxtime, redirectCount)
-    logger.dbg("getUrlContent(", url, ",", timeout, ",", maxtime, ",", redirectCount, ")")
+local function getUrlContent(url, cookies, timeout, maxtime, redirectCount)
+    logger.dbg("getUrlContent(", url, ",", cookies, ", ", timeout, ",", maxtime, ",", redirectCount, ")")
     if not redirectCount then
         redirectCount = 0
     elseif redirectCount == max_redirects then
@@ -88,12 +161,16 @@ local function getUrlContent(url, timeout, maxtime, redirectCount)
         url     = url,
         method  = "GET",
         sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
+        headers = {
+            ["cookie"] = build_cookies(cookies)
+        }
     }
     logger.dbg("request:", request)
     local code, headers, status = socket.skip(1, http.request(request))
+
     socketutil:reset_timeout()
-    logger.dbg("After http.request")
     local content = table.concat(sink) -- empty or content accumulated till now
+    logger.dbg("After http.request")
     logger.dbg("type(code):", type(code))
     logger.dbg("code:", code)
     logger.dbg("headers:", headers)
@@ -139,9 +216,40 @@ local function getUrlContent(url, timeout, maxtime, redirectCount)
     return true, content
 end
 
-function EpubDownloadBackend:getResponseAsString(url)
+function EpubDownloadBackend:getConnectionCookies(url, credentials)
+
+    local body = ""
+    for k, v in pairs(credentials) do
+        body = body .. (tostring(k) .. "=" .. tostring(v) .. "&")
+    end
+    local request = {
+        method  = "POST",
+        url     = url,
+        headers = {
+            ["content-type"] = "application/x-www-form-urlencoded",
+            ["content-length"] = tostring(#body)
+            },
+        source = ltn12.source.string(body),
+        sink    = nil
+    }
+    logger.dbg("request:", request, ", body: ", body)
+    local code, headers, status = socket.skip(1, http.request(request))
+
+    logger.dbg("code:", code)
+    logger.dbg("headers:", headers)
+    logger.dbg("status:", status)
+
+    local cookies = {}
+    local to_parse = headers["set-cookie"]
+    split_set_cookie(to_parse, cookies)
+    logger.dbg("Cookies: ", cookies)
+
+    return cookies
+end
+
+function EpubDownloadBackend:getResponseAsString(url, cookies)
     logger.dbg("EpubDownloadBackend:getResponseAsString(", url, ")")
-    local success, content = getUrlContent(url)
+    local success, content = getUrlContent(url, cookies)
     if (success) then
         return content
     else
@@ -157,21 +265,21 @@ function EpubDownloadBackend:resetTrapWidget()
     self.trap_widget = nil
 end
 
-function EpubDownloadBackend:loadPage(url)
+function EpubDownloadBackend:loadPage(url, cookies)
     local completed, success, content
     if self.trap_widget then -- if previously set with EpubDownloadBackend:setTrapWidget()
         local Trapper = require("ui/trapper")
         local timeout, maxtime = 30, 60
         -- We use dismissableRunInSubprocess with complex return values:
         completed, success, content = Trapper:dismissableRunInSubprocess(function()
-            return getUrlContent(url, timeout, maxtime)
+            return getUrlContent(url, cookies, timeout, maxtime)
         end, self.trap_widget)
         if not completed then
             error(self.dismissed_error_code) -- "Interrupted by user"
         end
     else
         local timeout, maxtime = 10, 60
-        success, content = getUrlContent(url, timeout, maxtime)
+        success, content = getUrlContent(url, cookies, timeout, maxtime)
     end
     logger.dbg("success:", success, "type(content):", type(content), "content:", content:sub(1, 500), "...")
     if not success then
@@ -472,7 +580,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                 src = img.src2x
             end
             logger.dbg("Getting img ", src)
-            local success, content = getUrlContent(src)
+            local success, content = getUrlContent(src, nil)
             -- success, content = getUrlContent(src..".unexistant") -- to simulate failure
             if success then
                 logger.dbg("success, size:", #content)
