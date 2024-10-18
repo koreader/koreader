@@ -1160,6 +1160,9 @@ function Dispatcher:execute(settings, exec_props)
         end
         if Dispatcher:isActionEnabled(settingsList[k]) then
             Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
+            if settings.settings and settings.settings.notify then
+                Notification:notify(T(_("Executing profile: %1"), settings.settings.name))
+            end
             if settingsList[k].configurable then
                 local value = v
                 if type(v) ~= "number" then
