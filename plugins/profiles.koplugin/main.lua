@@ -122,6 +122,7 @@ function Profiles:getSubMenuItems()
     }
     for k, v in ffiUtil.orderedPairs(self.data) do
         local sub_items = {
+            ignored_by_menu_search = true,
             {
                 text = _("Execute"),
                 callback = function(touchmenu_instance)
@@ -169,7 +170,7 @@ function Profiles:getSubMenuItems()
                 hold_callback = function(touchmenu_instance)
                     for event, profiles in pairs(self.autoexec) do
                         if profiles[k] then
-                            self:delAutoExecValue(event, k)
+                            util.tableRemovePath(self.autoexec, event, k)
                         end
                     end
                     touchmenu_instance:updateItems()
@@ -460,62 +461,6 @@ function Profiles:updateAutoExec(old_name, new_name)
     end
 end
 
-function Profiles:getAutoExecValue(key1, key2, key3, key4)
-    if key4 ~= nil then
-        return self.autoexec[key1]
-           and self.autoexec[key1][key2]
-           and self.autoexec[key1][key2][key3]
-           and self.autoexec[key1][key2][key3][key4]
-    elseif key3 ~= nil then
-        return self.autoexec[key1]
-           and self.autoexec[key1][key2]
-           and self.autoexec[key1][key2][key3]
-    else
-        return self.autoexec[key1]
-           and self.autoexec[key1][key2]
-    end
-end
-
-function Profiles:setAutoExecValue(value, key1, key2, key3, key4)
-    self.autoexec[key1] = self.autoexec[key1] or {}
-    if key3 == nil then
-        self.autoexec[key1][key2] = value
-    else
-        self.autoexec[key1][key2] = self.autoexec[key1][key2] or {}
-        if key4 == nil then
-            self.autoexec[key1][key2][key3] = value
-        else
-            self.autoexec[key1][key2][key3] = self.autoexec[key1][key2][key3] or {}
-            self.autoexec[key1][key2][key3][key4] = value
-        end
-    end
-end
-
-function Profiles:delAutoExecValue(key1, key2, key3, key4) -- deletes empty branch
-    if key4 ~= nil then
-        if self:getAutoExecValue(key1, key2, key3) ~= nil then
-            self.autoexec[key1][key2][key3][key4] = nil
-            if next(self.autoexec[key1][key2][key3]) == nil then
-                self:delAutoExecValue(key1, key2, key3)
-            end
-        end
-    elseif key3 ~= nil then
-        if self:getAutoExecValue(key1, key2) ~= nil then
-            self.autoexec[key1][key2][key3] = nil
-            if next(self.autoexec[key1][key2]) == nil then
-                self:delAutoExecValue(key1, key2)
-            end
-        end
-    else
-        if self.autoexec[key1] ~= nil then
-            self.autoexec[key1][key2] = nil
-            if next(self.autoexec[key1]) == nil then
-                self.autoexec[key1] = nil
-            end
-        end
-    end
-end
-
 function Profiles:genAutoExecMenuItem(text, event, profile_name, separator)
     if event == "SetRotationMode" then
         return self:genAutoExecSetRotationModeMenuItem(text, event, profile_name, separator)
@@ -525,15 +470,15 @@ function Profiles:genAutoExecMenuItem(text, event, profile_name, separator)
     return {
         text = text,
         checked_func = function()
-            return self:getAutoExecValue(event, profile_name)
+            return util.tableGetValue(self.autoexec, event, profile_name)
         end,
         callback = function()
-            if self:getAutoExecValue(event, profile_name) then
-                self:delAutoExecValue(event, profile_name)
+            if util.tableGetValue(self.autoexec, event, profile_name) then
+                util.tableRemovePath(self.autoexec, event, profile_name)
             else
-                self:setAutoExecValue(true, event, profile_name)
+                util.tableSetValue(self.autoexec, true, event, profile_name)
                 if event == "ReaderReady" then -- "always" is checked, clear all conditional triggers
-                    self:delAutoExecValue("ReaderReadyAll", profile_name)
+                    util.tableRemovePath(self.autoexec, "ReaderReadyAll", profile_name)
                 end
             end
         end,
@@ -545,7 +490,7 @@ function Profiles:genAutoExecSetRotationModeMenuItem(text, event, profile_name, 
     return {
         text = text,
         checked_func = function()
-            return self:getAutoExecValue(event, profile_name) and true
+            return util.tableGetValue(self.autoexec, event, profile_name) and true
         end,
         sub_item_table_func = function()
             local sub_item_table = {}
@@ -554,13 +499,13 @@ function Profiles:genAutoExecSetRotationModeMenuItem(text, event, profile_name, 
                 sub_item_table[i] = {
                     text = optionsutil.rotation_labels[i],
                     checked_func = function()
-                        return self:getAutoExecValue(event, profile_name, mode)
+                        return util.tableGetValue(self.autoexec, event, profile_name, mode)
                     end,
                     callback = function()
-                        if self:getAutoExecValue(event, profile_name, mode) then
-                            self:delAutoExecValue(event, profile_name, mode)
+                        if util.tableGetValue(self.autoexec, event, profile_name, mode) then
+                            util.tableRemovePath(self.autoexec, event, profile_name, mode)
                         else
-                            self:setAutoExecValue(true, event, profile_name, mode)
+                            util.tableSetValue(self.autoexec, true, event, profile_name, mode)
                         end
                     end,
                 }
@@ -568,7 +513,7 @@ function Profiles:genAutoExecSetRotationModeMenuItem(text, event, profile_name, 
             return sub_item_table
         end,
         hold_callback = function(touchmenu_instance)
-            self:delAutoExecValue(event, profile_name)
+            util.tableRemovePath(self.autoexec, event, profile_name)
             touchmenu_instance:updateItems()
         end,
         separator = separator,
@@ -580,7 +525,7 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
     return {
         text = text,
         checked_func = function()
-            return (self:getAutoExecValue(event_always, profile_name) or self:getAutoExecValue(event, profile_name)) and true
+            return (util.tableGetValue(self.autoexec, event_always, profile_name) or util.tableGetValue(self.autoexec, event, profile_name)) and true
         end,
         sub_item_table_func = function()
             local conditions = {
@@ -594,10 +539,10 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                 {
                     text = conditions[1][1], -- orientation
                     enabled_func = function()
-                        return not self:getAutoExecValue(event_always, profile_name)
+                        return not util.tableGetValue(self.autoexec, event_always, profile_name)
                     end,
                     checked_func = function()
-                        return self:getAutoExecValue(event, profile_name, conditions[1][2]) and true
+                        return util.tableGetValue(self.autoexec, event, profile_name, conditions[1][2]) and true
                     end,
                     sub_item_table_func = function()
                         local condition = conditions[1][2]
@@ -607,13 +552,13 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                             sub_item_table[i] = {
                                 text = optionsutil.rotation_labels[i],
                                 checked_func = function()
-                                    return self:getAutoExecValue(event, profile_name, condition, mode)
+                                    return util.tableGetValue(self.autoexec, event, profile_name, condition, mode)
                                 end,
                                 callback = function()
-                                    if self:getAutoExecValue(event, profile_name, condition, mode) then
-                                        self:delAutoExecValue(event, profile_name, condition, mode)
+                                    if util.tableGetValue(self.autoexec, event, profile_name, condition, mode) then
+                                        util.tableRemovePath(self.autoexec, event, profile_name, condition, mode)
                                     else
-                                        self:setAutoExecValue(true, event, profile_name, condition, mode)
+                                        util.tableSetValue(self.autoexec, true, event, profile_name, condition, mode)
                                     end
                                 end,
                             }
@@ -621,17 +566,17 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                         return sub_item_table
                     end,
                     hold_callback = function(touchmenu_instance)
-                        self:delAutoExecValue(event, profile_name, conditions[1][2])
+                        util.tableRemovePath(self.autoexec, event, profile_name, conditions[1][2])
                         touchmenu_instance:updateItems()
                     end,
                 },
                 {
                     text = conditions[2][1], -- doc_props
                     enabled_func = function()
-                        return not self:getAutoExecValue(event_always, profile_name)
+                        return not util.tableGetValue(self.autoexec, event_always, profile_name)
                     end,
                     checked_func = function()
-                        return self:getAutoExecValue(event, profile_name, conditions[2][2]) and true
+                        return util.tableGetValue(self.autoexec, event, profile_name, conditions[2][2]) and true
                     end,
                     sub_item_table_func = function()
                         local condition = conditions[2][2]
@@ -640,11 +585,11 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                             sub_item_table[i] = {
                                 text_func = function()
                                     local title = self.ui.bookinfo.prop_text[prop]:lower()
-                                    local txt = self:getAutoExecValue(event, profile_name, condition, prop)
+                                    local txt = util.tableGetValue(self.autoexec, event, profile_name, condition, prop)
                                     return txt and title .. " " .. txt or title:sub(1, -2)
                                 end,
                                 checked_func = function()
-                                    return self:getAutoExecValue(event, profile_name, condition, prop) and true
+                                    return util.tableGetValue(self.autoexec, event, profile_name, condition, prop) and true
                                 end,
                                 callback = function(touchmenu_instance)
                                     local dialog
@@ -673,9 +618,9 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                                             callback = function()
                                                 local txt = dialog:getInputText()
                                                 if txt == "" then
-                                                    self:delAutoExecValue(event, profile_name, condition, prop)
+                                                    util.tableRemovePath(self.autoexec, event, profile_name, condition, prop)
                                                 else
-                                                    self:setAutoExecValue(txt, event, profile_name, condition, prop)
+                                                    util.tableSetValue(self.autoexec, txt, event, profile_name, condition, prop)
                                                 end
                                                 UIManager:close(dialog)
                                                 touchmenu_instance:updateItems()
@@ -684,14 +629,14 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                                     })
                                     dialog = InputDialog:new{
                                         title =  _("Enter text contained in:") .. " " .. self.ui.bookinfo.prop_text[prop]:sub(1, -2),
-                                        input = self:getAutoExecValue(event, profile_name, condition, prop),
+                                        input = util.tableGetValue(self.autoexec, event, profile_name, condition, prop),
                                         buttons = buttons,
                                     }
                                     UIManager:show(dialog)
                                     dialog:onShowKeyboard()
                                 end,
                                 hold_callback = function(touchmenu_instance)
-                                    self:delAutoExecValue(event, profile_name, condition, prop)
+                                    util.tableRemovePath(self.autoexec, event, profile_name, condition, prop)
                                     touchmenu_instance:updateItems()
                                 end,
                             }
@@ -699,21 +644,21 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                         return sub_item_table
                     end,
                     hold_callback = function(touchmenu_instance)
-                        self:delAutoExecValue(event, profile_name, conditions[2][2])
+                        util.tableRemovePath(self.autoexec, event, profile_name, conditions[2][2])
                         touchmenu_instance:updateItems()
                     end,
                 },
                 {
                     text_func = function() -- filepath
                         local txt = conditions[3][1]
-                        local value = self:getAutoExecValue(event, profile_name, conditions[3][2])
+                        local value = util.tableGetValue(self.autoexec, event, profile_name, conditions[3][2])
                         return value and txt .. ": " .. value or txt
                     end,
                     enabled_func = function()
-                        return not self:getAutoExecValue(event_always, profile_name)
+                        return not util.tableGetValue(self.autoexec, event_always, profile_name)
                     end,
                     checked_func = function()
-                        return self:getAutoExecValue(event, profile_name, conditions[3][2]) and true
+                        return util.tableGetValue(self.autoexec, event, profile_name, conditions[3][2]) and true
                     end,
                     callback = function(touchmenu_instance)
                         local condition = conditions[3][2]
@@ -739,9 +684,9 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                                 callback = function()
                                     local txt = dialog:getInputText()
                                     if txt == "" then
-                                        self:delAutoExecValue(event, profile_name, condition)
+                                        util.tableRemovePath(self.autoexec, event, profile_name, condition)
                                     else
-                                        self:setAutoExecValue(txt, event, profile_name, condition)
+                                        util.tableSetValue(self.autoexec, txt, event, profile_name, condition)
                                     end
                                     UIManager:close(dialog)
                                     touchmenu_instance:updateItems()
@@ -750,14 +695,14 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                         })
                         dialog = InputDialog:new{
                             title =  _("Enter text contained in file path"),
-                            input = self:getAutoExecValue(event, profile_name, condition),
+                            input = util.tableGetValue(self.autoexec, event, profile_name, condition),
                             buttons = buttons,
                         }
                         UIManager:show(dialog)
                         dialog:onShowKeyboard()
                     end,
                     hold_callback = function(touchmenu_instance)
-                        self:delAutoExecValue(event, profile_name, conditions[3][2])
+                        util.tableRemovePath(self.autoexec, event, profile_name, conditions[3][2])
                         touchmenu_instance:updateItems()
                     end,
                 },
@@ -765,8 +710,8 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
             return sub_item_table
         end,
         hold_callback = function(touchmenu_instance)
-            self:delAutoExecValue(event_always, profile_name)
-            self:delAutoExecValue(event, profile_name)
+            util.tableRemovePath(self.autoexec, event_always, profile_name)
+            util.tableRemovePath(self.autoexec, event, profile_name)
             touchmenu_instance:updateItems()
         end,
         separator = separator,
