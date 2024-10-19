@@ -304,8 +304,6 @@ FocusManager.FORCED_FOCUS = 4
 
 --- Move focus to specified widget
 function FocusManager:moveFocusTo(x, y, focus_flags)
-    print("FocusManager:moveFocusTo:", x, y, focus_flags)
-    print(debug.traceback())
     focus_flags = focus_flags or 0
     if not self.layout then
         return false
@@ -496,7 +494,6 @@ FocusManager.RENDER_IN_NEXT_TICK = true
 --- Container calls this method to re-set focus widget style
 --- Some container regenerate layout on update and lose focus style
 function FocusManager:refocusWidget(nextTick, focus_flags)
-    print("FocusManager:refocusWidget:", nextTick, focus_flags)
     -- On touch devices, we do *not* want to show visual focus changes generated programmatically,
     -- we only want to see them for actual user input events (#12361).
     if not focus_flags then

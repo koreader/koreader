@@ -994,7 +994,6 @@ function Menu:init()
 end
 
 function Menu:updatePageInfo(select_number)
-    print("Menu:updatePageInfo", select_number)
     if #self.item_table > 0 then
         local is_focused = self.itemnumber and self.itemnumber > 0
         if is_focused or Device:hasDPad() then
@@ -1133,7 +1132,6 @@ end
 
 -- merge TitleBar layout into self FocusManager layout
 function Menu:mergeTitleBarIntoLayout()
-    print("Menu:mergeTitleBarIntoLayout")
     if Device:hasSymKey() or Device:hasScreenKB() then
         -- Title bar items can be accessed through key mappings on kindle
         return
@@ -1141,9 +1139,6 @@ function Menu:mergeTitleBarIntoLayout()
     -- On hasFewKeys devices, Menu uses the "Right" key to trigger the context menu: we can't use it to move focus in horizontal directions.
     -- So, add title bar buttons to FocusManager's layout in a vertical-only layout
     local title_bar_layout = self.title_bar:generateVerticalLayout()
-    print("self.selected:", self.selected.x, self.selected.y)
-    print("self.layout:", #self.layout, #self.layout[#self.layout])
-    print("title_bar_layout:", #title_bar_layout, #title_bar_layout[#title_bar_layout])
     for i, row in ipairs(title_bar_layout) do
         -- Insert the title bar in the top rows of our layout
         table.insert(self.layout, i, row)
