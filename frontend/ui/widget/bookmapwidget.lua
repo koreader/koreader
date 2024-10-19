@@ -354,13 +354,13 @@ function BookMapRow:init()
     self.pages_markers = {}
     self.indicators = {}
     self.bottom_texts = {}
-    local enable_invisiable_focus_page_slot = Device:hasDPad()
+    local enable_invisible_focus_page_slot = Device:hasDPad()
     local invisible_focusable_page_slots = nil
     local focus_border_size = Size.border.thin * 3;
-    local invisiable_widget = nil
-    if enable_invisiable_focus_page_slot then
+    local invisible_widget = nil
+    if enable_invisible_focus_page_slot then
         invisible_focusable_page_slots = {}
-        invisiable_widget = Widget:new{
+        invisible_widget = Widget:new{
             dimen = Geom:new{
                 w = self.page_slot_width + 1 - focus_border_size * 2,
                 h = self.span_height - focus_border_size * 2,
@@ -430,7 +430,7 @@ function BookMapRow:init()
             end
             prev_page_was_read = false
         end
-        if enable_invisiable_focus_page_slot then
+        if enable_invisible_focus_page_slot then
             local x
             if _mirroredUI then
                 x = self:getPageX(page, true) - Size.line.thin
@@ -445,7 +445,7 @@ function BookMapRow:init()
                 focusable = true,
                 focus_border_size = focus_border_size,
                 focus_inner_border = true,
-                invisiable_widget
+                invisible_widget
             }
             table.insert(self.pages_frame, invisible_focusable_page_slot)
             table.insert(invisible_focusable_page_slots, invisible_focusable_page_slot)
@@ -673,7 +673,7 @@ local BookMapWidget = InputContainer:extend{
 function BookMapWidget:init()
     self.layout = {}
     self.scroll_row_layout = {}
-    self.need_foucs_print = false
+    self.need_focus_print = false
     if self.ui.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
@@ -1271,7 +1271,7 @@ function BookMapWidget:update()
     self.initial_scroll_offset_y = self.cropping_widget._scroll_offset_y
 
     self:moveFocusTo(1, 1, FocusManager.FOCUS_ONLY_ON_NT)
-    self.need_foucs_print = true
+    self.need_focus_print = true
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
@@ -1907,12 +1907,12 @@ function BookMapWidget:paintTo(bb, x, y)
         if #focus_row > 0 then
             -- widgets in row has same height, so just check one widget
             local dimen = focus_row[1].dimen
-            local widget_invisiable = dimen:notIntersectWith(self.cropping_widget.dimen)
-            if not widget_invisiable then
+            local widget_invisible = dimen:notIntersectWith(self.cropping_widget.dimen)
+            if not widget_invisible then
                 local row, row_idx, row_y, row_h = self:getVGroupRowAtY(dimen.y-self.title_bar_h) -- luacheck: no unused
-                widget_invisiable = not row
+                widget_invisible = not row
             end
-            if not widget_invisiable then
+            if not widget_invisible then
                 table.insert(self.layout, focus_row)
                 row_added_to_focus_layout = true
             elseif row_added_to_focus_layout then -- reached end of ScrollContainer
@@ -1920,8 +1920,8 @@ function BookMapWidget:paintTo(bb, x, y)
             end
         end
     end
-    if self.need_foucs_print then
-        self.need_foucs_print = false
+    if self.need_focus_print then
+        self.need_focus_print = false
         self:refocusWidget(FocusManager.RENDER_IN_NEXT_TICK, FocusManager.FOCUS_ONLY_ON_NT)
     end
 end
