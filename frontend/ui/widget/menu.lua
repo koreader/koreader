@@ -1145,11 +1145,6 @@ function Menu:mergeTitleBarIntoLayout()
     end
     -- Adjust for the added rows to keep our current selection
     self.selected.y = math.min(#self.layout, self.selected.y + #title_bar_layout)
-
-    if Device:hasDPad() then
-        -- Move focus to the first menu item, if any, in keeping with the pre-FocusManager behavior
-        self:moveFocusTo(self.selected.x, self.selected.y, FocusManager.NOT_FOCUS)
-    end
 end
 
 --[[
