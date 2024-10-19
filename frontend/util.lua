@@ -243,7 +243,7 @@ end
 --- Removes a key in a table, removes all empty parent keys.
 ---- @param t Lua table
 ---- @param ... parent keys, starting from the upper level
-function util.tableRemovePath(t, ...)
+function util.tableRemoveValue(t, ...)
     local keys = { ... }
     for i = #keys, 1, -1 do
         local q = t
