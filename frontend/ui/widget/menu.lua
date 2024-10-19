@@ -1144,7 +1144,7 @@ function Menu:mergeTitleBarIntoLayout()
         table.insert(self.layout, i, row)
     end
     -- Adjust for the added rows to keep our current selection
-    self.selected.y = math.min(#self.layout, self.selected.y + #title_bar_layout)
+    self.selected.y = self.selected.y + #title_bar_layout
 end
 
 --[[
