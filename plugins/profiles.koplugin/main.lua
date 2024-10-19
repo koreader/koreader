@@ -170,7 +170,7 @@ function Profiles:getSubMenuItems()
                 hold_callback = function(touchmenu_instance)
                     for event, profiles in pairs(self.autoexec) do
                         if profiles[k] then
-                            util.tableRemovePath(self.autoexec, event, k)
+                            util.tableRemoveValue(self.autoexec, event, k)
                         end
                     end
                     touchmenu_instance:updateItems()
@@ -474,11 +474,11 @@ function Profiles:genAutoExecMenuItem(text, event, profile_name, separator)
         end,
         callback = function()
             if util.tableGetValue(self.autoexec, event, profile_name) then
-                util.tableRemovePath(self.autoexec, event, profile_name)
+                util.tableRemoveValue(self.autoexec, event, profile_name)
             else
                 util.tableSetValue(self.autoexec, true, event, profile_name)
                 if event == "ReaderReady" then -- "always" is checked, clear all conditional triggers
-                    util.tableRemovePath(self.autoexec, "ReaderReadyAll", profile_name)
+                    util.tableRemoveValue(self.autoexec, "ReaderReadyAll", profile_name)
                 end
             end
         end,
@@ -503,7 +503,7 @@ function Profiles:genAutoExecSetRotationModeMenuItem(text, event, profile_name, 
                     end,
                     callback = function()
                         if util.tableGetValue(self.autoexec, event, profile_name, mode) then
-                            util.tableRemovePath(self.autoexec, event, profile_name, mode)
+                            util.tableRemoveValue(self.autoexec, event, profile_name, mode)
                         else
                             util.tableSetValue(self.autoexec, true, event, profile_name, mode)
                         end
@@ -513,7 +513,7 @@ function Profiles:genAutoExecSetRotationModeMenuItem(text, event, profile_name, 
             return sub_item_table
         end,
         hold_callback = function(touchmenu_instance)
-            util.tableRemovePath(self.autoexec, event, profile_name)
+            util.tableRemoveValue(self.autoexec, event, profile_name)
             touchmenu_instance:updateItems()
         end,
         separator = separator,
@@ -556,7 +556,7 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                                 end,
                                 callback = function()
                                     if util.tableGetValue(self.autoexec, event, profile_name, condition, mode) then
-                                        util.tableRemovePath(self.autoexec, event, profile_name, condition, mode)
+                                        util.tableRemoveValue(self.autoexec, event, profile_name, condition, mode)
                                     else
                                         util.tableSetValue(self.autoexec, true, event, profile_name, condition, mode)
                                     end
@@ -566,7 +566,7 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                         return sub_item_table
                     end,
                     hold_callback = function(touchmenu_instance)
-                        util.tableRemovePath(self.autoexec, event, profile_name, conditions[1][2])
+                        util.tableRemoveValue(self.autoexec, event, profile_name, conditions[1][2])
                         touchmenu_instance:updateItems()
                     end,
                 },
@@ -618,7 +618,7 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                                             callback = function()
                                                 local txt = dialog:getInputText()
                                                 if txt == "" then
-                                                    util.tableRemovePath(self.autoexec, event, profile_name, condition, prop)
+                                                    util.tableRemoveValue(self.autoexec, event, profile_name, condition, prop)
                                                 else
                                                     util.tableSetValue(self.autoexec, txt, event, profile_name, condition, prop)
                                                 end
@@ -636,7 +636,7 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                                     dialog:onShowKeyboard()
                                 end,
                                 hold_callback = function(touchmenu_instance)
-                                    util.tableRemovePath(self.autoexec, event, profile_name, condition, prop)
+                                    util.tableRemoveValue(self.autoexec, event, profile_name, condition, prop)
                                     touchmenu_instance:updateItems()
                                 end,
                             }
@@ -644,7 +644,7 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                         return sub_item_table
                     end,
                     hold_callback = function(touchmenu_instance)
-                        util.tableRemovePath(self.autoexec, event, profile_name, conditions[2][2])
+                        util.tableRemoveValue(self.autoexec, event, profile_name, conditions[2][2])
                         touchmenu_instance:updateItems()
                     end,
                 },
@@ -684,7 +684,7 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                                 callback = function()
                                     local txt = dialog:getInputText()
                                     if txt == "" then
-                                        util.tableRemovePath(self.autoexec, event, profile_name, condition)
+                                        util.tableRemoveValue(self.autoexec, event, profile_name, condition)
                                     else
                                         util.tableSetValue(self.autoexec, txt, event, profile_name, condition)
                                     end
@@ -702,7 +702,7 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                         dialog:onShowKeyboard()
                     end,
                     hold_callback = function(touchmenu_instance)
-                        util.tableRemovePath(self.autoexec, event, profile_name, conditions[3][2])
+                        util.tableRemoveValue(self.autoexec, event, profile_name, conditions[3][2])
                         touchmenu_instance:updateItems()
                     end,
                 },
@@ -710,8 +710,8 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
             return sub_item_table
         end,
         hold_callback = function(touchmenu_instance)
-            util.tableRemovePath(self.autoexec, event_always, profile_name)
-            util.tableRemovePath(self.autoexec, event, profile_name)
+            util.tableRemoveValue(self.autoexec, event_always, profile_name)
+            util.tableRemoveValue(self.autoexec, event, profile_name)
             touchmenu_instance:updateItems()
         end,
         separator = separator,
