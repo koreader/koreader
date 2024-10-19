@@ -353,17 +353,19 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
         }
         self:attachNewTableToExistingTable(fn_keys, fn_keys_haskeyboard)
     end
-    menu_items.button_press_does_hotkeyshortcuts = {
-        sorting_hint = "physical_buttons_setup",
-        text = _("Use the press key for shortcuts"),
-        checked_func = function()
-            return G_reader_settings:isTrue("press_key_does_hotkeyshortcuts")
-        end,
-        callback = function()
-            G_reader_settings:flipNilOrFalse("press_key_does_hotkeyshortcuts")
-            UIManager:askForRestart()
-        end,
-    }
+    if Device:hasScreenKB() or Device:hasSymKey() then
+        menu_items.button_press_does_hotkeyshortcuts = {
+            sorting_hint = "physical_buttons_setup",
+            text = _("Use the press key for shortcuts"),
+            checked_func = function()
+                return G_reader_settings:isTrue("press_key_does_hotkeyshortcuts")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("press_key_does_hotkeyshortcuts")
+                UIManager:askForRestart()
+            end,
+        }
+    end
     menu_items.hotkeyshortcuts = {
         sorting_hint = "physical_buttons_setup",
         text = _("Keyboard shortcuts"),
