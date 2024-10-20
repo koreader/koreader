@@ -237,6 +237,8 @@ function InputDialog:init()
         title_multilines = true,
         bottom_v_padding = self.bottom_v_padding,
         info_text = self.description,
+        left_icon = self.title_bar_left_icon,
+        left_icon_tap_callback = self.title_bar_left_icon_tap_callback,
         show_parent = self,
     }
 
@@ -693,7 +695,7 @@ function InputDialog:onKeyboardHeightChanged()
     self.text_height = self.orig_text_height or nil
 
     -- Same deal as in toggleKeyboard...
-    self.keyboard_visible = visible
+    self.keyboard_visible = visible and true or false
     self:init()
     if self.keyboard_visible then
         self:onShowKeyboard()
