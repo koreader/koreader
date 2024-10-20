@@ -723,4 +723,17 @@ function TextEditor:showMenu()
     UIManager:show(dialog)
 end
 
+function TextEditor:onSetRotationMode(rotation)
+    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
+        -- Also re-layout ReaderView or FileManager itself
+        if self.ui.view then
+            self.ui.view:onSetRotationMode(rotation)
+        else
+            self.ui:onSetRotationMode(rotation)
+        end
+        self.input:onKeyboardHeightChanged()
+        return true
+    end
+end
+
 return TextEditor
