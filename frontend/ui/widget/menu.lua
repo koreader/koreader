@@ -1145,6 +1145,7 @@ function Menu:mergeTitleBarIntoLayout()
     end
     -- Adjust for the added rows to keep our current selection
     self.selected.y = self.selected.y + #title_bar_layout
+    logger.dbg("Menu:mergeTitleBarIntoLayout: Adjusted focus position to account for added titlebar rows:", self.selected.x, ",", self.selected.y)
 end
 
 --[[
