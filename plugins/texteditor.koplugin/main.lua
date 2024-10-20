@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Dispatcher = require("dispatcher")
@@ -514,7 +515,6 @@ function TextEditor:editFile(file_path, readonly)
     local directory, filename = util.splitFilePathName(file_path) -- luacheck: no unused
     local filename_without_suffix, filetype = util.splitFileNameSuffix(filename) -- luacheck: no unused
     local is_lua = filetype:lower() == "lua"
-    local input
     local para_direction_rtl = nil -- use UI language direction
     if self.force_ltr_para_direction then
         para_direction_rtl = false -- force LTR
@@ -524,7 +524,7 @@ function TextEditor:editFile(file_path, readonly)
         table.insert(buttons_first_row, {
             text = _("Lua check"),
             callback = function()
-                local parse_error = util.checkLuaSyntax(input:getInputText())
+                local parse_error = util.checkLuaSyntax(self.input:getInputText())
                 if parse_error then
                     UIManager:show(InfoMessage:new{
                         text = T(_("Lua syntax check failed:\n\n%1"), parse_error)
@@ -542,14 +542,14 @@ function TextEditor:editFile(file_path, readonly)
             text = _("QR"),
             callback = function()
                 UIManager:show(QRMessage:new{
-                    text = input:getInputText(),
+                    text = self.input:getInputText(),
                     height = Screen:getHeight(),
                     width = Screen:getWidth()
                 })
             end,
         })
     end
-    input = InputDialog:new{
+    self.input = InputDialog:new{
         title =  filename,
         input = self:readFileContent(file_path),
         input_face = Font:getFace(self.font_face, self.font_size),
@@ -561,6 +561,8 @@ function TextEditor:editFile(file_path, readonly)
         cursor_at_end = false,
         readonly = readonly,
         add_nav_bar = true,
+        title_bar_left_icon = "appbar.menu",
+        title_bar_left_icon_tap_callback = function() self:showMenu() end,
         keyboard_visible = self.show_keyboard_on_start, -- InputDialog will enforce false if readonly
         scroll_by_pan = true,
         buttons = {buttons_first_row},
@@ -584,6 +586,9 @@ function TextEditor:editFile(file_path, readonly)
         end,
         -- Close callback
         close_callback = function()
+            if self.rotation_mode and self.rotation_mode ~= Screen:getRotationMode() then
+                Screen:setRotationMode(self.rotation_mode)
+            end
             self:execWhenDoneFunc()
         end,
         -- File saving callback
@@ -656,9 +661,9 @@ Do you want to keep this file as empty, or do you prefer to delete it?
         end,
 
     }
-    UIManager:show(input)
+    UIManager:show(self.input)
     if self.show_keyboard_on_start and not readonly then
-        input:onShowKeyboard()
+        self.input:onShowKeyboard()
     end
     -- Note about readonly:
     -- We might have liked to still show keyboard even if readonly, just
@@ -686,6 +691,36 @@ function TextEditor:quickEditFile(file_path, done_callback, possible_new_file)
         self.whenDoneFunc = done_callback
     end
     self:checkEditFile(file_path, possible_new_file or false)
+end
+
+-- TitleBar left button tap
+function TextEditor:showMenu()
+    local dialog
+    local buttons = {}
+    local optionsutil = require("ui/data/optionsutil")
+    for i, mode in ipairs(optionsutil.rotation_modes) do
+        buttons[i] = {{
+            text = optionsutil.rotation_labels[i],
+            enabled_func = function()
+                return optionsutil.rotation_modes[i] ~= Screen:getRotationMode()
+            end,
+            callback = function()
+                UIManager:close(dialog)
+                self.rotation_mode = self.rotation_mode or Screen:getRotationMode()
+                Screen:setRotationMode(optionsutil.rotation_modes[i])
+                self.input:onKeyboardHeightChanged()
+            end,
+        }}
+    end
+    dialog = ButtonDialog:new{
+        shrink_unneeded_width = true,
+        buttons = buttons,
+        anchor = function()
+            return self.input.title_bar.left_button.image.dimen
+        end,
+        modal = true,
+    }
+    UIManager:show(dialog)
 end
 
 return TextEditor
