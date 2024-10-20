@@ -642,13 +642,13 @@ function PageBrowserWidget:update()
     }
     self.row[1] = row
     -- NT: update layout
-    -- remove existed MapBookRow in layout
+    -- remove existing BookMapRow from layout
     if #self.layout > self.nb_rows then
         for i = self.nb_rows + 1, #self.layout do
             self.layout[i] = nil
         end
     end
-    -- add new MapBookRow layout
+    -- add new BookMapRow layout
     for _, focus_row in ipairs(row.focus_layout) do
         table.insert(self.layout, focus_row)
     end
