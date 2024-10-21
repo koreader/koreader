@@ -1,9 +1,7 @@
 -- widget test utility
 -- usage: ./luajit tools/wtest.lua
 
-print(package.path)
-package.path = "common/?.lua;frontend/?.lua;" .. package.path
-package.cpath = "common/?.so;common/?.dll;/usr/lib/lua/?.so;" .. package.cpath
+require("setupkoenv")
 
 -- Load default settings
 G_defaults = require("luadefaults"):open()
