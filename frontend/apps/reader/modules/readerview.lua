@@ -78,6 +78,7 @@ local ReaderView = OverlapGroup:extend{
 }
 
 function ReaderView:init()
+    self.rotation_mode = Screen:getRotationMode()
     self.view_modules = {}
 
     self.state = {
@@ -836,10 +837,12 @@ function ReaderView:restoreViewContext(ctx)
     return false
 end
 
-function ReaderView:onSetRotationMode(rotation, force_rotate)
+function ReaderView:onSetRotationMode(rotation)
     if rotation ~= nil then
-        local old_rotation = Screen:getRotationMode()
-        if not force_rotate and rotation == old_rotation then
+        if rotation ~= Screen:getRotationMode() then
+            Screen:setRotationMode(rotation)
+        end
+        if rotation == self.rotation_mode then
             return
         end
 
@@ -850,17 +853,15 @@ function ReaderView:onSetRotationMode(rotation, force_rotate)
         --       If you then attempted to switch to a Landscape *rotation*, it would mistakenly think the layout hadn't changed!
         --       So, instead, as we're concerned with *rotation* layouts, just compare the two.
         --       We use LinuxFB-style constants, so, Portraits are even, Landscapes are odds, making this trivial.
-        local matching_orientation = bit.band(rotation, 1) == bit.band(old_rotation, 1)
+        local matching_orientation = bit.band(rotation, 1) == bit.band(self.rotation_mode, 1)
+        self.rotation_mode = rotation
 
-        if not force_rotate and rotation ~= old_rotation and matching_orientation then
+        if matching_orientation then
             -- No layout change, just rotate & repaint with a flash
-            Screen:setRotationMode(rotation)
             UIManager:setDirty(self.dialog, "full")
             Notification:notify(T(_("Rotation mode set to: %1"), optionsutil:getOptionText("SetRotationMode", rotation)))
             return
         end
-
-        Screen:setRotationMode(rotation)
     end
 
     UIManager:setDirty(nil, "full") -- SetDimensions will only request a partial, we want a flash
