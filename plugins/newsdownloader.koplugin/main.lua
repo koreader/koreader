@@ -253,6 +253,7 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
         local include_images = not never_download_images and feed.include_images
         local enable_filter = feed.enable_filter or feed.enable_filter == nil
         local filter_element = feed.filter_element or feed.filter_element == nil
+        local credentials = feed.credentials
         -- Check if the two required attributes are set.
         if url and limit then
             feed_message = T(_("Processing %1/%2:\n%3"), idx, total_feed_entries, BD.url(url))
@@ -260,6 +261,7 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
             -- Process the feed source.
             self:processFeedSource(
                 url,
+                credentials,
                 tonumber(limit),
                 unsupported_feeds_urls,
                 download_full_article,
@@ -338,9 +340,16 @@ function NewsDownloader:loadConfigAndProcessFeedsWithUI(touchmenu_instance)
     end)
 end
 
-function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, download_full_article, include_images, message, enable_filter, filter_element)
+function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_feeds_urls, download_full_article, include_images, message, enable_filter, filter_element)
+
+    local cookies = nil
+    if credentials ~= nil then
+        logger.dbg("Auth Cookies from ", cookies)
+        cookies = DownloadBackend:getConnectionCookies(credentials.url, credentials.auth)
+    end
+
     local ok, response = pcall(function()
-            return DownloadBackend:getResponseAsString(url)
+            return DownloadBackend:getResponseAsString(url, cookies)
     end)
     local feeds
     -- Check to see if a response is available to deserialize.
@@ -385,6 +394,7 @@ function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, do
                 return self:processFeed(
                     FEED_TYPE_ATOM,
                     feeds,
+                    cookies,
                     limit,
                     download_full_article,
                     include_images,
@@ -398,6 +408,7 @@ function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, do
                 return self:processFeed(
                     FEED_TYPE_RSS,
                     feeds,
+                    cookies,
                     limit,
                     download_full_article,
                     include_images,
@@ -450,7 +461,7 @@ function NewsDownloader:deserializeXMLString(xml_str)
     return xmlhandler.root
 end
 
-function NewsDownloader:processFeed(feed_type, feeds, limit, download_full_article, include_images, message, enable_filter, filter_element)
+function NewsDownloader:processFeed(feed_type, feeds, cookies, limit, download_full_article, include_images, message, enable_filter, filter_element)
     local feed_title
     local feed_item
     local total_items
@@ -504,6 +515,7 @@ function NewsDownloader:processFeed(feed_type, feeds, limit, download_full_artic
         if download_full_article then
             self:downloadFeed(
                 feed,
+                cookies,
                 feed_output_dir,
                 include_images,
                 article_message,
@@ -543,7 +555,7 @@ local function getTitleWithDate(feed)
     return title
 end
 
-function NewsDownloader:downloadFeed(feed, feed_output_dir, include_images, message, enable_filter, filter_element)
+function NewsDownloader:downloadFeed(feed, cookies, feed_output_dir, include_images, message, enable_filter, filter_element)
     local title_with_date = getTitleWithDate(feed)
     local news_file_path = ("%s%s%s"):format(feed_output_dir,
                                              title_with_date,
@@ -556,7 +568,7 @@ function NewsDownloader:downloadFeed(feed, feed_output_dir, include_images, mess
         logger.dbg("NewsDownloader: News file will be stored to :", news_file_path)
         local article_message = T(_("%1\n%2"), message, title_with_date)
         local link = getFeedLink(feed.link)
-        local html = DownloadBackend:loadPage(link)
+        local html = DownloadBackend:loadPage(link, cookies)
         DownloadBackend:createEpub(news_file_path, html, link, include_images, article_message, enable_filter, filter_element)
     end
 end
