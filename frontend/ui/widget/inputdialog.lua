@@ -477,6 +477,31 @@ function InputDialog:init()
     end
 end
 
+function InputDialog:reinit()
+    local visible = self:isKeyboardVisible()
+    self.input = self:getInputText() -- re-init with up-to-date text
+    self:onClose() -- will close keyboard and save view position
+    self._input_widget:onCloseWidget() -- proper cleanup of InputText and its keyboard
+    if self._added_widgets then
+        -- prevent these externally added widgets from being freed as :init() will re-add them
+        for i = 1, #self._added_widgets do
+            table.remove(self.vgroup, #self.vgroup-2)
+        end
+    end
+    self:free()
+    -- Restore original text_height (or reset it if none to force recomputing it)
+    self.text_height = self.orig_text_height or nil
+
+    -- Same deal as in toggleKeyboard...
+    self.keyboard_visible = visible and true or false
+    self:init()
+    if self.keyboard_visible then
+        self:onShowKeyboard()
+    end
+    -- Our position on screen has probably changed, so have the full screen refreshed
+    UIManager:setDirty("all", "flashui")
+end
+
 function InputDialog:addWidget(widget, re_init)
     table.insert(self.layout, #self.layout, {widget})
     if not re_init then -- backup widget for re-init
@@ -680,28 +705,7 @@ function InputDialog:onKeyboardClosed()
 end
 
 function InputDialog:onKeyboardHeightChanged()
-    local visible = self:isKeyboardVisible()
-    self.input = self:getInputText() -- re-init with up-to-date text
-    self:onClose() -- will close keyboard and save view position
-    self._input_widget:onCloseWidget() -- proper cleanup of InputText and its keyboard
-    if self._added_widgets then
-        -- prevent these externally added widgets from being freed as :init() will re-add them
-        for i = 1, #self._added_widgets do
-            table.remove(self.vgroup, #self.vgroup-2)
-        end
-    end
-    self:free()
-    -- Restore original text_height (or reset it if none to force recomputing it)
-    self.text_height = self.orig_text_height or nil
-
-    -- Same deal as in toggleKeyboard...
-    self.keyboard_visible = visible and true or false
-    self:init()
-    if self.keyboard_visible then
-        self:onShowKeyboard()
-    end
-    -- Our position on screen has probably changed, so have the full screen refreshed
-    UIManager:setDirty("all", "flashui")
+    self:reinit()
 end
 
 function InputDialog:onCloseDialog()
@@ -724,6 +728,19 @@ function InputDialog:onClose()
         self.view_pos_callback(self._top_line_num, self._charpos)
     end
     self:onCloseKeyboard()
+end
+
+function InputDialog:onSetRotationMode(rotation)
+    if self.rotation_enabled and rotation ~= nil then
+        if self.ui.view then
+            self.ui.view:onSetRotationMode(rotation, true)
+        else
+            self.ui:onSetRotationMode(rotation, true)
+        end
+        self:reinit()
+        self.rotation_mode_backup = nil
+        return true
+    end
 end
 
 function InputDialog:refreshButtons()
