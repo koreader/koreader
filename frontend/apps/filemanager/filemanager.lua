@@ -60,8 +60,8 @@ local function isFile(file)
     return lfs.attributes(file, "mode") == "file"
 end
 
-function FileManager:onSetRotationMode(rotation)
-    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
+function FileManager:onSetRotationMode(rotation, force_rotate)
+    if rotation ~= nil and (force_rotate or rotation ~= Screen:getRotationMode()) then
         Screen:setRotationMode(rotation)
         if FileManager.instance then
             self:reinit(self.path, self.focused_file)
