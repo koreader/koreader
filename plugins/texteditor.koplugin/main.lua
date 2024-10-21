@@ -563,6 +563,8 @@ function TextEditor:editFile(file_path, readonly)
         add_nav_bar = true,
         title_bar_left_icon = "appbar.menu",
         title_bar_left_icon_tap_callback = function() self:showMenu() end,
+        rotation_enabled = true,
+        ui = self.ui,
         keyboard_visible = self.show_keyboard_on_start, -- InputDialog will enforce false if readonly
         scroll_by_pan = true,
         buttons = {buttons_first_row},
@@ -586,8 +588,8 @@ function TextEditor:editFile(file_path, readonly)
         end,
         -- Close callback
         close_callback = function()
-            if self.rotation_mode and self.rotation_mode ~= Screen:getRotationMode() then
-                Screen:setRotationMode(self.rotation_mode)
+            if self.input.rotation_mode_backup and self.input.rotation_mode_backup ~= Screen:getRotationMode() then
+                Screen:setRotationMode(self.input.rotation_mode_backup)
             end
             self:execWhenDoneFunc()
         end,
@@ -706,9 +708,10 @@ function TextEditor:showMenu()
             end,
             callback = function()
                 UIManager:close(dialog)
-                self.rotation_mode = self.rotation_mode or Screen:getRotationMode()
+                local rotation_mode_backup = Screen:getRotationMode()
                 Screen:setRotationMode(optionsutil.rotation_modes[i])
-                self.input:onKeyboardHeightChanged()
+                self.input:reinit()
+                self.input.rotation_mode_backup = self.input.rotation_mode_backup or rotation_mode_backup
             end,
         }}
     end
@@ -721,19 +724,6 @@ function TextEditor:showMenu()
         modal = true,
     }
     UIManager:show(dialog)
-end
-
-function TextEditor:onSetRotationMode(rotation)
-    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
-        -- Also re-layout ReaderView or FileManager itself
-        if self.ui.view then
-            self.ui.view:onSetRotationMode(rotation)
-        else
-            self.ui:onSetRotationMode(rotation)
-        end
-        self.input:onKeyboardHeightChanged()
-        return true
-    end
 end
 
 return TextEditor
