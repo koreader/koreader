@@ -61,10 +61,13 @@ local function isFile(file)
 end
 
 function FileManager:onSetRotationMode(rotation)
-    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
-        Screen:setRotationMode(rotation)
-        if FileManager.instance then
+    if rotation ~= nil then
+        if rotation ~= Screen:getRotationMode() then
+            Screen:setRotationMode(rotation)
+        end
+        if rotation ~= self.rotation_mode then
             self:reinit(self.path, self.focused_file)
+            self.rotation_mode = rotation
         end
     end
     return true
@@ -401,6 +404,7 @@ end
 
 -- NOTE: The only thing that will *ever* instantiate a new FileManager object is our very own showFiles below!
 function FileManager:init()
+    self.rotation_mode = Screen:getRotationMode()
     self:setupLayout()
     self.active_widgets = {}
 
