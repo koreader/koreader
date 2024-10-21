@@ -1440,7 +1440,7 @@ function CalendarView:_populateItems()
     for _, week in ipairs(self.weeks) do
         week:update()
     end
-    self:moveFocusTo(1, 1, FocusManager.NOT_UNFOCUS)
+    self:moveFocusTo(1, 1, bit.bor(FocusManager.FOCUS_ONLY_ON_NT, FocusManager.NOT_UNFOCUS))
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
