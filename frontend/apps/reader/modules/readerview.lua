@@ -836,10 +836,10 @@ function ReaderView:restoreViewContext(ctx)
     return false
 end
 
-function ReaderView:onSetRotationMode(rotation)
+function ReaderView:onSetRotationMode(rotation, force_rotate)
     if rotation ~= nil then
         local old_rotation = Screen:getRotationMode()
-        if rotation == old_rotation then
+        if not force_rotate and rotation == old_rotation then
             return
         end
 
@@ -852,7 +852,7 @@ function ReaderView:onSetRotationMode(rotation)
         --       We use LinuxFB-style constants, so, Portraits are even, Landscapes are odds, making this trivial.
         local matching_orientation = bit.band(rotation, 1) == bit.band(old_rotation, 1)
 
-        if rotation ~= old_rotation and matching_orientation then
+        if not force_rotate and rotation ~= old_rotation and matching_orientation then
             -- No layout change, just rotate & repaint with a flash
             Screen:setRotationMode(rotation)
             UIManager:setDirty(self.dialog, "full")
