@@ -733,9 +733,9 @@ end
 function InputDialog:onSetRotationMode(rotation)
     if self.rotation_enabled and rotation ~= nil then
         if self.ui.view then
-            self.ui.view:onSetRotationMode(rotation, true)
+            self.ui.view:onSetRotationMode(rotation)
         else
-            self.ui:onSetRotationMode(rotation, true)
+            self.ui:onSetRotationMode(rotation)
         end
         self:reinit()
         self.rotation_mode_backup = nil
