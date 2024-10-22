@@ -1136,21 +1136,16 @@ function Menu:mergeTitleBarIntoLayout()
         -- Title bar items can be accessed through key mappings on kindle
         return
     end
-    local menu_item_layout_start_row = 1
     -- On hasFewKeys devices, Menu uses the "Right" key to trigger the context menu: we can't use it to move focus in horizontal directions.
     -- So, add title bar buttons to FocusManager's layout in a vertical-only layout
     local title_bar_layout = self.title_bar:generateVerticalLayout()
-    for _, row in ipairs(title_bar_layout) do
-        table.insert(self.layout, menu_item_layout_start_row, row)
-        menu_item_layout_start_row = menu_item_layout_start_row + 1
+    for i, row in ipairs(title_bar_layout) do
+        -- Insert the title bar in the top rows of our layout
+        table.insert(self.layout, i, row)
     end
-    if menu_item_layout_start_row > #self.layout then -- no menu items
-        menu_item_layout_start_row = #self.layout -- avoid index overflow
-    end
-    if Device:hasDPad() then
-        -- Move focus to the first menu item, if any, in keeping with the pre-FocusManager behavior
-        self:moveFocusTo(1, menu_item_layout_start_row, FocusManager.NOT_FOCUS)
-    end
+    -- Adjust for the added rows to keep our current selection
+    self.selected.y = self.selected.y + #title_bar_layout
+    logger.dbg("Menu:mergeTitleBarIntoLayout: Adjusted focus position to account for added titlebar rows:", self.selected.x, ",", self.selected.y)
 end
 
 --[[

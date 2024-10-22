@@ -139,6 +139,7 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
 
     -- As done in Menu:updateItems()
     self:updatePageInfo(select_number)
+    Menu.mergeTitleBarIntoLayout(self)
 
     self.show_parent.dithered = self._has_cover_images
     UIManager:setDirty(self.show_parent, function()
@@ -316,7 +317,6 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
             self.showFileDialog_ours = self.showFileDialog
         end)
     end
-    Menu.mergeTitleBarIntoLayout(self)
 end
 
 -- Similar to showFileDialog setup just above, but for History,
