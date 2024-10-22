@@ -278,7 +278,7 @@ function ListMenuItem:update()
             else
                 -- cover was not fetched previously, do as if not found
                 -- to force a new extraction
-                bookinfonoticeable = nil
+                bookinfo = nil
             end
         end
 
