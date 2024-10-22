@@ -356,7 +356,7 @@ function CoverMenu:onHistoryMenuHold(item)
             end,
         },
         { -- Allow user to ignore some bad metadata (filename will be used instead)
-            text = noticeablebookinfo.ignore_meta and _("Unignore metadata") or _("Ignore metadata"),
+            text = bookinfo.ignore_meta and _("Unignore metadata") or _("Ignore metadata"),
             enabled = bookinfo.has_meta and true or false,
             callback = function()
                 BookInfoManager:setBookInfoProperties(file, {
