@@ -54,7 +54,7 @@ corresponding onHandler method):
    Note that "XPointer" is used here but code written should take it as an
    opaque object and only use the given callbacks since in future this feature
    may work with PDFs and all of the XPointers will instead be PDF equivalents.
-fulfilled
+
    Called with {
         pos0 = [XPointer], pos1 = [XPointer],
         callbacks = {
