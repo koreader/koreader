@@ -728,7 +728,7 @@ function KeyValuePage:_populateItems()
         self.page_info_first_chev:hide()
         self.page_info_last_chev:hide()
     end
-    self:moveFocusTo(1, 1, FocusManager.NOT_UNFOCUS)
+    self:moveFocusTo(1, 1, bit.bor(FocusManager.FOCUS_ONLY_ON_NT, FocusManager.NOT_UNFOCUS))
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
