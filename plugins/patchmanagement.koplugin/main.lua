@@ -183,7 +183,7 @@ function PatchManagement:addToMainMenu(menu_items)
                     })
                 end
             end
-            
+
             return sub_item_table
         end,
     }
