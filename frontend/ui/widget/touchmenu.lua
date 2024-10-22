@@ -304,10 +304,10 @@ function TouchMenuBar:init()
     self.bar_icon_group = HorizontalGroup:new{}
     -- build up image widget for menu icon bar
     self.icon_widgets = {}
-    -- hold icon seperators
+    -- hold icon separators
     self.icon_seps = {}
     -- the start_seg for first icon_widget should be 0
-    -- we asign negative here to offset it in the loop
+    -- we assign negative here to offset it in the loop
     local start_seg = -icon_sep_width
     local end_seg = start_seg
     -- self.width is the screen width
@@ -784,7 +784,7 @@ function TouchMenu:switchMenuTab(tab_num)
         self.tab_item_table[tab_num].callback()
     end
 
-    -- It's like getting a new menu everytime we switch tab!
+    -- It's like getting a new menu every time we switch tab!
     -- Also, switching to the _same_ tab resets the stack and takes us back to
     -- the top of the menu tree
     self.page = 1
@@ -1092,7 +1092,7 @@ function TouchMenu:openMenu(path, with_animation)
 
     local function walkStep()
         walkStep_scheduled = false
-        -- Default delay if not overriden (-1 means no scheduleIn() so no refresh, 0 means nextTick)
+        -- Default delay if not overridden (-1 means no scheduleIn() so no refresh, 0 means nextTick)
         local next_delay = with_animation and 1 or -1
         if step == STEPS.START then
             -- Ensure some initial delay so search dialog and result list can be closed and refreshed
@@ -1224,7 +1224,7 @@ function TouchMenu:openMenu(path, with_animation)
         end,
         resend_event = not with_animation, -- if not animation, don't eat the tap
     }
-    UIManager:show(trap_widget) -- catch taps during animaton
+    UIManager:show(trap_widget) -- catch taps during animation
 
     -- Call it: it will reschedule itself if animation; if not, it will
     -- just execute itself without pause until done.

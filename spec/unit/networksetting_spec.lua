@@ -7,7 +7,7 @@ describe("NetworkSetting module", function()
         NetworkMgr = require("ui/network/manager")
     end)
 
-    it("should initilize properly with empty network list", function()
+    it("should initialize properly with empty network list", function()
         local ns = NetworkSetting:new{network_list = {}}
         assert.is.falsy(ns.connected_item)
     end)

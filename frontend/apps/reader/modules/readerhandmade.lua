@@ -258,7 +258,7 @@ Hidden flows are shown with gray or hatched background in Book map and Page brow
                                 self:updateDocFlows()
                                 self.ui:handleEvent(Event:new("UpdateToc"))
                                 self.ui:handleEvent(Event:new("InitScrollPageStates"))
-                                -- The footer may be visible, so have it update its dependant items
+                                -- The footer may be visible, so have it update its dependent items
                                 self.view.footer:onUpdateFooter(self.view.footer_visible)
                                 self.ui.annotation:setNeedsUpdateFlag()
                                 if touchmenu_instance then
@@ -282,7 +282,7 @@ Hidden flows are shown with gray or hatched background in Book map and Page brow
                                 self:updateDocFlows()
                                 self.ui:handleEvent(Event:new("UpdateToc"))
                                 self.ui:handleEvent(Event:new("InitScrollPageStates"))
-                                -- The footer may be visible, so have it update its dependant items
+                                -- The footer may be visible, so have it update its dependent items
                                 self.view.footer:onUpdateFooter(self.view.footer_visible)
                                 self.ui.annotation:setNeedsUpdateFlag()
                                 if touchmenu_instance then
@@ -326,7 +326,7 @@ function ReaderHandMade:onReaderReady()
     --   and it may fillToc(). So, it may happen that the expensive validateAndFixToc()
     --   is called twice (first with the original ToC, then with ours).
     -- - ReaderRolling will have its onReaderReady() called after ours, and if we
-    --   have set up hidden flows, we'll have overriden some documents methods so
+    --   have set up hidden flows, we'll have overridden some documents methods so
     --   its cacheFlows() is a no-op.
     self:updateHandmagePages()
     -- Don't have each of these send their own events: we'll send them once afterwards
@@ -358,7 +358,7 @@ function ReaderHandMade:setupToc(no_event)
         -- If enabled, plug one method into the document object,
         -- so it is used instead of the method from its class.
         self.document.getToc = function(this)
-            -- ReaderToc may add fieds to ToC items: return a copy,
+            -- ReaderToc may add fields to ToC items: return a copy,
             -- so the one we will save doesn't get polluted.
             return util.tableDeepCopy(self.toc)
         end

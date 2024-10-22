@@ -72,7 +72,7 @@ local function kindleGetCurrentProfile()
     if lipc_handle then
         local ha_input = lipc_handle:new_hasharray() -- an empty hash array since we only want to read
         local ha_result = lipc_handle:access_hash_property("com.lab126.wifid", "currentEssid", ha_input)
-        local profile = ha_result:to_table()[1] -- theres only a single element
+        local profile = ha_result:to_table()[1] -- there is only a single element
         ha_input:destroy()
         ha_result:destroy()
         lipc_handle:close()

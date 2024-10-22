@@ -54,7 +54,7 @@ corresponding onHandler method):
    Note that "XPointer" is used here but code written should take it as an
    opaque object and only use the given callbacks since in future this feature
    may work with PDFs and all of the XPointers will instead be PDF equivalents.
-
+fulfilled
    Called with {
         pos0 = [XPointer], pos1 = [XPointer],
         callbacks = {
@@ -210,7 +210,7 @@ function LanguageSupport:improveWordSelection(selection)
 
     -- We want to use native crengine text selection here, but we cannot use
     -- getTextFromPositions because the conversion to and from screen
-    -- co-ordinates leads to issues with text selection of <ruby> text. In
+    -- coordinates leads to issues with text selection of <ruby> text. In
     -- addition, using getTextFromXPointers means we can select text not on the
     -- screen. But this means we need to manually create the text selection
     -- object returned by getTextFromPositions (though this is not a big deal

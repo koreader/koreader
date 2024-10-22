@@ -10,9 +10,9 @@ local BookInfoManager = require("bookinfomanager")
 
 -- This is a kind of "base class" for both MosaicMenu and ListMenu.
 -- It implements the common code shared by these, mostly the non-UI
--- work : the updating of items and the management of backgrouns jobs.
+-- work : the updating of items and the management of background jobs.
 --
--- Here are defined the common overriden methods of Menu:
+-- Here the common overridden methods of Menu are defined:
 --    :updateItems(select_number)
 --    :onCloseWidget()
 --
@@ -117,7 +117,7 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
     -- when memory usage is already high
     nb_drawings_since_last_collectgarbage = nb_drawings_since_last_collectgarbage + 1
     if nb_drawings_since_last_collectgarbage >= NB_DRAWINGS_BETWEEN_COLLECTGARBAGE then
-        -- (delay it a bit so this pause is less noticable)
+        -- (delay it a bit so this pause is less noticeable)
         UIManager:scheduleIn(0.2, function()
             collectgarbage()
             collectgarbage()
@@ -131,7 +131,7 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
     -- Set the local variables with the things we know
     -- These are used only by extractBooksInDirectory(), which should
     -- use the cover_specs set for FileBrowser, and not those from History.
-    -- Hopefully, we get self.path=nil when called fro History
+    -- Hopefully, we get self.path=nil when called from History
     if self.path then
         current_path = self.path
         current_cover_specs = self.cover_specs
@@ -356,7 +356,7 @@ function CoverMenu:onHistoryMenuHold(item)
             end,
         },
         { -- Allow user to ignore some bad metadata (filename will be used instead)
-            text = bookinfo.ignore_meta and _("Unignore metadata") or _("Ignore metadata"),
+            text = noticeablebookinfo.ignore_meta and _("Unignore metadata") or _("Ignore metadata"),
             enabled = bookinfo.has_meta and true or false,
             callback = function()
                 BookInfoManager:setBookInfoProperties(file, {
@@ -490,7 +490,7 @@ function CoverMenu:onCloseWidget()
     self.cover_info_cache = nil
 
     -- Force garbage collecting when leaving too
-    -- (delay it a bit so this pause is less noticable)
+    -- (delay it a bit so this pause is less noticeable)
     UIManager:scheduleIn(0.2, function()
         collectgarbage()
         collectgarbage()

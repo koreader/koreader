@@ -687,7 +687,7 @@ function Screensaver:show()
                     message_widget,
                 }
             else
-                -- No prevously created widget, so just show message widget
+                -- No previously created widget, so just show message widget
                 widget = message_widget
             end
         end

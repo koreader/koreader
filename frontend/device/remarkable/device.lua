@@ -125,7 +125,7 @@ function Remarkable:init()
     -- logger.info("PPID:")
     -- local parent_process = os.execute("echo $PPID")
     -- os.execute("ps | grep $PPID")
-    -- logger.info(string.format("parent proccess is oxide?: %s", parent_process_is_oxide))
+    -- logger.info(string.format("parent process is oxide?: %s", parent_process_is_oxide))
 
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/remarkable/powerd"):new{

@@ -508,7 +508,7 @@ To:
                                 FFIUtil.purgeDir(cachedir)
                             end
                             lfs.mkdir(cachedir)
-                            -- Also remove from the Cache objet references to the cache files we've just deleted
+                            -- Also remove from the Cache object references to the cache files we've just deleted
                             local Cache = require("cache")
                             Cache.cached = {}
                             UIManager:askForRestart(_("Caches cleared. Please restart KOReader."))

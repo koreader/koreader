@@ -549,7 +549,7 @@ function AutoSuspend:addToMainMenu(menu_items)
             keep_menu_open = true,
             callback = function(touchmenu_instance)
                 -- 5*60 sec (5') is the minimum and 28*24*3600 (28days) is the maximum shutdown time.
-                -- Minimum time has to be big enough, to avoid start-stop death scenarious.
+                -- Minimum time has to be big enough, to avoid start-stop death scenarios.
                 -- Maximum more than four weeks seems a bit excessive if you want to enable authoshutdown,
                 -- even if the battery can last up to three months.
                 self:pickTimeoutValue(touchmenu_instance,

@@ -26,7 +26,7 @@ function HTTPClient:request(request, response_callback)
         local client = turbo.async.HTTPClient({verify_ca = false})
         local res = coroutine.yield(client:fetch(request.url, request))
         self.input_timeouts = self.input_timeouts - 1
-        -- reset INPUT_TIMEOUT to nil when all HTTP requests are fullfilled.
+        -- reset INPUT_TIMEOUT to nil when all HTTP requests are fulfilled.
         if self.input_timeouts == 0 then UIManager:resetInputTimeout() end
         if response_callback then
             response_callback(res)

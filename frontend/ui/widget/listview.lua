@@ -51,7 +51,7 @@ local ListView = InputContainer:extend{
     height = nil,
     padding = nil,
     item_height = nil,
-    itmes = nil,
+    items = nil,
 }
 
 function ListView:init()

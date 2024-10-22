@@ -122,7 +122,7 @@ function ButtonDialog:init()
         shrink_min_width = self.shrink_min_width,
         show_parent = self,
     }
-    local buttontable_width = self.buttontable:getSize().w -- may be shrinked
+    local buttontable_width = self.buttontable:getSize().w -- may be shrunk
 
     local title_widget, title_widget_height
     if self.title then

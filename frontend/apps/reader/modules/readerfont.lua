@@ -427,7 +427,7 @@ function ReaderFont:updateFontFamilyFonts()
     -- font (we have here in self.font_face) because of its increased bias (or the
     -- monospace font we also added with bias).
     -- So, we don't need to insert self.font_face in the list for unset family fonts,
-    -- which would otherwise need us to call updateFontFamilyFonts() everytime we
+    -- which would otherwise need us to call updateFontFamilyFonts() every time we
     -- change the main font face.
     local g_font_family_fonts = G_reader_settings:readSetting("cre_font_family_fonts", {})
     local family_fonts = {}
@@ -745,7 +745,7 @@ If that font happens to be part of this list already, it will be used first.]]),
             self.ui:handleEvent(Event:new("UpdatePos"))
         end,
         help_text = _([[
-Adjust the size of each fallback font so they all get the same x-height, and lowercase characters picked in them look similarly sized as those from the defaut font.
+Adjust the size of each fallback font so they all get the same x-height, and lowercase characters picked in them look similarly sized as those from the default font.
 This may help with Greek words among Latin text (as Latin fonts often do not have all the Greek characters), but may make Chinese or Indic characters smaller when picked from fallback fonts.]]),
         separator = true,
     })

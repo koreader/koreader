@@ -53,7 +53,7 @@ local CreDocument = Document:extend{
     --   in any fallback font. Also, we don't know if the user is using
     --   a serif or a sans main font, so choosing to have one of these early
     --   might not be the best decision (and moving them before FreeSans would
-    --   require one to set FreeSans as fallback to get its nicer glyphes, which
+    --   require one to set FreeSans as fallback to get its nicer glyphs, which
     --   would override Noto Sans CJK good symbol glyphs with smaller ones
     --   (Noto Sans & Serif do not have these symbol glyphs).
     fallback_fonts = { -- const
@@ -169,12 +169,12 @@ function CreDocument:init()
     local file_type = string.lower(string.match(self.file, ".+%.([^.]+)") or "")
     if file_type == "zip" then
         -- NuPogodi, 20.05.12: read the content of zip-file
-        -- and return extention of the 1st file
+        -- and return extension of the 1st file
         file_type = self:zipContentExt(self.file) or "unknown"
     end
 
     -- June 2018: epub.css has been cleaned to be more conforming to HTML specs
-    -- and to not include class name based styles (with conditional compatiblity
+    -- and to not include class name based styles (with conditional compatibility
     -- styles for previously opened documents). It should be usable on all
     -- HTML based documents, except FB2 which has some incompatible specs.
     -- The other css files (htm.css, rtf.css...) have not been updated in the
@@ -1065,7 +1065,7 @@ function CreDocument:setFontFace(new_font_face)
         -- don't have the font.
         cre.setAsPreferredFontWithBias(new_font_face, 1 + 128*5 + 256*5)
 
-        -- The above call has resetted all other biases, so re-set our other ones
+        -- The above call has reset all other biases, so re-set our other ones
         self:setOtherFontBiases()
     end
 end
@@ -1207,7 +1207,7 @@ function CreDocument:setRenderDPI(value)
 end
 
 function CreDocument:setRenderScaleFontWithDPI(toggle)
-    -- wheter to scale font with DPI, or keep the current size
+    -- whether to scale font with DPI, or keep the current size
     logger.dbg("CreDocument: set render scale font with dpi", toggle)
     self._document:setIntProperty("crengine.render.scale.font.with.dpi", toggle)
 end
@@ -1620,7 +1620,7 @@ function CreDocument:setupCallCache()
     local do_log = false
 
     -- Beware below for luacheck warnings "shadowing upvalue argument 'self'":
-    -- the 'self' we got and use here, and the one we may get implicitely
+    -- the 'self' we got and use here, and the one we may get implicitly
     -- as first parameter of the methods we define or redefine, are actually
     -- the same, but luacheck doesn't know that and would logically complain.
     -- So, we define our helpers (self._callCache*) as functions and not methods:
@@ -1909,13 +1909,13 @@ function CreDocument:setupCallCache()
             if add_reset then
                 self[name] = function(...)
                     -- logger.dbg("callCache:", name, "called with", select(2,...))
-                    if do_log then logger.dbg("callCache:", name, "reseting cache") end
+                    if do_log then logger.dbg("callCache:", name, "resetting cache") end
                     self._callCacheReset()
                     return func(...)
                 end
             elseif add_buffer_trash then
                 self[name] = function(...)
-                    if do_log then logger.dbg("callCache:", name, "reseting buffer") end
+                    if do_log then logger.dbg("callCache:", name, "resetting buffer") end
                     self._callCacheSet("current_buffer_tag", nil)
                     return func(...)
                 end

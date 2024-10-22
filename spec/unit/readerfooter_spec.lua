@@ -284,7 +284,7 @@ describe("Readerfooter module", function()
         tapFooterMenu(fake_menu, "Time left to finish chapter".." (⤻)")
         assert.are.same('', footer.footer_text.text)
 
-        -- reenable chapter time to read, text should be chapter time to read
+        -- re-enable chapter time to read, text should be chapter time to read
         tapFooterMenu(fake_menu, "Time left to finish chapter".." (⤻)")
         assert.are.same('⤻ N/A', footer.footer_text.text)
         readerui:closeDocument()

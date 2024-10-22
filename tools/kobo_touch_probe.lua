@@ -109,7 +109,7 @@ function TouchProbe:onTapProbe(arg, ges)
             local need_to_switch_xy = ges.pos.x > ges.pos.y
             self:saveSwitchXYSetting(need_to_switch_xy)
         else
-            -- x not mirroed, need one more probe
+            -- x not mirrored, need one more probe
             self.curr_probe_step = 2
             self:updateProbeInstruction()
             UIManager:setDirty(self)

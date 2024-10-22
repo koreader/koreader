@@ -35,7 +35,7 @@ local GetText_mt = {
     __index = {}
 }
 
--- wrapUntranslated() will be overriden by bidi.lua when UI language is RTL,
+-- wrapUntranslated() will be overridden by bidi.lua when UI language is RTL,
 -- to wrap untranslated english strings as LTR-isolated segments.
 -- It should do nothing when the UI language is LTR.
 GetText.wrapUntranslated_nowrap = function(text) return text end
