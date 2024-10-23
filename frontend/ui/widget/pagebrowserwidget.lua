@@ -4,6 +4,7 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Event = require("ui/event")
+local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -31,7 +32,7 @@ local BookMapWidget = require("ui/widget/bookmapwidget")
 local BookMapRow = BookMapWidget.BookMapRow
 
 -- PageBrowserWidget: shows thumbnails of pages
-local PageBrowserWidget = InputContainer:extend{
+local PageBrowserWidget = FocusManager:extend{
     title = _("Page browser"),
     -- Focus page: will be put at the best place in the thumbnail grid
     -- (that is, the grid will pick thumbnails from pages before and
@@ -42,6 +43,7 @@ local PageBrowserWidget = InputContainer:extend{
 }
 
 function PageBrowserWidget:init()
+    self.layout = {}
     if self.ui.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
@@ -53,15 +55,7 @@ function PageBrowserWidget:init()
     }
     self.covers_fullscreen = true -- hint for UIManager:_repaint()
 
-    if Device:hasKeys() then
-        self.key_events = {
-            Close = { { Device.input.group.Back } },
-            ScrollRowUp = { { "Up" } },
-            ScrollRowDown = { { "Down" } },
-            ScrollPageUp = { { Input.group.PgBack } },
-            ScrollPageDown = { { Input.group.PgFwd } },
-        }
-    end
+    self:registerKeyEvents()
     if Device:isTouchDevice() then
         self.ges_events = {
             Swipe = {
@@ -107,6 +101,16 @@ function PageBrowserWidget:init()
                 }
             },
         }
+    else
+        -- NT: needed for selection
+        self.ges_events = {
+            Tap = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = self.dimen,
+                }
+            }
+        }
     end
 
     -- Put the BookMapRow left and right border outside of screen
@@ -116,7 +120,7 @@ function PageBrowserWidget:init()
         fullscreen = true,
         title = self.title,
         left_icon = "appbar.menu",
-        left_icon_tap_callback = function() self:showMenu() end,
+        left_icon_tap_callback = function() self:onShowMenu() end,
         left_icon_hold_callback = function()
             -- Cycle nb of toc span levels shown in bottom row
             if self:updateNbTocSpans(-1, true, true) then
@@ -185,6 +189,34 @@ function PageBrowserWidget:init()
     self:updateLayout()
 end
 
+function PageBrowserWidget:registerKeyEvents()
+    if Device:hasKeys() then
+        self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.ShowMenu = { { "Menu" } }
+        self.key_events.ScrollPageUp = { { Input.group.PgBack } }
+        self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
+        if Device:isTouchDevice() then
+            self.key_events.ScrollRowUp = { { "Up" } }
+            self.key_events.ScrollRowDown = { { "Down" } }
+        elseif Device:hasKeyboard() then
+            self.key_events.ScrollRowUp = { { "Shift", "Up" } }
+            self.key_events.ScrollRowDown = { { "Shift", "Down" } }
+            -- same events as page turn buttons for mod+up/down. it gives the impression of movement through the bottom ribbon
+            self.key_events.SwipeRibbonLeftNT = { { "Shift", "Left" }, event = "ScrollPageUp" }
+            self.key_events.SwipeRibbonRightNT = { { "Shift", "Right" }, event = "ScrollPageDown" }
+            self.key_events.CloseAll = { { "Shift", "Back" }, event = "Close", args = true }
+        elseif Device:hasScreenKB() then
+            self.key_events.ScrollRowUp = { { "ScreenKB", "Up" } }
+            self.key_events.ScrollRowDown = { { "ScreenKB", "Down" } }
+            -- ditto last comment.
+            self.key_events.SwipeRibbonLeftNT = { { "ScreenKB", "Left" }, event = "ScrollPageUp" }
+            self.key_events.SwipeRibbonRightNT = { { "ScreenKB", "Right" }, event = "ScrollPageDown" }
+            self.key_events.CloseAll = { { "ScreenKB", "Back" }, event = "Close", args = true }
+        end
+    end
+end
+PageBrowserWidget.onPhysicalKeyboardConnected = PageBrowserWidget.registerKeyEvents
+
 function PageBrowserWidget:updateEditableStuff(update_view)
     -- Toc, bookmarks and hidden flows may be edited
     -- Note: we update everything to keep things simpler, but we could provide flags to
@@ -244,6 +276,9 @@ function PageBrowserWidget:updateLayout()
     self.view_finder_y = self.dimen.h - self.row_height - 2*self.view_finder_bw
     -- And put its bottom rounded corner outside of screen
     self.view_finder_h = self.row_height + 2*self.view_finder_bw + Size.radius.window
+
+    -- reset focus layout
+    self.layout = {}
 
     if self.grid then
         self.grid:free()
@@ -316,7 +351,8 @@ function PageBrowserWidget:updateLayout()
     grid_item_outer_h_margin = math.floor((self.grid_width - self.nb_cols * self.grid_item_width - (self.nb_cols-1)*grid_item_inner_h_margin) / 2)
 
     self.grid:clear()
-
+    local focus_row = nil
+    local focus_row_index = 0
     for idx = 1, self.nb_grid_items do
         local row = math.floor((idx-1)/self.nb_cols) -- start from 0
         local col = (idx-1) % self.nb_cols
@@ -334,15 +370,25 @@ function PageBrowserWidget:updateLayout()
         local grid_item = CenterContainer:new{
             dimen = self.grid_item_dimen:copy(),
         }
-        table.insert(self.grid, FrameContainer:new{
+        local grid_item_frame = FrameContainer:new{
             show_pagenum = show_pagenum,
             overlap_offset = {offset_x, offset_y},
             margin = 0,
-            padding = 0,
+            padding = Size.border.thin,
             bordersize = 0,
+            focusable = true,
+            focus_border_size = Size.border.thin * 2,
+            focus_inner_border = true,
             background = Blitbuffer.COLOR_WHITE,
             grid_item,
-        })
+        }
+        table.insert(self.grid, grid_item_frame)
+        if (not focus_row or focus_row_index ~= row) then
+            focus_row = {}
+            focus_row_index = row
+            table.insert(self.layout, focus_row)
+        end
+        table.insert(focus_row, grid_item_frame)
     end
 
     -- Put the focused (requested) page at some appropriate place in the grid
@@ -595,6 +641,17 @@ function PageBrowserWidget:update()
         -- extended_sep_pages = extended_sep_pages,
     }
     self.row[1] = row
+    -- NT: update layout
+    -- remove existing BookMapRow from layout
+    if #self.layout > self.nb_rows then
+        for i = self.nb_rows + 1, #self.layout do
+            self.layout[i] = nil
+        end
+    end
+    -- add new BookMapRow layout
+    for _, focus_row in ipairs(row.focus_layout) do
+        table.insert(self.layout, focus_row)
+    end
 
     local bd_mirrored_left_spacing = 0
     if BD.mirroredUILayout() and blank_page_slots_after_end > 0 then
@@ -661,6 +718,7 @@ function PageBrowserWidget:update()
             end
         end
     end
+    self:moveFocusTo(1, 1, FocusManager.FOCUS_ONLY_ON_NT)
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
@@ -862,7 +920,7 @@ function PageBrowserWidget:preloadNextPrevScreenThumbnails()
     end
 end
 
-function PageBrowserWidget:showMenu()
+function PageBrowserWidget:onShowMenu()
     local button_dialog
     -- Width of our -/+ buttons, so it looks fine with Button's default font size of 20
     local plus_minus_width = Screen:scaleBySize(60)
@@ -1018,13 +1076,13 @@ end
 function PageBrowserWidget:showAbout()
     UIManager:show(InfoMessage:new{
         text = _([[
-Page browser shows thumbnails of pages.
+Page browser shows thumbnails of a book's pages.
 
 The bottom ribbon displays an extract of the book map around the pages displayed:
 
-If statistics are enabled, black bars are shown for already read pages (gray for pages read in the current reading session). Their heights vary depending on the time spent reading the page.
-Chapters are shown above the pages they encompass.
-Under the pages, these indicators may be shown:
+If statistics are enabled, black bars indicate pages that have already been read (gray bars for pages read in the current session). The height of these bars varies based on the time spent reading each page.
+Chapters are indicated above the pages they cover.
+Below the pages, the following indicators may appear:
 ▲ current page
 ❶ ❷ … previous locations
 ▒ highlighted text
@@ -1034,8 +1092,9 @@ Under the pages, these indicators may be shown:
 end
 
 function PageBrowserWidget:showGestures()
-    UIManager:show(InfoMessage:new{
-        text = _([[
+    local text
+        if Device:isTouchDevice() then
+            text = _([[
 Swipe along the top or left screen edge to change the number of columns or rows of thumbnails.
 
 Swipe vertically to move one row, horizontally to move one screen.
@@ -1044,12 +1103,31 @@ Swipe horizontally in the bottom ribbon to move by the full stripe.
 
 Tap in the bottom ribbon on a page to focus thumbnails on this page.
 
-Tap on a thumbnail to read this page.
+Tap on a thumbnail to read that page.
 
 Long-press on ≡ to decrease or reset the number of chapter levels shown in the bottom ribbon.
 
-Any multiswipe will close the page browser.]]),
-    })
+Any multiswipe will close the page browser.]])
+        elseif Device:hasKeyboard() then
+            text = _([[
+The settings (in this menu) can be used to change the number of rows and columns, whether to display page numbers, and to display different chapter-levels in the bottom ribbon.
+
+Press Shift+Up to move up by one row, or either previous-page-turn-button to move one screen.
+
+Press Shift+Down to move down by one row, or either next-page-turn-button to move one screen.
+
+Select a thumbnail to read that page.]])
+        elseif Device:hasScreenKB() then
+            text = _([[
+The settings (in this menu) can be used to change the number of rows and columns, whether to display page numbers, and to display different chapter-levels in the bottom ribbon.
+
+Press ScreenKB+Up to move up by one row, or either previous-page-turn-button to move one screen.
+
+Press ScreenKB+Down to move down by one row, or either next-page-turn-button to move one screen.
+
+Select a thumbnail to read that page.]])
+        end
+    UIManager:show(InfoMessage:new{text = text})
 end
 
 function PageBrowserWidget:onClose(close_all_parents)
@@ -1460,6 +1538,21 @@ function PageBrowserWidget:onTap(arg, ges)
 end
 
 function PageBrowserWidget:onHold(arg, ges)
+    if not ges.pos then
+        if self:getFocusItem() then
+            -- emulator: triggered by ContextMenu key with focused widget, no pos inforamtion in event
+            -- set pos to center of widget
+            local pos = self:getFocusItem().dimen:copy()
+            pos.x = pos.x + pos.w / 2
+            pos.y = pos.y + pos.h / 2
+            pos.w = 0
+            pos.h = 0
+            ges.pos = pos;
+        else
+            return false
+        end
+    end
+
     -- If hold in the bottom BookMapRow, open a new BookMapWidget
     -- and focus on this page. We'll show a rounded square below
     -- our current focus_page to help locating where we were (it's
