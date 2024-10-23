@@ -210,6 +210,52 @@ function util.tableSize(t)
     return count
 end
 
+--- Returns a value of a key, checks if all parent keys are not empty.
+---- @param t Lua table
+---- @param ... parent keys, starting from the upper level
+---- @treturn value of the last key or nil
+function util.tableGetValue(t, ...)
+    local keys = { ... }
+    local q = t
+    for _, key in ipairs(keys) do
+        if type(q) ~= "table" then return end
+        q = q[key]
+        if q == nil then return end
+    end
+    return q
+end
+
+--- Sets a value of a key, creates all parent keys if needed.
+---- @param t Lua table
+---- @param value value to be assigned to the last key
+---- @param ... parent keys, starting from the upper level
+function util.tableSetValue(t, value, ...)
+    local keys = { ... }
+    local q = t
+    for i = 1, #keys - 1 do
+        local key = keys[i]
+        q[key] = q[key] or {}
+        q = q[key]
+    end
+    q[keys[#keys]] = value
+end
+
+--- Removes a key in a table, removes all empty parent keys.
+---- @param t Lua table
+---- @param ... parent keys, starting from the upper level
+function util.tableRemoveValue(t, ...)
+    local keys = { ... }
+    for i = #keys, 1, -1 do
+        local q = t
+        for j = 1, i - 1 do
+            q = q[keys[j]]
+            if type(q) ~= "table" then return end
+        end
+        q[keys[i]] = nil
+        if next(q) ~= nil then break end
+    end
+end
+
 --- Append all elements from t2 into t1.
 ---- @param t1 Lua table
 ---- @param t2 Lua table
