@@ -66,7 +66,9 @@ function FileManager:onSetRotationMode(rotation)
             Screen:setRotationMode(rotation)
         end
         if rotation ~= self.rotation_mode then
-            self:reinit(self.path, self.focused_file)
+            if FileManager.instance then
+                self:reinit(self.path, self.focused_file)
+            end
             self.rotation_mode = rotation
         end
     end
