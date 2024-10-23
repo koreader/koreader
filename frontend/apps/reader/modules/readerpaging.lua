@@ -99,7 +99,7 @@ function ReaderPaging:setupTouchZones()
             screen_zone = forward_zone,
             handler = function()
                 if G_reader_settings:nilOrFalse("page_turns_disable_tap") then
-                    return self:onGotoViewRel(1)
+                    return self:onPageTurnRel(1)
                 end
             end,
         },
@@ -109,7 +109,7 @@ function ReaderPaging:setupTouchZones()
             screen_zone = backward_zone,
             handler = function()
                 if G_reader_settings:nilOrFalse("page_turns_disable_tap") then
-                    return self:onGotoViewRel(-1)
+                    return self:onPageTurnRel(-1)
                 end
             end,
         },
@@ -145,6 +145,14 @@ function ReaderPaging:onReadSettings(config)
     self:_gotoPage(config:readSetting("last_page") or 1)
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
+    self.page_scroll_amount = config:readSetting("kopt_page_scroll_amount")
+        or G_reader_settings:readSetting("kopt_page_scroll_amount")
+        or 0
+end
+
+function ReaderPaging:onPageScrollAmountUpdate(page_scroll_amount)
+    self.page_scroll_amount = page_scroll_amount
+    return true
 end
 
 function ReaderPaging:onSaveSettings()
@@ -562,6 +570,14 @@ function ReaderPaging:onGotoViewRel(diff)
     end
     self:setPagePosition(self:getTopPage(), self:getTopPosition())
     return true
+end
+
+function ReaderPaging:onPageTurnRel(diff)
+    -- handle smooth scroll by default.
+    if self.view.page_scroll and self.page_scroll_amount ~= 0 then
+        return self:onGotoPosRel(self.page_scroll_amount * diff)
+    end
+    return self:onGotoViewRel(diff)
 end
 
 function ReaderPaging:onGotoPosRel(diff)
