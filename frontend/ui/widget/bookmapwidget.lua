@@ -39,8 +39,8 @@ local BookMapRow = WidgetContainer:extend{
     height = nil,
     pages_frame_border = Size.border.default,
     toc_span_border = Size.border.thin,
-    -- pages_frame_border = 10, -- for debugging positionning
-    -- toc_span_border = 5, -- for debugging positionning
+    -- pages_frame_border = 10, -- for debugging positioning
+    -- toc_span_border = 5, -- for debugging positioning
     toc_items = nil, -- Arrays[levels] of arrays[items at this level to show as spans]
     -- Many other options not described here, see BookMapWidget:update()
     -- for the complete list.
@@ -151,7 +151,7 @@ function BookMapRow:init()
             margin = 0,
             padding = 0,
             bordersize = self.pages_frame_border,
-            -- color = Blitbuffer.COLOR_GRAY, -- for debugging positionning
+            -- color = Blitbuffer.COLOR_GRAY, -- for debugging positioning
             Widget:new{ -- empty widget to give dimensions around which to draw borders
                 dimen = Geom:new{
                     w = self.pages_frame_inner_width,
@@ -351,7 +351,7 @@ function BookMapRow:init()
     local read_min_h = math.max(math.ceil(self.span_height * 0.1), unread_marker_h+Size.line.thick)
     if self.page_slot_width >= 5 * unread_marker_h then
         -- If page slots are large enough, we can make unread markers a bit taller (so they
-        -- are noticable and won't be confused with read page slots)
+        -- are noticeable and won't be confused with read page slots)
         unread_marker_h = unread_marker_h * 2
     end
     for page = self.start_page, self.end_page do
@@ -359,7 +359,7 @@ function BookMapRow:init()
             local x = self:getPageX(page)
             local w = self:getPageX(page, true) - x
             local h = math.ceil(self.read_pages[page][1] * self.span_height * 0.8)
-            h = math.max(h, read_min_h) -- so it's noticable
+            h = math.max(h, read_min_h) -- so it's noticeable
             local y = self.pages_frame_height - self.pages_frame_border - h + 1
             if self.with_page_sep then
                 -- We put the blank at the start of a page slot
@@ -545,11 +545,11 @@ function BookMapRow:paintTo(bb, x, y)
     end
     -- Paint regular sub widgets the classic way
     InputContainer.paintTo(self, bb, x, y)
-    -- And explicitely paint read pages markers (which are not subwidgets)
+    -- And explicitly paint read pages markers (which are not subwidgets)
     for _, marker in ipairs(self.pages_markers) do
         bb:paintRect(x + self.pages_frame_offset_x + marker.x, y + marker.y, marker.w, marker.h, marker.color)
     end
-    -- And explicitely paint indicators (which are not subwidgets)
+    -- And explicitly paint indicators (which are not subwidgets)
     for _, indicator in ipairs(self.indicators) do
         local glyph = RenderText:getGlyph(indicator.face or self.font_face, indicator.c)
         local alt_bb
@@ -572,7 +572,7 @@ function BookMapRow:paintTo(bb, x, y)
             alt_bb:free()
         end
     end
-    -- And explicitely paint bottom texts (which are not subwidgets)
+    -- And explicitly paint bottom texts (which are not subwidgets)
     for _, btext in ipairs(self.bottom_texts) do
         local text_w = TextWidget:new{
             text = btext.text,
@@ -601,7 +601,7 @@ function BookMapRow:paintTo(bb, x, y)
     end
 end
 
--- BookMapWidget: shows a map of content, including TOC, boomarks, read pages, non-linear flows...
+-- BookMapWidget: shows a map of content, including TOC, bookmarks, read pages, non-linear flows...
 local BookMapWidget = InputContainer:extend{
     -- Focus page: show the BookMapRow containing this page
     -- in the middle of screen
@@ -745,9 +745,9 @@ function BookMapWidget:init()
     }
     -- We'll handle all events in this main BookMapWidget: none of the vgroup
     -- children have any handler. Hack into vgroup so it doesn't propagate
-    -- events needlessly to its children (the slowness gets noticable when
+    -- events needlessly to its children (the slowness gets noticeable when
     -- we have many TOC items in flat map mode - the also needless :paintTo()
-    -- don't seen to cause such a noticable slowness)
+    -- don't seen to cause such a noticeable slowness)
     self.vgroup.propagateEvent = function() return false end
 
     -- Our scrollable container needs to be known as widget.cropping_widget in
@@ -990,7 +990,7 @@ function BookMapWidget:update()
                         cur_left_spacing = cur_left_spacing + Size.span.horizontal_default
                         -- Note: this variable indentation may make the page slot widths variable across
                         -- rows from different levels (and self.fit_pages_per_row not really accurate) :/
-                        -- Hopefully, it won't be noticable.
+                        -- Hopefully, it won't be noticeable.
                     else
                         p_max = item.page - 1
                         p_end = p_max
@@ -1432,7 +1432,7 @@ function BookMapWidget:onClose(close_all_parents)
         -- with the current size to be available)
         self.ui.thumbnail:tidyCache()
         -- Force a GC to free the memory used by the widgets and tiles
-        -- (delay it a bit so this pause is less noticable)
+        -- (delay it a bit so this pause is less noticeable)
         UIManager:scheduleIn(0.5, function()
             collectgarbage()
             collectgarbage()
@@ -1463,7 +1463,7 @@ end
 
 function BookMapWidget:getVGroupRowAtY(y)
     -- y is expected relative to the ScrollableContainer crop top
-    -- (if y is from a screen coordinate, substract 'self.title_bar_h' before calling this)
+    -- (if y is from a screen coordinate, subtract 'self.title_bar_h' before calling this)
     y = y + self.cropping_widget._scroll_offset_y
     return self:getMatchingVGroupRow(function(r, r_y, r_h)
         return y >= r_y and y < r_y + r_h
@@ -1472,7 +1472,7 @@ end
 
 function BookMapWidget:getBookMapRowNearY(y)
     -- y is expected relative to the ScrollableContainer crop top
-    -- (if y is from a screen coordinate, substract 'self.title_bar_h' before calling this)
+    -- (if y is from a screen coordinate, subtract 'self.title_bar_h' before calling this)
     y = y + self.cropping_widget._scroll_offset_y
     -- Return the BookMapRow at y, or if the vgroup element is a ToC
     -- title (in flat_map mode), return the follow up BookMapRow
@@ -1798,7 +1798,7 @@ end
 function BookMapWidget:paintTo(bb, x, y)
     -- Paint regular sub widgets the classic way
     InputContainer.paintTo(self, bb, x, y)
-    -- And explicitely paint "swipe" hints along the left and bottom borders
+    -- And explicitly paint "swipe" hints along the left and bottom borders
     self:paintLeftVerticalSwipeHint(bb, x, y)
     if not self.overview_mode then
         self:paintBottomHorizontalSwipeHint(bb, x, y)

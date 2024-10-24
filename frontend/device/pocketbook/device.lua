@@ -52,7 +52,7 @@ local PocketBook = Generic:extend{
     -- instead of busy looping at 50Hz the way inkview insists on doing.
     -- In case this method fails (no root), we fallback to classic inkview api.
     raw_input = nil, --[[{
-        -- value or function to adjust touch matrix orientiation.
+        -- value or function to adjust touch matrix orientation.
         touch_rotation = -3+4,
         -- Works same as input.event_map, but for raw input EV_KEY translation
         keymap = { [scan] = event },
@@ -170,7 +170,7 @@ function PocketBook:init()
 
             return self._fb_init(fb, finfo, vinfo)
         end,
-        -- raw touch input orientiation is different from the screen
+        -- raw touch input orientation is different from the screen
         getTouchRotation = function(fb)
             if type(touch_rotation) == "function" then
                 return touch_rotation(self, fb:getRotationMode())

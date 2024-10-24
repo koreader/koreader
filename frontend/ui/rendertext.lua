@@ -243,7 +243,7 @@ function RenderText:renderUtf8Text(dest_bb, x, baseline, face, text, kerning, bo
             pen_x = pen_x + (char_pads[char_idx] or 0)
             -- We used to use:
             --   pen_x = pen_x + char_pads[char_idx]
-            --   above will fail if we didnt count the same number of chars, we'll see
+            --   above will fail if we didn't count the same number of chars, we'll see
             -- We saw, and it's pretty robust: it never failed before we tried to
             -- render some binary content, which messes the utf8 sequencing: the
             -- split to UTF8 is only reversible if text is valid UTF8 (or nearly UTF8).

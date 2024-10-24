@@ -304,7 +304,7 @@ local xmlParser = function(handler)
                     -- End tag
                     if self._handler.endtag then
                         if attrs then
-                            -- Shouldnt have any attributes in endtag
+                            -- Shouldn't have any attributes in endtag
                             self:_err(string.format("%s (/%s)",
                                              self._errstr.endTagErr,
                                              tagname)
@@ -341,7 +341,7 @@ local xmlParser = function(handler)
         end
     end
 
-    -- Private attribures/functions
+    -- Private attributes/functions
 
     obj._handler    = handler
     obj._stack      = {}

@@ -78,7 +78,7 @@ if last_migration_date < 20200421 then
                 G_reader_settings:saveSetting("text_lang_fallback", dict_info[2])
                 g_text_lang_set = true
                 -- We can't really tweak other settings if the hyph algo fallback happens to be
-                -- @none, @softhyphens, @algortihm...
+                -- @none, @softhyphens, @algorithm...
             end
         end
         if not g_text_lang_set then
@@ -444,7 +444,7 @@ end
 if last_migration_date < 20220625 then
     os.remove("afterupdate.marker")
 
-    -- Move an existing `koreader/patch.lua` to `koreader/patches/1-patch.lua` (-> will be excuted in `early`)
+    -- Move an existing `koreader/patch.lua` to `koreader/patches/1-patch.lua` (-> will be executed in `early`)
     local data_dir = DataStorage:getDataDir()
     local patch_dir = data_dir .. "/patches"
     if lfs.attributes(data_dir .. "/patch.lua", "mode") == "file" then

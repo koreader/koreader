@@ -554,7 +554,7 @@ Note that your selected font size is not affected by this setting.]]),
                     unit = "%",
                     name = "cjk_width_scaling",
                     name_text = _("CJK width scaling"),
-                    info_text = _([[Increase the width of all CJK (Chinese, Japanese, Korean) chararacters by this percentage. This has the effect of adding space between these glyphs, and might make them easier to distinguish to some readers.]]),
+                    info_text = _([[Increase the width of all CJK (Chinese, Japanese, Korean) characters by this percentage. This has the effect of adding space between these glyphs, and might make them easier to distinguish to some readers.]]),
                     event = "SetCJKWidthScaling",
                     other_button = {
                         text = _("Word expansion"),

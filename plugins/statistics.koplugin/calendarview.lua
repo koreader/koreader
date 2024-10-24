@@ -302,7 +302,7 @@ function CalendarWeek:update()
 
     local offset_y_fixup
     if self.histo_shown then
-        -- No real y positionning needed, but push it a bit down
+        -- No real y positioning needed, but push it a bit down
         -- over histogram, as histograms rarely reach 100%, and
         -- will be drawn last, so possibly over last book span if
         -- really near 100%
@@ -1421,9 +1421,9 @@ function CalendarView:_populateItems()
                     close_callback = function(this)
                         -- Refresh calendar in case some day stats were reset for some books
                         -- (we don't know if some reset were done... so we refresh the current
-                        -- display always - at tickAfterNext so there is no noticable slowness
-                        -- when closing, and the re-painting happening after is not noticable;
-                        -- but if some stat reset were done, this will make a nice noticable
+                        -- display always - at tickAfterNext so there is no noticeable slowness
+                        -- when closing, and the re-painting happening after is not noticeable;
+                        -- but if some stat reset were done, this will make a nice noticeable
                         -- repainting showing dynamically reset books disappearing :)
                         UIManager:tickAfterNext(function()
                             self:goToMonth(os.date("%Y-%m", this.day_ts + 10800))

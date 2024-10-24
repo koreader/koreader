@@ -23,7 +23,7 @@ local Document = {
 
     GAMMA_NO_GAMMA = 1.0,
 
-    -- override bbox from orignal page's getUsedBBox
+    -- override bbox from original page's getUsedBBox
     bbox = nil, -- table
 
     -- flag to show whether the document was opened successfully
@@ -501,7 +501,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
     -- Make the context match the rotation,
     -- by pointing at the rotated origin via coordinates offsets.
     -- NOTE: We rotate our *Screen* bb on rotation (SetRotationMode), not the document,
-    --       so we hardly ever exercize this codepath...
+    --       so we hardly ever exercise this codepath...
     --       AFAICT, the only thing that will *ever* (attempt to) rotate the document is ReaderRotation's key bindings (RotationUpdate).
     --- @fixme: And whaddayano, it's broken ;). The aptly named key binds in question are J/K, I shit you not.
     if rotation == 90 then

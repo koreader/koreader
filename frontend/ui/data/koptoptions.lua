@@ -665,7 +665,7 @@ if BD.mirroredUILayout() then
     j.values[2], j.values[4] = j.values[4], j.values[2]
     j.labels[2], j.labels[4] = j.labels[4], j.labels[2]
     -- The zoom direction items will be mirrored, but we want them to
-    -- stay as is, as the RTL diretions are at the end of the arrays.
+    -- stay as is, as the RTL directions are at the end of the arrays.
     -- By reverting the mirroring, RTL directions will be on the right,
     -- so, at the start of the options for a RTL reader.
     j = KoptOptions[3].options[7]

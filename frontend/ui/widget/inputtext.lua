@@ -633,7 +633,7 @@ function InputText:onKeyPress(key)
         elseif key["Right"] then
             self:rightChar()
         -- NOTE: When we are not showing the virtual keyboard, let focusmanger handle up/down keys, as they  are used to directly move around the widget
-        --       seemlessly in and out of text fields and onto virtual buttons like `[cancel] [search dict]`, no need to unfocus first.
+        --       seamlessly in and out of text fields and onto virtual buttons like `[cancel] [search dict]`, no need to unfocus first.
         elseif key["Up"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
             self:upLine()
         elseif key["Down"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then

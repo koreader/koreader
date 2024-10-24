@@ -546,7 +546,7 @@ end
 
 function CoverBrowser:setupFileManagerDisplayMode(display_mode)
     if not DISPLAY_MODES[display_mode] then
-        display_mode = nil -- unknow mode, fallback to classic
+        display_mode = nil -- unknown mode, fallback to classic
     end
     if init_done and display_mode == filemanager_display_mode then -- no change
         return
@@ -677,7 +677,7 @@ end
 
 function CoverBrowser:setupHistoryDisplayMode(display_mode)
     if not DISPLAY_MODES[display_mode] then
-        display_mode = nil -- unknow mode, fallback to classic
+        display_mode = nil -- unknown mode, fallback to classic
     end
     if init_done and display_mode == history_display_mode then -- no change
         return
@@ -756,7 +756,7 @@ end
 
 function CoverBrowser:setupCollectionDisplayMode(display_mode)
     if not DISPLAY_MODES[display_mode] then
-        display_mode = nil -- unknow mode, fallback to classic
+        display_mode = nil -- unknown mode, fallback to classic
     end
     if init_done and display_mode == collection_display_mode then -- no change
         return

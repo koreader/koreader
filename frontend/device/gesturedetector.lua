@@ -87,7 +87,7 @@ local GestureDetector = {
     -- Hash of our currently active contacts
     active_contacts = {},
     contact_count = 0,
-    -- Used for double tap and bounce detection (this is outside a Contact object because it requires minimal persistance).
+    -- Used for double tap and bounce detection (this is outside a Contact object because it requires minimal persistence).
     previous_tap = {},
     -- for timestamp clocksource detection
     clock_id = nil,
@@ -806,7 +806,7 @@ function Contact:voidState()
     if tev.id == -1 then
         if self.down and buddy_contact and buddy_contact.down and self.mt_gesture then
             -- If we were lifted before our buddy, and we're part of a MT gesture,
-            -- defer to the proper state (wthout switching state ourselves).
+            -- defer to the proper state (without switching state ourselves).
             if self.mt_gesture == "tap" then
                 return self:tapState()
             elseif self.mt_gesture == "swipe" or self.mt_gesture == "pan" or self.mt_gesture == "pan_release" then

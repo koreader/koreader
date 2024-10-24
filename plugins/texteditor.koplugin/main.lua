@@ -78,8 +78,8 @@ function TextEditor:loadSettings()
     -- to be re-used by default by InputDialog (on certain conditaions,
     -- when fullscreen or condensed or add_nav_bar...)
     --
-    -- Allow users to set their prefered font manually in text_editor.lua
-    -- (sadly, not via TextEditor itself, as they would be overriden on close)
+    -- Allow users to set their preferred font manually in text_editor.lua
+    -- (sadly, not via TextEditor itself, as they would be overridden on close)
     if self.settings:has("normal_font") then
         self.normal_font = self.settings:readSetting("normal_font")
     end
@@ -457,7 +457,7 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
             self:editFile(file_path, readonly)
         end
     else -- File does not exist
-        -- Try to create it just to check if writting to it later is possible
+        -- Try to create it just to check if writing to it later is possible
         local file, err = io.open(file_path, "wb")
         if file then
             -- Clean it, we'll create it again on Save, and allow closing

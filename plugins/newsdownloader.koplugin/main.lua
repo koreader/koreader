@@ -290,7 +290,7 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
         -- Tell the user there were problems.
         feed_message = _("Downloading news finished with errors.")
         -- Display a dialogue that requires the user to acknowledge
-        -- that errors occured.
+        -- that errors occurred.
         UI:confirm(
             T(_([[
 Could not process some feeds.
@@ -842,7 +842,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
     -- In this loop, we cycle through the feed items. A series of
     -- conditionals checks to see if we are at the right id
     -- and key (i.e.: the key that triggered this function.
-    -- If we are at the right spot, we overrite (or create) the value
+    -- If we are at the right spot, we overwrite (or create) the value
     for idx, feed in ipairs(feed_config) do
         -- Check to see if this is the correct feed to update.
         if idx == id then
@@ -959,7 +959,7 @@ function NewsDownloader:deleteFeed(id)
     -- In this loop, we cycle through the feed items. A series of
     -- conditionals checks to see if we are at the right id
     -- and key (i.e.: the key that triggered this function.
-    -- If we are at the right spot, we overrite (or create) the value
+    -- If we are at the right spot, we overwrite (or create) the value
     local new_config = {}
     for idx, feed in ipairs(feed_config) do
         -- Check to see if this is the correct feed to update.

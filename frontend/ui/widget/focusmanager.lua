@@ -208,7 +208,7 @@ function FocusManager:onFocusPrevious()
 end
 
 function FocusManager:onFocusMove(args)
-    if not self.layout then -- allow parent focus manger to handle the event
+    if not self.layout then -- allow parent focus manager to handle the event
         return false
     end
     local dx, dy = unpack(args)

@@ -9,7 +9,7 @@ local C_ = _.pgettext
 local T = require("ffi/util").template
 local Screen = Device.screen
 
--- This module exposes Scrolling settings, and additionnally
+-- This module exposes Scrolling settings, and additionally
 -- handles inertial scrolling on non-eInk devices.
 
 local SCROLL_METHOD_CLASSIC = "classic"
@@ -55,7 +55,7 @@ function ReaderScrolling:init()
     -- The different scrolling methods are handled directly by readerpaging/readerrolling
     self.scroll_method = G_reader_settings:readSetting("scroll_method")
 
-    -- Keep inertial scrolling available on the emulator (which advertizes itself as eInk)
+    -- Keep inertial scrolling available on the emulator (which advertises itself as eInk)
     if not Device:hasEinkScreen() or Device:isEmulator() then
         self._inertial_scroll_supported = true
     end

@@ -28,7 +28,7 @@ describe("UIManager spec", function()
         assert.are.same(future2, UIManager._task_queue[1].time)
     end)
 
-    it("should calcualte wait_until properly in checkTasks routine", function()
+    it("should calculate wait_until properly in checkTasks routine", function()
         now = time.now()
         local future_time = now + time.s(60000)
         UIManager:quit()
@@ -132,7 +132,7 @@ describe("UIManager spec", function()
         UIManager:schedule(now + time.s(5), "5s");
         assert.are.same("5s", UIManager._task_queue[2].action)
 
-        -- insert task in place of "10s", as it'll expire shortly afer "10s"
+        -- insert task in place of "10s", as it'll expire shortly after "10s"
         -- NOTE: Can't use this here right now, as time.now, which is used internally,
         -- may or may not have moved, depending on host's performance and clock granularity
         -- (especially if host is fast and/or COARSE is available).
@@ -156,7 +156,7 @@ describe("UIManager spec", function()
         UIManager:scheduleIn(5, 'barba') -- is a bit later than "5s", as time.now() is used internally
         assert.are.same('barba', UIManager._task_queue[5].action)
 
-        -- "mama is sheduled now and as such inserted in "now"'s place
+        -- "mama is scheduled now and as such inserted in "now"'s place
         UIManager:schedule(now, 'mama')
         assert.are.same('mama', UIManager._task_queue[8].action)
 
@@ -299,7 +299,7 @@ describe("UIManager spec", function()
     end)
 
     it("should handle stack change when checking for active widgets", function()
-        -- senario 1: 2nd widget removes the 3rd widget in the stack
+        -- scenario 1: 2nd widget removes the 3rd widget in the stack
         local call_signals = {0, 0, 0}
         UIManager._window_stack = {
             {
@@ -335,7 +335,7 @@ describe("UIManager spec", function()
         assert.is.same(call_signals[2], 0)
         assert.is.same(call_signals[3], 1)
 
-        -- senario 2: top widget removes itself
+        -- scenario 2: top widget removes itself
         call_signals = {0, 0, 0}
         UIManager._window_stack = {
             {

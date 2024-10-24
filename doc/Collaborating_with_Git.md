@@ -90,7 +90,7 @@ integrate changes from this issue (or diff, patch, git cherry-pick sha-commit)
 ```
 dpavlin$ git add -p unireader.lua
 ```
-interactivly select just changes which are not whitespace
+interactively select just changes which are not whitespace
 
 ```
 dpavlin$ git commit --author NuPogodi -m 'TOC position on current place in the tree #235'

@@ -24,7 +24,7 @@ Maximal errors from 2020-2050 (compared to https://midcdmz.nrel.gov/spa/) are:
 
 *) A few days around beginning of summer (error <290s)
 
-**) A few days after and befor midnight sun (error <1200s)
+**) A few days after and before midnight sun (error <1200s)
 
 @usage
     local SunTime = require("suntime")
@@ -45,7 +45,7 @@ Maximal errors from 2020-2050 (compared to https://midcdmz.nrel.gov/spa/) are:
 @module suntime
 --]]--
 
--- math abbrevations
+-- math abbreviations
 local pi = math.pi
 local pi_2 = pi/2
 
@@ -131,7 +131,7 @@ function SunTime:getZglAdvanced()
 end
 
 -- set current date or year/month/day daylightsaving hh/mm/ss
--- if dst == nil use curent daylight saving of the system
+-- if dst == nil use current daylight saving of the system
 local days_in_month = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
 
 function SunTime:setDate(year, month, day, dst, hour, min, sec)
@@ -167,7 +167,7 @@ Set position for later calculations
 @param longitude Geographical longitude, West is negative
 @param time_zone Timezone e.g. CET = +1; if nil try to autodetect the current zone
 @param altitude Altitude of the location above the sea level
-@param degree if `nil` latitude and longitue are in radian, else in decimal degree
+@param degree if `nil` latitude and longitude are in radian, else in decimal degree
  --]]--
 function SunTime:setPosition(name, latitude, longitude, time_zone, altitude, degree)
     altitude = altitude or 200
@@ -442,7 +442,7 @@ function SunTime:calculateNoon(hour)
                 return hour + local_correction + aberration_time
             end
         end
-    else -- sourthern hemisphere
+    else -- southern hemisphere
         if pi_2 + self.pos.latitude - self.decl > self.eod then
             if self:getHeight(hour) > 0 then
                 return hour + local_correction + aberration_time
@@ -466,7 +466,7 @@ function SunTime:calculateMidnight(hour)
                 return hour + local_correction
             end
         end
-    else -- sourthern hemisphere
+    else -- southern hemisphere
         if pi_2 + self.pos.latitude + self.decl > self.eod then
             if self:getHeight(hour) < 0 then
                 return hour + local_correction

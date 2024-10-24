@@ -1,4 +1,4 @@
-describe("Nickel configuation module", function()
+describe("Nickel configuration module", function()
     local lfs, NickelConf
     setup(function()
         require("commonrequire")

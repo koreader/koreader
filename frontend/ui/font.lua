@@ -29,11 +29,11 @@ local Font = {
     regular_font_variant = _regular_font_variant,
 
     -- Allow globally not promoting fonts to their bold variants
-    -- (and use thiner and narrower synthetized bold instead).
+    -- (and use thinner and narrower synthesized bold instead).
     use_bold_font_for_bold = G_reader_settings:nilOrTrue("use_bold_font_for_bold"),
 
     -- Widgets can provide "bold = Font.FORCE_SYNTHETIZED_BOLD" instead
-    -- of "bold = true" to explicitely request synthetized bold, which,
+    -- of "bold = true" to explicitly request synthesized bold, which,
     -- with XText, makes a bold string the same width as itself non-bold.
     FORCE_SYNTHETIZED_BOLD = "FORCE_SYNTHETIZED_BOLD",
 
@@ -168,7 +168,7 @@ for _, font_path in ipairs(FontList:getFontList()) do
 end
 bold_candidates = nil -- luacheck: ignore
 
--- Helper functions with explicite names around
+-- Helper functions with explicit names around
 -- bold/regular_font_variant tables
 function Font:hasBoldVariant(name)
     return self.bold_font_variant[name] and true or false
@@ -186,7 +186,7 @@ function Font:getRegularVariantName(name)
     return self.regular_font_variant[name] or name
 end
 
--- Synthetized bold strength can be tuned:
+-- Synthesized bold strength can be tuned:
 -- local bold_strength_factor = 1   -- really too bold
 -- local bold_strength_factor = 1/2 -- bold enough
 local bold_strength_factor = 3/8 -- as crengine, lighter
@@ -226,7 +226,7 @@ local _getFallbackFont = function(face_obj, num)
             -- If main font is a real bold, or if it's not but we want bold,
             -- get the bold variant of the fallback if one exists.
             -- But if one exists, use the regular variant as an additional
-            -- fallback, drawn with synthetized bold (often, bold fonts
+            -- fallback, drawn with synthesized bold (often, bold fonts
             -- have less glyphs than their regular counterpart).
             if face_obj.is_real_bold or face_obj.wants_bold == true then
                                 -- (not if wants_bold==Font.FORCE_SYNTHETIZED_BOLD)
@@ -296,7 +296,7 @@ function Font:getFace(font, size, faceindex)
         if face_obj.orig_size ~= orig_size then
             -- orig_size has changed (which may happen on small orig_size variations
             -- mapping to a same final size, but more importantly when geometry
-            -- or dpi has changed): keep it updated, so code that would re-use
+            -- or dpi has changed): keep it updated, so code that would reuse
             -- it to fetch another font get the current original font size and
             -- not one from the past
             face_obj.orig_size = orig_size
@@ -386,8 +386,8 @@ function Font:getAdjustedFace(face, bold)
     if face.is_real_bold then
         -- No adjustment needed: main real bold font will ensure
         -- fallback fonts use their associated bold font or
-        -- get synthetized bold - whether bold is requested or not
-        -- (Set returned bold to true, to force synthetized bold
+        -- get synthesized bold - whether bold is requested or not
+        -- (Set returned bold to true, to force synthesized bold
         -- on fallback fonts with no associated real bold)
         -- (Drop bold=FORCE_SYNTHETIZED_BOLD and use 'true' if
         -- we were given a real bold font.)
@@ -413,8 +413,8 @@ function Font:getAdjustedFace(face, bold)
         end
     end
     -- Only the regular font is available, and bold requested:
-    -- we'll have synthetized bold - but _getFallbackFont() should
-    -- build a list of fallback fonts either synthetized, or possibly
+    -- we'll have synthesized bold - but _getFallbackFont() should
+    -- build a list of fallback fonts either synthesized, or possibly
     -- using the bold variant of a regular fallback font.
     -- We don't want to collide with the regular font face_obj.fallbacks
     -- so let's make a shallow clone of this face_obj, and have it cached.
@@ -432,13 +432,13 @@ function Font:getAdjustedFace(face, bold)
         orig_size = face.orig_size,
         -- We can keep the same FT object and the same hash in this face_obj
         -- (which is only used to identify cached glyphs, that we don't need
-        -- to distinguish as "bold" is appended when synthetized as bold)
+        -- to distinguish as "bold" is appended when synthesized as bold)
         ftsize = face.ftsize,
         hash = face.hash,
         hb_features = face.hb_features,
         is_real_bold = nil,
         wants_bold = bold, -- true or Font.FORCE_SYNTHETIZED_BOLD, used
-                           -- to pick the appropritate fallback fonts
+                           -- to pick the appropriate fallback fonts
     }
     face_obj.getFallbackFont = function(num)
         return _getFallbackFont(face_obj, num)

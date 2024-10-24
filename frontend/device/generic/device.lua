@@ -96,7 +96,7 @@ local Device = {
     stopTextInput = function() end,
 
     -- use these only as a last resort. We should abstract the functionality
-    -- and have device dependent implementations in the corresponting
+    -- and have device dependent implementations in the corresponding
     -- device/<devicetype>/device.lua file
     -- (these are functions!)
     isAndroid = no,

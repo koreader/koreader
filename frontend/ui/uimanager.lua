@@ -767,7 +767,7 @@ end
 
 --- Top-to-bottom widgets iterator
 --- NOTE: VirtualKeyboard can be instantiated multiple times, and is a modal,
---        so don't be suprised if you find a couple of instances of it at the top ;).
+--        so don't be surprised if you find a couple of instances of it at the top ;).
 function UIManager:topdown_widgets_iter()
     local n = #self._window_stack
     local i = n + 1
@@ -1149,7 +1149,7 @@ function UIManager:_refresh(mode, region, dither)
     end
     -- special case: "partial" refreshes
     -- will get promoted every self.FULL_REFRESH_COUNT refreshes
-    -- since _refresh can be called mutiple times via setDirty called in
+    -- since _refresh can be called multiple times via setDirty called in
     -- different widgets before a real screen repaint, we should make sure
     -- refresh_count is incremented by only once at most for each repaint
     -- NOTE: Ideally, we'd only check for "partial"" w/ no region set (that neatly narrows it down to just the reader).
@@ -1671,7 +1671,7 @@ function UIManager:_standbyTransition()
 end
 
 -- Used by a PM transition event handler to request an early return from input polling.
--- NOTE: We can't re-use setInputTimeout to avoid interactions with ZMQ...
+-- NOTE: We can't reuse setInputTimeout to avoid interactions with ZMQ...
 function UIManager:consumeInputEarlyAfterPM(toggle)
     self._pm_consume_input_early = toggle
 end

@@ -114,7 +114,7 @@ function ReaderDictionary:init()
         os.getenv("STARDICT_DATA_DIR") or
         DataStorage:getDataDir() .. "/data/dict"
 
-    -- Show the "Seaching..." InfoMessage after this delay
+    -- Show the "Searching..." InfoMessage after this delay
     self.lookup_msg_delay = 0.5
     -- Allow quick interruption or dismiss of search result window
     -- with tap if done before this delay. After this delay, the
@@ -649,7 +649,7 @@ local function tidyMarkup(results)
                 if ok then
                     result.definition = fixed_definition
                 else
-                    logger.warn("Dict's user provided funcion failed:", fixed_definition)
+                    logger.warn("Dict's user provided function failed:", fixed_definition)
                 end
             end
         else
@@ -813,7 +813,7 @@ function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progre
         -- and a really bad selected text, can take up to 10 seconds.
         -- It is nice to be able to cancel it when noticing wrong text was
         -- selected.
-        -- Because sdcv starts outputing its output only at the end when it has
+        -- Because sdcv starts outputting its output only at the end when it has
         -- done its work, we can use Trapper:dismissablePopen() to cancel it as
         -- long as we are waiting for output.
         -- When fuzzy search is enabled, we have a lookup_progress_msg that can

@@ -47,7 +47,7 @@ end
 
 function Wallabag:init()
     self.token_expiry = 0
-    -- default values so that user doesn't have to explicitely set them
+    -- default values so that user doesn't have to explicitly set them
     self.is_delete_finished = true
     self.is_delete_read = false
     self.is_auto_delete = false
@@ -466,7 +466,7 @@ function Wallabag:getBearerToken()
 end
 
 --- Get a JSON formatted list of articles from the server.
--- The list should have self.article_per_sync item, or less if an error occured.
+-- The list should have self.article_per_sync item, or less if an error occurred.
 -- If filter_tag is set, only articles containing this tag are queried.
 -- If ignore_tags is defined, articles containing either of the tags are skipped.
 function Wallabag:getArticleList()
@@ -491,7 +491,7 @@ function Wallabag:getArticleList()
             logger.dbg("Wallabag: couldn't get page #", page)
             break -- exit while loop
         elseif err or articles_json == nil then
-            -- another error has occured. Don't proceed with downloading
+            -- another error has occurred. Don't proceed with downloading
             -- or deleting articles
             logger.warn("Wallabag: download of page #", page, "failed with", err, code)
             UIManager:show(InfoMessage:new{

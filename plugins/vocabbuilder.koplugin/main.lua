@@ -750,7 +750,7 @@ local VocabItemWidget = InputContainer:extend{
 --[[--
     item: {
         checked_func: Block,
-        review_count: interger,
+        review_count: integer,
         word: Text
         book_title: TEXT
         create_time: Integer
