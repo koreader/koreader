@@ -1045,13 +1045,9 @@ function FileManagerMenu:onSwipeShowMenu(ges)
     end
 end
 
-function FileManagerMenu:onSetDimensions(dimen)
-    -- This widget doesn't support in-place layout updates, so, close & reopen
-    if self.menu_container then
-        self:onCloseFileManagerMenu()
-        self:onShowMenu()
-    end
-
+function FileManagerMenu:onSetDimensions()
+    -- This widget doesn't support in-place layout updates
+    self:onCloseFileManagerMenu()
     -- update gesture zones according to new screen dimen
     self:initGesListener()
 end
