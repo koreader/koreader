@@ -197,7 +197,9 @@ jobs:
       # Generate / upload artifact. {{{
 
       - name: Generate artifact
-        run: make update --assume-old=base
+        # Note: ensure the build skeleton is created, so there are no dangling
+        # symlinks (e.g. `data/dict`) to trip 7zip during artifact generation…
+        run: make skeleton update --assume-old=base
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
