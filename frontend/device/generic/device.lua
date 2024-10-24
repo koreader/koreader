@@ -455,9 +455,11 @@ function Device:install()
             UIManager:show(InfoMessage:new{
                 text = _("The update will be applied the next time KOReader is started."),
                 unmovable = true,
+                dismissable = false,
             })
         end,
         unmovable = true,
+        dismissable = false,
     })
 end
 
