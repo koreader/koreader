@@ -45,8 +45,8 @@ local ScrollableContainer = InputContainer:extend{
     --   content_bottom = y of the content bottom of a row (included)
     -- that should not account for any top or bottom padding (which should be accounted in
     -- top/bottom), which will be used instead of top/bottom when looking for truncated rows.
-    -- The disctinction allows, if only some top or bottom padding is truncated, but not the
-    -- content, to consider it fully visible and to not need to be visible after the swipe,
+    -- The distinction allows (if only some top or bottom padding is truncated, but not the
+    -- content) to consider it fully visible and to not need to be visible after the swipe,
     -- but to still use these padding for the alignments.
     step_scroll_grid = nil,      -- either this array
     step_scroll_grid_func = nil, -- or a function returning this array

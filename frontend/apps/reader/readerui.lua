@@ -306,7 +306,7 @@ function ReaderUI:init()
         })
     else
         -- load crengine default settings (from cr3.ini, some of these
-        -- will be overriden by our settings by some reader modules below)
+        -- will be overridden by our settings by some reader modules below)
         if self.document.setupDefaultView then
             self.document:setupDefaultView()
         end
@@ -766,7 +766,7 @@ end
 function ReaderUI:onFlushSettings(show_notification)
     self:saveSettings()
     if show_notification then
-        -- Invoked from dispatcher to explicitely flush settings
+        -- Invoked from dispatcher to explicitly flush settings
         Notification:notify(_("Book metadata saved."))
     end
 end

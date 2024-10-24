@@ -35,7 +35,7 @@ local md5 = require("ffi/sha2").md5
 
 
 local function isPathAllowed(path)
-    -- don't allow a path that interferes with frontent cache-framework; quick and dirty check
+    -- don't allow a path that interferes with frontend cache-framework; quick and dirty check
 
     if not Device:isValidPath(path) then -- isValidPath expects a trailing slash
         return false

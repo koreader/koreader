@@ -1149,7 +1149,7 @@ function Menu:mergeTitleBarIntoLayout()
 end
 
 --[[
-    the itemnumber paramter determines menu page number after switching item table
+    the itemnumber parameter determines menu page number after switching item table
     1. itemnumber >= 0
         the page number is calculated with items per page
     2. itemnumber == nil
@@ -1492,10 +1492,10 @@ function Menu:setTitleBarLeftIcon(icon)
     self.title_bar:setLeftIcon(icon)
 end
 
-function Menu:onLeftButtonTap() -- to be overriden and implemented by the caller
+function Menu:onLeftButtonTap() -- to be overridden and implemented by the caller
 end
 
-function Menu:onLeftButtonHold() -- to be overriden and implemented by the caller
+function Menu:onLeftButtonHold() -- to be overridden and implemented by the caller
 end
 
 function Menu:getFirstVisibleItemIndex()

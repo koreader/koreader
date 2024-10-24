@@ -154,7 +154,7 @@ function FakeCover:init()
     if not authors and title and self.filename and self.filename:sub(1,title:len()) == title then
         bd_wrap_title_as_filename = true
         -- Replace a hyphen surrounded by spaces (which most probably was
-        -- used to separate Authors/Title/Serie/Year/Categorie in the
+        -- used to separate Authors/Title/Series/Year/Categories in the
         -- filename with a \n
         title = title:gsub(" %- ", "\n")
         -- Same with |
@@ -165,9 +165,9 @@ function FakeCover:init()
         -- can also have some meaning, so we can't just remove them.
         -- But at least, make dots breakable (they wouldn't be if not
         -- followed by a space), by adding to them a zero-width-space,
-        -- so the dots stay on the right of their preceeding word.
+        -- so the dots stay on the right of their preceding word.
         title = title:gsub("%.", ".\u{200B}")
-        -- Except for a last dot near end of title that might preceed
+        -- Except for a last dot near end of title that might precede
         -- a file extension: we'd rather want the dot and its suffix
         -- together on a last line: so, move the zero-width-space
         -- before it.
@@ -402,7 +402,7 @@ function MosaicMenuItem:init()
         },
     }
 
-    -- We now build the minimal widget container that won't change after udpate()
+    -- We now build the minimal widget container that won't change after update()
 
     -- As done in MenuItem
     -- for compatibility with keyboard navigation
@@ -434,7 +434,7 @@ function MosaicMenuItem:init()
 end
 
 function MosaicMenuItem:update()
-    -- We will be a disctinctive widget whether we are a directory,
+    -- We will be a distinctive widget whether we are a directory,
     -- a known file with image / without image, or a not yet known file
     local widget
 
@@ -665,7 +665,7 @@ function MosaicMenuItem:update()
                     }
                 }
             end
-            -- In case we got a blitbuffer and didnt use it (ignore_cover, wikipedia), free it
+            -- In case we got a blitbuffer and didn't use it (ignore_cover, wikipedia), free it
             if bookinfo.cover_bb and not cover_bb_used then
                 bookinfo.cover_bb:free()
             end
@@ -901,7 +901,7 @@ function MosaicMenu:_recalculateDimen()
     }
 
     -- Create or replace corner_mark if needed
-    -- 1/12 (larger) or 1/16 (smaller) of cover looks allright
+    -- 1/12 (larger) or 1/16 (smaller) of cover looks alright
     local mark_size = math.floor(math.min(self.item_width, self.item_height) / 8)
     if mark_size ~= corner_mark_size then
         corner_mark_size = mark_size

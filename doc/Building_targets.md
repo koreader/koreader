@@ -6,7 +6,7 @@ These instructions are intended for a Linux OS. MacOS and Windows users are sugg
 
 ## Prerequisites
 
-This instructions asume that you [have a development environment ready to run](Building.md) KOReader. If not then please install common prerequisites first.
+These instructions assume that you [have a development environment ready to run](Building.md) KOReader. If not then please install common prerequisites first.
 
 ### A toolchain for your target.
 

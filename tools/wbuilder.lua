@@ -71,7 +71,7 @@ function TestVisible:paintTo(bb)
     h_line = math.floor(bb:getHeight() / 50)
     -- Paint white background for higher contrast
     bb:paintRect(0,0,bb:getWidth(),bb:getHeight(), Blitbuffer.COLOR_WHITE)
-    -- Only render gridtext not lines at a more central postition, so it doesn't interfere with the
+    -- Only render gridtext not lines at a more central position, so it doesn't interfere with the
     for i=1,h_line do
         y_num = i*50
         RenderText:renderUtf8Text(bb, 40, y_num+10, Font:getFace("ffont", 12), y_num, true)

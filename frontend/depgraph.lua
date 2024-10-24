@@ -114,7 +114,7 @@ function DepGraph:addNode(node_key, deps)
 end
 
 -- Attempt to remove a node, as well as all traces of it from other nodes' deps
--- If node has deps, it's kept, but marked as disabled, c.f., lenghty comment below.
+-- If node has deps, it's kept, but marked as disabled, c.f., lengthy comment below.
 function DepGraph:removeNode(node_key)
     -- We shouldn't remove a node if it has dependencies (as these may have been added via addNodeDep
     -- (as opposed to the optional deps list passed to addNode), like what InputContainer does with overrides,

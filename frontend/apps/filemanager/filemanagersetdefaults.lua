@@ -68,7 +68,7 @@ function SetDefaultsWidget:init()
         end
     end
 
-    -- Prepare our menu entires
+    -- Prepare our menu entries
     self.menu_entries = {}
 
     local set_dialog

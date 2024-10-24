@@ -352,7 +352,7 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                     -- that are on previous/next page of the page we should show. And
                     -- sometimes even xpointers that resolve to no page.
                     -- We need to loop thru all the results until we find one suitable,
-                    -- to follow its link and go to the next/prev page with occurences.
+                    -- to follow its link and go to the next/prev page with occurrences.
                     local valid_link
                     -- If backward search, results are already in a reversed order, so we'll
                     -- start from the nearest to current page one.
@@ -367,7 +367,7 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                         logger.dbg("res.end page & xpointer:", r_end_page, r_end)
                         local bounds = {}
                         if self._expect_back_results then
-                            -- Process end of occurence first, which is nearest to current page
+                            -- Process end of occurrence first, which is nearest to current page
                             table.insert(bounds, {r_end, r_end_page})
                             table.insert(bounds, {r_start, r_start_page})
                         else

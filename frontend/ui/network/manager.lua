@@ -544,7 +544,7 @@ function NetworkMgr:getBeforeActionFlag()
     return self._before_action_tripped
 end
 
---- @note: The callback will only run *after* a *succesful* network connection.
+--- @note: The callback will only run *after* a *successful* network connection.
 ---        The only guarantee it provides is isConnected (i.e., an IP & a local gateway),
 ---        *NOT* isOnline (i.e., WAN), se be careful with recursive callbacks!
 ---        Should only return false on *explicit* failures,

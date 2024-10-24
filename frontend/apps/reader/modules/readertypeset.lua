@@ -155,7 +155,7 @@ function ReaderTypeset:onSetRenderDPI(dpi)
 end
 
 -- June 2018: epub.css has been cleaned to be more conforming to HTML specs
--- and to not include class name based styles (with conditional compatiblity
+-- and to not include class name based styles (with conditional compatibility
 -- styles for previously opened documents). It should be usable on all
 -- HTML based documents, except FB2 which has some incompatible specs.
 -- These other css files have not been updated in the same way, and are

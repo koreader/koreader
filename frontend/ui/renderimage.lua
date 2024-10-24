@@ -169,7 +169,7 @@ function RenderImage:renderGifImageDataWithGifLib(data, size, want_frames, width
             end
         end
         -- Much like our other stuff, when we're puzzled about __gc, we do it manually!
-        -- So, also set this method, so that ImageViewer can explicitely call it onClose.
+        -- So, also set this method, so that ImageViewer can explicitly call it onClose.
         function frames:free()
             logger.dbg("frames.free() called, closing GifDocument", self.gif)
             if self.gif_close_needed then
@@ -251,7 +251,7 @@ function RenderImage:renderWebpImageDataWithLibwebp(data, size, want_frames, wid
             end
         end
         -- Much like our other stuff, when we're puzzled about __gc, we do it manually!
-        -- So, also set this method, so that ImageViewer can explicitely call it onClose.
+        -- So, also set this method, so that ImageViewer can explicitly call it onClose.
         function frames:free()
             logger.dbg("frames.free() called, closing webp object", self.webp)
             if self.webp_close_needed then

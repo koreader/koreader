@@ -151,7 +151,7 @@ When the book's language tag is not among our presets, no specific features will
         hold_callback = function()
             -- Show infos about TextLangMan seen lang_tags and loaded hyph dicts
             local lang_infos = {}
-            local seen_hyph_dicts = {} -- to avoid outputing count and size for shared hyph dicts
+            local seen_hyph_dicts = {} -- to avoid outputting count and size for shared hyph dicts
             local cre = require("document/credocument"):engineInit()
             local main_lang_tag, main_lang_active_hyph_dict, loaded_lang_infos = cre.getTextLangStatus() -- luacheck: no unused
             -- First output main lang tag
@@ -762,7 +762,7 @@ function ReaderTypography:onReadSettings(config)
         self.allow_doc_lang_tag_override = true
         -- Use the one manually set as fallback (with Hold)
         self.text_lang_tag = G_reader_settings:readSetting("text_lang_fallback")
-        logger.dbg("Typography lang: using fallback ", self.text_lang_tag, ", might be overriden by doc language")
+        logger.dbg("Typography lang: using fallback ", self.text_lang_tag, ", might be overridden by doc language")
     else
         self.allow_doc_lang_tag_override = true
         -- None decided, use default (shouldn't be reached)

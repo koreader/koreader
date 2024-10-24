@@ -662,7 +662,7 @@ function ReaderPaging:onInitScrollPageStates(orig_mode)
         blank_area:setSizeTo(self.view.visible_area)
         while blank_area.h > 0 do
             local offset = Geom:new()
-            -- caculate position in current page
+            -- calculate position in current page
             if self.current_page == self.orig_page then
                 local page_area = self.view:getPageArea(
                     self.view.state.page,

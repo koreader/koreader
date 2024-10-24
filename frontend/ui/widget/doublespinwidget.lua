@@ -62,7 +62,7 @@ function DoubleSpinWidget:init()
     self.screen_height = Screen:getHeight()
     if not self.width then
         if not self.width_factor then
-            self.width_factor = 0.8 -- default if no width speficied
+            self.width_factor = 0.8 -- default if no width specified
         end
         self.width = math.floor(math.min(self.screen_width, self.screen_height) * self.width_factor)
     end

@@ -863,13 +863,13 @@ function DictQuickLookup:update()
 
     -- Update main text widgets
     if self.is_html and self.shw_widget then
-        -- Re-use our ScrollHtmlWidget (self.shw_widget)
+        -- Reuse our ScrollHtmlWidget (self.shw_widget)
         -- NOTE: The recursive free via our WidgetContainer (self[1]) above already released the previous MµPDF document instance ;)
         self.text_widget.htmlbox_widget:setContent(self.definition, self:getHtmlDictionaryCss(), Screen:scaleBySize(self.dict_font_size))
         -- Scroll back to top
         self.text_widget:resetScroll()
     elseif not self.is_html and self.stw_widget then
-        -- Re-use our ScrollTextWidget (self.stw_widget)
+        -- Reuse our ScrollTextWidget (self.stw_widget)
         -- Update properties that may change across results (as done in DictQuickLookup:_instantiateScrollWidget())
         self.text_widget.text_widget.text = self.definition
         self.text_widget.text_widget.charlist = nil -- (required when use_xtext=false for proper re-init)
@@ -906,7 +906,7 @@ function DictQuickLookup:update()
 end
 
 function DictQuickLookup:getInitialVisibleArea()
-    -- Some positionning happens only at paintTo() time, but we want
+    -- Some positioning happens only at paintTo() time, but we want
     -- to know this before. So, do a bit like WidgetContainer does
     -- (without any MovableContainer offset)
     local dict_size = self.dict_frame:getSize()
@@ -1337,12 +1337,12 @@ function DictQuickLookup:lookupWikipedia(get_fullpage, word, is_sane, lang)
             word = self.lookupword
             is_sane = true
         else
-            -- we use the original word that was querried
+            -- we use the original word that was queried
             word = self.word
             is_sane = false
         end
     end
-    -- Keep providing self.word_boxes so new windows keep being positionned to not hide it
+    -- Keep providing self.word_boxes so new windows keep being positioned to not hide it
     self.ui:handleEvent(Event:new("LookupWikipedia", word, is_sane, self.word_boxes, get_fullpage, lang))
 end
 

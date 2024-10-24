@@ -1,4 +1,4 @@
--- module for integration with thirdparty applications
+-- module for integration with third-party applications
 local logger = require("logger")
 
 local roles = {
@@ -56,7 +56,7 @@ function M:checkMethod(role, method)
 end
 
 function M:dump()
-    local str = "user defined thirdparty apps\n"
+    local str = "user defined third-party apps\n"
     for i, role in ipairs(roles) do
         local apps = self[role.."s"]
         for index, _ in ipairs(apps or {}) do

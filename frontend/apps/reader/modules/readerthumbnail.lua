@@ -514,7 +514,7 @@ function ReaderThumbnail:_getPageImage(page)
         self.ui.bookmark:onPageUpdate(page) -- Update dogear state for this page
     end
 
-    -- Draw the page on a new BB with the targetted size
+    -- Draw the page on a new BB with the targeted size
     local bb = Blitbuffer.new(target_w, target_h, self.bb_type)
     self.ui.view:paintTo(bb, 0, 0)
 

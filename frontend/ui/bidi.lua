@@ -13,7 +13,7 @@ only 2 valid combinations:
 
 Text direction is handled by the libkoreader-xtext.so C module,
 and the TextWidget and TextBoxWidget widgets that handle text
-aligment. We just need here to set the default global paragraph
+alignment. We just need here to set the default global paragraph
 direction (that widgets can override if needed).
 
 UI mirroring is to be handled by our widget themselves, with the
@@ -62,7 +62,7 @@ function Bidi.setup(lang)
         -- Text direction should normally not follow ui mirroring
         -- lang override (so that Arabic is still right aligned
         -- when one wants the UI layout LTR). But allow it to
-        -- be independantly reversed (for testing UI mirroring
+        -- be independently reversed (for testing UI mirroring
         -- with english text right aligned).
         if G_reader_settings:isTrue("dev_reverse_ui_text_direction") then
             is_rtl = not is_rtl
@@ -127,7 +127,7 @@ function Bidi.mirroredUILayout()
     return Bidi._mirrored_ui_layout
 end
 
--- This fuction can be used by document widgets to temporarily match a widget
+-- This function can be used by document widgets to temporarily match a widget
 -- to the document page turn direction instead of the UI layout direction.
 function Bidi.invert()
     if not Bidi._inverted then

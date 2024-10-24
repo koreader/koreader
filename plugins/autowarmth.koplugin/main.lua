@@ -110,7 +110,7 @@ function AutoWarmth:init()
         i = j
     end
 
-    -- schedule recalculation shortly afer midnight
+    -- schedule recalculation shortly after midnight
     self:scheduleMidnightUpdate()
 end
 
@@ -676,7 +676,7 @@ function AutoWarmth:getFlOffDuringDayMenu()
   • off after sunrise and
   • on before sunset.]],
                     ok_always_enabled = true,
-                    -- read the saved setting, as this get's not overwritten by toggling easy_mode
+                    -- read the saved setting, as this gets overwritten by toggling easy_mode
                     value = G_reader_settings:readSetting("autowarmth_fl_off_during_day_offset_s", 0) * (1/60),
                     value_min = -15,
                     value_max = 30,
