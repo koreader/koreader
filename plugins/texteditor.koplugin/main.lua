@@ -439,7 +439,7 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
         -- No need to warn if readonly, the user will know it when we open
         -- without keyboard and the Save button says "Read only".
         local readonly = true
-        local file = io.open(file_path, 'r+b')
+        local file = io.open(file_path, "r+b")
         if file then
             file:close()
             readonly = false
