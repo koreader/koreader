@@ -508,7 +508,7 @@ To:
                                 FFIUtil.purgeDir(cachedir)
                             end
                             lfs.mkdir(cachedir)
-                            -- Also remove from the Cache objet references to the cache files we've just deleted
+                            -- Also remove from the Cache object references to the cache files we've just deleted
                             local Cache = require("cache")
                             Cache.cached = {}
                             UIManager:askForRestart(_("Caches cleared. Please restart KOReader."))
@@ -1045,9 +1045,13 @@ function FileManagerMenu:onSwipeShowMenu(ges)
     end
 end
 
-function FileManagerMenu:onSetDimensions()
-    -- This widget doesn't support in-place layout updates
-    self:onCloseFileManagerMenu()
+function FileManagerMenu:onSetDimensions(dimen)
+    -- This widget doesn't support in-place layout updates, so, close & reopen
+    if self.menu_container then
+        self:onCloseFileManagerMenu()
+        self:onShowMenu()
+    end
+
     -- update gesture zones according to new screen dimen
     self:initGesListener()
 end
