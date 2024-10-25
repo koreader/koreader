@@ -70,7 +70,7 @@ sudo apt-get install autoconf automake build-essential ca-certificates cmake \
 sudo apt install meson/bookworm-backports
 ```
 The bookworm-backports repository was already included on Linux Mint Dedian Edition 6.
-Otherwise, follow full up-to-date instructions from here: https://wiki.debian.org/Backports
+Otherwise, follow full up-to-date instructions from here: https://wiki.debian.org/Backports.
 
 ### Fedora/Red Hat
 
