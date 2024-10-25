@@ -730,16 +730,12 @@ function InputDialog:onClose()
     self:onCloseKeyboard()
 end
 
-function InputDialog:onSetRotationMode(rotation)
-    if self.rotation_enabled and rotation ~= nil then
-        if self.ui.view then
-            self.ui.view:onSetRotationMode(rotation)
-        else
-            self.ui:onSetRotationMode(rotation)
-        end
+function InputDialog:onSetRotationMode(mode)
+    if self.rotation_enabled and mode ~= nil then -- Text editor only
+        self.rotation_mode_backup = self.rotation_mode_backup or Screen:getRotationMode() -- backup only initial mode
+        Screen:setRotationMode(mode)
         self:reinit()
-        self.rotation_mode_backup = nil
-        return true
+        return true -- we are the upper widget, stop event propagation
     end
 end
 
