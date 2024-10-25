@@ -704,9 +704,7 @@ function InputDialog:onKeyboardClosed()
     end
 end
 
-function InputDialog:onKeyboardHeightChanged()
-    self:reinit()
-end
+InputDialog.onKeyboardHeightChanged = InputDialog.reinit
 
 function InputDialog:onCloseDialog()
     local close_button = self.button_table:getButtonById("close")
