@@ -65,6 +65,13 @@ sudo apt-get install autoconf automake build-essential ca-certificates cmake \
     lua5.1 luarocks meson nasm ninja-build patch perl pkg-config unzip wget
 ```
 
+**Note:** Debian distributions might need `meson` to be installed from `bookworm-backports`) because the version provided by the default repositories is too old:
+```
+sudo apt install meson/bookworm-backports
+```
+The bookworm-backports repository was already included on Linux Mint Dedian Edition 6.
+Otherwise, follow full up-to-date instructions from here: https://wiki.debian.org/Backports.
+
 ### Fedora/Red Hat
 
 Install the prerequisites using DNF:
