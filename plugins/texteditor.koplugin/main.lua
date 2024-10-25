@@ -564,7 +564,6 @@ function TextEditor:editFile(file_path, readonly)
         title_bar_left_icon = "appbar.menu",
         title_bar_left_icon_tap_callback = function() self:showMenu() end,
         rotation_enabled = true,
-        ui = self.ui,
         keyboard_visible = self.show_keyboard_on_start, -- InputDialog will enforce false if readonly
         scroll_by_pan = true,
         buttons = {buttons_first_row},
