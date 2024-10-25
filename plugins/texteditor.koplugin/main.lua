@@ -708,10 +708,7 @@ function TextEditor:showMenu()
             end,
             callback = function()
                 UIManager:close(dialog)
-                local rotation_mode_backup = Screen:getRotationMode()
-                Screen:setRotationMode(optionsutil.rotation_modes[i])
-                self.input:reinit()
-                self.input.rotation_mode_backup = self.input.rotation_mode_backup or rotation_mode_backup
+                self.input:onSetRotationMode(optionsutil.rotation_modes[i])
             end,
         }}
     end
