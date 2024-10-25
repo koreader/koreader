@@ -436,9 +436,13 @@ function ReaderMenu:onCloseReaderMenu()
     return true
 end
 
-function ReaderMenu:onSetDimensions()
-    -- This widget doesn't support in-place layout updates
-    self:onCloseReaderMenu()
+function ReaderMenu:onSetDimensions(dimen)
+    -- This widget doesn't support in-place layout updates, so, close & reopen
+    if self.menu_container then
+        self:onCloseReaderMenu()
+        self:onShowMenu()
+    end
+
     -- update gesture zones according to new screen dimen
     -- (On CRe, this will get called a second time by ReaderReady once the document is reloaded).
     self:initGesListener()
