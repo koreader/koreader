@@ -475,18 +475,6 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
     end
 end
 
-function TextEditor:readFileContent(file_path)
-    local file = io.open(file_path, "rb")
-    if not file then
-        -- We checked file existence before, so assume it's
-        -- because it's a new file
-        return ""
-    end
-    local file_content = file:read("*all")
-    file:close()
-    return file_content
-end
-
 function TextEditor:saveFileContent(file_path, content)
     local ok, err = util.writeToFile(content, file_path)
     if ok then
@@ -551,7 +539,7 @@ function TextEditor:editFile(file_path, readonly)
     end
     self.input = InputDialog:new{
         title =  filename,
-        input = self:readFileContent(file_path),
+        input = util.readFromFile(file_path, "rb"),
         input_face = Font:getFace(self.font_face, self.font_size),
         para_direction_rtl = para_direction_rtl,
         auto_para_direction = self.auto_para_direction,
@@ -583,7 +571,7 @@ function TextEditor:editFile(file_path, readonly)
         end,
         -- File restoring callback
         reset_callback = function(content) -- Will add a Reset button
-            return self:readFileContent(file_path), _("Text reset to last saved content")
+            return util.readFromFile(file_path, "rb") or "", _("Text reset to last saved content")
         end,
         -- Close callback
         close_callback = function()
