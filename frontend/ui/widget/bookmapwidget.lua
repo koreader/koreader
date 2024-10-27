@@ -649,13 +649,8 @@ function BookMapRow:paintTo(bb, x, y)
     end
 end
 
-<<<<<<< HEAD
 -- BookMapWidget: shows a map of content, including TOC, bookmarks, read pages, non-linear flows...
-local BookMapWidget = InputContainer:extend{
-=======
--- BookMapWidget: shows a map of content, including TOC, boomarks, read pages, non-linear flows...
-local BookMapWidget = InputContainer:extend{
->>>>>>> ff866289e (BookMapWidget: support NT device)
+local BookMapWidget = FocusManager:extend{
     -- Focus page: show the BookMapRow containing this page
     -- in the middle of screen
     focus_page = nil,
