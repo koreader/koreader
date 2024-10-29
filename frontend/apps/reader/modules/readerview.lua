@@ -969,7 +969,7 @@ function ReaderView:onBBoxUpdate(bbox)
     self.use_bbox = bbox and true or false
 end
 
---- @note: From ReaderRotation, which is broken and disabled.
+--- @note: From ReaderRotation, which was broken, and has been removed in #12658
 function ReaderView:onRotationUpdate(rotation)
     self.state.rotation = rotation
     self:recalculate()

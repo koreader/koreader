@@ -322,7 +322,7 @@ function ReaderZooming:onRestoreDimensions(dimensions)
     self:setZoom()
 end
 
---- @note: From ReaderRotation, which is broken and disabled.
+--- @note: From ReaderRotation, which was broken, and has been removed in #12658
 function ReaderZooming:onRotationUpdate(rotation)
     self.rotation = rotation
     self:setZoom()
