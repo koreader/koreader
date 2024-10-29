@@ -62,7 +62,7 @@ print(total_time) --> 50
 conn:close() -- Do not forget to close stmt after you are done
 ```
 
-For more information on supported SQL quries, check out [SQLite3's official
+For more information on supported SQL queries, check out [SQLite3's official
 documentation][sq3-doc].
 
 

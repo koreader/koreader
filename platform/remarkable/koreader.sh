@@ -22,7 +22,7 @@ ko_update_check() {
     INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
     if [ -f "${NEWUPDATE}" ]; then
         # If button-listen service is running then stop it during update so that
-        # the update can overwite the binary
+        # the update can overwrite the binary
         systemctl is-active --quiet button-listen
         USING_BUTTON_LISTEN=$?
         if [ ${USING_BUTTON_LISTEN} -eq 0 ]; then

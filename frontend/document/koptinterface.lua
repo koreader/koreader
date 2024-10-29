@@ -1379,7 +1379,7 @@ end
 
 local function all_matches(boxes, plist, case_insensitive)
     local pnb = #plist
-    -- return mached word indices from index i, j
+    -- return matched word indices from index i, j
     local function match(i, j)
         local pindex = 1
         local matched_indices = {}

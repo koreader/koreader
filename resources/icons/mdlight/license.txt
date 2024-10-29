@@ -1,7 +1,7 @@
 Read the license:
 http://creativecommons.org/licenses/by/3.0/ *
 
-Basicaly, use it anyway you want but include this license file in the source if your project is open source. Nothing is needed in the front facing project (UNLESS you are using any of the icons listed below). Commercial use is not only allowed but encouraged. This pack was made to promote consistency in applications.
+Basically, use it anyway you want but include this license file in the source if your project is open source. Nothing is needed in the front facing project (UNLESS you are using any of the icons listed below). Commercial use is not only allowed but encouraged. This pack was made to promote consistency in applications.
 
 Creator
 - Austin Andrews (@templarian)

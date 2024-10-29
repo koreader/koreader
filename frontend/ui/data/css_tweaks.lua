@@ -189,7 +189,7 @@ These tweaks allow you to change this behavior, and to override publisher rules.
                 separator = true,
             },
             -- To avoid duplicating these 2 tweaks into 2 others for ignoring publisher rules,
-            -- we apply the rules to BODY without !important (so they can still be overriden
+            -- we apply the rules to BODY without !important (so they can still be overridden
             -- by publisher rules applied to BODY), and to DocFragment with !important (so
             -- that with "* {widows/orphans: inherit !important}", all elements will inherit
             -- from the DocFragment rules.
@@ -684,7 +684,7 @@ table, tcaption, tr, th, td { border: black solid 1px; border-collapse: collapse
                 title = _("Full-width images"),
                 description = _("Useful for books containing only images, when they are smaller than your screen. May stretch images in some cases."),
                 -- This helped me once with a book. Will mess with aspect ratio
-                -- when images have a style="width: NNpx; heigh: NNpx"
+                -- when images have a style="width: NNpx; height: NNpx"
                 css = [[
 img {
 text-align: center !important;
@@ -1019,7 +1019,7 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
         -- to apply the hint).
         -- For the font-size changes, we want to match only block elements (with "-inline")
         -- as we want to keep any relative font-size (ie. 0.5em) for inline nodes like <sup>.
-        -- We also add a selector for the <autoBoxing> internal element (which are explicitely
+        -- We also add a selector for the <autoBoxing> internal element (which are explicitly
         -- not matched by '*') as we may get some in/as footnote containers, and they would
         -- inherit some of these properties, that we wish to reset too.
         (function()
@@ -1121,7 +1121,7 @@ This will break any complex footnote containing quotes or lists.]]),
                 id = "inpage_footnote_regularize_text",
                 title = _("Regularize text size on inline elements"),
                 description = _([[
-If the footnote text uses variable or absolute font sizes, line height or vertical alignments, which would make it too irregular, you can reset all of them to get a leaner text (to the expense of loosing superscripts).]]),
+If the footnote text uses variable or absolute font sizes, line height or vertical alignments, which would make it too irregular, you can reset all of them to get a leaner text (to the expense of losing superscripts).]]),
                 priority = 6,
                 css = [[
 *, autoBoxing {

@@ -122,7 +122,7 @@ function Terminal:getDefaultShellExecutable()
             break
         end
     end
-    logger.info("Terminal: default shell is", self.default_shell_executable)
+    logger.dbg("Terminal: default shell is", self.default_shell_executable)
 
     return self.default_shell_executable
 end

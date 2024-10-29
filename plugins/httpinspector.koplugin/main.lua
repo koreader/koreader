@@ -270,7 +270,7 @@ function HttpInspector:sendResponse(reqinfo, http_code, content_type, body)
     table.insert(response, T("HTTP/1.0 %1 %2", http_code, HTTP_RESPONSE_CODE[http_code] or "Unspecified"))
     -- If no content type provided, let the browser sniff it
     if content_type then
-        -- Advertize all our text as being UTF-8
+        -- Advertise all our text as being UTF-8
         local charset = ""
         if util.stringStartsWith(content_type, "text/") then
             charset = "; charset=utf-8"
@@ -669,7 +669,7 @@ function HttpInspector:exposeObject(obj, uri, reqinfo)
                     return self:sendResponse(reqinfo, 500, CTYPE.TEXT, json)
                 end
             else
-                return self:sendResponse(reqinfo, 400, CTYPE.TEXT, "Invalid request: unexepected token after "..reqinfo.parsed_uri)
+                return self:sendResponse(reqinfo, 400, CTYPE.TEXT, "Invalid request: unexpected token after "..reqinfo.parsed_uri)
             end
 
         elseif obj_type == "function" then
@@ -715,7 +715,7 @@ function HttpInspector:exposeObject(obj, uri, reqinfo)
             elseif (ftype == "=" or ftype == "?=") and fragment and uri then
                 -- 'property=value': assign value to property
                 -- 'property?=value': same, but output HTML allowing to get back to the parent
-                uri = fragment .. uri -- put back first frament into uri
+                uri = fragment .. uri -- put back first fragment into uri
                 local args, nb_args = getVariablesFromUri(uri)
                 if nb_args ~= 1 then
                     return self:sendResponse(reqinfo, 400, CTYPE.TEXT, "Variable assignment needs a single value")
@@ -744,7 +744,7 @@ function HttpInspector:exposeObject(obj, uri, reqinfo)
             end
         end
     end
-    return self:sendResponse(reqinfo, 400, CTYPE.TEXT, "Unexepected request") -- luacheck: ignore 511
+    return self:sendResponse(reqinfo, 400, CTYPE.TEXT, "Unexpected request") -- luacheck: ignore 511
 end
 
 -- Send a HTML page describing all this object's key/values
@@ -817,7 +817,7 @@ function HttpInspector:browseObject(obj, reqinfo)
         add_html(T("  <em>%1</em> instance", classinfo))
     end
     -- Keep track of names seen, so we can show these same names
-    -- in super classes lighter, as they are then overriden.
+    -- in super classes lighter, as they are then overridden.
     local seen_names = {}
     local seen_prefix = "<span style='opacity: 0.4'>"
     local seen_suffix = "</span>"

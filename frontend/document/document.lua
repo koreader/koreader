@@ -23,7 +23,7 @@ local Document = {
 
     GAMMA_NO_GAMMA = 1.0,
 
-    -- override bbox from orignal page's getUsedBBox
+    -- override bbox from original page's getUsedBBox
     bbox = nil, -- table
 
     -- flag to show whether the document was opened successfully

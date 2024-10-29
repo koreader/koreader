@@ -284,7 +284,7 @@ function ImageWidget:_render()
             -- we get corrupted images when using it for scaling such blitbuffers.
             -- We need to make a real new blitbuffer with rotated content:
             local rot_bb = self._bb:rotatedCopy(self.rotation_angle)
-            -- We made a new blitbuffer, we need to explicitely free
+            -- We made a new blitbuffer, we need to explicitly free
             -- the old one to not leak memory
             if self._bb_disposable then
                 self._bb:free()
@@ -330,7 +330,7 @@ function ImageWidget:_render()
 
     -- replace blitbuffer with a resized one if needed
     if self.scale_factor == nil then
-        -- no scaling, but strech to width and height, only if provided and needed
+        -- no scaling, but stretch to width and height, only if provided and needed
         if self.width and self.height and (self.width ~= bb_w or self.height ~= bb_h) then
             logger.dbg("ImageWidget: stretching")
             self._bb = RenderImage:scaleBlitBuffer(self._bb, self.width, self.height, self._bb_disposable)
@@ -583,7 +583,7 @@ function ImageWidget:paintTo(bb, x, y)
     -- In night mode, invert all rendered images, so the original is
     -- displayed when the whole screen is inverted by night mode.
     -- Except for our *black & white* icons: we do *NOT* want to invert them again:
-    -- they should match the UI's text/backgound.
+    -- they should match the UI's text/background.
     --- @note: As for *color* icons, we really *ought* to invert them here,
     ---        but we currently don't, as we don't really trickle down
     ---        a way to discriminate them from the B&W ones.
@@ -594,7 +594,7 @@ function ImageWidget:paintTo(bb, x, y)
 end
 
 -- This will normally be called by our WidgetContainer:free()
--- But it SHOULD explicitely be called if we are getting replaced
+-- But it SHOULD explicitly be called if we are getting replaced
 -- (ie: in some other widget's update()), to not leak memory with
 -- BlitBuffer zombies
 function ImageWidget:free()

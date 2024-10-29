@@ -11,7 +11,7 @@ local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
--- if sometime in the future crengine is updated to use normalized utf8 for hypenation
+-- if sometime in the future crengine is updated to use normalized utf8 for hyphenation
 -- this variable can be set to `true`. (see discussion in : https://github.com/koreader/crengine/pull/466),
 -- and some `if NORM then` branches can be simplified.
 local NORM = false
@@ -108,7 +108,7 @@ end
 
 -- Helper functions for dictionary entries-------------------------------------------
 
--- checks if suggestion is well formated
+-- checks if suggestion is well formatted
 function ReaderUserHyph:checkHyphenation(suggestion, word)
     if suggestion:find("%-%-") then
         return false -- two or more consecutive '-'

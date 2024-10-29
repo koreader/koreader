@@ -66,7 +66,7 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
         warmth = self.current_warmth
     end
 
-    -- Newer devices use a mixer instead of writting values per color.
+    -- Newer devices use a mixer instead of writing values per color.
     if self.frontlight_mixer then
         if set_brightness then
             -- Prefer the ioctl, as it's much lower latency.

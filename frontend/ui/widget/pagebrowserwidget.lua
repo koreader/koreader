@@ -240,7 +240,7 @@ function PageBrowserWidget:updateLayout()
     -- which should span over the page slots that get their thumbnails shown.
     self.view_finder_r = Size.radius.window
     self.view_finder_bw = Size.border.default
-    -- Have its top border noticable above the BookMapRow top border
+    -- Have its top border noticeable above the BookMapRow top border
     self.view_finder_y = self.dimen.h - self.row_height - 2*self.view_finder_bw
     -- And put its bottom rounded corner outside of screen
     self.view_finder_h = self.row_height + 2*self.view_finder_bw + Size.radius.window
@@ -678,7 +678,7 @@ function PageBrowserWidget:paintTo(bb, x, y)
         -- bb:paintRect(r.x, r.y, r.w, r.h, Blitbuffer.COLOR_GRAY_5)
         -- But we prefer them translucent, so we can draw them over chapter spans
         -- without getting bothered too much by them (alpha=0.3 feels fine).
-        -- Only hatchRect() currently supports paiting with alpha,
+        -- Only hatchRect() currently supports painting with alpha,
         -- so use it to fill our rectangle by using a larger stripe_width
         -- so it is fully filled.
         bb:hatchRect(r.x, r.y, r.w, r.h, r.h, Blitbuffer.COLOR_BLACK, 0.3)
@@ -687,7 +687,7 @@ function PageBrowserWidget:paintTo(bb, x, y)
     -- If we would prefer to see the BookMapRow top border always take the full width
     -- so it acts as a separator from the thumbnail grid, add this:
     -- bb:paintRect(0, self.dimen.h - self.row_height, self.dimen.w, BookMapRow.pages_frame_border, Blitbuffer.COLOR_BLACK)
-    -- And explicitely paint our viewfinder over the BookMapRow
+    -- And explicitly paint our viewfinder over the BookMapRow
     bb:paintBorder(self.view_finder_x, self.view_finder_y, self.view_finder_w, self.view_finder_h,
                             self.view_finder_bw, Blitbuffer.COLOR_BLACK, self.view_finder_r)
 end
@@ -1079,7 +1079,7 @@ function PageBrowserWidget:onClose(close_all_parents)
         -- with the current size to be available)
         self.ui.thumbnail:tidyCache()
         -- Force a GC to free the memory used by the widgets and tiles
-        -- (delay it a bit so this pause is less noticable)
+        -- (delay it a bit so this pause is less noticeable)
         UIManager:scheduleIn(0.5, function()
             collectgarbage()
             collectgarbage()
@@ -1465,7 +1465,7 @@ function PageBrowserWidget:onHold(arg, ges)
     -- our current focus_page to help locating where we were (it's
     -- quite more complicated to draw a rounded rectangle around
     -- multiple pages to figure our view finder, as these pages
-    -- may be splitted onto multiple BookMapRows...)
+    -- may be split onto multiple BookMapRows...)
     if ges.pos.y > Screen:getHeight() - self.row_height then
         local page = self.row[1]:getPageAtX(ges.pos.x)
         if page then

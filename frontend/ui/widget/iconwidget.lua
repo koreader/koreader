@@ -35,7 +35,7 @@ local IconWidget = ImageWidget:extend{
     icon = ICON_NOT_FOUND, -- show this if not provided
     -- See ImageWidget for other available options,
     -- we only start with a few different defaults, that can
-    -- be overriden by callers.
+    -- be overridden by callers.
     width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
     height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
     alpha = false, --- @note: Our icons have a transparent background, but, by default, we flatten them at caching time.

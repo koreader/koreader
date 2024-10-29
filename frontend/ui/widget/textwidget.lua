@@ -27,8 +27,8 @@ local xtext -- Delayed (and optional) loading
 local TextWidget = Widget:extend{
     text = nil,
     face = nil,
-    bold = false, -- use bold=true to use a real bold font (or synthetized if not available),
-                  -- or bold=Font.FORCE_SYNTHETIZED_BOLD to force using synthetized bold,
+    bold = false, -- use bold=true to use a real bold font (or synthesized if not available),
+                  -- or bold=Font.FORCE_SYNTHETIZED_BOLD to force using synthesized bold,
                   -- which, with XText, makes a bold string the same width as it non-bolded.
     fgcolor = Blitbuffer.COLOR_BLACK,
     padding = Size.padding.small, -- vertical padding (should it be function of face.size ?)
@@ -212,7 +212,7 @@ function TextWidget:_measureWithXText()
             -- a TextWidget, with use_xtext, to have it compute the width of
             -- the ellipsis, and then cache this width in the font table.)
             reserved_width = RenderText:getEllipsisWidth(self.face)
-                -- no bold: xtext does synthetized bold with normal metrics
+                -- no bold: xtext does synthesized bold with normal metrics
         end
         local max_width = self.max_width - reserved_width
         if max_width <= 0 then -- avoid _xtext:makeLine() crash

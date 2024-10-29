@@ -103,7 +103,7 @@ function ReaderCropping:onPageCrop(mode)
     self.crop_dialog = VerticalGroup:new{
         align = "left",
         self.bbox_widget,
-        (Device:isTouchDevice() and button_container) or nil, -- button bar only availble for touch devices
+        (Device:isTouchDevice() and button_container) or nil, -- button bar only available for touch devices
     }
     UIManager:show(self.crop_dialog)
     return true

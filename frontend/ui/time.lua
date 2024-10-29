@@ -1,5 +1,5 @@
 --[[--
-A runtime optimized module to compare and do simple arithmetics with fixed point time values (which are called fts in here).
+A runtime optimized module to compare and do simple arithmetic with fixed point time values (which are called fts in here).
 
 Also implements functions to retrieve time from various system clocks (monotonic, monotonic_coarse, realtime, realtime_coarse, boottime ...).
 
@@ -226,7 +226,7 @@ Which means that, yes, this is a fancier POSIX Epoch ;).
     local time = require("ui/time")
     local fts_start = time.realtime()
     -- Do some stuff.
-    -- You can add and substract fts times
+    -- You can add and subtract fts times
     local fts_duration = time.realtime() - fts_start
 
 @treturn fts fixed point time
@@ -282,7 +282,7 @@ if HAVE_BOOTTIME then
     time.boottime_or_realtime_coarse = time.boottime
 else
     function time.boottime()
-        logger.warn("fts: Attemped to call boottime on a platform where it's unsupported!")
+        logger.warn("fts: Attempted to call boottime on a platform where it's unsupported!")
         return 0
     end
 

@@ -96,7 +96,7 @@ local Device = {
     stopTextInput = function() end,
 
     -- use these only as a last resort. We should abstract the functionality
-    -- and have device dependent implementations in the corresponting
+    -- and have device dependent implementations in the corresponding
     -- device/<devicetype>/device.lua file
     -- (these are functions!)
     isAndroid = no,
@@ -455,9 +455,11 @@ function Device:install()
             UIManager:show(InfoMessage:new{
                 text = _("The update will be applied the next time KOReader is started."),
                 unmovable = true,
+                dismissable = false,
             })
         end,
         unmovable = true,
+        dismissable = false,
     })
 end
 

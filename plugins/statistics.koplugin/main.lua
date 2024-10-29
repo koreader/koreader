@@ -2863,7 +2863,7 @@ function ReaderStatistics:getReadingRatioPerHourByDay(month)
     -- We used to have in the SQL statement (with ? = 'YYYY-MM'):
     --   WHERE  strftime('%Y-%m', start_time, 'unixepoch', 'localtime') = ?
     -- but strftime()ing all start_time is slow.
-    -- Comverting the month into timestamp boundaries, and just comparing
+    -- Converting the month into timestamp boundaries, and just comparing
     -- integers, can be 5 times faster.
     -- We let SQLite compute these timestamp boundaries from the provided
     -- month; we need the start of the month to be a real date:

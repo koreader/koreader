@@ -694,7 +694,7 @@ function ReaderLink:onTap(_, ges)
             --
             -- 30px on a reference 167 dpi screen makes 0.45cm, which
             -- seems fine (on a 300dpi device, this will be scaled
-            -- to 54px (which makes 1/20th of screen witdh on a GloHD)
+            -- to 54px (which makes 1/20th of screen width on a GloHD)
             -- Trust Screen.dpi (which may not be the real device
             -- screen DPI if the user has set another one).
             max_distance = Screen:scaleByDPI(30)
@@ -1292,7 +1292,7 @@ function ReaderLink:onGoToLatestBookmark(ges)
     if latest_bookmark then
         if self.ui.paging then
             -- self:onGotoLink() needs something with a page attribute.
-            -- we need to substract 1 to bookmark page, as links start from 0
+            -- we need to subtract 1 to bookmark page, as links start from 0
             -- and onGotoLink will add 1 - we need a fake_link (with a single
             -- page attribute) so we don't touch the bookmark itself
             local fake_link = {}
@@ -1355,7 +1355,7 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
         flags = flags + 0x0002
     end
     -- Checks for private CSS properties "-cr-hint: footnote/noteref/..." are
-    -- always done (they can be applied to specific elements or classe names
+    -- always done (they can be applied to specific elements or class names
     -- with Styles tweaks.)
 
     -- Trust role= and epub:type= attribute values if defined, for source(*) and target

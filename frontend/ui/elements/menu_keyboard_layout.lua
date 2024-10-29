@@ -228,7 +228,7 @@ local sub_item_table = {
     },
 }
 if Device:hasKeyboard() or Device:hasScreenKB() then
-    -- we use same pos. 4 as below so we are always above "keyboard apperance settings"
+    -- we use same pos. 4 as below so we are always above "keyboard appearance settings"
     table.insert(sub_item_table, 4, {
         text = _("Show virtual keyboard"),
         help_text = _("Enable this setting to always display the virtual keyboard within a text input field. When a field is selected (in focus), you can temporarily toggle the keyboard on/off by pressing 'Shift' (or 'ScreenKB') + 'Home'."),

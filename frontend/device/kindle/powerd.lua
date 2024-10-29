@@ -242,7 +242,7 @@ function KindlePowerD:checkUnexpectedWakeup()
     end
 end
 
--- Dummy fuctions. They will be defined in initWakeupMgr
+-- Dummy functions. They will be defined in initWakeupMgr
 function KindlePowerD:wakeupFromSuspend() end
 function KindlePowerD:readyToSuspend() end
 

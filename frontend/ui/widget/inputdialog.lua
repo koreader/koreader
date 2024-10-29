@@ -60,7 +60,7 @@ To add |Save|Close| buttons, use:
                 -- Stuff to do when InputDialog is closed, if anything.
             )
         end
-        return nil -- sucess, default notification shown
+        return nil -- success, default notification shown
         return true, success_notif_text
         return false, error_infomsg_text
     end
