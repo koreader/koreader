@@ -60,28 +60,21 @@ local function isFile(file)
     return lfs.attributes(file, "mode") == "file"
 end
 
-function FileManager:onSetRotationMode(rotation)
-    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
-        Screen:setRotationMode(rotation)
-        if FileManager.instance then
-            self:reinit(self.path, self.focused_file)
-        end
-    end
-    return true
-end
-
-function FileManager:onPhysicalKeyboardConnected()
-    -- So that the key navigation shortcuts apply right away.
-    -- This will also naturally call registerKeyEvents
-    self:reinit(self.path, self.focused_file)
-end
-FileManager.onPhysicalKeyboardDisconnected = FileManager.onPhysicalKeyboardConnected
-
 function FileManager:setRotationMode()
     local locked = G_reader_settings:isTrue("lock_rotation")
     if not locked then
-        local rotation_mode = G_reader_settings:readSetting("fm_rotation_mode") or Screen.DEVICE_ROTATED_UPRIGHT
-        self:onSetRotationMode(rotation_mode)
+        local mode = G_reader_settings:readSetting("fm_rotation_mode") or Screen.DEVICE_ROTATED_UPRIGHT
+        self:onSetRotationMode(mode)
+    end
+end
+
+function FileManager:onSetRotationMode(mode)
+    local old_mode = Screen:getRotationMode()
+    if mode ~= nil and mode ~= old_mode then
+        Screen:setRotationMode(mode)
+        if FileManager.instance then
+            self:rotate()
+        end
     end
 end
 
@@ -728,6 +721,8 @@ function FileManager:tapPlus()
 end
 
 function FileManager:reinit(path, focused_file)
+    path = path or self.path
+    focused_file = focused_file or self.focused_file
     UIManager:flushSettings()
     self.dimen = Screen:getSize()
     -- backup the root path and path items
@@ -747,6 +742,13 @@ function FileManager:reinit(path, focused_file)
     -- CoverBrowser plugin's cover image renderings)
     -- self:onRefresh()
 end
+
+FileManager.rotate = FileManager.reinit
+
+-- So that the key navigation shortcuts apply right away.
+-- This will also naturally call registerKeyEvents
+FileManager.onPhysicalKeyboardConnected = FileManager.reinit
+FileManager.onPhysicalKeyboardDisconnected = FileManager.reinit
 
 function FileManager:getCurrentDir()
     return FileManager.instance and FileManager.instance.file_chooser.path

@@ -237,6 +237,8 @@ function InputDialog:init()
         title_multilines = true,
         bottom_v_padding = self.bottom_v_padding,
         info_text = self.description,
+        left_icon = self.title_bar_left_icon,
+        left_icon_tap_callback = self.title_bar_left_icon_tap_callback,
         show_parent = self,
     }
 
@@ -475,6 +477,31 @@ function InputDialog:init()
     end
 end
 
+function InputDialog:reinit()
+    local visible = self:isKeyboardVisible()
+    self.input = self:getInputText() -- re-init with up-to-date text
+    self:onClose() -- will close keyboard and save view position
+    self._input_widget:onCloseWidget() -- proper cleanup of InputText and its keyboard
+    if self._added_widgets then
+        -- prevent these externally added widgets from being freed as :init() will re-add them
+        for i = 1, #self._added_widgets do
+            table.remove(self.vgroup, #self.vgroup-2)
+        end
+    end
+    self:free()
+    -- Restore original text_height (or reset it if none to force recomputing it)
+    self.text_height = self.orig_text_height or nil
+
+    -- Same deal as in toggleKeyboard...
+    self.keyboard_visible = visible and true or false
+    self:init()
+    if self.keyboard_visible then
+        self:onShowKeyboard()
+    end
+    -- Our position on screen has probably changed, so have the full screen refreshed
+    UIManager:setDirty("all", "flashui")
+end
+
 function InputDialog:addWidget(widget, re_init)
     table.insert(self.layout, #self.layout, {widget})
     if not re_init then -- backup widget for re-init
@@ -677,30 +704,7 @@ function InputDialog:onKeyboardClosed()
     end
 end
 
-function InputDialog:onKeyboardHeightChanged()
-    local visible = self:isKeyboardVisible()
-    self.input = self:getInputText() -- re-init with up-to-date text
-    self:onClose() -- will close keyboard and save view position
-    self._input_widget:onCloseWidget() -- proper cleanup of InputText and its keyboard
-    if self._added_widgets then
-        -- prevent these externally added widgets from being freed as :init() will re-add them
-        for i = 1, #self._added_widgets do
-            table.remove(self.vgroup, #self.vgroup-2)
-        end
-    end
-    self:free()
-    -- Restore original text_height (or reset it if none to force recomputing it)
-    self.text_height = self.orig_text_height or nil
-
-    -- Same deal as in toggleKeyboard...
-    self.keyboard_visible = visible
-    self:init()
-    if self.keyboard_visible then
-        self:onShowKeyboard()
-    end
-    -- Our position on screen has probably changed, so have the full screen refreshed
-    UIManager:setDirty("all", "flashui")
-end
+InputDialog.onKeyboardHeightChanged = InputDialog.reinit
 
 function InputDialog:onCloseDialog()
     local close_button = self.button_table:getButtonById("close")
@@ -722,6 +726,15 @@ function InputDialog:onClose()
         self.view_pos_callback(self._top_line_num, self._charpos)
     end
     self:onCloseKeyboard()
+end
+
+function InputDialog:onSetRotationMode(mode)
+    if self.rotation_enabled and mode ~= nil then -- Text editor only
+        self.rotation_mode_backup = self.rotation_mode_backup or Screen:getRotationMode() -- backup only initial mode
+        Screen:setRotationMode(mode)
+        self:reinit()
+        return true -- we are the upper widget, stop event propagation
+    end
 end
 
 function InputDialog:refreshButtons()
