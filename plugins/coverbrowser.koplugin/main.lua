@@ -509,30 +509,16 @@ function CoverBrowser.initGrid(menu, display_mode)
     menu.display_mode_type = display_mode and display_mode:gsub("_.*", "") -- "mosaic" or "list"
 end
 
-function CoverBrowser:refreshFileManagerInstance(cleanup, post_init)
+function CoverBrowser:refreshFileManagerInstance()
     local fc = self.ui.file_chooser
     if fc then
-        if cleanup then -- clean instance properties we may have set
-            if fc.showFileDialog_orig then
-                -- remove our showFileDialog that extended file_dialog with new buttons
-                fc.showFileDialog = fc.showFileDialog_orig
-                fc.showFileDialog_orig = nil
-                fc.showFileDialog_ours = nil
-            end
+        if not filemanager_display_mode and fc.showFileDialog_orig then
+            fc.showFileDialog = fc.showFileDialog_orig
+            fc.showFileDialog_orig = nil
+            fc.showFileDialog_ours = nil
         end
-        if filemanager_display_mode then
-            if post_init then
-                -- FileBrowser was initialized in classic mode, but we changed
-                -- display mode: items per page may have changed, and we want
-                -- to re-position on the focused_file
-                fc:_recalculateDimen()
-                fc:changeToPath(fc.path, fc.prev_focused_path)
-            else
-                fc:updateItems()
-            end
-        else -- classic file_chooser needs this for a full redraw
-            fc:refreshPath()
-        end
+        fc:_recalculateDimen()
+        fc:changeToPath(fc.path, fc.prev_focused_path)
     end
 end
 
@@ -578,7 +564,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser._do_filename_only = nil
         FileChooser._do_hint_opened = nil
         FileChooser._do_center_partial_rows = nil
-        self:refreshFileManagerInstance(true)
+        self:refreshFileManagerInstance()
         return
     end
 
@@ -622,7 +608,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         -- instance is being init()'ed and there is no FileManager.instance yet,
         -- but there'll be one at next tick.
         UIManager:nextTick(function()
-            self:refreshFileManagerInstance(false, true)
+            self:refreshFileManagerInstance()
         end)
     end
 end
