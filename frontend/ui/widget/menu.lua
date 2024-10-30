@@ -5,7 +5,6 @@ local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Event = require("ui/event")
-local FFIUtil = require("ffi/util")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -28,12 +27,13 @@ local Utf8Proc = require("ffi/utf8proc")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local ffiUtil = require("ffi/util")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
-local T = FFIUtil.template
+local T = ffiUtil.template
 
 --[[--
 Widget that displays a shortcut icon for menu item.
@@ -805,7 +805,7 @@ function Menu:init()
                     if search_string == "" then return end
                     search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
                     for k, v in ipairs(self.item_table) do
-                        local filename = Utf8Proc.lowercase(util.fixUtf8(FFIUtil.basename(v.path), "?"))
+                        local filename = Utf8Proc.lowercase(util.fixUtf8(ffiUtil.basename(v.path), "?"))
                         local i = filename:find(search_string)
                         if i == 1 and not v.is_go_up then
                             self:onGotoPage(self:getPageNumber(k))
@@ -1006,6 +1006,7 @@ function Menu:updatePageInfo(select_number)
                 y = select_number
             else -- mosaic
                 x = select_number % nb_cols
+                x = x ~= 0 and x or nb_cols
                 y = (select_number - x) / nb_cols + 1
             end
             -- Reset focus manager accordingly.
@@ -1197,8 +1198,8 @@ function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch, 
     elseif itemnumber >= 0 then
         itemnumber = math.min(itemnumber, #self.item_table)
         self.page = self:getPageNumber(itemnumber)
-        -- Draw the focus in FileChooser when it has focused_path (i.e. itemmatch)
-        if self.path ~= nil and type(itemmatch) == "table" then
+        -- Draw the focus in FileChooser when it has focused_path (i.e. itemmatch), except ".." item
+        if self.path ~= nil and type(itemmatch) == "table" and not self.item_table[itemnumber].is_go_up then
             self.itemnumber = itemnumber
         end
     end
@@ -1381,6 +1382,7 @@ function Menu:onLastPage()
 end
 
 function Menu:onGotoPage(page)
+    self.prev_focused_path = nil
     self.page = page
     self:updateItems(1, true)
     return true
@@ -1549,7 +1551,7 @@ end
 
 function Menu.itemTableFromTouchMenu(t)
     local item_t = {}
-    for k, v in FFIUtil.orderedPairs(t) do
+    for k, v in ffiUtil.orderedPairs(t) do
         local item = { text = k }
         if v.callback then
             item.callback = v.callback
