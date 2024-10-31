@@ -3,6 +3,7 @@ local datetime = require("datetime")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
+local Event = require("ui/event")
 local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local Menu = require("ui/widget/menu")
@@ -505,11 +506,11 @@ function FileChooser:refreshPath()
     if self.focused_path then
         itemmatch = {path = self.focused_path}
         -- We use focused_path only once, but remember it
-        -- for CoverBrower to re-apply it on startup if needed
+        -- for CoverBrowser to re-apply it on startup if needed
         self.prev_focused_path = self.focused_path
         self.focused_path = nil
     end
-    local subtitle = BD.directory(filemanagerutil.abbreviate(self.path))
+    local subtitle = self.filemanager == nil and BD.directory(filemanagerutil.abbreviate(self.path))
     self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path], itemmatch, subtitle)
 end
 
@@ -535,7 +536,9 @@ function FileChooser:changeToPath(path, focused_path)
     end
 
     self:refreshPath()
-    self:onPathChanged(path)
+    if self.filemanager then
+        self.filemanager:handleEvent(Event:new("PathChanged", path))
+    end
 end
 
 function FileChooser:goHome()
@@ -606,10 +609,6 @@ function FileChooser:onFileSelect(item)
 end
 
 function FileChooser:onFileHold(item)
-    return true
-end
-
-function FileChooser:onPathChanged(path)
     return true
 end
 
