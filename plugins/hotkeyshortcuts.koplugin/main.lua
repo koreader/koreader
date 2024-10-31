@@ -41,7 +41,7 @@ local hotkeyshortcuts_list = {
     modifier_plus_press              = Device:hasScreenKB() and _("ScreenKB + Press")   or _("Shift + Press"),
     -- modifier_plus_menu (screenkb+menu) is already used globally for screenshots (on k4), don't add it here.
 }
-if G_reader_settings:isTrue("press_key_does_hotkeyshortcuts") then
+if LuaSettings:open(hotkeyshortcuts_path).data["press_key_does_hotkeyshortcuts"] then
     local hotkeyshortcuts_list_press = { press = _("Press") }
     util.tableMerge(hotkeyshortcuts_list, hotkeyshortcuts_list_press)
 end
@@ -172,7 +172,7 @@ function HotKeyShortcuts:registerKeyEvents()
         if not self.is_docless then
             addKeyEvents("ScreenKB", page_turn_keys, "HotkeyAction", "modifier_plus_")
             addKeyEvent("ScreenKB", "Press", "HotkeyAction", "modifier_plus_press")
-            if G_reader_settings:isTrue("press_key_does_hotkeyshortcuts") then
+            if self.settings_data.data["press_key_does_hotkeyshortcuts"] then
                 self.key_events.Press = { { "Press" }, event = "HotkeyAction", args = "press" }
             end
         end
@@ -183,7 +183,7 @@ function HotKeyShortcuts:registerKeyEvents()
         if not self.is_docless then
             addKeyEvents("Shift", page_turn_keys, "HotkeyAction", "modifier_plus_")
             addKeyEvent("Shift", "Press", "HotkeyAction", "modifier_plus_press")
-            if G_reader_settings:isTrue("press_key_does_hotkeyshortcuts") then
+            if self.settings_data.data["press_key_does_hotkeyshortcuts"] then
                 self.key_events.Press = { { "Press" }, event = "HotkeyAction", args = "press" }
             end
         end
@@ -264,7 +264,7 @@ function HotKeyShortcuts:genSubItem(hotkey, separator, hold_callback)
         modifier_plus_right_page_forward = true,
         modifier_plus_press = true,
     }
-    if G_reader_settings:isTrue("press_key_does_hotkeyshortcuts") then
+    if self.settings_data.data["press_key_does_hotkeyshortcuts"] then
         local fm_do_not_press = { press = true }
         util.tableMerge(reader_only, fm_do_not_press)
     end
@@ -326,7 +326,7 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
         "modifier_plus_home",
         "modifier_plus_press"
     }
-    if G_reader_settings:isTrue("press_key_does_hotkeyshortcuts") then
+    if self.settings_data.data["press_key_does_hotkeyshortcuts"] then
         table.insert(fn_keys, 1, "press")
     end
     if Device:hasKeyboard() then
@@ -358,10 +358,11 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
             sorting_hint = "physical_buttons_setup",
             text = _("Use the press key for shortcuts"),
             checked_func = function()
-                return G_reader_settings:isTrue("press_key_does_hotkeyshortcuts")
+                return self.settings_data.data["press_key_does_hotkeyshortcuts"]
             end,
             callback = function()
-                G_reader_settings:flipNilOrFalse("press_key_does_hotkeyshortcuts")
+                self.settings_data.data["press_key_does_hotkeyshortcuts"] = not self.settings_data.data["press_key_does_hotkeyshortcuts"]
+                self.updated = true
                 UIManager:askForRestart()
             end,
         }
@@ -424,9 +425,9 @@ function HotKeyShortcuts:overrideConflictingFunctions()
     local ReaderConfig = require("apps/reader/modules/readerconfig")
     ReaderConfig.registerKeyEvents = function(readerconfig)
         if Device:hasKeys() then
-            if G_reader_settings:isTrue("press_key_does_hotkeyshortcuts") then
+            if self.settings_data.data["press_key_does_hotkeyshortcuts"] then
                 readerconfig.key_events.ShowConfigMenu = { { "AA" } }
-            elseif G_reader_settings:nilOrFalse("press_key_does_hotkeyshortcuts") then
+            else
                 readerconfig.key_events.ShowConfigMenu = { { { "Press", "AA" } } }
             end
         end
