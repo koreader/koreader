@@ -161,10 +161,11 @@ function Profiles:getSubMenuItems()
                         },
                         self:genAutoExecMenuItem(_("on KOReader start"), "Start", k),
                         self:genAutoExecMenuItem(_("on wake-up"), "Resume", k),
-                        self:genAutoExecMenuItem(_("on rotation"), "SetRotationMode", k, true),
+                        self:genAutoExecMenuItem(_("on rotation"), "SetRotationMode", k),
+                        self:genAutoExecMenuItem(_("on showing folder"), "PathChanged", k, true),
                         -- separator
                         self:genAutoExecMenuItem(_("on book opening"), "ReaderReadyAll", k),
-                        self:genAutoExecMenuItem(_("on book closing"), "CloseDocument", k),
+                        self:genAutoExecMenuItem(_("on book closing"), "CloseDocumentAll", k),
                     }
                 end,
                 hold_callback = function(touchmenu_instance)
@@ -464,8 +465,10 @@ end
 function Profiles:genAutoExecMenuItem(text, event, profile_name, separator)
     if event == "SetRotationMode" then
         return self:genAutoExecSetRotationModeMenuItem(text, event, profile_name, separator)
-    elseif event == "ReaderReadyAll" then
-        return self:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, separator)
+    elseif event == "PathChanged" then
+        return self:genAutoExecPathChangedMenuItem(text, event, profile_name, separator)
+    elseif event == "ReaderReadyAll" or event == "CloseDocumentAll" then
+        return self:genAutoExecDocConditionalMenuItem(text, event, profile_name, separator)
     end
     return {
         text = text,
@@ -477,8 +480,9 @@ function Profiles:genAutoExecMenuItem(text, event, profile_name, separator)
                 util.tableRemoveValue(self.autoexec, event, profile_name)
             else
                 util.tableSetValue(self.autoexec, true, event, profile_name)
-                if event == "ReaderReady" then -- "always" is checked, clear all conditional triggers
-                    util.tableRemoveValue(self.autoexec, "ReaderReadyAll", profile_name)
+                if event == "ReaderReady" or event == "CloseDocument" then
+                    -- "always" is checked, clear all conditional triggers
+                    util.tableRemoveValue(self.autoexec, event .. "All", profile_name)
                 end
             end
         end,
@@ -520,8 +524,84 @@ function Profiles:genAutoExecSetRotationModeMenuItem(text, event, profile_name, 
     }
 end
 
-function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, separator)
-    local event_always = "ReaderReady"
+function Profiles:genAutoExecPathChangedMenuItem(text, event, profile_name, separator)
+    return {
+        text = text,
+        checked_func = function()
+            return util.tableGetValue(self.autoexec, event, profile_name) and true
+        end,
+        sub_item_table_func = function()
+            local conditions = {
+                { _("if folder path contains"), "has" },
+                { _("if folder path does not contain"), "has_not" },
+            }
+            local sub_item_table = {}
+            for i, mode in ipairs(conditions) do
+                sub_item_table[i] = {
+                    text_func = function()
+                        local txt = conditions[i][1]
+                        local value = util.tableGetValue(self.autoexec, event, profile_name, conditions[i][2])
+                        return value and txt .. ": " .. value or txt
+                    end,
+                    checked_func = function()
+                        return util.tableGetValue(self.autoexec, event, profile_name, conditions[i][2])
+                    end,
+                    callback = function(touchmenu_instance)
+                        local condition = conditions[i][2]
+                        local dialog
+                        local buttons = {{
+                            {
+                                text = _("Current folder"),
+                                callback = function()
+                                    local curr_path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile()
+                                    dialog:addTextToInput(curr_path)
+                                end,
+                            },
+                        }}
+                        table.insert(buttons, {
+                            {
+                                text = _("Cancel"),
+                                id = "close",
+                                callback = function()
+                                    UIManager:close(dialog)
+                                end,
+                            },
+                            {
+                                text = _("Save"),
+                                callback = function()
+                                    local txt = dialog:getInputText()
+                                    if txt == "" then
+                                        util.tableRemoveValue(self.autoexec, event, profile_name, condition)
+                                    else
+                                        util.tableSetValue(self.autoexec, txt, event, profile_name, condition)
+                                    end
+                                    UIManager:close(dialog)
+                                    touchmenu_instance:updateItems()
+                                end,
+                            },
+                        })
+                        dialog = InputDialog:new{
+                            title =  _("Enter text contained in folder path"),
+                            input = util.tableGetValue(self.autoexec, event, profile_name, condition),
+                            buttons = buttons,
+                        }
+                        UIManager:show(dialog)
+                        dialog:onShowKeyboard()
+                    end,
+                }
+            end
+            return sub_item_table
+        end,
+        hold_callback = function(touchmenu_instance)
+            util.tableRemoveValue(self.autoexec, event, profile_name)
+            touchmenu_instance:updateItems()
+        end,
+        separator = separator,
+    }
+end
+
+function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, separator)
+    local event_always = event:gsub("All", "")
     return {
         text = text,
         checked_func = function()
@@ -532,6 +612,7 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                 { _("if device orientation is"), "orientation" },
                 { _("if book metadata contains"), "doc_props" },
                 { _("if book file path contains"), "filepath" },
+                { _("if book is in collections"), "collections" },
             }
             local sub_item_table = {
                 self:genAutoExecMenuItem(_("always"), event_always, profile_name, true),
@@ -706,6 +787,42 @@ function Profiles:genAutoExecReaderReadyAllMenuItem(text, event, profile_name, s
                         touchmenu_instance:updateItems()
                     end,
                 },
+                {
+                    text_func = function() -- collections
+                        local txt = conditions[4][1]
+                        local collections = util.tableGetValue(self.autoexec, event, profile_name, conditions[4][2])
+                        if collections then
+                            local collections_nb = util.tableSize(collections)
+                            return txt .. ": " ..
+                                (collections_nb == 1 and self.ui.collections:getCollectionTitle(next(collections))
+                                                      or "(" .. collections_nb .. ")")
+                        end
+                        return txt
+                    end,
+                    enabled_func = function()
+                        return not util.tableGetValue(self.autoexec, event_always, profile_name)
+                    end,
+                    checked_func = function()
+                        return util.tableGetValue(self.autoexec, event, profile_name, conditions[4][2]) and true
+                    end,
+                    callback = function(touchmenu_instance)
+                        local condition = conditions[4][2]
+                        local collections = util.tableGetValue(self.autoexec, event, profile_name, condition)
+                        local caller_callback = function(selected_collections)
+                            if next(selected_collections) == nil then
+                                util.tableRemoveValue(self.autoexec, event, profile_name, condition)
+                            else
+                                util.tableSetValue(self.autoexec, selected_collections, event, profile_name, condition)
+                            end
+                            touchmenu_instance:updateItems()
+                        end
+                        self.ui.collections:onShowCollList(collections or {}, caller_callback, true)
+                    end,
+                    hold_callback = function(touchmenu_instance)
+                        util.tableRemoveValue(self.autoexec, event, profile_name, conditions[4][2])
+                        touchmenu_instance:updateItems()
+                    end,
+                },
             }
             return sub_item_table
         end,
@@ -729,16 +846,39 @@ function Profiles:onResume() -- global
     self:executeAutoExecEvent("Resume")
 end
 
-function Profiles:onSetRotationMode(rotation) -- global
+function Profiles:onSetRotationMode(mode) -- global
     local event = "SetRotationMode"
-    if self.autoexec[event] then
-        for profile_name, modes in pairs(self.autoexec[event]) do
-            if modes[rotation] then
-                if self.ui.config then -- close bottom menu to let Dispatcher execute profile
-                    self.ui.config:onCloseConfigMenu()
-                end
-                self:executeAutoExec(profile_name)
+    if self.autoexec[event] == nil then return end
+    for profile_name, modes in pairs(self.autoexec[event]) do
+        if modes[mode] then
+            if self.ui.config then -- close bottom menu to let Dispatcher execute profile
+                self.ui.config:onCloseConfigMenu()
             end
+            self:executeAutoExec(profile_name)
+        end
+    end
+end
+
+function Profiles:onPathChanged(path) -- global
+    local event = "PathChanged"
+    if self.autoexec[event] == nil then return end
+    local function is_match(txt, pattern)
+        for str in util.gsplit(pattern, ",") do -- comma separated patterns are allowed
+            if util.stringSearch(txt, str) ~= 0 then
+                return true
+            end
+        end
+    end
+    for profile_name, conditions in pairs(self.autoexec[event]) do
+        local do_execute
+        if conditions.has then
+            do_execute = is_match(path, conditions.has)
+        end
+        if do_execute == nil and conditions.has_not then
+            do_execute = not is_match(path, conditions.has_not)
+        end
+        if do_execute then
+            self:executeAutoExec(profile_name)
         end
     end
 end
@@ -746,21 +886,21 @@ end
 function Profiles:onReaderReady() -- global
     if not self.ui.reloading then
         self:executeAutoExecEvent("ReaderReady")
-        self:executeAutoExecReaderReadyAll()
+        self:executeAutoExecDocConditional("ReaderReadyAll")
     end
 end
 
 function Profiles:onCloseDocument() -- global
     if not self.ui.reloading then
         self:executeAutoExecEvent("CloseDocument")
+        self:executeAutoExecDocConditional("CloseDocumentAll")
     end
 end
 
 function Profiles:executeAutoExecEvent(event)
-    if self.autoexec[event] then
-        for profile_name in pairs(self.autoexec[event]) do
-            self:executeAutoExec(profile_name)
-        end
+    if self.autoexec[event] == nil then return end
+    for profile_name in pairs(self.autoexec[event]) do
+        self:executeAutoExec(profile_name)
     end
 end
 
@@ -786,25 +926,24 @@ function Profiles:executeAutoExec(profile_name)
     end
 end
 
-function Profiles:executeAutoExecReaderReadyAll()
-    local event = "ReaderReadyAll"
-    local function is_match(text, pattern)
-        text = text:lower()
-        for str in util.gsplit(pattern, ",") do -- comma separated patterns are allowed
-            if text:find(str:lower()) then
+function Profiles:executeAutoExecDocConditional(event)
+    if self.autoexec[event] == nil then return end
+    local function is_match(txt, pattern)
+        for str in util.gsplit(pattern, ",") do
+            if util.stringSearch(txt, str) ~= 0 then
                 return true
             end
         end
     end
-    if self.autoexec[event] then
-        for profile_name, conditions in pairs(self.autoexec[event]) do
-            if self.data[profile_name] then
-                local do_execute
-                for condition, trigger in pairs(conditions) do
-                    if condition == "orientation" then
-                        local mode = Screen:getRotationMode()
-                        do_execute = trigger[mode]
-                    elseif condition == "doc_props" then
+    for profile_name, conditions in pairs(self.autoexec[event]) do
+        if self.data[profile_name] then
+            local do_execute
+            for condition, trigger in pairs(conditions) do
+                if condition == "orientation" then
+                    local mode = Screen:getRotationMode()
+                    do_execute = trigger[mode]
+                elseif condition == "doc_props" then
+                    if self.ui.document then
                         for prop_name, pattern in pairs(trigger) do
                             local prop = self.ui.doc_props[prop_name == "title" and "display_title" or prop_name]
                             do_execute = is_match(prop, pattern)
@@ -812,16 +951,28 @@ function Profiles:executeAutoExecReaderReadyAll()
                                 break -- any prop match is enough
                             end
                         end
-                    elseif condition == "filepath" then
+                    end
+                elseif condition == "filepath" then
+                    if self.ui.document then
                         do_execute = is_match(self.ui.document.file, trigger)
                     end
-                    if do_execute then
-                        break -- execute profile only once
+                elseif condition == "collections" then
+                    if self.ui.document then
+                        local ReadCollection = require("readcollection")
+                        for collection_name in pairs(trigger) do
+                            if ReadCollection:isFileInCollection(self.ui.document.file, collection_name) then
+                                do_execute = true
+                                break -- any collection is enough
+                            end
+                        end
                     end
                 end
                 if do_execute then
-                    self:executeAutoExec(profile_name)
+                    break -- execute profile only once
                 end
+            end
+            if do_execute then
+                self:executeAutoExec(profile_name)
             end
         end
     end
