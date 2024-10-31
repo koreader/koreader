@@ -31,6 +31,7 @@ local Dispatcher = require("dispatcher")
 local InfoMessage = require("ui/widget/infomessage")
 local MyClipping = require("clip")
 local NetworkMgr = require("ui/network/manager")
+local Provider = require("provider")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -43,7 +44,7 @@ local _ = require("gettext")
 -- migrate settings from old "evernote.koplugin" or from previous (monolithic) "exporter.koplugin"
 local function migrateSettings()
     -- this is for legacy purposes. Do not add new targets here
-    local formats = { "html", "joplin", "json", "readwise", "text" }
+    local formats = { "html", "json", "readwise", "text" }
 
     local settings = G_reader_settings:readSetting("exporter")
     if not settings then
@@ -58,9 +59,6 @@ local function migrateSettings()
         for _, fmt in ipairs(formats) do
             new_settings[fmt] = { enabled = false }
         end
-        new_settings["joplin"].ip = settings.joplin_IP
-        new_settings["joplin"].port = settings.joplin_port
-        new_settings["joplin"].token = settings.joplin_token
         new_settings["readwise"].token = settings.readwise_token
         G_reader_settings:saveSetting("exporter", new_settings)
     end
@@ -99,28 +97,42 @@ local function updateMyClippings(clippings, new_clippings)
     return clippings
 end
 
+local targets = {
+    html = require("target/html"),
+    json = require("target/json"),
+    markdown = require("target/markdown"),
+    my_clippings = require("target/my_clippings"),
+    readwise = require("target/readwise"),
+    text = require("target/text"),
+    xmnote = require("target/xmnote"),
+}
+
+local function genExportersTable(path)
+    local t = {}
+    for k, v in pairs(targets) do
+        t[k] = v
+    end
+    if Provider:size("exporter") > 0 then
+        local tbl = Provider:getProvidersTable("exporter")
+        for k, v in pairs(tbl) do
+            t[k] = v
+        end
+    end
+
+    for _, v in pairs(t) do
+        v.path = path
+    end
+
+    return t
+end
+
 local Exporter = WidgetContainer:extend{
     name = "exporter",
-    targets = {
-        flomo = require("target/flomo"),
-        html = require("target/html"),
-        joplin = require("target/joplin"),
-        json = require("target/json"),
-        markdown = require("target/markdown"),
-        memos = require("target/memos"),
-        my_clippings = require("target/my_clippings"),
-        readwise = require("target/readwise"),
-        text = require("target/text"),
-        xmnote = require("target/xmnote"),
-    },
 }
 
 function Exporter:init()
     migrateSettings()
     self.parser = MyClipping:new{}
-    for _, v in pairs(self.targets) do
-        v.path = self.path
-    end
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
 end
@@ -133,7 +145,7 @@ function Exporter:onDispatcherRegisterActions()
 end
 
 function Exporter:isReady()
-    for k, v in pairs(self.targets) do
+    for k, v in pairs(genExportersTable(self.path)) do
         if v:isEnabled() then
             return true
         end
@@ -150,7 +162,7 @@ function Exporter:isReadyToExport()
 end
 
 function Exporter:requiresNetwork()
-    for k, v in pairs(self.targets) do
+    for k, v in pairs(genExportersTable(self.path)) do
         if v:isEnabled() then
             if v.is_remote then
                 return true
@@ -212,7 +224,7 @@ function Exporter:exportClippings(clippings)
         UIManager:nextTick(function()
             local timestamp = os.time()
             local statuses = {}
-            for k, v in pairs(self.targets) do
+            for k, v in pairs(genExportersTable(self.path)) do
                 if v:isEnabled() then
                     v.timestamp = timestamp
                     local status = v:export(exportables)
@@ -248,7 +260,7 @@ end
 
 function Exporter:addToMainMenu(menu_items)
     local formats_submenu, share_submenu, styles_submenu = {}, {}, {}
-    for k, v in pairs(self.targets) do
+    for k, v in pairs(genExportersTable(self.path)) do
         formats_submenu[#formats_submenu + 1] = v:getMenuTable()
         if v.shareable then
             share_submenu[#share_submenu + 1] = {

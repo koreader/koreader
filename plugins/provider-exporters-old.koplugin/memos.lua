@@ -8,7 +8,7 @@ local socket = require("socket")
 local socketutil = require("socketutil")
 local _ = require("gettext")
 
--- readwise exporter
+-- memos exporter
 local MemosExporter = require("base"):new {
     name = "memos",
     is_remote = true,
