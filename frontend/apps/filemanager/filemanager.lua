@@ -257,7 +257,7 @@ function FileManager:setupLayout()
             self.book_props = nil -- in 'self' to provide access to it in CoverBrowser
             local has_provider = DocumentRegistry:hasProvider(file)
             local has_sidecar = DocSettings:hasSidecarFile(file)
-            local doc_settings_or_file
+            local doc_settings_or_file = file
             if has_provider or has_sidecar then
                 self.book_props = file_manager.coverbrowser and file_manager.coverbrowser:getBookInfo(file)
                 if has_sidecar then
@@ -267,8 +267,6 @@ function FileManager:setupLayout()
                         self.book_props = FileManagerBookInfo.extendProps(props, file)
                         self.book_props.has_cover = true -- to enable "Book cover" button, we do not know if cover exists
                     end
-                else
-                    doc_settings_or_file = file
                 end
                 table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_refresh_callback))
                 table.insert(buttons, {}) -- separator
