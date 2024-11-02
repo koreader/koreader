@@ -265,8 +265,8 @@ function HotKeyShortcuts:genSubItem(hotkey, separator, hold_callback)
         modifier_plus_press = true,
     }
     if self.settings_data.data["press_key_does_hotkeyshortcuts"] then
-        local fm_do_not_press = { press = true }
-        util.tableMerge(reader_only, fm_do_not_press)
+        local do_not_allow_press_key_do_shortcuts_in_fm = { press = true }
+        util.tableMerge(reader_only, do_not_allow_press_key_do_shortcuts_in_fm)
     end
     local enabled_func
     if reader_only[hotkey] then
@@ -377,7 +377,9 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
             },
             {
                 text = _("Page-turn buttons"),
-                enabled_func = function() return self.hotkey_mode == "hotkeyshortcuts_reader" end,
+                enabled_func = function()
+                    return Device:hasKeyboard() and self.hotkey_mode == "hotkeyshortcuts_fm" or self.hotkey_mode == "hotkeyshortcuts_reader"
+                end,
                 sub_item_table = self:genSubItemTable(pg_turn),
             },
             {
