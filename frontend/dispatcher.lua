@@ -185,7 +185,8 @@ local settingsList = {
     book_status = {category="none", event="ShowBookStatus", title=_("Book status"), reader=true},
     book_info = {category="none", event="ShowBookInfo", title=_("Book information"), reader=true},
     book_description = {category="none", event="ShowBookDescription", title=_("Book description"), reader=true},
-    book_cover = {category="none", event="ShowBookCover", title=_("Book cover"), reader=true, separator=true},
+    book_cover = {category="none", event="ShowBookCover", title=_("Book cover"), reader=true},
+    notes_file = {category="none", event="ShowNotesFile", title=_("Notes file"), reader=true, separator=true},
     ----
     translate_page = {category="none", event="TranslateCurrentPage", title=_("Translate current page"), reader=true, separator=true},
     ----
@@ -419,6 +420,7 @@ local dispatcher_menu_order = {
     "book_info",
     "book_description",
     "book_cover",
+    "notes_file",
     ----
     "translate_page",
     ----
