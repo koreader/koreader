@@ -73,6 +73,15 @@ function BookInfo:show(doc_settings_or_file, book_props)
     -- File section
     local has_sidecar = type(doc_settings_or_file) == "table"
     local file = has_sidecar and doc_settings_or_file:readSetting("doc_path") or doc_settings_or_file
+    self.is_current_doc = self.document and self.document.file == file
+    if not has_sidecar and self.is_current_doc then
+        doc_settings_or_file = self.ui.doc_settings
+        has_sidecar = true
+    end
+    if not has_sidecar and DocSettings:hasSidecarFile(file) then
+        doc_settings_or_file = DocSettings:open(file)
+        has_sidecar = true
+    end
     local folder, filename = util.splitFilePathName(file)
     local __, filetype = filemanagerutil.splitFileNameType(filename)
     local attr = lfs.attributes(file)
@@ -172,7 +181,15 @@ function BookInfo:show(doc_settings_or_file, book_props)
     table.insert(kv_pairs, { _("Rating:"), ("★"):rep(rating) .. ("☆"):rep(self.rating_max - rating),
         hold_callback = summary_hold_callback })
     table.insert(kv_pairs, { _("Review:"), summary.note or _("N/A"),
-        hold_callback = summary_hold_callback })
+        hold_callback = summary_hold_callback, separator = true })
+
+    -- Notes file
+    local notes_file = has_sidecar and doc_settings_or_file:readSetting("notes_file")
+    local notes_file_callback = function()
+        self:showNotesFileDialog(notes_file, doc_settings_or_file, book_props)
+    end
+    table.insert(kv_pairs, { _("Notes file:"), notes_file and notes_file:gsub(".*/", "") or _("N/A"),
+        callback = notes_file_callback })
 
     local KeyValuePage = require("ui/widget/keyvaluepage")
     self.kvp_widget = KeyValuePage:new{
@@ -296,10 +313,7 @@ function BookInfo:findInProps(book_props, search_string, case_sensitive)
             elseif key == "description" then
                 prop = util.htmlToPlainTextIfHtml(prop)
             end
-            if not case_sensitive then
-                prop = Utf8Proc.lowercase(util.fixUtf8(prop, "?"))
-            end
-            if prop:find(search_string) then
+            if util.stringSearch(prop, search_string, case_sensitive) ~= 0 then
                 return true
             end
         end
@@ -469,7 +483,7 @@ function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
     if prop_key == "title" then -- generate when resetting the customized title and original is empty
         book_props.display_title = book_props.title or filemanagerutil.splitFileNameType(file)
     end
-    if self.document and self.document.file == file then -- currently opened document
+    if self.is_current_doc then
         self.ui.doc_props[prop_key] = prop_value
         if prop_key == "title" then
             self.ui.doc_props.display_title = book_props.display_title
@@ -664,6 +678,103 @@ function BookInfo:editSummary(doc_settings_or_file, book_props)
     }
     UIManager:show(input_dialog)
     input_dialog:onShowKeyboard(true)
+end
+
+function BookInfo:showNotesFileDialog(notes_file, doc_settings_or_file, book_props)
+    local function saveNotesFile(new_notes_file)
+        if type(doc_settings_or_file) ~= "table" then -- no sidecar yet, create
+            doc_settings_or_file = DocSettings:open(doc_settings_or_file)
+        end
+        doc_settings_or_file:saveSetting("notes_file", new_notes_file)
+        if not self.is_current_doc then
+            if new_notes_file or doc_settings_or_file:readSetting("summary") then
+                doc_settings_or_file:flush()
+            else -- remove empty sidecar
+                local file = doc_settings_or_file:readSetting("doc_path")
+                doc_settings_or_file:purge(nil, { doc_settings = true }) -- keep custom
+                doc_settings_or_file = file -- to reopen bookinfo
+            end
+            self.summary_updated = true -- refresh FM
+        end
+        self.kvp_widget:onClose()
+        self:show(doc_settings_or_file, book_props)
+    end
+    local button_dialog, title, buttons
+    if notes_file then
+        title = notes_file
+        buttons = {
+            {
+                {
+                    text = _("Reset"),
+                    callback = function()
+                        UIManager:close(button_dialog)
+                        saveNotesFile()
+                    end,
+                },
+                {
+                    text = _("View"),
+                    callback = function()
+                        UIManager:close(button_dialog)
+                        TextViewer.openFile(notes_file)
+                    end,
+                },
+                {
+                    text = _("Edit"),
+                    enabled = self.ui.texteditor ~= nil,
+                    callback = function()
+                        UIManager:close(button_dialog)
+                        self.ui.texteditor:openFile(notes_file)
+                    end,
+                },
+            },
+        }
+    else
+        title = _("Notes file")
+        buttons = {
+            {
+                {
+                    text = _("Choose"),
+                    callback = function()
+                        UIManager:close(button_dialog)
+                        local PathChooser = require("ui/widget/pathchooser")
+                        local path_chooser = PathChooser:new{
+                            path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile(),
+                            select_directory = false,
+                            onConfirm = saveNotesFile,
+                        }
+                        UIManager:show(path_chooser)
+                    end,
+                },
+                {
+                    text = _("Create"),
+                    enabled = self.ui.texteditor ~= nil,
+                    callback = function()
+                        UIManager:close(button_dialog)
+                        self.ui.texteditor:newFile(saveNotesFile)
+                    end,
+                },
+            },
+        }
+    end
+    button_dialog = ButtonDialog:new{
+        title = title,
+        title_align = "center",
+        buttons = buttons,
+    }
+    UIManager:show(button_dialog)
+end
+
+function BookInfo:onShowNotesFile()
+    if self.document then
+        local notes_file = self.ui.doc_settings:readSetting("notes_file")
+        if notes_file then
+            if self.ui.texteditor then
+                self.ui.texteditor:openFile(notes_file)
+            else
+                TextViewer.openFile(notes_file)
+            end
+        end
+    end
 end
 
 function BookInfo:moveBookMetadata()
