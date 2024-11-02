@@ -363,6 +363,7 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
             callback = function()
                 self.settings_data.data["press_key_does_hotkeyshortcuts"] = not self.settings_data.data["press_key_does_hotkeyshortcuts"]
                 self.updated = true
+                self:onFlushSettings()
                 UIManager:askForRestart()
             end,
         }
