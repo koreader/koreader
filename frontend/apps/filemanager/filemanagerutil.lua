@@ -7,11 +7,11 @@ local Device = require("device")
 local DocSettings = require("docsettings")
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
-local ffiutil = require("ffi/util")
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
-local T = ffiutil.template
+local T = ffiUtil.template
 
 local filemanagerutil = {}
 
@@ -89,7 +89,7 @@ function filemanagerutil.resetDocumentSettings(file)
         last_page = true,
         last_xpointer = true,
     }
-    local file_abs_path = ffiutil.realpath(file)
+    local file_abs_path = ffiUtil.realpath(file)
     if file_abs_path then
         local doc_settings = DocSettings:open(file_abs_path)
         for k in pairs(doc_settings.data) do
@@ -141,7 +141,7 @@ function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callba
     local file, summary, status
     if type(doc_settings_or_file) == "table" then
         file = doc_settings_or_file:readSetting("doc_path")
-        summary = doc_settings_or_file:readSetting("summary", {})
+        summary = doc_settings_or_file:readSetting("summary") or {}
         status = summary.status
     else
         file = doc_settings_or_file
@@ -175,7 +175,7 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
         file = doc_settings_or_file:readSetting("doc_path")
         has_sidecar_file = true
     else
-        file = ffiutil.realpath(doc_settings_or_file) or doc_settings_or_file
+        file = ffiUtil.realpath(doc_settings_or_file) or doc_settings_or_file
         has_sidecar_file = DocSettings:hasSidecarFile(file)
     end
     local custom_cover_file = DocSettings:findCustomCoverFile(file)
@@ -243,14 +243,12 @@ function filemanagerutil.genShowFolderButton(file, caller_callback, button_disab
         enabled = not button_disabled,
         callback = function()
             caller_callback()
-            local ui = require("apps/filemanager/filemanager").instance
-            if ui then
-                local pathname = util.splitFilePathName(file)
-                ui.file_chooser:changeToPath(pathname, file)
+            if G_ui.document then
+                G_ui:onClose()
+                G_ui:showFileManager(file)
             else
-                ui = require("apps/reader/readerui").instance
-                ui:onClose()
-                ui:showFileManager(file)
+                local pathname = util.splitFilePathName(file)
+                G_ui.file_chooser:changeToPath(pathname, file)
             end
         end,
     }
@@ -262,8 +260,7 @@ function filemanagerutil.genBookInformationButton(doc_settings_or_file, book_pro
         enabled = not button_disabled,
         callback = function()
             caller_callback()
-            local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
-            FileManagerBookInfo:show(doc_settings_or_file, book_props and FileManagerBookInfo.extendProps(book_props))
+            G_ui.bookinfo:show(doc_settings_or_file, book_props and G_ui.bookinfo.extendProps(book_props))
         end,
     }
 end
@@ -275,8 +272,7 @@ function filemanagerutil.genBookCoverButton(file, book_props, caller_callback, b
         enabled = (not button_disabled and (not book_props or has_cover)) and true or false,
         callback = function()
             caller_callback()
-            local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
-            FileManagerBookInfo:onShowBookCover(file)
+            G_ui.bookinfo:onShowBookCover(file)
         end,
     }
 end
@@ -289,8 +285,7 @@ function filemanagerutil.genBookDescriptionButton(file, book_props, caller_callb
         enabled = (not (button_disabled or book_props) or description) and true or false,
         callback = function()
             caller_callback()
-            local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
-            FileManagerBookInfo:onShowBookDescription(description, file)
+            G_ui.bookinfo:onShowBookDescription(description, file)
         end,
     }
 end
@@ -305,17 +300,17 @@ function filemanagerutil.genExecuteScriptButton(file, caller_callback)
             caller_callback()
             local script_is_running_msg = InfoMessage:new{
                 -- @translators %1 is the script's programming language (e.g., shell or python), %2 is the filename
-                text = T(_("Running %1 script %2…"), util.getScriptType(file), BD.filename(ffiutil.basename(file))),
+                text = T(_("Running %1 script %2…"), util.getScriptType(file), BD.filename(ffiUtil.basename(file))),
             }
             UIManager:show(script_is_running_msg)
             UIManager:scheduleIn(0.5, function()
                 local rv
                 if Device:isAndroid() then
                     Device:setIgnoreInput(true)
-                    rv = os.execute("sh " .. ffiutil.realpath(file)) -- run by sh, because sdcard has no execute permissions
+                    rv = os.execute("sh " .. ffiUtil.realpath(file)) -- run by sh, because sdcard has no execute permissions
                     Device:setIgnoreInput(false)
                 else
-                    rv = os.execute(ffiutil.realpath(file))
+                    rv = os.execute(ffiUtil.realpath(file))
                 end
                 UIManager:close(script_is_running_msg)
                 if rv == 0 then
