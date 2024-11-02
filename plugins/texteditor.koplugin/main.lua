@@ -14,13 +14,13 @@ local PathChooser = require("ui/widget/pathchooser")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local ffiutil = require("ffi/util")
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
-local T = ffiutil.template
+local T = ffiUtil.template
 
 local TextEditor = WidgetContainer:extend{
     name = "texteditor",
@@ -72,7 +72,7 @@ function TextEditor:loadSettings()
     -- NOTE: addToHistory assigns a new object
     self.history = self.settings:readSetting("history") or {}
     self.last_view_pos = self.settings:readSetting("last_view_pos") or {}
-    self.last_path = self.settings:readSetting("last_path") or ffiutil.realpath(DataStorage:getDataDir())
+    self.last_path = self.settings:readSetting("last_path") or ffiUtil.realpath(DataStorage:getDataDir())
     self.font_face = self.settings:readSetting("font_face") or self.normal_font
     self.font_size = self.settings:readSetting("font_size") or self.default_font_size
     -- The font settings could be saved in G_reader_setting if we want them
@@ -342,7 +342,7 @@ function TextEditor:addToHistory(file_path)
     self.history = new_history
 end
 
-function TextEditor:newFile()
+function TextEditor:newFile(caller_callback)
     self:loadSettings()
     UIManager:show(ConfirmBox:new{
         text = _([[To start editing a new file, you will have to:
@@ -379,7 +379,7 @@ Do you want to proceed?]]),
                                     -- Remember last_path
                                     self.last_path = file_path:match("(.*)/")
                                     if self.last_path == "" then self.last_path = "/" end
-                                    self:checkEditFile(file_path, false, true)
+                                    self:checkEditFile(file_path, false, true, caller_callback)
                                 end,
                             },
                         }},
@@ -408,7 +408,7 @@ function TextEditor:chooseFile()
     UIManager:show(path_chooser)
 end
 
-function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
+function TextEditor:checkEditFile(file_path, from_history, possibly_new_file, caller_callback)
     self:loadSettings()
     local attr = lfs.attributes(file_path)
     if not possibly_new_file and not attr then
@@ -417,14 +417,14 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
             ok_text = _("Create"),
             ok_callback = function()
                 -- go again thru there with possibly_new_file=true
-                self:checkEditFile(file_path, from_history, true)
+                self:checkEditFile(file_path, from_history, true, caller_callback)
             end,
         })
         return
     end
     if attr then
         -- File exists: get its real path with symlink and ../ resolved
-        file_path = ffiutil.realpath(file_path)
+        file_path = ffiUtil.realpath(file_path)
         attr = lfs.attributes(file_path)
     end
     if attr then -- File exists
@@ -465,7 +465,7 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
             -- without saving in case the user has changed his mind.
             file:close()
             os.remove(file_path)
-            self:editFile(file_path)
+            self:editFile(file_path, nil, caller_callback)
         else
             UIManager:show(InfoMessage:new{
                 text = T(_("This file can not be created:\n\n%1\n\nReason: %2"), BD.filepath(file_path), err)
@@ -475,11 +475,14 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
     end
 end
 
-function TextEditor:saveFileContent(file_path, content)
+function TextEditor:saveFileContent(file_path, content, caller_callback)
     local ok, err = util.writeToFile(content, file_path)
     if ok then
         if self.ui.file_chooser then
             self.ui.file_chooser:refreshPath()
+        end
+        if caller_callback then
+            caller_callback(file_path)
         end
         logger.info("TextEditor: saved file", file_path)
         return true
@@ -498,7 +501,7 @@ function TextEditor:deleteFile(file_path)
     return false, err
 end
 
-function TextEditor:editFile(file_path, readonly)
+function TextEditor:editFile(file_path, readonly, caller_callback)
     self:addToHistory(file_path)
     local directory, filename = util.splitFilePathName(file_path) -- luacheck: no unused
     local filename_without_suffix, filetype = util.splitFileNameSuffix(filename) -- luacheck: no unused
@@ -588,7 +591,7 @@ function TextEditor:editFile(file_path, readonly)
             end
             if content and #content > 0 then
                 if not is_lua then
-                    local ok, err = self:saveFileContent(file_path, content)
+                    local ok, err = self:saveFileContent(file_path, content, caller_callback)
                     if ok then
                         return true, _("File saved")
                     else
@@ -597,7 +600,7 @@ function TextEditor:editFile(file_path, readonly)
                 end
                 local parse_error = util.checkLuaSyntax(content)
                 if not parse_error then
-                    local ok, err = self:saveFileContent(file_path, content)
+                    local ok, err = self:saveFileContent(file_path, content, caller_callback)
                     if ok then
                         return true, _("Lua syntax OK, file saved")
                     else
@@ -615,7 +618,7 @@ Do you really want to save to this file?
 %2]]), parse_error, BD.filepath(file_path)),  _("Do not save"), _("Save anyway"))
                 -- we'll get the safer "Do not save" on tap outside
                 if save_anyway then
-                    local ok, err = self:saveFileContent(file_path, content)
+                    local ok, err = self:saveFileContent(file_path, content, caller_callback)
                     if ok then
                         return true, _("File saved")
                     else
@@ -639,7 +642,7 @@ Do you want to keep this file as empty, or do you prefer to delete it?
                         return false, T(_("Failed deleting file: %1"), err)
                     end
                 else
-                    local ok, err = self:saveFileContent(file_path, content)
+                    local ok, err = self:saveFileContent(file_path, content, caller_callback)
                     if ok then
                         return true, _("File saved")
                     else
