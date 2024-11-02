@@ -188,7 +188,7 @@ function BookInfo:show(doc_settings_or_file, book_props)
     local notes_file_callback = function()
         self:showNotesFileDialog(notes_file, doc_settings_or_file, book_props)
     end
-    table.insert(kv_pairs, { _("Notes file:"), notes_file and notes_file:gsub(".*/", "") or _("N/A"),
+    table.insert(kv_pairs, { _("Notes file:"), notes_file and notes_file:gsub(".*/", "") or _("Tap to set"),
         callback = notes_file_callback })
 
     local KeyValuePage = require("ui/widget/keyvaluepage")
