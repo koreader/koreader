@@ -509,7 +509,6 @@ function ReaderUI:init()
         logger.err("ReaderUI instance mismatch! Opened", tostring(self), "while we still have an existing instance:", tostring(ReaderUI.instance), debug.traceback())
     end
     ReaderUI.instance = self
-    G_ui = self
 end
 
 function ReaderUI:registerKeyEvents()
