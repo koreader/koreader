@@ -12,16 +12,18 @@ local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
+local Notification = require("ui/widget/notification")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
 local Screen = Device.screen
-local T = require("ffi/util").template
+local T = ffiUtil.template
 
 local BookInfo = WidgetContainer:extend{
     title = _("Book information"),
@@ -182,13 +184,13 @@ function BookInfo:show(doc_settings_or_file, book_props)
     table.insert(kv_pairs, { _("Review:"), summary.note or _("N/A"),
         hold_callback = summary_hold_callback, separator = true })
 
-    -- Notes file
-    local notes_file = has_sidecar and doc_settings_or_file:readSetting("notes_file")
-    local notes_file_callback = function()
-        self:showNotesFileDialog(notes_file, doc_settings_or_file, book_props)
+    -- Notebook file
+    local notebook_file = self:getNotebookFile(doc_settings_or_file)
+    local notebook_file_callback = function()
+        self:showNotebookFileDialog(notebook_file, doc_settings_or_file, book_props)
     end
-    table.insert(kv_pairs, { _("Notes file:"), notes_file and notes_file:gsub(".*/", "") or _("Tap to set"),
-        callback = notes_file_callback })
+    table.insert(kv_pairs, { _("Notebook file:"), notebook_file:gsub(".*/", ""),
+        callback = notebook_file_callback })
 
     local KeyValuePage = require("ui/widget/keyvaluepage")
     self.kvp_widget = KeyValuePage:new{
@@ -679,14 +681,29 @@ function BookInfo:editSummary(doc_settings_or_file, book_props)
     input_dialog:onShowKeyboard(true)
 end
 
-function BookInfo:showNotesFileDialog(notes_file, doc_settings_or_file, book_props)
-    local function saveNotesFile(new_notes_file)
+function BookInfo:getNotebookFile(doc_settings, force_doc)
+    local file
+    if doc_settings and type(doc_settings) == "table" then
+        file = doc_settings:readSetting("notebook_file")
+    end
+    if not force_doc and file == nil then
+        file = G_reader_settings:readSetting("notebook_file")
+        if file == nil then
+            local home_folder = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+            file = ffiUtil.realpath(home_folder) .. "/notebook.txt"
+        end
+    end
+    return file
+end
+
+function BookInfo:showNotebookFileDialog(notebook_file, doc_settings_or_file, book_props)
+    local function saveNotebookFile(new_notebook_file)
         if type(doc_settings_or_file) ~= "table" then -- no sidecar yet, create
             doc_settings_or_file = DocSettings:open(doc_settings_or_file)
         end
-        doc_settings_or_file:saveSetting("notes_file", new_notes_file)
+        doc_settings_or_file:saveSetting("notebook_file", new_notebook_file)
         if not self.is_current_doc then
-            if new_notes_file or doc_settings_or_file:readSetting("summary") then
+            if new_notebook_file or doc_settings_or_file:readSetting("summary") then
                 doc_settings_or_file:flush()
             else -- remove empty sidecar
                 local file = doc_settings_or_file:readSetting("doc_path")
@@ -698,81 +715,80 @@ function BookInfo:showNotesFileDialog(notes_file, doc_settings_or_file, book_pro
         self.kvp_widget:onClose()
         self:show(doc_settings_or_file, book_props)
     end
-    local button_dialog, title, buttons
-    if notes_file then
-        title = notes_file
-        buttons = {
-            {
-                {
-                    text = _("Reset"),
-                    callback = function()
-                        UIManager:close(button_dialog)
-                        saveNotesFile()
-                    end,
-                },
-                {
-                    text = _("View"),
-                    callback = function()
-                        UIManager:close(button_dialog)
-                        TextViewer.openFile(notes_file)
-                    end,
-                },
-                {
-                    text = _("Edit"),
-                    enabled = self.ui.texteditor ~= nil,
-                    callback = function()
-                        UIManager:close(button_dialog)
-                        self.ui.texteditor:openFile(notes_file)
-                    end,
-                },
-            },
-        }
-    else
-        title = _("Notes file")
-        buttons = {
-            {
-                {
-                    text = _("Choose"),
-                    callback = function()
-                        UIManager:close(button_dialog)
-                        local PathChooser = require("ui/widget/pathchooser")
-                        local path_chooser = PathChooser:new{
-                            path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile(),
-                            select_directory = false,
-                            onConfirm = saveNotesFile,
-                        }
-                        UIManager:show(path_chooser)
-                    end,
-                },
-                {
-                    text = _("Create"),
-                    enabled = self.ui.texteditor ~= nil,
-                    callback = function()
-                        UIManager:close(button_dialog)
-                        self.ui.texteditor:newFile(saveNotesFile)
-                    end,
-                },
-            },
-        }
-    end
+    local button_dialog
+    local buttons = self:getNotebookFile(doc_settings_or_file, true) == nil and {} or {{
+        {
+            text = _("Reset"),
+            callback = function()
+                UIManager:close(button_dialog)
+                saveNotebookFile()
+            end,
+        },
+        {
+            text = _("Set as default"),
+            enabled = notebook_file ~= self:getNotebookFile(),
+            callback = function()
+                UIManager:close(button_dialog)
+                G_reader_settings:saveSetting("notebook_file", notebook_file)
+                Notification:notify(_("Notebook file default location saved"), Notification.SOURCE_ALWAYS_SHOW)
+            end,
+        },
+    }}
+    table.insert(buttons, {
+        {
+            text = _("Choose"),
+            callback = function()
+                UIManager:close(button_dialog)
+                local PathChooser = require("ui/widget/pathchooser")
+                local path_chooser = PathChooser:new{
+                    path = notebook_file:match("(.*)/"),
+                    select_directory = false,
+                    onConfirm = saveNotebookFile,
+                }
+                UIManager:show(path_chooser)
+            end,
+        },
+        {
+            text = _("Create"),
+            enabled = self.ui.texteditor ~= nil,
+            callback = function()
+                UIManager:close(button_dialog)
+                self.ui.texteditor:newFile(saveNotebookFile)
+            end,
+        },
+    })
+    table.insert(buttons, {
+        {
+            text = _("View"),
+            enabled = lfs.attributes(notebook_file, "mode") == "file",
+            callback = function()
+                UIManager:close(button_dialog)
+                TextViewer.openFile(notebook_file)
+            end,
+        },
+        {
+            text = _("Edit"),
+            enabled = self.ui.texteditor ~= nil,
+            callback = function()
+                UIManager:close(button_dialog)
+                self.ui.texteditor:openFile(notebook_file)
+            end,
+        },
+    })
     button_dialog = ButtonDialog:new{
-        title = title,
+        title = notebook_file,
         title_align = "center",
         buttons = buttons,
     }
     UIManager:show(button_dialog)
 end
 
-function BookInfo:onShowNotesFile()
-    if self.document then
-        local notes_file = self.ui.doc_settings:readSetting("notes_file")
-        if notes_file then
-            if self.ui.texteditor then
-                self.ui.texteditor:openFile(notes_file)
-            else
-                TextViewer.openFile(notes_file)
-            end
-        end
+function BookInfo:onShowNotebookFile()
+    local notebook_file = self:getNotebookFile(self.ui.doc_settings)
+    if self.ui.texteditor then
+        self.ui.texteditor:openFile(notebook_file)
+    else
+        TextViewer.openFile(notebook_file)
     end
 end
 
