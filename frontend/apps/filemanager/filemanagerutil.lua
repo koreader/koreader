@@ -243,12 +243,14 @@ function filemanagerutil.genShowFolderButton(file, caller_callback, button_disab
         enabled = not button_disabled,
         callback = function()
             caller_callback()
-            if G_ui.document then
-                G_ui:onClose()
-                G_ui:showFileManager(file)
-            else
+            local ui = require("apps/filemanager/filemanager").instance
+            if ui then
                 local pathname = util.splitFilePathName(file)
-                G_ui.file_chooser:changeToPath(pathname, file)
+                ui.file_chooser:changeToPath(pathname, file)
+            else
+                ui = require("apps/reader/readerui").instance
+                ui:onClose()
+                ui:showFileManager(file)
             end
         end,
     }
@@ -260,7 +262,8 @@ function filemanagerutil.genBookInformationButton(doc_settings_or_file, book_pro
         enabled = not button_disabled,
         callback = function()
             caller_callback()
-            G_ui.bookinfo:show(doc_settings_or_file, book_props and G_ui.bookinfo.extendProps(book_props))
+            local ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
+            ui.bookinfo:show(doc_settings_or_file, book_props and ui.bookinfo.extendProps(book_props))
         end,
     }
 end
@@ -272,7 +275,8 @@ function filemanagerutil.genBookCoverButton(file, book_props, caller_callback, b
         enabled = (not button_disabled and (not book_props or has_cover)) and true or false,
         callback = function()
             caller_callback()
-            G_ui.bookinfo:onShowBookCover(file)
+            local ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
+            ui.bookinfo:onShowBookCover(file)
         end,
     }
 end
@@ -285,7 +289,8 @@ function filemanagerutil.genBookDescriptionButton(file, book_props, caller_callb
         enabled = (not (button_disabled or book_props) or description) and true or false,
         callback = function()
             caller_callback()
-            G_ui.bookinfo:onShowBookDescription(description, file)
+            local ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
+            ui.bookinfo:onShowBookDescription(description, file)
         end,
     }
 end
