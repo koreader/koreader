@@ -6,7 +6,6 @@ self = false
 globals = {
     "G_reader_settings",
     "G_defaults",
-    "G_ui",
     "table.pack",
     "table.unpack",
 }
