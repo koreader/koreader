@@ -433,7 +433,6 @@ function FileManager:init()
         logger.err("FileManager instance mismatch! Opened", tostring(self), "while we still have an existing instance:", tostring(FileManager.instance), debug.traceback())
     end
     FileManager.instance = self
-    G_ui = self
 end
 
 function FileChooser:onBack()
