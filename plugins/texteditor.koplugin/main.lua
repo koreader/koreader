@@ -413,7 +413,7 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file, ca
     local attr = lfs.attributes(file_path)
     if not possibly_new_file and not attr then
         UIManager:show(ConfirmBox:new{
-            text = T(_("This file does not exist anymore:\n\n%1\n\nDo you want to create it and start editing it?"), BD.filepath(file_path)),
+            text = T(_("This file does not exist:\n\n%1\n\nDo you want to create it and start editing it?"), BD.filepath(file_path)),
             ok_text = _("Create"),
             ok_callback = function()
                 -- go again thru there with possibly_new_file=true
