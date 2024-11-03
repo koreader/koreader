@@ -167,32 +167,21 @@ function HotKeyShortcuts:registerKeyEvents()
         end
     end
 
-    if Device:hasScreenKB() then
-        addKeyEvents("ScreenKB", cursor_keys, "HotkeyAction", "modifier_plus_")
-        if not self.is_docless then
-            addKeyEvents("ScreenKB", page_turn_keys, "HotkeyAction", "modifier_plus_")
-            addKeyEvent("ScreenKB", "Press", "HotkeyAction", "modifier_plus_press")
-            if self.settings_data.data["press_key_does_hotkeyshortcuts"] then
-                self.key_events.Press = { { "Press" }, event = "HotkeyAction", args = "press" }
-            end
+    local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+    addKeyEvents(modifier, cursor_keys, "HotkeyAction", "modifier_plus_")
+    if not self.is_docless then
+        addKeyEvents(modifier, page_turn_keys, "HotkeyAction", "modifier_plus_")
+        addKeyEvent(modifier, "Press", "HotkeyAction", "modifier_plus_press")
+        if self.settings_data.data["press_key_does_hotkeyshortcuts"] then
+            self.key_events.Press = { { "Press" }, event = "HotkeyAction", args = "press" }
         end
-        addKeyEvent("ScreenKB", "Back", "HotkeyAction", "modifier_plus_back")
-        addKeyEvent("ScreenKB", "Home", "HotkeyAction", "modifier_plus_home")
-    else
-        addKeyEvents("Shift", cursor_keys, "HotkeyAction", "modifier_plus_")
-        if not self.is_docless then
-            addKeyEvents("Shift", page_turn_keys, "HotkeyAction", "modifier_plus_")
-            addKeyEvent("Shift", "Press", "HotkeyAction", "modifier_plus_press")
-            if self.settings_data.data["press_key_does_hotkeyshortcuts"] then
-                self.key_events.Press = { { "Press" }, event = "HotkeyAction", args = "press" }
-            end
-        end
-        addKeyEvent("Shift", "Back", "HotkeyAction", "modifier_plus_back")
-        addKeyEvent("Shift", "Home", "HotkeyAction", "modifier_plus_home")
-        addKeyEvent("Shift", "Menu", "HotkeyAction", "modifier_plus_menu")
     end
+    addKeyEvent(modifier, "Back", "HotkeyAction", "modifier_plus_back")
+    addKeyEvent(modifier, "Home", "HotkeyAction", "modifier_plus_home")
+    -- remember, screenkb+menu is already used for screenshots (on k4), don't add it here.
 
     if Device:hasKeyboard() then
+        addKeyEvent("Shift", "Menu", "HotkeyAction", "modifier_plus_menu")
         local second_modifier = Device:hasSymKey() and "Alt" or "Ctrl"
         addKeyEvents(second_modifier, cursor_keys, "HotkeyAction", "alt_plus_")
         addKeyEvents(second_modifier, page_turn_keys, "HotkeyAction", "alt_plus_")
