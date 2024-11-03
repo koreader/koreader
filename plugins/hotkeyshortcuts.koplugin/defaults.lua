@@ -5,7 +5,7 @@ local Device = require("device")
 -- change them at any time using the hotkey shortcuts configuration menu.
 -- NOTE: The combinations that contain the tag ** keep nil, already assigned outside this plugin **
 --       should never be assigned to any action in this plugin, because they are already assigned
---       to events in core. If you assign them to actions in this plugin, those actions will be in 
+--       to events in core. If you assign them to actions in this plugin, those actions will be in
 --       conflict with the existing ones and hell will break loose.
 return {
     hotkeyshortcuts_fm = {
