@@ -481,9 +481,7 @@ function TextEditor:saveFileContent(file_path, content, caller_callback)
         if self.ui.file_chooser then
             self.ui.file_chooser:refreshPath()
         end
-        if caller_callback then
-            caller_callback(file_path)
-        end
+        self.caller_callback = caller_callback -- will be called in self.input.close_callback
         logger.info("TextEditor: saved file", file_path)
         return true
     end
@@ -580,6 +578,9 @@ function TextEditor:editFile(file_path, readonly, caller_callback)
         close_callback = function()
             if self.input.rotation_mode_backup and self.input.rotation_mode_backup ~= Screen:getRotationMode() then
                 Screen:setRotationMode(self.input.rotation_mode_backup)
+            end
+            if self.caller_callback then
+                self.caller_callback(file_path)
             end
             self:execWhenDoneFunc()
         end,
