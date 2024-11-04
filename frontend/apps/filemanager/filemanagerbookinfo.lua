@@ -681,24 +681,32 @@ function BookInfo:editSummary(doc_settings_or_file, book_props)
     input_dialog:onShowKeyboard(true)
 end
 
-function BookInfo:getNotebookFile(doc_settings, force_doc)
-    local file
-    if doc_settings and type(doc_settings) == "table" then
-        file = doc_settings:readSetting("notebook_file")
+function BookInfo:getNotebookFile(doc_settings_or_file)
+    local notebook_file
+    if type(doc_settings_or_file) == "table" then
+        notebook_file = doc_settings_or_file:readSetting("notebook_file")
     end
-    if not force_doc and file == nil then
-        file = G_reader_settings:readSetting("notebook_file")
-        if file == nil then
-            local home_folder = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
-            file = ffiUtil.realpath(home_folder) .. "/notebook.txt"
+    if notebook_file == nil then
+        notebook_file = G_reader_settings:readSetting("notebook_file")
+        if notebook_file == nil then
+            if type(doc_settings_or_file) == "table" then
+                notebook_file = doc_settings_or_file:readSetting("doc_path") .. ".txt"
+            elseif type(doc_settings_or_file) == "string" then
+                notebook_file = doc_settings_or_file .. ".txt"
+            else
+                local home_folder = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+                notebook_file = ffiUtil.realpath(home_folder) .. "/notebook.txt"
+            end
         end
     end
-    return file
+    return notebook_file
 end
 
 function BookInfo:showNotebookFileDialog(notebook_file, doc_settings_or_file, book_props)
+    local has_sidecar = type(doc_settings_or_file) == "table"
+    local file = has_sidecar and doc_settings_or_file:readSetting("doc_path") or doc_settings_or_file
     local function saveNotebookFile(new_notebook_file)
-        if type(doc_settings_or_file) ~= "table" then -- no sidecar yet, create
+        if not has_sidecar then
             doc_settings_or_file = DocSettings:open(doc_settings_or_file)
         end
         doc_settings_or_file:saveSetting("notebook_file", new_notebook_file)
@@ -706,7 +714,6 @@ function BookInfo:showNotebookFileDialog(notebook_file, doc_settings_or_file, bo
             if new_notebook_file or doc_settings_or_file:readSetting("summary") then
                 doc_settings_or_file:flush()
             else -- remove empty sidecar
-                local file = doc_settings_or_file:readSetting("doc_path")
                 doc_settings_or_file:purge(nil, { doc_settings = true }) -- keep custom
                 doc_settings_or_file = file -- to reopen bookinfo
             end
@@ -715,66 +722,91 @@ function BookInfo:showNotebookFileDialog(notebook_file, doc_settings_or_file, bo
         self.kvp_widget:onClose()
         self:show(doc_settings_or_file, book_props)
     end
+
     local button_dialog
-    local buttons = self:getNotebookFile(doc_settings_or_file, true) == nil and {} or {{
+    local local_notebook_file = file .. ".txt"
+    local default_notebook_file = G_reader_settings:readSetting("notebook_file")
+    local buttons = {
         {
-            text = _("Reset"),
-            callback = function()
-                UIManager:close(button_dialog)
-                saveNotebookFile()
-            end,
+            {
+                text = _("Use default"),
+                enabled = default_notebook_file ~= nil and notebook_file ~= default_notebook_file,
+                callback = function()
+                    UIManager:close(button_dialog)
+                    saveNotebookFile(default_notebook_file)
+                end,
+            },
+            {
+                text = _("Reset default"),
+                enabled = default_notebook_file ~= nil,
+                callback = function()
+                    UIManager:close(button_dialog)
+                    G_reader_settings:delSetting("notebook_file")
+                    Notification:notify(_("Notebook file default location reset"), Notification.SOURCE_ALWAYS_SHOW)
+                end,
+            },
         },
         {
-            text = _("Set as default"),
-            enabled = notebook_file ~= self:getNotebookFile(),
-            callback = function()
-                UIManager:close(button_dialog)
-                G_reader_settings:saveSetting("notebook_file", notebook_file)
-                Notification:notify(_("Notebook file default location saved"), Notification.SOURCE_ALWAYS_SHOW)
-            end,
-        },
-    }}
-    table.insert(buttons, {
-        {
-            text = _("Choose"),
-            callback = function()
-                UIManager:close(button_dialog)
-                local PathChooser = require("ui/widget/pathchooser")
-                local path_chooser = PathChooser:new{
-                    path = notebook_file:match("(.*)/"),
-                    select_directory = false,
-                    onConfirm = saveNotebookFile,
-                }
-                UIManager:show(path_chooser)
-            end,
+            {
+                text = _("Use local"),
+                enabled = notebook_file ~= local_notebook_file,
+                callback = function()
+                    UIManager:close(button_dialog)
+                    saveNotebookFile(local_notebook_file)
+                end,
+            },
+            {
+                text = _("Set as default"),
+                enabled = notebook_file ~= default_notebook_file,
+                callback = function()
+                    UIManager:close(button_dialog)
+                    G_reader_settings:saveSetting("notebook_file", notebook_file)
+                    Notification:notify(_("Notebook file default location saved"), Notification.SOURCE_ALWAYS_SHOW)
+                end,
+            },
         },
         {
-            text = _("Create"),
-            enabled = self.ui.texteditor ~= nil,
-            callback = function()
-                UIManager:close(button_dialog)
-                self.ui.texteditor:newFile(saveNotebookFile)
-            end,
+            {
+                text = _("Choose"),
+                callback = function()
+                    UIManager:close(button_dialog)
+                    local PathChooser = require("ui/widget/pathchooser")
+                    local path_chooser = PathChooser:new{
+                        path = notebook_file:match("(.*)/"),
+                        select_directory = false,
+                        onConfirm = saveNotebookFile,
+                    }
+                    UIManager:show(path_chooser)
+                end,
+            },
+            {
+                text = _("Create"),
+                enabled = self.ui.texteditor ~= nil,
+                callback = function()
+                    UIManager:close(button_dialog)
+                    self.ui.texteditor:newFile(saveNotebookFile)
+                end,
+            },
         },
-    })
-    table.insert(buttons, {
         {
-            text = _("View"),
-            enabled = lfs.attributes(notebook_file, "mode") == "file",
-            callback = function()
-                UIManager:close(button_dialog)
-                TextViewer.openFile(notebook_file)
-            end,
+            {
+                text = _("View"),
+                enabled = lfs.attributes(notebook_file, "mode") == "file",
+                callback = function()
+                    UIManager:close(button_dialog)
+                    TextViewer.openFile(notebook_file)
+                end,
+            },
+            {
+                text = _("Edit"),
+                enabled = self.ui.texteditor ~= nil,
+                callback = function()
+                    UIManager:close(button_dialog)
+                    self.ui.texteditor:openFile(notebook_file, saveNotebookFile)
+                end,
+            },
         },
-        {
-            text = _("Edit"),
-            enabled = self.ui.texteditor ~= nil,
-            callback = function()
-                UIManager:close(button_dialog)
-                self.ui.texteditor:openFile(notebook_file)
-            end,
-        },
-    })
+    }
     button_dialog = ButtonDialog:new{
         title = notebook_file,
         title_align = "center",
