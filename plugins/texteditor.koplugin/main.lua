@@ -60,8 +60,8 @@ function TextEditor:isFileTypeSupported(file)
     return true
 end
 
-function TextEditor:openFile(file)
-    self:checkEditFile(file)
+function TextEditor:openFile(file, caller_callback)
+    self:checkEditFile(file, nil, nil, caller_callback)
 end
 
 function TextEditor:loadSettings()
@@ -451,11 +451,11 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file, ca
                     BD.filepath(file_path), util.getFriendlySize(attr.size)),
                 ok_text = _("Open"),
                 ok_callback = function()
-                    self:editFile(file_path, readonly)
+                    self:editFile(file_path, readonly, caller_callback)
                 end,
             })
         else
-            self:editFile(file_path, readonly)
+            self:editFile(file_path, readonly, caller_callback)
         end
     else -- File does not exist
         -- Try to create it just to check if writing to it later is possible
