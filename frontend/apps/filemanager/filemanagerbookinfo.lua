@@ -681,6 +681,8 @@ function BookInfo:editSummary(doc_settings_or_file, book_props)
     input_dialog:onShowKeyboard(true)
 end
 
+-- notebook file
+
 function BookInfo:getNotebookFile(doc_settings_or_file)
     local notebook_file
     if type(doc_settings_or_file) == "table" then
@@ -788,6 +790,7 @@ function BookInfo:showNotebookFileDialog(notebook_file, doc_settings_or_file, bo
                 end,
             },
         },
+        {}, -- separator
         {
             {
                 text = _("View"),
@@ -818,11 +821,18 @@ end
 function BookInfo:onShowNotebookFile()
     local notebook_file = self:getNotebookFile(self.ui.doc_settings)
     if self.ui.texteditor then
-        self.ui.texteditor:openFile(notebook_file)
-    else
+        local function saveNotebookFile(new_notebook_file)
+            if self.ui.doc_settings ~= nil then
+                self.ui.doc_settings:saveSetting("notebook_file", new_notebook_file)
+            end
+        end
+        self.ui.texteditor:openFile(notebook_file, saveNotebookFile)
+    elseif lfs.attributes(notebook_file, "mode") == "file" then
         TextViewer.openFile(notebook_file)
     end
 end
+
+-- book metadata (sdr)
 
 function BookInfo:moveBookMetadata()
     -- called by filemanagermenu only
