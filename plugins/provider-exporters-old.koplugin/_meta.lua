@@ -1,6 +1,6 @@
 local _ = require("gettext")
 return {
-    name = "memos-exporter",
-    fullname = _("Memos exporter"),
-    description = _("Export to Memos and Flomo."),
+    name = "old-exporters",
+    fullname = _("Unsupported exporters"),
+    description = _("These will be removed soon"),
 }
