@@ -1,10 +1,6 @@
 local Provider = require("provider")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
--- this is a hack, remove me
-package.path = "plugins/exporter.koplugin/?.lua;" .. package.path
-
--- provider implementations
 local FlomoImpl = require("flomo")
 local JoplinImpl = require("joplin")
 local MemosImpl = require("memos")
