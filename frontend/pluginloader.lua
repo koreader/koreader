@@ -65,6 +65,11 @@ local function sandboxPluginEventHandlers(plugin)
     end
 end
 
+local function isProvider(name)
+    if name:sub(1,8) == "provider" then
+        return true
+    end
+end
 
 local PluginLoader = {
     show_info = true,
@@ -162,7 +167,19 @@ function PluginLoader:loadPlugins()
         package.cpath = string.format("%s;%s/lib/?.so", package.cpath, plugin.path)
     end
 
-    table.sort(self.enabled_plugins, function(v1,v2) return v1.path < v2.path end)
+    local function sort_providers_first(a,b)
+        if isProvider(a.name) and isProvider(b.name) then
+            return a.path < b.path
+        elseif isProvider(a.name) then
+            return true
+        elseif isProvider(b.name) then
+            return false
+        else
+            return a.path < b.path
+        end
+    end
+
+    table.sort(self.enabled_plugins, sort_providers_first)
 
     return self.enabled_plugins, self.disabled_plugins
 end
