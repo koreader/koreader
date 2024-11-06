@@ -342,55 +342,54 @@ function TextEditor:addToHistory(file_path)
     self.history = new_history
 end
 
-function TextEditor:newFile(caller_callback)
+function TextEditor:newFile(new_path, caller_callback)
     self:loadSettings()
-    UIManager:show(ConfirmBox:new{
-        text = _([[To start editing a new file, you will have to:
-
-- First choose a folder
-- Then enter a name for the new file
-- And start editing it
-
-Do you want to proceed?]]),
-        ok_text = _("Yes"),
-        cancel_text = _("No"),
-        ok_callback = function()
-            local path_chooser = PathChooser:new{
-                select_file = false,
-                path = self.last_path,
-                onConfirm = function(dir_path)
-                    local file_input
-                    file_input = InputDialog:new{
-                        title =  _("Enter filename"),
-                        input = dir_path == "/" and "/" or dir_path .. "/",
-                        buttons = {{
-                            {
-                                text = _("Cancel"),
-                                id = "close",
-                                callback = function()
-                                    UIManager:close(file_input)
-                                end,
-                            },
-                            {
-                                text = _("Edit"),
-                                callback = function()
-                                    local file_path = file_input:getInputText()
-                                    UIManager:close(file_input)
-                                    -- Remember last_path
-                                    self.last_path = file_path:match("(.*)/")
-                                    if self.last_path == "" then self.last_path = "/" end
-                                    self:checkEditFile(file_path, false, true, caller_callback)
-                                end,
-                            },
-                        }},
-                    }
-                    UIManager:show(file_input)
-                    file_input:onShowKeyboard()
-                end,
-            }
-            UIManager:show(path_chooser)
-        end,
-    })
+    new_path = new_path or (self.last_path == "/" and "/" or self.last_path .. "/")
+    local file_input
+    file_input = InputDialog:new{
+        title =  _("Enter filename"),
+        input = new_path,
+        buttons = {
+            {
+                {
+                    text = _("Choose folder"),
+                    callback = function()
+                        UIManager:close(file_input) -- need to close keyboard
+                        local path_chooser = PathChooser:new{
+                            select_file = false,
+                            path = new_path,
+                            onConfirm = function(dir_path)
+                                self:newFile(dir_path .. "/", caller_callback)
+                            end,
+                        }
+                        UIManager:show(path_chooser)
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(file_input)
+                    end,
+                },
+                {
+                    text = _("Edit"),
+                    callback = function()
+                        local file_path = file_input:getInputText()
+                        UIManager:close(file_input)
+                        -- Remember last_path
+                        self.last_path = file_path:match("(.*)/")
+                        if self.last_path == "" then self.last_path = "/" end
+                        self:checkEditFile(file_path, false, true, caller_callback)
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(file_input)
+    file_input:onShowKeyboard()
 end
 
 function TextEditor:chooseFile()
