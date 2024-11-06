@@ -11,7 +11,6 @@ of storing it.
 local lfs = require("libs/libkoreader-lfs")
 local rapidjson = require("rapidjson")
 local logger = require("logger")
-local parser = require("parser")
 local util = require("util")
 local time = require("ui/time")
 
@@ -51,10 +50,6 @@ local function slim(book, is_search)
     end
     return slim_book
 end
-
--- This is the max file size we attempt to decode using rapidjson.
--- For larger files we use a sax parser to avoid OOM errors
-local MAX_JSON_FILESIZE = 50 * 1024 * 1024
 
 --- find calibre files for a given dir
 local function findCalibreFiles(dir)
@@ -120,15 +115,7 @@ function CalibreMetadata:loadBookList()
         logger.warn("File is invalid", self.metadata)
         return rapidjson.array({})
     end
-    local books, err
-    local impl = G_reader_settings:readSetting("calibre_json_parser") or attr.size > MAX_JSON_FILESIZE and "safe" or "fast"
-    if impl == "fast" then
-        books, err = rapidjson.load_calibre(self.metadata)
-    elseif impl == "safe" then
-         books, err = parser.parseFile(self.metadata)
-    else
-        books, err = rapidjson.load(self.metadata)
-    end
+    local books, err = rapidjson.load_calibre(self.metadata)
     if not books then
         logger.warn(string.format("Unable to load library from json file %s: \n%s",
             self.metadata, err))
