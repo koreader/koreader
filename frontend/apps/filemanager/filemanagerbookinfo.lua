@@ -786,7 +786,7 @@ function BookInfo:showNotebookFileDialog(notebook_file, doc_settings_or_file, bo
                 enabled = self.ui.texteditor ~= nil,
                 callback = function()
                     UIManager:close(button_dialog)
-                    self.ui.texteditor:newFile(saveNotebookFile)
+                    self.ui.texteditor:newFile(notebook_file, saveNotebookFile)
                 end,
             },
         },
