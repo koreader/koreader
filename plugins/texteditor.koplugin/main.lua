@@ -357,7 +357,7 @@ function TextEditor:newFile(new_path, caller_callback)
                         UIManager:close(file_input) -- need to close keyboard
                         local path_chooser = PathChooser:new{
                             select_file = false,
-                            path = new_path,
+                            path = new_path:match("(.*)/"),
                             onConfirm = function(dir_path)
                                 self:newFile(dir_path .. "/", caller_callback)
                             end,
