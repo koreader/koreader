@@ -13,7 +13,7 @@ local T = require("ffi/util").template
 local _ = require("gettext")
 
 -- nextcloud notes exporter
-local NextcloudNotesExporter = require("base"):new {
+local NextcloudExporter = require("base"):new {
     name = "nextcloud_notes",
     category = _("KOReader"),
     is_remote = true,
@@ -58,11 +58,11 @@ local function makeRequest(url, auth, method, request_body)
     return response
 end
 
-function NextcloudNotesExporter:isReadyToExport()
+function NextcloudExporter:isReadyToExport()
     return self.settings.host and self.settings.username and self.settings.password
 end
 
-function NextcloudNotesExporter:getMenuTable()
+function NextcloudExporter:getMenuTable()
     local dialog_title = _("Setup Nextcloud Notes plugin")
     return {
         text = _("Nextcloud Notes"),
@@ -153,7 +153,7 @@ Export highlights > Choose formats and services > Markdown.]]), "https://github.
     }
 end
 
-function NextcloudNotesExporter:export(t)
+function NextcloudExporter:export(t)
     if not self:isReadyToExport() then
         return false
     end
@@ -222,4 +222,4 @@ function NextcloudNotesExporter:export(t)
     return true
 end
 
-return NextcloudNotesExporter
+return NextcloudExporter
