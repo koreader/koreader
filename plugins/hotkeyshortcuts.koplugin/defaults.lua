@@ -75,7 +75,7 @@ return {
         modifier_plus_right_page_forward = not Device:isTouchDevice() and {select_next_page_link = true,} or {},
         modifier_plus_back               = {open_previous_document = true,},
         modifier_plus_home               = Device:hasWifiToggle() and {toggle_wifi = true,} or {},
-        modifier_plus_press              = {full_refresh = true,},
+        modifier_plus_press              = {add_location_to_history = true,},
         -- modifier_plus_menu               -- keep nil, already assigned outside this plugin.
         -- optional, user can select whether or not to enable it.
         press = {show_config_menu = true,},
