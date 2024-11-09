@@ -1231,24 +1231,40 @@ function ReaderHighlight:showHighlightNoteOrDialog(index)
             buttons_table = {
                 {
                     {
-                        text = _("Delete"),
+                        text = _("Delete note"),
+                        callback = function()
+                            UIManager:close(textviewer)
+                            local annotation = self.ui.annotation.annotations[index]
+                            annotation.note = nil
+                            self.ui:handleEvent(Event:new("AnnotationsModified",
+                                    { annotation, nb_highlights_added = 1, nb_notes_added = -1 }))
+                            self:writePdfAnnotation("content", annotation, nil)
+                            if self.view.highlight.note_mark then -- refresh note marker
+                                UIManager:setDirty(self.dialog, "ui")
+                            end
+                        end,
+                    },
+                    {
+                        text = _("Edit note"),
+                        callback = function()
+                            UIManager:close(textviewer)
+                            self:editNote(index)
+                        end,
+                    },
+                },
+                {
+                    {
+                        text = _("Delete highlight"),
                         callback = function()
                             UIManager:close(textviewer)
                             self:deleteHighlight(index)
                         end,
                     },
                     {
-                        text = _("Edit"),
+                        text = _("Highlight menu"),
                         callback = function()
                             UIManager:close(textviewer)
                             self:onShowHighlightDialog(index)
-                        end,
-                    },
-                    {
-                        text = _("Note"),
-                        callback = function()
-                            UIManager:close(textviewer)
-                            self:editNote(index)
                         end,
                     },
                 },
