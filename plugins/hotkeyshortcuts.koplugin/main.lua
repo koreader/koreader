@@ -208,16 +208,19 @@ HotKeyShortcuts.onPhysicalKeyboardConnected = HotKeyShortcuts.registerKeyEvents
 
 function HotKeyShortcuts:shortcutTitleFunc(hotkey)
     local title = hotkeyshortcuts_list[hotkey]
-    return T(_("%1: (%2)"), title, Dispatcher:menuTextFunc(self.hotkeyshortcuts[hotkey]))
+    local action_list = self.hotkeyshortcuts[hotkey]
+    local action_text = action_list and Dispatcher:menuTextFunc(action_list) or _("No action")
+    return T(_("%1: (%2)"), title, action_text)
 end
 
 function HotKeyShortcuts:genMenu(hotkey)
     local sub_items = {}
     if hotkeyshortcuts_list[hotkey] ~= nil then
+        local default_action = self.defaults[hotkey]
+        local default_text = default_action and Dispatcher:menuTextFunc(default_action) or _("No action")
         table.insert(sub_items, {
-            text = T(_("%1 (default)"), Dispatcher:menuTextFunc(self.defaults[hotkey])),
+            text = T(_("%1 (default)"), default_text),
             keep_menu_open = true,
-            separator = true,
             checked_func = function()
                 return util.tableEquals(self.hotkeyshortcuts[hotkey], self.defaults[hotkey])
             end,
@@ -228,8 +231,9 @@ function HotKeyShortcuts:genMenu(hotkey)
         })
     end
     table.insert(sub_items, {
-        text = _("Pass through"),
+        text = _("No action"),
         keep_menu_open = true,
+        separator = true,
         checked_func = function()
             return self.hotkeyshortcuts[hotkey] == nil
         end,
@@ -239,7 +243,8 @@ function HotKeyShortcuts:genMenu(hotkey)
         end,
     })
     Dispatcher:addSubMenu(self, sub_items, self.hotkeyshortcuts, hotkey)
-    sub_items.max_per_page = nil -- restore default, settings in page 2
+    table.remove(sub_items, 3) -- removes the 'Nothing' option as it is redundant.
+    sub_items.max_per_page = 9 -- push settings ('Arrange actions', 'Show as quick menu', 'keep quick menu open') to page 2
     return sub_items
 end
 
