@@ -667,6 +667,7 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     -- raise error message when network is unavailable
     if resp_headers == nil then
         logger.dbg("Wallabag: Server error:", status or code)
+        self:removeFailedDownload(filepath)
         return nil, "network_error"
     end
     if code == 200 then
@@ -693,11 +694,7 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
         end
     else
         if filepath ~= "" then
-            local entry_mode = lfs.attributes(filepath, "mode")
-            if entry_mode == "file" then
-                os.remove(filepath)
-                logger.dbg("Wallabag: Removed failed download:", filepath)
-            end
+            self:removeFailedDownload(filepath)
         elseif not quiet then
             UIManager:show(InfoMessage:new{
                 text = _("Communication with server failed."), })
@@ -705,6 +702,16 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
         logger.dbg("Wallabag: Request failed:", status or code)
         logger.dbg("Wallabag: Response headers:", resp_headers)
         return nil, "http_error", code
+    end
+end
+
+function Wallabag:removeFailedDownload(filepath)
+    if filepath ~= "" then
+        local entry_mode = lfs.attributes(filepath, "mode")
+        if entry_mode == "file" then
+            os.remove(filepath)
+            logger.dbg("Wallabag: Removed failed download:", filepath)
+        end
     end
 end
 
