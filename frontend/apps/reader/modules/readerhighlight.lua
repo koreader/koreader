@@ -14,10 +14,10 @@ local TextViewer = require("ui/widget/textviewer")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
+local ffiUtil = require("ffi/util")
 local logger = require("logger")
 local util = require("util")
 local Size = require("ui/size")
-local ffiUtil = require("ffi/util")
 local time = require("ui/time")
 local _ = require("gettext")
 local C_ = _.pgettext
@@ -476,6 +476,35 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 callback = function(spin)
                     G_reader_settings:saveSetting("highlight_lighten_factor", spin.value)
                     self.view.highlight.lighten_factor = spin.value
+                    UIManager:setDirty(self.dialog, "ui")
+                    touchmenu_instance:updateItems()
+                end,
+            }
+            UIManager:show(spin_widget)
+        end,
+    })
+    table.insert(hl_sub_item_table, {
+        text_func = function()
+            return T(_("Highlight line height: %1\xE2\x80\xAF%"), G_reader_settings:readSetting("highlight_height_pct") or 100)
+        end,
+        enabled_func = function()
+            return self.view.highlight.saved_drawer == "lighten" or self.view.highlight.saved_drawer == "invert"
+        end,
+        callback = function(touchmenu_instance)
+            local spin_widget = SpinWidget:new{
+                value = G_reader_settings:readSetting("highlight_height_pct") or 100,
+                value_min = 0,
+                value_max = 100,
+                value_step = 1,
+                value_hold_step = 10,
+                default_value = 100,
+                unit = "%",
+                keep_shown_on_apply = true,
+                title_text =  _("Highlight line height"),
+                info_text = _("Percentage of the text line height."),
+                callback = function(spin)
+                    local value = spin.value ~= 100 and spin.value or nil
+                    G_reader_settings:saveSetting("highlight_height_pct", value)
                     UIManager:setDirty(self.dialog, "ui")
                     touchmenu_instance:updateItems()
                 end,
@@ -1202,17 +1231,24 @@ function ReaderHighlight:showHighlightNoteOrDialog(index)
             buttons_table = {
                 {
                     {
-                        text = _("Delete highlight"),
+                        text = _("Delete"),
                         callback = function()
                             UIManager:close(textviewer)
                             self:deleteHighlight(index)
                         end,
                     },
                     {
-                        text = _("Edit highlight"),
+                        text = _("Edit"),
                         callback = function()
                             UIManager:close(textviewer)
                             self:onShowHighlightDialog(index)
+                        end,
+                    },
+                    {
+                        text = _("Note"),
+                        callback = function()
+                            UIManager:close(textviewer)
+                            self:editNote(index)
                         end,
                     },
                 },
@@ -1256,7 +1292,7 @@ function ReaderHighlight:onShowHighlightDialog(index)
             {
                 text = _("Note"),
                 callback = function()
-                    self:editHighlight(index)
+                    self:editNote(index)
                     UIManager:close(self.edit_highlight_dialog)
                     self.edit_highlight_dialog = nil
                 end,
@@ -2157,10 +2193,10 @@ function ReaderHighlight:addNote(text)
     if text then -- called from Translator to save translation to note
         self:clear()
     end
-    self:editHighlight(index, true, text)
+    self:editNote(index, true, text)
 end
 
-function ReaderHighlight:editHighlight(index, is_new_note, text)
+function ReaderHighlight:editNote(index, is_new_note, text)
     local note_updated_callback = function()
         if self.view.highlight.note_mark then -- refresh note marker
             UIManager:setDirty(self.dialog, "ui")
