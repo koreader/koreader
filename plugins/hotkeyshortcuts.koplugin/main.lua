@@ -121,14 +121,15 @@ end
     @return (boolean) Returns true if the hotkey action was successfully executed, otherwise returns nil.
 ]]
 function HotKeyShortcuts:onHotkeyAction(hotkey)
-    local action_list = self.hotkeyshortcuts[hotkey]
-    if action_list == nil then
+    local hotkey_action_list = self.hotkeyshortcuts[hotkey]
+    if hotkey_action_list == nil then
         return
     else
-        local exec_props = { hotkeyshortcuts = hotkey }
-        Dispatcher:execute(action_list, exec_props)
+        local execution_properties = { hotkeyshortcuts = hotkey }
+        -- Execute the list of actions associated with the hotkey using Dispatcher
+        Dispatcher:execute(hotkey_action_list, execution_properties)
+        return true
     end
-    return true
 end
 
 --[[
@@ -322,6 +323,7 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
         "modifier_plus_back",
         "modifier_plus_home",
         "modifier_plus_press"
+        -- modifier_plus_menu (screenkb+menu) is already used globally for screenshots (on k4), don't add it here.
     }
     if self.settings_data.data["press_key_does_hotkeyshortcuts"] then
         table.insert(fn_keys, 1, "press")
