@@ -243,6 +243,9 @@ function HotKeyShortcuts:genMenu(hotkey)
         end,
     })
     Dispatcher:addSubMenu(self, sub_items, self.hotkeyshortcuts, hotkey)
+    -- Since we are already handling potential conflicts via overrideConflictingFunctions(), both "No action" and "Nothing",
+    -- introduced through Dispatcher:addSubMenu(), are effectively the same (from a user point of view); thus, we can do away
+    -- with "Nothing".
     table.remove(sub_items, 3) -- removes the 'Nothing' option as it is redundant.
     sub_items.max_per_page = 9 -- push settings ('Arrange actions', 'Show as quick menu', 'keep quick menu open') to page 2
     return sub_items
