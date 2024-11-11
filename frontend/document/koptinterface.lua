@@ -24,7 +24,7 @@ local KoptInterface = {
     -- in `$TESSDATA_PREFIX/` on more recent versions).
     tessocr_data = not os.getenv('TESSDATA_PREFIX') and DataStorage:getDataDir().."/data/tessdata" or nil,
     ocr_lang = "eng",
-    ocr_type = 3, -- default 0, for more accuracy use 3
+    ocr_type = -1, -- default: assume a single uniform block of text.
     last_context_size = nil,
     default_context_size = 1024*1024,
 }
