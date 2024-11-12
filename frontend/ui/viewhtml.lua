@@ -308,7 +308,7 @@ function ViewHtml:_handleLongPress(document, css_selectors_offsets, offset_shift
                         ancestors_classnames_selector = " > " .. ancestors_classnames_selector
                     end
                     ancestors_classnames_selector = elem .. all_classnames .. ancestors_classnames_selector
-                    seen_kind.element = true -- done with selectors targetting the selected element only
+                    seen_kind.element = true -- done with selectors targeting the selected element only
                 end
                 if elem == "DocFragment" or elem == "FictionBook" then
                     -- Ignore the root node up these

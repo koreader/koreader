@@ -24,7 +24,7 @@ local KoptInterface = {
     -- in `$TESSDATA_PREFIX/` on more recent versions).
     tessocr_data = not os.getenv('TESSDATA_PREFIX') and DataStorage:getDataDir().."/data/tessdata" or nil,
     ocr_lang = "eng",
-    ocr_type = 3, -- default 0, for more accuracy use 3
+    ocr_type = -1, -- default: assume a single uniform block of text.
     last_context_size = nil,
     default_context_size = 1024*1024,
 }
@@ -1379,7 +1379,7 @@ end
 
 local function all_matches(boxes, plist, case_insensitive)
     local pnb = #plist
-    -- return mached word indices from index i, j
+    -- return matched word indices from index i, j
     local function match(i, j)
         local pindex = 1
         local matched_indices = {}

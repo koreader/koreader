@@ -1,14 +1,11 @@
-* portabel: läuft auf eingebetteten Geräten (Cervantes, Kindle, Kobo, PocketBook), Android- und Linux-Computern. Entwickler können einen KOReader-Emulator in Linux und MacOS ausführen.
-
-* Multiformat-Dokumente: unterstützt feste Seitenformate (PDF, DjVu, CBT, CBZ) und umformatierbare E-Book-Formate (EPUB, FB2, Mobi, DOC, CHM, TXT). Gescannte PDF/DjVu-Dokumente können auch mit der integrierten K2pdfopt-Bibliothek umgewandelt werden.
-
-* Voll funktionsfähiges Lesen: mehrsprachige Benutzeroberfläche mit einer hochgradig anpassbaren Leseansicht und vielen Satzoptionen. Sie können beliebige Seitenränder einstellen, Zeilenabstände außer Kraft setzen und externe Schriftarten und Stile auswählen. Das Programm verfügt über mehrsprachige Silbentrennungswörterbücher, die in die Anwendung integriert sind.
-
-* integriert mit Calibre (Suche nach Metadaten, drahtloser Empfang von E-Books, Durchsuchen der Bibliothek über OPDS), Wallabag, Wikipedia, Google Translate und anderen Inhaltsanbietern.
-
-* optimiert für E-Ink-Geräte: benutzerdefinierte Benutzeroberfläche ohne Animationen, mit paginierten Menüs, einstellbarem Textkontrast und einfachem Zoom, um den Inhalt oder die Seite in paginierte Medien einzupassen.
-
-* erweiterbar über Plugins
-
-* und vieles mehr: Nachschlagen von Wörtern mit StarDict-Wörterbüchern / Wikipedia, Hinzufügen eigener Online-OPDS-Kataloge und RSS-Feeds, Online-Software-Updates über das Internet, ein FTP-Client, ein SSH-Server, ...
-
+<p>KOReader ist ein für E-Ink-Bildschirme optimierter E-Book-Reader. Er kann viele Formate öffnen und bietet erweiterte Textanpassungen.</p>
+<p>Im Folgenden finden Sie eine Auswahl der zahlreichen Funktionen:</p>
+<ul>
+  <li>Unterstützt sowohl feste Seitenformate (PDF, DjVu, CBT, CBZ) als auch reflowfähige E-Book-Formate (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Gescannte PDF&#47;DjVu-Dokumente können mit Reflow versehen werden. Spezielle Flussrichtungen für das Lesen zweispaltiger PDFs und Mangas.</li>
+  <li>Mehrsprachige Benutzeroberfläche, optimiert für E-Ink-Bildschirme. Hochgradig anpassbare Leseansicht mit vollständigen Satzoptionen. Mehrsprachige Silbentrennungswörterbücher sind im Lieferumfang enthalten.</li>
+  <li>Unterstützung nicht-lateinischer Schriften für Bücher, einschließlich Hebräisch, Arabisch, Persisch, Russisch, Chinesisch, Japanisch und Koreanisch.</li>
+  <li>Einzigartige Buchkarte und Seitenbrowser zum Navigieren in Ihrem Buch.</li>
+  <li>Spezieller mehrseitiger Highlight-Modus mit vielen lokalen und Online-Exportoptionen.</li>
+  <li>Kann Ihren Lesefortschritt auf allen Ihren KOReader-Geräten synchronisieren.</li>
+  <li>Integriert mit Calibre, Wallabag, Wikipedia, Google Translate und anderen Inhaltsanbietern.</li>
+</ul>

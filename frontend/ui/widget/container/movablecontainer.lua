@@ -30,7 +30,7 @@ local MovableContainer = InputContainer:extend{
     alpha = nil,
 
     -- Move threshold (if move distance less than that, considered as a Hold
-    -- with no movement, used for reseting move to original position)
+    -- with no movement, used for resetting move to original position)
     move_threshold = Screen:scaleBySize(5),
 
     -- Events to ignore (ie: ignore_events={"hold", "hold_release"})
@@ -414,7 +414,7 @@ end
 
 function MovableContainer:resetEventState()
     -- Cancel some internal moving-or-about-to-move state.
-    -- Can be called explicitely to prevent bad widget interactions.
+    -- Can be called explicitly to prevent bad widget interactions.
     self._touch_pre_pan_was_inside = false
     self._moving = false
 end

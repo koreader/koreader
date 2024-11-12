@@ -46,7 +46,7 @@ local function getCodename()
     return codename
 end
 
--- thirdparty app support
+-- third-party app support
 local external = require("device/thirdparty"):new{
     dicts = {
         { "Aard2", "Aard2", false, "itkach.aard2", "aard2" },

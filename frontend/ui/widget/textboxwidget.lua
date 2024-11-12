@@ -41,8 +41,8 @@ local TextBoxWidget = InputContainer:extend{
     alignment = "left", -- or "center", "right"
     dialog = nil, -- parent dialog that will be set dirty
     face = nil,
-    bold = nil,   -- use bold=true to use a real bold font (or synthetized if not available),
-                  -- or bold=Font.FORCE_SYNTHETIZED_BOLD to force using synthetized bold,
+    bold = nil,   -- use bold=true to use a real bold font (or synthesized if not available),
+                  -- or bold=Font.FORCE_SYNTHETIZED_BOLD to force using synthesized bold,
                   -- which, with XText, makes a bold string the same width as it non-bolded.
     line_height = 0.3, -- in em
     fgcolor = Blitbuffer.COLOR_BLACK,
@@ -101,7 +101,7 @@ local TextBoxWidget = InputContainer:extend{
     auto_para_direction = false, -- detect direction of each paragraph in text
                                  -- (para_direction_rtl or UI language is then only
                                  -- used as a weak hint about direction)
-    alignment_strict = false, -- true to force the alignemnt set by the alignment= attribute.
+    alignment_strict = false, -- true to force the alignment set by the alignment= attribute.
                               -- When false, specified alignment is inverted when para direction is RTL
     tabstop_nb_space_width = 8, -- unscaled_size_check: ignore
                                 -- width of tabstops, as a factor of the width of a space
@@ -404,11 +404,11 @@ function TextBoxWidget:_splitToLines()
             end
             self.vertical_string_list[ln] = line
             if line.no_allowed_break_met then
-                -- let the fact a long word was splitted be known
+                -- let the fact a long word was split be known
                 self.has_split_inside_word = true
             end
             if line.hard_newline_at_eot and not line.next_start_offset then
-                -- Add an empty line to reprensent the \n at end of text
+                -- Add an empty line to represent the \n at end of text
                 -- and allow positioning cursor after it
                 self.vertical_string_list[ln+1] = {
                     offset = size+1,
@@ -460,7 +460,7 @@ function TextBoxWidget:_splitToLines()
                 -- either a very long english word occupying more than one line,
                 -- or the excessive char is itself splittable:
                 -- we let that excessive char for next line
-                if adjusted_idx == offset then -- let the fact a long word was splitted be known
+                if adjusted_idx == offset then -- let the fact a long word was split be known
                     self.has_split_inside_word = true
                 end
                 end_offset = idx - 1
@@ -479,7 +479,7 @@ function TextBoxWidget:_splitToLines()
                 idx = adjusted_idx + 1
             end
             if self.justified then
-                -- this line was splitted and can be justified
+                -- this line was split and can be justified
                 -- we record in idx_pad the nb of pixels to add to each char
                 -- to make the whole line justified. This also helps hold
                 -- position accuracy.
@@ -856,7 +856,7 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
             if self.line_with_ellipsis and i == self.line_with_ellipsis and not line.ellipsis_added then
                 -- Requested to add an ellipsis on this line
                 local ellipsis_width = RenderText:getEllipsisWidth(self.face)
-                    -- no bold: xtext does synthetized bold with normal metrics
+                    -- no bold: xtext does synthesized bold with normal metrics
                 line.width = line.width + ellipsis_width
                 if line.width > line.targeted_width then
                     -- The ellipsis would overflow: we need to re-makeLine()
@@ -1241,7 +1241,7 @@ function TextBoxWidget:free(full)
     if full ~= false then -- final free(): free all remaining resources
         if self.use_xtext and self._xtext then
             -- Allow not waiting until Lua gc() to cleanup C XText malloc'ed stuff
-            -- (we should not free it if full=false as it is re-usable across renderings)
+            -- (we should not free it if full=false as it is reusable across renderings)
             self._xtext:free()
             self._xtext = nil
             -- logger.dbg("TextBoxWidget:_xtext:free()")
@@ -1674,7 +1674,7 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
         -- needs to deal with possible overflow ?
         y = y - scroll_lines * self.line_height_px
     end
-    -- We can also get x ouside current view, when a line takes the full width
+    -- We can also get x outside current view, when a line takes the full width
     -- (which happens when text is justified): move the cursor a bit to the left
     -- (it will be drawn over the right of the last glyph, which should be ok.)
     if x > self.width - self.cursor_line.dimen.w then
@@ -1711,7 +1711,7 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
                 self._bb:blitFrom(self.cursor_restore_bb, self.cursor_restore_x, self.cursor_restore_y,
                     0, 0, self.cursor_line.dimen.w, self.cursor_line.dimen.h)
                 -- remember current values for use in the setDirty funcs, as
-                -- we will have overriden them when these are called
+                -- we will have overridden them when these are called
                 restore_x = self.cursor_restore_x
                 restore_y = self.cursor_restore_y
                 if not CURSOR_COMBINE_REGIONS then
@@ -1939,7 +1939,7 @@ function TextBoxWidget:onHoldWord(callback, ges)
                 local words = util.splitToWords(self:_getLineText(line))
                 local probe_idx = char_start
                 for _, w in ipairs(words) do
-                    -- +1 for word separtor
+                    -- +1 for word separator
                     probe_idx = probe_idx + #util.splitToChars(w)
                     if idx <= probe_idx - 1 then
                         callback(w)
@@ -2024,7 +2024,7 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
                     local ImageViewer = require("ui/widget/imageviewer")
                     local imgviewer = ImageViewer:new{
                         image = image.hi_bb or image.bb, -- fallback to low-res if high-res failed
-                        image_disposable = false, -- we may re-use our bb if called again
+                        image_disposable = false, -- we may reuse our bb if called again
                         with_title_bar = true,
                         title_text = image.title,
                         caption = image.caption,

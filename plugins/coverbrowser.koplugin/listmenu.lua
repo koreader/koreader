@@ -150,13 +150,13 @@ function ListMenuItem:init()
         },
     }
 
-    -- We now build the minimal widget container that won't change after udpate()
+    -- We now build the minimal widget container that won't change after update()
 
     -- As done in MenuItem
     -- for compatibility with keyboard navigation
     -- (which does not seem to work well when multiple pages,
     -- even with classic menu)
-    self.underline_h = 1 -- smaller than default (3) to not shift our vertical aligment
+    self.underline_h = 1 -- smaller than default (3) to not shift our vertical alignment
     self._underline_container = UnderlineContainer:new{
         vertical_align = "top",
         padding = 0,
@@ -176,7 +176,7 @@ function ListMenuItem:init()
 end
 
 function ListMenuItem:update()
-    -- We will be a disctinctive widget whether we are a directory,
+    -- We will be a distinctive widget whether we are a directory,
     -- a known file with image / without image, or a not yet known file
     local widget
 
@@ -341,7 +341,7 @@ function ListMenuItem:update()
                     }
                 end
             end
-            -- In case we got a blitbuffer and didnt use it (ignore_cover), free it
+            -- In case we got a blitbuffer and didn't use it (ignore_cover), free it
             if bookinfo.cover_bb and not cover_bb_used then
                 bookinfo.cover_bb:free()
             end
@@ -375,7 +375,7 @@ function ListMenuItem:update()
             local filename_without_suffix, filetype = filemanagerutil.splitFileNameType(filename)
             local fileinfo_str
             if bookinfo._no_provider then
-                -- for unspported files: don't show extension on the right,
+                -- for unsupported files: don't show extension on the right,
                 -- keep it in filename
                 filename_without_suffix = filename
                 fileinfo_str = self.mandatory
@@ -489,7 +489,7 @@ function ListMenuItem:update()
             -- whether to use or not title and authors
             -- (We wrap each metadata text with BD.auto() to get for each of them
             -- the text direction from the first strong character - which should
-            -- individually be the best thing, and additionnaly prevent shuffling
+            -- individually be the best thing, and additionally prevent shuffling
             -- if concatenated.)
             if self.do_filename_only or bookinfo.ignore_meta then
                 title = filename_without_suffix -- made out above
@@ -719,7 +719,7 @@ function ListMenuItem:update()
                     face = Font:getFace("cfont", fontsize_info),
                     fgcolor = fgcolor,
                 }
-                local wpageinfo = TextWidget:new{ -- Empty but needed for similar positionning
+                local wpageinfo = TextWidget:new{ -- Empty but needed for similar positioning
                     text = "",
                     face = Font:getFace("cfont", fontsize_info),
                 }
@@ -981,11 +981,15 @@ function ListMenu:_updateItemsBuildUI()
     }
     table.insert(self.item_group, line_widget)
     local idx_offset = (self.page - 1) * self.perpage
+    local select_number
     for idx = 1, self.perpage do
         local index = idx_offset + idx
         local entry = self.item_table[index]
         if entry == nil then break end
         entry.idx = index
+        if index == self.itemnumber then -- focused item
+            select_number = idx
+        end
         -- Keyboard shortcuts, as done in Menu
         local item_shortcut, shortcut_style
         if self.is_enable_shortcut then
@@ -1020,6 +1024,7 @@ function ListMenu:_updateItemsBuildUI()
         end
 
     end
+    return select_number
 end
 
 return ListMenu

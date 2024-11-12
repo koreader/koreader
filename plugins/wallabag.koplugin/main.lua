@@ -47,9 +47,10 @@ end
 
 function Wallabag:init()
     self.token_expiry = 0
-    -- default values so that user doesn't have to explicitely set them
+    -- default values so that user doesn't have to explicitly set them
     self.is_delete_finished = true
     self.is_delete_read = false
+    self.is_delete_abandoned = false
     self.is_auto_delete = false
     self.is_sync_remote_delete = false
     self.is_archiving_deleted = true
@@ -70,6 +71,9 @@ function Wallabag:init()
     self.directory = self.wb_settings.data.wallabag.directory
     if self.wb_settings.data.wallabag.is_delete_finished ~= nil then
         self.is_delete_finished = self.wb_settings.data.wallabag.is_delete_finished
+    end
+    if self.wb_settings.data.wallabag.is_delete_abandoned ~= nil then
+        self.is_delete_abandoned = self.wb_settings.data.wallabag.is_delete_abandoned
     end
     if self.wb_settings.data.wallabag.send_review_as_tags ~= nil then
         self.send_review_as_tags = self.wb_settings.data.wallabag.send_review_as_tags
@@ -99,6 +103,7 @@ function Wallabag:init()
         self.articles_per_sync = self.wb_settings.data.wallabag.articles_per_sync
     end
     self.remove_finished_from_history = self.wb_settings.data.wallabag.remove_finished_from_history or false
+    self.remove_abandoned_from_history = self.wb_settings.data.wallabag.remove_abandoned_from_history or false
     self.download_original_document = self.wb_settings.data.wallabag.download_original_document
     self.download_queue = self.wb_settings.data.wallabag.download_queue or {}
 
@@ -151,7 +156,7 @@ function Wallabag:addToMainMenu(menu_items)
                     NetworkMgr:runWhenOnline(connect_callback)
                 end,
                 enabled_func = function()
-                    return self.is_delete_finished or self.is_delete_read
+                    return self.is_delete_finished or self.is_delete_read or self.is_delete_abandoned
                 end,
             },
             {
@@ -277,6 +282,14 @@ function Wallabag:addToMainMenu(menu_items)
                                     self.is_delete_read = not self.is_delete_read
                                     self:saveSettings()
                                 end,
+                            },
+                            {
+                                text = _("Remotely delete articles on hold"),
+                                checked_func = function() return self.is_delete_abandoned end,
+                                callback = function()
+                                    self.is_delete_abandoned = not self.is_delete_abandoned
+                                    self:saveSettings()
+                                end,
                                 separator = true,
                             },
                             {
@@ -337,6 +350,17 @@ function Wallabag:addToMainMenu(menu_items)
                         end,
                         callback = function()
                             self.remove_read_from_history = not self.remove_read_from_history
+                            self:saveSettings()
+                        end,
+                    },
+                    {
+                        text = _("Remove articles on hold from history"),
+                        keep_menu_open = true,
+                        checked_func = function()
+                            return self.remove_abandoned_from_history or false
+                        end,
+                        callback = function()
+                            self.remove_abandoned_from_history = not self.remove_abandoned_from_history
                             self:saveSettings()
                         end,
                         separator = true,
@@ -466,7 +490,7 @@ function Wallabag:getBearerToken()
 end
 
 --- Get a JSON formatted list of articles from the server.
--- The list should have self.article_per_sync item, or less if an error occured.
+-- The list should have self.article_per_sync item, or less if an error occurred.
 -- If filter_tag is set, only articles containing this tag are queried.
 -- If ignore_tags is defined, articles containing either of the tags are skipped.
 function Wallabag:getArticleList()
@@ -491,7 +515,7 @@ function Wallabag:getArticleList()
             logger.dbg("Wallabag: couldn't get page #", page)
             break -- exit while loop
         elseif err or articles_json == nil then
-            -- another error has occured. Don't proceed with downloading
+            -- another error has occurred. Don't proceed with downloading
             -- or deleting articles
             logger.warn("Wallabag: download of page #", page, "failed with", err, code)
             UIManager:show(InfoMessage:new{
@@ -667,6 +691,7 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     -- raise error message when network is unavailable
     if resp_headers == nil then
         logger.dbg("Wallabag: Server error:", status or code)
+        self:removeFailedDownload(filepath)
         return nil, "network_error"
     end
     if code == 200 then
@@ -693,11 +718,7 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
         end
     else
         if filepath ~= "" then
-            local entry_mode = lfs.attributes(filepath, "mode")
-            if entry_mode == "file" then
-                os.remove(filepath)
-                logger.dbg("Wallabag: Removed failed download:", filepath)
-            end
+            self:removeFailedDownload(filepath)
         elseif not quiet then
             UIManager:show(InfoMessage:new{
                 text = _("Communication with server failed."), })
@@ -705,6 +726,16 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
         logger.dbg("Wallabag: Request failed:", status or code)
         logger.dbg("Wallabag: Response headers:", resp_headers)
         return nil, "http_error", code
+    end
+end
+
+function Wallabag:removeFailedDownload(filepath)
+    if filepath ~= "" then
+        local entry_mode = lfs.attributes(filepath, "mode")
+        if entry_mode == "file" then
+            os.remove(filepath)
+            logger.dbg("Wallabag: Removed failed download:", filepath)
+        end
     end
 end
 
@@ -813,7 +844,7 @@ function Wallabag:processLocalFiles(mode)
     end
 
     local num_deleted = 0
-    if self.is_delete_finished or self.is_delete_read then
+    if self.is_delete_finished or self.is_delete_read or self.is_delete_abandoned then
         local info = InfoMessage:new{ text = _("Processing local files…") }
         UIManager:show(info)
         UIManager:forceRePaint()
@@ -829,8 +860,13 @@ function Wallabag:processLocalFiles(mode)
                     local summary = doc_settings:readSetting("summary")
                     local status = summary and summary.status
                     local percent_finished = doc_settings:readSetting("percent_finished")
-                    if status == "complete" or status == "abandoned" then
+                    if status == "complete" then
                         if self.is_delete_finished then
+                            self:removeArticle(entry_path)
+                            num_deleted = num_deleted + 1
+                        end
+                    elseif status == "abandoned" then
+                        if self.is_delete_abandoned then
                             self:removeArticle(entry_path)
                             num_deleted = num_deleted + 1
                         end
@@ -1150,6 +1186,7 @@ function Wallabag:saveSettings()
         auto_tags             = self.auto_tags,
         is_delete_finished    = self.is_delete_finished,
         is_delete_read        = self.is_delete_read,
+        is_delete_abandoned   = self.is_delete_abandoned,
         is_archiving_deleted  = self.is_archiving_deleted,
         is_auto_delete        = self.is_auto_delete,
         is_sync_remote_delete = self.is_sync_remote_delete,
@@ -1228,12 +1265,15 @@ function Wallabag:onCloseDocument()
         local document_full_path = self.ui.document.file
         local summary = self.ui.doc_settings:readSetting("summary")
         local status = summary and summary.status
-        local is_finished = status == "complete" or status == "abandoned"
+        local is_finished = status == "complete"
         local is_read = self:getLastPercent() == 1
+        local is_abandoned = status == "abandoned"
 
         if document_full_path
            and self.directory
-           and ( (self.remove_finished_from_history and is_finished) or (self.remove_read_from_history and is_read) )
+           and ( (self.remove_finished_from_history and is_finished)
+                   or (self.remove_read_from_history and is_read)
+                   or (self.remove_abandoned_from_history and is_abandoned) )
            and self.directory == string.sub(document_full_path, 1, string.len(self.directory)) then
             ReadHistory:removeItemByPath(document_full_path)
             self.ui:setLastDirForFileBrowser(self.directory)

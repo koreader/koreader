@@ -286,8 +286,8 @@ local KeyValuePage = FocusManager:extend{
     values_lang = nil,
     -- index for the first item to show
     show_page = 1,
-    -- aligment of value when key or value overflows its reserved width (for
-    -- now: 50%): "left" (stick to key), "right" (stick to scren right border)
+    -- alignment of value when key or value overflows its reserved width (for
+    -- now: 50%): "left" (stick to key), "right" (stick to screen's right border)
     value_overflow_align = "left",
     single_page = nil, -- show all items on one single page (and make them small)
     title_bar_align = "left",
@@ -728,7 +728,7 @@ function KeyValuePage:_populateItems()
         self.page_info_first_chev:hide()
         self.page_info_last_chev:hide()
     end
-    self:moveFocusTo(1, 1, FocusManager.NOT_UNFOCUS)
+    self:moveFocusTo(1, 1, bit.bor(FocusManager.FOCUS_ONLY_ON_NT, FocusManager.NOT_UNFOCUS))
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)

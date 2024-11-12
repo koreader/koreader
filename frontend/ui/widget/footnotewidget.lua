@@ -23,7 +23,7 @@ local time = require("ui/time")
 
 -- Note: we can't use < or > in comments in the CSS, or MuPDF complains with:
 --   error: css syntax error: unterminated comment.
--- So, HTML tags in comments are written upppercase (eg: <li> => LI)
+-- So, HTML tags in comments are written uppercase (eg: <li> => LI)
 
 -- Independent string for @page, so we can T() it individually,
 -- without needing to escape % in DEFAULT_CSS
@@ -38,7 +38,7 @@ local PAGE_CSS = [[
 
 -- Make default MuPDF styles (source/html/html-layout.c) a bit
 -- more similar to our epub.css ones, and more condensed to fit
--- in a small bottom pannel
+-- in a small bottom panel
 local DEFAULT_CSS = [[
 body {
     margin: 0;                  /* MuPDF: margin: 1em */
@@ -119,7 +119,7 @@ body > section > title {
 local FootnoteWidget = InputContainer:extend{
     html = nil,
     css = nil,
-    -- font_face can't really be overriden, it needs to be known by MuPDF
+    -- font_face can't really be overridden, it needs to be known by MuPDF
     font_face = "Noto Sans",
     -- For the doc_* values, we expect to be provided with the real
     -- (already scaled) sizes in screen pixels

@@ -10,9 +10,9 @@ local BookInfoManager = require("bookinfomanager")
 
 -- This is a kind of "base class" for both MosaicMenu and ListMenu.
 -- It implements the common code shared by these, mostly the non-UI
--- work : the updating of items and the management of backgrouns jobs.
+-- work : the updating of items and the management of background jobs.
 --
--- Here are defined the common overriden methods of Menu:
+-- Here the common overridden methods of Menu are defined:
 --    :updateItems(select_number)
 --    :onCloseWidget()
 --
@@ -91,10 +91,6 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
     self.page_info:resetLayout()
     self.return_button:resetLayout()
     self.content_group:resetLayout()
-    -- default to select the first item
-    if not select_number then
-        select_number = 1
-    end
 
     -- Reset the list of items not found in db that will need to
     -- be updated by a scheduled action
@@ -121,7 +117,7 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
     -- when memory usage is already high
     nb_drawings_since_last_collectgarbage = nb_drawings_since_last_collectgarbage + 1
     if nb_drawings_since_last_collectgarbage >= NB_DRAWINGS_BETWEEN_COLLECTGARBAGE then
-        -- (delay it a bit so this pause is less noticable)
+        -- (delay it a bit so this pause is less noticeable)
         UIManager:scheduleIn(0.2, function()
             collectgarbage()
             collectgarbage()
@@ -131,12 +127,11 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
 
     -- Specific UI building implementation (defined in some other module)
     self._has_cover_images = false
-    self:_updateItemsBuildUI()
-
+    select_number = self:_updateItemsBuildUI() or select_number
     -- Set the local variables with the things we know
     -- These are used only by extractBooksInDirectory(), which should
     -- use the cover_specs set for FileBrowser, and not those from History.
-    -- Hopefully, we get self.path=nil when called fro History
+    -- Hopefully, we get self.path=nil when called from History
     if self.path then
         current_path = self.path
         current_cover_specs = self.cover_specs
@@ -144,6 +139,7 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
 
     -- As done in Menu:updateItems()
     self:updatePageInfo(select_number)
+    Menu.mergeTitleBarIntoLayout(self)
 
     self.show_parent.dithered = self._has_cover_images
     UIManager:setDirty(self.show_parent, function()
@@ -321,7 +317,6 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
             self.showFileDialog_ours = self.showFileDialog
         end)
     end
-    Menu.mergeTitleBarIntoLayout(self)
 end
 
 -- Similar to showFileDialog setup just above, but for History,
@@ -495,7 +490,7 @@ function CoverMenu:onCloseWidget()
     self.cover_info_cache = nil
 
     -- Force garbage collecting when leaving too
-    -- (delay it a bit so this pause is less noticable)
+    -- (delay it a bit so this pause is less noticeable)
     UIManager:scheduleIn(0.2, function()
         collectgarbage()
         collectgarbage()

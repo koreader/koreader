@@ -437,7 +437,7 @@ function ImageViewer:_new_image_wg()
     self._image_wg = ImageWidget:new{
         file = self.file,
         image = self.image,
-        image_disposable = false, -- we may re-use self.image
+        image_disposable = false, -- we may reuse self.image
         file_do_cache = false,
         alpha = true, -- we might be showing images with an alpha channel (e.g., from Wikipedia)
         width = max_image_w,
@@ -828,7 +828,7 @@ function ImageViewer:onCloseWidget()
     -- Our ImageWidget (self._image_wg) is always a proper child widget, so it'll receive this event,
     -- and attempt to free its resources accordingly.
     -- But, if it didn't have to touch the original BB (self.image) passed to ImageViewer (e.g., no scaling needed),
-    -- it will *re-use* self.image, and flag it as non-disposable, meaning it will not have been free'd earlier.
+    -- it will *reuse* self.image, and flag it as non-disposable, meaning it will not have been free'd earlier.
     -- Since we're the ones who ultimately truly know whether we should dispose of self.image or not, do that now ;).
     if self.image and self.image_disposable and self.image.free then
         logger.dbg("ImageViewer:onCloseWidget: free self.image", self.image)

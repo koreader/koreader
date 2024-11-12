@@ -183,7 +183,7 @@ function ReaderToc:validateAndFixToc()
     local first = 1
     local last = #toc
 
-    -- For testing: shuffle a bit a valid TOC and make it randomely invalid
+    -- For testing: shuffle a bit a valid TOC and make it randomly invalid
     -- for i = first, last do
     --     toc[i].page = toc[i].page + math.random(10) - 5
     -- end
@@ -783,7 +783,7 @@ function ReaderToc:onShowToc()
     end
 
     -- Estimate expand/collapse icon size
-    -- *2/5 to acount for Menu top title and bottom icons, and add some space between consecutive icons
+    -- *2/5 to account for Menu top title and bottom icons, and add some space between consecutive icons
     local icon_size = math.floor(Screen:getHeight() / items_per_page * 2/5)
     local button_width = icon_size * 2
     self.expand_button = Button:new{

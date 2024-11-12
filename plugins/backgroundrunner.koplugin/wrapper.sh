@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Starts the arguments as a bash command in background with low priorty. The
+# Starts the arguments as a bash command in background with low priority. The
 # command will be killed if it executes for over 1 hour. If the command failed
 # to start, this script returns 127. If the command is timed out, this script
 # returns 255. Otherwise the return value of the command will be returned.

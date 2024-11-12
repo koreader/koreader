@@ -66,7 +66,7 @@ local function setupDebugFS()
     if not found then
         -- If we're not root, we won't be able to mount it
         if C.getuid() ~= 0 then
-            logger.dbg("ExternalKeyboard: Cannot mount debugfs (unpriviledged user)")
+            logger.dbg("ExternalKeyboard: Cannot mount debugfs (unprivileged user)")
             return false
         end
 

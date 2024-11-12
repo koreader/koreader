@@ -77,6 +77,9 @@ function InputText:onUnfocus() end
 -- Resync our position state with our text widget's actual state
 function InputText:resyncPos()
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
+    if self.strike_callback and self.min_buffer_size == nil then -- not Terminal plugin input
+        self.strike_callback()
+    end
 end
 
 local function initTouchEvents()
@@ -630,7 +633,7 @@ function InputText:onKeyPress(key)
         elseif key["Right"] then
             self:rightChar()
         -- NOTE: When we are not showing the virtual keyboard, let focusmanger handle up/down keys, as they  are used to directly move around the widget
-        --       seemlessly in and out of text fields and onto virtual buttons like `[cancel] [search dict]`, no need to unfocus first.
+        --       seamlessly in and out of text fields and onto virtual buttons like `[cancel] [search dict]`, no need to unfocus first.
         elseif key["Up"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
             self:upLine()
         elseif key["Down"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
@@ -803,16 +806,16 @@ end
 
 -- calculate current and last (original) line numbers
 function InputText:getLineNums()
-    local cur_line_num, last_line_num = 1, 1
+    local curr_line_num, last_line_num = 1, 1
     for i = 1, #self.charlist do
         if self.text_widget.charlist[i] == "\n" then
             if i < self.charpos then
-                cur_line_num = cur_line_num + 1
+                curr_line_num = curr_line_num + 1
             end
             last_line_num = last_line_num + 1
         end
     end
-    return cur_line_num, last_line_num
+    return curr_line_num, last_line_num
 end
 
 -- calculate charpos for the beginning of (original) line

@@ -185,7 +185,7 @@ local Input = {
     ev_slots = nil, -- table
     gesture_detector = nil,
 
-    -- simple internal clipboard implementation, can be overidden to use system clipboard
+    -- simple internal clipboard implementation, can be overridden to use system clipboard
     hasClipboardText = function()
         return _internal_clipboard_text ~= ""
     end,
@@ -1493,7 +1493,7 @@ function Input:waitEvent(now, deadline)
         for __, event in ipairs(ev) do
             if DEBUG.is_on then
                 -- NOTE: This is rather spammy and computationally intensive,
-                --       and we can't conditionally prevent evalutation of function arguments,
+                --       and we can't conditionally prevent evaluation of function arguments,
                 --       so, just hide the whole thing behind a branch ;).
                 if event.type == C.EV_KEY then
                     logger.dbg(string.format(

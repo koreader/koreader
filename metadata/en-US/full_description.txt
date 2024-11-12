@@ -7,5 +7,5 @@
   <li>Unique Book Map and Page Browser features to navigate your book.</li>
   <li>Special multi-page highlight mode with many local and online export options.</li>
   <li>Can synchronize your reading progress across all your KOReader running devices.</li>
-  <li>Integrated with Calibre, Wallabag, Wikipedia, Google translate and other content providers.</li>
+  <li>Integrated with Calibre, Wallabag, Wikipedia, Google Translate and other content providers.</li>
 </ul>

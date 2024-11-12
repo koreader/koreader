@@ -60,7 +60,7 @@ To add |Save|Close| buttons, use:
                 -- Stuff to do when InputDialog is closed, if anything.
             )
         end
-        return nil -- sucess, default notification shown
+        return nil -- success, default notification shown
         return true, success_notif_text
         return false, error_infomsg_text
     end
@@ -130,7 +130,7 @@ local InputDialog = FocusManager:extend{
     input_type = nil,
     deny_keyboard_hiding = false, -- don't hide keyboard on tap outside
     enter_callback = nil,
-    strike_callback = nil, -- call this on every keystroke (used by Terminal plugin's TermInputText)
+    strike_callback = nil, -- call this on every keystroke
     inputtext_class = InputText, -- (Terminal plugin provides TermInputText)
     readonly = false, -- don't allow editing, will not show keyboard
     allow_newline = false, -- allow entering new lines (this disables any enter_callback)
@@ -237,6 +237,8 @@ function InputDialog:init()
         title_multilines = true,
         bottom_v_padding = self.bottom_v_padding,
         info_text = self.description,
+        left_icon = self.title_bar_left_icon,
+        left_icon_tap_callback = self.title_bar_left_icon_tap_callback,
         show_parent = self,
     }
 
@@ -401,6 +403,11 @@ function InputDialog:init()
             save_button:setText(_("Not editable"), save_button.width)
         end
     end
+    if self.add_nav_bar then
+        self.curr_line_num = self._input_widget:getLineNums()
+        self.go_button = self.button_table:getButtonById("go")
+        self.go_button:setText("\u{250B}\u{202F}" .. self.curr_line_num, self.go_button.width)
+    end
 
     -- Combine all
     self.vgroup = VerticalGroup:new{
@@ -468,6 +475,31 @@ function InputDialog:init()
     if self.fullscreen and not self.keyboard_visible then
         self:lockKeyboard(true)
     end
+end
+
+function InputDialog:reinit()
+    local visible = self:isKeyboardVisible()
+    self.input = self:getInputText() -- re-init with up-to-date text
+    self:onClose() -- will close keyboard and save view position
+    self._input_widget:onCloseWidget() -- proper cleanup of InputText and its keyboard
+    if self._added_widgets then
+        -- prevent these externally added widgets from being freed as :init() will re-add them
+        for i = 1, #self._added_widgets do
+            table.remove(self.vgroup, #self.vgroup-2)
+        end
+    end
+    self:free()
+    -- Restore original text_height (or reset it if none to force recomputing it)
+    self.text_height = self.orig_text_height or nil
+
+    -- Same deal as in toggleKeyboard...
+    self.keyboard_visible = visible and true or false
+    self:init()
+    if self.keyboard_visible then
+        self:onShowKeyboard()
+    end
+    -- Our position on screen has probably changed, so have the full screen refreshed
+    UIManager:setDirty("all", "flashui")
 end
 
 function InputDialog:addWidget(widget, re_init)
@@ -672,30 +704,7 @@ function InputDialog:onKeyboardClosed()
     end
 end
 
-function InputDialog:onKeyboardHeightChanged()
-    local visible = self:isKeyboardVisible()
-    self.input = self:getInputText() -- re-init with up-to-date text
-    self:onClose() -- will close keyboard and save view position
-    self._input_widget:onCloseWidget() -- proper cleanup of InputText and its keyboard
-    if self._added_widgets then
-        -- prevent these externally added widgets from being freed as :init() will re-add them
-        for i = 1, #self._added_widgets do
-            table.remove(self.vgroup, #self.vgroup-2)
-        end
-    end
-    self:free()
-    -- Restore original text_height (or reset it if none to force recomputing it)
-    self.text_height = self.orig_text_height or nil
-
-    -- Same deal as in toggleKeyboard...
-    self.keyboard_visible = visible
-    self:init()
-    if self.keyboard_visible then
-        self:onShowKeyboard()
-    end
-    -- Our position on screen has probably changed, so have the full screen refreshed
-    UIManager:setDirty("all", "flashui")
-end
+InputDialog.onKeyboardHeightChanged = InputDialog.reinit
 
 function InputDialog:onCloseDialog()
     local close_button = self.button_table:getButtonById("close")
@@ -717,6 +726,15 @@ function InputDialog:onClose()
         self.view_pos_callback(self._top_line_num, self._charpos)
     end
     self:onCloseKeyboard()
+end
+
+function InputDialog:onSetRotationMode(mode)
+    if self.rotation_enabled and mode ~= nil then -- Text editor only
+        self.rotation_mode_backup = self.rotation_mode_backup or Screen:getRotationMode() -- backup only initial mode
+        Screen:setRotationMode(mode)
+        self:reinit()
+        return true -- we are the upper widget, stop event propagation
+    end
 end
 
 function InputDialog:refreshButtons()
@@ -768,12 +786,12 @@ function InputDialog:_addSaveCloseButtons()
         if self._text_modified and not edited then
             self._text_modified = false
             button("save"):disable()
-            if button("reset") then button("reset"):disable() end
+            if self.reset_callback then button("reset"):disable() end
             self:refreshButtons()
         elseif edited and not self._text_modified then
             self._text_modified = true
             button("save"):enable()
-            if button("reset") then button("reset"):enable() end
+            if self.reset_callback then button("reset"):enable() end
             self:refreshButtons()
         end
         if self.edited_callback then
@@ -782,7 +800,7 @@ function InputDialog:_addSaveCloseButtons()
     end
     if self.reset_callback then
         -- if reset_callback provided, add button to restore
-        -- test to some previous state
+        -- text to some previous state
         table.insert(row, {
             text = self.reset_button_text or _("Reset"),
             id = "reset",
@@ -961,15 +979,17 @@ function InputDialog:_addScrollButtons(nav_bar)
             })
             -- Add a button to go to the line by its number in the file
             table.insert(row, {
-                text = _("Go"),
+                text = "", -- current line number
+                font_bold = false,
+                id = "go",
                 callback = function()
                     self:toggleKeyboard(false) -- hide text editor keyboard
-                    local cur_line_num, last_line_num = self._input_widget:getLineNums()
+                    local curr_line_num, last_line_num = self._input_widget:getLineNums()
                     local input_dialog
                     input_dialog = InputDialog:new{
                         title = _("Enter line number"),
                         -- @translators %1 is the current line number, %2 is the last line number
-                        input_hint = T(_("%1 (1 - %2)"), cur_line_num, last_line_num),
+                        input_hint = T(_("%1 (1 - %2)"), curr_line_num, last_line_num),
                         input_type = "number",
                         stop_events_propagation = true, -- avoid interactions with upper InputDialog
                         buttons = {
@@ -986,7 +1006,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                                     text = _("Go to line"),
                                     is_enter_default = true,
                                     callback = function()
-                                        local new_line_num = tonumber(input_dialog:getInputText())
+                                        local new_line_num = input_dialog:getInputValue()
                                         if new_line_num and new_line_num >= 1 and new_line_num <= last_line_num then
                                             UIManager:close(input_dialog)
                                             self:toggleKeyboard()
@@ -1018,6 +1038,16 @@ function InputDialog:_addScrollButtons(nav_bar)
                 self._input_widget:scrollToBottom()
             end,
         })
+        self.strike_callback = function()
+            if self._input_widget then
+                local curr_line_num = self._input_widget:getLineNums()
+                if self.curr_line_num ~= curr_line_num then
+                    self.curr_line_num = curr_line_num
+                    self.go_button:setText("\u{250B}\u{202F}" .. curr_line_num, self.go_button.width)
+                    self.go_button:refresh()
+                end
+            end
+        end
     end
     -- Add the Up & Down buttons
     table.insert(row, {
@@ -1044,23 +1074,23 @@ function InputDialog:_addScrollButtons(nav_bar)
         local changed = false
         if prev_at_top and low > 0 then
             button("up"):enable()
-            if button("top") then button("top"):enable() end
+            if nav_bar then button("top"):enable() end
             prev_at_top = false
             changed = true
         elseif not prev_at_top and low <= 0 then
             button("up"):disable()
-            if button("top") then button("top"):disable() end
+            if nav_bar then button("top"):disable() end
             prev_at_top = true
             changed = true
         end
         if prev_at_bottom and high < 1 then
             button("down"):enable()
-            if button("bottom") then button("bottom"):enable() end
+            if nav_bar then button("bottom"):enable() end
             prev_at_bottom = false
             changed = true
         elseif not prev_at_bottom and high >= 1 then
             button("down"):disable()
-            if button("bottom") then button("bottom"):disable() end
+            if nav_bar then button("bottom"):disable() end
             prev_at_bottom = true
             changed = true
         end
@@ -1080,7 +1110,7 @@ function InputDialog:findCallback(input_dialog, find_first)
     local msg
     if char_pos > 0 then
         self._input_widget:moveCursorToCharPos(char_pos)
-        msg = T(_("Found in line %1."), self._input_widget:getLineNums())
+        msg = T(_("Found in line %1."), self.curr_line_num)
     else
         msg = _("Not found.")
     end

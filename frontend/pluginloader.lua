@@ -14,14 +14,38 @@ local OBSOLETE_PLUGINS = {
     storagestat = true,
     zsync = true,
 }
+
+local DEPRECATION_MESSAGES = {
+    remove = _("This plugin is unmaintained and will be removed soon."),
+    feature = _("The following features are unmaintained and will be removed soon:"),
+}
+
+local function deprecationFmt(field)
+    local s
+    if type(field) == "table" then
+        local f1, f2 = DEPRECATION_MESSAGES[field[1]], field[2]
+        if not f2 then
+            s = string.format("%s", f1)
+        else
+            s = string.format("%s: %s", f1, f2)
+        end
+    end
+    if not s then
+        return nil, ""
+    end
+    return true, s
+end
+
 -- Deprecated plugins are still available, but show a hint about deprecation.
 local function getMenuTable(plugin)
     local t = {}
     t.name = plugin.name
     t.fullname = string.format("%s%s", plugin.fullname or plugin.name,
         plugin.deprecated and " (" .. _("outdated") .. ")" or "")
+
+    local deprecated, message = deprecationFmt(plugin.deprecated)
     t.description = string.format("%s%s", plugin.description,
-        type(plugin.deprecated) == "string"  and "\n\n" .. plugin.deprecated or "")
+        deprecated and "\n\n" .. message or "")
     return t
 end
 

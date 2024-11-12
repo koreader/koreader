@@ -76,11 +76,11 @@ local KoptOptions = {
                     end
                 end,
                 -- For Dispatcher & onMakeDefault's sake
-                labels = {C_("Rotation", "⤹ 90°"), C_("Rotation", "↑ 0°"), C_("Rotation", "⤸ 90°"), C_("Rotation", "↓ 180°")},
+                labels = optionsutil.rotation_labels,
                 alternate = false,
-                values = {Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE, Screen.DEVICE_ROTATED_UPRIGHT, Screen.DEVICE_ROTATED_CLOCKWISE, Screen.DEVICE_ROTATED_UPSIDE_DOWN},
+                values = optionsutil.rotation_modes,
                 default_value = Screen.DEVICE_ROTATED_UPRIGHT,
-                args = {Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE, Screen.DEVICE_ROTATED_UPRIGHT, Screen.DEVICE_ROTATED_CLOCKWISE, Screen.DEVICE_ROTATED_UPSIDE_DOWN},
+                args = optionsutil.rotation_modes,
                 current_func = function() return Screen:getRotationMode() end,
                 event = "SetRotationMode",
                 name_text_hold_callback = optionsutil.showValues,
@@ -665,7 +665,7 @@ if BD.mirroredUILayout() then
     j.values[2], j.values[4] = j.values[4], j.values[2]
     j.labels[2], j.labels[4] = j.labels[4], j.labels[2]
     -- The zoom direction items will be mirrored, but we want them to
-    -- stay as is, as the RTL diretions are at the end of the arrays.
+    -- stay as is, as the RTL directions are at the end of the arrays.
     -- By reverting the mirroring, RTL directions will be on the right,
     -- so, at the start of the options for a RTL reader.
     j = KoptOptions[3].options[7]

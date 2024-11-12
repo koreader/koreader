@@ -21,7 +21,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
 local AlphaContainer = WidgetContainer:extend{
     alpha = 1,
-    -- we cache a blitbuffer object for re-use here:
+    -- we cache a blitbuffer object for reuse here:
     private_bb = nil,
 }
 

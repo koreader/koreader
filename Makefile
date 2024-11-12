@@ -69,7 +69,7 @@ INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastor
 		l10n tools README.md COPYING
 
 OUTPUT_DIR_ARTIFACTS = $(abspath $(OUTPUT_DIR))/!(cache|cmake|data|history|staging|thirdparty)
-OUTPUT_DIR_DATAFILES = $(wildcard $(OUTPUT_DIR)/data/*)
+OUTPUT_DIR_DATAFILES = $(OUTPUT_DIR)/data/*
 
 all: base
 	install -d $(INSTALL_DIR)/koreader

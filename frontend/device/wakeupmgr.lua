@@ -138,7 +138,7 @@ function WakeupMgr:removeTasks(epoch, callback)
             end
             table.remove(self._task_queue, k)
             removed = true
-            -- If we've successfuly pop'ed the upcoming task, we need to schedule the next one (if any) on exit.
+            -- If we've successfully pop'ed the upcoming task, we need to schedule the next one (if any) on exit.
             if k == 1 then
                 reschedule = true
             end

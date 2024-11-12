@@ -265,7 +265,7 @@ function DateTimeWidget:createLayout()
         self.sec_widget, -- 11
     }
 
-    -- remove empty widgets plus trailling placeholder
+    -- remove empty widgets plus trailing placeholder
     for i = #date_group, 1, -2 do
         if date_group[i] == dummy_widget then
             table.remove(date_group, i)

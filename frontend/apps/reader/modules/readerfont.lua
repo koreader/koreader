@@ -427,7 +427,7 @@ function ReaderFont:updateFontFamilyFonts()
     -- font (we have here in self.font_face) because of its increased bias (or the
     -- monospace font we also added with bias).
     -- So, we don't need to insert self.font_face in the list for unset family fonts,
-    -- which would otherwise need us to call updateFontFamilyFonts() everytime we
+    -- which would otherwise need us to call updateFontFamilyFonts() every time we
     -- change the main font face.
     local g_font_family_fonts = G_reader_settings:readSetting("cre_font_family_fonts", {})
     local family_fonts = {}
@@ -745,7 +745,7 @@ If that font happens to be part of this list already, it will be used first.]]),
             self.ui:handleEvent(Event:new("UpdatePos"))
         end,
         help_text = _([[
-Adjust the size of each fallback font so they all get the same x-height, and lowercase characters picked in them look similarly sized as those from the defaut font.
+Adjust the size of each fallback font so they all get the same x-height, and lowercase characters picked in them look similarly sized as those from the default font.
 This may help with Greek words among Latin text (as Latin fonts often do not have all the Greek characters), but may make Chinese or Indic characters smaller when picked from fallback fonts.]]),
         separator = true,
     })
@@ -903,26 +903,33 @@ a { color: black; }
 <h1>%s</h1>
 ]], _("Available fonts test document"), _("AVAILABLE FONTS")))
     local face_list = cre.getFontFaces()
+    local new_font_idx = 1
     if next(newly_added_fonts) then
         -- Sort alphabetically, with new fonts first (as done in sortFaceList())
-        local move_idx = 1
         for i=1, #face_list do
             if newly_added_fonts[face_list[i]] then
-                face_list[i] = face_list[i] .. " [NEW]"
-                table.insert(face_list, move_idx, table.remove(face_list, i))
-                move_idx = move_idx + 1
+                table.insert(face_list, new_font_idx, table.remove(face_list, i))
+                new_font_idx = new_font_idx + 1
             end
         end
     end
     f:write("<div style='margin: 2em'>\n")
-    for _, font_name in ipairs(face_list) do
+    for i, font_name in ipairs(face_list) do
         local font_id = font_name:gsub(" ", "_"):gsub("'", "_")
-        f:write(string.format("  <div><a href='#%s'>%s</a></div>\n", font_id, font_name))
+        if i < new_font_idx then -- New fonts prepended with NEW on summary page
+            f:write(string.format("  <div><a href='#%s'>NEW: %s</a></div>\n", font_id, font_name))
+        else
+            f:write(string.format("  <div><a href='#%s'>%s</a></div>\n", font_id, font_name))
+        end
     end
     f:write("</div>\n\n")
-    for _, font_name in ipairs(face_list) do
+    for i, font_name in ipairs(face_list) do
         local font_id = font_name:gsub(" ", "_"):gsub("'", "_")
-        f:write(string.format("<h1 id='%s'>%s</h1>\n", font_id, font_name))
+        if i < new_font_idx then -- New fonts prepended with NEW in titles and TOC
+            f:write(string.format("<h1 id='%s'>NEW: %s</h1>\n", font_id, font_name))
+        else
+            f:write(string.format("<h1 id='%s'>%s</h1>\n", font_id, font_name))
+        end
         f:write(string.format("<div style='font-family: %s'>\n", font_name))
         f:write(html_sample)
         f:write("\n</div>\n\n")

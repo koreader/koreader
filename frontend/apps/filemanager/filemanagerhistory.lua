@@ -3,13 +3,11 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DocSettings = require("docsettings")
-local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local Screen = require("device").screen
 local Utf8Proc = require("ffi/utf8proc")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("util")
@@ -86,7 +84,7 @@ function FileManagerHistory:updateItemTable()
     local subtitle = ""
     if self.search_string then
         subtitle = T(_("Search results (%1)"), #item_table)
-    elseif self.selected_colections then
+    elseif self.selected_collections then
         subtitle = T(_("Filtered by collections (%1)"), #item_table)
     elseif self.filter ~= "all" then
         subtitle = T(_("Status: %1 (%2)"), filter_text[self.filter]:lower(), #item_table)
@@ -110,8 +108,8 @@ function FileManagerHistory:isItemMatch(item)
             end
         end
     end
-    if self.selected_colections then
-        for name in pairs(self.selected_colections) do
+    if self.selected_collections then
+        for name in pairs(self.selected_collections) do
             if not ReadCollection:isFileInCollection(item.file, name) then
                 return false
             end
@@ -174,7 +172,7 @@ function FileManagerHistory:onMenuHold(item)
             doc_settings_or_file = DocSettings:open(file)
             if not self.book_props then
                 local props = doc_settings_or_file:readSetting("doc_props")
-                self.book_props = FileManagerBookInfo.extendProps(props, file)
+                self.book_props = self.ui.bookinfo.extendProps(props, file)
                 self.book_props.has_cover = true
             end
         else
@@ -204,7 +202,7 @@ function FileManagerHistory:onMenuHold(item)
                 UIManager:close(self.histfile_dialog)
                 -- The item's idx field is tied to the current *view*, so we can only pass it as-is when there's no filtering *at all* involved.
                 local index = item.idx
-                if self._manager.search_string or self._manager.selected_colections or self._manager.filter ~= "all" then
+                if self._manager.search_string or self._manager.selected_collections or self._manager.filter ~= "all" then
                     index = nil
                 end
                 require("readhistory"):removeItem(item, index)
@@ -230,23 +228,6 @@ function FileManagerHistory:onMenuHold(item)
     return true
 end
 
--- Can't *actually* name it onSetRotationMode, or it also fires in FM itself ;).
-function FileManagerHistory:MenuSetRotationModeHandler(rotation)
-    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
-        UIManager:close(self._manager.hist_menu)
-        -- Also re-layout ReaderView or FileManager itself
-        if self._manager.ui.view and self._manager.ui.view.onSetRotationMode then
-            self._manager.ui.view:onSetRotationMode(rotation)
-        elseif self._manager.ui.onSetRotationMode then
-            self._manager.ui:onSetRotationMode(rotation)
-        else
-            Screen:setRotationMode(rotation)
-        end
-        self._manager:onShowHist()
-    end
-    return true
-end
-
 function FileManagerHistory:onShowHist(search_info)
     self.hist_menu = Menu:new{
         ui = self.ui,
@@ -261,8 +242,8 @@ function FileManagerHistory:onShowHist(search_info)
         onLeftButtonTap = function() self:showHistDialog() end,
         onMenuChoice = self.onMenuChoice,
         onMenuHold = self.onMenuHold,
-        onSetRotationMode = self.MenuSetRotationModeHandler,
         _manager = self,
+        _recreate_func = function() self:onShowHist(search_info) end,
     }
 
     if search_info then
@@ -270,7 +251,7 @@ function FileManagerHistory:onShowHist(search_info)
         self.case_sensitive = search_info.case_sensitive
     else
         self.search_string = nil
-        self.selected_colections = nil
+        self.selected_collections = nil
     end
     self.filter = G_reader_settings:readSetting("history_filter", "all")
     self.is_frozen = G_reader_settings:isTrue("history_freeze_finished_books")
@@ -309,7 +290,7 @@ function FileManagerHistory:showHistDialog()
                 self.filter = filter
                 if filter == "all" then -- reset all filters
                     self.search_string = nil
-                    self.selected_colections = nil
+                    self.selected_collections = nil
                 end
                 self:updateItemTable()
             end,
@@ -330,11 +311,11 @@ function FileManagerHistory:showHistDialog()
             text = _("Filter by collections"),
             callback = function()
                 UIManager:close(hist_dialog)
-                local caller_callback = function()
-                    self.selected_colections = self.ui.collections.selected_colections
+                local caller_callback = function(selected_collections)
+                    self.selected_collections = selected_collections
                     self:updateItemTable()
                 end
-                self.ui.collections:onShowCollList({}, caller_callback, true) -- do not select any, no dialog to apply
+                self.ui.collections:onShowCollList(self.selected_collections or {}, caller_callback, true) -- no dialog to apply
             end,
         },
     })

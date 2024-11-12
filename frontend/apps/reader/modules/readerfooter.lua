@@ -2454,11 +2454,11 @@ function ReaderFooter:onSwapPageTurnButtons()
 end
 ReaderFooter.onToggleReadingOrder = ReaderFooter.onSwapPageTurnButtons
 
-function ReaderFooter:onSetRotationMode()
+function ReaderFooter:onSetDimensions()
     self:updateFooterContainer()
     self:resetLayout(true)
 end
-ReaderFooter.onScreenResize = ReaderFooter.onSetRotationMode
+ReaderFooter.onScreenResize = ReaderFooter.onSetDimensions
 
 function ReaderFooter:onSetPageHorizMargins(h_margins)
     if self.settings.progress_margin then

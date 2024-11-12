@@ -72,7 +72,7 @@ local function kindleGetCurrentProfile()
     if lipc_handle then
         local ha_input = lipc_handle:new_hasharray() -- an empty hash array since we only want to read
         local ha_result = lipc_handle:access_hash_property("com.lab126.wifid", "currentEssid", ha_input)
-        local profile = ha_result:to_table()[1] -- theres only a single element
+        local profile = ha_result:to_table()[1] -- there is only a single element
         ha_input:destroy()
         ha_result:destroy()
         lipc_handle:close()
@@ -1616,9 +1616,9 @@ function KindleScribe:init()
             logger.dbg("orientation_code =", orientation_code)
             local rotation_mode = 0
             if orientation_code then
-                if orientation_code == "U" or "L" then
+                if orientation_code == "U" or orientation_code == "L" then
                     rotation_mode = self.screen.DEVICE_ROTATED_UPRIGHT
-                elseif orientation_code == "D" or "R" then
+                elseif orientation_code == "D" or orientation_code == "R" then
                     rotation_mode = self.screen.DEVICE_ROTATED_UPSIDE_DOWN
                 end
             end

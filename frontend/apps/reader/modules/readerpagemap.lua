@@ -248,7 +248,7 @@ function ReaderPageMap:onShowPageList()
         pl_menu,
     }
 
-    -- buid up menu widget method as closure
+    -- build up menu widget method as closure
     local pagemap = self
     function pl_menu:onMenuChoice(item)
         pagemap.ui.link:addCurrentLocationToStack()
@@ -274,7 +274,7 @@ end
 
 function ReaderPageMap:getCurrentPageLabel(clean_label)
     -- Note: in scroll mode with PDF, when multiple pages are shown on
-    -- the screen, the advertized page number is the greatest page number
+    -- the screen, the advertised page number is the greatest page number
     -- among the pages shown (so, the page number of the partial page
     -- shown at bottom of screen).
     -- For consistency, getPageMapCurrentPageLabel() returns the last page

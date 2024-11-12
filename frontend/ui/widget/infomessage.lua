@@ -11,7 +11,7 @@ Example:
     local sample
     sample = InfoMessage:new{
         text = _("Some message"),
-        -- Usually the hight of a InfoMessage is self-adaptive. If this field is actively set, a
+        -- Usually the height of a InfoMessage is self-adaptive. If this field is actively set, a
         -- scrollbar may be shown. This variable is usually helpful to display a large chunk of text
         -- which may exceed the height of the screen.
         height = Screen:scaleBySize(400),

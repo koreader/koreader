@@ -33,16 +33,16 @@ local ReadHistory = require("readhistory")
 local Screenshoter = require("ui/widget/screenshoter")
 local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
+local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local BaseUtil = require("ffi/util")
 local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local N_ = _.ngettext
 local Screen = Device.screen
-local T = BaseUtil.template
+local T = ffiUtil.template
 
 local FileManager = InputContainer:extend{
     title = _("KOReader"),
@@ -60,28 +60,21 @@ local function isFile(file)
     return lfs.attributes(file, "mode") == "file"
 end
 
-function FileManager:onSetRotationMode(rotation)
-    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
-        Screen:setRotationMode(rotation)
-        if FileManager.instance then
-            self:reinit(self.path, self.focused_file)
-        end
-    end
-    return true
-end
-
-function FileManager:onPhysicalKeyboardConnected()
-    -- So that the key navigation shortcuts apply right away.
-    -- This will also naturally call registerKeyEvents
-    self:reinit(self.path, self.focused_file)
-end
-FileManager.onPhysicalKeyboardDisconnected = FileManager.onPhysicalKeyboardConnected
-
 function FileManager:setRotationMode()
     local locked = G_reader_settings:isTrue("lock_rotation")
     if not locked then
-        local rotation_mode = G_reader_settings:readSetting("fm_rotation_mode") or Screen.DEVICE_ROTATED_UPRIGHT
-        self:onSetRotationMode(rotation_mode)
+        local mode = G_reader_settings:readSetting("fm_rotation_mode") or Screen.DEVICE_ROTATED_UPRIGHT
+        self:onSetRotationMode(mode)
+    end
+end
+
+function FileManager:onSetRotationMode(mode)
+    local old_mode = Screen:getRotationMode()
+    if mode ~= nil and mode ~= old_mode then
+        Screen:setRotationMode(mode)
+        if FileManager.instance then
+            self:rotate()
+        end
     end
 end
 
@@ -113,13 +106,14 @@ function FileManager:onSetDimensions(dimen)
 end
 
 function FileManager:updateTitleBarPath(path)
-    path = path or self.file_chooser.path
     local text = BD.directory(filemanagerutil.abbreviate(path))
-    if FileManagerShortcuts:hasFolderShortcut(path) then
+    if self.folder_shortcuts:hasFolderShortcut(path) then
         text = "☆ " .. text
     end
     self.title_bar:setSubTitle(text)
 end
+
+FileManager.onPathChanged = FileManager.updateTitleBarPath
 
 function FileManager:setupLayout()
     self.show_parent = self.show_parent or self
@@ -142,7 +136,6 @@ function FileManager:setupLayout()
         right_icon_tap_callback = function() self:onShowPlusMenu() end,
         right_icon_hold_callback = false, -- propagate long-press to dispatcher
     }
-    self:updateTitleBarPath(self.root_path)
 
     local file_chooser = FileChooser:new{
         path = self.root_path,
@@ -164,11 +157,6 @@ function FileManager:setupLayout()
     self.focused_file = nil -- use it only once
 
     local file_manager = self
-
-    function file_chooser:onPathChanged(path)
-        file_manager:updateTitleBarPath(path)
-        return true
-    end
 
     function file_chooser:onFileSelect(item)
         if file_manager.selected_files then -- toggle selection
@@ -269,7 +257,7 @@ function FileManager:setupLayout()
             self.book_props = nil -- in 'self' to provide access to it in CoverBrowser
             local has_provider = DocumentRegistry:hasProvider(file)
             local has_sidecar = DocSettings:hasSidecarFile(file)
-            local doc_settings_or_file
+            local doc_settings_or_file = file
             if has_provider or has_sidecar then
                 self.book_props = file_manager.coverbrowser and file_manager.coverbrowser:getBookInfo(file)
                 if has_sidecar then
@@ -279,8 +267,6 @@ function FileManager:setupLayout()
                         self.book_props = FileManagerBookInfo.extendProps(props, file)
                         self.book_props.has_cover = true -- to enable "Book cover" button, we do not know if cover exists
                     end
-                else
-                    doc_settings_or_file = file
                 end
                 table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_refresh_callback))
                 table.insert(buttons, {}) -- separator
@@ -322,7 +308,7 @@ function FileManager:setupLayout()
                 })
             end
         else -- folder
-            local folder = BaseUtil.realpath(file)
+            local folder = ffiUtil.realpath(file)
             table.insert(buttons, {
                 {
                     text = _("Set as HOME folder"),
@@ -438,6 +424,7 @@ function FileManager:init()
 
     self:initGesListener()
     self:handleEvent(Event:new("SetDimensions", self.dimen))
+    self:handleEvent(Event:new("PathChanged", self.file_chooser.path))
 
     if FileManager.instance == nil then
         logger.dbg("Spinning up new FileManager instance", tostring(self))
@@ -728,10 +715,12 @@ function FileManager:tapPlus()
 end
 
 function FileManager:reinit(path, focused_file)
+    path = path or self.path
+    focused_file = focused_file or self.focused_file
     UIManager:flushSettings()
     self.dimen = Screen:getSize()
     -- backup the root path and path items
-    self.root_path = BaseUtil.realpath(path or self.file_chooser.path)
+    self.root_path = ffiUtil.realpath(path or self.file_chooser.path)
     local path_items_backup = {}
     for k, v in pairs(self.file_chooser.path_items) do
         path_items_backup[k] = v
@@ -747,6 +736,13 @@ function FileManager:reinit(path, focused_file)
     -- CoverBrowser plugin's cover image renderings)
     -- self:onRefresh()
 end
+
+FileManager.rotate = FileManager.reinit
+
+-- So that the key navigation shortcuts apply right away.
+-- This will also naturally call registerKeyEvents
+FileManager.onPhysicalKeyboardConnected = FileManager.reinit
+FileManager.onPhysicalKeyboardDisconnected = FileManager.reinit
 
 function FileManager:getCurrentDir()
     return FileManager.instance and FileManager.instance.file_chooser.path
@@ -824,7 +820,7 @@ function FileManager:openRandomFile(dir)
     local random_file = filemanagerutil.getRandomFile(dir, match_func)
     if random_file then
         UIManager:show(MultiConfirmBox:new{
-            text = T(_("Do you want to open %1?"), BD.filename(BaseUtil.basename(random_file))),
+            text = T(_("Do you want to open %1?"), BD.filename(ffiUtil.basename(random_file))),
             choice1_text = _("Open"),
             choice1_callback = function()
                 local ReaderUI = require("apps/reader/readerui")
@@ -854,11 +850,11 @@ function FileManager:cutFile(file)
 end
 
 function FileManager:pasteFileFromClipboard(file)
-    local orig_file = BaseUtil.realpath(self.clipboard)
-    local orig_name = BaseUtil.basename(orig_file)
-    local dest_path = BaseUtil.realpath(file or self.file_chooser.path)
+    local orig_file = ffiUtil.realpath(self.clipboard)
+    local orig_name = ffiUtil.basename(orig_file)
+    local dest_path = ffiUtil.realpath(file or self.file_chooser.path)
     dest_path = isFile(dest_path) and dest_path:match("(.*/)") or dest_path
-    local dest_file = BaseUtil.joinPath(dest_path, orig_name)
+    local dest_file = ffiUtil.joinPath(dest_path, orig_name)
     if orig_file == dest_file or orig_file == dest_path then -- do not paste to itself
         self.clipboard = nil
         return
@@ -949,12 +945,12 @@ function FileManager:showCopyMoveSelectedFilesDialog(close_callback)
 end
 
 function FileManager:pasteSelectedFiles(overwrite)
-    local dest_path = BaseUtil.realpath(self.file_chooser.path)
+    local dest_path = ffiUtil.realpath(self.file_chooser.path)
     local ok_files = {}
     for orig_file in pairs(self.selected_files) do
-        local orig_name = BaseUtil.basename(orig_file)
-        local dest_file = BaseUtil.joinPath(dest_path, orig_name)
-        if BaseUtil.realpath(orig_file) == dest_file then -- do not paste to itself
+        local orig_name = ffiUtil.basename(orig_file)
+        local dest_file = ffiUtil.joinPath(dest_path, orig_name)
+        if ffiUtil.realpath(orig_file) == dest_file then -- do not paste to itself
             self.selected_files[orig_file] = nil
         else
             local ok
@@ -1044,7 +1040,7 @@ function FileManager:createFolder()
 end
 
 function FileManager:showDeleteFileDialog(filepath, post_delete_callback, pre_delete_callback)
-    local file = BaseUtil.realpath(filepath)
+    local file = ffiUtil.realpath(filepath)
     if file == nil then
         UIManager:show(InfoMessage:new{
             text = T(_("File not found:\n%1"), BD.filepath(filepath)),
@@ -1081,7 +1077,7 @@ function FileManager:deleteFile(file, is_file)
             return true
         end
     else
-        local ok = BaseUtil.purgeDir(file)
+        local ok = ffiUtil.purgeDir(file)
         if ok then
             ReadHistory:folderDeleted(file) -- will delete sdr
             ReadCollection:removeItemsByPath(file)
@@ -1097,7 +1093,7 @@ end
 function FileManager:deleteSelectedFiles()
     local ok_files = {}
     for orig_file in pairs(self.selected_files) do
-        local file_abs_path = BaseUtil.realpath(orig_file)
+        local file_abs_path = ffiUtil.realpath(orig_file)
         local ok = file_abs_path and os.remove(file_abs_path)
         if ok then
             DocSettings.updateLocation(file_abs_path) -- delete sdr
@@ -1127,7 +1123,7 @@ function FileManager:showRenameFileDialog(file, is_file)
     local dialog
     dialog = InputDialog:new{
         title = is_file and _("Rename file") or _("Rename folder"),
-        input = BaseUtil.basename(file),
+        input = ffiUtil.basename(file),
         buttons = {{
             {
                 text = _("Cancel"),
@@ -1153,8 +1149,8 @@ function FileManager:showRenameFileDialog(file, is_file)
 end
 
 function FileManager:renameFile(file, basename, is_file)
-    if BaseUtil.basename(file) == basename then return end
-    local dest = BaseUtil.joinPath(BaseUtil.dirname(file), basename)
+    if ffiUtil.basename(file) == basename then return end
+    local dest = ffiUtil.joinPath(ffiUtil.dirname(file), basename)
 
     local function doRenameFile()
         if self:moveFile(file, dest) then
@@ -1218,7 +1214,7 @@ function FileManager:showFiles(path, focused_file, selected_files)
         FileManager.instance:onClose()
     end
 
-    path = BaseUtil.realpath(path or G_reader_settings:readSetting("lastdir") or filemanagerutil.getDefaultDir())
+    path = ffiUtil.realpath(path or G_reader_settings:readSetting("lastdir") or filemanagerutil.getDefaultDir())
     G_reader_settings:saveSetting("lastdir", path)
     self:setRotationMode()
     local file_manager = FileManager:new{
@@ -1234,19 +1230,19 @@ end
 --- A shortcut to execute mv.
 -- @treturn boolean result of mv command
 function FileManager:moveFile(from, to)
-    return BaseUtil.execute(self.mv_bin, from, to) == 0
+    return ffiUtil.execute(self.mv_bin, from, to) == 0
 end
 
 --- A shortcut to execute cp.
 -- @treturn boolean result of cp command
 function FileManager:copyFileFromTo(from, to)
-    return BaseUtil.execute(self.cp_bin, from, to) == 0
+    return ffiUtil.execute(self.cp_bin, from, to) == 0
 end
 
 --- A shortcut to execute cp recursively.
 -- @treturn boolean result of cp command
 function FileManager:copyRecursive(from, to)
-    return BaseUtil.execute(self.cp_bin, "-r", from, to ) == 0
+    return ffiUtil.execute(self.cp_bin, "-r", from, to ) == 0
 end
 
 function FileManager:onHome()
@@ -1339,9 +1335,9 @@ function FileManager:showSelectedFilesList()
         local a_path, a_name = util.splitFilePathName(a.text)
         local b_path, b_name = util.splitFilePathName(b.text)
         if a_path == b_path then
-            return BaseUtil.strcoll(a_name, b_name)
+            return ffiUtil.strcoll(a_name, b_name)
         end
-        return BaseUtil.strcoll(a_path, b_path)
+        return ffiUtil.strcoll(a_path, b_path)
     end
     table.sort(selected_files, sorting)
 

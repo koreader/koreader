@@ -90,11 +90,11 @@ local CreOptions = {
                     end
                 end,
                 -- For Dispatcher & onMakeDefault's sake
-                labels = {C_("Rotation", "⤹ 90°"), C_("Rotation", "↑ 0°"), C_("Rotation", "⤸ 90°"), C_("Rotation", "↓ 180°")},
+                labels = optionsutil.rotation_labels,
                 alternate = false,
-                values = {Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE, Screen.DEVICE_ROTATED_UPRIGHT, Screen.DEVICE_ROTATED_CLOCKWISE, Screen.DEVICE_ROTATED_UPSIDE_DOWN},
+                values = optionsutil.rotation_modes,
                 default_value = Screen.DEVICE_ROTATED_UPRIGHT,
-                args = {Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE, Screen.DEVICE_ROTATED_UPRIGHT, Screen.DEVICE_ROTATED_CLOCKWISE, Screen.DEVICE_ROTATED_UPSIDE_DOWN},
+                args = optionsutil.rotation_modes,
                 current_func = function() return Screen:getRotationMode() end,
                 event = "SetRotationMode",
                 name_text_hold_callback = optionsutil.showValues,
@@ -554,7 +554,7 @@ Note that your selected font size is not affected by this setting.]]),
                     unit = "%",
                     name = "cjk_width_scaling",
                     name_text = _("CJK width scaling"),
-                    info_text = _([[Increase the width of all CJK (Chinese, Japanese, Korean) chararacters by this percentage. This has the effect of adding space between these glyphs, and might make them easier to distinguish to some readers.]]),
+                    info_text = _([[Increase the width of all CJK (Chinese, Japanese, Korean) characters by this percentage. This has the effect of adding space between these glyphs, and might make them easier to distinguish to some readers.]]),
                     event = "SetCJKWidthScaling",
                     other_button = {
                         text = _("Word expansion"),

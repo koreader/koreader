@@ -95,7 +95,7 @@ function ReaderRolling:init()
             -- We loaded from a valid cache file: remember its hash. It may allow not
             -- having to do any background rerendering if the user somehow reverted
             -- some setting changes before any background rerendering had completed
-            -- (ie. with autorotation, transitionning from portrait to landscape for
+            -- (ie. with autorotation, transitioning from portrait to landscape for
             -- a few seconds, to then end up back in portrait).
             self.valid_cache_rendering_hash = self.ui.document:getDocumentRenderingHash(false)
         end
@@ -841,7 +841,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
                 -- rectangle to unmark it; but it might not always be just white
                 -- margin: when we're in dual page mode and crengine has drawn a
                 -- vertical pages separator - or if we have had crengine draw
-                -- some backgroud texture with credocument:setBackgroundImage().
+                -- some background texture with credocument:setBackgroundImage().
                 if self.mark_orig_content_bb then
                     -- be sure we don't leak memory if a previous one is still
                     -- hanging around
@@ -1148,7 +1148,7 @@ function ReaderRolling:_gotoPos(new_pos, do_dim_area)
         self.ui:handleEvent(Event:new("PageChangeAnimation", new_pos > self.current_pos))
     end
     self.ui.document:gotoPos(new_pos)
-    -- The current page we get in scroll mode may be a bit innacurate,
+    -- The current page we get in scroll mode may be a bit inaccurate,
     -- but we give it anyway to onPosUpdate so footer and statistics can
     -- keep up with page.
     self.current_page = self.ui.document:getCurrentPage()
@@ -1241,7 +1241,7 @@ function ReaderRolling:onSetStatusLine(status_line)
     self.cre_top_bar_enabled = status_line == 0
     -- (We used to toggle the footer when toggling the top status bar,
     -- but people seem to like having them both, and it feels more
-    -- practicable to have the independant.)
+    -- practicable to have the independent.)
     self:onUpdatePos()
 end
 
@@ -1681,7 +1681,7 @@ function ReaderRolling:handlePartialRerendering()
 end
 
 function ReaderRolling:_waitOrKillCurrentRerenderingSubprocess(wait, kill)
-    -- No need for an asynchronous collector: we'll explicitely call this and wait
+    -- No need for an asynchronous collector: we'll explicitly call this and wait
     -- before going on, even when reloading, to avoid having multiple possibly huge
     -- subprocesses at the same time.
     -- Returns true if the process is no longer running.
@@ -1913,7 +1913,7 @@ function ReaderRolling:_rerenderInBackground()
         -- (which happens when CSS properties "display:" and "white-space:" have changed for some nodes, which
         -- is rather rare with our style tweaks) here, and do the reload and rerendering in this same background
         -- subprocess, and doing this would hide this whole thing from the user, making the UX seamless.
-        -- But this would need a lot more memory, as we would then have 2 independant DOM in memory.
+        -- But this would need a lot more memory, as we would then have 2 independent DOM in memory.
         -- Ie. with a big book and KOReader taking 120 MB, the subprocess would additionally use:
         -- - 60 MB when doing a simple rerendering
         -- - 130 MB when doing a full load+render

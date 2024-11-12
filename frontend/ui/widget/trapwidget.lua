@@ -117,7 +117,7 @@ function TrapWidget:_dismissAndResend(evtype, ev)
         -- There may be some timing issues that could cause crashes, as we
         -- use nextTick, if the dismiss_callback uses UIManager:scheduleIn()
         -- or has set up some widget that may catch that event while not being
-        -- yet fully initialiazed.
+        -- yet fully initialized.
         -- (It happened mostly when I had some bug somewhere, and it was a quite
         -- reliable sign of a bug somewhere, but the stacktrace was unrelated
         -- to the bug location.)

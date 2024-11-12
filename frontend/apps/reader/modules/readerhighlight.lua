@@ -793,6 +793,7 @@ Except when in two columns mode, where this is limited to showing only the previ
             self.allow_corner_scroll = G_reader_settings:nilOrTrue("highlight_corner_scroll")
         end,
     })
+
     -- we allow user to select the rate at which the content selection tool moves through screen
     if not Device:isTouchDevice() and Device:hasDPad() then
         table.insert(menu_items.long_press.sub_item_table, {
@@ -857,11 +858,9 @@ Except when in two columns mode, where this is limited to showing only the previ
                 UIManager:show(spin_widget)
             end,
         })
-    end
 
-    -- long_press setting is under taps_and_gestures menu which is not available for non-touch devices
-    -- Clone long_press setting and change its label, making it much more meaningful for non-touch device users.
-    if not Device:isTouchDevice() and Device:hasDPad() then
+        -- long_press setting is under taps_and_gestures menu which is not available for non-touch devices
+        -- Clone long_press setting and change its label, making it much more meaningful for non-touch device users.
         menu_items.selection_text = menu_items.long_press
         menu_items.selection_text.text = _("Selection on text")
         menu_items.long_press = nil
@@ -1340,6 +1339,9 @@ function ReaderHighlight:onShowHighlightDialog(index)
     end
     self.edit_highlight_dialog = ButtonDialog:new{ -- in self for unit tests
         buttons = buttons,
+        anchor = function()
+            return self:_getDialogAnchor(self.edit_highlight_dialog, item)
+        end,
     }
     UIManager:show(self.edit_highlight_dialog)
     return true
@@ -1378,7 +1380,9 @@ function ReaderHighlight:onShowHighlightMenu(index)
 
     self.highlight_dialog = ButtonDialog:new{
         buttons = highlight_buttons,
-        anchor = function() return self:_getHighlightMenuAnchor() end,
+        anchor = function()
+            return self:_getDialogAnchor(self.highlight_dialog, not self.gest_pos and self.ui.annotation.annotations[index])
+        end,
         tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
     }
     -- NOTE: Disable merging for this update,
@@ -1391,10 +1395,10 @@ dbg:guard(ReaderHighlight, "onShowHighlightMenu",
             "onShowHighlightMenu must not be called with nil self.selected_text!")
     end)
 
-function ReaderHighlight:_getHighlightMenuAnchor()
+function ReaderHighlight:_getDialogAnchor(dialog, item)
     local position = G_reader_settings:readSetting("highlight_dialog_position", "center")
-    if position == "center" or not self.gest_pos then return end
-    local dialog_box = self.highlight_dialog:getContentSize()
+    if position == "center" then return end
+    local dialog_box = dialog:getContentSize()
     local anchor_x = math.floor((self.screen_w - dialog_box.w) / 2) -- center by width
     local anchor_y, prefers_pop_down
     if position == "top" then
@@ -1403,7 +1407,25 @@ function ReaderHighlight:_getHighlightMenuAnchor()
     elseif position == "bottom" then
         anchor_y = self.screen_h - Size.padding.small
     else -- "gesture"
-        local text_box = self.ui.document:getWordFromPosition(self.gest_pos)
+        local pos0, pos1
+        if item then -- highlight
+            if self.ui.rolling then
+                local y, x = self.ui.document:getScreenPositionFromXPointer(item.pos0)
+                pos0 = x ~= nil and y ~= nil and { x = x, y = y } or nil
+                y, x = self.ui.document:getScreenPositionFromXPointer(item.pos1)
+                pos1 = x ~= nil and y ~= nil and { x = x, y = y } or nil
+            else
+                pos0, pos1 = item.pos0, item.pos1
+            end
+        else -- gesture
+            pos0, pos1 = unpack(self.gest_pos)
+            self.gest_pos = nil
+        end
+        if pos0 == nil or pos1 == nil then return end -- fallback to "center"
+        if pos0.y > pos1.y then -- try to show the dialog below the highlight
+            pos1 = pos0
+        end
+        local text_box = self.ui.document:getWordFromPosition(pos1, true)
         if text_box then
             text_box = text_box.sbox
             if text_box and self.ui.paging then
@@ -1418,7 +1440,6 @@ function ReaderHighlight:_getHighlightMenuAnchor()
             anchor_y = text_box.y - Size.padding.small
         end
     end
-    self.gest_pos = nil
     return { x = anchor_x, y = anchor_y, h = 0, w = 0 }, prefers_pop_down
 end
 
@@ -1516,7 +1537,7 @@ function ReaderHighlight:onHold(arg, ges)
         logger.dbg("not inside page area")
         return false
     end
-    self.gest_pos = self.hold_pos
+    self.gest_pos = { self.hold_pos, self.hold_pos }
 
     self.allow_hold_pan_corner_scroll = false -- reset this, don't allow that yet
 
@@ -1723,7 +1744,7 @@ function ReaderHighlight:onHoldPan(_, ges)
 
     local old_text = self.selected_text and self.selected_text.text
     self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.holdpan_pos)
-    self.gest_pos = self.holdpan_pos
+    self.gest_pos = { self.hold_pos, self.holdpan_pos }
     self.is_word_selection = false
 
     if self.selected_text and self.selected_text.pos0 then
@@ -1814,7 +1835,6 @@ function ReaderHighlight:getSelectedWordContext(nb_words)
 end
 
 function ReaderHighlight:viewSelectionHTML(debug_view, no_css_files_buttons)
-    if self.ui.paging then return end
     if self.selected_text and self.selected_text.pos0 and self.selected_text.pos1 then
         local ViewHtml = require("ui/viewhtml")
         ViewHtml:viewSelectionHTML(self.ui.document, self.selected_text)
@@ -2391,7 +2411,7 @@ function ReaderHighlight:getSavedExtendedHighlightPage(highlight, page, index)
     local item = {
         datetime = highlight.datetime,
         drawer   = highlight.drawer,
-        color    = highlight.color or self.highlight.saved_color,
+        color    = highlight.color or self.view.highlight.saved_color,
         text     = highlight.text,
         note     = highlight.note,
         page     = highlight.page,

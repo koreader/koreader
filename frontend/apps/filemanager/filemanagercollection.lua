@@ -3,7 +3,6 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DocSettings = require("docsettings")
-local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
@@ -11,7 +10,6 @@ local ReadCollection = require("readcollection")
 local SortWidget = require("ui/widget/sortwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local Screen = require("device").screen
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -71,12 +69,17 @@ function FileManagerCollection:onShowColl(collection_name)
         title_bar_fm_style = true,
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showCollDialog() end,
+        onReturn = function()
+            self.coll_menu.close_callback()
+            self:onShowCollList()
+        end,
         onMenuChoice = self.onMenuChoice,
         onMenuHold = self.onMenuHold,
-        onSetRotationMode = self.MenuSetRotationModeHandler,
         _manager = self,
+        _recreate_func = function() self:onShowColl(collection_name) end,
         collection_name = collection_name,
     }
+    table.insert(self.coll_menu.paths, true) -- enable onReturn button
     self.coll_menu.close_callback = function()
         self:refreshFileManager()
         UIManager:close(self.coll_menu)
@@ -99,6 +102,10 @@ function FileManagerCollection:updateItemTable(show_last_item)
     title = T("%1 (%2)", title, #item_table)
     local item_number = show_last_item and #item_table or -1
     self.coll_menu:switchItemTable(title, item_table, item_number)
+end
+
+function FileManagerCollection:onSetDimensions(dimen)
+    self.dimen = dimen
 end
 
 function FileManagerCollection:onMenuChoice(item)
@@ -143,7 +150,7 @@ function FileManagerCollection:onMenuHold(item)
             doc_settings_or_file = DocSettings:open(file)
             if not self.book_props then
                 local props = doc_settings_or_file:readSetting("doc_props")
-                self.book_props = FileManagerBookInfo.extendProps(props, file)
+                self.book_props = self.ui.bookinfo.extendProps(props, file)
                 self.book_props.has_cover = true
             end
         else
@@ -274,21 +281,6 @@ function FileManagerCollection:sortCollection()
     UIManager:show(sort_widget)
 end
 
-function FileManagerCollection:MenuSetRotationModeHandler(rotation)
-    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
-        UIManager:close(self._manager.coll_menu)
-        if self._manager.ui.view and self._manager.ui.view.onSetRotationMode then
-            self._manager.ui.view:onSetRotationMode(rotation)
-        elseif self._manager.ui.onSetRotationMode then
-            self._manager.ui:onSetRotationMode(rotation)
-        else
-            Screen:setRotationMode(rotation)
-        end
-        self._manager:onShowColl()
-    end
-    return true
-end
-
 function FileManagerCollection:onBookMetadataChanged()
     if self.coll_menu then
         self.coll_menu:updateItems()
@@ -297,14 +289,18 @@ end
 
 -- collection list
 
-function FileManagerCollection:onShowCollList(file_or_files, caller_callback, no_dialog)
-    self.selected_colections = nil
-    if file_or_files then -- select mode
-        if type(file_or_files) == "string" then -- checkmark collections containing the file
-            self.selected_colections = ReadCollection:getCollectionsWithFile(file_or_files)
-        else -- do not checkmark any
-            self.selected_colections = {}
+function FileManagerCollection:onShowCollList(file_or_selected_collections, caller_callback, no_dialog)
+    local title_bar_left_icon
+    if file_or_selected_collections ~= nil then -- select mode
+        title_bar_left_icon = "check"
+        if type(file_or_selected_collections) == "string" then -- checkmark collections containing the file
+            self.selected_collections = ReadCollection:getCollectionsWithFile(file_or_selected_collections)
+        else
+            self.selected_collections = util.tableDeepCopy(file_or_selected_collections)
         end
+    else
+        title_bar_left_icon = "appbar.menu"
+        self.selected_collections = nil
     end
     self.coll_list = Menu:new{
         subtitle = "",
@@ -312,15 +308,15 @@ function FileManagerCollection:onShowCollList(file_or_files, caller_callback, no
         is_borderless = true,
         is_popout = false,
         title_bar_fm_style = true,
-        title_bar_left_icon = file_or_files and "check" or "appbar.menu",
+        title_bar_left_icon = title_bar_left_icon,
         onLeftButtonTap = function() self:showCollListDialog(caller_callback, no_dialog) end,
         onMenuChoice = self.onCollListChoice,
         onMenuHold = self.onCollListHold,
-        onSetRotationMode = self.MenuSetRotationModeHandler,
         _manager = self,
+        _recreate_func = function() self:onShowCollList(file_or_selected_collections, caller_callback, no_dialog) end,
     }
     self.coll_list.close_callback = function(force_close)
-        if force_close or self.selected_colections == nil then
+        if force_close or self.selected_collections == nil then
             self:refreshFileManager()
             UIManager:close(self.coll_list)
             self.coll_list = nil
@@ -337,8 +333,8 @@ function FileManagerCollection:updateCollListItemTable(do_init, item_number)
         item_table = {}
         for name, coll in pairs(ReadCollection.coll) do
             local mandatory
-            if self.selected_colections then
-                mandatory = self.selected_colections[name] and self.checkmark or "  "
+            if self.selected_collections then
+                mandatory = self.selected_collections[name] and self.checkmark or "  "
                 self.coll_list.items_mandatory_font_size = self.coll_list.font_size
             else
                 mandatory = util.tableSize(coll)
@@ -358,12 +354,12 @@ function FileManagerCollection:updateCollListItemTable(do_init, item_number)
     end
     local title = T(_("Collections (%1)"), #item_table)
     local subtitle
-    if self.selected_colections then
-        local selected_nb = util.tableSize(self.selected_colections)
-        subtitle = self.selected_colections and T(_("Selected: %1"), selected_nb)
+    if self.selected_collections then
+        local selected_nb = util.tableSize(self.selected_collections)
+        subtitle = self.selected_collections and T(_("Selected: %1"), selected_nb)
         if do_init and selected_nb > 0 then -- show first collection containing the long-pressed book
             for i, item in ipairs(item_table) do
-                if self.selected_colections[item.name] then
+                if self.selected_collections[item.name] then
                     item_number = i
                     break
                 end
@@ -374,13 +370,13 @@ function FileManagerCollection:updateCollListItemTable(do_init, item_number)
 end
 
 function FileManagerCollection:onCollListChoice(item)
-    if self._manager.selected_colections then
+    if self._manager.selected_collections then
         if item.mandatory == self._manager.checkmark then
             self.item_table[item.idx].mandatory = "  "
-            self._manager.selected_colections[item.name] = nil
+            self._manager.selected_collections[item.name] = nil
         else
             self.item_table[item.idx].mandatory = self._manager.checkmark
-            self._manager.selected_colections[item.name] = true
+            self._manager.selected_collections[item.name] = true
         end
         self._manager:updateCollListItemTable()
     else
@@ -390,7 +386,7 @@ end
 
 function FileManagerCollection:onCollListHold(item)
     if item.name == ReadCollection.default_collection_name -- Favorites non-editable
-            or self._manager.selected_colections then -- select mode
+            or self._manager.selected_collections then -- select mode
         return
     end
 
@@ -424,7 +420,7 @@ end
 
 function FileManagerCollection:showCollListDialog(caller_callback, no_dialog)
     if no_dialog then
-        caller_callback()
+        caller_callback(self.selected_collections)
         self.coll_list.close_callback(true)
         return
     end
@@ -439,7 +435,7 @@ function FileManagerCollection:showCollListDialog(caller_callback, no_dialog)
             end,
         },
     }
-    if self.selected_colections then -- select mode
+    if self.selected_collections then -- select mode
         buttons = {
             new_collection_button,
             {}, -- separator
@@ -448,8 +444,8 @@ function FileManagerCollection:showCollListDialog(caller_callback, no_dialog)
                     text = _("Deselect all"),
                     callback = function()
                         UIManager:close(button_dialog)
-                        for name in pairs(self.selected_colections) do
-                            self.selected_colections[name] = nil
+                        for name in pairs(self.selected_collections) do
+                            self.selected_collections[name] = nil
                         end
                         self:updateCollListItemTable(true)
                     end,
@@ -459,7 +455,7 @@ function FileManagerCollection:showCollListDialog(caller_callback, no_dialog)
                     callback = function()
                         UIManager:close(button_dialog)
                         for name in pairs(ReadCollection.coll) do
-                            self.selected_colections[name] = true
+                            self.selected_collections[name] = true
                         end
                         self:updateCollListItemTable(true)
                     end,
@@ -470,7 +466,7 @@ function FileManagerCollection:showCollListDialog(caller_callback, no_dialog)
                     text = _("Apply selection"),
                     callback = function()
                         UIManager:close(button_dialog)
-                        caller_callback()
+                        caller_callback(self.selected_collections)
                         self.coll_list.close_callback(true)
                     end,
                 },
@@ -535,8 +531,8 @@ function FileManagerCollection:addCollection()
     local editCallback = function(name)
         ReadCollection:addCollection(name)
         local mandatory
-        if self.selected_colections then
-            self.selected_colections[name] = true
+        if self.selected_collections then
+            self.selected_collections[name] = true
             mandatory = self.checkmark
         else
             mandatory = 0
@@ -591,6 +587,7 @@ end
 -- external
 
 function FileManagerCollection:genAddToCollectionButton(file_or_files, caller_pre_callback, caller_post_callback, button_disabled)
+    local is_single_file = type(file_or_files) == "string"
     return {
         text = _("Collections…"),
         enabled = not button_disabled,
@@ -598,17 +595,18 @@ function FileManagerCollection:genAddToCollectionButton(file_or_files, caller_pr
             if caller_pre_callback then
                 caller_pre_callback()
             end
-            local caller_callback = function()
-                if type(file_or_files) == "string" then
-                    ReadCollection:addRemoveItemMultiple(file_or_files, self.selected_colections)
+            local caller_callback = function(selected_collections)
+                if is_single_file then
+                    ReadCollection:addRemoveItemMultiple(file_or_files, selected_collections)
                 else -- selected files
-                    ReadCollection:addItemsMultiple(file_or_files, self.selected_colections)
+                    ReadCollection:addItemsMultiple(file_or_files, selected_collections)
                 end
                 if caller_post_callback then
                     caller_post_callback()
                 end
             end
-            self:onShowCollList(file_or_files, caller_callback)
+            -- if selected files, do not checkmark any collection on start
+            self:onShowCollList(is_single_file and file_or_files or {}, caller_callback)
         end,
     }
 end
