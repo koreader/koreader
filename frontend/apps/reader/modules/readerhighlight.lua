@@ -622,13 +622,13 @@ If you wish your highlights to be saved in the document, just move it to a writa
                     separator = true,
                 },
                 {
-                    text = _("Write all highlights into pdf file"),
+                    text = _("Write all highlights into PDF file"),
                     enabled_func = function()
                         return self.highlight_write_into_pdf and self.ui.annotation:getNumberOfHighlightsAndNotes() > 0
                     end,
                     callback = function()
                         UIManager:show(ConfirmBox:new{
-                            text = _("Are you sure you want to write all KOReader highlights into pdf file?"),
+                            text = _("Are you sure you want to write all KOReader highlights into PDF file?"),
                             icon = "texture-box",
                             ok_callback = function()
                                 local count = 0
@@ -643,8 +643,8 @@ If you wish your highlights to be saved in the document, just move it to a writa
                                     end
                                 end
                                 UIManager:show(Notification:new{
-                                    text = T(N_("1 highlight written into pdf file",
-                                        "%1 highlights written into pdf file", count), count),
+                                    text = T(N_("1 highlight written into PDF file",
+                                        "%1 highlights written into PDF file", count), count),
                                 })
                             end,
                         })
