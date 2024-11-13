@@ -138,12 +138,6 @@ function Device:init()
 
     local event_map = dofile("frontend/device/android/event_map.lua")
 
-    if android.prop.is_tolino then
-        -- dpad left/right as page back/forward
-        event_map[21] = "LPgBack"
-        event_map[22] = "LPgFwd"
-    end
-
     self.input = require("device/input"):new{
         device = self,
         event_map = event_map,
@@ -354,12 +348,7 @@ function Device:retrieveNetworkInfo()
             return _("Connected to mobile data network")
         elseif type == C.ANETWORK_ETHERNET then
             return _("Connected to Ethernet")
-        elseif type == C.ANETWORK_BLUETOOTH then
-            return _("Connected to Bluetooth")
-        elseif type == C.ANETWORK_VPN then
-            return _("Connected to VPN")
         end
-        return _("Unknown connection")
     end
 end
 
