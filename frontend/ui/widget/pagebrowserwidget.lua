@@ -44,6 +44,10 @@ local PageBrowserWidget = FocusManager:extend{
 
 function PageBrowserWidget:init()
     self.layout = {}
+    self.build_focus_layout = false
+    if Device:hasDPad() and Device:useDPadAsActionKeys() then
+        self.build_focus_layout = true
+    end
     if self.ui.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
@@ -382,13 +386,15 @@ function PageBrowserWidget:updateLayout()
             background = Blitbuffer.COLOR_WHITE,
             grid_item,
         }
-        table.insert(self.grid, grid_item_frame)
-        if (not focus_row or focus_row_index ~= row) then
-            focus_row = {}
-            focus_row_index = row
-            table.insert(self.layout, focus_row)
+        if self.build_focus_layout then
+            table.insert(self.grid, grid_item_frame)
+            if (not focus_row or focus_row_index ~= row) then
+                focus_row = {}
+                focus_row_index = row
+                table.insert(self.layout, focus_row)
+            end
+            table.insert(focus_row, grid_item_frame)
         end
-        table.insert(focus_row, grid_item_frame)
     end
 
     -- Put the focused (requested) page at some appropriate place in the grid
@@ -641,16 +647,18 @@ function PageBrowserWidget:update()
         -- extended_sep_pages = extended_sep_pages,
     }
     self.row[1] = row
-    -- NT: update layout
-    -- remove existing BookMapRow from layout
-    if #self.layout > self.nb_rows then
-        for i = self.nb_rows + 1, #self.layout do
-            self.layout[i] = nil
+    if self.build_focus_layout then
+        -- NT: update layout
+        -- remove existing BookMapRow from layout
+        if #self.layout > self.nb_rows then
+            for i = self.nb_rows + 1, #self.layout do
+                self.layout[i] = nil
+            end
         end
-    end
-    -- add new BookMapRow layout
-    for _, focus_row in ipairs(row.focus_layout) do
-        table.insert(self.layout, focus_row)
+        -- add new BookMapRow layout
+        for _, focus_row in ipairs(row.focus_layout) do
+            table.insert(self.layout, focus_row)
+        end
     end
 
     local bd_mirrored_left_spacing = 0
