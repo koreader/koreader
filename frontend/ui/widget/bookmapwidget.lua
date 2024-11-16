@@ -1894,7 +1894,7 @@ function BookMapWidget:paintTo(bb, x, y)
     -- NT: build focus layout, ignore invisible row in ScrollContainer
     local focused_widget = self:getFocusItem()
     if focused_widget then
-        -- clear existed focused widget style before new layout(scroll up or down)
+        -- clear the existing focused widget style before applying the new layout (scroll up or down)
         -- not a perfect solution
         focused_widget:handleEvent(Event:new("Unfocus"))
     end
