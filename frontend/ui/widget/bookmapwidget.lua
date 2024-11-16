@@ -113,6 +113,7 @@ end
 
 function BookMapRow:init()
     self.focus_layout = {}
+    local enable_invisible_focus_page_slot = Device:hasDPad() and Device:useDPadAsActionKeys()
     local _mirroredUI = BD.mirroredUILayout()
     self.dimen = Geom:new{ x = 0, y = 0, w = self.width, h = self.height }
 
@@ -263,12 +264,14 @@ function BookMapRow:init()
                     }
                 }
                 table.insert(self.pages_frame, span_w)
-                if (not focus_row or focus_row_offset_y ~= offset_y) then
-                    focus_row = {}
-                    focus_row_offset_y = offset_y
-                    table.insert(self.focus_layout, focus_row)
+                if enable_invisible_focus_page_slot then
+                    if (not focus_row or focus_row_offset_y ~= offset_y) then
+                        focus_row = {}
+                        focus_row_offset_y = offset_y
+                        table.insert(self.focus_layout, focus_row)
+                    end
+                    table.insert(focus_row, span_w)
                 end
-                table.insert(focus_row, span_w)
             end
         end
     end
@@ -354,7 +357,6 @@ function BookMapRow:init()
     self.pages_markers = {}
     self.indicators = {}
     self.bottom_texts = {}
-    local enable_invisible_focus_page_slot = Device:hasDPad() and Device:useDPadAsActionKeys()
     local invisible_focusable_page_slots = nil
     local focus_border_size = Size.border.thin * 3;
     local invisible_widget = nil
