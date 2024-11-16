@@ -386,8 +386,8 @@ function PageBrowserWidget:updateLayout()
             background = Blitbuffer.COLOR_WHITE,
             grid_item,
         }
+        table.insert(self.grid, grid_item_frame)
         if self.build_focus_layout then
-            table.insert(self.grid, grid_item_frame)
             if (not focus_row or focus_row_index ~= row) then
                 focus_row = {}
                 focus_row_index = row
