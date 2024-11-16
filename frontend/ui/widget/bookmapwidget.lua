@@ -354,7 +354,7 @@ function BookMapRow:init()
     self.pages_markers = {}
     self.indicators = {}
     self.bottom_texts = {}
-    local enable_invisible_focus_page_slot = Device:hasDPad()
+    local enable_invisible_focus_page_slot = Device:hasDPad() and Device:useDPadAsActionKeys()
     local invisible_focusable_page_slots = nil
     local focus_border_size = Size.border.thin * 3;
     local invisible_widget = nil
