@@ -94,6 +94,7 @@ local menu_items = {
                     genMenuItem(_("3 seconds"), "screensaver_delay", "3"),
                     genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
                     genMenuItem(getUntilTapOrKeyPressText(), "screensaver_delay", "tap"),
+                    -- "Until 'exit sleep screen' gesture" is added later to touch devices
                 },
             },
             {
@@ -187,7 +188,9 @@ local menu_items = {
 }
 
 if Device:isTouchDevice() then
-    table.insert(menu_items[1].sub_item_table[8].sub_item_table, genMenuItem(_("Until 'exit sleep screen' gesture"), "screensaver_delay", "gesture"))
+    table.insert(menu_items[1].sub_item_table[8].sub_item_table,
+        genMenuItem(_("Until 'exit sleep screen' gesture"), "screensaver_delay", "gesture")
+    )
 end
 
 return menu_items
