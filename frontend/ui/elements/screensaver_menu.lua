@@ -1,3 +1,4 @@
+local Device = require("device")
 local Screensaver = require("ui/screensaver")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
@@ -10,6 +11,14 @@ end
 
 local function isReaderProgressEnabled()
     return Screensaver.getReaderProgress ~= nil and hasLastFile()
+end
+
+local function getUntilTapOrKeyPressText()
+    if Device:isTouchDevice() then
+        return _("Until a tap")
+    else
+        return _("Until a key press")
+    end
 end
 
 local function genMenuItem(text, setting, value, enabled_func, separator)
@@ -26,7 +35,8 @@ local function genMenuItem(text, setting, value, enabled_func, separator)
         separator = separator,
     }
 end
-return {
+
+local menu_items = {
     {
         text = _("Wallpaper"),
         sub_item_table = {
@@ -83,8 +93,7 @@ return {
                     genMenuItem(_("1 second"), "screensaver_delay", "1"),
                     genMenuItem(_("3 seconds"), "screensaver_delay", "3"),
                     genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
-                    genMenuItem(_("Until a tap"), "screensaver_delay", "tap"),
-                    genMenuItem(_("Until 'exit sleep screen' gesture"), "screensaver_delay", "gesture"),
+                    genMenuItem(getUntilTapOrKeyPressText(), "screensaver_delay", "tap"),
                 },
             },
             {
@@ -176,3 +185,9 @@ return {
         },
     },
 }
+
+if Device:isTouchDevice() then
+    table.insert(menu_items[1].sub_item_table[8].sub_item_table, genMenuItem(_("Until 'exit sleep screen' gesture"), "screensaver_delay", "gesture"))
+end
+
+return menu_items
