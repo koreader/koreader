@@ -178,7 +178,7 @@ local menu_items = {
     },
 }
 
-if Device:canReboot() or Device:canPowerOff() then
+if Device:canReboot() and Device:canPowerOff() then
     table.insert(menu_items[2].sub_item_table, {
         text = _("Hide reboot/poweroff message"),
         checked_func = function()
