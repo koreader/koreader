@@ -94,7 +94,7 @@ local menu_items = {
                     genMenuItem(_("3 seconds"), "screensaver_delay", "3"),
                     genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
                     genMenuItem(getUntilTapOrKeyPressText(), "screensaver_delay", "tap"),
-                    -- "Until 'exit sleep screen' gesture" is added later to touch devices
+                    Device:isTouchDevice() and genMenuItem(_("Until 'exit sleep screen' gesture"), "screensaver_delay", "gesture") or nil,
                 },
             },
             {
@@ -174,23 +174,20 @@ local menu_items = {
                     genMenuItem(_("Bottom"), "screensaver_message_position", "bottom", nil, true),
                 },
             },
-            {
-                text = _("Hide reboot/poweroff message"),
-                checked_func = function()
-                    return G_reader_settings:isTrue("screensaver_hide_fallback_msg")
-                end,
-                callback = function()
-                    G_reader_settings:toggle("screensaver_hide_fallback_msg")
-                end,
-            },
         },
     },
 }
 
-if Device:isTouchDevice() then
-    table.insert(menu_items[1].sub_item_table[8].sub_item_table,
-        genMenuItem(_("Until 'exit sleep screen' gesture"), "screensaver_delay", "gesture")
-    )
+if Device:canReboot() or Device:canPowerOff() then
+    table.insert(menu_items[2].sub_item_table, {
+        text = _("Hide reboot/poweroff message"),
+        checked_func = function()
+            return G_reader_settings:isTrue("screensaver_hide_fallback_msg")
+        end,
+        callback = function()
+            G_reader_settings:toggle("screensaver_hide_fallback_msg")
+        end,
+    })
 end
 
 return menu_items

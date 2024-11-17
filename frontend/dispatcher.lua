@@ -67,7 +67,7 @@ local settingsList = {
     ----
 
     -- Device
-    exit_screensaver = {category="none", event="ExitScreensaver", title=_("Exit sleep screen"), device=true},
+    exit_screensaver = {category="none", event="ExitScreensaver", title=_("Exit sleep screen"), device=true, condition=Device:isTouchDevice()},
     start_usbms = {category="none", event="RequestUSBMS", title=_("Start USB storage"), device=true, condition=Device:canToggleMassStorage()},
     suspend = {category="none", event="RequestSuspend", title=_("Sleep"), device=true, condition=Device:canSuspend()},
     restart = {category="none", event="Restart", title=_("Restart KOReader"), device=true, condition=Device:canRestart()},
