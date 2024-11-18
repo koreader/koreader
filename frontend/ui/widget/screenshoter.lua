@@ -100,8 +100,8 @@ function Screenshoter:onScreenshot(screenshot_name, caller_callback)
         title = _("Screenshot saved to:") .. "\n\n" .. BD.filepath(screenshot_name) .. "\n",
         modal = true,
         buttons = buttons,
-        tap_close_callback = function(caller_callback)
-            if caller_callback then
+        tap_close_callback = function()
+            if type(caller_callback) == "function" then
                 caller_callback()
             end
             local current_path = self.ui.file_chooser and self.ui.file_chooser.path
