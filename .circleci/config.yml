@@ -38,7 +38,7 @@ jobs:
       CCACHE_MAXSIZE: "128M"
       CLICOLOR_FORCE: "1"
       EMULATE_READER: "1"
-      MAKEFLAGS: "OUTPUT_DIR=build INSTALL_DIR=install"
+      MAKEFLAGS: "PARALLEL_JOBS=3 OUTPUT_DIR=build INSTALL_DIR=install"
     parallelism: 2
     steps:
       # Checkout / fetch. {{{
