@@ -590,7 +590,7 @@ Aliases (shortcuts) to frequently used commands can be placed in:
                     local cur_size = G_reader_settings:readSetting("terminal_font_size")
                     local size_spin = SpinWidget:new{
                         value = cur_size,
-                        value_min = 10,
+                        value_min = 8,
                         value_max = 30,
                         value_hold_step = 2,
                         default_value = 14,
