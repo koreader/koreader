@@ -263,6 +263,19 @@ function KoptInterface:getSemiAutoBBox(doc, pageno)
     end
 end
 
+function KoptInterface:reflowPage(doc, pageno, bbox, background)
+    logger.dbg("reflowing page", pageno, background and "in background" or "in foreground")
+    local kc = self:createContext(doc, pageno, bbox)
+    if background then
+        kc:setPreCache()
+        self.bg_thread = true
+    end
+    local page = doc._document:openPage(pageno)
+    page:reflow(kc, doc.render_mode)
+    page:close()
+    return kc
+end
+
 --[[--
 Get cached koptcontext for a certain page.
 
@@ -277,13 +290,9 @@ function KoptInterface:getCachedContext(doc, pageno)
     local cached = DocCache:check(hash, ContextCacheItem)
     if not cached then
         -- If kctx is not cached, create one and get reflowed bmp in foreground.
-        local kc = self:createContext(doc, pageno, bbox)
-        local page = doc._document:openPage(pageno)
-        logger.dbg("reflowing page", pageno, "in foreground")
-        -- reflow page
         --local secs, usecs = FFIUtil.gettime()
-        page:reflow(kc, doc.render_mode)
-        page:close()
+        local kc = self:reflowPage(doc, pageno, bbox, false)
+        -- reflow page
         --local nsecs, nusecs = FFIUtil.gettime()
         --local dur = nsecs - secs + (nusecs - usecs) / 1000000
         --self:logReflowDuration(pageno, dur)
@@ -472,20 +481,11 @@ function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, hint
         if hinting then
             CanvasContext:enableCPUCores(2)
         end
-
-        local kc = self:createContext(doc, pageno, bbox)
-        local page = doc._document:openPage(pageno)
-        logger.dbg("hinting page", pageno, "in background")
-        -- reflow will return immediately and running in background thread
-        kc:setPreCache()
-        self.bg_thread = true
-        page:reflow(kc, doc.render_mode)
-        page:close()
+        local kc = self:reflowPage(doc, pageno, bbox, true)
         DocCache:insert(hash, ContextCacheItem:new{
             size = self.last_context_size or self.default_context_size,
             kctx = kc,
         })
-
         -- We'll wait until the background thread is done to go back to a single core, as this returns immediately!
         -- c.f., :waitForContext
     end
