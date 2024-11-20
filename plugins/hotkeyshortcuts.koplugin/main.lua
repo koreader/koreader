@@ -6,6 +6,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
+local logger = require("logger")
 local util = require("util")
 local T = FFIUtil.template
 local _ = require("gettext")
@@ -123,11 +124,13 @@ end
 function HotKeyShortcuts:onHotkeyAction(hotkey)
     local hotkey_action_list = self.hotkeyshortcuts[hotkey]
     if hotkey_action_list == nil then
+        logger.dbg("No actions associated with hotkey: ", hotkey)
         return
     else
         local execution_properties = { hotkeyshortcuts = hotkey }
         -- Execute the list of actions associated with the hotkey using Dispatcher
         Dispatcher:execute(hotkey_action_list, execution_properties)
+        logger.dbg("Executing actions for hotkey: ", hotkey, " with events: ", hotkey_action_list)
         return true
     end
 end
