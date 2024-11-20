@@ -1229,7 +1229,7 @@ function ReaderHighlight:onShowHighlightDialog(index)
     local buttons = {
         {
             {
-                text = ("\u{F48E}"), -- Trash can (icon to prevent confusion of Delete/Details buttons)
+                text = "\u{F48E}", -- Trash can (icon to prevent confusion of Delete/Details buttons)
                 callback = function()
                     self:deleteHighlight(index)
                     UIManager:close(self.edit_highlight_dialog)
