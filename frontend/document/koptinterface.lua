@@ -16,6 +16,7 @@ local TileCacheItem = require("document/tilecacheitem")
 local Utf8Proc = require("ffi/utf8proc")
 local logger = require("logger")
 local util = require("util")
+local ffi = require("ffi")
 
 local KoptInterface = {
     ocrengine = "ocrengine",
@@ -263,6 +264,32 @@ function KoptInterface:getSemiAutoBBox(doc, pageno)
     end
 end
 
+-- lazily load libpthread
+local cached_pthread
+local function get_pthread()
+    if cached_pthread then
+        return cached_pthread
+    end
+    local candidates, ok
+    if ffi.os == "Windows" then
+        candidates = {"libwinpthread-1.dll"}
+    elseif FFIUtil.isAndroid() then
+        -- pthread directives are in Bionic library on Android
+        candidates = {"libc.so"}
+    else
+        -- Kobo devices strangely have no libpthread.so in LD_LIBRARY_PATH
+        -- so we hardcode the libpthread.so.0 here just for Kobo.
+        candidates = {"pthread", "libpthread.so.0"}
+    end
+    for _, libname in ipairs(candidates) do
+        ok, cached_pthread = pcall(ffi.load, libname)
+        if ok then
+            require("ffi/pthread_h")
+            return cached_pthread
+        end
+    end
+end
+
 function KoptInterface:reflowPage(doc, pageno, bbox, background)
     logger.dbg("reflowing page", pageno, background and "in background" or "in foreground")
     local kc = self:createContext(doc, pageno, bbox)
@@ -270,9 +297,24 @@ function KoptInterface:reflowPage(doc, pageno, bbox, background)
         kc:setPreCache()
         self.bg_thread = true
     end
+    -- Caculate zoom.
+    kc.zoom = (1.5 * kc.zoom * kc.quality * kc.dev_width) / bbox.x1
+    -- Generate pixmap.
     local page = doc._document:openPage(pageno)
-    page:reflow(kc, doc.render_mode)
+    page:getPagePix(kc, doc.render_mode)
     page:close()
+    -- Reflow.
+    if background then
+        local pthread = get_pthread()
+        local rf_thread = ffi.new("pthread_t[1]")
+        local attr = ffi.new("pthread_attr_t[1]")
+        pthread.pthread_attr_init(attr)
+        pthread.pthread_attr_setdetachstate(attr, pthread.PTHREAD_CREATE_DETACHED)
+        pthread.pthread_create(rf_thread, attr, KOPTContext.k2pdfopt.k2pdfopt_reflow_bmp, ffi.cast("void*", kc))
+        pthread.pthread_attr_destroy(attr)
+    else
+        KOPTContext.k2pdfopt.k2pdfopt_reflow_bmp(kc)
+    end
     return kc
 end
 
