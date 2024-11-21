@@ -1635,15 +1635,11 @@ function util.round_decimal(num, points)
     return math.floor(num * op) / op
 end
 
-function util.isExecutable(file)
-    local attrs = lfs.attributes(file)
-    return attrs and attrs.mode == "file" and os.execute("test -x " .. file) == 0
-end
-
 function util.which(command, path)
     path = path or os.getenv("PATH") or ""
     for p in path:gmatch("([^:]+)") do
-        if util.isExecutable(p .. "/" .. command) then
+        p = p .. "/" .. command
+        if ffiUtil.isExecutable(p) then
             return p
         end
     end
