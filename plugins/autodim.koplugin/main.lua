@@ -22,6 +22,10 @@ local DEFAULT_AUTODIM_DURATION_S = 5
 local DEFAULT_AUTODIM_FRACTION = 20
 local AUTODIM_EVENT_FREQUENCY = 2 -- in Hz; Frequenzy for FrontlightChangedEvent on E-Ink devices
 
+if not Device:hasFrontlight() then
+    return { disabled = true, }
+end
+
 local AutoDim = WidgetContainer:extend{
     name = "autodim",
 }
