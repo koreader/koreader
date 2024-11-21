@@ -1007,104 +1007,26 @@ function ReaderHighlight:onTap(_, ges)
     -- ReaderHighlight:clear can only return true if self.hold_pos was set anyway.
     local cleared = self.hold_pos and self:clear()
     -- We only care about potential taps on existing highlights, not on taps that closed a highlight menu.
-    if not cleared and ges and self.ui.annotation:hasAnnotations() then
-        if self.ui.paging then
-            return self:onTapPageSavedHighlight(ges)
-        else
-            return self:onTapXPointerSavedHighlight(ges)
-        end
-    end
-end
-
-function ReaderHighlight:onTapPageSavedHighlight(ges)
-    local pages = self.view:getCurrentPageList()
-    local pos = self.view:screenToPageTransform(ges.pos)
-    local highlights_tapped = {}
-    for _, page in ipairs(pages) do
-        local items, idx_offset = self:getPageSavedHighlights(page)
-        for i, item in ipairs(items) do
-            local boxes = self.ui.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
-            if boxes then
-                for __, box in ipairs(boxes) do
-                    if inside_box(pos, box) then
-                        logger.dbg("Tap on highlight")
-                        local hl_i = item.parent or (i + idx_offset) -- parent exists in multi-page highlight only
-                        if self.select_mode then
-                            if hl_i == self.highlight_idx then
-                                -- tap on the first fragment: abort select mode, clear highlight
-                                self.select_mode = false
-                                self:deleteHighlight(hl_i)
-                                return true
-                            end
-                        else
-                            table.insert(highlights_tapped, hl_i)
-                            break
-                        end
+    if not cleared and ges and #self.view.highlight.visible_boxes > 0 then
+        local pos = self.view:screenToPageTransform(ges.pos)
+        local highlights_tapped = {}
+        for _, box in ipairs(self.view.highlight.visible_boxes) do
+            if inside_box(pos, box.rect) then
+                if self.select_mode then
+                    if box.index == self.highlight_idx then
+                        -- tap on the first fragment: abort select mode, clear highlight
+                        self.select_mode = false
+                        self:deleteHighlight(box.index)
+                        return true
                     end
+                else
+                    table.insert(highlights_tapped, box.index)
                 end
             end
         end
-    end
-    if #highlights_tapped > 0 then
-        return self:showChooseHighlightDialog(highlights_tapped)
-    end
-end
-
-function ReaderHighlight:onTapXPointerSavedHighlight(ges)
-    -- Getting screen boxes is done for each tap on screen (changing pages,
-    -- showing menu...). We might want to cache these boxes per page (and
-    -- clear that cache when page layout change or highlights are added
-    -- or removed).
-    local pos = self.view:screenToPageTransform(ges.pos)
-    -- NOTE: By now, pos.page is set, but if a highlight spans across multiple pages,
-    --       it's stored under the hash of its *starting* point,
-    --       so we can't just check the current page, hence the giant hashwalk of death...
-    --       We can't even limit the walk to page <= pos.page,
-    --       because pos.page isn't super accurate in continuous mode
-    --       (it's the page number for what's it the topleft corner of the screen,
-    --       i.e., often a bit earlier)...
-    -- Even in page mode, it's safer to use pos and ui.dimen.h
-    -- than pages' xpointers pos, even if ui.dimen.h is a bit
-    -- larger than pages' heights
-    local cur_view_top = self.document:getCurrentPos()
-    local cur_view_bottom
-    if self.view.view_mode == "page" and self.document:getVisiblePageCount() > 1 then
-        cur_view_bottom = cur_view_top + 2 * self.ui.dimen.h
-    else
-        cur_view_bottom = cur_view_top + self.ui.dimen.h
-    end
-    local highlights_tapped = {}
-    for hl_i, item in ipairs(self.ui.annotation.annotations) do
-        if item.drawer then
-            -- document:getScreenBoxesFromPositions() is expensive, so we
-            -- first check this item is on current page
-            local start_pos = self.document:getPosFromXPointer(item.pos0)
-            local end_pos = self.document:getPosFromXPointer(item.pos1)
-            if start_pos <= cur_view_bottom and end_pos >= cur_view_top then
-                local boxes = self.ui.document:getScreenBoxesFromPositions(item.pos0, item.pos1, true) -- get_segments=true
-                if boxes then
-                    for _, box in ipairs(boxes) do
-                        if inside_box(pos, box) then
-                            logger.dbg("Tap on highlight")
-                            if self.select_mode then
-                                if hl_i == self.highlight_idx then
-                                    -- tap on the first fragment: abort select mode, clear highlight
-                                    self.select_mode = false
-                                    self:deleteHighlight(hl_i)
-                                    return true
-                                end
-                            else
-                                table.insert(highlights_tapped, hl_i)
-                                break
-                            end
-                        end
-                    end
-                end
-            end
+        if #highlights_tapped > 0 then
+            return self:showChooseHighlightDialog(highlights_tapped)
         end
-    end
-    if #highlights_tapped > 0 then
-        return self:showChooseHighlightDialog(highlights_tapped)
     end
 end
 
