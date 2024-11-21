@@ -615,6 +615,13 @@ end
 
 function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note_mark)
     local x, y, w, h = rect.x, rect.y, rect.w, rect.h
+    if drawer == "lighten" or drawer == "invert" then
+        local pct = G_reader_settings:readSetting("highlight_height_pct")
+        if pct ~= nil then
+            h = math.floor(h * pct / 100)
+            y = y + math.ceil((rect.h - h) / 2)
+        end
+    end
     if drawer == "lighten" then
         if not color then
             bb:darkenRect(x, y, w, h, self.highlight.lighten_factor)
@@ -674,9 +681,9 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
             end
             if self.highlight.note_mark == "sideline" then
                 if Blitbuffer.isColor8(color) then
-                    bb:paintRect(note_mark_pos_x, y, self.note_mark_line_w, h, color)
+                    bb:paintRect(note_mark_pos_x, y, self.note_mark_line_w, rect.h, color)
                 else
-                    bb:paintRectRGB32(note_mark_pos_x, y, self.note_mark_line_w, h, color)
+                    bb:paintRectRGB32(note_mark_pos_x, y, self.note_mark_line_w, rect.h, color)
                 end
             elseif self.highlight.note_mark == "sidemark" then
                 self.note_mark_sign:paintTo(bb, note_mark_pos_x, y)
