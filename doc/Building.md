@@ -22,7 +22,7 @@ To get and compile the source you must have:
 - `make`: version 4.1 or greater
 - `meson`: version 1.2.0 or greater
 - `nasm`
-- `ninja`: optional, but recommended
+- `ninja`
 - `patch`
 - `perl`: version 5 or greater
 - `pkg-config` or `pkgconf`

@@ -14,13 +14,13 @@ local PathChooser = require("ui/widget/pathchooser")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local ffiutil = require("ffi/util")
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
-local T = ffiutil.template
+local T = ffiUtil.template
 
 local TextEditor = WidgetContainer:extend{
     name = "texteditor",
@@ -60,8 +60,8 @@ function TextEditor:isFileTypeSupported(file)
     return true
 end
 
-function TextEditor:openFile(file)
-    self:checkEditFile(file)
+function TextEditor:openFile(file, caller_callback)
+    self:checkEditFile(file, nil, nil, caller_callback)
 end
 
 function TextEditor:loadSettings()
@@ -72,7 +72,7 @@ function TextEditor:loadSettings()
     -- NOTE: addToHistory assigns a new object
     self.history = self.settings:readSetting("history") or {}
     self.last_view_pos = self.settings:readSetting("last_view_pos") or {}
-    self.last_path = self.settings:readSetting("last_path") or ffiutil.realpath(DataStorage:getDataDir())
+    self.last_path = self.settings:readSetting("last_path") or ffiUtil.realpath(DataStorage:getDataDir())
     self.font_face = self.settings:readSetting("font_face") or self.normal_font
     self.font_size = self.settings:readSetting("font_size") or self.default_font_size
     -- The font settings could be saved in G_reader_setting if we want them
@@ -342,55 +342,54 @@ function TextEditor:addToHistory(file_path)
     self.history = new_history
 end
 
-function TextEditor:newFile()
+function TextEditor:newFile(new_path, caller_callback)
     self:loadSettings()
-    UIManager:show(ConfirmBox:new{
-        text = _([[To start editing a new file, you will have to:
-
-- First choose a folder
-- Then enter a name for the new file
-- And start editing it
-
-Do you want to proceed?]]),
-        ok_text = _("Yes"),
-        cancel_text = _("No"),
-        ok_callback = function()
-            local path_chooser = PathChooser:new{
-                select_file = false,
-                path = self.last_path,
-                onConfirm = function(dir_path)
-                    local file_input
-                    file_input = InputDialog:new{
-                        title =  _("Enter filename"),
-                        input = dir_path == "/" and "/" or dir_path .. "/",
-                        buttons = {{
-                            {
-                                text = _("Cancel"),
-                                id = "close",
-                                callback = function()
-                                    UIManager:close(file_input)
-                                end,
-                            },
-                            {
-                                text = _("Edit"),
-                                callback = function()
-                                    local file_path = file_input:getInputText()
-                                    UIManager:close(file_input)
-                                    -- Remember last_path
-                                    self.last_path = file_path:match("(.*)/")
-                                    if self.last_path == "" then self.last_path = "/" end
-                                    self:checkEditFile(file_path, false, true)
-                                end,
-                            },
-                        }},
-                    }
-                    UIManager:show(file_input)
-                    file_input:onShowKeyboard()
-                end,
-            }
-            UIManager:show(path_chooser)
-        end,
-    })
+    new_path = new_path or (self.last_path == "/" and "/" or self.last_path .. "/")
+    local file_input
+    file_input = InputDialog:new{
+        title =  _("Enter filename"),
+        input = new_path,
+        buttons = {
+            {
+                {
+                    text = _("Choose folder"),
+                    callback = function()
+                        UIManager:close(file_input) -- need to close keyboard
+                        local path_chooser = PathChooser:new{
+                            select_file = false,
+                            path = new_path:match("(.*)/"),
+                            onConfirm = function(dir_path)
+                                self:newFile(dir_path .. "/", caller_callback)
+                            end,
+                        }
+                        UIManager:show(path_chooser)
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(file_input)
+                    end,
+                },
+                {
+                    text = _("Edit"),
+                    callback = function()
+                        local file_path = file_input:getInputText()
+                        UIManager:close(file_input)
+                        -- Remember last_path
+                        self.last_path = file_path:match("(.*)/")
+                        if self.last_path == "" then self.last_path = "/" end
+                        self:checkEditFile(file_path, false, true, caller_callback)
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(file_input)
+    file_input:onShowKeyboard()
 end
 
 function TextEditor:chooseFile()
@@ -408,23 +407,23 @@ function TextEditor:chooseFile()
     UIManager:show(path_chooser)
 end
 
-function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
+function TextEditor:checkEditFile(file_path, from_history, possibly_new_file, caller_callback)
     self:loadSettings()
     local attr = lfs.attributes(file_path)
     if not possibly_new_file and not attr then
         UIManager:show(ConfirmBox:new{
-            text = T(_("This file does not exist anymore:\n\n%1\n\nDo you want to create it and start editing it?"), BD.filepath(file_path)),
+            text = T(_("This file does not exist:\n\n%1\n\nDo you want to create it and start editing it?"), BD.filepath(file_path)),
             ok_text = _("Create"),
             ok_callback = function()
                 -- go again thru there with possibly_new_file=true
-                self:checkEditFile(file_path, from_history, true)
+                self:checkEditFile(file_path, from_history, true, caller_callback)
             end,
         })
         return
     end
     if attr then
         -- File exists: get its real path with symlink and ../ resolved
-        file_path = ffiutil.realpath(file_path)
+        file_path = ffiUtil.realpath(file_path)
         attr = lfs.attributes(file_path)
     end
     if attr then -- File exists
@@ -451,11 +450,11 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
                     BD.filepath(file_path), util.getFriendlySize(attr.size)),
                 ok_text = _("Open"),
                 ok_callback = function()
-                    self:editFile(file_path, readonly)
+                    self:editFile(file_path, readonly, caller_callback)
                 end,
             })
         else
-            self:editFile(file_path, readonly)
+            self:editFile(file_path, readonly, caller_callback)
         end
     else -- File does not exist
         -- Try to create it just to check if writing to it later is possible
@@ -465,7 +464,7 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
             -- without saving in case the user has changed his mind.
             file:close()
             os.remove(file_path)
-            self:editFile(file_path)
+            self:editFile(file_path, nil, caller_callback)
         else
             UIManager:show(InfoMessage:new{
                 text = T(_("This file can not be created:\n\n%1\n\nReason: %2"), BD.filepath(file_path), err)
@@ -475,12 +474,13 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
     end
 end
 
-function TextEditor:saveFileContent(file_path, content)
+function TextEditor:saveFileContent(file_path, content, caller_callback)
     local ok, err = util.writeToFile(content, file_path)
     if ok then
         if self.ui.file_chooser then
             self.ui.file_chooser:refreshPath()
         end
+        self.caller_callback = caller_callback -- will be called in self.input.close_callback
         logger.info("TextEditor: saved file", file_path)
         return true
     end
@@ -498,7 +498,7 @@ function TextEditor:deleteFile(file_path)
     return false, err
 end
 
-function TextEditor:editFile(file_path, readonly)
+function TextEditor:editFile(file_path, readonly, caller_callback)
     self:addToHistory(file_path)
     local directory, filename = util.splitFilePathName(file_path) -- luacheck: no unused
     local filename_without_suffix, filetype = util.splitFileNameSuffix(filename) -- luacheck: no unused
@@ -578,6 +578,9 @@ function TextEditor:editFile(file_path, readonly)
             if self.input.rotation_mode_backup and self.input.rotation_mode_backup ~= Screen:getRotationMode() then
                 Screen:setRotationMode(self.input.rotation_mode_backup)
             end
+            if self.caller_callback then
+                self.caller_callback(file_path)
+            end
             self:execWhenDoneFunc()
         end,
         -- File saving callback
@@ -588,7 +591,7 @@ function TextEditor:editFile(file_path, readonly)
             end
             if content and #content > 0 then
                 if not is_lua then
-                    local ok, err = self:saveFileContent(file_path, content)
+                    local ok, err = self:saveFileContent(file_path, content, caller_callback)
                     if ok then
                         return true, _("File saved")
                     else
@@ -597,7 +600,7 @@ function TextEditor:editFile(file_path, readonly)
                 end
                 local parse_error = util.checkLuaSyntax(content)
                 if not parse_error then
-                    local ok, err = self:saveFileContent(file_path, content)
+                    local ok, err = self:saveFileContent(file_path, content, caller_callback)
                     if ok then
                         return true, _("Lua syntax OK, file saved")
                     else
@@ -615,7 +618,7 @@ Do you really want to save to this file?
 %2]]), parse_error, BD.filepath(file_path)),  _("Do not save"), _("Save anyway"))
                 -- we'll get the safer "Do not save" on tap outside
                 if save_anyway then
-                    local ok, err = self:saveFileContent(file_path, content)
+                    local ok, err = self:saveFileContent(file_path, content, caller_callback)
                     if ok then
                         return true, _("File saved")
                     else
@@ -639,7 +642,7 @@ Do you want to keep this file as empty, or do you prefer to delete it?
                         return false, T(_("Failed deleting file: %1"), err)
                     end
                 else
-                    local ok, err = self:saveFileContent(file_path, content)
+                    local ok, err = self:saveFileContent(file_path, content, caller_callback)
                     if ok then
                         return true, _("File saved")
                     else

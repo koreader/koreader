@@ -56,7 +56,8 @@ local settingsList = {
     history_search = {category="none", event="SearchHistory", title=_("History search"), general=true},
     favorites = {category="none", event="ShowColl", title=_("Favorites"), general=true},
     collections = {category="none", event="ShowCollList", title=_("Collections"), general=true},
-    filemanager = {category="none", event="Home", title=_("File browser"), general=true, separator=true},
+    filemanager = {category="none", event="Home", title=_("File browser"), general=true},
+    notebook_file = {category="none", event="ShowNotebookFile", title=_("Notebook file"), general=true, separator=true},
     ----
     dictionary_lookup = {category="none", event="ShowDictionaryLookup", title=_("Dictionary lookup"), general=true},
     wikipedia_lookup = {category="none", event="ShowWikipediaLookup", title=_("Wikipedia lookup"), general=true, separator=true},
@@ -185,7 +186,7 @@ local settingsList = {
     book_status = {category="none", event="ShowBookStatus", title=_("Book status"), reader=true},
     book_info = {category="none", event="ShowBookInfo", title=_("Book information"), reader=true},
     book_description = {category="none", event="ShowBookDescription", title=_("Book description"), reader=true},
-    book_cover = {category="none", event="ShowBookCover", title=_("Book cover"), reader=true, separator=true},
+    book_cover = {category="none", event="ShowBookCover", title=_("Book cover"), reader=true},
     ----
     translate_page = {category="none", event="TranslateCurrentPage", title=_("Translate current page"), reader=true, separator=true},
     ----
@@ -289,6 +290,7 @@ local dispatcher_menu_order = {
     "favorites",
     "collections",
     "filemanager",
+    "notebook_file",
     ----
     "dictionary_lookup",
     "wikipedia_lookup",

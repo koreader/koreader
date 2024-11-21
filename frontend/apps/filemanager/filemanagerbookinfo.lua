@@ -12,17 +12,18 @@ local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
+local Notification = require("ui/widget/notification")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local Utf8Proc = require("ffi/utf8proc")
+local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
 local Screen = Device.screen
-local T = require("ffi/util").template
+local T = ffiUtil.template
 
 local BookInfo = WidgetContainer:extend{
     title = _("Book information"),
@@ -73,6 +74,15 @@ function BookInfo:show(doc_settings_or_file, book_props)
     -- File section
     local has_sidecar = type(doc_settings_or_file) == "table"
     local file = has_sidecar and doc_settings_or_file:readSetting("doc_path") or doc_settings_or_file
+    self.is_current_doc = self.document and self.document.file == file
+    if not has_sidecar and self.is_current_doc then
+        doc_settings_or_file = self.ui.doc_settings
+        has_sidecar = true
+    end
+    if not has_sidecar and DocSettings:hasSidecarFile(file) then
+        doc_settings_or_file = DocSettings:open(file)
+        has_sidecar = true
+    end
     local folder, filename = util.splitFilePathName(file)
     local __, filetype = filemanagerutil.splitFileNameType(filename)
     local attr = lfs.attributes(file)
@@ -172,7 +182,15 @@ function BookInfo:show(doc_settings_or_file, book_props)
     table.insert(kv_pairs, { _("Rating:"), ("★"):rep(rating) .. ("☆"):rep(self.rating_max - rating),
         hold_callback = summary_hold_callback })
     table.insert(kv_pairs, { _("Review:"), summary.note or _("N/A"),
-        hold_callback = summary_hold_callback })
+        hold_callback = summary_hold_callback, separator = true })
+
+    -- Notebook file
+    local notebook_file = self:getNotebookFile(doc_settings_or_file)
+    local notebook_file_callback = function()
+        self:showNotebookFileDialog(notebook_file, doc_settings_or_file, book_props)
+    end
+    table.insert(kv_pairs, { _("Notebook file:"), notebook_file:gsub(".*/", ""),
+        callback = notebook_file_callback })
 
     local KeyValuePage = require("ui/widget/keyvaluepage")
     self.kvp_widget = KeyValuePage:new{
@@ -296,10 +314,7 @@ function BookInfo:findInProps(book_props, search_string, case_sensitive)
             elseif key == "description" then
                 prop = util.htmlToPlainTextIfHtml(prop)
             end
-            if not case_sensitive then
-                prop = Utf8Proc.lowercase(util.fixUtf8(prop, "?"))
-            end
-            if prop:find(search_string) then
+            if util.stringSearch(prop, search_string, case_sensitive) ~= 0 then
                 return true
             end
         end
@@ -469,7 +484,7 @@ function BookInfo:setCustomMetadata(file, book_props, prop_key, prop_value)
     if prop_key == "title" then -- generate when resetting the customized title and original is empty
         book_props.display_title = book_props.title or filemanagerutil.splitFileNameType(file)
     end
-    if self.document and self.document.file == file then -- currently opened document
+    if self.is_current_doc then
         self.ui.doc_props[prop_key] = prop_value
         if prop_key == "title" then
             self.ui.doc_props.display_title = book_props.display_title
@@ -665,6 +680,159 @@ function BookInfo:editSummary(doc_settings_or_file, book_props)
     UIManager:show(input_dialog)
     input_dialog:onShowKeyboard(true)
 end
+
+-- notebook file
+
+function BookInfo:getNotebookFile(doc_settings_or_file)
+    local notebook_file
+    if type(doc_settings_or_file) == "table" then
+        notebook_file = doc_settings_or_file:readSetting("notebook_file")
+    end
+    if notebook_file == nil then
+        notebook_file = G_reader_settings:readSetting("notebook_file")
+        if notebook_file == nil then
+            if type(doc_settings_or_file) == "table" then
+                notebook_file = doc_settings_or_file:readSetting("doc_path") .. ".txt"
+            elseif type(doc_settings_or_file) == "string" then
+                notebook_file = doc_settings_or_file .. ".txt"
+            else
+                local home_folder = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+                notebook_file = ffiUtil.realpath(home_folder) .. "/notebook.txt"
+            end
+        end
+    end
+    return notebook_file
+end
+
+function BookInfo:showNotebookFileDialog(notebook_file, doc_settings_or_file, book_props)
+    local has_sidecar = type(doc_settings_or_file) == "table"
+    local file = has_sidecar and doc_settings_or_file:readSetting("doc_path") or doc_settings_or_file
+    local function saveNotebookFile(new_notebook_file)
+        if not has_sidecar then
+            doc_settings_or_file = DocSettings:open(doc_settings_or_file)
+        end
+        doc_settings_or_file:saveSetting("notebook_file", new_notebook_file)
+        if not self.is_current_doc then
+            if new_notebook_file or doc_settings_or_file:readSetting("summary") then
+                doc_settings_or_file:flush()
+            else -- remove empty sidecar
+                doc_settings_or_file:purge(nil, { doc_settings = true }) -- keep custom
+                doc_settings_or_file = file -- to reopen bookinfo
+            end
+            self.summary_updated = true -- refresh FM
+        end
+        self.kvp_widget:onClose()
+        self:show(doc_settings_or_file, book_props)
+    end
+
+    local button_dialog
+    local local_notebook_file = file .. ".txt"
+    local default_notebook_file = G_reader_settings:readSetting("notebook_file")
+    local buttons = {
+        {
+            {
+                text = _("Use default"),
+                enabled = default_notebook_file ~= nil and notebook_file ~= default_notebook_file,
+                callback = function()
+                    UIManager:close(button_dialog)
+                    saveNotebookFile(default_notebook_file)
+                end,
+            },
+            {
+                text = _("Reset default"),
+                enabled = default_notebook_file ~= nil,
+                callback = function()
+                    UIManager:close(button_dialog)
+                    G_reader_settings:delSetting("notebook_file")
+                    Notification:notify(_("Notebook file default location reset"), Notification.SOURCE_ALWAYS_SHOW)
+                end,
+            },
+        },
+        {
+            {
+                text = _("Use local"),
+                enabled = notebook_file ~= local_notebook_file,
+                callback = function()
+                    UIManager:close(button_dialog)
+                    saveNotebookFile(local_notebook_file)
+                end,
+            },
+            {
+                text = _("Set as default"),
+                enabled = notebook_file ~= default_notebook_file,
+                callback = function()
+                    UIManager:close(button_dialog)
+                    G_reader_settings:saveSetting("notebook_file", notebook_file)
+                    Notification:notify(_("Notebook file default location saved"), Notification.SOURCE_ALWAYS_SHOW)
+                end,
+            },
+        },
+        {
+            {
+                text = _("Choose"),
+                callback = function()
+                    UIManager:close(button_dialog)
+                    local PathChooser = require("ui/widget/pathchooser")
+                    local path_chooser = PathChooser:new{
+                        path = notebook_file:match("(.*)/"),
+                        select_directory = false,
+                        onConfirm = saveNotebookFile,
+                    }
+                    UIManager:show(path_chooser)
+                end,
+            },
+            {
+                text = _("Create"),
+                enabled = self.ui.texteditor ~= nil,
+                callback = function()
+                    UIManager:close(button_dialog)
+                    self.ui.texteditor:newFile(notebook_file, saveNotebookFile)
+                end,
+            },
+        },
+        {}, -- separator
+        {
+            {
+                text = _("View"),
+                enabled = lfs.attributes(notebook_file, "mode") == "file",
+                callback = function()
+                    UIManager:close(button_dialog)
+                    TextViewer.openFile(notebook_file)
+                end,
+            },
+            {
+                text = _("Edit"),
+                enabled = self.ui.texteditor ~= nil,
+                callback = function()
+                    UIManager:close(button_dialog)
+                    self.ui.texteditor:openFile(notebook_file, saveNotebookFile)
+                end,
+            },
+        },
+    }
+    button_dialog = ButtonDialog:new{
+        title = notebook_file,
+        title_align = "center",
+        buttons = buttons,
+    }
+    UIManager:show(button_dialog)
+end
+
+function BookInfo:onShowNotebookFile()
+    local notebook_file = self:getNotebookFile(self.ui.doc_settings)
+    if self.ui.texteditor then
+        local function saveNotebookFile(new_notebook_file)
+            if self.ui.doc_settings ~= nil then
+                self.ui.doc_settings:saveSetting("notebook_file", new_notebook_file)
+            end
+        end
+        self.ui.texteditor:openFile(notebook_file, saveNotebookFile)
+    elseif lfs.attributes(notebook_file, "mode") == "file" then
+        TextViewer.openFile(notebook_file)
+    end
+end
+
+-- book metadata (sdr)
 
 function BookInfo:moveBookMetadata()
     -- called by filemanagermenu only
