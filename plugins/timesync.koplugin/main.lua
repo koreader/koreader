@@ -9,21 +9,28 @@ if C.getuid() ~= 0 then
     return { disabled = true, }
 end
 
-local ntp_cmd
--- Check if we have access to ntpd or ntpdate
-if os.execute("command -v ntpd >/dev/null") == 0 then
-    -- Make sure it's actually busybox's implementation, as the syntax may otherwise differ...
-    -- (Of particular note, Kobo ships busybox ntpd, but not ntpdate; and Kindle ships ntpdate and !busybox ntpd).
+local function which(command)
     local path = os.getenv("PATH") or ""
     for p in path:gmatch("([^:]+)") do
-        local sym = lfs.symlinkattributes(p .. "/ntpd")
-        if sym and sym.mode == "link" and string.sub(sym.target, -7) == "busybox" then
-            ntp_cmd = "ntpd -q -n -p pool.ntp.org"
-            break
+        p = p .. "/" .. command
+        if lfs.attributes(p) and os.execute("test -x " .. p) == 0 then
+            return p
         end
     end
 end
-if not ntp_cmd and os.execute("command -v ntpdate >/dev/null") == 0 then
+
+local ntp_cmd
+-- Check if we have access to ntpd or ntpdate
+local ntpd = which('ntpd')
+if ntpd then
+    -- Make sure it's actually busybox's implementation, as the syntax may otherwise differ...
+    -- (Of particular note, Kobo ships busybox ntpd, but not ntpdate; and Kindle ships ntpdate and !busybox ntpd).
+    local sym = lfs.symlinkattributes(ntpd)
+    if sym and sym.mode == "link" and string.sub(sym.target, -7) == "busybox" then
+        ntp_cmd = "ntpd -q -n -p pool.ntp.org"
+    end
+end
+if not ntp_cmd and which('ntpdate') then
     ntp_cmd = "ntpdate pool.ntp.org"
 end
 if not ntp_cmd then
