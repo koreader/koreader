@@ -77,7 +77,7 @@ jobs:
           # Remove some installed packages to prevent brew
           # from attempting (and failing) to upgrade them.
           brew uninstall gradle maven
-          brew install --formula --quiet "${packages[@]}"
+          brew install --formula --overwrite --quiet "${packages[@]}"
 
       - name: Update PATH
         run: >
