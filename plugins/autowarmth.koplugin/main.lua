@@ -31,6 +31,10 @@ local T = FFIUtil.template
 local Screen = require("device").screen
 local datetime = require("datetime")
 
+if not Device:hasFrontlight() then
+    return { disabled = true, }
+end
+
 local activate_sun = 1
 local activate_schedule = 2
 local activate_closer_noon = 3
