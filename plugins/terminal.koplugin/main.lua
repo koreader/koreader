@@ -111,7 +111,6 @@ function Terminal:getDefaultShellExecutable()
         "hush",
         "ksh",
         "mksh",
-        "/bin/sh", -- explicit path required for older Kindles
     }
     local env_shell = os.getenv("SHELL")
     if env_shell then
