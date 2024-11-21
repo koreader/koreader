@@ -3,14 +3,10 @@ Plugin for setting screen warmth based on the sun position and/or a time schedul
 
 @module koplugin.autowarmth
 --]]--
-local Device = require("device")
-
-if not Device:hasFrontlight() then
-    return { disabled = true, }
-end
 
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
+local Device = require("device")
 local DateTimeWidget = require("ui/widget/datetimewidget")
 local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
 local DeviceListener = require("device/devicelistener")
