@@ -4,10 +4,6 @@ if not (Device:isKindle() and Device:hasLightSensor()) then
     return { disabled = true, }
 end
 
-if not Device:hasFrontlight() then
-    return { disabled = true, }
-end
-
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
