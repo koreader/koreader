@@ -80,7 +80,8 @@ local bit = require("bit")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local C_ = _.pgettext
-local T = require("ffi/util").template
+local ffiUtil = require("ffi/util")
+local T = ffiUtil.template
 
 local CHUNK_SIZE = 80 * 40 -- max. nb of read bytes (reduce this, if taps are not detected)
 
@@ -95,7 +96,7 @@ local Terminal = WidgetContainer:extend{
 
 function Terminal:isExecutable(file)
     -- check if file is an executable or a command in PATH
-    return util.isExecutable(file) or util.which(file)
+    return ffiUtil.isExecutable(file) or util.which(file)
 end
 
 -- Try SHELL environment variable and some standard shells
