@@ -13,14 +13,6 @@ local function isReaderProgressEnabled()
     return Screensaver.getReaderProgress ~= nil and hasLastFile()
 end
 
-local function getUntilTapOrKeyPressText()
-    if Device:isTouchDevice() then
-        return _("Until a tap")
-    else
-        return _("Until a key press")
-    end
-end
-
 local function genMenuItem(text, setting, value, enabled_func, separator)
     return {
         text = text,
@@ -93,7 +85,7 @@ local menu_items = {
                     genMenuItem(_("1 second"), "screensaver_delay", "1"),
                     genMenuItem(_("3 seconds"), "screensaver_delay", "3"),
                     genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
-                    genMenuItem(getUntilTapOrKeyPressText(), "screensaver_delay", "tap"),
+                    genMenuItem(Device:isTouchDevice() and _("Until a tap") or _("Until a key press"), "screensaver_delay", "tap"),
                     Device:isTouchDevice() and genMenuItem(_("Until 'exit sleep screen' gesture"), "screensaver_delay", "gesture") or nil,
                 },
             },
@@ -174,20 +166,17 @@ local menu_items = {
                     genMenuItem(_("Bottom"), "screensaver_message_position", "bottom", nil, true),
                 },
             },
+            (Device:canReboot() and Device:canPowerOff()) and {
+                text = _("Hide reboot/poweroff message"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("screensaver_hide_fallback_msg")
+                end,
+                callback = function()
+                    G_reader_settings:toggle("screensaver_hide_fallback_msg")
+                end,
+            } or nil,
         },
     },
 }
-
-if Device:canReboot() and Device:canPowerOff() then
-    table.insert(menu_items[2].sub_item_table, {
-        text = _("Hide reboot/poweroff message"),
-        checked_func = function()
-            return G_reader_settings:isTrue("screensaver_hide_fallback_msg")
-        end,
-        callback = function()
-            G_reader_settings:toggle("screensaver_hide_fallback_msg")
-        end,
-    })
-end
 
 return menu_items
