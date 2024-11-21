@@ -6,6 +6,7 @@ This plugin provides a terminal emulator (VT52 (+some ANSI and some VT100))
 
 local Device = require("device")
 local logger = require("logger")
+local util = require("util")
 local ffi = require("ffi")
 local C = ffi.C
 require("ffi/posix_h")
@@ -94,7 +95,7 @@ local Terminal = WidgetContainer:extend{
 
 function Terminal:isExecutable(file)
     -- check if file is an executable or a command in PATH
-    return os.execute(string.format("test -x %s || command -v %s", file, file)) == 0
+    return util.isExecutable(file) or util.which(file)
 end
 
 -- Try SHELL environment variable and some standard shells
