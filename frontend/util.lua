@@ -1635,6 +1635,7 @@ function util.round_decimal(num, points)
     return math.floor(num * op) / op
 end
 
+-- Check if a certain command is executable (e.g. ntpd or ntp for Time Sync plugin)
 function util.which(command)
     local path = os.getenv("PATH") or ""
     for p in path:gmatch("([^:]+)") do
