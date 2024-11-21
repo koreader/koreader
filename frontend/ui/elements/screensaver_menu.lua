@@ -83,7 +83,7 @@ return {
                     genMenuItem(_("1 second"), "screensaver_delay", "1"),
                     genMenuItem(_("3 seconds"), "screensaver_delay", "3"),
                     genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
-                    genMenuItem(_("Until a tap"), "screensaver_delay", "tap"),
+                    genMenuItem(not require("device"):isTouchDevice() and _("Until a button press") or _("Until a tap"), "screensaver_delay", "tap"),
                     genMenuItem(_("Until 'exit sleep screen' gesture"), "screensaver_delay", "gesture"),
                 },
             },
