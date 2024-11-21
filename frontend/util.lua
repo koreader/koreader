@@ -1635,12 +1635,15 @@ function util.round_decimal(num, points)
     return math.floor(num * op) / op
 end
 
--- Check if a certain command is executable (e.g. ntpd or ntp for Time Sync plugin)
-function util.which(command)
-    local path = os.getenv("PATH") or ""
+function util.isExecutable(file)
+    local attrs = lfs.attributes(file)
+    return attrs and attrs.mode == "file" and os.execute("test -x " .. file) == 0
+end
+
+function util.which(command, path)
+    path = path or os.getenv("PATH") or ""
     for p in path:gmatch("([^:]+)") do
-        p = p .. "/" .. command
-        if lfs.attributes(p) and os.execute("test -x " .. p) == 0 then
+        if util.isExecutable(p .. "/" .. command) then
             return p
         end
     end
