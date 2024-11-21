@@ -15,10 +15,10 @@ local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local JSON = require("json")
 local Screen = require("device").screen
-local ffiutil  = require("ffi/util")
+local ffiUtil  = require("ffi/util")
 local logger = require("logger")
 local util = require("util")
-local T = ffiutil.template
+local T = ffiUtil.template
 local _ = require("gettext")
 
 -- From https://cloud.google.com/translate/docs/languages
@@ -225,7 +225,7 @@ end
 function Translator:genSettingsMenu()
     local function genLanguagesItems(setting_name, default_checked_item)
         local items_table = {}
-        for lang_key, lang_name in ffiutil.orderedPairs(SUPPORTED_LANGUAGES) do
+        for lang_key, lang_name in ffiUtil.orderedPairs(SUPPORTED_LANGUAGES) do
             table.insert(items_table, {
                 text_func = function()
                     return T("%1 (%2)", lang_name, lang_key)
@@ -628,7 +628,7 @@ function Translator:_showTranslation(text, detailed_view, source_lang, target_la
                             UIManager:close(ui.highlight.highlight_dialog)
                             ui.highlight.highlight_dialog = nil
                             if index then
-                                ui.highlight:editHighlight(index, false, text_main)
+                                ui.highlight:editNote(index, false, text_main)
                             else
                                 ui.highlight:addNote(text_main)
                             end
@@ -641,7 +641,7 @@ function Translator:_showTranslation(text, detailed_view, source_lang, target_la
                             UIManager:close(ui.highlight.highlight_dialog)
                             ui.highlight.highlight_dialog = nil
                             if index then
-                                ui.highlight:editHighlight(index, false, text_all)
+                                ui.highlight:editNote(index, false, text_all)
                             else
                                 ui.highlight:addNote(text_all)
                             end
