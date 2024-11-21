@@ -12,7 +12,7 @@ end
 
 local ntp_cmd
 -- Check if we have access to ntpd or ntpdate
-local ntpd = util.which('ntpd')
+local ntpd = util.which("ntpd")
 if ntpd then
     -- Make sure it's actually busybox's implementation, as the syntax may otherwise differ...
     -- (Of particular note, Kobo ships busybox ntpd, but not ntpdate; and Kindle ships ntpdate and !busybox ntpd).
@@ -21,7 +21,7 @@ if ntpd then
         ntp_cmd = "ntpd -q -n -p pool.ntp.org"
     end
 end
-if not ntp_cmd and util.which('ntpdate') then
+if not ntp_cmd and util.which("ntpdate") then
     ntp_cmd = "ntpdate pool.ntp.org"
 end
 if not ntp_cmd then
