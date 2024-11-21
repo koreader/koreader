@@ -5,6 +5,11 @@ Plugin for automatic dimming of the frontlight after an idle period.
 --]]--
 
 local Device = require("device")
+
+if not Device:hasFrontlight() then
+    return { disabled = true, }
+end
+
 local FFIUtil = require("ffi/util")
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
@@ -21,10 +26,6 @@ local DEFAULT_AUTODIM_STARTTIME_M = 5
 local DEFAULT_AUTODIM_DURATION_S = 5
 local DEFAULT_AUTODIM_FRACTION = 20
 local AUTODIM_EVENT_FREQUENCY = 2 -- in Hz; Frequenzy for FrontlightChangedEvent on E-Ink devices
-
-if not Device:hasFrontlight() then
-    return { disabled = true, }
-end
 
 local AutoDim = WidgetContainer:extend{
     name = "autodim",
