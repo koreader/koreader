@@ -133,7 +133,7 @@ function WpaSupplicant:authenticateNetwork(network)
         local connected, state = wcli:getConnectedNetwork()
         if connected then
             network.wpa_supplicant_id = connected.id
-            network.ssid = connected.ssid
+            network.ssid = decodeSSID(connected.ssid)
             success = true
             break
         else
