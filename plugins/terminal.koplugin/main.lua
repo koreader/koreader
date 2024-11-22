@@ -77,10 +77,11 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local TermInputText = require("terminputtext")
 local TextWidget = require("ui/widget/textwidget")
 local bit = require("bit")
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local C_ = _.pgettext
-local ffiUtil = require("ffi/util")
+
 local T = ffiUtil.template
 
 local CHUNK_SIZE = 80 * 40 -- max. nb of read bytes (reduce this, if taps are not detected)
@@ -96,7 +97,7 @@ local Terminal = WidgetContainer:extend{
 
 function Terminal:isExecutable(file)
     -- check if file is an executable or a command in PATH
-    return ffiUtil.isExecutable(file) or util.which(file)
+    return ffiUtil.isExecutable(file) or util.which(file) ~= nil
 end
 
 -- Try SHELL environment variable and some standard shells
