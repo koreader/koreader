@@ -28,7 +28,7 @@ local function genMenuItem(text, setting, value, enabled_func, separator)
     }
 end
 
-local menu_items = {
+return {
     {
         text = _("Wallpaper"),
         sub_item_table = {
@@ -178,5 +178,3 @@ local menu_items = {
         },
     },
 }
-
-return menu_items
