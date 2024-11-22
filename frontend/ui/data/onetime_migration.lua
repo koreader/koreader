@@ -751,7 +751,7 @@ end
 
 -- 20241117, Switch "Until 'exit sleep screen' gesture" to "Until a key press" for non-touch devices
 -- https://github.com/koreader/koreader/pull/12747
-if last_migration_date < 20241117 then
+if last_migration_date < 20241122 then
     logger.info("Performing one-time migration for 20241117")
 
     local Device = require("device")

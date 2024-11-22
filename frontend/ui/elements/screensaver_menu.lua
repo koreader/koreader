@@ -38,7 +38,6 @@ return {
             genMenuItem(_("Show reading progress on sleep screen"), "screensaver_type", "readingprogress", isReaderProgressEnabled),
             genMenuItem(_("Show book status on sleep screen"), "screensaver_type", "bookstatus", hasLastFile),
             genMenuItem(_("Leave screen as-is"), "screensaver_type", "disable", nil, true),
-            separator = true,
             {
                 text = _("Border fill, rotation, and fit"),
                 enabled_func = function()
