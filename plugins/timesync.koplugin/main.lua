@@ -1,10 +1,10 @@
-local Device = require("device")
-local lfs = require("libs/libkoreader-lfs")
-
-local ffi = require("ffi")
 local C = ffi.C
-require("ffi/posix_h")
+local Device = require("device")
+local ffi = require("ffi")
+local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
+require("ffi/posix_h")
+
 -- We need to be root to be able to set the time (CAP_SYS_TIME)
 if C.getuid() ~= 0 then
     return { disabled = true, }
