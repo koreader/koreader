@@ -368,13 +368,8 @@ function FileManagerCollection:updateCollListItemTable(do_init, item_number)
             end
         end
     elseif self.from_collection_name ~= nil then
-        for i, item in ipairs(item_table) do
-            if item.name == self.from_collection_name then
-                itemmatch = { text = self.from_collection_name }
-                self.coll_list.path = true -- draw focus
-                break
-            end
-        end
+        itemmatch = { text = self.from_collection_name }
+        self.coll_list.path = true -- draw focus
         self.from_collection_name = nil
     end
     self.coll_list:switchItemTable(title, item_table, item_number or -1, itemmatch, subtitle)
