@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
+local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DocSettings = require("docsettings")
@@ -9,6 +10,7 @@ local Menu = require("ui/widget/menu")
 local ReadCollection = require("readcollection")
 local SortWidget = require("ui/widget/sortwidget")
 local UIManager = require("ui/uimanager")
+local Utf8Proc = require("ffi/utf8proc")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local _ = require("gettext")
@@ -70,6 +72,7 @@ function FileManagerCollection:onShowColl(collection_name)
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showCollDialog() end,
         onReturn = function()
+            self.from_collection_name = collection_name
             self.coll_menu.close_callback()
             self:onShowCollList()
         end,
@@ -353,7 +356,7 @@ function FileManagerCollection:updateCollListItemTable(do_init, item_number)
         item_table = self.coll_list.item_table
     end
     local title = T(_("Collections (%1)"), #item_table)
-    local subtitle
+    local itemmatch, subtitle
     if self.selected_collections then
         local selected_nb = util.tableSize(self.selected_collections)
         subtitle = self.selected_collections and T(_("Selected: %1"), selected_nb)
@@ -365,8 +368,17 @@ function FileManagerCollection:updateCollListItemTable(do_init, item_number)
                 end
             end
         end
+    elseif self.from_collection_name ~= nil then
+        for i, item in ipairs(item_table) do
+            if item.name == self.from_collection_name then
+                itemmatch = { text = self.from_collection_name }
+                self.coll_list.path = true -- draw focus
+                break
+            end
+        end
+        self.from_collection_name = nil
     end
-    self.coll_list:switchItemTable(title, item_table, item_number or -1, nil, subtitle)
+    self.coll_list:switchItemTable(title, item_table, item_number or -1, itemmatch, subtitle)
 end
 
 function FileManagerCollection:onCollListChoice(item)
@@ -484,6 +496,16 @@ function FileManagerCollection:showCollListDialog(caller_callback, no_dialog)
                     end,
                 },
             },
+            {},
+            {
+                {
+                    text = _("Collections search"),
+                    callback = function()
+                        UIManager:close(button_dialog)
+                        self:onShowCollectionsSearchDialog()
+                    end,
+                },
+            },
         }
     end
     button_dialog = ButtonDialog:new{
@@ -582,6 +604,120 @@ function FileManagerCollection:sortCollections()
         end,
     }
     UIManager:show(sort_widget)
+end
+
+function FileManagerCollection:onShowCollectionsSearchDialog(search_str)
+    local search_dialog, check_button_case
+    search_dialog = InputDialog:new{
+        title = _("Enter text to search for"),
+        input = search_str or self.search_str,
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(search_dialog)
+                    end,
+                },
+                {
+                    text = _("Search"),
+                    callback = function()
+                        local str = search_dialog:getInputText()
+                        UIManager:close(search_dialog)
+                        if str ~= "" then
+                            self.search_str = str
+                            self.case_sensitive = check_button_case.checked
+                            local Trapper = require("ui/trapper")
+                            Trapper:wrap(function()
+                                self:searchCollections()
+                            end)
+                        end
+                    end,
+                },
+            },
+        },
+    }
+    check_button_case = CheckButton:new{
+        text = _("Case sensitive"),
+        checked = self.case_sensitive,
+        parent = search_dialog,
+    }
+    search_dialog:addWidget(check_button_case)
+    UIManager:show(search_dialog)
+    search_dialog:onShowKeyboard()
+    return true
+end
+
+function FileManagerCollection:searchCollections()
+    local function isFileMatch(file)
+        if self.search_str == "*" then
+            return true
+        end
+        if util.stringSearch(file:gsub(".*/", ""), self.search_str, self.case_sensitive) ~= 0 then
+            return true
+        end
+        local book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file) or
+                           self.ui.bookinfo.getDocProps(file, nil, true) -- do not open the document
+        if next(book_props) ~= nil and self.ui.bookinfo:findInProps(book_props, self.search_str, self.case_sensitive) then
+            return true
+        end
+    end
+
+    local Trapper = require("ui/trapper")
+    local info = InfoMessage:new{ text = _("Searching… (tap to cancel)") }
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    local completed, files_found, files_found_order = Trapper:dismissableRunInSubprocess(function()
+        local _files_found, _files_found_order = {}, {}
+        for coll_name, coll in pairs(ReadCollection.coll) do
+            local coll_order = ReadCollection.coll_order[coll_name]
+            for _, item in pairs(coll) do
+                if isFileMatch(item.file) then
+                    local order_idx = _files_found[item.file]
+                    if order_idx == nil then -- new
+                        table.insert(_files_found_order, {
+                            file = item.file,
+                            coll_order = coll_order,
+                            item_order = item.order,
+                        })
+                        _files_found[item.file] = #_files_found_order -- order_idx
+                    else -- previously found, update orders
+                        if _files_found_order[order_idx].coll_order > coll_order then
+                            _files_found_order[order_idx].coll_order = coll_order
+                            _files_found_order[order_idx].item_order = item.order
+                        end
+                    end
+                end
+            end
+        end
+        return _files_found, _files_found_order
+    end, info)
+    if not completed then return end
+    UIManager:close(info)
+
+    if #files_found_order == 0 then
+        UIManager:show(InfoMessage:new{
+            text = T(_("No results for: %1"), self.search_str),
+        })
+    else
+        table.sort(files_found_order, function(a, b)
+            if a.coll_order ~= b.coll_order then
+                return a.coll_order < b.coll_order
+            end
+            return a.item_order < b.item_order
+        end)
+        local coll_name = T(_("Search results: %1"), self.search_str)
+        ReadCollection:removeCollection(coll_name, true)
+        ReadCollection:addCollection(coll_name, true)
+        ReadCollection:addItemsMultiple(files_found, { [coll_name] = true }, true)
+        ReadCollection:updateCollectionOrder(coll_name, files_found_order)
+        if self.coll_list ~= nil then
+            UIManager:close(self.coll_list)
+            self.coll_list = nil
+        end
+        self:onShowColl(coll_name)
+    end
 end
 
 -- external
