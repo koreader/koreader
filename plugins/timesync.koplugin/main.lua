@@ -1,6 +1,6 @@
-local C = ffi.C
 local Device = require("device")
 local ffi = require("ffi")
+local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 require("ffi/posix_h")
