@@ -294,7 +294,7 @@ function HotKeyShortcuts:genSubItemTable(hotkeyshortcuts)
     return sub_item_table
 end
 
-local function HotKeyShortcuts:attachNewTableToExistingTable(original_table, second_table)
+local function attachNewTableToExistingTable(original_table, second_table)
     for _, v in ipairs(second_table) do
         table.insert(original_table, v)
     end
