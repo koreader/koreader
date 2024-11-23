@@ -17,15 +17,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: ['arm64', 'x86_64']
+        include:
+          - image: '13'
+            platform: 'x86-64'
+            xcode_version: '15.2'
+            deployment_target: '10.15'
+          - image: '14'
+            platform: 'ARM64'
+            xcode_version: '15.4'
+            deployment_target: '11.0'
 
-    runs-on: ${{ matrix.platform == 'arm64' && 'macos-14' || 'macos-13' }}
+    name: "macOS ${{ matrix.image }} ${{ matrix.platform }} 🔨${{ matrix.xcode_version }} 🎯${{ matrix.deployment_target }}"
+
+    runs-on: "macos-${{ matrix.image }}"
 
     env:
-      # Bump number to reset all caches.
-      CACHE_EPOCH: '1'
+      # Bump first number to reset all caches.
+      CACHE_KEY: "1-macOS-${{ matrix.image }}-${{ matrix.platform }}-XC${{ matrix.xcode_version }}-DT${{ matrix.deployment_target }}"
       CLICOLOR_FORCE: '1'
-      MACOSX_DEPLOYMENT_TARGET: ${{ matrix.platform == 'arm64' && '11.0' || '10.15' }}
+      MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
       MAKEFLAGS: 'OUTPUT_DIR=build INSTALL_DIR=install TARGET=macos'
 
     steps:
@@ -34,9 +44,7 @@ jobs:
 
       - name: XCode version
         run: |
-          # NOTE: don't forget to bump `CACHE_EPOCH`
-          # above when changing the XCode version.
-          sudo xcode-select -s /Applications/Xcode_15.2.app
+          sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode_version }}.app
           xcodebuild -version
           xcode-select -p
 
@@ -114,7 +122,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: build
-          key: ${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ runner.arch }}-build-${{ hashFiles('cache-key') }}
+          key: ${{ env.CACHE_KEY }}-build-${{ hashFiles('cache-key') }}
 
       - name: Restore build cache
         id: ccache-restore
@@ -122,8 +130,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: /Users/runner/Library/Caches/ccache
-          key: ${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ runner.arch }}-ccache-${{ hashFiles('cache-key') }}
-          restore-keys: ${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ runner.arch }}-ccache-
+          key: ${{ env.CACHE_KEY }}-ccache-${{ hashFiles('cache-key') }}
+          restore-keys: ${{ env.CACHE_KEY }}-ccache-
 
       - name: Install ccache
         if: steps.build-restore.outputs.cache-hit != 'true'
