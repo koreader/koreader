@@ -115,7 +115,6 @@ function HotKeyShortcuts:init()
     self:registerKeyEvents()
 end
 
-
 --[[
     Handles the action triggered by a hotkey press.
     @param hotkey (string) The identifier for the hotkey that was pressed.
@@ -123,14 +122,15 @@ end
 ]]
 function HotKeyShortcuts:onHotkeyAction(hotkey)
     local hotkey_action_list = self.hotkeyshortcuts[hotkey]
+    local context = self.is_docless and "FileManager" or "Reader"
     if hotkey_action_list == nil then
-        logger.dbg("No actions associated with hotkey: ", hotkey)
+        logger.dbg("No actions associated with hotkey: ", hotkey, " in ", context)
         return
     else
         local execution_properties = { hotkeyshortcuts = hotkey }
-        -- Execute the list of actions associated with the hotkey using Dispatcher
+        logger.dbg("Executing actions for hotkey: ", hotkey, " in ", context, " with events: ", hotkey_action_list)
+        -- Execute the list of actions associated with the hotkey (using Dispatcher)
         Dispatcher:execute(hotkey_action_list, execution_properties)
-        logger.dbg("Executing actions for hotkey: ", hotkey, " with events: ", hotkey_action_list)
         return true
     end
 end
@@ -152,7 +152,7 @@ end
 ]]
 function HotKeyShortcuts:registerKeyEvents()
     self.key_events = {}
-    self:overrideConflictingFunctions()
+    self:overrideConflictingKeyEvents()
     local cursor_keys = { "Up", "Down", "Left", "Right" }
     local page_turn_keys = { "LPgBack", "LPgFwd", "RPgBack", "RPgFwd" }
     local function_keys = { "Back", "Home", "Press", "Menu" }
@@ -206,6 +206,12 @@ function HotKeyShortcuts:registerKeyEvents()
         end
         addKeyEvents(second_modifier, remaining_keys, "HotkeyAction", "alt_plus_")
     end -- if hasKeyboard()
+
+    if next(self.key_events) == nil then
+        logger.warn("No hotkey events registered.")
+    else
+        logger.dbg("Hotkey events registered successfully.")
+    end
 end -- registerKeyEvents()
 
 HotKeyShortcuts.onPhysicalKeyboardConnected = HotKeyShortcuts.registerKeyEvents
@@ -247,7 +253,7 @@ function HotKeyShortcuts:genMenu(hotkey)
         end,
     })
     Dispatcher:addSubMenu(self, sub_items, self.hotkeyshortcuts, hotkey)
-    -- Since we are already handling potential conflicts via overrideConflictingFunctions(), both "No action" and "Nothing",
+    -- Since we are already handling potential conflicts via overrideConflictingKeyEvents(), both "No action" and "Nothing",
     -- introduced through Dispatcher:addSubMenu(), are effectively the same (from a user point of view); thus, we can do away
     -- with "Nothing".
     table.remove(sub_items, 3) -- removes the 'Nothing' option as it is redundant.
@@ -406,46 +412,45 @@ end
 
 --[[
     Description:
-    This function overrides existing `registerKeyEvents()` functions in various modules to resolve conflicts and customize key event handling.
-    It modifies the key event registration for several reader and file manager modules based on device capabilities and user settings.
+    This function overrides existing `registerKeyEvents()` functions in various modules to resolve conflicts and customize key event handling
+    It resets the key events for each component and assigns new key events based on the device and settings.
 
-    Modules and their modifications:
-    - ReaderBookmark: Overrides `registerKeyEvents()` with an empty function.
-    - ReaderConfig: Soft-override that keeps `ShowConfigMenu` key event based on user settings.
-    - ReaderDictionary: Overrides `registerKeyEvents()` with an empty function.
-    - ReaderLink: Soft-override that keeps `GotoSelectedPageLink` key event for devices with screenkb or symbol key.
-    - ReaderSearch: Soft-override that keeps `ShowFulltextSearchInputBlank` key event for devices with a keyboard.
-    - ReaderToc: Overrides `registerKeyEvents()` with an empty function.
-    - ReaderThumbnail: Overrides `registerKeyEvents()` with an empty function.
-    - ReaderWikipedia: Overrides `registerKeyEvents()` with an empty function.
-    - ReaderUI: Soft-override that keeps `Home` and `KeyContentSelection` key events based on device capabilities.
-    - FileManager: Soft-override that keeps `Home` and `Back` key events, and conditionally removes `Close` key event.
-    - FileSearcher: Soft-override that keeps `ShowFileSearchBlank` key event for devices with keyboards.
-    - FileManagerMenu: Soft-override that keeps `ShowMenu` key event for devices with keys.
+    Details:
+    - Resets and overrides key events for the following modules:
+        - ReaderBookmark
+        - ReaderConfig
+        - ReaderLink
+        - ReaderSearch
+        - ReaderToc
+        - ReaderThumbnail
+        - ReaderUI
+        - ReaderDictionary
+        - ReaderWikipedia
+        - FileSearcher
+        - FileManagerMenu (if in docless mode)
+    - Logs debug messages indicating which key events have been overridden.
 ]]
-function HotKeyShortcuts:overrideConflictingFunctions()
-    local ReaderBookmark = require("apps/reader/modules/readerbookmark")
-    ReaderBookmark.registerKeyEvents = function(readerbookmark) end
+function HotKeyShortcuts:overrideConflictingKeyEvents()
+    if not self.is_docless then
+        self.ui.bookmark.key_events = {} -- reset it.
+        logger.dbg("Hotkey ReaderBookmark:registerKeyEvents() overridden.")
 
-    local ReaderConfig = require("apps/reader/modules/readerconfig")
-    ReaderConfig.registerKeyEvents = function(readerconfig)
-        if Device:hasKeys() then
+        if Device:hasScreenKB() or Device:hasSymKey() then
+            local readerconfig = self.ui.config
+            readerconfig.key_events = {} -- reset it, then add our own
             if self.settings_data.data["press_key_does_hotkeyshortcuts"] then
-                readerconfig.key_events.ShowConfigMenu = { { "AA" } }
+                readerconfig.key_events.ShowConfigMenu = { { "AA" }, event = "ShowConfigMenu" }
             else
-                readerconfig.key_events.ShowConfigMenu = { { { "Press", "AA" } } }
+                readerconfig.key_events.ShowConfigMenu = { { { "Press", "AA" } }, event = "ShowConfigMenu" }
             end
+            logger.dbg("Hotkey ReaderConfig:registerKeyEvents() overridden.")
         end
-    end
 
-    local ReaderDictionary= require("apps/reader/modules/readerdictionary")
-    ReaderDictionary.registerKeyEvents = function(readerdictionary) end
-
-    local ReaderLink = require("apps/reader/modules/readerlink")
-    ReaderLink.registerKeyEvents = function(readerlink)
+        local readerlink = self.ui.link
+        readerlink.key_events = {} -- reset it.
         if Device:hasScreenKB() or Device:hasSymKey() then
             readerlink.key_events.GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" }
-        elseif Device:hasKeys() then
+        elseif Device:hasKeyboard() then
             readerlink.key_events = {
                 SelectNextPageLink = {
                     { "Tab" },
@@ -461,76 +466,63 @@ function HotKeyShortcuts:overrideConflictingFunctions()
                 },
             }
         end
-    end
+        logger.dbg("Hotkey ReaderLink:registerKeyEvents() overridden.")
 
-    local ReaderSearch = require("apps/reader/modules/readersearch")
-    ReaderSearch.registerKeyEvents = function(readersearch)
         if Device:hasKeyboard() then
+            local readersearch = self.ui.search
+            readersearch.key_events = {} -- reset it.
             readersearch.key_events.ShowFulltextSearchInputBlank = {
                 { "Alt", "Shift", "S" }, { "Ctrl", "Shift", "S" },
                 event = "ShowFulltextSearchInput",
                 args = ""
             }
+            logger.dbg("Hotkey ReaderSearch:registerKeyEvents() overridden.")
         end
+        
+
+        self.ui.toc.key_events = {} -- reset it.
+        logger.dbg("Hotkey ReaderToc:registerKeyEvents() overridden.")
+
+        self.ui.thumbnail.key_events = {} -- reset it.
+        logger.dbg("Hotkey ReaderThumbnail:registerKeyEvents() overridden.")
+
+        local readerui = self.ui
+        readerui.key_events = {} -- reset it, then add our own
+        readerui.key_events.Home = { { "Home" } }
+        readerui.key_events.Back = { { Device.input.group.Back } }
+        if Device:hasDPad() and Device:useDPadAsActionKeys() then
+            readerui.key_events.KeyContentSelection = { { { "Up", "Down" } }, event = "StartHighlightIndicator" }
+        elseif Device:hasKeyboard() then
+            readerui.key_events.Reload = { { "F5" } }
+        end
+        logger.dbg("Hotkey ReaderUI:registerKeyEvents() overridden.")
     end
 
-    local ReaderToc = require("apps/reader/modules/readertoc")
-    ReaderToc.registerKeyEvents = function(readertoc) end
+    if Device:hasKeyboard() then
+        self.ui.dictionary.key_events = {} -- reset it.
+        logger.dbg("Hotkey ReaderDictionary:registerKeyEvents() overridden.")
+        
+        self.ui.wikipedia.key_events = {} -- reset it.
+        logger.dbg("Hotkey ReaderWikipedia:registerKeyEvents() overridden.")
 
-    local ReaderThumbnail = require("apps/reader/modules/readerthumbnail")
-    ReaderThumbnail.registerKeyEvents = function(readerthumbnail) end
-
-    local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
-    ReaderWikipedia.registerKeyEvents = function(readerwikipedia) end
-
-    local ReaderUI = require("apps/reader/readerui")
-    ReaderUI.registerKeyEvents = function(readerui)
-        if Device:hasKeys() then
-            readerui.key_events.Home = { { "Home" } }
-            if Device:hasDPad() and Device:useDPadAsActionKeys() then
-                readerui.key_events.KeyContentSelection = { { { "Up", "Down" } }, event = "StartHighlightIndicator" }
-            elseif Device:hasKeyboard() then
-                readerui.key_events.Reload = { { "F5" } }
-            end
-        end
+        local filesearcher = self.ui.filesearcher
+        filesearcher.key_events = {} -- reset it.
+    
+        filesearcher.key_events.ShowFileSearchBlank = {
+            { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" },
+            event = "ShowFileSearch",
+            args = ""
+        }
+        logger.dbg("Hotkey FileSearcher:registerKeyEvents() overridden.")
     end
-
-    local FileManager = require("apps/filemanager/filemanager")
-    local FileChooser = require("ui/widget/filechooser")
-    FileManager.registerKeyEvents = function(filemanager)
-        if Device:hasKeys() then
-            filemanager.key_events.Home = { { "Home" } }
-            -- Ensure file_chooser is initialized before accessing it
-            if not filemanager.file_chooser then
-                filemanager.file_chooser = FileChooser:new()
-            end
-            -- Override the menu.lua way of handling the back key
-            filemanager.file_chooser.key_events.Back = { { Device.input.group.Back } }
-            if not Device:hasFewKeys() then
-                -- Also remove the handler assigned to the "Back" key by menu.lua
-                filemanager.file_chooser.key_events.Close = nil
-            end
-        end
+    
+    if self.is_docless then
+        local filemanagermenu = self.ui.menu
+        filemanagermenu.key_events = {} -- reset it.
+        filemanagermenu.key_events.ShowMenu = { { "Menu" } }
+        logger.dbg("Hotkey FileManagerMenu:registerKeyEvents() overridden.")
     end
-
-    local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
-    FileSearcher.registerKeyEvents = function(filemanagerfilesearcher)
-        if Device:hasKeyboard() then
-            filemanagerfilesearcher.key_events.ShowFileSearchBlank = {
-                { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" },
-                event = "ShowFileSearch",
-                args = ""
-            }
-        end
-    end
-
-    local FileManagerMenu = require("apps/filemanager/filemanagermenu")
-    FileManagerMenu.registerKeyEvents = function(filemanagermenu)
-        if Device:hasKeys() then
-            filemanagermenu.key_events.ShowMenu = { { "Menu" } }
-        end
-    end
-end -- overrideConflictingFunctions()
+end -- overrideConflictingKeyEvents()
 
 --[[
     This function checks if the `settings_data` exists and if it has been marked as updated.
