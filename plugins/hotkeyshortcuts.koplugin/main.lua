@@ -478,7 +478,6 @@ function HotKeyShortcuts:overrideConflictingKeyEvents()
             }
             logger.dbg("Hotkey ReaderSearch:registerKeyEvents() overridden.")
         end
-        
 
         self.ui.toc.key_events = {} -- reset it.
         logger.dbg("Hotkey ReaderToc:registerKeyEvents() overridden.")
@@ -501,13 +500,13 @@ function HotKeyShortcuts:overrideConflictingKeyEvents()
     if Device:hasKeyboard() then
         self.ui.dictionary.key_events = {} -- reset it.
         logger.dbg("Hotkey ReaderDictionary:registerKeyEvents() overridden.")
-        
+
         self.ui.wikipedia.key_events = {} -- reset it.
         logger.dbg("Hotkey ReaderWikipedia:registerKeyEvents() overridden.")
 
         local filesearcher = self.ui.filesearcher
         filesearcher.key_events = {} -- reset it.
-    
+
         filesearcher.key_events.ShowFileSearchBlank = {
             { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" },
             event = "ShowFileSearch",
@@ -515,7 +514,7 @@ function HotKeyShortcuts:overrideConflictingKeyEvents()
         }
         logger.dbg("Hotkey FileSearcher:registerKeyEvents() overridden.")
     end
-    
+
     if self.is_docless then
         local filemanagermenu = self.ui.menu
         filemanagermenu.key_events = {} -- reset it.
