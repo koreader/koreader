@@ -10,7 +10,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20240928
+local CURRENT_MIGRATION_DATE = 20241123
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -746,6 +746,17 @@ if last_migration_date < 20240928 then
             end
         end
         G_reader_settings:delSetting("autostart_profiles")
+    end
+end
+
+-- 20241123, Switch "Until 'exit sleep screen' gesture" to "Until a key press" for non-touch devices
+-- https://github.com/koreader/koreader/pull/12747
+if last_migration_date < 20241123 then
+    logger.info("Performing one-time migration for 20241123")
+
+    local Device = require("device")
+    if not Device:isTouchDevice() and G_reader_settings:readSetting("screensaver_delay") == "gesture" then
+        G_reader_settings:saveSetting("screensaver_delay", "tap")
     end
 end
 

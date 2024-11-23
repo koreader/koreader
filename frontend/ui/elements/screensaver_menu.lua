@@ -1,3 +1,4 @@
+local Device = require("device")
 local Screensaver = require("ui/screensaver")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
@@ -26,6 +27,7 @@ local function genMenuItem(text, setting, value, enabled_func, separator)
         separator = separator,
     }
 end
+
 return {
     {
         text = _("Wallpaper"),
@@ -36,7 +38,6 @@ return {
             genMenuItem(_("Show reading progress on sleep screen"), "screensaver_type", "readingprogress", isReaderProgressEnabled),
             genMenuItem(_("Show book status on sleep screen"), "screensaver_type", "bookstatus", hasLastFile),
             genMenuItem(_("Leave screen as-is"), "screensaver_type", "disable", nil, true),
-            separator = true,
             {
                 text = _("Border fill, rotation, and fit"),
                 enabled_func = function()
@@ -83,8 +84,8 @@ return {
                     genMenuItem(_("1 second"), "screensaver_delay", "1"),
                     genMenuItem(_("3 seconds"), "screensaver_delay", "3"),
                     genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
-                    genMenuItem(_("Until a tap"), "screensaver_delay", "tap"),
-                    genMenuItem(_("Until 'exit sleep screen' gesture"), "screensaver_delay", "gesture"),
+                    genMenuItem(Device:isTouchDevice() and _("Until a tap") or _("Until a key press"), "screensaver_delay", "tap"),
+                    Device:isTouchDevice() and genMenuItem(_("Until 'exit sleep screen' gesture"), "screensaver_delay", "gesture") or nil,
                 },
             },
             {
@@ -164,7 +165,7 @@ return {
                     genMenuItem(_("Bottom"), "screensaver_message_position", "bottom", nil, true),
                 },
             },
-            {
+            (Device:canReboot() and Device:canPowerOff()) and {
                 text = _("Hide reboot/poweroff message"),
                 checked_func = function()
                     return G_reader_settings:isTrue("screensaver_hide_fallback_msg")
@@ -172,7 +173,7 @@ return {
                 callback = function()
                     G_reader_settings:toggle("screensaver_hide_fallback_msg")
                 end,
-            },
+            } or nil,
         },
     },
 }
