@@ -267,16 +267,18 @@ describe("ReadHistory module", function()
         end
         rm(file("history.lua"))
         local h = reload()
-        for i = 1000, 1, -1 do
+        for i = 600, 1, -1 do
             touch(to_file(i))
-            h:addItem(to_file(i))
+            h:addItem(to_file(i), nil, i ~= 1)
         end
 
-        for i = 1, 500 do  -- at most 500 items are stored
+        -- at most 500 items are stored
+        assert.is.same(500, #h.hist)
+        for i = 1, 500 do
             assert_item_is(h, i, string.format("%04d", i))
         end
 
-        for i = 1, 1000 do
+        for i = 1, 600 do
             rm(to_file(i))
         end
     end)
