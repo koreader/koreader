@@ -90,6 +90,8 @@ function ReaderView:init()
         bbox = nil,
     }
     self.highlight = {
+        page_boxes = {},  -- hashmap; boxes in pages, used to draw visited pages in "page" view modes
+        visible_boxes = nil, -- array; visible boxes in the current page, used by ReaderHighlight:onTap()
         lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
         note_mark = G_reader_settings:readSetting("highlight_note_marker"),
         temp_drawer = "invert",
@@ -531,33 +533,68 @@ function ReaderView:drawTempHighlight(bb, x, y)
 end
 
 function ReaderView:drawSavedHighlight(bb, x, y)
-    if #self.ui.annotation.annotations == 0 then return end
-    if self.ui.paging then
-        return self:drawPageSavedHighlight(bb, x, y)
-    else
-        return self:drawXPointerSavedHighlight(bb, x, y)
+    self.highlight.visible_boxes = {}
+    if #self.ui.annotation.annotations > 0 then
+        if self.ui.paging then
+            return self:drawPageSavedHighlight(bb, x, y)
+        else
+            return self:drawXPointerSavedHighlight(bb, x, y)
+        end
     end
 end
 
 function ReaderView:drawPageSavedHighlight(bb, x, y)
+    local do_cache = not self.page_scroll and self.document.configurable.text_wrap == 0
     local colorful
     local pages = self:getCurrentPageList()
     for _, page in ipairs(pages) do
-        local items = self.ui.highlight:getPageSavedHighlights(page)
-        for _, item in ipairs(items) do
-            local boxes = self.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
-            if boxes then
-                local color = item.color and Blitbuffer.colorFromName(item.color)
-                if not colorful and color and not Blitbuffer.isColor8(color) then
-                    colorful = true
+        if self.highlight.page_boxes[page] ~= nil then -- cached
+            for _, box in ipairs(self.highlight.page_boxes[page]) do
+                local rect = self:pageToScreenTransform(page, box.rect)
+                if rect then
+                    table.insert(self.highlight.visible_boxes, box)
+                    self:drawHighlightRect(bb, x, y, rect, box.drawer, box.color, box.draw_mark)
+                    if box.colorful then
+                        colorful = true
+                    end
                 end
-                local draw_note_mark = item.note and self.highlight.note_mark
-                for _, box in ipairs(boxes) do
-                    local rect = self:pageToScreenTransform(page, box)
-                    if rect then
-                        self:drawHighlightRect(bb, x, y, rect, item.drawer, color, draw_note_mark)
-                        if draw_note_mark and self.highlight.note_mark == "sidemark" then
-                            draw_note_mark = false -- side mark in the first line only
+            end
+        else -- not cached
+            if do_cache then
+                self.highlight.page_boxes[page] = {}
+            end
+            local items, idx_offset = self.ui.highlight:getPageSavedHighlights(page)
+            for index, item in ipairs(items) do
+                local boxes = self.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
+                if boxes then
+                    local drawer = item.drawer
+                    local color = item.color and Blitbuffer.colorFromName(item.color)
+                    if not colorful and color and not Blitbuffer.isColor8(color) then
+                        colorful = true
+                    end
+                    local draw_note_mark = item.note and true or nil
+                    for _, box in ipairs(boxes) do
+                        local rect = self:pageToScreenTransform(page, box)
+                        if rect then
+                            local hl_box = {
+                                index     = item.parent or (index + idx_offset), -- index in annotations
+                                rect      = box,
+                                drawer    = drawer,
+                                color     = color,
+                                draw_mark = draw_note_mark,
+                                colorful  = colorful,
+                            }
+                            if do_cache then
+                                table.insert(self.highlight.page_boxes[page], hl_box)
+                            end
+                            table.insert(self.highlight.visible_boxes, hl_box)
+                            self:drawHighlightRect(bb, x, y, rect, drawer, color, draw_note_mark)
+                            draw_note_mark = draw_note_mark and false -- side mark in the first line only
+                        else
+                            -- some boxes are not displayed in the currently visible part of the page,
+                            -- the page boxes cannot be cached
+                            do_cache = false
+                            self.highlight.page_boxes[page] = nil
                         end
                     end
                 end
@@ -568,41 +605,63 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
 end
 
 function ReaderView:drawXPointerSavedHighlight(bb, x, y)
-    -- Getting screen boxes is done for each tap on screen (changing pages,
-    -- showing menu...). We might want to cache these boxes per page (and
-    -- clear that cache when page layout change or highlights are added
-    -- or removed).
-    -- Even in page mode, it's safer to use pos and ui.dimen.h
-    -- than pages' xpointers pos, even if ui.dimen.h is a bit
-    -- larger than pages' heights
-    local cur_view_top = self.document:getCurrentPos()
-    local cur_view_bottom
-    if self.view_mode == "page" and self.document:getVisiblePageCount() > 1 then
-        cur_view_bottom = cur_view_top + 2 * self.ui.dimen.h
-    else
-        cur_view_bottom = cur_view_top + self.ui.dimen.h
-    end
+    local do_cache = self.view_mode == "page"
     local colorful
-    for _, item in ipairs(self.ui.annotation.annotations) do
-        if item.drawer then
-            -- document:getScreenBoxesFromPositions() is expensive, so we
-            -- first check if this item is on current page
-            local start_pos = self.document:getPosFromXPointer(item.pos0)
-            if start_pos > cur_view_bottom then return colorful end -- this and all next highlights are after the current page
-            local end_pos = self.document:getPosFromXPointer(item.pos1)
-            if end_pos >= cur_view_top then
-                local boxes = self.document:getScreenBoxesFromPositions(item.pos0, item.pos1, true) -- get_segments=true
-                if boxes then
-                    local color = item.color and Blitbuffer.colorFromName(item.color)
-                    if not colorful and color and not Blitbuffer.isColor8(color) then
-                        colorful = true
-                    end
-                    local draw_note_mark = item.note and self.highlight.note_mark
-                    for _, box in ipairs(boxes) do
-                        if box.h ~= 0 then
-                            self:drawHighlightRect(bb, x, y, box, item.drawer, color, draw_note_mark)
-                            if draw_note_mark and self.highlight.note_mark == "sidemark" then
-                                draw_note_mark = false -- side mark in the first line only
+    local page = self.document:getCurrentPage()
+    if self.highlight.page_boxes[page] ~= nil then -- cached
+        for _, box in ipairs(self.highlight.page_boxes[page]) do
+            table.insert(self.highlight.visible_boxes, box)
+            self:drawHighlightRect(bb, x, y, box.rect, box.drawer, box.color, box.draw_mark)
+            if box.colorful then
+                colorful = true
+            end
+        end
+    else -- not cached
+        if do_cache then
+            self.highlight.page_boxes[page] = {}
+        end
+        -- Even in page mode, it's safer to use pos and ui.dimen.h
+        -- than pages' xpointers pos, even if ui.dimen.h is a bit
+        -- larger than pages' heights
+        local cur_view_top = self.document:getCurrentPos()
+        local cur_view_bottom
+        if self.view_mode == "page" and self.document:getVisiblePageCount() > 1 then
+            cur_view_bottom = cur_view_top + 2 * self.ui.dimen.h
+        else
+            cur_view_bottom = cur_view_top + self.ui.dimen.h
+        end
+        for index, item in ipairs(self.ui.annotation.annotations) do
+            if item.drawer then
+                -- document:getScreenBoxesFromPositions() is expensive, so we
+                -- first check if this item is on current page
+                local start_pos = self.document:getPosFromXPointer(item.pos0)
+                if start_pos > cur_view_bottom then break end -- this and all next highlights are after the current page
+                local end_pos = self.document:getPosFromXPointer(item.pos1)
+                if end_pos >= cur_view_top then
+                    local boxes = self.document:getScreenBoxesFromPositions(item.pos0, item.pos1, true) -- get_segments=true
+                    if boxes then
+                        local drawer = item.drawer
+                        local color = item.color and Blitbuffer.colorFromName(item.color)
+                        if not colorful and color and not Blitbuffer.isColor8(color) then
+                            colorful = true
+                        end
+                        local draw_note_mark = item.note and true or nil
+                        for _, box in ipairs(boxes) do
+                            if box.h ~= 0 then
+                                local hl_box = {
+                                    index     = index,
+                                    rect      = box,
+                                    drawer    = drawer,
+                                    color     = color,
+                                    draw_mark = draw_note_mark,
+                                    colorful  = colorful,
+                                }
+                                if do_cache then
+                                    table.insert(self.highlight.page_boxes[page], hl_box)
+                                end
+                                table.insert(self.highlight.visible_boxes, hl_box)
+                                self:drawHighlightRect(bb, x, y, box, drawer, color, draw_note_mark)
+                                draw_note_mark = draw_note_mark and false -- side mark in the first line only
                             end
                         end
                     end
@@ -662,10 +721,8 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
     elseif drawer == "invert" then
         bb:invertRect(x, y, w, h)
     end
-    if draw_note_mark then
-        if not color then
-            color = Blitbuffer.COLOR_BLACK
-        end
+    if self.highlight.note_mark ~= nil and draw_note_mark ~= nil then
+        color = color or Blitbuffer.COLOR_BLACK
         if self.highlight.note_mark == "underline" then
             -- With most annotation styles, we'd risk making this invisible if we used the same color,
             -- so, always draw this in black.
@@ -686,7 +743,9 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
                     bb:paintRectRGB32(note_mark_pos_x, y, self.note_mark_line_w, rect.h, color)
                 end
             elseif self.highlight.note_mark == "sidemark" then
-                self.note_mark_sign:paintTo(bb, note_mark_pos_x, y)
+                if draw_note_mark then
+                    self.note_mark_sign:paintTo(bb, note_mark_pos_x, y)
+                end
             end
         end
     end
@@ -905,6 +964,7 @@ In combination with zoom to fit page, page height, content height, content or co
         })
     end
 
+    self:resetHighlightBoxesCache()
     self.page_scroll = page_scroll
     if not page_scroll then
         self.document.configurable.page_scroll = 0
@@ -1086,12 +1146,39 @@ end
 
 function ReaderView:onSetViewMode(new_mode)
     if new_mode ~= self.view_mode then
+        self:resetHighlightBoxesCache()
         self.view_mode = new_mode
         self.document:setViewMode(new_mode)
         self.ui:handleEvent(Event:new("ChangeViewMode"))
         Notification:notify(T( _("View mode set to: %1"), optionsutil:getOptionText("SetViewMode", new_mode)))
     end
 end
+
+function ReaderView:resetHighlightBoxesCache(items)
+    if items == nil then
+        self.highlight.page_boxes = {}
+    else
+        for _, item in ipairs(items) do
+            if item.drawer then
+                local page0, page1
+                if self.ui.rolling then
+                    page0 = self.document:getPageFromXPointer(item.pos0)
+                    page1 = self.document:getPageFromXPointer(item.pos1)
+                else
+                    page0 = item.pos0.page
+                    page1 = item.pos1.page
+                end
+                for page = page0, page1 do
+                    self.highlight.page_boxes[page] = nil
+                end
+            end
+        end
+    end
+end
+
+ReaderView.onReflowUpdated = ReaderView.resetHighlightBoxesCache
+ReaderView.onDocumentRerendered = ReaderView.resetHighlightBoxesCache
+ReaderView.onAnnotationsModified = ReaderView.resetHighlightBoxesCache
 
 function ReaderView:onPageGapUpdate(page_gap)
     self.page_gap.height = Screen:scaleBySize(page_gap)
