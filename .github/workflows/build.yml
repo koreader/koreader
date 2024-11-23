@@ -128,9 +128,9 @@ jobs:
       - name: Install ccache
         if: steps.build-restore.outputs.cache-hit != 'true'
         run: |
-          wget --progress=dot:mega https://github.com/ccache/ccache/releases/download/v4.9.1/ccache-4.9.1-darwin.tar.gz
-          tar xf ccache-4.9.1-darwin.tar.gz
-          printf '%s\n' "$PWD/ccache-4.9.1-darwin" >>"${GITHUB_PATH}"
+          wget --progress=dot:mega https://github.com/ccache/ccache/releases/download/v4.10.2/ccache-4.10.2-darwin.tar.gz
+          tar xf ccache-4.10.2-darwin.tar.gz
+          printf '%s\n' "$PWD/ccache-4.10.2-darwin" >>"${GITHUB_PATH}"
 
       - name: Setup build cache
         if: steps.build-restore.outputs.cache-hit != 'true'
