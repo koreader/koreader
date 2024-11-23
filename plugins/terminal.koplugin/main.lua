@@ -6,6 +6,7 @@ This plugin provides a terminal emulator (VT52 (+some ANSI and some VT100))
 
 local Device = require("device")
 local logger = require("logger")
+local util = require("util")
 local ffi = require("ffi")
 local C = ffi.C
 require("ffi/posix_h")
@@ -76,10 +77,11 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local TermInputText = require("terminputtext")
 local TextWidget = require("ui/widget/textwidget")
 local bit = require("bit")
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local C_ = _.pgettext
-local T = require("ffi/util").template
+local T = ffiUtil.template
 
 local CHUNK_SIZE = 80 * 40 -- max. nb of read bytes (reduce this, if taps are not detected)
 
@@ -94,7 +96,7 @@ local Terminal = WidgetContainer:extend{
 
 function Terminal:isExecutable(file)
     -- check if file is an executable or a command in PATH
-    return os.execute(string.format("test -x %s || command -v %s", file, file)) == 0
+    return ffiUtil.isExecutable(file) or util.which(file) ~= nil
 end
 
 -- Try SHELL environment variable and some standard shells

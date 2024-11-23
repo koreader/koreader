@@ -1635,4 +1635,14 @@ function util.round_decimal(num, points)
     return math.floor(num * op) / op
 end
 
+function util.which(command, path)
+    path = path or os.getenv("PATH") or ""
+    for p in path:gmatch("([^:]+)") do
+        p = p .. "/" .. command
+        if ffiUtil.isExecutable(p) then
+            return p
+        end
+    end
+end
+
 return util
