@@ -3,26 +3,26 @@ local Device = require("device")
 
 -- The hotkey shortcuts defined here are only the defaults. The user can
 -- change them at any time using the hotkey shortcuts configuration menu.
--- NOTE: The combinations that contain the tag ** keep nil, already assigned outside this plugin **
+-- NOTE: The combinations that contain the tag ** keep nil, "existing function outside plugin" **
 --       should never be assigned to any action in this plugin, because they are already assigned
 --       to events in core. If you assign them to actions in this plugin, those actions will be in
 --       conflict with the existing ones and hell will break loose.
 return {
     hotkeyshortcuts_fm = {
         modifier_plus_up                 = nil,
-        -- modifier_plus_down               -- keep nil, already assigned outside this plugin.
+        -- modifier_plus_down               -- keep nil, brings up FM search widget (equivalent to tapping on 'Page x of y').
         modifier_plus_left               = nil,
         modifier_plus_right              = nil,
-        -- modifier_plus_left_page_back     -- keep nil, already assigned outside this plugin.
-        -- modifier_plus_left_page_forward  -- keep nil, already assigned outside this plugin.
-        -- modifier_plus_right_page_back    -- keep nil, already assigned outside this plugin.
-        -- modifier_plus_right_page_forward -- keep nil, already assigned outside this plugin.
+        -- modifier_plus_left_page_back     -- keep nil, goes to first FM page, (i.e <<).
+        -- modifier_plus_left_page_forward  -- keep nil, goes to last FM page (i.e >>).
+        -- modifier_plus_right_page_back    -- keep nil, goes to first FM page, (i.e <<).
+        -- modifier_plus_right_page_forward -- keep nil, goes to last FM page (i.e >>).
         modifier_plus_back               = {open_previous_document = true,},
         modifier_plus_home               = Device:hasWifiToggle() and {toggle_wifi = true,} or {},
-        -- modifier_plus_press              -- keep nil, already assigned outside this plugin.
-        -- modifier_plus_menu               -- keep nil, already assigned outside this plugin.
+        -- modifier_plus_press              -- keep nil, long press or hold.
+        -- modifier_plus_menu               -- keep nil, screenshots on K4.
         -- optional, user can select whether or not to enable it.
-        -- press -- keep nil, already assigned outside this plugin.
+        -- press -- keep nil, select button.
         -- alt
         alt_plus_up                 = nil,
         alt_plus_down               = nil,
@@ -76,7 +76,7 @@ return {
         modifier_plus_back               = {open_previous_document = true,},
         modifier_plus_home               = Device:hasWifiToggle() and {toggle_wifi = true,} or {},
         modifier_plus_press              = {add_location_to_history = true,},
-        -- modifier_plus_menu               -- keep nil, already assigned outside this plugin.
+        -- modifier_plus_menu               -- keep nil, screenshots on K4.
         -- optional, user can select whether or not to enable it.
         press = {show_config_menu = true,},
         -- alt

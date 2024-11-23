@@ -129,13 +129,12 @@ function HotKeyShortcuts:onHotkeyAction(hotkey)
     else
         local execution_properties = { hotkeyshortcuts = hotkey }
         logger.dbg("Executing actions for hotkey: ", hotkey, " in ", context, " with events: ", hotkey_action_list)
-        -- Execute the list of actions associated with the hotkey (using Dispatcher)
+        -- Execute (via Dispatcher) the list of actions associated with the hotkey
         Dispatcher:execute(hotkey_action_list, execution_properties)
         return true
     end
 end
-
---[[
+--[[ The following snippet is an example of the hotkeyshortcuts.lua file that is generated in the settings directory:
 ["modifier_plus_right_page_forward"] = {
     ["settings"] = {
         ["order"] = {
@@ -193,7 +192,7 @@ function HotKeyShortcuts:registerKeyEvents()
         local top_row_keys = { "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P" }
         local remaining_keys = { "A", "S", "D", "F", "G", "H", "J", "K", "L", "Z", "X", "C", "V", "B", "N", "M" }
         if Device.k3_alt_plus_key_kernel_translated then
-            -- Add the infamous top row keys, with kernel issues
+            -- Add the infamous top row keys, with kernel issues (see #12358 for details)
             for _, key in ipairs(top_row_keys) do
                 self.key_events["AltPlus" .. key] = {
                     { Device.k3_alt_plus_key_kernel_translated[key] },
@@ -207,11 +206,7 @@ function HotKeyShortcuts:registerKeyEvents()
         addKeyEvents(second_modifier, remaining_keys, "HotkeyAction", "alt_plus_")
     end -- if hasKeyboard()
 
-    if next(self.key_events) == nil then
-        logger.warn("No hotkey events registered.")
-    else
-        logger.dbg("Hotkey events registered successfully.")
-    end
+    logger.dbg("Hotkey total events registered successfully: ", #self.key_events)
 end -- registerKeyEvents()
 
 HotKeyShortcuts.onPhysicalKeyboardConnected = HotKeyShortcuts.registerKeyEvents
@@ -256,6 +251,8 @@ function HotKeyShortcuts:genMenu(hotkey)
     -- Since we are already handling potential conflicts via overrideConflictingKeyEvents(), both "No action" and "Nothing",
     -- introduced through Dispatcher:addSubMenu(), are effectively the same (from a user point of view); thus, we can do away
     -- with "Nothing".
+    -- We prioritize "No action" as it will allow the predefined underlaying actions to be executed for hotkeys in the 'reader_only'
+    -- array in the genSubItem() function.
     table.remove(sub_items, 3) -- removes the 'Nothing' option as it is redundant.
     sub_items.max_per_page = 9 -- push settings ('Arrange actions', 'Show as quick menu', 'keep quick menu open') to page 2
     return sub_items
@@ -297,25 +294,18 @@ function HotKeyShortcuts:genSubItemTable(hotkeyshortcuts)
     return sub_item_table
 end
 
-function HotKeyShortcuts:attachNewTableToExistingTable(orig_table, second_table)
+local function HotKeyShortcuts:attachNewTableToExistingTable(original_table, second_table)
     for _, v in ipairs(second_table) do
-        table.insert(orig_table, v)
+        table.insert(original_table, v)
     end
 end
 
 --[[
     This function configures and adds various hotkey shortcuts to the main menu based on the device's capabilities
     and user settings. It supports different sets of keys for devices with and without keyboards.
-
-    The function performs the following steps:
-    1. Defines sets of cursor keys, page-turn buttons, and function keys.
-    2. Adds the "press" key to function keys if the corresponding setting is enabled.
-    3. If the device has a keyboard, additional sets of keys (cursor, page-turn, and function keys) are appended.
-    4. Adds a menu item for enabling/disabling the use of the press key for shortcuts.
-    5. Adds a menu item for configuring keyboard shortcuts, including cursor keys, page-turn buttons, and function keys.
-    6. If the device has a keyboard, an additional menu item for alphabet keys is added.
 --]]
 function HotKeyShortcuts:addToMainMenu(menu_items)
+    -- 1. Defines sets of cursor keys, page-turn buttons, and function keys.
     local cursor_keys = {
         "modifier_plus_up",
         "modifier_plus_down",
@@ -334,9 +324,11 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
         "modifier_plus_press"
         -- modifier_plus_menu (screenkb+menu) is already used globally for screenshots (on k4), don't add it here.
     }
+    -- 2. Adds the "press" key to function keys if the corresponding setting is enabled.
     if self.settings_data.data["press_key_does_hotkeyshortcuts"] then
         table.insert(fn_keys, 1, "press")
     end
+    -- 3. If the device has a keyboard, additional sets of keys (cursor, page-turn, and function keys) are appended.
     if Device:hasKeyboard() then
         local cursor_keys_haskeyboard = {
             "alt_plus_up",
@@ -361,6 +353,7 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
         }
         self:attachNewTableToExistingTable(fn_keys, fn_keys_haskeyboard)
     end
+    -- 4. Adds a menu item for enabling/disabling the use of the press key for shortcuts.
     if Device:hasScreenKB() or Device:hasSymKey() then
         menu_items.button_press_does_hotkeyshortcuts = {
             sorting_hint = "physical_buttons_setup",
@@ -376,6 +369,7 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
             end,
         }
     end
+    --5. Adds a menu item for configuring keyboard shortcuts, including cursor keys, page-turn buttons, and function keys.
     menu_items.hotkeyshortcuts = {
         sorting_hint = "physical_buttons_setup",
         text = _("Keyboard shortcuts"),
@@ -397,7 +391,7 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
             },
         },
     }
-
+    -- 6. If the device has a keyboard, adds a menu item for configuring hotkeys using alphabet keys.
     if Device:hasKeyboard() then
         table.insert(menu_items.hotkeyshortcuts.sub_item_table, {
             text = _("Alphabet keys"),
@@ -412,8 +406,7 @@ end
 
 --[[
     Description:
-    This function overrides existing `registerKeyEvents()` functions in various modules to resolve conflicts and customize key event handling
-    It resets the key events for each component and assigns new key events based on the device and settings.
+    This function resets existing key_event tables in various modules to resolve conflicts and customize key event handling
 
     Details:
     - Resets and overrides key events for the following modules:
@@ -506,7 +499,6 @@ function HotKeyShortcuts:overrideConflictingKeyEvents()
 
         local filesearcher = self.ui.filesearcher
         filesearcher.key_events = {} -- reset it.
-
         filesearcher.key_events.ShowFileSearchBlank = {
             { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" },
             event = "ShowFileSearch",
@@ -536,7 +528,7 @@ end
 
 function HotKeyShortcuts:updateProfiles(action_old_name, action_new_name)
     for _, section in ipairs({ "hotkeyshortcuts_fm", "hotkeyshortcuts_reader" }) do
-       local hotkeyshortcuts = self.settings_data.data[section]
+        local hotkeyshortcuts = self.settings_data.data[section]
         for shortcut_name, shortcut in pairs(hotkeyshortcuts) do
             if shortcut[action_old_name] then
                 if shortcut.settings and shortcut.settings.order then
