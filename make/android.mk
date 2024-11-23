@@ -42,6 +42,12 @@ ANDROID_DIR = $(PLATFORM_DIR)/android
 ANDROID_LAUNCHER_DIR = $(ANDROID_DIR)/luajit-launcher
 ANDROID_LAUNCHER_BUILD = $(INSTALL_DIR)/luajit-launcher
 ANDROID_ASSETS = $(ANDROID_LAUNCHER_BUILD)/assets
+# Assets compression method:
+# - LZMA/LZMA2: `-m0=lzma2 -mx=9`
+# - LZMA/LZMA2 (7z >= 17.02, fast version): `-m0=flzma2 -mx=9`
+# - ZSTD (7z >= 17.02, LZMA still used for archive headers): `-m0=zstd -mx=16`
+# - ZSTD (7z >= 17.02): `-m0=zstd -mhc=off -mx=16`
+ANDROID_ASSETS_COMPRESSION ?= -m0=lzma2 -mx=9
 ANDROID_LIBS = $(ANDROID_LAUNCHER_BUILD)/libs/$(ANDROID_ABI)
 ANDROID_FLAVOR ?= Rocks
 
@@ -60,6 +66,22 @@ else
   ANDROID_ARCH ?= arm
   ANDROID_ABI ?= armeabi-v7a
 endif
+
+define UPDATE_PATH_EXCLUDES +=
+plugins/SSH.koplugin
+plugins/autofrontlight.koplugin
+plugins/hello.koplugin
+plugins/timesync.koplugin
+tools
+endef
+
+define UPDATE_GLOBAL_EXCLUDES +=
+README.md
+COPYING
+LICENSE*
+*license.txt
+NOTICE
+endef
 
 androiddev: update
 	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) dev
@@ -83,35 +105,14 @@ update: all
 	# binaries are stored as shared libraries to prevent W^X exception on Android 10+
 	# https://developer.android.com/about/versions/10/behavior-changes-10#execute-permission
 	llvm-strip --strip-unneeded $(INSTALL_DIR)/koreader/sdcv -o $(ANDROID_LIBS)/libsdcv.so
-	# assets are compressed manually and stored inside the APK.
+	# Assets are compressed manually and stored inside the APK.
 	cd $(INSTALL_DIR)/koreader && \
-		./tools/mk7z.sh \
-		$(abspath $(ANDROID_ASSETS)/module/koreader.7z) \
-		"$$(git show -s --format='%ci')" \
-		-m0=lzma2 -mx=9 \
-		-- . \
-		'-x!cache' \
-		'-x!clipboard' \
-		'-x!data/dict' \
-		'-x!data/tessdata' \
-		'-x!history' \
-		'-x!l10n/templates' \
-		'-x!libs' \
-		'-x!ota' \
-		'-x!resources/fonts*' \
-		'-x!resources/icons/src*' \
-		'-x!rocks/bin' \
-		'-x!rocks/lib/luarocks' \
-		'-x!screenshots' \
-		'-x!sdcv' \
-		'-x!spec' \
-		'-x!tools' \
-		'-xr!.*' \
-		'-xr!COPYING' \
-		'-xr!NOTES.txt' \
-		'-xr!NOTICE' \
-		'-xr!README.md' \
-		;
+	  ./tools/mkrelease.sh \
+	  $(if $(PARALLEL_JOBS),--jobs $(PARALLEL_JOBS)) \
+	  --epoch="$$(git show -s --format='%ci')" \
+	  --options='$(ANDROID_ASSETS_COMPRESSION)' \
+	  $(abspath $(ANDROID_ASSETS)/module/koreader.7z) \
+	  . '-x!libs' '-x!sdcv' $(release_excludes)
 	# Note: we filter out the `--debug=…` make flag so the old
 	# crummy version provided by the NDK does not blow a gasket.
 	env \

@@ -14,10 +14,6 @@ ifneq (,$(findstring -,$(VERSION)))
 	VERSION := $(VERSION)_$(RELEASE_DATE)
 endif
 
-# releases do not contain tests and misc data
-IS_RELEASE := $(if $(or $(EMULATE_READER),$(WIN32)),,1)
-IS_RELEASE := $(if $(or $(IS_RELEASE),$(APPIMAGE),$(LINUX),$(MACOS)),1,)
-
 LINUX_ARCH?=native
 ifeq ($(LINUX_ARCH), native)
 	LINUX_ARCH_NAME:=$(shell uname -m)
@@ -50,11 +46,14 @@ WIN32_DIR=$(PLATFORM_DIR)/win32
 
 define CR3GUI_DATADIR_EXCLUDES
 %/KoboUSBMS.tar.gz
+%/NOTES.txt
 %/cr3.ini
 %/cr3skin-format.txt
 %/desktop
 %/devices
+%/dict
 %/manual
+%/tessdata
 endef
 CR3GUI_DATADIR_FILES = $(filter-out $(CR3GUI_DATADIR_EXCLUDES),$(wildcard $(CR3GUI_DATADIR)/*))
 
@@ -71,18 +70,78 @@ INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastor
 OUTPUT_DIR_ARTIFACTS = $(abspath $(OUTPUT_DIR))/!(cache|cmake|data|history|staging|thirdparty)
 OUTPUT_DIR_DATAFILES = $(OUTPUT_DIR)/data/*
 
+# Release excludes. {{{
+
+define UPDATE_PATH_EXCLUDES
+cache
+clipboard
+data/dict
+data/tessdata
+ev_replay.py
+help
+history
+l10n/templates
+ota
+resources/fonts*
+resources/icons/src*
+screenshots
+spec
+endef
+
+# Files created after execution.
+define UPDATE_PATH_EXCLUDES +=
+data/cr3.ini
+defaults.*.lua
+history.lua
+scripts
+settings
+settings.reader.lua*
+styletweaks
+version.log
+endef
+
+# Testsuite leftovers.
+define UPDATE_PATH_EXCLUDES +=
+dummy-test-file*
+file.sdr*
+readerbookmark.*
+readerhighlight.*
+testdata
+this-is-not-a-valid-file*
+endef
+
+# Globally excluded.
+define UPDATE_GLOBAL_EXCLUDES
+*.orig
+*.swo
+*.swp
+*.un~
+.*
+endef
+
+release_excludes = $(strip $(UPDATE_PATH_EXCLUDES:%='-x!$1%') $(UPDATE_GLOBAL_EXCLUDES:%='-xr!%'))
+
+# }}}
+
+define mkupdate
+cd $(INSTALL_DIR) &&
+'$(abspath tools/mkrelease.sh)'
+$(if $(PARALLEL_JOBS),--jobs $(PARALLEL_JOBS))
+--manifest=$(or $2,koreader)/ota/package.index
+$(foreach a,$1,'$(if $(filter --%,$a),$a,$(abspath $a))') $(or $2,koreader)
+$(call release_excludes,$(or $2,koreader)/)
+endef
+
 all: base
 	install -d $(INSTALL_DIR)/koreader
 	rm -f $(INSTALL_DIR)/koreader/git-rev; echo "$(VERSION)" > $(INSTALL_DIR)/koreader/git-rev
 ifdef ANDROID
 	rm -f android-fdroid-version; echo -e "$(ANDROID_NAME)\n$(ANDROID_VERSION)" > koreader-android-fdroid-latest
 endif
-ifeq (,$(IS_RELEASE))
 	$(SYMLINK) $(KOR_BASE)/ev_replay.py $(INSTALL_DIR)/koreader/
-endif
 	bash -O extglob -c '$(SYMLINK) $(OUTPUT_DIR_ARTIFACTS) $(INSTALL_DIR)/koreader/'
 ifneq (,$(EMULATE_READER))
-	@echo "[*] install front spec only for the emulator"
+	@echo "[*] Install front spec only for the emulator"
 	$(SYMLINK) spec $(INSTALL_DIR)/koreader/spec/front
 	$(SYMLINK) test $(INSTALL_DIR)/koreader/spec/front/unit/data
 endif
@@ -112,10 +171,6 @@ endif
 	! test -L $(INSTALL_DIR)/koreader/data || rm $(INSTALL_DIR)/koreader/data
 	install -d $(INSTALL_DIR)/koreader/data
 	$(SYMLINK) $(strip $(DATADIR_FILES)) $(INSTALL_DIR)/koreader/data/
-ifneq (,$(IS_RELEASE))
-	@echo "[*] Clean up, remove unused files for releases"
-	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,desktop,devices,dict,manual,tessdata}
-endif
 
 base: base-all
 
@@ -198,3 +253,5 @@ doc:
 .PHONY: $(PHONY)
 
 include $(KOR_BASE)/Makefile
+
+# vim: foldmethod=marker foldlevel=0

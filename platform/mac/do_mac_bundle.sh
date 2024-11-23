@@ -131,11 +131,6 @@ pushd "${APP_PATH}/Contents/koreader"
 lipo /usr/bin/tar -extract_family "${APP_ARCH}" -output tar
 mv COPYING README.md ../Resources/
 mv koreader ../MacOS/koreader
-rm -rf cache clipboard history ota \
-    l10n/.git l10n/.tx l10n/templates l10n/LICENSE l10n/Makefile l10n/README.md \
-    plugins/SSH.koplugin plugins/hello.koplugin plugins/timesync.koplugin \
-    plugins/autofrontlight.koplugin resources/fonts resources/icons/src \
-    rocks/bin rocks/lib/luarocks screenshots spec tools
 
 # Adjust reader.lua a bit.
 sed '1d' reader.lua >tempfile
@@ -162,6 +157,6 @@ codesign --force --deep -s - "${APP_BUNDLE}.app"
 
 # Package as 7z reduces size from 80MB to 30MB.
 if command_exists "7z"; then
-    7z a -l -m0=lzma2 -mx=9 "${APP_BUNDLE}-${APP_ARCH}-${VERSION}.7z" "${APP_BUNDLE}.app"
-    rm -rfv "${APP_BUNDLE}.app"
+    7z a -l -m0=flzma2 -mx=9 "${APP_BUNDLE}-${APP_ARCH}-${VERSION}.7z" "${APP_BUNDLE}.app"
+    rm -rf "${APP_BUNDLE}.app"
 fi
