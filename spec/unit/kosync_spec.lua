@@ -50,7 +50,7 @@ local service = [[
 }
 ]]
 
-describe("KOSync modules #notest #nocov", function()
+describe("KOSync modules #notest", function()
     local logger, md5, client
     local username, password, doc, percentage, progress, device
 

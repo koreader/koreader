@@ -1,4 +1,4 @@
-describe("HTTP client module #notest #nocov", function()
+describe("HTTP client module #notest", function()
     local UIManager
     setup(function()
         require("commonrequire")

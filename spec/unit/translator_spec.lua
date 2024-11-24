@@ -14,7 +14,7 @@ describe("Translator module", function()
         G_reader_settings:delSetting("trans_server")
         G_reader_settings:flush()
     end)
-    -- add " #notest #nocov" to the it("description string") when it does not work anymore
+    -- add " #notest" to the it("description string") when it does not work anymore
     it("should return translation #internet", function()
         local translation_result = Translator:translate(dutch_wikipedia_text, "en")
         assert.is.truthy(translation_result)
