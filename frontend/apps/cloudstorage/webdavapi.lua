@@ -104,7 +104,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
             -- <d:href> is the path and filename of the entry.
             local item_fullpath = item:match("<[^:]*:href[^>]*>(.*)</[^:]*:href>")
             local item_name = ffiUtil.basename(util.htmlEntitiesToUtf8(util.urlDecode(item_fullpath)))
-            local is_current_dir = item_name == string.sub(folder_path, -#item_name)
+            local is_current_dir = self.trim_slashes(item_fullpath) == path
             local is_not_collection = item:find("<[^:]*:resourcetype%s*/>") or
                                       item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
             local item_path = path .. "/" .. item_name
