@@ -208,7 +208,7 @@ function HotKeyShortcuts:registerKeyEvents()
 
     local key_event_count = 0
     for _ in pairs(self.key_events) do key_event_count = key_event_count + 1 end
-    logger.dbg("Hotkey total number of key events registered successfully: ", key_event_count)
+    logger.dbg("Total number of hotkey events registered successfully: ", key_event_count)
 end -- registerKeyEvents()
 
 HotKeyShortcuts.onPhysicalKeyboardConnected = HotKeyShortcuts.registerKeyEvents
