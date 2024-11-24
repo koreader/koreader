@@ -31,7 +31,7 @@ local service = [[
 }
 ]]
 
-describe("Lua Spore modules #notest #nocov", function()
+describe("Lua Spore modules #notest", function()
     local Spore, client
     setup(function()
         require("commonrequire")
@@ -53,7 +53,7 @@ describe("Lua Spore modules #notest #nocov", function()
     end)
 end)
 
-describe("Lua Spore modules with async http request #notest #nocov", function()
+describe("Lua Spore modules with async http request #notest", function()
     local client, UIManager
 
     setup(function()
