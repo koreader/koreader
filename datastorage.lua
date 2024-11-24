@@ -10,7 +10,9 @@ local full_data_dir
 function DataStorage:getDataDir()
     if data_dir then return data_dir end
 
-    if isAndroid then
+    if os.getenv("KO_HOME") then
+        data_dir = os.getenv("KO_HOME")
+    elseif isAndroid then
         data_dir = android.getExternalStoragePath() .. "/koreader"
     elseif os.getenv("UBUNTU_APPLICATION_ISOLATION") then
         local app_id = os.getenv("APP_ID")
