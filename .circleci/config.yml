@@ -103,11 +103,11 @@ jobs:
       - run:
           name: Test
           command: .ci/test.sh
-      # Docs, coverage, and test timing (can we use two outputs at once?); master branch only.
+      # Upload coverage statistics (master branch only).
       - run:
-          name: Coverage
+          name: Uploading coverage
           command: .ci/after_success.sh
-      # By storing the test results CircleCI automatically distributes tests based on execution time.
+      # Store test results for better feedback / insights.
       - store_test_results:
           path: &TESTS_XML test-results.xml
       # CircleCI doesn't make the test results available as artifacts (October 2017).
@@ -129,7 +129,7 @@ jobs:
       - run:
           name: fetch
           command: .ci/fetch.sh
-      # docs, coverage, and test timing (can we use two outputs at once?); master branch only
+      # Docs & translations (master branch only).
       - run:
           name: docs-and-translation
           command: .ci/after_success_docs_translation.sh
