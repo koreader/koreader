@@ -206,7 +206,9 @@ function HotKeyShortcuts:registerKeyEvents()
         addKeyEvents(second_modifier, remaining_keys, "HotkeyAction", "alt_plus_")
     end -- if hasKeyboard()
 
-    logger.dbg("Hotkey total events registered successfully: ", #self.key_events)
+    local key_event_count = 0
+    for _ in pairs(self.key_events) do key_event_count = key_event_count + 1 end
+    logger.dbg("Hotkey total number of key events registered successfully: ", key_event_count)
 end -- registerKeyEvents()
 
 HotKeyShortcuts.onPhysicalKeyboardConnected = HotKeyShortcuts.registerKeyEvents
