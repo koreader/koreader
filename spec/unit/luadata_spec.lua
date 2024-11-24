@@ -1,9 +1,10 @@
 describe("luadata module", function()
-    local Settings, lfs
+    local DataStorage, Settings, lfs
     setup(function()
         require("commonrequire")
+        DataStorage = require("datastorage")
         lfs = require("libs/libkoreader-lfs")
-        Settings = require("frontend/luadata"):open("this-is-not-a-valid-file")
+        Settings = require("frontend/luadata"):open(DataStorage:getDataDir() .. "/this-is-not-a-valid-file")
     end)
 
     it("should handle undefined keys", function()
@@ -94,7 +95,7 @@ describe("luadata module", function()
     describe("backup data file", function()
         local file, d
         setup(function()
-            file = "dummy-test-file"
+            file = DataStorage:getDataDir() .. "/dummy-test-file"
             d = Settings:open(file)
         end)
         it("should generate data file", function()
