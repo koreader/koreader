@@ -47,7 +47,7 @@ coverage: coverage-summary
 coverage-run: all test-data $(INSTALL_DIR)/koreader/.luacov
 	rm -f $(addprefix $(INSTALL_DIR)/koreader/,$(COVERAGE_STATS) $(COVERAGE_REPORT))
 	# Run tests.
-	$(RUNTESTS) $(INSTALL_DIR)/koreader front --coverage --tags=!nocov $T
+	$(RUNTESTS) $(INSTALL_DIR)/koreader front --coverage $(if $(filter undefined,$(flavor T)),--tags=!nocov,$T)
 	# Aggregate statistics.
 	cd $(INSTALL_DIR)/koreader && \
 	    eval "$$($(LUAROCKS_BINARY) path)" && \
