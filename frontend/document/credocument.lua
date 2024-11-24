@@ -8,7 +8,7 @@ local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
 local buffer = require("string.buffer")
 local ffi = require("ffi")
-local util = require("frontend/util")
+local util = require("util")
 local C = ffi.C
 local cre -- Delayed loading
 local lfs = require("libs/libkoreader-lfs")
@@ -1722,7 +1722,6 @@ function CreDocument:setupCallCache()
         end
         -- Make this one non-local, in case we want to have it shown via a menu item
         self.getCallCacheStatistics = function()
-            local util = require("util")
             local res = {}
             table.insert(res, "CRE call cache content:")
             table.insert(res, string.format("     all: %d items", util.tableSize(self._global_call_cache) + self._tag_list_call_cache:used_slots()))
