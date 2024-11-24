@@ -49,7 +49,7 @@ describe("docsettings module", function()
 
     it("should read legacy history file", function()
         G_reader_settings:delSetting("document_metadata_folder")
-        local file = "file.pdf"
+        local file = DataStorage:getDataDir() .. "/file.pdf"
         local d = docsettings:open(file)
         d:saveSetting("a", "b")
         d:saveSetting("c", "d")
@@ -59,7 +59,7 @@ describe("docsettings module", function()
         local legacy_files = {
             docsettings:getHistoryPath(file),
             d.doc_sidecar_dir .. "/file.pdf.lua",
-            "file.pdf.kpdfview.lua",
+            file .. ".kpdfview.lua",
         }
 
         for _, f in ipairs(legacy_files) do
@@ -83,13 +83,13 @@ describe("docsettings module", function()
     end)
 
     it("should respect newest history file", function()
-        local file = "file.pdf"
+        local file = DataStorage:getDataDir() .. "/file.pdf"
         local d = docsettings:open(file)
 
         local legacy_files = {
             docsettings:getHistoryPath(file),
             d.doc_sidecar_dir .. "/file.pdf.lua",
-            "file.pdf.kpdfview.lua",
+            file .. ".kpdfview.lua",
         }
 
         -- docsettings:flush will remove legacy files.
@@ -120,7 +120,7 @@ describe("docsettings module", function()
 
     it("should reserve last good file", function()
         G_reader_settings:delSetting("document_metadata_folder")
-        local file = "file.pdf"
+        local file = DataStorage:getDataDir() .. "/file.pdf"
         local d = docsettings:open(file)
         d:saveSetting("a", "a")
         d:flush()
@@ -179,7 +179,7 @@ describe("docsettings module", function()
     describe("ignore empty sidecar file", function()
         it("should ignore empty file", function()
             G_reader_settings:delSetting("document_metadata_folder")
-            local file = "file.pdf"
+            local file = DataStorage:getDataDir() .. "/file.pdf"
             local d = docsettings:open(file)
             d:saveSetting("a", "a")
             d:flush()
@@ -213,7 +213,7 @@ describe("docsettings module", function()
 
         it("should ignore empty table", function()
             G_reader_settings:delSetting("document_metadata_folder")
-            local file = "file.pdf"
+            local file = DataStorage.getDataDir() .. "/file.pdf"
             local d = docsettings:open(file)
             d:saveSetting("a", "a")
             d:flush()

@@ -1,9 +1,10 @@
 describe("ReaderScreenshot module", function()
-    local DocumentRegistry, ReaderUI, lfs, UIManager, Event, Screen
+    local DataStorage, DocumentRegistry, ReaderUI, lfs, UIManager, Event, Screen
     local sample_epub = "spec/front/unit/data/leaves.epub"
     local readerui
     setup(function()
         require("commonrequire")
+        DataStorage = require("datastorage")
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")
         lfs = require("libs/libkoreader-lfs")
@@ -24,7 +25,7 @@ describe("ReaderScreenshot module", function()
     end)
 
     it("should get screenshot in portrait", function()
-        local name = "screenshots/reader_screenshot_portrait.png"
+        local name = DataStorage:getDataDir() .. "/screenshots/reader_screenshot_portrait.png"
         readerui:handleEvent(Event:new("SetRotationMode", Screen.DEVICE_ROTATED_UPRIGHT))
         UIManager:quit()
         UIManager:show(readerui)
@@ -40,7 +41,7 @@ describe("ReaderScreenshot module", function()
     end)
 
     it("should get screenshot in landscape", function()
-        local name = "screenshots/reader_screenshot_landscape.png"
+        local name = DataStorage:getDataDir() .. "/screenshots/reader_screenshot_landscape.png"
         readerui:handleEvent(Event:new("SetRotationMode", Screen.DEVICE_ROTATED_CLOCKWISE))
         UIManager:quit()
         UIManager:show(readerui)
