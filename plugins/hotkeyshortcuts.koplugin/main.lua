@@ -338,14 +338,14 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
             "alt_plus_left",
             "alt_plus_right",
         }
-        self:attachNewTableToExistingTable(cursor_keys, cursor_keys_haskeyboard)
+        attachNewTableToExistingTable(cursor_keys, cursor_keys_haskeyboard)
         local pg_turn_haskeyboard = {
             "alt_plus_left_page_back",
             "alt_plus_left_page_forward",
             "alt_plus_right_page_back",
             "alt_plus_right_page_forward",
         }
-        self:attachNewTableToExistingTable(pg_turn, pg_turn_haskeyboard)
+        attachNewTableToExistingTable(pg_turn, pg_turn_haskeyboard)
         local fn_keys_haskeyboard = {
             "modifier_plus_menu",
             "alt_plus_back",
@@ -353,7 +353,7 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
             "alt_plus_press",
             "alt_plus_menu"
         }
-        self:attachNewTableToExistingTable(fn_keys, fn_keys_haskeyboard)
+        attachNewTableToExistingTable(fn_keys, fn_keys_haskeyboard)
     end
     -- 4. Adds a menu item for enabling/disabling the use of the press key for shortcuts.
     if Device:hasScreenKB() or Device:hasSymKey() then
