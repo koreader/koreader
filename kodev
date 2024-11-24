@@ -297,8 +297,8 @@ function parse_options() {
         exit ${E_OPTERR}
     fi
     ARGS=("$@")
-    # echo "OPTS: ${OPTS[@]} [${#OPTS[@]}]"
-    # echo "ARGS: ${ARGS[@]} [${#ARGS[@]}]"
+    # echo "OPTS [${#OPTS[@]}]: $(print_quoted "${OPTS[@]}")"
+    # echo "ARGS [${#ARGS[@]}]: $(print_quoted "${ARGS[@]}")"
 }
 
 # }}}
@@ -651,30 +651,43 @@ $(build_options_help_msg 'BUILD' 'use existing build' '' 'default')
 }
 
 function kodev-test() {
+    # shellcheck disable=1091
+    source "${CURDIR}/base/test-runner/runtests"
     HELP="
 USAGE: $0 ${CMD} <OPTIONS> <TEST_SUITE> <TEST_NAMES>
 
-    TEST_SUITE: [all|base|front]. Optional: default to all.
+    TEST_SUITE: [all|base|bench|front]. Optional: default to all.
     TEST_NAMES: if no TEST_NAMES are given, the full testsuite is run.
 
-OPTIONS:
-
-    -t, --tags=TAGS           only run tests with given tags
-
+${RUNTESTS_HELP}
 $(build_options_help_msg 'BUILD' 'use existing build' '' 'default')
 "
-    parse_options "t:${BUILD_GETOPT_SHORT}" "tags:,${BUILD_GETOPT_LONG}" '*' "$@"
-    # Handle first argument.
-    suite=''
+    parse_options "${RUNTESTS_GETOPT_SHORT}${BUILD_GETOPT_SHORT}" "${RUNTESTS_GETOPT_LONG},${BUILD_GETOPT_LONG}" '*' "$@"
+    # Forward all options except for most build options.
+    local targs=(${VERBOSE:+-v})
+    set -- "${OPTS[@]}"
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            # Those need special handling so an option-like argument is properly forwarded.
+            --busted | --meson)
+                targs+=("$1=$2")
+                shift
+                ;;
+            # Other.
+            *) targs+=("$1") ;;
+        esac
+        shift
+    done
     set -- "${ARGS[@]}"
-    if [[ $# -ne 0 ]]; then
+    if [[ $# -gt 0 ]]; then
         suite="$1"
         shift
-        ARGS=("$@")
+    else
+        suite='all'
     fi
-    # The rest (custom options included) is forwarded to busted.
+    targs+=("$@")
     setup_target 'emulator'
-    run_make ${NO_BUILD:+--assume-old=all} "test${suite}" BUSTED_OVERRIDES="$(print_quoted "${OPTS[@]}" "${ARGS[@]}")"
+    run_make ${NO_BUILD:+--assume-old=all} "test${suite}" T="$(print_quoted "${targs[@]}")"
 }
 
 # }}}

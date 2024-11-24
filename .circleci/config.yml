@@ -39,7 +39,6 @@ jobs:
       CLICOLOR_FORCE: "1"
       EMULATE_READER: "1"
       MAKEFLAGS: "PARALLEL_JOBS=3 OUTPUT_DIR=build INSTALL_DIR=install"
-    parallelism: 2
     steps:
       # Checkout / fetch. {{{
       - checkout
@@ -110,7 +109,7 @@ jobs:
           command: .ci/after_success.sh
       # By storing the test results CircleCI automatically distributes tests based on execution time.
       - store_test_results:
-          path: &TESTS_XML install/koreader/junit-test-results.xml
+          path: &TESTS_XML test-results.xml
       # CircleCI doesn't make the test results available as artifacts (October 2017).
       - store_artifacts:
           path: *TESTS_XML
@@ -125,7 +124,6 @@ jobs:
     resource_class: small
     environment:
       BASH_ENV: "~/.bashrc"
-    parallelism: 1
     steps:
       - checkout
       - run:
