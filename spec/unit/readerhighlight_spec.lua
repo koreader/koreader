@@ -157,7 +157,7 @@ describe("Readerhighlight module", function()
                 readerui.highlight:clear()
                 readerui.annotation.annotations = {}
             end)
-            it("should response on tap gesture #nocov", function()
+            it("should response on tap gesture", function()
                 tap_highlight_text(readerui,
                                    Geom:new{ x = 260, y = 70 },
                                    Geom:new{ x = 260, y = 150 },
@@ -185,7 +185,7 @@ describe("Readerhighlight module", function()
                 readerui.highlight:clear()
                 readerui.annotation.annotations = {}
             end)
-            it("should respond to tap gesture #nocov", function()
+            it("should respond to tap gesture", function()
                 tap_highlight_text(readerui, Geom:new{ x = 260, y = 70 }, Geom:new{ x = 260, y = 150 }, Geom:new{ x = 280, y = 110 })
                 screenshot("reader_tap_highlight_text_pdf_scanned.png")
             end)
@@ -215,7 +215,7 @@ describe("Readerhighlight module", function()
                 -- We haven't torn it down yet
                 ReaderUI.instance = readerui
             end)
-            it("should response on tap gesture #nocov", function()
+            it("should response on tap gesture", function()
                 tap_highlight_text(readerui, Geom:new{ x = 260, y = 70 }, Geom:new{ x = 260, y = 150 }, Geom:new{ x = 280, y = 110 })
                 screenshot("reader_tap_highlight_text_pdf_reflowed.png")
             end)

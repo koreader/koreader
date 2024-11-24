@@ -1,4 +1,4 @@
-describe("BatteryState plugin tests #nocov", function()
+describe("BatteryState plugin tests", function()
     local MockTime, module, time
 
     local stat = function() --luacheck: ignore

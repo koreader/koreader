@@ -257,7 +257,7 @@ local facet_sample = [[
 </feed>
 ]]
 
-describe("OPDS module #nocov", function()
+describe("OPDS module", function()
     local socketutil
     local OPDSParser, OPDSBrowser
     local orig_path, orig_lbt, orig_ltt, orig_fbt, orig_ftt
