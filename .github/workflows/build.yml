@@ -65,6 +65,7 @@ jobs:
           packages=(
             autoconf
             automake
+            bash
             binutils
             cmake
             coreutils

@@ -29,35 +29,39 @@ run-wbuilder: all
 
 # Testing & coverage. {{{
 
-PHONY += coverage coverage-full coverage-run coverage-summary test testbase testfront
+PHONY += coverage coverage-full coverage-run coverage-summary test test%
 
-$(INSTALL_DIR)/koreader/.busted: .busted
-	$(SYMLINK) .busted $@
+$(addprefix test,all base bench front): all test-data
+	$(RUNTESTS) $(INSTALL_DIR)/koreader $(@:test%=%) $T
+
+test: testall
+
+COVERAGE_STATS = luacov.stats.out
+COVERAGE_REPORT = luacov.report.out
 
 $(INSTALL_DIR)/koreader/.luacov:
 	$(SYMLINK) .luacov $@
 
-testbase: all test-data $(OUTPUT_DIR)/.busted $(OUTPUT_DIR)/spec/base
-	cd $(OUTPUT_DIR) && $(BUSTED_LUAJIT) $(or $(BUSTED_OVERRIDES),./spec/base/unit)
-
-testfront: all test-data $(INSTALL_DIR)/koreader/.busted
-	# sdr files may have unexpected impact on unit testing
-	-rm -rf spec/unit/data/*.sdr
-	cd $(INSTALL_DIR)/koreader && $(BUSTED_LUAJIT) $(BUSTED_OVERRIDES)
-
-test: testbase testfront
-
 coverage: coverage-summary
 
-coverage-run: all test-data $(INSTALL_DIR)/koreader/.busted $(INSTALL_DIR)/koreader/.luacov
-	-rm -rf $(INSTALL_DIR)/koreader/luacov.*.out
-	cd $(INSTALL_DIR)/koreader && $(BUSTED_LUAJIT) --coverage --exclude-tags=nocov
+coverage-run: all test-data $(INSTALL_DIR)/koreader/.luacov
+	rm -f $(addprefix $(INSTALL_DIR)/koreader/,$(COVERAGE_STATS) $(COVERAGE_REPORT))
+	# Run tests.
+	$(RUNTESTS) $(INSTALL_DIR)/koreader front --coverage --tags=!nocov $T
+	# Aggregate statistics.
+	cd $(INSTALL_DIR)/koreader && \
+	    eval "$$($(LUAROCKS_BINARY) path)" && \
+	    test -r $(COVERAGE_STATS) || \
+	    ./luajit tools/merge_luacov_stats.lua $(COVERAGE_STATS) spec/run/*/$(COVERAGE_STATS)
+	# Generate report.
+	cd $(INSTALL_DIR)/koreader && \
+	    eval "$$($(LUAROCKS_BINARY) path)" && \
+	    ./luajit -e 'r = require "luacov.runner"; r.run_report(r.configuration)' /dev/null
 
 coverage-full: coverage-run
 	cd $(INSTALL_DIR)/koreader && cat luacov.report.out
 
 coverage-summary: coverage-run
-	# coverage report summary
 	cd $(INSTALL_DIR)/koreader && tail -n \
 		+$$(($$(grep -nm1 -e "^Summary$$" luacov.report.out|cut -d: -f1)-1)) \
 		luacov.report.out

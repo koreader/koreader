@@ -6,6 +6,11 @@
 -- global flag to indicate coverage test
 LUACOV = true
 
+local lfs = require "lfs"
+local kohome = os.getenv("KO_HOME")
+local outdir = (kohome or ".") .. "/"
+lfs.mkdir(outdir)
+
 return {
 
   -- default filename to load for config options if not provided
@@ -13,13 +18,13 @@ return {
   ['configfile'] = '.luacov',
 
   -- filename to store stats collected
-  ['statsfile'] = 'luacov.stats.out',
+  ['statsfile'] = outdir .. 'luacov.stats.out',
 
   -- filename to store report
-  ['reportfile'] = 'luacov.report.out',
+  ['reportfile'] = outdir .. 'luacov.report.out',
 
   -- Run reporter on completion? (won't work for ticks)
-  runreport = true,
+  runreport = false,
 
   -- Delete stats file after reporting?
   deletestats = false,
@@ -62,3 +67,5 @@ return {
 
 
 }
+
+-- vim: ft=lua
