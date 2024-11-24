@@ -39,13 +39,13 @@ describe("ReaderLink module", function()
             }
         end)
 
-        it("should jump to links #nocov", function()
+        it("should jump to links", function()
             readerui.rolling:onGotoPage(5)
             readerui.link:onTap(nil, {pos = {x = 320, y = 190}})
             assert.is.same(37, readerui.rolling.current_page)
         end)
 
-        it("should be able to go back after link jump #nocov", function()
+        it("should be able to go back after link jump", function()
             readerui.rolling:onGotoPage(5)
             readerui.link:onTap(nil, {pos = {x = 320, y = 190}})
             assert.is.same(37, readerui.rolling.current_page)
