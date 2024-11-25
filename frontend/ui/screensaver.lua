@@ -194,10 +194,10 @@ function Screensaver:expandSpecial(message, fallback)
         local powerd = Device:getPowerDevice()
         if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
             batt_lvl = powerd:getCapacity() + powerd:getAuxCapacity()
-           batt_symbol = powerd:getBatterySymbol(powerd:isAuxCharged(), powerd:isAuxCharging(), batt_lvl / 2)
+            batt_symbol = powerd:getBatterySymbol(powerd:isAuxCharged(), powerd:isAuxCharging(), batt_lvl / 2)
         else
             batt_lvl = powerd:getCapacity()
-           batt_symbol = powerd:getBatterySymbol(powerd:isCharged(), powerd:isCharging(), batt_lvl)
+            batt_symbol = powerd:getBatterySymbol(powerd:isCharged(), powerd:isCharging(), batt_lvl)
         end
     end
 
