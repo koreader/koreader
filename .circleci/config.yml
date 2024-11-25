@@ -7,7 +7,7 @@ parameters:
     # Bump this to reset all caches.
     cache_epoch:
       type: integer
-      default: 1
+      default: 2
 
 # }}}
 
@@ -91,7 +91,7 @@ jobs:
           name: Save build cache
           key: *CACHE_KEY_BUILD_CACHE
           paths:
-            - /home/ko/.ccache
+            - /home/ko/.cache/ccache
       - save_cache:
           name: Save build directory
           key: *CACHE_KEY_BUILD_DIR
