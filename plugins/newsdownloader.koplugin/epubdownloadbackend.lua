@@ -46,8 +46,14 @@ local function filter(text, element)
         "div#newsstorytext",
         "div.general",
         }
-    if element and element ~= "" then
-        table.insert(selectors, 1, element)
+    if type(element) == "string" and element ~= "" then
+        table.insert(selectors, 1, element)  -- Insert string at the beginning
+    elseif type(element) == "table" then
+        for _, el in ipairs(element) do
+            if type(el) == "string" and el ~= "" then
+                table.insert(selectors, 1, el)  -- Insert each non-empty element at the beginning
+            end
+        end
     end
     for _, sel in ipairs(selectors) do
        local elements = root:select(sel)
