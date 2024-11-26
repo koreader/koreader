@@ -50,7 +50,7 @@ local function filter(text, element)
         table.insert(selectors, 1, element)  -- Insert string at the beginning
     elseif type(element) == "table" then
         for _, el in ipairs(element) do
-            if el ~= "" then
+            if type(el) == "string" and el ~= "" then
                 table.insert(selectors, 1, el)  -- Insert each non-empty element at the beginning
             end
         end
