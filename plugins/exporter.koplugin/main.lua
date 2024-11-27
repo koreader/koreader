@@ -102,12 +102,10 @@ end
 local Exporter = WidgetContainer:extend{
     name = "exporter",
     targets = {
-        flomo = require("target/flomo"),
         html = require("target/html"),
         joplin = require("target/joplin"),
         json = require("target/json"),
         markdown = require("target/markdown"),
-        memos = require("target/memos"),
         my_clippings = require("target/my_clippings"),
         nextcloud = require("target/nextcloud"),
         readwise = require("target/readwise"),
