@@ -6,6 +6,7 @@ local DEFAULT_PLUGIN_PATH = "plugins"
 
 -- plugin names that were removed and are no longer available.
 local OBSOLETE_PLUGINS = {
+    autofrontlight = true,
     calibrecompanion = true,
     evernote = true,
     goodreads = true,
