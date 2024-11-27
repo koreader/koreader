@@ -127,7 +127,7 @@ function PluginLoader:_discover()
         end
     end
     for _, lookup_path in ipairs(lookup_path_list) do
-        logger.info("Discovering plugins from directory:", lookup_path)
+        logger.info("Looking for plugins in directory:", lookup_path)
         for entry in lfs.dir(lookup_path) do
             local plugin_root = lookup_path.."/"..entry
             local mode = lfs.attributes(plugin_root, "mode")
@@ -185,7 +185,7 @@ function PluginLoader:_load(t)
                 end
                 sandboxPluginEventHandlers(plugin_module)
                 table.insert(self.enabled_plugins, plugin_module)
-                logger.info("Plugin loaded", plugin_module.name)
+                logger.dbg("Plugin loaded", plugin_module.name)
             end
         end
     end
@@ -212,7 +212,7 @@ function PluginLoader:loadPlugins()
     end
 
     table.sort(self.enabled_plugins, function(v1,v2) return v1.path < v2.path end)
-    
+
     return self.enabled_plugins, self.disabled_plugins
 end
 
