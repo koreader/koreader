@@ -45,7 +45,7 @@ function AutoStandby:init()
 
     -- Schedule the next standby on plugin init, either:
     --   1. When KOReader starts -> to prevent the device from instantly going into standby
-    --   2. During a transition  -> since the standby scheduled following the input event leading to the transtion has been unscheduled
+    --   2. During a transition  -> since the standby scheduled following the input event leading to the transition has been unscheduled
     --        to avoid going into standby during the transition, re-schedule the next standby
     AutoStandby:scheduleNextStandby()
 end
