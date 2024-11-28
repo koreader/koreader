@@ -339,6 +339,7 @@ function TextViewer:init(reinit)
             -- a few things before forwarding them
             "touch", "pan", "pan_release",
         },
+        anchor = self.anchor,
         self.frame,
     }
     self[1] = WidgetContainer:new{
@@ -346,6 +347,10 @@ function TextViewer:init(reinit)
         dimen = self.region,
         self.movable,
     }
+end
+
+function TextViewer:getContentSize()
+    return self.movable.dimen
 end
 
 function TextViewer:onCloseWidget()
