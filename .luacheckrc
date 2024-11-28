@@ -28,9 +28,6 @@ files["spec/unit/*"].std = "+busted"
 files["spec/unit/*"].globals = {
     "match", -- can be removed once luacheck 0.24.0 or higher is used
     "package",
-    "requireBackgroundRunner",
-    "stopBackgroundRunner",
-    "notifyBackgroundJobsUpdated",
 }
 
 -- TODO: clean up and enforce max line width (631)
