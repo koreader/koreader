@@ -42,10 +42,17 @@ function AutoStandby:init()
 
     UIManager.event_hook:registerWidget("InputEvent", self)
     self.ui.menu:registerToMainMenu(self)
+
+    -- Schedule the next standby on plugin init, either:
+    --   1. When KOReader starts -> to prevent the device from instantly going into standby
+    --   2. During a transition  -> since the standby scheduled following the input event leading to the transtion has been unscheduled
+    --        to avoid going into standby during the transition, re-schedule the next standby
+    AutoStandby:scheduleNextStandby()
 end
 
 function AutoStandby:onCloseWidget()
     logger.dbg("AutoStandby:onCloseWidget() instance=", tostring(self))
+    -- Unschedule to next standby to avoid going into standby during a transition
     UIManager:unschedule(AutoStandby.allow)
 end
 
@@ -79,13 +86,21 @@ function AutoStandby:onInputEvent()
         return
     end
 
+    self.scheduleNextStandby()
+end
+
+-- Schedule the next standby for when it's actually due
+function AutoStandby:scheduleNextStandby()
+    local t = os.time()
+    local config = AutoStandby.settings.data
+
     -- Nuke past timer as we'll reschedule the allow (or not)
     UIManager:unschedule(AutoStandby.allow)
 
     if PowerD:getCapacityHW() <= config.bat then
         -- battery is below threshold, so allow standby aggressively
         logger.dbg("AutoStandby: battery below threshold, enabling aggressive standby")
-        self:allow()
+        AutoStandby:allow()
         return
     elseif t > AutoStandby.lastInput + config.max then
         -- too far apart, so reset delay
@@ -99,17 +114,17 @@ function AutoStandby:onInputEvent()
 
     AutoStandby.lastInput = t
 
-    if not self:isAllowedByConfig() then
+    if not AutoStandby:isAllowedByConfig() then
         -- all standbys forbidden, always prevent
-        self:prevent()
+        AutoStandby:prevent()
         return
     elseif AutoStandby.delay == 0 then
         -- If delay is 0 now, just allow straight
-        self:allow()
+        AutoStandby:allow()
         return
     end
     -- otherwise prevent for a while for duration of the delay
-    self:prevent()
+    AutoStandby:prevent()
     -- and schedule standby re-enable once delay expires
     UIManager:scheduleIn(AutoStandby.delay, AutoStandby.allow, AutoStandby)
 end
