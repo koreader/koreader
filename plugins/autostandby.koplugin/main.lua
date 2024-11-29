@@ -52,7 +52,7 @@ end
 
 function AutoStandby:onCloseWidget()
     logger.dbg("AutoStandby:onCloseWidget() instance=", tostring(self))
-    -- Unschedule to next standby to avoid going into standby during a transition
+    -- Unschedule the next standby to avoid going into standby during a transition
     UIManager:unschedule(AutoStandby.allow)
 end
 
