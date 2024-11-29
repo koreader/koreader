@@ -47,7 +47,7 @@ function AutoStandby:init()
     --   1. When KOReader starts -> to prevent the device from instantly going into standby
     --   2. During a transition  -> since the standby scheduled following the input event leading to the transition has been unscheduled
     --        to avoid going into standby during the transition, re-schedule the next standby
-    AutoStandby:_scheduleNext(os.time(), self.settings.data)
+    self:_scheduleNext(os.time(), self.settings.data)
 end
 
 function AutoStandby:onCloseWidget()
