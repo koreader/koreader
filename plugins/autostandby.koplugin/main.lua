@@ -126,7 +126,7 @@ function AutoStandby:onInputEvent()
         return
     end
 
-    self._scheduleNext()
+    self:_scheduleNext()
 end
 
 -- Prevent standby (by timer)
