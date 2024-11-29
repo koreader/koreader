@@ -24,44 +24,6 @@ local AutoStandby = WidgetContainer:extend{
     preventing = false,
 }
 
--- Schedule the next standby for when it's actually due
-function AutoStandby:_scheduleNext(t, config)
-
-    -- Nuke past timer as we'll reschedule the allow (or not)
-    UIManager:unschedule(AutoStandby.allow)
-
-    if PowerD:getCapacityHW() <= config.bat then
-        -- battery is below threshold, so allow standby aggressively
-        logger.dbg("AutoStandby: battery below threshold, enabling aggressive standby")
-        self:allow()
-        return
-    elseif t > AutoStandby.lastInput + config.max then
-        -- too far apart, so reset delay
-        logger.dbg("AutoStandby: input too far in future, resetting adaptive standby delay from", AutoStandby.delay, "to", config.min)
-        AutoStandby.delay = config.min
-    elseif t < AutoStandby.lastInput + AutoStandby.delay + config.win then
-        -- otherwise widen the delay - "adaptive" - with frequent inputs, but don't grow beyonnd the max
-        AutoStandby.delay = math.min((AutoStandby.delay+1) * config.mul, config.max)
-        logger.dbg("AutoStandby: increasing standby delay to", AutoStandby.delay)
-    end -- equilibrium: when the event arrives beyond delay + win, but still below max, we keep the delay as-is
-
-    AutoStandby.lastInput = t
-
-    if not self:isAllowedByConfig() then
-        -- all standbys forbidden, always prevent
-        self:prevent()
-        return
-    elseif AutoStandby.delay == 0 then
-        -- If delay is 0 now, just allow straight
-        self:allow()
-        return
-    end
-    -- otherwise prevent for a while for duration of the delay
-    self:prevent()
-    -- and schedule standby re-enable once delay expires
-    UIManager:scheduleIn(AutoStandby.delay, AutoStandby.allow, AutoStandby)
-end
-
 function AutoStandby:init()
     logger.dbg("AutoStandby:init() instance=", tostring(self))
     if not self.settings:has("filter") then
@@ -125,6 +87,44 @@ function AutoStandby:onInputEvent()
     end
 
     self:_scheduleNext(t, config)
+end
+
+-- Schedule the next standby for when it's actually due
+function AutoStandby:_scheduleNext(t, config)
+
+    -- Nuke past timer as we'll reschedule the allow (or not)
+    UIManager:unschedule(AutoStandby.allow)
+
+    if PowerD:getCapacityHW() <= config.bat then
+        -- battery is below threshold, so allow standby aggressively
+        logger.dbg("AutoStandby: battery below threshold, enabling aggressive standby")
+        self:allow()
+        return
+    elseif t > AutoStandby.lastInput + config.max then
+        -- too far apart, so reset delay
+        logger.dbg("AutoStandby: input too far in future, resetting adaptive standby delay from", AutoStandby.delay, "to", config.min)
+        AutoStandby.delay = config.min
+    elseif t < AutoStandby.lastInput + AutoStandby.delay + config.win then
+        -- otherwise widen the delay - "adaptive" - with frequent inputs, but don't grow beyonnd the max
+        AutoStandby.delay = math.min((AutoStandby.delay+1) * config.mul, config.max)
+        logger.dbg("AutoStandby: increasing standby delay to", AutoStandby.delay)
+    end -- equilibrium: when the event arrives beyond delay + win, but still below max, we keep the delay as-is
+
+    AutoStandby.lastInput = t
+
+    if not self:isAllowedByConfig() then
+        -- all standbys forbidden, always prevent
+        self:prevent()
+        return
+    elseif AutoStandby.delay == 0 then
+        -- If delay is 0 now, just allow straight
+        self:allow()
+        return
+    end
+    -- otherwise prevent for a while for duration of the delay
+    self:prevent()
+    -- and schedule standby re-enable once delay expires
+    UIManager:scheduleIn(AutoStandby.delay, AutoStandby.allow, AutoStandby)
 end
 
 -- Prevent standby (by timer)
