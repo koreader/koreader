@@ -16,7 +16,7 @@ if not (Device:hasScreenKB() or Device:hasKeyboard()) then
 end
 
 local HotKeyShortcuts = InputContainer:extend{
-    name = "hotkeyshortcuts",
+    name = "hotkeys",
     settings_data = nil,
     hotkeyshortcuts = nil,
     defaults = nil,
