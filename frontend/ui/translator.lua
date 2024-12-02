@@ -188,6 +188,19 @@ local Translator = {
         ssel = 0,  -- ?
         tsel = 0,  -- ?
         -- tk = "" -- auth token
+        -- dt = { -- what we want in result
+            -- "t",   -- translation of source text
+            -- "at",  -- alternate translations
+            -- Next options only give additional results when text is a single word
+            -- "bd",  -- dictionary (articles, reverse translations, etc)
+            -- "ex",  -- examples
+            -- "ld",  -- ?
+            -- "md",  -- definitions of source text
+            -- "qca", -- ?
+            -- "rw",  -- "see also" list
+            -- "rm",  -- transcription / transliteration of source and translated texts
+            -- "ss",  -- synonyms of source text, if it's one word
+        -- }
         -- q = text to translate
     },
     default_lang = "en",
@@ -374,19 +387,7 @@ function Translator:loadPage(text, target_lang, source_lang)
     local query = ""
     self.trans_params.tl = target_lang
     self.trans_params.sl = source_lang
-    self.trans_params.dt = { -- what we want in result
-       "t",   -- translation of source text
-       "at",  -- alternate translations
-       -- Next options only give additional results when text is a single word
-       -- "bd",  -- dictionary (articles, reverse translations, etc)
-       -- "ex",  -- examples
-       -- "ld",  -- ?
-       "md",  -- definitions of source text
-       -- "qca", -- ?
-       -- "rw",  -- "see also" list
-       -- "rm",  -- transcription / transliteration of source and translated texts
-       -- "ss",  -- synonyms of source text, if it's one word
-    }
+    self.trans_params.dt = {"t", "at", "md"}
 
     if G_reader_settings:isTrue("translator_with_romanizations") then
        table.insert(self.trans_params.dt, "rm")
