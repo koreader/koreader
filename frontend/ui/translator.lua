@@ -390,13 +390,7 @@ function Translator:loadPage(text, target_lang, source_lang)
     if G_reader_settings:isTrue("translator_from_romanizations") then
        table.insert(self.trans_params.dt, "rm")
     else
-       local rmIndex = nil
-       for i, v in pairs(self.trans_params.dt) do
-          if v == "rm" then
-             rmIndex = i
-             break
-          end
-       end
+       local rmIndex = util.arrayContains(self.trans_params.dt, "rm")
        if rmIndex then
           table.remove(self.trans_params.dt, rmIndex)
        end
