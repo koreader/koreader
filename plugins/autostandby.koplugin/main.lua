@@ -42,10 +42,17 @@ function AutoStandby:init()
 
     UIManager.event_hook:registerWidget("InputEvent", self)
     self.ui.menu:registerToMainMenu(self)
+
+    -- Schedule the next standby on plugin init, either:
+    --   1. When KOReader starts -> to prevent the device from instantly going into standby
+    --   2. During a transition  -> since the standby scheduled following the input event leading to the transition has been unscheduled
+    --        to avoid going into standby during the transition, re-schedule the next standby
+    self:_scheduleNext(os.time(), self.settings.data)
 end
 
 function AutoStandby:onCloseWidget()
     logger.dbg("AutoStandby:onCloseWidget() instance=", tostring(self))
+    -- Unschedule the next standby to avoid going into standby during a transition
     UIManager:unschedule(AutoStandby.allow)
 end
 
@@ -78,6 +85,12 @@ function AutoStandby:onInputEvent()
         logger.dbg("AutoStandby: input packed too close to previous one, ignoring")
         return
     end
+
+    self:_scheduleNext(t, config)
+end
+
+-- Schedule the next standby for when it's actually due
+function AutoStandby:_scheduleNext(t, config)
 
     -- Nuke past timer as we'll reschedule the allow (or not)
     UIManager:unschedule(AutoStandby.allow)
