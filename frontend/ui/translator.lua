@@ -268,10 +268,10 @@ This is useful:
                 text = _("Show romanizations"),
                 help_text = _("Displays source language text in latin characters. This is useful for reading languages with non-latin scripts."),
                 checked_func = function()
-                    return G_reader_settings:isTrue("translator_from_romanizations")
+                    return G_reader_settings:isTrue("translator_with_romanizations")
                 end,
                 callback = function()
-                    G_reader_settings:flipTrue("translator_from_romanizations")
+                    G_reader_settings:flipTrue("translator_with_romanizations")
                 end,
             },
             {
@@ -388,7 +388,7 @@ function Translator:loadPage(text, target_lang, source_lang)
        -- "ss",  -- synonyms of source text, if it's one word
     }
 
-    if G_reader_settings:isTrue("translator_from_romanizations") then
+    if G_reader_settings:isTrue("translator_with_romanizations") then
        table.insert(self.trans_params.dt, "rm")
     end
     for k,v in pairs(self.trans_params) do
