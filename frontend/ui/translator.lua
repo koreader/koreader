@@ -279,6 +279,7 @@ This is useful:
             },
             {
                 text = _("Show romanizations"),
+                help_text = _("Displays source language text in latin characters. This is useful for reading languages with non-latin scripts."),
                 checked_func = function()
                     return G_reader_settings:isTrue("translator_from_romanizations")
                 end,
