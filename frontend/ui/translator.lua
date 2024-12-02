@@ -278,6 +278,16 @@ This is useful:
                 end,
             },
             {
+                text = _("Show romanizations"),
+                help_text = _("Displays source language text in Latin characters. This is useful for reading languages with non-Latin scripts."),
+                checked_func = function()
+                    return G_reader_settings:isTrue("translator_with_romanizations")
+                end,
+                callback = function()
+                    G_reader_settings:flipTrue("translator_with_romanizations")
+                end,
+            },
+            {
                 text_func = function()
                     local lang = G_reader_settings:readSetting("translator_from_language")
                     return T(_("Translate from: %1"), self:getLanguageName(lang, ""))
@@ -377,6 +387,7 @@ function Translator:loadPage(text, target_lang, source_lang)
     local query = ""
     self.trans_params.tl = target_lang
     self.trans_params.sl = source_lang
+
     for k,v in pairs(self.trans_params) do
         if type(v) == "table" then
             for _, v2 in ipairs(v) do
@@ -385,6 +396,9 @@ function Translator:loadPage(text, target_lang, source_lang)
         else
             query = query .. k .. '=' .. v .. '&'
         end
+    end
+    if G_reader_settings:isTrue("translator_with_romanizations") then
+       query = query .. "dt=rm&"
     end
     local parsed = url.parse(self:getTransServer())
     parsed.path = self.trans_path
@@ -560,10 +574,14 @@ function Translator:_showTranslation(text, detailed_view, source_lang, target_la
         -- for easier quick reading
         local source = {}
         local translated = {}
+        local romanized = {}
         for i, r in ipairs(result[1]) do
             if detailed_view then
                 local s = type(r[2]) == "string" and r[2] or ""
                 table.insert(source, s)
+                if type(r[4]) == "string" then
+                    table.insert(romanized, r[4])
+                end
             end
             local t = type(r[1]) == "string" and r[1] or ""
             table.insert(translated, t)
@@ -572,6 +590,9 @@ function Translator:_showTranslation(text, detailed_view, source_lang, target_la
         if detailed_view then
             text_main = "● " .. text_main
             table.insert(output, "▣ " .. table.concat(source, " "))
+            if #romanized > 0 then
+                table.insert(output, table.concat(romanized, " "))
+            end
         end
         table.insert(output, text_main)
     end
