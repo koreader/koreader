@@ -53,7 +53,6 @@ describe("Translator module", function()
         G_reader_settings:saveSetting("translator_from_romanizations", false)
         assert.is_false(G_reader_settings:isTrue("translator_from_romanizations"))
         local translation_result = Translator:loadPage(chinese_wikipedia_text, "en", "auto")
-        local translations = translation_result[1]
         local romanizations = getRomanizations(translation_result)
         assert.is.same(0, #romanizations)
     end)
