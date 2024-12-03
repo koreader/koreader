@@ -408,11 +408,12 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
     local is_standby = setting == "auto_standby_timeout_seconds"
 
     local day, hour, minute, second
-    local day_max, hour_max, min_max, sec_max
+    local day_max, day_min, hour_max, min_max, sec_max
     if time_scale == 2 then
         day = math.floor(setting_val * (1/(24*3600)))
         hour = math.floor(setting_val * (1/3600)) % 24
         day_max = math.floor(range[2] * (1/(24*3600))) - 1
+        day_min = 0
         hour_max = 23
     elseif time_scale == 1 then
         hour = math.floor(setting_val * (1/3600))
@@ -437,6 +438,7 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
         min_hold_step = 10,
         sec_hold_step = 10,
         day_max = day_max,
+        day_min = day_min,
         hour_max = hour_max,
         min_max = min_max,
         sec_max = sec_max,
@@ -465,6 +467,7 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
                 text = T(_("%1: %2"), title, time_string),
                 timeout = 3,
             })
+            time_spinner:onClose()
         end,
         default_value = datetime.secondsToClockDuration("letters", default_value,
             time_scale == 2 or time_scale == 1, true),
