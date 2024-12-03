@@ -8,7 +8,7 @@ local Device = require("device")
 --       to events in core. If you assign them to actions in this plugin, those actions will be in
 --       conflict with the existing ones and hell will break loose.
 return {
-    hotkeyshortcuts_fm = {
+    hotkeys_fm = {
         modifier_plus_up                 = nil,
         -- modifier_plus_down               -- keep nil, brings up FM search widget (equivalent to tapping on 'Page x of y').
         modifier_plus_left               = nil,
@@ -64,7 +64,7 @@ return {
         alt_plus_y = nil,
         alt_plus_z = nil,
     },
-    hotkeyshortcuts_reader = {
+    hotkeys_reader = {
         modifier_plus_up                 = {toc = true,},
         modifier_plus_down               = {book_map = true,},
         modifier_plus_left               = {bookmarks = true,},

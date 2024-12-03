@@ -15,17 +15,17 @@ if not (Device:hasScreenKB() or Device:hasKeyboard()) then
     return { disabled = true, }
 end
 
-local HotKeyShortcuts = InputContainer:extend{
+local HotKeys = InputContainer:extend{
     name = "hotkeys",
     settings_data = nil,
-    hotkeyshortcuts = nil,
+    hotkeys = nil,
     defaults = nil,
     updated = false,
 }
-local hotkeyshortcuts_path = FFIUtil.joinPath(DataStorage:getSettingsDir(), "hotkeyshortcuts.lua")
+local hotkeys_path = FFIUtil.joinPath(DataStorage:getSettingsDir(), "hotkeys.lua")
 
 -- mofifier *here* refers to either screenkb or shift
-local hotkeyshortcuts_list = {
+local hotkeys_list = {
     -- cursor keys
     modifier_plus_up                 = Device:hasScreenKB() and _("ScreenKB + Up")      or _("Shift + Up"),
     modifier_plus_down               = Device:hasScreenKB() and _("ScreenKB + Down")    or _("Shift + Down"),
@@ -42,12 +42,12 @@ local hotkeyshortcuts_list = {
     modifier_plus_press              = Device:hasScreenKB() and _("ScreenKB + Press")   or _("Shift + Press"),
     -- modifier_plus_menu (screenkb+menu) is already used globally for screenshots (on k4), don't add it here.
 }
-if LuaSettings:open(hotkeyshortcuts_path).data["press_key_does_hotkeyshortcuts"] then
-    local hotkeyshortcuts_list_press = { press = _("Press") }
-    util.tableMerge(hotkeyshortcuts_list, hotkeyshortcuts_list_press)
+if LuaSettings:open(hotkeys_path).data["press_key_does_hotkeys"] then
+    local hotkeys_list_press = { press = _("Press") }
+    util.tableMerge(hotkeys_list, hotkeys_list_press)
 end
 if Device:hasKeyboard() then
-    local hotkeyshortcuts_list_haskeyboard = {
+    local hotkeys_list_haskeyboard = {
         modifier_plus_menu          = _("Shift + Menu"),
         -- NOTE: we will use 'alt' for kindles and 'ctrl' for other devices with keyboards
         --       but for simplicity we will use in code 'alt+keys' as the array's key for all.
@@ -94,21 +94,21 @@ if Device:hasKeyboard() then
         alt_plus_y = Device:hasSymKey() and _("Alt + Y") or _("Ctrl + Y"),
         alt_plus_z = Device:hasSymKey() and _("Alt + Z") or _("Ctrl + Z"),
     }
-    util.tableMerge(hotkeyshortcuts_list, hotkeyshortcuts_list_haskeyboard)
+    util.tableMerge(hotkeys_list, hotkeys_list_haskeyboard)
 end
 
-function HotKeyShortcuts:init()
+function HotKeys:init()
     local defaults_path = FFIUtil.joinPath(self.path, "defaults.lua")
-    if not lfs.attributes(hotkeyshortcuts_path, "mode") then
-        FFIUtil.copyFile(defaults_path, hotkeyshortcuts_path)
+    if not lfs.attributes(hotkeys_path, "mode") then
+        FFIUtil.copyFile(defaults_path, hotkeys_path)
     end
     self.is_docless = self.ui == nil or self.ui.document == nil
-    self.hotkey_mode = self.is_docless and "hotkeyshortcuts_fm" or "hotkeyshortcuts_reader"
+    self.hotkey_mode = self.is_docless and "hotkeys_fm" or "hotkeys_reader"
     self.defaults = LuaSettings:open(defaults_path).data[self.hotkey_mode]
     if not self.settings_data then
-        self.settings_data = LuaSettings:open(hotkeyshortcuts_path)
+        self.settings_data = LuaSettings:open(hotkeys_path)
     end
-    self.hotkeyshortcuts = self.settings_data.data[self.hotkey_mode]
+    self.hotkeys = self.settings_data.data[self.hotkey_mode]
 
     self.ui.menu:registerToMainMenu(self)
     Dispatcher:init()
@@ -120,21 +120,21 @@ end
     @param hotkey (string) The identifier for the hotkey that was pressed.
     @return (boolean) Returns true if the hotkey action was successfully executed, otherwise returns nil.
 ]]
-function HotKeyShortcuts:onHotkeyAction(hotkey)
-    local hotkey_action_list = self.hotkeyshortcuts[hotkey]
+function HotKeys:onHotkeyAction(hotkey)
+    local hotkey_action_list = self.hotkeys[hotkey]
     local context = self.is_docless and "FileManager" or "Reader"
     if hotkey_action_list == nil then
         logger.dbg("No actions associated with hotkey: ", hotkey, " in ", context)
         return
     else
-        local execution_properties = { hotkeyshortcuts = hotkey }
+        local execution_properties = { hotkeys = hotkey }
         logger.dbg("Executing actions for hotkey: ", hotkey, " in ", context, " with events: ", hotkey_action_list)
         -- Execute (via Dispatcher) the list of actions associated with the hotkey
         Dispatcher:execute(hotkey_action_list, execution_properties)
         return true
     end
 end
---[[ The following snippet is an example of the hotkeyshortcuts.lua file that is generated in the settings directory:
+--[[ The following snippet is an example of the hotkeys.lua file that is generated in the settings directory:
 ["modifier_plus_right_page_forward"] = {
     ["settings"] = {
         ["order"] = {
@@ -146,10 +146,10 @@ end
 
 --[[
     Description:
-    This function registers key events for the HotKeyShortcuts plugin. It initializes the key events table,
+    This function registers key events for the HotKeys plugin. It initializes the key events table,
     overrides conflicting functions, and maps various keys to specific events based on the device's capabilities.
 ]]
-function HotKeyShortcuts:registerKeyEvents()
+function HotKeys:registerKeyEvents()
     self.key_events = {}
     self:overrideConflictingKeyEvents()
     local cursor_keys = { "Up", "Down", "Left", "Right" }
@@ -175,7 +175,7 @@ function HotKeyShortcuts:registerKeyEvents()
     if not self.is_docless then
         addKeyEvents(modifier, page_turn_keys, "HotkeyAction", "modifier_plus_")
         addKeyEvent(modifier, "Press", "HotkeyAction", "modifier_plus_press")
-        if self.settings_data.data["press_key_does_hotkeyshortcuts"] then
+        if self.settings_data.data["press_key_does_hotkeys"] then
             self.key_events.Press = { { "Press" }, event = "HotkeyAction", args = "press" }
         end
     end
@@ -210,28 +210,28 @@ function HotKeyShortcuts:registerKeyEvents()
     logger.dbg("Total number of hotkey events registered successfully: ", key_event_count)
 end -- registerKeyEvents()
 
-HotKeyShortcuts.onPhysicalKeyboardConnected = HotKeyShortcuts.registerKeyEvents
+HotKeys.onPhysicalKeyboardConnected = HotKeys.registerKeyEvents
 
-function HotKeyShortcuts:shortcutTitleFunc(hotkey)
-    local title = hotkeyshortcuts_list[hotkey]
-    local action_list = self.hotkeyshortcuts[hotkey]
+function HotKeys:shortcutTitleFunc(hotkey)
+    local title = hotkeys_list[hotkey]
+    local action_list = self.hotkeys[hotkey]
     local action_text = action_list and Dispatcher:menuTextFunc(action_list) or _("No action")
     return T(_("%1: (%2)"), title, action_text)
 end
 
-function HotKeyShortcuts:genMenu(hotkey)
+function HotKeys:genMenu(hotkey)
     local sub_items = {}
-    if hotkeyshortcuts_list[hotkey] ~= nil then
+    if hotkeys_list[hotkey] ~= nil then
         local default_action = self.defaults[hotkey]
         local default_text = default_action and Dispatcher:menuTextFunc(default_action) or _("No action")
         table.insert(sub_items, {
             text = T(_("%1 (default)"), default_text),
             keep_menu_open = true,
             checked_func = function()
-                return util.tableEquals(self.hotkeyshortcuts[hotkey], self.defaults[hotkey])
+                return util.tableEquals(self.hotkeys[hotkey], self.defaults[hotkey])
             end,
             callback = function()
-                self.hotkeyshortcuts[hotkey] = util.tableDeepCopy(self.defaults[hotkey])
+                self.hotkeys[hotkey] = util.tableDeepCopy(self.defaults[hotkey])
                 self.updated = true
             end,
         })
@@ -241,14 +241,14 @@ function HotKeyShortcuts:genMenu(hotkey)
         keep_menu_open = true,
         separator = true,
         checked_func = function()
-            return self.hotkeyshortcuts[hotkey] == nil
+            return self.hotkeys[hotkey] == nil
         end,
         callback = function()
-            self.hotkeyshortcuts[hotkey] = nil
+            self.hotkeys[hotkey] = nil
             self.updated = true
         end,
     })
-    Dispatcher:addSubMenu(self, sub_items, self.hotkeyshortcuts, hotkey)
+    Dispatcher:addSubMenu(self, sub_items, self.hotkeys, hotkey)
     -- Since we are already handling potential conflicts via overrideConflictingKeyEvents(), both "No action" and "Nothing",
     -- introduced through Dispatcher:addSubMenu(), are effectively the same (from a user point of view); thus, we can do away
     -- with "Nothing".
@@ -259,7 +259,7 @@ function HotKeyShortcuts:genMenu(hotkey)
     return sub_items
 end
 
-function HotKeyShortcuts:genSubItem(hotkey, separator, hold_callback)
+function HotKeys:genSubItem(hotkey, separator, hold_callback)
     local reader_only = {
         -- these button combinations are used by different events in FM already, don't allow users to customise them.
         modifier_plus_down = true,
@@ -269,13 +269,13 @@ function HotKeyShortcuts:genSubItem(hotkey, separator, hold_callback)
         modifier_plus_right_page_forward = true,
         modifier_plus_press = true,
     }
-    if self.settings_data.data["press_key_does_hotkeyshortcuts"] then
+    if self.settings_data.data["press_key_does_hotkeys"] then
         local do_not_allow_press_key_do_shortcuts_in_fm = { press = true }
         util.tableMerge(reader_only, do_not_allow_press_key_do_shortcuts_in_fm)
     end
     local enabled_func
     if reader_only[hotkey] then
-       enabled_func = function() return self.hotkey_mode == "hotkeyshortcuts_reader" end
+       enabled_func = function() return self.hotkey_mode == "hotkeys_reader" end
     end
     return {
         text_func = function() return self:shortcutTitleFunc(hotkey) end,
@@ -287,9 +287,9 @@ function HotKeyShortcuts:genSubItem(hotkey, separator, hold_callback)
     }
 end
 
-function HotKeyShortcuts:genSubItemTable(hotkeyshortcuts)
+function HotKeys:genSubItemTable(hotkeys)
     local sub_item_table = {}
-    for _, item in ipairs(hotkeyshortcuts) do
+    for _, item in ipairs(hotkeys) do
         table.insert(sub_item_table, self:genSubItem(item))
     end
     return sub_item_table
@@ -305,7 +305,7 @@ end
     This function configures and adds various hotkey shortcuts to the main menu based on the device's capabilities
     and user settings. It supports different sets of keys for devices with and without keyboards.
 --]]
-function HotKeyShortcuts:addToMainMenu(menu_items)
+function HotKeys:addToMainMenu(menu_items)
     -- 1. Defines sets of cursor keys, page-turn buttons, and function keys.
     local cursor_keys = {
         "modifier_plus_up",
@@ -326,7 +326,7 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
         -- modifier_plus_menu (screenkb+menu) is already used globally for screenshots (on k4), don't add it here.
     }
     -- 2. Adds the "press" key to function keys if the corresponding setting is enabled.
-    if self.settings_data.data["press_key_does_hotkeyshortcuts"] then
+    if self.settings_data.data["press_key_does_hotkeys"] then
         table.insert(fn_keys, 1, "press")
     end
     -- 3. If the device has a keyboard, additional sets of keys (cursor, page-turn, and function keys) are appended.
@@ -356,14 +356,14 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
     end
     -- 4. Adds a menu item for enabling/disabling the use of the press key for shortcuts.
     if Device:hasScreenKB() or Device:hasSymKey() then
-        menu_items.button_press_does_hotkeyshortcuts = {
+        menu_items.button_press_does_hotkeys = {
             sorting_hint = "physical_buttons_setup",
             text = _("Use the press key for shortcuts"),
             checked_func = function()
-                return self.settings_data.data["press_key_does_hotkeyshortcuts"]
+                return self.settings_data.data["press_key_does_hotkeys"]
             end,
             callback = function()
-                self.settings_data.data["press_key_does_hotkeyshortcuts"] = not self.settings_data.data["press_key_does_hotkeyshortcuts"]
+                self.settings_data.data["press_key_does_hotkeys"] = not self.settings_data.data["press_key_does_hotkeys"]
                 self.updated = true
                 self:onFlushSettings()
                 UIManager:askForRestart()
@@ -371,7 +371,7 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
         }
     end
     --5. Adds a menu item for configuring keyboard shortcuts, including cursor keys, page-turn buttons, and function keys.
-    menu_items.hotkeyshortcuts = {
+    menu_items.hotkeys = {
         sorting_hint = "physical_buttons_setup",
         text = _("Keyboard shortcuts"),
         sub_item_table = {
@@ -382,7 +382,7 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
             {
                 text = _("Page-turn buttons"),
                 enabled_func = function()
-                    return Device:hasKeyboard() and self.hotkey_mode == "hotkeyshortcuts_fm" or self.hotkey_mode == "hotkeyshortcuts_reader"
+                    return Device:hasKeyboard() and self.hotkey_mode == "hotkeys_fm" or self.hotkey_mode == "hotkeys_reader"
                 end,
                 sub_item_table = self:genSubItemTable(pg_turn),
             },
@@ -394,7 +394,7 @@ function HotKeyShortcuts:addToMainMenu(menu_items)
     }
     -- 6. If the device has a keyboard, adds a menu item for configuring hotkeys using alphabet keys.
     if Device:hasKeyboard() then
-        table.insert(menu_items.hotkeyshortcuts.sub_item_table, {
+        table.insert(menu_items.hotkeys.sub_item_table, {
             text = _("Alphabet keys"),
             sub_item_table = self:genSubItemTable({
                 "alt_plus_a", "alt_plus_b", "alt_plus_c", "alt_plus_d", "alt_plus_e", "alt_plus_f", "alt_plus_g", "alt_plus_h", "alt_plus_i",
@@ -408,7 +408,6 @@ end
 --[[
     Description:
     This function resets existing key_event tables in various modules to resolve conflicts and customize key event handling
-
     Details:
     - Resets and overrides key events for the following modules:
         - ReaderBookmark
@@ -424,7 +423,7 @@ end
         - FileManagerMenu (if in docless mode)
     - Logs debug messages indicating which key events have been overridden.
 ]]
-function HotKeyShortcuts:overrideConflictingKeyEvents()
+function HotKeys:overrideConflictingKeyEvents()
     if not self.is_docless then
         self.ui.bookmark.key_events = {} -- reset it.
         logger.dbg("Hotkey ReaderBookmark:registerKeyEvents() overridden.")
@@ -432,7 +431,7 @@ function HotKeyShortcuts:overrideConflictingKeyEvents()
         if Device:hasScreenKB() or Device:hasSymKey() then
             local readerconfig = self.ui.config
             readerconfig.key_events = {} -- reset it, then add our own
-            if self.settings_data.data["press_key_does_hotkeyshortcuts"] then
+            if self.settings_data.data["press_key_does_hotkeys"] then
                 readerconfig.key_events.ShowConfigMenu = { { "AA" }, event = "ShowConfigMenu" }
             else
                 readerconfig.key_events.ShowConfigMenu = { { { "Press", "AA" } }, event = "ShowConfigMenu" }
@@ -520,17 +519,17 @@ end -- overrideConflictingKeyEvents()
     This function checks if the `settings_data` exists and if it has been marked as updated.
     If both conditions are met, it flushes the `settings_data` and resets the `updated` flag to false.
 --]]
-function HotKeyShortcuts:onFlushSettings()
+function HotKeys:onFlushSettings()
     if self.settings_data and self.updated then
         self.settings_data:flush()
         self.updated = false
     end
 end
 
-function HotKeyShortcuts:updateProfiles(action_old_name, action_new_name)
-    for _, section in ipairs({ "hotkeyshortcuts_fm", "hotkeyshortcuts_reader" }) do
-        local hotkeyshortcuts = self.settings_data.data[section]
-        for shortcut_name, shortcut in pairs(hotkeyshortcuts) do
+function HotKeys:updateProfiles(action_old_name, action_new_name)
+    for _, section in ipairs({ "hotkeys_fm", "hotkeys_reader" }) do
+        local hotkeys = self.settings_data.data[section]
+        for shortcut_name, shortcut in pairs(hotkeys) do
             if shortcut[action_old_name] then
                 if shortcut.settings and shortcut.settings.order then
                     for i, action in ipairs(shortcut.settings.order) do
@@ -564,4 +563,4 @@ function HotKeyShortcuts:updateProfiles(action_old_name, action_new_name)
     end
 end
 
-return HotKeyShortcuts
+return HotKeys
