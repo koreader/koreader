@@ -1,0 +1,42 @@
+describe("Provider module", function()
+    local Provider
+    local t
+    local fail = { a = function() end, }
+
+    setup(function()
+        require("commonrequire")
+        Provider = require("provider")
+    end)
+
+    it("should fail to register an improper provider", function()
+        assert.is_false(Provider:register())
+    end)
+    it("should fail to unregister an improper provider", function()
+        assert.is_false(Provider:unregister())
+    end)
+    it("should register a proper provider with empty implementation", function()
+        assert.is_true(Provider:register("test", "exporter", {}))
+    end)
+    it("should override an implementation for the same name of the same kind", function()
+        assert.is_true(Provider:register("test", "exporter", { test  = function() end }))
+        assert.is_true(type(Provider.features["exporter"]["test"].test) == "function")
+    end)
+    it("should unregister a provider", function()
+        assert.is_true(Provider:unregister("test", "exporter"))
+    end)
+    it("should count providers for a specific feature", function()
+        assert.is_true(Provider:register("test1", "exporter", {}))
+        assert.is_true(Provider:register("test2", "exporter", {}))
+        assert.is_true(Provider:register("test3", "exporter", {}))
+        assert.is_true(Provider:size("exporter") == 3)
+    end)       
+
+    it("should dump a table of providers for a specific feature", function()
+        assert.are.same(Provider.features["exporter"],
+            Provider:getProvidersTable("exporter"))
+    end)
+    it("should dump an empty table for an invalid feature", function()
+        t = Provider:getProvidersTable("invalid")
+        assert.is_true(type(t) == "table")
+    end)
+end)
