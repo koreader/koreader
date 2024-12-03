@@ -1,4 +1,4 @@
---[[ 
+--[[
 
 Provider is a singleton that holds thirdparty implementations for features.
 
@@ -84,7 +84,7 @@ Get providers for a given feature
 ]]
 function Provider:getProvidersTable(feature)
     if self:_isValidFeature(feature) then
-	return aTable(self.features[feature])
+        return aTable(self.features[feature])
     end
     return aTable()
 end

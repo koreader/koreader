@@ -135,6 +135,10 @@ local Exporter = WidgetContainer:extend{
     name = "exporter",
 }
 
+function Exporter:_updateTargets()
+    self.targets = genExportersTable(self.path)
+end
+
 function Exporter:init()
     migrateSettings()
     self.parser = MyClipping:new{}
@@ -264,7 +268,7 @@ function Exporter:exportClippings(clippings)
 end
 
 function Exporter:addToMainMenu(menu_items)
-    self.targets = genExportersTable(self.path)
+    self:_updateTargets()
     local formats_submenu, share_submenu, styles_submenu = {}, {}, {}
     for k, v in pairs(self.targets) do
         formats_submenu[#formats_submenu + 1] = v:getMenuTable()

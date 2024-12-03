@@ -1,7 +1,6 @@
 describe("Provider module", function()
     local Provider
     local t
-    local fail = { a = function() end, }
 
     setup(function()
         require("commonrequire")
@@ -15,21 +14,21 @@ describe("Provider module", function()
         assert.is_false(Provider:unregister())
     end)
     it("should register a proper provider with empty implementation", function()
-        assert.is_true(Provider:register("test", "exporter", {}))
+        assert.is_true(Provider:register("exporter", "test", {}))
     end)
     it("should override an implementation for the same name of the same kind", function()
-        assert.is_true(Provider:register("test", "exporter", { test  = function() end }))
+        assert.is_true(Provider:register("exporter", "test", { test  = function() end }))
         assert.is_true(type(Provider.features["exporter"]["test"].test) == "function")
     end)
     it("should unregister a provider", function()
-        assert.is_true(Provider:unregister("test", "exporter"))
+        assert.is_true(Provider:unregister("exporter", "test"))
     end)
     it("should count providers for a specific feature", function()
-        assert.is_true(Provider:register("test1", "exporter", {}))
-        assert.is_true(Provider:register("test2", "exporter", {}))
-        assert.is_true(Provider:register("test3", "exporter", {}))
+        assert.is_true(Provider:register("exporter", "test1", {}))
+        assert.is_true(Provider:register("exporter", "test2", {}))
+        assert.is_true(Provider:register("exporter", "test3", {}))
         assert.is_true(Provider:size("exporter") == 3)
-    end)       
+    end)
 
     it("should dump a table of providers for a specific feature", function()
         assert.are.same(Provider.features["exporter"],
