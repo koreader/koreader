@@ -480,7 +480,7 @@ sub { font-size: 50% !important; vertical-align: sub !important; }
             },
             (function()
                 local sub_table = {
-                    title = _("Override font-based normal line leight"),
+                    title = _("Override font-based normal line height"),
                 }
                 for __, height in ipairs( { 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5 } ) do
                     table.insert(sub_table, {
