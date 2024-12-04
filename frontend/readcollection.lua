@@ -145,7 +145,7 @@ function ReadCollection:addRemoveItemMultiple(file, collections_to_add)
     self:write()
 end
 
-function ReadCollection:addItemsMultiple(files, collections_to_add)
+function ReadCollection:addItemsMultiple(files, collections_to_add, no_write)
     for file in pairs(files) do
         file = FFIUtil.realpath(file) or file
         for coll_name in pairs(collections_to_add) do
@@ -156,7 +156,9 @@ function ReadCollection:addItemsMultiple(files, collections_to_add)
             end
         end
     end
-    self:write()
+    if not no_write then
+        self:write()
+    end
 end
 
 function ReadCollection:removeItem(file, collection_name, no_write) -- FM: delete file; FMColl: remove file
@@ -288,7 +290,7 @@ end
 
 -- manage collections
 
-function ReadCollection:addCollection(coll_name)
+function ReadCollection:addCollection(coll_name, no_write)
     local max_order = 0
     for _, order in pairs(self.coll_order) do
         if max_order < order then
@@ -297,7 +299,9 @@ function ReadCollection:addCollection(coll_name)
     end
     self.coll_order[coll_name] = max_order + 1
     self.coll[coll_name] = {}
-    self:write(coll_name)
+    if not no_write then
+        self:write()
+    end
 end
 
 function ReadCollection:renameCollection(coll_name, new_name)
@@ -308,10 +312,12 @@ function ReadCollection:renameCollection(coll_name, new_name)
     self:write(new_name)
 end
 
-function ReadCollection:removeCollection(coll_name)
+function ReadCollection:removeCollection(coll_name, no_write)
     self.coll_order[coll_name] = nil
     self.coll[coll_name] = nil
-    self:write()
+    if not no_write then
+        self:write()
+    end
 end
 
 function ReadCollection:updateCollectionListOrder(ordered_coll)

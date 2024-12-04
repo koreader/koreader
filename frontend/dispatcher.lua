@@ -50,20 +50,21 @@ local Dispatcher = {
 -- See above for description.
 local settingsList = {
     -- General
+    filemanager = {category="none", event="Home", title=_("File browser"), general=true},
     reading_progress = {category="none", event="ShowReaderProgress", title=_("Reading progress"), general=true},
     open_previous_document = {category="none", event="OpenLastDoc", title=_("Open previous document"), general=true},
     history = {category="none", event="ShowHist", title=_("History"), general=true},
     history_search = {category="none", event="SearchHistory", title=_("History search"), general=true},
     favorites = {category="none", event="ShowColl", title=_("Favorites"), general=true},
     collections = {category="none", event="ShowCollList", title=_("Collections"), general=true},
-    filemanager = {category="none", event="Home", title=_("File browser"), general=true},
-    notebook_file = {category="none", event="ShowNotebookFile", title=_("Notebook file"), general=true, separator=true},
+    collections_search = {category="none", event="ShowCollectionsSearchDialog", title=_("Collections search"), general=true, separator=true},
     ----
     dictionary_lookup = {category="none", event="ShowDictionaryLookup", title=_("Dictionary lookup"), general=true},
     wikipedia_lookup = {category="none", event="ShowWikipediaLookup", title=_("Wikipedia lookup"), general=true, separator=true},
     ----
     show_menu = {category="none", event="ShowMenu", title=_("Show menu"), general=true},
     menu_search = {category="none", event="MenuSearch", title=_("Menu search"), general=true},
+    notebook_file = {category="none", event="ShowNotebookFile", title=_("Notebook file"), general=true},
     screenshot = {category="none", event="Screenshot", title=_("Screenshot"), general=true, separator=true},
     ----
 
@@ -283,20 +284,21 @@ local settingsList = {
 -- array for item order in menu
 local dispatcher_menu_order = {
     -- General
+    "filemanager",
     "reading_progress",
     "open_previous_document",
     "history",
     "history_search",
     "favorites",
     "collections",
-    "filemanager",
-    "notebook_file",
+    "collections_search",
     ----
     "dictionary_lookup",
     "wikipedia_lookup",
     ----
     "show_menu",
     "menu_search",
+    "notebook_file",
     "screenshot",
     ----
 
