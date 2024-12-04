@@ -150,6 +150,10 @@ function CreDocument:engineInit()
         -- and bold text with the font_base_weight setting set to its default value of 0 (=400).
         cre.regularizeRegisteredFontsWeights(true) -- true to print what modifications were made
 
+        -- Let our default font (even if we don't have a document) be known to crengine's FontManager
+        -- (self:setFontFace(self.default_font) would need a credocument to be loaded)
+        cre.setAsPreferredFontWithBias(self.default_font, 1 + 128*5 + 256*5)
+
         -- Set up bias for some specific fonts
         self:setOtherFontBiases()
 
@@ -320,11 +324,6 @@ function CreDocument:loadDocument(full_document)
     if not self._loaded then
         local only_metadata = full_document == false
         logger.dbg("CreDocument: loading document...")
-        if only_metadata then
-            -- Setting a default font before loading document
-            -- actually do prevent some crashes
-            self:setFontFace(self.default_font)
-        end
         if self._document:loadDocument(self.file, only_metadata) then
             self._loaded = true
             logger.dbg("CreDocument: loading done.")
