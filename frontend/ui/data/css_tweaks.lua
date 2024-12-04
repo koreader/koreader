@@ -491,7 +491,7 @@ sub { font-size: 50% !important; vertical-align: sub !important; }
 * {
     -cr-hint: late;
     -cr-only-if: line-height-normal;
-    line-height: %1 !important;
+        line-height: %1 !important;
 }
                         ]], height),
                     })
