@@ -509,14 +509,63 @@ function CoverBrowser.initGrid(menu, display_mode)
     menu.display_mode_type = display_mode and display_mode:gsub("_.*", "") -- "mosaic" or "list"
 end
 
+function CoverBrowser.addFileDialogButtons(widget)
+    FileManager.addFileDialogButtons(widget, "coverbrowser_1", function(file, is_file, bookinfo)
+        if is_file then
+            return bookinfo and {
+                { -- Allow user to ignore some offending cover image
+                    text = bookinfo.ignore_cover and _("Unignore cover") or _("Ignore cover"),
+                    enabled = bookinfo.has_cover and true or false,
+                    callback = function()
+                        BookInfoManager:setBookInfoProperties(file, {
+                            ["ignore_cover"] = not bookinfo.ignore_cover and 'Y' or false,
+                        })
+                        local menu = widget.getMenuInstance()
+                        UIManager:close(menu.file_dialog)
+                        menu:updateItems(1, true)
+                    end,
+                },
+                { -- Allow user to ignore some bad metadata (filename will be used instead)
+                    text = bookinfo.ignore_meta and _("Unignore metadata") or _("Ignore metadata"),
+                    enabled = bookinfo.has_meta and true or false,
+                    callback = function()
+                        BookInfoManager:setBookInfoProperties(file, {
+                            ["ignore_meta"] = not bookinfo.ignore_meta and 'Y' or false,
+                        })
+                        local menu = widget.getMenuInstance()
+                        UIManager:close(menu.file_dialog)
+                        menu:updateItems(1, true)
+                    end,
+                },
+            }
+        end
+    end)
+    FileManager.addFileDialogButtons(widget, "coverbrowser_2", function(file, is_file, bookinfo)
+        if is_file then
+            return bookinfo and {
+                { -- Allow a new extraction (multiple interruptions, book replaced)...
+                    text = _("Refresh cached book information"),
+                    callback = function()
+                        local menu = widget.getMenuInstance()
+                        menu:updateCache(file) -- wipe the cache
+                        BookInfoManager:deleteBookInfo(file)
+                        UIManager:close(menu.file_dialog)
+                        menu:updateItems(1, true)
+                    end,
+                },
+            }
+        end
+    end)
+end
+
+function CoverBrowser.removeFileDialogButtons(widget)
+    FileManager.removeFileDialogButtons(widget, "coverbrowser_2")
+    FileManager.removeFileDialogButtons(widget, "coverbrowser_1")
+end
+
 function CoverBrowser:refreshFileManagerInstance()
     local fc = self.ui.file_chooser
     if fc then
-        if not filemanager_display_mode and fc.showFileDialog_orig then
-            fc.showFileDialog = fc.showFileDialog_orig
-            fc.showFileDialog_orig = nil
-            fc.showFileDialog_ours = nil
-        end
         fc:_recalculateDimen()
         fc:changeToPath(fc.path, fc.prev_focused_path)
     end
@@ -557,6 +606,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser.onCloseWidget = _FileChooser_onCloseWidget_orig
         FileChooser._recalculateDimen = _FileChooser__recalculateDimen_orig
         FileManager.tapPlus = _FileManager_tapPlus_orig
+        CoverBrowser.removeFileDialogButtons(FileManager)
         -- Also clean-up what we added, even if it does not bother original code
         FileChooser.updateCache = nil
         FileChooser._updateItemsBuildUI = nil
@@ -574,6 +624,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
     FileChooser.updateCache = CoverMenu.updateCache
     FileChooser.updateItems = CoverMenu.updateItems
     FileChooser.onCloseWidget = CoverMenu.onCloseWidget
+    CoverBrowser.addFileDialogButtons(FileManager)
     if FileChooser.display_mode_type == "mosaic" then
         -- Replace some other original methods with those from our MosaicMenu
         local MosaicMenu = require("mosaicmenu")
@@ -630,9 +681,6 @@ local function _FileManagerHistory_updateItemTable(self)
         hist_menu.updateCache = CoverMenu.updateCache
         hist_menu.updateItems = CoverMenu.updateItems
         hist_menu.onCloseWidget = CoverMenu.onCloseWidget
-        -- Also replace original onMenuHold (it will use original method, so remember it)
-        hist_menu.onMenuHold_orig = hist_menu.onMenuHold
-        hist_menu.onMenuHold = CoverMenu.onHistoryMenuHold
 
         CoverBrowser.initGrid(hist_menu, display_mode)
         if hist_menu.display_mode_type == "mosaic" then
@@ -681,10 +729,12 @@ function CoverBrowser:setupHistoryDisplayMode(display_mode)
 
     -- We only need to replace one FileManagerHistory method
     if not display_mode then -- classic mode
+        CoverBrowser.removeFileDialogButtons(FileManagerHistory)
         -- Put back original methods
         FileManagerHistory.updateItemTable = _FileManagerHistory_updateItemTable_orig
         FileManagerHistory.display_mode = nil
     else
+        CoverBrowser.addFileDialogButtons(FileManagerHistory)
         -- Replace original method with the one defined above
         FileManagerHistory.updateItemTable = _FileManagerHistory_updateItemTable
         -- And let it know which display_mode we should use
@@ -709,9 +759,6 @@ local function _FileManagerCollections_updateItemTable(self)
         coll_menu.updateCache = CoverMenu.updateCache
         coll_menu.updateItems = CoverMenu.updateItems
         coll_menu.onCloseWidget = CoverMenu.onCloseWidget
-        -- Also replace original onMenuHold (it will use original method, so remember it)
-        coll_menu.onMenuHold_orig = coll_menu.onMenuHold
-        coll_menu.onMenuHold = CoverMenu.onCollectionsMenuHold
 
         CoverBrowser.initGrid(coll_menu, display_mode)
         if coll_menu.display_mode_type == "mosaic" then
@@ -760,10 +807,12 @@ function CoverBrowser:setupCollectionDisplayMode(display_mode)
 
     -- We only need to replace one FileManagerCollection method
     if not display_mode then -- classic mode
+        CoverBrowser.removeFileDialogButtons(FileManagerCollection)
         -- Put back original methods
         FileManagerCollection.updateItemTable = _FileManagerCollection_updateItemTable_orig
         FileManagerCollection.display_mode = nil
     else
+        CoverBrowser.addFileDialogButtons(FileManagerCollection)
         -- Replace original method with the one defined above
         FileManagerCollection.updateItemTable = _FileManagerCollections_updateItemTable
         -- And let it know which display_mode we should use

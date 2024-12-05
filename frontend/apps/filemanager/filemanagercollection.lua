@@ -122,18 +122,18 @@ end
 
 function FileManagerCollection:onMenuHold(item)
     local file = item.file
-    self.collfile_dialog = nil
+    self.file_dialog = nil
     self.book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
 
     local function close_dialog_callback()
-        UIManager:close(self.collfile_dialog)
+        UIManager:close(self.file_dialog)
     end
     local function close_dialog_menu_callback()
-        UIManager:close(self.collfile_dialog)
+        UIManager:close(self.file_dialog)
         self._manager.coll_menu.close_callback()
     end
     local function close_dialog_update_callback()
-        UIManager:close(self.collfile_dialog)
+        UIManager:close(self.file_dialog)
         self._manager:updateItemTable()
         self._manager.files_updated = true
     end
@@ -197,13 +197,27 @@ function FileManagerCollection:onMenuHold(item)
         })
     end
 
-    self.collfile_dialog = ButtonDialog:new{
+    if self._manager.file_dialog_added_buttons ~= nil then
+        for _, row_func in ipairs(self._manager.file_dialog_added_buttons) do
+            local row = row_func(file, true, self.book_props)
+            if row ~= nil then
+                table.insert(buttons, row)
+            end
+        end
+    end
+
+    self.file_dialog = ButtonDialog:new{
         title = BD.filename(item.text),
         title_align = "center",
         buttons = buttons,
     }
-    UIManager:show(self.collfile_dialog)
+    UIManager:show(self.file_dialog)
     return true
+end
+
+function FileManagerCollection.getMenuInstance()
+    local ui = require("apps/filemanager/filemanager").instance or require("apps/reader/readerui").instance
+    return ui.collections.coll_menu
 end
 
 function FileManagerCollection:showCollDialog()
