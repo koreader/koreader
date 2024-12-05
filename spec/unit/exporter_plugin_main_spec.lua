@@ -13,8 +13,6 @@ describe("Exporter plugin module", function()
                 document = DocumentRegistry:openDocument(sample_epub),
             }
 
-        readerui.exporter:_updateTargets()
-
         sample_clippings = {
             ["Title1"] = {
                 [1] = {
