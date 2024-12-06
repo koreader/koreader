@@ -431,7 +431,7 @@ end
         - ReaderBookmark
         - ReaderConfig
         - ReaderLink
-        - ReaderSearch; also includes a new type to search feature.
+        - ReaderSearch; also adds a type to search feature.
         - ReaderToc
         - ReaderThumbnail
         - ReaderUI
@@ -487,7 +487,6 @@ function HotKeys:overrideConflictingKeyEvents()
                 event = "ShowFulltextSearchInput",
                 args = ""
             }
-            -- This is an entirely new feature, we don't want to add it to self.key_events as we are harcoding it.
             if self.type_to_search then
                 self.ui.highlight.key_events.StartHighlightIndicator = nil -- remove 'H' shortcut used for highlight indicator
                 readersearch.key_events.Alphabet = {
