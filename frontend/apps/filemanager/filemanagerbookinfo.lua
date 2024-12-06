@@ -371,11 +371,12 @@ function BookInfo:onShowBookCover(file, force_orig)
     end
 end
 
-function BookInfo:getCoverImage(doc, file, force_orig)
+function BookInfo:getCoverImage(document, file, force_orig)
+    local curr_file = document and document.file
     local cover_bb
     -- check for a custom cover (orig cover is forcibly requested in "Book information" only)
     if not force_orig then
-        local custom_cover = DocSettings:findCustomCoverFile(file or (doc and doc.file))
+        local custom_cover = DocSettings:findCustomCoverFile(file or curr_file)
         if custom_cover then
             local cover_doc = DocumentRegistry:openDocument(custom_cover)
             if cover_doc then
@@ -386,16 +387,19 @@ function BookInfo:getCoverImage(doc, file, force_orig)
         end
     end
     -- orig cover
-    local is_doc = doc and true or false
-    if not is_doc then
+    local doc
+    local do_open = file ~= nil and file ~= curr_file
+    if do_open then
         doc = DocumentRegistry:openDocument(file)
         if doc and doc.loadDocument then -- CreDocument
             doc:loadDocument(false) -- load only metadata
         end
+    else
+        doc = document
     end
     if doc then
         cover_bb = doc:getCoverPageImage()
-        if not is_doc then
+        if do_open then
             doc:close()
         end
     end
