@@ -1157,6 +1157,12 @@ function Dispatcher:execute(settings, exec_props)
         UIManager:broadcastEvent(Event:new("BatchedUpdate"))
     end
     local gesture = exec_props and exec_props.gesture
+
+    if settings.settings and settings.settings.notify then
+        Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
+        Notification:notify(T(_("Executing profile: %1"), settings.settings.name))
+    end
+
     for k, v in iter_func(settings) do
         if type(k) == "number" then
             k = v
@@ -1164,9 +1170,6 @@ function Dispatcher:execute(settings, exec_props)
         end
         if Dispatcher:isActionEnabled(settingsList[k]) then
             Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
-            if settings.settings and settings.settings.notify then
-                Notification:notify(T(_("Executing profile: %1"), settings.settings.name))
-            end
             if settingsList[k].configurable then
                 local value = v
                 if type(v) ~= "number" then
