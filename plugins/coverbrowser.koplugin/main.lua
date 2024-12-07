@@ -27,7 +27,6 @@ local FileManagerCollection = require("apps/filemanager/filemanagercollection")
 local _FileManagerCollection_updateItemTable_orig = FileManagerCollection.updateItemTable
 
 local FileManager = require("apps/filemanager/filemanager")
-local _FileManager_tapPlus_orig = FileManager.tapPlus
 
 -- Available display modes
 local DISPLAY_MODES = {
@@ -496,6 +495,22 @@ function CoverBrowser:addToMainMenu(menu_items)
     })
 end
 
+function CoverBrowser:genExtractBookInfoButton(close_dialog_callback) -- for FileManager Plus dialog
+    return filemanager_display_mode and {
+        {
+            text = _("Extract and cache book information"),
+            callback = function()
+                close_dialog_callback()
+                local fc = self.ui.file_chooser
+                local Trapper = require("ui/trapper")
+                Trapper:wrap(function()
+                    BookInfoManager:extractBooksInDirectory(fc.path, fc.cover_specs)
+                end)
+            end,
+        },
+    }
+end
+
 function CoverBrowser.initGrid(menu, display_mode)
     if menu == nil then return end
     if menu.nb_cols_portrait == nil then
@@ -605,7 +620,6 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser.updateItems = _FileChooser_updateItems_orig
         FileChooser.onCloseWidget = _FileChooser_onCloseWidget_orig
         FileChooser._recalculateDimen = _FileChooser__recalculateDimen_orig
-        FileManager.tapPlus = _FileManager_tapPlus_orig
         CoverBrowser.removeFileDialogButtons(FileManager)
         -- Also clean-up what we added, even if it does not bother original code
         FileChooser.updateCache = nil
@@ -645,12 +659,6 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser._do_filename_only = display_mode == "list_image_filename"
         FileChooser._do_hint_opened = true -- dogear at bottom
     end
-
-    -- Replace this FileManager method with the one from CoverMenu
-    -- (but first, make the original method saved here as local available
-    -- to CoverMenu)
-    CoverMenu._FileManager_tapPlus_orig = _FileManager_tapPlus_orig
-    FileManager.tapPlus = CoverMenu.tapPlus
 
     if init_done then
         self:refreshFileManagerInstance()

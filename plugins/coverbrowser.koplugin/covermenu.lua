@@ -1,4 +1,3 @@
-local ButtonDialog = require("ui/widget/buttondialog")
 local DocSettings = require("docsettings")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
@@ -13,7 +12,7 @@ local BookInfoManager = require("bookinfomanager")
 -- work : the updating of items and the management of background jobs.
 --
 -- Here the common overridden methods of Menu are defined:
---    :updateItems(select_number)
+--    :updateItems(select_number, no_recalculate_dimen)
 --    :onCloseWidget()
 --
 -- MosaicMenu or ListMenu should implement specific UI methods:
@@ -23,12 +22,6 @@ local BookInfoManager = require("bookinfomanager")
 -- should fill self.item_group with some specific UI layout. It may add
 -- not found item to self.items_to_update for us to update() them
 -- regularly.
-
--- Store these as local, to be set by some object and re-used by
--- another object (as we plug the methods below to different objects,
--- we can't store them in 'self' if we want another one to use it)
-local current_path = nil
-local current_cover_specs = false
 
 -- Do some collectgarbage() every few drawings
 local NB_DRAWINGS_BETWEEN_COLLECTGARBAGE = 5
@@ -128,14 +121,6 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
     -- Specific UI building implementation (defined in some other module)
     self._has_cover_images = false
     select_number = self:_updateItemsBuildUI() or select_number
-    -- Set the local variables with the things we know
-    -- These are used only by extractBooksInDirectory(), which should
-    -- use the cover_specs set for FileBrowser, and not those from History.
-    -- Hopefully, we get self.path=nil when called from History
-    if self.path then
-        current_path = self.path
-        current_cover_specs = self.cover_specs
-    end
 
     -- As done in Menu:updateItems()
     self:updatePageInfo(select_number)
@@ -259,46 +244,6 @@ function CoverMenu:onCloseWidget()
 
     -- Call the object's original onCloseWidget (i.e., Menu's, as none our our expected subclasses currently implement it)
     Menu.onCloseWidget(self)
-end
-
-function CoverMenu:tapPlus()
-    -- Call original function: it will create a ButtonDialog
-    -- and store it as self.file_dialog, and UIManager:show() it.
-    CoverMenu._FileManager_tapPlus_orig(self)
-    if self.file_dialog.select_mode then return end -- do not change select menu
-
-    -- Remember some of this original ButtonDialog properties
-    local orig_title = self.file_dialog.title
-    local orig_title_align = self.file_dialog.title_align
-    local orig_buttons = self.file_dialog.buttons
-    -- Close original ButtonDialog (it has not yet been painted
-    -- on screen, so we won't see it)
-    UIManager:close(self.file_dialog)
-    UIManager:clearRenderStack()
-
-    -- Add a new button to original buttons set
-    table.insert(orig_buttons, {}) -- separator
-    table.insert(orig_buttons, {
-        {
-            text = _("Extract and cache book information"),
-            callback = function()
-                UIManager:close(self.file_dialog)
-                local Trapper = require("ui/trapper")
-                Trapper:wrap(function()
-                    BookInfoManager:extractBooksInDirectory(current_path, current_cover_specs)
-                end)
-            end,
-        },
-    })
-
-    -- Create the new ButtonDialog, and let UIManager show it
-    self.file_dialog = ButtonDialog:new{
-        title = orig_title,
-        title_align = orig_title_align,
-        buttons = orig_buttons,
-    }
-    UIManager:show(self.file_dialog)
-    return true
 end
 
 return CoverMenu
