@@ -6,7 +6,6 @@ if lfs.attributes(patch_dir, "mode") ~= "directory" then return end
 
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local sort = require("sort")
 local userPatch = require("userpatch")
 local _ = require("gettext")
