@@ -679,12 +679,15 @@ $(build_options_help_msg 'BUILD' 'use existing build' '' 'default')
         shift
     done
     set -- "${ARGS[@]}"
-    if [[ $# -gt 0 ]]; then
-        suite="$1"
-        shift
-    else
-        suite='all'
-    fi
+    case "$1" in
+        all | base | bench | front)
+            suite="$1"
+            shift
+            ;;
+        *)
+            suite='all'
+            ;;
+    esac
     targs+=("$@")
     setup_target 'emulator'
     run_make ${NO_BUILD:+--assume-old=all} "test${suite}" T="$(print_quoted "${targs[@]}")"
