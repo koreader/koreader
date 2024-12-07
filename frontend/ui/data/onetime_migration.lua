@@ -760,7 +760,7 @@ if last_migration_date < 20241123 then
     end
 end
 
--- 20241207, Move PatchManagement plugin to the core
+-- 20241207, We moved patch management to core. Remove the original plugin.
 -- https://github.com/koreader/koreader/pull/12862
 if last_migration_date < 20241207 then
     logger.info("Performing one-time migration for 20241207")
