@@ -637,6 +637,9 @@ local function tidyMarkup(results)
     local format_escape = "&[29Ib%+]{(.-)}"
     for _, result in ipairs(results) do
         local ifo = getAvailableIfoByName(result.dict)
+        if ifo then
+            result.dictionary_file = ifo.file
+        end
         if ifo and ifo.lang then
             result.ifo_lang = ifo.lang
         end
