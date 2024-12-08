@@ -50,7 +50,7 @@ plaintext, search, select, summary, template, textarea, video, xmp {
 }
 ]]
 
-function HtmlBoxWidget:setContent(body, css, default_font_size, is_xhtml, no_css_fixes)
+function HtmlBoxWidget:setContent(body, css, default_font_size, is_xhtml, no_css_fixes, html_resource_directory)
     -- fz_set_user_css is tied to the context instead of the document so to easily support multiple
     -- HTML dictionaries with different CSS, we embed the stylesheet into the HTML instead of using
     -- that function.
@@ -72,7 +72,7 @@ function HtmlBoxWidget:setContent(body, css, default_font_size, is_xhtml, no_css
     -- rules to trigger (ie. <title><p>123</p></title>, which is valid in FB2 snippets, parsed
     -- as title>p, while gumbo-parse would consider "<p>123</p>" as being plain text).
     local ok
-    ok, self.document = pcall(Mupdf.openDocumentFromText, html, is_xhtml and "xhtml" or "html")
+    ok, self.document = pcall(Mupdf.openDocumentFromText, html, is_xhtml and "xhtml" or "html", html_resource_directory)
     if not ok then
         -- self.document contains the error
         logger.warn("HTML loading error:", self.document)
@@ -83,7 +83,7 @@ function HtmlBoxWidget:setContent(body, css, default_font_size, is_xhtml, no_css
         body = body:gsub("\n", "&nbsp;<div></div>")
         html = string.format("<html>%s<body>%s</body></html>", head, body)
 
-        ok, self.document = pcall(Mupdf.openDocumentFromText, html, "html")
+        ok, self.document = pcall(Mupdf.openDocumentFromText, html, "html", html_resource_directory)
         if not ok then
             error(self.document)
         end
