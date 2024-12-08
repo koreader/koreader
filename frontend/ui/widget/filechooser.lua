@@ -302,7 +302,7 @@ function FileChooser:getList(path, collate)
             if FileChooser.show_hidden or not util.stringStartsWith(f, ".") then
                 local fullpath = path.."/"..f
                 local attributes = lfs.attributes(fullpath) or {}
-                local item = true
+                local item = {}
                 if attributes.mode == "directory" and f ~= "." and f ~= ".."
                         and self:show_dir(f) then
                     if collate then -- when collate == nil count only to display in folder mandatory
