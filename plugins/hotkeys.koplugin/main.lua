@@ -109,6 +109,7 @@ function HotKeys:init()
         self.settings_data = LuaSettings:open(hotkeys_path)
     end
     self.hotkeys = self.settings_data.data[self.hotkey_mode]
+    self.type_to_search = self.settings_data.data["type_to_search"] or false
 
     self.ui.menu:registerToMainMenu(self)
     Dispatcher:init()
@@ -354,7 +355,24 @@ function HotKeys:addToMainMenu(menu_items)
         }
         attachNewTableToExistingTable(fn_keys, fn_keys_haskeyboard)
     end
-    -- 4. Adds a menu item for enabling/disabling the use of the press key for shortcuts.
+    -- 4a. Adds a menu item for enabling/disabling the type-to-search feature
+    if Device:hasKeyboard() and not self.is_docless then
+        menu_items.a_type_to_search = {
+            sorting_hint = "physical_buttons_setup",
+            text = _("Type to launch full text search"),
+            checked_func = function()
+                return self.type_to_search
+            end,
+            callback = function()
+                self.type_to_search = not self.type_to_search
+                self.settings_data.data["type_to_search"] = self.type_to_search
+                self.updated = true
+                self:onFlushSettings()
+                UIManager:askForRestart()
+            end,
+        }
+    end
+    -- 4b. Adds a menu item for enabling/disabling the use of the press key for shortcuts.
     if Device:hasScreenKB() or Device:hasSymKey() then
         menu_items.button_press_does_hotkeys = {
             sorting_hint = "physical_buttons_setup",
@@ -413,7 +431,7 @@ end
         - ReaderBookmark
         - ReaderConfig
         - ReaderLink
-        - ReaderSearch
+        - ReaderSearch; also adds a type to search feature.
         - ReaderToc
         - ReaderThumbnail
         - ReaderUI
@@ -469,6 +487,14 @@ function HotKeys:overrideConflictingKeyEvents()
                 event = "ShowFulltextSearchInput",
                 args = ""
             }
+            if self.type_to_search then
+                self.ui.highlight.key_events.StartHighlightIndicator = nil -- remove 'H' shortcut used for highlight indicator
+                readersearch.key_events.Alphabet = {
+                    { Device.input.group.Alphabet }, { "Shift", Device.input.group.Alphabet },
+                    event = "ShowFulltextSearchInput",
+                    args = ""
+                }
+            end
             logger.dbg("Hotkey ReaderSearch:registerKeyEvents() overridden.")
         end
 

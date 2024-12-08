@@ -319,7 +319,6 @@ function ReaderSearch:onShowFulltextSearchInput(search_string)
 
     UIManager:show(self.input_dialog)
     self.input_dialog:onShowKeyboard()
-    return true
 end
 
 function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitive)
