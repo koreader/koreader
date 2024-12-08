@@ -369,6 +369,20 @@ left to right or reverse, top to bottom or reverse.]]),
                 },
             },
             {
+                name = "page_scroll_amount",
+                name_text = _("Page Scroll Amount"),
+                toggle = { C_("Scroll", "legacy"), C_("Scroll", "small"), C_("Scroll", "medium"), C_("Scroll", "large") },
+                values = { 0, 1, 2, 3 },
+                default_value = 0,
+                args = { 0, 1, 2, 3 },
+                event = "PageScrollAmountUpdate",
+                enabled_func = function(configurable)
+                    return optionsutil.enableIfEquals(configurable, "page_scroll", 1)
+                end,
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[In continuous view mode, sets the amount of scroll tapping would lead to.]]),
+            },
+            {
                 name = "full_screen",
                 name_text = _("Progress Bar"),
                 toggle = {_("off"), _("on")},
