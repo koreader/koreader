@@ -120,48 +120,6 @@ describe("Readerfooter module", function()
         readerui:onClose()
     end)
 
-    it("should setup footer as invisible in full screen mode", function()
-        G_reader_settings:saveSetting("reader_footer_mode", 1)
-        -- default settings
-
-        local sample_pdf = "spec/front/unit/data/2col.pdf"
-        purgeDir(DocSettings:getSidecarDir(sample_pdf))
-        os.remove(DocSettings:getHistoryPath(sample_pdf))
-        local cfg = DocSettings:open(sample_pdf)
-        cfg:saveSetting("kopt_full_screen", 0)
-        cfg:flush()
-
-        local readerui = ReaderUI:new{
-            dimen = Screen:getSize(),
-            document = DocumentRegistry:openDocument(sample_pdf),
-        }
-        assert.is.same(false, readerui.view.footer_visible)
-        G_reader_settings:delSetting("reader_footer_mode")
-        readerui:closeDocument()
-        readerui:onClose()
-    end)
-
-    it("should setup footer as visible in mini progress bar mode", function()
-        G_reader_settings:saveSetting("reader_footer_mode", 1)
-        -- default settings
-
-        local sample_pdf = "spec/front/unit/data/2col.pdf"
-        purgeDir(DocSettings:getSidecarDir(sample_pdf))
-        os.remove(DocSettings:getHistoryPath(sample_pdf))
-        local cfg = DocSettings:open(sample_pdf)
-        cfg:delSetting("kopt_full_screen")
-        cfg:flush()
-
-        local readerui = ReaderUI:new{
-            dimen = Screen:getSize(),
-            document = DocumentRegistry:openDocument(sample_pdf),
-        }
-        assert.is.same(true, readerui.view.footer_visible)
-        G_reader_settings:delSetting("reader_footer_mode")
-        readerui:closeDocument()
-        readerui:onClose()
-    end)
-
     it("should setup footer as invisible", function()
         G_reader_settings:saveSetting("reader_footer_mode", 1)
         -- default settings

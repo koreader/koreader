@@ -369,17 +369,6 @@ left to right or reverse, top to bottom or reverse.]]),
                 },
             },
             {
-                name = "full_screen",
-                name_text = _("Progress Bar"),
-                toggle = {_("off"), _("on")},
-                values = {1, 0},
-                default_value = 1,
-                event = "SetFullScreen",
-                args = {true, false},
-                show = false, -- toggling bottom status can be done via tap
-                name_text_hold_callback = optionsutil.showValues,
-            },
-            {
                 name = "line_spacing",
                 name_text = _("Line Spacing"),
                 toggle = {C_("Line spacing", "small"), C_("Line spacing", "medium"), C_("Line spacing", "large")},

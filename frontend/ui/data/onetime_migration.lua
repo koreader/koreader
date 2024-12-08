@@ -11,7 +11,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20241207
+local CURRENT_MIGRATION_DATE = 20241208
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -766,6 +766,14 @@ if last_migration_date < 20241207 then
     logger.info("Performing one-time migration for 20241207")
 
     ffiUtil.purgeDir(DataStorage:getDataDir() .. "/plugins/patchmanagement.koplugin")
+end
+
+-- 20241208, Remove unused setting.
+-- https://github.com/koreader/koreader/pull/12871
+if last_migration_date < 20241208 then
+    logger.info("Performing one-time migration for 20241208")
+
+    G_reader_settings:delSetting("kopt_full_screen")
 end
 
 -- We're done, store the current migration date
