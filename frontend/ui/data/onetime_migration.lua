@@ -3,6 +3,7 @@ Centralizes any and all one time migration concerns.
 --]]
 
 local DataStorage = require("datastorage")
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local SQ3 = require("lua-ljsqlite3/init")
@@ -10,7 +11,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20241123
+local CURRENT_MIGRATION_DATE = 20241207
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -339,11 +340,10 @@ end
 -- 20210831, Clean VirtualKeyboard settings of disabled layouts, https://github.com/koreader/koreader/pull/8159
 if last_migration_date < 20210831 then
     logger.info("Performing one-time migration for 20210831")
-    local FFIUtil = require("ffi/util")
     local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
     local keyboard_layouts_new = {}
     local selected_layouts_count = 0
-    for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
+    for k, v in ffiUtil.orderedPairs(keyboard_layouts) do
         if v == true and selected_layouts_count < 4 then
             selected_layouts_count = selected_layouts_count + 1
             keyboard_layouts_new[selected_layouts_count] = k
@@ -758,6 +758,14 @@ if last_migration_date < 20241123 then
     if not Device:isTouchDevice() and G_reader_settings:readSetting("screensaver_delay") == "gesture" then
         G_reader_settings:saveSetting("screensaver_delay", "tap")
     end
+end
+
+-- 20241207, We moved patch management to core. Remove the original plugin.
+-- https://github.com/koreader/koreader/pull/12862
+if last_migration_date < 20241207 then
+    logger.info("Performing one-time migration for 20241207")
+
+    ffiUtil.purgeDir(DataStorage:getDataDir() .. "/plugins/patchmanagement.koplugin")
 end
 
 -- We're done, store the current migration date

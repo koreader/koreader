@@ -4,6 +4,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local PluginLoader = require("pluginloader")
 local Screensaver = require("ui/screensaver")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
@@ -284,11 +285,13 @@ function ReaderMenu:setUpdateItemTable()
         }
     end
 
-    local PluginLoader = require("pluginloader")
+    -- tools tab
     self.menu_items.plugin_management = {
         text = _("Plugin management"),
-        sub_item_table = PluginLoader:genPluginManagerSubItem()
+        sub_item_table = PluginLoader:genPluginManagerSubItem(),
     }
+    self.menu_items.patch_management = dofile("frontend/ui/elements/patch_management.lua")
+
     -- main menu tab
     -- insert common info
     for id, common_setting in pairs(dofile("frontend/ui/elements/common_info_menu_table.lua")) do

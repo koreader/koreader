@@ -2,7 +2,6 @@ local BD = require("ui/bidi")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local FFIUtil = require("ffi/util")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local PluginLoader = require("pluginloader")
@@ -11,13 +10,14 @@ local Size = require("ui/size")
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
+local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util  = require("util")
 local _ = require("gettext")
-local T = FFIUtil.template
+local T = ffiUtil.template
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
@@ -482,15 +482,16 @@ To:
     }
 
     -- tools tab
+    self.menu_items.plugin_management = {
+        text = _("Plugin management"),
+        sub_item_table = PluginLoader:genPluginManagerSubItem(),
+    }
+    self.menu_items.patch_management = dofile("frontend/ui/elements/patch_management.lua")
     self.menu_items.advanced_settings = {
         text = _("Advanced settings"),
         callback = function()
             SetDefaults:ConfirmEdit()
         end,
-    }
-    self.menu_items.plugin_management = {
-        text = _("Plugin management"),
-        sub_item_table = PluginLoader:genPluginManagerSubItem()
     }
 
     self.menu_items.developer_options = {
@@ -505,7 +506,7 @@ To:
                             local DataStorage = require("datastorage")
                             local cachedir = DataStorage:getDataDir() .. "/cache"
                             if lfs.attributes(cachedir, "mode") == "directory" then
-                                FFIUtil.purgeDir(cachedir)
+                                ffiUtil.purgeDir(cachedir)
                             end
                             lfs.mkdir(cachedir)
                             -- Also remove from the Cache object references to the cache files we've just deleted
