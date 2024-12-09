@@ -946,11 +946,6 @@ function ReaderView:onRestoreDimensions(dimensions)
     self:recalculate()
 end
 
-function ReaderView:onSetFullScreen(full_screen)
-    self.footer_visible = not full_screen
-    self.ui:handleEvent(Event:new("SetDimensions", Screen:getSize()))
-end
-
 function ReaderView:onSetScrollMode(page_scroll)
     if self.ui.paging and page_scroll
             and self.ui.zooming.paged_modes[self.zoom_mode]
@@ -991,13 +986,8 @@ function ReaderView:onReadSettings(config)
                            or Screen.DEVICE_ROTATED_UPRIGHT
         self:onSetRotationMode(rotation_mode)
     end
-    local full_screen = config:readSetting("kopt_full_screen") or self.document.configurable.full_screen
-    if full_screen == 0 then
-        self.footer_visible = false
-    end
     self:resetLayout()
-    local page_scroll = config:readSetting("kopt_page_scroll") or self.document.configurable.page_scroll
-    self.page_scroll = page_scroll == 1 and true or false
+    self.page_scroll = (config:readSetting("kopt_page_scroll") or self.document.configurable.page_scroll) == 1
     self.inverse_reading_order = config:isTrue("inverse_reading_order") or G_reader_settings:isTrue("inverse_reading_order")
     self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or G_defaults:readSetting("DSHOWOVERLAP")
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
@@ -1059,7 +1049,7 @@ function ReaderView:onReaderFooterVisibilityChange()
     if self.ui.paging and self.state.page then
         -- We don't need to do anything if reclaim is enabled ;).
         if not self.footer.settings.reclaim_height then
-            -- NOTE: Mimic what onSetFullScreen does, since, without reclaim, toggling the footer affects the available area,
+            -- NOTE: Without reclaim, toggling the footer affects the available area,
             --       so we need to recompute the full layout.
             -- NOTE: ReaderView:recalculate will snap visible_area to page_area edges (depending on zoom direction).
             --       We don't actually want to move here, so save & restore our current visible_area *coordinates*...
