@@ -43,6 +43,7 @@ local DictQuickLookup = InputContainer:extend{
     results = nil,
     lookupword = nil,
     dictionary = nil,
+    dictionary_resource_directory = nil, -- relative path to the dictionary's res folder if it exists
     definition = nil,
     displayword = nil,
     images = nil,
@@ -807,6 +808,7 @@ function DictQuickLookup:_instantiateScrollWidget()
     if self.is_html then
         self.shw_widget = ScrollHtmlWidget:new{
             html_body = self.definition,
+            html_resource_directory = self.dictionary_resource_directory,
             css = self:getHtmlDictionaryCss(),
             default_font_size = Screen:scaleBySize(self.dict_font_size),
             width = self.content_width,
@@ -865,7 +867,7 @@ function DictQuickLookup:update()
     if self.is_html and self.shw_widget then
         -- Reuse our ScrollHtmlWidget (self.shw_widget)
         -- NOTE: The recursive free via our WidgetContainer (self[1]) above already released the previous MµPDF document instance ;)
-        self.text_widget.htmlbox_widget:setContent(self.definition, self:getHtmlDictionaryCss(), Screen:scaleBySize(self.dict_font_size))
+        self.text_widget.htmlbox_widget:setContent(self.definition, self:getHtmlDictionaryCss(), Screen:scaleBySize(self.dict_font_size), nil, nil, self.dictionary_resource_directory)
         -- Scroll back to top
         self.text_widget:resetScroll()
     elseif not self.is_html and self.stw_widget then
@@ -1004,6 +1006,7 @@ function DictQuickLookup:changeDictionary(index, skip_update)
     if not self.results[index] then return end
     self.dict_index = index
     self.dictionary = self.results[index].dict
+    self.dictionary_resource_directory = self.results[index].dictionary_resource_directory
     self.lookupword = self.results[index].word
     self.definition = self.results[index].definition
     self.is_wiki_fullpage = self.results[index].is_wiki_fullpage
