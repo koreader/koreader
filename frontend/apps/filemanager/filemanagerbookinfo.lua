@@ -374,7 +374,7 @@ end
 function BookInfo:getCoverImage(document, file, force_orig)
     local curr_file = document and document.file
     local cover_bb
-    -- check for a custom cover (orig cover is forcibly requested in "Book information" only)
+
     if not force_orig then
         local custom_cover = DocSettings:findCustomCoverFile(file or curr_file)
         if custom_cover then
@@ -382,27 +382,27 @@ function BookInfo:getCoverImage(document, file, force_orig)
             if cover_doc then
                 cover_bb = cover_doc:getCoverPageImage()
                 cover_doc:close()
-                return cover_bb, custom_cover
+                if cover_bb then return cover_bb end -- Early return
             end
         end
     end
-    -- orig cover
-    local doc
+
     local do_open = file ~= nil and file ~= curr_file
-    if do_open then
-        doc = DocumentRegistry:openDocument(file)
-        if doc and doc.loadDocument then -- CreDocument
-            doc:loadDocument(false) -- load only metadata
+    local cover_doc = do_open and DocumentRegistry:openDocument(file) or document
+
+    if cover_doc then
+        if do_open and cover_doc.loadDocument then
+            cover_doc:loadDocument(false)
         end
-    else
-        doc = document
-    end
-    if doc then
-        cover_bb = doc:getCoverPageImage()
+        cover_bb = cover_doc:getCoverPageImage()
         if do_open then
-            doc:close()
+            cover_doc:close()
         end
     end
+
+    return cover_bb
+end
+
     return cover_bb
 end
 
