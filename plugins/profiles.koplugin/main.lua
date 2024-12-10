@@ -2,6 +2,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
+local DocSettings = require("docsettings")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
@@ -105,7 +106,7 @@ function Profiles:getSubMenuItems()
         },
         {
             text = _("New with current book settings"),
-            enabled = self.ui.document ~= nil,
+            enabled = self.document ~= nil,
             keep_menu_open = true,
             callback = function(touchmenu_instance)
                 local function editCallback(new_name)
@@ -615,6 +616,7 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                 { _("if book metadata contains"), "doc_props" },
                 { _("if book file path contains"), "filepath" },
                 { _("if book is in collections"), "collections" },
+                { _("and if book is new"), "is_new" },
             }
             local sub_item_table = {
                 self:genAutoExecMenuItem(_("always"), event_always, profile_name, true),
@@ -676,7 +678,7 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                                 end,
                                 callback = function(touchmenu_instance)
                                     local dialog
-                                    local buttons = self.ui.document == nil and {} or {{
+                                    local buttons = self.document == nil and {} or {{
                                         {
                                             text = _("Current book"),
                                             enabled_func = function()
@@ -746,11 +748,11 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                     callback = function(touchmenu_instance)
                         local condition = conditions[3][2]
                         local dialog
-                        local buttons = self.ui.document == nil and {} or {{
+                        local buttons = self.document == nil and {} or {{
                             {
                                 text = _("Current book"),
                                 callback = function()
-                                    dialog:addTextToInput(self.ui.document.file)
+                                    dialog:addTextToInput(self.document.file)
                                 end,
                             },
                         }}
@@ -824,7 +826,29 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                         util.tableRemoveValue(self.autoexec, event, profile_name, conditions[4][2])
                         touchmenu_instance:updateItems()
                     end,
+                    separator = true,
                 },
+                event == "ReaderReadyAll" and {
+                    text = conditions[5][1], -- new
+                    enabled_func = function()
+                        return not util.tableGetValue(self.autoexec, event_always, profile_name)
+                    end,
+                    checked_func = function()
+                        return util.tableGetValue(self.autoexec, event, profile_name, conditions[5][2]) and true
+                    end,
+                    callback = function(touchmenu_instance)
+                        local condition = conditions[5][2]
+                        if util.tableGetValue(self.autoexec, event, profile_name, condition) then
+                            util.tableRemoveValue(self.autoexec, event, profile_name, condition)
+                        else
+                            util.tableSetValue(self.autoexec, true, event, profile_name, condition)
+                        end
+                    end,
+                    hold_callback = function(touchmenu_instance)
+                        util.tableRemoveValue(self.autoexec, event, profile_name, conditions[5][2])
+                        touchmenu_instance:updateItems()
+                    end,
+                } or nil,
             }
             return sub_item_table
         end,
@@ -866,7 +890,7 @@ function Profiles:onPathChanged(path) -- global
     if self.autoexec[event] == nil then return end
     local function is_match(txt, pattern)
         for str in util.gsplit(pattern, ",") do -- comma separated patterns are allowed
-            if util.stringSearch(txt, str) ~= 0 then
+            if util.stringSearch(txt, util.trim(str)) ~= 0 then
                 return true
             end
         end
@@ -922,7 +946,7 @@ function Profiles:executeAutoExec(profile_name)
         })
     else
         logger.dbg("Profiles - auto executing:", profile_name)
-        UIManager:nextTick(function()
+        UIManager:tickAfterNext(function()
             Dispatcher:execute(self.data[profile_name])
         end)
     end
@@ -932,7 +956,7 @@ function Profiles:executeAutoExecDocConditional(event)
     if self.autoexec[event] == nil then return end
     local function is_match(txt, pattern)
         for str in util.gsplit(pattern, ",") do
-            if util.stringSearch(txt, str) ~= 0 then
+            if util.stringSearch(txt, util.trim(str)) ~= 0 then
                 return true
             end
         end
@@ -940,37 +964,39 @@ function Profiles:executeAutoExecDocConditional(event)
     for profile_name, conditions in pairs(self.autoexec[event]) do
         if self.data[profile_name] then
             local do_execute
-            for condition, trigger in pairs(conditions) do
-                if condition == "orientation" then
-                    local mode = Screen:getRotationMode()
-                    do_execute = trigger[mode]
-                elseif condition == "doc_props" then
-                    if self.ui.document then
-                        for prop_name, pattern in pairs(trigger) do
-                            local prop = self.ui.doc_props[prop_name == "title" and "display_title" or prop_name]
-                            do_execute = is_match(prop, pattern)
-                            if do_execute then
-                                break -- any prop match is enough
+            if not conditions.is_new or not DocSettings:hasSidecarFile(self.document.file) then
+                for condition, trigger in pairs(conditions) do
+                    if condition == "orientation" then
+                        local mode = Screen:getRotationMode()
+                        do_execute = trigger[mode]
+                    elseif condition == "doc_props" then
+                        if self.document then
+                            for prop_name, pattern in pairs(trigger) do
+                                local prop = self.ui.doc_props[prop_name == "title" and "display_title" or prop_name]
+                                do_execute = is_match(prop, pattern)
+                                if do_execute then
+                                    break -- any prop match is enough
+                                end
+                            end
+                        end
+                    elseif condition == "filepath" then
+                        if self.document then
+                            do_execute = is_match(self.document.file, trigger)
+                        end
+                    elseif condition == "collections" then
+                        if self.document then
+                            local ReadCollection = require("readcollection")
+                            for collection_name in pairs(trigger) do
+                                if ReadCollection:isFileInCollection(self.document.file, collection_name) then
+                                    do_execute = true
+                                    break -- any collection is enough
+                                end
                             end
                         end
                     end
-                elseif condition == "filepath" then
-                    if self.ui.document then
-                        do_execute = is_match(self.ui.document.file, trigger)
+                    if do_execute then
+                        break -- execute profile only once
                     end
-                elseif condition == "collections" then
-                    if self.ui.document then
-                        local ReadCollection = require("readcollection")
-                        for collection_name in pairs(trigger) do
-                            if ReadCollection:isFileInCollection(self.ui.document.file, collection_name) then
-                                do_execute = true
-                                break -- any collection is enough
-                            end
-                        end
-                    end
-                end
-                if do_execute then
-                    break -- execute profile only once
                 end
             end
             if do_execute then
