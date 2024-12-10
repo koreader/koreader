@@ -51,11 +51,11 @@ function Screenshoter:onScreenshot(screenshot_name, caller_callback)
     local prefix = self.prefix
     local file = self.ui.document and self.ui.document.file -- currently opened book
     if file then
-        local curr_page = self.ui:getCurrentPage()
+        local curr_page = "p" .. self.ui:getCurrentPage()
         if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
             curr_page = self.ui.pagemap:getCurrentPageLabel(true)
         end
-        prefix = self.prefix .. "_" .. ffiutil.basename(file) .. "_p_" .. curr_page
+        prefix = self.prefix .. "_" .. ffiutil.basename(file) .. "_" .. curr_page
     end
     if not screenshot_name then
         screenshot_name = os.date(self:getScreenshotDir() .. "/" .. prefix .. "_%Y-%m-%d_%H%M%S.png")
