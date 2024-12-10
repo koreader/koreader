@@ -309,7 +309,7 @@ function VocabularyBuilder:hasWord(word)
     stmt:bind(word)
     local result = stmt:step()
     stmt:close()
-    if result then -- count, prev_context, next_context, highlight
+    if result then
         return {
             book_title = result[1],
             create_time = tonumber(result[2]),
