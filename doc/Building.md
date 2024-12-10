@@ -92,8 +92,8 @@ luarocks --lua-version=5.1 --local install busted
 Install the prerequisites using [Homebrew](https://brew.sh/):
 
 ```
-brew install autoconf automake binutils cmake coreutils findutils gnu-getopt \
-    libtool make meson nasm ninja p7zip pkg-config sdl2 util-linux
+brew install autoconf automake bash binutils cmake coreutils findutils \
+    gnu-getopt libtool make meson nasm ninja p7zip pkg-config sdl2 util-linux
 ```
 
 You will also have to ensure Homebrew's findutils, gnu-getopt, make & util-linux are in your path, e.g., via
