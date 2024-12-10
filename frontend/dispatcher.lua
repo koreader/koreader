@@ -869,7 +869,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                             callback = function(spin)
                                 setValue(k, spin.value, touchmenu_instance)
                             end,
-                            option_text = caller.profiles == nil and _("Use gesture distance"), -- Gesture manager only
+                            option_text = Device:isTouchDevice() and caller.profiles == nil and _("Use gesture distance"), -- Gesture manager only
                             option_callback = function()
                                 setValue(k, 0, touchmenu_instance)
                             end,
