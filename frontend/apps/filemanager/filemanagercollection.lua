@@ -13,6 +13,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local _ = require("gettext")
+local N_ = _.ngettext
 local T = require("ffi/util").template
 local util = require("util")
 
@@ -239,6 +240,22 @@ function FileManagerCollection:showCollDialog()
                 self:sortCollection()
             end,
         }},
+        {}, -- separator
+        {{
+            text = _("Add all books from a folder"),
+            callback = function()
+                UIManager:close(coll_dialog)
+                self:addBooksFromFolder(true)
+            end,
+        }},
+        {{
+            text = _("Add all books from a folder and its subfolders"),
+            callback = function()
+                UIManager:close(coll_dialog)
+                self:addBooksFromFolder()
+            end,
+        }},
+        {}, -- separator
         {{
             text = _("Add a book to collection"),
             callback = function()
@@ -295,6 +312,32 @@ function FileManagerCollection:sortCollection()
         end
     }
     UIManager:show(sort_widget)
+end
+
+function FileManagerCollection:addBooksFromFolder(not_recursive)
+    local PathChooser = require("ui/widget/pathchooser")
+    local path_chooser = PathChooser:new{
+        path = G_reader_settings:readSetting("home_dir"),
+        select_file = false,
+        onConfirm = function(folder)
+            local files_found = {}
+            local DocumentRegistry = require("document/documentregistry")
+            util.findFiles(folder, function(file)
+                files_found[file] = DocumentRegistry:hasProvider(file) or nil
+            end, not_recursive)
+            local count = ReadCollection:addItemsMultiple(files_found, { [self.coll_menu.collection_name] = true })
+            local text
+            if count == 0 then
+                text = _("No books added to collection")
+            else
+                text = T(N_("1 book added to collection", "%1 books added to collection", count), count)
+                self:updateItemTable()
+                self.files_updated = true
+            end
+            UIManager:show(InfoMessage:new{ text = text })
+        end,
+    }
+    UIManager:show(path_chooser)
 end
 
 function FileManagerCollection:onBookMetadataChanged()
