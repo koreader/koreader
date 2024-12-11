@@ -53,7 +53,7 @@ function Screenshoter:onScreenshot(screenshot_name, caller_callback)
     if file then
         local curr_page = "p" .. self.ui:getCurrentPage()
         if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
-            curr_page = self.ui.pagemap:getCurrentPageLabel(true)
+            curr_page = "p_" .. self.ui.pagemap:getCurrentPageLabel(true)
         end
         prefix = self.prefix .. "_" .. ffiutil.basename(file) .. "_" .. curr_page
     end
