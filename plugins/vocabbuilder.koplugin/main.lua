@@ -1059,12 +1059,13 @@ function VocabItemWidget:removeAndClose()
 end
 
 function VocabItemWidget:showMore()
+    -- @translators Used in vocabbuilder: %1 date, %2 time
+    local date_str = T(_("Added on %1 | Review scheduled at %2"), os.date("%Y-%m-%d", self.item.create_time), os.date("%Y-%m-%d %H:%M", self.item.due_time))
     local dialogue = WordInfoDialog:new{
         title = self.item.word,
         highlighted_word = self.item.highlight,
         book_title = self.item.book_title,
-        dates = _("Added on") .. " " .. os.date("%Y-%m-%d", self.item.create_time) .. " | " ..
-        _("Review scheduled at") .. " " .. os.date("%Y-%m-%d %H:%M", self.item.due_time),
+        dates = date_str,
         prev_context = self.item.prev_context,
         next_context = self.item.next_context,
         remove_callback = function()
@@ -2108,12 +2109,12 @@ function VocabBuilder:onWordLookedUp(word, title, is_manual)
 
     local item = DB:hasWord(word)
     if item then
+        local date_str = T(_("Added on %1 | Review scheduled at %2"), os.date("%Y-%m-%d", item.create_time), os.date("%Y-%m-%d %H:%M", item.due_time))
         local dialog = WordInfoDialog:new{
             title = _("Vocabulary exists:") .. " " .. word,
             highlighted_word = item.highlight or word,
             book_title = item.book_title,
-            dates = _("Added on") .. " " .. os.date("%Y-%m-%d", item.create_time) .. " | " ..
-            _("Review scheduled at") .. " " .. os.date("%Y-%m-%d %H:%M", item.due_time),
+            dates = date_str,
             prev_context = item.prev_context,
             next_context = item.next_context,
             update_callback = update,
