@@ -5,6 +5,7 @@ local Device = require("device")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
+local ffiutil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("util")
 local Screen = require("device").screen
@@ -47,11 +48,20 @@ function Screenshoter:getScreenshotDir()
 end
 
 function Screenshoter:onScreenshot(screenshot_name, caller_callback)
+    local prefix = self.prefix
+    local file = self.ui.document and self.ui.document.file -- currently opened book
+    if file then
+        local curr_page = "p" .. self.ui:getCurrentPage()
+        if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+            curr_page = "p_" .. self.ui.pagemap:getCurrentPageLabel(true)
+        end
+        prefix = self.prefix .. "_" .. ffiutil.basename(file) .. "_" .. curr_page
+    end
     if not screenshot_name then
-        screenshot_name = os.date(self:getScreenshotDir() .. "/" .. self.prefix .. "_%Y-%m-%d_%H%M%S.png")
+        screenshot_name = os.date(self:getScreenshotDir() .. "/" .. prefix .. "_%Y-%m-%d_%H%M%S.png")
     end
     Screen:shot(screenshot_name)
-    local file = self.ui.document and self.ui.document.file -- currently opened book
+
     local dialog
     local buttons = {
         {
