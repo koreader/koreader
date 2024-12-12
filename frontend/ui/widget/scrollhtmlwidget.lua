@@ -40,7 +40,7 @@ function ScrollHtmlWidget:init()
         html_link_tapped_callback = self.html_link_tapped_callback,
     }
 
-    self.htmlbox_widget:setContent(self.html_body, self.css, self.default_font_size, self.is_xhtml)
+    self.htmlbox_widget:setContent(self.html_body, self.css, self.default_font_size, self.is_xhtml, nil, self.html_resource_directory)
 
     self.v_scroll_bar = VerticalScrollBar:new{
         enable = self.htmlbox_widget.page_count > 1,

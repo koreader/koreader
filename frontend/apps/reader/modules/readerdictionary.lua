@@ -641,16 +641,21 @@ local function tidyMarkup(results)
             result.ifo_lang = ifo.lang
         end
         if ifo and ifo.is_html then
+            local dict_path = util.splitFilePathName(ifo.file)
             result.is_html = ifo.is_html
             result.css = ifo.css
             if ifo.fix_html_func then
-                local dict_path = util.splitFilePathName(ifo.file)
                 local ok, fixed_definition = pcall(ifo.fix_html_func, result.definition, dict_path)
                 if ok then
                     result.definition = fixed_definition
                 else
                     logger.warn("Dict's user provided function failed:", fixed_definition)
                 end
+            end
+
+            local res_dir = dict_path .. "res"
+            if lfs.attributes(res_dir, "mode") == "directory" then
+                result.dictionary_resource_directory = res_dir
             end
         else
             local def = result.definition
