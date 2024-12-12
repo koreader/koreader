@@ -681,21 +681,6 @@ dbg:guard(UIManager, 'setDirty',
     end)
 --]]
 
---[[--
-Clear the full repaint & refresh queues.
-
-NOTE: Beware! This doesn't take any prisonners!
-You shouldn't have to resort to this unless in very specific circumstances!
-plugins/coverbrowser.koplugin/covermenu.lua building a franken-menu out of buttondialog
-and wanting to avoid inheriting their original paint/refresh cycle being a prime example.
---]]
-function UIManager:clearRenderStack()
-    logger.dbg("clearRenderStack: Clearing the full render stack!")
-    self._dirty = {}
-    self._refresh_func_stack = {}
-    self._refresh_stack = {}
-end
-
 function UIManager:insertZMQ(zeromq)
     table.insert(self._zeromqs, zeromq)
     return zeromq
