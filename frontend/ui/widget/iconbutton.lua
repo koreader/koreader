@@ -136,12 +136,6 @@ function IconButton:onTapIconButton()
         --
         self.callback()
 
-        -- NOTE: plugins/coverbrowser.koplugin/covermenu (ab)uses UIManager:clearRenderStack,
-        --       so we need to enqueue the actual refresh request for the unhighlight post-callback,
-        --       otherwise, it's lost.
-        --       This changes nothing in practice, since we follow by explicitly requesting to drain the refresh queue ;).
-        UIManager:setDirty(nil, "fast", self.dimen)
-
         UIManager:forceRePaint()
     end
     return true
