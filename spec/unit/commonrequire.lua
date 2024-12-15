@@ -56,3 +56,10 @@ package.reload = function(name)
     assert(package.unload(name))
     return require(name)
 end
+
+function disable_plugins()
+    local PluginLoader = require("pluginloader")
+    PluginLoader.enabled_plugins = {}
+    PluginLoader.disabled_plugins = {}
+    PluginLoader.loaded_plugins = {}
+end

@@ -2,6 +2,7 @@ describe("FileManager module", function()
     local DataStorage, FileManager, lfs, docsettings, UIManager, Screen, makePath, util
     setup(function()
         require("commonrequire")
+        disable_plugins()
         require("document/canvascontext"):init(require("device"))
         DataStorage = require("datastorage")
         FileManager = require("apps/filemanager/filemanager")

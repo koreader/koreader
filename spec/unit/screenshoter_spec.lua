@@ -4,6 +4,7 @@ describe("ReaderScreenshot module", function()
     local readerui
     setup(function()
         require("commonrequire")
+        disable_plugins()
         DataStorage = require("datastorage")
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")

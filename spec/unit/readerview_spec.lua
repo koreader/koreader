@@ -3,6 +3,7 @@ describe("Readerview module", function()
 
     setup(function()
         require("commonrequire")
+        disable_plugins()
         require("document/canvascontext"):init(require("device"))
         DocumentRegistry = require("document/documentregistry")
         Blitbuffer = require("ffi/blitbuffer")

@@ -4,6 +4,7 @@ describe("Readerui module", function()
     local readerui
     setup(function()
         require("commonrequire")
+        disable_plugins()
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")
         DocSettings = require("docsettings")
