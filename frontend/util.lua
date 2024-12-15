@@ -783,7 +783,8 @@ end
 --- Recursively scan directory for files inside
 -- @string path
 -- @func callback(fullpath, name, attr)
-function util.findFiles(dir, cb)
+function util.findFiles(dir, cb, recursive)
+    recursive = recursive ~= false
     local function scan(current)
         local ok, iter, dir_obj = pcall(lfs.dir, current)
         if not ok then return end
@@ -792,7 +793,7 @@ function util.findFiles(dir, cb)
             -- lfs can return nil here, as it will follow symlinks!
             local attr = lfs.attributes(path) or {}
             if attr.mode == "directory" then
-                if f ~= "." and f ~= ".." then
+                if recursive and f ~= "." and f ~= ".." then
                     scan(path)
                 end
             elseif attr.mode == "file" or attr.mode == "link" then

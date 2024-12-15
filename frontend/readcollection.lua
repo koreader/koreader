@@ -1,6 +1,6 @@
 local DataStorage = require("datastorage")
-local FFIUtil = require("ffi/util")
 local LuaSettings = require("luasettings")
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -17,7 +17,7 @@ local ReadCollection = {
 -- read, write
 
 local function buildEntry(file, order, mandatory)
-    file = FFIUtil.realpath(file)
+    file = ffiUtil.realpath(file)
     if not file then return end
     if not mandatory then -- new item
         local attr = lfs.attributes(file)
@@ -84,12 +84,12 @@ end
 -- info
 
 function ReadCollection:isFileInCollection(file, collection_name)
-    file = FFIUtil.realpath(file) or file
+    file = ffiUtil.realpath(file) or file
     return self.coll[collection_name][file] and true or false
 end
 
 function ReadCollection:isFileInCollections(file)
-    file = FFIUtil.realpath(file) or file
+    file = ffiUtil.realpath(file) or file
     for _, coll in pairs(self.coll) do
         if coll[file] then
             return true
@@ -99,7 +99,7 @@ function ReadCollection:isFileInCollections(file)
 end
 
 function ReadCollection:getCollectionsWithFile(file)
-    file = FFIUtil.realpath(file) or file
+    file = ffiUtil.realpath(file) or file
     local collections = {}
     for coll_name, coll in pairs(self.coll) do
         if coll[file] then
@@ -129,7 +129,7 @@ function ReadCollection:addItem(file, collection_name)
 end
 
 function ReadCollection:addRemoveItemMultiple(file, collections_to_add)
-    file = FFIUtil.realpath(file) or file
+    file = ffiUtil.realpath(file) or file
     for coll_name, coll in pairs(self.coll) do
         if collections_to_add[coll_name] then
             if not coll[file] then
@@ -146,23 +146,26 @@ function ReadCollection:addRemoveItemMultiple(file, collections_to_add)
 end
 
 function ReadCollection:addItemsMultiple(files, collections_to_add, no_write)
+    local count = 0
     for file in pairs(files) do
-        file = FFIUtil.realpath(file) or file
+        file = ffiUtil.realpath(file) or file
         for coll_name in pairs(collections_to_add) do
             local coll = self.coll[coll_name]
             if not coll[file] then
                 local max_order = self:getCollectionMaxOrder(coll_name)
                 coll[file] = buildEntry(file, max_order + 1)
+                count = count + 1
             end
         end
     end
-    if not no_write then
+    if not no_write and count > 0 then
         self:write()
     end
+    return count
 end
 
 function ReadCollection:removeItem(file, collection_name, no_write) -- FM: delete file; FMColl: remove file
-    file = FFIUtil.realpath(file) or file
+    file = ffiUtil.realpath(file) or file
     if collection_name then
         if self.coll[collection_name][file] then
             self.coll[collection_name][file] = nil
@@ -226,7 +229,7 @@ function ReadCollection:_updateItem(coll_name, file_name, new_filepath, new_path
 end
 
 function ReadCollection:updateItem(file, new_filepath) -- FM: rename file, move file
-    file = FFIUtil.realpath(file) or file
+    file = ffiUtil.realpath(file) or file
     local do_write
     for coll_name, coll in pairs(self.coll) do
         if coll[file] then
@@ -242,7 +245,7 @@ end
 function ReadCollection:updateItems(files, new_path) -- FM: move files
     local do_write
     for file in pairs(files) do
-        file = FFIUtil.realpath(file) or file
+        file = ffiUtil.realpath(file) or file
         for coll_name, coll in pairs(self.coll) do
             if coll[file] then
                 self:_updateItem(coll_name, file, nil, new_path)
