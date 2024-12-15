@@ -593,7 +593,6 @@ end
 function ReaderUI:showReader(file, provider, seamless)
     logger.dbg("show reader ui")
 
-    file = ffiUtil.realpath(file)
     if lfs.attributes(file, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
              text = T(_("File '%1' does not exist."), BD.filepath(filemanagerutil.abbreviate(file)))
@@ -601,20 +600,59 @@ function ReaderUI:showReader(file, provider, seamless)
         return
     end
 
-    if not DocumentRegistry:hasProvider(file) and provider == nil then
+    if provider == nil and DocumentRegistry:hasProvider(file) then
+        provider = DocumentRegistry:getProvider(file)
+    end
+    if provider ~= nil then
+        provider = self:extendProvider(file, provider)
+    end
+    if provider and provider.provider then
+        -- We can now signal the existing ReaderUI/FileManager instances that it's time to go bye-bye...
+        UIManager:broadcastEvent(Event:new("ShowingReader"))
+        self:showReaderCoroutine(file, provider, seamless)
+    else
         UIManager:show(InfoMessage:new{
             text = T(_("File '%1' is not supported."), BD.filepath(filemanagerutil.abbreviate(file)))
         })
         self:showFileManager(file)
-        return
     end
+end
 
-    -- We can now signal the existing ReaderUI/FileManager instances that it's time to go bye-bye...
-    UIManager:broadcastEvent(Event:new("ShowingReader"))
-    provider = provider or DocumentRegistry:getProvider(file)
-    if provider.provider then
-        self:showReaderCoroutine(file, provider, seamless)
+function ReaderUI:extendProvider(file, provider)
+    -- If file extension is pure "zip", check the archive content and choose the appropriate provider,
+    -- except when the provider choice is forced in the "Open with" dialog.
+    -- Also pass to crengine is_fb2 property, based on the archive content (pure "zip"),
+    -- or on the original file double extension ("fb2.zip" etc).
+    local _, file_type = filemanagerutil.splitFileNameType(file) -- supports double-extension
+    if file_type == "zip" then
+        -- read the content of zip-file and get extension of the 1st file
+        local std_out = io.popen("unzip -qql \"" .. file .. "\"")
+        if std_out then
+            local size, ext
+            for line in std_out:lines() do
+                size, ext = string.match(line, "%s+(%d+)%s+.+%.([^.]+)")
+                if size and ext then break end
+            end
+            std_out:close()
+            if ext ~= nil then
+                file_type = ext:lower()
+            end
+        end
+        if not provider.forced then
+            local providers = DocumentRegistry:getProviders("dummy." .. file_type)
+            if providers then
+                for _, p in ipairs(providers) do
+                    if p.provider.provider == "crengine" or p.provider.provider == "mupdf" then -- only these can unzip
+                        provider = p.provider
+                        break
+                    end
+                end
+            end
+        end
     end
+    provider.is_fb2 = file_type:sub(1, 2) == "fb"
+    provider.forced = nil
+    return provider
 end
 
 function ReaderUI:showReaderCoroutine(file, provider, seamless)
