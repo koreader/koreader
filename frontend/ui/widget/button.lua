@@ -381,6 +381,9 @@ function Button:_doFeedbackHighlight()
         -- The nil check is to discriminate the default from callers that explicitly request a specific radius.
         if self[1].radius == nil then
             self[1].radius = Size.radius.button
+            -- Save original colors so that they can be restored
+            self.label_widget.original_fgcolor = self.label_widget.fgcolor
+            self[1].original_background = self[1].background
             -- And here, it's easier to just invert the bg/fg colors ourselves,
             -- so as to preserve the rounded corners in one step.
             self[1].background = self[1].background:invert()
@@ -404,8 +407,8 @@ function Button:_undoFeedbackHighlight(is_translucent)
     if self.text then
         if self[1].radius == Size.radius.button then
             self[1].radius = nil
-            self[1].background = self[1].background:invert()
-            self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
+            self[1].background = self[1].original_background
+            self.label_widget.fgcolor = self.label_widget.original_fgcolor
         else
             self[1].invert = false
         end
