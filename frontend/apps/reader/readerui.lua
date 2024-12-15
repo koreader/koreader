@@ -590,7 +590,7 @@ end
 --- @note: Will sanely close existing FileManager/ReaderUI instance for you!
 ---        This is the *only* safe way to instantiate a new ReaderUI instance!
 ---        (i.e., don't look at the testsuite, which resorts to all kinds of nasty hacks).
-function ReaderUI:showReader(file, provider, seamless)
+function ReaderUI:showReader(file, provider, seamless, is_provider_forced)
     logger.dbg("show reader ui")
 
     if lfs.attributes(file, "mode") ~= "file" then
@@ -604,7 +604,7 @@ function ReaderUI:showReader(file, provider, seamless)
         provider = DocumentRegistry:getProvider(file)
     end
     if provider ~= nil then
-        provider = self:extendProvider(file, provider)
+        provider = self:extendProvider(file, provider, is_provider_forced)
     end
     if provider and provider.provider then
         -- We can now signal the existing ReaderUI/FileManager instances that it's time to go bye-bye...
@@ -618,10 +618,10 @@ function ReaderUI:showReader(file, provider, seamless)
     end
 end
 
-function ReaderUI:extendProvider(file, provider)
-    -- If file extension is pure "zip", check the archive content and choose the appropriate provider,
+function ReaderUI:extendProvider(file, provider, is_provider_forced)
+    -- If file extension is single "zip", check the archive content and choose the appropriate provider,
     -- except when the provider choice is forced in the "Open with" dialog.
-    -- Also pass to crengine is_fb2 property, based on the archive content (pure "zip"),
+    -- Also pass to crengine is_fb2 property, based on the archive content (single "zip" extension),
     -- or on the original file double extension ("fb2.zip" etc).
     local _, file_type = filemanagerutil.splitFileNameType(file) -- supports double-extension
     if file_type == "zip" then
@@ -638,7 +638,7 @@ function ReaderUI:extendProvider(file, provider)
                 file_type = ext:lower()
             end
         end
-        if not provider.forced then
+        if not is_provider_forced then
             local providers = DocumentRegistry:getProviders("dummy." .. file_type)
             if providers then
                 for _, p in ipairs(providers) do
@@ -651,7 +651,6 @@ function ReaderUI:extendProvider(file, provider)
         end
     end
     provider.is_fb2 = file_type:sub(1, 2) == "fb"
-    provider.forced = nil
     return provider
 end
 
