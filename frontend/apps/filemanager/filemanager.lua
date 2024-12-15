@@ -1549,13 +1549,9 @@ function FileManager:showOpenWithDialog(file)
 end
 
 function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_callback)
-    if provider == nil then
-        provider = DocumentRegistry:getProvider(file, true) -- include auxiliary
-    else
-        provider.forced = true
-    end
+    local is_provider_forced = provider ~= nil
+    provider = provider or DocumentRegistry:getProvider(file, true) -- include auxiliary
     if provider and provider.order then -- auxiliary
-        provider.forced = nil
         if aux_caller_callback then
             aux_caller_callback()
         end
@@ -1569,7 +1565,7 @@ function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_ca
             doc_caller_callback()
         end
         local ReaderUI = require("apps/reader/readerui")
-        ReaderUI:showReader(file, provider)
+        ReaderUI:showReader(file, provider, nil, is_provider_forced)
     end
 end
 
