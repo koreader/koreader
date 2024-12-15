@@ -29,6 +29,8 @@ files["spec/unit/*"].globals = {
     "match", -- can be removed once luacheck 0.24.0 or higher is used
     "package",
     "disable_plugins",
+    "fastforward_ui_events",
+    "screenshot",
 }
 
 -- TODO: clean up and enforce max line width (631)
