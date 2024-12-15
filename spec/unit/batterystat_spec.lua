@@ -7,7 +7,6 @@ describe("BatteryState plugin tests", function()
 
     setup(function()
         require("commonrequire")
-        package.unloadAll()
         require("document/canvascontext"):init(require("device"))
         time = require("ui/time")
         MockTime = require("mock_time")
@@ -16,7 +15,6 @@ describe("BatteryState plugin tests", function()
 
     teardown(function()
         MockTime:uninstall()
-        package.unloadAll()
         require("document/canvascontext"):init(require("device"))
     end)
 
