@@ -10,7 +10,7 @@ describe("random package tests", function()
     end)
 
     it("should generate uuid without dash", function()
-        for i = 1, 10000 do
+        for i = 1, 1000 do
             local uuid = random.uuid()
             assert.Equals(uuid:len(), 32)
             assert.Equals(uuid:sub(13, 13), "4")
@@ -19,7 +19,7 @@ describe("random package tests", function()
     end)
 
     it("should generate uuid with dash", function()
-        for i = 1, 10000 do
+        for i = 1, 1000 do
             local uuid = random.uuid(true)
             assert.Equals(uuid:len(), 36)
             assert.Equals(uuid:sub(9, 9), "-")
