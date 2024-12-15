@@ -245,14 +245,14 @@ function FileManagerCollection:showCollDialog()
             text = _("Add all books from a folder"),
             callback = function()
                 UIManager:close(coll_dialog)
-                self:addBooksFromFolder(true)
+                self:addBooksFromFolder(false)
             end,
         }},
         {{
             text = _("Add all books from a folder and its subfolders"),
             callback = function()
                 UIManager:close(coll_dialog)
-                self:addBooksFromFolder()
+                self:addBooksFromFolder(true)
             end,
         }},
         {}, -- separator
@@ -314,7 +314,7 @@ function FileManagerCollection:sortCollection()
     UIManager:show(sort_widget)
 end
 
-function FileManagerCollection:addBooksFromFolder(not_recursive)
+function FileManagerCollection:addBooksFromFolder(include_subfolders)
     local PathChooser = require("ui/widget/pathchooser")
     local path_chooser = PathChooser:new{
         path = G_reader_settings:readSetting("home_dir"),
@@ -324,7 +324,7 @@ function FileManagerCollection:addBooksFromFolder(not_recursive)
             local DocumentRegistry = require("document/documentregistry")
             util.findFiles(folder, function(file)
                 files_found[file] = DocumentRegistry:hasProvider(file) or nil
-            end, not_recursive)
+            end, include_subfolders)
             local count = ReadCollection:addItemsMultiple(files_found, { [self.coll_menu.collection_name] = true })
             local text
             if count == 0 then
