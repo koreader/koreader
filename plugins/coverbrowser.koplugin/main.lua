@@ -672,7 +672,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
     end
 end
 
-local function _FileManagerHistory_updateItemTable(self)
+local function _FileManagerHistory_updateItemTable(self, ...)
     -- 'self' here is the single FileManagerHistory instance
     -- FileManagerHistory has just created a new instance of Menu as 'hist_menu'
     -- at each display of History. Soon after instantiation, this method
@@ -714,7 +714,7 @@ local function _FileManagerHistory_updateItemTable(self)
     end
 
     -- And do now what the original does
-    _FileManagerHistory_updateItemTable_orig(self)
+    _FileManagerHistory_updateItemTable_orig(self, ...)
 end
 
 function CoverBrowser:setupHistoryDisplayMode(display_mode)
@@ -750,7 +750,7 @@ function CoverBrowser:setupHistoryDisplayMode(display_mode)
     end
 end
 
-local function _FileManagerCollections_updateItemTable(self)
+local function _FileManagerCollections_updateItemTable(self, ...)
     -- 'self' here is the single FileManagerCollections instance
     -- FileManagerCollections has just created a new instance of Menu as 'coll_menu'
     -- at each display of Collection/Favorites. Soon after instantiation, this method
@@ -792,7 +792,7 @@ local function _FileManagerCollections_updateItemTable(self)
     end
 
     -- And do now what the original does
-    _FileManagerCollection_updateItemTable_orig(self)
+    _FileManagerCollection_updateItemTable_orig(self, ...)
 end
 
 function CoverBrowser:setupCollectionDisplayMode(display_mode)
