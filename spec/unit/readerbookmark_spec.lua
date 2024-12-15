@@ -144,22 +144,7 @@ describe("ReaderBookmark module", function()
             assert.truthy(not readerui.view.dogear_visible)
         end)
         it("should sort bookmarks with ascending page numbers", function()
-            local pages = {1, 20, 5, 30, 10, 40, 15, 25, 35, 45}
-            for _, page in ipairs(pages) do
-                readerui.paging:onGotoPage(page)
-                readerui.bookmark:onToggleBookmark()
-            end
-            readerui.bookmark:onShowBookmark()
-            fastforward_ui_events()
-            screenshot(Screen, "reader_bookmark_10marks_pdf.png")
-            local annotated_pages = {}
-            for i, a in ipairs(readerui.annotation.annotations) do
-                table.insert(annotated_pages, a.page)
-            end
-            assert.are.same({1, 5, 10, 15, 20, 25, 30, 35, 40, 45}, annotated_pages)
-        end)
-        it("should keep descending page numbers after removing bookmarks", function()
-            local pages = {1, 30, 10, 40, 20}
+            local pages = {20, 9, 30, 10, 15}
             for _, page in ipairs(pages) do
                 readerui.paging:onGotoPage(page)
                 readerui.bookmark:onToggleBookmark()
@@ -167,18 +152,33 @@ describe("ReaderBookmark module", function()
             readerui.bookmark:onShowBookmark()
             fastforward_ui_events()
             screenshot(Screen, "reader_bookmark_5marks_pdf.png")
-            assert.are.same(5, #readerui.annotation.annotations)
+            local annotated_pages = {}
+            for i, a in ipairs(readerui.annotation.annotations) do
+                table.insert(annotated_pages, a.page)
+            end
+            assert.are.same({9, 10, 15, 20, 30}, annotated_pages)
+        end)
+        it("should keep descending page numbers after removing bookmarks", function()
+            local pages = {30, 10, 20}
+            for _, page in ipairs(pages) do
+                readerui.paging:onGotoPage(page)
+                readerui.bookmark:onToggleBookmark()
+            end
+            readerui.bookmark:onShowBookmark()
+            fastforward_ui_events()
+            screenshot(Screen, "reader_bookmark_2marks_pdf.png")
+            assert.are.same(2, #readerui.annotation.annotations)
         end)
         it("should add bookmark by highlighting", function()
             readerui.paging:onGotoPage(10)
             highlight_text(readerui, Geom:new{ x = 260, y = 70 }, Geom:new{ x = 260, y = 150 })
             readerui.bookmark:onShowBookmark()
             fastforward_ui_events()
-            screenshot(Screen, "reader_bookmark_6marks_pdf.png")
-            assert.are.same(6, #readerui.annotation.annotations)
+            screenshot(Screen, "reader_bookmark_3marks_pdf.png")
+            assert.are.same(3, #readerui.annotation.annotations)
         end)
         it("should get previous bookmark for certain page", function()
-            assert.are.same(5, readerui.bookmark:getPreviousBookmarkedPage(10))
+            assert.are.same(9, readerui.bookmark:getPreviousBookmarkedPage(10))
         end)
         it("should get next bookmark for certain page", function()
             assert.are.same(15, readerui.bookmark:getNextBookmarkedPage(10))
