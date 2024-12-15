@@ -1551,8 +1551,11 @@ end
 function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_callback)
     if provider == nil then
         provider = DocumentRegistry:getProvider(file, true) -- include auxiliary
+    else
+        provider.forced = true
     end
     if provider and provider.order then -- auxiliary
+        provider.forced = nil
         if aux_caller_callback then
             aux_caller_callback()
         end
