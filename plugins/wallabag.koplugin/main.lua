@@ -127,6 +127,7 @@ function Wallabag:init()
     end
     self.remove_finished_from_history = self.wb_settings.data.wallabag.remove_finished_from_history or false
     self.remove_abandoned_from_history = self.wb_settings.data.wallabag.remove_abandoned_from_history or false
+    self.remove_read_from_history = self.wb_settings.data.wallabag.remove_read_from_history or false
     self.download_original_document = self.wb_settings.data.wallabag.download_original_document
     self.download_queue = self.wb_settings.data.wallabag.download_queue or {}
 
@@ -1220,6 +1221,7 @@ function Wallabag:saveSettings()
         is_sync_remote_delete         = self.is_sync_remote_delete,
         articles_per_sync             = self.articles_per_sync,
         send_review_as_tags           = self.send_review_as_tags,
+        remove_abandoned_from_history = self.remove_abandoned_from_history,
         remove_finished_from_history  = self.remove_finished_from_history,
         remove_read_from_history      = self.remove_read_from_history,
         download_original_document    = self.download_original_document,
@@ -1289,7 +1291,7 @@ function Wallabag:addToDownloadQueue(article_url)
 end
 
 function Wallabag:onCloseDocument()
-    if self.remove_finished_from_history or self.remove_read_from_history then
+    if self.remove_finished_from_history or self.remove_read_from_history or self.remove_abandoned_from_history then
         local document_full_path = self.ui.document.file
         local summary = self.ui.doc_settings:readSetting("summary")
         local status = summary and summary.status
@@ -1299,9 +1301,11 @@ function Wallabag:onCloseDocument()
 
         if document_full_path
            and self.directory
-           and ( (self.remove_finished_from_history and is_finished)
-                   or (self.remove_read_from_history and is_read)
-                   or (self.remove_abandoned_from_history and is_abandoned) )
+           and (
+                (self.remove_finished_from_history and is_finished)
+                or (self.remove_read_from_history and is_read)
+                or (self.remove_abandoned_from_history and is_abandoned)
+            )
            and self.directory == string.sub(document_full_path, 1, string.len(self.directory)) then
             ReadHistory:removeItemByPath(document_full_path)
             self.ui:setLastDirForFileBrowser(self.directory)
