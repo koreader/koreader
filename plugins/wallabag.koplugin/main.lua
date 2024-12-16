@@ -163,9 +163,9 @@ function Wallabag:addToMainMenu(menu_items)
                 text = _("Mark locally finished articles as read on server"),
                 callback = function()
                     local connect_callback = function()
-                        local num_deleted = self:processLocalFiles("manual")
+                        local num_del_remote, num_del_local = self:processLocalFiles("manual")
                         UIManager:show(InfoMessage:new{
-                            text = T(_("Articles processed.\nDeleted: %1"), num_deleted)
+                            text = T(_("Processing finished.\n\nDeleted from wallabag: %1\nDeleted from KOReader: %2"), num_del_remote, num_del_local)
                         })
                         self:refreshCurrentDirIfNeeded()
                     end
@@ -777,7 +777,7 @@ function Wallabag:synchronize()
         UIManager:close(info)
     end
 
-    local deleted_count = self:processLocalFiles("auto")
+    local num_del_remote, num_del_local = self:processLocalFiles("auto")
 
     info = InfoMessage:new{ text = _("Getting article list…") }
     UIManager:show(info)
@@ -807,15 +807,15 @@ function Wallabag:synchronize()
                 end
             end
             -- synchronize remote deletions
-            deleted_count = deleted_count + self:processRemoteDeletes(remote_article_ids)
+            num_del_local = num_del_local + self:processRemoteDeletes(remote_article_ids)
 
             local msg
             if failed_count ~= 0 then
-                msg = _("Processing finished.\n\nArticles downloaded: %1\nDeleted: %2\nFailed: %3")
-                info = InfoMessage:new{ text = T(msg, downloaded_count, deleted_count, failed_count) }
+                msg = _("Processing finished.\n\nArticles downloaded: %1\nDeleted locally: %2\nFailed: %3")
+                info = InfoMessage:new{ text = T(msg, downloaded_count, num_del_local, failed_count) }
             else
-                msg = _("Processing finished.\n\nArticles downloaded: %1\nDeleted: %2")
-                info = InfoMessage:new{ text = T(msg, downloaded_count, deleted_count) }
+                msg = _("Processing finished.\n\nArticles downloaded: %1\nDeleted locally: %2")
+                info = InfoMessage:new{ text = T(msg, downloaded_count, num_del_local) }
             end
             UIManager:show(info)
         end -- articles
@@ -858,7 +858,8 @@ function Wallabag:processLocalFiles(mode)
         return 0, 0
     end
 
-    local num_deleted = 0
+    local num_del_remote = 0
+    local num_del_local = 0
     if self.is_archive_finished or self.is_archive_read or self.is_archive_abandoned then
         local info = InfoMessage:new{ text = _("Processing local files…") }
         UIManager:show(info)
@@ -875,27 +876,21 @@ function Wallabag:processLocalFiles(mode)
                     local summary = doc_settings:readSetting("summary")
                     local status = summary and summary.status
                     local percent_finished = doc_settings:readSetting("percent_finished")
-                    if status == "complete" then
-                        if self.is_archive_finished then
-                            self:removeArticle(entry_path)
-                            num_deleted = num_deleted + 1
-                        end
-                    elseif status == "abandoned" then
-                        if self.is_archive_abandoned then
-                            self:removeArticle(entry_path)
-                            num_deleted = num_deleted + 1
-                        end
-                    elseif percent_finished == 1 then -- 100% read
-                        if self.is_archive_read then
-                            self:removeArticle(entry_path)
-                            num_deleted = num_deleted + 1
-                        end
+                    if (
+                        (status == "complete" and self.is_archive_finished)
+                        or (status == "abandoned" and self.is_archive_abandoned)
+                        or (percent_finished == 1 and self.is_archive_read)
+                    ) then
+                        self:removeArticle(entry_path)
+                        num_del_remote = num_del_remote + 1
+                        self:deleteLocalArticle(entry_path)
+                        num_del_local = num_del_local + 1
                     end
                 end -- has sidecar
             end -- not . and ..
         end -- for entry
     end -- flag checks
-    return num_deleted
+    return num_del_remote, num_del_local
 end
 
 function Wallabag:addArticle(article_url)
@@ -953,7 +948,7 @@ function Wallabag:addTags(path)
 end
 
 function Wallabag:removeArticle(path)
-    logger.dbg("wallabag: removing article ", path)
+    logger.dbg("wallabag: removing article on remote", path)
     local id = self:getArticleID(path)
     if id then
         if self.is_delete_archived then
@@ -973,7 +968,6 @@ function Wallabag:removeArticle(path)
 
             self:callAPI("PATCH", "/api/entries/" .. id .. ".json", headers, bodyJSON, "")
         end
-        self:deleteLocalArticle(path)
     end
 end
 
