@@ -512,6 +512,7 @@ local WordInfoDialog = FocusManager:extend{
     tap_close_callback = nil,
     remove_callback = nil,
     reset_callback = nil,
+    update_callback = nil, -- used when duplicate word found when adding
     dismissable = true, -- set to false if any button callback is required
 }
 local book_title_triangle = BD.mirroredUILayout() and " ⯇" or " ⯈"
@@ -564,8 +565,22 @@ function WordInfoDialog:init()
         end
     }
 
-    local buttons = {{reset_button, remove_button}}
-    if self.vocabbuilder.item.last_due_time then
+    local cancel_button = {
+        text = _("Cancel"),
+        callback = function()
+            UIManager:close(self)
+        end
+    }
+    local update_button = {
+        text = _("Overwrite"),
+        callback = function()
+            self.update_callback()
+            UIManager:close(self)
+        end
+    }
+
+    local buttons = self.update_callback and {{cancel_button, update_button}} or {{reset_button, remove_button}}
+    if self.vocabbuilder and self.vocabbuilder.item.last_due_time then
         table.insert(buttons, {{
             text = _("Undo study status"),
             callback = function()
@@ -592,7 +607,7 @@ function WordInfoDialog:init()
         bordersize = 0,
     }
     self.book_title_button = Button:new{
-        text = self.book_title .. book_title_triangle,
+        text = self.book_title .. (self.update_callback and '' or book_title_triangle),
         width = width,
         text_font_face = "NotoSans-Italic.ttf",
         text_font_size = 14,
@@ -601,15 +616,19 @@ function WordInfoDialog:init()
         padding = Size.padding.button,
         bordersize = 0,
         callback = function()
-            self.vocabbuilder:onShowBookAssignment(function(new_book_title)
-                self.book_title = new_book_title
-                self.book_title_button:setText(new_book_title..book_title_triangle, width)
-            end)
+            if self.vocabbuilder then
+                self.vocabbuilder:onShowBookAssignment(function(new_book_title)
+                    self.book_title = new_book_title
+                    self.book_title_button:setText(new_book_title..book_title_triangle, width)
+                end)
+            end
         end,
         show_parent = self
     }
 
-    table.insert(self.layout, {copy_button})
+    if not self.update_callback then
+        table.insert(self.layout, {copy_button})
+    end
     table.insert(self.layout, {self.book_title_button})
     self:mergeLayoutInVertical(focus_button)
 
@@ -637,7 +656,7 @@ function WordInfoDialog:init()
                                     alignment = self.title_align or "left",
                                 },
                                 HorizontalSpan:new{ width=Size.padding.default },
-                                copy_button,
+                                not self.update_callback and copy_button or nil,
                             },
                             self.book_title_button,
                             VerticalSpan:new{width= Size.padding.default},
@@ -1040,12 +1059,15 @@ function VocabItemWidget:removeAndClose()
 end
 
 function VocabItemWidget:showMore()
+    -- @translators Used in vocabbuilder: %1 date
+    local date_str = T(_("Added on %1"), os.date("%Y-%m-%d", self.item.create_time))
+    -- @translators Used in vocabbuilder: %1 time
+    local time_str = T(_("Review scheduled at %1"), os.date("%Y-%m-%d %H:%M", self.item.due_time))
     local dialogue = WordInfoDialog:new{
         title = self.item.word,
         highlighted_word = self.item.highlight,
         book_title = self.item.book_title,
-        dates = _("Added on") .. " " .. os.date("%Y-%m-%d", self.item.create_time) .. " | " ..
-        _("Review scheduled at") .. " " .. os.date("%Y-%m-%d %H:%M", self.item.due_time),
+        dates = date_str .. " | " .. time_str,
         prev_context = self.item.prev_context,
         next_context = self.item.next_context,
         remove_callback = function()
@@ -2077,14 +2099,34 @@ function VocabBuilder:onWordLookedUp(word, title, is_manual)
             highlight = util.cleanupSelectedText(self.ui.highlight.selected_text.text)
         end
     end
-    DB:insertOrUpdate({
+
+    local update = function() DB:insertOrUpdate({
         book_title = title,
         time = os.time(),
         word = word,
         prev_context = prev_context,
         next_context = next_context,
         highlight = highlight ~= word and highlight or nil
-    })
+    }) end
+
+    local item = DB:hasWord(word)
+    if item then
+        local date_str = T(_("Added on %1"), os.date("%Y-%m-%d", item.create_time))
+        local time_str = T(_("Review scheduled at %1"), os.date("%Y-%m-%d %H:%M", item.due_time))
+        local dialog = WordInfoDialog:new{
+            title = _("Vocabulary exists:") .. " " .. word,
+            highlighted_word = item.highlight or word,
+            book_title = item.book_title,
+            dates = date_str .. " | " .. time_str,
+            prev_context = item.prev_context,
+            next_context = item.next_context,
+            update_callback = update,
+        }
+        UIManager:show(dialog)
+    else
+        update()
+    end
+
     return true
 end
 
