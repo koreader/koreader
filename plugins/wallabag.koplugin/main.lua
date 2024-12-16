@@ -53,7 +53,7 @@ function Wallabag:init()
     self.is_delete_abandoned = false
     self.is_auto_delete = false
     self.is_sync_remote_delete = false
-    self.is_archiving_deleted = true
+    self.is_delete_archived = false
     self.send_review_as_tags = false
     self.filter_tag = ""
     self.ignore_tags = ""
@@ -69,6 +69,9 @@ function Wallabag:init()
     self.username = self.wb_settings.data.wallabag.username
     self.password = self.wb_settings.data.wallabag.password
     self.directory = self.wb_settings.data.wallabag.directory
+
+    local do_migrate = false
+
     if self.wb_settings.data.wallabag.is_delete_finished ~= nil then
         self.is_delete_finished = self.wb_settings.data.wallabag.is_delete_finished
     end
@@ -87,8 +90,12 @@ function Wallabag:init()
     if self.wb_settings.data.wallabag.is_sync_remote_delete ~= nil then
         self.is_sync_remote_delete = self.wb_settings.data.wallabag.is_sync_remote_delete
     end
-    if self.wb_settings.data.wallabag.is_archiving_deleted ~= nil then
-        self.is_archiving_deleted = self.wb_settings.data.wallabag.is_archiving_deleted
+    if self.wb_settings.data.wallabag.is_delete_archived ~= nil then
+        self.is_delete_archived = self.wb_settings.data.wallabag.is_delete_archived
+    elseif self.wb_settings.data.wallabag.is_archiving_deleted ~= nil then
+        -- Migrate old setting
+        self.is_delete_archived = not self.wb_settings.data.wallabag.is_archiving_deleted
+        do_migrate = true
     end
     if self.wb_settings.data.wallabag.filter_tag then
         self.filter_tag = self.wb_settings.data.wallabag.filter_tag
@@ -106,6 +113,10 @@ function Wallabag:init()
     self.remove_abandoned_from_history = self.wb_settings.data.wallabag.remove_abandoned_from_history or false
     self.download_original_document = self.wb_settings.data.wallabag.download_original_document
     self.download_queue = self.wb_settings.data.wallabag.download_queue or {}
+
+    if do_migrate then
+        self:saveSettings()
+    end
 
     -- workaround for dateparser only available if newsdownloader is active
     self.is_dateparser_available = false
@@ -293,10 +304,10 @@ function Wallabag:addToMainMenu(menu_items)
                                 separator = true,
                             },
                             {
-                                text = _("Mark as finished instead of deleting"),
-                                checked_func = function() return self.is_archiving_deleted end,
+                                text = _("Delete instead of marking as read"),
+                                checked_func = function() return self.is_delete_archived end,
                                 callback = function()
-                                    self.is_archiving_deleted = not self.is_archiving_deleted
+                                    self.is_delete_archived = not self.is_delete_archived
                                     self:saveSettings()
                                 end,
                                 separator = true,
@@ -941,7 +952,9 @@ function Wallabag:removeArticle(path)
     logger.dbg("Wallabag: removing article ", path)
     local id = self:getArticleID(path)
     if id then
-        if self.is_archiving_deleted then
+        if self.is_delete_archived then
+            self:callAPI("DELETE", "/api/entries/" .. id .. ".json", nil, "", "")
+        else
             local body = {
                 archive = 1
             }
@@ -955,8 +968,6 @@ function Wallabag:removeArticle(path)
             }
 
             self:callAPI("PATCH", "/api/entries/" .. id .. ".json", headers, bodyJSON, "")
-        else
-            self:callAPI("DELETE", "/api/entries/" .. id .. ".json", nil, "", "")
         end
         self:deleteLocalArticle(path)
     end
@@ -1187,7 +1198,7 @@ function Wallabag:saveSettings()
         is_delete_finished    = self.is_delete_finished,
         is_delete_read        = self.is_delete_read,
         is_delete_abandoned   = self.is_delete_abandoned,
-        is_archiving_deleted  = self.is_archiving_deleted,
+        is_delete_archived    = self.is_delete_archived,
         is_auto_delete        = self.is_auto_delete,
         is_sync_remote_delete = self.is_sync_remote_delete,
         articles_per_sync     = self.articles_per_sync,
