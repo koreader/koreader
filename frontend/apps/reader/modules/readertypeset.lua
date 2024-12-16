@@ -88,6 +88,12 @@ function ReaderTypeset:onReadSettings(config)
     self.ui.document:setNightmodeImages(self.configurable.nightmode_images == 1)
 end
 
+function ReaderTypeset:onReaderReady()
+    -- Initial detecting of fb2 may be wrong
+    local doc_format = self.ui.document:getDocumentFormat()
+    self.ui.document.is_fb2 = doc_format:find("FB") and true
+end
+
 function ReaderTypeset:onSaveSettings()
     self.ui.doc_settings:saveSetting("css", self.css)
 end
@@ -188,6 +194,16 @@ function ReaderTypeset:genStyleSheetMenu()
                     return self.css == self.ui.document.default_css
                 end
                 return css_file == self.css
+            end,
+            enabled_func = function()
+                if fb2_compatible == true and not self.ui.document.is_fb2 then
+                    return false
+                end
+                if fb2_compatible == false and self.ui.document.is_fb2 then
+                    return false
+                end
+                -- if fb2_compatible==nil, we don't know (user css file)
+                return true
             end,
             separator = separator,
         }
