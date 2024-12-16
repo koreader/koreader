@@ -47,19 +47,6 @@ end
 
 function Wallabag:init()
     self.token_expiry = 0
-    -- default values so that user doesn't have to explicitly set them
-    self.is_archive_finished = true
-    self.is_archive_read = false
-    self.is_archive_abandoned = false
-    self.is_auto_archive = false
-    self.is_sync_remote_delete = false
-    self.is_delete_archived = false
-    self.send_review_as_tags = false
-    self.filter_tag = ""
-    self.ignore_tags = ""
-    self.auto_tags = ""
-    self.articles_per_sync = 30
-
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
     self.wb_settings = self.readSettings()
@@ -72,13 +59,13 @@ function Wallabag:init()
 
     local do_migrate = false
 
-    if self.wb_settings.data.wallabag.is_archive_finished ~= nil then
-        self.is_archive_finished = self.wb_settings.data.wallabag.is_archive_finished
-    elseif self.wb_settings.data.wallabag.is_delete_finished ~= nil then
-        -- Migrate old setting
-        self.is_archive_finished = self.wb_settings.data.wallabag.is_delete_finished
-        do_migrate = true
-    end
+    -- default values so that user doesn't have to explicitly set them
+    self.is_archive_abandoned = false
+    self.is_archive_finished = true
+    self.is_archive_read = false
+    self.is_auto_archive = false
+    self.is_delete_archived = false
+
     if self.wb_settings.data.wallabag.is_archive_abandoned ~= nil then
         self.is_archive_abandoned = self.wb_settings.data.wallabag.is_archive_abandoned
     elseif self.wb_settings.data.wallabag.is_delete_abandoned ~= nil then
@@ -86,9 +73,15 @@ function Wallabag:init()
         self.is_archive_abandoned = self.wb_settings.data.wallabag.is_delete_abandoned
         do_migrate = true
     end
-    if self.wb_settings.data.wallabag.send_review_as_tags ~= nil then
-        self.send_review_as_tags = self.wb_settings.data.wallabag.send_review_as_tags
+
+    if self.wb_settings.data.wallabag.is_archive_finished ~= nil then
+        self.is_archive_finished = self.wb_settings.data.wallabag.is_archive_finished
+    elseif self.wb_settings.data.wallabag.is_delete_finished ~= nil then
+        -- Migrate old setting
+        self.is_archive_finished = self.wb_settings.data.wallabag.is_delete_finished
+        do_migrate = true
     end
+
     if self.wb_settings.data.wallabag.is_archive_read ~= nil then
         self.is_archive_read = self.wb_settings.data.wallabag.is_archive_read
     elseif self.wb_settings.data.wallabag.is_delete_read ~= nil then
@@ -96,6 +89,7 @@ function Wallabag:init()
         self.is_archive_read = self.wb_settings.data.wallabag.is_delete_read
         do_migrate = true
     end
+
     if self.wb_settings.data.wallabag.is_auto_archive ~= nil then
         self.is_auto_archive = self.wb_settings.data.wallabag.is_auto_archive
     elseif self.wb_settings.data.wallabag.is_auto_delete ~= nil then
@@ -103,9 +97,7 @@ function Wallabag:init()
         self.is_auto_archive = self.wb_settings.data.wallabag.is_auto_delete
         do_migrate = true
     end
-    if self.wb_settings.data.wallabag.is_sync_remote_delete ~= nil then
-        self.is_sync_remote_delete = self.wb_settings.data.wallabag.is_sync_remote_delete
-    end
+
     if self.wb_settings.data.wallabag.is_delete_archived ~= nil then
         self.is_delete_archived = self.wb_settings.data.wallabag.is_delete_archived
     elseif self.wb_settings.data.wallabag.is_archiving_deleted ~= nil then
@@ -113,22 +105,17 @@ function Wallabag:init()
         self.is_delete_archived = not self.wb_settings.data.wallabag.is_archiving_deleted
         do_migrate = true
     end
-    if self.wb_settings.data.wallabag.filter_tag then
-        self.filter_tag = self.wb_settings.data.wallabag.filter_tag
-    end
-    if self.wb_settings.data.wallabag.ignore_tags then
-        self.ignore_tags = self.wb_settings.data.wallabag.ignore_tags
-    end
-    if self.wb_settings.data.wallabag.auto_tags then
-        self.auto_tags = self.wb_settings.data.wallabag.auto_tags
-    end
-    if self.wb_settings.data.wallabag.articles_per_sync ~= nil then
-        self.articles_per_sync = self.wb_settings.data.wallabag.articles_per_sync
-    end
+
+    self.is_sync_remote_delete = self.wb_settings.data.wallabag.is_sync_remote_delete or false
+    self.send_review_as_tags = self.wb_settings.data.wallabag.send_review_as_tags or false
+    self.filter_tag = self.wb_settings.data.wallabag.filter_tag or ""
+    self.ignore_tags = self.wb_settings.data.wallabag.ignore_tags or ""
+    self.auto_tags = self.wb_settings.data.wallabag.auto_tags or ""
+    self.articles_per_sync = self.wb_settings.data.wallabag.articles_per_sync or 30
     self.remove_finished_from_history = self.wb_settings.data.wallabag.remove_finished_from_history or false
     self.remove_abandoned_from_history = self.wb_settings.data.wallabag.remove_abandoned_from_history or false
     self.remove_read_from_history = self.wb_settings.data.wallabag.remove_read_from_history or false
-    self.download_original_document = self.wb_settings.data.wallabag.download_original_document
+    self.download_original_document = self.wb_settings.data.wallabag.download_original_document or false
     self.download_queue = self.wb_settings.data.wallabag.download_queue or {}
 
     if do_migrate then
@@ -398,7 +385,7 @@ function Wallabag:addToMainMenu(menu_items)
                         text = _("Prefer original non-HTML document"),
                         keep_menu_open = true,
                         checked_func = function()
-                            return self.download_original_document
+                            return self.download_original_document or false
                         end,
                         callback = function()
                             self.download_original_document = not self.download_original_document
