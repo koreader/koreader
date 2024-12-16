@@ -776,7 +776,7 @@ function Wallabag:synchronize()
         UIManager:close(info)
     end
 
-    local deleted_count = self:processLocalFiles()
+    local deleted_count = self:processLocalFiles("auto")
 
     info = InfoMessage:new{ text = _("Getting article list…") }
     UIManager:show(info)
@@ -848,11 +848,9 @@ function Wallabag:processRemoteDeletes(remote_article_ids)
 end
 
 function Wallabag:processLocalFiles(mode)
-    if mode then
-        if self.is_auto_archive == false and mode ~= "manual" then
-            logger.dbg("Wallabag: Automatic processing of local files disabled.")
-            return 0, 0
-        end
+    if self.is_auto_archive == false and mode ~= "manual" then
+        logger.dbg("wallabag: Automatic processing of local files disabled.")
+        return 0, 0
     end
 
     if self:getBearerToken() == false then
