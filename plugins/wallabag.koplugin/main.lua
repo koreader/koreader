@@ -872,30 +872,32 @@ function Wallabag:synchronize()
 end
 
 function Wallabag:processRemoteDeletes(remote_article_ids)
-    if not self.sync_remote_archive then
-        logger.dbg("wallabag: Processing of remote file deletions disabled.")
-        return 0
-    end
     logger.dbg("wallabag: articles IDs from server: ", remote_article_ids)
 
     local info = InfoMessage:new{ text = _("Synchronizing remote deletions…") }
     UIManager:show(info)
     UIManager:forceRePaint()
     UIManager:close(info)
-    local deleted_count = 0
+    local count = 0
+
     for entry in lfs.dir(self.directory) do
-        if entry ~= "." and entry ~= ".." then
+        if entry ~= "." and entry ~= ".." and lfs.attributes(entry, "mode") == "file" then
             local entry_path = self.directory .. "/" .. entry
             local id = self:getArticleID(entry_path)
             if not remote_article_ids[ id ] then
-                logger.dbg("wallabag: Deleting local file (deleted on server): ", entry_path)
-                self:deleteLocalArticle(entry_path)
-                deleted_count = deleted_count + 1
-            end
-        end
+                if self.use_local_archive then
+                    logger.dbg("wallabag: Archiving local file (archived or deleted on server): ", entry_path)
+                    count = count + self:archiveLocalArticle(entry_path)
+                else
+                    logger.dbg("wallabag: Deleting local file (archived or deleted on server): ", entry_path)
+                    count = count + self:deleteLocalArticle(entry_path)
+                end -- if self.use_local_archive
+            end -- if not remote_article_ids[ id ]
+        end -- if entry ~= . and entry ~= ..
     end -- for entry
-    return deleted_count
-end
+
+    return count
+end -- Wallabag:processRemoteDeletes
 
 function Wallabag:processLocalFiles(mode)
     if self.auto_archive == false and mode ~= "manual" then
@@ -931,15 +933,20 @@ function Wallabag:processLocalFiles(mode)
                         or (percent_finished == 1 and self.archive_read)
                     ) then
                         self:removeArticle(entry_path)
-                        num_del_remote = num_del_remote + 1
-                        self:deleteLocalArticle(entry_path)
-                        num_del_local = num_del_local + 1
+                        count_remote = count_remote + 1
+                        if self.use_local_archive then
+                            logger.dbg("wallabag: Archiving local file: ", entry_path)
+                            count_local = count_local + self:archiveLocalArticle(entry_path)
+                        else
+                            logger.dbg("wallabag: Deleting local file: ", entry_path)
+                            count_local = count_local + self:deleteLocalArticle(entry_path)
+                        end
                     end
                 end -- has sidecar
             end -- not . and ..
         end -- for entry
     end -- flag checks
-    return num_del_remote, num_del_local
+    return count_remote, count_local
 end
 
 function Wallabag:addArticle(article_url)
@@ -1020,10 +1027,45 @@ function Wallabag:removeArticle(path)
     end
 end
 
+function Wallabag:archiveLocalArticle(path)
+    local result = 0
+
+    -- Check if the archive directory is valid
+    local dir_mode = lfs.attributes(self.archive_directory, "mode")
+    if dir_mode == nil then
+        util.makePath(self.archive_directory)
+        UIManager:show(InfoMessage:new{
+            text = T(_("Created the archive directory at %1."), self.archive_directory),
+        })
+        UIManager:forceRePaint()
+    elseif dir_mode ~= "directory" then
+        UIManager:show(InfoMessage:new{
+            text = _("The archive directory is not valid.\nPlease configure it in the settings."),
+        })
+        UIManager:forceRePaint()
+        return result
+    end
+
+    if lfs.attributes(path, "mode") == "file" then
+        local old_dir, file = util.splitFilePathName(path)
+        local new_path = self.archive_directory .. file
+        if FileManager:moveFile(path, new_path) then
+            result = 1
+        end
+        DocSettings.updateLocation(path, new_path, false) -- move sdr
+        -- TODO Why is sdr copied instead of moved?
+    end
+
+    return result
+end
+
 function Wallabag:deleteLocalArticle(path)
+    local result = 0
     if lfs.attributes(path, "mode") == "file" then
         FileManager:deleteFile(path, true)
+        result = 1
    end
+    return result
 end
 
 function Wallabag:getArticleID(path)
