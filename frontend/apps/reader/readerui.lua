@@ -124,6 +124,7 @@ function ReaderUI:init()
     end
 
     self.doc_settings = DocSettings:open(self.document.file)
+    self.document.is_new = self.doc_settings:readSetting("doc_props") == nil
     -- Handle local settings migration
     SettingsMigration:migrateSettings(self.doc_settings)
 
