@@ -2,7 +2,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
-local DocSettings = require("docsettings")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
@@ -964,7 +963,7 @@ function Profiles:executeAutoExecDocConditional(event)
     for profile_name, conditions in pairs(self.autoexec[event]) do
         if self.data[profile_name] then
             local do_execute
-            if not conditions.is_new or not DocSettings:hasSidecarFile(self.document.file) then
+            if not conditions.is_new or self.document.is_new then
                 for condition, trigger in pairs(conditions) do
                     if condition == "orientation" then
                         local mode = Screen:getRotationMode()
