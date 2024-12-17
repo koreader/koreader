@@ -60,60 +60,68 @@ function Wallabag:init()
     local do_migrate = false
 
     -- default values so that user doesn't have to explicitly set them
-    self.is_archive_abandoned = false
-    self.is_archive_finished = true
-    self.is_archive_read = false
-    self.is_auto_archive = false
-    self.is_delete_archived = false
+    self.archive_abandoned = false
+    self.archive_finished = true
+    self.archive_read = false
+    self.auto_archive = false
+    self.delete_instead = false
+    self.sync_remote_archive = false
 
-    if self.wb_settings.data.wallabag.is_archive_abandoned ~= nil then
-        self.is_archive_abandoned = self.wb_settings.data.wallabag.is_archive_abandoned
+    if self.wb_settings.data.wallabag.archive_abandoned ~= nil then
+        self.archive_abandoned = self.wb_settings.data.wallabag.archive_abandoned
     elseif self.wb_settings.data.wallabag.is_delete_abandoned ~= nil then
         -- Migrate old setting
-        self.is_archive_abandoned = self.wb_settings.data.wallabag.is_delete_abandoned
+        self.archive_abandoned = self.wb_settings.data.wallabag.is_delete_abandoned
         do_migrate = true
     end
 
-    if self.wb_settings.data.wallabag.is_archive_finished ~= nil then
-        self.is_archive_finished = self.wb_settings.data.wallabag.is_archive_finished
+    if self.wb_settings.data.wallabag.archive_finished ~= nil then
+        self.archive_finished = self.wb_settings.data.wallabag.archive_finished
     elseif self.wb_settings.data.wallabag.is_delete_finished ~= nil then
         -- Migrate old setting
-        self.is_archive_finished = self.wb_settings.data.wallabag.is_delete_finished
+        self.archive_finished = self.wb_settings.data.wallabag.is_delete_finished
         do_migrate = true
     end
 
-    if self.wb_settings.data.wallabag.is_archive_read ~= nil then
-        self.is_archive_read = self.wb_settings.data.wallabag.is_archive_read
+    if self.wb_settings.data.wallabag.archive_read ~= nil then
+        self.archive_read = self.wb_settings.data.wallabag.archive_read
     elseif self.wb_settings.data.wallabag.is_delete_read ~= nil then
         -- Migrate old setting
-        self.is_archive_read = self.wb_settings.data.wallabag.is_delete_read
+        self.archive_read = self.wb_settings.data.wallabag.is_delete_read
         do_migrate = true
     end
 
-    if self.wb_settings.data.wallabag.is_auto_archive ~= nil then
-        self.is_auto_archive = self.wb_settings.data.wallabag.is_auto_archive
+    if self.wb_settings.data.wallabag.auto_archive ~= nil then
+        self.auto_archive = self.wb_settings.data.wallabag.auto_archive
     elseif self.wb_settings.data.wallabag.is_auto_delete ~= nil then
         -- Migrate old setting
-        self.is_auto_archive = self.wb_settings.data.wallabag.is_auto_delete
+        self.auto_archive = self.wb_settings.data.wallabag.is_auto_delete
         do_migrate = true
     end
 
-    if self.wb_settings.data.wallabag.is_delete_archived ~= nil then
-        self.is_delete_archived = self.wb_settings.data.wallabag.is_delete_archived
+    if self.wb_settings.data.wallabag.delete_instead ~= nil then
+        self.delete_instead = self.wb_settings.data.wallabag.delete_instead
     elseif self.wb_settings.data.wallabag.is_archiving_deleted ~= nil then
         -- Migrate old setting
-        self.is_delete_archived = not self.wb_settings.data.wallabag.is_archiving_deleted
+        self.delete_instead = not self.wb_settings.data.wallabag.is_archiving_deleted
         do_migrate = true
     end
 
-    self.is_sync_remote_delete = self.wb_settings.data.wallabag.is_sync_remote_delete or false
+    if self.wb_settings.data.wallabag.sync_remote_archive ~= nil then
+        self.sync_remote_archive = self.wb_settings.data.wallabag.sync_remote_archive
+    elseif self.wb_settings.data.wallabag.is_archiving_deleted ~= nil then
+        -- Migrate old setting
+        self.sync_remote_archive = self.wb_settings.data.wallabag.is_sync_remote_delete
+        do_migrate = true
+    end
+
     self.send_review_as_tags = self.wb_settings.data.wallabag.send_review_as_tags or false
     self.filter_tag = self.wb_settings.data.wallabag.filter_tag or ""
     self.ignore_tags = self.wb_settings.data.wallabag.ignore_tags or ""
     self.auto_tags = self.wb_settings.data.wallabag.auto_tags or ""
     self.articles_per_sync = self.wb_settings.data.wallabag.articles_per_sync or 30
-    self.remove_finished_from_history = self.wb_settings.data.wallabag.remove_finished_from_history or false
     self.remove_abandoned_from_history = self.wb_settings.data.wallabag.remove_abandoned_from_history or false
+    self.remove_finished_from_history = self.wb_settings.data.wallabag.remove_finished_from_history or false
     self.remove_read_from_history = self.wb_settings.data.wallabag.remove_read_from_history or false
     self.download_original_document = self.wb_settings.data.wallabag.download_original_document or false
     self.download_queue = self.wb_settings.data.wallabag.download_queue or {}
@@ -172,7 +180,7 @@ function Wallabag:addToMainMenu(menu_items)
                     NetworkMgr:runWhenOnline(connect_callback)
                 end,
                 enabled_func = function()
-                    return self.is_archive_finished or self.is_archive_read or self.is_archive_abandoned
+                    return self.archive_finished or self.archive_read or self.archive_abandoned
                 end,
             },
             {
@@ -285,52 +293,52 @@ function Wallabag:addToMainMenu(menu_items)
                         sub_item_table = {
                             {
                                 text = _("Mark finished articles as read"),
-                                checked_func = function() return self.is_archive_finished end,
+                                checked_func = function() return self.archive_finished end,
                                 callback = function()
-                                    self.is_archive_finished = not self.is_archive_finished
+                                    self.archive_finished = not self.archive_finished
                                     self:saveSettings()
                                 end,
                             },
                             {
                                 text = _("Mark 100% read articles as read"),
-                                checked_func = function() return self.is_archive_read end,
+                                checked_func = function() return self.archive_read end,
                                 callback = function()
-                                    self.is_archive_read = not self.is_archive_read
+                                    self.archive_read = not self.archive_read
                                     self:saveSettings()
                                 end,
                             },
                             {
                                 text = _("Mark articles on hold as read"),
-                                checked_func = function() return self.is_archive_abandoned end,
+                                checked_func = function() return self.archive_abandoned end,
                                 callback = function()
-                                    self.is_archive_abandoned = not self.is_archive_abandoned
+                                    self.archive_abandoned = not self.archive_abandoned
                                     self:saveSettings()
                                 end,
                                 separator = true,
                             },
                             {
                                 text = _("Auto-upload mark as read when downloading"),
-                                checked_func = function() return self.is_auto_archive end,
+                                checked_func = function() return self.auto_archive end,
                                 callback = function()
-                                    self.is_auto_archive = not self.is_auto_archive
+                                    self.auto_archive = not self.auto_archive
                                     self:saveSettings()
                                 end,
                                 separator = true,
                             },
                             {
                                 text = _("Delete instead of marking as read"),
-                                checked_func = function() return self.is_delete_archived end,
+                                checked_func = function() return self.delete_instead end,
                                 callback = function()
-                                    self.is_delete_archived = not self.is_delete_archived
+                                    self.delete_instead = not self.delete_instead
                                     self:saveSettings()
                                 end,
                                 separator = true,
                             },
                             {
                                 text = _("Delete remotely read and deleted articles locally"),
-                                checked_func = function() return self.is_sync_remote_delete end,
+                                checked_func = function() return self.sync_remote_archive end,
                                 callback = function()
-                                    self.is_sync_remote_delete = not self.is_sync_remote_delete
+                                    self.sync_remote_archive = not self.sync_remote_archive
                                     self:saveSettings()
                                 end,
                             },
@@ -823,7 +831,7 @@ function Wallabag:synchronize()
 end
 
 function Wallabag:processRemoteDeletes(remote_article_ids)
-    if not self.is_sync_remote_delete then
+    if not self.sync_remote_archive then
         logger.dbg("wallabag: Processing of remote file deletions disabled.")
         return 0
     end
@@ -849,7 +857,7 @@ function Wallabag:processRemoteDeletes(remote_article_ids)
 end
 
 function Wallabag:processLocalFiles(mode)
-    if self.is_auto_archive == false and mode ~= "manual" then
+    if self.auto_archive == false and mode ~= "manual" then
         logger.dbg("wallabag: Automatic processing of local files disabled.")
         return 0, 0
     end
@@ -860,7 +868,7 @@ function Wallabag:processLocalFiles(mode)
 
     local num_del_remote = 0
     local num_del_local = 0
-    if self.is_archive_finished or self.is_archive_read or self.is_archive_abandoned then
+    if self.archive_finished or self.archive_read or self.archive_abandoned then
         local info = InfoMessage:new{ text = _("Processing local files…") }
         UIManager:show(info)
         UIManager:forceRePaint()
@@ -877,9 +885,9 @@ function Wallabag:processLocalFiles(mode)
                     local status = summary and summary.status
                     local percent_finished = doc_settings:readSetting("percent_finished")
                     if (
-                        (status == "complete" and self.is_archive_finished)
-                        or (status == "abandoned" and self.is_archive_abandoned)
-                        or (percent_finished == 1 and self.is_archive_read)
+                        (status == "complete" and self.archive_finished)
+                        or (status == "abandoned" and self.archive_abandoned)
+                        or (percent_finished == 1 and self.archive_read)
                     ) then
                         self:removeArticle(entry_path)
                         num_del_remote = num_del_remote + 1
@@ -951,7 +959,7 @@ function Wallabag:removeArticle(path)
     logger.dbg("wallabag: removing article on remote", path)
     local id = self:getArticleID(path)
     if id then
-        if self.is_delete_archived then
+        if self.delete_instead then
             self:callAPI("DELETE", "/api/entries/" .. id .. ".json", nil, "", "")
         else
             local body = {
@@ -1190,17 +1198,17 @@ function Wallabag:saveSettings()
         username                      = self.username,
         password                      = self.password,
         directory                     = self.directory,
+        archive_abandoned             = self.archive_abandoned,
+        archive_finished              = self.archive_finished,
+        archive_read                  = self.archive_read,
+        auto_archive                  = self.auto_archive,
+        delete_instead                = self.delete_instead,
+        sync_remote_archive           = self.sync_remote_archive,
+        send_review_as_tags           = self.send_review_as_tags,
         filter_tag                    = self.filter_tag,
         ignore_tags                   = self.ignore_tags,
         auto_tags                     = self.auto_tags,
-        is_archive_finished           = self.is_archive_finished,
-        is_archive_read               = self.is_archive_read,
-        is_archive_abandoned          = self.is_archive_abandoned,
-        is_delete_archived            = self.is_delete_archived,
-        is_auto_archive               = self.is_auto_archive,
-        is_sync_remote_delete         = self.is_sync_remote_delete,
         articles_per_sync             = self.articles_per_sync,
-        send_review_as_tags           = self.send_review_as_tags,
         remove_abandoned_from_history = self.remove_abandoned_from_history,
         remove_finished_from_history  = self.remove_finished_from_history,
         remove_read_from_history      = self.remove_read_from_history,
