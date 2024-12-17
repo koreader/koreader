@@ -56,8 +56,17 @@ function Wallabag:init()
     self.username = self.wb_settings.data.wallabag.username
     self.password = self.wb_settings.data.wallabag.password
     self.directory = self.wb_settings.data.wallabag.directory
+    self.archive_directory = self.wb_settings.data.wallabag.archive_directory
 
     local do_migrate = false
+
+    if not self.archive_directory or self.archive_directory == "" then
+        if self.directory and self.directory ~= "" then
+            -- deleteLocalArticle only deletes files, so nesting is OK
+            self.archive_directory = self.directory .. 'archive/'
+            do_migrate = true
+        end
+    end
 
     -- default values so that user doesn't have to explicitly set them
     self.archive_abandoned = false
@@ -115,6 +124,7 @@ function Wallabag:init()
         do_migrate = true
     end
 
+    self.use_local_archive = self.wb_settings.data.wallabag.use_local_archive or false
     self.send_review_as_tags = self.wb_settings.data.wallabag.send_review_as_tags or false
     self.filter_tag = self.wb_settings.data.wallabag.filter_tag or ""
     self.ignore_tags = self.wb_settings.data.wallabag.ignore_tags or ""
@@ -334,12 +344,43 @@ function Wallabag:addToMainMenu(menu_items)
                                 end,
                                 separator = true,
                             },
+                        },
+                    },
+                    {
+                        text = _("Local delete settings"),
+                        sub_item_table = {
                             {
                                 text = _("Delete remotely read and deleted articles locally"),
                                 checked_func = function() return self.sync_remote_archive end,
                                 callback = function()
                                     self.sync_remote_archive = not self.sync_remote_archive
                                     self:saveSettings()
+                                end,
+                            },
+                            {
+                                text = _("Move to archive directory instead of deleting"),
+                                checked_func = function() return self.use_local_archive end,
+                                callback = function()
+                                    self.use_local_archive = not self.use_local_archive
+                                    self:saveSettings()
+                                end,
+                            },
+                            {
+                                text_func = function()
+                                    local path
+                                    if not self.archive_directory or self.archive_directory == "" then
+                                        path = _("Not set")
+                                    else
+                                        path = filemanagerutil.abbreviate(self.archive_directory)
+                                    end
+                                    return T(_("Set archive directory: %1"), BD.dirpath(path))
+                                end,
+                                keep_menu_open = true,
+                                callback = function(touchmenu_instance)
+                                    self:setArchiveDirectory(touchmenu_instance)
+                                end,
+                                enabled_func = function()
+                                    return self.use_local_archive
                                 end,
                             },
                         },
@@ -1190,6 +1231,19 @@ function Wallabag:setDownloadDirectory(touchmenu_instance)
     }:chooseDir()
 end
 
+function Wallabag:setArchiveDirectory(touchmenu_instance)
+    require("ui/downloadmgr"):new{
+        onConfirm = function(path)
+            logger.dbg("wallabag: set archive directory to: ", path)
+            self.archive_directory = path
+            self:saveSettings()
+            if touchmenu_instance then
+                touchmenu_instance:updateItems()
+            end
+        end,
+    }:chooseDir()
+end
+
 function Wallabag:saveSettings()
     local tempsettings = {
         server_url                    = self.server_url,
@@ -1198,12 +1252,14 @@ function Wallabag:saveSettings()
         username                      = self.username,
         password                      = self.password,
         directory                     = self.directory,
+        archive_directory             = self.archive_directory,
         archive_abandoned             = self.archive_abandoned,
         archive_finished              = self.archive_finished,
         archive_read                  = self.archive_read,
         auto_archive                  = self.auto_archive,
         delete_instead                = self.delete_instead,
         sync_remote_archive           = self.sync_remote_archive,
+        use_local_archive             = self.use_local_archive,
         send_review_as_tags           = self.send_review_as_tags,
         filter_tag                    = self.filter_tag,
         ignore_tags                   = self.ignore_tags,
