@@ -137,7 +137,7 @@ function Wallabag:init()
     self.download_queue = self.wb_settings.data.wallabag.download_queue or {}
 
     if do_migrate then
-        -- TODO After enough time remove the setting migration parts
+        -- TODO After enough time remove the setting migration parts and simplify defaults
         self:saveSettings()
     end
 
@@ -172,18 +172,22 @@ function Wallabag:addToMainMenu(menu_items)
         text = _("Wallabag"), -- Leave uppercase
         sub_item_table = {
             {
-                text = _("Retrieve new articles from server"),
+                text = _("Download new articles from server"),
                 callback = function()
                     self.ui:handleEvent(Event:new("SynchronizeWallabag"))
                 end,
             },
             {
-                text = _("Mark locally finished articles as read on server"),
+                text = _("Upload article statuses to server"),
                 callback = function()
                     local connect_callback = function()
                         local num_del_remote, num_del_local = self:processLocalFiles("manual")
                         UIManager:show(InfoMessage:new{
-                            text = T(_("Processing finished.\n\nDeleted from wallabag: %1\nDeleted from KOReader: %2"), num_del_remote, num_del_local)
+                            text = T(
+                                _("Processing finished.\n\nDeleted from wallabag: %1\nDeleted from KOReader: %2"),
+                                num_del_remote,
+                                num_del_local
+                            )
                         })
                         self:refreshCurrentDirIfNeeded()
                     end
@@ -221,85 +225,81 @@ function Wallabag:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Configure wallabag client"),
-                        keep_menu_open = true,
-                        callback = function()
-                            self:editClientSettings()
-                        end,
+                        text = _("Download settings"),
+                        sub_item_table = {
+                            {
+                                text_func = function()
+                                    local path
+                                    if not self.directory or self.directory == "" then
+                                            path = _("not set")
+                                    else
+                                        path = filemanagerutil.abbreviate(self.directory)
+                                    end
+                                        return T(_("Download directory: %1"), BD.dirpath(path))
+                                end,
+                                keep_menu_open = true,
+                                callback = function(touchmenu_instance)
+                                    self:setDownloadDirectory(touchmenu_instance)
+                                end,
+                            },
+                            {
+                                text_func = function ()
+                                    return T(_("Number of articles to download: %1"), self.articles_per_sync)
+                                end,
+                                keep_menu_open = true,
+                                callback = function(touchmenu_instance)
+                                    self:setArticlesPerSync(touchmenu_instance)
+                                end,
+                            },
+                            {
+                                text_func = function()
+                                    return T(_("Only download articles with tag: %1"), self.filter_tag or "")
+                                end,
+                                keep_menu_open = true,
+                                callback = function(touchmenu_instance)
+                                    self:setTagsDialog(
+                                        touchmenu_instance,
+                                        _("Tag to include"),
+                                        _("Enter a single tag to filter articles on"),
+                                        self.filter_tag,
+                                        function(tag)
+                                            self.filter_tag = tag
+                                        end
+                                    )
+                                end,
+                            },
+                            {
+                                text_func = function()
+                                    return T(_("Do not download articles with tags: %1"), self.ignore_tags or "")
+                                end,
+                                keep_menu_open = true,
+                                callback = function(touchmenu_instance)
+                                    self:setTagsDialog(
+                                        touchmenu_instance,
+                                        _("Tags to ignore"),
+                                        _("Enter a comma-separated list of tags to ignore"),
+                                        self.ignore_tags,
+                                        function(tags)
+                                                self.ignore_tags = tags
+                                        end
+                                    )
+                                end,
+                            },
+                            {
+                                text = _("Prefer original non-HTML document"),
+                                keep_menu_open = true,
+                                checked_func = function()
+                                    return self.download_original_document or false
+                                end,
+                                callback = function()
+                                    self.download_original_document = not self.download_original_document
+                                    self:saveSettings()
+                                end,
+                            },
+                        },
                     },
                     {
-                        text_func = function()
-                            local path
-                            if not self.directory or self.directory == "" then
-                                path = _("Not set")
-                            else
-                                path = filemanagerutil.abbreviate(self.directory)
-                            end
-                            return T(_("Set download directory: %1"), BD.dirpath(path))
-                        end,
-                        keep_menu_open = true,
-                        callback = function(touchmenu_instance)
-                            self:setDownloadDirectory(touchmenu_instance)
-                        end,
-                        separator = true,
-                    },
-                    {
-                        text_func = function()
-                            local filter
-                            if not self.filter_tag or self.filter_tag == "" then
-                                filter = _("All articles")
-                            else
-                                filter = self.filter_tag
-                            end
-                            return T(_("Filter articles by tag: %1"), filter)
-                        end,
-                        keep_menu_open = true,
-                        callback = function(touchmenu_instance)
-                            self:setFilterTag(touchmenu_instance)
-                        end,
-                    },
-                    {
-                        text_func = function()
-                            if not self.ignore_tags or self.ignore_tags == "" then
-                                return _("Ignore tags")
-                            end
-                            return T(_("Ignore tags (%1)"), self.ignore_tags)
-                        end,
-                        keep_menu_open = true,
-                        callback = function(touchmenu_instance)
-                            self:setTagsDialog(touchmenu_instance,
-                                _("Tags to ignore"),
-                                _("Enter a comma-separated list of tags to ignore."),
-                                self.ignore_tags,
-                                function(tags)
-                                    self.ignore_tags = tags
-                                end
-                            )
-                        end,
-                    },
-                    {
-                        text_func = function()
-                            if not self.auto_tags or self.auto_tags == "" then
-                                return _("Automatic tags")
-                            end
-                            return T(_("Automatic tags (%1)"), self.auto_tags)
-                        end,
-                        keep_menu_open = true,
-                        callback = function(touchmenu_instance)
-                            self:setTagsDialog(touchmenu_instance,
-                                _("Tags to automatically add"),
-                                _("Enter a comma-separated list of tags to automatically add to new articles."),
-                                self.auto_tags,
-                                function(tags)
-                                    self.auto_tags = tags
-                                end
-                            )
-                        end,
-                        separator = true,
-                    },
-                    {
-                        text = _("Mark as read on wallabag"),
-                        separator = true,
+                        text = _("Remote mark-as-read settings"),
                         sub_item_table = {
                             {
                                 text = _("Mark finished articles as read"),
@@ -327,13 +327,12 @@ function Wallabag:addToMainMenu(menu_items)
                                 separator = true,
                             },
                             {
-                                text = _("Auto-upload mark as read when downloading"),
+                                text = _("Auto-upload article statuses when downloading"),
                                 checked_func = function() return self.auto_archive end,
                                 callback = function()
                                     self.auto_archive = not self.auto_archive
                                     self:saveSettings()
                                 end,
-                                separator = true,
                             },
                             {
                                 text = _("Delete instead of marking as read"),
@@ -342,7 +341,6 @@ function Wallabag:addToMainMenu(menu_items)
                                     self.delete_instead = not self.delete_instead
                                     self:saveSettings()
                                 end,
-                                separator = true,
                             },
                         },
                     },
@@ -350,7 +348,7 @@ function Wallabag:addToMainMenu(menu_items)
                         text = _("Local delete settings"),
                         sub_item_table = {
                             {
-                                text = _("Delete remotely read and deleted articles locally"),
+                                text = _("Delete remotely archived and deleted articles locally"),
                                 checked_func = function() return self.sync_remote_archive end,
                                 callback = function()
                                     self.sync_remote_archive = not self.sync_remote_archive
@@ -369,7 +367,7 @@ function Wallabag:addToMainMenu(menu_items)
                                 text_func = function()
                                     local path
                                     if not self.archive_directory or self.archive_directory == "" then
-                                        path = _("Not set")
+                                        path = _("not set")
                                     else
                                         path = filemanagerutil.abbreviate(self.archive_directory)
                                     end
@@ -386,59 +384,71 @@ function Wallabag:addToMainMenu(menu_items)
                         },
                     },
                     {
+                        text = _("History settings"),
+                        sub_item_table = {
+                            {
+                                text = _("Remove finished articles from history"),
+                                keep_menu_open = true,
+                                checked_func = function()
+                                    return self.remove_finished_from_history or false
+                                end,
+                                callback = function()
+                                    self.remove_finished_from_history = not self.remove_finished_from_history
+                                    self:saveSettings()
+                                end,
+                            },
+                            {
+                                text = _("Remove 100% read articles from history"),
+                                keep_menu_open = true,
+                                checked_func = function()
+                                    return self.remove_read_from_history or false
+                                end,
+                                callback = function()
+                                    self.remove_read_from_history = not self.remove_read_from_history
+                                    self:saveSettings()
+                                end,
+                            },
+                            {
+                                text = _("Remove articles on hold from history"),
+                                keep_menu_open = true,
+                                checked_func = function()
+                                    return self.remove_abandoned_from_history or false
+                                end,
+                                callback = function()
+                                    self.remove_abandoned_from_history = not self.remove_abandoned_from_history
+                                    self:saveSettings()
+                                end,
+                                separator = true,
+                            },
+                        },
+                        separator = true,
+                    },
+                    {
+                        text_func = function()
+                            return T(_("Tags to add to new articles: %1"), self.auto_tags or "")
+                        end,
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            self:setTagsDialog(
+                                touchmenu_instance,
+                                _("Tags to add to new articles"),
+                                _("Enter a comma-separated list of tags to add when submitting a new article to wallabag."),
+                                self.auto_tags,
+                                function(tags)
+                                    self.auto_tags = tags
+                                end
+                            )
+                        end,
+                    },
+                    {
                         text = _("Send review as tags"),
-                        help_text = _("This allow you to write tags in the review field, separated by commas, which can then be sent to wallabag."),
+                        help_text = _("This allow you to write tags in the review field, separated by commas, which will be uploaded to the article on wallabag."),
                         keep_menu_open = true,
                         checked_func = function()
                             return self.send_review_as_tags or false
                         end,
                         callback = function()
                             self.send_review_as_tags = not self.send_review_as_tags
-                            self:saveSettings()
-                        end,
-                    },
-                    {
-                        text = _("Remove finished articles from history"),
-                        keep_menu_open = true,
-                        checked_func = function()
-                            return self.remove_finished_from_history or false
-                        end,
-                        callback = function()
-                            self.remove_finished_from_history = not self.remove_finished_from_history
-                            self:saveSettings()
-                        end,
-                    },
-                    {
-                        text = _("Remove 100% read articles from history"),
-                        keep_menu_open = true,
-                        checked_func = function()
-                            return self.remove_read_from_history or false
-                        end,
-                        callback = function()
-                            self.remove_read_from_history = not self.remove_read_from_history
-                            self:saveSettings()
-                        end,
-                    },
-                    {
-                        text = _("Remove articles on hold from history"),
-                        keep_menu_open = true,
-                        checked_func = function()
-                            return self.remove_abandoned_from_history or false
-                        end,
-                        callback = function()
-                            self.remove_abandoned_from_history = not self.remove_abandoned_from_history
-                            self:saveSettings()
-                        end,
-                        separator = true,
-                    },
-                    {
-                        text = _("Prefer original non-HTML document"),
-                        keep_menu_open = true,
-                        checked_func = function()
-                            return self.download_original_document or false
-                        end,
-                        callback = function()
-                            self.download_original_document = not self.download_original_document
                             self:saveSettings()
                         end,
                         separator = true,
@@ -549,8 +559,7 @@ function Wallabag:getBearerToken()
         self.token_expiry = now + result.expires_in
         return true
     else
-        UIManager:show(InfoMessage:new{
-            text = _("Could not login to wallabag server."), })
+        UIManager:show(InfoMessage:new{text = _("Could not login to wallabag server.")})
         return false
     end
 end
@@ -584,8 +593,7 @@ function Wallabag:getArticleList()
             -- another error has occurred. Don't proceed with downloading
             -- or deleting articles
             logger.warn("wallabag: download of page #", page, "failed with", err, code)
-            UIManager:show(InfoMessage:new{
-                text = _("Requesting article list failed."), })
+            UIManager:show(InfoMessage:new{text = _("Requesting article list failed.")})
             return
         end
 
@@ -773,12 +781,10 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
                     --logger.dbg("wallabag: result ", result)
                     return result
                 else
-                    UIManager:show(InfoMessage:new{
-                        text = _("Server response is not valid."), })
+                    UIManager:show(InfoMessage:new{text = _("Server response is not valid.")})
                 end
             else
-                UIManager:show(InfoMessage:new{
-                    text = _("Server response is not valid."), })
+                UIManager:show(InfoMessage:new{text = _("Server response is not valid.")})
             end
             return nil, "json_error"
         end
@@ -786,8 +792,7 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
         if filepath ~= "" then
             self:removeFailedDownload(filepath)
         elseif not quiet then
-            UIManager:show(InfoMessage:new{
-                text = _("Communication with server failed."), })
+            UIManager:show(InfoMessage:new{text = _("Communication with server failed.")})
         end
         logger.dbg("wallabag: Request failed:", status or code)
         logger.dbg("wallabag: Response headers:", resp_headers)
@@ -805,8 +810,8 @@ function Wallabag:removeFailedDownload(filepath)
     end
 end
 
-function Wallabag:synchronize()
-    local info = InfoMessage:new{ text = _("Connecting…") }
+function Wallabag:downloadArticles()
+    local info = InfoMessage:new{ text = _("Connecting to wallabag server…") }
     UIManager:show(info)
     UIManager:forceRePaint()
     UIManager:close(info)
@@ -814,6 +819,8 @@ function Wallabag:synchronize()
     if self:getBearerToken() == false then
         return false
     end
+
+    -- Add articles from queue to remote
     if self.download_queue and next(self.download_queue) ~= nil then
         info = InfoMessage:new{ text = _("Adding articles from queue…") }
         UIManager:show(info)
@@ -821,21 +828,29 @@ function Wallabag:synchronize()
         for _, articleUrl in ipairs(self.download_queue) do
             self:addArticle(articleUrl)
         end
+
         self.download_queue = {}
         self:saveSettings()
         UIManager:close(info)
     end
 
-    local num_del_remote, num_del_local = self:processLocalFiles("auto")
+    -- Sync local article statuses to remote
+    local del_count_remote, del_count_local
+    if self.auto_archive == true then
+        del_count_remote, del_count_local = self:processLocalFiles("auto")
+    else
+        logger.dbg("wallabag: Automatic processing of local files disabled.")
+    end
 
+    -- Download new articles from remote
     info = InfoMessage:new{ text = _("Getting article list…") }
     UIManager:show(info)
     UIManager:forceRePaint()
     UIManager:close(info)
 
     local remote_article_ids = {}
-    local downloaded_count = 0
-    local failed_count = 0
+    local download_count = 0
+    local fail_count = 0
     if self.access_token ~= "" then
         local articles = self:getArticleList()
         if articles then
@@ -850,26 +865,38 @@ function Wallabag:synchronize()
                 remote_article_ids[ tostring(article.id) ] = true
                 local res = self:download(article)
                 if res == downloaded then
-                    downloaded_count = downloaded_count + 1
+                    download_count = download_count + 1
                 elseif res == failed then
-                    failed_count = failed_count + 1
+                    fail_count = fail_count + 1
                 end
             end
-            -- synchronize remote deletions
-            num_del_local = num_del_local + self:processRemoteDeletes(remote_article_ids)
 
-            local msg
-            if failed_count ~= 0 then
-                msg = _("Processing finished.\n\nArticles downloaded: %1\nDeleted locally: %2\nFailed: %3")
-                info = InfoMessage:new{ text = T(msg, downloaded_count, num_del_local, failed_count) }
+            -- Synchronize remote deletions to local
+            if self.sync_remote_archive then
+                del_count_local = del_count_local + self:processRemoteDeletes(remote_article_ids)
             else
-                msg = _("Processing finished.\n\nArticles downloaded: %1\nDeleted locally: %2")
-                info = InfoMessage:new{ text = T(msg, downloaded_count, num_del_local) }
+                logger.dbg("wallabag: Processing of remote file deletions disabled.")
             end
+
+            local msg = "Processing finished.\n\n"
+            msg = msg .. T(_("Articles downloaded: %1"), download_count)
+
+            if self.auto_archive or self.sync_remote_archive then
+                if self.use_local_archive then
+                    msg = msg .. T(_("\nArchived locally: %1"), del_count_local)
+            else
+                    msg = msg .. T(_("\nDeleted locally: %1"), del_count_local)
+                end
+            end
+
+            if fail_count > 0 then
+                msg = msg .. T(_("\nFailed: %1"), fail_count)
+            end
+            info = InfoMessage:new{ text = msg }
             UIManager:show(info)
         end -- articles
     end -- access_token
-end
+end -- Wallabag:synchronize
 
 function Wallabag:processRemoteDeletes(remote_article_ids)
     logger.dbg("wallabag: articles IDs from server: ", remote_article_ids)
@@ -900,19 +927,18 @@ function Wallabag:processRemoteDeletes(remote_article_ids)
 end -- Wallabag:processRemoteDeletes
 
 function Wallabag:processLocalFiles(mode)
-    if self.auto_archive == false and mode ~= "manual" then
-        logger.dbg("wallabag: Automatic processing of local files disabled.")
-        return 0, 0
-    end
-
     if self:getBearerToken() == false then
         return 0, 0
     end
 
-    local num_del_remote = 0
-    local num_del_local = 0
+    local count_remote = 0
+    local count_local = 0
+
     if self.archive_finished or self.archive_read or self.archive_abandoned then
-        local info = InfoMessage:new{ text = _("Processing local files…") }
+        local info = InfoMessage:new{ text = T(
+            _("Processing local article statuses (%1)…"),
+            mode
+        )}
         UIManager:show(info)
         UIManager:forceRePaint()
         UIManager:close(info)
@@ -1091,39 +1117,9 @@ function Wallabag:refreshCurrentDirIfNeeded()
     end
 end
 
-function Wallabag:setFilterTag(touchmenu_instance)
-   self.tag_dialog = InputDialog:new {
-        title =  _("Set a single tag to filter articles on"),
-        input = self.filter_tag,
-        buttons = {
-            {
-                {
-                    text = _("Cancel"),
-                    id = "close",
-                    callback = function()
-                        UIManager:close(self.tag_dialog)
-                    end,
-                },
-                {
-                    text = _("OK"),
-                    is_enter_default = true,
-                    callback = function()
-                        self.filter_tag = self.tag_dialog:getInputText()
-                        self:saveSettings()
-                        touchmenu_instance:updateItems()
-                        UIManager:close(self.tag_dialog)
-                    end,
-                }
-            }
-        },
-    }
-    UIManager:show(self.tag_dialog)
-    self.tag_dialog:onShowKeyboard()
-end
-
 function Wallabag:setTagsDialog(touchmenu_instance, title, description, value, callback)
    self.tags_dialog = InputDialog:new {
-        title =  title,
+        title = title,
         description = description,
         input = value,
         buttons = {
@@ -1136,7 +1132,7 @@ function Wallabag:setTagsDialog(touchmenu_instance, title, description, value, c
                     end,
                 },
                 {
-                    text = _("Set tags"),
+                    text = _("Save"),
                     is_enter_default = true,
                     callback = function()
                         callback(self.tags_dialog:getInputText())
@@ -1224,40 +1220,34 @@ Restart KOReader after editing the config file.]]), BD.dirpath(DataStorage:getSe
     self.settings_dialog:onShowKeyboard()
 end
 
-function Wallabag:editClientSettings()
-    self.client_settings_dialog = MultiInputDialog:new {
-        title = _("wallabag client settings"),
-        fields = {
-            {
-                text = self.articles_per_sync,
-                description = _("Number of articles"),
-                input_type = "number",
-                hint = _("Number of articles to download per sync")
-            },
-        },
+function Wallabag:setArticlesPerSync(touchmenu_instance)
+   self.articles_dialog = InputDialog:new {
+        title =  _("Number of articles to download"),
+        input = tostring(self.articles_per_sync),
         buttons = {
             {
                 {
                     text = _("Cancel"),
                     id = "close",
                     callback = function()
-                        UIManager:close(self.client_settings_dialog)
-                    end
+                        UIManager:close(self.articles_dialog)
+                    end,
                 },
                 {
-                    text = _("Apply"),
+                    text = _("OK"),
+                    is_enter_default = true,
                     callback = function()
-                        local myfields = self.client_settings_dialog:getFields()
-                        self.articles_per_sync = math.max(1, tonumber(myfields[1]) or self.articles_per_sync)
-                        self:saveSettings(myfields)
-                        UIManager:close(self.client_settings_dialog)
-                    end
-                },
-            },
+                        self.articles_per_sync = math.max(1, tonumber(self.articles_dialog:getInputText()) or self.articles_per_sync)
+                        self:saveSettings()
+                        touchmenu_instance:updateItems()
+                        UIManager:close(self.articles_dialog)
+                    end,
+                }
+            }
         },
     }
-    UIManager:show(self.client_settings_dialog)
-    self.client_settings_dialog:onShowKeyboard()
+    UIManager:show(self.articles_dialog)
+    self.articles_dialog:onShowKeyboard()
 end
 
 function Wallabag:setDownloadDirectory(touchmenu_instance)
@@ -1357,7 +1347,7 @@ end
 
 function Wallabag:onSynchronizeWallabag()
     local connect_callback = function()
-        self:synchronize()
+        self:downloadArticles()
         self:refreshCurrentDirIfNeeded()
     end
     NetworkMgr:runWhenOnline(connect_callback)
