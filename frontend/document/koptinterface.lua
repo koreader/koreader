@@ -1196,9 +1196,22 @@ function KoptInterface:getSelectedWordContext(word, nb_words, pos)
     local boxes = self.last_text_boxes
     if not pos or not boxes or #boxes == 0 then return end
     local i, j = getWordBoxIndices(boxes, pos)
+    local i_end, j_end = i, j
+    local word_array = util.splitToArray(word, " ")
+    for idx, split_word in ipairs(word_array) do
+        if boxes[i_end][j_end].word ~= split_word then return end
+        if idx ~= #word_array then
+            if j_end == #boxes[i_end] then
+                i_end = i_end + 1
+                j_end = 1
+            else
+                j_end = j_end + 1
+            end
+        end
+    end
     if boxes[i][j].word ~= word then return end
     local prev_text = get_prev_text(boxes, i, j, nb_words)
-    local next_text = get_next_text(boxes, i, j, nb_words)
+    local next_text = get_next_text(boxes, i_end, j_end, nb_words)
     return prev_text, next_text
 end
 
