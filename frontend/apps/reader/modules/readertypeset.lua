@@ -89,7 +89,7 @@ function ReaderTypeset:onReadSettings(config)
 end
 
 function ReaderTypeset:onReaderReady()
-    -- Initial detecting of fb2 may be wrong
+    -- Initial detection of fb2 may be wrong
     local doc_format = self.ui.document:getDocumentFormat()
     local is_fb2 = doc_format:sub(1, 11) == "FictionBook"
     if self.ui.document.is_fb2 ~= is_fb2 then
