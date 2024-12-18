@@ -1,9 +1,10 @@
 describe("Readerui module", function()
     local DocumentRegistry, ReaderUI, DocSettings, UIManager, Screen
-    local sample_epub = "spec/front/unit/data/leaves.epub"
+    local sample_epub = "spec/front/unit/data/juliet.epub"
     local readerui
     setup(function()
         require("commonrequire")
+        disable_plugins()
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")
         DocSettings = require("docsettings")

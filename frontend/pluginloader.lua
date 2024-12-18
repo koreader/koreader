@@ -76,6 +76,41 @@ local PluginLoader = {
     all_plugins = nil,
 }
 
+function PluginLoader:loadPluginFromDir(name, plugin_root, plugins_disabled)
+    local mainfile = plugin_root.."/main.lua"
+    local metafile = plugin_root.."/_meta.lua"
+    if plugins_disabled and plugins_disabled[name] then
+        mainfile = metafile
+    end
+    -- keep reference to old value so they can be restored later
+    local package_path = package.path
+    local package_cpath = package.cpath
+    package.path = string.format("%s/?.lua;%s", plugin_root, package_path)
+    package.cpath = string.format("%s/lib/?.so;%s", plugin_root, package_cpath)
+    local ok, plugin_module = pcall(dofile, mainfile)
+    if not ok or not plugin_module then
+        logger.warn("Error when loading", mainfile, plugin_module)
+    elseif type(plugin_module.disabled) ~= "boolean" or not plugin_module.disabled then
+        plugin_module.path = plugin_root
+        plugin_module.name = plugin_module.name or plugin_root:match("/(.-)%.koplugin")
+        if (plugins_disabled and plugins_disabled[name]) then
+            table.insert(self.disabled_plugins, plugin_module)
+        else
+            local ok_meta, plugin_metamodule = pcall(dofile, metafile)
+            if ok_meta and plugin_metamodule then
+                for k,v in pairs(plugin_metamodule) do plugin_module[k] = v end
+            end
+            sandboxPluginEventHandlers(plugin_module)
+            table.insert(self.enabled_plugins, plugin_module)
+        end
+    else
+        logger.dbg("Plugin", mainfile, "has been disabled.")
+    end
+    package.path = package_path
+    package.cpath = package_cpath
+end
+
+
 function PluginLoader:loadPlugins()
     if self.enabled_plugins then return self.enabled_plugins, self.disabled_plugins end
 
@@ -107,10 +142,6 @@ function PluginLoader:loadPlugins()
         end
     end
 
-    -- keep reference to old value so they can be restored later
-    local package_path = package.path
-    local package_cpath = package.cpath
-
     local plugins_disabled = G_reader_settings:readSetting("plugins_disabled")
     if type(plugins_disabled) ~= "table" then
         plugins_disabled = {}
@@ -126,34 +157,7 @@ function PluginLoader:loadPlugins()
             local mode = lfs.attributes(plugin_root, "mode")
             -- valid koreader plugin directory
             if mode == "directory" and entry:find(".+%.koplugin$") then
-                local mainfile = plugin_root.."/main.lua"
-                local metafile = plugin_root.."/_meta.lua"
-                if plugins_disabled and plugins_disabled[entry:sub(1, -10)] then
-                    mainfile = metafile
-                end
-                package.path = string.format("%s/?.lua;%s", plugin_root, package_path)
-                package.cpath = string.format("%s/lib/?.so;%s", plugin_root, package_cpath)
-                local ok, plugin_module = pcall(dofile, mainfile)
-                if not ok or not plugin_module then
-                    logger.warn("Error when loading", mainfile, plugin_module)
-                elseif type(plugin_module.disabled) ~= "boolean" or not plugin_module.disabled then
-                    plugin_module.path = plugin_root
-                    plugin_module.name = plugin_module.name or plugin_root:match("/(.-)%.koplugin")
-                    if (plugins_disabled and plugins_disabled[entry:sub(1, -10)]) then
-                        table.insert(self.disabled_plugins, plugin_module)
-                    else
-                        local ok_meta, plugin_metamodule = pcall(dofile, metafile)
-                        if ok_meta and plugin_metamodule then
-                            for k,v in pairs(plugin_metamodule) do plugin_module[k] = v end
-                        end
-                        sandboxPluginEventHandlers(plugin_module)
-                        table.insert(self.enabled_plugins, plugin_module)
-                    end
-                else
-                    logger.dbg("Plugin", mainfile, "has been disabled.")
-                end
-                package.path = package_path
-                package.cpath = package_cpath
+                self:loadPluginFromDir(entry:sub(1, -10), plugin_root, plugins_disabled)
             end
         end
     end
