@@ -991,6 +991,19 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
                 end
             end,
             sub_item_table = submenu,
+            enabled_func = function()
+                local ui = require("apps/reader/readerui").instance
+                local context = ui and (ui.paging and "ReaderPaging" or "ReaderRolling") or "FileManager"
+                if context == "FileManager" then
+                    return section[1] ~= "reader" and section[1] ~= "rolling" and section[1] ~= "paging"
+                elseif context == "ReaderPaging" then
+                    return section[1] ~= "filemanager" and section[1] ~= "rolling"
+                elseif context == "ReaderRolling" then
+                    return section[1] ~= "filemanager" and section[1] ~= "paging"
+                else
+                    return section[1] ~= "filemanager"
+                end
+            end,
         })
     end
     menu.max_per_page = #menu -- next items in page 2
