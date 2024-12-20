@@ -776,5 +776,17 @@ if last_migration_date < 20241208 then
     G_reader_settings:delSetting("kopt_full_screen")
 end
 
+-- 20241220, Remove obsolete plugins
+if last_migration_date < 20241220 then
+    logger.info("Performing one-time migration for 20241220")
+    local base = DataStorage:getDataDir() .. "/plugins/"
+    local old_plugins = { "autofrontlight", "backgroundrunner", "calibrecompanion",
+        "evernote", "goodreads", "kobolight", "send2ebook", "storagestat", "zsync" }
+
+    for v, _ in ipairs(old_plugins) do
+        ffiUtil.purgeDir(base .. v .. ".koplugin")
+    end
+end
+
 -- We're done, store the current migration date
 G_reader_settings:saveSetting("last_migration_date", CURRENT_MIGRATION_DATE)
