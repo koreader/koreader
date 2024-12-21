@@ -783,7 +783,7 @@ if last_migration_date < 20241220 then
     local old_plugins = { "autofrontlight", "backgroundrunner", "calibrecompanion",
         "evernote", "goodreads", "kobolight", "send2ebook", "storagestat", "zsync" }
 
-    for v, _ in ipairs(old_plugins) do
+    for _, v in ipairs(old_plugins) do
         ffiUtil.purgeDir(base .. v .. ".koplugin")
     end
 end
