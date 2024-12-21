@@ -5,19 +5,6 @@ local _ = require("gettext")
 
 local DEFAULT_PLUGIN_PATH = "plugins"
 
--- plugin names that were removed and are no longer available.
-local OBSOLETE_PLUGINS = {
-    autofrontlight = true,
-    backgroundrunner = true,
-    calibrecompanion = true,
-    evernote = true,
-    goodreads = true,
-    kobolight = true,
-    send2ebook = true,
-    storagestat = true,
-    zsync = true,
-}
-
 local DEPRECATION_MESSAGES = {
     remove = _("This plugin is unmaintained and will be removed soon."),
     feature = _("The following features are unmaintained and will be removed soon:"),
@@ -97,10 +84,6 @@ function PluginLoader:_discover()
     local plugins_disabled = G_reader_settings:readSetting("plugins_disabled")
     if type(plugins_disabled) ~= "table" then
         plugins_disabled = {}
-    end
-    -- disable obsolete plugins
-    for element in pairs(OBSOLETE_PLUGINS) do
-        plugins_disabled[element] = true
     end
 
     local discovered = {}
@@ -232,9 +215,7 @@ function PluginLoader:genPluginManagerSubItem()
         for _, plugin in ipairs(disabled_plugins) do
             local element = getMenuTable(plugin)
             element.enable = false
-            if not OBSOLETE_PLUGINS[element.name] then
-                table.insert(self.all_plugins, element)
-            end
+            table.insert(self.all_plugins, element)
         end
 
         table.sort(self.all_plugins, function(v1, v2) return v1.fullname < v2.fullname end)
