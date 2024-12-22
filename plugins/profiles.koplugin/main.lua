@@ -212,8 +212,9 @@ function Profiles:getSubMenuItems()
                 sub_item_table_func = function()
                     local edit_actions_sub_items = {}
                     Dispatcher:addSubMenu(self, edit_actions_sub_items, self.data, k)
+                    local function always_enabled() return true end
                     for _, item in ipairs(edit_actions_sub_items) do
-                        item.enabled_func = function() return true end
+                        item.enabled_func = always_enabled
                     end
                     return edit_actions_sub_items
                 end,
