@@ -212,6 +212,9 @@ function Profiles:getSubMenuItems()
                 sub_item_table_func = function()
                     local edit_actions_sub_items = {}
                     Dispatcher:addSubMenu(self, edit_actions_sub_items, self.data, k)
+                    for _, item in ipairs(edit_actions_sub_items) do
+                        item.enabled_func = function() return true end
+                    end
                     return edit_actions_sub_items
                 end,
                 separator = true,

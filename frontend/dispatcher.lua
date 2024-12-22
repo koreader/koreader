@@ -67,9 +67,9 @@ local settingsList = {
     notebook_file = {category="none", event="ShowNotebookFile", title=_("Notebook file"), general=true},
     screenshot = {category="none", event="Screenshot", title=_("Screenshot"), general=true, separator=true},
     ----
-    folder_shortcuts = {category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true},
-    file_search = {category="none", event="ShowFileSearch", title=_("File search"), filemanager=true},
-    file_search_results = {category="none", event="ShowSearchResults", title=_("Last file search results"), filemanager=true},
+    folder_shortcuts = {category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), general=true},
+    file_search = {category="none", event="ShowFileSearch", title=_("File search"), general=true},
+    file_search_results = {category="none", event="ShowSearchResults", title=_("Last file search results"), general=true},
     ----
 
     -- Device
