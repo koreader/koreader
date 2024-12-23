@@ -1,4 +1,11 @@
 --[[--
+This plugin downloads a set number of the newest arcticles in your wallabag "Unread" list. As epubs,
+or in their original formats. It can archive or delete articles from wallabag when you finish them
+in KOReader. And it will delete or archive them locally when you finish them elsewhere.
+
+TODO Translate the new menu labels? See https://github.com/koreader/koreader-translations
+TODO Make sure all menu labels and message texts are wrapped in _() for translation
+
 @module koplugin.wallabag
 ]]
 
@@ -32,7 +39,7 @@ local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
 
--- constants
+-- Constants
 local article_id_prefix = "[w-id_"
 local article_id_postfix = "] "
 local failed, skipped, downloaded = 1, 2, 3
@@ -41,10 +48,14 @@ local Wallabag = WidgetContainer:extend{
     name = "wallabag",
 }
 
+--- Add wallabag events to event dispatcher.
 function Wallabag:onDispatcherRegisterActions()
-    Dispatcher:registerAction("wallabag_download", { category="none", event="SynchronizeWallabag", title=_("wallabag retrieval"), general=true,})
-end
+    Dispatcher:registerAction("wallabag_download", { category="none", event="DownloadArticles", title=_("wallabag retrieval"), general=true,})
+    Dispatcher:registerAction("wallabag_queue_upload", { category="none", event="UploadQueue", title=_("wallabag queue upload"), general=true,})
+    Dispatcher:registerAction("wallabag_status_upload", { category="none", event="UploadStatuses", title=_("wallabag statuses upload"), general=true,})
+end -- Wallabag:onDispatcherRegisterActions
 
+--- Initialize the wallabag WidgetContainer.
 function Wallabag:init()
     self.token_expiry = 0
     self:onDispatcherRegisterActions()
@@ -62,19 +73,10 @@ function Wallabag:init()
 
     if not self.archive_directory or self.archive_directory == "" then
         if self.directory and self.directory ~= "" then
-            -- deleteLocalArticle only deletes files, so nesting is OK
             self.archive_directory = self.directory .. 'archive/'
             do_migrate = true
         end
     end
-
-    -- default values so that user doesn't have to explicitly set them
-    self.archive_abandoned = false
-    self.archive_finished = true
-    self.archive_read = false
-    self.auto_archive = false
-    self.delete_instead = false
-    self.sync_remote_archive = false
 
     if self.wb_settings.data.wallabag.archive_abandoned ~= nil then
         self.archive_abandoned = self.wb_settings.data.wallabag.archive_abandoned
@@ -82,6 +84,8 @@ function Wallabag:init()
         -- Migrate old setting
         self.archive_abandoned = self.wb_settings.data.wallabag.is_delete_abandoned
         do_migrate = true
+    else
+        self.archive_abandoned = false
     end
 
     if self.wb_settings.data.wallabag.archive_finished ~= nil then
@@ -90,6 +94,8 @@ function Wallabag:init()
         -- Migrate old setting
         self.archive_finished = self.wb_settings.data.wallabag.is_delete_finished
         do_migrate = true
+    else
+        self.archive_finished = true
     end
 
     if self.wb_settings.data.wallabag.archive_read ~= nil then
@@ -98,6 +104,8 @@ function Wallabag:init()
         -- Migrate old setting
         self.archive_read = self.wb_settings.data.wallabag.is_delete_read
         do_migrate = true
+    else
+        self.archive_read = false
     end
 
     if self.wb_settings.data.wallabag.auto_archive ~= nil then
@@ -106,6 +114,8 @@ function Wallabag:init()
         -- Migrate old setting
         self.auto_archive = self.wb_settings.data.wallabag.is_auto_delete
         do_migrate = true
+    else
+        self.auto_archive = false
     end
 
     if self.wb_settings.data.wallabag.delete_instead ~= nil then
@@ -114,6 +124,8 @@ function Wallabag:init()
         -- Migrate old setting
         self.delete_instead = not self.wb_settings.data.wallabag.is_archiving_deleted
         do_migrate = true
+    else
+        self.delete_instead = false
     end
 
     if self.wb_settings.data.wallabag.sync_remote_archive ~= nil then
@@ -122,6 +134,8 @@ function Wallabag:init()
         -- Migrate old setting
         self.sync_remote_archive = self.wb_settings.data.wallabag.is_sync_remote_delete
         do_migrate = true
+    else
+        self.sync_remote_archive = false
     end
 
     self.use_local_archive = self.wb_settings.data.wallabag.use_local_archive or false
@@ -134,7 +148,15 @@ function Wallabag:init()
     self.remove_finished_from_history = self.wb_settings.data.wallabag.remove_finished_from_history or false
     self.remove_read_from_history = self.wb_settings.data.wallabag.remove_read_from_history or false
     self.download_original_document = self.wb_settings.data.wallabag.download_original_document or false
-    self.download_queue = self.wb_settings.data.wallabag.download_queue or {}
+
+    self.upload_queue = {}
+    if self.wb_settings.data.wallabag.upload_queue ~= nil then
+        self.upload_queue = self.wb_settings.data.wallabag.upload_queue
+    elseif self.wb_settings.data.wallabag.download_queue ~= nil then
+        -- Migrate old setting
+        self.upload_queue = self.wb_settings.data.wallabag.download_queue
+        do_migrate = true
+    end
 
     if do_migrate then
         -- TODO After enough time remove the setting migration parts and simplify defaults
@@ -165,33 +187,41 @@ function Wallabag:init()
             }
         end)
     end
-end
+end -- Wallabag:init
 
+--- Add Wallabag to the Tools menu in both the file manager and the reader.
 function Wallabag:addToMainMenu(menu_items)
     menu_items.wallabag = {
-        text = _("Wallabag"), -- Leave uppercase
+        text = _("Wallabag"), -- Leave uppercase for a clean menu
         sub_item_table = {
             {
-                text = _("Download new articles from server"),
+                text_func = function()
+                    if self.auto_archive then
+                        return _("Synchronize articles with server")
+                    else
+                        return _("Download new articles from server")
+                    end
+                end,
                 callback = function()
-                    self.ui:handleEvent(Event:new("SynchronizeWallabag"))
+                    self.ui:handleEvent(Event:new("DownloadArticles"))
+                end,
+            },
+            {
+                text = T(
+                    _("Upload queue of locally added articles to server (%1)"),
+                    #self.upload_queue
+                ),
+                callback = function()
+                    self.ui:handleEvent(Event:new("UploadQueue"))
+                end,
+                enabled_func = function()
+                    return #self.upload_queue > 0
                 end,
             },
             {
                 text = _("Upload article statuses to server"),
                 callback = function()
-                    local connect_callback = function()
-                        local num_del_remote, num_del_local = self:processLocalFiles("manual")
-                        UIManager:show(InfoMessage:new{
-                            text = T(
-                                _("Processing finished.\n\nDeleted from wallabag: %1\nDeleted from KOReader: %2"),
-                                num_del_remote,
-                                num_del_local
-                            )
-                        })
-                        self:refreshCurrentDirIfNeeded()
-                    end
-                    NetworkMgr:runWhenOnline(connect_callback)
+                    self.ui:handleEvent(Event:new("UploadStatuses"))
                 end,
                 enabled_func = function()
                     return self.archive_finished or self.archive_read or self.archive_abandoned
@@ -200,14 +230,7 @@ function Wallabag:addToMainMenu(menu_items)
             {
                 text = _("Go to download directory"),
                 callback = function()
-                    if self.ui.document then
-                        self.ui:onClose()
-                    end
-                    if FileManager.instance then
-                        FileManager.instance:reinit(self.directory)
-                    else
-                        FileManager:showFiles(self.directory)
-                    end
+                    self.ui:handleEvent(Event:new("GoToDownloadDirectory"))
                 end,
             },
             {
@@ -235,7 +258,7 @@ function Wallabag:addToMainMenu(menu_items)
                                     else
                                         path = filemanagerutil.abbreviate(self.directory)
                                     end
-                                        return T(_("Download directory: %1"), BD.dirpath(path))
+                                    return T(_("Download directory: %1"), BD.dirpath(path))
                                 end,
                                 keep_menu_open = true,
                                 callback = function(touchmenu_instance)
@@ -371,7 +394,7 @@ function Wallabag:addToMainMenu(menu_items)
                                     else
                                         path = filemanagerutil.abbreviate(self.archive_directory)
                                     end
-                                    return T(_("Set archive directory: %1"), BD.dirpath(path))
+                                    return T(_("Archive directory: %1"), BD.dirpath(path))
                                 end,
                                 keep_menu_open = true,
                                 callback = function(touchmenu_instance)
@@ -483,8 +506,10 @@ Downloads to directory: %1]]), BD.dirpath(filemanagerutil.abbreviate(self.direct
             },
         },
     }
-end
+end -- Wallabag:addToMainMenu
 
+--- Validate server settings and request an OAuth bearer token.
+-- Do not request a new token if the saved one is valid for more than 5 minutes.
 function Wallabag:getBearerToken()
 
     -- Check if the configuration is complete
@@ -552,30 +577,34 @@ function Wallabag:getBearerToken()
         ["Accept"] = "application/json, */*",
         ["Content-Length"] = tostring(#bodyJSON),
     }
-    local result = self:callAPI("POST", login_url, headers, bodyJSON, "")
+    local ok, result = self:callAPI("POST", login_url, headers, bodyJSON)
 
-    if result then
+    if ok then
         self.access_token = result.access_token
         self.token_expiry = now + result.expires_in
+
         return true
     else
         UIManager:show(InfoMessage:new{text = _("Could not login to wallabag server.")})
+
         return false
     end
-end
+end -- Wallabag:getBearerToken
 
 --- Get a JSON formatted list of articles from the server.
 -- The list should have self.article_per_sync item, or less if an error occurred.
 -- If filter_tag is set, only articles containing this tag are queried.
--- If ignore_tags is defined, articles containing either of the tags are skipped.
+-- If ignore_tags is defined, articles containing any of the tags are skipped.
 function Wallabag:getArticleList()
     local filtering = ""
+
     if self.filter_tag ~= "" then
         filtering = "&tags=" .. self.filter_tag
     end
 
     local article_list = {}
     local page = 1
+
     -- query the server for articles until we hit our target number
     while #article_list < self.articles_per_sync do
         -- get the JSON containing the article list
@@ -583,48 +612,52 @@ function Wallabag:getArticleList()
                           .. "&page=" .. page
                           .. "&perPage=" .. self.articles_per_sync
                           .. filtering
-        local articles_json, err, code = self:callAPI("GET", articles_url, nil, "", "", true)
+        local ok, result, code = self:callAPI("GET", articles_url, nil, nil, nil, true)
 
-        if err == "http_error" and code == 404 then
-            -- we may have hit the last page, there are no more articles
+        if not ok and result == "http_error" and code == 404 then
+            -- We may have hit the last page, there are no more articles
             logger.dbg("wallabag: couldn't get page #", page)
-            break -- exit while loop
-        elseif err or articles_json == nil then
-            -- another error has occurred. Don't proceed with downloading
-            -- or deleting articles
-            logger.warn("wallabag: download of page #", page, "failed with", err, code)
+            break -- exit while loop but do return article_list
+        elseif not ok then
+            -- Another error has occurred. Don't proceed with downloading or deleting articles
+            logger.warn("wallabag: download of page #", page, "failed with", result, code)
+            UIManager:show(InfoMessage:new{text = _("Requesting article list failed.")})
+            return
+        elseif result == nil then
+            -- No error occurred, but no JSON was returned either
+            logger.warn("wallabag: download of page #", page, "did not return anything")
             UIManager:show(InfoMessage:new{text = _("Requesting article list failed.")})
             return
         end
 
         -- We're only interested in the actual articles in the JSON
-        -- build an array of those so it's easier to manipulate later
-        local new_article_list = {}
-        for _, article in ipairs(articles_json._embedded.items) do
-            table.insert(new_article_list, article)
+        -- Build an array of those so it's easier to manipulate later
+        local page_article_list = {}
+        for _, article in ipairs(result._embedded.items) do
+            table.insert(page_article_list, article)
         end
 
-        -- Apply the filters
-        new_article_list = self:filterIgnoredTags(new_article_list)
+        -- Remove articles that have any of the tags in self.ignore_tags
+        page_article_list = self:filterIgnoredTags(page_article_list)
 
-        -- Append the filtered list to the final article list
-        for _, article in ipairs(new_article_list) do
+        -- Append this page's filtered list to the final article_list
+        for _, article in ipairs(page_article_list) do
+            table.insert(article_list, article)
             if #article_list == self.articles_per_sync then
                 logger.dbg("wallabag: hit the article target", self.articles_per_sync)
-                break
+                break -- exit for loop
             end
-            table.insert(article_list, article)
         end
 
         page = page + 1
     end
 
     return article_list
-end
+end -- Wallabag:getArticleList
 
 --- Remove all the articles from the list containing one of the ignored tags.
--- article_list: array containing a json formatted list of articles
--- returns: same array, but without any articles that contain an ignored tag.
+-- @param article_list Array containing a JSON formatted list of articles
+-- @return Same array, but without any articles that contain an ignored tag.
 function Wallabag:filterIgnoredTags(article_list)
     -- decode all tags to ignore
     local ignoring = {}
@@ -652,16 +685,16 @@ function Wallabag:filterIgnoredTags(article_list)
     end
 
     return filtered_list
-end
+end -- Wallabag:filterIgnoredTags
 
---- Download wallabag article.
--- @string article
+--- Download a single article from the wallabag server given by the id in the article JSON.
 -- @treturn int 1 failed, 2 skipped, 3 downloaded
 function Wallabag:download(article)
     local skip_article = false
     local title = util.getSafeFilename(article.title, self.directory, 230, 0)
     local file_ext = ".epub"
     local item_url = "/api/entries/" .. article.id .. "/export.epub"
+
     -- The mimetype is actually an HTTP Content-Type, so it can include a semicolon with stuff after it.
     -- Just in case we also trim it, though that shouldn't be necessary.
     -- A function represents `null` in our JSON.decode, because `nil` would just disappear.
@@ -691,7 +724,7 @@ function Wallabag:download(article)
     if attr then
         -- File already exists, skip it. Preferably only skip if the date of local file is newer than server's.
         -- newsdownloader.koplugin has a date parser but it is available only if the plugin is activated.
-        --- @todo find a better solution
+        -- TODO find a better solution
         if self.is_dateparser_available then
             local server_date = self.dateparser.parse(article.updated_at)
             if server_date < attr.modification then
@@ -705,139 +738,151 @@ function Wallabag:download(article)
     end
 
     if skip_article == false then
-        if self:callAPI("GET", item_url, nil, "", local_path) then
-            return downloaded
+        if self:callAPI("GET", item_url, nil, nil, local_path) then
+            return downloaded -- 3
         else
-            return failed
+            return failed -- 1
         end
     end
-    return skipped
-end
 
--- method: (mandatory) GET, POST, DELETE, PATCH, etc...
--- apiurl: (mandatory) API call excluding the server path, or full URL to a file
--- headers: defaults to auth if given nil value, provide all headers necessary if in use
--- body: empty string if not needed
--- filepath: downloads the file if provided, returns JSON otherwise
--- @treturn result or (nil, "network_error") or (nil, "json_error")
--- or (nil, "http_error", code)
----- @todo separate call to internal API from the download on external server
-function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
+    return skipped -- 2
+end -- Wallabag:download
+
+--- Call the wallabag API.
+-- See https://app.wallabag.it/api/doc/ for methods and parameters.
+-- @param method GET, POST, DELETE, PATCH, etc…
+-- @param url URL endpoint on wallabag server without hostname, or full URL for external link
+-- @param[opt] headers Defaults to Authorization for API endpoints, none for external
+-- @param[opt] body Body to include in the request, if needed
+-- @param[opt] filepath Downloads the file if provided, returns JSON otherwise
+-- @param[opt=false] quiet
+-- @treturn bool Whether the request was successful
+-- @treturn string Error type if unsuccessful, filepath if success with path, JSON if without
+-- @treturn int HTTP response code if unsuccessful (e.g. 404, 503, …)
+function Wallabag:callAPI(method, url, headers, body, filepath, quiet)
+    quiet = quiet or false
+
     local sink = {}
-    local request = {}
+    local request = {
+        method = method
+    }
 
     -- Is it an API call, or a regular file direct download?
-    if apiurl:sub(1, 1) == "/" then
+    -- TODO Separate call to internal API from the download on external server
+    if url:sub(1, 1) == "/" then
         -- API call to our server, has the form "/random/api/call"
-        request.url = self.server_url .. apiurl
-        if headers == nil then
-            headers = {
-                ["Authorization"] = "Bearer " .. self.access_token,
-            }
-        end
-    else
-        -- regular url link to a foreign server
-        local file_url = apiurl
-        request.url = file_url
-        if headers == nil then
-            -- no need for a token here
-            headers = {}
-        end
+        request.url = self.server_url .. url
+        request.headers = headers or {
+            ["Authorization"] = "Bearer " .. self.access_token,
+        }
+    else -- Assume full URL (e.g. https://…)
+        request.url = url
+        request.headers = headers or {}
     end
 
-    request.method = method
-    if filepath ~= "" then
+    if filepath ~= nil then
         request.sink = ltn12.sink.file(io.open(filepath, "w"))
         socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     else
         request.sink = ltn12.sink.table(sink)
         socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
     end
-    request.headers = headers
-    if body ~= "" then
+
+    if body ~= nil then
         request.source = ltn12.source.string(body)
     end
-    logger.dbg("wallabag: URL     ", request.url)
-    logger.dbg("wallabag: method  ", method)
+
+    logger.dbg("wallabag: request.url ", request.url)
+    logger.dbg("wallabag: request.method ", request.method)
 
     local code, resp_headers, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
-    -- raise error message when network is unavailable
+
+    -- Raise error if network is unavailable
     if resp_headers == nil then
         logger.dbg("wallabag: Server error:", status or code)
-        self:removeFailedDownload(filepath)
-        return nil, "network_error"
+
+        if filepath then
+            self:removeFailedDownload(filepath)
+        end
+
+        return false, "network_error"
     end
+
+    -- If the request returned successfully
     if code == 200 then
-        if filepath ~= "" then
+        if filepath then
             logger.dbg("wallabag: file downloaded to", filepath)
-            return true
+            return true, filepath
         else
             local content = table.concat(sink)
+
+            -- If any JSON was downloaded
             if content ~= "" and string.sub(content, 1,1) == "{" then
                 local ok, result = pcall(JSON.decode, content)
+
+                -- If the downloaded JSON could be parsed
                 if ok and result then
                     -- Only enable this log when needed, the output can be large
-                    --logger.dbg("wallabag: result ", result)
-                    return result
+                    -- logger.dbg("wallabag: result ", result)
+                    return true, result
                 else
                     UIManager:show(InfoMessage:new{text = _("Server response is not valid.")})
                 end
             else
                 UIManager:show(InfoMessage:new{text = _("Server response is not valid.")})
             end
-            return nil, "json_error"
+
+            return false, "json_error"
         end
     else
-        if filepath ~= "" then
+        if filepath then
             self:removeFailedDownload(filepath)
         elseif not quiet then
             UIManager:show(InfoMessage:new{text = _("Communication with server failed.")})
         end
+
         logger.dbg("wallabag: Request failed:", status or code)
         logger.dbg("wallabag: Response headers:", resp_headers)
-        return nil, "http_error", code
-    end
-end
 
+        return false, "http_error", code
+    end
+end -- Wallabag:callAPI
+
+--- Remove any files that were created for a download that failed
 function Wallabag:removeFailedDownload(filepath)
-    if filepath ~= "" then
+    if filepath then
         local entry_mode = lfs.attributes(filepath, "mode")
+
         if entry_mode == "file" then
             os.remove(filepath)
             logger.dbg("wallabag: Removed failed download:", filepath)
         end
     end
-end
+end -- Wallabag:removeFailedDownload
 
+--- Add articles from local queue to wallabag, then download new articles.
+-- If self.auto_archive is true, then local article statuses are uploaded before downloading.
+-- @treturn bool Whether the synchronization process reached the end (with or without errors)
 function Wallabag:downloadArticles()
     local info = InfoMessage:new{ text = _("Connecting to wallabag server…") }
     UIManager:show(info)
     UIManager:forceRePaint()
     UIManager:close(info)
 
+    -- Update bearer token if needed
     if self:getBearerToken() == false then
         return false
     end
 
     -- Add articles from queue to remote
-    if self.download_queue and next(self.download_queue) ~= nil then
-        info = InfoMessage:new{ text = _("Adding articles from queue…") }
-        UIManager:show(info)
-        UIManager:forceRePaint()
-        for _, articleUrl in ipairs(self.download_queue) do
-            self:addArticle(articleUrl)
-        end
+    -- TODO Add option to disable auto-upload?
+    self.uploadQueue()
 
-        self.download_queue = {}
-        self:saveSettings()
-        UIManager:close(info)
-    end
-
-    -- Sync local article statuses to remote
+    -- Upload local article statuses to remote
     local del_count_remote, del_count_local
     if self.auto_archive == true then
-        del_count_remote, del_count_local = self:processLocalFiles("auto")
+        del_count_remote, del_count_local = self:uploadStatuses()
     else
         logger.dbg("wallabag: Automatic processing of local files disabled.")
     end
@@ -851,15 +896,18 @@ function Wallabag:downloadArticles()
     local remote_article_ids = {}
     local download_count = 0
     local fail_count = 0
+
     if self.access_token ~= "" then
+        -- Get a list of articles to download
         local articles = self:getArticleList()
+
         if articles then
             logger.dbg("wallabag: number of articles:", #articles)
-
             info = InfoMessage:new{ text = _("Downloading articles…") }
             UIManager:show(info)
             UIManager:forceRePaint()
             UIManager:close(info)
+
             for _, article in ipairs(articles) do
                 logger.dbg("wallabag: processing article ID: ", article.id)
                 remote_article_ids[ tostring(article.id) ] = true
@@ -896,8 +944,50 @@ function Wallabag:downloadArticles()
             UIManager:show(info)
         end -- articles
     end -- access_token
-end -- Wallabag:synchronize
 
+    return true
+end -- Wallabag:downloadArticles
+
+--- Upload any articles that were added to the queue.
+-- In case there was no network connection to upload them at the time.
+-- @tparam[opt] quiet bool Whether to supress the info message or not
+-- @treturn int Number of article URLs added to the server
+function Wallabag:uploadQueue(quiet)
+    quiet = quiet or true
+
+    local count = 0
+
+    if self.upload_queue and next(self.upload_queue) ~= nil then
+        local info = InfoMessage:new{ text = _("Uploading articles from queue…") }
+        UIManager:show(info)
+        UIManager:forceRePaint()
+
+        for _, articleUrl in ipairs(self.upload_queue) do
+            if self:addArticle(articleUrl) then
+                count = count + 1
+                -- TODO Add error handling
+            end
+        end
+
+        self.upload_queue = {}
+        self:saveSettings()
+        UIManager:close(info)
+    end
+
+    if not quiet then
+        local msg = T(_("Uploaded %1 articles from the queue to wallabag: %1"), count)
+        local info = InfoMessage:new{ msg }
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        UIManager:close(info)
+    end
+
+    return count
+end -- Wallabag:uploadQueue
+
+--- Compare local IDs with remote_article_ids and delete or archive any that are missing.
+-- @tparam remote_article_ids tab Article IDs of articles downloaded this sync run
+-- @treturn int Number of locally deleted or archived articles
 function Wallabag:processRemoteDeletes(remote_article_ids)
     logger.dbg("wallabag: articles IDs from server: ", remote_article_ids)
 
@@ -911,6 +1001,7 @@ function Wallabag:processRemoteDeletes(remote_article_ids)
         if entry ~= "." and entry ~= ".." and lfs.attributes(entry, "mode") == "file" then
             local entry_path = self.directory .. "/" .. entry
             local id = self:getArticleID(entry_path)
+
             if not remote_article_ids[ id ] then
                 if self.use_local_archive then
                     logger.dbg("wallabag: Archiving local file (archived or deleted on server): ", entry_path)
@@ -926,7 +1017,12 @@ function Wallabag:processRemoteDeletes(remote_article_ids)
     return count
 end -- Wallabag:processRemoteDeletes
 
-function Wallabag:processLocalFiles(mode)
+--- Archive (or delete) locally finished articles on the wallabag server.
+-- @tparam[opt] quiet bool Whether to supress the info message or not
+function Wallabag:uploadStatuses(quiet)
+    quiet = quiet or true
+
+    -- Update bearer token if needed
     if self:getBearerToken() == false then
         return 0, 0
     end
@@ -935,19 +1031,17 @@ function Wallabag:processLocalFiles(mode)
     local count_local = 0
 
     if self.archive_finished or self.archive_read or self.archive_abandoned then
-        local info = InfoMessage:new{ text = T(
-            _("Processing local article statuses (%1)…"),
-            mode
-        )}
+        local info = InfoMessage:new{ text = _("Processing local article statuses…") }
         UIManager:show(info)
         UIManager:forceRePaint()
         UIManager:close(info)
+
         for entry in lfs.dir(self.directory) do
             if entry ~= "." and entry ~= ".." then
                 local entry_path = self.directory .. "/" .. entry
                 if DocSettings:hasSidecarFile(entry_path) then
                     if self.send_review_as_tags then
-                        self:addTags(entry_path)
+                        self:addTagsFromReview(entry_path)
                     end
                     local doc_settings = DocSettings:open(entry_path)
                     local summary = doc_settings:readSetting("summary")
@@ -958,7 +1052,7 @@ function Wallabag:processLocalFiles(mode)
                         or (status == "abandoned" and self.archive_abandoned)
                         or (percent_finished == 1 and self.archive_read)
                     ) then
-                        self:removeArticle(entry_path)
+                        self:archiveArticle(entry_path)
                         count_remote = count_remote + 1
                         if self.use_local_archive then
                             logger.dbg("wallabag: Archiving local file: ", entry_path)
@@ -966,18 +1060,44 @@ function Wallabag:processLocalFiles(mode)
                         else
                             logger.dbg("wallabag: Deleting local file: ", entry_path)
                             count_local = count_local + self:deleteLocalArticle(entry_path)
-                        end
-                    end
+                        end -- if use local archive
+                    end -- if finished
                 end -- has sidecar
             end -- not . and ..
         end -- for entry
-    end -- flag checks
-    return count_remote, count_local
-end
+    end -- if self.archive
 
+    if not quiet then
+        local msg = "Processing finished.\n"
+
+        if self.delete_instead then
+            msg = msg .. T(_("\nDeleted from wallabag: %1"), count_remote)
+        else
+            msg = msg .. T(_("\nArchived on wallabag: %1"), count_remote)
+        end
+
+        if self.use_local_archive then
+            msg = msg .. T(_("\nArchived in KOReader: %1"), count_local)
+        else
+            msg = msg .. T(_("\nDeleted from KOReader: %1"), count_local)
+        end
+
+        local info = InfoMessage:new{ msg }
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        UIManager:close(info)
+    end -- if not quiet
+
+    return count_remote, count_local
+end -- Wallabag:uploadStatuses
+
+--- Add a new article (including any auto_tags) to the wallabag server.
+-- @tparam article_url string Full URL of the article
+-- @treturn bool Whether the API call could be made successfully
 function Wallabag:addArticle(article_url)
     logger.dbg("wallabag: adding article ", article_url)
 
+    -- Update bearer token if needed
     if not article_url or self:getBearerToken() == false then
         return false
     end
@@ -996,16 +1116,21 @@ function Wallabag:addArticle(article_url)
         ["Authorization"] = "Bearer " .. self.access_token,
     }
 
-    return self:callAPI("POST", "/api/entries.json", headers, body_JSON, "")
-end
+    return self:callAPI("POST", "/api/entries.json", headers, body_JSON) == true
+end -- Wallabag:addArticle
 
-function Wallabag:addTags(path)
+--- Add tags from the local review to the article on wallabag.
+-- @tparam path string Local path of the article
+-- @treturn nil
+function Wallabag:addTagsFromReview(path)
     logger.dbg("wallabag: managing tags for article ", path)
     local id = self:getArticleID(path)
+
     if id then
         local doc_settings = DocSettings:open(path)
         local summary = doc_settings:readSetting("summary")
         local tags = summary and summary.note
+
         if tags and tags ~= "" then
             logger.dbg("wallabag: sending tags ", tags, " for ", path)
 
@@ -1022,19 +1147,23 @@ function Wallabag:addTags(path)
                 ["Authorization"] = "Bearer " .. self.access_token,
             }
 
-            self:callAPI("POST", "/api/entries/" .. id .. "/tags.json", headers, bodyJSON, "")
+            self:callAPI("POST", "/api/entries/" .. id .. "/tags.json", headers, bodyJSON)
         else
             logger.dbg("wallabag: no tags to send for ", path)
         end
     end
-end
+end -- Wallabag:addTagsFromReview
 
-function Wallabag:removeArticle(path)
+--- Archive an article on wallabag, or if delete_instead, then delete.
+-- @tparam path string Local path of the article
+-- @treturn nil
+function Wallabag:archiveArticle(path)
     logger.dbg("wallabag: removing article on remote", path)
     local id = self:getArticleID(path)
+
     if id then
         if self.delete_instead then
-            self:callAPI("DELETE", "/api/entries/" .. id .. ".json", nil, "", "")
+            self:callAPI("DELETE", "/api/entries/" .. id .. ".json")
         else
             local body = {
                 archive = 1
@@ -1048,11 +1177,14 @@ function Wallabag:removeArticle(path)
                 ["Authorization"] = "Bearer " .. self.access_token,
             }
 
-            self:callAPI("PATCH", "/api/entries/" .. id .. ".json", headers, bodyJSON, "")
-        end
-    end
-end
+            self:callAPI("PATCH", "/api/entries/" .. id .. ".json", headers, bodyJSON)
+        end -- if delete_instead
+    end -- if id
+end -- Wallabag:archiveArticle
 
+--- Move an article and its sidecar to archive_directory.
+-- @tparam path string Local path of the article
+-- @treturn int 1 if successful, 0 if not
 function Wallabag:archiveLocalArticle(path)
     local result = 0
 
@@ -1083,40 +1215,54 @@ function Wallabag:archiveLocalArticle(path)
     end
 
     return result
-end
+end -- Wallabag:archiveLocalArticle
 
+--- Delete an article and its sidecar locally.
+-- @tparam path string Local path of the article
+-- @treturn int 1 if successful, 0 if not
 function Wallabag:deleteLocalArticle(path)
     local result = 0
+
     if lfs.attributes(path, "mode") == "file" then
         FileManager:deleteFile(path, true)
         result = 1
    end
-    return result
-end
 
+    return result
+end -- Wallabag:deleteLocalArticle
+
+--- Extract the wallabag ID from the file name.
+-- @tparam path string Local path of the article
+-- @return ID as string if successful, nil if not
 function Wallabag:getArticleID(path)
-    -- extract the wallabag ID from the file name
     local offset = self.directory:len() + 2 -- skip / and advance to the next char
     local prefix_len = article_id_prefix:len()
+
     if path:sub(offset , offset + prefix_len - 1) ~= article_id_prefix then
         logger.warn("wallabag: getArticleID: no match! ", path:sub(offset , offset + prefix_len - 1))
         return
     end
+
     local endpos = path:find(article_id_postfix, offset + prefix_len)
+
     if endpos == nil then
         logger.warn("wallabag: getArticleID: no match! ")
         return
     end
-    local id = path:sub(offset + prefix_len, endpos - 1)
-    return id
-end
 
+    local id = path:sub(offset + prefix_len, endpos - 1)
+
+    return id
+end -- Wallabag:getArticleID
+
+--- Refresh current directory if the file manager is opened.
 function Wallabag:refreshCurrentDirIfNeeded()
     if FileManager.instance then
         FileManager.instance:onRefresh()
     end
-end
+end -- Wallabag:refreshCurrentDirIfNeeded
 
+--- A dialog used for setting filter_tag, ignore_tags and auto_tags.
 function Wallabag:setTagsDialog(touchmenu_instance, title, description, value, callback)
    self.tags_dialog = InputDialog:new {
         title = title,
@@ -1146,8 +1292,10 @@ function Wallabag:setTagsDialog(touchmenu_instance, title, description, value, c
     }
     UIManager:show(self.tags_dialog)
     self.tags_dialog:onShowKeyboard()
-end
+end -- Wallabag:setTagsDialog
 
+--- The dialog shown when clicking "Configure wallabag server".
+-- Or automatically, when getBearerToken is run with an incomplete server configuration.
 function Wallabag:editServerSettings()
     local text_info = T(_([[
 Enter the details of your wallabag server and account.
@@ -1218,8 +1366,9 @@ Restart KOReader after editing the config file.]]), BD.dirpath(DataStorage:getSe
     }
     UIManager:show(self.settings_dialog)
     self.settings_dialog:onShowKeyboard()
-end
+end -- Wallabag:editServerSettings
 
+--- The dialog shown when clicking "Number of articles to download".
 function Wallabag:setArticlesPerSync(touchmenu_instance)
    self.articles_dialog = InputDialog:new {
         title =  _("Number of articles to download"),
@@ -1248,8 +1397,10 @@ function Wallabag:setArticlesPerSync(touchmenu_instance)
     }
     UIManager:show(self.articles_dialog)
     self.articles_dialog:onShowKeyboard()
-end
+end -- Wallabag:setArticlesPerSync
 
+--- The dialog shown when clicking "Download directory".
+-- Or automatically, when getBearerToken is run with an incomplete server configuration.
 function Wallabag:setDownloadDirectory(touchmenu_instance)
     require("ui/downloadmgr"):new{
         onConfirm = function(path)
@@ -1261,8 +1412,9 @@ function Wallabag:setDownloadDirectory(touchmenu_instance)
             end
         end,
     }:chooseDir()
-end
+end -- Wallabag:setDownloadDirectory
 
+--- The dialog shown when clicking "Archive directory"
 function Wallabag:setArchiveDirectory(touchmenu_instance)
     require("ui/downloadmgr"):new{
         onConfirm = function(path)
@@ -1274,8 +1426,9 @@ function Wallabag:setArchiveDirectory(touchmenu_instance)
             end
         end,
     }:chooseDir()
-end
+end -- Wallabag:setArchiveDirectory
 
+--- Write all current settings to the Lua settings file.
 function Wallabag:saveSettings()
     local tempsettings = {
         server_url                    = self.server_url,
@@ -1301,37 +1454,42 @@ function Wallabag:saveSettings()
         remove_finished_from_history  = self.remove_finished_from_history,
         remove_read_from_history      = self.remove_read_from_history,
         download_original_document    = self.download_original_document,
-        download_queue                = self.download_queue,
+        upload_queue                  = self.upload_queue,
     }
+
     self.wb_settings:saveSetting("wallabag", tempsettings)
     self.wb_settings:flush()
+end -- Wallabag:saveSettings
 
-end
-
+--- Read wallabag plugin settings from Lua settings file.
 function Wallabag:readSettings()
     local wb_settings = LuaSettings:open(DataStorage:getSettingsDir().."/wallabag.lua")
     wb_settings:readSetting("wallabag", {})
     return wb_settings
-end
+end -- Wallabag:readSettings
 
-function Wallabag:saveWBSettings(setting)
-    if not self.wb_settings then self.wb_settings = self:readSettings() end
-    self.wb_settings:saveSetting("wallabag", setting)
-    self.wb_settings:flush()
-end
+--- Save a single setting
+-- Unused?
+-- function Wallabag:saveWBSettings(setting)
+--     if not self.wb_settings then self.wb_settings = self:readSettings() end
+--     self.wb_settings:saveSetting("wallabag", setting)
+--     self.wb_settings:flush()
+-- end -- Wallabag:saveWBSettings
 
+--- Handler for addWallabagArticle event.
+--- Uploads a new article to wallabag directly if there is a network connection, or add it to the
+-- local upload queue.
 function Wallabag:onAddWallabagArticle(article_url)
     if not NetworkMgr:isOnline() then
-        self:addToDownloadQueue(article_url)
+        self:addToUploadQueue(article_url)
         UIManager:show(InfoMessage:new{
-            text = T(_("Article added to download queue:\n%1"), BD.url(article_url)),
+            text = T(_("Article added to upload queue:\n%1"), BD.url(article_url)),
             timeout = 1,
          })
         return
     end
 
-    local wallabag_result = self:addArticle(article_url)
-    if wallabag_result then
+    if self:addArticle(article_url) then
         UIManager:show(InfoMessage:new{
             text = T(_("Article added to wallabag:\n%1"), BD.url(article_url)),
         })
@@ -1343,29 +1501,78 @@ function Wallabag:onAddWallabagArticle(article_url)
 
     -- stop propagation
     return true
-end
+end -- Wallabag:onAddWallabagArticle
 
-function Wallabag:onSynchronizeWallabag()
+--- Handler for downloadArticles event.
+function Wallabag:onDownloadArticles()
     local connect_callback = function()
         self:downloadArticles()
         self:refreshCurrentDirIfNeeded()
     end
+
     NetworkMgr:runWhenOnline(connect_callback)
 
     -- stop propagation
     return true
-end
+end -- Wallabag:onDownloadArticles
 
+--- Handler for uploadQueue event.
+function Wallabag:onUploadQueue()
+    local connect_callback = function()
+        self:uploadQueue(false)
+        self:refreshCurrentDirIfNeeded()
+    end
+
+    NetworkMgr:runWhenOnline(connect_callback)
+
+    -- stop propagation
+    return true
+end -- Wallabag:onUploadQueue
+
+--- Handler for uploadStatuses event.
+function Wallabag:onUploadStatuses()
+    local connect_callback = function()
+        self:uploadStatuses(false)
+        self:refreshCurrentDirIfNeeded()
+    end
+
+    NetworkMgr:runWhenOnline(connect_callback)
+
+    -- stop propagation
+    return true
+end -- Wallabag:onUploadStatuses
+
+--- Handler for goToDownloadDirectory event.
+function Wallabag:onGoToDownloadDirectory()
+    if self.ui.document then
+        self.ui:onClose()
+    end
+
+    if FileManager.instance then
+        FileManager.instance:reinit(self.directory)
+    else
+        FileManager:showFiles(self.directory)
+    end
+
+    -- stop propagation
+    return true
+end -- Wallabag:onGoToDownloadDirectory
+
+--- Get percent read of the opened article.
 function Wallabag:getLastPercent()
     local percent = self.ui.paging and self.ui.paging:getLastPercent() or self.ui.rolling:getLastPercent()
     return Math.roundPercent(percent)
-end
+end -- Wallabag:getLastPercent
 
-function Wallabag:addToDownloadQueue(article_url)
-    table.insert(self.download_queue, article_url)
+--- Add URL to the upload_queue.
+function Wallabag:addToUploadQueue(article_url)
+    table.insert(self.upload_queue, article_url)
     self:saveSettings()
-end
+end -- Wallabag:addToUploadQueue
 
+--- Handler for the closeDocument event.
+-- If the opened article/book is saved in the wallabag directory, and if any of the
+-- remove_from_history settings are set and matching, then remove it from history
 function Wallabag:onCloseDocument()
     if self.remove_finished_from_history or self.remove_read_from_history or self.remove_abandoned_from_history then
         local document_full_path = self.ui.document.file
@@ -1387,6 +1594,6 @@ function Wallabag:onCloseDocument()
             self.ui:setLastDirForFileBrowser(self.directory)
         end
     end
-end
+end -- Wallabag:onCloseDocument
 
 return Wallabag
