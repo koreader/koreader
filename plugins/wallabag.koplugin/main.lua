@@ -548,6 +548,7 @@ function Wallabag:getBearerToken()
          UIManager:show(InfoMessage:new{
             text = _("The download directory is not valid.\nPlease configure it in the settings.")
         })
+
         return false
     end
     if string.sub(self.directory, -1) ~= "/" then
@@ -585,7 +586,7 @@ function Wallabag:getBearerToken()
 
         return true
     else
-        UIManager:show(InfoMessage:new{text = _("Could not login to wallabag server.")})
+        UIManager:show(InfoMessage:new{ text = _("Could not login to wallabag server.") })
 
         return false
     end
@@ -621,12 +622,12 @@ function Wallabag:getArticleList()
         elseif not ok then
             -- Another error has occurred. Don't proceed with downloading or deleting articles
             logger.warn("wallabag: download of page #", page, "failed with", result, code)
-            UIManager:show(InfoMessage:new{text = _("Requesting article list failed.")})
+            UIManager:show(InfoMessage:new{ text = _("Requesting article list failed.") })
             return
         elseif result == nil then
             -- No error occurred, but no JSON was returned either
             logger.warn("wallabag: download of page #", page, "did not return anything")
-            UIManager:show(InfoMessage:new{text = _("Requesting article list failed.")})
+            UIManager:show(InfoMessage:new{ text = _("Requesting article list failed.") })
             return
         end
 
@@ -827,10 +828,10 @@ function Wallabag:callAPI(method, url, headers, body, filepath, quiet)
                     -- logger.dbg("wallabag: result ", result)
                     return true, result
                 else
-                    UIManager:show(InfoMessage:new{text = _("Server response is not valid.")})
+                    UIManager:show(InfoMessage:new{ text = _("Server response is not valid.") })
                 end
             else
-                UIManager:show(InfoMessage:new{text = _("Server response is not valid.")})
+                UIManager:show(InfoMessage:new{ text = _("Server response is not valid.") })
             end
 
             return false, "json_error"
@@ -839,7 +840,7 @@ function Wallabag:callAPI(method, url, headers, body, filepath, quiet)
         if filepath then
             self:removeFailedDownload(filepath)
         elseif not quiet then
-            UIManager:show(InfoMessage:new{text = _("Communication with server failed.")})
+            UIManager:show(InfoMessage:new{ text = _("Communication with server failed.") })
         end
 
         logger.dbg("wallabag: Request failed:", status or code)
@@ -867,83 +868,101 @@ end -- Wallabag:removeFailedDownload
 function Wallabag:downloadArticles()
     local info = InfoMessage:new{ text = _("Connecting to wallabag server…") }
     UIManager:show(info)
-    UIManager:forceRePaint()
-    UIManager:close(info)
+
+    local del_count_remote = 0
+    local del_count_local = 0
 
     -- Update bearer token if needed
-    if self:getBearerToken() == false then
+    if not self:getBearerToken() or self.access_token == "" then
+        UIManager:close(info)
         return false
     end
 
+    UIManager:close(info)
+
     -- Add articles from queue to remote
-    -- TODO Add option to disable auto-upload?
-    self.uploadQueue()
+    self:uploadQueue()
 
     -- Upload local article statuses to remote
-    local del_count_remote, del_count_local
     if self.auto_archive == true then
         del_count_remote, del_count_local = self:uploadStatuses()
     else
         logger.dbg("wallabag: Automatic processing of local files disabled.")
     end
 
-    -- Download new articles from remote
-    info = InfoMessage:new{ text = _("Getting article list…") }
-    UIManager:show(info)
-    UIManager:forceRePaint()
-    UIManager:close(info)
-
     local remote_article_ids = {}
     local download_count = 0
     local fail_count = 0
 
-    if self.access_token ~= "" then
-        -- Get a list of articles to download
-        local articles = self:getArticleList()
+    -- Get a list of articles to download
+    info = InfoMessage:new{ text = _("Getting article list…") }
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    local articles = self:getArticleList()
+    UIManager:close(info)
 
-        if articles then
-            logger.dbg("wallabag: number of articles:", #articles)
-            info = InfoMessage:new{ text = _("Downloading articles…") }
-            UIManager:show(info)
-            UIManager:forceRePaint()
-            UIManager:close(info)
+    if articles then
+        logger.dbg("wallabag: number of articles:", #articles)
+        info = InfoMessage:new{
+            text = T(
+                _("Downloading %1 articles…"),
+                #articles
+            ),
+            timeout = 5
+        }
+        UIManager:show(info)
+        UIManager:forceRePaint()
 
-            for _, article in ipairs(articles) do
-                logger.dbg("wallabag: processing article ID: ", article.id)
-                remote_article_ids[ tostring(article.id) ] = true
-                local res = self:download(article)
-                if res == downloaded then
-                    download_count = download_count + 1
-                elseif res == failed then
-                    fail_count = fail_count + 1
-                end
+        for _, article in ipairs(articles) do
+            logger.dbg("wallabag: processing article ID: ", article.id)
+            remote_article_ids[ tostring(article.id) ] = true
+
+            local res = self:download(article)
+
+            if res == downloaded then
+                download_count = download_count + 1
+                info = InfoMessage:new{
+                    text = T(
+                        _("Downloaded article %1 of %2…"),
+                        download_count,
+                        #articles
+                    ),
+                    timeout = 5
+                }
+                UIManager:show(info)
+                UIManager:forceRePaint()
+            elseif res == failed then
+                fail_count = fail_count + 1
             end
+        end
 
-            -- Synchronize remote deletions to local
-            if self.sync_remote_archive then
-                del_count_local = del_count_local + self:processRemoteDeletes(remote_article_ids)
+        -- Synchronize remote deletions to local
+        if self.sync_remote_archive then
+            del_count_local = del_count_local + self:processRemoteDeletes(remote_article_ids)
+        else
+            logger.dbg("wallabag: Processing of remote file deletions disabled.")
+        end
+
+        local msg = "Processing finished.\n\n"
+        msg = msg .. T(_("Articles downloaded: %1"), download_count)
+
+        if self.auto_archive or self.sync_remote_archive then
+            if self.use_local_archive then
+                msg = msg .. T(_("\nArchived locally: %1"), del_count_local)
             else
-                logger.dbg("wallabag: Processing of remote file deletions disabled.")
+                msg = msg .. T(_("\nDeleted locally: %1"), del_count_local)
             end
+        end
 
-            local msg = "Processing finished.\n\n"
-            msg = msg .. T(_("Articles downloaded: %1"), download_count)
+        if fail_count > 0 then
+            msg = msg .. T(_("\nFailed: %1"), fail_count)
+        end
 
-            if self.auto_archive or self.sync_remote_archive then
-                if self.use_local_archive then
-                    msg = msg .. T(_("\nArchived locally: %1"), del_count_local)
-            else
-                    msg = msg .. T(_("\nDeleted locally: %1"), del_count_local)
-                end
-            end
-
-            if fail_count > 0 then
-                msg = msg .. T(_("\nFailed: %1"), fail_count)
-            end
-            info = InfoMessage:new{ text = msg }
-            UIManager:show(info)
-        end -- articles
-    end -- access_token
+        UIManager:close(info)
+        info = InfoMessage:new{ text = msg }
+        UIManager:show(info)
+        UIManager:forceRePaint()
+    end -- articles
 
     return true
 end -- Wallabag:downloadArticles
@@ -958,9 +977,11 @@ function Wallabag:uploadQueue(quiet)
     local count = 0
 
     if self.upload_queue and next(self.upload_queue) ~= nil then
-        local info = InfoMessage:new{ text = _("Uploading articles from queue…") }
+        local info = InfoMessage:new{ text = T(
+            _("Uploading %1 articles from queue…"),
+            #self.upload_queue
+        )}
         UIManager:show(info)
-        UIManager:forceRePaint()
 
         for _, articleUrl in ipairs(self.upload_queue) do
             if self:addArticle(articleUrl) then
@@ -976,10 +997,8 @@ function Wallabag:uploadQueue(quiet)
 
     if not quiet then
         local msg = T(_("Uploaded %1 articles from the queue to wallabag: %1"), count)
-        local info = InfoMessage:new{ msg }
+        local info = InfoMessage:new{ text = msg }
         UIManager:show(info)
-        UIManager:forceRePaint()
-        UIManager:close(info)
     end
 
     return count
@@ -993,8 +1012,7 @@ function Wallabag:processRemoteDeletes(remote_article_ids)
 
     local info = InfoMessage:new{ text = _("Synchronizing remote deletions…") }
     UIManager:show(info)
-    UIManager:forceRePaint()
-    UIManager:close(info)
+
     local count = 0
 
     for entry in lfs.dir(self.directory) do
@@ -1014,6 +1032,7 @@ function Wallabag:processRemoteDeletes(remote_article_ids)
         end -- if entry ~= . and entry ~= ..
     end -- for entry
 
+    UIManager:close(info)
     return count
 end -- Wallabag:processRemoteDeletes
 
@@ -1033,8 +1052,6 @@ function Wallabag:uploadStatuses(quiet)
     if self.archive_finished or self.archive_read or self.archive_abandoned then
         local info = InfoMessage:new{ text = _("Processing local article statuses…") }
         UIManager:show(info)
-        UIManager:forceRePaint()
-        UIManager:close(info)
 
         for entry in lfs.dir(self.directory) do
             if entry ~= "." and entry ~= ".." then
@@ -1065,6 +1082,8 @@ function Wallabag:uploadStatuses(quiet)
                 end -- has sidecar
             end -- not . and ..
         end -- for entry
+
+        UIManager:close(info)
     end -- if self.archive
 
     if not quiet then
@@ -1082,10 +1101,7 @@ function Wallabag:uploadStatuses(quiet)
             msg = msg .. T(_("\nDeleted from KOReader: %1"), count_local)
         end
 
-        local info = InfoMessage:new{ msg }
-        UIManager:show(info)
-        UIManager:forceRePaint()
-        UIManager:close(info)
+        UIManager:show(InfoMessage:new{ text = msg })
     end -- if not quiet
 
     return count_remote, count_local
@@ -1194,13 +1210,12 @@ function Wallabag:archiveLocalArticle(path)
         util.makePath(self.archive_directory)
         UIManager:show(InfoMessage:new{
             text = T(_("Created the archive directory at %1."), self.archive_directory),
+            timeout = 10
         })
-        UIManager:forceRePaint()
     elseif dir_mode ~= "directory" then
         UIManager:show(InfoMessage:new{
             text = _("The archive directory is not valid.\nPlease configure it in the settings."),
         })
-        UIManager:forceRePaint()
         return result
     end
 
@@ -1484,7 +1499,7 @@ function Wallabag:onAddWallabagArticle(article_url)
         self:addToUploadQueue(article_url)
         UIManager:show(InfoMessage:new{
             text = T(_("Article added to upload queue:\n%1"), BD.url(article_url)),
-            timeout = 1,
+            timeout = 10,
          })
         return
     end
@@ -1492,6 +1507,7 @@ function Wallabag:onAddWallabagArticle(article_url)
     if self:addArticle(article_url) then
         UIManager:show(InfoMessage:new{
             text = T(_("Article added to wallabag:\n%1"), BD.url(article_url)),
+            timeout = 10,
         })
     else
         UIManager:show(InfoMessage:new{
