@@ -99,7 +99,7 @@ function BookInfo:show(doc_settings_or_file, book_props)
     -- book_props may be provided if caller already has them available
     -- but it may lack "pages", that we may get from sidecar file
     if not book_props or not book_props.pages then
-        book_props = BookInfo.getDocProps(file, book_props)
+        book_props = self:getDocProps(file, book_props)
     end
     -- cover image
     self.custom_book_cover = DocSettings:findCustomCoverFile(file)
@@ -238,7 +238,15 @@ function BookInfo.extendProps(original_props, filepath)
 end
 
 -- Returns customized document metadata, including number of pages.
-function BookInfo.getDocProps(file, book_props, no_open_document)
+function BookInfo:getDocProps(file, book_props, no_open_document)
+    if self.ui.coverbrowser then
+        book_props = self.ui.coverbrowser.getDocProps(file)
+        if book_props ~= nil then -- already customized
+            book_props.display_title = book_props.title or filemanagerutil.splitFileNameType(file)
+            return book_props
+        end
+    end
+
     if DocSettings:hasSidecarFile(file) then
         local doc_settings = DocSettings:open(file)
         if not book_props then
@@ -340,7 +348,7 @@ end
 function BookInfo:onShowBookDescription(description, file)
     if not description then
         if file then
-            description = BookInfo.getDocProps(file).description
+            description = self:getDocProps(file).description
         elseif self.document then -- currently opened document
             description = self.ui.doc_props.description
         end
