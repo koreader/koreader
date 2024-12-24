@@ -39,6 +39,12 @@ local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
 
+-- Logging functions
+local log_dbg  = function(...) return logger.dbg("wallabag:", ...) end
+local log_info = function(...) return logger.info("wallabag:", ...) end
+local log_warn = function(...) return logger.warn("wallabag:", ...) end
+local log_err  = function(...) return logger.err("wallabag:", ...) end
+
 -- Constants
 local article_id_prefix = "[w-id_"
 local article_id_postfix = "] "
@@ -57,6 +63,7 @@ end -- Wallabag:onDispatcherRegisterActions
 
 --- Initialize the wallabag WidgetContainer.
 function Wallabag:init()
+    log_info("init: initializing…")
     self.token_expiry = 0
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
@@ -597,6 +604,9 @@ end -- Wallabag:getBearerToken
 -- If filter_tag is set, only articles containing this tag are queried.
 -- If ignore_tags is defined, articles containing any of the tags are skipped.
 function Wallabag:getArticleList()
+    local log_dbg = function(...) return log_dbg("getArticleList:", ...) end
+    local log_warn = function(...) return log_warn("getArticleList:", ...) end
+
     local filtering = ""
 
     if self.filter_tag ~= "" then
@@ -617,17 +627,17 @@ function Wallabag:getArticleList()
 
         if not ok and result == "http_error" and code == 404 then
             -- We may have hit the last page, there are no more articles
-            logger.dbg("wallabag: couldn't get page #", page)
+            log_dbg("requesting page", page, "failed with", result, code)
             break -- exit while loop but do return article_list
         elseif not ok then
-            -- Another error has occurred. Don't proceed with downloading or deleting articles
-            logger.warn("wallabag: download of page #", page, "failed with", result, code)
+            -- Some other error has occurred. Don't proceed with downloading or deleting articles
+            log_warn("requesting page", page, "failed with", result, code)
             UIManager:show(InfoMessage:new{ text = _("Requesting article list failed.") })
             return
         elseif result == nil then
             -- No error occurred, but no JSON was returned either
-            logger.warn("wallabag: download of page #", page, "did not return anything")
-            UIManager:show(InfoMessage:new{ text = _("Requesting article list failed.") })
+            log_warn("requesting page", page, "did not return anything")
+            UIManager:show(InfoMessage:new{ text = _("Requesting article list did not return anything.") })
             return
         end
 
@@ -645,7 +655,7 @@ function Wallabag:getArticleList()
         for _, article in ipairs(page_article_list) do
             table.insert(article_list, article)
             if #article_list == self.articles_per_sync then
-                logger.dbg("wallabag: hit the article target", self.articles_per_sync)
+                log_dbg("#article_list == self.articles_per_sync ==", self.articles_per_sync)
                 break -- exit for loop
             end
         end
@@ -660,6 +670,8 @@ end -- Wallabag:getArticleList
 -- @param article_list Array containing a JSON formatted list of articles
 -- @return Same array, but without any articles that contain an ignored tag.
 function Wallabag:filterIgnoredTags(article_list)
+    local log_dbg = function(...) return log_dbg("filterIgnoredTags:", ...) end
+
     -- decode all tags to ignore
     local ignoring = {}
     if self.ignore_tags ~= "" then
@@ -670,16 +682,18 @@ function Wallabag:filterIgnoredTags(article_list)
 
     -- rebuild a list without the ignored articles
     local filtered_list = {}
+
     for _, article in ipairs(article_list) do
         local skip_article = false
+
         for _, tag in ipairs(article.tags) do
             if ignoring[tag.label] then
                 skip_article = true
-                logger.dbg("wallabag: ignoring tag", tag.label, "in article",
-                           article.id, ":", article.title)
+                log_dbg("skipping", article.id, "because it is tagged", tag.label)
                 break -- no need to look for other tags
             end
         end
+
         if not skip_article then
             table.insert(filtered_list, article)
         end
@@ -691,6 +705,8 @@ end -- Wallabag:filterIgnoredTags
 --- Download a single article from the wallabag server given by the id in the article JSON.
 -- @treturn int 1 failed, 2 skipped, 3 downloaded
 function Wallabag:download(article)
+    local log_dbg = function(...) return log_dbg("download:", ...) end
+
     local skip_article = false
     local title = util.getSafeFilename(article.title, self.directory, 230, 0)
     local file_ext = ".epub"
@@ -702,24 +718,24 @@ function Wallabag:download(article)
     -- We can simplify that to not a string.
     local mimetype = type(article.mimetype) == string and util.trim(article.mimetype:match("^[^;]*")) or nil
 
-    -- If the article links to a supported file, we will download it directly.
+    -- If the article links to a supported file type, we will download it directly.
     -- All webpages are HTML. Ignore them since we want the wallabag EPUB instead!
     if self.download_original_document then
         if mimetype ~= "text/html" and DocumentRegistry:hasProvider(nil, mimetype) then
-            logger.dbg("wallabag: ignoring EPUB in favor of mimetype: ", mimetype)
+            log_dbg("ignoring EPUB in favor of mimetype", mimetype)
             file_ext = "."..DocumentRegistry:mimeToExt(article.mimetype)
             item_url = article.url
         elseif mimetype == nil and DocumentRegistry:hasProvider(article.url) then
-            logger.dbg("wallabag: ignoring EPUB in favor of original: ", article.url)
+            log_dbg("ignoring EPUB in favor of original", article.url)
             file_ext = "."..util.getFileNameSuffix(article.url)
             item_url = article.url
+        else
+            log_dbg("not ignoring EPUB, because", article.url, "is HTML")
         end
     end
 
     local local_path = self.directory .. article_id_prefix .. article.id .. article_id_postfix .. title .. file_ext
-    logger.dbg("wallabag: DOWNLOAD: id: ", article.id)
-    logger.dbg("wallabag: DOWNLOAD: title: ", article.title)
-    logger.dbg("wallabag: DOWNLOAD: filename: ", local_path)
+    log_dbg("downloading", article.id, "to", local_path)
 
     local attr = lfs.attributes(local_path)
     if attr then
@@ -730,11 +746,11 @@ function Wallabag:download(article)
             local server_date = self.dateparser.parse(article.updated_at)
             if server_date < attr.modification then
                 skip_article = true
-                logger.dbg("wallabag: skipping file (date checked): ", local_path)
+                log_dbg("skipping download because local copy is newer at", local_path)
             end
         else
             skip_article = true
-            logger.dbg("wallabag: skipping file: ", local_path)
+            log_dbg("skipping download because local copy exists at", local_path)
         end
     end
 
@@ -761,6 +777,9 @@ end -- Wallabag:download
 -- @treturn string Error type if unsuccessful, filepath if success with path, JSON if without
 -- @treturn int HTTP response code if unsuccessful (e.g. 404, 503, …)
 function Wallabag:callAPI(method, url, headers, body, filepath, quiet)
+    local log_dbg = function(...) return log_dbg("callAPI:", ...) end
+    local log_err = function(...) return log_err("callAPI:", ...) end
+
     quiet = quiet or false
 
     local sink = {}
@@ -793,27 +812,25 @@ function Wallabag:callAPI(method, url, headers, body, filepath, quiet)
         request.source = ltn12.source.string(body)
     end
 
-    logger.dbg("wallabag: request.url ", request.url)
-    logger.dbg("wallabag: request.method ", request.method)
+    log_dbg(request.method, request.url)
 
     local code, resp_headers, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
 
     -- Raise error if network is unavailable
     if resp_headers == nil then
-        logger.dbg("wallabag: Server error:", status or code)
-
         if filepath then
             self:removeFailedDownload(filepath)
         end
 
+        log_err("network error", status or code)
         return false, "network_error"
     end
 
     -- If the request returned successfully
     if code == 200 then
         if filepath then
-            logger.dbg("wallabag: file downloaded to", filepath)
+            log_dbg("file downloaded to", filepath)
             return true, filepath
         else
             local content = table.concat(sink)
@@ -824,13 +841,16 @@ function Wallabag:callAPI(method, url, headers, body, filepath, quiet)
 
                 -- If the downloaded JSON could be parsed
                 if ok and result then
+                    log_dbg("JSON downloaded")
                     -- Only enable this log when needed, the output can be large
-                    -- logger.dbg("wallabag: result ", result)
+                    -- log_dbg("result =", result)
                     return true, result
                 else
+                    log_err("response was no valid JSON", content)
                     UIManager:show(InfoMessage:new{ text = _("Server response is not valid.") })
                 end
             else
+                log_err("response was no JSON", content)
                 UIManager:show(InfoMessage:new{ text = _("Server response is not valid.") })
             end
 
@@ -843,21 +863,21 @@ function Wallabag:callAPI(method, url, headers, body, filepath, quiet)
             UIManager:show(InfoMessage:new{ text = _("Communication with server failed.") })
         end
 
-        logger.dbg("wallabag: Request failed:", status or code)
-        logger.dbg("wallabag: Response headers:", resp_headers)
-
+        log_err("HTTP error", status or code, resp_headers)
         return false, "http_error", code
     end
 end -- Wallabag:callAPI
 
 --- Remove any files that were created for a download that failed
 function Wallabag:removeFailedDownload(filepath)
+    local log_dbg = function(...) return log_dbg("removeFailedDownload:", ...) end
+
     if filepath then
         local entry_mode = lfs.attributes(filepath, "mode")
 
         if entry_mode == "file" then
             os.remove(filepath)
-            logger.dbg("wallabag: Removed failed download:", filepath)
+            log_dbg("removed", filepath)
         end
     end
 end -- Wallabag:removeFailedDownload
@@ -866,10 +886,12 @@ end -- Wallabag:removeFailedDownload
 -- If self.auto_archive is true, then local article statuses are uploaded before downloading.
 -- @treturn bool Whether the synchronization process reached the end (with or without errors)
 function Wallabag:downloadArticles()
+    local log_dbg = function(...) return log_dbg("downloadArticles:", ...) end
+    local log_err = function(...) return log_err("downloadArticles:", ...) end
+
     local info = InfoMessage:new{ text = _("Connecting to wallabag server…") }
     UIManager:show(info)
 
-    local del_count_remote = 0
     local del_count_local = 0
 
     -- Update bearer token if needed
@@ -884,10 +906,9 @@ function Wallabag:downloadArticles()
     self:uploadQueue()
 
     -- Upload local article statuses to remote
+    log_dbg("self.auto_archive =", self.auto_archive)
     if self.auto_archive == true then
-        del_count_remote, del_count_local = self:uploadStatuses()
-    else
-        logger.dbg("wallabag: Automatic processing of local files disabled.")
+        _, del_count_local = self:uploadStatuses()
     end
 
     local remote_article_ids = {}
@@ -902,7 +923,7 @@ function Wallabag:downloadArticles()
     UIManager:close(info)
 
     if articles then
-        logger.dbg("wallabag: number of articles:", #articles)
+        log_dbg("got a list of", #articles, "articles")
         info = InfoMessage:new{
             text = T(
                 _("Downloading %1 articles…"),
@@ -914,12 +935,13 @@ function Wallabag:downloadArticles()
         UIManager:forceRePaint()
 
         for _, article in ipairs(articles) do
-            logger.dbg("wallabag: processing article ID: ", article.id)
+            log_dbg("downloading", article.id)
             remote_article_ids[ tostring(article.id) ] = true
 
             local res = self:download(article)
 
             if res == downloaded then
+                log_dbg(article.id, "downloaded")
                 download_count = download_count + 1
                 info = InfoMessage:new{
                     text = T(
@@ -932,15 +954,17 @@ function Wallabag:downloadArticles()
                 UIManager:show(info)
                 UIManager:forceRePaint()
             elseif res == failed then
+                log_err(article.id, "failed")
                 fail_count = fail_count + 1
+            else -- res == skipped
+                log_dbg(article.id, "skipped")
             end
         end
 
         -- Synchronize remote deletions to local
+        log_dbg("self.sync_remote_archive =", self.sync_remote_archive)
         if self.sync_remote_archive then
             del_count_local = del_count_local + self:processRemoteDeletes(remote_article_ids)
-        else
-            logger.dbg("wallabag: Processing of remote file deletions disabled.")
         end
 
         local msg = "Processing finished.\n\n"
@@ -1008,7 +1032,8 @@ end -- Wallabag:uploadQueue
 -- @tparam remote_article_ids tab Article IDs of articles downloaded this sync run
 -- @treturn int Number of locally deleted or archived articles
 function Wallabag:processRemoteDeletes(remote_article_ids)
-    logger.dbg("wallabag: articles IDs from server: ", remote_article_ids)
+    local log_dbg = function(...) return log_dbg("processRemoteDeletes:", ...) end
+    log_dbg("remote_article_ids =", remote_article_ids)
 
     local info = InfoMessage:new{ text = _("Synchronizing remote deletions…") }
     UIManager:show(info)
@@ -1022,10 +1047,10 @@ function Wallabag:processRemoteDeletes(remote_article_ids)
 
             if not remote_article_ids[ id ] then
                 if self.use_local_archive then
-                    logger.dbg("wallabag: Archiving local file (archived or deleted on server): ", entry_path)
+                    log_dbg("archiving", entry_path)
                     count = count + self:archiveLocalArticle(entry_path)
                 else
-                    logger.dbg("wallabag: Deleting local file (archived or deleted on server): ", entry_path)
+                    log_dbg("deleting", entry_path)
                     count = count + self:deleteLocalArticle(entry_path)
                 end -- if self.use_local_archive
             end -- if not remote_article_ids[ id ]
@@ -1039,19 +1064,22 @@ end -- Wallabag:processRemoteDeletes
 --- Archive (or delete) locally finished articles on the wallabag server.
 -- @tparam[opt] quiet bool Whether to supress the info message or not
 function Wallabag:uploadStatuses(quiet)
-    quiet = quiet or true
+    local log_dbg = function(...) return log_dbg("uploadStatuses:", ...) end
 
-    -- Update bearer token if needed
-    if self:getBearerToken() == false then
-        return 0, 0
-    end
+    quiet = quiet or true
 
     local count_remote = 0
     local count_local = 0
 
+    -- Update bearer token if needed
+    if self:getBearerToken() == false then
+        return count_remote, count_local
+    end
+
     if self.archive_finished or self.archive_read or self.archive_abandoned then
         local info = InfoMessage:new{ text = _("Processing local article statuses…") }
         UIManager:show(info)
+        UIManager:forceRePaint()
 
         for entry in lfs.dir(self.directory) do
             if entry ~= "." and entry ~= ".." then
@@ -1072,10 +1100,10 @@ function Wallabag:uploadStatuses(quiet)
                         self:archiveArticle(entry_path)
                         count_remote = count_remote + 1
                         if self.use_local_archive then
-                            logger.dbg("wallabag: Archiving local file: ", entry_path)
+                            log_dbg("archiving", entry_path)
                             count_local = count_local + self:archiveLocalArticle(entry_path)
                         else
-                            logger.dbg("wallabag: Deleting local file: ", entry_path)
+                            log_dbg("deleting", entry_path)
                             count_local = count_local + self:deleteLocalArticle(entry_path)
                         end -- if use local archive
                     end -- if finished
@@ -1111,7 +1139,8 @@ end -- Wallabag:uploadStatuses
 -- @tparam article_url string Full URL of the article
 -- @treturn bool Whether the API call could be made successfully
 function Wallabag:addArticle(article_url)
-    logger.dbg("wallabag: adding article ", article_url)
+    local log_dbg = function(...) return log_dbg("addArticle:", ...) end
+    log_dbg("adding", article_url)
 
     -- Update bearer token if needed
     if not article_url or self:getBearerToken() == false then
@@ -1139,7 +1168,9 @@ end -- Wallabag:addArticle
 -- @tparam path string Local path of the article
 -- @treturn nil
 function Wallabag:addTagsFromReview(path)
-    logger.dbg("wallabag: managing tags for article ", path)
+    local log_dbg = function(...) return log_dbg("addTagsFromReview:", ...) end
+    log_dbg("managing tags for", path)
+
     local id = self:getArticleID(path)
 
     if id then
@@ -1148,7 +1179,7 @@ function Wallabag:addTagsFromReview(path)
         local tags = summary and summary.note
 
         if tags and tags ~= "" then
-            logger.dbg("wallabag: sending tags ", tags, " for ", path)
+            log_dbg("sending tags", tags, "for", path)
 
             local body = {
                 tags = tags,
@@ -1165,7 +1196,7 @@ function Wallabag:addTagsFromReview(path)
 
             self:callAPI("POST", "/api/entries/" .. id .. "/tags.json", headers, bodyJSON)
         else
-            logger.dbg("wallabag: no tags to send for ", path)
+            log_dbg("no tags to send for", path)
         end
     end
 end -- Wallabag:addTagsFromReview
@@ -1174,18 +1205,18 @@ end -- Wallabag:addTagsFromReview
 -- @tparam path string Local path of the article
 -- @treturn nil
 function Wallabag:archiveArticle(path)
-    logger.dbg("wallabag: removing article on remote", path)
+    local log_dbg = function(...) return log_dbg("archiveArticle:", ...) end
+    log_dbg("getting wallabag ID from", path)
+
     local id = self:getArticleID(path)
 
     if id then
         if self.delete_instead then
+            log_dbg("deleting", path, "on remote")
             self:callAPI("DELETE", "/api/entries/" .. id .. ".json")
         else
-            local body = {
-                archive = 1
-            }
+            local body = { archive = 1 }
             local bodyJSON = JSON.encode(body)
-
             local headers = {
                 ["Content-type"] = "application/json",
                 ["Accept"] = "application/json, */*",
@@ -1193,6 +1224,7 @@ function Wallabag:archiveArticle(path)
                 ["Authorization"] = "Bearer " .. self.access_token,
             }
 
+            log_dbg("archiving", path, "on remote")
             self:callAPI("PATCH", "/api/entries/" .. id .. ".json", headers, bodyJSON)
         end -- if delete_instead
     end -- if id
@@ -1250,22 +1282,26 @@ end -- Wallabag:deleteLocalArticle
 -- @tparam path string Local path of the article
 -- @return ID as string if successful, nil if not
 function Wallabag:getArticleID(path)
+    local log_dbg = function(...) return log_dbg("getArticleID:", ...) end
+    local log_warn = function(...) return log_warn("getArticleID:", ...) end
+
     local offset = self.directory:len() + 2 -- skip / and advance to the next char
     local prefix_len = article_id_prefix:len()
 
     if path:sub(offset , offset + prefix_len - 1) ~= article_id_prefix then
-        logger.warn("wallabag: getArticleID: no match! ", path:sub(offset , offset + prefix_len - 1))
+        log_warn(path, "does not start with", article_id_prefix)
         return
     end
 
     local endpos = path:find(article_id_postfix, offset + prefix_len)
 
     if endpos == nil then
-        logger.warn("wallabag: getArticleID: no match! ")
+        log_warn(path, "does not end with", article_id_postfix)
         return
     end
 
     local id = path:sub(offset + prefix_len, endpos - 1)
+    log_dbg("got id", id, "from", path)
 
     return id
 end -- Wallabag:getArticleID
@@ -1417,11 +1453,13 @@ end -- Wallabag:setArticlesPerSync
 --- The dialog shown when clicking "Download directory".
 -- Or automatically, when getBearerToken is run with an incomplete server configuration.
 function Wallabag:setDownloadDirectory(touchmenu_instance)
+    local log_dbg = function(...) return log_dbg("setDownloadDirectory:", ...) end
+
     require("ui/downloadmgr"):new{
         onConfirm = function(path)
-            logger.dbg("wallabag: set download directory to: ", path)
             self.directory = path
             self:saveSettings()
+            log_dbg("set download directory to", path)
             if touchmenu_instance then
                 touchmenu_instance:updateItems()
             end
@@ -1431,11 +1469,13 @@ end -- Wallabag:setDownloadDirectory
 
 --- The dialog shown when clicking "Archive directory"
 function Wallabag:setArchiveDirectory(touchmenu_instance)
+    local log_dbg = function(...) return log_dbg("setArchiveDirectory:", ...) end
+
     require("ui/downloadmgr"):new{
         onConfirm = function(path)
-            logger.dbg("wallabag: set archive directory to: ", path)
             self.archive_directory = path
             self:saveSettings()
+            log_dbg("set archive directory to", path)
             if touchmenu_instance then
                 touchmenu_instance:updateItems()
             end
