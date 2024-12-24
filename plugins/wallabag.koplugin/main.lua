@@ -3,7 +3,6 @@ This plugin downloads a set number of the newest arcticles in your wallabag "Unr
 or in their original formats. It can archive or delete articles from wallabag when you finish them
 in KOReader. And it will delete or archive them locally when you finish them elsewhere.
 
-TODO Why does my wallabag directory contain more than articles_per_sync articles?
 TODO Translate the new menu labels? See https://github.com/koreader/koreader-translations
 TODO Make sure all menu labels and message texts are wrapped in _() for translation
 
@@ -1087,8 +1086,9 @@ function Wallabag:processRemoteDeletes(remote_ids)
     local count = 0
 
     for entry in lfs.dir(self.directory) do
-        if entry ~= "." and entry ~= ".." and lfs.attributes(entry, "mode") == "file" then
-            local entry_path = self.directory .. entry
+        local entry_path = self.directory .. entry
+
+        if entry ~= "." and entry ~= ".." and lfs.attributes(entry_path, "mode") == "file" then
             local local_id = self:getArticleID(entry_path)
 
             if not remote_ids[ local_id ] then
@@ -1099,6 +1099,8 @@ function Wallabag:processRemoteDeletes(remote_ids)
                     log_dbg("deleting", local_id, "at", entry_path)
                     count = count + self:deleteLocalArticle(entry_path)
                 end -- if self.use_local_archive
+            else
+                log_dbg("local_id", local_id, "found in remote_ids; not archiving/deleting")
             end -- if not remote_article_ids[ id ]
         end -- if entry ~= . and entry ~= ..
     end -- for entry
