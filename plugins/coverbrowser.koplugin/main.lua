@@ -832,6 +832,10 @@ function CoverBrowser:getBookInfo(file)
     return BookInfoManager:getBookInfo(file)
 end
 
+function CoverBrowser.getDocProps(file)
+    return BookInfoManager:getDocProps(file)
+end
+
 function CoverBrowser:onInvalidateMetadataCache(file)
     BookInfoManager:deleteBookInfo(file)
     return true
