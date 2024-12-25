@@ -10,6 +10,7 @@ describe("Readerfooter module", function()
 
     setup(function()
         require("commonrequire")
+        disable_plugins()
         local Device = require("device")
         -- Override powerd for running tests on devices with batteries.
         Device.powerd.isChargingHW = function() return false end
