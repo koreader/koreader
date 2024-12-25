@@ -14,14 +14,14 @@ describe("FileManager module", function()
         util = require("ffi/util")
     end)
     it("should show file manager", function()
-        UIManager:quit()
         local filemanager = FileManager:new{
             dimen = Screen:getSize(),
             root_path = "spec/front/unit/data",
         }
         UIManager:show(filemanager)
-        UIManager:scheduleIn(1, function() filemanager:onClose() end)
-        UIManager:run()
+        fastforward_ui_events()
+        filemanager:onClose()
+        UIManager:quit()
     end)
     it("should show error on non-existent file", function()
         local filemanager = FileManager:new{
