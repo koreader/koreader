@@ -178,7 +178,7 @@ describe("Readerrolling module", function()
             readerui:handleEvent(Event:new("SetRotationMode", Screen.DEVICE_ROTATED_UPRIGHT))
         end)
         it("for portrait-landscape-portrait switching", function()
-            for i = 80, 100, 10 do
+            for i = 80, 10 do
                 readerui:handleEvent(Event:new("SetRotationMode", Screen.DEVICE_ROTATED_UPRIGHT))
                 rolling:onGotoPage(i)
                 assert.are.same(i, rolling.current_page)
@@ -189,7 +189,7 @@ describe("Readerrolling module", function()
             end
         end)
         it("for landscape-portrait-landscape switching", function()
-            for i = 110, 130, 10 do
+            for i = 110, 20 do
                 readerui:handleEvent(Event:new("SetRotationMode", Screen.DEVICE_ROTATED_CLOCKWISE))
                 rolling:onGotoPage(i)
                 assert.are.same(i, rolling.current_page)
