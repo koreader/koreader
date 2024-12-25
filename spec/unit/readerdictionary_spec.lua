@@ -1,20 +1,15 @@
 describe("Readerdictionary module", function()
-    local DataStorage, DocumentRegistry, ReaderUI, UIManager, Screen
+    local DocumentRegistry, ReaderUI, UIManager, Screen
 
     setup(function()
         require("commonrequire")
         disable_plugins()
         load_plugin("japanese.koplugin")
-        DataStorage = require("datastorage")
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")
         UIManager = require("ui/uimanager")
         Screen = require("device").screen
     end)
-
-    local function screenshot(filename)
-        Screen:shot(DataStorage:getDataDir() .. "/screenshots/" .. filename)
-    end
 
     local readerui, rolling, dictionary
     setup(function()
@@ -42,7 +37,7 @@ describe("Readerdictionary module", function()
             ReaderUI.instance = readerui
         end)
         UIManager:run()
-        screenshot("screenshots/reader_dictionary.png")
+        screenshot(Screen, "reader_dictionary.png")
     end)
     it("should attempt to deinflect (Japanese) word on lookup", function()
         UIManager:quit()
@@ -72,6 +67,6 @@ describe("Readerdictionary module", function()
             ReaderUI.instance = readerui
         end)
         UIManager:run()
-        screenshot("screenshots/reader_dictionary_japanese.png")
+        screenshot(Screen, "reader_dictionary_japanese.png")
     end)
 end)

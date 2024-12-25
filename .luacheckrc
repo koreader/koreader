@@ -30,6 +30,8 @@ files["spec/unit/*"].globals = {
     "package",
     "disable_plugins",
     "load_plugin",
+    "fastforward_ui_events",
+    "screenshot",
 }
 
 -- TODO: clean up and enforce max line width (631)

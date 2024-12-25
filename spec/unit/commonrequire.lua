@@ -75,3 +75,17 @@ function load_plugin(name)
     end
     assert(false)
 end
+
+function fastforward_ui_events()
+    local UIManager = require("ui/uimanager")
+    -- Fast forward all scheduled tasks.
+    UIManager:shiftScheduledTasksBy(-1e9)
+    -- Fix hang when running tests with our docker base image SDL.
+    UIManager:setInputTimeout(0)
+    -- And run the UI manager's input loop once.
+    UIManager:handleInput()
+end
+
+function screenshot(screen, filename)
+    screen:shot(DataStorage:getDataDir() .. "/screenshots/" .. filename)
+end
