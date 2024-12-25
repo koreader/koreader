@@ -3,6 +3,8 @@ describe("Readerdictionary module", function()
 
     setup(function()
         require("commonrequire")
+        disable_plugins()
+        load_plugin("japanese.koplugin")
         DataStorage = require("datastorage")
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")

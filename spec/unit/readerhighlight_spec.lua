@@ -4,6 +4,7 @@ describe("Readerhighlight module", function()
 
     setup(function()
         require("commonrequire")
+        disable_plugins()
         require("document/canvascontext"):init(require("device"))
         DataStorage = require("datastorage")
         DocumentRegistry = require("document/documentregistry")
@@ -12,6 +13,7 @@ describe("Readerhighlight module", function()
         ReaderUI = require("apps/reader/readerui")
         Screen = require("device").screen
         UIManager = require("ui/uimanager")
+        load_plugin('japanese.koplugin')
         sample_pdf = DataStorage:getDataDir() .. "/readerhighlight.pdf"
         require("ffi/util").copyFile("spec/front/unit/data/sample.pdf", sample_pdf)
     end)

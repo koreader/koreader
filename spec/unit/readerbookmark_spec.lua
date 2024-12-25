@@ -4,6 +4,7 @@ describe("ReaderBookmark module", function()
 
     setup(function()
         require("commonrequire")
+        disable_plugins()
         DataStorage = require("datastorage")
         DocSettings = require("docsettings")
         DocumentRegistry = require("document/documentregistry")

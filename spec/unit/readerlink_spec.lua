@@ -3,6 +3,7 @@ describe("ReaderLink module", function()
 
     setup(function()
         require("commonrequire")
+        disable_plugins()
         require("document/canvascontext"):init(require("device"))
         DocumentRegistry = require("document/documentregistry")
         Event = require("ui/event")

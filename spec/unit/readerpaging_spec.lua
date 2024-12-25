@@ -5,6 +5,7 @@ describe("Readerpaging module", function()
 
     setup(function()
         require("commonrequire")
+        disable_plugins()
         UIManager = require("ui/uimanager")
         stub(UIManager, "getNthTopWidget")
         UIManager.getNthTopWidget.returns({})

@@ -56,3 +56,22 @@ package.reload = function(name)
     assert(package.unload(name))
     return require(name)
 end
+
+function disable_plugins()
+    local PluginLoader = require("pluginloader")
+    PluginLoader.enabled_plugins = {}
+    PluginLoader.disabled_plugins = {}
+    PluginLoader.loaded_plugins = {}
+end
+
+function load_plugin(name)
+    local PluginLoader = require("pluginloader")
+    local t = PluginLoader:_discover()
+    for _, v in ipairs(t) do
+        if v.name == name then
+            PluginLoader:_load{v}
+            return
+        end
+    end
+    assert(false)
+end
