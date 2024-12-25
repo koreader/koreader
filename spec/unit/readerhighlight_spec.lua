@@ -4,7 +4,6 @@ describe("Readerhighlight module", function()
 
     setup(function()
         require("commonrequire")
-        package.unloadAll()
         require("document/canvascontext"):init(require("device"))
         DataStorage = require("datastorage")
         DocumentRegistry = require("document/documentregistry")
