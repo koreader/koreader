@@ -21,6 +21,10 @@ describe("Readerrolling module", function()
         rolling = readerui.rolling
     end)
 
+    teardown(function()
+        readerui:onClose()
+    end)
+
     describe("test in portrait screen mode", function()
         it("should goto portrait screen mode", function()
             readerui:handleEvent(Event:new("SetRotationMode", Screen.DEVICE_ROTATED_UPRIGHT))
@@ -63,9 +67,11 @@ describe("Readerrolling module", function()
 
         it("should emit EndOfBook event at the end of sample epub", function()
             local called = false
+            local saved_handler = readerui.onEndOfBook
             readerui.onEndOfBook = function()
                 called = true
             end
+            finally(function() readerui.onEndOfBook = saved_handler end)
             -- check beginning of the book
             rolling:onGotoPage(1)
             assert.is.falsy(called)
@@ -79,42 +85,43 @@ describe("Readerrolling module", function()
             assert.is.truthy(called)
             rolling:onGotoViewRel(1)
             assert.is.truthy(called)
-            readerui.onEndOfBook = nil
         end)
 
         it("should emit EndOfBook event at the end sample txt", function()
             local sample_txt = "spec/front/unit/data/sample.txt"
-            -- Unsafe second // ReaderUI instance!
-            local txt_readerui = ReaderUI:new{
+            local old_instance = readerui
+            finally(function()
+                ReaderUI.instance = old_instance
+                readerui = old_instance
+                rolling = readerui.rolling
+            end)
+            ReaderUI.instance = nil
+            readerui = ReaderUI:new{
                 dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_txt),
             }
+            rolling = readerui.rolling
             local called = false
-            txt_readerui.onEndOfBook = function()
+            readerui.onEndOfBook = function()
                 called = true
             end
-            local txt_rolling = txt_readerui.rolling
             -- check beginning of the book
-            txt_rolling:onGotoPage(1)
+            rolling:onGotoPage(1)
             assert.is.falsy(called)
-            txt_rolling:onGotoViewRel(-1)
-            txt_rolling:onGotoViewRel(-1)
+            rolling:onGotoViewRel(-1)
+            rolling:onGotoViewRel(-1)
             assert.is.falsy(called)
             -- not at the end of the book
-            txt_rolling:onGotoPage(3)
+            rolling:onGotoPage(3)
             assert.is.falsy(called)
-            txt_rolling:onGotoViewRel(1)
+            rolling:onGotoViewRel(1)
             assert.is.falsy(called)
             -- at the end of the book
-            txt_rolling:onGotoPage(txt_readerui.document:getPageCount())
+            rolling:onGotoPage(readerui.document:getPageCount())
             assert.is.falsy(called)
-            txt_rolling:onGotoViewRel(1)
+            rolling:onGotoViewRel(1)
             assert.is.truthy(called)
-            readerui.onEndOfBook = nil
-            txt_readerui:closeDocument()
-            txt_readerui:onClose()
-            -- Restore the ref to the original ReaderUI instance
-            ReaderUI.instance = readerui
+            readerui:onClose()
         end)
     end)
 
@@ -214,14 +221,11 @@ describe("Readerrolling module", function()
             end
             local test_book = "spec/front/unit/data/sample.txt"
             require("docsettings"):open(test_book):purge()
-            readerui:closeDocument()
             readerui:onClose()
-            local tmp_readerui = ReaderUI:new{
+            readerui = ReaderUI:new{
                 document = DocumentRegistry:openDocument(test_book),
             }
             ReaderView.onPageUpdate = saved_handler
-            tmp_readerui:closeDocument()
-            tmp_readerui:onClose()
         end)
     end)
 end)
