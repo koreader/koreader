@@ -14,7 +14,7 @@ describe("Readerview module", function()
     end)
 
     it("should stop hinting on document close event", function()
-        local sample_epub = "spec/front/unit/data/leaves.epub"
+        local sample_epub = "spec/front/unit/data/juliet.epub"
         local readerui = ReaderUI:new{
             dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_epub),
