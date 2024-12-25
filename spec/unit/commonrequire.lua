@@ -56,30 +56,3 @@ package.reload = function(name)
     assert(package.unload(name))
     return require(name)
 end
-
-package.unloadAll = function()
-    local candidates = {
-        "spec/",
-        "frontend/",
-        "plugins/",
-        "datastorage.lua",
-        "defaults.lua",
-    }
-    local pending = {}
-    for name, _ in pairs(package.loaded) do
-        local path = package.searchpath(name, package.path)
-        if path ~= nil then
-            for _, candidate in ipairs(candidates) do
-                if path:find(candidate) == 1 then
-                    table.insert(pending, name)
-                end
-            end
-        end
-    end
-    for _, name in ipairs(pending) do
-        if name ~= "commonrequire" then
-            assert(package.unload(name))
-        end
-    end
-    return #pending
-end
