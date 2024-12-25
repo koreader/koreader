@@ -1209,7 +1209,6 @@ function KoptInterface:getSelectedWordContext(word, nb_words, pos)
             end
         end
     end
-    if boxes[i][j].word ~= word then return end
     local prev_text = get_prev_text(boxes, i, j, nb_words)
     local next_text = get_next_text(boxes, i_end, j_end, nb_words)
     return prev_text, next_text
