@@ -67,10 +67,6 @@ local settingsList = {
     notebook_file = {category="none", event="ShowNotebookFile", title=_("Notebook file"), general=true},
     screenshot = {category="none", event="Screenshot", title=_("Screenshot"), general=true, separator=true},
     ----
-    folder_shortcuts = {category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), general=true},
-    file_search = {category="none", event="ShowFileSearch", title=_("File search"), general=true},
-    file_search_results = {category="none", event="ShowSearchResults", title=_("Last file search results"), general=true},
-    ----
 
     -- Device
     exit_screensaver = {category="none", event="ExitScreensaver", title=_("Exit sleep screen"), device=true, condition=Device:isTouchDevice()},
@@ -139,6 +135,9 @@ local settingsList = {
     show_plus_menu = {category="none", event="ShowPlusMenu", title=_("Show plus menu"), filemanager=true},
     toggle_select_mode = {category="none", event="ToggleSelectMode", title=_("Toggle select mode"), filemanager=true},
     refresh_content = {category="none", event="RefreshContent", title=_("Refresh content"), filemanager=true},
+    folder_shortcuts = {category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true, reader=true},
+    file_search = {category="none", event="ShowFileSearch", title=_("File search"), filemanager=true, reader=true},
+    file_search_results = {category="none", event="ShowSearchResults", title=_("Last file search results"), filemanager=true, reader=true},
     ----
     folder_up = {category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
     -- go_to
@@ -301,10 +300,6 @@ local dispatcher_menu_order = {
     "notebook_file",
     "screenshot",
     ----
-    "folder_shortcuts",
-    "file_search",
-    "file_search_results",
-    ----
 
     -- Device
     "exit_screensaver",
@@ -374,6 +369,9 @@ local dispatcher_menu_order = {
     "show_plus_menu",
     "toggle_select_mode",
     "refresh_content",
+    "folder_shortcuts",
+    "file_search",
+    "file_search_results",
     ----
     "folder_up",
     -- "go_to"
@@ -980,6 +978,15 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
                     end
                 end
             end,
+            enabled_func = function()
+                local ui = require("apps/reader/readerui").instance
+                local context = ui and (ui.paging and "ReaderPaging" or "ReaderRolling") or "FileManager"
+                if context == "FileManager" then
+                    return section[1] ~= "reader" and section[1] ~= "rolling" and section[1] ~= "paging"
+                else
+                    return section[1] ~= "filemanager"
+                end
+            end,
             hold_callback = function(touchmenu_instance)
                 if location[settings] ~= nil then
                     for k, _ in pairs(location[settings]) do
@@ -993,15 +1000,6 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
                 end
             end,
             sub_item_table = submenu,
-            enabled_func = function()
-                local ui = require("apps/reader/readerui").instance
-                local context = ui and (ui.paging and "ReaderPaging" or "ReaderRolling") or "FileManager"
-                if context == "FileManager" then
-                    return section[1] ~= "reader" and section[1] ~= "rolling" and section[1] ~= "paging"
-                else
-                    return section[1] ~= "filemanager"
-                end
-            end,
         })
     end
     menu.max_per_page = #menu -- next items in page 2
