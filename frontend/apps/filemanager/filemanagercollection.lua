@@ -708,8 +708,7 @@ function FileManagerCollection:searchCollections()
         if util.stringSearch(file:gsub(".*/", ""), self.search_str, self.case_sensitive) ~= 0 then
             return true
         end
-        local book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file) or
-                           self.ui.bookinfo.getDocProps(file, nil, true) -- do not open the document
+        local book_props = self.ui.bookinfo:getDocProps(file, nil, true) -- do not open the document
         if next(book_props) ~= nil and self.ui.bookinfo:findInProps(book_props, self.search_str, self.case_sensitive) then
             return true
         end

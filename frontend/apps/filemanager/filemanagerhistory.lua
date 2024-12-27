@@ -96,13 +96,7 @@ function FileManagerHistory:isItemMatch(item)
     if self.search_string then
         local filename = self.case_sensitive and item.text or Utf8Proc.lowercase(util.fixUtf8(item.text, "?"))
         if not filename:find(self.search_string) then
-            local book_props
-            if self.ui.coverbrowser then
-                book_props = self.ui.coverbrowser:getBookInfo(item.file)
-            end
-            if not book_props then
-                book_props = self.ui.bookinfo.getDocProps(item.file, nil, true) -- do not open the document
-            end
+            local book_props = self.ui.bookinfo:getDocProps(item.file, nil, true) -- do not open the document
             if not self.ui.bookinfo:findInProps(book_props, self.search_string, self.case_sensitive) then
                 return false
             end

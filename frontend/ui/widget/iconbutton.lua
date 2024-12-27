@@ -136,6 +136,8 @@ function IconButton:onTapIconButton()
         --
         self.callback()
 
+        -- Enqueue the actual refresh request for the unhighlight post-callback, otherwise, it's lost.
+        UIManager:setDirty(nil, "fast", self.dimen)
         UIManager:forceRePaint()
     end
     return true
