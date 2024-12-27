@@ -91,7 +91,7 @@ local MenuItem = InputContainer:extend{
     infont = "infont",
     linesize = Size.line.medium,
     single_line = false,
-    single_line_disabled = false, -- set to true to always use TextBoxWidget
+    multilines_forced = false, -- set to true to always use TextBoxWidget
     multilines_show_more_text = false,
     -- Align text & mandatory baselines (only when single_line=true)
     align_baselines = false,
@@ -140,7 +140,7 @@ function MenuItem:init()
     if self.infont_size > max_font_size then
         self.infont_size = max_font_size
     end
-    if not self.single_line and not self.single_line_disabled
+    if not self.single_line and not self.multilines_forced
             and not self.multilines_show_more_text and not self.items_max_lines then
         -- For non single line menus (File browser, Bookmarks), if the
         -- user provided font size is large and would not allow showing
@@ -1108,7 +1108,7 @@ function Menu:updateItems(select_number, no_recalculate_dimen)
             menu = self,
             linesize = self.linesize,
             single_line = self.single_line,
-            single_line_disabled = self.single_line_disabled,
+            multilines_forced = self.multilines_forced,
             multilines_show_more_text = multilines_show_more_text,
             items_max_lines = self.items_max_lines,
             truncate_left = self.truncate_left,
