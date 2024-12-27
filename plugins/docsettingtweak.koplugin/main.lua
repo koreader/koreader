@@ -91,7 +91,7 @@ end
 
 function DocSettingTweak:onDocSettingsLoad(doc_settings, document)
     -- check that the document has not been opened yet & and that we have defaults to customize
-    if doc_settings.data.doc_props == nil and directory_defaults.data ~= nil then
+    if document.is_new and directory_defaults.data ~= nil then
         local base = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
         local directory = FFIUtil.dirname(document.file)
         -- check if folder matches our defaults to override

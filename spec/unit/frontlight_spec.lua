@@ -3,7 +3,7 @@ describe("Frontlight function in PowerD", function()
     local param, test_when_on, test_when_off
     setup(function()
         require("commonrequire")
-        package.unloadAll()
+        disable_plugins()
         require("document/canvascontext"):init(require("device"))
 
         PowerD = require("device/generic/powerd"):new{
@@ -28,7 +28,6 @@ describe("Frontlight function in PowerD", function()
     end)
 
     teardown(function()
-        package.unloadAll()
         require("document/canvascontext"):init(require("device"))
     end)
 

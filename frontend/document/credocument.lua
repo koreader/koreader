@@ -67,7 +67,7 @@ local CreDocument = Document:extend{
         "Noto Sans",
     },
 
-    default_css = "./data/cr3.css",
+    default_css = nil,
     provider = "crengine",
     provider_name = "Cool Reader Engine",
 
@@ -76,20 +76,6 @@ local CreDocument = Document:extend{
     page_in_flow = nil, -- table
     last_linear_page = nil,
 }
-
--- NuPogodi, 20.05.12: inspect the zipfile content
-function CreDocument:zipContentExt(fname)
-    local std_out = io.popen("unzip ".."-qql \""..fname.."\"")
-    if std_out then
-        local size, ext
-        for line in std_out:lines() do
-            size, ext = string.match(line, "%s+(%d+)%s+.+%.([^.]+)")
-            if size and ext then break end
-        end
-        std_out:close()
-        if ext then return string.lower(ext) end
-    end
-end
 
 function CreDocument:cacheInit()
     -- remove legacy cr3cache directory
@@ -170,13 +156,6 @@ function CreDocument:init()
     self.flows = {}
     self.page_in_flow = {}
 
-    local file_type = string.lower(string.match(self.file, ".+%.([^.]+)") or "")
-    if file_type == "zip" then
-        -- NuPogodi, 20.05.12: read the content of zip-file
-        -- and return extension of the 1st file
-        file_type = self:zipContentExt(self.file) or "unknown"
-    end
-
     -- June 2018: epub.css has been cleaned to be more conforming to HTML specs
     -- and to not include class name based styles (with conditional compatibility
     -- styles for previously opened documents). It should be usable on all
@@ -184,11 +163,7 @@ function CreDocument:init()
     -- The other css files (htm.css, rtf.css...) have not been updated in the
     -- same way, and are kept as-is for when a previously opened document
     -- requests one of them.
-    self.default_css = "./data/epub.css"
-    if file_type == "fb2" or file_type == "fb3" then
-        self.default_css = "./data/fb2.css"
-        self.is_fb2 = true -- FB2 won't look good with any html-oriented stylesheet
-    end
+    self.default_css = self.is_fb2 and "./data/fb2.css" or "./data/epub.css"
 
     -- This mode must be the same as the default one set as ReaderView.view_mode
     self._view_mode = G_defaults:readSetting("DCREREADER_VIEW_MODE") == "scroll" and self.SCROLL_VIEW_MODE or self.PAGE_VIEW_MODE

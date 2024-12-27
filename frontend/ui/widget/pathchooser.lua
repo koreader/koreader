@@ -3,12 +3,12 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
 local FileChooser = require("ui/widget/filechooser")
 local UIManager = require("ui/uimanager")
-local ffiutil = require("ffi/util")
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
-local T = ffiutil.template
+local T = ffiUtil.template
 
 local PathChooser = FileChooser:extend{
     title = true, -- or a string
@@ -16,6 +16,7 @@ local PathChooser = FileChooser:extend{
     no_title = false,
     is_popout = false,
     covers_fullscreen = true, -- set it to false if you set is_popout = true
+    title_bar_fm_style = true,
     is_borderless = true,
     select_directory = true, -- allow selecting directories
     select_file = true,      -- allow selecting files
@@ -63,7 +64,7 @@ function PathChooser:onMenuSelect(item)
         -- Don't navigate to same directory
         return true
     end
-    path = ffiutil.realpath(path)
+    path = ffiUtil.realpath(path)
     if not path then
         -- If starting in a no-more existing directory, allow
         -- not getting stuck in it
@@ -97,7 +98,7 @@ function PathChooser:onMenuHold(item)
     if path:sub(-2, -1) == "/." then -- with show_current_dir_for_hold
         path = path:sub(1, -3)
     end
-    path = ffiutil.realpath(path)
+    path = ffiUtil.realpath(path)
     if not path then
         return true
     end

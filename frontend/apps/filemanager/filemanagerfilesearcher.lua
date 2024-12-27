@@ -215,12 +215,9 @@ function FileSearcher:isFileMatch(filename, fullpath, search_string, is_file)
         return true
     end
     if self.include_metadata and is_file and DocumentRegistry:hasProvider(fullpath) then
-        local book_props = self.ui.coverbrowser:getBookInfo(fullpath) or
-                           self.ui.bookinfo.getDocProps(fullpath, nil, true) -- do not open the document
+        local book_props = self.ui.bookinfo:getDocProps(fullpath, nil, true) -- do not open the document
         if next(book_props) ~= nil then
-            if self.ui.bookinfo:findInProps(book_props, search_string, self.case_sensitive) then
-                return true
-            end
+            return self.ui.bookinfo:findInProps(book_props, search_string, self.case_sensitive)
         else
             self.no_metadata_count = self.no_metadata_count + 1
         end
@@ -330,7 +327,7 @@ function FileSearcher:showFileDialog(item)
         local doc_settings_or_file = is_currently_opened and self.ui.doc_settings
             or (has_sidecar and DocSettings:open(file) or file)
         if has_provider or has_sidecar then
-            bookinfo = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
+            bookinfo = self.ui.bookinfo:getDocProps(file, nil, true)
             table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_callback))
             table.insert(buttons, {}) -- separator
             table.insert(buttons, {

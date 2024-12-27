@@ -4,6 +4,8 @@ describe("Exporter plugin module", function()
     local DocumentRegistry, Screen
     setup(function()
         require("commonrequire")
+        disable_plugins()
+        load_plugin("exporter.koplugin")
         local ReaderUI = require("apps/reader/readerui")
         DocumentRegistry = require("document/documentregistry")
         Screen = require("device").screen

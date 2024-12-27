@@ -88,6 +88,20 @@ function ReaderTypeset:onReadSettings(config)
     self.ui.document:setNightmodeImages(self.configurable.nightmode_images == 1)
 end
 
+function ReaderTypeset:onReaderReady()
+    -- Initial detection of fb2 may be wrong
+    local doc_format = self.ui.document:getDocumentFormat()
+    local is_fb2 = doc_format:sub(1, 11) == "FictionBook"
+    if self.ui.document.is_fb2 ~= is_fb2 then
+        self.ui.document.is_fb2 = is_fb2
+        self.ui.document.default_css = is_fb2 and "./data/fb2.css" or "./data/epub.css"
+        if self.ui.document.is_new then
+            local css = G_reader_settings:readSetting(is_fb2 and "copt_fb2_css" or "copt_css")
+            self:setStyleSheet(css or self.ui.document.default_css)
+        end
+    end
+end
+
 function ReaderTypeset:onSaveSettings()
     self.ui.doc_settings:saveSetting("css", self.css)
 end

@@ -31,6 +31,7 @@ local Dispatcher = require("dispatcher")
 local InfoMessage = require("ui/widget/infomessage")
 local MyClipping = require("clip")
 local NetworkMgr = require("ui/network/manager")
+local Provider = require("provider")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -99,27 +100,43 @@ local function updateMyClippings(clippings, new_clippings)
     return clippings
 end
 
+local targets = {
+    html = require("target/html"),
+    joplin = require("target/joplin"),
+    json = require("target/json"),
+    markdown = require("target/markdown"),
+    my_clippings = require("target/my_clippings"),
+    nextcloud = require("target/nextcloud"),
+    readwise = require("target/readwise"),
+    text = require("target/text"),
+    xmnote = require("target/xmnote"),
+}
+
+local function genExportersTable(path)
+    local t = {}
+    for k, v in pairs(targets) do
+        t[k] = v
+    end
+    if Provider:size("exporter") > 0 then
+        local tbl = Provider:getProvidersTable("exporter")
+        for k, v in pairs(tbl) do
+            t[k] = v
+        end
+    end
+    for _, v in pairs(t) do
+        v.path = path
+    end
+    return t
+end
+
 local Exporter = WidgetContainer:extend{
     name = "exporter",
-    targets = {
-        html = require("target/html"),
-        joplin = require("target/joplin"),
-        json = require("target/json"),
-        markdown = require("target/markdown"),
-        my_clippings = require("target/my_clippings"),
-        nextcloud = require("target/nextcloud"),
-        readwise = require("target/readwise"),
-        text = require("target/text"),
-        xmnote = require("target/xmnote"),
-    },
 }
 
 function Exporter:init()
     migrateSettings()
     self.parser = MyClipping:new{}
-    for _, v in pairs(self.targets) do
-        v.path = self.path
-    end
+    self.targets = genExportersTable(self.path)
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
 end
