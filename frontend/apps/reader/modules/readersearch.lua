@@ -661,7 +661,7 @@ function ReaderSearch:onShowFindAllResults(not_cached)
         item_table = self.findall_results,
         items_per_page = self.findall_results_per_page,
         items_max_lines = self.findall_results_max_lines,
-        single_line_disabled = true, -- to always have search_string in bold
+        multilines_forced = true, -- to always have search_string in bold
         covers_fullscreen = true,
         is_borderless = true,
         is_popout = false,
