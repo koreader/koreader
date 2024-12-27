@@ -5,6 +5,7 @@ in KOReader. And it will delete or archive them locally when you finish them els
 
 TODO Translate the new menu labels? See https://github.com/koreader/koreader-translations
 TODO Make sure all menu labels and message texts are wrapped in _() for translation
+TODO An option to parse comma-separated reviews as tags, full text as review. Maybe strip tags?
 
 @module koplugin.wallabag
 ]]
@@ -66,7 +67,7 @@ function Wallabag:init()
     self.token_expiry = 0
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
-    self.wb_settings = self.readSettings()
+    self.wb_settings = self:readSettings()
     self.server_url = self.wb_settings.data.wallabag.server_url
     self.client_id = self.wb_settings.data.wallabag.client_id
     self.client_secret = self.wb_settings.data.wallabag.client_secret
