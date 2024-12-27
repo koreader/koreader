@@ -3,9 +3,9 @@ This plugin downloads a set number of the newest arcticles in your wallabag "Unr
 or in their original formats. It can archive or delete articles from wallabag when you finish them
 in KOReader. And it will delete or archive them locally when you finish them elsewhere.
 
-TODO Translate the new menu labels? See https://github.com/koreader/koreader-translations
-TODO Make sure all menu labels and message texts are wrapped in _() for translation
-TODO An option to parse comma-separated reviews as tags, full text as review. Maybe strip tags?
+--- @todo Translate the new menu labels? See https://github.com/koreader/koreader-translations
+--- @todo Make sure all menu labels and message texts are wrapped in _() for translation
+--- @todo An option to parse comma-separated reviews as tags, full text as review. Maybe strip tags?
 
 @module koplugin.wallabag
 ]]
@@ -166,7 +166,7 @@ function Wallabag:init()
     end
 
     if do_migrate then
-        -- TODO After enough time remove the setting migration parts and simplify defaults
+        --- @todo After enough time remove the setting migration parts and simplify defaults
         self:saveSettings()
     end
 
@@ -750,7 +750,7 @@ function Wallabag:downloadArticle(article)
     if attr then
         -- File already exists, skip it. Preferably only skip if the date of local file is newer than server's.
         -- newsdownloader.koplugin has a date parser but it is available only if the plugin is activated.
-        -- TODO find a better solution
+        --- @todo find a better solution
         if self.is_dateparser_available then
             local server_date = self.dateparser.parse(article.updated_at)
             if server_date < attr.modification then
@@ -797,7 +797,7 @@ function Wallabag:callAPI(method, url, headers, body, filepath, quiet)
     }
 
     -- Is it an API call, or a regular file direct download?
-    -- TODO Separate call to internal API from the download on external server
+    --- @todo Separate call to internal API from the download on external server
     if url:sub(1, 1) == "/" then
         -- API call to our server, has the form "/random/api/call"
         request.url = self.server_url .. url
@@ -1053,7 +1053,7 @@ function Wallabag:uploadQueue(quiet)
         for _, articleUrl in ipairs(self.upload_queue) do
             if self:addArticle(articleUrl) then
                 count = count + 1
-                -- TODO Add error handling
+                --- @todo Add error handling
             end
         end
 
@@ -1342,13 +1342,13 @@ function Wallabag:archiveLocalArticle(path)
     end
 
     if lfs.attributes(path, "mode") == "file" then
-        local old_dir, file = util.splitFilePathName(path)
+        local _, file = util.splitFilePathName(path)
         local new_path = self.archive_directory .. file
         if FileManager:moveFile(path, new_path) then
             result = 1
         end
         DocSettings.updateLocation(path, new_path, false) -- move sdr
-        -- TODO Why is sdr copied instead of moved?
+        --- @todo Why is sdr copied instead of moved?
     end
 
     return result
