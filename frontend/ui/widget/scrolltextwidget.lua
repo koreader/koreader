@@ -68,6 +68,7 @@ function ScrollTextWidget:init()
         auto_para_direction = self.auto_para_direction,
         alignment_strict = self.alignment_strict,
         for_measurement_only = self.for_measurement_only,
+        display_highlight = self.display_highlight,
     }
     local visible_line_count = self.text_widget:getVisLineCount()
     local total_line_count = self.text_widget:getAllLineCount()

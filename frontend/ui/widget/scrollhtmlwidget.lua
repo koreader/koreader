@@ -99,7 +99,7 @@ end
 -- Reset the scrolling *state* to the top of the document, but don't actually re-render/refresh anything.
 -- (Useful when replacing a Scroll*Widget during an update call, c.f., DictQuickLookup).
 function ScrollHtmlWidget:resetScroll()
-    self.htmlbox_widget.page_number = 1
+    self.htmlbox_widget:setPageNumber(1)
     self:_updateScrollBar()
 
     self.v_scroll_bar.enable = self.htmlbox_widget.page_count > 1
@@ -114,7 +114,7 @@ function ScrollHtmlWidget:scrollToRatio(ratio)
     if page_num == self.htmlbox_widget.page_number then
         return
     end
-    self.htmlbox_widget.page_number = page_num
+    self.htmlbox_widget:setPageNumber(page_num)
     self:_updateScrollBar()
 
     self.htmlbox_widget:freeBb()
@@ -145,13 +145,13 @@ function ScrollHtmlWidget:scrollText(direction)
             return
         end
 
-        self.htmlbox_widget.page_number = self.htmlbox_widget.page_number + 1
+        self.htmlbox_widget:setPageNumber(self.htmlbox_widget.page_number + 1)
     elseif direction < 0 then
         if self.htmlbox_widget.page_number <= 1 then
             return
         end
 
-        self.htmlbox_widget.page_number = self.htmlbox_widget.page_number - 1
+        self.htmlbox_widget:setPageNumber(self.htmlbox_widget.page_number - 1)
     end
     self:_updateScrollBar()
 

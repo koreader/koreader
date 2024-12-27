@@ -149,6 +149,12 @@ function FootnoteWidget:init()
             w = Screen:getWidth(),
             h = Screen:getHeight(),
         }
+
+        local hold_pan_rate = G_reader_settings:readSetting("hold_pan_rate")
+        if not hold_pan_rate then
+            hold_pan_rate = Screen.low_pan_rate and 5.0 or 30.0
+        end
+
         self.ges_events = {
             TapClose = {
                 GestureRange:new{
@@ -170,8 +176,9 @@ function FootnoteWidget:init()
             },
             HoldPanText = {
                 GestureRange:new{
-                    ges = "hold",
+                    ges = "hold_pan",
                     range = range,
+                    rate = hold_pan_rate,
                 },
             },
             HoldReleaseText = {
@@ -182,9 +189,13 @@ function FootnoteWidget:init()
                 -- callback function when HoldReleaseText is handled as args
                 args = function(text, hold_duration)
                     if self.dialog then
+                        local dict_close_callback = function()
+                            self.htmlwidget.htmlbox_widget:scheduleClearHighlightAndRedraw()
+                        end
+
                         local lookup_target = hold_duration < time.s(3) and "LookupWord" or "LookupWikipedia"
                         self.dialog:handleEvent(
-                            Event:new(lookup_target, text)
+                            Event:new(lookup_target, text, nil, nil, nil, nil, dict_close_callback)
                         )
                     end
                 end
