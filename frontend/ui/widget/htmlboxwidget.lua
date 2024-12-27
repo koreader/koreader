@@ -7,6 +7,7 @@ local DrawContext = require("ffi/drawcontext")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local koptinterface = require("document/koptinterface")
 local Mupdf = require("ffi/mupdf")
 local Screen = Device.screen
 local UIManager = require("ui/uimanager")
@@ -20,9 +21,14 @@ local HtmlBoxWidget = InputContainer:extend{
     document = nil,
     page_count = 0,
     page_number = 1,
+    page_boxes = nil,
     hold_start_pos = nil,
+    hold_end_pos = nil,
     hold_start_time = nil,
     html_link_tapped_callback = nil,
+    highlight_rects = nil,
+    highlight_text = nil,
+    highlight_clear_and_redraw_function = nil,
 }
 
 function HtmlBoxWidget:init()
@@ -103,6 +109,12 @@ function HtmlBoxWidget:_render()
     local dc = DrawContext.new()
     self.bb = page:draw_new(dc, self.dimen.w, self.dimen.h, 0, 0)
     page:close()
+
+    if self.highlight_rects then
+        for _, rect in ipairs(self.highlight_rects) do
+            self.bb:invertRect(rect.x, rect.y, rect.w, rect.h)
+        end
+    end
 end
 
 function HtmlBoxWidget:getSize()
@@ -171,7 +183,11 @@ function HtmlBoxWidget:getPosFromAbsPos(abs_pos)
 end
 
 function HtmlBoxWidget:onHoldStartText(_, ges)
+    self:unscheduleClearHighlightAndRedraw()
     self.hold_start_pos = self:getPosFromAbsPos(ges.pos)
+    self.hold_end_pos = self.hold_start_pos
+    self.highlight_rects = nil
+    self.highlight_text = nil
 
     if not self.hold_start_pos then
         return false -- let event be processed by other widgets
@@ -179,48 +195,30 @@ function HtmlBoxWidget:onHoldStartText(_, ges)
 
     self.hold_start_time = UIManager:getTime()
 
+    local highlight_changed = self:updateHighlight()
+    if highlight_changed then
+        self:redrawHighlight()
+    end
+
     return true
 end
 
-function HtmlBoxWidget:onHoldPan(_, ges)
+function HtmlBoxWidget:onHoldPanText(_, ges)
     -- We don't highlight the currently selected text, but just let this
     -- event pop up if we are not currently selecting text
     if not self.hold_start_pos then
         return false
     end
-    return true
-end
 
-function HtmlBoxWidget:getSelectedText(lines, start_pos, end_pos)
-    local found_start = false
-    local words = {}
+    self.hold_end_pos = self:getPosFromAbsPos(ges.pos)
 
-    for _, line in ipairs(lines) do
-        for _, w in ipairs(line) do
-            if type(w) == 'table' then
-                if not found_start then
-                    if start_pos.x >= w.x0 and start_pos.x < w.x1 and start_pos.y >= w.y0 and start_pos.y < w.y1 then
-                        found_start = true
-                    elseif end_pos.x >= w.x0 and end_pos.x < w.x1 and end_pos.y >= w.y0 and end_pos.y < w.y1 then
-                        -- We found end_pos before start_pos, switch them
-                        found_start = true
-                        start_pos, end_pos = end_pos, start_pos
-                    end
-                end
-
-                if found_start then
-                    table.insert(words, w.word)
-
-                    -- Found the end.
-                    if end_pos.x >= w.x0 and end_pos.x < w.x1 and end_pos.y >= w.y0 and end_pos.y < w.y1 then
-                        return words
-                    end
-                end
-            end
-        end
+    local highlight_changed = self:updateHighlight()
+    if highlight_changed then
+        self.hold_start_time = UIManager:getTime()
+        self:redrawHighlight()
     end
 
-    return words
+    return true
 end
 
 function HtmlBoxWidget:onHoldReleaseText(callback, ges)
@@ -233,23 +231,19 @@ function HtmlBoxWidget:onHoldReleaseText(callback, ges)
         return false
     end
 
-    local start_pos = self.hold_start_pos
-    self.hold_start_pos = nil
+    self.hold_end_pos = self:getPosFromAbsPos(ges.pos)
 
-    local end_pos = self:getPosFromAbsPos(ges.pos)
-    if not end_pos then
+    local highlight_changed = self:updateHighlight()
+    if highlight_changed then
+        self:redrawHighlight()
+    end
+
+    if not self.highlight_text then
         return false
     end
 
     local hold_duration = time.now() - self.hold_start_time
-
-    local page = self.document:openPage(self.page_number)
-    local lines = page:getPageText()
-    page:close()
-
-    local words = self:getSelectedText(lines, start_pos, end_pos)
-    local selected_text = table.concat(words, " ")
-    callback(selected_text, hold_duration)
+    callback(self.highlight_text, hold_duration)
 
     return true
 end
@@ -280,6 +274,100 @@ function HtmlBoxWidget:onTapText(arg, ges)
                 return true
             end
         end
+    end
+end
+
+function HtmlBoxWidget:setPageNumber(page_number)
+    if page_number == self.page_number then
+        return
+    end
+
+    self.page_number = page_number
+    self.page_boxes = nil
+    self:clearHighlight()
+end
+
+function HtmlBoxWidget:areTextBoxesEqual(boxes1, text1, boxes2, text2)
+    if text1 ~= text2 then
+        return false
+    end
+
+    if boxes1 and boxes2 then
+        if #boxes1 ~= #boxes2 then
+            return false
+        end
+
+        for i = 1, #boxes1, 1 do
+            if boxes1[i] ~= boxes2[i] then
+                return false
+            end
+        end
+
+        return true
+    else
+        return (boxes1 == nil) == (boxes2 == nil)
+    end
+end
+
+-- Returns with true if the highlight has changed.
+function HtmlBoxWidget:clearHighlight()
+    self.hold_start_pos = nil
+    self.hold_end_pos = nil
+    return self:updateHighlight()
+end
+
+-- Returns with true if the highlight has changed.
+function HtmlBoxWidget:updateHighlight()
+    if self.hold_start_pos and self.hold_end_pos then
+        -- getPageText is slow so we only call it when needed, and keep the result.
+        if self.page_boxes == nil then
+            local page = self.document:openPage(self.page_number)
+            self.page_boxes = page:getPageText()
+            page:close()
+        end
+
+        local text_boxes = koptinterface:getTextFromBoxes(self.page_boxes, self.hold_start_pos, self.hold_end_pos)
+        local changed = not HtmlBoxWidget:areTextBoxesEqual(self.highlight_rects, self.highlight_text, text_boxes.boxes, text_boxes.text)
+        if changed then
+            self.highlight_rects = text_boxes.boxes
+            self.highlight_text = text_boxes.text
+        end
+
+        return changed
+    else
+        local changed = self.highlight_rects ~= nil
+        self.highlight_rects = nil
+        self.highlight_text = nil
+        return changed
+    end
+end
+
+function HtmlBoxWidget:redrawHighlight()
+    self:freeBb()
+    UIManager:setDirty("all", "ui", self.dimen)
+end
+
+function HtmlBoxWidget:scheduleClearHighlightAndRedraw()
+    if self.highlight_clear_and_redraw_function then
+        return
+    end
+
+    self.highlight_clear_and_redraw_function = function ()
+        self.highlight_clear_and_redraw_function = nil
+
+        local highlight_changed = self:clearHighlight()
+        if highlight_changed then
+            self:redrawHighlight()
+        end
+    end
+
+    UIManager:scheduleIn(0.5, self.highlight_clear_and_redraw_function)
+end
+
+function HtmlBoxWidget:unscheduleClearHighlightAndRedraw()
+    if self.highlight_clear_and_redraw_function then
+        UIManager:unschedule(self.highlight_clear_and_redraw_function)
+        self.highlight_clear_and_redraw_function = nil
     end
 end
 
