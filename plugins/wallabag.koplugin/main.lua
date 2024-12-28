@@ -50,14 +50,12 @@ local Wallabag = WidgetContainer:extend{
     name = "wallabag",
 }
 
---- Add wallabag events to event dispatcher.
 function Wallabag:onDispatcherRegisterActions()
     Dispatcher:registerAction("wallabag_download", { category="none", event="DownloadArticles", title=_("wallabag retrieval"), general=true,})
     Dispatcher:registerAction("wallabag_queue_upload", { category="none", event="UploadQueue", title=_("wallabag queue upload"), general=true,})
     Dispatcher:registerAction("wallabag_status_upload", { category="none", event="UploadStatuses", title=_("wallabag statuses upload"), general=true,})
 end -- Wallabag:onDispatcherRegisterActions
 
---- Initialize the wallabag WidgetContainer.
 function Wallabag:init()
     self.token_expiry = 0
     self:onDispatcherRegisterActions()
@@ -862,7 +860,6 @@ function Wallabag:callAPI(method, url, headers, body, filepath, quiet)
     end
 end -- Wallabag:callAPI
 
---- Remove any files that were created for a download that failed
 function Wallabag:removeFailedDownload(filepath)
 
     if filepath then
@@ -1369,7 +1366,6 @@ function Wallabag:getArticleID(path)
     return id
 end -- Wallabag:getArticleID
 
---- Refresh current directory if the file manager is opened.
 function Wallabag:refreshFileManager()
     if FileManager.instance then
         FileManager.instance:onRefresh()
@@ -1541,7 +1537,6 @@ function Wallabag:setArchiveDirectory(touchmenu_instance)
     }:chooseDir()
 end -- Wallabag:setArchiveDirectory
 
---- Write all current settings to the Lua settings file.
 function Wallabag:saveSettings()
     local tempsettings = {
         server_url                    = self.server_url,
@@ -1574,7 +1569,6 @@ function Wallabag:saveSettings()
     self.wb_settings:flush()
 end -- Wallabag:saveSettings
 
---- Read wallabag plugin settings from Lua settings file.
 function Wallabag:readSettings()
     local wb_settings = LuaSettings:open(DataStorage:getSettingsDir().."/wallabag.lua")
     wb_settings:readSetting("wallabag", {})
@@ -1617,7 +1611,6 @@ function Wallabag:onAddWallabagArticle(article_url)
     return true
 end -- Wallabag:onAddWallabagArticle
 
---- Handler for downloadArticles event.
 function Wallabag:onDownloadArticles()
 
     local connect_callback = function()
@@ -1633,7 +1626,6 @@ function Wallabag:onDownloadArticles()
     return true
 end -- Wallabag:onDownloadArticles
 
---- Handler for uploadQueue event.
 function Wallabag:onUploadQueue()
     local connect_callback = function()
         self:uploadQueue(false)
@@ -1646,7 +1638,6 @@ function Wallabag:onUploadQueue()
     return true
 end -- Wallabag:onUploadQueue
 
---- Handler for uploadStatuses event.
 function Wallabag:onUploadStatuses()
     local connect_callback = function()
         self:uploadStatuses(false)
@@ -1659,7 +1650,6 @@ function Wallabag:onUploadStatuses()
     return true
 end -- Wallabag:onUploadStatuses
 
---- Handler for goToDownloadDirectory event.
 function Wallabag:onGoToDownloadDirectory()
 
     if self.ui.document then
@@ -1685,7 +1675,6 @@ function Wallabag:getLastPercent()
     return Math.roundPercent(percent)
 end -- Wallabag:getLastPercent
 
---- Add URL to the upload_queue.
 function Wallabag:addToUploadQueue(article_url)
     table.insert(self.upload_queue, article_url)
     self:saveSettings()
