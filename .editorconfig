@@ -9,6 +9,15 @@ charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
 
+# https://github.com/CppCXY/EmmyLuaCodeStyle/blob/master/docs/format_config_EN.md
+[*.lua]
+quote_style = double
+call_arg_parentheses = remove_table_only
+max_line_length = 180
+trailing_table_separator = smart
+space_before_function_call_single_arg = false
+break_all_list_when_line_exceed = true
+
 [*.md]
 indent_style = space
 indent_size = 2
