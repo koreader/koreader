@@ -1004,6 +1004,19 @@ local KindlePaperWhite5 = Kindle:extend{
     -- NOTE: Input device path is variable, see findInputDevices
 }
 
+local KindlePaperWhite5SE = Kindle:extend{
+    model = "KindlePaperWhite5SE", -- Signature Edition, has light sensor
+    isMTK = yes,
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    hasNaturalLight = yes,
+    hasNaturalLightMixer = yes,
+    hasLightSensor = yes,
+    display_dpi = 300,
+    canHWDither = no,
+    canDoSwipeAnimation = yes,
+}
+
 local KindleBasic4 = Kindle:extend{
     model = "KindleBasic4",
     isMTK = yes,
@@ -1566,6 +1579,7 @@ function KindlePaperWhite5:init()
 
     Kindle.init(self)
 end
+KindlePaperWhite5SE.init = KindlePaperWhite5.init
 
 function KindleBasic4:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
@@ -1690,6 +1704,7 @@ KindlePaperWhite4.exit = KindleTouch.exit
 KindleBasic3.exit = KindleTouch.exit
 KindleOasis3.exit = KindleTouch.exit
 KindlePaperWhite5.exit = KindleTouch.exit
+KindlePaperWhite5SE.exit = KindleTouch.exit
 KindleBasic4.exit = KindleTouch.exit
 KindleScribe.exit = KindleTouch.exit
 
@@ -1745,7 +1760,8 @@ local pw4_set = Set { "0PP", "0T1", "0T2", "0T3", "0T4", "0T5", "0T6",
                   "16Q", "16R", "16S", "16T", "16U", "16V" }
 local kt4_set = Set { "10L", "0WF", "0WG", "0WH", "0WJ", "0VB" }
 local koa3_set = Set { "11L", "0WQ", "0WP", "0WN", "0WM", "0WL" }
-local pw5_set = Set { "1LG", "1Q0", "1PX", "1VD", "219", "21A", "2BH", "2BJ", "2DK" }
+local pw5_set = Set { "1Q0", "1PX", "1VD", "21A", "2BJ", "2DK" }
+local pw5se_set = Set { "1LG", "219", "2BH" }
 local kt5_set = Set { "22D", "25T", "23A", "2AQ", "2AP", "1XH", "22C" }
 local ks_set = Set { "27J", "2BL", "263", "227", "2BM", "23L", "23M", "270" }
 
@@ -1792,6 +1808,8 @@ else
         return KindleOasis3
     elseif pw5_set[kindle_devcode_v2] then
         return KindlePaperWhite5
+    elseif pw5se_set[kindle_devcode_v2] then
+        return KindlePaperWhite5SE
     elseif kt5_set[kindle_devcode_v2] then
         return KindleBasic4
     elseif ks_set[kindle_devcode_v2] then
