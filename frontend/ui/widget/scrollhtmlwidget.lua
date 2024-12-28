@@ -23,6 +23,7 @@ local ScrollHtmlWidget = InputContainer:extend{
     htmlbox_widget = nil,
     v_scroll_bar = nil,
     dialog = nil,
+    highlight_text_selection = false,
     html_link_tapped_callback = nil,
     dimen = nil,
     width = 0,
@@ -37,6 +38,8 @@ function ScrollHtmlWidget:init()
             w = self.width - self.scroll_bar_width - self.text_scroll_span,
             h = self.height,
         },
+        dialog = self.dialog,
+        highlight_text_selection = self.highlight_text_selection,
         html_link_tapped_callback = self.html_link_tapped_callback,
     }
 

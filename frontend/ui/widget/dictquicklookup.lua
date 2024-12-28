@@ -828,6 +828,7 @@ function DictQuickLookup:_instantiateScrollWidget()
             width = self.content_width,
             height = self.definition_height,
             dialog = self,
+            highlight_text_selection = true,
             html_link_tapped_callback = function(link)
                 self.html_dictionary_link_tapped_callback(self.dictionary, link)
             end,
@@ -846,7 +847,7 @@ function DictQuickLookup:_instantiateScrollWidget()
             auto_para_direction = not self.is_wiki, -- only for dict results (we don't know their lang)
             image_alt_face = self.image_alt_face,
             images = self.images,
-            display_highlight = true,
+            highlight_text_selection = true,
         }
         self.text_widget = self.stw_widget
     end

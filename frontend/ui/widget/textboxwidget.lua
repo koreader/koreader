@@ -68,10 +68,10 @@ local TextBoxWidget = InputContainer:extend{
     _bb = nil,
     _face_adjusted = nil,
 
-    -- If display_highlight is true then highlight will be displayed.
-    -- If false then highlight will work as it did originally: no highlight will be displayed, and the
-    -- highlight will be updated only on hold release (so hold time might be incorrect).
-    display_highlight = false,
+    -- If highlight_text_selection is true then text selection will be highlighted.
+    -- If false then text selection will work as it did originally: no highlighting, and the
+    -- text selection will be updated only on hold release (so hold time might be incorrect).
+    highlight_text_selection = false,
     highlight_rects = nil,
     highlight_start_idx = nil,
     highlight_end_idx = nil,
@@ -963,7 +963,7 @@ end
 -- (NOTE: This instantiates the inner bb (self._bb), so be careful about its lifecycle when you call this,
 --        c.f., TextBoxWidget:update).
 function TextBoxWidget:_updateLayout(update_highlight)
-    if self.display_highlight and (update_highlight == nil or update_highlight) then
+    if self.highlight_text_selection and (update_highlight == nil or update_highlight) then
         self:updateHighlight()
     end
 
@@ -1995,9 +1995,10 @@ function TextBoxWidget:onHoldStartText(_, ges)
     self.hold_start_pos = self:getPosFromAbsPos(ges.pos)
     self.hold_end_pos = self.hold_start_pos
 
-    local highlight_changed = self.display_highlight and self:updateHighlight()
-    if highlight_changed then
-        self:redrawHighlight()
+    if self.highlight_text_selection then
+        if self:updateHighlight() then
+            self:redrawHighlight()
+        end
     end
 
     -- check coordinates are actually inside our area
@@ -2018,10 +2019,11 @@ function TextBoxWidget:onHoldPanText(_, ges)
 
     self.hold_end_pos = self:getPosFromAbsPos(ges.pos)
 
-    local highlight_changed = self.display_highlight and self:updateHighlight()
-    if highlight_changed then
-        self.hold_start_time = UIManager:getTime()
-        self:redrawHighlight()
+    if self.highlight_text_selection then
+        if self:updateHighlight() then
+            self.hold_start_time = UIManager:getTime()
+            self:redrawHighlight()
+        end
     end
 
     -- Don't let that event be processed by other widget
@@ -2040,9 +2042,10 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
 
     -- Unlike to onHoldStartText and onHoldPanText we must call updateHighlight here even if highlight
     -- displaying is disabled to be able to query the higlighted word.
-    local highlight_changed = self:updateHighlight() and self.display_highlight
-    if highlight_changed then
-        self:redrawHighlight()
+    if self:updateHighlight() then
+        if self.highlight_text_selection then
+            self:redrawHighlight()
+        end
     end
 
     -- check start and end coordinates are actually inside our area
@@ -2221,6 +2224,10 @@ function TextBoxWidget:getXtextHighlightIndices(start_x, start_y, end_x, end_y)
         return nil, nil, nil, nil
     end
 
+    -- Delegate word boundaries search to xtext.cpp, which can
+    -- use libunibreak's wordbreak features.
+    -- (50 is the nb of chars backward and ahead of selection indices
+    -- to consider when looking for word boundaries)
     local word_start_idx, word_end_idx = self._xtext:getSelectedWordIndices(sel_start_idx, sel_end_idx, 50)
     return word_start_idx, word_end_idx, start_line_num, end_line_num
 end
@@ -2230,32 +2237,34 @@ function TextBoxWidget:getXtextHighlightRects(text_start_idx, text_end_idx, star
 
     for line_num = start_line_num, end_line_num, 1 do
         local line = self.vertical_string_list[line_num]
-        local draw_line = false
-        local line_x0 = 0
-        local line_x1 = 0
+        if line.xglyphs then -- non-empty line
+            local draw_line = false
+            local line_x0 = 0
+            local line_x1 = 0
 
-        for _, xglyph in ipairs(line.xglyphs) do
-            if xglyph.text_index >= text_start_idx and (xglyph.text_index + xglyph.cluster_len) <= text_end_idx and (not xglyph.no_drawing) then
-                if draw_line then
-                    if xglyph.x0 < line_x0 then line_x0 = xglyph.x0 end
-                    if xglyph.x1 > line_x1 then line_x1 = xglyph.x1 end
-                else
-                    draw_line = true
-                    line_x0 = xglyph.x0
-                    line_x1 = xglyph.x1
+            for _, xglyph in ipairs(line.xglyphs) do
+                if xglyph.text_index >= text_start_idx and xglyph.text_index <= text_end_idx and not xglyph.no_drawing then
+                    if draw_line then
+                        if xglyph.x0 < line_x0 then line_x0 = xglyph.x0 end
+                        if xglyph.x1 > line_x1 then line_x1 = xglyph.x1 end
+                    else
+                        draw_line = true
+                        line_x0 = xglyph.x0
+                        line_x1 = xglyph.x1
+                    end
                 end
             end
-        end
 
-        if draw_line then
-            local rect = Geom:new{
-                x = line_x0,
-                y = (line_num - self.virtual_line_num) * self.line_height_px,
-                w = line_x1 - line_x0,
-                h = self.line_height_px,
-            }
+            if draw_line then
+                local rect = Geom:new{
+                    x = line_x0,
+                    y = (line_num - self.virtual_line_num) * self.line_height_px,
+                    w = line_x1 - line_x0,
+                    h = self.line_height_px,
+                }
 
-            table.insert(rects, rect)
+                table.insert(rects, rect)
+            end
         end
     end
 
@@ -2265,7 +2274,7 @@ end
 function TextBoxWidget:getNonXtextHighlightIndices(start_x, start_y, end_x, end_y)
     local start_idx = self:_findWordEdge(start_x, start_y, FIND_START)
     local end_idx = self:_findWordEdge(end_x, end_y, FIND_END)
-    if (not start_idx) or (not end_idx) then
+    if not start_idx or not end_idx then
         -- one or both hold points were out of text
         return nil, nil, nil, nil
     end
@@ -2325,16 +2334,16 @@ function TextBoxWidget:getNonXtextHighlightRects(text_start_idx, text_end_idx, s
     return rects
 end
 
--- Returns with true if the highlight has changed.
+-- Returns true if the highlight has changed.
 function TextBoxWidget:clearHighlight()
     self.hold_start_pos = nil
     self.hold_end_pos = nil
     return self:updateHighlight()
 end
 
--- Returns with true if the highlight has changed.
+-- Returns true if the highlight has changed.
 function TextBoxWidget:updateHighlight()
-    if (not self.hold_start_pos) or (not self.hold_end_pos) then
+    if not self.hold_start_pos or not self.hold_end_pos then
         local changed = self.highlight_start_idx ~= nil or self.highlight_end_idx ~= nil
         self.highlight_start_idx = nil
         self.highlight_end_idx = nil
@@ -2363,7 +2372,7 @@ function TextBoxWidget:updateHighlight()
         end
     end
 
-    local text_start_idx, text_end_idx, start_line_num, end_line_num
+    local text_start_idx, text_end_idx
     if self.use_xtext then
         text_start_idx, text_end_idx, start_line_num, end_line_num = self:getXtextHighlightIndices(x0, y0, x1, y1)
     else
@@ -2377,7 +2386,7 @@ function TextBoxWidget:updateHighlight()
     self.highlight_start_idx = text_start_idx
     self.highlight_end_idx = text_end_idx
 
-    if text_start_idx == nil or (not self.display_highlight) then
+    if text_start_idx == nil or not self.highlight_text_selection then
         self.highlight_rects = nil
     elseif self.use_xtext then
         self.highlight_rects = self:getXtextHighlightRects(text_start_idx, text_end_idx, start_line_num, end_line_num)
@@ -2396,15 +2405,14 @@ function TextBoxWidget:redrawHighlight()
 end
 
 function TextBoxWidget:scheduleClearHighlightAndRedraw()
-    if self.highlight_clear_and_redraw_function or (not self.display_highlight) then
+    if self.highlight_clear_and_redraw_function or not self.highlight_text_selection then
         return
     end
 
     self.highlight_clear_and_redraw_function = function ()
         self.highlight_clear_and_redraw_function = nil
 
-        local highlight_changed = self:clearHighlight()
-        if highlight_changed then
+        if self:clearHighlight() then
             self:redrawHighlight()
         end
     end

@@ -18,6 +18,7 @@ local util  = require("util")
 local HtmlBoxWidget = InputContainer:extend{
     bb = nil,
     dimen = nil,
+    dialog = nil, -- parent dialog that will be set dirty
     document = nil,
     page_count = 0,
     page_number = 1,
@@ -26,6 +27,11 @@ local HtmlBoxWidget = InputContainer:extend{
     hold_end_pos = nil,
     hold_start_time = nil,
     html_link_tapped_callback = nil,
+
+    -- If highlight_text_selection is true then text selection will be highlighted.
+    -- If false then text selection will work as it did originally: no highlighting, and the
+    -- text selection will be updated only on hold release (so hold time might be incorrect).
+    highlight_text_selection = false,
     highlight_rects = nil,
     highlight_text = nil,
     highlight_clear_and_redraw_function = nil,
@@ -110,7 +116,7 @@ function HtmlBoxWidget:_render()
     self.bb = page:draw_new(dc, self.dimen.w, self.dimen.h, 0, 0)
     page:close()
 
-    if self.highlight_rects then
+    if self.highlight_text_selection and self.highlight_rects then
         for _, rect in ipairs(self.highlight_rects) do
             self.bb:invertRect(rect.x, rect.y, rect.w, rect.h)
         end
@@ -195,9 +201,10 @@ function HtmlBoxWidget:onHoldStartText(_, ges)
 
     self.hold_start_time = UIManager:getTime()
 
-    local highlight_changed = self:updateHighlight()
-    if highlight_changed then
-        self:redrawHighlight()
+    if self.highlight_text_selection then
+        if self:updateHighlight() then
+            self:redrawHighlight()
+        end
     end
 
     return true
@@ -212,10 +219,11 @@ function HtmlBoxWidget:onHoldPanText(_, ges)
 
     self.hold_end_pos = self:getPosFromAbsPos(ges.pos)
 
-    local highlight_changed = self:updateHighlight()
-    if highlight_changed then
-        self.hold_start_time = UIManager:getTime()
-        self:redrawHighlight()
+    if self.highlight_text_selection then
+        if self:updateHighlight() then
+            self.hold_start_time = UIManager:getTime()
+            self:redrawHighlight()
+        end
     end
 
     return true
@@ -233,9 +241,12 @@ function HtmlBoxWidget:onHoldReleaseText(callback, ges)
 
     self.hold_end_pos = self:getPosFromAbsPos(ges.pos)
 
-    local highlight_changed = self:updateHighlight()
-    if highlight_changed then
-        self:redrawHighlight()
+    -- Unlike to onHoldStartText and onHoldPanText we must call updateHighlight here even if highlight
+    -- displaying is disabled to be able to query the higlighted word.
+    if self:updateHighlight() then
+        if self.highlight_text_selection then
+            self:redrawHighlight()
+        end
     end
 
     if not self.highlight_text then
@@ -309,14 +320,14 @@ function HtmlBoxWidget:areTextBoxesEqual(boxes1, text1, boxes2, text2)
     end
 end
 
--- Returns with true if the highlight has changed.
+-- Returns true if the highlight has changed.
 function HtmlBoxWidget:clearHighlight()
     self.hold_start_pos = nil
     self.hold_end_pos = nil
     return self:updateHighlight()
 end
 
--- Returns with true if the highlight has changed.
+-- Returns true if the highlight has changed.
 function HtmlBoxWidget:updateHighlight()
     if self.hold_start_pos and self.hold_end_pos then
         -- getPageText is slow so we only call it when needed, and keep the result.
@@ -332,7 +343,6 @@ function HtmlBoxWidget:updateHighlight()
             self.highlight_rects = text_boxes.boxes
             self.highlight_text = text_boxes.text
         end
-
         return changed
     else
         local changed = self.highlight_rects ~= nil
@@ -344,19 +354,20 @@ end
 
 function HtmlBoxWidget:redrawHighlight()
     self:freeBb()
-    UIManager:setDirty("all", "ui", self.dimen)
+    UIManager:setDirty(self.dialog or "all", function()
+        return "ui", self.dimen
+    end)
 end
 
 function HtmlBoxWidget:scheduleClearHighlightAndRedraw()
-    if self.highlight_clear_and_redraw_function then
+    if self.highlight_clear_and_redraw_function or not self.highlight_text_selection then
         return
     end
 
     self.highlight_clear_and_redraw_function = function ()
         self.highlight_clear_and_redraw_function = nil
 
-        local highlight_changed = self:clearHighlight()
-        if highlight_changed then
+        if self:clearHighlight() then
             self:redrawHighlight()
         end
     end

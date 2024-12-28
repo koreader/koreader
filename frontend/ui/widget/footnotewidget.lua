@@ -321,6 +321,7 @@ function FootnoteWidget:init()
         scroll_bar_width = scroll_bar_width,
         text_scroll_span = text_scroll_span,
         dialog = self.dialog,
+        highlight_text_selection = true,
     }
 
     -- We only want a top border, so use a LineWidget for that
