@@ -51,9 +51,24 @@ local Wallabag = WidgetContainer:extend{
 }
 
 function Wallabag:onDispatcherRegisterActions()
-    Dispatcher:registerAction("wallabag_download", { category="none", event="DownloadArticles", title=_("wallabag retrieval"), general=true,})
-    Dispatcher:registerAction("wallabag_queue_upload", { category="none", event="UploadQueue", title=_("wallabag queue upload"), general=true,})
-    Dispatcher:registerAction("wallabag_status_upload", { category="none", event="UploadStatuses", title=_("wallabag statuses upload"), general=true,})
+    Dispatcher:registerAction("wallabag_download", {
+        category = "none",
+        event = "SynchronizeWallabag",
+        title = _("wallabag retrieval"),
+        general = true,
+    })
+    Dispatcher:registerAction("wallabag_queue_upload", {
+        category = "none",
+        event = "UploadWallabagQueue",
+        title = _("wallabag queue upload"),
+        general = true,
+    })
+    Dispatcher:registerAction("wallabag_status_upload", {
+        category = "none",
+        event = "UploadWallabagStatuses",
+        title = _("wallabag statuses upload"),
+        general = true,
+    })
 end -- Wallabag:onDispatcherRegisterActions
 
 function Wallabag:init()
@@ -137,7 +152,7 @@ function Wallabag:addToMainMenu(menu_items)
                     end
                 end,
                 callback = function()
-                    self.ui:handleEvent(Event:new("DownloadArticles"))
+                    self.ui:handleEvent(Event:new("SynchronizeWallabag"))
                 end,
             },
             {
@@ -146,7 +161,7 @@ function Wallabag:addToMainMenu(menu_items)
                     #self.upload_queue
                 ),
                 callback = function()
-                    self.ui:handleEvent(Event:new("UploadQueue"))
+                    self.ui:handleEvent(Event:new("UploadWallabagQueue"))
                 end,
                 enabled_func = function()
                     return #self.upload_queue > 0
@@ -155,7 +170,7 @@ function Wallabag:addToMainMenu(menu_items)
             {
                 text = _("Upload article statuses to server"),
                 callback = function()
-                    self.ui:handleEvent(Event:new("UploadStatuses"))
+                    self.ui:handleEvent(Event:new("UploadWallabagStatuses"))
                 end,
                 enabled_func = function()
                     return self.archive_finished or self.archive_read or self.archive_abandoned
@@ -164,7 +179,7 @@ function Wallabag:addToMainMenu(menu_items)
             {
                 text = _("Go to download directory"),
                 callback = function()
-                    self.ui:handleEvent(Event:new("GoToDownloadDirectory"))
+                    self.ui:handleEvent(Event:new("GoToWallabagDirectory"))
                 end,
             },
             {
@@ -1523,11 +1538,11 @@ function Wallabag:onAddWallabagArticle(article_url)
     return true
 end -- Wallabag:onAddWallabagArticle
 
-function Wallabag:onDownloadArticles()
+function Wallabag:onSynchronizeWallabag()
     local connect_callback = function()
-        logger.dbg("Wallabag:onDownloadArticles:connect_callback: downloading articles…")
+        logger.dbg("Wallabag:onSynchronizeWallabag:connect_callback: downloading articles…")
         self:downloadArticles()
-        logger.dbg("Wallabag:onDownloadArticles:connect_callback: refreshing file manager…")
+        logger.dbg("Wallabag:onSynchronizeWallabag:connect_callback: refreshing file manager…")
         self:refreshFileManager()
     end
 
@@ -1535,9 +1550,9 @@ function Wallabag:onDownloadArticles()
 
     -- stop propagation
     return true
-end -- Wallabag:onDownloadArticles
+end -- Wallabag:onSynchronizeWallabag
 
-function Wallabag:onUploadQueue()
+function Wallabag:onUploadWallabagQueue()
     local connect_callback = function()
         self:uploadQueue(false)
         self:refreshFileManager()
@@ -1547,9 +1562,9 @@ function Wallabag:onUploadQueue()
 
     -- stop propagation
     return true
-end -- Wallabag:onUploadQueue
+end -- Wallabag:onUploadWallabagQueue
 
-function Wallabag:onUploadStatuses()
+function Wallabag:onUploadWallabagStatuses()
     local connect_callback = function()
         self:uploadStatuses(false)
         self:refreshFileManager()
@@ -1559,25 +1574,25 @@ function Wallabag:onUploadStatuses()
 
     -- stop propagation
     return true
-end -- Wallabag:onUploadStatuses
+end -- Wallabag:onUploadWallabagStatuses
 
-function Wallabag:onGoToDownloadDirectory()
+function Wallabag:onGoToWallabagDirectory()
     if self.ui.document then
         self.ui:onClose()
-        logger.dbg("Wallabag:onGoToDownloadDirectory: closed document")
+        logger.dbg("Wallabag:onGoToWallabagDirectory: closed document")
     end
 
     if FileManager.instance then
         FileManager.instance:reinit(self.directory)
-        logger.dbg("Wallabag:onGoToDownloadDirectory: reinitialized file manager at", self.directory)
+        logger.dbg("Wallabag:onGoToWallabagDirectory: reinitialized file manager at", self.directory)
     else
         FileManager:showFiles(self.directory)
-        logger.dbg("Wallabag:onGoToDownloadDirectory: opened file manager at", self.directory)
+        logger.dbg("Wallabag:onGoToWallabagDirectory: opened file manager at", self.directory)
     end
 
     -- stop propagation
     return true
-end -- Wallabag:onGoToDownloadDirectory
+end -- Wallabag:onGoToWallabagDirectory
 
 --- Get percent read of the opened article.
 function Wallabag:getLastPercent()
