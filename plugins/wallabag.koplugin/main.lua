@@ -61,107 +61,41 @@ function Wallabag:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
     self.wb_settings = self:readSettings()
+
+    -- These settings do not have defaults and need to be set by the user
     self.server_url = self.wb_settings.data.wallabag.server_url
     self.client_id = self.wb_settings.data.wallabag.client_id
     self.client_secret = self.wb_settings.data.wallabag.client_secret
     self.username = self.wb_settings.data.wallabag.username
     self.password = self.wb_settings.data.wallabag.password
     self.directory = self.wb_settings.data.wallabag.directory
+
+    -- archive_directory only has a default if directory is set
     self.archive_directory = self.wb_settings.data.wallabag.archive_directory
-
-    local do_migrate = false
-
     if not self.archive_directory or self.archive_directory == "" then
         if self.directory and self.directory ~= "" then
             self.archive_directory = self.directory .. 'archive/'
-            do_migrate = true
         end
     end
 
-    if self.wb_settings.data.wallabag.archive_abandoned ~= nil then
-        self.archive_abandoned = self.wb_settings.data.wallabag.archive_abandoned
-    elseif self.wb_settings.data.wallabag.is_delete_abandoned ~= nil then
-        -- Migrate old setting
-        self.archive_abandoned = self.wb_settings.data.wallabag.is_delete_abandoned
-        do_migrate = true
-    else
-        self.archive_abandoned = false
-    end
-
-    if self.wb_settings.data.wallabag.archive_finished ~= nil then
-        self.archive_finished = self.wb_settings.data.wallabag.archive_finished
-    elseif self.wb_settings.data.wallabag.is_delete_finished ~= nil then
-        -- Migrate old setting
-        self.archive_finished = self.wb_settings.data.wallabag.is_delete_finished
-        do_migrate = true
-    else
-        self.archive_finished = true
-    end
-
-    if self.wb_settings.data.wallabag.archive_read ~= nil then
-        self.archive_read = self.wb_settings.data.wallabag.archive_read
-    elseif self.wb_settings.data.wallabag.is_delete_read ~= nil then
-        -- Migrate old setting
-        self.archive_read = self.wb_settings.data.wallabag.is_delete_read
-        do_migrate = true
-    else
-        self.archive_read = false
-    end
-
-    if self.wb_settings.data.wallabag.auto_archive ~= nil then
-        self.auto_archive = self.wb_settings.data.wallabag.auto_archive
-    elseif self.wb_settings.data.wallabag.is_auto_delete ~= nil then
-        -- Migrate old setting
-        self.auto_archive = self.wb_settings.data.wallabag.is_auto_delete
-        do_migrate = true
-    else
-        self.auto_archive = false
-    end
-
-    if self.wb_settings.data.wallabag.delete_instead ~= nil then
-        self.delete_instead = self.wb_settings.data.wallabag.delete_instead
-    elseif self.wb_settings.data.wallabag.is_archiving_deleted ~= nil then
-        -- Migrate old setting
-        self.delete_instead = not self.wb_settings.data.wallabag.is_archiving_deleted
-        do_migrate = true
-    else
-        self.delete_instead = false
-    end
-
-    if self.wb_settings.data.wallabag.sync_remote_archive ~= nil then
-        self.sync_remote_archive = self.wb_settings.data.wallabag.sync_remote_archive
-    elseif self.wb_settings.data.wallabag.is_archiving_deleted ~= nil then
-        -- Migrate old setting
-        self.sync_remote_archive = self.wb_settings.data.wallabag.is_sync_remote_delete
-        do_migrate = true
-    else
-        self.sync_remote_archive = false
-    end
-
-    self.use_local_archive = self.wb_settings.data.wallabag.use_local_archive or false
-    self.send_review_as_tags = self.wb_settings.data.wallabag.send_review_as_tags or false
-    self.filter_tag = self.wb_settings.data.wallabag.filter_tag or ""
-    self.ignore_tags = self.wb_settings.data.wallabag.ignore_tags or ""
-    self.auto_tags = self.wb_settings.data.wallabag.auto_tags or ""
-    self.articles_per_sync = self.wb_settings.data.wallabag.articles_per_sync or 30
+    -- These settings do have defaults
+    self.archive_abandoned             = self.wb_settings.data.wallabag.archive_abandoned or false
+    self.archive_finished              = self.wb_settings.data.wallabag.archive_finished or true
+    self.archive_read                  = self.wb_settings.data.wallabag.archive_read or false
+    self.articles_per_sync             = self.wb_settings.data.wallabag.articles_per_sync or 30
+    self.auto_archive                  = self.wb_settings.data.wallabag.auto_archive or false
+    self.auto_tags                     = self.wb_settings.data.wallabag.auto_tags or ""
+    self.delete_instead                = self.wb_settings.data.wallabag.delete_instead or false
+    self.download_original_document    = self.wb_settings.data.wallabag.download_original_document or false
+    self.filter_tag                    = self.wb_settings.data.wallabag.filter_tag or ""
+    self.ignore_tags                   = self.wb_settings.data.wallabag.ignore_tags or ""
     self.remove_abandoned_from_history = self.wb_settings.data.wallabag.remove_abandoned_from_history or false
-    self.remove_finished_from_history = self.wb_settings.data.wallabag.remove_finished_from_history or false
-    self.remove_read_from_history = self.wb_settings.data.wallabag.remove_read_from_history or false
-    self.download_original_document = self.wb_settings.data.wallabag.download_original_document or false
-
-    self.upload_queue = {}
-    if self.wb_settings.data.wallabag.upload_queue ~= nil then
-        self.upload_queue = self.wb_settings.data.wallabag.upload_queue
-    elseif self.wb_settings.data.wallabag.download_queue ~= nil then
-        -- Migrate old setting
-        self.upload_queue = self.wb_settings.data.wallabag.download_queue
-        do_migrate = true
-    end
-
-    if do_migrate then
-        --- @todo After enough time remove the setting migration parts and simplify defaults
-        self:saveSettings()
-    end
+    self.remove_finished_from_history  = self.wb_settings.data.wallabag.remove_finished_from_history or false
+    self.remove_read_from_history      = self.wb_settings.data.wallabag.remove_read_from_history or false
+    self.send_review_as_tags           = self.wb_settings.data.wallabag.send_review_as_tags or false
+    self.sync_remote_archive           = self.wb_settings.data.wallabag.sync_remote_archive or false
+    self.upload_queue                  = self.wb_settings.data.wallabag.upload_queue or {}
+    self.use_local_archive             = self.wb_settings.data.wallabag.use_local_archive or false
 
     -- workaround for dateparser only available if newsdownloader is active
     self.is_dateparser_available = false
@@ -1549,20 +1483,20 @@ function Wallabag:saveSettings()
         archive_abandoned             = self.archive_abandoned,
         archive_finished              = self.archive_finished,
         archive_read                  = self.archive_read,
+        articles_per_sync             = self.articles_per_sync,
         auto_archive                  = self.auto_archive,
+        auto_tags                     = self.auto_tags,
         delete_instead                = self.delete_instead,
-        sync_remote_archive           = self.sync_remote_archive,
-        use_local_archive             = self.use_local_archive,
-        send_review_as_tags           = self.send_review_as_tags,
+        download_original_document    = self.download_original_document,
         filter_tag                    = self.filter_tag,
         ignore_tags                   = self.ignore_tags,
-        auto_tags                     = self.auto_tags,
-        articles_per_sync             = self.articles_per_sync,
         remove_abandoned_from_history = self.remove_abandoned_from_history,
         remove_finished_from_history  = self.remove_finished_from_history,
         remove_read_from_history      = self.remove_read_from_history,
-        download_original_document    = self.download_original_document,
+        send_review_as_tags           = self.send_review_as_tags,
+        sync_remote_archive           = self.sync_remote_archive,
         upload_queue                  = self.upload_queue,
+        use_local_archive             = self.use_local_archive,
     }
 
     self.wb_settings:saveSetting("wallabag", tempsettings)
@@ -1570,18 +1504,10 @@ function Wallabag:saveSettings()
 end -- Wallabag:saveSettings
 
 function Wallabag:readSettings()
-    local wb_settings = LuaSettings:open(DataStorage:getSettingsDir().."/wallabag.lua")
+    local wb_settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/wallabag.lua")
     wb_settings:readSetting("wallabag", {})
     return wb_settings
 end -- Wallabag:readSettings
-
---- Save a single setting
--- Unused?
--- function Wallabag:saveWBSettings(setting)
---     if not self.wb_settings then self.wb_settings = self:readSettings() end
---     self.wb_settings:saveSetting("wallabag", setting)
---     self.wb_settings:flush()
--- end -- Wallabag:saveWBSettings
 
 --- Handler for addWallabagArticle event.
 --- Uploads a new article to wallabag directly if there is a network connection, or add it to the
