@@ -110,11 +110,9 @@ function MultiInputDialog:init()
     self:onCloseKeyboard()
     self._input_widget:onCloseWidget()
 
-    -- Initialize keyboard_visible
+    -- Update keyboard_visible
     if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
         self.keyboard_visible = false
-    else
-        self.keyboard_visible = true
     end
 
     local VerticalGroupData = VerticalGroup:new{
