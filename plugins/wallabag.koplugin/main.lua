@@ -317,7 +317,7 @@ function Wallabag:addToMainMenu(menu_items)
                         },
                     },
                     {
-                        text = _("Local delete settings"),
+                        text = _("Local file removal settings"),
                         sub_item_table = {
                             {
                                 text = _("Delete remotely archived and deleted articles locally"),
@@ -414,7 +414,7 @@ function Wallabag:addToMainMenu(menu_items)
                     },
                     {
                         text = _("Send review as tags"),
-                        help_text = _("This allow you to write tags in the review field, separated by commas, which will be uploaded to the article on wallabag."),
+                        help_text = _("This allows you to write tags in the review field, separated by commas, which will be uploaded to the article on wallabag."),
                         keep_menu_open = true,
                         checked_func = function()
                             return self.send_review_as_tags or false
@@ -449,7 +449,7 @@ The 'Delete remotely read and deleted articles locally' option will allow deleti
 
 More details: https://wallabag.org
 
-Downloads to directory: %1]]), BD.dirpath(filemanagerutil.abbreviate(self.directory))),
+Downloads to folder: %1]]), BD.dirpath(filemanagerutil.abbreviate(self.directory))),
                     })
                 end,
             },
@@ -477,7 +477,7 @@ function Wallabag:getBearerToken()
     if server_empty or directory_empty then
         logger.warn("Wallabag:getBearerToken: showing dialog because server_empty =", server_empty, "or directory_empty =", directory_empty)
         UIManager:show(MultiConfirmBox:new{
-            text = _("Please configure the server settings and set a download directory."),
+            text = _("Please configure the server settings and set a download folder."),
             choice1_text_func = function()
                 if server_empty then
                     return _("Server (★)")
@@ -488,9 +488,9 @@ function Wallabag:getBearerToken()
             choice1_callback = function() self:editServerSettings() end,
             choice2_text_func = function()
                 if directory_empty then
-                    return _("Directory (★)")
+                    return _("Folder (★)")
                 else
-                    return _("Directory")
+                    return _("Folder")
                 end
             end,
             choice2_callback = function() self:setDownloadDirectory() end,
