@@ -1453,12 +1453,12 @@ abbr.abbr {
 
     if self.wiki_prettify then
         -- Prepend some symbols to section titles for a better visual feeling of hierarchy
-        html = html:gsub("<h1>", "<h1> "..h1_sym.." ")
-        html = html:gsub("<h2>", "<h2> "..h2_sym.." ")
-        html = html:gsub("<h3>", "<h3> "..h3_sym.." ")
-        html = html:gsub("<h4>", "<h4> "..h4_sym.." ")
-        html = html:gsub("<h5>", "<h5> "..h5_sym.." ")
-        html = html:gsub("<h6>", "<h6> "..h6_sym.." ")
+        html = html:gsub("(<h1[^>]*>)", "%1 "..h1_sym.." ")
+        html = html:gsub("(<h2[^>]*>)", "%1 "..h2_sym.." ")
+        html = html:gsub("(<h3[^>]*>)", "%1 "..h3_sym.." ")
+        html = html:gsub("(<h4[^>]*>)", "%1 "..h4_sym.." ")
+        html = html:gsub("(<h5[^>]*>)", "%1 "..h5_sym.." ")
+        html = html:gsub("(<h6[^>]*>)", "%1 "..h6_sym.." ")
     end
 
     -- Note: in all the gsub patterns above, we used lowercase for tags and attributes
