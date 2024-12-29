@@ -483,7 +483,8 @@ function ListMenuItem:update()
             local fontsize_title = _fontSize(20, 24)
             local fontsize_authors = _fontSize(18, 22)
             local wtitle, wauthors
-            local title, authors
+            local title, authors, reduce_font_size
+            local fixed_font_size = BookInfoManager:getSetting("fixed_item_font_size")
             local series_mode = BookInfoManager:getSetting("series_mode")
 
             -- whether to use or not title and authors
@@ -493,11 +494,9 @@ function ListMenuItem:update()
             -- if concatenated.)
             if self.do_filename_only or bookinfo.ignore_meta then
                 title = filename_without_suffix -- made out above
-                title = BD.auto(title)
                 authors = nil
             else
-                title = bookinfo.title and bookinfo.title or filename_without_suffix
-                title = BD.auto(title)
+                title = bookinfo.title or filename_without_suffix
                 authors = bookinfo.authors
                 -- If multiple authors (crengine separates them with \n), we
                 -- can display them on multiple lines, but limit to 2, and
@@ -514,40 +513,34 @@ function ListMenuItem:update()
                     end
                     authors = table.concat(authors, "\n")
                     -- as we'll fit 3 lines instead of 2, we can avoid some loops by starting from a lower font size
-                    fontsize_title = _fontSize(17, 21)
-                    fontsize_authors = _fontSize(15, 19)
+                    reduce_font_size = true
                 elseif authors then
                     authors = BD.auto(authors)
                 end
             end
+            title = BD.auto(title)
             -- add Series metadata if requested
-            if bookinfo.series then
-                if bookinfo.series_index then
-                    bookinfo.series = BD.auto(bookinfo.series .. " #" .. bookinfo.series_index)
-                else
-                    bookinfo.series = BD.auto(bookinfo.series)
-                end
+            if series_mode and bookinfo.series then
+                local series = bookinfo.series_index and bookinfo.series .. " #" .. bookinfo.series_index
+                    or bookinfo.series
+                series = BD.auto(series)
                 if series_mode == "append_series_to_title" then
-                    if title then
-                        title = title .. " - " .. bookinfo.series
-                    else
-                        title = bookinfo.series
-                    end
-                end
-                if not authors then
-                    if series_mode == "append_series_to_authors" or series_mode == "series_in_separate_line" then
-                        authors = bookinfo.series
-                    end
-                else
-                    if series_mode == "append_series_to_authors" then
-                        authors = authors .. " - " .. bookinfo.series
-                    elseif series_mode == "series_in_separate_line" then
-                        authors = bookinfo.series .. "\n" .. authors
+                    title = title .. " - " .. series
+                elseif series_mode == "append_series_to_authors" then
+                    authors = authors and authors .. " - " .. series or series
+                else -- "series_in_separate_line"
+                    if authors then
+                        authors = series .. "\n" .. authors
                         -- as we'll fit 3 lines instead of 2, we can avoid some loops by starting from a lower font size
-                        fontsize_title = _fontSize(17, 21)
-                        fontsize_authors = _fontSize(15, 19)
+                        reduce_font_size = true
+                    else
+                        authors = series
                     end
                 end
+            end
+            if reduce_font_size and not fixed_font_size then
+                fontsize_title = _fontSize(17, 21)
+                fontsize_authors = _fontSize(15, 19)
             end
             if bookinfo.unsupported then
                 -- Let's show this fact in place of the anyway empty authors slot
@@ -606,7 +599,7 @@ function ListMenuItem:update()
                     break
                 end
                 -- Don't go too low, and get out of this loop.
-                if fontsize_title <= 12 or fontsize_authors <= 10 then
+                if fixed_font_size or fontsize_title <= 12 or fontsize_authors <= 10 then
                     local title_height = wtitle:getSize().h
                     local title_line_height = wtitle:getLineHeight()
                     local title_min_height = 2 * title_line_height -- unscaled_size_check: ignore
