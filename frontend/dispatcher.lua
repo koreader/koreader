@@ -135,9 +135,9 @@ local settingsList = {
     show_plus_menu = {category="none", event="ShowPlusMenu", title=_("Show plus menu"), filemanager=true},
     toggle_select_mode = {category="none", event="ToggleSelectMode", title=_("Toggle select mode"), filemanager=true},
     refresh_content = {category="none", event="RefreshContent", title=_("Refresh content"), filemanager=true},
-    folder_shortcuts = {category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true, reader=true},
-    file_search = {category="none", event="ShowFileSearch", title=_("File search"), filemanager=true, reader=true},
-    file_search_results = {category="none", event="ShowSearchResults", title=_("Last file search results"), filemanager=true, reader=true},
+    folder_shortcuts = {category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true, general=true},
+    file_search = {category="none", event="ShowFileSearch", title=_("File search"), filemanager=true, general=true},
+    file_search_results = {category="none", event="ShowSearchResults", title=_("Last file search results"), filemanager=true, general=true},
     ----
     folder_up = {category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
     -- go_to
