@@ -374,20 +374,39 @@ function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_f
         )
         return
     end
+
     -- Check to see if the feed uses RSS.
-    local is_rss = feeds.rss
-        and feeds.rss.channel
-        and feeds.rss.channel.title
-        and feeds.rss.channel.item
-        and feeds.rss.channel.item[1]
-        and feeds.rss.channel.item[1].title
-        and feeds.rss.channel.item[1].link
+    local is_rss = false
+    if feeds.rss and feeds.rss.channel and feeds.rss.channel.title and feeds.rss.channel.item then
+        if type(feeds.rss.channel.item) == "table" then
+            -- Normalize data for single-item feeds.
+            if not feeds.rss.channel.item[1] and feeds.rss.channel.item then
+                local item = feeds.rss.channel.item
+                feeds.rss.channel.item = {}
+                feeds.rss.channel.item[1] = item
+            end
+            if feeds.rss.channel.item[1] and feeds.rss.channel.item[1].title and feeds.rss.channel.item[1].link then
+                is_rss = true
+            end
+        end
+    end
+
     -- Check to see if the feed uses Atom.
-    local is_atom = feeds.feed
-        and feeds.feed.title
-        and feeds.feed.entry[1]
-        and feeds.feed.entry[1].title
-        and feeds.feed.entry[1].link
+    local is_atom = false
+    if feeds.feed and feeds.feed.title and feeds.feed.entry then
+        if type(feeds.feed.entry) == "table" then
+            -- Normalize data for single-item feeds.
+            if not feeds.feed.entry[1] and feeds.feed.entry then
+                local entry = feeds.feed.entry
+                feeds.feed.entry = {}
+                feeds.feed.entry[1] = entry
+            end
+            if feeds.feed.entry[1] and feeds.feed.entry[1].title and feeds.feed.entry[1].link then
+                is_atom = true
+            end
+        end
+    end
+
     -- Process the feeds accordingly.
     if is_atom then
         ok = pcall(function()
