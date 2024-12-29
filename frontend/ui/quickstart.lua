@@ -220,7 +220,7 @@ The following methods are available for accessing your books and articles:
 
 You can assign hotkeys for quick access to each of these dialogs.
 
-Note, our hotkeys plugin works independently for both our reader and file manager modules. 
+Note, our hotkeys plugin works independently for both our reader and file manager modules.
 You will need to set up the hotkeys for both modules separately.
 
 You can also set KOReader to open with any of these dialogs on startup via:
@@ -239,7 +239,7 @@ The following methods are available for accessing your books and articles:
 
 You can assign gestures for quick access to each of these dialogs.
 
-Note, our gestures plugin works independently for both our reader and file manager modules. 
+Note, our gestures plugin works independently for both our reader and file manager modules.
 You will need to set up the gestures for both modules separately.
 
 You can also set KOReader to open with any of these dialogs on startup via:
