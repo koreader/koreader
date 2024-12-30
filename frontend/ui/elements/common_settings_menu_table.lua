@@ -283,7 +283,16 @@ if Device:isTouchDevice() then
             UIManager:broadcastEvent(Event:new("IgnoreHoldCorners"))
         end,
     }
-    common_settings.screen_disable_double_tap = dofile("frontend/ui/elements/screen_disable_double_tap_table.lua")
+    common_settings.screen_disable_double_tap = {
+        text = _("Disable double tap"),
+        checked_func = function()
+            return G_reader_settings:nilOrTrue("disable_double_tap")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrTrue("disable_double_tap")
+            UIManager:askForRestart()
+        end,
+    }
     common_settings.menu_activate = dofile("frontend/ui/elements/menu_activate.lua")
 end
 
