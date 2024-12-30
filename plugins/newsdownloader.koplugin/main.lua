@@ -522,12 +522,17 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, limit, download_f
         -- Get the feed description.
         local feed_description
         if feed_type == FEED_TYPE_RSS then
+            feed_title = feed.title
             feed_description = feed.description
             if feed["content:encoded"] ~= nil then
                 -- Spec: https://web.resource.org/rss/1.0/modules/content/
                 feed_description = feed["content:encoded"]
             end
+        elseif feed_type == FEED_TYPE_ATOM then
+            feed_title = feed.title and feed.title[1] or feed.title
+            feed_description = feed.content[1] or feed.content --- @todo This should select the one with type="html" if there is a choice.
         else
+            feed_title = feed.title and feed.title[1] or feed.title
             feed_description = feed.summary
         end
         -- Download the article.
@@ -544,6 +549,7 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, limit, download_f
         else
             self:createFromDescription(
                 feed,
+                feed_title,
                 feed_description,
                 feed_output_dir,
                 include_images,
@@ -592,7 +598,7 @@ function NewsDownloader:downloadFeed(feed, cookies, feed_output_dir, include_ima
     end
 end
 
-function NewsDownloader:createFromDescription(feed, content, feed_output_dir, include_images, message)
+function NewsDownloader:createFromDescription(feed, title, content, feed_output_dir, include_images, message)
     local title_with_date = getTitleWithDate(feed)
     local news_file_path = ("%s%s%s"):format(feed_output_dir,
                                              title_with_date,
@@ -603,15 +609,14 @@ function NewsDownloader:createFromDescription(feed, content, feed_output_dir, in
     else
         logger.dbg("NewsDownloader: News file will be stored to :", news_file_path)
         local article_message = T(_("%1\n%2"), message, title_with_date)
-        local footer = _("This is just a description of the feed. To download the full article instead, go to the News Downloader settings and change 'download_full_article' to 'true'.")
-
+        local footer = _("If this is only a summary, the full article can be downloaded by going to the News Downloader settings and changing 'Download full article' to 'true'.")
         local html = string.format([[<!DOCTYPE html>
 <html>
 <head><meta charset='UTF-8'><title>%s</title></head>
 <body><header><h2>%s</h2></header><article>%s</article>
 <br><footer><small>%s</small></footer>
 </body>
-</html>]], feed.title, feed.title, content, footer)
+</html>]], title, title, content, footer)
         local link = getFeedLink(feed.link)
         DownloadBackend:createEpub(news_file_path, html, link, include_images, article_message)
     end
