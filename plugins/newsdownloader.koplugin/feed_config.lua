@@ -14,7 +14,7 @@ return {--do NOT change this line
  -- set 'limit' to "0" means no limit.
 
  -- 'download_full_article=true' - means download full article (may not always work correctly)
- -- 'download_full_article=false' - means use only feed description to create feeds. Ssmetimes this is only a summary or the first few lines, sometimes it's the full article.
+ -- 'download_full_article=false' - means use only feed description to create feeds. Sometimes this is only a summary or the first few lines, sometimes it's the full article.
  -- default value is 'false' (if no 'download_full_article' entry)
 
  -- 'include_images=true' - means download any images on the page and include them in the article
