@@ -36,7 +36,7 @@ local NewsDownloader = WidgetContainer:extend{
     empty_feed = {
         [1] = "https://",
         limit = 5,
-        download_full_article = true,
+        download_full_article = false,
         include_images = true,
         enable_filter = false,
         filter_element = ""
@@ -249,7 +249,7 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
     for idx, feed in ipairs(feed_config) do
         local url = feed[1]
         local limit = feed.limit
-        local download_full_article = feed.download_full_article == nil or feed.download_full_article
+        local download_full_article = feed.download_full_article or false
         local include_images = not never_download_images and feed.include_images
         local enable_filter = feed.enable_filter or feed.enable_filter == nil
         local filter_element = feed.filter_element or feed.filter_element == nil
