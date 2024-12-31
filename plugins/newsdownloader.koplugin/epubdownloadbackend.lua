@@ -359,7 +359,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
             end
             ext = ext:lower()
             local imgid = string.format("img%05d", imagenum)
-            local imgpath = string.format("images/%s.%s", imgid, ext)
+            local imgpath = ext ~= "" and string.format("images/%s.%s", imgid, ext) or string.format("images/%s", imgid)
             local mimetype = ext_to_mimetype[ext] or ""
             local width = tonumber(img_tag:match([[width="([^"]*)"]]))
             local height = tonumber(img_tag:match([[height="([^"]*)"]]))
