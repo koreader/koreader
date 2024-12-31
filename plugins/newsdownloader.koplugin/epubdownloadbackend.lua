@@ -353,14 +353,13 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                 src_ext = src_ext:match("(.-)%?") -- remove ?blah
             end
             local ext = src_ext:match(".*%.(%S%S%S?%S?%S?)$") -- extensions are only 2 to 5 chars
-            if ext == nil or ext == "" then
-                -- we won't know what mimetype to use, ignore it
-                logger.dbg("no file extension found in ", src)
-                return nil
+            if ext == nil then
+                --- @todo Reverse the logic to download the image first so we can get the mimetype from the headers?
+                ext = ""
             end
             ext = ext:lower()
             local imgid = string.format("img%05d", imagenum)
-            local imgpath = string.format("images/%s.%s", imgid, ext)
+            local imgpath = ext ~= "" and string.format("images/%s.%s", imgid, ext) or string.format("images/%s", imgid)
             local mimetype = ext_to_mimetype[ext] or ""
             local width = tonumber(img_tag:match([[width="([^"]*)"]]))
             local height = tonumber(img_tag:match([[height="([^"]*)"]]))
