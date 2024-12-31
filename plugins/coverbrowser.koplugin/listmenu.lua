@@ -400,7 +400,7 @@ function ListMenuItem:update()
                     if BookInfoManager:getSetting("show_pages_read_as_progress") then
                         pages_str = T(_("Page %1 of %2"), Math.round(percent_finished*pages), pages)
                     else
-                        pages_str = T(_("%1 % of %2 pages"), math.floor(100*percent_finished), pages)
+                        pages_str = T(N_("%1 % of 1 page", "%1 % of %2 pages", pages), math.floor(100*percent_finished), pages)
                     end
                     if BookInfoManager:getSetting("show_pages_left_in_progress") then
                         pages_str = T(_("%1, %2 to read"), pages_str, Math.round(pages-percent_finished*pages), pages)
