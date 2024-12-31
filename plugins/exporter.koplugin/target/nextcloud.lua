@@ -90,7 +90,7 @@ function NextcloudExporter:getMenuTable()
                             },
                             {
                                 description = _("App password"),
-                                hint = _("Security -> Devices & sessions"),
+                                hint = _("Security → Devices & sessions"),
                                 text = self.settings.password,
                                 input_type = "string"
                             }
