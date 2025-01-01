@@ -790,7 +790,6 @@ if last_migration_date < 20241228 then
         local new_settings = {}
         local migrate = {
             download_queue = "upload_queue",
-            is_archiving_deleted = "delete_instead",
             is_auto_delete = "auto_archive",
             is_delete_abandoned = "archive_abandoned",
             is_delete_finished = "archive_finished",
@@ -801,6 +800,8 @@ if last_migration_date < 20241228 then
         for old_key, value in pairs(wb_settings.data.wallabag) do
             if migrate[old_key] ~= nil then
                 new_settings[migrate[old_key]] = value
+            elseif old_key == "is_archiving_deleted" then
+                new_settings["delete_instead"] = not value
             else
                 new_settings[old_key] = value
             end
