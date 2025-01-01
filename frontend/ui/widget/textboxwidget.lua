@@ -75,6 +75,8 @@ local TextBoxWidget = InputContainer:extend{
     highlight_rects = nil,
     highlight_start_idx = nil,
     highlight_end_idx = nil,
+    highlight_start_line = nil,
+    highlight_end_line = nil,
     highlight_clear_and_redraw_function = nil,
     hold_start_pos = nil,
     hold_end_pos = nil,
@@ -1981,7 +1983,7 @@ function TextBoxWidget:onHoldWord(callback, ges)
     end
 end
 
--- Allow selection of one or more words (with no visual feedback)
+-- Allow selection of one or more words
 -- Gestures should be declared in widget using us (e.g dictquicklookup.lua)
 
 -- Constants for which side of a word to find
@@ -1991,9 +1993,19 @@ local FIND_END = 2
 function TextBoxWidget:onHoldStartText(_, ges)
     -- store hold start position and timestamp, will be used on release
 
+    local pos = Geom:new{
+        x = ges.pos.x - self.dimen.x,
+        y = ges.pos.y - self.dimen.y,
+    }
+
+    -- check if the coordinates are actually inside our area
+    if pos.x < 0 or pos.x >= self.dimen.w or pos.y < 0 or pos.y >= self.dimen.h then
+        pos = nil
+    end
+
+    self.hold_start_pos = pos
+    self.hold_end_pos = pos
     self:unscheduleClearHighlightAndRedraw()
-    self.hold_start_pos = self:getPosFromAbsPos(ges.pos)
-    self.hold_end_pos = self.hold_start_pos
 
     if self.highlight_text_selection then
         if self:updateHighlight() then
@@ -2001,7 +2013,6 @@ function TextBoxWidget:onHoldStartText(_, ges)
         end
     end
 
-    -- check coordinates are actually inside our area
     if not self.hold_start_pos then
         return false -- let event be processed by other widgets
     end
@@ -2011,13 +2022,15 @@ function TextBoxWidget:onHoldStartText(_, ges)
 end
 
 function TextBoxWidget:onHoldPanText(_, ges)
-    -- We don't highlight the currently selected text, but just let this
-    -- event pop up if we are not currently selecting text
-    if not self.hold_start_time then
+    -- Let this event pop up if we are not currently selecting text
+    if not self.hold_start_pos then
         return false
     end
 
-    self.hold_end_pos = self:getPosFromAbsPos(ges.pos)
+    self.hold_end_pos = Geom:new{
+        x = ges.pos.x - self.dimen.x,
+        y = ges.pos.y - self.dimen.y,
+    }
 
     if self.highlight_text_selection then
         if self:updateHighlight() then
@@ -2038,7 +2051,10 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
         return false
     end
 
-    self.hold_end_pos = self:getPosFromAbsPos(ges.pos)
+    self.hold_end_pos = Geom:new{
+        x = ges.pos.x - self.dimen.x,
+        y = ges.pos.y - self.dimen.y,
+    }
 
     -- Unlike to onHoldStartText and onHoldPanText we must call updateHighlight here even if highlight
     -- displaying is disabled to be able to query the higlighted word.
@@ -2046,11 +2062,6 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
         if self.highlight_text_selection then
             self:redrawHighlight()
         end
-    end
-
-    -- check start and end coordinates are actually inside our area
-    if not self.hold_end_pos then
-        return false
     end
 
     local hold_duration = time.now() - self.hold_start_time
@@ -2179,20 +2190,6 @@ function TextBoxWidget:getSourceIndex(char_idx)
     end
 end
 
-function TextBoxWidget:getPosFromAbsPos(abs_pos)
-    local pos = Geom:new{
-        x = abs_pos.x - self.dimen.x,
-        y = abs_pos.y - self.dimen.y,
-    }
-
-    -- check if the coordinates are actually inside our area
-    if pos.x < 0 or pos.x >= self.dimen.w or pos.y < 0 or pos.y >= self.dimen.h then
-        return nil
-    end
-
-    return pos
-end
-
 function TextBoxWidget:getXtextHighlightIndices(start_x, start_y, end_x, end_y)
     -- With xtext and fribidi, words may not be laid out in logical order,
     -- so the left of a visual word may be its end in logical order,
@@ -2203,7 +2200,7 @@ function TextBoxWidget:getXtextHighlightIndices(start_x, start_y, end_x, end_y)
     local sel_end_idx = self:getCharPosAtXY(end_x, end_y)
     if not sel_start_idx or not sel_end_idx then
         -- one or both hold points were out of text
-        return nil, nil, nil, nil
+        return nil, nil
     end
     if sel_start_idx > sel_end_idx then -- re-order if needed
         sel_start_idx, sel_end_idx = sel_end_idx, sel_start_idx
@@ -2212,16 +2209,10 @@ function TextBoxWidget:getXtextHighlightIndices(start_x, start_y, end_x, end_y)
     -- and that we need to correct. But if both positions are
     -- after last char, the full selection is out of text.
     if sel_start_idx > #self._xtext then -- Both are after last char
-        return nil, nil, nil, nil
+        return nil, nil
     end
     if sel_end_idx > #self._xtext then -- Only end is after last char
         sel_end_idx = #self._xtext
-    end
-
-    local start_line_num = math.ceil(start_y / self.line_height_px) + self.virtual_line_num - 1
-    local end_line_num = math.ceil(end_y / self.line_height_px) + self.virtual_line_num - 1
-    if start_line_num < 1 or end_line_num > #self.vertical_string_list then
-        return nil, nil, nil, nil
     end
 
     -- Delegate word boundaries search to xtext.cpp, which can
@@ -2229,7 +2220,7 @@ function TextBoxWidget:getXtextHighlightIndices(start_x, start_y, end_x, end_y)
     -- (50 is the nb of chars backward and ahead of selection indices
     -- to consider when looking for word boundaries)
     local word_start_idx, word_end_idx = self._xtext:getSelectedWordIndices(sel_start_idx, sel_end_idx, 50)
-    return word_start_idx, word_end_idx, start_line_num, end_line_num
+    return word_start_idx, word_end_idx
 end
 
 function TextBoxWidget:getXtextHighlightRects(text_start_idx, text_end_idx, start_line_num, end_line_num)
@@ -2276,16 +2267,10 @@ function TextBoxWidget:getNonXtextHighlightIndices(start_x, start_y, end_x, end_
     local end_idx = self:_findWordEdge(end_x, end_y, FIND_END)
     if not start_idx or not end_idx then
         -- one or both hold points were out of text
-        return nil, nil, nil, nil
+        return nil, nil
     end
 
-    local start_line_num = math.ceil(start_y / self.line_height_px) + self.virtual_line_num - 1
-    local end_line_num = math.ceil(end_y / self.line_height_px) + self.virtual_line_num - 1
-    if start_line_num < 1 or end_line_num > #self.vertical_string_list then
-        return nil, nil, nil, nil
-    end
-
-    return start_idx, end_idx, start_line_num, end_line_num
+    return start_idx, end_idx
 end
 
 function TextBoxWidget:getNonXtextHighlightRects(text_start_idx, text_end_idx, start_line_num, end_line_num)
@@ -2347,6 +2332,8 @@ function TextBoxWidget:updateHighlight()
         local changed = self.highlight_start_idx ~= nil or self.highlight_end_idx ~= nil
         self.highlight_start_idx = nil
         self.highlight_end_idx = nil
+        self.highlight_start_line = nil
+        self.highlight_end_line = nil
         self.highlight_rects = nil
         return changed
     end
@@ -2354,12 +2341,13 @@ function TextBoxWidget:updateHighlight()
     -- Swap start and end if needed
     local x0, y0, x1, y1
     -- first, sort by y/line_num
-    local start_line_num = math.ceil(self.hold_start_pos.y / self.line_height_px)
-    local end_line_num = math.ceil(self.hold_end_pos.y / self.line_height_px)
+    local start_line_num = math.ceil(self.hold_start_pos.y / self.line_height_px) + self.virtual_line_num - 1
+    local end_line_num = math.ceil(self.hold_end_pos.y / self.line_height_px) + self.virtual_line_num - 1
     if start_line_num < end_line_num then
         x0, y0 = self.hold_start_pos.x, self.hold_start_pos.y
         x1, y1 = self.hold_end_pos.x, self.hold_end_pos.y
     elseif start_line_num > end_line_num then
+        start_line_num, end_line_num = end_line_num, start_line_num
         x0, y0 = self.hold_end_pos.x, self.hold_end_pos.y
         x1, y1 = self.hold_start_pos.x, self.hold_start_pos.y
     else -- same line_num : sort by x
@@ -2374,17 +2362,33 @@ function TextBoxWidget:updateHighlight()
 
     local text_start_idx, text_end_idx
     if self.use_xtext then
-        text_start_idx, text_end_idx, start_line_num, end_line_num = self:getXtextHighlightIndices(x0, y0, x1, y1)
+        text_start_idx, text_end_idx = self:getXtextHighlightIndices(x0, y0, x1, y1)
     else
-        text_start_idx, text_end_idx, start_line_num, end_line_num = self:getNonXtextHighlightIndices(x0, y0, x1, y1)
+        text_start_idx, text_end_idx = self:getNonXtextHighlightIndices(x0, y0, x1, y1)
     end
 
-    if text_start_idx == self.highlight_start_idx and text_end_idx == self.highlight_end_idx then
+    if start_line_num < 1 then
+        start_line_num = 1
+    end
+    if start_line_num > #self.vertical_string_list then
+        start_line_num = #self.vertical_string_list
+    end
+    if end_line_num < 1 then
+        end_line_num = 1
+    end
+    if end_line_num > #self.vertical_string_list then
+        end_line_num = #self.vertical_string_list
+    end
+
+    if text_start_idx == self.highlight_start_idx and text_end_idx == self.highlight_end_idx
+      and start_line_num == self.highlight_start_line and end_line_num == self.highlight_end_line then
         return false
     end
 
     self.highlight_start_idx = text_start_idx
     self.highlight_end_idx = text_end_idx
+    self.highlight_start_line = start_line_num
+    self.highlight_end_line = end_line_num
 
     if text_start_idx == nil or not self.highlight_text_selection then
         self.highlight_rects = nil
