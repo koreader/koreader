@@ -7,7 +7,6 @@ local DrawContext = require("ffi/drawcontext")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local koptinterface = require("document/koptinterface")
 local Mupdf = require("ffi/mupdf")
 local Screen = Device.screen
 local UIManager = require("ui/uimanager")
@@ -217,7 +216,10 @@ function HtmlBoxWidget:onHoldPanText(_, ges)
         return false
     end
 
-    self.hold_end_pos = self:getPosFromAbsPos(ges.pos)
+    self.hold_end_pos = Geom:new{
+        x = ges.pos.x - self.dimen.x,
+        y = ges.pos.y - self.dimen.y,
+    }
 
     if self.highlight_text_selection then
         if self:updateHighlight() then
@@ -227,6 +229,135 @@ function HtmlBoxWidget:onHoldPanText(_, ges)
     end
 
     return true
+end
+
+function HtmlBoxWidget:isRtlLine(line)
+    local word_count = #line
+    return word_count > 1 and line[1].x0 > line[word_count].x0
+end
+
+function HtmlBoxWidget:getWordIndices(lines, pos)
+    local last_checked_line_index = nil
+
+    for line_index, line in ipairs(lines) do
+        if pos.y >= line.y0 then -- check if pos in on or below the line
+            if pos.y < line.y1 then -- check if pos is within the line vertically
+                if pos.x >= line.x0 and pos.x < line.x1 then -- check if pos is within the line horizontally
+                    if #line >= 1 then -- if line is not empty then check for exact word hit
+                        local word_start_index = 1
+                        local word_end_index = #line
+                        local step = 1
+                        if HtmlBoxWidget:isRtlLine(line) then
+                            word_start_index, word_end_index = word_end_index, word_start_index
+                            step = -1
+                        end
+
+                        local word_x0 = line[word_start_index].x0
+                        for word_index = word_start_index, word_end_index, step do
+                            local word = line[word_index]
+                            if pos.x >= word_x0 and pos.x < word.x1 then
+                                return line_index, word_index
+                            end
+
+                            -- join the word rectangles horizontally to avoid hit gaps
+                            word_x0 = word.x1
+                        end
+                    end
+                elseif pos.x < line.x0 then -- check if pos is before the current line horizontally
+                    if HtmlBoxWidget:isRtlLine(line) then
+                        return line_index, #line
+                    else
+                        return line_index, 1
+                    end
+                elseif pos.x >= line.x1 then -- check if pos after the current line horizontally
+                    if HtmlBoxWidget:isRtlLine(line) then
+                        -- To match TextBoxWidget's selection behavior this should be "line_index, 1"
+                        -- but then the selection will jump between the full row and the visually
+                        -- last word when hitting a vertical gap. If we extend the line vertically
+                        -- till the next one then selection will be weird around new paragraphs.
+                        -- The solution might require getPageText() to add empty lines.
+                        return line_index, #line
+                    else
+                        return line_index, #line
+                    end
+                end
+            end
+
+            last_checked_line_index = line_index
+        end
+    end
+
+    if last_checked_line_index == nil then
+        return 1, 1
+    else
+        return last_checked_line_index, #lines[last_checked_line_index]
+    end
+end
+
+function HtmlBoxWidget:getSelectedText(lines, start_pos, end_pos)
+    local start_line_index, start_word_index = HtmlBoxWidget:getWordIndices(lines, start_pos)
+    local end_line_index, end_word_index = HtmlBoxWidget:getWordIndices(lines, end_pos)
+    if start_line_index == nil or end_line_index == nil then
+        return nil, nil
+    elseif start_line_index > end_line_index then
+        start_line_index, end_line_index = end_line_index, start_line_index
+        start_word_index, end_word_index = end_word_index, start_word_index
+    elseif start_line_index == end_line_index and start_word_index > end_word_index then
+        start_word_index, end_word_index = end_word_index, start_word_index
+    end
+
+    local found_start = false
+    local words = {}
+    local rects = {}
+
+    for line_index = start_line_index, end_line_index do
+        local line = lines[line_index]
+        local draw_line = false
+        local rect_x0 = 0
+        local rect_x1 = 0
+
+        for word_index, word in ipairs(line) do
+            if type(word) == 'table' then
+                if line_index == start_line_index and word_index == start_word_index then
+                    found_start = true
+                end
+
+                if found_start then
+                    table.insert(words, word.word)
+
+                    if draw_line then
+                        if word.x0 < rect_x0 then rect_x0 = word.x0 end
+                        if word.x1 > rect_x1 then rect_x1 = word.x1 end
+                    else
+                        draw_line = true
+                        rect_x0 = word.x0
+                        rect_x1 = word.x1
+                    end
+
+                    if line_index == end_line_index and word_index == end_word_index then
+                        break
+                    end
+                end
+            end
+        end
+
+        if draw_line then
+            local rect = Geom:new{
+                x = rect_x0,
+                y = line.y0,
+                w = rect_x1 - rect_x0,
+                h = line.y1 - line.y0,
+            }
+
+            table.insert(rects, rect)
+        end
+    end
+
+    if found_start then
+        return table.concat(words, " "), rects
+    else
+        return nil, nil
+    end
 end
 
 function HtmlBoxWidget:onHoldReleaseText(callback, ges)
@@ -239,7 +370,10 @@ function HtmlBoxWidget:onHoldReleaseText(callback, ges)
         return false
     end
 
-    self.hold_end_pos = self:getPosFromAbsPos(ges.pos)
+    self.hold_end_pos = Geom:new{
+        x = ges.pos.x - self.dimen.x,
+        y = ges.pos.y - self.dimen.y,
+    }
 
     -- Unlike to onHoldStartText and onHoldPanText we must call updateHighlight here even if highlight
     -- displaying is disabled to be able to query the higlighted word.
@@ -337,11 +471,11 @@ function HtmlBoxWidget:updateHighlight()
             page:close()
         end
 
-        local text_boxes = koptinterface:getTextFromBoxes(self.page_boxes, self.hold_start_pos, self.hold_end_pos)
-        local changed = not HtmlBoxWidget:areTextBoxesEqual(self.highlight_rects, self.highlight_text, text_boxes.boxes, text_boxes.text)
+        local text, rects = HtmlBoxWidget:getSelectedText(self.page_boxes, self.hold_start_pos, self.hold_end_pos)
+        local changed = not HtmlBoxWidget:areTextBoxesEqual(self.highlight_rects, self.highlight_text, rects, text)
         if changed then
-            self.highlight_rects = text_boxes.boxes
-            self.highlight_text = text_boxes.text
+            self.highlight_rects = rects
+            self.highlight_text = text
         end
         return changed
     else
