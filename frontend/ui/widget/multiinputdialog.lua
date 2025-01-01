@@ -110,7 +110,8 @@ function MultiInputDialog:init()
     self:onCloseKeyboard()
     self._input_widget:onCloseWidget()
 
-    -- Update keyboard_visible
+    -- Update self.keyboard_visible, this is needed because InputDialog:onCloseKeyboard updates it regardless of whether
+    -- G_reader_settings("virtual_keyboard_enabled") is disabled, which can lead to an incorrect keyboard visibility state.
     if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
         self.keyboard_visible = false
     end
