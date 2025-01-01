@@ -1199,7 +1199,22 @@ function KoptInterface:getSelectedWordContext(word, nb_words, pos)
     local i_end, j_end = i, j
     local word_array = util.splitToArray(word, " ")
     for idx, split_word in ipairs(word_array) do
-        if boxes[i_end][j_end].word ~= split_word then return end
+        local box_word = boxes[i_end][j_end].word
+        if box_word:sub(-1) == "-" and j_end == #boxes[i_end] and box_word ~= split_word then
+            -- Line final hyphenation.
+            -- Combine word with first word of next line.
+            box_word = box_word:sub(1, -2)
+            i_end = i_end + 1
+            j_end = 1
+            box_word = box_word .. boxes[i_end][j_end].word
+        elseif box_word:sub(-2, -1) == "\u{00AD}" and j_end == #boxes[i_end] and box_word ~= split_word then
+            -- Hyphen
+            box_word = box_word:sub(1, -3)
+            i_end = i_end + 1
+            j_end = 1
+            box_word = box_word .. boxes[i_end][j_end].word
+        end
+        if box_word ~= split_word then return end
         if idx ~= #word_array then
             if j_end == #boxes[i_end] then
                 i_end = i_end + 1
