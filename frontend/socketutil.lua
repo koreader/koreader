@@ -2,6 +2,7 @@
 This module contains miscellaneous helper functions specific to our usage of LuaSocket/LuaSec.
 ]]
 
+local Device = require("device")
 local Version = require("version")
 local http = require("socket.http")
 local https = require("ssl.https")
@@ -16,7 +17,7 @@ local socketutil = {
 
 --- Builds a sensible UserAgent that fits Wikipedia's UA policy <https://meta.wikimedia.org/wiki/User-Agent_policy>
 local socket_ua = http.USERAGENT
-socketutil.USER_AGENT = "KOReader/" .. Version:getShortVersion() .. " (https://koreader.rocks/) " .. socket_ua:gsub(" ", "/")
+socketutil.USER_AGENT = "KOReader/" .. Version:getShortVersion() .. " (" .. Device:info() .. "; " .. jit.os .. "; " .. jit.arch .. ") " .. socket_ua:gsub(" ", "/")
 -- Monkey-patch it in LuaSocket, as it already takes care of inserting the appropriate header to its requests.
 http.USERAGENT = socketutil.USER_AGENT
 
