@@ -563,8 +563,12 @@ local function parseDate(dateTime)
     -- Uses lua-feedparser https://github.com/slact/lua-feedparser
     -- feedparser is available under the (new) BSD license.
     -- see: koreader/plugins/newsdownloader.koplugin/lib/LICENCE_lua-feedparser
+    logger.dbg("NewsDownloader: Parsing date:", dateTime)
     local date = dateparser.parse(dateTime)
-    return os.date("%y-%m-%d_%H-%M_", date)
+    if type(date) == "number" then
+        return os.date("%y-%m-%d_%H-%M_", date)
+    end
+    return dateTime
 end
 
 -- This appears to be used by Atom feeds in processFeed.
