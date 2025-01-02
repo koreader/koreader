@@ -1864,7 +1864,7 @@ local kt5_set = Set { "22D", "25T", "23A", "2AQ", "2AP", "1XH", "22C" }
 local ks_set = Set { "27J", "2BL", "263", "227", "2BM", "23L", "23M", "270" }
 local kcs_set = Set { "3H7" } --- There's definitely more, no otas are available yet
 local kt6_set = Set { "A89", "3L2", "3L3", "3L4", "3L5", "3L6", "3KM" }
-local pw6_set = Set { "33W", "33X", "346", "349", "3H3", "3H5", "3H8", "3HA", "3J5", "3JS" } --- some of these are probably SE :/ 
+local pw6_set = Set { "33W", "33X", "346", "349", "3H3", "3H5", "3H8", "3HA", "3J5", "3JS" } --- some of these are probably SE :/
 
 if kindle_sn_lead == "B" or kindle_sn_lead == "9" then
     local kindle_devcode = string.sub(kindle_sn, 3, 4)
