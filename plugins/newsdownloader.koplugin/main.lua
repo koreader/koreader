@@ -632,11 +632,18 @@ function NewsDownloader:createFromDescription(feed, title, content, feed_output_
             end)
         end
 
-        local html = string.format([[<!DOCTYPE html>
+        local html = string.format([[
+<!DOCTYPE html>
 <html>
-<head><meta charset='UTF-8'><title>%s</title></head>
-<body><header><h2>%s</h2></header><article>%s</article>
-<br><footer><small>%s</small></footer>
+<head>
+<meta charset="UTF-8">
+<title>%s</title>
+</head>
+<body>
+<header><h1>%s</h1></header>
+<article>%s</article>
+<br>
+<footer><small>%s</small></footer>
 </body>
 </html>]], title, title, content, footer)
         local link = getFeedLink(feed.link)
