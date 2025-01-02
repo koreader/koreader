@@ -279,6 +279,7 @@ function ReadTimer:addToMainMenu(menu_items)
                                         datetime.secondsToClockDuration(user_duration_format, seconds, false)),
                                     timeout = 5,
                                 })
+                                if touchmenu_instance then touchmenu_instance:updateItems() end
                             else
                                 UIManager:show(InfoMessage:new{
                                     text = _("Timer could not be set. The selected time is in the past."),
