@@ -258,23 +258,23 @@ end
 
 function FileManagerCollection:showCollDialog()
     local coll_dialog
-    local function genFilterByMetadataButton(text_, prop_)
+    local function genFilterByMetadataButton(button_text, button_prop)
         return {
-            text = text_,
+            text = button_text,
             callback = function()
                 UIManager:close(coll_dialog)
                 local prop_values = {}
                 for idx, item in ipairs(self.coll_menu.item_table) do
-                    local doc_prop = self.ui.bookinfo:getDocProps(item.file, nil, true)[prop_]
+                    local doc_prop = self.ui.bookinfo:getDocProps(item.file, nil, true)[button_prop]
                     if doc_prop == nil then
                         doc_prop = self.empty_prop
-                    elseif prop_ == "language" then
+                    elseif button_prop == "language" then
                         doc_prop = doc_prop:lower()
                     end
                     prop_values[doc_prop] = prop_values[doc_prop] or {}
                     table.insert(prop_values[doc_prop], idx)
                 end
-                self:showPropValueList(prop_, prop_values)
+                self:showPropValueList(button_prop, prop_values)
             end,
         }
     end
