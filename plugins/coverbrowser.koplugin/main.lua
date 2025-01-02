@@ -155,16 +155,16 @@ function CoverBrowser:addToMainMenu(menu_items)
     -- next to Classic mode settings
     if menu_items.filebrowser_settings == nil then return end
     local fc = self.ui.file_chooser
-    local function genSeriesSubMenuItem(text_, value_)
+    local function genSeriesSubMenuItem(item_text, item_series_mode)
         return {
-            text = text_,
+            text = item_text,
             radio = true,
             checked_func = function()
-                return series_mode == value_
+                return series_mode == item_series_mode
             end,
             callback = function()
-                if series_mode ~= value_ then
-                    series_mode = value_
+                if series_mode ~= item_series_mode then
+                    series_mode = item_series_mode
                     BookInfoManager:saveSetting("series_mode", series_mode)
                     fc:updateItems(1, true)
                 end
