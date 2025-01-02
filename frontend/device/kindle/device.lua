@@ -1017,6 +1017,23 @@ local KindlePaperWhite5SE = Kindle:extend{
     canDoSwipeAnimation = yes,
 }
 
+local KindlePaperWhite6 = Kindle:extend{
+    model = "KindlePaperWhite6",
+    isMTK = yes,
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    hasNaturalLight = yes,
+    -- NOTE: We *can* technically control both LEDs independently,
+    --       but the mix is device-specific, we don't have access to the LUT for the mix powerd is using,
+    --       and the widget is designed for the Kobo Aura One anyway, so, hahaha, nope.
+    hasNaturalLightMixer = yes,
+    display_dpi = 300,
+    -- NOTE: While hardware dithering (via MDP) should be a thing, it doesn't appear to do anything right now :/.
+    canHWDither = no, --- this is a guess i don't have a device to check
+    canDoSwipeAnimation = yes,
+    -- NOTE: Input device path is variable, see findInputDevices
+}
+
 local KindleBasic4 = Kindle:extend{
     model = "KindleBasic4",
     isMTK = yes,
@@ -1024,6 +1041,17 @@ local KindleBasic4 = Kindle:extend{
     hasFrontlight = yes,
     display_dpi = 300,
     canHWDither = no,
+    canDoSwipeAnimation = yes,
+    -- NOTE: Like the PW5, input device path is variable, see findInputDevices
+}
+
+local KindleBasic5 = Kindle:extend{
+    model = "KindleBasic5",
+    isMTK = yes,
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    display_dpi = 300,
+    canHWDither = no, --- this is a guess i don't have a device to check
     canDoSwipeAnimation = yes,
     -- NOTE: Like the PW5, input device path is variable, see findInputDevices
 }
@@ -1055,7 +1083,7 @@ local KindleColorSoft = Kindle:extend{
     hasNaturalLightMixer = yes,
     hasLightSensor = yes,
     display_dpi = 300,
-    canHWDither = yes,
+    canHWDither = no, --- this is a guess i don't have a device to check
     canDoSwipeAnimation = yes,
     hasColorScreen = yes,
 }
@@ -1595,12 +1623,46 @@ function KindlePaperWhite5:init()
 end
 KindlePaperWhite5SE.init = KindlePaperWhite5.init
 
+function KindlePaperWhite6:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/fp9967-bl1/brightness",
+        warmth_intensity_file = "/sys/class/backlight/fp9967-bl0/brightness", --- guess based on colorsoft
+        batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
+        is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
+    }
+
+    -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
+    self.screen:_MTK_ToggleFastMode(true)
+
+    Kindle.init(self)
+end
+
 function KindleBasic4:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         fl_intensity_file = "/sys/class/backlight/fp9966-bl1/brightness",
         warmth_intensity_file = "/sys/class/backlight/fp9966-bl0/brightness",
+        batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
+        is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
+    }
+
+    -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
+    self.screen:_MTK_ToggleFastMode(true)
+
+    Kindle.init(self)
+end
+
+function KindleBasic5:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/fp9967-bl1/brightness",
+        warmth_intensity_file = "/sys/class/backlight/fp9967-bl0/brightness", --- guess based on colorsoft
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
@@ -1738,7 +1800,9 @@ KindleBasic3.exit = KindleTouch.exit
 KindleOasis3.exit = KindleTouch.exit
 KindlePaperWhite5.exit = KindleTouch.exit
 KindlePaperWhite5SE.exit = KindleTouch.exit
+KindlePaperWhite6.exit = KindleTouch.exit
 KindleBasic4.exit = KindleTouch.exit
+KindleBasic5.exit = KindleTouch.exit
 KindleScribe.exit = KindleTouch.exit
 KindleColorSoft.exit = KindleTouch.exit
 
@@ -1798,7 +1862,10 @@ local pw5_set = Set { "1Q0", "1PX", "1VD", "21A", "2BJ", "2DK" }
 local pw5se_set = Set { "1LG", "219", "2BH" }
 local kt5_set = Set { "22D", "25T", "23A", "2AQ", "2AP", "1XH", "22C" }
 local ks_set = Set { "27J", "2BL", "263", "227", "2BM", "23L", "23M", "270" }
-local kcs_set = Set { "3H7" } --- There's definitely more, no otas are available yet 
+local kcs_set = Set { "3H7" } --- There's definitely more, no otas are available yet
+local kt6_set = Set { "A89", "3L2", "3L3", "3L4", "3L5", "3L6", "3KM" }
+local pw6_set = Set { "33W", "33X", "346", "349", "3H3", "3H5", "3H8", "3HA", "3J5", "3JS" } --- some of these are probably SE :/ 
+
 if kindle_sn_lead == "B" or kindle_sn_lead == "9" then
     local kindle_devcode = string.sub(kindle_sn, 3, 4)
 
@@ -1850,6 +1917,10 @@ else
         return KindleScribe
     elseif kcs_set[kindle_devcode_v2] then
         return KindleColorSoft
+    elseif kt6_set[kindle_devcode_v2] then
+        return KindleBasic5
+    elseif pw6_set[kindle_devcode_v2] then
+        return KindlePaperWhite6
     end
 end
 
