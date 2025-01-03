@@ -458,13 +458,13 @@ end
 --- Validate server settings and request an OAuth bearer token.
 -- Do not request a new token if the saved one is valid for more than 5 minutes.
 function Wallabag:getBearerToken()
-    local function is_empty(s)
+    local function isEmpty(s)
         return s == nil or s == ""
     end
 
     -- check if the configuration is complete
-    local server_empty = is_empty(self.server_url) or is_empty(self.username) or is_empty(self.password) or is_empty(self.client_id) or is_empty(self.client_secret)
-    local directory_empty = is_empty(self.directory)
+    local server_empty = isEmpty(self.server_url) or isEmpty(self.username) or isEmpty(self.password) or isEmpty(self.client_id) or isEmpty(self.client_secret)
+    local directory_empty = isEmpty(self.directory)
     if server_empty or directory_empty then
         logger.warn("Wallabag:getBearerToken: showing dialog because server_empty =", server_empty, "or directory_empty =", directory_empty)
         UIManager:show(MultiConfirmBox:new{
@@ -863,7 +863,7 @@ function Wallabag:downloadArticles()
                 _("Got a list of %1 articles…"),
                 #articles
             ),
-            timeout = 5
+            timeout = 3
         }
         UIManager:show(info)
         UIManager:forceRePaint()
@@ -883,7 +883,7 @@ function Wallabag:downloadArticles()
                         download_count,
                         #articles
                     ),
-                    timeout = 5
+                    timeout = 3
                 }
                 UIManager:show(info)
                 UIManager:forceRePaint()
@@ -909,37 +909,33 @@ function Wallabag:downloadArticles()
 
         logger.info("Wallabag:downloadArticles: - queue_count =", queue_count)
         if queue_count > 0 then
-            msg = msg..T(_("\n- added from queue: %1"), queue_count)
+            msg = msg.."\n"..T(_("- added from queue: %1"), queue_count)
         end
 
         logger.info("Wallabag:downloadArticles: - download_count =", download_count)
-        msg = msg..T(_("\n- downloaded: %1"), download_count)
-
         logger.dbg("Wallabag:downloadArticles: - skip_count =", skip_count)
-        if skip_count > 0 then
-            msg = msg..T(_("\n- skipped: %1"), skip_count)
-        end
+        msg = msg.."\n"..T(_("- downloaded: %1\n- skipped: %2"), download_count, skip_count)
 
         logger.info("Wallabag:downloadArticles: - fail_count =", fail_count)
         if fail_count > 0 then
-            msg = msg..T(_("\n- failed: %1"), fail_count)
+            msg = msg.."\n"..T(_("- failed: %1"), fail_count)
         end
 
         logger.info("Wallabag:downloadArticles: - del_count_local =", del_count_local)
         if del_count_local > 0 then
             if self.use_local_archive then
-                msg = msg..T(_("\n- archived in KOReader: %1"), del_count_local)
+                msg = msg.."\n"..T(_("- archived in KOReader: %1"), del_count_local)
             else
-                msg = msg..T(_("\n- deleted from KOReader: %1"), del_count_local)
+                msg = msg.."\n"..T(_("- deleted from KOReader: %1"), del_count_local)
             end
         end
 
         logger.info("Wallabag:downloadArticles: - del_count_remote =", del_count_remote)
         if del_count_remote > 0 then
             if self.delete_instead then
-                msg = msg..T(_("\n- deleted from Wallabag: %1"), del_count_remote)
+                msg = msg.."\n"..T(_("- deleted from Wallabag: %1"), del_count_remote)
             else
-                msg = msg..T(_("\n- archived in Wallabag: %1"), del_count_remote)
+                msg = msg.."\n"..T(_("- archived in Wallabag: %1"), del_count_remote)
             end
         end
 
@@ -962,7 +958,7 @@ function Wallabag:uploadQueue(quiet)
     local count = 0
 
     if self.upload_queue and next(self.upload_queue) ~= nil then
-        local msg = T(N_("Adding 1 article from the queue…", "Adding %1 articles from the queue…", #self.upload_queue), #self.upload_queue)
+        local msg = T(N_("Adding 1 article from queue…", "Adding %1 articles from queue…", #self.upload_queue), #self.upload_queue)
         local info = InfoMessage:new{ text = msg }
         UIManager:show(info)
 
@@ -979,12 +975,12 @@ function Wallabag:uploadQueue(quiet)
     end
 
     if not quiet then
-        local msg = T(N_("Added 1 article from the queue to Wallabag", "Added %1 articles from the queue to Wallabag", count), count)
+        local msg = T(N_("Added 1 article from queue to Wallabag", "Added %1 articles from queue to Wallabag", count), count)
         local info = InfoMessage:new{ text = msg }
         UIManager:show(info)
     end
 
-    logger.info("Wallabag:uploadQueue: uploaded", count, "articles from the queue to Wallabag")
+    logger.info("Wallabag:uploadQueue: uploaded", count, "articles from queue to Wallabag")
 
     return count
 end
@@ -1014,12 +1010,12 @@ function Wallabag:processRemoteDeletes(remote_ids)
                 else
                     logger.dbg("Wallabag:processRemoteDeletes: deleting", local_id, "at", entry_path)
                     count = count + self:deleteLocalArticle(entry_path)
-                end -- if self.use_local_archive
+                end
             else
                 logger.dbg("Wallabag:processRemoteDeletes: local_id", local_id, "found in remote_ids; not archiving/deleting")
-            end -- if not remote_article_ids[ id ]
-        end -- if entry ~= . and entry ~= ..
-    end -- for entry
+            end
+        end
+    end
 
     UIManager:close(info)
     return count
@@ -1110,15 +1106,15 @@ function Wallabag:uploadStatuses(quiet)
         local msg = _("Upload finished:")
 
         if self.delete_instead then
-            msg = msg..T(_("\n- deleted from Wallabag: %1"), count_remote)
+            msg = msg.."\n"..T(_("- deleted from Wallabag: %1"), count_remote)
         else
-            msg = msg..T(_("\n- archived on Wallabag: %1"), count_remote)
+            msg = msg.."\n"..T(_("- archived on Wallabag: %1"), count_remote)
         end
 
         if self.use_local_archive then
-            msg = msg..T(_("\n- archived in KOReader: %1"), count_local)
+            msg = msg.."\n"..T(_("- archived in KOReader: %1"), count_local)
         else
-            msg = msg..T(_("\n- deleted from KOReader: %1"), count_local)
+            msg = msg.."\n"..T(_("- deleted from KOReader: %1"), count_local)
         end
 
         local info = InfoMessage:new{ text = msg }
