@@ -1083,7 +1083,7 @@ local KindleColorSoft = Kindle:extend{
     hasNaturalLightMixer = yes,
     hasLightSensor = yes,
     display_dpi = 300,
-    canHWDither = no, --- this is a guess i don't have a device to check
+    canHWDither = yes,
     canDoSwipeAnimation = yes,
     hasColorScreen = yes,
 }
