@@ -74,7 +74,7 @@ function FileManagerCollection:onShowColl(collection_name)
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showCollDialog() end,
         onReturn = function()
-            self.from_collection_name = collection_name
+            self.from_collection_name = self:getCollectionTitle(collection_name)
             self.coll_menu.close_callback()
             self:onShowCollList()
         end,
@@ -96,17 +96,33 @@ function FileManagerCollection:onShowColl(collection_name)
     return true
 end
 
-function FileManagerCollection:updateItemTable(show_last_item)
-    local item_table = {}
-    for _, item in pairs(ReadCollection.coll[self.coll_menu.collection_name]) do
-        if self:isItemMatch(item) then
-            table.insert(item_table, item)
+function FileManagerCollection:updateItemTable(show_last_item, item_table)
+    if item_table == nil then
+        item_table = {}
+        for _, item in pairs(ReadCollection.coll[self.coll_menu.collection_name]) do
+            if self:isItemMatch(item) then
+                table.insert(item_table, item)
+            end
+        end
+        if #item_table > 1 then
+            table.sort(item_table, function(v1, v2) return v1.order < v2.order end)
         end
     end
-    if #item_table > 1 then
-        table.sort(item_table, function(v1, v2) return v1.order < v2.order end)
+    local collection_name = self:getCollectionTitle(self.coll_menu.collection_name)
+    local title = T("%1 (%2)", collection_name, #item_table)
+    local subtitle = ""
+    if self.match_table ~= nil then
+        subtitle = {}
+        for prop, value in pairs(self.match_table.props) do
+            table.insert(subtitle, self.ui.bookinfo.prop_text[prop] .. " " .. value)
+        end
+        if #subtitle == 1 then
+            subtitle = subtitle[1]
+        else
+            table.sort(subtitle)
+            subtitle = table.concat(subtitle, " | ")
+        end
     end
-    local title, subtitle = self:getMenuTitle(#item_table)
     local item_number = show_last_item and #item_table or -1
     self.coll_menu:switchItemTable(title, item_table, item_number, nil, subtitle)
 end
@@ -121,25 +137,6 @@ function FileManagerCollection:isItemMatch(item)
         end
     end
     return true
-end
-
-function FileManagerCollection:getMenuTitle(item_table_nb)
-    local collection_name = self:getCollectionTitle(self.coll_menu.collection_name)
-    local title = T("%1 (%2)", collection_name, item_table_nb)
-    local subtitle = ""
-    if self.match_table ~= nil then
-        subtitle = {}
-        for prop, value in pairs(self.match_table.props) do
-            table.insert(subtitle, self.ui.bookinfo.prop_text[prop] .. " " .. value)
-        end
-        if #subtitle == 1 then
-            subtitle = subtitle[1]
-        else
-            table.sort(subtitle)
-            subtitle = table.concat(subtitle, " | ")
-        end
-    end
-    return title, subtitle
 end
 
 function FileManagerCollection:onSetDimensions(dimen)
@@ -257,10 +254,12 @@ function FileManagerCollection.getMenuInstance()
 end
 
 function FileManagerCollection:showCollDialog()
+    local coll_not_empty = #self.coll_menu.item_table > 0
     local coll_dialog
     local function genFilterByMetadataButton(button_text, button_prop)
         return {
             text = button_text,
+            enabled = coll_not_empty,
             callback = function()
                 UIManager:close(coll_dialog)
                 local prop_values = {}
@@ -298,6 +297,7 @@ function FileManagerCollection:showCollDialog()
         },
         {{
             text = _("Reset all filters"),
+            enabled = self.match_table ~= nil,
             callback = function()
                 UIManager:close(coll_dialog)
                 self.match_table = nil
@@ -307,6 +307,7 @@ function FileManagerCollection:showCollDialog()
         {}, -- separator
         {{
             text = _("Arrange books in collection"),
+            enabled = coll_not_empty,
             callback = function()
                 UIManager:close(coll_dialog)
                 self:sortCollection()
@@ -385,8 +386,7 @@ function FileManagerCollection:showPropValueList(prop, prop_values)
                 for _, idx in ipairs(item_idxs) do
                     table.insert(item_table, self.coll_menu.item_table[idx])
                 end
-                local title, subtitle = self:getMenuTitle(#item_table)
-                self.coll_menu:switchItemTable(title, item_table, nil, nil, subtitle)
+                self:updateItemTable(nil, item_table)
             end,
         })
     end
@@ -394,7 +394,7 @@ function FileManagerCollection:showPropValueList(prop, prop_values)
         table.sort(prop_item_table, function(a, b) return ffiUtil.strcoll(a.text, b.text) end)
     end
     prop_menu = Menu:new{
-        title = T("%1 (%2)", self.ui.bookinfo.prop_text[prop]:gsub(":", ""), #prop_item_table),
+        title = T("%1 (%2)", self.ui.bookinfo.prop_text[prop]:sub(1, -2), #prop_item_table),
         item_table = prop_item_table,
         covers_fullscreen = true,
         is_borderless = true,
