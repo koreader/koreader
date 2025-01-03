@@ -17,12 +17,23 @@ local util  = require("util")
 local HtmlBoxWidget = InputContainer:extend{
     bb = nil,
     dimen = nil,
+    dialog = nil, -- parent dialog that will be set dirty
     document = nil,
     page_count = 0,
     page_number = 1,
+    page_boxes = nil,
     hold_start_pos = nil,
+    hold_end_pos = nil,
     hold_start_time = nil,
     html_link_tapped_callback = nil,
+
+    -- If highlight_text_selection is true then text selection will be highlighted.
+    -- If false then text selection will work as it did originally: no highlighting, and the
+    -- text selection will be updated only on hold release (so hold time might be incorrect).
+    highlight_text_selection = false,
+    highlight_rects = nil,
+    highlight_text = nil,
+    highlight_clear_and_redraw_function = nil,
 }
 
 function HtmlBoxWidget:init()
@@ -103,6 +114,12 @@ function HtmlBoxWidget:_render()
     local dc = DrawContext.new()
     self.bb = page:draw_new(dc, self.dimen.w, self.dimen.h, 0, 0)
     page:close()
+
+    if self.highlight_text_selection and self.highlight_rects then
+        for _, rect in ipairs(self.highlight_rects) do
+            self.bb:invertRect(rect.x, rect.y, rect.w, rect.h)
+        end
+    end
 end
 
 function HtmlBoxWidget:getSize()
@@ -171,7 +188,11 @@ function HtmlBoxWidget:getPosFromAbsPos(abs_pos)
 end
 
 function HtmlBoxWidget:onHoldStartText(_, ges)
+    self:unscheduleClearHighlightAndRedraw()
     self.hold_start_pos = self:getPosFromAbsPos(ges.pos)
+    self.hold_end_pos = self.hold_start_pos
+    self.highlight_rects = nil
+    self.highlight_text = nil
 
     if not self.hold_start_pos then
         return false -- let event be processed by other widgets
@@ -179,48 +200,164 @@ function HtmlBoxWidget:onHoldStartText(_, ges)
 
     self.hold_start_time = UIManager:getTime()
 
+    if self.highlight_text_selection then
+        if self:updateHighlight() then
+            self:redrawHighlight()
+        end
+    end
+
     return true
 end
 
-function HtmlBoxWidget:onHoldPan(_, ges)
+function HtmlBoxWidget:onHoldPanText(_, ges)
     -- We don't highlight the currently selected text, but just let this
     -- event pop up if we are not currently selecting text
     if not self.hold_start_pos then
         return false
     end
+
+    self.hold_end_pos = Geom:new{
+        x = ges.pos.x - self.dimen.x,
+        y = ges.pos.y - self.dimen.y,
+    }
+
+    if self.highlight_text_selection then
+        if self:updateHighlight() then
+            self.hold_start_time = UIManager:getTime()
+            self:redrawHighlight()
+        end
+    end
+
     return true
 end
 
+function HtmlBoxWidget:isRtlLine(line)
+    local word_count = #line
+    return word_count > 1 and line[1].x0 > line[word_count].x0
+end
+
+function HtmlBoxWidget:getWordIndices(lines, pos)
+    local last_checked_line_index = nil
+
+    for line_index, line in ipairs(lines) do
+        if pos.y >= line.y0 then -- check if pos in on or below the line
+            if pos.y < line.y1 then -- check if pos is within the line vertically
+                if pos.x >= line.x0 and pos.x < line.x1 then -- check if pos is within the line horizontally
+                    if #line >= 1 then -- if line is not empty then check for exact word hit
+                        local word_start_index = 1
+                        local word_end_index = #line
+                        local step = 1
+                        if HtmlBoxWidget:isRtlLine(line) then
+                            word_start_index, word_end_index = word_end_index, word_start_index
+                            step = -1
+                        end
+
+                        local word_x0 = line[word_start_index].x0
+                        for word_index = word_start_index, word_end_index, step do
+                            local word = line[word_index]
+                            if pos.x >= word_x0 and pos.x < word.x1 then
+                                return line_index, word_index
+                            end
+
+                            -- join the word rectangles horizontally to avoid hit gaps
+                            word_x0 = word.x1
+                        end
+                    end
+                elseif pos.x < line.x0 then -- check if pos is before the current line horizontally
+                    if HtmlBoxWidget:isRtlLine(line) then
+                        return line_index, #line
+                    else
+                        return line_index, 1
+                    end
+                elseif pos.x >= line.x1 then -- check if pos after the current line horizontally
+                    if HtmlBoxWidget:isRtlLine(line) then
+                        -- To match TextBoxWidget's selection behavior this should be "line_index, 1"
+                        -- but then the selection will jump between the full row and the visually
+                        -- last word when hitting a vertical gap. If we extend the line vertically
+                        -- till the next one then selection will be weird around new paragraphs.
+                        -- The solution might require getPageText() to add empty lines.
+                        return line_index, #line
+                    else
+                        return line_index, #line
+                    end
+                end
+            end
+
+            last_checked_line_index = line_index
+        end
+    end
+
+    if last_checked_line_index == nil then
+        return 1, 1
+    else
+        return last_checked_line_index, #lines[last_checked_line_index]
+    end
+end
+
 function HtmlBoxWidget:getSelectedText(lines, start_pos, end_pos)
+    local start_line_index, start_word_index = HtmlBoxWidget:getWordIndices(lines, start_pos)
+    local end_line_index, end_word_index = HtmlBoxWidget:getWordIndices(lines, end_pos)
+    if start_line_index == nil or end_line_index == nil then
+        return nil, nil
+    elseif start_line_index > end_line_index then
+        start_line_index, end_line_index = end_line_index, start_line_index
+        start_word_index, end_word_index = end_word_index, start_word_index
+    elseif start_line_index == end_line_index and start_word_index > end_word_index then
+        start_word_index, end_word_index = end_word_index, start_word_index
+    end
+
     local found_start = false
     local words = {}
+    local rects = {}
 
-    for _, line in ipairs(lines) do
-        for _, w in ipairs(line) do
-            if type(w) == 'table' then
-                if not found_start then
-                    if start_pos.x >= w.x0 and start_pos.x < w.x1 and start_pos.y >= w.y0 and start_pos.y < w.y1 then
-                        found_start = true
-                    elseif end_pos.x >= w.x0 and end_pos.x < w.x1 and end_pos.y >= w.y0 and end_pos.y < w.y1 then
-                        -- We found end_pos before start_pos, switch them
-                        found_start = true
-                        start_pos, end_pos = end_pos, start_pos
-                    end
+    for line_index = start_line_index, end_line_index do
+        local line = lines[line_index]
+        local draw_line = false
+        local rect_x0 = 0
+        local rect_x1 = 0
+
+        for word_index, word in ipairs(line) do
+            if type(word) == 'table' then
+                if line_index == start_line_index and word_index == start_word_index then
+                    found_start = true
                 end
 
                 if found_start then
-                    table.insert(words, w.word)
+                    table.insert(words, word.word)
 
-                    -- Found the end.
-                    if end_pos.x >= w.x0 and end_pos.x < w.x1 and end_pos.y >= w.y0 and end_pos.y < w.y1 then
-                        return words
+                    if draw_line then
+                        if word.x0 < rect_x0 then rect_x0 = word.x0 end
+                        if word.x1 > rect_x1 then rect_x1 = word.x1 end
+                    else
+                        draw_line = true
+                        rect_x0 = word.x0
+                        rect_x1 = word.x1
+                    end
+
+                    if line_index == end_line_index and word_index == end_word_index then
+                        break
                     end
                 end
             end
         end
+
+        if draw_line then
+            local rect = Geom:new{
+                x = rect_x0,
+                y = line.y0,
+                w = rect_x1 - rect_x0,
+                h = line.y1 - line.y0,
+            }
+
+            table.insert(rects, rect)
+        end
     end
 
-    return words
+    if found_start then
+        return table.concat(words, " "), rects
+    else
+        return nil, nil
+    end
 end
 
 function HtmlBoxWidget:onHoldReleaseText(callback, ges)
@@ -233,23 +370,25 @@ function HtmlBoxWidget:onHoldReleaseText(callback, ges)
         return false
     end
 
-    local start_pos = self.hold_start_pos
-    self.hold_start_pos = nil
+    self.hold_end_pos = Geom:new{
+        x = ges.pos.x - self.dimen.x,
+        y = ges.pos.y - self.dimen.y,
+    }
 
-    local end_pos = self:getPosFromAbsPos(ges.pos)
-    if not end_pos then
+    -- Unlike to onHoldStartText and onHoldPanText we must call updateHighlight here even if highlight
+    -- displaying is disabled to be able to query the higlighted word.
+    if self:updateHighlight() then
+        if self.highlight_text_selection then
+            self:redrawHighlight()
+        end
+    end
+
+    if not self.highlight_text then
         return false
     end
 
     local hold_duration = time.now() - self.hold_start_time
-
-    local page = self.document:openPage(self.page_number)
-    local lines = page:getPageText()
-    page:close()
-
-    local words = self:getSelectedText(lines, start_pos, end_pos)
-    local selected_text = table.concat(words, " ")
-    callback(selected_text, hold_duration)
+    callback(self.highlight_text, hold_duration)
 
     return true
 end
@@ -280,6 +419,100 @@ function HtmlBoxWidget:onTapText(arg, ges)
                 return true
             end
         end
+    end
+end
+
+function HtmlBoxWidget:setPageNumber(page_number)
+    if page_number == self.page_number then
+        return
+    end
+
+    self.page_number = page_number
+    self.page_boxes = nil
+    self:clearHighlight()
+end
+
+function HtmlBoxWidget:areTextBoxesEqual(boxes1, text1, boxes2, text2)
+    if text1 ~= text2 then
+        return false
+    end
+
+    if boxes1 and boxes2 then
+        if #boxes1 ~= #boxes2 then
+            return false
+        end
+
+        for i = 1, #boxes1, 1 do
+            if boxes1[i] ~= boxes2[i] then
+                return false
+            end
+        end
+
+        return true
+    else
+        return (boxes1 == nil) == (boxes2 == nil)
+    end
+end
+
+-- Returns true if the highlight has changed.
+function HtmlBoxWidget:clearHighlight()
+    self.hold_start_pos = nil
+    self.hold_end_pos = nil
+    return self:updateHighlight()
+end
+
+-- Returns true if the highlight has changed.
+function HtmlBoxWidget:updateHighlight()
+    if self.hold_start_pos and self.hold_end_pos then
+        -- getPageText is slow so we only call it when needed, and keep the result.
+        if self.page_boxes == nil then
+            local page = self.document:openPage(self.page_number)
+            self.page_boxes = page:getPageText()
+            page:close()
+        end
+
+        local text, rects = HtmlBoxWidget:getSelectedText(self.page_boxes, self.hold_start_pos, self.hold_end_pos)
+        local changed = not HtmlBoxWidget:areTextBoxesEqual(self.highlight_rects, self.highlight_text, rects, text)
+        if changed then
+            self.highlight_rects = rects
+            self.highlight_text = text
+        end
+        return changed
+    else
+        local changed = self.highlight_rects ~= nil
+        self.highlight_rects = nil
+        self.highlight_text = nil
+        return changed
+    end
+end
+
+function HtmlBoxWidget:redrawHighlight()
+    self:freeBb()
+    UIManager:setDirty(self.dialog or "all", function()
+        return "ui", self.dimen
+    end)
+end
+
+function HtmlBoxWidget:scheduleClearHighlightAndRedraw()
+    if self.highlight_clear_and_redraw_function or not self.highlight_text_selection then
+        return
+    end
+
+    self.highlight_clear_and_redraw_function = function ()
+        self.highlight_clear_and_redraw_function = nil
+
+        if self:clearHighlight() then
+            self:redrawHighlight()
+        end
+    end
+
+    UIManager:scheduleIn(0.5, self.highlight_clear_and_redraw_function)
+end
+
+function HtmlBoxWidget:unscheduleClearHighlightAndRedraw()
+    if self.highlight_clear_and_redraw_function then
+        UIManager:unschedule(self.highlight_clear_and_redraw_function)
+        self.highlight_clear_and_redraw_function = nil
     end
 end
 
