@@ -781,7 +781,7 @@ end
 
 local VirtualKeyboard = FocusManager:extend{
     name = "VirtualKeyboard",
-    visible = nil,
+    visible = false,
     lock_visibility = false,
     covers_footer = true,
     modal = true,
@@ -846,10 +846,6 @@ function VirtualKeyboard:init()
     if self.uwrap_func then
         self.uwrap_func()
         self.uwrap_func = nil
-    end
-    -- NOTE: Make sure this is never actually `nil` to avoid inheritance issues for higher level widgets relying on it for their own visibility tracking...
-    if self.visible == nil then
-        self.visible = false
     end
     local lang = self:getKeyboardLayout()
     local keyboard_layout = self.lang_to_keyboard_layout[lang] or self.lang_to_keyboard_layout["en"]
