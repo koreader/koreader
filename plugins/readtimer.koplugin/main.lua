@@ -265,6 +265,10 @@ function ReadTimer:addToMainMenu(menu_items)
                             then_t.min = alarm_time.min
                             then_t.sec = 0
                             local seconds = os.difftime(os.time(then_t), os.time())
+                            if seconds < -120 then
+                                then_t.day = then_t.day + 1
+                                seconds = os.difftime(os.time(then_t), os.time())
+                            end
                             if seconds > 0 then
                                 self:rescheduleIn(seconds)
                                 local user_duration_format = G_reader_settings:readSetting("duration_format")
