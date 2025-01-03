@@ -613,31 +613,18 @@ function MosaicMenuItem:update()
                 self._has_cover_image = true
             else
                 -- add Series metadata if requested
-                local series_mode = BookInfoManager:getSetting("series_mode")
                 local title_add, authors_add
-                if bookinfo.series then
-                    if bookinfo.series_index then
-                        bookinfo.series = BD.auto(bookinfo.series .. " #" .. bookinfo.series_index)
-                    else
-                        bookinfo.series = BD.auto(bookinfo.series)
-                    end
+                local series_mode = BookInfoManager:getSetting("series_mode")
+                if series_mode and bookinfo.series then
+                    local series = bookinfo.series_index and bookinfo.series .. " #" .. bookinfo.series_index
+                        or bookinfo.series
+                    series = BD.auto(series)
                     if series_mode == "append_series_to_title" then
-                        if bookinfo.title then
-                            title_add = " - " .. bookinfo.series
-                        else
-                            title_add = bookinfo.series
-                        end
-                    end
-                    if not bookinfo.authors then
-                        if series_mode == "append_series_to_authors" or series_mode == "series_in_separate_line" then
-                            authors_add = bookinfo.series
-                        end
-                    else
-                        if series_mode == "append_series_to_authors" then
-                            authors_add = " - " .. bookinfo.series
-                        elseif series_mode == "series_in_separate_line" then
-                            authors_add = "\n \n" .. bookinfo.series
-                        end
+                        title_add = bookinfo.title and " - " .. series or series
+                    elseif series_mode == "append_series_to_authors" then
+                        authors_add = bookinfo.authors and " - " .. series or series
+                    else -- "series_in_separate_line"
+                        authors_add = bookinfo.authors and "\n \n" .. series or series
                     end
                 end
                 local bottom_pad = Size.padding.default

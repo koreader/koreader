@@ -88,11 +88,13 @@ function ReadCollection:isFileInCollection(file, collection_name)
     return self.coll[collection_name][file] and true or false
 end
 
-function ReadCollection:isFileInCollections(file)
-    file = ffiUtil.realpath(file) or file
-    for _, coll in pairs(self.coll) do
-        if coll[file] then
-            return true
+function ReadCollection:isFileInCollections(file, ignore_show_mark_setting)
+    if ignore_show_mark_setting or G_reader_settings:nilOrTrue("collection_show_mark") then
+        file = ffiUtil.realpath(file) or file
+        for _, coll in pairs(self.coll) do
+            if coll[file] then
+                return true
+            end
         end
     end
     return false

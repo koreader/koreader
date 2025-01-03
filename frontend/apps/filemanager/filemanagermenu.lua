@@ -240,7 +240,7 @@ function FileManagerMenu:setUpdateItemTable()
                         end,
                         callback = function()
                             G_reader_settings:flipNilOrFalse("items_multilines_show_more_text")
-                            self.ui:onRefresh()
+                            FileChooser:refreshPath()
                         end,
                         separator = true,
                     },
@@ -255,7 +255,7 @@ function FileManagerMenu:setUpdateItemTable()
                             else
                                 G_reader_settings:saveSetting("show_file_in_bold", "opened")
                             end
-                            self.ui:onRefresh()
+                            FileChooser:refreshPath()
                         end,
                     },
                     {
@@ -269,7 +269,7 @@ function FileManagerMenu:setUpdateItemTable()
                             else
                                 G_reader_settings:delSetting("show_file_in_bold")
                             end
-                            self.ui:onRefresh()
+                            FileChooser:refreshPath()
                         end,
                     },
                 },
@@ -375,11 +375,21 @@ To:
                         end,
                         callback = function()
                             G_reader_settings:flipNilOrFalse("lock_home_folder")
-                            self.ui:onRefresh()
+                            FileChooser:refreshPath()
                         end,
                     },
                 },
                 separator = true,
+            },
+            {
+                text = _("Show collection mark"),
+                checked_func = function()
+                    return G_reader_settings:hasNot("collection_show_mark")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("collection_show_mark")
+                    FileChooser:refreshPath()
+                end,
             },
             {
                 text_func = function()
