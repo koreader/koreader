@@ -614,7 +614,6 @@ function InputDialog:onShowKeyboard(ignore_first_hold_release)
     end
     -- NOTE: There's no VirtualKeyboard widget instantiated at all when readonly,
     --       and our input widget handles that itself, so we don't need any guards here.
-    --       (In which case, isKeyboardVisible will return `nil`, same as if we had a VK instantiated but *never* shown).
     self._input_widget:onShowKeyboard(ignore_first_hold_release)
     -- There's a bit of a chicken or egg issue in init where we would like to check the actual keyboard's visibility state,
     -- but the widget might not exist or be shown yet, so we'll just have to keep this in sync...
