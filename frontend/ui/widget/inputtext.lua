@@ -777,6 +777,8 @@ function InputText:isKeyboardVisible()
     if self.keyboard then
         return self.keyboard:isVisible()
     end
+    -- NOTE: Never return `nil`, to avoid inheritance issues in (Multi)InputDialog's keyboard_visible flag.
+    return false
 end
 
 function InputText:lockKeyboard(toggle)
