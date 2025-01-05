@@ -162,6 +162,7 @@ function TextBoxWidget:init()
         self.line_glyph_extra_height = -line_heights_diff
     end
 
+    self.highlight_lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2)
     self.cursor_line = LineWidget:new{
         dimen = Geom:new{
             w = self.select_mode and 3*Size.line.medium or Size.line.medium,
@@ -916,7 +917,7 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
 
         if self.highlight_rects then
             for _, rect in ipairs(self.highlight_rects) do
-                self._bb:invertRect(rect.x, rect.y, rect.w, rect.h)
+                self._bb:darkenRect(rect.x, rect.y, rect.w, rect.h, self.highlight_lighten_factor)
             end
         end
 
@@ -956,7 +957,7 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
 
     if self.highlight_rects then
         for _, rect in ipairs(self.highlight_rects) do
-            self._bb:invertRect(rect.x, rect.y, rect.w, rect.h)
+            self._bb:darkenRect(rect.x, rect.y, rect.w, rect.h, self.highlight_lighten_factor)
         end
     end
 end
@@ -2229,32 +2230,24 @@ function TextBoxWidget:getXtextHighlightRects(text_start_idx, text_end_idx, star
     for line_num = start_line_num, end_line_num, 1 do
         local line = self.vertical_string_list[line_num]
         if line.xglyphs then -- non-empty line
-            local draw_line = false
-            local line_x0 = 0
-            local line_x1 = 0
+            local line_last_rect = nil
 
             for _, xglyph in ipairs(line.xglyphs) do
                 if xglyph.text_index >= text_start_idx and xglyph.text_index <= text_end_idx and not xglyph.no_drawing then
-                    if draw_line then
-                        if xglyph.x0 < line_x0 then line_x0 = xglyph.x0 end
-                        if xglyph.x1 > line_x1 then line_x1 = xglyph.x1 end
+                    if line_last_rect == nil then
+                        local rect = Geom:new{
+                            x = xglyph.x0,
+                            y = (line_num - self.virtual_line_num) * self.line_height_px,
+                            w = xglyph.x1 - xglyph.x0,
+                            h = self.line_height_px,
+                        }
+
+                        table.insert(rects, rect)
+                        line_last_rect = rect
                     else
-                        draw_line = true
-                        line_x0 = xglyph.x0
-                        line_x1 = xglyph.x1
+                        line_last_rect.w = xglyph.x1 - line_last_rect.x
                     end
                 end
-            end
-
-            if draw_line then
-                local rect = Geom:new{
-                    x = line_x0,
-                    y = (line_num - self.virtual_line_num) * self.line_height_px,
-                    w = line_x1 - line_x0,
-                    h = self.line_height_px,
-                }
-
-                table.insert(rects, rect)
             end
         end
     end
@@ -2279,39 +2272,28 @@ function TextBoxWidget:getNonXtextHighlightRects(text_start_idx, text_end_idx, s
     for line_num = start_line_num, end_line_num, 1 do
         local line = self.vertical_string_list[line_num]
         if line.end_offset then
-            local draw_line = false
-            local line_x0 = 0
-            local line_x1 = 0
+            local line_last_rect = nil
             local x = 0
 
             for text_index = line.offset, line.end_offset, 1 do
                 local width = self.char_width[self.charlist[text_index]] + (self.idx_pad[text_index] or 0)
                 if text_index >= text_start_idx and text_index <= text_end_idx then
-                    local line_new_x0 = x
-                    local line_new_x1 = x + width
+                    if line_last_rect == nil then
+                        local rect = Geom:new{
+                            x = x,
+                            y = (line_num - self.virtual_line_num) * self.line_height_px,
+                            w = width,
+                            h = self.line_height_px,
+                        }
 
-                    if draw_line then
-                        if line_new_x0 < line_x0 then line_x0 = line_new_x0 end
-                        if line_new_x1 > line_x1 then line_x1 = line_new_x1 end
+                        table.insert(rects, rect)
+                        line_last_rect = rect
                     else
-                        draw_line = true
-                        line_x0 = line_new_x0
-                        line_x1 = line_new_x1
+                        line_last_rect.w = (x + width) - line_last_rect.x
                     end
                 end
 
                 x = x + width
-            end
-
-            if draw_line then
-                local rect = Geom:new{
-                    x = line_x0,
-                    y = (line_num - self.virtual_line_num) * self.line_height_px,
-                    w = line_x1 - line_x0,
-                    h = self.line_height_px,
-                }
-
-                table.insert(rects, rect)
             end
         end
     end
