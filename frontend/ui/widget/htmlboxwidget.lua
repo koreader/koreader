@@ -202,10 +202,8 @@ function HtmlBoxWidget:onHoldStartText(_, ges)
 
     self.hold_start_time = UIManager:getTime()
 
-    if self.highlight_text_selection then
-        if self:updateHighlight() then
-            self:redrawHighlight()
-        end
+    if self:updateHighlight() then
+        self:redrawHighlight()
     end
 
     return true
@@ -223,11 +221,9 @@ function HtmlBoxWidget:onHoldPanText(_, ges)
         y = ges.pos.y - self.dimen.y,
     }
 
-    if self.highlight_text_selection then
-        if self:updateHighlight() then
-            self.hold_start_time = UIManager:getTime()
-            self:redrawHighlight()
-        end
+    if self:updateHighlight() then
+        self.hold_start_time = UIManager:getTime()
+        self:redrawHighlight()
     end
 
     return true
@@ -400,12 +396,8 @@ function HtmlBoxWidget:onHoldReleaseText(callback, ges)
         y = ges.pos.y - self.dimen.y,
     }
 
-    -- Unlike to onHoldStartText and onHoldPanText we must call updateHighlight here even if highlight
-    -- displaying is disabled to be able to query the higlighted word.
     if self:updateHighlight() then
-        if self.highlight_text_selection then
-            self:redrawHighlight()
-        end
+        self:redrawHighlight()
     end
 
     if not self.highlight_text then
@@ -512,14 +504,16 @@ function HtmlBoxWidget:updateHighlight()
 end
 
 function HtmlBoxWidget:redrawHighlight()
-    self:freeBb()
-    UIManager:setDirty(self.dialog or "all", function()
-        return "ui", self.dimen
-    end)
+    if self.highlight_text_selection then
+        self:freeBb()
+        UIManager:setDirty(self.dialog or "all", function()
+            return "ui", self.dimen
+        end)
+    end
 end
 
 function HtmlBoxWidget:scheduleClearHighlightAndRedraw()
-    if self.highlight_clear_and_redraw_function or not self.highlight_text_selection then
+    if self.highlight_clear_and_redraw_function then
         return
     end
 
