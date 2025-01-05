@@ -14,6 +14,180 @@ local logger = require("logger")
 local time = require("ui/time")
 local util  = require("util")
 
+-- -1: right to left, 0: mixed, +1: left to right
+local function getLineTextDirection(line)
+    local word_count = #line
+    if word_count <= 1 then
+        return 1
+    end
+
+    local ltr = true
+    local rtl = true
+
+    for i = 2, word_count do
+        if line[i].x0 > line[i - 1].x0 then
+            rtl = false
+        elseif line[i].x0 < line[i - 1].x0 then
+            ltr = false
+        end
+    end
+
+    if ltr and not rtl then
+        return 1
+    elseif rtl and not ltr then
+        return -1
+    else
+        return 0
+    end
+end
+
+local function getWordIndices(lines, pos)
+    local last_checked_line_index = nil
+
+    for line_index, line in ipairs(lines) do
+        if pos.y >= line.y0 then -- check if pos in on or below the line
+            if pos.y < line.y1 then -- check if pos is within the line vertically
+                local rtl_line = getLineTextDirection(line) < 0
+
+                if pos.x >= line.x0 and pos.x < line.x1 then -- check if pos is within the line horizontally
+                    if #line >= 1 then -- if line is not empty then check for exact word hit
+                        local word_start_index = 1
+                        local word_end_index = #line
+                        local step = 1
+                        if rtl_line then
+                            word_start_index, word_end_index = word_end_index, word_start_index
+                            step = -1
+                        end
+
+                        local word_x0 = line[word_start_index].x0
+                        for word_index = word_start_index, word_end_index, step do
+                            local word = line[word_index]
+                            if pos.x >= word_x0 and pos.x < word.x1 then
+                                return line_index, word_index
+                            end
+
+                            -- join the word rectangles horizontally to avoid hit gaps
+                            word_x0 = word.x1
+                        end
+                    end
+                elseif pos.x < line.x0 then -- check if pos is before the current line horizontally
+                    if rtl_line then
+                        return line_index, #line
+                    else
+                        return line_index, 1
+                    end
+                elseif pos.x >= line.x1 then -- check if pos after the current line horizontally
+                    if rtl_line then
+                        -- To match TextBoxWidget's selection behavior this should be "line_index, 1"
+                        -- but then the selection will jump between the full row and the visually
+                        -- last word when hitting a vertical gap. If we extend the line vertically
+                        -- till the next one then selection will be weird around new paragraphs.
+                        -- The solution might require getPageText() to add empty lines.
+                        return line_index, #line
+                    else
+                        return line_index, #line
+                    end
+                end
+            end
+
+            last_checked_line_index = line_index
+        end
+    end
+
+    if last_checked_line_index == nil then
+        return 1, 1
+    else
+        return last_checked_line_index, #lines[last_checked_line_index]
+    end
+end
+
+local function getSelectedText(lines, start_pos, end_pos)
+    local start_line_index, start_word_index = getWordIndices(lines, start_pos)
+    local end_line_index, end_word_index = getWordIndices(lines, end_pos)
+    if start_line_index == nil or end_line_index == nil then
+        return nil, nil
+    elseif start_line_index > end_line_index then
+        start_line_index, end_line_index = end_line_index, start_line_index
+        start_word_index, end_word_index = end_word_index, start_word_index
+    elseif start_line_index == end_line_index and start_word_index > end_word_index then
+        start_word_index, end_word_index = end_word_index, start_word_index
+    end
+
+    local found_start = false
+    local words = {}
+    local rects = {}
+
+    for line_index = start_line_index, end_line_index do
+        local line = lines[line_index]
+        local line_last_rect = nil
+        local line_text_direction = getLineTextDirection(line)
+
+        for word_index, word in ipairs(line) do
+            if type(word) == 'table' then
+                if line_index == start_line_index and word_index == start_word_index then
+                    found_start = true
+                end
+
+                if found_start then
+                    table.insert(words, word.word)
+
+                    -- do not try to join word rects in mixed direction lines
+                    if line_last_rect == nil or line_text_direction == 0 then
+                        local rect = Geom:new{
+                            x = word.x0,
+                            y = line.y0,
+                            w = word.x1 - word.x0,
+                            h = line.y1 - line.y0,
+                        }
+
+                        table.insert(rects, rect)
+                        line_last_rect = rect
+                    else
+                        if line_text_direction > 0 then -- left to right
+                            line_last_rect.w = word.x1 - line_last_rect.x
+                        else -- right to left
+                            line_last_rect.w = line_last_rect.w + (line_last_rect.x - word.x0)
+                            line_last_rect.x = word.x0
+                        end
+                    end
+
+                    if line_index == end_line_index and word_index == end_word_index then
+                        break
+                    end
+                end
+            end
+        end
+    end
+
+    if found_start then
+        return table.concat(words, " "), rects
+    else
+        return nil, nil
+    end
+end
+
+local function areTextBoxesEqual(boxes1, text1, boxes2, text2)
+    if text1 ~= text2 then
+        return false
+    end
+
+    if boxes1 and boxes2 then
+        if #boxes1 ~= #boxes2 then
+            return false
+        end
+
+        for i = 1, #boxes1, 1 do
+            if boxes1[i] ~= boxes2[i] then
+                return false
+            end
+        end
+
+        return true
+    else
+        return (boxes1 == nil) == (boxes2 == nil)
+    end
+end
+
 local HtmlBoxWidget = InputContainer:extend{
     bb = nil,
     dimen = nil,
@@ -229,158 +403,6 @@ function HtmlBoxWidget:onHoldPanText(_, ges)
     return true
 end
 
--- -1: right to left, 0: mixed, +1: left to right
-function HtmlBoxWidget:getLineTextDirection(line)
-    local word_count = #line
-    if word_count <= 1 then
-        return 1
-    end
-
-    local ltr = true
-    local rtl = true
-
-    for i = 2, word_count do
-        if line[i].x0 > line[i - 1].x0 then
-            rtl = false
-        elseif line[i].x0 < line[i - 1].x0 then
-            ltr = false
-        end
-    end
-
-    if ltr and not rtl then
-        return 1
-    elseif rtl and not ltr then
-        return -1
-    else
-        return 0
-    end
-end
-
-function HtmlBoxWidget:getWordIndices(lines, pos)
-    local last_checked_line_index = nil
-
-    for line_index, line in ipairs(lines) do
-        if pos.y >= line.y0 then -- check if pos in on or below the line
-            if pos.y < line.y1 then -- check if pos is within the line vertically
-                local rtl_line = HtmlBoxWidget:getLineTextDirection(line) < 0
-
-                if pos.x >= line.x0 and pos.x < line.x1 then -- check if pos is within the line horizontally
-                    if #line >= 1 then -- if line is not empty then check for exact word hit
-                        local word_start_index = 1
-                        local word_end_index = #line
-                        local step = 1
-                        if rtl_line then
-                            word_start_index, word_end_index = word_end_index, word_start_index
-                            step = -1
-                        end
-
-                        local word_x0 = line[word_start_index].x0
-                        for word_index = word_start_index, word_end_index, step do
-                            local word = line[word_index]
-                            if pos.x >= word_x0 and pos.x < word.x1 then
-                                return line_index, word_index
-                            end
-
-                            -- join the word rectangles horizontally to avoid hit gaps
-                            word_x0 = word.x1
-                        end
-                    end
-                elseif pos.x < line.x0 then -- check if pos is before the current line horizontally
-                    if rtl_line then
-                        return line_index, #line
-                    else
-                        return line_index, 1
-                    end
-                elseif pos.x >= line.x1 then -- check if pos after the current line horizontally
-                    if rtl_line then
-                        -- To match TextBoxWidget's selection behavior this should be "line_index, 1"
-                        -- but then the selection will jump between the full row and the visually
-                        -- last word when hitting a vertical gap. If we extend the line vertically
-                        -- till the next one then selection will be weird around new paragraphs.
-                        -- The solution might require getPageText() to add empty lines.
-                        return line_index, #line
-                    else
-                        return line_index, #line
-                    end
-                end
-            end
-
-            last_checked_line_index = line_index
-        end
-    end
-
-    if last_checked_line_index == nil then
-        return 1, 1
-    else
-        return last_checked_line_index, #lines[last_checked_line_index]
-    end
-end
-
-function HtmlBoxWidget:getSelectedText(lines, start_pos, end_pos)
-    local start_line_index, start_word_index = HtmlBoxWidget:getWordIndices(lines, start_pos)
-    local end_line_index, end_word_index = HtmlBoxWidget:getWordIndices(lines, end_pos)
-    if start_line_index == nil or end_line_index == nil then
-        return nil, nil
-    elseif start_line_index > end_line_index then
-        start_line_index, end_line_index = end_line_index, start_line_index
-        start_word_index, end_word_index = end_word_index, start_word_index
-    elseif start_line_index == end_line_index and start_word_index > end_word_index then
-        start_word_index, end_word_index = end_word_index, start_word_index
-    end
-
-    local found_start = false
-    local words = {}
-    local rects = {}
-
-    for line_index = start_line_index, end_line_index do
-        local line = lines[line_index]
-        local line_last_rect = nil
-        local line_text_direction = HtmlBoxWidget:getLineTextDirection(line)
-
-        for word_index, word in ipairs(line) do
-            if type(word) == 'table' then
-                if line_index == start_line_index and word_index == start_word_index then
-                    found_start = true
-                end
-
-                if found_start then
-                    table.insert(words, word.word)
-
-                    -- do not try to join word rects in mixed direction lines
-                    if line_last_rect == nil or line_text_direction == 0 then
-                        local rect = Geom:new{
-                            x = word.x0,
-                            y = line.y0,
-                            w = word.x1 - word.x0,
-                            h = line.y1 - line.y0,
-                        }
-
-                        table.insert(rects, rect)
-                        line_last_rect = rect
-                    else
-                        if line_text_direction > 0 then -- left to right
-                            line_last_rect.w = word.x1 - line_last_rect.x
-                        else -- right to left
-                            line_last_rect.w = line_last_rect.w + (line_last_rect.x - word.x0)
-                            line_last_rect.x = word.x0
-                        end
-                    end
-
-                    if line_index == end_line_index and word_index == end_word_index then
-                        break
-                    end
-                end
-            end
-        end
-    end
-
-    if found_start then
-        return table.concat(words, " "), rects
-    else
-        return nil, nil
-    end
-end
-
 function HtmlBoxWidget:onHoldReleaseText(callback, ges)
     if not callback then
         return false
@@ -449,28 +471,6 @@ function HtmlBoxWidget:setPageNumber(page_number)
     self:clearHighlight()
 end
 
-function HtmlBoxWidget:areTextBoxesEqual(boxes1, text1, boxes2, text2)
-    if text1 ~= text2 then
-        return false
-    end
-
-    if boxes1 and boxes2 then
-        if #boxes1 ~= #boxes2 then
-            return false
-        end
-
-        for i = 1, #boxes1, 1 do
-            if boxes1[i] ~= boxes2[i] then
-                return false
-            end
-        end
-
-        return true
-    else
-        return (boxes1 == nil) == (boxes2 == nil)
-    end
-end
-
 -- Returns true if the highlight has changed.
 function HtmlBoxWidget:clearHighlight()
     self.hold_start_pos = nil
@@ -488,8 +488,8 @@ function HtmlBoxWidget:updateHighlight()
             page:close()
         end
 
-        local text, rects = HtmlBoxWidget:getSelectedText(self.page_boxes, self.hold_start_pos, self.hold_end_pos)
-        local changed = not HtmlBoxWidget:areTextBoxesEqual(self.highlight_rects, self.highlight_text, rects, text)
+        local text, rects = getSelectedText(self.page_boxes, self.hold_start_pos, self.hold_end_pos)
+        local changed = not areTextBoxesEqual(self.highlight_rects, self.highlight_text, rects, text)
         if changed then
             self.highlight_rects = rects
             self.highlight_text = text
