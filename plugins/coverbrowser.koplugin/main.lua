@@ -155,6 +155,23 @@ function CoverBrowser:addToMainMenu(menu_items)
     -- next to Classic mode settings
     if menu_items.filebrowser_settings == nil then return end
     local fc = self.ui.file_chooser
+    local function genSeriesSubMenuItem(item_text, item_series_mode)
+        return {
+            text = item_text,
+            radio = true,
+            checked_func = function()
+                return series_mode == item_series_mode
+            end,
+            callback = function()
+                if series_mode ~= item_series_mode then
+                    series_mode = item_series_mode
+                    BookInfoManager:saveSetting("series_mode", series_mode)
+                    fc:updateItems(1, true)
+                end
+            end,
+        }
+    end
+
     table.insert (menu_items.filebrowser_settings.sub_item_table, 5, {
         text = _("Mosaic and detailed list settings"),
         separator = true,
@@ -255,6 +272,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     }
                     UIManager:show(widget)
                 end,
+                separator = true,
             },
             {
                 text_func = function()
@@ -291,6 +309,26 @@ function CoverBrowser:addToMainMenu(menu_items)
                         end,
                     }
                     UIManager:show(widget)
+                end,
+            },
+            {
+                text = _("Shrink item font size to fit more text"),
+                checked_func = function()
+                    return not BookInfoManager:getSetting("fixed_item_font_size")
+                end,
+                callback = function()
+                    BookInfoManager:toggleSetting("fixed_item_font_size")
+                    fc:updateItems(1, true)
+                end,
+            },
+            {
+                text = _("Show file properties"),
+                checked_func = function()
+                    return not BookInfoManager:getSetting("hide_file_info")
+                end,
+                callback = function()
+                    BookInfoManager:toggleSetting("hide_file_info")
+                    fc:updateItems(1, true)
                 end,
                 separator = true,
             },
@@ -344,6 +382,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                             BookInfoManager:toggleSetting("no_hint_description")
                             fc:updateItems(1, true)
                         end,
+                        separator = true,
                     },
                     {
                         text = _("Show hint for book status in history"),
@@ -360,62 +399,17 @@ function CoverBrowser:addToMainMenu(menu_items)
                             BookInfoManager:toggleSetting("collections_hint_opened")
                             fc:updateItems(1, true)
                         end,
-                    }
-                }
-            },
-            {
-                text = _("Series"),
-                sub_item_table = {
-                    {
-                        text = _("Append series metadata to authors"),
-                        checked_func = function() return series_mode == "append_series_to_authors" end,
-                        callback = function()
-                            if series_mode == "append_series_to_authors" then
-                                series_mode = nil
-                            else
-                                series_mode = "append_series_to_authors"
-                            end
-                            BookInfoManager:saveSetting("series_mode", series_mode)
-                            fc:updateItems(1, true)
-                        end,
-                    },
-                    {
-                        text = _("Append series metadata to title"),
-                        checked_func = function() return series_mode == "append_series_to_title" end,
-                        callback = function()
-                            if series_mode == "append_series_to_title" then
-                                series_mode = nil
-                            else
-                                series_mode = "append_series_to_title"
-                            end
-                            BookInfoManager:saveSetting("series_mode", series_mode)
-                            fc:updateItems(1, true)
-                        end,
-                    },
-                    {
-                        text = _("Show series metadata in separate line"),
-                        checked_func = function() return series_mode == "series_in_separate_line" end,
-                        callback = function()
-                            if series_mode == "series_in_separate_line" then
-                                series_mode = nil
-                            else
-                                series_mode = "series_in_separate_line"
-                            end
-                            BookInfoManager:saveSetting("series_mode", series_mode)
-                            fc:updateItems(1, true)
-                        end,
                     },
                 },
             },
             {
-                text = _("Show file properties"),
-                checked_func = function()
-                    return not BookInfoManager:getSetting("hide_file_info")
-                end,
-                callback = function()
-                    BookInfoManager:toggleSetting("hide_file_info")
-                    fc:updateItems(1, true)
-                end,
+                text = _("Series"),
+                sub_item_table = {
+                    genSeriesSubMenuItem(_("Do not show series metadata"), nil),
+                    genSeriesSubMenuItem(_("Show series metadata in separate line"), "series_in_separate_line"),
+                    genSeriesSubMenuItem(_("Append series metadata to title"), "append_series_to_title"),
+                    genSeriesSubMenuItem(_("Append series metadata to authors"), "append_series_to_authors"),
+                },
                 separator = true,
             },
             {
@@ -434,7 +428,6 @@ function CoverBrowser:addToMainMenu(menu_items)
                         keep_menu_open = true,
                         callback = function()
                             local ConfirmBox = require("ui/widget/confirmbox")
-                            UIManager:close(self.file_dialog)
                             UIManager:show(ConfirmBox:new{
                                 -- Checking file existences is quite fast, but deleting entries is slow.
                                 text = _("Are you sure that you want to prune cache of removed books?\n(This may take a while.)"),
@@ -446,9 +439,9 @@ function CoverBrowser:addToMainMenu(menu_items)
                                     UIManager:nextTick(function()
                                         local summary = BookInfoManager:removeNonExistantEntries()
                                         UIManager:close(msg)
-                                        UIManager:show( InfoMessage:new{ text = summary } )
+                                        UIManager:show(InfoMessage:new{ text = summary })
                                     end)
-                                end
+                                end,
                             })
                         end,
                     },
@@ -457,7 +450,6 @@ function CoverBrowser:addToMainMenu(menu_items)
                         keep_menu_open = true,
                         callback = function()
                             local ConfirmBox = require("ui/widget/confirmbox")
-                            UIManager:close(self.file_dialog)
                             UIManager:show(ConfirmBox:new{
                                 text = _("Are you sure that you want to compact cache database?\n(This may take a while.)"),
                                 ok_text = _("Compact database"),
@@ -468,9 +460,9 @@ function CoverBrowser:addToMainMenu(menu_items)
                                     UIManager:nextTick(function()
                                         local summary = BookInfoManager:compactDb()
                                         UIManager:close(msg)
-                                        UIManager:show( InfoMessage:new{ text = summary } )
+                                        UIManager:show(InfoMessage:new{ text = summary })
                                     end)
-                                end
+                                end,
                             })
                         end,
                     },
@@ -479,13 +471,12 @@ function CoverBrowser:addToMainMenu(menu_items)
                         keep_menu_open = true,
                         callback = function()
                             local ConfirmBox = require("ui/widget/confirmbox")
-                            UIManager:close(self.file_dialog)
                             UIManager:show(ConfirmBox:new{
                                 text = _("Are you sure that you want to delete cover and metadata cache?\n(This will also reset your display mode settings.)"),
                                 ok_text = _("Purge"),
                                 ok_callback = function()
                                     BookInfoManager:deleteDb()
-                                end
+                                end,
                             })
                         end,
                     },
