@@ -45,6 +45,8 @@ function HtmlBoxWidget:init()
             },
         }
     end
+
+    self.highlight_lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2)
 end
 
 -- These are generic "fixes" to MuPDF HTML stylesheet:
@@ -117,7 +119,7 @@ function HtmlBoxWidget:_render()
 
     if self.highlight_text_selection and self.highlight_rects then
         for _, rect in ipairs(self.highlight_rects) do
-            self.bb:invertRect(rect.x, rect.y, rect.w, rect.h)
+            self.bb:darkenRect(rect.x, rect.y, rect.w, rect.h, self.highlight_lighten_factor)
         end
     end
 end
@@ -231,9 +233,31 @@ function HtmlBoxWidget:onHoldPanText(_, ges)
     return true
 end
 
-function HtmlBoxWidget:isRtlLine(line)
+-- -1: right to left, 0: mixed, +1: left to right
+function HtmlBoxWidget:getLineTextDirection(line)
     local word_count = #line
-    return word_count > 1 and line[1].x0 > line[word_count].x0
+    if word_count <= 1 then
+        return 1
+    end
+
+    local ltr = true
+    local rtl = true
+
+    for i = 2, word_count do
+        if line[i].x0 > line[i - 1].x0 then
+            rtl = false
+        elseif line[i].x0 < line[i - 1].x0 then
+            ltr = false
+        end
+    end
+
+    if ltr and not rtl then
+        return 1
+    elseif rtl and not ltr then
+        return -1
+    else
+        return 0
+    end
 end
 
 function HtmlBoxWidget:getWordIndices(lines, pos)
@@ -242,12 +266,14 @@ function HtmlBoxWidget:getWordIndices(lines, pos)
     for line_index, line in ipairs(lines) do
         if pos.y >= line.y0 then -- check if pos in on or below the line
             if pos.y < line.y1 then -- check if pos is within the line vertically
+                local rtl_line = HtmlBoxWidget:getLineTextDirection(line) < 0
+
                 if pos.x >= line.x0 and pos.x < line.x1 then -- check if pos is within the line horizontally
                     if #line >= 1 then -- if line is not empty then check for exact word hit
                         local word_start_index = 1
                         local word_end_index = #line
                         local step = 1
-                        if HtmlBoxWidget:isRtlLine(line) then
+                        if rtl_line then
                             word_start_index, word_end_index = word_end_index, word_start_index
                             step = -1
                         end
@@ -264,13 +290,13 @@ function HtmlBoxWidget:getWordIndices(lines, pos)
                         end
                     end
                 elseif pos.x < line.x0 then -- check if pos is before the current line horizontally
-                    if HtmlBoxWidget:isRtlLine(line) then
+                    if rtl_line then
                         return line_index, #line
                     else
                         return line_index, 1
                     end
                 elseif pos.x >= line.x1 then -- check if pos after the current line horizontally
-                    if HtmlBoxWidget:isRtlLine(line) then
+                    if rtl_line then
                         -- To match TextBoxWidget's selection behavior this should be "line_index, 1"
                         -- but then the selection will jump between the full row and the visually
                         -- last word when hitting a vertical gap. If we extend the line vertically
@@ -312,9 +338,8 @@ function HtmlBoxWidget:getSelectedText(lines, start_pos, end_pos)
 
     for line_index = start_line_index, end_line_index do
         local line = lines[line_index]
-        local draw_line = false
-        local rect_x0 = 0
-        local rect_x1 = 0
+        local line_last_rect = nil
+        local line_text_direction = HtmlBoxWidget:getLineTextDirection(line)
 
         for word_index, word in ipairs(line) do
             if type(word) == 'table' then
@@ -325,13 +350,24 @@ function HtmlBoxWidget:getSelectedText(lines, start_pos, end_pos)
                 if found_start then
                     table.insert(words, word.word)
 
-                    if draw_line then
-                        if word.x0 < rect_x0 then rect_x0 = word.x0 end
-                        if word.x1 > rect_x1 then rect_x1 = word.x1 end
+                    -- do not try to join word rects in mixed direction lines
+                    if line_last_rect == nil or line_text_direction == 0 then
+                        local rect = Geom:new{
+                            x = word.x0,
+                            y = line.y0,
+                            w = word.x1 - word.x0,
+                            h = line.y1 - line.y0,
+                        }
+
+                        table.insert(rects, rect)
+                        line_last_rect = rect
                     else
-                        draw_line = true
-                        rect_x0 = word.x0
-                        rect_x1 = word.x1
+                        if line_text_direction > 0 then -- left to right
+                            line_last_rect.w = word.x1 - line_last_rect.x
+                        else -- right to left
+                            line_last_rect.w = line_last_rect.w + (line_last_rect.x - word.x0)
+                            line_last_rect.x = word.x0
+                        end
                     end
 
                     if line_index == end_line_index and word_index == end_word_index then
@@ -339,17 +375,6 @@ function HtmlBoxWidget:getSelectedText(lines, start_pos, end_pos)
                     end
                 end
             end
-        end
-
-        if draw_line then
-            local rect = Geom:new{
-                x = rect_x0,
-                y = line.y0,
-                w = rect_x1 - rect_x0,
-                h = line.y1 - line.y0,
-            }
-
-            table.insert(rects, rect)
         end
     end
 
