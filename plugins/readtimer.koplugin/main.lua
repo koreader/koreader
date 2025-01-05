@@ -265,23 +265,20 @@ function ReadTimer:addToMainMenu(menu_items)
                             then_t.min = alarm_time.min
                             then_t.sec = 0
                             local seconds = os.difftime(os.time(then_t), os.time())
-                            if seconds > 0 then
-                                self:rescheduleIn(seconds)
-                                local user_duration_format = G_reader_settings:readSetting("duration_format")
-                                UIManager:show(InfoMessage:new{
-                                    -- @translators %1:%2 is a clock time (HH:MM), %3 is a duration
-                                    text = T(_("Timer set for %1:%2.\n\nThat's %3 from now."),
-                                        string.format("%02d", alarm_time.hour), string.format("%02d", alarm_time.min),
-                                        datetime.secondsToClockDuration(user_duration_format, seconds, false)),
-                                    timeout = 5,
-                                })
-                                if touchmenu_instance then touchmenu_instance:updateItems() end
-                            else
-                                UIManager:show(InfoMessage:new{
-                                    text = _("Timer could not be set. The selected time is in the past."),
-                                    timeout = 5,
-                                })
+                            if seconds <= 0 then
+                                then_t.day = then_t.day + 1
+                                seconds = os.difftime(os.time(then_t), os.time())
                             end
+                            self:rescheduleIn(seconds)
+                            local user_duration_format = G_reader_settings:readSetting("duration_format")
+                            UIManager:show(InfoMessage:new{
+                                -- @translators %1:%2 is a clock time (HH:MM), %3 is a duration
+                                text = T(_("Timer set for %1:%2.\n\nThat's %3 from now."),
+                                    string.format("%02d", alarm_time.hour), string.format("%02d", alarm_time.min),
+                                    datetime.secondsToClockDuration(user_duration_format, seconds, false)),
+                                timeout = 5,
+                            })
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
                         end
                     }
                     self:addCheckboxes(time_widget)
