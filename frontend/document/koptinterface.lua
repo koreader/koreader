@@ -833,7 +833,9 @@ function KoptInterface:getNativeOCRWord(doc, pageno, rect)
             kc.getTOCRWord, kc, "src",
             0, 0, word_w, word_h,
             self.tessocr_data, self.ocr_lang, self.ocr_type, 0, 1)
-        DocCache:insert(hash, CacheItem:new{ ocrword = word, size = #word + 64 }) -- estimation
+        if word then
+            DocCache:insert(hash, CacheItem:new{ ocrword = word, size = #word + 64 }) -- estimation
+        end
         logger.dbg("word", word)
         page:close()
         kc:free()
