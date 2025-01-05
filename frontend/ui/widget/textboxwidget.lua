@@ -2008,10 +2008,8 @@ function TextBoxWidget:onHoldStartText(_, ges)
     self.hold_end_pos = pos
     self:unscheduleClearHighlightAndRedraw()
 
-    if self.highlight_text_selection then
-        if self:updateHighlight() then
-            self:redrawHighlight()
-        end
+    if self:updateHighlight() then
+        self:redrawHighlight()
     end
 
     if not self.hold_start_pos then
@@ -2033,11 +2031,9 @@ function TextBoxWidget:onHoldPanText(_, ges)
         y = ges.pos.y - self.dimen.y,
     }
 
-    if self.highlight_text_selection then
-        if self:updateHighlight() then
-            self.hold_start_time = UIManager:getTime()
-            self:redrawHighlight()
-        end
+    if self:updateHighlight() then
+        self.hold_start_time = UIManager:getTime()
+        self:redrawHighlight()
     end
 
     -- Don't let that event be processed by other widget
@@ -2057,12 +2053,8 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
         y = ges.pos.y - self.dimen.y,
     }
 
-    -- Unlike to onHoldStartText and onHoldPanText we must call updateHighlight here even if highlight
-    -- displaying is disabled to be able to query the higlighted word.
     if self:updateHighlight() then
-        if self.highlight_text_selection then
-            self:redrawHighlight()
-        end
+        self:redrawHighlight()
     end
 
     local hold_duration = time.now() - self.hold_start_time
@@ -2384,14 +2376,16 @@ function TextBoxWidget:updateHighlight()
 end
 
 function TextBoxWidget:redrawHighlight()
-    self:_updateLayout(false)
-    UIManager:setDirty(self.dialog or "all", function()
-        return "ui", self.dimen
-    end)
+    if self.highlight_text_selection then
+        self:_updateLayout(false)
+        UIManager:setDirty(self.dialog or "all", function()
+            return "ui", self.dimen
+        end)
+    end
 end
 
 function TextBoxWidget:scheduleClearHighlightAndRedraw()
-    if self.highlight_clear_and_redraw_function or not self.highlight_text_selection then
+    if self.highlight_clear_and_redraw_function then
         return
     end
 
