@@ -250,12 +250,12 @@ function HotKeys:genMenu(hotkey)
         end,
     })
     Dispatcher:addSubMenu(self, sub_items, self.hotkeys, hotkey)
-    -- Since we are already handling potential conflicts via overrideConflictingKeyEvents(), both "No action" and "Nothing",
+    -- Since we are already handling potential conflicts via overrideConflictingKeyEvents(), both "No action" and "Nothing (consume gesture)",
     -- introduced through Dispatcher:addSubMenu(), are effectively the same (from a user point of view); thus, we can do away
-    -- with "Nothing".
+    -- with "Nothing (consume gesture)".
     -- We prioritize "No action" as it will allow the predefined underlaying actions to be executed for hotkeys in the 'reader_only'
     -- array in the genSubItem() function.
-    table.remove(sub_items, 3) -- removes the 'Nothing' option as it is redundant.
+    table.remove(sub_items, 3) -- removes the "Nothing (consume gesture)" option as it is redundant.
     sub_items.max_per_page = 9 -- push settings ('Arrange actions', 'Show as quick menu', 'keep quick menu open') to page 2
     return sub_items
 end

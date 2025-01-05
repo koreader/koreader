@@ -722,7 +722,7 @@ function Dispatcher:menuTextFunc(settings)
     if settings then
         local count = Dispatcher:_itemsCount(settings)
         if count == 0 then
-            return _("Nothing")
+            return _("Nothing (consume gesture)")
         elseif count == 1 then
             local item = next(settings)
             if item == "settings" then item = next(settings, item) end
@@ -940,7 +940,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     Dispatcher:init()
     menu.ignored_by_menu_search = true -- all those would be duplicated
     table.insert(menu, {
-        text = _("Nothing"),
+        text = _("Nothing (consume gesture)"),
         separator = true,
         checked_func = function()
             return location[settings] ~= nil and Dispatcher:_itemsCount(location[settings]) == 0
