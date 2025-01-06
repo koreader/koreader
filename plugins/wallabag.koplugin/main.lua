@@ -873,7 +873,7 @@ function Wallabag:downloadArticles()
         logger.dbg("Wallabag:downloadArticles: got a list of", #articles, "articles")
         info = InfoMessage:new{
             text = T(
-                _("Got a list of %1 articles…"),
+                _("Received a list of %1 articles…"),
                 #articles
             ),
             timeout = 3
@@ -1362,10 +1362,12 @@ Restart KOReader after editing the config file.]]), BD.dirpath(DataStorage:getSe
         fields = {
             {
                 text = self.server_url,
+                --description = T(_("Server URL:")),
                 hint = _("Server URL")
             },
             {
                 text = self.client_id,
+                --description = T(_("Client ID and secret")),
                 hint = _("Client ID")
             },
             {
@@ -1374,6 +1376,7 @@ Restart KOReader after editing the config file.]]), BD.dirpath(DataStorage:getSe
             },
             {
                 text = self.username,
+                --description = T(_("Username and password")),
                 hint = _("Username")
             },
             {
@@ -1519,7 +1522,7 @@ end
 -- local upload queue.
 function Wallabag:onAddWallabagArticle(article_url)
     if not NetworkMgr:isOnline() then
-        self:addToUploadQueue(article_url)
+        self:addToOfflineQueue(article_url)
         UIManager:show(InfoMessage:new{
             text = T(_("Article will be added to Wallabag in the next sync:\n%1"), BD.url(article_url)),
             timeout = 1,
@@ -1594,10 +1597,10 @@ function Wallabag:getLastPercent()
     return Math.roundPercent(percent)
 end
 
-function Wallabag:addToUploadQueue(article_url)
+function Wallabag:addToOfflineQueue(article_url)
     table.insert(self.offline_queue, article_url)
     self:saveSettings()
-    logger.dbg("Wallabag:addToUploadQueue: added", article_url, "to queue")
+    logger.dbg("Wallabag:addToOfflineQueue: added", article_url, "to queue")
 end
 
 --- Handler for the CloseDocument event.
