@@ -102,7 +102,7 @@ function Wallabag:init()
     self.remove_read_from_history      = self.wb_settings.data.wallabag.remove_read_from_history or false
     self.remove_abandoned_from_history = self.wb_settings.data.wallabag.remove_abandoned_from_history or false
     self.download_original_document    = self.wb_settings.data.wallabag.download_original_document or false
-    self.upload_queue                  = self.wb_settings.data.wallabag.upload_queue or {}
+    self.offline_queue                  = self.wb_settings.data.wallabag.offline_queue or {}
     self.use_local_archive             = self.wb_settings.data.wallabag.use_local_archive or false
 
     -- archive_directory only has a default if directory is set
@@ -162,7 +162,7 @@ function Wallabag:addToMainMenu(menu_items)
                     self.ui:handleEvent(Event:new("UploadWallabagQueue"))
                 end,
                 enabled_func = function()
-                    return #self.upload_queue > 0
+                    return #self.offline_queue > 0
                 end,
             },
             {
@@ -175,7 +175,7 @@ function Wallabag:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Go to download directory"),
+                text = _("Go to download folder"),
                 callback = function()
                     self.ui:handleEvent(Event:new("GoToWallabagDirectory"))
                 end,
@@ -205,7 +205,7 @@ function Wallabag:addToMainMenu(menu_items)
                                     else
                                         path = filemanagerutil.abbreviate(self.directory)
                                     end
-                                    return T(_("Download directory: %1"), BD.dirpath(path))
+                                    return T(_("Download folder: %1"), BD.dirpath(path))
                                 end,
                                 keep_menu_open = true,
                                 callback = function(touchmenu_instance)
@@ -326,7 +326,7 @@ function Wallabag:addToMainMenu(menu_items)
                                 end,
                             },
                             {
-                                text = _("Move to archive directory instead of deleting"),
+                                text = _("Move to archive folder instead of deleting"),
                                 checked_func = function() return self.use_local_archive end,
                                 callback = function()
                                     self.use_local_archive = not self.use_local_archive
@@ -341,7 +341,7 @@ function Wallabag:addToMainMenu(menu_items)
                                     else
                                         path = filemanagerutil.abbreviate(self.archive_directory)
                                     end
-                                    return T(_("Archive directory: %1"), BD.dirpath(path))
+                                    return T(_("Archive folder: %1"), BD.dirpath(path))
                                 end,
                                 keep_menu_open = true,
                                 callback = function(touchmenu_instance)
@@ -412,7 +412,7 @@ function Wallabag:addToMainMenu(menu_items)
                     },
                     {
                         text = _("Send review as tags"),
-                        help_text = _("This allows you to write tags in the review field, separated by commas, which will be uploaded to the article on Wallabag."),
+                        help_text = _("This allows you to write tags in the review field, separated by commas, which will be applied to the article on Wallabag."),
                         keep_menu_open = true,
                         checked_func = function()
                             return self.send_review_as_tags or false
@@ -428,7 +428,7 @@ function Wallabag:addToMainMenu(menu_items)
                         keep_menu_open = true,
                         callback = function()
                             UIManager:show(InfoMessage:new{
-                                text = _([[Download directory: use a directory that is exclusively used by the Wallabag plugin. Existing files in this directory risk being deleted.
+                                text = _([[Download folder: use a folder that is exclusively used by the Wallabag plugin. Existing files in this folder risk being deleted.
 
 Articles marked as finished, on hold or 100% read can be marked as read (or deleted) on the server. This is done automatically when retrieving new articles with the 'Auto-upload article statuses when downloading' setting.
 
@@ -494,7 +494,7 @@ function Wallabag:getBearerToken()
     if dir_mode ~= "directory" then
         logger.err("Wallabag:getBearerToken:", self.directory, "is not a directory")
         UIManager:show(InfoMessage:new{
-            text = _("The download directory is not valid.\nPlease configure it in the settings.")
+            text = _("The download folder is not valid.\nPlease configure it in the settings.")
         })
 
         return false
@@ -957,19 +957,19 @@ function Wallabag:uploadQueue(quiet)
 
     local count = 0
 
-    if self.upload_queue and next(self.upload_queue) ~= nil then
-        local msg = T(N_("Adding 1 article from queue…", "Adding %1 articles from queue…", #self.upload_queue), #self.upload_queue)
+    if self.offline_queue and next(self.offline_queue) ~= nil then
+        local msg = T(N_("Adding 1 article from queue…", "Adding %1 articles from queue…", #self.offline_queue), #self.offline_queue)
         local info = InfoMessage:new{ text = msg }
         UIManager:show(info)
 
-        for _, articleUrl in ipairs(self.upload_queue) do
+        for _, articleUrl in ipairs(self.offline_queue) do
             if self:addArticle(articleUrl) then
                 count = count + 1
                 --- @todo Add error handling
             end
         end
 
-        self.upload_queue = {}
+        self.offline_queue = {}
         self:saveSettings()
         UIManager:close(info)
     end
@@ -1236,7 +1236,7 @@ function Wallabag:archiveLocalArticle(path)
         util.makePath(self.archive_directory)
     elseif dir_mode ~= "directory" then
         UIManager:show(InfoMessage:new{
-            text = _("The archive directory is not valid.\nPlease configure it in the settings."),
+            text = _("The archive folder is not valid.\nPlease configure it in the settings."),
         })
         return result
     end
@@ -1339,7 +1339,7 @@ function Wallabag:editServerSettings()
     local text_info = T(_([[
 Enter the details of your Wallabag server and account.
 
-Client ID and client secret are long strings so you might prefer to save the empty settings and edit the config file directly in your installation directory:
+Client ID and client secret are long strings so you might prefer to save the empty settings and edit the config file directly in your installation folder:
 %1/wallabag.lua
 
 Restart KOReader after editing the config file.]]), BD.dirpath(DataStorage:getSettingsDir()))
@@ -1434,7 +1434,7 @@ function Wallabag:setArticlesPerSync(touchmenu_instance)
     self.articles_dialog:onShowKeyboard()
 end
 
---- The dialog shown when clicking "Download directory".
+--- The dialog shown when clicking "Download folder".
 -- Or automatically, when getBearerToken is run with an incomplete server configuration.
 function Wallabag:setDownloadDirectory(touchmenu_instance)
     require("ui/downloadmgr"):new{
@@ -1449,7 +1449,7 @@ function Wallabag:setDownloadDirectory(touchmenu_instance)
     }:chooseDir()
 end
 
---- The dialog shown when clicking "Archive directory"
+--- The dialog shown when clicking "Archive folder"
 function Wallabag:setArchiveDirectory(touchmenu_instance)
     require("ui/downloadmgr"):new{
         onConfirm = function(path)
@@ -1486,7 +1486,7 @@ function Wallabag:saveSettings()
         remove_read_from_history      = self.remove_read_from_history,
         remove_abandoned_from_history = self.remove_abandoned_from_history,
         download_original_document    = self.download_original_document,
-        upload_queue                  = self.upload_queue,
+        offline_queue                  = self.offline_queue,
         use_local_archive             = self.use_local_archive,
         archive_directory             = self.archive_directory,
     }
@@ -1582,7 +1582,7 @@ function Wallabag:getLastPercent()
 end
 
 function Wallabag:addToUploadQueue(article_url)
-    table.insert(self.upload_queue, article_url)
+    table.insert(self.offline_queue, article_url)
     self:saveSettings()
     logger.dbg("Wallabag:addToUploadQueue: added", article_url, "to queue")
 end

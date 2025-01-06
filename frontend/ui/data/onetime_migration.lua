@@ -789,7 +789,7 @@ if last_migration_date < 20241228 then
 
         local new_settings = {}
         local migrate = {
-            download_queue = "upload_queue",
+            download_queue = "offline_queue",
             is_auto_delete = "auto_archive",
             is_delete_abandoned = "archive_abandoned",
             is_delete_finished = "archive_finished",
