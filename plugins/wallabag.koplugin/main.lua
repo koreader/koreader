@@ -568,19 +568,27 @@ function Wallabag:getArticleList()
         local ok, result, code = self:callAPI("GET", articles_url, nil, nil, nil, true)
 
         if not ok and result == "http_error" and code == 404 then
-            -- Assume we have hit the last page, there are no more articles
             logger.dbg("Wallabag:getArticleList: requesting page", page, "failed with", result, code)
-            break -- exit while loop but do return article_list
+            if #article_list == 0 then
+                UIManager:show(InfoMessage:new{ text = _("Requesting article list failed with a 404 error.") })
+                return
+            end
+            -- Assume we have gone past the last page, do return articles from previous pages
+            break
         elseif not ok then
             -- Some other error has occurred. Don't proceed with downloading or deleting articles
             logger.warn("Wallabag:getArticleList: requesting page", page, "failed with", result, code)
             UIManager:show(InfoMessage:new{ text = _("Requesting article list failed.") })
             return
-        elseif result == nil then
-            -- No error occurred, but no JSON was returned either
+        elseif result == nil or result._embedded == nil or result._embedded.items == nil or #result._embedded.items == 0 then
+            -- No error occurred, but no items were returned either
             logger.warn("Wallabag:getArticleList: requesting page", page, "did not return anything")
-            UIManager:show(InfoMessage:new{ text = _("Requesting article list did not return anything.") })
-            return
+            if #article_list == 0 then
+                UIManager:show(InfoMessage:new{ text = _("Requesting article list did not return anything.") })
+                return
+            end
+            -- Articles were returned from a previous page, do return those
+            break
         end
 
         -- We're only interested in the actual articles in the JSON
@@ -602,7 +610,12 @@ function Wallabag:getArticleList()
             end
         end
 
-        page = page + 1
+        if result.pages ~= nil and page < result.pages then
+            page = page + 1
+        else
+            logger.dbg("Wallabag:getArticleList: reached the last page")
+            break
+        end
     end
 
     return article_list
