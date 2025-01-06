@@ -182,7 +182,7 @@ function NextcloudExporter:export(t)
     -- export each note
     for _, booknotes in pairs(t) do
         local note = md.prepareBookContent(booknotes, markdown_settings.formatting_options, markdown_settings.highlight_formatting)
-        local note_title = string.format("%s - %s", booknotes.author, booknotes.title)
+        local note_title = string.format("%s - %s", string.gsub(booknotes.author, "\n", ", "), booknotes.title)
 
         -- search for existing note, and in that case use its ID for update
         note_id = nil
