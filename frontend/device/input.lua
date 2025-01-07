@@ -233,6 +233,11 @@ function Input:init()
         self.input = require("ffi/input_pocketbook")
     else
         self.input = require("libs/libkoreader-input")
+        if self.device.canAutosleep() then
+            self.input.waitForEvent = self.input.waitForEventWithEpoll
+        else
+            self.input.waitForEvent = self.input.waitForEventWithSelect
+        end
     end
 
     -- Initialize instance-specific tables
@@ -556,7 +561,7 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
         -- If GestureDetector's clock source probing was inconclusive, do this on the UI timescale instead.
         if clock_id == -1 then
             deadline = time.now() + delay
-            clock_id = C.CLOCK_MONOTONIC
+            clock_id = C.CLOCK_BOOTTIME
         else
             deadline = origin + delay
         end
@@ -1309,7 +1314,7 @@ end
 -- `deadline` (an fts time) is the absolute deadline imposed by UIManager:handleInput() (a.k.a., our main event loop ^^):
 -- it's either nil (meaning block forever waiting for input), or the earliest UIManager deadline (in most cases, that's the next scheduled task,
 -- in much less common cases, that's the earliest of UIManager.INPUT_TIMEOUT (currently, only KOSync ever sets it) or UIManager.ZMQ_TIMEOUT if there are pending ZMQs).
-function Input:waitEvent(now, deadline)
+function Input:waitEvent(now, deadline, powersave)
     -- On the first iteration of the loop, we don't need to update now, we're following closely (a couple ms at most) behind UIManager.
     local ok, ev
     -- Wrapper around the platform-specific input.waitForEvent (which itself is generally poll-like, and supposed to poll *once*).
@@ -1370,7 +1375,7 @@ function Input:waitEvent(now, deadline)
 
                 local timerfd
                 local sec, usec = time.split_s_us(poll_timeout)
-                ok, ev, timerfd = self.input.waitForEvent(sec, usec)
+                ok, ev, timerfd = self.input.waitForEvent(sec, usec, powersave and time.to_ms(powersave))
                 -- We got an actual input event, go and process it
                 if ok then break end
 
@@ -1457,7 +1462,7 @@ function Input:waitEvent(now, deadline)
             end
 
             local sec, usec = time.split_s_us(poll_timeout)
-            ok, ev = self.input.waitForEvent(sec, usec)
+            ok, ev = self.input.waitForEvent(sec, usec, powersave and time.to_ms(powersave))
         end -- if #timer_callbacks > 0
 
         -- Handle errors

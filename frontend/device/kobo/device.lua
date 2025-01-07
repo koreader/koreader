@@ -149,6 +149,7 @@ local Kobo = Generic:extend{
     pressure_event = nil,
     -- Device features multiple CPU cores
     isSMP = no,
+    nb_online_CPUs = 1, -- one CPU is always online
     -- Device supports "eclipse" waveform modes (i.e., optimized for nightmode).
     hasEclipseWfm = no,
     -- Device ships with various hardware revisions under the same device code, requiring automatic hardware detection (PMIC & FL)...
@@ -426,6 +427,7 @@ local KoboCadmus = Kobo:extend{
     model = "Kobo_cadmus",
     isSunxi = yes,
     hasEclipseWfm = yes,
+    canAutosleep = yes,
     canToggleChargingLED = yes,
     led_uses_channel_3 = true,
     hasFrontlight = yes,
@@ -1247,7 +1249,7 @@ end
 
 --- The function to put the device into standby, with enabled touchscreen.
 -- max_duration ... maximum time for the next standby, can wake earlier (e.g. Tap, Button ...)
-function Kobo:standby(max_duration)
+function Kobo:standby(max_duration_s)
     -- On MTK, any suspend/standby attempt while plugged-in will hang the kernel... -_-"
     -- NOTE: isCharging is still true while isCharged!
     if self:isMTK() and self.powerd:isCharging() then
@@ -1274,8 +1276,8 @@ function Kobo:standby(max_duration)
     local function standby_alarm()
     end
 
-    if max_duration then
-        self.wakeup_mgr:addTask(max_duration, standby_alarm)
+    if max_duration_s then
+        self.wakeup_mgr:addTask(max_duration_s, standby_alarm)
     end
 
     logger.dbg("Kobo standby: asking to enter standby . . .")
@@ -1306,7 +1308,7 @@ function Kobo:standby(max_duration)
         end
     end
 
-    if max_duration then
+    if max_duration_s then
         -- NOTE: We don't actually care about discriminating exactly *why* we woke up,
         --       and our scheduled wakeup action is a NOP anyway,
         --       so we can just drop the task instead of doing things the right way like suspend ;).
@@ -1324,6 +1326,91 @@ function Kobo:standby(max_duration)
 
     -- And restore the standard CPU scheduler once we're done dealing with the wakeup event.
     UIManager:tickAfterNext(self.defaultCPUGovernor, self)
+end
+
+
+function Kobo:setAutosleepTime(time)
+    self.autosleep_time = time
+end
+
+--- Just a helper for wakeup_mgr
+local function _standby_alarm() end
+
+--- The function checks and prepares kernel's autosleep function
+-- Prepares an rtc wakeup if we want to use the autosleep function
+-- uses self._old_time_diff for storing the difference between boottime and monotonic
+
+-- max_duration ... maximum time for the next standby, can wake earlier (e.g. Tap, Button ...)
+--
+-- return nil ... autosleep not activated
+--        min_duration ... returns the minimal duration to stay awake for input
+function Kobo:prepareAutosleep(max_duration)
+    if not self.canAutosleep() or not self.autosleep_time or self.autosleep_time <= 0 then
+        return
+    end
+    local min_duration = self.autosleep_time
+    self._old_time_diff = nil
+    if self.nb_online_CPUs > 1 then
+        return -- only standby if single threaded
+    end
+    max_duration = max_duration or math.huge
+    min_duration = min_duration
+    if max_duration <= min_duration then
+        return
+    end
+
+    if self:isMTK() and self.powerd:isCharging() then
+        -- On MTK, any suspend/standby attempt while plugged-in will hang the kernel... -_-"
+        -- NOTE: isCharging is still true while isCharged!
+        logger.info("Kobo standby: skipping the standby request for now: device is plugged in and would otherwise crash!")
+        return
+    else
+        local NetworkMgr = require("ui/network/manager")
+        if NetworkMgr:getWifiState() then
+            -- Don't enter standby if wifi is on, as this will break in fun and interesting ways
+            -- (from Wi-Fi issues to kernel deadlocks).
+            logger.dbg("Kobo standby: WiFi is on,")
+            return
+        elseif self.powerd:isCharging() and not self:canPowerSaveWhileCharging() then
+            return
+        end
+    end
+
+    -- NOTE: Switch to the performance CPU governor, in order to speed up the resume process so as to lower its latency cost...
+    --       (It won't have any impact on power efficiency *during* suspend, so there's not really any drawback).
+    self:performanceCPUGovernor()
+
+    if max_duration then
+        self.wakeup_mgr:addTask(math.floor(time.to_s(max_duration) + 1), _standby_alarm)
+    end
+
+    -- boottime ticks during stanby, monotonic does not.
+    -- So we check the differnce of both before a potential standby.
+    self._old_time_diff = time.boottime() - time.monotonic()
+    return min_duration
+end
+
+--- Cleanup the things done in prepareAutosleep (wakealarm) and do the timeshift again.
+function Kobo:cleanupAutosleep()
+    if not self.canAutosleep() or not self._old_time_diff then
+        return
+    end
+
+    self:defaultCPUGovernor()
+
+    self.wakeup_mgr:removeTasks(nil, _standby_alarm)
+
+    -- boottime ticks during stanby, monotonic does not.
+    -- Here we get the standby time
+    local standby_time = time.boottime() - time.monotonic() - self._old_time_diff
+
+
+    if time.to_s(standby_time) > 0.001 then -- don't process standby times below 1ms
+        logger.dbg("Kobo standby: last standby_time = ", time.to_s(standby_time))
+        self.last_standby_time = standby_time
+        self.total_standby_time = self.total_standby_time + self.last_standby_time
+        UIManager:shiftScheduledTasksBy( - self.last_standby_time) -- correct scheduled times by last_standby_time
+    end
 end
 
 function Kobo:suspend()
@@ -1599,6 +1686,7 @@ function Kobo:enableCPUCores(amount)
 
         ffiUtil.writeToSysfs(up, path)
     end
+    self.nb_online_CPUs = math.min(self.cpu_count, amount)
 end
 
 function Kobo:performanceCPUGovernor()
