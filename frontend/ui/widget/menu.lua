@@ -4,6 +4,7 @@ local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
+local DocSettings = require("docsettings")
 local Event = require("ui/event")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
@@ -1402,6 +1403,7 @@ end
 Menu.onSetupShowReader = Menu.onShowingReader
 
 function Menu:onCloseWidget()
+    self.book_info_cache = nil
     --- @fixme
     -- we cannot refresh regionally using the dimen field
     -- because some menus without menu title use VerticalGroup to include
@@ -1564,6 +1566,67 @@ function Menu.itemTableFromTouchMenu(t)
         table.insert(item_t, item)
     end
     return item_t
+end
+
+-- BookInfoCache, for menues showing the file list
+
+function Menu:getBookInfoCache(file)
+    -- { been_opened, pages, percent_finished, status, has_highlight }
+    if self.book_info_cache then
+        if self.book_info_cache[file] then
+            return self.book_info_cache[file]
+        end
+    else
+        self.book_info_cache = {}
+    end
+    self.book_info_cache[file] = {}
+    local book_info = self.book_info_cache[file]
+    if DocSettings:hasSidecarFile(file) then
+        book_info.been_opened = true
+        local doc_settings = DocSettings:open(file)
+        local pages = doc_settings:readSetting("doc_pages")
+        if pages == nil then
+            local stats = doc_settings:readSetting("stats")
+            if stats and stats.pages and stats.pages ~= 0 then -- crengine with statistics disabled stores 0
+                pages = stats.pages
+            end
+        end
+        book_info.pages = pages
+        book_info.percent_finished = doc_settings:readSetting("percent_finished")
+        local summary = doc_settings:readSetting("summary")
+        book_info.status = summary and summary.status
+        local annotations = doc_settings:readSetting("annotations")
+        if annotations then
+            book_info.has_highlight = #annotations > 0
+        else
+            local highlight = doc_settings:readSetting("highlight")
+            book_info.has_highlight = highlight and next(highlight) and true
+        end
+    else
+        book_info.been_opened = false
+    end
+    return book_info
+end
+
+function Menu:getBookInfoCacheBeenOpened(file)
+    local been_opened = self.book_info_cache and self.book_info_cache[file] and self.book_info_cache[file].been_opened
+    if been_opened ~= nil then
+        return been_opened
+    end
+    return DocSettings:hasSidecarFile(file)
+end
+
+function Menu:setBookInfoCache(file, status)
+    self.book_info_cache = self.book_info_cache or {}
+    self.book_info_cache[file] = self.book_info_cache[file] or {}
+    self.book_info_cache[file].been_opened = true
+    self.book_info_cache[file].status = status
+end
+
+function Menu:resetBookInfoCache(file)
+    if self.book_info_cache then
+        self.book_info_cache[file] = nil
+    end
 end
 
 return Menu
