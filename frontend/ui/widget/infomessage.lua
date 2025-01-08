@@ -176,12 +176,10 @@ function InfoMessage:init()
         dimen = Screen:getSize(),
         self.movable,
     }
-    if not self.height then
-        self:shrinkFontToFit(frame, text_widget, 0.95)
-    end
-
     if self.shrink_to_fit then
         self:shrinkFontToFit(frame, text_widget, 0.07)
+    elseif not self.height then
+        self:shrinkFontToFit(frame, text_widget, 0.95)
     end
 
     if self.show_delay then
