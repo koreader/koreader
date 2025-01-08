@@ -156,7 +156,7 @@ end
 function FileManagerCollection:onMenuHold(item)
     local file = item.file
     self.file_dialog = nil
-    self.book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
+    local book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
 
     local function close_dialog_callback()
         UIManager:close(self.file_dialog)
@@ -176,26 +176,26 @@ function FileManagerCollection:onMenuHold(item)
     local doc_settings_or_file
     if is_currently_opened then
         doc_settings_or_file = self.ui.doc_settings
-        if not self.book_props then
-            self.book_props = self.ui.doc_props
-            self.book_props.has_cover = true
+        if not book_props then
+            book_props = self.ui.doc_props
+            book_props.has_cover = true
         end
     else
-        if DocSettings:hasSidecarFile(file) then
+        if self:getBookInfoCacheBeenOpened(file) then
             doc_settings_or_file = DocSettings:open(file)
-            if not self.book_props then
+            if not book_props then
                 local props = doc_settings_or_file:readSetting("doc_props")
-                self.book_props = self.ui.bookinfo.extendProps(props, file)
-                self.book_props.has_cover = true
+                book_props = self.ui.bookinfo.extendProps(props, file)
+                book_props.has_cover = true
             end
         else
             doc_settings_or_file = file
         end
     end
-    table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_update_callback))
+    table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_update_callback, self))
     table.insert(buttons, {}) -- separator
     table.insert(buttons, {
-        filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_update_callback, is_currently_opened),
+        filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_update_callback, is_currently_opened, self),
         self._manager:genAddToCollectionButton(file, close_dialog_callback, close_dialog_update_callback),
     })
     table.insert(buttons, {
@@ -217,11 +217,11 @@ function FileManagerCollection:onMenuHold(item)
     })
     table.insert(buttons, {
         filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback),
-        filemanagerutil.genBookInformationButton(doc_settings_or_file, self.book_props, close_dialog_callback),
+        filemanagerutil.genBookInformationButton(doc_settings_or_file, book_props, close_dialog_callback),
     })
     table.insert(buttons, {
-        filemanagerutil.genBookCoverButton(file, self.book_props, close_dialog_callback),
-        filemanagerutil.genBookDescriptionButton(file, self.book_props, close_dialog_callback),
+        filemanagerutil.genBookCoverButton(file, book_props, close_dialog_callback),
+        filemanagerutil.genBookDescriptionButton(file, book_props, close_dialog_callback),
     })
 
     if Device:canExecuteScript(file) then
@@ -232,7 +232,7 @@ function FileManagerCollection:onMenuHold(item)
 
     if self._manager.file_dialog_added_buttons ~= nil then
         for _, row_func in ipairs(self._manager.file_dialog_added_buttons) do
-            local row = row_func(file, true, self.book_props)
+            local row = row_func(file, true, book_props)
             if row ~= nil then
                 table.insert(buttons, row)
             end
