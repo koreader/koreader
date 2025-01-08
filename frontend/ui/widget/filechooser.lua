@@ -1,7 +1,6 @@
 local BD = require("ui/bidi")
 local datetime = require("datetime")
 local Device = require("device")
-local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
@@ -167,19 +166,14 @@ local FileChooser = Menu:extend{
                     return b.opened
                 end, cache
             end,
-            item_func = function(item)
-                local percent_finished
-                item.opened = DocSettings:hasSidecarFile(item.path)
-                if item.opened then
-                    local doc_settings = DocSettings:open(item.path)
-                    percent_finished = doc_settings:readSetting("percent_finished")
-                end
-
+            item_func = function(item, this)
+                local book_info = this:getBookInfoCache(item.path)
+                item.opened = book_info.been_opened
                 -- smooth 2 decimal points (0.00) instead of 16 decimal points
-                item.percent_finished = util.round_decimal(percent_finished or 0, 2)
+                item.percent_finished = util.round_decimal(book_info.percent_finished or 0, 2)
             end,
             mandatory_func = function(item)
-                return item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
+                return item.opened and string.format("%d\xE2\x80\xAF%%", 100 * item.percent_finished) or "–"
             end,
         },
         percent_unopened_last = {
@@ -197,19 +191,14 @@ local FileChooser = Menu:extend{
                     return a.opened
                 end, cache
             end,
-            item_func = function(item)
-                local percent_finished
-                item.opened = DocSettings:hasSidecarFile(item.path)
-                if item.opened then
-                    local doc_settings = DocSettings:open(item.path)
-                    percent_finished = doc_settings:readSetting("percent_finished")
-                end
-
+            item_func = function(item, this)
+                local book_info = this:getBookInfoCache(item.path)
+                item.opened = book_info.been_opened
                 -- smooth 2 decimal points (0.00) instead of 16 decimal points
-                item.percent_finished = util.round_decimal(percent_finished or 0, 2)
+                item.percent_finished = util.round_decimal(book_info.percent_finished or 0, 2)
             end,
             mandatory_func = function(item)
-                return item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
+                return item.opened and string.format("%d\xE2\x80\xAF%%", 100 * item.percent_finished) or "–"
             end,
         },
         percent_natural = {
@@ -234,29 +223,25 @@ local FileChooser = Menu:extend{
 
                 return sortfunc, cache
             end,
-            item_func = function(item)
-                local percent_finished
+            item_func = function(item, this)
+                local book_info = this:getBookInfoCache(item.path)
+                item.opened = book_info.been_opened
+                local percent_finished = book_info.percent_finished
                 local sort_percent
-                item.opened = DocSettings:hasSidecarFile(item.path)
                 if item.opened then
-                    local doc_settings = DocSettings:open(item.path)
-                    local summary = doc_settings:readSetting("summary")
-
                     -- books marked as "finished" or "on hold" should be considered the same as 100% and less than 0% respectively
-                    if summary and summary.status == "complete" then
+                    if book_info.status == "complete" then
                         sort_percent = 1.0
-                    elseif summary and summary.status == "abandoned" then
+                    elseif book_info.status == "abandoned" then
                         sort_percent = -0.01
                     end
-
-                    percent_finished = doc_settings:readSetting("percent_finished")
                 end
                 -- smooth 2 decimal points (0.00) instead of 16 decimal points
                 item.sort_percent = sort_percent or util.round_decimal(percent_finished or -1, 2)
                 item.percent_finished = percent_finished or 0
             end,
             mandatory_func = function(item)
-                return item.opened and string.format("%d %%", 100 * item.percent_finished) or "–"
+                return item.opened and string.format("%d\xE2\x80\xAF%%", 100 * item.percent_finished) or "–"
             end,
         },
     },
@@ -279,7 +264,7 @@ function FileChooser:show_file(filename, fullpath)
         if filename:match(pattern) then return false end
     end
     if not self.show_unsupported and self.file_filter ~= nil and not self.file_filter(filename) then return false end
-    if not FileChooser.show_finished and fullpath ~= nil and filemanagerutil.getStatus(fullpath) == "complete" then return false end
+    if not FileChooser.show_finished and fullpath ~= nil and filemanagerutil.getStatus(fullpath, self) == "complete" then return false end
     return true
 end
 
@@ -350,8 +335,13 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         local show_file_in_bold = G_reader_settings:readSetting("show_file_in_bold")
         item.bidi_wrap_func = BD.filename
         item.is_file = true
+        if collate.item_func ~= nil then
+            collate.item_func(item, self)
+        end
         if show_file_in_bold ~= false then
-            item.opened = DocSettings:hasSidecarFile(fullpath)
+            if item.opened == nil then -- could be set in item_func
+                item.opened = (self:getBookInfoCache(item.path)).been_opened
+            end
             item.bold = item.opened
             if show_file_in_bold ~= "opened" then
                 item.bold = not item.bold
@@ -359,9 +349,6 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         end
         item.dim = self.filemanager and self.filemanager.selected_files
                    and self.filemanager.selected_files[item.path]
-        if collate.item_func ~= nil then
-            collate.item_func(item)
-        end
         item.mandatory = self:getMenuItemMandatory(item, collate)
     else -- folder
         if item.text == "./." then -- added as content of an unreadable directory
@@ -370,7 +357,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
             item.text = item.text.."/"
             item.bidi_wrap_func = BD.directory
             if collate.can_collate_mixed and collate.item_func ~= nil then
-                collate.item_func(item)
+                collate.item_func(item, self)
             end
             if dirpath then -- file browser or PathChooser
                 item.mandatory = self:getMenuItemMandatory(item)
@@ -627,7 +614,7 @@ function FileChooser:getNextFile(curr_file)
         if is_curr_file_found then
             local next_file = item_table[i+1]
             if next_file and next_file.is_file and DocumentRegistry:hasProvider(next_file.path)
-                    and filemanagerutil.getStatus(next_file.path) ~= "complete" then
+                    and filemanagerutil.getStatus(next_file.path, self) ~= "complete" then
                 return next_file.path
             end
         end
