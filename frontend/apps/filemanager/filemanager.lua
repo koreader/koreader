@@ -253,25 +253,25 @@ function FileManager:setupLayout()
             {}, -- separator
         }
 
+        local book_props
         if is_file then
-            self.book_props = nil -- in 'self' to provide access to it in CoverBrowser
             local has_provider = DocumentRegistry:hasProvider(file)
-            local has_sidecar = DocSettings:hasSidecarFile(file)
+            local been_opened = self:getBookInfoCacheBeenOpened(file)
             local doc_settings_or_file = file
-            if has_provider or has_sidecar then
-                self.book_props = file_manager.coverbrowser and file_manager.coverbrowser:getBookInfo(file)
-                if has_sidecar then
+            if has_provider or been_opened then
+                book_props = file_manager.coverbrowser and file_manager.coverbrowser:getBookInfo(file)
+                if been_opened then
                     doc_settings_or_file = DocSettings:open(file)
-                    if not self.book_props then
+                    if not book_props then
                         local props = doc_settings_or_file:readSetting("doc_props")
-                        self.book_props = FileManagerBookInfo.extendProps(props, file)
-                        self.book_props.has_cover = true -- to enable "Book cover" button, we do not know if cover exists
+                        book_props = FileManagerBookInfo.extendProps(props, file)
+                        book_props.has_cover = true -- to enable "Book cover" button, we do not know if cover exists
                     end
                 end
-                table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_refresh_callback))
+                table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_refresh_callback, self))
                 table.insert(buttons, {}) -- separator
                 table.insert(buttons, {
-                    filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_refresh_callback),
+                    filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_refresh_callback, nil, self),
                     file_manager.collections:genAddToCollectionButton(file, close_dialog_callback, refresh_callback),
                 })
             end
@@ -283,12 +283,12 @@ function FileManager:setupLayout()
                         file_manager:showOpenWithDialog(file)
                     end,
                 },
-                filemanagerutil.genBookInformationButton(doc_settings_or_file, self.book_props, close_dialog_callback),
+                filemanagerutil.genBookInformationButton(doc_settings_or_file, book_props, close_dialog_callback),
             })
             if has_provider then
                 table.insert(buttons, {
-                    filemanagerutil.genBookCoverButton(file, self.book_props, close_dialog_callback),
-                    filemanagerutil.genBookDescriptionButton(file, self.book_props, close_dialog_callback),
+                    filemanagerutil.genBookCoverButton(file, book_props, close_dialog_callback),
+                    filemanagerutil.genBookDescriptionButton(file, book_props, close_dialog_callback),
                 })
             end
             if Device:canExecuteScript(file) then
@@ -325,7 +325,7 @@ function FileManager:setupLayout()
 
         if file_manager.file_dialog_added_buttons ~= nil then
             for _, row_func in ipairs(file_manager.file_dialog_added_buttons) do
-                local row = row_func(file, is_file, self.book_props)
+                local row = row_func(file, is_file, book_props)
                 if row ~= nil then
                     table.insert(buttons, row)
                 end
