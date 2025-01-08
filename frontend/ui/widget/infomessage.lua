@@ -181,7 +181,7 @@ function InfoMessage:init()
     end
 
     if self.shrink_to_fit then
-        self:shrinkFontToFit(frame, text_widget, 0.07) 
+        self:shrinkFontToFit(frame, text_widget, 0.07)
     end
 
     if self.show_delay then
@@ -262,7 +262,7 @@ end
 function InfoMessage:shrinkFontToFit(frame, text_widget, height_threshold)
     local cur_size = frame:getSize()
     if cur_size and cur_size.h > height_threshold * Screen:getHeight() then
-        local orig_font = text_widget.face.orig_font 
+        local orig_font = text_widget.face.orig_font
         local orig_size = text_widget.face.orig_size
         local real_size = text_widget.face.size
         if orig_size > 10 then -- don't go too small
