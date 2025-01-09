@@ -255,7 +255,7 @@ function FileManager:setupLayout()
         local book_props
         if is_file then
             local has_provider = DocumentRegistry:hasProvider(file)
-            local been_opened = self:getBookInfoCacheBeenOpened(file)
+            local been_opened = self.getBookInfoCacheBeenOpened(file)
             local doc_settings_or_file = file
             if has_provider or been_opened then
                 book_props = file_manager.coverbrowser and file_manager.coverbrowser:getBookInfo(file)
@@ -267,10 +267,10 @@ function FileManager:setupLayout()
                         book_props.has_cover = true -- to enable "Book cover" button, we do not know if cover exists
                     end
                 end
-                table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_refresh_callback, self))
+                table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_refresh_callback))
                 table.insert(buttons, {}) -- separator
                 table.insert(buttons, {
-                    filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_refresh_callback, nil, self),
+                    filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_refresh_callback),
                     file_manager.collections:genAddToCollectionButton(file, close_dialog_callback, refresh_callback),
                 })
             end
