@@ -53,7 +53,7 @@ local InfoMessage = InputContainer:extend{
     _timeout_func = nil,
     width = nil,  -- The width of the InfoMessage. Keep it nil to use default value.
     height = nil,  -- The height of the InfoMessage. If this field is set, a scrollbar may be shown.
-    cap_height_to_one_line = false,  -- Attempt to show text in one single line. This setting and height are not to be used conjointly.
+    force_one_line = false,  -- Attempt to show text in one single line. This setting and height are not to be used conjointly.
     -- The image shows at the left of the InfoMessage. Image data will be freed
     -- by InfoMessage, caller should not manage its lifecycle
     image = nil,
@@ -179,10 +179,10 @@ function InfoMessage:init()
 
     if not self.height then
         local max_height
-        if self.cap_height_to_one_line then
+        if self.force_one_line then
             local icon_height = self.show_icon and image_widget:getSize().h or 0
-            -- calculate the size of the frame container when it's only displaying one line, and add a magic number (3) to give it some wiggle room
-            max_height = math.max(text_widget:getLineHeight(), icon_height) + 2*frame.bordersize + 2*frame.padding + 3
+            -- calculate the size of the frame container when it's only displaying one line.
+            max_height = math.max(text_widget:getLineHeight(), icon_height) + 2*frame.bordersize + 2*frame.padding
         else
             max_height = Screen:getHeight() * 0.95
         end
