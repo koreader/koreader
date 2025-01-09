@@ -551,7 +551,7 @@ function MosaicMenuItem:update()
             end
         end
 
-        local book_info = self.menu:getBookInfoCache(self.filepath)
+        local book_info = self.menu.getBookInfoCache(self.filepath)
         self.been_opened = book_info.been_opened
         if bookinfo then -- This book is known
             self.percent_finished = book_info.percent_finished
