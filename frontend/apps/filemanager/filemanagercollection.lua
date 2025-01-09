@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -13,10 +14,10 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
+local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
 local T = ffiUtil.template
-local util = require("util")
 
 local FileManagerCollection = WidgetContainer:extend{
     title = _("Collections"),
@@ -63,14 +64,7 @@ end
 
 function FileManagerCollection:onShowColl(collection_name)
     collection_name = collection_name or ReadCollection.default_collection_name
-    self.coll_menu = Menu:new{
-        ui = self.ui,
-        covers_fullscreen = true, -- hint for UIManager:_repaint()
-        is_borderless = true,
-        is_popout = false,
-        -- item and book cover thumbnail dimensions in Mosaic and Detailed list display modes
-        -- must be equal in File manager, History and Collection windows to avoid image scaling
-        title_bar_fm_style = true,
+    self.coll_menu = BookList:new{
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showCollDialog() end,
         onReturn = function()
@@ -80,6 +74,7 @@ function FileManagerCollection:onShowColl(collection_name)
         end,
         onMenuChoice = self.onMenuChoice,
         onMenuHold = self.onMenuHold,
+        ui = self.ui,
         _manager = self,
         _recreate_func = function() self:onShowColl(collection_name) end,
         collection_name = collection_name,
