@@ -181,7 +181,8 @@ function InfoMessage:init()
         local max_height
         if self.cap_height_to_one_line then
             local icon_height = self.show_icon and image_widget:getSize().h or 0
-            max_height = math.max(text_widget:getLineHeight(), icon_height) + 2*frame.bordersize + 2*frame.padding + 3 -- 3 is a magic number to give it some wiggle room
+            -- calculate the size of the frame container when it's only displaying one line, and add a magic number (3) to give it some wiggle room
+            max_height = math.max(text_widget:getLineHeight(), icon_height) + 2*frame.bordersize + 2*frame.padding + 3
         else
             max_height = Screen:getHeight() * 0.95
         end
