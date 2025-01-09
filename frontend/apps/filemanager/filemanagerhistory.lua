@@ -1,10 +1,10 @@
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DocSettings = require("docsettings")
 local InputDialog = require("ui/widget/inputdialog")
-local Menu = require("ui/widget/menu")
 local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -237,19 +237,13 @@ function FileManagerHistory.getMenuInstance()
 end
 
 function FileManagerHistory:onShowHist(search_info)
-    self.hist_menu = Menu:new{
-        ui = self.ui,
-        covers_fullscreen = true, -- hint for UIManager:_repaint()
-        is_borderless = true,
-        is_popout = false,
+    self.hist_menu = BookList:new{
         title = self.hist_menu_title,
-        -- item and book cover thumbnail dimensions in Mosaic and Detailed list display modes
-        -- must be equal in File manager, History and Collection windows to avoid image scaling
-        title_bar_fm_style = true,
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showHistDialog() end,
         onMenuChoice = self.onMenuChoice,
         onMenuHold = self.onMenuHold,
+        ui = self.ui,
         _manager = self,
         _recreate_func = function() self:onShowHist(search_info) end,
     }
