@@ -5,8 +5,9 @@ local BookList = Menu:extend{
     covers_fullscreen = true, -- hint for UIManager:_repaint()
     is_borderless = true,
     is_popout = false,
-
-    book_info_cache = nil, -- hashmap { been_opened, pages, percent_finished, status, has_highlight }
+    -- cache in the base class
+    -- hashmap { been_opened, pages, percent_finished, status, has_highlight }
+    book_info_cache = {},
 }
 
 function BookList:init()
@@ -14,16 +15,12 @@ function BookList:init()
     Menu.init(self)
 end
 
-function BookList:getBookInfoCache(file)
-    if self.book_info_cache then
-        if self.book_info_cache[file] then
-            return self.book_info_cache[file]
-        end
-    else
-        self.book_info_cache = {}
+function BookList.getBookInfoCache(file)
+    if BookList.book_info_cache[file] then
+        return BookList.book_info_cache[file]
     end
-    self.book_info_cache[file] = {}
-    local book_info = self.book_info_cache[file]
+    BookList.book_info_cache[file] = {}
+    local book_info = BookList.book_info_cache[file]
     if DocSettings:hasSidecarFile(file) then
         book_info.been_opened = true
         local doc_settings = DocSettings:open(file)
@@ -51,26 +48,24 @@ function BookList:getBookInfoCache(file)
     return book_info
 end
 
-function BookList:getBookInfoCacheBeenOpened(file)
-    local been_opened = self.book_info_cache and self.book_info_cache[file] and self.book_info_cache[file].been_opened
+function BookList.getBookInfoCacheBeenOpened(file)
+    local been_opened = BookList.book_info_cache[file] and BookList.book_info_cache[file].been_opened
     if been_opened ~= nil then
         return been_opened
     end
     return DocSettings:hasSidecarFile(file)
 end
 
-function BookList:setBookInfoCache(file, status)
-    local book_info_cache = self.book_info_cache and self.book_info_cache[file]
+function BookList.setBookInfoCache(file, status)
+    local book_info_cache = BookList.book_info_cache[file]
     if book_info_cache then
         book_info_cache.been_opened = true
         book_info_cache.status = status
     end
 end
 
-function BookList:resetBookInfoCache(file)
-    if self.book_info_cache then
-        self.book_info_cache[file] = nil
-    end
+function BookList.resetBookInfoCache(file)
+    BookList.book_info_cache[file] = nil
 end
 
 return BookList
