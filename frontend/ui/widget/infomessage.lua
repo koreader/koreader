@@ -180,23 +180,8 @@ function InfoMessage:init()
     if not self.height then
         local max_height
         if self.cap_height_to_one_line then
-            -- Create a dummy text widget to get single line height
-            local dummy_widget = TextBoxWidget:new{
-            text = "XdgfhTipqy",
-            face = self.face,
-            width = text_width,
-            }
-            local dummy_frame = FrameContainer:new{
-                HorizontalGroup:new{
-                    align = "center",
-                    image_widget,
-                    HorizontalSpan:new{ width = (self.show_icon and Size.span.horizontal_default or 0) },
-                    dummy_widget,
-                }
-            }
-            max_height = dummy_frame:getSize().h + 3 -- 3 is a magic number to give it some wiggle room
-            dummy_widget:free()
-            dummy_frame:free()
+            local icon_height = self.show_icon and image_widget:getSize().h or 0
+            max_height = math.max(text_widget:getLineHeight(), icon_height) + 2*frame.bordersize + 2*frame.padding + 3 -- 3 is a magic number to give it some wiggle room
         else
             max_height = Screen:getHeight() * 0.95
         end
