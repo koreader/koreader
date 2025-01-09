@@ -14,10 +14,6 @@ local PathChooser = FileChooser:extend{
     title = true, -- or a string
         -- if let to true, a generic title will be set in init()
     no_title = false,
-    is_popout = false,
-    covers_fullscreen = true, -- set it to false if you set is_popout = true
-    title_bar_fm_style = true,
-    is_borderless = true,
     select_directory = true, -- allow selecting directories
     select_file = true,      -- allow selecting files
     show_files = true, -- show files, even if select_file=false
@@ -28,11 +24,11 @@ local PathChooser = FileChooser:extend{
 function PathChooser:init()
     if self.title == true then -- default title depending on options
         if self.select_directory and not self.select_file then
-            self.title = _("Long-press to choose a folder")
+            self.title = _("Long-press folder's name to choose it")
         elseif not self.select_directory and self.select_file then
-            self.title = _("Long-press to choose a file")
+            self.title = _("Long-press file's name to choose it")
         else
-            self.title = _("Long-press to choose")
+            self.title = _("Long-press item's name to choose it")
         end
     end
     if not self.show_files then
