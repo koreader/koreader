@@ -553,7 +553,7 @@ function CoverBrowser.addFileDialogButtons(widget)
                     text = _("Refresh cached book information"),
                     callback = function()
                         local menu = widget.getMenuInstance()
-                        menu:resetBookInfoCache(file)
+                        menu.resetBookInfoCache(file)
                         BookInfoManager:deleteBookInfo(file)
                         UIManager:close(menu.file_dialog)
                         menu:updateItems(1, true)
