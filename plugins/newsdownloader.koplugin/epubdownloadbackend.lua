@@ -339,6 +339,10 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
             logger.dbg("no src found in ", img_tag)
             return nil
         end
+        if src:sub(1,5) == "data:" then
+            logger.dbg("skipping data URI", src)
+            return nil
+        end
         if src:sub(1,2) == "//" then
             src = "https:" .. src -- Wikipedia redirects from http to https, so use https
         elseif src:sub(1,1) == "/" then -- non absolute url
