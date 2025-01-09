@@ -106,17 +106,7 @@ end
 -- Get a document status ("new", "reading", "complete", or "abandoned")
 function filemanagerutil.getStatus(file)
     local book_info = BookList.getBookInfoCache(file)
-    if book_info ~= nil then
-        return book_info.been_opened and (book_info.status or "reading") or "new"
-    end
-    if DocSettings:hasSidecarFile(file) then
-        local summary = DocSettings:open(file):readSetting("summary")
-        if summary and summary.status and summary.status ~= "" then
-            return summary.status
-        end
-        return "reading"
-    end
-    return "new"
+    return book_info.been_opened and (book_info.status or "reading") or "new"
 end
 
 function filemanagerutil.saveSummary(doc_settings_or_file, summary)
