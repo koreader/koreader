@@ -319,15 +319,15 @@ function FileSearcher:showFileDialog(item)
     if item.is_file then
         local is_currently_opened = self.ui.document and self.ui.document.file == file
         local has_provider = DocumentRegistry:hasProvider(file)
-        local been_opened = self.search_menu:getBookInfoCacheBeenOpened(file)
+        local been_opened = BookList.getBookInfoCacheBeenOpened(file)
         local doc_settings_or_file = is_currently_opened and self.ui.doc_settings
             or (been_opened and DocSettings:open(file) or file)
         if has_provider or been_opened then
             bookinfo = self.ui.bookinfo:getDocProps(file, nil, true)
-            table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_callback, self.search_menu))
+            table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_callback))
             table.insert(buttons, {}) -- separator
             table.insert(buttons, {
-                filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_callback, is_currently_opened, self.search_menu),
+                filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_callback, is_currently_opened),
                 self.ui.collections:genAddToCollectionButton(file, close_dialog_callback, update_item_callback),
             })
         end
