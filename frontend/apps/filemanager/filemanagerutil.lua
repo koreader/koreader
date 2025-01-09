@@ -3,6 +3,7 @@ This module contains miscellaneous helper functions for FileManager
 ]]
 
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local Event = require("ui/event")
@@ -103,8 +104,8 @@ function filemanagerutil.resetDocumentSettings(file)
 end
 
 -- Get a document status ("new", "reading", "complete", or "abandoned")
-function filemanagerutil.getStatus(file, menu_instance)
-    local book_info = menu_instance and menu_instance:getBookInfoCache(file)
+function filemanagerutil.getStatus(file)
+    local book_info = BookList.getBookInfoCache(file)
     if book_info ~= nil then
         return book_info.been_opened and (book_info.status or "reading") or "new"
     end
@@ -141,7 +142,7 @@ function filemanagerutil.statusToString(status)
 end
 
 -- Generate all book status file dialog buttons in a row
-function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callback, menu_instance)
+function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callback)
     local file, summary, status
     if type(doc_settings_or_file) == "table" then
         file = doc_settings_or_file:readSetting("doc_path")
@@ -150,7 +151,7 @@ function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callba
     else
         file = doc_settings_or_file
         summary = {}
-        status = filemanagerutil.getStatus(file, menu_instance)
+        status = filemanagerutil.getStatus(file)
     end
     local function genStatusButton(to_status)
         return {
@@ -159,13 +160,7 @@ function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callba
             callback = function()
                 summary.status = to_status
                 filemanagerutil.saveSummary(doc_settings_or_file, summary)
-                if menu_instance then
-                    menu_instance:setBookInfoCache(file, to_status)
-                    local fc = menu_instance._manager and menu_instance._manager.ui.file_chooser
-                    if fc then -- underlying File manager
-                        fc:setBookInfoCache(file, to_status)
-                    end
-                end
+                BookList.setBookInfoCache(file, to_status)
                 caller_callback()
             end,
         }
@@ -178,7 +173,7 @@ function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callba
 end
 
 -- Generate "Reset" file dialog button
-function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_callback, button_disabled, menu_instance)
+function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_callback, button_disabled)
     local doc_settings, file, has_sidecar_file
     if type(doc_settings_or_file) == "table" then
         doc_settings = doc_settings_or_file
@@ -186,11 +181,7 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
         has_sidecar_file = true
     else
         file = ffiUtil.realpath(doc_settings_or_file) or doc_settings_or_file
-        if menu_instance then
-            has_sidecar_file = menu_instance:getBookInfoCacheBeenOpened(file)
-        else
-            has_sidecar_file = DocSettings:hasSidecarFile(file)
-        end
+        has_sidecar_file = BookList.getBookInfoCacheBeenOpened(file)
     end
     local custom_cover_file = DocSettings:findCustomCoverFile(file)
     local has_custom_cover_file = custom_cover_file and true or false
@@ -219,13 +210,7 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
                         UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
                     end
                     if data_to_purge.doc_settings then
-                        if menu_instance then
-                            menu_instance:resetBookInfoCache(file)
-                            local fc = menu_instance._manager and menu_instance._manager.ui.file_chooser
-                            if fc then -- underlying File manager
-                                fc:resetBookInfoCache(file)
-                            end
-                        end
+                        BookList.resetBookInfoCache(file)
                         require("readhistory"):fileSettingsPurged(file)
                     end
                     caller_callback()
