@@ -53,6 +53,7 @@ local InfoMessage = InputContainer:extend{
     _timeout_func = nil,
     width = nil,  -- The width of the InfoMessage. Keep it nil to use default value.
     height = nil,  -- The height of the InfoMessage. If this field is set, a scrollbar may be shown.
+    cap_height_to_one_line = false,  -- Attempt to show text in one single line. This setting and height are not to be used conjointly.
     -- The image shows at the left of the InfoMessage. Image data will be freed
     -- by InfoMessage, caller should not manage its lifecycle
     image = nil,
@@ -76,7 +77,6 @@ local InfoMessage = InputContainer:extend{
     show_delay = nil,
     -- Set to true when it might be displayed after some processing, to avoid accidental dismissal
     flush_events_on_show = false,
-    shrink_to_fit = false,
 }
 
 function InfoMessage:init()
@@ -176,10 +176,53 @@ function InfoMessage:init()
         dimen = Screen:getSize(),
         self.movable,
     }
-    if self.shrink_to_fit then
-        self:shrinkFontToFit(frame, text_widget, 0.07)
-    elseif not self.height then
-        self:shrinkFontToFit(frame, text_widget, 0.95)
+
+    if not self.height then
+        local max_height
+        if self.cap_height_to_one_line then
+            -- Create a dummy text widget to get single line height
+            local dummy_widget = TextBoxWidget:new{
+            text = "XdgfhTipqy",
+            face = self.face,
+            width = text_width,
+            }
+            local dummy_frame = FrameContainer:new{
+                HorizontalGroup:new{
+                    align = "center",
+                    image_widget,
+                    HorizontalSpan:new{ width = (self.show_icon and Size.span.horizontal_default or 0) },
+                    dummy_widget,
+                }
+            }
+            max_height = dummy_frame:getSize().h + 3 -- 3 is a magic number to give it some wiggle room
+            dummy_widget:free()
+            dummy_frame:free()
+        else
+            max_height = Screen:getHeight() * 0.95
+        end
+
+        -- Reduce font size if the text is too long
+        local cur_size = frame:getSize()
+        if cur_size and cur_size.h > max_height then
+            local orig_font = text_widget.face.orig_font
+            local orig_size = text_widget.face.orig_size
+            local real_size = text_widget.face.size
+            if orig_size > 10 then -- don't go too small
+                while true do
+                    orig_size = orig_size - 1
+                    self.face = Font:getFace(orig_font, orig_size)
+                    -- scaleBySize() in Font:getFace() may give the same
+                    -- real font size even if we decreased orig_size,
+                    -- so check we really got a smaller real font size
+                    if self.face.size < real_size then
+                        break
+                    end
+                end
+                -- re-init this widget
+                self:free()
+                self:init()
+            end
+        end
     end
 
     if self.show_delay then
@@ -254,30 +297,6 @@ end
 function InfoMessage:getVisibleArea()
     if not self.invisible then
         return self.movable.dimen
-    end
-end
-
-function InfoMessage:shrinkFontToFit(frame, text_widget, height_threshold)
-    local cur_size = frame:getSize()
-    if cur_size and cur_size.h > height_threshold * Screen:getHeight() then
-        local orig_font = text_widget.face.orig_font
-        local orig_size = text_widget.face.orig_size
-        local real_size = text_widget.face.size
-        if orig_size > 10 then -- don't go too small
-            while true do
-                orig_size = orig_size - 1
-                self.face = Font:getFace(orig_font, orig_size)
-                -- scaleBySize() in Font:getFace() may give the same
-                -- real font size even if we decreased orig_size,
-                -- so check we really got a smaller real font size
-                if self.face.size < real_size then
-                    break
-                end
-            end
-            -- re-init this widget
-            self:free()
-            self:init()
-        end
     end
 end
 
