@@ -176,7 +176,7 @@ function FileManagerCollection:onMenuHold(item)
             book_props.has_cover = true
         end
     else
-        if self:getBookInfoCacheBeenOpened(file) then
+        if BookList.getBookInfoCacheBeenOpened(file) then
             doc_settings_or_file = DocSettings:open(file)
             if not book_props then
                 local props = doc_settings_or_file:readSetting("doc_props")
@@ -187,10 +187,10 @@ function FileManagerCollection:onMenuHold(item)
             doc_settings_or_file = file
         end
     end
-    table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_update_callback, self))
+    table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_update_callback))
     table.insert(buttons, {}) -- separator
     table.insert(buttons, {
-        filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_update_callback, is_currently_opened, self),
+        filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_update_callback, is_currently_opened),
         self._manager:genAddToCollectionButton(file, close_dialog_callback, close_dialog_update_callback),
     })
     table.insert(buttons, {
