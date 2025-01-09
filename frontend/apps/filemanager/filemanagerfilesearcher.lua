@@ -1,3 +1,4 @@
+local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -8,7 +9,6 @@ local FileChooser = require("ui/widget/filechooser")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
-local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
@@ -259,12 +259,8 @@ function FileSearcher:onShowSearchResults(not_cached)
         return
     end
 
-    self.search_menu = Menu:new{
+    self.search_menu = BookList:new{
         subtitle = T(_("Query: %1"), FileSearcher.search_string),
-        covers_fullscreen = true, -- hint for UIManager:_repaint()
-        is_borderless = true,
-        is_popout = false,
-        title_bar_fm_style = true,
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:setSelectMode() end,
         onMenuSelect = self.onMenuSelect,
