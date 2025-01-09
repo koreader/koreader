@@ -5,6 +5,7 @@ It works using data gathered from a document interface.
 ]]--
 
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
 local Device = require("device")
 local DeviceListener = require("device/devicelistener")
 local DocCache = require("document/doccache")
@@ -814,6 +815,7 @@ function ReaderUI:onClose(full_refresh)
         self:saveSettings()
     end
     if self.document ~= nil then
+        BookList.resetBookInfoCache(self.document.file)
         require("readhistory"):updateLastBookTime(self.tearing_down)
         -- Serialize the most recently displayed page for later launch
         DocCache:serialize(self.document.file)
