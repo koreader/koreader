@@ -166,8 +166,8 @@ local FileChooser = BookList:extend{
                     return b.opened
                 end, cache
             end,
-            item_func = function(item, this)
-                local book_info = this:getBookInfoCache(item.path)
+            item_func = function(item)
+                local book_info = BookList.getBookInfoCache(item.path)
                 item.opened = book_info.been_opened
                 -- smooth 2 decimal points (0.00) instead of 16 decimal points
                 item.percent_finished = util.round_decimal(book_info.percent_finished or 0, 2)
@@ -191,8 +191,8 @@ local FileChooser = BookList:extend{
                     return a.opened
                 end, cache
             end,
-            item_func = function(item, this)
-                local book_info = this:getBookInfoCache(item.path)
+            item_func = function(item)
+                local book_info = BookList.getBookInfoCache(item.path)
                 item.opened = book_info.been_opened
                 -- smooth 2 decimal points (0.00) instead of 16 decimal points
                 item.percent_finished = util.round_decimal(book_info.percent_finished or 0, 2)
@@ -223,8 +223,8 @@ local FileChooser = BookList:extend{
 
                 return sortfunc, cache
             end,
-            item_func = function(item, this)
-                local book_info = this:getBookInfoCache(item.path)
+            item_func = function(item)
+                local book_info = BookList.getBookInfoCache(item.path)
                 item.opened = book_info.been_opened
                 local percent_finished = book_info.percent_finished
                 local sort_percent
@@ -264,7 +264,7 @@ function FileChooser:show_file(filename, fullpath)
         if filename:match(pattern) then return false end
     end
     if not self.show_unsupported and self.file_filter ~= nil and not self.file_filter(filename) then return false end
-    if not FileChooser.show_finished and fullpath ~= nil and filemanagerutil.getStatus(fullpath, self) == "complete" then return false end
+    if not FileChooser.show_finished and fullpath ~= nil and filemanagerutil.getStatus(fullpath) == "complete" then return false end
     return true
 end
 
@@ -336,11 +336,11 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         item.bidi_wrap_func = BD.filename
         item.is_file = true
         if collate.item_func ~= nil then
-            collate.item_func(item, self)
+            collate.item_func(item)
         end
         if show_file_in_bold ~= false then
             if item.opened == nil then -- could be set in item_func
-                item.opened = (self:getBookInfoCache(item.path)).been_opened
+                item.opened = BookList.getBookInfoCacheBeenOpened(item.path)
             end
             item.bold = item.opened
             if show_file_in_bold ~= "opened" then
@@ -615,7 +615,7 @@ function FileChooser:getNextFile(curr_file)
         if is_curr_file_found then
             local next_file = item_table[i+1]
             if next_file and next_file.is_file and DocumentRegistry:hasProvider(next_file.path)
-                    and filemanagerutil.getStatus(next_file.path, self) ~= "complete" then
+                    and filemanagerutil.getStatus(next_file.path) ~= "complete" then
                 return next_file.path
             end
         end
