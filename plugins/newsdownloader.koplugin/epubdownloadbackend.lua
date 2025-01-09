@@ -340,7 +340,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
             return nil
         end
         if src:sub(1,5) == "data:" then
-            logger.dbg("NewsDownloader: skipping data URI")
+            logger.dbg("skipping data URI", src)
             return nil
         end
         if src:sub(1,2) == "//" then

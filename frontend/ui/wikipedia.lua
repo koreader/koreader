@@ -699,7 +699,7 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
             return nil
         end
         if src:sub(1,5) == "data:" then
-            logger.dbg("NewsDownloader: skipping data URI")
+            logger.dbg("skipping data URI", src)
             return nil
         end
         if src:sub(1,2) == "//" then
