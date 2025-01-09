@@ -1,15 +1,15 @@
 local BD = require("ui/bidi")
-local datetime = require("datetime")
+local BookList = require("ui/widget/booklist")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
-local filemanagerutil = require("apps/filemanager/filemanagerutil")
-local Menu = require("ui/widget/menu")
 local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
+local datetime = require("datetime")
 local ffi = require("ffi")
 local ffiUtil = require("ffi/util")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local sort = require("sort")
 local util = require("util")
@@ -18,7 +18,7 @@ local Screen = Device.screen
 local T = ffiUtil.template
 
 -- NOTE: It's our caller's responsibility to setup a title bar and pass it to us via custom_title_bar (c.f., FileManager)
-local FileChooser = Menu:extend{
+local FileChooser = BookList:extend{
     path = lfs.currentdir(),
     show_path = true,
     parent = nil,
@@ -273,7 +273,7 @@ function FileChooser:init()
     if lfs.attributes(self.path, "mode") ~= "directory" then
         self.path = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
     end
-    Menu.init(self) -- call parent's init()
+    BookList.init(self)
     self:refreshPath()
 end
 
@@ -437,7 +437,8 @@ function FileChooser:genItemTable(dirs, files, path)
         end
         if self.show_current_dir_for_hold then
             table.insert(item_table, 1, {
-                text = _("Long-press to choose current folder"),
+                text = _("Long-press here to choose current folder"),
+                bold = true,
                 path = path.."/.",
             })
         end
@@ -481,7 +482,7 @@ function FileChooser:getMenuItemMandatory(item, collate)
 end
 
 function FileChooser:updateItems(select_number, no_recalculate_dimen)
-    Menu.updateItems(self, select_number, no_recalculate_dimen) -- call parent's updateItems()
+    BookList.updateItems(self, select_number, no_recalculate_dimen) -- call parent's updateItems()
     self.path_items[self.path] = (self.page - 1) * self.perpage + (select_number or 1)
 end
 
