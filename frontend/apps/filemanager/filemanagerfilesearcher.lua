@@ -3,7 +3,6 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local FileChooser = require("ui/widget/filechooser")
 local InfoMessage = require("ui/widget/infomessage")
@@ -319,9 +318,9 @@ function FileSearcher:showFileDialog(item)
     if item.is_file then
         local is_currently_opened = self.ui.document and self.ui.document.file == file
         local has_provider = DocumentRegistry:hasProvider(file)
-        local been_opened = BookList.getBookInfoCacheBeenOpened(file)
+        local been_opened = BookList.isBeenOpened(file)
         local doc_settings_or_file = is_currently_opened and self.ui.doc_settings
-            or (been_opened and DocSettings:open(file) or file)
+            or (been_opened and BookList.openDocSettings(file) or file)
         if has_provider or been_opened then
             bookinfo = self.ui.bookinfo:getDocProps(file, nil, true)
             table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_callback))
