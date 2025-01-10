@@ -4,7 +4,6 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local DocSettings = require("docsettings")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
@@ -176,8 +175,8 @@ function FileManagerCollection:onMenuHold(item)
             book_props.has_cover = true
         end
     else
-        if BookList.getBookInfoCacheBeenOpened(file) then
-            doc_settings_or_file = DocSettings:open(file)
+        if BookList.isBeenOpened(file) then
+            doc_settings_or_file = BookList.openDocSettings(file)
             if not book_props then
                 local props = doc_settings_or_file:readSetting("doc_props")
                 book_props = self.ui.bookinfo.extendProps(props, file)
