@@ -92,7 +92,7 @@ function filemanagerutil.resetDocumentSettings(file)
     }
     local file_abs_path = ffiUtil.realpath(file)
     if file_abs_path then
-        local doc_settings = DocSettings:open(file_abs_path)
+        local doc_settings = BookList.openDocSettings(file_abs_path)
         for k in pairs(doc_settings.data) do
             if not settings_to_keep[k] then
                 doc_settings:delSetting(k)
@@ -106,13 +106,13 @@ end
 -- Get a document status ("new", "reading", "complete", or "abandoned")
 function filemanagerutil.getStatus(file)
     local book_info = BookList.getBookInfoCache(file)
-    return book_info.been_opened and (book_info.status or "reading") or "new"
+    return book_info.been_opened and book_info.status or "new"
 end
 
 function filemanagerutil.saveSummary(doc_settings_or_file, summary)
     -- In case the book doesn't have a sidecar file, this'll create it
     if type(doc_settings_or_file) ~= "table" then
-        doc_settings_or_file = DocSettings:open(doc_settings_or_file)
+        doc_settings_or_file = BookList.openDocSettings(doc_settings_or_file)
     end
     summary.modified = os.date("%Y-%m-%d", os.time())
     doc_settings_or_file:saveSetting("summary", summary)
@@ -171,7 +171,7 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
         has_sidecar_file = true
     else
         file = ffiUtil.realpath(doc_settings_or_file) or doc_settings_or_file
-        has_sidecar_file = BookList.getBookInfoCacheBeenOpened(file)
+        has_sidecar_file = BookList.isBeenOpened(file)
     end
     local custom_cover_file = DocSettings:findCustomCoverFile(file)
     local has_custom_cover_file = custom_cover_file and true or false
@@ -195,7 +195,7 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
                         custom_cover_file    = check_button_cover.checked and custom_cover_file,
                         custom_metadata_file = check_button_metadata.checked and custom_metadata_file,
                     }
-                    (doc_settings or DocSettings:open(file)):purge(nil, data_to_purge)
+                    (doc_settings or BookList.openDocSettings(file)):purge(nil, data_to_purge)
                     if data_to_purge.custom_cover_file or data_to_purge.custom_metadata_file then
                         UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
                     end
