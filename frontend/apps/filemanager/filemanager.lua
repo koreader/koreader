@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
+local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -255,12 +256,12 @@ function FileManager:setupLayout()
         local book_props
         if is_file then
             local has_provider = DocumentRegistry:hasProvider(file)
-            local been_opened = self.getBookInfoCacheBeenOpened(file)
+            local been_opened = BookList.isBeenOpened(file)
             local doc_settings_or_file = file
             if has_provider or been_opened then
                 book_props = file_manager.coverbrowser and file_manager.coverbrowser:getBookInfo(file)
                 if been_opened then
-                    doc_settings_or_file = DocSettings:open(file)
+                    doc_settings_or_file = BookList.openDocSettings(file)
                     if not book_props then
                         local props = doc_settings_or_file:readSetting("doc_props")
                         book_props = FileManagerBookInfo.extendProps(props, file)
@@ -859,7 +860,7 @@ end
 
 function FileManager:openRandomFile(dir)
     local match_func = function(file) -- documents, not yet opened
-        return DocumentRegistry:hasProvider(file) and not DocSettings:hasSidecarFile(file)
+        return DocumentRegistry:hasProvider(file) and not BookList.isBeenOpened(file)
     end
     local random_file = filemanagerutil.getRandomFile(dir, match_func)
     if random_file then
@@ -1094,7 +1095,7 @@ function FileManager:showDeleteFileDialog(filepath, post_delete_callback, pre_de
     end
     local is_file = isFile(file)
     local text = (is_file and _("Delete file permanently?") or _("Delete folder permanently?")) .. "\n\n" .. BD.filepath(file)
-    if is_file and DocSettings:hasSidecarFile(file) then
+    if is_file and BookList.isBeenOpened(file) then
         text = text .. "\n\n" .. _("Book settings, highlights and notes will be deleted.")
     end
     UIManager:show(ConfirmBox:new{
