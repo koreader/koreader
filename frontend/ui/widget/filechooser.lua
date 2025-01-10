@@ -340,7 +340,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         end
         if show_file_in_bold ~= false then
             if item.opened == nil then -- could be set in item_func
-                item.opened = BookList.getBookInfoCacheBeenOpened(item.path)
+                item.opened = BookList.isBeenOpened(item.path)
             end
             item.bold = item.opened
             if show_file_in_bold ~= "opened" then
