@@ -68,16 +68,13 @@ local TextBoxWidget = InputContainer:extend{
     _bb = nil,
     _face_adjusted = nil,
 
-    -- If highlight_text_selection is true then text selection will be highlighted.
-    -- If false then text selection will work as it did originally: no highlighting, and the
-    -- text selection will be updated only on hold release (so hold time might be incorrect).
-    highlight_text_selection = false,
+    highlight_text_selection = false, -- if true then the selected text will be highlighted
     highlight_rects = nil,
     highlight_start_idx = nil,
     highlight_end_idx = nil,
     highlight_start_line = nil,
     highlight_end_line = nil,
-    highlight_clear_and_redraw_function = nil,
+    highlight_clear_and_redraw_action = nil,
     hold_start_pos = nil,
     hold_end_pos = nil,
 
@@ -2218,12 +2215,10 @@ end
 
 function TextBoxWidget:getXtextHighlightRects(text_start_idx, text_end_idx, start_line_num, end_line_num)
     local rects = {}
-
     for line_num = start_line_num, end_line_num, 1 do
         local line = self.vertical_string_list[line_num]
         if line.xglyphs then -- non-empty line
             local line_last_rect = nil
-
             for _, xglyph in ipairs(line.xglyphs) do
                 if xglyph.text_index >= text_start_idx and xglyph.text_index <= text_end_idx and not xglyph.no_drawing then
                     if line_last_rect == nil then
@@ -2233,7 +2228,6 @@ function TextBoxWidget:getXtextHighlightRects(text_start_idx, text_end_idx, star
                             w = xglyph.x1 - xglyph.x0,
                             h = self.line_height_px,
                         }
-
                         table.insert(rects, rect)
                         line_last_rect = rect
                     else
@@ -2243,7 +2237,6 @@ function TextBoxWidget:getXtextHighlightRects(text_start_idx, text_end_idx, star
             end
         end
     end
-
     return rects
 end
 
@@ -2254,19 +2247,16 @@ function TextBoxWidget:getNonXtextHighlightIndices(start_x, start_y, end_x, end_
         -- one or both hold points were out of text
         return nil, nil
     end
-
     return start_idx, end_idx
 end
 
 function TextBoxWidget:getNonXtextHighlightRects(text_start_idx, text_end_idx, start_line_num, end_line_num)
     local rects = {}
-
     for line_num = start_line_num, end_line_num, 1 do
         local line = self.vertical_string_list[line_num]
         if line.end_offset then
             local line_last_rect = nil
             local x = 0
-
             for text_index = line.offset, line.end_offset, 1 do
                 local width = self.char_width[self.charlist[text_index]] + (self.idx_pad[text_index] or 0)
                 if text_index >= text_start_idx and text_index <= text_end_idx then
@@ -2277,19 +2267,16 @@ function TextBoxWidget:getNonXtextHighlightRects(text_start_idx, text_end_idx, s
                             w = width,
                             h = self.line_height_px,
                         }
-
                         table.insert(rects, rect)
                         line_last_rect = rect
                     else
                         line_last_rect.w = (x + width) - line_last_rect.x
                     end
                 end
-
                 x = x + width
             end
         end
     end
-
     return rects
 end
 
@@ -2354,16 +2341,17 @@ function TextBoxWidget:updateHighlight()
         end_line_num = #self.vertical_string_list
     end
 
+    -- Has the highlight range changed?
     if text_start_idx == self.highlight_start_idx and text_end_idx == self.highlight_end_idx
       and start_line_num == self.highlight_start_line and end_line_num == self.highlight_end_line then
         return false
     end
 
+    -- The range has changed, get the rectangles for drawing.
     self.highlight_start_idx = text_start_idx
     self.highlight_end_idx = text_end_idx
     self.highlight_start_line = start_line_num
     self.highlight_end_line = end_line_num
-
     if text_start_idx == nil or not self.highlight_text_selection then
         self.highlight_rects = nil
     elseif self.use_xtext then
@@ -2371,7 +2359,6 @@ function TextBoxWidget:updateHighlight()
     else
         self.highlight_rects = self:getNonXtextHighlightRects(text_start_idx, text_end_idx, start_line_num, end_line_num)
     end
-
     return true
 end
 
@@ -2385,25 +2372,23 @@ function TextBoxWidget:redrawHighlight()
 end
 
 function TextBoxWidget:scheduleClearHighlightAndRedraw()
-    if self.highlight_clear_and_redraw_function then
+    if self.highlight_clear_and_redraw_action then
         return
     end
 
-    self.highlight_clear_and_redraw_function = function ()
-        self.highlight_clear_and_redraw_function = nil
-
+    self.highlight_clear_and_redraw_action = function ()
+        self.highlight_clear_and_redraw_action = nil
         if self:clearHighlight() then
             self:redrawHighlight()
         end
     end
-
-    UIManager:scheduleIn(0.5, self.highlight_clear_and_redraw_function)
+    UIManager:scheduleIn(0.5, self.highlight_clear_and_redraw_action)
 end
 
 function TextBoxWidget:unscheduleClearHighlightAndRedraw()
-    if self.highlight_clear_and_redraw_function then
-        UIManager:unschedule(self.highlight_clear_and_redraw_function)
-        self.highlight_clear_and_redraw_function = nil
+    if self.highlight_clear_and_redraw_action then
+        UIManager:unschedule(self.highlight_clear_and_redraw_action)
+        self.highlight_clear_and_redraw_action = nil
     end
 end
 

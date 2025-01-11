@@ -201,13 +201,10 @@ local HtmlBoxWidget = InputContainer:extend{
     hold_start_time = nil,
     html_link_tapped_callback = nil,
 
-    -- If highlight_text_selection is true then text selection will be highlighted.
-    -- If false then text selection will work as it did originally: no highlighting, and the
-    -- text selection will be updated only on hold release (so hold time might be incorrect).
-    highlight_text_selection = false,
+    highlight_text_selection = false, -- if true then the selected text will be highlighted
     highlight_rects = nil,
     highlight_text = nil,
-    highlight_clear_and_redraw_function = nil,
+    highlight_clear_and_redraw_action = nil,
 }
 
 function HtmlBoxWidget:init()
@@ -513,25 +510,23 @@ function HtmlBoxWidget:redrawHighlight()
 end
 
 function HtmlBoxWidget:scheduleClearHighlightAndRedraw()
-    if self.highlight_clear_and_redraw_function then
+    if self.highlight_clear_and_redraw_action then
         return
     end
 
-    self.highlight_clear_and_redraw_function = function ()
-        self.highlight_clear_and_redraw_function = nil
-
+    self.highlight_clear_and_redraw_action = function ()
+        self.highlight_clear_and_redraw_action = nil
         if self:clearHighlight() then
             self:redrawHighlight()
         end
     end
-
-    UIManager:scheduleIn(0.5, self.highlight_clear_and_redraw_function)
+    UIManager:scheduleIn(0.5, self.highlight_clear_and_redraw_action)
 end
 
 function HtmlBoxWidget:unscheduleClearHighlightAndRedraw()
-    if self.highlight_clear_and_redraw_function then
-        UIManager:unschedule(self.highlight_clear_and_redraw_function)
-        self.highlight_clear_and_redraw_function = nil
+    if self.highlight_clear_and_redraw_action then
+        UIManager:unschedule(self.highlight_clear_and_redraw_action)
+        self.highlight_clear_and_redraw_action = nil
     end
 end
 
