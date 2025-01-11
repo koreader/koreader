@@ -161,7 +161,7 @@ function FileManagerHistory:onMenuHold(item)
             book_props.has_cover = true
         end
     else
-        if BookList.isBeenOpened(file) then
+        if BookList.beenOpened(file) then
             doc_settings_or_file = BookList.openDocSettings(file)
             if not book_props then
                 local props = doc_settings_or_file:readSetting("doc_props")
