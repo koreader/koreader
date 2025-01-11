@@ -789,10 +789,6 @@ FileManager.rotate = FileManager.reinit
 FileManager.onPhysicalKeyboardConnected = FileManager.reinit
 FileManager.onPhysicalKeyboardDisconnected = FileManager.reinit
 
-function FileManager:getCurrentDir()
-    return FileManager.instance and FileManager.instance.file_chooser.path
-end
-
 function FileManager:onClose()
     logger.dbg("close filemanager")
     PluginLoader:finalize()
