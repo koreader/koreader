@@ -256,7 +256,7 @@ function FileManager:setupLayout()
         local book_props
         if is_file then
             local has_provider = DocumentRegistry:hasProvider(file)
-            local been_opened = BookList.isBeenOpened(file)
+            local been_opened = BookList.beenOpened(file)
             local doc_settings_or_file = file
             if has_provider or been_opened then
                 book_props = file_manager.coverbrowser and file_manager.coverbrowser:getBookInfo(file)
@@ -860,7 +860,7 @@ end
 
 function FileManager:openRandomFile(dir)
     local match_func = function(file) -- documents, not yet opened
-        return DocumentRegistry:hasProvider(file) and not BookList.isBeenOpened(file)
+        return DocumentRegistry:hasProvider(file) and not BookList.beenOpened(file)
     end
     local random_file = filemanagerutil.getRandomFile(dir, match_func)
     if random_file then
@@ -1095,7 +1095,7 @@ function FileManager:showDeleteFileDialog(filepath, post_delete_callback, pre_de
     end
     local is_file = isFile(file)
     local text = (is_file and _("Delete file permanently?") or _("Delete folder permanently?")) .. "\n\n" .. BD.filepath(file)
-    if is_file and BookList.isBeenOpened(file) then
+    if is_file and BookList.beenOpened(file) then
         text = text .. "\n\n" .. _("Book settings, highlights and notes will be deleted.")
     end
     UIManager:show(ConfirmBox:new{
@@ -1116,6 +1116,7 @@ function FileManager:deleteFile(file, is_file)
     if is_file then
         local ok = os.remove(file)
         if ok then
+            BookList.resetBookInfoCache(file)
             DocSettings.updateLocation(file) -- delete sdr
             ReadHistory:fileDeleted(file)
             ReadCollection:removeItem(file)
@@ -1141,6 +1142,7 @@ function FileManager:deleteSelectedFiles()
         local file_abs_path = ffiUtil.realpath(orig_file)
         local ok = file_abs_path and os.remove(file_abs_path)
         if ok then
+            BookList.resetBookInfoCache(file_abs_path)
             DocSettings.updateLocation(file_abs_path) -- delete sdr
             ok_files[orig_file] = true
             self.selected_files[orig_file] = nil
