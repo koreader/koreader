@@ -171,7 +171,7 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
         has_sidecar_file = true
     else
         file = ffiUtil.realpath(doc_settings_or_file) or doc_settings_or_file
-        has_sidecar_file = BookList.isBeenOpened(file)
+        has_sidecar_file = BookList.beenOpened(file)
     end
     local custom_cover_file = DocSettings:findCustomCoverFile(file)
     local has_custom_cover_file = custom_cover_file and true or false
