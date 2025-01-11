@@ -318,7 +318,7 @@ function FileSearcher:showFileDialog(item)
     if item.is_file then
         local is_currently_opened = self.ui.document and self.ui.document.file == file
         local has_provider = DocumentRegistry:hasProvider(file)
-        local been_opened = BookList.isBeenOpened(file)
+        local been_opened = BookList.beenOpened(file)
         local doc_settings_or_file = is_currently_opened and self.ui.doc_settings
             or (been_opened and BookList.openDocSettings(file) or file)
         if has_provider or been_opened then
