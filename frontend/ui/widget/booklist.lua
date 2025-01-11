@@ -67,7 +67,7 @@ function BookList.resetBookInfoCache(file)
     BookList.book_info_cache[file] = nil
 end
 
-function BookList.isBeenOpened(file)
+function BookList.beenOpened(file)
     local book_info = BookList.book_info_cache[file]
     local been_opened = book_info and book_info.been_opened
     if been_opened == nil then -- not cached yet
