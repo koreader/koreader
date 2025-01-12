@@ -179,7 +179,7 @@ function InfoMessage:init()
 
     if not self.height then
         local max_height
-        if self.force_one_line then
+        if self.force_one_line and not self.text:find("\n") then
             local icon_height = self.show_icon and image_widget:getSize().h or 0
             -- Calculate the size of the frame container when it's only displaying one line.
             max_height = math.max(text_widget:getLineHeight(), icon_height) + 2*frame.bordersize + 2*frame.padding
