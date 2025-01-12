@@ -60,6 +60,8 @@ local DictQuickLookup = InputContainer:extend{
     refresh_callback = nil,
     html_dictionary_link_tapped_callback = nil,
 
+    dict_close_callback = nil, -- called when closing DictQuickLookup
+
     -- Static class member, holds a ref to the currently opened widgets (in instantiation order).
     window_list = {},
     -- Static class member, used by ReaderWiktionary to communicate state from a closed widget to the next opened one.
@@ -126,6 +128,12 @@ function DictQuickLookup:init()
             w = Screen:getWidth(),
             h = Screen:getHeight(),
         }
+
+        local hold_pan_rate = G_reader_settings:readSetting("hold_pan_rate")
+        if not hold_pan_rate then
+            hold_pan_rate = Screen.low_pan_rate and 5.0 or 30.0
+        end
+
         self.ges_events = {
             Tap = {
                 GestureRange:new{
@@ -165,8 +173,9 @@ function DictQuickLookup:init()
             },
             HoldPanText = {
                 GestureRange:new{
-                    ges = "hold",
+                    ges = "hold_pan",
                     range = range,
+                    rate = hold_pan_rate,
                 },
             },
             HoldReleaseText = {
@@ -182,12 +191,17 @@ function DictQuickLookup:init()
                         -- but allow switching domain with a long hold
                         lookup_wikipedia = not lookup_wikipedia
                     end
+
+                    local new_dict_close_callback = function()
+                        self:clearDictionaryHighlight()
+                    end
+
                     -- We don't pass self.highlight to subsequent lookup, we want the
                     -- first to be the only one to unhighlight selection when closed
                     if lookup_wikipedia then
-                        self:lookupWikipedia(false, text)
+                        self:lookupWikipedia(false, text, nil, nil, new_dict_close_callback)
                     else
-                        self.ui:handleEvent(Event:new("LookupWord", text))
+                        self.ui:handleEvent(Event:new("LookupWord", text, nil, nil, nil, nil, new_dict_close_callback))
                     end
                 end
             },
@@ -814,6 +828,7 @@ function DictQuickLookup:_instantiateScrollWidget()
             width = self.content_width,
             height = self.definition_height,
             dialog = self,
+            highlight_text_selection = true,
             html_link_tapped_callback = function(link)
                 self.html_dictionary_link_tapped_callback(self.dictionary, link)
             end,
@@ -832,6 +847,7 @@ function DictQuickLookup:_instantiateScrollWidget()
             auto_para_direction = not self.is_wiki, -- only for dict results (we don't know their lang)
             image_alt_face = self.image_alt_face,
             images = self.images,
+            highlight_text_selection = true,
         }
         self.text_widget = self.stw_widget
     end
@@ -1166,6 +1182,11 @@ function DictQuickLookup:onClose(no_clear)
             end)
         end
     end
+
+    if self.dict_close_callback then
+        self.dict_close_callback()
+    end
+
     return true
 end
 
@@ -1321,7 +1342,7 @@ function DictQuickLookup:onLookupInputWord(hint)
     self.input_dialog:onShowKeyboard()
 end
 
-function DictQuickLookup:lookupWikipedia(get_fullpage, word, is_sane, lang)
+function DictQuickLookup:lookupWikipedia(get_fullpage, word, is_sane, lang, dict_close_callback)
     if not lang then
         -- Use the lang of the current or nearest is_wiki DictQuickLookup.
         -- Otherwise, first lang in ReaderWikipedia.wiki_languages will be used.
@@ -1346,7 +1367,7 @@ function DictQuickLookup:lookupWikipedia(get_fullpage, word, is_sane, lang)
         end
     end
     -- Keep providing self.word_boxes so new windows keep being positioned to not hide it
-    self.ui:handleEvent(Event:new("LookupWikipedia", word, is_sane, self.word_boxes, get_fullpage, lang))
+    self.ui:handleEvent(Event:new("LookupWikipedia", word, is_sane, self.word_boxes, get_fullpage, lang, dict_close_callback))
 end
 
 function DictQuickLookup:onShowResultsMenu()
@@ -1591,6 +1612,14 @@ function DictQuickLookup:showWikiResultsMenu()
     button_dialog:setScrolledOffset(self.menu_scrolled_offsets["wiki"])
     self.menu_opened[button_dialog] = true
     UIManager:show(button_dialog)
+end
+
+function DictQuickLookup:clearDictionaryHighlight()
+    if self.shw_widget then
+        self.shw_widget.htmlbox_widget:scheduleClearHighlightAndRedraw()
+    elseif self.stw_widget then
+        self.stw_widget.text_widget:scheduleClearHighlightAndRedraw()
+    end
 end
 
 return DictQuickLookup

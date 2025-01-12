@@ -433,7 +433,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
     end
 end
 
-function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link)
+function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link, dict_close_callback)
     logger.dbg("dict lookup word:", word, boxes)
     -- escape quotes and other funny characters in word
     word = self:cleanSelection(word, is_sane)
@@ -449,7 +449,7 @@ function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link)
 
     -- Wrapped through Trapper, as we may be using Trapper:dismissablePopen() in it
     Trapper:wrap(function()
-        self:stardictLookup(word, self.enabled_dict_names, not disable_fuzzy_search, boxes, link)
+        self:stardictLookup(word, self.enabled_dict_names, not disable_fuzzy_search, boxes, link, dict_close_callback)
     end)
     return true
 end
@@ -953,7 +953,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     return results
 end
 
-function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link)
+function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link, dict_close_callback)
     if word == "" then
         return
     end
@@ -978,6 +978,10 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
                     self.highlight:clear(clear_id)
                 end)
             end
+
+            if dict_close_callback then
+                dict_close_callback()
+            end
         end)
         return
     end
@@ -994,7 +998,7 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
                 lookup_cancelled = false,
             }
         }
-        self:showDict(word, nope, boxes, link)
+        self:showDict(word, nope, boxes, link, dict_close_callback)
         return
     end
 
@@ -1010,13 +1014,18 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
         if self.highlight then
             self.highlight:clear()
         end
+
+        if dict_close_callback then
+            dict_close_callback()
+        end
+
         return
     end
 
-    self:showDict(word, tidyMarkup(results), boxes, link)
+    self:showDict(word, tidyMarkup(results), boxes, link, dict_close_callback)
 end
 
-function ReaderDictionary:showDict(word, results, boxes, link)
+function ReaderDictionary:showDict(word, results, boxes, link, dict_close_callback)
     if results and results[1] then
         logger.dbg("showing quick lookup window", #DictQuickLookup.window_list+1, ":", word, results)
         self.dict_window = DictQuickLookup:new{
@@ -1041,6 +1050,7 @@ function ReaderDictionary:showDict(word, results, boxes, link)
             html_dictionary_link_tapped_callback = function(dictionary, html_link)
                 self:onHtmlDictionaryLinkTapped(dictionary, html_link)
             end,
+            dict_close_callback = dict_close_callback,
         }
         if self.lookup_progress_msg then
             -- If we have a lookup InfoMessage that ended up being displayed, make
