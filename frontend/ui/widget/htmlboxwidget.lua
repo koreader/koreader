@@ -205,7 +205,6 @@ function HtmlBoxWidget:init()
             },
         }
     end
-
     self.highlight_lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2)
 end
 
