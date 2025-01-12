@@ -444,7 +444,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
 
     -- ----------------------------------------------------------------
     -- /mimetype : always "application/epub+zip"
-    epub:add("mimetype", "application/epub+zip")
+    epub:add("mimetype", "application/epub+zip", true)
 
     -- ----------------------------------------------------------------
     -- /META-INF/container.xml : always the same content
