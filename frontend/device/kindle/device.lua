@@ -1923,7 +1923,7 @@ else
     elseif pw6_set[kindle_devcode_v2] then
         return KindlePaperWhite6
     elseif ks2_set[kindle_devcode_v2] then
-        return KindleScribe --- yes the scribe 2 is identical
+        return KindleScribe -- Scribe 1 and 2 are identical.
     end
 end
 
