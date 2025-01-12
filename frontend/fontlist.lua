@@ -95,7 +95,7 @@ end
 
 local function getExternalFontDir()
     if CanvasContext:hasSystemFonts() then
-        return require("frontend/ui/elements/font_settings"):getPath()
+        return require("ui/elements/font_settings"):getPath()
     else
         return os.getenv("EXT_FONT_DIR")
     end
