@@ -6,12 +6,13 @@ local DataStorage = require("datastorage")
 local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local LuaSettings = require("frontend/luasettings")
 local SQ3 = require("lua-ljsqlite3/init")
 local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20241208
+local CURRENT_MIGRATION_DATE = 20241228
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -774,6 +775,41 @@ if last_migration_date < 20241208 then
     logger.info("Performing one-time migration for 20241208")
 
     G_reader_settings:delSetting("kopt_full_screen")
+end
+
+-- 20241228, Refactor wallabag plugin.
+-- https://github.com/koreader/koreader/pull/12949
+if last_migration_date < 20241228 then
+    logger.info("Performing one-time migration for 20241228")
+
+    local wb_lua = DataStorage:getSettingsDir() .. "/wallabag.lua"
+    if lfs.attributes(wb_lua, "mode") == "file" then
+        local wb_settings = LuaSettings:open(wb_lua)
+        wb_settings:readSetting("wallabag")
+
+        local new_settings = {}
+        local migrate = {
+            download_queue = "offline_queue",
+            is_auto_delete = "auto_archive",
+            is_delete_abandoned = "archive_abandoned",
+            is_delete_finished = "archive_finished",
+            is_delete_read = "archive_read",
+            is_sync_remote_delete = "sync_remote_archive",
+        }
+
+        for old_key, value in pairs(wb_settings.data.wallabag) do
+            if migrate[old_key] ~= nil then
+                new_settings[migrate[old_key]] = value
+            elseif old_key == "is_archiving_deleted" then
+                new_settings["delete_instead"] = not value
+            else
+                new_settings[old_key] = value
+            end
+        end
+
+        wb_settings:saveSetting("wallabag", new_settings)
+        wb_settings:flush()
+    end
 end
 
 -- We're done, store the current migration date
