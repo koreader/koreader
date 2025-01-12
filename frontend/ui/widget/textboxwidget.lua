@@ -966,7 +966,6 @@ function TextBoxWidget:_updateLayout(update_highlight)
     if self.highlight_text_selection and (update_highlight == nil or update_highlight) then
         self:updateHighlight()
     end
-
     self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
 end
 
