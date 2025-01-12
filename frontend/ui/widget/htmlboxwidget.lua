@@ -23,7 +23,6 @@ local function getLineTextDirection(line)
 
     local ltr = true
     local rtl = true
-
     for i = 2, word_count do
         if line[i].x0 > line[i - 1].x0 then
             rtl = false
@@ -31,7 +30,6 @@ local function getLineTextDirection(line)
             ltr = false
         end
     end
-
     if ltr and not rtl then
         return 1
     elseif rtl and not ltr then
@@ -43,12 +41,10 @@ end
 
 local function getWordIndices(lines, pos)
     local last_checked_line_index = nil
-
     for line_index, line in ipairs(lines) do
         if pos.y >= line.y0 then -- check if pos in on or below the line
             if pos.y < line.y1 then -- check if pos is within the line vertically
                 local rtl_line = getLineTextDirection(line) < 0
-
                 if pos.x >= line.x0 and pos.x < line.x1 then -- check if pos is within the line horizontally
                     if #line >= 1 then -- if line is not empty then check for exact word hit
                         local word_start_index = 1
@@ -116,18 +112,15 @@ local function getSelectedText(lines, start_pos, end_pos)
     local found_start = false
     local words = {}
     local rects = {}
-
     for line_index = start_line_index, end_line_index do
         local line = lines[line_index]
         local line_last_rect = nil
         local line_text_direction = getLineTextDirection(line)
-
         for word_index, word in ipairs(line) do
             if type(word) == 'table' then
                 if line_index == start_line_index and word_index == start_word_index then
                     found_start = true
                 end
-
                 if found_start then
                     table.insert(words, word.word)
 
@@ -139,7 +132,6 @@ local function getSelectedText(lines, start_pos, end_pos)
                             w = word.x1 - word.x0,
                             h = line.y1 - line.y0,
                         }
-
                         table.insert(rects, rect)
                         line_last_rect = rect
                     else
@@ -170,18 +162,15 @@ local function areTextBoxesEqual(boxes1, text1, boxes2, text2)
     if text1 ~= text2 then
         return false
     end
-
     if boxes1 and boxes2 then
         if #boxes1 ~= #boxes2 then
             return false
         end
-
         for i = 1, #boxes1, 1 do
             if boxes1[i] ~= boxes2[i] then
                 return false
             end
         end
-
         return true
     else
         return (boxes1 == nil) == (boxes2 == nil)
@@ -462,7 +451,6 @@ function HtmlBoxWidget:setPageNumber(page_number)
     if page_number == self.page_number then
         return
     end
-
     self.page_number = page_number
     self.page_boxes = nil
     self:clearHighlight()
