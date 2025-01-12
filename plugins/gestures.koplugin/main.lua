@@ -147,7 +147,7 @@ function Gestures:init()
     if not self.settings_data then
         self.settings_data = LuaSettings:open(gestures_path)
         if not next(self.settings_data.data) then
-            logger.dbg("No gestures file or invalid gestures file found, copying defaults")
+            logger.warn("No gestures file or invalid gestures file found, copying defaults")
             self.settings_data:purge()
             FFIUtil.copyFile(defaults_path, gestures_path)
             self.settings_data = LuaSettings:open(gestures_path)

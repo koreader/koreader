@@ -104,7 +104,7 @@ function HotKeys:init()
     if not self.settings_data then
         self.settings_data = LuaSettings:open(hotkeys_path)
         if not next(self.settings_data.data) then
-            logger.dbg("No hotkeys file or invalid hotkeys file found, copying defaults")
+            logger.warn("No hotkeys file or invalid hotkeys file found, copying defaults")
             self.settings_data:purge()
             FFIUtil.copyFile(defaults_path, hotkeys_path)
             self.settings_data = LuaSettings:open(hotkeys_path)
