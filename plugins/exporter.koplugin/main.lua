@@ -40,33 +40,6 @@ local T = require("ffi/util").template
 local logger = require("logger")
 local _ = require("gettext")
 
-
--- migrate settings from old "evernote.koplugin" or from previous (monolithic) "exporter.koplugin"
-local function migrateSettings()
-    -- these are for legacy formats. Don't add new targets here.
-    local formats = { "html", "joplin", "json", "readwise", "text" }
-
-    local settings = G_reader_settings:readSetting("exporter")
-    if not settings then
-        settings = G_reader_settings:readSetting("evernote")
-    end
-
-    if type(settings) == "table" then
-        for _, fmt in ipairs(formats) do
-            if type(settings[fmt]) == "table" then return end
-        end
-        local new_settings = {}
-        for _, fmt in ipairs(formats) do
-            new_settings[fmt] = { enabled = false }
-        end
-        new_settings["joplin"].ip = settings.joplin_IP
-        new_settings["joplin"].port = settings.joplin_port
-        new_settings["joplin"].token = settings.joplin_token
-        new_settings["readwise"].token = settings.readwise_token
-        G_reader_settings:saveSetting("exporter", new_settings)
-    end
-end
-
 -- update clippings from history clippings
 local function updateHistoryClippings(clippings, new_clippings)
     for title, booknotes in pairs(new_clippings) do
@@ -134,7 +107,6 @@ local Exporter = WidgetContainer:extend{
 }
 
 function Exporter:init()
-    migrateSettings()
     self.parser = MyClipping:new{}
     self.targets = genExportersTable(self.path)
     self.ui.menu:registerToMainMenu(self)
