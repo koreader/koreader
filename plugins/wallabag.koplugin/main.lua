@@ -872,10 +872,7 @@ function Wallabag:downloadArticles()
     if articles then
         logger.dbg("Wallabag:downloadArticles: got a list of", #articles, "articles")
         info = InfoMessage:new{
-            text = T(
-                _("Received a list of %1 articles…"),
-                #articles
-            ),
+            text = T(N_("Received a list of 1 article.", "Received a list of %1 articles.", #articles), #articles),
             timeout = 3
         }
         UIManager:show(info)
