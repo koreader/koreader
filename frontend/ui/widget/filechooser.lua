@@ -167,7 +167,7 @@ local FileChooser = BookList:extend{
                 end, cache
             end,
             item_func = function(item)
-                local book_info = BookList.getBookInfoCache(item.path)
+                local book_info = BookList.getBookInfo(item.path)
                 item.opened = book_info.been_opened
                 -- smooth 2 decimal points (0.00) instead of 16 decimal points
                 item.percent_finished = util.round_decimal(book_info.percent_finished or 0, 2)
@@ -192,7 +192,7 @@ local FileChooser = BookList:extend{
                 end, cache
             end,
             item_func = function(item)
-                local book_info = BookList.getBookInfoCache(item.path)
+                local book_info = BookList.getBookInfo(item.path)
                 item.opened = book_info.been_opened
                 -- smooth 2 decimal points (0.00) instead of 16 decimal points
                 item.percent_finished = util.round_decimal(book_info.percent_finished or 0, 2)
@@ -224,7 +224,7 @@ local FileChooser = BookList:extend{
                 return sortfunc, cache
             end,
             item_func = function(item)
-                local book_info = BookList.getBookInfoCache(item.path)
+                local book_info = BookList.getBookInfo(item.path)
                 item.opened = book_info.been_opened
                 local percent_finished = book_info.percent_finished
                 local sort_percent
@@ -340,7 +340,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         end
         if show_file_in_bold ~= false then
             if item.opened == nil then -- could be set in item_func
-                item.opened = BookList.beenOpened(item.path)
+                item.opened = BookList.hasBookBeenOpened(item.path)
             end
             item.bold = item.opened
             if show_file_in_bold ~= "opened" then
