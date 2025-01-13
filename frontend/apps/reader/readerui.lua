@@ -815,7 +815,7 @@ function ReaderUI:onClose(full_refresh)
         self:saveSettings()
     end
     if self.document ~= nil then
-        BookList.resetBookInfoCache(self.document.file)
+        BookList.setBookInfoCache(self.document.file, self.doc_settings)
         require("readhistory"):updateLastBookTime(self.tearing_down)
         -- Serialize the most recently displayed page for later launch
         DocCache:serialize(self.document.file)
