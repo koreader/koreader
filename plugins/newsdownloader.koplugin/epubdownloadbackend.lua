@@ -578,9 +578,8 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
             -- Process can be interrupted at this point between each image download
             -- by tapping while the InfoMessage is displayed
             -- We use the fast_refresh option from image #2 for a quicker download
-            local go_on = UI:info(T(_("%1\n\nRetrieving image %2 / %3 …"), message, inum, nb_images), inum >= 2)
+            local go_on = UI:info((message and message ~= "" and message .. "\n\n" or "") .. T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2)
             if not go_on then
-                logger.dbg("cancelled")
                 cancelled = true
                 break
             end
@@ -589,12 +588,12 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                 src = img.src2x
             end
             logger.dbg("Getting img ", src)
-            local success, content = getUrlContent(src, nil)
+            local success, content = getUrlContent(src)
             -- success, content = getUrlContent(src..".unexistant") -- to simulate failure
             if success then
                 logger.dbg("success, size:", #content)
             else
-                logger.dbg("failed fetching:", src)
+                logger.info("failed fetching:", src)
             end
             if success then
                 -- Images do not need to be compressed, so spare some cpu cycles
@@ -603,7 +602,6 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                     no_compression = false
                 end
                 epub:add("OEBPS/"..img.imgpath, content, no_compression)
-                logger.dbg("Adding OEBPS/"..img.imgpath)
             else
                 go_on = UI:confirm(T(_("Downloading image %1 failed. Continue anyway?"), inum), _("Stop"), _("Continue"))
                 if not go_on then
