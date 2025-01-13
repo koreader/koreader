@@ -360,7 +360,7 @@ When the book's language tag is not among our presets, no specific features will
             return _("Left/right minimal sizes: language defaults")
         end,
         callback = function()
-            local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
+            local DoubleSpinWidget = require("ui/widget/doublespinwidget")
             local cre = require("document/credocument"):engineInit()
             local hyph_alg, alg_left_hyphen_min, alg_right_hyphen_min = cre.getSelectedHyphDict() -- luacheck: no unused
             local hyph_limits_widget = DoubleSpinWidget:new{
