@@ -1531,6 +1531,7 @@ abbr.abbr {
                     no_compression = false
                 end
                 epub:add("OEBPS/"..img.imgpath, content, no_compression)
+                logger.dbg("Adding OEBPS/"..img.imgpath)
             else
                 go_on = UI:confirm(T(_("Downloading image %1 failed. Continue anyway?"), inum), _("Stop"), _("Continue"))
                 if not go_on then
