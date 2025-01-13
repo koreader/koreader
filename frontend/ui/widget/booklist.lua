@@ -57,13 +57,13 @@ function BookList.resetBookInfoCache(file)
     BookList.book_info_cache[file] = nil
 end
 
-function BookList.isBookInfoCacheNotSet(file)
+function BookList.hasBookInfoCache(file)
     local book_info = BookList.book_info_cache[file]
-    return book_info == nil or (book_info.been_opened and book_info.status == nil)
+    return book_info ~= nil and (book_info.been_opened == false or book_info.status ~= nil)
 end
 
 function BookList.getBookInfo(file)
-    if BookList.isBookInfoCacheNotSet(file) then
+    if not BookList.hasBookInfoCache(file) then
         if DocSettings:hasSidecarFile(file) then
             BookList.setBookInfoCache(file, DocSettings:open(file))
         else
@@ -85,7 +85,7 @@ end
 
 function BookList.getDocSettings(file)
     local doc_settings = DocSettings:open(file)
-    if BookList.isBookInfoCacheNotSet(file) then
+    if not BookList.hasBookInfoCache(file) then
         BookList.setBookInfoCache(file, doc_settings)
     end
     return doc_settings
