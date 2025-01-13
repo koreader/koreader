@@ -5,7 +5,6 @@ local FFIUtil = require("ffi/util")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
-local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local T = FFIUtil.template
@@ -99,14 +98,17 @@ end
 
 function HotKeys:init()
     local defaults_path = FFIUtil.joinPath(self.path, "defaults.lua")
-    if not lfs.attributes(hotkeys_path, "mode") then
-        FFIUtil.copyFile(defaults_path, hotkeys_path)
-    end
     self.is_docless = self.ui == nil or self.ui.document == nil
     self.hotkey_mode = self.is_docless and "hotkeys_fm" or "hotkeys_reader"
     self.defaults = LuaSettings:open(defaults_path).data[self.hotkey_mode]
     if not self.settings_data then
         self.settings_data = LuaSettings:open(hotkeys_path)
+        if not next(self.settings_data.data) then
+            logger.warn("No hotkeys file or invalid hotkeys file found, copying defaults")
+            self.settings_data:purge()
+            FFIUtil.copyFile(defaults_path, hotkeys_path)
+            self.settings_data = LuaSettings:open(hotkeys_path)
+        end
     end
     self.hotkeys = self.settings_data.data[self.hotkey_mode]
     self.type_to_search = self.settings_data.data["type_to_search"] or false

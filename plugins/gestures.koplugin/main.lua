@@ -16,7 +16,6 @@ local Screen = require("device").screen
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local T = FFIUtil.template
@@ -140,9 +139,6 @@ end
 
 function Gestures:init()
     local defaults_path = FFIUtil.joinPath(self.path, "defaults.lua")
-    if not lfs.attributes(gestures_path, "mode") then
-        FFIUtil.copyFile(defaults_path, gestures_path)
-    end
     self.ignore_hold_corners = G_reader_settings:isTrue("ignore_hold_corners")
     self.multiswipes_enabled = G_reader_settings:isTrue("multiswipes_enabled")
     self.is_docless = self.ui == nil or self.ui.document == nil
@@ -150,6 +146,12 @@ function Gestures:init()
     self.defaults = LuaSettings:open(defaults_path).data[self.ges_mode]
     if not self.settings_data then
         self.settings_data = LuaSettings:open(gestures_path)
+        if not next(self.settings_data.data) then
+            logger.warn("No gestures file or invalid gestures file found, copying defaults")
+            self.settings_data:purge()
+            FFIUtil.copyFile(defaults_path, gestures_path)
+            self.settings_data = LuaSettings:open(gestures_path)
+        end
     end
     self.gestures = self.settings_data.data[self.ges_mode]
     self.custom_multiswipes = self.settings_data.data["custom_multiswipes"]
