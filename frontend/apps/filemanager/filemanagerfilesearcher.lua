@@ -318,9 +318,9 @@ function FileSearcher:showFileDialog(item)
     if item.is_file then
         local is_currently_opened = self.ui.document and self.ui.document.file == file
         local has_provider = DocumentRegistry:hasProvider(file)
-        local been_opened = BookList.beenOpened(file)
+        local been_opened = BookList.hasBookBeenOpened(file)
         local doc_settings_or_file = is_currently_opened and self.ui.doc_settings
-            or (been_opened and BookList.openDocSettings(file) or file)
+            or (been_opened and BookList.getDocSettings(file) or file)
         if has_provider or been_opened then
             bookinfo = self.ui.bookinfo:getDocProps(file, nil, true)
             table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_callback))
