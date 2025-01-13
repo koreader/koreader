@@ -281,7 +281,7 @@ function ListMenuItem:update()
             end
         end
 
-        local book_info = self.menu.getBookInfoCache(self.filepath)
+        local book_info = self.menu.getBookInfo(self.filepath)
         self.been_opened = book_info.been_opened
         if bookinfo then -- This book is known
             self.bookinfo_found = true
@@ -369,7 +369,7 @@ function ListMenuItem:update()
                 filename_without_suffix = filename
                 fileinfo_str = self.mandatory
             else
-                local mark = book_info.has_highlight and "\u{2592}  " or "" -- "medium shade"
+                local mark = book_info.has_annotations and "\u{2592}  " or "" -- "medium shade"
                 fileinfo_str = mark .. BD.wrap(filetype) .. "  " .. BD.wrap(self.mandatory)
             end
             -- right widget, second line
