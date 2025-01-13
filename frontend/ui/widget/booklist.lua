@@ -13,13 +13,15 @@ function BookList:init()
     Menu.init(self)
 end
 
-function BookList._buildBookInfoCache(doc_settings)
+-- BookInfo
+
+function BookList.setBookInfoCache(file, doc_settings)
     local book_info = {
         been_opened      = true,
         status           = nil,
         pages            = nil,
+        has_annotations  = nil,
         percent_finished = doc_settings:readSetting("percent_finished"),
-        has_highlight    = nil,
     }
     local summary = doc_settings:readSetting("summary")
     book_info.status = summary and summary.status or "reading"
@@ -33,33 +35,21 @@ function BookList._buildBookInfoCache(doc_settings)
     book_info.pages = pages
     local annotations = doc_settings:readSetting("annotations")
     if annotations then
-        book_info.has_highlight = #annotations > 0
+        book_info.has_annotations = #annotations > 0
     else
         local highlight = doc_settings:readSetting("highlight")
-        book_info.has_highlight = highlight and next(highlight) and true
+        book_info.has_annotations = highlight and next(highlight) and true
     end
-    return book_info
+    BookList.book_info_cache[file] = book_info
 end
 
-function BookList.getBookInfoCache(file)
-    local book_info = BookList.book_info_cache[file]
-    if (book_info and book_info.status) == nil then
-        if DocSettings:hasSidecarFile(file) then
-            BookList.book_info_cache[file] = BookList._buildBookInfoCache(DocSettings:open(file))
-        else
-            BookList.book_info_cache[file] = { been_opened = false }
-        end
-    end
-    return BookList.book_info_cache[file]
-end
-
-function BookList.setBookInfoCache(file, status)
-    local book_info = BookList.book_info_cache[file]
-    if (book_info and book_info.status) == nil then
-        BookList.book_info_cache[file] = { been_opened = true, status = status }
+function BookList.setBookInfoCacheProperty(file, prop_name, prop_value)
+    if prop_name == "been_opened" and prop_value == false then
+        BookList.book_info_cache[file] = { been_opened = false }
     else
-        book_info.been_opened = true
-        book_info.status = status
+        BookList.book_info_cache[file] = BookList.book_info_cache[file] or {}
+        BookList.book_info_cache[file][prop_name] = prop_value
+        BookList.book_info_cache[file].been_opened = true
     end
 end
 
@@ -67,7 +57,23 @@ function BookList.resetBookInfoCache(file)
     BookList.book_info_cache[file] = nil
 end
 
-function BookList.beenOpened(file)
+function BookList.isBookInfoCacheNotSet(file)
+    local book_info = BookList.book_info_cache[file]
+    return book_info == nil or (book_info.been_opened and book_info.status == nil)
+end
+
+function BookList.getBookInfo(file)
+    if BookList.isBookInfoCacheNotSet(file) then
+        if DocSettings:hasSidecarFile(file) then
+            BookList.setBookInfoCache(file, DocSettings:open(file))
+        else
+            BookList.book_info_cache[file] = { been_opened = false }
+        end
+    end
+    return BookList.book_info_cache[file]
+end
+
+function BookList.hasBookBeenOpened(file)
     local book_info = BookList.book_info_cache[file]
     local been_opened = book_info and book_info.been_opened
     if been_opened == nil then -- not cached yet
@@ -77,11 +83,10 @@ function BookList.beenOpened(file)
     return been_opened
 end
 
-function BookList.openDocSettings(file)
+function BookList.getDocSettings(file)
     local doc_settings = DocSettings:open(file)
-    local book_info = BookList.book_info_cache[file]
-    if (book_info and book_info.status) == nil then
-        BookList.book_info_cache[file] = BookList._buildBookInfoCache(doc_settings)
+    if BookList.isBookInfoCacheNotSet(file) then
+        BookList.setBookInfoCache(file, doc_settings)
     end
     return doc_settings
 end
