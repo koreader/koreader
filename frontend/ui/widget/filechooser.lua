@@ -173,7 +173,7 @@ local FileChooser = BookList:extend{
                 item.percent_finished = util.round_decimal(book_info.percent_finished or 0, 2)
             end,
             mandatory_func = function(item)
-                return item.opened and string.format("%d\xE2\x80\xAF%%", 100 * item.percent_finished) or "–"
+                return item.opened and string.format("%d\u{202F}%%", 100 * item.percent_finished) or "–"
             end,
         },
         percent_unopened_last = {
@@ -198,7 +198,7 @@ local FileChooser = BookList:extend{
                 item.percent_finished = util.round_decimal(book_info.percent_finished or 0, 2)
             end,
             mandatory_func = function(item)
-                return item.opened and string.format("%d\xE2\x80\xAF%%", 100 * item.percent_finished) or "–"
+                return item.opened and string.format("%d\u{202F}%%", 100 * item.percent_finished) or "–"
             end,
         },
         percent_natural = {
@@ -241,7 +241,7 @@ local FileChooser = BookList:extend{
                 item.percent_finished = percent_finished or 0
             end,
             mandatory_func = function(item)
-                return item.opened and string.format("%d\xE2\x80\xAF%%", 100 * item.percent_finished) or "–"
+                return item.opened and string.format("%d\u{202F}%%", 100 * item.percent_finished) or "–"
             end,
         },
     },
