@@ -58,6 +58,9 @@ end
 if G_reader_settings:hasNot("screensaver_hide_fallback_msg") then
     G_reader_settings:makeFalse("screensaver_hide_fallback_msg")
 end
+if G_reader_settings:hasNot("screensaver_exclude_finished_books") then
+    G_reader_settings:makeFalse("screensaver_exclude_finished_books")
+end
 
 local Screensaver = {
     default_screensaver_message = _("Sleeping"),
