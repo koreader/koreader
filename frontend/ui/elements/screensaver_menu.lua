@@ -1,5 +1,4 @@
 local Device = require("device")
-local DocSettings = require("docsettings")
 local Screensaver = require("ui/screensaver")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
@@ -40,7 +39,7 @@ return {
             genMenuItem(_("Show book status on sleep screen"), "screensaver_type", "bookstatus", hasLastFile),
             genMenuItem(_("Leave screen as-is"), "screensaver_type", "disable", nil, true),
             {
-                text = _("Hide sleep screen covers for finished books"),
+                text = _("Hide sleep screen cover for finished books"),
                 enabled_func = function()
                     return G_reader_settings:readSetting("screensaver_type") == "cover"
                 end,
