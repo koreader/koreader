@@ -1499,18 +1499,27 @@ abbr.abbr {
     collectgarbage()
     collectgarbage()
 
+    local socket = require("socket")
+    local before_images_time = socket.gettime()
+    local time_prev = before_images_time
+
     -- ----------------------------------------------------------------
     -- OEBPS/images/*
     if include_images then
         local nb_images = #images
         for inum, img in ipairs(images) do
-            -- Process can be interrupted at this point between each image download
+            -- Process can be interrupted every second between image downloads
             -- by tapping while the InfoMessage is displayed
             -- We use the fast_refresh option from image #2 for a quicker download
-            local go_on = UI:info(T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2)
-            if not go_on then
-                cancelled = true
-                break
+            local go_on = true
+            local now = socket.gettime()
+            if now - time_prev > 1 then
+                go_on = UI:info(T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2)
+                if not go_on then
+                    cancelled = true
+                    break
+                end
+                time_prev = now
             end
             local src = img.src
             if use_img_2x and img.src2x then
@@ -1540,6 +1549,8 @@ abbr.abbr {
             end
         end
     end
+
+    logger.dbg("Image download time for:", page_htmltitle, socket.gettime() - before_images_time)
 
     -- Done with adding files
     if cancelled then
