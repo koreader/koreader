@@ -39,8 +39,8 @@ return {
             genMenuItem(_("Show book status on sleep screen"), "screensaver_type", "bookstatus", hasLastFile),
             genMenuItem(_("Leave screen as-is"), "screensaver_type", "disable", nil, true),
             {
-                text = _("Hide book covers conditionally"),
-                help_text = _("Choose to hide book covers when locking the device from file browser or when done reading a book."),
+                text = _("Book cover visibility rules"),
+                help_text = _("Choose to hide book covers when locking the device from the file browser or after finishing a book."),
                 enabled_func = function()
                     return G_reader_settings:readSetting("screensaver_type") == "cover"
                 end,
@@ -50,7 +50,7 @@ return {
                 sub_item_table = {
                     {
                         text = _("Hide book cover for finished books"),
-                        help_text = _("When the device is locked after finishing a book, the cover and message of said book will be hidden."),
+                        help_text = _("When the device is locked after finishing a book, both the cover and sleep screen message of the book will be hidden."),
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_exclude_finished_books")
                         end,
