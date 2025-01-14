@@ -4,6 +4,7 @@ local Screen = require("device").screen
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
 local T = ffiutil.template
@@ -1503,14 +1504,22 @@ abbr.abbr {
     -- OEBPS/images/*
     if include_images then
         local nb_images = #images
+        local before_images_time = time.now()
+        local time_prev = before_images_time
         for inum, img in ipairs(images) do
-            -- Process can be interrupted at this point between each image download
+            -- Process can be interrupted every second between image downloads
             -- by tapping while the InfoMessage is displayed
             -- We use the fast_refresh option from image #2 for a quicker download
-            local go_on = UI:info(T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2)
-            if not go_on then
-                cancelled = true
-                break
+            local go_on
+            if time.to_ms(time.since(time_prev)) > 1000 then
+                time_prev = time.now()
+                go_on = UI:info(T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2)
+                if not go_on then
+                    cancelled = true
+                    break
+                end
+            else
+                UI:info(T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2, true)
             end
             local src = img.src
             if use_img_2x and img.src2x then
@@ -1539,6 +1548,7 @@ abbr.abbr {
                 end
             end
         end
+        logger.dbg("Image download time for:", page_htmltitle, time.to_ms(time.since(before_images_time)), "ms")
     end
 
     -- Done with adding files
