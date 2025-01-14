@@ -449,13 +449,18 @@ function Screensaver:setup(event, event_message)
             else
                 doc_settings = DocSettings:open(lastfile)
             end
+            local book_summary = doc_settings:readSetting("summary")
             if G_reader_settings:isTrue("screensaver_exclude_finished_books") then
-                local book_summary = doc_settings:readSetting("summary")
                 if book_summary and book_summary.status == "complete" then
                     doc_settings:makeTrue("exclude_screensaver")
                     self.show_message = false
-                else
+                end
+            else
+                if book_summary and book_summary.status == "complete" then
                     doc_settings:makeFalse("exclude_screensaver")
+                    if G_reader_settings:isTrue("screensaver_show_message") then
+                        self.show_message = true
+                    end
                 end
             end
             excluded = doc_settings:isTrue("exclude_screensaver")
