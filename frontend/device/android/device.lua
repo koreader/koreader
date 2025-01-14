@@ -59,6 +59,7 @@ local external = require("device/thirdparty"):new{
         { "GoldenFree", "GoldenDict Free", false, "mobi.goldendict.android.free", "send" },
         { "GoldenPro", "GoldenDict Pro", false, "mobi.goldendict.android", "send" },
         { "Kiwix", "Kiwix", false, "org.kiwix.kiwixmobile", "text" },
+        { "KiwixStandalone", "Kiwix (F-Droid)", false, "org.kiwix.kiwixmobile.standalone", "text" },
         { "LookUp", "Look Up", false, "gaurav.lookup", "send" },
         { "LookUpPro", "Look Up Pro", false, "gaurav.lookuppro", "send" },
         { "Mdict", "Mdict", false, "cn.mdict", "send" },
