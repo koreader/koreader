@@ -460,7 +460,7 @@ function Screensaver:setup(event, event_message)
                     self.show_message = false
                 end
             else
-               doc_settings:makeFalse("exclude_screensaver_finished") 
+               doc_settings:makeFalse("exclude_screensaver_finished")
             end
             if ui then -- ReaderUI instance
                 excluded = doc_settings:isTrue("exclude_screensaver") or doc_settings:isTrue("exclude_screensaver_finished")
