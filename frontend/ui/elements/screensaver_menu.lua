@@ -60,7 +60,7 @@ return {
                     },
                     {
                         text = _("Hide book cover in file browser"),
-                        help_text = _("When the device is locked from the file browser, the cover of the last opened book will be hidden."),
+                        help_text = _("When the device is locked from the file browser, both the cover and sleep screen message of the last opened book will be hidden."),
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
                         end,
