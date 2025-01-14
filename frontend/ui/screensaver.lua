@@ -58,9 +58,6 @@ end
 if G_reader_settings:hasNot("screensaver_hide_fallback_msg") then
     G_reader_settings:makeFalse("screensaver_hide_fallback_msg")
 end
-if G_reader_settings:hasNot("screensaver_exclude_finished_books") then
-    G_reader_settings:makeFalse("screensaver_exclude_finished_books")
-end
 
 local Screensaver = {
     default_screensaver_message = _("Sleeping"),
@@ -452,8 +449,10 @@ function Screensaver:setup(event, event_message)
             else
                 doc_settings = DocSettings:open(lastfile)
             end
-            local book_summary = doc_settings:readSetting("summary")
+
             local exclude_finished_books = G_reader_settings:isTrue("screensaver_exclude_finished_books")
+            local exclude_screensaver_fm = G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
+            local book_summary = doc_settings:readSetting("summary")
             local book_finished = book_summary and book_summary.status == "complete"
             if exclude_finished_books and book_finished then
                 doc_settings:makeTrue("exclude_screensaver_finished")
@@ -461,9 +460,16 @@ function Screensaver:setup(event, event_message)
                     self.show_message = false
                 end
             else
-                doc_settings:makeFalse("exclude_screensaver_finished")
+               doc_settings:makeFalse("exclude_screensaver_finished") 
             end
-            excluded = doc_settings:isTrue("exclude_screensaver") or doc_settings:isTrue("exclude_screensaver_finished")
+            if ui then -- ReaderUI instance
+                excluded = doc_settings:isTrue("exclude_screensaver") or doc_settings:isTrue("exclude_screensaver_finished")
+            else -- FileManager instance
+                excluded = doc_settings:isTrue("exclude_screensaver") or doc_settings:isTrue("exclude_screensaver_finished") or exclude_screensaver_fm
+                if self.show_message and exclude_screensaver_fm then
+                    self.show_message = false
+                end
+            end
         else
             -- No DocSetting, not excluded
             excluded = false
