@@ -184,7 +184,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                 callback = function()
                     local nb_cols = fc.nb_cols_portrait
                     local nb_rows = fc.nb_rows_portrait
-                    local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
+                    local DoubleSpinWidget = require("ui/widget/doublespinwidget")
                     local widget = DoubleSpinWidget:new{
                         title_text = _("Portrait mosaic mode"),
                         width_factor = 0.6,
@@ -232,7 +232,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                 callback = function()
                     local nb_cols = fc.nb_cols_landscape
                     local nb_rows = fc.nb_rows_landscape
-                    local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
+                    local DoubleSpinWidget = require("ui/widget/doublespinwidget")
                     local widget = DoubleSpinWidget:new{
                         title_text = _("Landscape mosaic mode"),
                         width_factor = 0.6,
