@@ -40,7 +40,7 @@ return {
             genMenuItem(_("Leave screen as-is"), "screensaver_type", "disable", nil, true),
             {
                 text = _("Ignore book cover"),
-                help_text = _("Choose to programatically not show book covers when locking the device from the file browser or after finishing a book."),
+                help_text = _("Choose when to ignore showing book covers on the lock screen."),
                 enabled_func = function()
                     return G_reader_settings:readSetting("screensaver_type") == "cover"
                 end,
