@@ -311,7 +311,7 @@ review your feed configuration file.]])
     if touchmenu_instance then
         -- Ask the user if they want to go to their downloads folder
         -- or if they'd rather remain at the menu.
-        feed_message = feed_message .. _("Go to download folder?")
+        feed_message = feed_message.."\n\n".._("Go to download folder?")
         local should_go_to_downloads = UI:confirm(
             feed_message,
             _("Close"),
