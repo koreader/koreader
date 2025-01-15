@@ -39,8 +39,8 @@ return {
             genMenuItem(_("Show book status on sleep screen"), "screensaver_type", "bookstatus", hasLastFile),
             genMenuItem(_("Leave screen as-is"), "screensaver_type", "disable", nil, true),
             {
-                text = _("Book cover visibility rules"),
-                help_text = _("Choose to hide book covers when locking the device from the file browser or after finishing a book."),
+                text = _("Ignore book cover rules"),
+                help_text = _("Choose to programatically not show book covers when locking the device from the file browser or after finishing a book."),
                 enabled_func = function()
                     return G_reader_settings:readSetting("screensaver_type") == "cover"
                 end,
@@ -49,8 +49,8 @@ return {
                 end,
                 sub_item_table = {
                     {
-                        text = _("Hide book cover for finished books"),
-                        help_text = _("When the device is locked after finishing a book, both the cover and sleep screen message of the book will be hidden."),
+                        text = _("Ignore book cover for finished books"),
+                        help_text = _("When the device is locked after finishing a book, both the cover and sleep screen message of the book will not be shown."),
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_exclude_finished_books")
                         end,
@@ -59,8 +59,8 @@ return {
                         end,
                     },
                     {
-                        text = _("Hide book cover in file browser"),
-                        help_text = _("When the device is locked from the file browser, both the cover and sleep screen message of the last opened book will be hidden."),
+                        text = _("Ignore book cover in file browser"),
+                        help_text = _("When the device is locked from the file browser, both the cover and sleep screen message of the last opened book will not be shown."),
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
                         end,
