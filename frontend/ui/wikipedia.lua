@@ -4,6 +4,7 @@ local Screen = require("device").screen
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
 local T = ffiutil.template
@@ -1499,8 +1500,7 @@ abbr.abbr {
     collectgarbage()
     collectgarbage()
 
-    local socket = require("socket")
-    local before_images_time = socket.gettime()
+    local before_images_time = time.now()
     local time_prev = before_images_time
 
     -- ----------------------------------------------------------------
@@ -1512,8 +1512,8 @@ abbr.abbr {
             -- by tapping while the InfoMessage is displayed
             -- We use the fast_refresh option from image #2 for a quicker download
             local go_on = true
-            local now = socket.gettime()
-            if now - time_prev > 1 then
+            local now = time.now()
+            if time.to_ms(now - time_prev) > 1000 then
                 go_on = UI:info(T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2)
                 if not go_on then
                     cancelled = true
@@ -1550,7 +1550,7 @@ abbr.abbr {
         end
     end
 
-    logger.dbg("Image download time for:", page_htmltitle, socket.gettime() - before_images_time)
+    logger.dbg("Image download time for:", page_htmltitle, time.to_ms(time.now() - before_images_time), "ms")
 
     -- Done with adding files
     if cancelled then
