@@ -49,6 +49,16 @@ return {
                 end,
                 sub_item_table = {
                     {
+                        text = _("For books on hold"),
+                        help_text = _("When the device is locked and a book has been marked as on hold, both the cover and sleep screen message of the book will not be shown."),
+                        checked_func = function()
+                            return G_reader_settings:isTrue("screensaver_exclude_on_hold_books")
+                        end,
+                        callback = function()
+                            G_reader_settings:flipNilOrFalse("screensaver_exclude_on_hold_books")
+                        end,
+                    },
+                    {
                         text = _("For finished books"),
                         help_text = _("When the device is locked after finishing a book, both the cover and sleep screen message of the book will not be shown."),
                         checked_func = function()

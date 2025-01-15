@@ -451,21 +451,22 @@ function Screensaver:setup(event, event_message)
             end
 
             local exclude_finished_books = G_reader_settings:isTrue("screensaver_exclude_finished_books")
+            local exclude_on_hold_books = G_reader_settings:isTrue("screensaver_exclude_on_hold_books")
             local exclude_screensaver_fm = G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
             local book_summary = doc_settings:readSetting("summary")
-            local book_finished = book_summary and book_summary.status == "complete"
-            if exclude_finished_books and book_finished then
-                doc_settings:makeTrue("exclude_screensaver_finished")
+            local book_finished_or_on_hold = book_summary and (book_summary.status == "complete" or book_summary.status == "abandoned")
+            if (exclude_finished_books or exclude_on_hold_books) and book_finished_or_on_hold then
+                doc_settings:makeTrue("exclude_screensaver_finished_or_on_hold")
                 if self.show_message then
                     self.show_message = false
                 end
             else
-               doc_settings:makeFalse("exclude_screensaver_finished")
+               doc_settings:makeFalse("exclude_screensaver_finished_or_on_hold")
             end
             if ui then -- ReaderUI instance
-                excluded = doc_settings:isTrue("exclude_screensaver") or doc_settings:isTrue("exclude_screensaver_finished")
+                excluded = doc_settings:isTrue("exclude_screensaver") or doc_settings:isTrue("exclude_screensaver_finished_or_on_hold")
             else -- FileManager instance
-                excluded = doc_settings:isTrue("exclude_screensaver") or doc_settings:isTrue("exclude_screensaver_finished") or exclude_screensaver_fm
+                excluded = doc_settings:isTrue("exclude_screensaver") or doc_settings:isTrue("exclude_screensaver_finished_or_on_hold") or exclude_screensaver_fm
                 if self.show_message and exclude_screensaver_fm then
                     self.show_message = false
                 end
