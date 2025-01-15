@@ -582,7 +582,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
             -- Process can be interrupted every second between image downloads
             -- by tapping while the InfoMessage is displayed
             -- We use the fast_refresh option from image #2 for a quicker download
-            local go_on = true
+            local go_on
             local now = time.now()
             if time.to_ms(now - time_prev) > 1000 then
                 go_on = UI:info((message and message ~= "" and message .. "\n\n" or "") .. T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2)
