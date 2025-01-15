@@ -45,12 +45,14 @@ return {
                     return G_reader_settings:readSetting("screensaver_type") == "cover"
                 end,
                 checked_func = function()
-                    return G_reader_settings:isTrue("screensaver_exclude_finished_books") or G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
+                    return G_reader_settings:isTrue("screensaver_exclude_finished_books")
+                            or G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
+                            or G_reader_settings:isTrue("screensaver_exclude_on_hold_books")
                 end,
                 sub_item_table = {
                     {
                         text = _("For books on hold"),
-                        help_text = _("When the device is locked and a book has been marked as on hold, both the cover and sleep screen message of the book will not be shown."),
+                        help_text = _("When the device is locked and the current book has been marked as on hold, both the cover and sleep screen message of the book will not be shown."),
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_exclude_on_hold_books")
                         end,
@@ -60,7 +62,7 @@ return {
                     },
                     {
                         text = _("For finished books"),
-                        help_text = _("When the device is locked after finishing a book, both the cover and sleep screen message of the book will not be shown."),
+                        help_text = _("When the device is locked and the current book has been markeed as finished, both the cover and sleep screen message of the book will not be shown."),
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_exclude_finished_books")
                         end,
