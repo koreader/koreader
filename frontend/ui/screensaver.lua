@@ -454,24 +454,16 @@ function Screensaver:setup(event, event_message)
             local book_summary = doc_settings:readSetting("summary")
             local book_finished = book_summary and book_summary.status == "complete"
             local book_on_hold = book_summary and book_summary.status == "abandoned"
-            local exclude_finished_books = G_reader_settings:isTrue("screensaver_exclude_finished_books") and book_finished
-            local exclude_on_hold_books = G_reader_settings:isTrue("screensaver_exclude_on_hold_books") and book_on_hold
-            local exclude_books_in_fm = not ui and G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
-
-            if not excluded then
-                if exclude_books_in_fm or exclude_finished_books or exclude_on_hold_books then
-                    excluded = true
-                end
-                if excluded then
-                    self.show_message = false
-                end
-            else
-                -- doc_settings:isTrue("exclude_screensaver") does not get rid of the message, so honor it, when not in any of the other cases
-                if self.show_message then
-                    if exclude_books_in_fm or exclude_finished_books or exclude_on_hold_books then
-                        self.show_message = false
-                    end
-                end
+            local exclude_finished_book = G_reader_settings:isTrue("screensaver_exclude_finished_books") and book_finished
+            local exclude_on_hold_book = G_reader_settings:isTrue("screensaver_exclude_on_hold_books") and book_on_hold
+            local exclude_book_in_fm = not ui and G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
+            local should_exclude_book = exclude_book_in_fm or exclude_finished_book or exclude_on_hold_book
+            if not excluded and should_exclude_book then
+                excluded = true
+                self.show_message = false
+            elseif self.show_message and excluded and should_exclude_book then
+                -- doc_settings:isTrue("exclude_screensaver") does not get rid of the message, check if we should hide it, otherwise we honor it
+                self.show_message = false
             end -- if not excluded
         else
             -- No DocSetting, not excluded
