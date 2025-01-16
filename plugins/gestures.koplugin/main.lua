@@ -4,7 +4,6 @@ local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
-local FFIUtil = require("ffi/util")
 local Geom = require("ui/geometry")
 local GestureDetector = require("device/gesturedetector")
 local GestureRange = require("ui/gesturerange")
@@ -16,12 +15,13 @@ local Screen = require("device").screen
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local ffiUtil = require("ffi/util")
 local logger = require("logger")
-local util = require("util")
-local T = FFIUtil.template
 local time = require("ui/time")
+local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
+local T = ffiUtil.template
 
 if not Device:isTouchDevice() then
     return { disabled = true, }
@@ -35,7 +35,7 @@ local Gestures = WidgetContainer:extend{
     custom_multiswipes = nil,
     updated = false,
 }
-local gestures_path = FFIUtil.joinPath(DataStorage:getSettingsDir(), "gestures.lua")
+local gestures_path = ffiUtil.joinPath(DataStorage:getSettingsDir(), "gestures.lua")
 
 local gestures_list = {
     tap_top_left_corner = _("Top left"),
@@ -138,7 +138,7 @@ function Gestures:isGestureAlwaysActive(ges, multiswipe_directions)
 end
 
 function Gestures:init()
-    local defaults_path = FFIUtil.joinPath(self.path, "defaults.lua")
+    local defaults_path = ffiUtil.joinPath(self.path, "defaults.lua")
     self.ignore_hold_corners = G_reader_settings:isTrue("ignore_hold_corners")
     self.multiswipes_enabled = G_reader_settings:isTrue("multiswipes_enabled")
     self.is_docless = self.ui == nil or self.ui.document == nil
@@ -149,7 +149,7 @@ function Gestures:init()
         if not next(self.settings_data.data) then
             logger.warn("No gestures file or invalid gestures file found, copying defaults")
             self.settings_data:purge()
-            FFIUtil.copyFile(defaults_path, gestures_path)
+            ffiUtil.copyFile(defaults_path, gestures_path)
             self.settings_data = LuaSettings:open(gestures_path)
         end
     end
@@ -224,74 +224,70 @@ function Gestures:genMenu(ges)
         table.insert(sub_items, {
             text = T(_("%1 (default)"), Dispatcher:menuTextFunc(self.defaults[ges])),
             keep_menu_open = true,
-            separator = true,
+            no_refresh_on_check = true,
             checked_func = function()
                 return util.tableEquals(self.gestures[ges], self.defaults[ges])
             end,
-            callback = function()
-                self.gestures[ges] = util.tableDeepCopy(self.defaults[ges])
-                self.updated = true
+            callback = function(touchmenu_instance)
+                local function do_remove()
+                    self.gestures[ges] = util.tableDeepCopy(self.defaults[ges])
+                    self.updated = true
+                    touchmenu_instance:updateItems()
+                end
+                Dispatcher.removeActions(self.gestures[ges], do_remove)
             end,
+            separator = true,
         })
     end
     table.insert(sub_items, {
         text = _("Pass through"),
         keep_menu_open = true,
+        no_refresh_on_check = true,
         checked_func = function()
             return self.gestures[ges] == nil
         end,
-        callback = function()
-            self.gestures[ges] = nil
-            self.updated = true
+        callback = function(touchmenu_instance)
+            local function do_remove()
+                self.gestures[ges] = nil
+                self.updated = true
+                touchmenu_instance:updateItems()
+            end
+            Dispatcher.removeActions(self.gestures[ges], do_remove)
         end,
     })
     Dispatcher:addSubMenu(self, sub_items, self.gestures, ges)
     sub_items.max_per_page = nil -- restore default, settings in page 2
     table.insert(sub_items, {
         text = _("Anchor QuickMenu to gesture position"),
+        enabled_func = function()
+            return util.tableGetValue(self.gestures, ges, "settings", "show_as_quickmenu") or false
+        end,
         checked_func = function()
-            return self.gestures[ges] ~= nil
-            and self.gestures[ges].settings ~= nil
-            and self.gestures[ges].settings.anchor_quickmenu
+            return util.tableGetValue(self.gestures, ges, "settings", "anchor_quickmenu")
         end,
         callback = function()
             if self.gestures[ges] then
-                if self.gestures[ges].settings then
-                    if self.gestures[ges].settings.anchor_quickmenu then
-                        self.gestures[ges].settings.anchor_quickmenu = nil
-                        if next(self.gestures[ges].settings) == nil then
-                            self.gestures[ges].settings = nil
-                        end
-                    else
-                       self.gestures[ges].settings.anchor_quickmenu = true
-                    end
+                if util.tableGetValue(self.gestures, ges, "settings", "anchor_quickmenu") then
+                    util.tableRemoveValue(self.gestures, ges, "settings", "anchor_quickmenu")
                 else
-                    self.gestures[ges].settings = {["anchor_quickmenu"] = true}
+                    util.tableSetValue(self.gestures, true, ges, "settings", "anchor_quickmenu")
                 end
                 self.updated = true
             end
         end,
+        separator = true,
     })
     table.insert(sub_items, {
         text = _("Always active"),
         checked_func = function()
-            return self.gestures[ges] ~= nil
-            and self.gestures[ges].settings ~= nil
-            and self.gestures[ges].settings.always_active
+            return util.tableGetValue(self.gestures, ges, "settings", "always_active")
         end,
         callback = function()
             if self.gestures[ges] then
-                if self.gestures[ges].settings then
-                    if self.gestures[ges].settings.always_active then
-                        self.gestures[ges].settings.always_active = nil
-                        if next(self.gestures[ges].settings) == nil then
-                            self.gestures[ges].settings = nil
-                        end
-                    else
-                        self.gestures[ges].settings.always_active = true
-                    end
+                if util.tableGetValue(self.gestures, ges, "settings", "always_active") then
+                    util.tableRemoveValue(self.gestures, ges, "settings", "always_active")
                 else
-                    self.gestures[ges].settings = {["always_active"] = true}
+                    util.tableSetValue(self.gestures, true, ges, "settings", "always_active")
                 end
                 self.updated = true
             end
@@ -471,7 +467,7 @@ function Gestures:genCustomMultiswipeSubmenu()
             help_text = _("The number of possible multiswipe gestures is theoretically infinite. With the multiswipe recorder you can easily record your own."),
         }
     }
-    for item in FFIUtil.orderedPairs(self.custom_multiswipes) do
+    for item in ffiUtil.orderedPairs(self.custom_multiswipes) do
         local hold_callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
                 text = T(_("Remove custom multiswipe %1?"), self:friendlyMultiswipeName(item)),
