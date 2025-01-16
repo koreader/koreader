@@ -976,6 +976,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
         end,
         callback = function(touchmenu_instance)
             local function do_remove()
+                local actions = location[settings]
                 local name = actions and actions.settings and actions.settings.name
                 location[settings] = name and { settings = { name = name } } or {}
                 caller.updated = true
