@@ -45,8 +45,8 @@ return {
                     return G_reader_settings:readSetting("screensaver_type") == "cover"
                 end,
                 checked_func = function()
-                    return G_reader_settings:isTrue("screensaver_exclude_finished_books")
-                            or G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
+                    return G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
+                            or G_reader_settings:isTrue("screensaver_exclude_finished_books")
                             or G_reader_settings:isTrue("screensaver_exclude_on_hold_books")
                 end,
                 sub_item_table = {
