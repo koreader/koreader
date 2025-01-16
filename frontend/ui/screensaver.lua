@@ -459,20 +459,20 @@ function Screensaver:setup(event, event_message)
                     excluded = true
                 elseif G_reader_settings:isTrue("screensaver_exclude_finished_books") and book_finished then
                     excluded = true
-                elseif G_reader_settings:isTrue("screensaver_exclude_on_hold_books") and book_on_hold then 
+                elseif G_reader_settings:isTrue("screensaver_exclude_on_hold_books") and book_on_hold then
                     excluded = true
                 end
                 if excluded then
                     self.show_message = false
                 end
-            else 
+            else
                 -- doc_settings:isTrue("exclude_screensaver") does not get rid of the message, so honor it, when not in any of the other cases
                 if self.show_message then
                     if not ui and G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager") then
                         self.show_message = false
                     elseif G_reader_settings:isTrue("screensaver_exclude_finished_books") and book_finished then
                         self.show_message = false
-                    elseif G_reader_settings:isTrue("screensaver_exclude_on_hold_books") and book_on_hold then 
+                    elseif G_reader_settings:isTrue("screensaver_exclude_on_hold_books") and book_on_hold then
                         self.show_message = false
                     end
                 end
