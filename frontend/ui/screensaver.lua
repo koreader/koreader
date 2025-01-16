@@ -449,27 +449,34 @@ function Screensaver:setup(event, event_message)
             else
                 doc_settings = DocSettings:open(lastfile)
             end
+            excluded = doc_settings:isTrue("exclude_screensaver")
 
-            local exclude_finished_books = G_reader_settings:isTrue("screensaver_exclude_finished_books")
-            local exclude_on_hold_books = G_reader_settings:isTrue("screensaver_exclude_on_hold_books")
-            local exclude_screensaver_fm = G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
             local book_summary = doc_settings:readSetting("summary")
-            local book_finished_or_on_hold = book_summary and (book_summary.status == "complete" or book_summary.status == "abandoned")
-            local exclude_screensaver_finished_or_on_hold = false
-            if (exclude_finished_books or exclude_on_hold_books) and book_finished_or_on_hold then
-                exclude_screensaver_finished_or_on_hold = true
+            local book_finished = book_summary and book_summary.status == "complete"
+            local book_on_hold = book_summary and book_summary.status == "abandoned"
+            if not excluded then
+                if not ui and G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager") then
+                    excluded = true
+                elseif G_reader_settings:isTrue("screensaver_exclude_finished_books") and book_finished then
+                    excluded = true
+                elseif G_reader_settings:isTrue("screensaver_exclude_on_hold_books") and book_on_hold then 
+                    excluded = true
+                end
+                if excluded then
+                    self.show_message = false
+                end
+            else 
+                -- doc_settings:isTrue("exclude_screensaver") does not get rid of the message, so honor it, when not in any of the other cases
                 if self.show_message then
-                    self.show_message = false
+                    if not ui and G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager") then
+                        self.show_message = false
+                    elseif G_reader_settings:isTrue("screensaver_exclude_finished_books") and book_finished then
+                        self.show_message = false
+                    elseif G_reader_settings:isTrue("screensaver_exclude_on_hold_books") and book_on_hold then 
+                        self.show_message = false
+                    end
                 end
-            end
-            if ui then -- ReaderUI instance
-                excluded = doc_settings:isTrue("exclude_screensaver") or exclude_screensaver_finished_or_on_hold
-            else -- FileManager instance
-                excluded = doc_settings:isTrue("exclude_screensaver") or exclude_screensaver_finished_or_on_hold or exclude_screensaver_fm
-                if self.show_message and exclude_screensaver_fm then
-                    self.show_message = false
-                end
-            end
+            end -- if not excluded
         else
             -- No DocSetting, not excluded
             excluded = false

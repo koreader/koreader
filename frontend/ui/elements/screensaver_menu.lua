@@ -62,7 +62,7 @@ return {
                     },
                     {
                         text = _("For finished books"),
-                        help_text = _("When the device is locked and the current book has been markeed as finished, both the cover and sleep screen message of the book will not be shown."),
+                        help_text = _("When the device is locked and the current book has been marked as finished, both the cover and sleep screen message of the book will not be shown."),
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_exclude_finished_books")
                         end,
