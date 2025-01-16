@@ -457,7 +457,7 @@ function Screensaver:setup(event, event_message)
             local exclude_finished_books = G_reader_settings:isTrue("screensaver_exclude_finished_books") and book_finished
             local exclude_on_hold_books = G_reader_settings:isTrue("screensaver_exclude_on_hold_books") and book_on_hold
             local exclude_books_in_fm = not ui and G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
-            
+
             if not excluded then
                 if exclude_books_in_fm or exclude_finished_books or exclude_on_hold_books then
                     excluded = true
