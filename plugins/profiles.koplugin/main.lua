@@ -207,7 +207,7 @@ function Profiles:getSubMenuItems()
             },
             {
                 text_func = function()
-                    return T(_("Edit actions: (%1)"), Dispatcher:menuTextFunc(v))
+                    return T(_("Edit actions: (%1)"), Dispatcher:menuTextFunc(self.data[k]))
                 end,
                 sub_item_table_func = function()
                     local edit_actions_sub_items = {}
@@ -259,7 +259,6 @@ function Profiles:getSubMenuItems()
             {
                 text = _("Delete"),
                 keep_menu_open = true,
-                separator = true,
                 callback = function(touchmenu_instance)
                     UIManager:show(ConfirmBox:new{
                         text = _("Do you want to delete this profile?"),
@@ -278,6 +277,7 @@ function Profiles:getSubMenuItems()
                         end,
                     })
                 end,
+                separator = true,
             },
         }
         table.insert(sub_item_table, {
@@ -545,6 +545,7 @@ function Profiles:genAutoExecPathChangedMenuItem(text, event, profile_name, sepa
                         local value = util.tableGetValue(self.autoexec, event, profile_name, conditions[i][2])
                         return value and txt .. ": " .. value or txt
                     end,
+                    no_refresh_on_check = true,
                     checked_func = function()
                         return util.tableGetValue(self.autoexec, event, profile_name, conditions[i][2])
                     end,
@@ -672,6 +673,7 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                                     local txt = util.tableGetValue(self.autoexec, event, profile_name, condition, prop)
                                     return txt and title .. " " .. txt or title:sub(1, -2)
                                 end,
+                                no_refresh_on_check = true,
                                 checked_func = function()
                                     return util.tableGetValue(self.autoexec, event, profile_name, condition, prop) and true
                                 end,
@@ -741,6 +743,7 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                     enabled_func = function()
                         return not util.tableGetValue(self.autoexec, event_always, profile_name)
                     end,
+                    no_refresh_on_check = true,
                     checked_func = function()
                         return util.tableGetValue(self.autoexec, event, profile_name, conditions[3][2]) and true
                     end,
@@ -805,6 +808,7 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                     enabled_func = function()
                         return not util.tableGetValue(self.autoexec, event_always, profile_name)
                     end,
+                    no_refresh_on_check = true,
                     checked_func = function()
                         return util.tableGetValue(self.autoexec, event, profile_name, conditions[4][2]) and true
                     end,
