@@ -676,45 +676,50 @@ function Dispatcher:getArgFromValue(item, value)
 end
 
 -- Add the item to the end of the execution order.
--- If item or the order is nil all items will be added.
-function Dispatcher:_addToOrder(location, settings, item)
-    if location[settings] then
-        if not location[settings].settings then location[settings].settings = {} end
-        if not location[settings].settings.order or item == nil then
-            location[settings].settings.order = {}
-            for k in pairs(location[settings]) do
+-- If order is nil all items will be added.
+function Dispatcher._addToOrder(location, settings, item)
+    local actions = location[settings]
+    local count = Dispatcher:_itemsCount(actions)
+    if count == 2 then
+        local first_item
+        for k in pairs(actions) do
+            if k ~= "settings" and k~= item then
+                first_item = k
+                break
+            end
+        end
+        actions.settings = actions.settings or {}
+        actions.settings.order = { first_item, item }
+    elseif count > 2 then
+        local order = util.tableGetValue(actions, "settings", "order")
+        if order then
+            table.insert(location[settings].settings.order, item)
+        else -- old unordered actions
+            util.tableSetValue(actions, {}, "settings", "order")
+            for k in pairs(actions) do
                 if settingsList[k] ~= nil then
                     table.insert(location[settings].settings.order, k)
                 end
-            end
-        else
-            if not util.arrayContains(location[settings].settings.order, item) then
-                table.insert(location[settings].settings.order, item)
             end
         end
     end
 end
 
 -- Remove the item from the execution order.
--- If item is nil all items will be removed.
--- If the resulting order is empty it will be nilled
-function Dispatcher:_removeFromOrder(location, settings, item)
-    if location[settings] and location[settings].settings then
-        if location[settings].settings.order then
-            if item then
-                local k = util.arrayContains(location[settings].settings.order, item)
-                if k then table.remove(location[settings].settings.order, k) end
-            else
-                location[settings].settings.order = {}
-            end
-            if next(location[settings].settings.order) == nil then
-                location[settings].settings.order = nil
-                if next(location[settings].settings) == nil then
-                    location[settings].settings = nil
-                end
+-- If the resulting order is empty it will be nilled.
+function Dispatcher._removeFromOrder(location, settings, item)
+    local actions = location[settings]
+    local order = util.tableGetValue(actions, "settings", "order")
+    if order then
+        local k = util.arrayContains(order, item)
+        if k then
+            table.remove(order, k)
+            if Dispatcher:_itemsCount(actions) < 2 then
+                util.tableRemoveValue(actions, "settings", "order")
             end
         end
     end
+    util.tableRemoveValue(actions, "settings", "quickmenu_separators", item)
 end
 
 -- Get a textual representation of the enabled actions to display in a menu item.
@@ -734,37 +739,45 @@ function Dispatcher:menuTextFunc(settings)
 end
 
 -- Get a list of all enabled actions to display in a menu.
-function Dispatcher:getDisplayList(settings)
+function Dispatcher.getDisplayList(settings, for_sorting)
     local item_table = {}
     if not settings then return item_table end
+    local is_check_mark = for_sorting and settings.settings and settings.settings.show_as_quickmenu
     for item, v in iter_func(settings) do
         if type(item) == "number" then item = v end
-        if settingsList[item] ~= nil and (settingsList[item].condition == nil or settingsList[item].condition == true) then
-            table.insert(item_table, {text = Dispatcher:getNameFromItem(item, settings), key = item})
+        if settingsList[item] ~= nil and settingsList[item].condition ~= false then
+            table.insert(item_table, {
+                text = Dispatcher:getNameFromItem(item, settings),
+                key = item,
+                checked_func = is_check_mark and function()
+                    return settings.settings.quickmenu_separators and settings.settings.quickmenu_separators[item]
+                end,
+                callback = is_check_mark and function()
+                    if settings.settings.quickmenu_separators and settings.settings.quickmenu_separators[item] then
+                        util.tableRemoveValue(settings.settings, "quickmenu_separators", item)
+                    else
+                        util.tableSetValue(settings.settings, true, "quickmenu_separators", item)
+                    end
+                end,
+            })
         end
     end
     return item_table
 end
 
 -- Display a SortWidget to sort the enable actions execution order.
-function Dispatcher:_sortActions(caller, location, settings, touchmenu_instance)
-    local display_list = Dispatcher:getDisplayList(location[settings])
+function Dispatcher._sortActions(caller, actions)
+    local display_list = Dispatcher.getDisplayList(actions, true)
     local SortWidget = require("ui/widget/sortwidget")
-    local sort_widget
-    sort_widget = SortWidget:new{
-        title = _("Arrange actions"),
+    local sort_widget = SortWidget:new{
+        title = util.tableGetValue(actions, "settings", "show_as_quickmenu")
+            and _("Arrange actions and QuickMenu separators") or _("Arrange actions"),
         item_table = display_list,
         callback = function()
-            if location[settings] and next(location[settings]) ~= nil then
-                if  not location[settings].settings then
-                    location[settings].settings = {}
-                end
-                location[settings].settings.order = {}
-                for i, v in ipairs(sort_widget.item_table) do
-                    location[settings].settings.order[i] = v.key
-                end
+            util.tableSetValue(actions, {}, "settings", "order")
+            for i, v in ipairs(display_list) do
+                actions.settings.order[i] = v.key
             end
-            if touchmenu_instance then touchmenu_instance:updateItems() end
             caller.updated = true
         end
     }
@@ -778,10 +791,10 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                 location[settings] = {}
             end
             location[settings][k] = value
-            Dispatcher:_addToOrder(location, settings, k)
+            Dispatcher._addToOrder(location, settings, k)
         else
             location[settings][k] = nil
-            Dispatcher:_removeFromOrder(location, settings, k)
+            Dispatcher._removeFromOrder(location, settings, k)
         end
         caller.updated = true
         if touchmenu_instance then
@@ -926,6 +939,21 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
     end
 end
 
+function Dispatcher.removeActions(actions, do_remove)
+    if actions then
+        local count = Dispatcher:_itemsCount(actions)
+        if count == 1 then
+            do_remove()
+        elseif count > 1 then
+            local ConfirmBox = require("ui/widget/confirmbox")
+            UIManager:show(ConfirmBox:new{
+                text = T(NC_("Dispatcher", "1 action will be removed.", "%1 actions will be removed.", count), count),
+                ok_callback = do_remove,
+            })
+        end
+    end
+end
+
 --[[--
 Add a submenu to edit which items are dispatched
 arguments are:
@@ -941,19 +969,21 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     menu.ignored_by_menu_search = true -- all those would be duplicated
     table.insert(menu, {
         text = _("Nothing"),
-        separator = true,
+        keep_menu_open = true,
+        no_refresh_on_check = true,
         checked_func = function()
             return location[settings] ~= nil and Dispatcher:_itemsCount(location[settings]) == 0
         end,
         callback = function(touchmenu_instance)
-            local name = location[settings] and location[settings].settings and location[settings].settings.name
-            location[settings] = {}
-            if name then
-                location[settings].settings = { name = name }
+            local function do_remove()
+                local name = actions and actions.settings and actions.settings.name
+                location[settings] = name and { settings = { name = name } } or {}
+                caller.updated = true
+                touchmenu_instance:updateItems()
             end
-            caller.updated = true
-            if touchmenu_instance then touchmenu_instance:updateItems() end
+            Dispatcher.removeActions(location[settings], do_remove)
         end,
+        separator = true,
     })
     local section_list = {
         {"general", _("General")},
@@ -983,7 +1013,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
                     for k, _ in pairs(location[settings]) do
                         if settingsList[k] ~= nil and settingsList[k][section[1]] == true then
                             location[settings][k] = nil
-                            Dispatcher:_removeFromOrder(location, settings, k)
+                            Dispatcher._removeFromOrder(location, settings, k)
                             caller.updated = true
                         end
                     end
@@ -995,45 +1025,34 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     end
     menu.max_per_page = #menu -- next items in page 2
     table.insert(menu, {
-        text = _("Arrange actions"),
-        checked_func = function()
-            return location[settings] ~= nil
-            and location[settings].settings ~= nil
-            and location[settings].settings.order ~= nil
+        text_func = function()
+            return util.tableGetValue(location[settings], "settings", "show_as_quickmenu")
+                and _("Arrange actions and QuickMenu separators") or _("Arrange actions")
+        end,
+        enabled_func = function()
+            return location[settings] and Dispatcher:_itemsCount(location[settings]) > 1 or false
         end,
         callback = function(touchmenu_instance)
-            Dispatcher:_sortActions(caller, location, settings, touchmenu_instance)
+            Dispatcher._sortActions(caller, location[settings])
         end,
-        hold_callback = function(touchmenu_instance)
-            if location[settings]
-            and location[settings].settings
-            and location[settings].settings.order then
-                Dispatcher:_removeFromOrder(location, settings)
-                caller.updated = true
-                if touchmenu_instance then touchmenu_instance:updateItems() end
-            end
-        end,
+        keep_menu_open = true,
+        separator = true,
     })
     table.insert(menu, {
         text = _("Show as QuickMenu"),
         checked_func = function()
-            return location[settings] ~= nil
-            and location[settings].settings ~= nil
-            and location[settings].settings.show_as_quickmenu
+            return util.tableGetValue(location[settings], "settings", "show_as_quickmenu")
         end,
         callback = function()
-            if location[settings] then
-                if location[settings].settings then
-                    if location[settings].settings.show_as_quickmenu then
-                        location[settings].settings.show_as_quickmenu = nil
-                        if next(location[settings].settings) == nil then
-                            location[settings].settings = nil
-                        end
-                    else
-                        location[settings].settings.show_as_quickmenu = true
-                    end
+            local actions = location[settings]
+            if actions then
+                if util.tableGetValue(actions, "settings", "show_as_quickmenu") then
+                    util.tableRemoveValue(actions, "settings", "show_as_quickmenu")
+                    util.tableRemoveValue(actions, "settings", "quickmenu_separators")
+                    util.tableRemoveValue(actions, "settings", "keep_open_on_apply")
+                    util.tableRemoveValue(actions, "settings", "anchor_quickmenu")
                 else
-                    location[settings].settings = {["show_as_quickmenu"] = true}
+                    util.tableSetValue(actions, true, "settings", "show_as_quickmenu")
                 end
                 caller.updated = true
             end
@@ -1041,24 +1060,19 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     })
     table.insert(menu, {
         text = _("Keep QuickMenu open"),
+        enabled_func = function()
+            return util.tableGetValue(location[settings], "settings", "show_as_quickmenu") or false
+        end,
         checked_func = function()
-            return location[settings] ~= nil
-            and location[settings].settings ~= nil
-            and location[settings].settings.keep_open_on_apply
+            return util.tableGetValue(location[settings], "settings", "keep_open_on_apply")
         end,
         callback = function()
-            if location[settings] then
-                if location[settings].settings then
-                    if location[settings].settings.keep_open_on_apply then
-                        location[settings].settings.keep_open_on_apply = nil
-                        if next(location[settings].settings) == nil then
-                            location[settings].settings = nil
-                        end
-                    else
-                        location[settings].settings.keep_open_on_apply = true
-                    end
+            local actions = location[settings]
+            if actions then
+                if util.tableGetValue(actions, "settings", "keep_open_on_apply") then
+                    util.tableRemoveValue(actions, "settings", "keep_open_on_apply")
                 else
-                    location[settings].settings = {["keep_open_on_apply"] = true}
+                    util.tableSetValue(actions, true, "settings", "keep_open_on_apply")
                 end
                 caller.updated = true
             end
@@ -1082,10 +1096,10 @@ function Dispatcher:isActionEnabled(action)
     return not disabled
 end
 
-function Dispatcher:_showAsMenu(settings, exec_props)
-    local title = settings.settings.name or _("QuickMenu")
+function Dispatcher._showAsMenu(settings, exec_props)
+    local title = settings.settings.name
     local keep_open_on_apply = settings.settings.keep_open_on_apply
-    local display_list = Dispatcher:getDisplayList(settings)
+    local display_list = Dispatcher.getDisplayList(settings)
     local quickmenu
     local buttons = {}
     if exec_props and exec_props.qm_show then
@@ -1123,6 +1137,9 @@ function Dispatcher:_showAsMenu(settings, exec_props)
                 end
             end,
         }})
+        if settings.settings.quickmenu_separators and settings.settings.quickmenu_separators[v.key] then
+            table.insert(buttons, {})
+        end
     end
     local ButtonDialog = require("ui/widget/buttondialog")
     quickmenu = ButtonDialog:new{
@@ -1148,7 +1165,7 @@ arguments are:
 function Dispatcher:execute(settings, exec_props)
     if ((exec_props == nil or exec_props.qm_show == nil) and settings.settings and settings.settings.show_as_quickmenu)
             or (exec_props and exec_props.qm_show) then
-        return Dispatcher:_showAsMenu(settings, exec_props)
+        return Dispatcher._showAsMenu(settings, exec_props)
     end
     local has_many = Dispatcher:_itemsCount(settings) > 1
     if has_many then
