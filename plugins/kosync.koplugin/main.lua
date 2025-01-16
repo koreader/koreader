@@ -139,7 +139,7 @@ end
 local function validate(entry)
     if not entry then return false end
     if type(entry) == "string" then
-        if entry == "" or not entry:match("%S") then return false end
+        if entry == "" or not entry:match("^%S+$") then return false end
     end
     return true
 end
