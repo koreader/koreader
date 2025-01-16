@@ -136,6 +136,10 @@ local function showSyncError()
     })
 end
 
+local function trim(entry)
+    return entry:match("^%s*(.-)%s*$")
+end
+
 local function validate(entry)
     if not entry then return false end
     if type(entry) == "string" then
@@ -447,6 +451,7 @@ function KOSync:login(menu)
                     text = _("Login"),
                     callback = function()
                         local username, password = unpack(dialog:getFields())
+                        username = trim(username)
                         local ok, err = validateUser(username, password)
                         if not ok then
                             UIManager:show(InfoMessage:new{
@@ -469,6 +474,7 @@ function KOSync:login(menu)
                     text = _("Register"),
                     callback = function()
                         local username, password = unpack(dialog:getFields())
+                        username = trim(username)
                         local ok, err = validateUser(username, password)
                         if not ok then
                             UIManager:show(InfoMessage:new{
