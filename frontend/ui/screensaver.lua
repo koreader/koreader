@@ -450,6 +450,18 @@ function Screensaver:setup(event, event_message)
                 doc_settings = DocSettings:open(lastfile)
             end
             excluded = doc_settings:isTrue("exclude_screensaver")
+
+            local book_summary = doc_settings:readSetting("summary")
+            local book_finished = book_summary and book_summary.status == "complete"
+            local book_on_hold = book_summary and book_summary.status == "abandoned"
+            local exclude_finished_book = G_reader_settings:isTrue("screensaver_exclude_finished_books") and book_finished
+            local exclude_on_hold_book = G_reader_settings:isTrue("screensaver_exclude_on_hold_books") and book_on_hold
+            local exclude_book_in_fm = not ui and G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
+            local should_exclude_book = exclude_book_in_fm or exclude_finished_book or exclude_on_hold_book
+            if should_exclude_book then
+                excluded = true
+                self.show_message = false
+            end
         else
             -- No DocSetting, not excluded
             excluded = false
