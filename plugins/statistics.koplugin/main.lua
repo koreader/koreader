@@ -1088,7 +1088,7 @@ function ReaderStatistics:addToMainMenu(menu_items)
                                 self.settings.min_sec, self.settings.max_sec)
                         end,
                         callback = function(touchmenu_instance)
-                            local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
+                            local DoubleSpinWidget = require("ui/widget/doublespinwidget")
                             local durations_widget
                             durations_widget = DoubleSpinWidget:new{
                                 left_text = C_("Extrema", "Min"),
