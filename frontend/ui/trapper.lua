@@ -121,7 +121,7 @@ exact same size.
     Trapper:info("some text about step or progress")
     go_on = Trapper:info()
 ]]
-function Trapper:info(text, fast_refresh)
+function Trapper:info(text, fast_refresh, skip_dismiss_check)
     local _coroutine = coroutine.running()
     if not _coroutine then
         logger.info("unwrapped info:", text)
@@ -137,16 +137,19 @@ function Trapper:info(text, fast_refresh)
         -- the coroutine.yield() that follows.
         -- If no dismiss_callback was fired, we need to get this code resumed:
         -- that will be done with the following go_on_func schedule in 0.1 second.
-        local go_on_func = function() coroutine.resume(_coroutine, true) end
-        -- delay matters: 0.05 or 0.1 seems fine
-        -- 0.01 is too fast: go_on_func is called before our dismiss_callback is processed
-        UIManager:scheduleIn(0.1, go_on_func)
+        local go_on = true
+        local go_on_func
+        if not skip_dismiss_check then
+            go_on_func = function() coroutine.resume(_coroutine, true) end
+            -- delay matters: 0.05 or 0.1 seems fine
+            -- 0.01 is too fast: go_on_func is called before our dismiss_callback is processed
+            UIManager:scheduleIn(0.1, go_on_func)
 
-        local go_on = coroutine.yield() -- gives control back to UIManager
-        -- go_on is the 2nd arg given to the coroutine.resume() that got us resumed:
-        -- false if it was a dismiss_callback
-        -- true if it was the schedule go_on_func
-
+            go_on = coroutine.yield() -- gives control back to UIManager
+            -- go_on is the 2nd arg given to the coroutine.resume() that got us resumed:
+            -- false if it was a dismiss_callback
+            -- true if it was the schedule go_on_func
+        end
         if not go_on then -- dismiss_callback called
             UIManager:unschedule(go_on_func) -- no more need for this scheduled action
             -- Don't just return false without confirmation (this tap may have been
