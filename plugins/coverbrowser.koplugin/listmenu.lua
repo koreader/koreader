@@ -2,7 +2,6 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
-local DocSettings = require("docsettings")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -282,6 +281,8 @@ function ListMenuItem:update()
             end
         end
 
+        local book_info = self.menu.getBookInfo(self.filepath)
+        self.been_opened = book_info.been_opened
         if bookinfo then -- This book is known
             self.bookinfo_found = true
             local cover_bb_used = false
@@ -355,21 +356,9 @@ function ListMenuItem:update()
             --   file type
             --   pages read / nb of pages (not available for crengine doc not opened)
             -- Current page / pages are available or more accurate in .sdr/metadata.lua
-            -- We use a cache (cleaned at end of this browsing session) to store
-            -- page, percent read and book status from sidecar files, to avoid
-            -- re-parsing them when re-rendering a visited page
-            if not self.menu.cover_info_cache then
-                self.menu.cover_info_cache = {}
-            end
-            local pages_str = ""
-            local pages = bookinfo.pages -- default to those in bookinfo db
-            local percent_finished, status, has_highlight
-            if DocSettings:hasSidecarFile(self.filepath) then
-                self.been_opened = true
-                self.menu:updateCache(self.filepath, nil, true, pages) -- create new cache entry if absent
-                pages, percent_finished, status, has_highlight =
-                    unpack(self.menu.cover_info_cache[self.filepath], 1, self.menu.cover_info_cache[self.filepath].n)
-            end
+            local pages = book_info.pages or bookinfo.pages -- default to those in bookinfo db
+            local percent_finished = book_info.percent_finished
+            local status = book_info.status
             -- right widget, first line
             local directory, filename = util.splitFilePathName(self.filepath) -- luacheck: no unused
             local filename_without_suffix, filetype = filemanagerutil.splitFileNameType(filename)
@@ -380,10 +369,11 @@ function ListMenuItem:update()
                 filename_without_suffix = filename
                 fileinfo_str = self.mandatory
             else
-                local mark = has_highlight and "\u{2592}  " or "" -- "medium shade"
+                local mark = book_info.has_annotations and "\u{2592}  " or "" -- "medium shade"
                 fileinfo_str = mark .. BD.wrap(filetype) .. "  " .. BD.wrap(self.mandatory)
             end
             -- right widget, second line
+            local pages_str = ""
             if status == "complete" or status == "abandoned" then
                 -- Display these instead of the read %
                 if pages then
@@ -692,10 +682,6 @@ function ListMenuItem:update()
             if self.do_cover_image then
                 -- Not in db, we're going to fetch some cover
                 self.cover_specs = cover_specs
-            end
-            --
-            if self.do_hint_opened and DocSettings:hasSidecarFile(self.filepath) then
-                self.been_opened = true
             end
             -- No right widget by default, except in History
             local wright

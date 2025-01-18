@@ -1,9 +1,9 @@
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local DocSettings = require("docsettings")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
@@ -13,10 +13,10 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
+local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
 local T = ffiUtil.template
-local util = require("util")
 
 local FileManagerCollection = WidgetContainer:extend{
     title = _("Collections"),
@@ -63,14 +63,7 @@ end
 
 function FileManagerCollection:onShowColl(collection_name)
     collection_name = collection_name or ReadCollection.default_collection_name
-    self.coll_menu = Menu:new{
-        ui = self.ui,
-        covers_fullscreen = true, -- hint for UIManager:_repaint()
-        is_borderless = true,
-        is_popout = false,
-        -- item and book cover thumbnail dimensions in Mosaic and Detailed list display modes
-        -- must be equal in File manager, History and Collection windows to avoid image scaling
-        title_bar_fm_style = true,
+    self.coll_menu = BookList:new{
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showCollDialog() end,
         onReturn = function()
@@ -80,6 +73,7 @@ function FileManagerCollection:onShowColl(collection_name)
         end,
         onMenuChoice = self.onMenuChoice,
         onMenuHold = self.onMenuHold,
+        ui = self.ui,
         _manager = self,
         _recreate_func = function() self:onShowColl(collection_name) end,
         collection_name = collection_name,
@@ -156,7 +150,7 @@ end
 function FileManagerCollection:onMenuHold(item)
     local file = item.file
     self.file_dialog = nil
-    self.book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
+    local book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
 
     local function close_dialog_callback()
         UIManager:close(self.file_dialog)
@@ -176,17 +170,17 @@ function FileManagerCollection:onMenuHold(item)
     local doc_settings_or_file
     if is_currently_opened then
         doc_settings_or_file = self.ui.doc_settings
-        if not self.book_props then
-            self.book_props = self.ui.doc_props
-            self.book_props.has_cover = true
+        if not book_props then
+            book_props = self.ui.doc_props
+            book_props.has_cover = true
         end
     else
-        if DocSettings:hasSidecarFile(file) then
-            doc_settings_or_file = DocSettings:open(file)
-            if not self.book_props then
+        if BookList.hasBookBeenOpened(file) then
+            doc_settings_or_file = BookList.getDocSettings(file)
+            if not book_props then
                 local props = doc_settings_or_file:readSetting("doc_props")
-                self.book_props = self.ui.bookinfo.extendProps(props, file)
-                self.book_props.has_cover = true
+                book_props = self.ui.bookinfo.extendProps(props, file)
+                book_props.has_cover = true
             end
         else
             doc_settings_or_file = file
@@ -217,11 +211,11 @@ function FileManagerCollection:onMenuHold(item)
     })
     table.insert(buttons, {
         filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback),
-        filemanagerutil.genBookInformationButton(doc_settings_or_file, self.book_props, close_dialog_callback),
+        filemanagerutil.genBookInformationButton(doc_settings_or_file, book_props, close_dialog_callback),
     })
     table.insert(buttons, {
-        filemanagerutil.genBookCoverButton(file, self.book_props, close_dialog_callback),
-        filemanagerutil.genBookDescriptionButton(file, self.book_props, close_dialog_callback),
+        filemanagerutil.genBookCoverButton(file, book_props, close_dialog_callback),
+        filemanagerutil.genBookDescriptionButton(file, book_props, close_dialog_callback),
     })
 
     if Device:canExecuteScript(file) then
@@ -232,7 +226,7 @@ function FileManagerCollection:onMenuHold(item)
 
     if self._manager.file_dialog_added_buttons ~= nil then
         for _, row_func in ipairs(self._manager.file_dialog_added_buttons) do
-            local row = row_func(file, true, self.book_props)
+            local row = row_func(file, true, book_props)
             if row ~= nil then
                 table.insert(buttons, row)
             end

@@ -2,6 +2,7 @@
     This module implements calibre metadata searching.
 --]]
 
+local BookList = require("ui/widget/booklist")
 local CalibreMetadata = require("metadata")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
@@ -10,7 +11,6 @@ local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
-local Menu = require("ui/widget/menu")
 local Persist = require("persist")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
@@ -453,11 +453,8 @@ function CalibreSearch:browse(option)
         end
     end
 
-    self.search_menu = self.search_menu or Menu:new{
-        width = Screen:getWidth(),
-        height = Screen:getHeight(),
+    self.search_menu = self.search_menu or BookList:new{
         parent = nil,
-        is_borderless = true,
         onMenuHold = self.onMenuHold,
     }
     self.search_menu.paths = {}

@@ -3,6 +3,7 @@ This module contains miscellaneous helper functions for FileManager
 ]]
 
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local Event = require("ui/event")
@@ -99,19 +100,14 @@ function filemanagerutil.resetDocumentSettings(file)
         end
         doc_settings:makeTrue("docsettings_reset_done") -- for readertypeset block_rendering_mode
         doc_settings:flush()
+        BookList.setBookInfoCache(file_abs_path, doc_settings)
     end
 end
 
 -- Get a document status ("new", "reading", "complete", or "abandoned")
 function filemanagerutil.getStatus(file)
-    if DocSettings:hasSidecarFile(file) then
-        local summary = DocSettings:open(file):readSetting("summary")
-        if summary and summary.status and summary.status ~= "" then
-            return summary.status
-        end
-        return "reading"
-    end
-    return "new"
+    local book_info = BookList.getBookInfo(file)
+    return book_info.been_opened and book_info.status or "new"
 end
 
 function filemanagerutil.saveSummary(doc_settings_or_file, summary)
@@ -155,7 +151,7 @@ function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callba
             callback = function()
                 summary.status = to_status
                 filemanagerutil.saveSummary(doc_settings_or_file, summary)
-                UIManager:broadcastEvent(Event:new("DocSettingsItemsChanged", file, { summary = summary })) -- for CoverBrowser
+                BookList.setBookInfoCacheProperty(file, "status", to_status)
                 caller_callback()
             end,
         }
@@ -176,7 +172,7 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
         has_sidecar_file = true
     else
         file = ffiUtil.realpath(doc_settings_or_file) or doc_settings_or_file
-        has_sidecar_file = DocSettings:hasSidecarFile(file)
+        has_sidecar_file = BookList.hasBookBeenOpened(file)
     end
     local custom_cover_file = DocSettings:findCustomCoverFile(file)
     local has_custom_cover_file = custom_cover_file and true or false
@@ -205,7 +201,7 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
                         UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
                     end
                     if data_to_purge.doc_settings then
-                        UIManager:broadcastEvent(Event:new("DocSettingsItemsChanged", file)) -- for CoverBrowser
+                        BookList.setBookInfoCacheProperty(file, "been_opened", false)
                         require("readhistory"):fileSettingsPurged(file)
                     end
                     caller_callback()

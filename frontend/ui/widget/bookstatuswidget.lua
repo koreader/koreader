@@ -1,4 +1,5 @@
 local Blitbuffer = require("ffi/blitbuffer")
+local BookList = require("ui/widget/booklist")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
@@ -197,6 +198,7 @@ function BookStatusWidget:genHeader(title)
 end
 
 function BookStatusWidget:onChangeBookStatus(option_name, option_value)
+    BookList.setBookInfoCacheProperty(self.ui.document.file, "status", option_name[option_value])
     self.summary.status = option_name[option_value]
     self.summary.modified = os.date("%Y-%m-%d", os.time())
     self.updated = true

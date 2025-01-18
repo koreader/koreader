@@ -553,7 +553,7 @@ function CoverBrowser.addFileDialogButtons(widget)
                     text = _("Refresh cached book information"),
                     callback = function()
                         local menu = widget.getMenuInstance()
-                        menu:updateCache(file) -- wipe the cache
+                        menu.resetBookInfoCache(file)
                         BookInfoManager:deleteBookInfo(file)
                         UIManager:close(menu.file_dialog)
                         menu:updateItems(1, true)
@@ -613,7 +613,6 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser._recalculateDimen = _FileChooser__recalculateDimen_orig
         CoverBrowser.removeFileDialogButtons(FileManager)
         -- Also clean-up what we added, even if it does not bother original code
-        FileChooser.updateCache = nil
         FileChooser._updateItemsBuildUI = nil
         FileChooser._do_cover_images = nil
         FileChooser._do_filename_only = nil
@@ -626,7 +625,6 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
     -- In both mosaic and list modes, replace original methods with those from
     -- our generic CoverMenu
     local CoverMenu = require("covermenu")
-    FileChooser.updateCache = CoverMenu.updateCache
     FileChooser.updateItems = CoverMenu.updateItems
     FileChooser.onCloseWidget = CoverMenu.onCloseWidget
     CoverBrowser.addFileDialogButtons(FileManager)
@@ -677,7 +675,6 @@ local function _FileManagerHistory_updateItemTable(self, ...)
         -- In both mosaic and list modes, replace original methods with those from
         -- our generic CoverMenu
         local CoverMenu = require("covermenu")
-        hist_menu.updateCache = CoverMenu.updateCache
         hist_menu.updateItems = CoverMenu.updateItems
         hist_menu.onCloseWidget = CoverMenu.onCloseWidget
 
@@ -755,7 +752,6 @@ local function _FileManagerCollections_updateItemTable(self, ...)
         -- In both mosaic and list modes, replace original methods with those from
         -- our generic CoverMenu
         local CoverMenu = require("covermenu")
-        coll_menu.updateCache = CoverMenu.updateCache
         coll_menu.updateItems = CoverMenu.updateItems
         coll_menu.onCloseWidget = CoverMenu.onCloseWidget
 
@@ -830,23 +826,6 @@ end
 function CoverBrowser:onInvalidateMetadataCache(file)
     BookInfoManager:deleteBookInfo(file)
     return true
-end
-
-function CoverBrowser:onDocSettingsItemsChanged(file, doc_settings)
-    local status -- nil to wipe the covermenu book cache
-    if doc_settings then
-        status = doc_settings.summary and doc_settings.summary.status
-        if not status then return end -- changes not for us
-    end
-    if filemanager_display_mode and self.ui.file_chooser then
-        self.ui.file_chooser:updateCache(file, status)
-    end
-    if history_display_mode and self.ui.history and self.ui.history.hist_menu then
-        self.ui.history.hist_menu:updateCache(file, status)
-    end
-    if collection_display_mode and self.ui.collections and self.ui.collections.coll_menu then
-        self.ui.collections.coll_menu:updateCache(file, status)
-    end
 end
 
 function CoverBrowser:extractBooksInDirectory(path)

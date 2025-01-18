@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
+local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -141,9 +142,6 @@ function FileManager:setupLayout()
         path = self.root_path,
         focused_path = self.focused_file,
         show_parent = self.show_parent,
-        height = Screen:getHeight(),
-        is_popout = false,
-        is_borderless = true,
         file_filter = function(filename) return DocumentRegistry:hasProvider(filename) end,
         close_callback = function() return self:onClose() end,
         -- allow left bottom tap gesture, otherwise it is eaten by hidden return button
@@ -253,19 +251,19 @@ function FileManager:setupLayout()
             {}, -- separator
         }
 
+        local book_props
         if is_file then
-            self.book_props = nil -- in 'self' to provide access to it in CoverBrowser
             local has_provider = DocumentRegistry:hasProvider(file)
-            local has_sidecar = DocSettings:hasSidecarFile(file)
+            local been_opened = BookList.hasBookBeenOpened(file)
             local doc_settings_or_file = file
-            if has_provider or has_sidecar then
-                self.book_props = file_manager.coverbrowser and file_manager.coverbrowser:getBookInfo(file)
-                if has_sidecar then
-                    doc_settings_or_file = DocSettings:open(file)
-                    if not self.book_props then
+            if has_provider or been_opened then
+                book_props = file_manager.coverbrowser and file_manager.coverbrowser:getBookInfo(file)
+                if been_opened then
+                    doc_settings_or_file = BookList.getDocSettings(file)
+                    if not book_props then
                         local props = doc_settings_or_file:readSetting("doc_props")
-                        self.book_props = FileManagerBookInfo.extendProps(props, file)
-                        self.book_props.has_cover = true -- to enable "Book cover" button, we do not know if cover exists
+                        book_props = FileManagerBookInfo.extendProps(props, file)
+                        book_props.has_cover = true -- to enable "Book cover" button, we do not know if cover exists
                     end
                 end
                 table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_refresh_callback))
@@ -283,12 +281,12 @@ function FileManager:setupLayout()
                         file_manager:showOpenWithDialog(file)
                     end,
                 },
-                filemanagerutil.genBookInformationButton(doc_settings_or_file, self.book_props, close_dialog_callback),
+                filemanagerutil.genBookInformationButton(doc_settings_or_file, book_props, close_dialog_callback),
             })
             if has_provider then
                 table.insert(buttons, {
-                    filemanagerutil.genBookCoverButton(file, self.book_props, close_dialog_callback),
-                    filemanagerutil.genBookDescriptionButton(file, self.book_props, close_dialog_callback),
+                    filemanagerutil.genBookCoverButton(file, book_props, close_dialog_callback),
+                    filemanagerutil.genBookDescriptionButton(file, book_props, close_dialog_callback),
                 })
             end
             if Device:canExecuteScript(file) then
@@ -325,7 +323,7 @@ function FileManager:setupLayout()
 
         if file_manager.file_dialog_added_buttons ~= nil then
             for _, row_func in ipairs(file_manager.file_dialog_added_buttons) do
-                local row = row_func(file, is_file, self.book_props)
+                local row = row_func(file, is_file, book_props)
                 if row ~= nil then
                     table.insert(buttons, row)
                 end
@@ -789,10 +787,6 @@ FileManager.rotate = FileManager.reinit
 FileManager.onPhysicalKeyboardConnected = FileManager.reinit
 FileManager.onPhysicalKeyboardDisconnected = FileManager.reinit
 
-function FileManager:getCurrentDir()
-    return FileManager.instance and FileManager.instance.file_chooser.path
-end
-
 function FileManager:onClose()
     logger.dbg("close filemanager")
     PluginLoader:finalize()
@@ -860,7 +854,7 @@ end
 
 function FileManager:openRandomFile(dir)
     local match_func = function(file) -- documents, not yet opened
-        return DocumentRegistry:hasProvider(file) and not DocSettings:hasSidecarFile(file)
+        return DocumentRegistry:hasProvider(file) and not BookList.hasBookBeenOpened(file)
     end
     local random_file = filemanagerutil.getRandomFile(dir, match_func)
     if random_file then
@@ -1095,7 +1089,7 @@ function FileManager:showDeleteFileDialog(filepath, post_delete_callback, pre_de
     end
     local is_file = isFile(file)
     local text = (is_file and _("Delete file permanently?") or _("Delete folder permanently?")) .. "\n\n" .. BD.filepath(file)
-    if is_file and DocSettings:hasSidecarFile(file) then
+    if is_file and BookList.hasBookBeenOpened(file) then
         text = text .. "\n\n" .. _("Book settings, highlights and notes will be deleted.")
     end
     UIManager:show(ConfirmBox:new{
@@ -1116,6 +1110,7 @@ function FileManager:deleteFile(file, is_file)
     if is_file then
         local ok = os.remove(file)
         if ok then
+            BookList.resetBookInfoCache(file)
             DocSettings.updateLocation(file) -- delete sdr
             ReadHistory:fileDeleted(file)
             ReadCollection:removeItem(file)
@@ -1141,6 +1136,7 @@ function FileManager:deleteSelectedFiles()
         local file_abs_path = ffiUtil.realpath(orig_file)
         local ok = file_abs_path and os.remove(file_abs_path)
         if ok then
+            BookList.resetBookInfoCache(file_abs_path)
             DocSettings.updateLocation(file_abs_path) -- delete sdr
             ok_files[orig_file] = true
             self.selected_files[orig_file] = nil

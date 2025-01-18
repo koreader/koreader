@@ -46,12 +46,9 @@ end
 -- update the view of the dir if we are currently browsing it.
 local function updateDir(dir)
     local FileManager = require("apps/filemanager/filemanager")
-    if FileManager:getCurrentDir() == dir then
-        -- getCurrentDir() will return nil (well, nothing, technically) if there isn't an FM instance, so,
-        -- unless we were passed a nil, this is technically redundant.
-        if FileManager.instance then
-            FileManager.instance:reinit(dir)
-        end
+    local fc = FileManager.instance and FileManager.instance.file_chooser
+    if fc and fc.path == dir then
+        fc:refreshPath()
     end
 end
 
