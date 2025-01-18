@@ -89,8 +89,17 @@ local function _getRandomImage(dir)
     if G_reader_settings:isTrue("screensaver_cycle_images_alphabetically") then
         local files = filemanagerutil.getFiles(dir, match_func)
         if not files then return end
-        table.sort(files) -- Sort files alphabetically (numbers go: 1, 10, 11, 2, 20, 21, ...)
+        -- we have files, sort them in natural order, i.e z2 < z11 < z20
+        local sort = require("frontend/sort")
+        local natsort
+        natsort, cache = sort.natsort_cmp()
+        table.sort(files, function(a, b)
+            return natsort(a, b)
+        end)
         local index = G_reader_settings:readSetting("screensaver_cycle_index", 1)
+        if index > #files then -- wrap around
+            index = 1
+        end
         local file = files[index]
         index = (index % #files) + 1
         G_reader_settings:saveSetting("screensaver_cycle_index", index)

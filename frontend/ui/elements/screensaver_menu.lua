@@ -163,7 +163,7 @@ return {
                     },
                     {
                         text = _("Show images in alphabetical order"),
-                        help_text = _("When enabled, images will be shown in alphabetical order rather than random order. Please note that numbers are sorted lexicographically, so they will be sorted like this: 1, 10, 11, 2, 20, 21, ..."),
+                        help_text = _("When enabled, images will be shown in alphabetical order rather than in random order."),
                         enabled_func = function()
                             return G_reader_settings:readSetting("screensaver_type") == "random_image"
                         end,
