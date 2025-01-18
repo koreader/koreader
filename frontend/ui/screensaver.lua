@@ -87,11 +87,16 @@ local function _getRandomImage(dir)
     end
     -- If the user has set the option to cycle images alphabetically, we sort the files instead of picking a random one.
     if G_reader_settings:isTrue("screensaver_cycle_images_alphabetically") then
-        local files = filemanagerutil.getFiles(dir, match_func)
-        if not files then return end
+        local files = {}
+        util.findFiles(dir, function(file)
+            if match_func(file) then
+                table.insert(files, file)
+            end
+        end, false)
+        if #files == 0 then return end
         -- we have files, sort them in natural order, i.e z2 < z11 < z20
         local sort = require("frontend/sort")
-        local natsort, cache = sort.natsort_cmp()
+        local natsort = sort.natsort_cmp()
         table.sort(files, function(a, b)
             return natsort(a, b)
         end)

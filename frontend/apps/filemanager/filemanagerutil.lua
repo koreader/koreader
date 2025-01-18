@@ -70,28 +70,6 @@ function filemanagerutil.getRandomFile(dir, match_func)
     end
 end
 
--- This function is almost the same as getRandomFile, but returns a list of files instead of a single file
-function filemanagerutil.getFiles(dir, match_func)
-    if not dir:match("/$") then
-        dir = dir .. "/"
-    end
-    local files = {}
-    local ok, iter, dir_obj = pcall(lfs.dir, dir)
-    if ok then
-        for entry in iter, dir_obj do
-            local file = dir .. entry
-            if lfs.attributes(file, "mode") == "file" and match_func(file) then
-                table.insert(files, file)
-            end
-        end
-        if #files == 0 then
-            -- return nil if no files found, to distinguish from an empty list
-            return nil
-        end
-    end
-    return files
-end
-
 -- Purge doc settings except kept
 function filemanagerutil.resetDocumentSettings(file)
     local settings_to_keep = {
