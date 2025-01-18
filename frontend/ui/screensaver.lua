@@ -87,6 +87,7 @@ local function _getRandomImage(dir)
     end
     -- If the user has set the option to cycle images alphabetically, we sort the files instead of picking a random one.
     if G_reader_settings:isTrue("screensaver_cycle_images_alphabetically") then
+        local start_time = os.clock()
         local files = {}
         util.findFiles(dir, function(file)
             if match_func(file) then
@@ -100,6 +101,10 @@ local function _getRandomImage(dir)
         table.sort(files, function(a, b)
             return natsort(a, b)
         end)
+        local elapsed_time = os.clock() - start_time
+        if elapsed_time > 0.5 then -- threshold in seconds
+            logger.warn("Screensaver, finding and sorting files took: " .. elapsed_time .. " seconds")
+        end
         local index = G_reader_settings:readSetting("screensaver_cycle_index", 1)
         if index > #files then -- wrap around
             index = 1
