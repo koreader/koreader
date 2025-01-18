@@ -159,6 +159,20 @@ return {
                         callback = function()
                             Screensaver:chooseFolder()
                         end,
+                        separator = true,
+                    },
+                    {
+                        text = _("Show images in alphabetical order"),
+                        help_text = _("When enabled, images will be shown in alphabetical order rather than random order. Please note that numbers are sorted lexicographically, so they will be sorted like this: 1, 10, 11, 2, 20, 21, ..."),
+                        enabled_func = function()
+                            return G_reader_settings:readSetting("screensaver_type") == "random_image"
+                        end,
+                        checked_func = function()
+                            return G_reader_settings:isTrue("screensaver_cycle_images_alphabetically")
+                        end,
+                        callback = function()
+                            G_reader_settings:flipNilOrFalse("screensaver_cycle_images_alphabetically")
+                        end,
                     },
                 },
             },
