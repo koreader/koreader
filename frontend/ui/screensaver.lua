@@ -103,14 +103,13 @@ local function _getRandomImage(dir)
         end)
         local elapsed_time = os.clock() - start_time
         if elapsed_time > 0.5 then -- threshold in seconds
-            logger.warn("Screensaver, finding and sorting files took: " .. elapsed_time .. " seconds")
+            logger.warn("Screensaver: finding and sorting files alphabetically took " .. elapsed_time .. " seconds")
         end
-        local index = G_reader_settings:readSetting("screensaver_cycle_index", 1)
+        local index = G_reader_settings:readSetting("screensaver_cycle_index", 0) + 1
         if index > #files then -- wrap around
             index = 1
         end
         local file = files[index]
-        index = (index % #files) + 1
         G_reader_settings:saveSetting("screensaver_cycle_index", index)
         return file
     else -- Pick a random file (default behavior)
