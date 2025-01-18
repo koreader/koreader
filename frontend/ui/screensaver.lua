@@ -85,7 +85,19 @@ local function _getRandomImage(dir)
     local match_func = function(file) -- images, ignore macOS resource forks
         return not util.stringStartsWith(ffiUtil.basename(file), "._") and DocumentRegistry:isImageFile(file)
     end
-    return filemanagerutil.getRandomFile(dir, match_func)
+    -- If the user has set the option to cycle images alphabetically, we sort the files instead of picking a random one.
+    if G_reader_settings:isTrue("screensaver_cycle_images_alphabetically") then
+        local files = filemanagerutil.getFiles(dir, match_func)
+        if not files then return end
+        table.sort(files) -- Sort files alphabetically (numbers go: 1, 10, 11, 2, 20, 21, ...)
+        local index = G_reader_settings:readSetting("screensaver_cycle_index", 1)
+        local file = files[index]
+        index = (index % #files) + 1
+        G_reader_settings:saveSetting("screensaver_cycle_index", index)
+        return file
+    else -- Pick a random file (default behavior)
+        return filemanagerutil.getRandomFile(dir, match_func)
+    end
 end
 
 -- This is implemented by the Statistics plugin
