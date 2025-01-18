@@ -91,8 +91,7 @@ local function _getRandomImage(dir)
         if not files then return end
         -- we have files, sort them in natural order, i.e z2 < z11 < z20
         local sort = require("frontend/sort")
-        local natsort, cache
-        natsort, cache = sort.natsort_cmp()
+        local natsort, cache = sort.natsort_cmp()
         table.sort(files, function(a, b)
             return natsort(a, b)
         end)
