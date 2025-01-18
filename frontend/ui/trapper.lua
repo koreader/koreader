@@ -115,6 +115,7 @@ exact same size.
 
 @string text text to display as an InfoMessage (or nil to keep existing one)
 @boolean fast_refresh[opt=false] true for faster refresh
+@boolean skip_dismiss_check[opt=false] true to return immediately, to avoid the 100 ms delay for interim update
 @treturn boolean true if InfoMessage was not dismissed, false if dismissed
 
 @usage
