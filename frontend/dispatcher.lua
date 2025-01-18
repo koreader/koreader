@@ -767,11 +767,12 @@ end
 
 -- Display a SortWidget to sort the enable actions execution order.
 function Dispatcher._sortActions(caller, actions)
+    local show_as_quickmenu = util.tableGetValue(actions, "settings", "show_as_quickmenu")
     local display_list = Dispatcher.getDisplayList(actions, true)
     local SortWidget = require("ui/widget/sortwidget")
     local sort_widget = SortWidget:new{
-        title = util.tableGetValue(actions, "settings", "show_as_quickmenu")
-            and _("Arrange actions and QuickMenu separators") or _("Arrange actions"),
+        title = show_as_quickmenu and _("Arrange actions and QuickMenu separators") or _("Arrange actions"),
+        underscore_checked_item = show_as_quickmenu,
         item_table = display_list,
         callback = function()
             util.tableSetValue(actions, {}, "settings", "order")
@@ -1172,6 +1173,10 @@ function Dispatcher:execute(settings, exec_props)
     if has_many then
         UIManager:broadcastEvent(Event:new("BatchedUpdate"))
     end
+    Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
+    if settings.settings and settings.settings.notify then
+        Notification:notify(T(_("Executing profile: %1"), settings.settings.name))
+    end
     local gesture = exec_props and exec_props.gesture
     for k, v in iter_func(settings) do
         if type(k) == "number" then
@@ -1179,10 +1184,6 @@ function Dispatcher:execute(settings, exec_props)
             v = settings[k]
         end
         if Dispatcher:isActionEnabled(settingsList[k]) then
-            Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
-            if settings.settings and settings.settings.notify then
-                Notification:notify(T(_("Executing profile: %1"), settings.settings.name))
-            end
             if settingsList[k].configurable then
                 local value = v
                 if type(v) ~= "number" then
@@ -1192,7 +1193,6 @@ function Dispatcher:execute(settings, exec_props)
                 end
                 UIManager:sendEvent(Event:new("ConfigChange", settingsList[k].configurable.name, value))
             end
-
             local category = settingsList[k].category
             local event = settingsList[k].event
             if category == "none" then
@@ -1213,8 +1213,8 @@ function Dispatcher:execute(settings, exec_props)
                 UIManager:sendEvent(Event:new(event, arg))
             end
         end
-        Notification:resetNotifySource()
     end
+    Notification:resetNotifySource()
     if has_many then
         UIManager:broadcastEvent(Event:new("BatchedUpdateDone"))
     end
