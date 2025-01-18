@@ -83,10 +83,17 @@ function SortItemWidget:init()
                     dimen = Geom:new{ w = checked_widget:getSize().w },
                     self.checkmark_widget,
                 },
-                TextWidget:new{
-                    text = self.item.text,
-                    max_width = text_max_width,
-                    face = self.item.face or self.face,
+                VerticalGroup:new{
+                    align = "left",
+                    TextWidget:new{
+                        text = self.item.text,
+                        max_width = text_max_width,
+                        face = self.item.face or self.face,
+                    },
+                    self.show_parent.underscore_checked_item and item_checked and LineWidget:new{
+                        dimen = Geom:new{ w = text_max_width, h = Size.line.thick },
+                        background = Blitbuffer.COLOR_DARK_GRAY,
+                    },
                 },
             },
         },
