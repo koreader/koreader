@@ -1387,9 +1387,6 @@ local ges_coordinate_translation_90 = {
     southeast = "southwest",
     southwest = "northwest",
 }
-local function translateGesDirCoordinate(direction, translation_table)
-    return translation_table[direction]
-end
 local function translateMultiswipeGesDirCoordinate(multiswipe_directions, translation_table)
     return multiswipe_directions:gsub("%S+", translation_table)
 end
@@ -1414,7 +1411,7 @@ function GestureDetector:adjustGesCoordinate(ges)
             or ges.ges == "two_finger_pan"
             or ges.ges == "two_finger_hold_pan"
         then
-            ges.direction = translateGesDirCoordinate(ges.direction, ges_coordinate_translation_90)
+            ges.direction = ges_coordinate_translation_90[ges.direction]
             if ges.ges == "multiswipe" then
                 ges.multiswipe_directions = translateMultiswipeGesDirCoordinate(ges.multiswipe_directions, ges_coordinate_translation_90)
                 logger.dbg("GestureDetector: Landscape translation for multiswipe:", ges.multiswipe_directions)
@@ -1446,7 +1443,7 @@ function GestureDetector:adjustGesCoordinate(ges)
             or ges.ges == "two_finger_pan"
             or ges.ges == "two_finger_hold_pan"
         then
-            ges.direction = translateGesDirCoordinate(ges.direction, ges_coordinate_translation_270)
+            ges.direction = ges_coordinate_translation_270[ges.direction]
             if ges.ges == "multiswipe" then
                 ges.multiswipe_directions = translateMultiswipeGesDirCoordinate(ges.multiswipe_directions, ges_coordinate_translation_270)
                 logger.dbg("GestureDetector: Inverted landscape translation for multiswipe:", ges.multiswipe_directions)
@@ -1478,7 +1475,7 @@ function GestureDetector:adjustGesCoordinate(ges)
             or ges.ges == "two_finger_pan"
             or ges.ges == "two_finger_hold_pan"
         then
-            ges.direction = translateGesDirCoordinate(ges.direction, ges_coordinate_translation_180)
+            ges.direction = ges_coordinate_translation_180[ges.direction]
             if ges.ges == "multiswipe" then
                 ges.multiswipe_directions = translateMultiswipeGesDirCoordinate(ges.multiswipe_directions, ges_coordinate_translation_180)
                 logger.dbg("GestureDetector: Inverted portrait translation for multiswipe:", ges.multiswipe_directions)
