@@ -11,7 +11,6 @@ local Utf8Proc = require("ffi/utf8proc")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("util")
 local _ = require("gettext")
-local C_ = _.pgettext
 local T = require("ffi/util").template
 
 local FileManagerHistory = WidgetContainer:extend{
