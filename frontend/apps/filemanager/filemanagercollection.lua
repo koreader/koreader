@@ -105,10 +105,16 @@ function FileManagerCollection:updateItemTable(show_last_item, item_table)
     local collection_name = self:getCollectionTitle(self.coll_menu.collection_name)
     local title = T("%1 (%2)", collection_name, #item_table)
     local subtitle = ""
-    if self.match_table ~= nil then
+    if self.match_table then
         subtitle = {}
-        for prop, value in pairs(self.match_table.props) do
-            table.insert(subtitle, self.ui.bookinfo.prop_text[prop] .. " " .. value)
+        if self.match_table.status then
+            local status_string = BookList.getBookStatusString(self.match_table.status, true)
+            table.insert(subtitle, "\u{0000}" .. status_string) -- sorted first
+        end
+        if self.match_table.props then
+            for prop, value in pairs(self.match_table.props) do
+                table.insert(subtitle, T("%1 %2", self.ui.bookinfo.prop_text[prop], value))
+            end
         end
         if #subtitle == 1 then
             subtitle = subtitle[1]
@@ -122,11 +128,18 @@ function FileManagerCollection:updateItemTable(show_last_item, item_table)
 end
 
 function FileManagerCollection:isItemMatch(item)
-    if self.match_table ~= nil then
-        local doc_props = self.ui.bookinfo:getDocProps(item.file, nil, true)
-        for prop, value in pairs(self.match_table.props) do
-            if (doc_props[prop] or self.empty_prop) ~= value then
+    if self.match_table then
+        if self.match_table.status then
+            if self.match_table.status ~= BookList.getBookStatus(item.file) then
                 return false
+            end
+        end
+        if self.match_table.props then
+            local doc_props = self.ui.bookinfo:getDocProps(item.file, nil, true)
+            for prop, value in pairs(self.match_table.props) do
+                if (doc_props[prop] or self.empty_prop) ~= value then
+                    return false
+                end
             end
         end
     end
@@ -250,6 +263,17 @@ end
 function FileManagerCollection:showCollDialog()
     local coll_not_empty = #self.coll_menu.item_table > 0
     local coll_dialog
+    local function genFilterByStatusButton(button_status)
+        return {
+            text = BookList.getBookStatusString(button_status),
+            enabled = coll_not_empty,
+            callback = function()
+                UIManager:close(coll_dialog)
+                util.tableSetValue(self, button_status, "match_table", "status")
+                self:updateItemTable()
+            end,
+        }
+    end
     local function genFilterByMetadataButton(button_text, button_prop)
         return {
             text = button_text,
@@ -281,6 +305,14 @@ function FileManagerCollection:showCollDialog()
             end,
         }},
         {}, -- separator
+        {
+            genFilterByStatusButton("new"),
+            genFilterByStatusButton("reading"),
+        },
+        {
+            genFilterByStatusButton("abandoned"),
+            genFilterByStatusButton("complete"),
+        },
         {
             genFilterByMetadataButton(_("Filter by authors"), "authors"),
             genFilterByMetadataButton(_("Filter by series"), "series"),
