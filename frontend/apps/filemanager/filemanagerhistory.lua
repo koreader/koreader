@@ -18,15 +18,6 @@ local FileManagerHistory = WidgetContainer:extend{
     hist_menu_title = _("History"),
 }
 
-local filter_text = {
-    all       = C_("Book status filter", "All"),
-    reading   = C_("Book status filter", "Reading"),
-    abandoned = C_("Book status filter", "On hold"),
-    complete  = C_("Book status filter", "Finished"),
-    deleted   = C_("Book status filter", "Deleted"),
-    new       = C_("Book status filter", "New"),
-}
-
 function FileManagerHistory:init()
     self.ui.menu:registerToMainMenu(self)
 end
@@ -48,10 +39,7 @@ function FileManagerHistory:fetchStatuses(count)
         elseif v.file == (self.ui.document and self.ui.document.file) then -- currently opened file
             status = self.ui.doc_settings:readSetting("summary").status
         else
-            status = filemanagerutil.getStatus(v.file)
-        end
-        if not filter_text[status] then
-            status = "reading"
+            status = BookList.getBookStatus(v.file)
         end
         if count then
             self.count[status] = self.count[status] + 1
@@ -80,15 +68,26 @@ function FileManagerHistory:updateItemTable()
             self.count[v.status] = self.count[v.status] + 1
         end
     end
+    local title = T("%1 (%2)", self.hist_menu_title, #item_table)
     local subtitle = ""
     if self.search_string then
-        subtitle = T(_("Search results (%1)"), #item_table)
+        subtitle = T(_("Query: %1"), self.search_string)
     elseif self.selected_collections then
-        subtitle = T(_("Filtered by collections (%1)"), #item_table)
+        local collections = {}
+        for collection in pairs(self.selected_collections) do
+            table.insert(collections, self.ui.collections:getCollectionTitle(collection))
+        end
+        if #collections == 1 then
+            collections = collections[1]
+        else
+            table.sort(collections)
+            collections = table.concat(collections, ", ")
+        end
+        subtitle = T(_("Collections: %1"), collections)
     elseif self.filter ~= "all" then
-        subtitle = T(_("Status: %1 (%2)"), filter_text[self.filter]:lower(), #item_table)
+        subtitle = BookList.getBookStatusString(self.filter, true)
     end
-    self.hist_menu:switchItemTable(nil, item_table, -1, nil, subtitle)
+    self.hist_menu:switchItemTable(title, item_table, -1, nil, subtitle)
 end
 
 function FileManagerHistory:isItemMatch(item)
@@ -237,7 +236,6 @@ end
 
 function FileManagerHistory:onShowHist(search_info)
     self.hist_menu = BookList:new{
-        title = self.hist_menu_title,
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showHistDialog() end,
         onMenuChoice = self.onMenuChoice,
@@ -246,6 +244,18 @@ function FileManagerHistory:onShowHist(search_info)
         _manager = self,
         _recreate_func = function() self:onShowHist(search_info) end,
     }
+    self.hist_menu.close_callback = function()
+        if self.files_updated then -- refresh Filemanager list of files
+            if self.ui.file_chooser then
+                self.ui.file_chooser:refreshPath()
+            end
+            self.files_updated = nil
+        end
+        self.statuses_fetched = nil
+        UIManager:close(self.hist_menu)
+        self.hist_menu = nil
+        G_reader_settings:saveSetting("history_filter", self.filter)
+    end
 
     if search_info then
         self.search_string = search_info.search_string
@@ -260,18 +270,6 @@ function FileManagerHistory:onShowHist(search_info)
         self:fetchStatuses(false)
     end
     self:updateItemTable()
-    self.hist_menu.close_callback = function()
-        if self.files_updated then -- refresh Filemanager list of files
-            if self.ui.file_chooser then
-                self.ui.file_chooser:refreshPath()
-            end
-            self.files_updated = nil
-        end
-        self.statuses_fetched = nil
-        UIManager:close(self.hist_menu)
-        self.hist_menu = nil
-        G_reader_settings:saveSetting("history_filter", self.filter)
-    end
     UIManager:show(self.hist_menu, "flashui")
     return true
 end
@@ -285,7 +283,7 @@ function FileManagerHistory:showHistDialog()
     local buttons = {}
     local function genFilterButton(filter)
         return {
-            text = T(_("%1 (%2)"), filter_text[filter], self.count[filter]),
+            text = T(_("%1 (%2)"), BookList.getBookStatusString(filter), self.count[filter]),
             callback = function()
                 UIManager:close(hist_dialog)
                 self.filter = filter
