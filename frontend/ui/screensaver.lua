@@ -90,19 +90,19 @@ local function _getRandomImage(dir)
     if G_reader_settings:isTrue("screensaver_cycle_images_alphabetically") then
         local start_time = time.now()
         local files = {}
+        local num_files = 0
         util.findFiles(dir, function(file)
+            -- Slippery slope ahead! Ensure the number of files does not become unmanageable, otherwise we'll have performance issues.
+            -- NOTE: empirically, a kindle 4 found and sorted 128 files in 0.274828 seconds.
+            if num_files > 128 then return end -- this seems like a reasonable [yet arbitrary] limit
             if match_func(file) then
                 table.insert(files, file)
+                num_files = num_files + 1
             end
         end, false)
         if #files == 0 then return end
-        -- Slippery slope detected! Ensure the number of files does not exceed 128 to prevent performance issues.
-        if #files > 128 then -- this seems like a reasonable [arbitrary] limit
-            logger.warn("Screensaver: found", #files, "files, dropping", #files - 128)
-            files = {table.unpack(files, 1, 128)}
-        end
         -- we have files, sort them in natural order, i.e z2 < z11 < z20
-        local sort = require("frontend/sort")
+        local sort = require("sort")
         local natsort = sort.natsort_cmp()
         table.sort(files, function(a, b)
             return natsort(a, b)
