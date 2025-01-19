@@ -96,6 +96,10 @@ local function _getRandomImage(dir)
             end
         end, false)
         if #files == 0 then return end
+        -- Slippery slope detected! Ensure the number of files does not exceed 128 to prevent performance issues.
+        if #files > 128 then -- this seems like a reasonable [arbitrary] limit
+            files = {table.unpack(files, 1, 128)}
+        end
         -- we have files, sort them in natural order, i.e z2 < z11 < z20
         local sort = require("frontend/sort")
         local natsort = sort.natsort_cmp()
