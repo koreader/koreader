@@ -94,7 +94,7 @@ local function _getRandomImage(dir)
         util.findFiles(dir, function(file)
             -- Slippery slope ahead! Ensure the number of files does not become unmanageable, otherwise we'll have performance issues.
             -- NOTE: empirically, a kindle 4 found and sorted 128 files in 0.274828 seconds.
-            if num_files > 128 then return end -- this seems like a reasonable [yet arbitrary] limit
+            if num_files >= 128 then return end -- this seems like a reasonable [yet arbitrary] limit
             if match_func(file) then
                 table.insert(files, file)
                 num_files = num_files + 1
