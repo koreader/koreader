@@ -98,6 +98,7 @@ local function _getRandomImage(dir)
         if #files == 0 then return end
         -- Slippery slope detected! Ensure the number of files does not exceed 128 to prevent performance issues.
         if #files > 128 then -- this seems like a reasonable [arbitrary] limit
+            logger.warn("Screensaver: found", #files, "files, dropping", #files - 128)
             files = {table.unpack(files, 1, 128)}
         end
         -- we have files, sort them in natural order, i.e z2 < z11 < z20
@@ -107,7 +108,7 @@ local function _getRandomImage(dir)
             return natsort(a, b)
         end)
         local elapsed_time = time.to_s(time.since(start_time))
-        logger.info("Screensaver: finding and sorting", #files, "files took ", elapsed_time, " seconds")
+        logger.info("Screensaver: found and sorted", #files, "files in", elapsed_time, "seconds")
         local index = G_reader_settings:readSetting("screensaver_cycle_index", 0) + 1
         if index > #files then -- wrap around
             index = 1
