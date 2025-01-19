@@ -264,7 +264,7 @@ function FileChooser:show_file(filename, fullpath)
         if filename:match(pattern) then return false end
     end
     if not self.show_unsupported and self.file_filter ~= nil and not self.file_filter(filename) then return false end
-    if not FileChooser.show_finished and fullpath ~= nil and filemanagerutil.getStatus(fullpath) == "complete" then return false end
+    if not FileChooser.show_finished and fullpath ~= nil and BookList.getBookStatus(fullpath) == "complete" then return false end
     return true
 end
 
@@ -615,7 +615,7 @@ function FileChooser:getNextFile(curr_file)
         if is_curr_file_found then
             local next_file = item_table[i+1]
             if next_file and next_file.is_file and DocumentRegistry:hasProvider(next_file.path)
-                    and filemanagerutil.getStatus(next_file.path) ~= "complete" then
+                    and BookList.getBookStatus(next_file.path) ~= "complete" then
                 return next_file.path
             end
         end
