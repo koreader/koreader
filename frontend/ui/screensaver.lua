@@ -510,7 +510,7 @@ function Screensaver:setup(event, event_message)
         end
         G_reader_settings:delSetting("screensaver_stretch_images_temp")
     end
-    
+
     if self.screensaver_type == "random_image" then
         local screensaver_dir = G_reader_settings:readSetting(self.prefix .. "screensaver_dir")
                              or G_reader_settings:readSetting("screensaver_dir")
