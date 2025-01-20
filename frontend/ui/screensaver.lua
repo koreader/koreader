@@ -113,9 +113,8 @@ local function _getRandomImage(dir)
         if index > #files then -- wrap around
             index = 1
         end
-        local file = files[index]
         G_reader_settings:saveSetting("screensaver_cycle_index", index)
-        return file
+        return files[index]
     else -- Pick a random file (default behavior)
         return filemanagerutil.getRandomFile(dir, match_func)
     end
