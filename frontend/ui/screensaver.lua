@@ -500,27 +500,10 @@ function Screensaver:setup(event, event_message)
             self.screensaver_type = "random_image"
         end
     end
-
-    -- Restore the previous state of screensaver_stretch_images if it exists
-    if G_reader_settings:has("screensaver_stretch_images_temp") then
-        if G_reader_settings:isTrue("screensaver_stretch_images_temp") then
-            G_reader_settings:makeTrue("screensaver_stretch_images")
-        else
-            G_reader_settings:makeFalse("screensaver_stretch_images")
-        end
-        G_reader_settings:delSetting("screensaver_stretch_images_temp")
-    end
-
     if self.screensaver_type == "random_image" then
         local screensaver_dir = G_reader_settings:readSetting(self.prefix .. "screensaver_dir")
                              or G_reader_settings:readSetting("screensaver_dir")
         self.image_file = _getRandomImage(screensaver_dir) or "resources/koreader.png" -- Fallback image
-        if self.image_file == "resources/koreader.png" then
-            -- Save the current state of screensaver_stretch_images
-            local current_stretch_images = G_reader_settings:isTrue("screensaver_stretch_images")
-            G_reader_settings:saveSetting("screensaver_stretch_images_temp", current_stretch_images)
-            G_reader_settings:makeFalse("screensaver_stretch_images")
-        end
     end
 
     -- Use the right background setting depending on the effective mode, now that fallbacks have kicked in.
@@ -584,7 +567,8 @@ function Screensaver:show()
         local widget_settings = {
             width = Screen:getWidth(),
             height = Screen:getHeight(),
-            scale_factor = G_reader_settings:isFalse("screensaver_stretch_images") and 0 or nil,
+            -- We don't want to stretch the falback image
+            scale_factor = (self.image_file == "resources/koreader.png") and 1 or (G_reader_settings:isFalse("screensaver_stretch_images") and 0 or nil),
             stretch_limit_percentage = G_reader_settings:readSetting("screensaver_stretch_limit_percentage"),
         }
         if self.image then

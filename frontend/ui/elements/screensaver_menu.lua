@@ -104,7 +104,7 @@ return {
                             return _("Stretch cover to fit screen")
                         end,
                         checked_func = function()
-                            return G_reader_settings:isTrue("screensaver_stretch_images") or G_reader_settings:isTrue("screensaver_stretch_images_temp")
+                            return G_reader_settings:isTrue("screensaver_stretch_images")
                         end,
                         callback = function(touchmenu_instance)
                             Screensaver:setStretchLimit(touchmenu_instance)
