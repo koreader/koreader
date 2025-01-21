@@ -96,14 +96,14 @@ function Screenshoter:onScreenshot(screenshot_name, caller_callback)
                     UIManager:show(image_viewer)
                 end,
             },
-            {
+            not (Device:isKindle() and Device.isSpecialOffers) and {
                 text = _("Set as wallpaper"),
                 callback = function()
                     G_reader_settings:saveSetting("screensaver_type", "document_cover")
                     G_reader_settings:saveSetting("screensaver_document_cover", screenshot_name)
                     dialog:onClose()
                 end,
-            },
+            } or nil,
         },
     }
     dialog = ButtonDialog:new{
