@@ -131,7 +131,7 @@ function BookShortcuts:getSubMenuItems()
             callback = function() self:onBookShortcut(k) end,
             hold_callback = function(touchmenu_instance)
                 UIManager:show(ConfirmBox:new{
-                    text = _("Do you want to delete this shortcut?" .. "\n\n" .. k .. "\n"),
+                    text = _("Do you want to delete this shortcut?") .. "\n\n" .. k .. "\n",
                     ok_text = _("Delete"),
                     ok_callback = function()
                         self:deleteShortcut(k)
