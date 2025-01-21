@@ -162,7 +162,7 @@ return {
                         separator = true,
                     },
                     {
-                        text = _("Cycle through images in order rather than randomly"),
+                        text = _("Cycle through images in order"),
                         help_text = _("When enabled, all images (up to 128) will be displayed at least once on the sleep screen in sequence before repeating the cycle."),
                         enabled_func = function()
                             return G_reader_settings:readSetting("screensaver_type") == "random_image"
