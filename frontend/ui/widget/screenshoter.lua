@@ -96,7 +96,7 @@ function Screenshoter:onScreenshot(screenshot_name, caller_callback)
                     UIManager:show(image_viewer)
                 end,
             },
-            not (Device:isKindle() and Device.isSpecialOffers) and {
+            Device:supportsScreensaver() and {
                 text = _("Set as wallpaper"),
                 callback = function()
                     G_reader_settings:saveSetting("screensaver_type", "document_cover")
