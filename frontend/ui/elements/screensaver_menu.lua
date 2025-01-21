@@ -159,6 +159,20 @@ return {
                         callback = function()
                             Screensaver:chooseFolder()
                         end,
+                        separator = true,
+                    },
+                    {
+                        text = _("Cycle through images in order"),
+                        help_text = _("When enabled, all images (up to 128) will be displayed at least once on the sleep screen in sequence before repeating the cycle."),
+                        enabled_func = function()
+                            return G_reader_settings:readSetting("screensaver_type") == "random_image"
+                        end,
+                        checked_func = function()
+                            return G_reader_settings:isTrue("screensaver_cycle_images_alphabetically")
+                        end,
+                        callback = function()
+                            G_reader_settings:flipNilOrFalse("screensaver_cycle_images_alphabetically")
+                        end,
                     },
                 },
             },

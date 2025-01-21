@@ -25,6 +25,7 @@ local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -85,7 +86,38 @@ local function _getRandomImage(dir)
     local match_func = function(file) -- images, ignore macOS resource forks
         return not util.stringStartsWith(ffiUtil.basename(file), "._") and DocumentRegistry:isImageFile(file)
     end
-    return filemanagerutil.getRandomFile(dir, match_func)
+    -- If the user has set the option to cycle images alphabetically, we sort the files instead of picking a random one.
+    if G_reader_settings:isTrue("screensaver_cycle_images_alphabetically") then
+        local start_time = time.now()
+        local files = {}
+        local num_files = 0
+        util.findFiles(dir, function(file)
+            -- Slippery slope ahead! Ensure the number of files does not become unmanageable, otherwise we'll have performance issues.
+            -- NOTE: empirically, a kindle 4 found and sorted 128 files in 0.274828 seconds.
+            if num_files >= 128 then return end -- this seems like a reasonable [yet arbitrary] limit
+            if match_func(file) then
+                table.insert(files, file)
+                num_files = num_files + 1
+            end
+        end, false)
+        if #files == 0 then return end
+        -- we have files, sort them in natural order, i.e z2 < z11 < z20
+        local sort = require("sort")
+        local natsort = sort.natsort_cmp()
+        table.sort(files, function(a, b)
+            return natsort(a, b)
+        end)
+        local elapsed_time = time.to_s(time.since(start_time))
+        logger.info("Screensaver: found and sorted", #files, "files in", elapsed_time, "seconds")
+        local index = G_reader_settings:readSetting("screensaver_cycle_index", 0) + 1
+        if index > #files then -- wrap around
+            index = 1
+        end
+        G_reader_settings:saveSetting("screensaver_cycle_index", index)
+        return files[index]
+    else -- Pick a random file (default behavior)
+        return filemanagerutil.getRandomFile(dir, match_func)
+    end
 end
 
 -- This is implemented by the Statistics plugin
