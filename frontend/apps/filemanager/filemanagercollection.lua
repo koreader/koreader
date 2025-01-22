@@ -284,12 +284,18 @@ function FileManagerCollection:showCollDialog()
                 for idx, item in ipairs(self.coll_menu.item_table) do
                     local doc_prop = self.ui.bookinfo:getDocProps(item.file, nil, true)[button_prop]
                     if doc_prop == nil then
-                        doc_prop = self.empty_prop
+                        doc_prop = { self.empty_prop }
+                    elseif button_prop == "series" then
+                        doc_prop = { doc_prop }
                     elseif button_prop == "language" then
-                        doc_prop = doc_prop:lower()
+                        doc_prop = { doc_prop:lower() }
+                    else -- "authors", "keywords"
+                        doc_prop = util.splitToArray(doc_prop, "\n")
                     end
-                    prop_values[doc_prop] = prop_values[doc_prop] or {}
-                    table.insert(prop_values[doc_prop], idx)
+                    for _, prop in ipairs(doc_prop) do
+                        prop_values[prop] = prop_values[prop] or {}
+                        table.insert(prop_values[prop], idx)
+                    end
                 end
                 self:showPropValueList(button_prop, prop_values)
             end,
