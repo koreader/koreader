@@ -2470,15 +2470,27 @@ function ReaderHighlight:onHighlightPress()
                 -- With crengine, selected_text.sboxes does return good coordinates.
                 if self.ui.rolling and self.selected_text and self.selected_text.sboxes and #self.selected_text.sboxes > 0 then
                     local pos = self.selected_text.sboxes[1]
-                    -- set hold_pos to center of selected_test to make center selection more stable, not jitted at edge
-                    self.hold_pos = self.view:screenToPageTransform({
-                        x = pos.x + pos.w / 2,
-                        y = pos.y + pos.h / 2
-                    })
-                    -- move indicator to center selected text making succeed same row selection much accurate.
-                    UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
-                    self._current_indicator_pos.x = pos.x + pos.w / 2 - self._current_indicator_pos.w / 2
-                    self._current_indicator_pos.y = pos.y + pos.h / 2 - self._current_indicator_pos.h / 2
+                    logger.dbg("AAA0:", pos.x, pos.x + pos.w)
+                    -- Words hyphenated due to line breaks create an almost full width selection, so we need to check if the box is almost full width.
+                    if pos.x + pos.w == self.screen_w - self.ui.document.configurable.h_page_margins[2] then
+                        self.hold_pos = self.view:screenToPageTransform({
+                            x = pos.w, -- we don't really know where our box should actually start, so we just set it to the end of the box
+                            y = pos.y + pos.h / 4 -- our pos.h is twice as much as what it would be in a non-hyphen case
+                        })
+                        UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
+                        self._current_indicator_pos.x = pos.w
+                        self._current_indicator_pos.y = pos.y + pos.h / 4 - self._current_indicator_pos.h / 2
+                    else
+                        -- set hold_pos to center of selected_text to make center selection more stable, not jitted at edge
+                        self.hold_pos = self.view:screenToPageTransform({
+                            x = pos.x + pos.w / 2,
+                            y = pos.y + pos.h / 2
+                        })
+                        UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
+                        -- move indicator to center selected text making succeed same row selection much accurate.
+                        self._current_indicator_pos.x = pos.x + pos.w / 2 - self._current_indicator_pos.w / 2
+                        self._current_indicator_pos.y = pos.y + pos.h / 2 - self._current_indicator_pos.h / 2
+                    end
                     UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
                 end
             else
