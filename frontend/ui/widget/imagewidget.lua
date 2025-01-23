@@ -140,7 +140,7 @@ function ImageWidget:_loadfile()
         -- and use them in cache hash, when self.scale_factor is nil, when we are sure
         -- we don't need to keep aspect ratio.
         local width, height
-        if self.scale_factor == nil then
+        if self.scale_factor == nil and self.stretch_limit_percentage == nil then
             width = self.width
             height = self.height
         end
