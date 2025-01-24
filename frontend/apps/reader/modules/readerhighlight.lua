@@ -2470,25 +2470,27 @@ function ReaderHighlight:onHighlightPress()
                 -- With crengine, selected_text.sboxes does return good coordinates.
                 if self.ui.rolling and self.selected_text and self.selected_text.sboxes and #self.selected_text.sboxes > 0 then
                     local pos = self.selected_text.sboxes[1]
-                    local left_margin = self.ui.document.configurable.h_page_margins[1]
-                    local right_margin = self.ui.document.configurable.h_page_margins[2]
-                    -- Words hyphenated due to line breaks create an almost full width selection, so we need to check if the box is almost full width.
-                    if (pos.x <= left_margin) and (pos.x + pos.w >= self.screen_w - right_margin) then
+                    local margins = self.ui.document.configurable.h_page_margins[1] + self.ui.document.configurable.h_page_margins[2]
+                    -- Words hyphenated due to line breaks create an almost full width selection, so we need to check if it is the case.
+                    -- We cannot precisely recognise hyphenated words under all circumstances, so a heuristic approach is necessary,
+                    -- false positives may still occur under some extreme cases, but they should be the exception rather than the rule.
+                    -- And in any case, the punishment for false positives is much less severe than the punishment for false negatives.
+                    if pos.w > 0.6 * (self.screen_w - margins) then
                         self.hold_pos = self.view:screenToPageTransform({
-                            x = pos.x, -- we can't get to the middle of our box, so we just set it to the leftmost point
+                            x = pos.x, -- we can't get to the middle of the word, so we just set it to the leftmost point
                             y = pos.y + pos.h * 3/4 -- our pos.h is twice as much as what it would be in a non-hyphen case
                         })
                         UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
                         self._current_indicator_pos.x = pos.x
                         self._current_indicator_pos.y = pos.y + pos.h * 3/4 - self._current_indicator_pos.h / 2
-                    else
+                    else -- normal words, i.e not hyphenated due to line breaks
                         -- set hold_pos to center of selected_text to make center selection more stable, not JITted at edge
                         self.hold_pos = self.view:screenToPageTransform({
                             x = pos.x + pos.w / 2,
                             y = pos.y + pos.h / 2
                         })
                         UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
-                        -- move indicator to center selected text making succeed same row selection much accurate.
+                        -- Move the indicator to the center of the selected word, improving accuracy for subsequent same-row selections.
                         self._current_indicator_pos.x = pos.x + pos.w / 2 - self._current_indicator_pos.w / 2
                         self._current_indicator_pos.y = pos.y + pos.h / 2 - self._current_indicator_pos.h / 2
                     end
