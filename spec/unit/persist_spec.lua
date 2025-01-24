@@ -81,8 +81,7 @@ describe("Persist module", function()
 
     it("should return standalone serializers/deserializers", function()
         local tab = sample
-        -- NOTE: zstd only deser from a *file*, not a string.
-        for _, codec in ipairs({"dump", "serpent", "bitser", "luajit"}) do
+        for _, codec in ipairs({"dump", "serpent", "bitser", "luajit", "zstd"}) do
             assert.is_true(Persist.getCodec(codec).id == codec)
             local ser = Persist.getCodec(codec).serialize
             local deser = Persist.getCodec(codec).deserialize
@@ -91,7 +90,7 @@ describe("Persist module", function()
             if not t then
                 print(codec, "deser failed:", err)
             end
-            assert.are.same(t, tab)
+            assert.are.same(tab, t)
         end
     end)
 
@@ -101,7 +100,7 @@ describe("Persist module", function()
             local ser = Persist.getCodec(codec).serialize
             local deser = Persist.getCodec(codec).deserialize
             local str = ser(tab)
-            assert.are.same(deser(str), tab)
+            assert.are.same(tab, deser(str))
         end
     end)
 
