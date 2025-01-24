@@ -16,8 +16,11 @@ local NetworkMgr = require("ui/network/manager")
 local Persist = require("persist")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local dateparser = require("lib.dateparser")
+local http = require("socket.http")
 local lfs = require("libs/libkoreader-lfs")
+local ltn12 = require("ltn12")
 local logger = require("logger")
+local socket = require("socket")
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
@@ -341,16 +344,52 @@ function NewsDownloader:loadConfigAndProcessFeedsWithUI(touchmenu_instance)
 end
 
 function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_feeds_urls, download_full_article, include_images, message, enable_filter, filter_element)
+    -- Check if we have a cached response first
+    local cache = DownloadBackend:getCache()
+    local cached_response = cache:check(url)
+    local ok, response
 
     local cookies = nil
     if credentials ~= nil then
-        logger.dbg("Auth Cookies from ", cookies)
+        logger.dbg("Auth Cookies from ", credentials.url)
         cookies = DownloadBackend:getConnectionCookies(credentials.url, credentials.auth)
     end
 
-    local ok, response = pcall(function()
-            return DownloadBackend:getResponseAsString(url, cookies)
-    end)
+    if cached_response then
+        logger.dbg("NewsDownloader: Using cached response for ", url)
+        local headers_cached = cached_response.headers
+        logger.dbg("NewsDownloader: Cached response headers", headers_cached)
+
+        -- use last-modified from headers to send a modified since request
+        local last_modified = headers_cached["last-modified"]
+        if last_modified then
+            logger.dbg("NewsDownloader: sending If-Modified-Since", last_modified, url)
+            local response_body = {}
+            local headers = {
+                ["If-Modified-Since"] = last_modified
+            }
+            if cookies then
+                headers["Cookie"] = cookies
+            end
+            local code, response_headers = socket.skip(1, http.request{
+                url = url,
+                headers = headers,
+                sink = ltn12.sink.table(response_body)
+            })
+            ok = (code == 304)
+            logger.dbg("NewsDownloader: If-Modified-Since response", code, response_headers)
+            if ok then
+                response = cached_response.content
+            end
+        end
+    end
+
+    if not response then
+        ok, response = pcall(function()
+            return DownloadBackend:getResponseAsString(url, cookies, true)
+        end)
+    end
+
     local feeds
     -- Check to see if a response is available to deserialize.
     if ok then
