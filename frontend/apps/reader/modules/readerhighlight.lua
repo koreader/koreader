@@ -2471,36 +2471,36 @@ function ReaderHighlight:onHighlightPress()
         self:onStopHighlightIndicator(true) -- need_clear_selection=true
         return true
     end
-    -- No existing highlight at current indicator position: start hold
+    -- no existing highlight at current indicator position: start hold
     self._start_indicator_highlight = true
     self:onHold(nil, self:_createHighlightGesture("hold"))
 
     if not (self.ui.rolling and self.selected_text and self.selected_text.sboxes and #self.selected_text.sboxes > 0) then
         return true
     end
-
+    -- With crengine, selected_text.sboxes return good coordinates.
     local pos = self.selected_text.sboxes[1]
     local margins = self.ui.document.configurable.h_page_margins[1] + self.ui.document.configurable.h_page_margins[2]
-    -- Words hyphenated due to line breaks create an almost full width selection, so we need to check if it is the case.
-    -- We cannot precisely recognise hyphenated words under all circumstances, so a heuristic approach is necessary,
+    -- Words hyphenated due to line breaks create almost full width selection boxes, so we need to check if that is the case.
+    -- We cannot precisely recognise hyphenated words under all circumstances, so a heuristic approach is used,
     -- false positives may still occur under some extreme cases, but they should be the exception rather than the rule.
-    -- And in any case, the punishment for false positives is much less severe than the punishment for false negatives.
+    -- In any case, the punishment for false positives is much less severe (almost non-existing) than that for false negatives.
     local is_word_hyphenated = pos.w > 0.6 * (self.screen_w - margins)
 
-    -- Helper function to update positions
+    -- helper function to update cross hairs positions
     local function updatePositions(hold_x, hold_y, indicator_x, indicator_y)
         self.hold_pos = self.view:screenToPageTransform({ x = hold_x, y = hold_y })
         UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
         self._current_indicator_pos.x = indicator_x
         self._current_indicator_pos.y = indicator_y
     end
-    -- Determine positions based on word type and layout
+    -- Determine positions based on word type and layout.
     if is_word_hyphenated then
         if BD.mirroredUILayout() then
             updatePositions(
                 pos.x + pos.w,          -- rightmost point
                 pos.y + pos.h * 3 / 4,  -- adjusted vertical position
-                pos.x + pos.w - self._current_indicator_pos.w,
+                pos.x + pos.w,
                 pos.y + pos.h * 3 / 4 - self._current_indicator_pos.h / 2
             )
         else
@@ -2513,6 +2513,7 @@ function ReaderHighlight:onHighlightPress()
         end
     else
         updatePositions(
+            -- set hold_pos to center of selected_text to make center selection more stable, not JITted at edge
             pos.x + pos.w / 2,          -- center of word horizontally
             pos.y + pos.h / 2,          -- center of word vertically
             pos.x + pos.w / 2 - self._current_indicator_pos.w / 2,
