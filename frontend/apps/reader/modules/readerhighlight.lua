@@ -2475,33 +2475,41 @@ function ReaderHighlight:onHighlightPress()
                     -- We cannot precisely recognise hyphenated words under all circumstances, so a heuristic approach is necessary,
                     -- false positives may still occur under some extreme cases, but they should be the exception rather than the rule.
                     -- And in any case, the punishment for false positives is much less severe than the punishment for false negatives.
-                    local is_hyphenated = pos.w > 0.6 * (self.screen_w - margins)
-                    if BD.mirroredUILayout() and is_hyphenated then
-                        self.hold_pos = self.view:screenToPageTransform({
-                            x = pos.x + pos.w, -- rightmost point for RTL
-                            y = pos.y + pos.h * 3/4
-                        })
+                    local is_word_hyphenated = pos.w > 0.6 * (self.screen_w - margins)
+                    -- Helper function to update `hold_pos` and `_current_indicator_pos`
+                    local function updatePositions(hold_x, hold_y, indicator_x, indicator_y)
+                        self.hold_pos = self.view:screenToPageTransform({ x = hold_x, y = hold_y })
                         UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
-                        self._current_indicator_pos.x = pos.x + pos.w - self._current_indicator_pos.w
-                        self._current_indicator_pos.y = pos.y + pos.h * 3/4 - self._current_indicator_pos.h / 2
-                    elseif is_hyphenated then
-                        self.hold_pos = self.view:screenToPageTransform({
-                            x = pos.x, -- we can't get to the middle of the word, so we just set it to the leftmost point
-                            y = pos.y + pos.h * 3/4 -- our pos.h is twice as much as what it would be in a non-hyphen case
-                        })
-                        UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
-                        self._current_indicator_pos.x = pos.x
-                        self._current_indicator_pos.y = pos.y + pos.h * 3/4 - self._current_indicator_pos.h / 2
-                    else -- normal words, i.e not hyphenated due to line breaks
-                        -- set hold_pos to center of selected_text to make center selection more stable, not JITted at edge
-                        self.hold_pos = self.view:screenToPageTransform({
-                            x = pos.x + pos.w / 2,
-                            y = pos.y + pos.h / 2
-                        })
-                        UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
-                        -- Move the indicator to the center of the selected word, improving accuracy for subsequent same-row selections.
-                        self._current_indicator_pos.x = pos.x + pos.w / 2 - self._current_indicator_pos.w / 2
-                        self._current_indicator_pos.y = pos.y + pos.h / 2 - self._current_indicator_pos.h / 2
+                        self._current_indicator_pos.x = indicator_x
+                        self._current_indicator_pos.y = indicator_y
+                    end
+
+                    if is_word_hyphenated then
+                        if BD.mirroredUILayout() then
+                            -- Hyphenated word in a mirrored layout (RTL)
+                            updatePositions(
+                                pos.x + pos.w,                        -- rightmost point
+                                pos.y + pos.h * 3 / 4,                -- adjusted vertical position
+                                pos.x + pos.w - self._current_indicator_pos.w,
+                                pos.y + pos.h * 3 / 4 - self._current_indicator_pos.h / 2
+                            )
+                        else
+                            -- Hyphenated word in a standard layout (LTR)
+                            updatePositions(
+                                pos.x,                                -- leftmost point
+                                pos.y + pos.h * 3 / 4,                -- adjusted vertical position
+                                pos.x,
+                                pos.y + pos.h * 3 / 4 - self._current_indicator_pos.h / 2
+                            )
+                        end
+                    else
+                        -- Normal (non-hyphenated) word
+                        updatePositions(
+                            pos.x + pos.w / 2,                        -- centre of word horizontally
+                            pos.y + pos.h / 2,                        -- centre of word vertically
+                            pos.x + pos.w / 2 - self._current_indicator_pos.w / 2,
+                            pos.y + pos.h / 2 - self._current_indicator_pos.h / 2
+                        )
                     end
                     UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
                 end
