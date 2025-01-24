@@ -2475,7 +2475,16 @@ function ReaderHighlight:onHighlightPress()
                     -- We cannot precisely recognise hyphenated words under all circumstances, so a heuristic approach is necessary,
                     -- false positives may still occur under some extreme cases, but they should be the exception rather than the rule.
                     -- And in any case, the punishment for false positives is much less severe than the punishment for false negatives.
-                    if pos.w > 0.6 * (self.screen_w - margins) then
+                    local is_hyphenated = pos.w > 0.6 * (self.screen_w - margins)
+                    if BD.mirroredUILayout() and is_hyphenated then
+                        self.hold_pos = self.view:screenToPageTransform({
+                            x = pos.x + pos.w, -- rightmost point for RTL
+                            y = pos.y + pos.h * 3/4
+                        })
+                        UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
+                        self._current_indicator_pos.x = pos.x + pos.w - self._current_indicator_pos.w
+                        self._current_indicator_pos.y = pos.y + pos.h * 3/4 - self._current_indicator_pos.h / 2
+                    elseif is_hyphenated then
                         self.hold_pos = self.view:screenToPageTransform({
                             x = pos.x, -- we can't get to the middle of the word, so we just set it to the leftmost point
                             y = pos.y + pos.h * 3/4 -- our pos.h is twice as much as what it would be in a non-hyphen case
