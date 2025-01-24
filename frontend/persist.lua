@@ -88,7 +88,7 @@ local codecs = {
             if not path then
                 local result = ffi.string(cbuff, clen)
                 C.free(cbuff)
-                return result
+                return result, clen
             end
 
             local f = C.fopen(path, "wb")
