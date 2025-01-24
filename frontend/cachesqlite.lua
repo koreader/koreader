@@ -72,9 +72,14 @@ end
 function CacheSQLite:insert(key, object)
     self:openDB()
     local codec = Persist.getCodec(self.codec)
-    local size = 0
-    object = codec.serialize(object)
-    size = #object
+    local size
+    object, size = codec.serialize(object)
+    if type(size) == "cdata" then
+        size = tonumber(size)
+    end
+    if not size then
+        size = #object
+    end
 
     if not self:willAccept(size) then
         logger.warn("Too much memory would be claimed by caching", key)
