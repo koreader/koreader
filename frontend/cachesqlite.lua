@@ -86,7 +86,7 @@ end
 
 --- Closes the SQLite database.
 --- This is normally done internally, but can be called manually if needed.
---- @param[opt=false] explicit boolean
+--- @param[opt=false] explicit boolean When auto_close is false, this must be set to true to close the DB.
 function CacheSQLite:closeDB(explicit)
     if is_connected and (self.auto_close or explicit) then
         self.db:close()
