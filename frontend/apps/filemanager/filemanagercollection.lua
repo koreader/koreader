@@ -467,7 +467,6 @@ function FileManagerCollection:addBooksFromFolder(include_subfolders)
         select_file = false,
         onConfirm = function(folder)
             local files_found = {}
-            local DocumentRegistry = require("document/documentregistry")
             util.findFiles(folder, function(file)
                 files_found[file] = DocumentRegistry:hasProvider(file) or nil
             end, include_subfolders)
@@ -896,8 +895,8 @@ function FileManagerCollection:searchCollections(coll_name)
     UIManager:forceRePaint()
     local completed, files_found, files_found_order = Trapper:dismissableRunInSubprocess(function()
         local match_cache, _files_found, _files_found_order = {}, {}, {}
-        for coll_name, coll in pairs(collections) do
-            local coll_order = ReadCollection.coll_order[coll_name]
+        for collection_name, coll in pairs(collections) do
+            local coll_order = ReadCollection.coll_order[collection_name]
             for _, item in pairs(coll) do
                 local file = item.file
                 if match_cache[file] == nil then -- a book can be included to several collections
