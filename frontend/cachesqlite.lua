@@ -18,6 +18,7 @@ Example:
 
 local Persist = require("persist")
 local SQ3 = require("lua-ljsqlite3/init")
+local UIManager = require("ui/uimanager")
 local logger = require("logger")
 
 local CacheSQLite = {
@@ -139,7 +140,7 @@ function CacheSQLite:insert(key, object)
         VALUES (?, ?, ?, ?);
     ]])
     local ok, err = pcall(function()
-        stmt:reset():bind(key, object, size, os.time()):step()
+        stmt:reset():bind(key, object, size, UIManager:getTime()):step()
     end)
     if not ok and err then
         err = err:gsub("\n.*", "") -- remove stacktrace
@@ -161,7 +162,7 @@ function CacheSQLite:check(key)
         UPDATE cache SET last_access = ? WHERE key = ?
         RETURNING value;
     ]])
-    local row = stmt:reset():bind(os.time(), key):step()
+    local row = stmt:reset():bind(UIManager:getTime(), key):step()
     self:closeDB()
 
     if row then
