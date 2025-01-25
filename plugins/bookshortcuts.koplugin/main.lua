@@ -9,6 +9,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = ffiUtil.template
 
 local BookShortcuts = WidgetContainer:extend{
@@ -21,7 +22,7 @@ function BookShortcuts:onDispatcherRegisterActions()
     for k,v in pairs(self.shortcuts.data) do
         local mode = lfs.attributes(k, "mode")
         if mode then
-            local title = T(_("Open %1"), mode == "file" and k:gsub(".*/", "") or k)
+            local title = T(C_("File", "Open %1"), mode == "file" and k:gsub(".*/", "") or k)
             Dispatcher:registerAction(k, {category="none", event="BookShortcut", title=title, general=true, arg=k,})
         end
     end
