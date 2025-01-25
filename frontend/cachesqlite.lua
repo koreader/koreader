@@ -86,8 +86,9 @@ end
 
 --- Closes the SQLite database.
 --- This is normally done internally, but can be called manually if needed.
-function CacheSQLite:closeDB(manual)
-    if is_connected and (self.auto_close or manual) then
+--- @param explicit boolean
+function CacheSQLite:closeDB(explicit)
+    if is_connected and (self.auto_close or explicit) then
         self.db:close()
         is_connected = false
     end
