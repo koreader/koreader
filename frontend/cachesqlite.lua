@@ -1,19 +1,34 @@
 --[[--
-An SQLite-based cache implementation, with an interface similar to Cache.
+An SQLite-based cache implementation, with an interface similar to @{cache|Cache}.
+
+Example:
+
+    local CacheSQLite = require("cachesqlite")
+    local cache = CacheSQLite:new{
+        size = 1024 * 1024 * 10, -- 10 MB
+        -- Set to :memory: for an in-memory database.
+        -- In that case, set auto_close to false.
+        db_path = "/path/to/cache.db",
+    }
+    cache:insert("key", {value = "data"})
+    local data = cache:check("key")
+
+@module cachesqlite
 --]]
 
 local Persist = require("persist")
 local SQ3 = require("lua-ljsqlite3/init")
 local logger = require("logger")
 
-
 local CacheSQLite = {
     --- Max storage space, in bytes.
     size = nil,
-    --- Database file path.
+    --- Database file path. Set to :memory: for an in-memory database.
     db_path = nil,
     --- Compression codec from Persist.
     codec = "zstd",
+    --- Whether to automatically close the DB connection after each operation. Set to false for batch operations or when using :memory:.
+    auto_close = true,
 }
 
 function CacheSQLite:new(o)
@@ -24,7 +39,13 @@ function CacheSQLite:new(o)
     return o
 end
 
+local is_connected = false
+
 function CacheSQLite:init()
+    if self.db_path == ":memory:" and self.auto_close == true then
+        logger.warn("CacheSQLite: using in-memory database, forcing auto_close = false")
+        self.auto_close = false
+    end
     self:openDB()
 
     -- Create cache table if it doesn't exist
@@ -56,13 +77,26 @@ end
 --- Opens the SQLite database.
 --- This is normally done internally, but can be called manually if needed.
 function CacheSQLite:openDB()
-    self.db = SQ3.open(self.db_path)
+    if not is_connected then
+        self.db = SQ3.open(self.db_path)
+        is_connected = true
+    end
 end
 
 --- Closes the SQLite database.
 --- This is normally done internally, but can be called manually if needed.
-function CacheSQLite:closeDB()
-    self.db:close()
+function CacheSQLite:closeDB(manual)
+    if is_connected and (self.auto_close or manual) then
+        self.db:close()
+        is_connected = false
+    end
+end
+
+--- Retrieves the connected state of the database.
+--- This is normally done internally, but can be called manually if needed.
+--- @return boolean
+function CacheSQLite:isConnected()
+    return is_connected
 end
 
 --- Inserts an object into the cache.
