@@ -125,14 +125,16 @@ jobs:
           path: build
           key: ${{ env.CACHE_KEY }}-build-${{ hashFiles('cache-key') }}
 
-      - name: Restore build cache
+      - name: Lookup or restore build cache
         id: ccache-restore
-        if: steps.build-restore.outputs.cache-hit != 'true'
         uses: actions/cache/restore@v4
         with:
           path: /Users/runner/Library/Caches/ccache
           key: ${{ env.CACHE_KEY }}-ccache-${{ hashFiles('cache-key') }}
           restore-keys: ${{ env.CACHE_KEY }}-ccache-
+          # When not building, do a lookup so the cache
+          # does not get removed after 7 days with no use.
+          lookup-only: ${{ steps.build-restore.outputs.cache-hit }}
 
       - name: Install ccache
         if: steps.build-restore.outputs.cache-hit != 'true'
