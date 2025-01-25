@@ -1,5 +1,8 @@
 local DocSettings = require("docsettings")
 local Menu = require("ui/widget/menu")
+local ffiUtil = require("ffi/util")
+local _ = require("gettext")
+local T = ffiUtil.template
 
 local BookList = Menu:extend{
     covers_fullscreen = true, -- hint for UIManager:_repaint()
@@ -89,6 +92,23 @@ function BookList.getDocSettings(file)
         BookList.setBookInfoCache(file, doc_settings)
     end
     return doc_settings
+end
+
+function BookList.getBookStatus(file)
+    local book_info = BookList.getBookInfo(file)
+    return book_info.been_opened and book_info.status or "new"
+end
+
+function BookList.getBookStatusString(status, with_prefix)
+    local status_string = ({
+        new       = _("New"),      -- no sidecar file
+        reading   = _("Reading"),  -- doc_settings.summary.status
+        abandoned = _("On hold"),  -- doc_settings.summary.status
+        complete  = _("Finished"), -- doc_settings.summary.status
+        deleted   = _("Deleted"),
+        all       = _("All"),
+    })[status]
+    return with_prefix and T(_("Status: %1"), status_string:lower()) or status_string
 end
 
 return BookList
