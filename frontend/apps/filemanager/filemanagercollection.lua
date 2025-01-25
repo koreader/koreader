@@ -846,7 +846,11 @@ function FileManagerCollection:onShowCollectionsSearchDialog(search_str, coll_na
         checked = self.include_content,
         parent = search_dialog,
     }
-    search_dialog:addWidget(check_button_content)
+    if self.ui.document then
+        self.include_content = nil
+    else
+        search_dialog:addWidget(check_button_content)
+    end
     UIManager:show(search_dialog)
     search_dialog:onShowKeyboard()
     return true
