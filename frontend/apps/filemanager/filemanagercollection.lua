@@ -4,6 +4,7 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
@@ -13,6 +14,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
+local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
@@ -334,6 +336,15 @@ function FileManagerCollection:showCollDialog()
                 UIManager:close(coll_dialog)
                 self.match_table = nil
                 self:updateItemTable()
+            end,
+        }},
+        {}, -- separator
+        {{
+            text = _("Book search"),
+            enabled = coll_not_empty,
+            callback = function()
+                UIManager:close(coll_dialog)
+                self:onShowCollectionsSearchDialog(nil, self.coll_menu.collection_name)
             end,
         }},
         {}, -- separator
@@ -792,8 +803,8 @@ function FileManagerCollection:sortCollections()
     UIManager:show(sort_widget)
 end
 
-function FileManagerCollection:onShowCollectionsSearchDialog(search_str)
-    local search_dialog, check_button_case
+function FileManagerCollection:onShowCollectionsSearchDialog(search_str, coll_name)
+    local search_dialog, check_button_case, check_button_content
     search_dialog = InputDialog:new{
         title = _("Enter text to search for"),
         input = search_str or self.search_str,
@@ -814,9 +825,10 @@ function FileManagerCollection:onShowCollectionsSearchDialog(search_str)
                         if str ~= "" then
                             self.search_str = str
                             self.case_sensitive = check_button_case.checked
+                            self.include_content = check_button_content.checked
                             local Trapper = require("ui/trapper")
                             Trapper:wrap(function()
-                                self:searchCollections()
+                                self:searchCollections(coll_name)
                             end)
                         end
                     end,
@@ -830,12 +842,18 @@ function FileManagerCollection:onShowCollectionsSearchDialog(search_str)
         parent = search_dialog,
     }
     search_dialog:addWidget(check_button_case)
+    check_button_content = CheckButton:new{
+        text = _("Also search in book content (slow)"),
+        checked = self.include_content,
+        parent = search_dialog,
+    }
+    search_dialog:addWidget(check_button_content)
     UIManager:show(search_dialog)
     search_dialog:onShowKeyboard()
     return true
 end
 
-function FileManagerCollection:searchCollections()
+function FileManagerCollection:searchCollections(coll_name)
     local function isFileMatch(file)
         if self.search_str == "*" then
             return true
@@ -843,30 +861,57 @@ function FileManagerCollection:searchCollections()
         if util.stringSearch(file:gsub(".*/", ""), self.search_str, self.case_sensitive) ~= 0 then
             return true
         end
+        if not DocumentRegistry:hasProvider(file) then
+            return false
+        end
         local book_props = self.ui.bookinfo:getDocProps(file, nil, true) -- do not open the document
+        book_props.display_title = nil
         if next(book_props) ~= nil and self.ui.bookinfo:findInProps(book_props, self.search_str, self.case_sensitive) then
             return true
         end
+        if self.include_content then
+            logger.dbg("Search in book:", file)
+            local ReaderUI = require("apps/reader/readerui")
+            local provider = ReaderUI:extendProvider(file, DocumentRegistry:getProvider(file))
+            local document = DocumentRegistry:openDocument(file, provider)
+            if document then
+                local found
+                local loaded = not document.loadDocument and true or document:loadDocument()
+                if loaded then
+                    found = document:findText(self.search_str, 0, 0, not self.case_sensitive, 1, false, 1)
+                end
+                document:close()
+                if found then
+                    return true
+                end
+            end
+        end
+        return false
     end
 
+    local collections = coll_name and { coll_name = ReadCollection.coll[coll_name] } or ReadCollection.coll
     local Trapper = require("ui/trapper")
     local info = InfoMessage:new{ text = _("Searching… (tap to cancel)") }
     UIManager:show(info)
     UIManager:forceRePaint()
     local completed, files_found, files_found_order = Trapper:dismissableRunInSubprocess(function()
-        local _files_found, _files_found_order = {}, {}
-        for coll_name, coll in pairs(ReadCollection.coll) do
+        local match_cache, _files_found, _files_found_order = {}, {}, {}
+        for coll_name, coll in pairs(collections) do
             local coll_order = ReadCollection.coll_order[coll_name]
             for _, item in pairs(coll) do
-                if isFileMatch(item.file) then
-                    local order_idx = _files_found[item.file]
+                local file = item.file
+                if match_cache[file] == nil then -- a book can be included to several collections
+                    match_cache[file] = isFileMatch(file)
+                end
+                if match_cache[file] then
+                    local order_idx = _files_found[file]
                     if order_idx == nil then -- new
                         table.insert(_files_found_order, {
-                            file = item.file,
+                            file = file,
                             coll_order = coll_order,
                             item_order = item.order,
                         })
-                        _files_found[item.file] = #_files_found_order -- order_idx
+                        _files_found[file] = #_files_found_order -- order_idx
                     else -- previously found, update orders
                         if _files_found_order[order_idx].coll_order > coll_order then
                             _files_found_order[order_idx].coll_order = coll_order
@@ -892,16 +937,20 @@ function FileManagerCollection:searchCollections()
             end
             return a.item_order < b.item_order
         end)
-        local coll_name = T(_("Search results: %1"), self.search_str)
-        ReadCollection:removeCollection(coll_name, true)
-        ReadCollection:addCollection(coll_name, true)
-        ReadCollection:addItemsMultiple(files_found, { [coll_name] = true }, true)
-        ReadCollection:updateCollectionOrder(coll_name, files_found_order)
+        local new_coll_name = T(_("Search results: %1"), self.search_str)
+        if coll_name then
+            new_coll_name = new_coll_name .. " " .. T(_"(in %1)", coll_name)
+            self.coll_menu.close_callback()
+        end
+        ReadCollection:removeCollection(new_coll_name, true)
+        ReadCollection:addCollection(new_coll_name, true)
+        ReadCollection:addItemsMultiple(files_found, { [new_coll_name] = true }, true)
+        ReadCollection:updateCollectionOrder(new_coll_name, files_found_order)
         if self.coll_list ~= nil then
             UIManager:close(self.coll_list)
             self.coll_list = nil
         end
-        self:onShowColl(coll_name)
+        self:onShowColl(new_coll_name)
     end
 end
 
