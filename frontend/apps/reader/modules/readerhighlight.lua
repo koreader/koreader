@@ -2481,11 +2481,14 @@ function ReaderHighlight:onHighlightPress()
     -- With crengine, selected_text.sboxes return good coordinates.
     local pos = self.selected_text.sboxes[1]
     local margins = self.ui.document.configurable.h_page_margins[1] + self.ui.document.configurable.h_page_margins[2]
-    -- Words hyphenated due to line breaks create almost full width selection boxes, so we need to check if that is the case.
+    -- Check if we're in two-column mode
+    local two_column_mode = self.ui.document.configurable.visible_pages == 2
+    local effective_width = two_column_mode and (self.screen_w - margins) / 2 or self.screen_w - margins
+    -- Words hyphenated due to line breaks create almost-full-effective_width selection boxes, so we need to check if that is the case.
     -- We cannot precisely recognise hyphenated words under all circumstances, so a heuristic approach is used,
     -- false positives may still occur under some extreme cases, but they should be the exception rather than the rule.
     -- In any case, the punishment for false positives is much less severe (almost non-existing) than that for false negatives.
-    local is_word_hyphenated = pos.w > 0.6 * (self.screen_w - margins)
+    local is_word_hyphenated = pos.w > 0.7 * effective_width
 
     -- helper function to update cross hairs positions
     local function updatePositions(hold_x, hold_y, indicator_x, indicator_y)
