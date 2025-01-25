@@ -86,7 +86,7 @@ end
 
 --- Closes the SQLite database.
 --- This is normally done internally, but can be called manually if needed.
---- @param explicit boolean
+--- @param[opt=false] explicit boolean
 function CacheSQLite:closeDB(explicit)
     if is_connected and (self.auto_close or explicit) then
         self.db:close()
@@ -135,7 +135,6 @@ function CacheSQLite:insert(key, object)
         end
     end
 
-    -- Insert new entry using prepared statement
     local stmt = self.db:prepare([[
         INSERT OR REPLACE INTO cache (key, value, size, last_access)
         VALUES (?, ?, ?, ?);
