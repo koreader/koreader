@@ -2478,25 +2478,26 @@ function ReaderHighlight:onHighlightPress()
     if not (self.ui.rolling and self.selected_text and self.selected_text.sboxes and #self.selected_text.sboxes > 0) then
         return true
     end
-    -- With crengine, selected_text.sboxes return good coordinates.
+    -- With crengine, selected_text.sboxes have good coordinates, so we'll borrow them.
     local pos = self.selected_text.sboxes[1]
     local margins = self.ui.document.configurable.h_page_margins[1] + self.ui.document.configurable.h_page_margins[2]
     local two_column_mode = self.ui.document.configurable.visible_pages == 2
     local effective_width = two_column_mode and (self.screen_w - margins) / 2 or self.screen_w - margins
-    -- Words hyphenated due to line breaks create almost-full-effective_width selection boxes, so we need to check if that is the case.
-    -- We cannot precisely recognise hyphenated words under all circumstances, so a heuristic approach is used, goes in two steps.
-    -- First step: check if the box is huge.
-    local is_word_hyphenated = pos.w > 0.7 * effective_width
+    -- When words are split (and hyphenated) due to line breaks, they create selection boxes that are almost as wide as the
+    -- effective_width, so we need to check if that is the case. We cannot precisely recognise hyphenated words in the front
+    -- end easily, so a heuristic approach is used, it goes in two steps.
+    -- First step: check if the box is huge. We must give some room for unknown variables like publisher embedded padding or margins.
+    local is_word_split = pos.w > 0.7 * effective_width
     -- Second step: weed out false positives by comparing words at different box coordinates.
-    if is_word_hyphenated then
+    if is_word_split then
         local word_at_pos = self.ui.document:getWordFromPosition({
-            x = BD.mirroredUILayout() and (pos.x + pos.w) or pos.x,
-            y = pos.y + pos.h * 1/4
+            x = BD.mirroredUILayout() and pos.x + pos.w or pos.x,
+            y = pos.y + pos.h * 1/4 -- puts us at potential line 1 of 2
         })
-        -- If we get a word at those coordinates and it's the same word, then we're not actually a hyphenated word, just a very wide one.
+        -- If we get a word at those coordinates and it's the same word, then we're likely not a hyphenated word, just a very wide one.
         if word_at_pos and word_at_pos.word == self.selected_text.text then
-            is_word_hyphenated = false -- check mate
-        else -- we're 99% sure we actually are hyphenated, now re-select original word
+            is_word_split = false -- check mate
+        else -- We're 99% sure the word is split (and hyphenated). Re-select the original word to ensure the correct word is highlighted.
             self.ui.document:getWordFromPosition({
                 x = BD.mirroredUILayout() and pos.x + pos.w or pos.x,
                 y = pos.y + pos.h * 3/4
@@ -2512,7 +2513,7 @@ function ReaderHighlight:onHighlightPress()
         self._current_indicator_pos.y = indicator_y
     end
     -- Determine positions based on word type and layout.
-    if is_word_hyphenated then
+    if is_word_split then
         if BD.mirroredUILayout() then
             updatePositions(
                 pos.x + pos.w,          -- rightmost point
