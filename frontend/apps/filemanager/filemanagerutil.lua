@@ -52,22 +52,15 @@ function filemanagerutil.splitFileNameType(filepath)
 end
 
 function filemanagerutil.getRandomFile(dir, match_func)
-    if not dir:match("/$") then
-        dir = dir .. "/"
-    end
     local files = {}
-    local ok, iter, dir_obj = pcall(lfs.dir, dir)
-    if ok then
-        for entry in iter, dir_obj do
-            local file = dir .. entry
-            if lfs.attributes(file, "mode") == "file" and match_func(file) then
-                table.insert(files, entry)
-            end
+    util.findFiles(dir, function(file)
+        if match_func(file) then
+            table.insert(files, file)
         end
-        if #files > 0 then
-            math.randomseed(os.time())
-            return dir .. files[math.random(#files)]
-        end
+    end, false)
+    if #files > 0 then
+        math.randomseed(os.time())
+        return files[math.random(#files)]
     end
 end
 
@@ -104,12 +97,6 @@ function filemanagerutil.resetDocumentSettings(file)
     end
 end
 
--- Get a document status ("new", "reading", "complete", or "abandoned")
-function filemanagerutil.getStatus(file)
-    local book_info = BookList.getBookInfo(file)
-    return book_info.been_opened and book_info.status or "new"
-end
-
 function filemanagerutil.saveSummary(doc_settings_or_file, summary)
     -- In case the book doesn't have a sidecar file, this'll create it
     if type(doc_settings_or_file) ~= "table" then
@@ -119,17 +106,6 @@ function filemanagerutil.saveSummary(doc_settings_or_file, summary)
     doc_settings_or_file:saveSetting("summary", summary)
     doc_settings_or_file:flush()
     return doc_settings_or_file
-end
-
-function filemanagerutil.statusToString(status)
-    local status_to_text = {
-        new       = _("Unread"),
-        reading   = _("Reading"),
-        abandoned = _("On hold"),
-        complete  = _("Finished"),
-    }
-
-    return status_to_text[status]
 end
 
 -- Generate all book status file dialog buttons in a row
@@ -142,11 +118,11 @@ function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callba
     else
         file = doc_settings_or_file
         summary = {}
-        status = filemanagerutil.getStatus(file)
+        status = BookList.getBookStatus(file)
     end
     local function genStatusButton(to_status)
         return {
-            text = filemanagerutil.statusToString(to_status) .. (status == to_status and "  ✓" or ""),
+            text = BookList.getBookStatusString(to_status) .. (status == to_status and "  ✓" or ""),
             enabled = status ~= to_status,
             callback = function()
                 summary.status = to_status

@@ -921,7 +921,9 @@ function TouchMenu:onMenuSelect(item, tap_on_checkmark)
                 -- must set keep_menu_open=true if that is wished)
                 callback(self)
                 if refresh then
-                    self:updateItems()
+                    if not item.no_refresh_on_check then
+                        self:updateItems()
+                    end
                 elseif not item.keep_menu_open then
                     self:closeMenu()
                 end

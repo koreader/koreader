@@ -99,8 +99,8 @@ function Screenshoter:onScreenshot(screenshot_name, caller_callback)
             {
                 text = _("Set as wallpaper"),
                 callback = function()
-                    G_reader_settings:saveSetting("screensaver_type", "image_file")
-                    G_reader_settings:saveSetting("screensaver_image", screenshot_name)
+                    G_reader_settings:saveSetting("screensaver_type", "document_cover")
+                    G_reader_settings:saveSetting("screensaver_document_cover", screenshot_name)
                     dialog:onClose()
                 end,
             },

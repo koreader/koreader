@@ -378,7 +378,7 @@ local highlight_dialog_position = {
     {_("Top"), "top"},
     {_("Center"), "center"},
     {_("Bottom"), "bottom"},
-    {_("Gesture position"), "gesture"},
+    {_("Highlight position"), "gesture"},
 }
 
 function ReaderHighlight:addToMainMenu(menu_items)
@@ -826,7 +826,7 @@ Except when in two columns mode, where this is limited to showing only the previ
     if not Device:isTouchDevice() and Device:hasDPad() then
         table.insert(menu_items.long_press.sub_item_table, {
             text_func = function()
-                return T(_("Rate of movement in content selection: %1"), G_reader_settings:readSetting("highlight_non_touch_factor") or 4)
+                return T(_("Crosshairs speed for text selection: %1"), G_reader_settings:readSetting("highlight_non_touch_factor") or 4)
             end,
             callback = function(touchmenu_instance)
                 local curr_val = G_reader_settings:readSetting("highlight_non_touch_factor") or 4
@@ -837,8 +837,8 @@ Except when in two columns mode, where this is limited to showing only the previ
                     precision = "%.2f",
                     value_step = 0.25,
                     default_value = 4,
-                    title_text = _("Rate of movement"),
-                    info_text = _("Select a decimal value from 0.25 to 5. A smaller value results in a larger travel distance per keystroke. Font size and this value are inversely correlated, meaning a smaller font size requires a larger value and vice versa."),
+                    title_text = _("Crosshairs speed"),
+                    info_text = _("Select a decimal value from 0.25 to 5. A smaller value increases the travel distance of the crosshairs per keystroke. Font size and this value are inversely correlated, meaning a smaller font size requires a larger value and vice versa."),
                     callback = function(spin)
                         G_reader_settings:saveSetting("highlight_non_touch_factor", spin.value)
                         if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -848,7 +848,7 @@ Except when in two columns mode, where this is limited to showing only the previ
             end,
         })
         table.insert(menu_items.long_press.sub_item_table, {
-            text = _("Speed-up rate on multiple keystrokes"),
+            text = _("Increase crosshairs speed on consecutive keystrokes"),
             checked_func = function()
                 return G_reader_settings:nilOrTrue("highlight_non_touch_spedup")
             end,
@@ -862,7 +862,7 @@ Except when in two columns mode, where this is limited to showing only the previ
         table.insert(menu_items.long_press.sub_item_table, {
             text_func = function()
                 local highlight_non_touch_interval = G_reader_settings:readSetting("highlight_non_touch_interval") or 1
-                return T(N_("Speed-up rate interval: 1 second", "Speed-up rate interval: %1 seconds", highlight_non_touch_interval), highlight_non_touch_interval)
+                return T(N_("Interval for crosshairs speed increase: 1 second", "Interval for speed increase: %1 seconds", highlight_non_touch_interval), highlight_non_touch_interval)
             end,
             enabled_func = function()
                 return not self.view.highlight.disabled and G_reader_settings:nilOrTrue("highlight_non_touch_spedup")
@@ -877,7 +877,7 @@ Except when in two columns mode, where this is limited to showing only the previ
                     value_step = 0.1,
                     default_value = 1,
                     title_text = _("Time interval"),
-                    info_text = _("Select a decimal value up to 1 second. This is the period of time within which multiple keystrokes will speed-up rate of travel."),
+                    info_text = _("Select a decimal value up to 1 second. This defines the time period within which multiple keystrokes will trigger an increase in the crosshairs speed."),
                     callback = function(spin)
                         G_reader_settings:saveSetting("highlight_non_touch_interval", spin.value)
                         if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -887,10 +887,10 @@ Except when in two columns mode, where this is limited to showing only the previ
             end,
         })
 
-        -- long_press setting is under taps_and_gestures menu which is not available for non-touch devices
-        -- Clone long_press setting and change its label, making it much more meaningful for non-touch device users.
+        -- long_press settings are under the taps_and_gestures menu, which is not available for non-touch devices
+        -- Clone long_press settings, and change its label, making it much more meaningful for non-touch device users.
         menu_items.selection_text = menu_items.long_press
-        menu_items.selection_text.text = _("Selection on text")
+        menu_items.selection_text.text = _("Text selection tools")
         menu_items.long_press = nil
     end
 
