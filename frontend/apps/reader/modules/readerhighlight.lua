@@ -2481,14 +2481,28 @@ function ReaderHighlight:onHighlightPress()
     -- With crengine, selected_text.sboxes return good coordinates.
     local pos = self.selected_text.sboxes[1]
     local margins = self.ui.document.configurable.h_page_margins[1] + self.ui.document.configurable.h_page_margins[2]
-    -- Check if we're in two-column mode
     local two_column_mode = self.ui.document.configurable.visible_pages == 2
     local effective_width = two_column_mode and (self.screen_w - margins) / 2 or self.screen_w - margins
     -- Words hyphenated due to line breaks create almost-full-effective_width selection boxes, so we need to check if that is the case.
-    -- We cannot precisely recognise hyphenated words under all circumstances, so a heuristic approach is used,
-    -- false positives may still occur under some extreme cases, but they should be the exception rather than the rule.
-    -- In any case, the punishment for false positives is much less severe (almost non-existing) than that for false negatives.
+    -- We cannot precisely recognise hyphenated words under all circumstances, so a heuristic approach is used, goes in two steps.
+    -- First step: check if the box is huge.
     local is_word_hyphenated = pos.w > 0.7 * effective_width
+    -- Second step: weed out false positives by comparing words at different box coordinates.
+    if is_word_hyphenated then
+        local word_at_pos = self.ui.document:getWordFromPosition({
+            x = BD.mirroredUILayout() and (pos.x + pos.w) or pos.x,
+            y = pos.y + pos.h * 1/4
+        })
+        -- If we get a word at those coordinates and it's the same word, then we're not actually a hyphenated word, just a very wide one.
+        if word_at_pos and word_at_pos.word == self.selected_text.text then
+            is_word_hyphenated = false -- check mate
+        else -- we're 99% sure we actually are hyphenated, now re-select original word
+            self.ui.document:getWordFromPosition({
+                x = BD.mirroredUILayout() and pos.x + pos.w or pos.x,
+                y = pos.y + pos.h * 3/4
+            })
+        end
+    end
 
     -- helper function to update cross hairs positions
     local function updatePositions(hold_x, hold_y, indicator_x, indicator_y)
