@@ -537,6 +537,9 @@ function BookStatusWidget:onClose()
     end
     -- NOTE: Flash on close to avoid ghosting, since we show an image.
     UIManager:close(self, "flashpartial")
+    if self.close_callback then
+        self.close_callback()
+    end
     return true
 end
 
