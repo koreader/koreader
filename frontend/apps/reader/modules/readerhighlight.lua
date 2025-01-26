@@ -2490,14 +2490,20 @@ function ReaderHighlight:onHighlightPress()
     local is_word_split = pos.w > 0.7 * effective_width
     -- Second step: weed out false positives by comparing words at different box coordinates.
     if is_word_split then
-        local word_at_pos = self.ui.document:getWordFromPosition({
+        local word_at_pos1 = self.ui.document:getWordFromPosition({
             x = BD.mirroredUILayout() and pos.x + pos.w or pos.x,
             y = pos.y + pos.h * 1/4 -- puts us at potential line 1 of 2
         })
-        -- If we get a word at those coordinates and it's the same word, then we're likely not a hyphenated word, just a very wide one.
-        if word_at_pos and word_at_pos.word == self.selected_text.text then
+        local word_at_pos2 = self.ui.document:getWordFromPosition({
+            x = BD.mirroredUILayout() and pos.x or pos.x + pos.w,
+            y = pos.y + pos.h * 3/4 -- puts us at potential line 2 of 2
+        })
+        local does_word_at_pos1_match = word_at_pos1 and word_at_pos1.word == self.selected_text.text
+        local does_word_at_pos2_match = word_at_pos2 and word_at_pos2.word == self.selected_text.text
+        -- If all three words are found to be a match, then we're likely not a hyphenated word, just a very wide one.
+        if does_word_at_pos1_match and does_word_at_pos2_match then
             is_word_split = false -- check mate
-        else -- We're 99% sure the word is split (and hyphenated). Re-select the original word to ensure the correct word is highlighted.
+        else -- We're 99.99% sure the word is split (and hyphenated). Re-select the original word to ensure the correct word is highlighted.
             self.ui.document:getWordFromPosition({
                 x = BD.mirroredUILayout() and pos.x + pos.w or pos.x,
                 y = pos.y + pos.h * 3/4
