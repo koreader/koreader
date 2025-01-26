@@ -888,7 +888,7 @@ function FileManagerCollection:searchCollections(coll_name)
                     -- crengine saving of such cache files.
                     if not self.is_cre_cache_disabled then
                         local cre = require("document/credocument"):engineInit()
-                        cre.initCache("", 67108864, true, 40)
+                        cre.initCache("", 0, true, 40)
                         self.is_cre_cache_disabled = true
                     end
                     loaded = document:loadDocument()
