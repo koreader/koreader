@@ -878,8 +878,17 @@ function FileManagerCollection:searchCollections(coll_name)
             local provider = ReaderUI:extendProvider(file, DocumentRegistry:getProvider(file))
             local document = DocumentRegistry:openDocument(file, provider)
             if document then
-                local found
-                local loaded = not document.loadDocument and true or document:loadDocument()
+                local loaded, found
+                if document.loadDocument then -- CRE
+                    if not self.is_cre_cache_disabled then
+                        local cre = require("document/credocument"):engineInit()
+                        cre.initCache("", 0)
+                        self.is_cre_cache_disabled = true
+                    end
+                    loaded = document:loadDocument()
+                else
+                    loaded = true
+                end
                 if loaded then
                     found = document:findText(self.search_str, 0, 0, not self.case_sensitive, 1, false, 1)
                 end
