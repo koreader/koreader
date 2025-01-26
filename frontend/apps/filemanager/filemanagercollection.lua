@@ -880,6 +880,12 @@ function FileManagerCollection:searchCollections(coll_name)
             if document then
                 local loaded, found
                 if document.loadDocument then -- CRE
+                    -- We will be half-loading documents and may mess with crengine's state.
+                    -- Fortunately, this is run in a subprocess, so we won't be affecting the
+                    -- main process's crengine state or any document opened in the main
+                    -- process (we furthermore prevent this feature when one is opened).
+                    -- To avoid creating half-rendered/invalide cache files, it's best to disable
+                    -- crengine saving of such cache files.
                     if not self.is_cre_cache_disabled then
                         local cre = require("document/credocument"):engineInit()
                         cre.initCache("", 0)
