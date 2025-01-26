@@ -23,14 +23,11 @@ function ReaderStatus:addToMainMenu(menu_items)
     }
 end
 
-function ReaderStatus:onShowBookStatus(before_show_callback)
+function ReaderStatus:onShowBookStatus(close_callback)
     local status_page = BookStatusWidget:new{
         ui = self.ui,
+        close_callback = close_callback,
     }
-    if before_show_callback then
-        before_show_callback()
-    end
-    status_page.dithered = true
     UIManager:show(status_page, "full")
     return true
 end
@@ -157,8 +154,8 @@ function ReaderStatus:onEndOfBook()
     elseif settings == "book_status_file_browser" then
         -- Ditto
         UIManager:nextTick(function()
-            local before_show_callback = function() self:openFileBrowser() end
-            self:onShowBookStatus(before_show_callback)
+            local book_status_close_callback = function() self:openFileBrowser() end
+            self:onShowBookStatus(book_status_close_callback)
         end)
     elseif settings == "delete_file" then
         -- Ditto
@@ -169,12 +166,9 @@ function ReaderStatus:onEndOfBook()
 end
 
 function ReaderStatus:openFileBrowser()
-    local FileManager = require("apps/filemanager/filemanager")
     local file = self.document.file
     self.ui:onClose()
-    if not FileManager.instance then
-        self.ui:showFileManager(file)
-    end
+    self.ui:showFileManager(file)
 end
 
 function ReaderStatus:onOpenNextDocumentInFolder()
