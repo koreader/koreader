@@ -599,8 +599,7 @@ function Screensaver:show()
         local widget_settings = {
             width = Screen:getWidth(),
             height = Screen:getHeight(),
-            -- We don't want to stretch the falback image
-            scale_factor = (self.image_file == "resources/koreader.png") and 1 or (G_reader_settings:isFalse("screensaver_stretch_images") and 0 or nil),
+            scale_factor = G_reader_settings:isFalse("screensaver_stretch_images") and 0 or nil,
             stretch_limit_percentage = G_reader_settings:readSetting("screensaver_stretch_limit_percentage"),
         }
         if self.image then
