@@ -857,7 +857,7 @@ function FileManagerCollection:onShowCollectionsSearchDialog(search_str, coll_na
 end
 
 function FileManagerCollection:searchCollections(coll_name)
-    local is_cre_cache_disabled
+    local CreDocument = require("document/credocument")
     local function isFileMatch(file)
         if self.search_str == "*" then
             return true
@@ -887,10 +887,10 @@ function FileManagerCollection:searchCollections(coll_name)
                     -- process (we furthermore prevent this feature when one is opened).
                     -- To avoid creating half-rendered/invalide cache files, it's best to disable
                     -- crengine saving of such cache files.
-                    if not is_cre_cache_disabled then
-                        local cre = require("document/credocument"):engineInit()
+                    if not self.is_cre_cache_disabled then
+                        local cre = CreDocument:engineInit()
                         cre.initCache("", 0, true, 40)
-                        is_cre_cache_disabled = true
+                        self.is_cre_cache_disabled = true
                     end
                     loaded = document:loadDocument()
                 else
@@ -913,7 +913,7 @@ function FileManagerCollection:searchCollections(coll_name)
     local info = InfoMessage:new{ text = _("Searching… (tap to cancel)") }
     UIManager:show(info)
     UIManager:forceRePaint()
-    local completed, files_found, files_found_order = Trapper:dismissableRunInSubprocess(function()
+    local completed, files_found, files_found_order, is_cre_cache_disabled = Trapper:dismissableRunInSubprocess(function()
         local match_cache, _files_found, _files_found_order = {}, {}, {}
         for collection_name, coll in pairs(collections) do
             local coll_order = ReadCollection.coll_order[collection_name]
@@ -940,10 +940,10 @@ function FileManagerCollection:searchCollections(coll_name)
                 end
             end
         end
-        return _files_found, _files_found_order
+        return _files_found, _files_found_order, self.is_cre_cache_disabled
     end, info)
-    if is_cre_cache_disabled then
-        require("document/credocument").cacheInit()
+    if is_cre_cache_disabled and CreDocument.isEngineInitDone() then
+        CreDocument.cacheInit() -- restore CRE cache
     end
     if not completed then return end
     UIManager:close(info)
