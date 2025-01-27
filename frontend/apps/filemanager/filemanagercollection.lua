@@ -887,7 +887,8 @@ function FileManagerCollection:searchCollections(coll_name)
                     -- To avoid creating half-rendered/invalide cache files, it's best to disable
                     -- crengine saving of such cache files.
                     if not self.is_cre_cache_disabled then
-                        require("document/credocument").disableCache()
+                        local cre = require("document/credocument"):engineInit()
+                        cre.initCache("", 0, true, 40)
                         self.is_cre_cache_disabled = true
                     end
                     loaded = document:loadDocument()
