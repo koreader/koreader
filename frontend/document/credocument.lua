@@ -149,6 +149,10 @@ function CreDocument:engineInit()
     return cre
 end
 
+function CreDocument.isEngineInitDone()
+    return engine_initialized
+end
+
 function CreDocument:init()
     self:updateColorRendering()
     self:engineInit()
