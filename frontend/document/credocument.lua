@@ -99,11 +99,6 @@ function CreDocument.cacheInit()
         G_reader_settings:readSetting("cre_storage_size_factor") or default_cre_storage_size_factor)
 end
 
-function CreDocument.disableCache()
-    cre = cre or CreDocument:engineInit()
-    cre.initCache("", 0, true, 40)
-end
-
 function CreDocument:engineInit()
     if not engine_initialized then
         cre = require("libs/libkoreader-cre")
