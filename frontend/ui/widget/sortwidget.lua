@@ -144,6 +144,7 @@ local SortWidget = FocusManager:extend{
 }
 
 function SortWidget:init()
+    self:registerKeyEvents()
     self.layout = {}
     -- no item is selected on start
     self.marked = 0
@@ -155,13 +156,6 @@ function SortWidget:init()
         w = self.width or Screen:getWidth(),
         h = self.height or Screen:getHeight(),
     }
-
-    if Device:hasKeys() then
-        self.key_events.Close = { { Device.input.group.Back } }
-        self.key_events.NextPage = { { Device.input.group.PgFwd } }
-        self.key_events.PrevPage = { { Device.input.group.PgBack } }
-        self.key_events.ShowWidgetMenu = { { "Menu" } }
-    end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
             GestureRange:new{
@@ -206,9 +200,9 @@ function SortWidget:init()
         width = self.footer_button_width,
         callback = function()
             if self.marked > 0 then
-                self:moveItem(-1)
+                self:onMoveItem(-1)
             else
-                self:goToPage(1)
+                self:onGoToPage(1)
             end
         end,
         bordersize = 0,
@@ -220,9 +214,9 @@ function SortWidget:init()
         width = self.footer_button_width,
         callback = function()
             if self.marked > 0 then
-                self:moveItem(1)
+                self:onMoveItem(1)
             else
-                self:goToPage(self.pages)
+                self:onGoToPage(self.pages)
             end
         end,
         bordersize = 0,
@@ -256,7 +250,7 @@ function SortWidget:init()
             callback = function(input)
                 local page = tonumber(input)
                 if page and page >= 1 and page <= self.pages then
-                    self:goToPage(page)
+                    self:onGoToPage(page)
                 end
             end,
             ok_text = _("Go to page"),
@@ -352,11 +346,31 @@ function SortWidget:init()
     }
 end
 
+function SortWidget:registerKeyEvents()
+    if Device:hasKeys() then
+        self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.NextPage = { { Device.input.group.PgFwd } }
+        self.key_events.PrevPage = { { Device.input.group.PgBack } }
+        self.key_events.ShowWidgetMenu = { { "Menu" } }
+        if Device:hasScreenKB() then
+            self.key_events.MoveUp = { { "ScreenKB", "Up" }, event = "MoveItem", args = -1 }
+            self.key_events.MoveDown = { { "ScreenKB", "Down" }, event = "MoveItem", args = 1 }
+            self.key_events.FirstPage = { { "ScreenKB", Device.input.group.PgBack }, event = "GoToPage", args = 1 }
+            self.key_events.LastPage = { { "ScreenKB", Device.input.group.PgFwd }, event = "GoToPage", args = self.pages }
+        elseif Device:hasKeyboard() then
+            self.key_events.MoveUp = { { "Shift", "Up" }, event = "MoveItem", args = -1 }
+            self.key_events.MoveDown = { { "Shift", "Down" }, event = "MoveItem", args = 1 }
+            self.key_events.FirstPage = { { "Shift", Device.input.group.PgBack }, event = "GoToPage", args = 1 }
+            self.key_events.LastPage = { { "Shift", Device.input.group.PgFwd }, event = "GoToPage", args = self.pages }
+        end
+    end
+end
+
 function SortWidget:nextPage()
     if self.show_page < self.pages then
         self.show_page = self.show_page + 1
         if self.marked > 0 then -- put selected item first in the page
-            self:moveItem(self.items_per_page * (self.show_page - 1) + 1 - self.marked)
+            self:onMoveItem(self.items_per_page * (self.show_page - 1) + 1 - self.marked)
         else
             self:_populateItems()
         end
@@ -367,19 +381,20 @@ function SortWidget:prevPage()
     if self.show_page > 1 then
         self.show_page = self.show_page - 1
         if self.marked > 0 then -- put selected item first in the page
-            self:moveItem(self.items_per_page * (self.show_page - 1) + 1 - self.marked)
+            self:onMoveItem(self.items_per_page * (self.show_page - 1) + 1 - self.marked)
         else
             self:_populateItems()
         end
     end
 end
 
-function SortWidget:goToPage(page)
+function SortWidget:onGoToPage(page)
     self.show_page = page
     self:_populateItems()
 end
 
-function SortWidget:moveItem(diff)
+function SortWidget:onMoveItem(diff)
+    if self.marked == 0 then return end -- don't crash when called with key events on NT
     local move_to = self.marked + diff
     if move_to > 0 and move_to <= #self.item_table then
         -- Remember the original state to support Cancel
@@ -579,7 +594,7 @@ function SortWidget:onCancel()
         self.orig_item_table = nil
     end
 
-    self:goToPage(self.show_page)
+    self:onGoToPage(self.show_page)
     return true
 end
 
@@ -597,7 +612,7 @@ function SortWidget:onReturn()
 
     self.marked = 0
     self.orig_item_table = nil
-    self:goToPage(self.show_page)
+    self:onGoToPage(self.show_page)
     return true
 end
 
