@@ -857,6 +857,7 @@ function FileManagerCollection:onShowCollectionsSearchDialog(search_str, coll_na
 end
 
 function FileManagerCollection:searchCollections(coll_name)
+    local is_cre_cache_disabled
     local function isFileMatch(file)
         if self.search_str == "*" then
             return true
@@ -886,10 +887,10 @@ function FileManagerCollection:searchCollections(coll_name)
                     -- process (we furthermore prevent this feature when one is opened).
                     -- To avoid creating half-rendered/invalide cache files, it's best to disable
                     -- crengine saving of such cache files.
-                    if not self.is_cre_cache_disabled then
+                    if not is_cre_cache_disabled then
                         local cre = require("document/credocument"):engineInit()
                         cre.initCache("", 0, true, 40)
-                        self.is_cre_cache_disabled = true
+                        is_cre_cache_disabled = true
                     end
                     loaded = document:loadDocument()
                 else
@@ -941,6 +942,9 @@ function FileManagerCollection:searchCollections(coll_name)
         end
         return _files_found, _files_found_order
     end, info)
+    if is_cre_cache_disabled then
+        require("document/credocument").cacheInit()
+    end
     if not completed then return end
     UIManager:close(info)
 
