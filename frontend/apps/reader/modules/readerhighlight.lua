@@ -2484,23 +2484,24 @@ function ReaderHighlight:onHighlightPress()
     local two_column_mode = self.ui.document.configurable.visible_pages == 2
     local effective_width = two_column_mode and (self.screen_w - margins) / 2 or self.screen_w - margins
     -- When words are split (and hyphenated) due to line breaks, they create selection boxes that are almost as wide as the
-    -- effective_width, so we need to check if that is the case. We cannot precisely recognise hyphenated words in the front
-    -- end easily, so a heuristic approach is used, it goes in two steps.
-    -- First step: check if the box is huge. We must give some room for unknown variables like publisher embedded padding or margins.
+    -- effective_width, so we need to check if that is the case, in order to handle those cases properly. We cannot precisely
+    -- and easily recognise hyphenated words in the front end, so a heuristic approach is used, it goes in two steps.
+    -- Step one: check if our box is a 'big boy'. We must allow some room for unknown variables like publisher-embedded padding et al.
     local is_word_split = pos.w > 0.7 * effective_width
-    -- Second step: weed out false positives by comparing words at different box coordinates.
+    -- Step two: weed out false positives (i.e long words) by comparing words found at different box coordinates.
     if is_word_split then
+        -- in the case of a split (and hyphenated) word, we should get distinct words at different coordinates inside the box
         local word_at_pos1 = self.ui.document:getWordFromPosition({
             x = BD.mirroredUILayout() and pos.x + pos.w or pos.x,
-            y = pos.y + pos.h * 1/4 -- puts us at potential line 1 of 2
+            y = pos.y + pos.h * 1/4 -- puts us at a potential line 1 of 2
         })
         local word_at_pos2 = self.ui.document:getWordFromPosition({
             x = BD.mirroredUILayout() and pos.x or pos.x + pos.w,
-            y = pos.y + pos.h * 3/4 -- puts us at potential line 2 of 2
+            y = pos.y + pos.h * 3/4 -- puts us at a potential line 2 of 2
         })
         local does_word_at_pos1_match = word_at_pos1 and word_at_pos1.word == self.selected_text.text
         local does_word_at_pos2_match = word_at_pos2 and word_at_pos2.word == self.selected_text.text
-        -- If all three words are found to be a match, then we're likely not a hyphenated word, just a very wide one.
+        -- If all 3 words are found to be a match, then we’re likely not a split word, just a very long one, something worthy of floccinaucinihilipilification.
         if does_word_at_pos1_match and does_word_at_pos2_match then
             is_word_split = false -- check mate
         else -- We're 99.99% sure the word is split (and hyphenated). Re-select the original word to ensure the correct word is highlighted.
