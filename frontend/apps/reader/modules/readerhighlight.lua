@@ -2486,11 +2486,12 @@ function ReaderHighlight:onHighlightPress()
     -- When words are split (and hyphenated) due to line breaks, they create selection boxes that are almost as wide as the
     -- effective_width, so we need to check if that is the case, in order to handle those cases properly. We cannot precisely
     -- and easily recognise hyphenated words in the front end, so a heuristic approach is used, it goes in two steps.
-    -- Step one: check if our box is a 'big boy'. We must allow some room for unknown variables like publisher-embedded padding et al.
+    -- Step one: check if our box is a 'big boy'. We must allow some room for unknown variables like publisher-embedded padding etc.
     local is_word_split = pos.w > 0.7 * effective_width
     -- Step two: weed out false positives (i.e long words) by comparing words found at different box coordinates.
     if is_word_split then
-        -- in the case of a split (and hyphenated) word, we should get distinct words at different coordinates inside the box
+        -- In the case of a split (and hyphenated) word, we should get distinct words at different coordinates inside the box,
+        -- false positives on the other hand, should return the same word at different coordinates.
         local word_at_pos1 = self.ui.document:getWordFromPosition({
             x = BD.mirroredUILayout() and pos.x + pos.w or pos.x,
             y = pos.y + pos.h * 1/4 -- puts us at a potential line 1 of 2
@@ -2501,10 +2502,10 @@ function ReaderHighlight:onHighlightPress()
         })
         local does_word_at_pos1_match = word_at_pos1 and word_at_pos1.word == self.selected_text.text
         local does_word_at_pos2_match = word_at_pos2 and word_at_pos2.word == self.selected_text.text
-        -- If all 3 words are found to be a match, then we’re likely not a split word, just a very long one, something worthy of floccinaucinihilipilification.
+        -- If all 3 words are a match, then we're likely not a split word, just a very long one, something worthy of floccinaucinihilipilification.
         if does_word_at_pos1_match and does_word_at_pos2_match then
             is_word_split = false -- check mate
-        else -- We're 99.99% sure the word is split (and hyphenated). Re-select the original word to ensure the correct word is highlighted.
+        else -- We're 99.99% sure the word was split (and hyphenated). Re-select the original word to ensure the correct word is highlighted.
             self.ui.document:getWordFromPosition({
                 x = BD.mirroredUILayout() and pos.x + pos.w or pos.x,
                 y = pos.y + pos.h * 3/4
@@ -2512,7 +2513,7 @@ function ReaderHighlight:onHighlightPress()
         end
     end
 
-    -- helper function to update cross hairs positions
+    -- helper function to update crosshairs positioning and self.hold_pos
     local function updatePositions(hold_x, hold_y, indicator_x, indicator_y)
         self.hold_pos = self.view:screenToPageTransform({ x = hold_x, y = hold_y })
         UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
@@ -2521,7 +2522,7 @@ function ReaderHighlight:onHighlightPress()
     end
     -- Determine positions based on word type and layout.
     if is_word_split then
-        if BD.mirroredUILayout() then
+        if BD.mirroredUILayout() then -- RTL
             updatePositions(
                 pos.x + pos.w,          -- rightmost point
                 pos.y + pos.h * 3 / 4,  -- adjusted vertical position
