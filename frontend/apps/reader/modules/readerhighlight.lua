@@ -2486,7 +2486,7 @@ function ReaderHighlight:onHighlightPress()
     -- When words are split (and hyphenated) due to line breaks, they create selection boxes that are almost as wide as the
     -- effective_width, so we need to check if that is the case, in order to handle those cases properly. We cannot precisely
     -- and easily recognise hyphenated words in the front end, so a heuristic approach is used, it goes in two steps.
-    -- Step one: check if our box is a 'big boy'. We must allow some room for unknown variables like publisher-embedded padding etc.
+    -- Step one: check if our box is a 'big boy'. We must allow some room for unknown variables like publisher-embedded padding, etc.
     local is_word_split = pos.w > 0.7 * effective_width
     -- Step two: weed out false positives (i.e long words) by comparing words found at different box coordinates.
     if is_word_split then
@@ -2505,7 +2505,7 @@ function ReaderHighlight:onHighlightPress()
         -- If all 3 words are a match, then we're likely not a split word, just a very long one, something worthy of floccinaucinihilipilification.
         if does_word_at_pos1_match and does_word_at_pos2_match then
             is_word_split = false -- check mate
-        else -- We're 99.99% sure the word was split (and hyphenated). Re-select the original word to ensure the correct word is highlighted.
+        else -- We're reasonably sure the word was split (and hyphenated). Re-select the original word to ensure the correct word is highlighted.
             self.ui.document:getWordFromPosition({
                 x = BD.mirroredUILayout() and pos.x + pos.w or pos.x,
                 y = pos.y + pos.h * 3/4
