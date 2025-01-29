@@ -192,7 +192,7 @@ local function getUrlContent(url, cookies, timeout, maxtime, redirectCount)
         return false, code
     end
     if code >= 400 and code < 500 then
-        logger.warn("socket error:", status or code)
+        logger.warn("HTTP error:", status or code)
         return false, status or code
     end
     if headers == nil then
