@@ -1,6 +1,8 @@
---[[
-A LRU cache, based on https://github.com/starius/lua-lru
-]]--
+--[[--
+An LRU cache, based on https://github.com/starius/lua-lru
+
+@module cache
+--]]
 
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")

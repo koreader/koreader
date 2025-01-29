@@ -191,6 +191,10 @@ local function getUrlContent(url, cookies, timeout, maxtime, redirectCount)
         logger.warn("request interrupted:", status or code)
         return false, code
     end
+    if code >= 400 and code < 500 then
+        logger.warn("HTTP error:", status or code)
+        return false, status or code
+    end
     if headers == nil then
         logger.warn("No HTTP headers:", status or code or "network unreachable")
         return false, "Network or remote server unavailable"
@@ -210,7 +214,7 @@ local function getUrlContent(url, cookies, timeout, maxtime, redirectCount)
            error("EpubDownloadBackend: Don't know how to handle HTTP response status:", status or code)
         end
         logger.warn("HTTP status not okay:", status or code)
-        return false, "Remote server error or unavailable"
+        return false, status or code
     end
     if headers and headers["content-length"] then
         -- Check we really got the announced content size

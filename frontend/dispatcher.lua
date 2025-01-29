@@ -187,12 +187,13 @@ local settingsList = {
     book_status = {category="none", event="ShowBookStatus", title=_("Book status"), reader=true},
     book_info = {category="none", event="ShowBookInfo", title=_("Book information"), reader=true},
     book_description = {category="none", event="ShowBookDescription", title=_("Book description"), reader=true},
-    book_cover = {category="none", event="ShowBookCover", title=_("Book cover"), reader=true},
+    book_cover = {category="none", event="ShowBookCover", title=_("Book cover"), reader=true, separator=true},
     ----
     translate_page = {category="none", event="TranslateCurrentPage", title=_("Translate current page"), reader=true, separator=true},
     ----
-    toggle_page_change_animation = {category="none", event="TogglePageChangeAnimation", title=_("Toggle page turn animations"), reader=true, condition=Device:canDoSwipeAnimation()},
+    set_inverse_reading_order = {category="string", event="ToggleReadingOrder", title=_("Invert page turn taps and swipes"), reader=true, condition=Device:isTouchDevice(), args={true, false}, toggle={_("on"), _("off")}},
     toggle_inverse_reading_order = {category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), reader=true, condition=Device:isTouchDevice()},
+    toggle_page_change_animation = {category="none", event="TogglePageChangeAnimation", title=_("Toggle page turn animations"), reader=true, condition=Device:canDoSwipeAnimation()},
     toggle_handmade_toc = {category="none", event="ToggleHandmadeToc", title=_("Toggle custom TOC"), reader=true, condition=Device:isTouchDevice()},
     toggle_handmade_flows = {category="none", event="ToggleHandmadeFlows", title=_("Toggle custom hidden flows"), reader=true, separator=true, condition=Device:isTouchDevice()},
     ----
@@ -425,8 +426,9 @@ local dispatcher_menu_order = {
     ----
     "translate_page",
     ----
-    "toggle_page_change_animation",
+    "set_inverse_reading_order",
     "toggle_inverse_reading_order",
+    "toggle_page_change_animation",
     "toggle_handmade_toc",
     "toggle_handmade_flows",
     ----

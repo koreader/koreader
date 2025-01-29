@@ -27,7 +27,10 @@ function BookList.setBookInfoCache(file, doc_settings)
         percent_finished = doc_settings:readSetting("percent_finished"),
     }
     local summary = doc_settings:readSetting("summary")
-    book_info.status = summary and summary.status or "reading"
+    book_info.status = summary and summary.status
+    if book_info.status == nil or BookList.getBookStatusString(book_info.status) == nil then
+        book_info.status = "reading"
+    end
     local pages = doc_settings:readSetting("doc_pages")
     if pages == nil then
         local stats = doc_settings:readSetting("stats")

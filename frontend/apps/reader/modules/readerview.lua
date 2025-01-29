@@ -988,7 +988,11 @@ function ReaderView:onReadSettings(config)
     end
     self:resetLayout()
     self.page_scroll = (config:readSetting("kopt_page_scroll") or self.document.configurable.page_scroll) == 1
-    self.inverse_reading_order = config:isTrue("inverse_reading_order") or G_reader_settings:isTrue("inverse_reading_order")
+    if config:has("inverse_reading_order") then
+        self.inverse_reading_order = config:isTrue("inverse_reading_order")
+    else
+        self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
+    end
     self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or G_defaults:readSetting("DSHOWOVERLAP")
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
     self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height")
@@ -1279,11 +1283,16 @@ function ReaderView:setupTouchZones()
     (self.ui.rolling or self.ui.paging):setupTouchZones()
 end
 
-function ReaderView:onToggleReadingOrder()
-    self.inverse_reading_order = not self.inverse_reading_order
-    self:setupTouchZones()
-    local is_rtl = self.inverse_reading_order ~= BD.mirroredUILayout() -- mirrored reading
-    Notification:notify(is_rtl and _("RTL page turning.") or _("LTR page turning."))
+function ReaderView:onToggleReadingOrder(toggle)
+    if toggle == nil then
+        toggle = not self.inverse_reading_order
+    end
+    if self.inverse_reading_order ~= toggle then
+        self.inverse_reading_order = toggle
+        self:setupTouchZones()
+        local is_rtl = self.inverse_reading_order ~= BD.mirroredUILayout() -- mirrored reading
+        Notification:notify(is_rtl and _("RTL page turning.") or _("LTR page turning."))
+    end
     return true
 end
 
