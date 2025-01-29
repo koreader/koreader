@@ -193,21 +193,7 @@ local function getUrlContent(url, cookies, timeout, maxtime, redirectCount)
     end
     if code >= 400 and code < 500 then
         logger.warn("socket error:", status or code)
-        if code == 400 then
-            return false, "Bad request - invalid URL or parameters"
-        elseif code == 401 then
-            return false, "Unauthorized - authentication required"
-        elseif code == 403 then
-            return false, "Access forbidden by server"
-        elseif code == 404 then
-            return false, "Resource not found at this URL"
-        elseif code == 408 then
-            return false, "Request timed out"
-        elseif code == 429 then
-            return false, "Too many requests - please try again later"
-        else
-            return false, string.format("HTTP error %d occurred", code)
-        end
+        return false, status or code
     end
     if headers == nil then
         logger.warn("No HTTP headers:", status or code or "network unreachable")
@@ -228,7 +214,7 @@ local function getUrlContent(url, cookies, timeout, maxtime, redirectCount)
            error("EpubDownloadBackend: Don't know how to handle HTTP response status:", status or code)
         end
         logger.warn("HTTP status not okay:", status or code)
-        return false, "Remote server error or unavailable"
+        return false, status or code
     end
     if headers and headers["content-length"] then
         -- Check we really got the announced content size
