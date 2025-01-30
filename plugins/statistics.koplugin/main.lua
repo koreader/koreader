@@ -95,6 +95,8 @@ ReaderStatistics.default_settings = {
 
 function ReaderStatistics:onDispatcherRegisterActions()
     Dispatcher:registerAction("toggle_statistics", {category="none", event="ToggleStatistics", title=_("Toggle statistics"), general=true})
+    Dispatcher:registerAction("reading_progress", {category="none", event="ShowReaderProgress", title=_("Reading progress"), general=true})
+    Dispatcher:registerAction("stats_time_range", {category="none", event="ShowTimeRange", title=_("Statistics time range"), general=true})
     Dispatcher:registerAction("stats_calendar_view", {category="none", event="ShowCalendarView", title=_("Statistics calendar view"), general=true})
     Dispatcher:registerAction("stats_calendar_day_view", {category="none", event="ShowCalendarDayView", title=_("Statistics today's timeline"), general=true})
     Dispatcher:registerAction("stats_sync", {category="none", event="SyncBookStats", title=_("Synchronize book statistics"), general=true, separator=true})
@@ -1369,7 +1371,7 @@ Time is in hours and minutes.]]),
                 text = _("Time range"),
                 keep_menu_open = true,
                 callback = function()
-                    self:statMenu()
+                    self:onShowTimeRange()
                 end
             },
             {
@@ -1390,7 +1392,7 @@ Time is in hours and minutes.]]),
     }
 end
 
-function ReaderStatistics:statMenu()
+function ReaderStatistics:onShowTimeRange()
     self.kv = KeyValuePage:new{
         title = _("Time range statistics"),
         return_button = true,
