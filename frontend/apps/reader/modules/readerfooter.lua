@@ -1388,6 +1388,9 @@ function ReaderFooter:addToMainMenu(menu_items)
                     for _, m in ipairs(self.mode_index) do
                         if self.settings[m] then
                             enabled_count = enabled_count + 1
+                            if enabled_count > 1 then
+                                break
+                            end
                         end
                     end
                     return enabled_count > 1
