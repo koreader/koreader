@@ -688,7 +688,9 @@ function Dispatcher._addToOrder(location, settings, item)
     elseif count > 2 then
         local order = util.tableGetValue(actions, "settings", "order")
         if order then
-            table.insert(location[settings].settings.order, item)
+            if not util.arrayContains(order, item) then
+                table.insert(location[settings].settings.order, item)
+            end
         else -- old unordered actions
             util.tableSetValue(actions, {}, "settings", "order")
             for k in pairs(actions) do
