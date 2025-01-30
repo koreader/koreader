@@ -1149,7 +1149,7 @@ function ReaderView:onSetViewMode(new_mode)
 end
 
 function ReaderView:resetHighlightBoxesCache(items)
-    if items == nil then
+    if type(items) ~= "table" then
         self.highlight.page_boxes = {}
     else
         for _, item in ipairs(items) do
