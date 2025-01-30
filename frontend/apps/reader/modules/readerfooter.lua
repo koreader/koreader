@@ -1381,10 +1381,24 @@ function ReaderFooter:addToMainMenu(menu_items)
             {
                 text = _("Arrange items in status bar"),
                 separator = true,
+                keep_menu_open = true,
+                enabled_func = function()
+                    -- count enabled items
+                    local enabled_count = 0
+                    for _, m in ipairs(self.mode_index) do
+                        if self.settings[m] then
+                            enabled_count = enabled_count + 1
+                        end
+                    end
+                    return enabled_count > 1
+                end,
                 callback = function()
                     local item_table = {}
                     for i=1, #self.mode_index do
-                        table.insert(item_table, {text = self:textOptionTitles(self.mode_index[i]), label = self.mode_index[i]})
+                        -- add only enabled items to the sort list
+                        if self.settings[self.mode_index[i]] then
+                            table.insert(item_table, {text = self:textOptionTitles(self.mode_index[i]), label = self.mode_index[i]})
+                        end
                     end
                     local SortWidget = require("ui/widget/sortwidget")
                     local sort_item
@@ -1392,9 +1406,18 @@ function ReaderFooter:addToMainMenu(menu_items)
                         title = _("Arrange items"),
                         item_table = item_table,
                         callback = function()
+                            -- update mode_index with only enabled items (in their new order)
+                            local new_mode_index = {}
                             for i=1, #sort_item.item_table do
-                                self.mode_index[i] = sort_item.item_table[i].label
+                                table.insert(new_mode_index, sort_item.item_table[i].label)
                             end
+                            -- append disabled items to the end of the sort list (in their original order)
+                            for _, m in ipairs(self.mode_index) do
+                                if not self.settings[m] then
+                                    table.insert(new_mode_index, m)
+                                end
+                            end
+                            self.mode_index = new_mode_index
                             self.settings.order = self.mode_index
                             self:updateFooterTextGenerator()
                             self:onUpdateFooter()
