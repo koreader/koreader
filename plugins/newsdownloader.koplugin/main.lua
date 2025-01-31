@@ -1,7 +1,5 @@
 local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
---local DownloadBackend = require("internaldownloadbackend")
---local DownloadBackend = require("luahttpdownloadbackend")
 local DownloadBackend = require("epubdownloadbackend")
 local ReadHistory = require("readhistory")
 local FFIUtil = require("ffi/util")
