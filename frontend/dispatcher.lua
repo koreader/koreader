@@ -276,7 +276,7 @@ local settingsList = {
     kopt_defect_size = {category="string", paging=true}, -- not shown in the bottom menu
     kopt_max_columns = {category="configurable", paging=true},
     kopt_auto_straighten = {category="absolutenumber", paging=true},
-    
+
     settings = nil, -- reserved for per instance dispatcher settings
 }
 
