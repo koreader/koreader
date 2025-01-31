@@ -375,10 +375,20 @@ function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_f
                 headers = headers,
                 sink = ltn12.sink.table(response_body)
             })
-            ok = (code == 304)
             logger.dbg("NewsDownloader: If-Modified-Since response", code, response_headers)
-            if ok then
+            if code == 304 then
+                ok = true
                 response = cached_response.content
+                -- Update cached headers.
+                cached_response.headers = response_headers
+                cache:insert(url, cached_response)
+            elseif code == 200 then
+                ok = true
+                response = table.concat(response_body)
+                -- Update cached response.
+                cached_response.headers = response_headers
+                cached_response.content = response
+                cache:insert(url, cached_response)
             end
         end
     end
