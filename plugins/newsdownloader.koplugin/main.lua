@@ -354,41 +354,67 @@ function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_f
     end
 
     if cached_response then
-        logger.dbg("NewsDownloader: Using cached response for ", url)
+        logger.dbg("NewsDownloader: Checking cache validity for:", url)
         local headers_cached = cached_response.headers
         logger.dbg("NewsDownloader: Cached response headers", headers_cached)
 
-        local etag = headers_cached["etag"]
-        local last_modified = headers_cached["last-modified"]
-        if etag or last_modified then
-            logger.dbg("NewsDownloader: requesting with If-Modified-Since:", last_modified, "If-None-Match:", etag, url)
-            local response_body = {}
-            local headers = {
-                ["If-Modified-Since"] = last_modified,
-                ["If-None-Match"] = etag,
-            }
-            if cookies then
-                headers["Cookie"] = cookies
+        local cache_control = headers_cached["cache-control"]
+        local retry_after = headers_cached["retry-after"]
+        if (cache_control and cache_control:find("max%-age")) or retry_after then
+            local max_age = cache_control and tonumber(cache_control:match("max%-age=(%d+)")) or 0
+            local retry = retry_after and tonumber(retry_after) or 0
+            local timeout = math.min(43200, math.max(max_age, retry)) -- Limit to 12 hours.
+            if timeout then
+                local last_access = headers_cached["date"]
+                if last_access then
+                    logger.dbg("NewsDownloader: Checking cache validity for:", url, "last_access", last_access, "timeout", timeout)
+                    local last_access_time = dateparser.parse(last_access)
+                    if last_access_time then
+                        local now = os.time()
+                        local diff = now - last_access_time
+                        if diff < timeout then
+                            logger.dbg("NewsDownloader: Using cached response for:", url, "max-age:", max_age, "retry-after:", retry_after, "timeout:", timeout, "diff:", diff)
+                            response = cached_response.content
+                            ok = true
+                        end
+                    end
+                end
             end
-            local code, response_headers = socket.skip(1, http.request{
-                url = url,
-                headers = headers,
-                sink = ltn12.sink.table(response_body)
-            })
-            logger.dbg("NewsDownloader: If-Modified-Since response", code, response_headers)
-            if code == 304 then
-                ok = true
-                response = cached_response.content
-                -- Update cached headers.
-                cached_response.headers = response_headers
-                cache:insert(url, cached_response)
-            elseif code == 200 then
-                ok = true
-                response = table.concat(response_body)
-                -- Update cached response.
-                cached_response.headers = response_headers
-                cached_response.content = response
-                cache:insert(url, cached_response)
+        end
+
+        if not ok then
+            local etag = headers_cached["etag"]
+            local last_modified = headers_cached["last-modified"]
+            if etag or last_modified then
+                logger.dbg("NewsDownloader: requesting with If-Modified-Since:", last_modified, "If-None-Match:", etag, url)
+                local response_body = {}
+                local headers = {
+                    ["If-Modified-Since"] = last_modified,
+                    ["If-None-Match"] = etag,
+                }
+                if cookies then
+                    headers["Cookie"] = cookies
+                end
+                local code, response_headers = socket.skip(1, http.request{
+                    url = url,
+                    headers = headers,
+                    sink = ltn12.sink.table(response_body)
+                })
+                logger.dbg("NewsDownloader: If-Modified-Since/If-None-Match response", code, response_headers)
+                if code == 304 then
+                    ok = true
+                    response = cached_response.content
+                    -- Update cached headers.
+                    cached_response.headers = response_headers
+                    cache:insert(url, cached_response)
+                elseif code == 200 then
+                    ok = true
+                    response = table.concat(response_body)
+                    -- Update cached response.
+                    cached_response.headers = response_headers
+                    cached_response.content = response
+                    cache:insert(url, cached_response)
+                end
             end
         end
     end
