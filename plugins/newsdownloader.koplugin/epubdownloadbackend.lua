@@ -178,12 +178,12 @@ local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache)
 
     socketutil:reset_timeout()
     local content = table.concat(sink) -- empty or content accumulated till now
-    logger.dbg("After http.request")
-    logger.dbg("type(code):", type(code))
-    logger.dbg("code:", code)
-    logger.dbg("headers:", headers)
-    logger.dbg("status:", status)
-    logger.dbg("#content:", #content)
+    logger.dbg(
+        "getUrlContent: after http.request",
+        "type(code):", type(code), "code:", code, "headers:", headers,
+        "status:", status,
+        "#content:", #content
+    )
 
     if code == socketutil.TIMEOUT_CODE or
        code == socketutil.SSL_HANDSHAKE_CODE or
@@ -243,14 +243,17 @@ function EpubDownloadBackend:getConnectionCookies(url, credentials)
     logger.dbg("request:", request, ", body: ", body)
     local code, headers, status = socket.skip(1, http.request(request))
 
-    logger.dbg("code:", code)
-    logger.dbg("headers:", headers)
-    logger.dbg("status:", status)
+    logger.dbg(
+        "getConnectionCookies: after http.request",
+        "code:", code,
+        "headers:", headers,
+        "status:", status
+    )
 
     local cookies = {}
     local to_parse = headers["set-cookie"]
     split_set_cookie(to_parse, cookies)
-    logger.dbg("Cookies: ", cookies)
+    logger.dbg("getConnectionCookies: cookies:", cookies)
 
     return cookies
 end
@@ -289,7 +292,7 @@ function EpubDownloadBackend:loadPage(url, cookies)
         local timeout, maxtime = 10, 60
         success, content = getUrlContent(url, cookies, timeout, maxtime)
     end
-    logger.dbg("success:", success, "type(content):", type(content), "content:", content:sub(1, 500), "...")
+    logger.dbg("success:", success, "type(content):", type(content), "content:", type(content) == "string" and content:sub(1, 500), "...")
     if not success then
         error(content)
     else
