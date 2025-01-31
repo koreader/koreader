@@ -168,33 +168,19 @@ end
 -- up the food chain, so to speak
 --
 function FeedView:flattenArray(base_array, source_array)
-    for key, value in pairs(source_array) do
-        if value[2] == nil then
+    for _, value in pairs(source_array) do
+        if not value[2] then
             -- If the value is empty, then it's probably supposed to be a line
-            table.insert(
-                base_array,
-                "---"
-            )
+            table.insert(base_array, "---")
         else
-            if value["callback"] then
-                table.insert(
-                    base_array,
-                    {
-                        value[1], value[2], callback = value["callback"]
-                    }
-                )
-            else
-                table.insert(
-                    base_array,
-                    {
-                        value[1], value[2]
-                    }
-                )
-            end
+            table.insert(base_array, {
+                value[1],
+                value[2],
+                callback = value.callback,
+            })
         end
     end
     return base_array
 end
-
 
 return FeedView
