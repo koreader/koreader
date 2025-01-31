@@ -1,3 +1,5 @@
+local CacheSQLite = require("cachesqlite")
+local DataStorage = require("datastorage")
 local Version = require("version")
 local ffiutil = require("ffi/util")
 local http = require("socket.http")
@@ -21,6 +23,12 @@ local EpubDownloadBackend = {
    dismissed_error_code = "Interrupted by user",
 }
 local max_redirects = 5; --prevent infinite redirects
+
+local FeedCache = CacheSQLite:new{
+    slots = 500,
+    db_path = DataStorage:getDataDir() .. "/cache/newsdownloader.sqlite",
+    size = 1024 * 1024 * 10, -- 10MB
+}
 
 -- filter HTML using CSS selector
 local function filter(text, element)
@@ -150,8 +158,8 @@ local function build_cookies(cookies)
 end
 
 -- Get URL content
-local function getUrlContent(url, cookies, timeout, maxtime, redirectCount)
-    logger.dbg("getUrlContent(", url, ",", cookies, ", ", timeout, ",", maxtime, ",", redirectCount, ")")
+local function getUrlContent(url, cookies, timeout, maxtime, redirectCount, add_to_cache)
+    logger.dbg("getUrlContent(", url, ",", cookies, ", ", timeout, ",", maxtime, ",", redirectCount, ",", add_to_cache, ")")
     if not redirectCount then
         redirectCount = 0
     elseif redirectCount == max_redirects then
@@ -209,7 +217,7 @@ local function getUrlContent(url, cookies, timeout, maxtime, redirectCount)
              redirected_url = socket_url.build(parsed_redirect_location)
            end
            logger.dbg("getUrlContent: Redirecting to url: ", redirected_url)
-           return getUrlContent(redirected_url, timeout, maxtime, redirectCount + 1)
+           return getUrlContent(redirected_url, timeout, maxtime, redirectCount + 1, add_to_cache)
         else
            error("EpubDownloadBackend: Don't know how to handle HTTP response status:", status or code)
         end
@@ -223,8 +231,21 @@ local function getUrlContent(url, cookies, timeout, maxtime, redirectCount)
             return false, "Incomplete content received"
         end
     end
+
+    if add_to_cache then
+        logger.dbg("Adding to cache", url)
+        FeedCache:insert(url, {
+            headers = headers,
+            content = content,
+        })
+    end
+
     logger.dbg("Returning content ok")
     return true, content
+end
+
+function EpubDownloadBackend:getCache()
+    return FeedCache
 end
 
 function EpubDownloadBackend:getConnectionCookies(url, credentials)
@@ -258,9 +279,9 @@ function EpubDownloadBackend:getConnectionCookies(url, credentials)
     return cookies
 end
 
-function EpubDownloadBackend:getResponseAsString(url, cookies)
+function EpubDownloadBackend:getResponseAsString(url, cookies, add_to_cache)
     logger.dbg("EpubDownloadBackend:getResponseAsString(", url, ")")
-    local success, content = getUrlContent(url, cookies)
+    local success, content = getUrlContent(url, cookies, nil, nil, nil, add_to_cache)
     if (success) then
         return content
     else
