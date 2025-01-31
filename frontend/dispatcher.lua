@@ -254,7 +254,7 @@ local settingsList = {
     kopt_zoom_overlap_v = {category="absolutenumber", paging=true},
     kopt_zoom_mode_type = {category="string", paging=true},
     kopt_zoom_mode_genus = {category="string", paging=true},
-    kopt_zoom_range_number = {category="string", paging=true, title=_("Number of columns/rows to split the page")},
+    kopt_zoom_range_number = {category="string", paging=true, title=_("Number of columns/rows to split page")},
     kopt_zoom_factor = {category="string", paging=true},
     kopt_zoom_direction = {category="string", paging=true},
     kopt_page_scroll = {category="string", paging=true},
