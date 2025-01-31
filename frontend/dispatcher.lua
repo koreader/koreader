@@ -253,8 +253,9 @@ local settingsList = {
     kopt_zoom_overlap_h = {category="absolutenumber", paging=true},
     kopt_zoom_overlap_v = {category="absolutenumber", paging=true},
     kopt_zoom_mode_type = {category="string", paging=true},
-    kopt_zoom_factor = {category="string", paging=true},
     kopt_zoom_mode_genus = {category="string", paging=true},
+    kopt_zoom_range_number = {category="string", paging=true, title=_("Number of columns/rows to split the page")},
+    kopt_zoom_factor = {category="string", paging=true},
     kopt_zoom_direction = {category="string", paging=true},
     kopt_page_scroll = {category="string", paging=true},
     kopt_page_gap_height = {category="string", paging=true},
@@ -275,6 +276,8 @@ local settingsList = {
     kopt_defect_size = {category="string", paging=true}, -- not shown in the bottom menu
     kopt_max_columns = {category="configurable", paging=true},
     kopt_auto_straighten = {category="absolutenumber", paging=true},
+    
+    settings = nil, -- reserved for per instance dispatcher settings
 }
 
 -- array for item order in menu
@@ -479,8 +482,9 @@ local dispatcher_menu_order = {
     "kopt_zoom_overlap_h",
     "kopt_zoom_overlap_v",
     "kopt_zoom_mode_type",
-    "kopt_zoom_factor",
     "kopt_zoom_mode_genus",
+    "kopt_zoom_range_number",
+    "kopt_zoom_factor",
     "kopt_zoom_direction",
     "kopt_page_scroll",
     "kopt_page_gap_height",
