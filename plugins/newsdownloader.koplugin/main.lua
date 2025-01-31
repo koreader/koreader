@@ -358,12 +358,14 @@ function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_f
         local headers_cached = cached_response.headers
         logger.dbg("NewsDownloader: Cached response headers", headers_cached)
 
+        local etag = headers_cached["etag"]
         local last_modified = headers_cached["last-modified"]
-        if last_modified then
-            logger.dbg("NewsDownloader: sending If-Modified-Since", last_modified, url)
+        if etag or last_modified then
+            logger.dbg("NewsDownloader: requesting with If-Modified-Since:", last_modified, "If-None-Match:", etag, url)
             local response_body = {}
             local headers = {
-                ["If-Modified-Since"] = last_modified
+                ["If-Modified-Since"] = last_modified,
+                ["If-None-Match"] = etag,
             }
             if cookies then
                 headers["Cookie"] = cookies
