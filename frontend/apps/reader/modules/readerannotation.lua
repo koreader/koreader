@@ -420,7 +420,10 @@ function ReaderAnnotation:addItem(item)
 end
 
 function ReaderAnnotation:onAnnotationsModified(items)
-    items[1].datetime_updated = os.date("%Y-%m-%d %H:%M:%S")
+    local now = os.date("%Y-%m-%d %H:%M:%S")
+    if items[1].datetime ~= now then
+        items[1].datetime_updated = now
+    end
 end
 
 -- info
@@ -429,7 +432,7 @@ function ReaderAnnotation:getPageRef(pn_or_xp, pn)
     -- same as ReaderBookmark:getBookmarkPageString(page)
     -- but gets pn (page number already calculated in the caller)
     -- and returns nil if there are no reference pages and hidden flows
-    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+    if self.ui.pagemap:wantsPageLabels() then
         return self.ui.pagemap:getXPointerPageLabel(pn_or_xp, true)
     end
     if self.document:hasHiddenFlows() then
