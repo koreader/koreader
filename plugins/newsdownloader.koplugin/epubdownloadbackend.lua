@@ -328,6 +328,26 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     local cancelled = false
     local page_htmltitle = html:match([[<title[^>]*>(.-)</title>]])
     logger.dbg("page_htmltitle is ", page_htmltitle)
+
+    -- Make sure self-closing tags like <br> and <hr> are closed like <br/>.
+    html = html:gsub("<(%w+)(.-)>", function(tag, attrs)
+        local self_closing_tags = {
+            br = true, hr = true, img = true,
+            input = true, meta = true, link = true,
+            area = true, base = true, col = true,
+            embed = true, param = true, source = true,
+            track = true, wbr = true
+        }
+        if self_closing_tags[tag] then
+            return string.format("<%s%s/>", tag, attrs)
+        else
+            return string.format("<%s%s>", tag, attrs)
+        end
+    end)
+
+    -- Remove all script tags to save a few bytes.
+    html = html:gsub("<script.->.-</script>", "")
+
 --    local sections = html.sections -- Wikipedia provided TOC
     local bookid = "bookid_placeholder" --string.format("wikipedia_%s_%s_%s", lang, phtml.pageid, phtml.revid)
     -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
