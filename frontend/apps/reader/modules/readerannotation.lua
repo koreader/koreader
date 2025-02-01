@@ -420,9 +420,8 @@ function ReaderAnnotation:addItem(item)
 end
 
 function ReaderAnnotation:onAnnotationsModified(items)
-    local now = os.date("%Y-%m-%d %H:%M:%S")
-    if items[1].datetime ~= now then
-        items[1].datetime_updated = now
+    if items.update_datetime ~= false then
+        items[1].datetime_updated = os.date("%Y-%m-%d %H:%M:%S")
     end
 end
 
