@@ -102,18 +102,18 @@ function BookList.getBookStatus(file)
     return book_info.been_opened and book_info.status or "new"
 end
 
+local status_strings = {
+    new       = _("New"),      -- no sidecar file
+    reading   = _("Reading"),  -- doc_settings.summary.status
+    abandoned = _("On hold"),  -- doc_settings.summary.status
+    complete  = _("Finished"), -- doc_settings.summary.status
+    deleted   = _("Deleted"),
+    all       = _("All"),
+}
+
 function BookList.getBookStatusString(status, with_prefix)
-    if status then
-        local status_string = ({
-            new       = _("New"),      -- no sidecar file
-            reading   = _("Reading"),  -- doc_settings.summary.status
-            abandoned = _("On hold"),  -- doc_settings.summary.status
-            complete  = _("Finished"), -- doc_settings.summary.status
-            deleted   = _("Deleted"),
-            all       = _("All"),
-        })[status]
-        return with_prefix and T(_("Status: %1"), status_string:lower()) or status_string
-    end
+    local status_string = status and status_strings[status]
+    return status_string and (with_prefix and T(_("Status: %1"), status_string:lower()) or status_string)
 end
 
 return BookList
