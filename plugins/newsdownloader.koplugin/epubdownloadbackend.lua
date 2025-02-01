@@ -331,7 +331,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
 
     -- Rejigger HTML into XHTML to avoid unclosed elements. See <https://github.com/koreader/crengine/pull/370#issuecomment-910156921>.
     local cre = require("libs/libkoreader-cre")
-    html = cre.getBalancedHTML(html, 0x50)
+    html = cre.getBalancedHTML(html, 0x0)
 
     -- Remove all script tags to save a few bytes.
     html = html:gsub("<script.->.-</script>", "")
