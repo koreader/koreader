@@ -432,7 +432,7 @@ function ReaderAnnotation:getPageRef(pn_or_xp, pn)
     -- same as ReaderBookmark:getBookmarkPageString(page)
     -- but gets pn (page number already calculated in the caller)
     -- and returns nil if there are no reference pages and hidden flows
-    if self.ui.pagemap:wantsPageLabels() then
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
         return self.ui.pagemap:getXPointerPageLabel(pn_or_xp, true)
     end
     if self.document:hasHiddenFlows() then
