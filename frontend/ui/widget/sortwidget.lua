@@ -348,7 +348,7 @@ end
 
 function SortWidget:registerKeyEvents()
     if Device:hasKeys() then
-        self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.CloseNT = { { Device.input.group.Back } }
         self.key_events.NextPage = { { Device.input.group.PgFwd } }
         self.key_events.PrevPage = { { Device.input.group.PgBack } }
         self.key_events.ShowWidgetMenu = { { "Menu" } }
@@ -578,6 +578,14 @@ function SortWidget:onClose()
     UIManager:close(self)
     UIManager:setDirty(nil, "ui")
     return true
+end
+
+function SortWidget:onCloseNT()
+    if self.marked > 0 then
+        self:onCancel()
+    else
+        self:onClose()
+    end
 end
 
 function SortWidget:onCancel()
