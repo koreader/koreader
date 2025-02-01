@@ -48,10 +48,6 @@ local NewsDownloader = WidgetContainer:extend{
 local FEED_TYPE_RSS = "rss"
 local FEED_TYPE_ATOM = "atom"
 
---local initialized = false
---local feed_config_file_name = "feed_config.lua"
---local news_downloader_config_file = "news_downloader_settings.lua
-
 -- If a title looks like <title>blabla</title> it'll just be feed.title.
 -- If a title looks like <title attr="alb">blabla</title> then we get a table
 -- where [1] is the title string and the attributes are also available.
@@ -116,9 +112,8 @@ function NewsDownloader:getSubMenuItems()
             callback = function()
                 local Trapper = require("ui/trapper")
                 Trapper:wrap(function()
-                        self:viewFeedList()
+                    self:viewFeedList()
                 end)
-
             end,
         },
         {
@@ -439,13 +434,10 @@ function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_f
         else
             error_message = _("(Reason: Error during feed deserialization)")
         end
-        table.insert(
-            unsupported_feeds_urls,
-            {
-                url,
-                error_message
-            }
-        )
+        table.insert(unsupported_feeds_urls, {
+            url,
+            error_message,
+        })
         return
     end
 
@@ -523,13 +515,10 @@ function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_f
         elseif not is_atom then
             error_message = _("(Reason: Couldn't process Atom)")
         end
-        table.insert(
-            unsupported_feeds_urls,
-            {
-                url,
-                error_message
-            }
-        )
+        table.insert(unsupported_feeds_urls, {
+            url,
+            error_message
+        })
     end
 end
 
@@ -548,7 +537,7 @@ function NewsDownloader:deserializeXMLString(xml_str)
 
     -- Instantiate the object that parses the XML to a Lua table.
     local ok = pcall(function()
-            libxml.xmlParser(xmlhandler):parse(xml_str)
+        libxml.xmlParser(xmlhandler):parse(xml_str)
     end)
     if not ok then return end
     return xmlhandler.root
@@ -645,7 +634,6 @@ local function parseDate(dateTime)
     return dateTime
 end
 
--- This appears to be used by Atom feeds in processFeed.
 local function getTitleWithDate(feed)
     local title = util.getSafeFilename(getFeedTitle(feed.title))
     if feed.updated then
@@ -739,7 +727,7 @@ function NewsDownloader:removeNewsButKeepFeedConfig()
         end
     end
     UIManager:show(InfoMessage:new{
-                       text = _("All downloaded news feed items deleted.")
+        text = _("All downloaded news feed items deleted.")
     })
 end
 
@@ -756,13 +744,12 @@ function NewsDownloader:setCustomDownloadDirectory()
             self.initialized = false
             self:lazyInitialization()
         end,
-                                 }:chooseDir()
+    }:chooseDir()
 end
 
 function NewsDownloader:viewFeedList()
     local UI = require("ui/trapper")
     UI:info(_("Loading news feed list…"))
-    -- Protected call to see if feed config path returns a file that can be opened.
     local ok, feed_config = pcall(dofile, self.feed_config_path)
     if not ok or not feed_config then
         local change_feed_config = UI:confirm(
@@ -1135,9 +1122,12 @@ function NewsDownloader:saveConfig(config)
 end
 
 function NewsDownloader:changeFeedConfig()
+    local config = ""
     local feed_config_file = io.open(self.feed_config_path, "rb")
-    local config = feed_config_file:read("*all")
-    feed_config_file:close()
+    if feed_config_file then
+        config = feed_config_file:read("*all")
+        feed_config_file:close()
+    end
     local config_editor
     logger.info("NewsDownloader: opening configuration file", self.feed_config_path)
     config_editor = InputDialog:new{
@@ -1157,9 +1147,9 @@ function NewsDownloader:changeFeedConfig()
             if content and #content > 0 then
                 local parse_error = util.checkLuaSyntax(content)
                 if not parse_error then
-                    local syntax_okay, syntax_error = pcall(loadstring(content))
-                    if syntax_okay then
-                        feed_config_file = io.open(self.feed_config_path, "w")
+                    local syntax_okay, syntax_error = loadstring(content)
+                    feed_config_file = io.open(self.feed_config_path, "w")
+                    if syntax_okay and feed_config_file then
                         feed_config_file:write(content)
                         feed_config_file:close()
                         return true, _("Configuration saved")
@@ -1190,7 +1180,8 @@ end
 
 function NewsDownloader:onCloseDocument()
     local document_full_path = self.ui.document.file
-    if  document_full_path and self.download_dir and self.download_dir == string.sub(document_full_path, 1, string.len(self.download_dir)) then
+    -- NOTE: this is partially broken by the lazy initialization shenanigans, in case someone considers this a feature. self.download_dir can be nil.
+    if document_full_path and self.download_dir and self.download_dir == string.sub(document_full_path, 1, #self.download_dir) then
         logger.dbg("NewsDownloader: document_full_path:", document_full_path)
         logger.dbg("NewsDownloader: self.download_dir:", self.download_dir)
         logger.dbg("NewsDownloader: removing NewsDownloader file from history.")
@@ -1198,40 +1189,6 @@ function NewsDownloader:onCloseDocument()
         local doc_dir = util.splitFilePathName(document_full_path)
         self.ui:setLastDirForFileBrowser(doc_dir)
     end
-end
-
---
--- KeyValuePage doesn't like to get a table with sub tables.
--- This function flattens an array, moving all nested tables
--- up the food chain, so to speak
---
-function NewsDownloader:flattenArray(base_array, source_array)
-    for key, value in pairs(source_array) do
-        if value[2] == nil then
-            -- If the value is empty, then it's probably supposed to be a line
-            table.insert(
-                base_array,
-                "---"
-            )
-        else
-            if value["callback"] then
-                table.insert(
-                    base_array,
-                    {
-                        value[1], value[2], callback = value["callback"]
-                    }
-                )
-            else
-                table.insert(
-                    base_array,
-                    {
-                        value[1], value[2]
-                    }
-                )
-            end
-        end
-    end
-    return base_array
 end
 
 return NewsDownloader
