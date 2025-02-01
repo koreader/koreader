@@ -28,7 +28,7 @@ function BookList.setBookInfoCache(file, doc_settings)
     }
     local summary = doc_settings:readSetting("summary")
     book_info.status = summary and summary.status
-    if book_info.status == nil or BookList.getBookStatusString(book_info.status) == nil then
+    if BookList.getBookStatusString(book_info.status) == nil then
         book_info.status = "reading"
     end
     local pages = doc_settings:readSetting("doc_pages")
@@ -103,15 +103,17 @@ function BookList.getBookStatus(file)
 end
 
 function BookList.getBookStatusString(status, with_prefix)
-    local status_string = ({
-        new       = _("New"),      -- no sidecar file
-        reading   = _("Reading"),  -- doc_settings.summary.status
-        abandoned = _("On hold"),  -- doc_settings.summary.status
-        complete  = _("Finished"), -- doc_settings.summary.status
-        deleted   = _("Deleted"),
-        all       = _("All"),
-    })[status]
-    return with_prefix and T(_("Status: %1"), status_string:lower()) or status_string
+    if status then
+        local status_string = ({
+            new       = _("New"),      -- no sidecar file
+            reading   = _("Reading"),  -- doc_settings.summary.status
+            abandoned = _("On hold"),  -- doc_settings.summary.status
+            complete  = _("Finished"), -- doc_settings.summary.status
+            deleted   = _("Deleted"),
+            all       = _("All"),
+        })[status]
+        return with_prefix and T(_("Status: %1"), status_string:lower()) or status_string
+    end
 end
 
 return BookList
