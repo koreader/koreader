@@ -352,7 +352,7 @@ function ReaderBookmark:toggleBookmark(pageno)
         }
         self.ui.annotation:addItem(item)
     end
-    self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
+    self.ui:handleEvent(Event:new("AnnotationsModified", { item, update_datetime = false }))
 end
 
 function ReaderBookmark:setDogearVisibility(pn_or_xp)
@@ -416,9 +416,9 @@ function ReaderBookmark:removeItemByIndex(index)
     local item = self.ui.annotation.annotations[index]
     local item_type = self.getBookmarkType(item)
     if item_type == "highlight" then
-        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = -1 }))
+        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = -1, update_datetime = false }))
     elseif item_type == "note" then
-        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_notes_added = -1 }))
+        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_notes_added = -1, update_datetime = false }))
     end
     table.remove(self.ui.annotation.annotations, index)
     self.view.footer:maybeUpdateFooter()
