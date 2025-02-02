@@ -328,6 +328,14 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     local cancelled = false
     local page_htmltitle = html:match([[<title[^>]*>(.-)</title>]])
     logger.dbg("page_htmltitle is ", page_htmltitle)
+
+    -- Rejigger HTML into XHTML to avoid unclosed elements. See <https://github.com/koreader/crengine/pull/370#issuecomment-910156921>.
+    local cre = require("libs/libkoreader-cre")
+    html = cre.getBalancedHTML(html, 0x0)
+
+    -- Remove all script tags to save a few bytes.
+    html = html:gsub("<script.->.-</script>", "")
+
 --    local sections = html.sections -- Wikipedia provided TOC
     local bookid = "bookid_placeholder" --string.format("wikipedia_%s_%s_%s", lang, phtml.pageid, phtml.revid)
     -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
