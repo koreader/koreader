@@ -238,7 +238,7 @@ function KindlePowerD:checkUnexpectedWakeup()
     if self.device.wakeup_mgr:isWakeupAlarmScheduled() and self.device.wakeup_mgr:wakeupAction(90) then
         logger.info("Kindle scheduled wakeup")
     else
-        logger.warn("Kindle unscheduled wakeup")
+        logger.info("Kindle unscheduled wakeup")
     end
 end
 
