@@ -420,7 +420,7 @@ function ReaderAnnotation:addItem(item)
 end
 
 function ReaderAnnotation:onAnnotationsModified(items)
-    if items.update_datetime ~= false then
+    if items.index_modified == nil then -- not needed when annotation added or removed
         items[1].datetime_updated = os.date("%Y-%m-%d %H:%M:%S")
     end
 end
