@@ -1178,7 +1178,7 @@ print("INDEX",index)
 print("BOXINDEX",box.index)
 print(items[1].datetime, self.ui.annotation.annotations[box.index].datetime)
                     if box.index > index or
-                            (box.index == index and items[1].datetime ~= self.ui.annotation.annotations[box.index+1].datetime) then
+                            (box.index == index and items[1].datetime ~= self.ui.annotation.annotations[index + 1].datetime) then
                         box.index = box.index + delta
                     end
                 end
