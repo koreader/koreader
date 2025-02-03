@@ -1175,7 +1175,7 @@ function ReaderView:resetHighlightBoxesCache(items)
             for _, page_boxes in pairs(self.highlight.page_boxes) do
                 for i, box in ipairs(page_boxes) do
                     if box.index > index or
-                            (box.index == index and delta > 0 and
+                            (box.index == index and delta > 0 and self.ui.annotation.annotations[index + 1] and
                                 items[1].datetime ~= self.ui.annotation.annotations[index + 1].datetime) then
                         box.index = box.index + delta
                     end
