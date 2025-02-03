@@ -1168,14 +1168,14 @@ function ReaderView:resetHighlightBoxesCache(items)
             end
         end
         if items.index_modified then -- annotation added or removed, shift annotations indexes
-            local index, delta = items.index_modified, 1
+            local index, index_shift = items.index_modified, 1
             if index < 0 then
-                index, delta = -index, -1
+                index, index_shift = -index, -1
             end
             for _, page_boxes in pairs(self.highlight.page_boxes) do
-                for i, box in ipairs(page_boxes) do
+                for _, box in ipairs(page_boxes) do
                     if box.index >= index then
-                        box.index = box.index + delta
+                        box.index = box.index + index_shift
                     end
                 end
             end
