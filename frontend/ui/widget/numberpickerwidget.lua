@@ -300,8 +300,7 @@ function NumberPickerWidget:changeValue(value, step, max, min, wrap)
         self.value_index = self.value_index + step
         if self.value_index > #self.value_table then
             self.value_index = wrap and 1 or #self.value_table
-        elseif
-        self.value_index < 1 then
+        elseif self.value_index < 1 then
             self.value_index = wrap and #self.value_table or 1
         end
         value = self.value_table[self.value_index]

@@ -68,6 +68,10 @@ function DoubleSpinWidget:init()
     end
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.LeftWidgetUp = { { "LPgFwd" }, event = "ButtonSpinAdjust", args = { "left_widget", 1 } }
+        self.key_events.LeftWidgetDown = { { "LPgBack" }, event = "ButtonSpinAdjust", args = { "left_widget", -1 } }
+        self.key_events.RightWidgetUp = { { "RPgFwd" }, event = "ButtonSpinAdjust", args = { "right_widget", 1 } }
+        self.key_events.RightWidgetDown = { { "RPgBack" }, event = "ButtonSpinAdjust", args = { "right_widget", -1 } }
     end
     if Device:isTouchDevice() then
         self.ges_events.TapClose = {
@@ -347,6 +351,22 @@ function DoubleSpinWidget:onClose()
     if self.close_callback then
         self.close_callback()
     end
+    return true
+end
+
+function DoubleSpinWidget:onButtonSpinAdjust(args)
+    local which_widget, direction = unpack(args)
+    local current_value = which_widget == "left_widget" and self.left_value or self.right_value
+    local step = (which_widget == "left_widget" and self.left_step or self.right_step) or 1
+    local min_val = which_widget == "left_widget" and self.left_min or self.right_min
+    local max_val = which_widget == "left_widget" and self.left_max or self.right_max
+    local new_value = NumberPickerWidget:changeValue(current_value, direction * step, max_val, min_val, false)
+    if which_widget == "left_widget" then
+        self.left_value = new_value
+    else
+        self.right_value = new_value
+    end
+    self:update(self.left_value, self.right_value)
     return true
 end
 
