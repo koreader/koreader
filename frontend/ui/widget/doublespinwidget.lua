@@ -368,9 +368,14 @@ step value to either the left or right widget component.
 function DoubleSpinWidget:onDoubleSpinButtonPressed(args)
     local target_side, direction = unpack(args)
     local target_widget = target_side == "left_widget" and self.left_widget or self.right_widget
-    local step = target_widget.value_step or 1
     -- Use the target_widget's changeValue method but don't update the stored value directly
-    local new_value = target_widget:changeValue(target_widget:getValue(), direction * step, target_widget.value_max, target_widget.value_min, false)
+    local new_value = target_widget:changeValue(
+        target_widget:getValue(),
+        target_widget.value_step * direction,
+        target_widget.value_max,
+        target_widget.value_min,
+        false
+    )
     target_widget.value = new_value
     target_widget:update()
     return true
