@@ -343,9 +343,7 @@ end
 function SpinWidget:onSpinButtonPressed(direction)
     local widget = self.value_widget
     if widget.value_table then
-        local value_index = widget.value_index
-        local table_lenght = #widget.value_table
-        local new_index = NumberPickerWidget:changeValue(value_index, direction, table_lenght, 1, false)
+        local new_index = NumberPickerWidget:changeValue(widget.value_index, direction, #widget.value_table, 1, false)
         widget.value_index = new_index
     else
         local step = self.value_step or 1
