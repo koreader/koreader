@@ -69,10 +69,10 @@ function DoubleSpinWidget:init()
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
         if Device:hasDPad() and Device:useDPadAsActionKeys() then
-            self.key_events.LeftWidgetUp    = { { "LPgFwd"  }, event = "SpinButtonPressed", args = { "left_widget",   1 } }
-            self.key_events.LeftWidgetDown  = { { "LPgBack" }, event = "SpinButtonPressed", args = { "left_widget",  -1 } }
-            self.key_events.RightWidgetUp   = { { "RPgFwd"  }, event = "SpinButtonPressed", args = { "right_widget",  1 } }
-            self.key_events.RightWidgetDown = { { "RPgBack" }, event = "SpinButtonPressed", args = { "right_widget", -1 } }
+            self.key_events.LeftWidgetValueUp    = { { "LPgFwd"  }, event = "DoubleSpinButtonPressed", args = { "left_widget",   1 } }
+            self.key_events.LeftWidgetValueDown  = { { "LPgBack" }, event = "DoubleSpinButtonPressed", args = { "left_widget",  -1 } }
+            self.key_events.RightWidgetValueUp   = { { "RPgFwd"  }, event = "DoubleSpinButtonPressed", args = { "right_widget",  1 } }
+            self.key_events.RightWidgetValueDown = { { "RPgBack" }, event = "DoubleSpinButtonPressed", args = { "right_widget", -1 } }
         end
     end
     if Device:isTouchDevice() then
@@ -356,7 +356,7 @@ function DoubleSpinWidget:onClose()
     return true
 end
 
-function DoubleSpinWidget:onSpinButtonPressed(args)
+function DoubleSpinWidget:onDoubleSpinButtonPressed(args)
     local target_side, direction = unpack(args)
     local target_widget = target_side == "left_widget" and self.left_widget or self.right_widget
     local step = (target_side == "left_widget" and self.left_step or self.right_step) or 1

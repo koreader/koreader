@@ -66,6 +66,8 @@ function SpinWidget:init()
     end
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.WidgetValueUp    = { { Device.input.group.PgFwd  }, event = "SpinButtonPressed", args =  1 }
+        self.key_events.WidgetValueDown  = { { Device.input.group.PgBack }, event = "SpinButtonPressed", args = -1 }
     end
     if Device:isTouchDevice() then
         self.ges_events.TapClose = {
@@ -90,7 +92,7 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
     local prev_movable_offset = self.movable and self.movable:getMovedOffset()
     local prev_movable_alpha = self.movable and self.movable.alpha
     self.layout = {}
-    local value_widget = NumberPickerWidget:new{
+    self.value_widget = NumberPickerWidget:new{
         show_parent = self,
         value = numberpicker_value or self.value,
         value_table = self.value_table,
@@ -106,10 +108,10 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         end,
         unit = self.unit,
     }
-    self:mergeLayoutInVertical(value_widget)
+    self:mergeLayoutInVertical(self.value_widget)
     local value_group = HorizontalGroup:new{
         align = "center",
-        value_widget,
+        self.value_widget,
     }
 
     local title_bar = TitleBar:new{
@@ -149,12 +151,12 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
             {
                 text = T(_("Default value: %1%2"), value, unit),
                 callback = function()
-                    if value_widget.value_table then
-                        value_widget.value_index = self.default_value
+                    if self.value_widget.value_table then
+                        self.value_widget.value_index = self.default_value
                     else
-                        value_widget.value = self.default_value
+                        self.value_widget.value = self.default_value
                     end
-                    value_widget:update()
+                    self.value_widget:update()
                 end,
             },
         })
@@ -164,7 +166,7 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         text = self.extra_text,
         callback = function()
             if self.extra_callback then
-                self.value, self.value_index = value_widget:getValue()
+                self.value, self.value_index = self.value_widget:getValue()
                 self.extra_callback(self)
             end
             if not self.keep_shown_on_apply then -- assume extra wants it same as ok
@@ -176,7 +178,7 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         text = self.option_text,
         callback = function()
             if self.option_callback then
-                self.value, self.value_index = value_widget:getValue()
+                self.value, self.value_index = self.value_widget:getValue()
                 self.option_callback(self)
             end
             if not self.keep_shown_on_apply then -- assume option wants it same as ok
@@ -203,9 +205,9 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         },
         {
             text = self.ok_text,
-            enabled = self.ok_always_enabled or self.original_value ~= value_widget:getValue(),
+            enabled = self.ok_always_enabled or self.original_value ~= self.value_widget:getValue(),
             callback = function()
-                self.value, self.value_index = value_widget:getValue()
+                self.value, self.value_index = self.value_widget:getValue()
                 self.original_value = self.value
                 if self.callback then
                     self.callback(self)
@@ -335,6 +337,26 @@ function SpinWidget:onClose()
     if self.close_callback then
         self.close_callback()
     end
+    return true
+end
+
+function SpinWidget:onSpinButtonPressed(direction)
+    local widget = self.value_widget
+    if widget.value_table then
+        local new_index = widget.value_index + direction
+        if new_index < 1 then
+            new_index = 1
+        elseif new_index > #widget.value_table then
+            new_index = #widget.value_table
+        end
+        widget.value_index = new_index
+    else
+        local step = self.value_step or 1
+        -- Use the widget's changeValue method but don't update the stored value directly
+        local new_value = NumberPickerWidget:changeValue(widget:getValue(), direction * step, widget.value_max, widget.value_min, false)
+        widget.value = new_value
+    end
+    widget:update()
     return true
 end
 
