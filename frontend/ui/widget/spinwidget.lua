@@ -340,6 +340,14 @@ function SpinWidget:onClose()
     return true
 end
 
+--[[
+This method updates the widget's value based on the direction of the spin.
+For value_table-based widgets, it cycles through indices in the table.
+For numeric widgets, it increments/decrements by the specified step value.
+
+@param direction {number}. The direction of the spin (-1 for decrease, 1 for increase)
+@return boolean Always returns true to indicate the event was handled
+]]
 function SpinWidget:onSpinButtonPressed(direction)
     local widget = self.value_widget
     if widget.value_table then
