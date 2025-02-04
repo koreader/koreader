@@ -342,23 +342,16 @@ end
 
 --[[
 This method updates the widget's value based on the direction of the spin.
-For value_table-based widgets, it cycles through indices in the table.
-For numeric widgets, it increments/decrements by the specified step value.
 
 @param direction {number}. The direction of the spin (-1 for decrease, 1 for increase)
 @return boolean Always returns true to indicate the event was handled
 ]]
 function SpinWidget:onSpinButtonPressed(direction)
     local widget = self.value_widget
-    if widget.value_table then
-        local new_index = NumberPickerWidget:changeValue(widget.value_index, direction, #widget.value_table, 1, false)
-        widget.value_index = new_index
-    else
-        local step = self.value_step or 1
-        -- Use the widget's changeValue method but don't update the stored value directly
-        local new_value = NumberPickerWidget:changeValue(widget:getValue(), direction * step, widget.value_max, widget.value_min, false)
-        widget.value = new_value
-    end
+    local step = self.value_step or 1
+    -- Use the widget's changeValue method but don't update the stored value directly
+    local new_value = widget:changeValue(widget:getValue(), direction * step, widget.value_max, widget.value_min, false)
+    widget.value = new_value
     widget:update()
     return true
 end
