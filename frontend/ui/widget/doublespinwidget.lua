@@ -357,14 +357,14 @@ function DoubleSpinWidget:onClose()
 end
 
 --[[
-This method processes value changes when physical buttons are pressed, applying the appropriate
+This method processes value changes based on the direction of the spin, applying the appropriate
 step value to either the left or right widget component.
 
 @param args {table} A table containing:
     - target_side {string}. Either "left_widget" or "right_widget" indicating which side to modify
     - direction {number}. The direction of change (1 for increase, -1 for decrease)
 @return {boolean} Returns true to indicate the event was handled
---]]
+]]
 function DoubleSpinWidget:onDoubleSpinButtonPressed(args)
     local target_side, direction = unpack(args)
     local target_widget = target_side == "left_widget" and self.left_widget or self.right_widget
