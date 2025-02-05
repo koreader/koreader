@@ -369,13 +369,7 @@ function DoubleSpinWidget:onDoubleSpinButtonPressed(args)
     local target_side, direction = unpack(args)
     local target_widget = target_side == "left_widget" and self.left_widget or self.right_widget
     -- Use the target_widget's changeValue method but don't update the stored value directly
-    target_widget.value = target_widget:changeValue(
-        target_widget:getValue(),
-        target_widget.value_step * direction,
-        target_widget.value_max,
-        target_widget.value_min,
-        target_widget.wrap
-    )
+    target_widget.value = target_widget:changeValue(target_widget.value_step * direction)
     target_widget:update()
     return true
 end

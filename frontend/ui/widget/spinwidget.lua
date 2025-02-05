@@ -347,10 +347,9 @@ This method updates the widget's value based on the direction of the spin.
 @return boolean Always returns true to indicate the event was handled
 ]]
 function SpinWidget:onSpinButtonPressed(direction)
-    local widget = self.value_widget
     -- Use the widget's changeValue method but don't update the stored value directly
-    widget.value = widget:changeValue(widget:getValue(), self.value_step * direction, widget.value_max, widget.value_min, widget.wrap)
-    widget:update()
+    self.value_widget.value = self.value_widget:changeValue(self.value_step * direction)
+    self.value_widget:update()
     return true
 end
 
