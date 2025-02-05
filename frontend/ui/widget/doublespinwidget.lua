@@ -374,7 +374,7 @@ function DoubleSpinWidget:onDoubleSpinButtonPressed(args)
         target_widget.value_step * direction,
         target_widget.value_max,
         target_widget.value_min,
-        false
+        target_widget.wrap
     )
     target_widget:update()
     return true
