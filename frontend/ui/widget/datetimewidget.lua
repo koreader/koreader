@@ -85,14 +85,14 @@ local DateTimeWidget = FocusManager:extend{
 }
 
 local IMPOSSIBLE_DATES = {
+    -- 29th February is handled separately
+    { month = 2, day = 30 },
+    { month = 2, day = 31 },
     -- April, June, September, November have 30 days
     { month = 4, day = 31 },
     { month = 6, day = 31 },
     { month = 9, day = 31 },
     { month = 11, day = 31 },
-    -- February special cases
-    { month = 2, day = 30 },
-    { month = 2, day = 31 },
 }
 
 function DateTimeWidget:isValidDate(year, month, day)
@@ -103,9 +103,9 @@ function DateTimeWidget:isValidDate(year, month, day)
             return false
         end
     end
-    -- Special handling for February 29
+    -- Special handling for the 29th February
     if month == 2 and day == 29 then
-        -- Check if it's not a leap year
+        -- Check if year it's a leap year
         if year % 4 ~= 0 then return false end
         if year % 100 == 0 and year % 400 ~= 0 then return false end
     end
@@ -165,44 +165,45 @@ end
 function DateTimeWidget:registerKeyEvents()
     if not Device:hasKeys() then return end
     self.key_events.Close = { { Device.input.group.Back } }
-    if self.nb_pickers == 1 then
-        self.key_events.Up   = { { Device.input.group.PgFwd  }, event = "DateTimeButtonPressed", args = { "center_widget",  1 } }
-        self.key_events.Down = { { Device.input.group.PgBack }, event = "DateTimeButtonPressed", args = { "center_widget", -1 } }
-    elseif self.nb_pickers == 2 then
-        self.key_events.LeftWidgetValueUp    = { { "LPgFwd"  }, event = "DateTimeButtonPressed", args = { "left_widget",   1 } }
-        self.key_events.LeftWidgetValueDown  = { { "LPgBack" }, event = "DateTimeButtonPressed", args = { "left_widget",  -1 } }
-        self.key_events.RightWidgetValueUp   = { { "RPgFwd"  }, event = "DateTimeButtonPressed", args = { "right_widget",  1 } }
-        self.key_events.RightWidgetValueDown = { { "RPgBack" }, event = "DateTimeButtonPressed", args = { "right_widget", -1 } }
-    elseif self.nb_pickers == 3 then
-        self.key_events.LeftWidgetValueUp    = { { "LPgFwd"  }, event = "DateTimeButtonPressed", args = { "left_widget",   1 } }
-        self.key_events.LeftWidgetValueDown  = { { "LPgBack" }, event = "DateTimeButtonPressed", args = { "left_widget",  -1 } }
-        self.key_events.RightWidgetValueUp   = { { "RPgFwd"  }, event = "DateTimeButtonPressed", args = { "right_widget",  1 } }
-        self.key_events.RightWidgetValueDown = { { "RPgBack" }, event = "DateTimeButtonPressed", args = { "right_widget", -1 } }
-        if Device:hasScreenKB() then
-            self.key_events.CenterWidgetValueUp   = {
-                { "ScreenKB", Device.input.group.PgFwd },
-                event = "DateTimeButtonPressed",
-                args = { "center_widget",  1 }
-            }
-            self.key_events.CenterWidgetValueDown = {
-                { "ScreenKB",
-                Device.input.group.PgBack },
-                event = "DateTimeButtonPressed",
-                args = { "center_widget", -1 }
-            }
-        elseif Device:hasKeyboard() then
-            self.key_events.CenterWidgetValueUp   = {
-                { "Shift", Device.input.group.PgBack },
-                event = "DateTimeButtonPressed",
-                args = { "center_widget",  1 }
-            }
-            self.key_events.CenterWidgetValueDown = {
-                { "Shift", Device.input.group.PgBack },
-                event = "DateTimeButtonPressed",
-                args = { "center_widget", -1 }
-            }
-        end
-    end
+    if Device:hasDPad() and Device:useDPadAsActionKeys() then
+        if self.nb_pickers == 1 then
+            self.key_events.CenterWidgetValueUp   = { { Device.input.group.PgFwd  }, event = "DateTimeButtonPressed", args = { "center_widget",  1 } }
+            self.key_events.CenterWidgetValueDown = { { Device.input.group.PgBack }, event = "DateTimeButtonPressed", args = { "center_widget", -1 } }
+        elseif self.nb_pickers == 2 then
+            self.key_events.LeftWidgetValueUp    = { { "LPgFwd"  }, event = "DateTimeButtonPressed", args = { "left_widget",   1 } }
+            self.key_events.LeftWidgetValueDown  = { { "LPgBack" }, event = "DateTimeButtonPressed", args = { "left_widget",  -1 } }
+            self.key_events.RightWidgetValueUp   = { { "RPgFwd"  }, event = "DateTimeButtonPressed", args = { "right_widget",  1 } }
+            self.key_events.RightWidgetValueDown = { { "RPgBack" }, event = "DateTimeButtonPressed", args = { "right_widget", -1 } }
+        elseif self.nb_pickers == 3 then
+            self.key_events.LeftWidgetValueUp    = { { "LPgFwd"  }, event = "DateTimeButtonPressed", args = { "left_widget",   1 } }
+            self.key_events.LeftWidgetValueDown  = { { "LPgBack" }, event = "DateTimeButtonPressed", args = { "left_widget",  -1 } }
+            self.key_events.RightWidgetValueUp   = { { "RPgFwd"  }, event = "DateTimeButtonPressed", args = { "right_widget",  1 } }
+            self.key_events.RightWidgetValueDown = { { "RPgBack" }, event = "DateTimeButtonPressed", args = { "right_widget", -1 } }
+            if Device:hasScreenKB() then
+                self.key_events.CenterWidgetValueUp   = {
+                    { "ScreenKB", Device.input.group.PgFwd },
+                    event = "DateTimeButtonPressed",
+                    args = { "center_widget",  1 }
+                }
+                self.key_events.CenterWidgetValueDown = {
+                    { "ScreenKB", Device.input.group.PgBack },
+                    event = "DateTimeButtonPressed",
+                    args = { "center_widget", -1 }
+                }
+            elseif Device:hasKeyboard() then
+                self.key_events.CenterWidgetValueUp   = {
+                    { "Shift", Device.input.group.PgBack },
+                    event = "DateTimeButtonPressed",
+                    args = { "center_widget",  1 }
+                }
+                self.key_events.CenterWidgetValueDown = {
+                    { "Shift", Device.input.group.PgBack },
+                    event = "DateTimeButtonPressed",
+                    args = { "center_widget", -1 }
+                }
+            end
+        end -- if self.nb_pickers
+    end -- if Device:hasDPad() and Device:useDPadAsActionKeys()
 end
 
 function DateTimeWidget:createLayout()
@@ -405,17 +406,15 @@ function DateTimeWidget:createLayout()
         {
             text = self.ok_text,
             callback = function()
-                if self.year and self.month and self.day and not self:isValidDate(
-                    self.year_widget:getValue(),
-                    self.month_widget:getValue(),
-                    self.day_widget:getValue()
-                ) then
-                    local InfoMessage = require("ui/widget/infomessage")
-                    UIManager:show(InfoMessage:new{
-                        text = _("Invalid date, please try again."),
-                        timeout = 2,
-                    })
-                    return
+                if self.year and self.month and self.day then
+                    if not self:isValidDate(self.year_widget:getValue(), self.month_widget:getValue(), self.day_widget:getValue()) then
+                        local InfoMessage = require("ui/widget/infomessage")
+                        UIManager:show(InfoMessage:new{
+                            text = _("Invalid date, please try again."),
+                            timeout = 2,
+                        })
+                        return
+                    end
                 end
                 if self.callback then
                     self.year = self.year_widget:getValue()
