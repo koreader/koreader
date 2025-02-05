@@ -96,8 +96,8 @@ local IMPOSSIBLE_DATES = {
 }
 
 function DateTimeWidget:isValidDate(year, month, day)
-    if not (year and month and day) then return true end -- not a date picker
-    -- Check impossible dates
+    if not (year and month and day) then return false end -- not a date picker
+    -- check impossible dates
     for _, impossible in ipairs(IMPOSSIBLE_DATES) do
         if month == impossible.month and day == impossible.day then
             return false
@@ -105,7 +105,7 @@ function DateTimeWidget:isValidDate(year, month, day)
     end
     -- Special handling for the 29th February
     if month == 2 and day == 29 then
-        -- Check if year it's a leap year
+        -- check if year is a leap year
         if year % 4 ~= 0 then return false end
         if year % 100 == 0 and year % 400 ~= 0 then return false end
     end
@@ -179,25 +179,15 @@ function DateTimeWidget:registerKeyEvents()
             self.key_events.LeftWidgetValueDown  = { { "LPgBack" }, event = "DateTimeButtonPressed", args = { "left_widget",  -1 } }
             self.key_events.RightWidgetValueUp   = { { "RPgFwd"  }, event = "DateTimeButtonPressed", args = { "right_widget",  1 } }
             self.key_events.RightWidgetValueDown = { { "RPgBack" }, event = "DateTimeButtonPressed", args = { "right_widget", -1 } }
-            if Device:hasScreenKB() then
+            if Device:hasScreenKB() or Device:hasKeyboard() then
+                local modifier = Device:hasKeyboard() and "Shift" or "ScreenKB"
                 self.key_events.CenterWidgetValueUp   = {
-                    { "ScreenKB", Device.input.group.PgFwd },
+                    { modifier, Device.input.group.PgFwd },
                     event = "DateTimeButtonPressed",
                     args = { "center_widget",  1 }
                 }
                 self.key_events.CenterWidgetValueDown = {
-                    { "ScreenKB", Device.input.group.PgBack },
-                    event = "DateTimeButtonPressed",
-                    args = { "center_widget", -1 }
-                }
-            elseif Device:hasKeyboard() then
-                self.key_events.CenterWidgetValueUp   = {
-                    { "Shift", Device.input.group.PgBack },
-                    event = "DateTimeButtonPressed",
-                    args = { "center_widget",  1 }
-                }
-                self.key_events.CenterWidgetValueDown = {
-                    { "Shift", Device.input.group.PgBack },
+                    { modifier, Device.input.group.PgBack },
                     event = "DateTimeButtonPressed",
                     args = { "center_widget", -1 }
                 }
