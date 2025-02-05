@@ -84,6 +84,34 @@ local DateTimeWidget = FocusManager:extend{
     extra_callback = nil,
 }
 
+local IMPOSSIBLE_DATES = {
+    -- April, June, September, November have 30 days
+    { month = 4, day = 31 },
+    { month = 6, day = 31 },
+    { month = 9, day = 31 },
+    { month = 11, day = 31 },
+    -- February special cases
+    { month = 2, day = 30 },
+    { month = 2, day = 31 },
+}
+
+function DateTimeWidget:isValidDate(year, month, day)
+    if not (year and month and day) then return true end -- not a date picker
+    -- Check impossible dates
+    for _, impossible in ipairs(IMPOSSIBLE_DATES) do
+        if month == impossible.month and day == impossible.day then
+            return false
+        end
+    end
+    -- Special handling for February 29
+    if month == 2 and day == 29 then
+        -- Check if it's not a leap year
+        if year % 4 ~= 0 then return false end
+        if year % 100 == 0 and year % 400 ~= 0 then return false end
+    end
+    return true
+end
+
 function DateTimeWidget:init()
     self.nb_pickers = 0
     if self.year then
@@ -117,9 +145,7 @@ function DateTimeWidget:init()
         width_scale_factor = 0.95
     end
     self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) * width_scale_factor)
-    if Device:hasKeys() then
-        self.key_events.Close = { { Device.input.group.Back } }
-    end
+    self:registerKeyEvents()
     if Device:isTouchDevice() then
         self.ges_events.TapClose = {
             GestureRange:new{
@@ -134,6 +160,49 @@ function DateTimeWidget:init()
 
     -- Actually the widget layout
     self:createLayout()
+end
+
+function DateTimeWidget:registerKeyEvents()
+    if not Device:hasKeys() then return end
+    self.key_events.Close = { { Device.input.group.Back } }
+    if self.nb_pickers == 1 then
+        self.key_events.Up   = { { Device.input.group.PgFwd  }, event = "DateTimeButtonPressed", args = { "center_widget",  1 } }
+        self.key_events.Down = { { Device.input.group.PgBack }, event = "DateTimeButtonPressed", args = { "center_widget", -1 } }
+    elseif self.nb_pickers == 2 then
+        self.key_events.LeftWidgetValueUp    = { { "LPgFwd"  }, event = "DateTimeButtonPressed", args = { "left_widget",   1 } }
+        self.key_events.LeftWidgetValueDown  = { { "LPgBack" }, event = "DateTimeButtonPressed", args = { "left_widget",  -1 } }
+        self.key_events.RightWidgetValueUp   = { { "RPgFwd"  }, event = "DateTimeButtonPressed", args = { "right_widget",  1 } }
+        self.key_events.RightWidgetValueDown = { { "RPgBack" }, event = "DateTimeButtonPressed", args = { "right_widget", -1 } }
+    elseif self.nb_pickers == 3 then
+        self.key_events.LeftWidgetValueUp    = { { "LPgFwd"  }, event = "DateTimeButtonPressed", args = { "left_widget",   1 } }
+        self.key_events.LeftWidgetValueDown  = { { "LPgBack" }, event = "DateTimeButtonPressed", args = { "left_widget",  -1 } }
+        self.key_events.RightWidgetValueUp   = { { "RPgFwd"  }, event = "DateTimeButtonPressed", args = { "right_widget",  1 } }
+        self.key_events.RightWidgetValueDown = { { "RPgBack" }, event = "DateTimeButtonPressed", args = { "right_widget", -1 } }
+        if Device:hasScreenKB() then
+            self.key_events.CenterWidgetValueUp   = {
+                { "ScreenKB", Device.input.group.PgFwd },
+                event = "DateTimeButtonPressed",
+                args = { "center_widget",  1 }
+            }
+            self.key_events.CenterWidgetValueDown = {
+                { "ScreenKB",
+                Device.input.group.PgBack },
+                event = "DateTimeButtonPressed",
+                args = { "center_widget", -1 }
+            }
+        elseif Device:hasKeyboard() then
+            self.key_events.CenterWidgetValueUp   = {
+                { "Shift", Device.input.group.PgBack },
+                event = "DateTimeButtonPressed",
+                args = { "center_widget",  1 }
+            }
+            self.key_events.CenterWidgetValueDown = {
+                { "Shift", Device.input.group.PgBack },
+                event = "DateTimeButtonPressed",
+                args = { "center_widget", -1 }
+            }
+        end
+    end
 end
 
 function DateTimeWidget:createLayout()
@@ -186,6 +255,8 @@ function DateTimeWidget:createLayout()
             value_step = 1,
             value_hold_step = self.day_hold_step or 3,
             width = number_picker_widgets_width,
+            date_month = self.month and self.month_widget or nil,
+            date_year = self.year and self.year_widget or nil,
         }
         self:mergeLayoutInHorizontal(self.day_widget)
     else
@@ -334,6 +405,18 @@ function DateTimeWidget:createLayout()
         {
             text = self.ok_text,
             callback = function()
+                if self.year and self.month and self.day and not self:isValidDate(
+                    self.year_widget:getValue(),
+                    self.month_widget:getValue(),
+                    self.day_widget:getValue()
+                ) then
+                    local InfoMessage = require("ui/widget/infomessage")
+                    UIManager:show(InfoMessage:new{
+                        text = _("Invalid date, please try again."),
+                        timeout = 2,
+                    })
+                    return
+                end
                 if self.callback then
                     self.year = self.year_widget:getValue()
                     self.month = self.month_widget:getValue()
@@ -455,6 +538,73 @@ end
 
 function DateTimeWidget:onClose()
     UIManager:close(self)
+    return true
+end
+
+--[[
+This method processes value changes based on the direction of the spin, applying the appropriate
+step value to the target widget component (left, center, or right).
+
+@param args {table} A table containing:
+    - target_side {string}. Either "left_widget", "center_widget" or "right_widget" indicating which side to modify
+    - direction {number}. The direction of change (1 for increase, -1 for decrease)
+@return {boolean} Returns true to indicate the event was handled
+]]
+function DateTimeWidget:onDateTimeButtonPressed(args)
+    local target_side, direction = unpack(args)
+    local target_widget
+    if target_side == "left_widget" then
+        if self.year then
+            target_widget = self.year_widget
+        elseif self.month then
+            target_widget = self.month_widget
+        elseif self.day then
+            target_widget = self.day_widget
+        elseif self.hour then
+            target_widget = self.hour_widget
+        elseif self.min then
+            target_widget = self.min_widget
+        end
+    elseif target_side == "center_widget" then
+        -- When alone (1 picker) or between others (3 pickers), try each possible widget
+        if self.month then
+            target_widget = self.month_widget
+        elseif self.day then
+            target_widget = self.day_widget
+        elseif self.hour then
+            target_widget = self.hour_widget
+        elseif self.min then
+            target_widget = self.min_widget
+        elseif self.sec then
+            target_widget = self.sec_widget
+        elseif self.year then
+            target_widget = self.year_widget
+        end
+    elseif target_side == "right_widget" then
+        -- For right position, could be any widget except year
+        if self.sec then
+            target_widget = self.sec_widget
+        elseif self.min then
+            target_widget = self.min_widget
+        elseif self.hour then
+            target_widget = self.hour_widget
+        elseif self.day then
+            target_widget = self.day_widget
+        elseif self.month then
+            target_widget = self.month_widget
+        end
+    end
+
+    if self.day and target_widget == self.day_widget then
+        if target_widget.date_month and target_widget.date_year then
+            target_widget.value_max = target_widget:getDaysInMonth(
+                target_widget.date_month:getValue(),
+                target_widget.date_year:getValue()
+            )
+        end
+    end
+    target_widget.value = target_widget:changeValue(target_widget.value_step * direction)
+    target_widget:update()
     return true
 end
 
