@@ -82,35 +82,6 @@ local DateTimeWidget = FocusManager:extend{
     -- Optional extra button on bottom
     extra_text = nil,
     extra_callback = nil,
-}
-
-local IMPOSSIBLE_DATES = {
-    -- 29th February is handled separately
-    { month = 2, day = 30 },
-    { month = 2, day = 31 },
-    -- April, June, September, November have 30 days
-    { month = 4, day = 31 },
-    { month = 6, day = 31 },
-    { month = 9, day = 31 },
-    { month = 11, day = 31 },
-}
-
-function DateTimeWidget:isValidDate(year, month, day)
-    if not (year and month and day) then return false end -- not a date picker
-    -- check impossible dates
-    for _, impossible in ipairs(IMPOSSIBLE_DATES) do
-        if month == impossible.month and day == impossible.day then
-            return false
-        end
-    end
-    -- Special handling for the 29th February
-    if month == 2 and day == 29 then
-        -- check if year is a leap year
-        if year % 4 ~= 0 then return false end
-        if year % 100 == 0 and year % 400 ~= 0 then return false end
-    end
-    return true
-end
 
 function DateTimeWidget:init()
     self.nb_pickers = 0
@@ -213,6 +184,21 @@ function DateTimeWidget:createLayout()
             value_step = 1,
             value_hold_step = self.year_hold_step or 4,
             width = number_picker_widgets_width,
+            picker_updated_callback = function(value)
+                if self.month and self.day then
+                    local current_month = self.month_widget:getValue()
+                    local current_day = self.day_widget:getValue()
+                    -- Check if we're on February 29th
+                    if current_month == 2 and current_day == 29 then
+                        -- Check if the new year value is not a leap year
+                        if value % 4 ~= 0 or (value % 100 == 0 and value % 400 ~= 0) then
+                            -- Change to February 28th
+                            self.day_widget.value = 28
+                            self.day_widget:update()
+                        end
+                    end
+                end
+            end,
         }
         self:mergeLayoutInHorizontal(self.year_widget)
     else
@@ -227,6 +213,17 @@ function DateTimeWidget:createLayout()
             value_step = 1,
             value_hold_step = self.month_hold_step or 3,
             width = number_picker_widgets_width,
+            picker_updated_callback = function(value)
+                if self.day then
+                    local current_day = self.day_widget:getValue()
+                    local year_value = self.year and self.year_widget:getValue() or 2021 -- default non-leap year
+                    local days_in_month = self.day_widget:getDaysInMonth(value, year_value)
+                    if current_day > days_in_month then
+                        self.day_widget.value = days_in_month
+                        self.day_widget:update()
+                    end
+                end
+            end,
         }
         self:mergeLayoutInHorizontal(self.month_widget)
     else
@@ -391,16 +388,6 @@ function DateTimeWidget:createLayout()
         {
             text = self.ok_text,
             callback = function()
-                if self.year and self.month and self.day then
-                    if not self:isValidDate(self.year_widget:getValue(), self.month_widget:getValue(), self.day_widget:getValue()) then
-                        local InfoMessage = require("ui/widget/infomessage")
-                        UIManager:show(InfoMessage:new{
-                            text = _("Invalid date, please try again."),
-                            timeout = 2,
-                        })
-                        return
-                    end
-                end
                 if self.callback then
                     self.year = self.year_widget:getValue()
                     self.month = self.month_widget:getValue()
