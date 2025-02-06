@@ -82,6 +82,7 @@ local DateTimeWidget = FocusManager:extend{
     -- Optional extra button on bottom
     extra_text = nil,
     extra_callback = nil,
+}
 
 function DateTimeWidget:init()
     self.nb_pickers = 0
