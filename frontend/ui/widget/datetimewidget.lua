@@ -169,17 +169,12 @@ function DateTimeWidget:registerKeyEvents()
         if self.nb_pickers == 1 then
             self.key_events.CenterWidgetValueUp   = { { Device.input.group.PgFwd  }, event = "DateTimeButtonPressed", args = { "center_widget",  1 } }
             self.key_events.CenterWidgetValueDown = { { Device.input.group.PgBack }, event = "DateTimeButtonPressed", args = { "center_widget", -1 } }
-        elseif self.nb_pickers == 2 then
+        elseif self.nb_pickers == 2 or self.nb_pickers == 3 then
             self.key_events.LeftWidgetValueUp    = { { "LPgFwd"  }, event = "DateTimeButtonPressed", args = { "left_widget",   1 } }
             self.key_events.LeftWidgetValueDown  = { { "LPgBack" }, event = "DateTimeButtonPressed", args = { "left_widget",  -1 } }
             self.key_events.RightWidgetValueUp   = { { "RPgFwd"  }, event = "DateTimeButtonPressed", args = { "right_widget",  1 } }
             self.key_events.RightWidgetValueDown = { { "RPgBack" }, event = "DateTimeButtonPressed", args = { "right_widget", -1 } }
-        elseif self.nb_pickers == 3 then
-            self.key_events.LeftWidgetValueUp    = { { "LPgFwd"  }, event = "DateTimeButtonPressed", args = { "left_widget",   1 } }
-            self.key_events.LeftWidgetValueDown  = { { "LPgBack" }, event = "DateTimeButtonPressed", args = { "left_widget",  -1 } }
-            self.key_events.RightWidgetValueUp   = { { "RPgFwd"  }, event = "DateTimeButtonPressed", args = { "right_widget",  1 } }
-            self.key_events.RightWidgetValueDown = { { "RPgBack" }, event = "DateTimeButtonPressed", args = { "right_widget", -1 } }
-            if Device:hasScreenKB() or Device:hasKeyboard() then
+            if self.nb_pickers == 3 and (Device:hasScreenKB() or Device:hasKeyboard()) then
                 local modifier = Device:hasKeyboard() and "Shift" or "ScreenKB"
                 self.key_events.CenterWidgetValueUp   = {
                     { modifier, Device.input.group.PgFwd },
