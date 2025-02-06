@@ -1,13 +1,13 @@
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
-local FFIUtil = require("ffi/util")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
+local ffiUtil = require("ffi/util")
 local logger = require("logger")
 local util = require("util")
-local T = FFIUtil.template
+local T = ffiUtil.template
 local _ = require("gettext")
 
 if not (Device:hasScreenKB() or Device:hasKeyboard()) then
@@ -21,7 +21,7 @@ local HotKeys = InputContainer:extend{
     defaults = nil,
     updated = false,
 }
-local hotkeys_path = FFIUtil.joinPath(DataStorage:getSettingsDir(), "hotkeys.lua")
+local hotkeys_path = ffiUtil.joinPath(DataStorage:getSettingsDir(), "hotkeys.lua")
 
 -- Define hotkeys_list
 local hotkeys_list = {}
@@ -43,6 +43,8 @@ if LuaSettings:open(hotkeys_path).data["press_key_does_hotkeys"] then
 end
 if Device:hasKeyboard() then
     local hotkeys_list_haskeyboard = { modifier_plus_menu = _("Shift + Menu") }
+    -- now we can add the "menu" button to base_keys, so we can use it on haskeyboard devices
+    base_keys.menu = "Menu"
     -- NOTE: we will use 'alt' for kindles and 'ctrl' for other devices with keyboards
     --       but for simplicity we will use in code 'alt+keys' as the array's key for all.
     local modifier_two = Device:hasSymKey() and "Alt + " or "Ctrl + "
@@ -51,14 +53,14 @@ if Device:hasKeyboard() then
         hotkeys_list_haskeyboard["alt_plus_" .. key] = _(modifier_two .. label)
     end
     -- Alt/Ctrl + alphabet keys
-    for _, char in ipairs(Device.input.group.Alphabet) do
+    for dummy, char in ipairs(Device.input.group.Alphabet) do
         hotkeys_list_haskeyboard["alt_plus_" .. char:lower()] = _(modifier_two .. char)
     end
     util.tableMerge(hotkeys_list, hotkeys_list_haskeyboard)
 end
 
 function HotKeys:init()
-    local defaults_path = FFIUtil.joinPath(self.path, "defaults.lua")
+    local defaults_path = ffiUtil.joinPath(self.path, "defaults.lua")
     self.is_docless = self.ui == nil or self.ui.document == nil
     self.hotkey_mode = self.is_docless and "hotkeys_fm" or "hotkeys_reader"
     self.defaults = LuaSettings:open(defaults_path).data[self.hotkey_mode]
@@ -67,7 +69,7 @@ function HotKeys:init()
         if not next(self.settings_data.data) then
             logger.warn("No hotkeys file or invalid hotkeys file found, copying defaults")
             self.settings_data:purge()
-            FFIUtil.copyFile(defaults_path, hotkeys_path)
+            ffiUtil.copyFile(defaults_path, hotkeys_path)
             self.settings_data = LuaSettings:open(hotkeys_path)
         end
     end
@@ -191,25 +193,44 @@ function HotKeys:genMenu(hotkey)
         table.insert(sub_items, {
             text = T(_("%1 (default)"), default_text),
             keep_menu_open = true,
+            no_refresh_on_check = true,
             checked_func = function()
                 return util.tableEquals(self.hotkeys[hotkey], self.defaults[hotkey])
             end,
-            callback = function()
-                self.hotkeys[hotkey] = util.tableDeepCopy(self.defaults[hotkey])
-                self.updated = true
+            callback = function(touchmenu_instance)
+                local function do_remove()
+                    self.hotkeys[hotkey] = util.tableDeepCopy(self.defaults[hotkey])
+                    self.updated = true
+                    touchmenu_instance:updateItems()
+                end
+                if self.hotkeys[hotkey] and next(self.hotkeys[hotkey]) then
+                    Dispatcher.removeActions(self.hotkeys[hotkey], do_remove)
+                else -- If no actions are selected, just update the defaults
+                    do_remove()
+                end
             end,
         })
     end
     table.insert(sub_items, {
         text = _("No action"),
         keep_menu_open = true,
+        no_refresh_on_check = true,
         separator = true,
         checked_func = function()
-            return self.hotkeys[hotkey] == nil
+            -- Return true if no hotkey exists, or if the hotkey exists but has no dispatcher settings
+            return self.hotkeys[hotkey] == nil or next(self.hotkeys[hotkey]) == nil
         end,
-        callback = function()
-            self.hotkeys[hotkey] = nil
-            self.updated = true
+        callback = function(touchmenu_instance)
+            local function do_remove()
+                self.hotkeys[hotkey] = nil
+                self.updated = true
+                touchmenu_instance:updateItems()
+            end
+            if self.hotkeys[hotkey] and next(self.hotkeys[hotkey]) then
+                Dispatcher.removeActions(self.hotkeys[hotkey], do_remove)
+            else -- If no actions are selected, just update the defaults
+                do_remove()
+            end
         end,
     })
     Dispatcher:addSubMenu(self, sub_items, self.hotkeys, hotkey)
