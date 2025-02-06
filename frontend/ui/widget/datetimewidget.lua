@@ -189,14 +189,10 @@ function DateTimeWidget:createLayout()
                 if self.month and self.day then
                     local current_month = self.month_widget:getValue()
                     local current_day = self.day_widget:getValue()
-                    -- check if we're on the 29th February
-                    if current_month == 2 and current_day == 29 then
-                        -- check if the new year-value is a leap year
-                        if value % 4 ~= 0 or (value % 100 == 0 and value % 400 ~= 0) then
-                            -- change to 28th February
-                            self.day_widget.value = 28
-                            self.day_widget:update()
-                        end
+                    local days_in_month = self.day_widget:getDaysInMonth(current_month, value)
+                    if current_day > days_in_month then
+                        self.day_widget.value = days_in_month
+                        self.day_widget:update()
                     end
                 end
             end,
