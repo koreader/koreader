@@ -524,48 +524,19 @@ step value to the target widget component (left, center, or right).
 ]]
 function DateTimeWidget:onDateTimeButtonPressed(args)
     local target_side, direction = unpack(args)
-    local target_widget
-    if target_side == "left_widget" then
-        if self.year then
-            target_widget = self.year_widget
-        elseif self.month then
-            target_widget = self.month_widget
-        elseif self.day then
-            target_widget = self.day_widget
-        elseif self.hour then
-            target_widget = self.hour_widget
-        elseif self.min then
-            target_widget = self.min_widget
-        end
-    elseif target_side == "center_widget" then
-        -- When alone (1 picker) or between others (3 pickers), try each possible widget
-        if self.month then
-            target_widget = self.month_widget
-        elseif self.day then
-            target_widget = self.day_widget
-        elseif self.hour then
-            target_widget = self.hour_widget
-        elseif self.min then
-            target_widget = self.min_widget
-        elseif self.sec then
-            target_widget = self.sec_widget
-        elseif self.year then
-            target_widget = self.year_widget
-        end
-    elseif target_side == "right_widget" then
-        -- For right position, could be any widget except year
-        if self.sec then
-            target_widget = self.sec_widget
-        elseif self.min then
-            target_widget = self.min_widget
-        elseif self.hour then
-            target_widget = self.hour_widget
-        elseif self.day then
-            target_widget = self.day_widget
-        elseif self.month then
-            target_widget = self.month_widget
+    local widget_order = {
+        left_widget = { "year", "month", "day", "hour", "min" },
+        center_widget = { "month", "day", "hour", "min", "sec", "year" },
+        right_widget = { "sec", "min", "hour", "day", "month" }
+    }
+    local function get_target_widget(self, target_side)
+        for _, key in ipairs(widget_order[target_side]) do
+            if self[key] then
+                return self[key .. "_widget"]
+            end
         end
     end
+    local target_widget = get_target_widget(self, target_side)
 
     if self.day and target_widget == self.day_widget then
         if target_widget.date_month and target_widget.date_year then
