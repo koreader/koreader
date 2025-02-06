@@ -529,10 +529,10 @@ function DateTimeWidget:onDateTimeButtonPressed(args)
         center_widget = { "month", "day", "hour", "min", "sec", "year" },
         right_widget = { "sec", "min", "hour", "day", "month" }
     }
-    local function get_target_widget(self, target_side)
-        for _, key in ipairs(widget_order[target_side]) do
-            if self[key] then
-                return self[key .. "_widget"]
+    local function get_target_widget(instance, side)
+        for _, key in ipairs(widget_order[side]) do
+            if instance[key] then
+                return instance[key .. "_widget"]
             end
         end
     end
