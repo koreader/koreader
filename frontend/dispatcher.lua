@@ -51,7 +51,6 @@ local Dispatcher = {
 local settingsList = {
     -- General
     filemanager = {category="none", event="Home", title=_("File browser"), general=true},
-    reading_progress = {category="none", event="ShowReaderProgress", title=_("Reading progress"), general=true},
     open_previous_document = {category="none", event="OpenLastDoc", title=_("Open previous document"), general=true},
     history = {category="none", event="ShowHist", title=_("History"), general=true},
     history_search = {category="none", event="SearchHistory", title=_("History search"), general=true},
@@ -90,6 +89,7 @@ local settingsList = {
     toggle_gsensor = {category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:hasGSensor()},
     temp_gsensor_on = {category="none", event="TempGSensorOn", title=_("Enable accelerometer for 5 seconds"), device=true, condition=Device:hasGSensor()},
     lock_gsensor = {category="none", event="LockGSensor", title=_("Lock auto rotation to current orientation"), device=true, condition=Device:hasGSensor()},
+    rotation_mode = {category="string", device=true}, -- title=_("Rotation"), parsed from CreOptions
     toggle_rotation = {category="none", event="SwapRotation", title=_("Toggle orientation"), device=true},
     invert_rotation = {category="none", event="InvertRotation", title=_("Invert rotation"), device=true},
     iterate_rotation = {category="none", event="IterateRotation", title=_("Rotate by 90° CW"), device=true},
@@ -140,8 +140,9 @@ local settingsList = {
     file_search_results = {category="none", event="ShowSearchResults", title=_("Last file search results"), filemanager=true},
     ----
     folder_up = {category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
-    -- go_to
-    -- back
+    fm_go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), filemanager=true},
+    fm_back = {category="none", event="Back", title=_("Back"), filemanager=true, separator=true},
+    ----
 
     -- Reader
     open_next_document_in_folder = {category="none", event="OpenNextDocumentInFolder", title=_("Open next document in folder"), reader=true, separator=true},
@@ -156,7 +157,7 @@ local settingsList = {
     last_page = {category="none", event="GoToEnd", title=_("Last page"), reader=true},
     random_page = {category="none", event="GoToRandomPage", title=_("Random page"), reader=true},
     page_jmp = {category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Turn pages"), reader=true},
-    go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), filemanager=true, reader=true},
+    go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), reader=true},
     skim = {category="none", event="ShowSkimtoDialog", title=_("Skim document"), reader=true},
     prev_bookmark = {category="none", event="GotoPreviousBookmarkFromPage", title=_("Previous bookmark"), reader=true},
     next_bookmark = {category="none", event="GotoNextBookmarkFromPage", title=_("Next bookmark"), reader=true},
@@ -164,7 +165,7 @@ local settingsList = {
     last_bookmark = {category="none", event="GotoLastBookmark", title=_("Last bookmark"), reader=true},
     latest_bookmark = {category="none", event="GoToLatestBookmark", title=_("Latest bookmark"), reader=true, separator=true},
     ----
-    back = {category="none", event="Back", title=_("Back"), filemanager=true, reader=true},
+    back = {category="none", event="Back", title=_("Back"), reader=true},
     previous_location = {category="none", event="GoBackLink", arg=true, title=_("Back to previous location"), reader=true},
     next_location = {category="none", event="GoForwardLink", arg=true, title=_("Forward to next location"), reader=true},
     follow_nearest_link = {category="arg", event="GoToPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest link"), reader=true},
@@ -220,7 +221,6 @@ local settingsList = {
     ----
 
     -- parsed from CreOptions
-    rotation_mode = {category="string", device=true},
     font_size = {category="absolutenumber", rolling=true, title=_("Font size"), step=0.5},
     word_spacing = {category="string", rolling=true},
     word_expansion = {category="string", rolling=true},
@@ -253,9 +253,9 @@ local settingsList = {
     kopt_zoom_overlap_h = {category="absolutenumber", paging=true},
     kopt_zoom_overlap_v = {category="absolutenumber", paging=true},
     kopt_zoom_mode_type = {category="string", paging=true},
-    -- kopt_zoom_range_number = {category="string", paging=true},
-    kopt_zoom_factor = {category="string", paging=true},
     kopt_zoom_mode_genus = {category="string", paging=true},
+    kopt_zoom_range_number = {category="string", paging=true, title=_("Number of columns/rows to split page")},
+    kopt_zoom_factor = {category="string", paging=true},
     kopt_zoom_direction = {category="string", paging=true},
     kopt_page_scroll = {category="string", paging=true},
     kopt_page_gap_height = {category="string", paging=true},
@@ -273,8 +273,7 @@ local settingsList = {
     kopt_doc_language = {category="string", paging=true},
     kopt_forced_ocr = {category="configurable", paging=true},
     kopt_writing_direction = {category="configurable", paging=true},
-    kopt_defect_size = {category="string", paging=true},
-    kopt_detect_indent = {category="configurable", paging=true},
+    kopt_defect_size = {category="string", paging=true}, -- not shown in the bottom menu
     kopt_max_columns = {category="configurable", paging=true},
     kopt_auto_straighten = {category="absolutenumber", paging=true},
 
@@ -285,7 +284,6 @@ local settingsList = {
 local dispatcher_menu_order = {
     -- General
     "filemanager",
-    "reading_progress",
     "open_previous_document",
     "history",
     "history_search",
@@ -375,8 +373,9 @@ local dispatcher_menu_order = {
     "file_search_results",
     ----
     "folder_up",
-    -- "go_to"
-    -- "back"
+    "fm_go_to",
+    "fm_back",
+    ----
 
     -- Reader
     "open_next_document_in_folder",
@@ -483,9 +482,9 @@ local dispatcher_menu_order = {
     "kopt_zoom_overlap_h",
     "kopt_zoom_overlap_v",
     "kopt_zoom_mode_type",
-    -- "kopt_zoom_range_number", -- can't figure out how this name text func works
-    "kopt_zoom_factor",
     "kopt_zoom_mode_genus",
+    "kopt_zoom_range_number",
+    "kopt_zoom_factor",
     "kopt_zoom_direction",
     "kopt_page_scroll",
     "kopt_page_gap_height",
@@ -504,7 +503,6 @@ local dispatcher_menu_order = {
     "kopt_forced_ocr",
     "kopt_writing_direction",
     "kopt_defect_size",
-    "kopt_detect_indent",
     "kopt_max_columns",
     "kopt_auto_straighten",
 }
@@ -514,9 +512,8 @@ local dispatcher_menu_order = {
 --]]--
 function Dispatcher:init()
     if Dispatcher.initialized then return end
-    local parseoptions = function(base, i, prefix)
-        for y=1, #base[i].options do
-            local option = base[i].options[y]
+    local parseoptions = function(options, prefix)
+        for _, option in ipairs(options) do
             local name = prefix and prefix .. option.name or option.name
             if settingsList[name] ~= nil then
                 if option.name ~= nil and option.values ~= nil then
@@ -568,10 +565,10 @@ function Dispatcher:init()
         end
     end
     for i=1,#CreOptions do
-        parseoptions(CreOptions, i)
+        parseoptions(CreOptions[i].options)
     end
-    for i=1,#KoptOptions do
-        parseoptions(KoptOptions, i, "kopt_")
+    for i=2,#KoptOptions do -- #1 "Rotation" parsed from CreOptions
+        parseoptions(KoptOptions[i].options, "kopt_")
     end
     UIManager:broadcastEvent(Event:new("DispatcherRegisterActions"))
     Dispatcher.initialized = true
@@ -695,7 +692,9 @@ function Dispatcher._addToOrder(location, settings, item)
     elseif count > 2 then
         local order = util.tableGetValue(actions, "settings", "order")
         if order then
-            table.insert(location[settings].settings.order, item)
+            if not util.arrayContains(order, item) then
+                table.insert(location[settings].settings.order, item)
+            end
         else -- old unordered actions
             util.tableSetValue(actions, {}, "settings", "order")
             for k in pairs(actions) do
@@ -1094,7 +1093,7 @@ function Dispatcher:isActionEnabled(action)
         elseif context == "rolling" then
             disabled = action["paging"]
         else -- FM
-            disabled = (action["reader"] or action["rolling"] or action["paging"]) and not action["filemanager"]
+            disabled = action["reader"] or action["rolling"] or action["paging"]
         end
     end
     return not disabled
