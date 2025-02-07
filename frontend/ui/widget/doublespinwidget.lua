@@ -55,13 +55,13 @@ local DoubleSpinWidget = FocusManager:extend{
     extra_callback = nil,
     is_range = false, -- show a range separator in default button and between the spinners
     unit = nil,
-    _left_widget = nil,  -- Instance variable to store left widget reference
-    _right_widget = nil, -- Instance variable to store right widget reference
 }
 
 function DoubleSpinWidget:init()
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
+    self._left_widget = nil  -- Instance variable to store left widget reference
+    self._right_widget = nil -- Instance variable to store right widget reference
     if not self.width then
         if not self.width_factor then
             self.width_factor = 0.8 -- default if no width specified
