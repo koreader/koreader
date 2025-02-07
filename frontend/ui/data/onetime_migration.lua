@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20250131
+local CURRENT_MIGRATION_DATE = 20250207
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -812,10 +812,10 @@ if last_migration_date < 20241228 then
     end
 end
 
--- 20250131, Separate GoTo and Back actions for Reader and FileManager.
+-- 20250207, Separate GoTo and Back actions for Reader and FileManager.
 -- https://github.com/koreader/koreader/pull/13167
-if last_migration_date < 20250131 then
-    logger.info("Performing one-time migration for 20250131")
+if last_migration_date < 20250207 then
+    logger.info("Performing one-time migration for 20250207")
 
     local gestures_path = ffiUtil.joinPath(DataStorage:getSettingsDir(), "gestures.lua")
     if lfs.attributes(gestures_path, "mode") == "file" then
