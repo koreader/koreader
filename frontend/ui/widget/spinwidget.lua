@@ -52,11 +52,10 @@ local SpinWidget = FocusManager:extend{
     unit = nil, -- unit to show or nil
 }
 
-local value_widget
-
 function SpinWidget:init()
     -- used to enable ok_button, self.value may be changed in extra callback
     self.original_value = self.value_table and self.value_table[self.value_index or 1] or self.value
+    local value_widget
 
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()

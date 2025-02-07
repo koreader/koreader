@@ -57,12 +57,11 @@ local DoubleSpinWidget = FocusManager:extend{
     unit = nil,
 }
 
-local left_widget
-local right_widget
-
 function DoubleSpinWidget:init()
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
+    local left_widget
+    local right_widget
     if not self.width then
         if not self.width_factor then
             self.width_factor = 0.8 -- default if no width specified
