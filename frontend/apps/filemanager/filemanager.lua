@@ -694,7 +694,16 @@ function FileManager:tapPlus()
                     text = _("Open random document"),
                     callback = function()
                         UIManager:close(plus_dialog)
-                        self:openRandomFile(self.file_chooser.path)
+                        self:openRandomFile(self.file_chooser.path, false)
+                    end
+                },
+            },
+            {
+                {
+                    text = _("Open random unopened document"),
+                    callback = function()
+                        UIManager:close(plus_dialog)
+                        self:openRandomFile(self.file_chooser.path, true)
                     end
                 },
             },
@@ -852,9 +861,13 @@ function FileManager:setHome(path)
     return true
 end
 
-function FileManager:openRandomFile(dir)
-    local match_func = function(file) -- documents, not yet opened
-        return DocumentRegistry:hasProvider(file) and not BookList.hasBookBeenOpened(file)
+function FileManager:openRandomFile(dir, is_unopened)
+    local match_func = function(file)
+        if is_unopened then
+            return DocumentRegistry:hasProvider(file) and not BookList.hasBookBeenOpened(file)
+        else
+            return DocumentRegistry:hasProvider(file)
+        end
     end
     local random_file = filemanagerutil.getRandomFile(dir, match_func)
     if random_file then
@@ -868,7 +881,7 @@ function FileManager:openRandomFile(dir)
             -- @translators Another file. This is a button on the open random file dialog. It presents a file with the choices Open/Another.
             choice2_text = _("Another"),
             choice2_callback = function()
-                self:openRandomFile(dir)
+                self:openRandomFile(dir, is_unopened)
             end,
         })
     else
