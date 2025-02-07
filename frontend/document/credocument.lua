@@ -77,7 +77,7 @@ local CreDocument = Document:extend{
     last_linear_page = nil,
 }
 
-function CreDocument:cacheInit()
+function CreDocument.cacheInit()
     -- remove legacy cr3cache directory
     if lfs.attributes("./cr3cache", "mode") == "directory" then
         os.execute("rm -r ./cr3cache")
@@ -112,7 +112,7 @@ function CreDocument:engineInit()
         end)
 
         -- initialize cache
-        self:cacheInit()
+        CreDocument.cacheInit()
 
         -- initialize hyph dictionaries
         cre.initHyphDict("./data/hyph/")
