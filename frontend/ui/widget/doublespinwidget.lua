@@ -127,7 +127,6 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         unit = self.unit,
     }
     self:mergeLayoutInHorizontal(right_widget)
-
     left_widget.picker_updated_callback = function(value)
         self:update(value, right_widget:getValue())
     end
