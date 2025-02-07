@@ -217,7 +217,6 @@ function HotKeys:genMenu(hotkey)
         no_refresh_on_check = true,
         separator = true,
         checked_func = function()
-            -- Return true if no hotkey exists, or if the hotkey exists but has no dispatcher settings
             return self.hotkeys[hotkey] == nil or next(self.hotkeys[hotkey]) == nil
         end,
         callback = function(touchmenu_instance)
@@ -228,7 +227,7 @@ function HotKeys:genMenu(hotkey)
             end
             if self.hotkeys[hotkey] and next(self.hotkeys[hotkey]) then
                 Dispatcher.removeActions(self.hotkeys[hotkey], do_remove)
-            else -- If no actions are selected, just update the defaults
+            else
                 do_remove()
             end
         end,
