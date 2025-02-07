@@ -3,11 +3,6 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local UIManager = require("ui/uimanager")
 local mime = require("mime")
 local md = require("template/md")
-local json = require("json")
-local http = require("socket.http")
-local ltn12 = require("ltn12")
-local socket = require("socket")
-local socketutil = require("socketutil")
 local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -22,41 +17,6 @@ local NextcloudExporter = require("base"):new {
 -- fetching all notes from Nextcloud is costly, so we keep a copy here
 -- while we determine wether to update existing or create a new note
 local notes_cache
-
-local function makeRequest(url, auth, method, request_body)
-    local sink = {}
-    local request_body_json = json.encode(request_body)
-    local source = ltn12.source.string(request_body_json)
-
-    local request = {
-        url     = url,
-        method  = method,
-        sink    = ltn12.sink.table(sink),
-        source  = source,
-        headers = {
-            ["Content-Length"] = #request_body_json,
-            ["Content-Type"] = "application/json",
-            ["Authorization"] = "Basic " .. auth,
-            ["OCS-APIRequest"] = "true",
-        },
-    }
-    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
-    local code, headers, status = socket.skip(1, http.request(request))
-    socketutil:reset_timeout()
-
-    if code ~= 200 then
-        logger.warn("Nextcloud: HTTP response code <> 200. Response status:", status or code or "network unreachable")
-        logger.dbg("Response headers:", headers)
-        return nil, status
-    end
-
-    if not sink[1] then
-        return nil, "No response from Nextcloud"
-    end
-
-    local response = json.decode(sink[1])
-    return response
-end
 
 function NextcloudExporter:isReadyToExport()
     return self.settings.host and self.settings.username and self.settings.password
@@ -171,9 +131,15 @@ function NextcloudExporter:export(t)
     local response
     local err
 
+
+    local json_headers = {
+        ["Authorization"] = "Basic " .. auth,
+        ["OCS-APIRequest"] = "true",
+    }
+
     -- fetch existing notes from Nextcloud
     local url = url_base .. "notes?category=" .. self.category
-    notes_cache, err = makeRequest(url, auth, "GET")
+    notes_cache, err = self:makeJsonRequest(url, "GET", nil, json_headers)
     if not notes_cache then
         logger.warn("Error fetching existing notes from Nextcloud", err)
         return false
@@ -212,7 +178,7 @@ function NextcloudExporter:export(t)
         end
 
         -- save note in Nextcloud
-        response, err = makeRequest(url, auth, verb, request_body)
+        response, err = self:makeJsonRequest(url, verb, request_body, json_headers)
         if not response then
             logger.warn("Error saving note in Nextcloud", err)
             return false

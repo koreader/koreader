@@ -8,6 +8,12 @@ Each target should inherit from this class and implement *at least* an `export` 
 
 local DataStorage = require("datastorage")
 local Device = require("device")
+local http = require("socket.http")
+local ltn12 = require("ltn12")
+local rapidjson = require("rapidjson")
+local socket = require("socket")
+local socketutil = require("socketutil")
+
 local util = require("util")
 local _ = require("gettext")
 
@@ -158,6 +164,62 @@ Shares text with other apps
 function BaseExporter:shareText(text, title)
     local reason = _("Share") .. " " .. self.name
     Device:doShareText(text, reason, title, self.mimetype)
+end
+
+--[[--
+Makes a json request against a remote endpoint
+
+@param endpoint string url
+@param method string method
+@param body string json string to encode
+@param headers table of additional headers
+
+@treturn response or nil, err
+]]
+
+function BaseExporter:makeJsonRequest(endpoint, method, body, headers)
+    local sink = {}
+    local extra_headers = headers or {}
+    local body_json = rapidjson.encode(body)
+    if not body_json then
+        return nil, "Invalid JSON string"
+    end
+    local source = ltn12.source.string(body_json)
+    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
+
+    local request = {
+        url = endpoint,
+        method = method,
+        sink = ltn12.sink.table(sink),
+        source = source,
+        headers = {
+            ["Content-Length"] = #body_json,
+            ["Content-Type"] = "application/json",
+        },
+    }
+
+    -- fill in extra headers
+    for k, v in pairs(extra_headers) do
+        request.headers[k] = v
+    end
+
+    local code = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
+
+    if code ~= 200 then
+        return nil, "Server HTTP response code is not OK"
+    end
+
+    if not sink[1] then
+        return nil, "No response from server"
+    end
+
+    local response, err = rapidjson.decode(sink[1])
+    if not response then
+        return nil, "Unable to decode JSON: " .. err
+    end
+
+    return response
 end
 
 return BaseExporter

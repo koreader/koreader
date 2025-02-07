@@ -1,11 +1,6 @@
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
-local http = require("socket.http")
-local json = require("json")
 local logger = require("logger")
-local ltn12 = require("ltn12")
-local socket = require("socket")
-local socketutil = require("socketutil")
 local _ = require("gettext")
 
 -- readwise exporter
@@ -13,35 +8,6 @@ local ReadwiseExporter = require("base"):new {
     name = "readwise",
     is_remote = true,
 }
-
-local function makeRequest(endpoint, method, request_body, token)
-    local sink = {}
-    local request_body_json = json.encode(request_body)
-    local source = ltn12.source.string(request_body_json)
-    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
-    local request = {
-        url     = "https://readwise.io/api/v2/" .. endpoint,
-        method  = method,
-        sink    = ltn12.sink.table(sink),
-        source  = source,
-        headers = {
-            ["Content-Length"] = #request_body_json,
-            ["Content-Type"] = "application/json",
-            ["Authorization"] = "Token " .. token
-        },
-    }
-    local code, headers, status = socket.skip(1, http.request(request))
-    socketutil:reset_timeout()
-
-    if code ~= 200 then
-        logger.warn("Readwise: HTTP response code <> 200. Response status:", status or code or "network unreachable")
-        logger.dbg("Response headers:", headers)
-        return nil, status
-    end
-
-    local response = json.decode(sink[1])
-    return response
-end
 
 function ReadwiseExporter:isReadyToExport()
     if self.settings.token then return true end
@@ -96,6 +62,11 @@ end
 
 function ReadwiseExporter:createHighlights(booknotes)
     local highlights = {}
+
+    local json_headers = {
+        ["Authorization"] = "Token " .. self.settings.token,
+    }
+
     for _, chapter in ipairs(booknotes) do
         for _, clipping in ipairs(chapter) do
             local highlight = {
@@ -113,13 +84,13 @@ function ReadwiseExporter:createHighlights(booknotes)
         end
     end
 
-    local result, err = makeRequest("highlights", "POST", { highlights = highlights }, self.settings.token)
+    local result, err = self:makeJsonRequest("https://readwise.io/api/v2/highlights", "POST",
+         { highlights = highlights }, json_headers)
+
     if not result then
         logger.warn("error creating highlights", err)
         return false
     end
-
-    logger.dbg("createHighlights result", result)
     return true
 end
 
