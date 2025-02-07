@@ -60,8 +60,6 @@ local DoubleSpinWidget = FocusManager:extend{
 function DoubleSpinWidget:init()
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
-    local left_widget
-    local right_widget
     if not self.width then
         if not self.width_factor then
             self.width_factor = 0.8 -- default if no width specified
@@ -71,10 +69,10 @@ function DoubleSpinWidget:init()
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
         if Device:hasDPad() and Device:useDPadAsActionKeys() then
-            self.key_events.LeftWidgetValueUp    = { { "LPgFwd"  }, event = "DoubleSpinButtonPressed", args = { "left_widget",   1 } }
-            self.key_events.LeftWidgetValueDown  = { { "LPgBack" }, event = "DoubleSpinButtonPressed", args = { "left_widget",  -1 } }
-            self.key_events.RightWidgetValueUp   = { { "RPgFwd"  }, event = "DoubleSpinButtonPressed", args = { "right_widget",  1 } }
-            self.key_events.RightWidgetValueDown = { { "RPgBack" }, event = "DoubleSpinButtonPressed", args = { "right_widget", -1 } }
+            self.key_events.LeftWidgetValueUp    = { { "LPgFwd"  }, event = "DoubleSpinButtonPressed", args = { true,   1 } }
+            self.key_events.LeftWidgetValueDown  = { { "LPgBack" }, event = "DoubleSpinButtonPressed", args = { true,  -1 } }
+            self.key_events.RightWidgetValueUp   = { { "RPgFwd"  }, event = "DoubleSpinButtonPressed", args = { false,  1 } }
+            self.key_events.RightWidgetValueDown = { { "RPgBack" }, event = "DoubleSpinButtonPressed", args = { false, -1 } }
         end
     end
     if Device:isTouchDevice() then
@@ -102,7 +100,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
     local prev_movable_offset = self.movable and self.movable:getMovedOffset()
     local prev_movable_alpha = self.movable and self.movable.alpha
     self.layout = {}
-    left_widget = NumberPickerWidget:new{
+    self.left_widget = NumberPickerWidget:new{
         show_parent = self,
         value = numberpicker_left_value or self.left_value,
         value_min = self.left_min,
@@ -113,8 +111,8 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         wrap = self.left_wrap,
         unit = self.unit,
     }
-    self:mergeLayoutInHorizontal(left_widget)
-    right_widget = NumberPickerWidget:new{
+    self:mergeLayoutInHorizontal(self.left_widget)
+    self.right_widget = NumberPickerWidget:new{
         show_parent = self,
         value = numberpicker_right_value or self.right_value,
         value_min = self.right_min,
@@ -125,12 +123,12 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         wrap = self.right_wrap,
         unit = self.unit,
     }
-    self:mergeLayoutInHorizontal(right_widget)
-    left_widget.picker_updated_callback = function(value)
-        self:update(value, right_widget:getValue())
+    self:mergeLayoutInHorizontal(self.right_widget)
+    self.left_widget.picker_updated_callback = function(value)
+        self:update(value, self.right_widget:getValue())
     end
-    right_widget.picker_updated_callback = function(value)
-        self:update(left_widget:getValue(), value)
+    self.right_widget.picker_updated_callback = function(value)
+        self:update(self.left_widget:getValue(), value)
     end
     local separator_widget = TextWidget:new{
         text = self.is_range and "–" or "",
@@ -141,7 +139,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
     local text_max_width = math.floor(0.95 * self.width / 2)
     local left_vertical_group = VerticalGroup:new{
         align = "center",
-        left_widget,
+        self.left_widget,
     }
     local separator_vertical_group = VerticalGroup:new{
         align = "center",
@@ -149,7 +147,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
     }
     local right_vertical_group = VerticalGroup:new{
         align = "center",
-        right_widget,
+        self.right_widget,
     }
 
     if self.left_text ~= "" or self.right_text ~= "" then
@@ -219,10 +217,10 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
                     self.right_precision and string.format(self.right_precision, self.right_default) or self.right_default,
                     unit, separator),
                 callback = function()
-                    left_widget.value = self.left_default
-                    right_widget.value = self.right_default
-                    left_widget:update()
-                    right_widget:update()
+                    self.left_widget.value = self.left_default
+                    self.right_widget.value = self.right_default
+                    self.left_widget:update()
+                    self.right_widget:update()
                 end,
             }
         })
@@ -233,7 +231,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
                 text = self.extra_text,
                 callback = function()
                     if self.extra_callback then
-                        self.extra_callback(left_widget:getValue(), right_widget:getValue())
+                        self.extra_callback(self.left_widget:getValue(), self.right_widget:getValue())
                     end
                     if not self.keep_shown_on_apply then -- assume extra wants it same as ok
                         self:onClose()
@@ -254,11 +252,11 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         },
         {
             text = self.ok_text,
-            enabled = self.ok_always_enabled or self.left_value ~= left_widget:getValue()
-                or self.right_value ~= right_widget:getValue(),
+            enabled = self.ok_always_enabled or self.left_value ~= self.left_widget:getValue()
+                or self.right_value ~= self.right_widget:getValue(),
             callback = function()
-                self.left_value = left_widget:getValue()
-                self.right_value = right_widget:getValue()
+                self.left_value = self.left_widget:getValue()
+                self.right_value = self.right_widget:getValue()
                 if self.callback then
                     self.callback(self.left_value, self.right_value)
                 end
@@ -363,13 +361,13 @@ This method processes value changes based on the direction of the spin, applying
 step value to either the left or right widget component.
 
 @param args {table} A table containing:
-    - target_side {string}. Either "left_widget" or "right_widget" indicating which side to modify
-    - direction {number}. The direction of change (1 for increase, -1 for decrease)
+    - is_left_widget {boolean}. True for self.left_widget or False for self.right_widget
+    - direction {int}. The direction of change (1 for increase, -1 for decrease)
 @return {boolean} Returns true to indicate the event was handled
 ]]
 function DoubleSpinWidget:onDoubleSpinButtonPressed(args)
-    local target_side, direction = unpack(args)
-    local target_widget = target_side == "left_widget" and left_widget or right_widget
+    local is_left_widget, direction = unpack(args)
+    local target_widget = is_left_widget and self.left_widget or self.right_widget
     target_widget.value = target_widget:changeValue(target_widget.value_step * direction)
     target_widget:update()
     return true
