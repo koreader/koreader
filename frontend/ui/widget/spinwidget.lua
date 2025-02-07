@@ -55,6 +55,7 @@ local SpinWidget = FocusManager:extend{
 function SpinWidget:init()
     -- used to enable ok_button, self.value may be changed in extra callback
     self.original_value = self.value_table and self.value_table[self.value_index or 1] or self.value
+    self._value_widget = nil
 
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
@@ -92,7 +93,7 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
     local prev_movable_offset = self.movable and self.movable:getMovedOffset()
     local prev_movable_alpha = self.movable and self.movable.alpha
     self.layout = {}
-    self.value_widget = NumberPickerWidget:new{
+    local value_widget = NumberPickerWidget:new{
         show_parent = self,
         value = numberpicker_value or self.value,
         value_table = self.value_table,
@@ -108,11 +109,12 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         end,
         unit = self.unit,
     }
-    self:mergeLayoutInVertical(self.value_widget)
+    self:mergeLayoutInVertical(value_widget)
     local value_group = HorizontalGroup:new{
         align = "center",
-        self.value_widget,
+        value_widget,
     }
+    self._value_widget = value_widget
 
     local title_bar = TitleBar:new{
         width = self.width,
@@ -151,12 +153,12 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
             {
                 text = T(_("Default value: %1%2"), value, unit),
                 callback = function()
-                    if self.value_widget.value_table then
-                        self.value_widget.value_index = self.default_value
+                    if self._value_widget.value_table then
+                        self._value_widget.value_index = self.default_value
                     else
-                        self.value_widget.value = self.default_value
+                        self._value_widget.value = self.default_value
                     end
-                    self.value_widget:update()
+                    self._value_widget:update()
                 end,
             },
         })
@@ -166,7 +168,7 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         text = self.extra_text,
         callback = function()
             if self.extra_callback then
-                self.value, self.value_index = self.value_widget:getValue()
+                self.value, self.value_index = self._value_widget:getValue()
                 self.extra_callback(self)
             end
             if not self.keep_shown_on_apply then -- assume extra wants it same as ok
@@ -178,7 +180,7 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         text = self.option_text,
         callback = function()
             if self.option_callback then
-                self.value, self.value_index = self.value_widget:getValue()
+                self.value, self.value_index = self._value_widget:getValue()
                 self.option_callback(self)
             end
             if not self.keep_shown_on_apply then -- assume option wants it same as ok
@@ -205,9 +207,9 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         },
         {
             text = self.ok_text,
-            enabled = self.ok_always_enabled or self.original_value ~= self.value_widget:getValue(),
+            enabled = self.ok_always_enabled or self.original_value ~= self._value_widget:getValue(),
             callback = function()
-                self.value, self.value_index = self.value_widget:getValue()
+                self.value, self.value_index = self._value_widget:getValue()
                 self.original_value = self.value
                 if self.callback then
                     self.callback(self)
@@ -347,9 +349,8 @@ This method updates the widget's value based on the direction of the spin.
 @return boolean Always returns true to indicate the event was handled
 ]]
 function SpinWidget:onSpinButtonPressed(direction)
-    -- Use the widget's changeValue method but don't update the stored value directly
-    self.value_widget.value = self.value_widget:changeValue(self.value_step * direction)
-    self.value_widget:update()
+    self._value_widget.value = self._value_widget:changeValue(self.value_step * direction)
+    self._value_widget:update()
     return true
 end
 
