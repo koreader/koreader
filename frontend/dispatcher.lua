@@ -1121,10 +1121,7 @@ function Dispatcher._showAsMenu(settings, exec_props)
         table.insert(buttons, {{
             text = v.text,
             enabled = Dispatcher:isActionEnabled(settingsList[v.key]),
-            align = "left",
-            font_face = "smallinfofont",
-            font_size = 22,
-            font_bold = false,
+            menu_style = true,
             callback = function()
                 UIManager:close(quickmenu)
                 Dispatcher:execute({[v.key] = settings[v.key]})
