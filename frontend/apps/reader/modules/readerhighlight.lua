@@ -1132,11 +1132,8 @@ function ReaderHighlight:showChooseHighlightDialog(highlights)
             buttons[i] = {{
                 text = (item.note and self.ui.bookmark.display_prefix["note"]
                                    or self.ui.bookmark.display_prefix["highlight"]) .. item.text,
-                align = "left",
                 avoid_text_truncation = false,
-                font_face = "smallinfofont",
-                font_size = 22,
-                font_bold = false,
+                menu_style = true,
                 callback = function()
                     UIManager:close(dialog)
                     self:showHighlightNoteOrDialog(index)
@@ -1200,7 +1197,7 @@ function ReaderHighlight:showHighlightNoteOrDialog(index)
                         text = _("Highlight menu"),
                         callback = function()
                             UIManager:close(textviewer)
-                            self:onShowHighlightDialog(index)
+                            self:showHighlightDialog(index)
                         end,
                     },
                 },
@@ -1208,11 +1205,11 @@ function ReaderHighlight:showHighlightNoteOrDialog(index)
         }
         UIManager:show(textviewer)
     else
-        self:onShowHighlightDialog(index)
+        self:showHighlightDialog(index)
     end
 end
 
-function ReaderHighlight:onShowHighlightDialog(index)
+function ReaderHighlight:showHighlightDialog(index)
     local item = self.ui.annotation.annotations[index]
     local buttons = {
         {
@@ -2158,7 +2155,7 @@ function ReaderHighlight:editHighlightStyle(index)
         UIManager:setDirty(self.dialog, "ui")
         self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
     end
-    self:showHighlightStyleDialog(apply_drawer, item.drawer, index)
+    self:showHighlightStyleDialog(apply_drawer, index)
 end
 
 function ReaderHighlight:editHighlightColor(index)
@@ -2178,32 +2175,37 @@ function ReaderHighlight:editHighlightColor(index)
     self:showHighlightColorDialog(apply_color, item)
 end
 
-function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer)
-    local default_drawer, keep_shown_on_apply
-    if item_drawer then -- called from ReaderHighlight:editHighlightStyle()
-        default_drawer = self.view.highlight.saved_drawer
-        keep_shown_on_apply = true
+function ReaderHighlight:showHighlightStyleDialog(caller_callback, index)
+    local item_drawer = index and self.ui.annotation.annotations[index].drawer
+    local dialog
+    local buttons = {}
+    for i, v in ipairs(highlight_style) do
+        buttons[i] = {{
+            text = v[1] .. (v[2] == item_drawer and "  ✓" or ""),
+            menu_style = true,
+            callback = function()
+                UIManager:close(dialog)
+                UIManager:nextTick(function()
+                    caller_callback(v[2])
+                end)
+            end,
+        }}
     end
-    local radio_buttons = {}
-    for _, v in ipairs(highlight_style) do
-        table.insert(radio_buttons, {
-            {
-                text = v[1],
-                checked = item_drawer == v[2],
-                provider = v[2],
-            },
-        })
+    if index then -- called from ReaderHighlight:editHighlightStyle()
+        table.insert(buttons, {}) -- separator
+        table.insert(buttons, {{
+            text = _("Highlight menu"),
+            callback = function()
+                UIManager:close(dialog)
+                self:showHighlightDialog(index)
+            end,
+        }})
     end
-    UIManager:show(RadioButtonWidget:new{
-        title_text = _("Highlight style"),
-        width_factor = 0.5,
-        keep_shown_on_apply = keep_shown_on_apply,
-        radio_buttons = radio_buttons,
-        default_provider = default_drawer,
-        callback = function(radio)
-            caller_callback(radio.provider)
-        end,
-    })
+    dialog = ButtonDialog:new{
+        width_factor = 0.4,
+        buttons = buttons,
+    }
+    UIManager:show(dialog)
 end
 
 function ReaderHighlight:showHighlightColorDialog(caller_callback, item)
