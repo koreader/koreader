@@ -132,6 +132,15 @@ function DateTimeWidget:init()
 
     -- Actually the widget layout
     self:createLayout()
+
+    -- Move focus to OK button on NT devices with key_events, saves time for users
+    if Device:hasDPad() and Device:useDPadAsActionKeys() and not Device:isTouchDevice() then
+        -- Since button table is the last row in our layout, and OK is the last button
+        -- We need to set focus to both last row, and last column
+        local last_row = #self.layout
+        local last_col = #self.layout[last_row]
+        self:moveFocusTo(last_col, last_row)
+    end
 end
 
 function DateTimeWidget:registerKeyEvents()
