@@ -520,36 +520,8 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 end
             end
         end,
-        callback = function(touchmenu_instance)
-            local notemark = self.view.highlight.note_mark or "none"
-            local radio_buttons = {}
-            for _, v in ipairs(note_mark) do
-                table.insert(radio_buttons, {
-                    {
-                        text = v[1],
-                        checked = v[2] == notemark,
-                        provider = v[2],
-                    },
-                })
-            end
-            UIManager:show(RadioButtonWidget:new{
-                title_text = _("Note marker"),
-                width_factor = 0.5,
-                keep_shown_on_apply = true,
-                radio_buttons = radio_buttons,
-                callback = function(radio)
-                    if radio.provider == "none" then
-                        self.view.highlight.note_mark = nil
-                        G_reader_settings:delSetting("highlight_note_marker")
-                    else
-                        self.view.highlight.note_mark = radio.provider
-                        G_reader_settings:saveSetting("highlight_note_marker", radio.provider)
-                    end
-                    self.view:setupNoteMarkPosition()
-                    UIManager:setDirty(self.dialog, "ui")
-                    touchmenu_instance:updateItems()
-                end,
-            })
+        callback = function()
+            self:showNoteMarkerDialog()
         end,
         separator = true,
     })
@@ -2175,10 +2147,8 @@ function ReaderHighlight:showHighlightStyleDialog(caller_callback, index)
             text = v[1] .. (v[2] == item_drawer and "  ✓" or ""),
             menu_style = true,
             callback = function()
+                caller_callback(v[2])
                 UIManager:close(dialog)
-                UIManager:nextTick(function()
-                    caller_callback(v[2])
-                end)
             end,
         }}
     end
@@ -2187,8 +2157,8 @@ function ReaderHighlight:showHighlightStyleDialog(caller_callback, index)
         table.insert(buttons, {{
             text = _("Highlight menu"),
             callback = function()
-                UIManager:close(dialog)
                 self:showHighlightDialog(index)
+                UIManager:close(dialog)
             end,
         }})
     end
@@ -2234,6 +2204,32 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, item)
         colorful = true,
         dithered = true,
     })
+end
+
+function ReaderHighlight:showNoteMarkerDialog()
+    local notemark = self.view.highlight.note_mark or "none"
+    local dialog
+    local buttons = {}
+    for i, v in ipairs(note_mark) do
+        local mark = v[2]
+        buttons[i] = {{
+            text = v[1] .. (mark == notemark and "  ✓" or ""),
+            menu_style = true,
+            callback = function()
+                self.view.highlight.note_mark = mark ~= "none" and mark or nil
+                G_reader_settings:saveSetting("highlight_note_marker", self.view.highlight.note_mark)
+                self.view:setupNoteMarkPosition()
+                UIManager:setDirty(self.dialog, "ui")
+                UIManager:close(dialog)
+                self:showNoteMarkerDialog()
+            end,
+        }}
+    end
+    dialog = ButtonDialog:new{
+        width_factor = 0.4,
+        buttons = buttons,
+    }
+    UIManager:show(dialog)
 end
 
 function ReaderHighlight:startSelection()
