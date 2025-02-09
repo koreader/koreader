@@ -970,7 +970,6 @@ function ReaderHighlight:clear(clear_id)
     end
     self.is_word_selection = false
     self.selected_text_start_xpointer = nil
-    self.gest_pos = nil
     if self.hold_pos then
         self.hold_pos = nil
         self.selected_text = nil
@@ -1211,22 +1210,21 @@ end
 
 function ReaderHighlight:showHighlightDialog(index)
     local item = self.ui.annotation.annotations[index]
+    local edit_highlight_dialog
     local buttons = {
         {
             {
                 text = "\u{F48E}", -- Trash can (icon to prevent confusion of Delete/Details buttons)
                 callback = function()
                     self:deleteHighlight(index)
-                    UIManager:close(self.edit_highlight_dialog)
-                    self.edit_highlight_dialog = nil
+                    UIManager:close(edit_highlight_dialog)
                 end,
             },
             {
                 text = C_("Highlight", "Style"),
                 callback = function()
                     self:editHighlightStyle(index)
-                    UIManager:close(self.edit_highlight_dialog)
-                    self.edit_highlight_dialog = nil
+                    UIManager:close(edit_highlight_dialog)
                 end,
             },
             {
@@ -1234,24 +1232,21 @@ function ReaderHighlight:showHighlightDialog(index)
                 enabled = item.drawer ~= "invert",
                 callback = function()
                     self:editHighlightColor(index)
-                    UIManager:close(self.edit_highlight_dialog)
-                    self.edit_highlight_dialog = nil
+                    UIManager:close(edit_highlight_dialog)
                 end,
             },
             {
                 text = _("Note"),
                 callback = function()
                     self:editNote(index)
-                    UIManager:close(self.edit_highlight_dialog)
-                    self.edit_highlight_dialog = nil
+                    UIManager:close(edit_highlight_dialog)
                 end,
             },
             {
                 text = _("Details"),
                 callback = function()
                     self.ui.bookmark:showBookmarkDetails(index)
-                    UIManager:close(self.edit_highlight_dialog)
-                    self.edit_highlight_dialog = nil
+                    UIManager:close(edit_highlight_dialog)
                 end,
             },
             {
@@ -1259,8 +1254,7 @@ function ReaderHighlight:showHighlightDialog(index)
                 callback = function()
                     self.selected_text = util.tableDeepCopy(item)
                     self:onShowHighlightMenu(index)
-                    UIManager:close(self.edit_highlight_dialog)
-                    self.edit_highlight_dialog = nil
+                    UIManager:close(edit_highlight_dialog)
                 end,
             },
         },
@@ -1286,7 +1280,6 @@ function ReaderHighlight:showHighlightDialog(index)
                 end,
                 hold_callback = function()
                     self:updateHighlight(index, 0, -1, true)
-                    return true
                 end,
             },
             {
@@ -1297,7 +1290,6 @@ function ReaderHighlight:showHighlightDialog(index)
                 end,
                 hold_callback = function()
                     self:updateHighlight(index, 0, 1, true)
-                    return true
                 end,
             },
             {
@@ -1322,13 +1314,14 @@ function ReaderHighlight:showHighlightDialog(index)
             }
         })
     end
-    self.edit_highlight_dialog = ButtonDialog:new{ -- in self for unit tests
+    edit_highlight_dialog = ButtonDialog:new{
+        name = "edit_highlight_dialog", -- for unit tests
         buttons = buttons,
         anchor = function()
-            return self:_getDialogAnchor(self.edit_highlight_dialog, index)
+            return self:_getDialogAnchor(edit_highlight_dialog, index)
         end,
     }
-    UIManager:show(self.edit_highlight_dialog)
+    UIManager:show(edit_highlight_dialog)
     return true
 end
 
@@ -1509,7 +1502,6 @@ function ReaderHighlight:onHold(arg, ges)
         logger.dbg("not inside page area")
         return false
     end
-    self.gest_pos = { self.hold_pos, self.hold_pos }
 
     self.allow_hold_pan_corner_scroll = false -- reset this, don't allow that yet
 
@@ -1716,7 +1708,6 @@ function ReaderHighlight:onHoldPan(_, ges)
 
     local old_text = self.selected_text and self.selected_text.text
     self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.holdpan_pos)
-    self.gest_pos = { self.hold_pos, self.holdpan_pos }
     self.is_word_selection = false
 
     if self.selected_text and self.selected_text.pos0 then
