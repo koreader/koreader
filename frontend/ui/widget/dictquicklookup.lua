@@ -751,9 +751,12 @@ function DictQuickLookup:registerKeyEvents()
         self.key_events.MenuKeyPress = { { "Menu" } }
         if Device:hasScreenKB() or Device:hasKeyboard() then
             local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
-            self.key_events.ChangeToPrevDict = { { modifier, "Left" } }
-            self.key_events.ChangeToNextDict = { { modifier, "Right" } }
-            self.key_events.HighlightIndicator = { { modifier, { "Up", "Down" } }, event = "StartHighlightIndicator" }
+            self.key_events.ChangeToPrevDict = { { modifier, Input.group.PgBack } }
+            self.key_events.ChangeToNextDict = { { modifier, Input.group.PgFwd } }
+            self.key_events.StartOrUpHighlightIndicator   = { { modifier, "Up" },   event = "StartOrMoveHighlightIndicator", args = { 0, -1, true } }
+            self.key_events.StartOrDownHighlightIndicator = { { modifier, "Down" }, event = "StartOrMoveHighlightIndicator", args = { 0,  1, true } }
+            self.key_events.FastLeftHighlightIndicator  = { { modifier, "Left" },  event = "MoveHighlightIndicator", args = { -1, 0, true } }
+            self.key_events.FastRightHighlightIndicator = { { modifier, "Right" }, event = "MoveHighlightIndicator", args = { 1,  0, true } }
             if Device:hasKeyboard() then
                 self.key_events.LookupInputWordClear = { { Input.group.Alphabet }, event = "LookupInputWord" }
                 -- We need to concat here so that the 'del' event press, which propagates to inputText (desirable for previous key_event,
@@ -1668,9 +1671,9 @@ function DictQuickLookup:clearDictionaryHighlight()
     end
 end
 
-------------------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------------------
-
+--[=[
+The following methods are used to handle text selection in the dictionary widget for non-touch devices.
+]=]
 function DictQuickLookup:onStartHighlightIndicator()
     if not (self.definition_widget and not self.text_widget.highlight.indicator) then return false end
     -- Suspend focus management from button_table instance to prevent the d-pad
@@ -1687,7 +1690,8 @@ function DictQuickLookup:onStartHighlightIndicator()
         }
         -- it's complicated, but we need two rounds of refocusing in order to clear up the focus
         self.button_table:moveFocusTo(1, 1)
-        self.button_table:moveFocusTo(1, 1, 2)
+        local NOT_FOCUS = 2
+        self.button_table:moveFocusTo(1, 1, NOT_FOCUS)
     end
 
     -- Create rect with coordinates relative to the content area
@@ -1739,11 +1743,18 @@ end
 
 function DictQuickLookup:onMoveHighlightIndicator(args)
     if not (self.text_widget and self.text_widget.highlight.indicator) then return false end
-    local dx, dy = unpack(args)
-    local move_distance = Size.item.height_default / (G_reader_settings:readSetting("highlight_non_touch_factor") or 4)
+    local dx, dy, quick_move = unpack(args)
+    local move_distance = Size.item.height_default / (G_reader_settings:readSetting("highlight_non_touch_factor_dict") or 3)
     local rect = self.text_widget.highlight.indicator:copy()
-    rect.x = rect.x + move_distance * dx
-    rect.y = rect.y + move_distance * dy
+    local quick_move_distance_dx = self.content_width * (1/4)
+    local quick_move_distance_dy = self.definition_height * (1/4)
+    if quick_move then
+        rect.x = rect.x + quick_move_distance_dx * dx
+        rect.y = rect.y + quick_move_distance_dy * dy
+    else
+        rect.x = rect.x + move_distance * dx
+        rect.y = rect.y + move_distance * dy
+    end
 
     if rect.x < 0 then
         rect.x = 0
@@ -1784,15 +1795,18 @@ function DictQuickLookup:onHighlightPress()
         -- Show menu with selected text from dictionary widget
         local selection_widget = self:_getSelectionWidget(self)
         if selection_widget then
-            -- First process the hold release event which finalizes text selection
+            -- first, process the hold release event which finalizes text selection
             selection_widget:onHoldReleaseText(nil, self:_createHighlightGesture("hold_release"))
             local hold_duration = time.to_s(time.since(self._hold_duration))
             -- After hold release, highlight_text should contain the complete selection
             local selected_text = selection_widget.highlight_text
+            --[==[ HELP WANTED!
+            Wikipedia is currently broken, unsure what selected_text needs to be in that case, await confirmation
+            ]==]
             if selected_text then
                 local lookup_wikipedia = self.is_wiki
-                if hold_duration >= time.s(3) then
-                    -- but allow switching domain with a long hold
+                if lookup_wikipedia and hold_duration >= time.s(5) then
+                    -- allow switching domain with a long hold
                     lookup_wikipedia = not lookup_wikipedia
                 end
                 local new_dict_close_callback = function()
@@ -1809,7 +1823,7 @@ function DictQuickLookup:onHighlightPress()
         return true
     end
     self._start_indicator_highlight = true
-    -- start text selection directly in widget
+    -- start text selection, we'll track the hold duration to allow switching from wiki to dict
     local selection_widget = self:_getSelectionWidget(self)
     if selection_widget then
         self._hold_duration = time.now()

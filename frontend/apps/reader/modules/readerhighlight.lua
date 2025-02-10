@@ -3,6 +3,7 @@ local BlitBuffer = require("ffi/blitbuffer")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local DoubleSpinWidget = require("ui/widget/doublespinwidget")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
@@ -826,25 +827,37 @@ Except when in two columns mode, where this is limited to showing only the previ
     if not Device:isTouchDevice() and Device:hasDPad() then
         table.insert(menu_items.long_press.sub_item_table, {
             text_func = function()
-                return T(_("Crosshairs speed for text selection: %1"), G_reader_settings:readSetting("highlight_non_touch_factor") or 4)
+                local reader_speed = G_reader_settings:readSetting("highlight_non_touch_factor") or 4
+                local dict_speed = G_reader_settings:readSetting("highlight_non_touch_factor_dict") or 3
+                return T(_("Crosshairs speed (reader/dict): %1 / %2"), reader_speed, dict_speed)
             end,
             callback = function(touchmenu_instance)
-                local curr_val = G_reader_settings:readSetting("highlight_non_touch_factor") or 4
-                local spin_widget = SpinWidget:new{
-                    value = curr_val,
-                    value_min = 0.25,
-                    value_max = 5,
-                    precision = "%.2f",
-                    value_step = 0.25,
-                    default_value = 4,
+                local reader_speed = G_reader_settings:readSetting("highlight_non_touch_factor") or 4
+                local dict_speed = G_reader_settings:readSetting("highlight_non_touch_factor_dict") or 3
+                local double_spin_widget = DoubleSpinWidget:new{
+                    left_text = _("Reader"),
+                    left_value = reader_speed,
+                    left_min = 0.25,
+                    left_max = 5,
+                    left_default = 4,
+                    left_precision = "%.2f",
+                    left_step = 0.25,
+                    right_text = _("Dictionary"),
+                    right_value = dict_speed,
+                    right_min = 0.25,
+                    right_max = 5,
+                    right_default = 3,
+                    right_precision = "%.2f",
+                    right_step = 0.25,
                     title_text = _("Crosshairs speed"),
-                    info_text = _("Select a decimal value from 0.25 to 5. A smaller value increases the travel distance of the crosshairs per keystroke. Font size and this value are inversely correlated, meaning a smaller font size requires a larger value and vice versa."),
-                    callback = function(spin)
-                        G_reader_settings:saveSetting("highlight_non_touch_factor", spin.value)
+                    info_text = _("Select decimal values from 0.25 to 5. A smaller value increases the travel distance of the crosshairs per keystroke. Font size and these values are inversely correlated, meaning a smaller font size requires a larger value and vice versa."),
+                    callback = function(left_value, right_value)
+                        G_reader_settings:saveSetting("highlight_non_touch_factor", left_value)
+                        G_reader_settings:saveSetting("highlight_non_touch_factor_dict", right_value)
                         if touchmenu_instance then touchmenu_instance:updateItems() end
-                    end
+                    end,
                 }
-                UIManager:show(spin_widget)
+                UIManager:show(double_spin_widget)
             end,
         })
         table.insert(menu_items.long_press.sub_item_table, {
