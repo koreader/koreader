@@ -753,6 +753,10 @@ function DictQuickLookup:registerKeyEvents()
             local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
             self.key_events.ChangeToPrevDict = { { modifier, Input.group.PgBack } }
             self.key_events.ChangeToNextDict = { { modifier, Input.group.PgFwd } }
+            self.key_events.StartOrUpTextSelectorIndicator   = { { modifier, "Up" },   event = "StartOrMoveTextSelectorIndicator", args = { 0, -1, true } }
+            self.key_events.StartOrDownTextSelectorIndicator = { { modifier, "Down" }, event = "StartOrMoveTextSelectorIndicator", args = { 0,  1, true } }
+            self.key_events.FastLeftTextSelectorIndicator  = { { modifier, "Left" },  event = "MoveTextSelectorIndicator", args = { -1, 0, true } }
+            self.key_events.FastRightTextSelectorIndicator = { { modifier, "Right" }, event = "MoveTextSelectorIndicator", args = { 1,  0, true } }
             if Device:hasKeyboard() then
                 self.key_events.LookupInputWordClear = { { Input.group.Alphabet }, event = "LookupInputWord" }
                 -- We need to concat here so that the 'del' event press, which propagates to inputText (desirable for previous key_event,
@@ -762,18 +766,16 @@ function DictQuickLookup:registerKeyEvents()
                 -- same case as hasKeyboard
                 self.key_events.LookupInputWord = { { "ScreenKB", "Back" }, args = self.word .." " }
             end
-            if not Device:useDPadAsActionKeys() then return end -- stop here if we're using the emulator to avoid phantom events
-            self.key_events.StartOrUpTextSelectorIndicator   = { { modifier, "Up" },   event = "StartOrMoveTextSelectorIndicator", args = { 0, -1, true } }
-            self.key_events.StartOrDownTextSelectorIndicator = { { modifier, "Down" }, event = "StartOrMoveTextSelectorIndicator", args = { 0,  1, true } }
-            self.key_events.FastLeftTextSelectorIndicator  = { { modifier, "Left" },  event = "MoveTextSelectorIndicator", args = { -1, 0, true } }
-            self.key_events.FastRightTextSelectorIndicator = { { modifier, "Right" }, event = "MoveTextSelectorIndicator", args = { 1,  0, true } }
+
         end
-        if Device:hasDPad() and Device:useDPadAsActionKeys() then
+        if Device:hasDPad() then
+            self.key_events.TextSelectorPress          = { { "Press" } }
             self.key_events.UpTextSelectorIndicator    = { { "Up" },    event = "MoveTextSelectorIndicator", args = { 0, -1 } }
             self.key_events.DownTextSelectorIndicator  = { { "Down" },  event = "MoveTextSelectorIndicator", args = { 0,  1 } }
-            self.key_events.LeftTextSelectorIndicator  = { { "Left" },  event = "MoveTextSelectorIndicator", args = { -1, 0 } }
             self.key_events.RightTextSelectorIndicator = { { "Right" }, event = "MoveTextSelectorIndicator", args = { 1,  0 } }
-            self.key_events.HighlightPress          = { { "Press" } }
+            if not Device:hasFewKeys() then
+                self.key_events.LeftTextSelectorIndicator = { { "Left" },  event = "MoveTextSelectorIndicator", args = { -1, 0 } }
+            end
         end
     end
 end
@@ -1675,6 +1677,7 @@ end
 --[====[
 The following methods are used to handle text selection in the dictionary widget for non-touch devices.
 ]====]
+
 function DictQuickLookup:onStartTextSelectorIndicator()
     if not (self.definition_widget and not self.text_widget.text_selector.indicator) then return false end
     -- Suspend focus management from button_table instance to prevent the d-pad
@@ -1761,7 +1764,11 @@ function DictQuickLookup:onMoveTextSelectorIndicator(args)
         rect.x = 0
     end
     if rect.x + rect.w > self.content_width then
-        rect.x = self.content_width - rect.w
+        if Device:hasFewKeys() then
+            rect.x = 0 -- wrap around to beginning when reaching end
+        else
+            rect.x = self.content_width - rect.w
+        end
     end
     if rect.y < 0 then
         rect.y = 0
@@ -1790,7 +1797,7 @@ function DictQuickLookup:onMoveTextSelectorIndicator(args)
     return true
 end
 
-function DictQuickLookup:onHighlightPress()
+function DictQuickLookup:onTextSelectorPress()
     if not self.text_widget.text_selector.indicator then return false end
     if self._start_text_selector_indicator then
         -- Show menu with selected text from dictionary widget
@@ -1824,10 +1831,10 @@ function DictQuickLookup:onHighlightPress()
         return true
     end
     self._start_text_selector_indicator = true
-    -- start text selection, we'll track the hold duration to allow switching from wiki to dict
+    -- start text selection, we'll time the hold duration to allow switching from wiki to dict
     local selection_widget = self:_getSelectionWidget(self)
     if selection_widget then
-        self._hold_duration = time.now()
+        self._hold_duration = time.now() -- on your marks, get set, go!
         selection_widget:onHoldStartText(nil, self:_createHighlightGesture("hold"))
         -- center indicator on selected text if available
         if selection_widget.highlight_rects and #selection_widget.highlight_rects > 0 then
