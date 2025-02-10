@@ -103,25 +103,9 @@ function DictQuickLookup:init()
         font_size_alt = 8
     end
     self.image_alt_face = Font:getFace("cfont", font_size_alt)
-    if Device:hasKeys() then
-        self.key_events.ReadPrevResult = { { Input.group.PgBack } }
-        self.key_events.ReadNextResult = { { Input.group.PgFwd } }
-        self.key_events.Close = { { Input.group.Back } }
-        self.key_events.MenuKeyPress = { { "Menu" } }
-        if Device:hasKeyboard() then
-            self.key_events.ChangeToPrevDict = { { "Shift", "Left" } }
-            self.key_events.ChangeToNextDict = { { "Shift", "Right" } }
-            self.key_events.LookupInputWordClear = { { Input.group.Alphabet }, event = "LookupInputWord" }
-            -- We need to concat here so that the 'del' event press, which propagates to inputText (desirable for previous key_event,
-            -- i.e., LookupInputWordClear) does not remove the last char of self.word
-            self.key_events.LookupInputWord = { { Device:hasSymKey() and "Del" or "Backspace" }, args = self.word .." " }
-        elseif Device:hasScreenKB() then
-            self.key_events.ChangeToPrevDict = { { "ScreenKB", "Left" } }
-            self.key_events.ChangeToNextDict = { { "ScreenKB", "Right" } }
-            -- same case as hasKeyboard
-            self.key_events.LookupInputWord = { { "ScreenKB", "Back" }, args = self.word .." " }
-        end
-    end
+    self._start_indicator_highlight = false
+    self._previous_indicator_pos = nil
+    self:registerKeyEvents()
     if Device:isTouchDevice() then
         local range = Geom:new{
             x = 0, y = 0,
@@ -748,7 +732,7 @@ function DictQuickLookup:init()
     -- NT: add dict_title.left_button and lookup_edit_button to FocusManager.
     -- It is better to add these two buttons into self.movable, but it is not a FocusManager.
     -- Only self.button_table is a FocusManager, so the workaround is inserting these two buttons into self.button_table.layout.
-    if Device:hasDPad() then
+    if Device:hasDPad() and not (Device:hasScreenKB() or Device:hasSymKey()) then
         table.insert(self.button_table.layout, 1, { self.dict_title.left_button })
         table.insert(self.button_table.layout, 2, { lookup_edit_button })
         -- Refocus on the updated layout
@@ -757,6 +741,37 @@ function DictQuickLookup:init()
 
     -- We're a new window
     table.insert(DictQuickLookup.window_list, self)
+end
+
+function DictQuickLookup:registerKeyEvents()
+    if Device:hasKeys() then
+        self.key_events.ReadPrevResult = { { Input.group.PgBack } }
+        self.key_events.ReadNextResult = { { Input.group.PgFwd } }
+        self.key_events.Close = { { Input.group.Back } }
+        self.key_events.MenuKeyPress = { { "Menu" } }
+        if Device:hasScreenKB() or Device:hasKeyboard() then
+            local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+            self.key_events.ChangeToPrevDict = { { modifier, "Left" } }
+            self.key_events.ChangeToNextDict = { { modifier, "Right" } }
+            self.key_events.HighlightIndicator = { { modifier, { "Up", "Down" } }, event = "StartHighlightIndicator" }
+            if Device:hasKeyboard() then
+                self.key_events.LookupInputWordClear = { { Input.group.Alphabet }, event = "LookupInputWord" }
+                -- We need to concat here so that the 'del' event press, which propagates to inputText (desirable for previous key_event,
+                -- i.e., LookupInputWordClear) does not remove the last char of self.word
+                self.key_events.LookupInputWord = { { Device:hasSymKey() and "Del" or "Backspace" }, args = self.word .." " }
+            else
+                -- same case as hasKeyboard
+                self.key_events.LookupInputWord = { { "ScreenKB", "Back" }, args = self.word .." " }
+            end
+        end
+        if Device:hasDPad() and Device:useDPadAsActionKeys() then
+            self.key_events.UpHighlightIndicator    = { { "Up" },    event = "MoveHighlightIndicator", args = { 0, -1 } }
+            self.key_events.DownHighlightIndicator  = { { "Down" },  event = "MoveHighlightIndicator", args = { 0,  1 } }
+            self.key_events.LeftHighlightIndicator  = { { "Left" },  event = "MoveHighlightIndicator", args = { -1, 0 } }
+            self.key_events.RightHighlightIndicator = { { "Right" }, event = "MoveHighlightIndicator", args = { 1,  0 } }
+            self.key_events.HighlightPress          = { { "Press" } }
+        end
+    end
 end
 
 -- Whether currently DictQuickLookup is working without a document.
@@ -828,9 +843,22 @@ function DictQuickLookup:_instantiateScrollWidget()
             width = self.content_width,
             height = self.definition_height,
             dialog = self,
+            highlight = { indicator = nil, }, -- Add this for indicator visibility
             highlight_text_selection = true,
             html_link_tapped_callback = function(link)
                 self.html_dictionary_link_tapped_callback(self.dictionary, link)
+            end,
+            -- We should override the widget's paintTo method to draw our indicator
+            paintTo = function(widget, bb, x, y)
+                -- Call original paintTo from ScrollHtmlWidget
+                ScrollHtmlWidget.paintTo(widget, bb, x, y)
+                -- Draw our indicator on top if we have one
+                if widget.highlight.indicator then
+                    local rect = widget.highlight.indicator
+                    -- Draw indicator - use crosshair style
+                    bb:paintRect(rect.x + x, rect.y + y + rect.h/2 - 1, rect.w, 2, Blitbuffer.COLOR_BLACK)
+                    bb:paintRect(rect.x + x + rect.w/2 - 1, rect.y + y, 2, rect.h, Blitbuffer.COLOR_BLACK)
+                end
             end,
         }
         self.text_widget = self.shw_widget
@@ -847,7 +875,20 @@ function DictQuickLookup:_instantiateScrollWidget()
             auto_para_direction = not self.is_wiki, -- only for dict results (we don't know their lang)
             image_alt_face = self.image_alt_face,
             images = self.images,
+            highlight = { indicator = nil, }, -- Add this for indicator visibility
             highlight_text_selection = true,
+            -- We should override the widget's paintTo method to draw our indicator
+            paintTo = function(widget, bb, x, y)
+                -- Call original paintTo from ScrollTextWidget
+                ScrollTextWidget.paintTo(widget, bb, x, y)
+                -- Draw our indicator on top if we have one
+                if widget.highlight.indicator then
+                    local rect = widget.highlight.indicator
+                    -- Draw indicator - use crosshairs style
+                    bb:paintRect(rect.x + x, rect.y + y + rect.h/2 - 1, rect.w, 2, Blitbuffer.COLOR_BLACK)
+                    bb:paintRect(rect.x + x + rect.w/2 - 1, rect.y + y, 2, rect.h, Blitbuffer.COLOR_BLACK)
+                end
+            end,
         }
         self.text_widget = self.stw_widget
     end
@@ -1155,6 +1196,11 @@ function DictQuickLookup:onTap(arg, ges_ev)
 end
 
 function DictQuickLookup:onClose(no_clear)
+    if self.text_widget.highlight.indicator then
+        -- If we're in text selection mode, stop it
+        self:onStopHighlightIndicator(true)
+        return true
+    end
     for menu, _ in pairs(self.menu_opened) do
         UIManager:close(menu)
     end
@@ -1620,6 +1666,185 @@ function DictQuickLookup:clearDictionaryHighlight()
     elseif self.stw_widget then
         self.stw_widget.text_widget:scheduleClearHighlightAndRedraw()
     end
+end
+
+------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------
+
+function DictQuickLookup:onStartHighlightIndicator()
+    if not (self.definition_widget and not self.text_widget.highlight.indicator) then return false end
+    -- Suspend focus management from button_table instance to prevent the d-pad
+    -- and press keys from moving focus during text selection.
+    self.button_table.movement_allowed = { x = false, y = false }
+    -- Also disable key_events temporarily during text selection.
+    self.button_table.key_events_enabled = false
+    -- Save current focused item position before un-focusing it.
+    self._save_focused_item = nil
+    if self.button_table:getFocusItem() then
+        self._save_focused_item = {
+            x = self.button_table.selected.x,
+            y = self.button_table.selected.y
+        }
+        -- it's complicated, but we need two rounds of refocusing in order to clear up the focus
+        self.button_table:moveFocusTo(1, 1)
+        self.button_table:moveFocusTo(1, 1, 2)
+    end
+
+    -- Create rect with coordinates relative to the content area
+    local rect = self._previous_indicator_pos
+    if not rect then
+        rect = Geom:new()
+        rect.x = math.floor((self.content_width - rect.w) / 2)
+        rect.y = math.floor((self.definition_height - rect.h) / 2)
+        rect.w = Size.item.height_default
+        rect.h = rect.w
+    end
+    self.text_widget.highlight.indicator = rect
+
+    -- Mark the entire definition widget area as dirty to ensure the indicator is drawn
+    UIManager:setDirty(self, function()
+        return "ui", self.definition_widget.dimen
+    end)
+    return true
+end
+
+function DictQuickLookup:onStopHighlightIndicator(need_clear_selection)
+    if not self.text_widget.highlight.indicator then return false end
+    -- resume focus manager's normal operation
+    self.button_table.movement_allowed = { x = true, y = true }
+    -- and re-enable key_events
+    self.button_table.key_events_enabled = true
+    -- Restore previous focus if it was saved
+    if self._save_focused_item then
+        self.button_table:moveFocusTo(
+            self._save_focused_item.x,
+            self._save_focused_item.y
+        )
+        self._save_focused_item = nil
+    end
+
+    local rect = self.text_widget.highlight.indicator
+    self._previous_indicator_pos = rect
+    self._start_indicator_highlight = false
+    self.text_widget.highlight.indicator = nil
+    -- Mark definition widget area as dirty for clean re-draw
+    UIManager:setDirty(self, function()
+        return "ui", self.definition_widget.dimen
+    end)
+    if need_clear_selection then
+        self:clearDictionaryHighlight()
+    end
+    return true
+end
+
+function DictQuickLookup:onMoveHighlightIndicator(args)
+    if not (self.text_widget and self.text_widget.highlight.indicator) then return false end
+    local dx, dy = unpack(args)
+    local move_distance = Size.item.height_default / (G_reader_settings:readSetting("highlight_non_touch_factor") or 4)
+    local rect = self.text_widget.highlight.indicator:copy()
+    rect.x = rect.x + move_distance * dx
+    rect.y = rect.y + move_distance * dy
+
+    if rect.x < 0 then
+        rect.x = 0
+    end
+    if rect.x + rect.w > self.content_width then
+        rect.x = self.content_width - rect.w
+    end
+    if rect.y < 0 then
+        rect.y = 0
+    end
+    if rect.y + rect.h > self.definition_height then
+        rect.y = self.definition_height - rect.h
+    end
+    -- Update display before changing widget state to clear old position
+    UIManager:setDirty(self, function()
+        return "ui", self.definition_widget.dimen
+    end)
+    -- Update widget state
+    self.text_widget.highlight.indicator = rect
+    -- Trigger refresh on the ScrollTextWidget/ScrollHtmlWidget itself
+    -- to ensure the paintTo method that draws the crosshair is called
+    UIManager:setDirty(self, function()
+        return "ui", self.definition_widget.dimen
+    end)
+
+    if self._start_indicator_highlight then
+        local selection_widget = self:_getSelectionWidget(self)
+        if selection_widget then
+            selection_widget:onHoldPanText(nil, self:_createHighlightGesture("hold_pan"))
+        end
+    end
+    return true
+end
+
+function DictQuickLookup:onHighlightPress()
+    if not self.text_widget.highlight.indicator then return false end
+    if self._start_indicator_highlight then
+        -- Show menu with selected text from dictionary widget
+        local selection_widget = self:_getSelectionWidget(self)
+        if selection_widget then
+            -- First process the hold release event which finalizes text selection
+            selection_widget:onHoldReleaseText(nil, self:_createHighlightGesture("hold_release"))
+            local hold_duration = time.to_s(time.since(self._hold_duration))
+            -- After hold release, highlight_text should contain the complete selection
+            local selected_text = selection_widget.highlight_text
+            if selected_text then
+                local lookup_wikipedia = self.is_wiki
+                if hold_duration >= time.s(3) then
+                    -- but allow switching domain with a long hold
+                    lookup_wikipedia = not lookup_wikipedia
+                end
+                local new_dict_close_callback = function()
+                    self:clearDictionaryHighlight()
+                end
+                if lookup_wikipedia then
+                    self:lookupWikipedia(false, selected_text, nil, nil, new_dict_close_callback)
+                else
+                    self.ui:handleEvent(Event:new("LookupWord", selected_text, nil, nil, nil, nil, new_dict_close_callback))
+                end
+            end
+        end
+        self:onStopHighlightIndicator()
+        return true
+    end
+    self._start_indicator_highlight = true
+    -- start text selection directly in widget
+    local selection_widget = self:_getSelectionWidget(self)
+    if selection_widget then
+        self._hold_duration = time.now()
+        selection_widget:onHoldStartText(nil, self:_createHighlightGesture("hold"))
+        -- center indicator on selected text if available
+        if selection_widget.highlight_rects and #selection_widget.highlight_rects > 0 then
+            local highlight = selection_widget.highlight_rects[1]
+            local indicator = self.text_widget.highlight.indicator
+            indicator.x = highlight.x + (highlight.w/2) - (indicator.w/2)
+            indicator.y = highlight.y + (highlight.h/2) - (indicator.h/2)
+            UIManager:setDirty(self, function()
+                return "ui", self.definition_widget.dimen
+            end)
+        end
+    end
+    return true
+end
+
+-- Local helper function to get the actual widget that handles text selection
+function DictQuickLookup:_getSelectionWidget(instance)
+    return instance.is_html and instance.text_widget.htmlbox_widget or instance.text_widget.text_widget
+end
+
+function DictQuickLookup:_createHighlightGesture(gesture)
+    local point = self.text_widget.highlight.indicator:copy()
+    -- Add the definition_widget's absolute position to get correct screen coordinates
+    point.x = point.x + point.w / 2 + self.definition_widget.dimen.x
+    point.y = point.y + point.h / 2 + self.definition_widget.dimen.y
+    point.w = 0
+    point.h = 0
+    return {
+        ges = gesture,
+        pos = point,
+        time = time.realtime(),
+    }
 end
 
 return DictQuickLookup
