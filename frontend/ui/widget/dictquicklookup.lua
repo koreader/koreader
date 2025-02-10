@@ -753,10 +753,6 @@ function DictQuickLookup:registerKeyEvents()
             local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
             self.key_events.ChangeToPrevDict = { { modifier, Input.group.PgBack } }
             self.key_events.ChangeToNextDict = { { modifier, Input.group.PgFwd } }
-            self.key_events.StartOrUpHighlightIndicator   = { { modifier, "Up" },   event = "StartOrMoveHighlightIndicator", args = { 0, -1, true } }
-            self.key_events.StartOrDownHighlightIndicator = { { modifier, "Down" }, event = "StartOrMoveHighlightIndicator", args = { 0,  1, true } }
-            self.key_events.FastLeftHighlightIndicator  = { { modifier, "Left" },  event = "MoveHighlightIndicator", args = { -1, 0, true } }
-            self.key_events.FastRightHighlightIndicator = { { modifier, "Right" }, event = "MoveHighlightIndicator", args = { 1,  0, true } }
             if Device:hasKeyboard() then
                 self.key_events.LookupInputWordClear = { { Input.group.Alphabet }, event = "LookupInputWord" }
                 -- We need to concat here so that the 'del' event press, which propagates to inputText (desirable for previous key_event,
@@ -766,6 +762,11 @@ function DictQuickLookup:registerKeyEvents()
                 -- same case as hasKeyboard
                 self.key_events.LookupInputWord = { { "ScreenKB", "Back" }, args = self.word .." " }
             end
+            if not Device:useDPadAsActionKeys() then return end -- stop here if we're using the emulator to avoid phantom events
+            self.key_events.StartOrUpHighlightIndicator   = { { modifier, "Up" },   event = "StartOrMoveHighlightIndicator", args = { 0, -1, true } }
+            self.key_events.StartOrDownHighlightIndicator = { { modifier, "Down" }, event = "StartOrMoveHighlightIndicator", args = { 0,  1, true } }
+            self.key_events.FastLeftHighlightIndicator  = { { modifier, "Left" },  event = "MoveHighlightIndicator", args = { -1, 0, true } }
+            self.key_events.FastRightHighlightIndicator = { { modifier, "Right" }, event = "MoveHighlightIndicator", args = { 1,  0, true } }
         end
         if Device:hasDPad() and Device:useDPadAsActionKeys() then
             self.key_events.UpHighlightIndicator    = { { "Up" },    event = "MoveHighlightIndicator", args = { 0, -1 } }
@@ -1671,9 +1672,9 @@ function DictQuickLookup:clearDictionaryHighlight()
     end
 end
 
---[=[
+--[====[
 The following methods are used to handle text selection in the dictionary widget for non-touch devices.
-]=]
+]====]
 function DictQuickLookup:onStartHighlightIndicator()
     if not (self.definition_widget and not self.text_widget.highlight.indicator) then return false end
     -- Suspend focus management from button_table instance to prevent the d-pad
@@ -1688,7 +1689,7 @@ function DictQuickLookup:onStartHighlightIndicator()
             x = self.button_table.selected.x,
             y = self.button_table.selected.y
         }
-        -- it's complicated, but we need two rounds of refocusing in order to clear up the focus
+        -- it's complicated, but we need two rounds of refocusing in order to clear up the existing focus
         self.button_table:moveFocusTo(1, 1)
         local NOT_FOCUS = 2
         self.button_table:moveFocusTo(1, 1, NOT_FOCUS)
@@ -1840,6 +1841,14 @@ function DictQuickLookup:onHighlightPress()
         end
     end
     return true
+end
+
+function DictQuickLookup:onStartOrMoveHighlightIndicator(args)
+    if not self.text_widget.highlight.indicator then
+        self:onStartHighlightIndicator()
+        return true
+    end
+    self:onMoveHighlightIndicator(args)
 end
 
 -- Local helper function to get the actual widget that handles text selection
