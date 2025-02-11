@@ -63,6 +63,7 @@ local external = require("device/thirdparty"):new{
         { "LookUp", "Look Up", false, "gaurav.lookup", "send" },
         { "LookUpPro", "Look Up Pro", false, "gaurav.lookuppro", "send" },
         { "Mdict", "Mdict", false, "cn.mdict", "send" },
+        { "OSS-Dict", "OSS-Dict", false, "com.akylas.aard2", "send" },
         { "QuickDic", "QuickDic", false, "de.reimardoeffinger.quickdic", "quickdic" },
     },
     check = function(self, app)

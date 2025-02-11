@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20241228
+local CURRENT_MIGRATION_DATE = 20250207
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -809,6 +809,36 @@ if last_migration_date < 20241228 then
 
         wb_settings:saveSetting("wallabag", new_settings)
         wb_settings:flush()
+    end
+end
+
+-- 20250207, Separate GoTo and Back actions for Reader and FileManager.
+-- https://github.com/koreader/koreader/pull/13167
+if last_migration_date < 20250207 then
+    logger.info("Performing one-time migration for 20250207")
+
+    local gestures_path = ffiUtil.joinPath(DataStorage:getSettingsDir(), "gestures.lua")
+    if lfs.attributes(gestures_path, "mode") == "file" then
+        local gestures = LuaSettings:open(gestures_path)
+        if next(gestures.data) and next(gestures.data.gesture_fm) then
+            local updated
+            for _, gesture in pairs(gestures.data.gesture_fm) do
+                for action in pairs(gesture) do
+                    if action == "go_to" then
+                        gesture.go_to = nil
+                        gesture.fm_go_to = true
+                        updated = true
+                    elseif action == "back" then
+                        gesture.back = nil
+                        gesture.fm_back = true
+                        updated = true
+                    end
+                end
+            end
+            if updated then
+                gestures:flush()
+            end
+        end
     end
 end
 

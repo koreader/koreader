@@ -368,9 +368,9 @@ function Profiles:getProfileFromCurrentBookSettings(new_name)
             "kopt_page_margin",
             "kopt_zoom_overlap_h",
             "kopt_zoom_overlap_v",
-            "kopt_max_columns",
-            "kopt_zoom_mode_genus",
             "kopt_zoom_mode_type",
+            "kopt_zoom_mode_genus",
+            "kopt_zoom_range_number",
             "kopt_zoom_factor",
             "kopt_zoom_direction",
             "kopt_page_scroll",
@@ -378,6 +378,7 @@ function Profiles:getProfileFromCurrentBookSettings(new_name)
             "kopt_font_size",
             "kopt_contrast",
             "kopt_quality",
+            "kopt_max_columns",
         }
     end
     local setting_needs_arg = {
