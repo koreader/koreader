@@ -103,7 +103,7 @@ function DictQuickLookup:init()
         font_size_alt = 8
     end
     self.image_alt_face = Font:getFace("cfont", font_size_alt)
-    self._start_text_selector_indicator = false
+    self._text_selection_started = false
     self._previous_indicator_pos = nil
     self:registerKeyEvents()
     if Device:isTouchDevice() then
@@ -1678,6 +1678,18 @@ end
 The following methods are used to handle text selection in the dictionary widget for non-touch devices.
 ]====]
 
+--[[
+This function initializes and displays a text selection indicator in the dictionary quick lookup widget.
+    1. Suspends focus management and key events in the button table during text selection
+    2. Saves and clears the current focus position (FocusManager)
+    3. Creates or reuses a rectangular indicator with specific dimensions
+    4. Updates the UI to show the indicator
+@return boolean Returns true if the indicator was successfully started, false otherwise
+
+Requirements:
+- Requires self.definition_widget to exist
+- Requires self.text_widget.text_selector.indicator to not exist
+]]
 function DictQuickLookup:onStartTextSelectorIndicator()
     if not (self.definition_widget and not self.text_widget.text_selector.indicator) then return false end
     -- Suspend focus management from button_table instance to prevent the d-pad
@@ -1716,6 +1728,12 @@ function DictQuickLookup:onStartTextSelectorIndicator()
     return true
 end
 
+--[[
+Stops the text selector indicator and restores normal UI behavior.
+
+@param need_clear_selection boolean Whether to clear dictionary highlights after stopping selector
+@return boolean Returns true if indicator was stopped, false if no indicator existed
+]]
 function DictQuickLookup:onStopTextSelectorIndicator(need_clear_selection)
     if not self.text_widget.text_selector.indicator then return false end
     -- resume focus manager's normal operation
@@ -1733,7 +1751,7 @@ function DictQuickLookup:onStopTextSelectorIndicator(need_clear_selection)
 
     local rect = self.text_widget.text_selector.indicator
     self._previous_indicator_pos = rect
-    self._start_text_selector_indicator = false
+    self._text_selection_started = false
     self.text_widget.text_selector.indicator = nil
     -- Mark definition widget area as dirty for clean re-draw
     UIManager:setDirty(self, function()
@@ -1745,6 +1763,23 @@ function DictQuickLookup:onStopTextSelectorIndicator(need_clear_selection)
     return true
 end
 
+--[[
+This function controls the positioning and movement of the text selection indicator,
+including both normal and quick movement modes. It ensures the indicator stays within
+the boundaries of the content area and updates the display accordingly.
+@param args {table} Array containing movement parameters:
+    - dx {number} Horizontal movement delta
+    - dy {number} Vertical movement delta
+    - quick_move {boolean} Whether to use quick movement mode
+@return {boolean} Returns true if movement was handled, false if text widget or
+                 indicator is not available
+Details:
+- Normal movement is based on a fraction of the default item height
+- Quick movement covers 1/4 of the content width/height
+- Handles boundary conditions and wrapping (on few-key devices)
+- Updates the UI to reflect the new indicator position
+- Triggers text selection if selection is active
+]]
 function DictQuickLookup:onMoveTextSelectorIndicator(args)
     if not (self.text_widget and self.text_widget.text_selector.indicator) then return false end
     local dx, dy, quick_move = unpack(args)
@@ -1788,7 +1823,7 @@ function DictQuickLookup:onMoveTextSelectorIndicator(args)
         return "ui", self.definition_widget.dimen
     end)
 
-    if self._start_text_selector_indicator then
+    if self._text_selection_started then
         local selection_widget = self:_getSelectionWidget(self)
         if selection_widget then
             selection_widget:onHoldPanText(nil, self:_createHighlightGesture("hold_pan"))
@@ -1797,9 +1832,22 @@ function DictQuickLookup:onMoveTextSelectorIndicator(args)
     return true
 end
 
+--[[
+@details This function manages the text selection process and subsequent actions:
+    - Initiates text selection on first press
+    - On second press (when selection is complete):
+        * Processes the selection
+        * Handles Wikipedia/Dictionary lookup based on hold duration
+        * Clears highlights after lookup
+@note Wikipedia lookup can be toggled with a long hold (≥5 seconds)
+@return boolean Returns true if the event was handled, false otherwise
+@local variables
+    _text_selection_started: boolean tracking selection state
+    _hold_duration: timestamp for tracking hold duration
+]]
 function DictQuickLookup:onTextSelectorPress()
     if not self.text_widget.text_selector.indicator then return false end
-    if self._start_text_selector_indicator then
+    if self._text_selection_started then
         -- Show menu with selected text from dictionary widget
         local selection_widget = self:_getSelectionWidget(self)
         if selection_widget then
@@ -1830,7 +1878,7 @@ function DictQuickLookup:onTextSelectorPress()
         self:onStopTextSelectorIndicator()
         return true
     end
-    self._start_text_selector_indicator = true
+    self._text_selection_started = true
     -- start text selection, we'll time the hold duration to allow switching from wiki to dict
     local selection_widget = self:_getSelectionWidget(self)
     if selection_widget then
