@@ -245,7 +245,8 @@ local settingsList = {
     embedded_css = {category="string", rolling=true},
     embedded_fonts = {category="string", rolling=true},
     smooth_scaling = {category="string", rolling=true},
-    nightmode_images = {category="string", rolling=true},
+    nightmode_images = {category="string", rolling=true, separator=true},
+    ----
 
     -- parsed from KoptOptions
     kopt_trim_page = {category="string", paging=true},
