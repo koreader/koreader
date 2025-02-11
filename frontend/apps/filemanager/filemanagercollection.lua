@@ -1,9 +1,10 @@
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local DocSettings = require("docsettings")
+local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
@@ -11,16 +12,19 @@ local ReadCollection = require("readcollection")
 local SortWidget = require("ui/widget/sortwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
+local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
-local T = require("ffi/util").template
-local util = require("util")
+local T = ffiUtil.template
 
 local FileManagerCollection = WidgetContainer:extend{
     title = _("Collections"),
     default_collection_title = _("Favorites"),
     checkmark = "\u{2713}",
+    empty_prop = "\u{0000}" .. _("N/A"), -- sorted first
 }
 
 function FileManagerCollection:init()
@@ -61,23 +65,17 @@ end
 
 function FileManagerCollection:onShowColl(collection_name)
     collection_name = collection_name or ReadCollection.default_collection_name
-    self.coll_menu = Menu:new{
-        ui = self.ui,
-        covers_fullscreen = true, -- hint for UIManager:_repaint()
-        is_borderless = true,
-        is_popout = false,
-        -- item and book cover thumbnail dimensions in Mosaic and Detailed list display modes
-        -- must be equal in File manager, History and Collection windows to avoid image scaling
-        title_bar_fm_style = true,
+    self.coll_menu = BookList:new{
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showCollDialog() end,
         onReturn = function()
-            self.from_collection_name = collection_name
+            self.from_collection_name = self:getCollectionTitle(collection_name)
             self.coll_menu.close_callback()
             self:onShowCollList()
         end,
         onMenuChoice = self.onMenuChoice,
         onMenuHold = self.onMenuHold,
+        ui = self.ui,
         _manager = self,
         _recreate_func = function() self:onShowColl(collection_name) end,
         collection_name = collection_name,
@@ -87,24 +85,67 @@ function FileManagerCollection:onShowColl(collection_name)
         self:refreshFileManager()
         UIManager:close(self.coll_menu)
         self.coll_menu = nil
+        self.match_table = nil
     end
     self:updateItemTable()
     UIManager:show(self.coll_menu)
     return true
 end
 
-function FileManagerCollection:updateItemTable(show_last_item)
-    local item_table = {}
-    for _, item in pairs(ReadCollection.coll[self.coll_menu.collection_name]) do
-        table.insert(item_table, item)
+function FileManagerCollection:updateItemTable(show_last_item, item_table)
+    if item_table == nil then
+        item_table = {}
+        for _, item in pairs(ReadCollection.coll[self.coll_menu.collection_name]) do
+            if self:isItemMatch(item) then
+                table.insert(item_table, item)
+            end
+        end
+        if #item_table > 1 then
+            table.sort(item_table, function(v1, v2) return v1.order < v2.order end)
+        end
     end
-    if #item_table > 1 then
-        table.sort(item_table, function(v1, v2) return v1.order < v2.order end)
+    local collection_name = self:getCollectionTitle(self.coll_menu.collection_name)
+    local title = T("%1 (%2)", collection_name, #item_table)
+    local subtitle = ""
+    if self.match_table then
+        subtitle = {}
+        if self.match_table.status then
+            local status_string = BookList.getBookStatusString(self.match_table.status, true)
+            table.insert(subtitle, "\u{0000}" .. status_string) -- sorted first
+        end
+        if self.match_table.props then
+            for prop, value in pairs(self.match_table.props) do
+                table.insert(subtitle, T("%1 %2", self.ui.bookinfo.prop_text[prop], value))
+            end
+        end
+        if #subtitle == 1 then
+            subtitle = subtitle[1]
+        else
+            table.sort(subtitle)
+            subtitle = table.concat(subtitle, " | ")
+        end
     end
-    local title = self:getCollectionTitle(self.coll_menu.collection_name)
-    title = T("%1 (%2)", title, #item_table)
     local item_number = show_last_item and #item_table or -1
-    self.coll_menu:switchItemTable(title, item_table, item_number)
+    self.coll_menu:switchItemTable(title, item_table, item_number, nil, subtitle)
+end
+
+function FileManagerCollection:isItemMatch(item)
+    if self.match_table then
+        if self.match_table.status then
+            if self.match_table.status ~= BookList.getBookStatus(item.file) then
+                return false
+            end
+        end
+        if self.match_table.props then
+            local doc_props = self.ui.bookinfo:getDocProps(item.file, nil, true)
+            for prop, value in pairs(self.match_table.props) do
+                if (doc_props[prop] or self.empty_prop) ~= value then
+                    return false
+                end
+            end
+        end
+    end
+    return true
 end
 
 function FileManagerCollection:onSetDimensions(dimen)
@@ -124,7 +165,7 @@ end
 function FileManagerCollection:onMenuHold(item)
     local file = item.file
     self.file_dialog = nil
-    self.book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
+    local book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
 
     local function close_dialog_callback()
         UIManager:close(self.file_dialog)
@@ -144,17 +185,17 @@ function FileManagerCollection:onMenuHold(item)
     local doc_settings_or_file
     if is_currently_opened then
         doc_settings_or_file = self.ui.doc_settings
-        if not self.book_props then
-            self.book_props = self.ui.doc_props
-            self.book_props.has_cover = true
+        if not book_props then
+            book_props = self.ui.doc_props
+            book_props.has_cover = true
         end
     else
-        if DocSettings:hasSidecarFile(file) then
-            doc_settings_or_file = DocSettings:open(file)
-            if not self.book_props then
+        if BookList.hasBookBeenOpened(file) then
+            doc_settings_or_file = BookList.getDocSettings(file)
+            if not book_props then
                 local props = doc_settings_or_file:readSetting("doc_props")
-                self.book_props = self.ui.bookinfo.extendProps(props, file)
-                self.book_props.has_cover = true
+                book_props = self.ui.bookinfo.extendProps(props, file)
+                book_props.has_cover = true
             end
         else
             doc_settings_or_file = file
@@ -185,11 +226,11 @@ function FileManagerCollection:onMenuHold(item)
     })
     table.insert(buttons, {
         filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback),
-        filemanagerutil.genBookInformationButton(doc_settings_or_file, self.book_props, close_dialog_callback),
+        filemanagerutil.genBookInformationButton(doc_settings_or_file, book_props, close_dialog_callback),
     })
     table.insert(buttons, {
-        filemanagerutil.genBookCoverButton(file, self.book_props, close_dialog_callback),
-        filemanagerutil.genBookDescriptionButton(file, self.book_props, close_dialog_callback),
+        filemanagerutil.genBookCoverButton(file, book_props, close_dialog_callback),
+        filemanagerutil.genBookDescriptionButton(file, book_props, close_dialog_callback),
     })
 
     if Device:canExecuteScript(file) then
@@ -200,7 +241,7 @@ function FileManagerCollection:onMenuHold(item)
 
     if self._manager.file_dialog_added_buttons ~= nil then
         for _, row_func in ipairs(self._manager.file_dialog_added_buttons) do
-            local row = row_func(file, true, self.book_props)
+            local row = row_func(file, true, book_props)
             if row ~= nil then
                 table.insert(buttons, row)
             end
@@ -222,7 +263,46 @@ function FileManagerCollection.getMenuInstance()
 end
 
 function FileManagerCollection:showCollDialog()
+    local coll_not_empty = #self.coll_menu.item_table > 0
     local coll_dialog
+    local function genFilterByStatusButton(button_status)
+        return {
+            text = BookList.getBookStatusString(button_status),
+            enabled = coll_not_empty,
+            callback = function()
+                UIManager:close(coll_dialog)
+                util.tableSetValue(self, button_status, "match_table", "status")
+                self:updateItemTable()
+            end,
+        }
+    end
+    local function genFilterByMetadataButton(button_text, button_prop)
+        return {
+            text = button_text,
+            enabled = coll_not_empty,
+            callback = function()
+                UIManager:close(coll_dialog)
+                local prop_values = {}
+                for idx, item in ipairs(self.coll_menu.item_table) do
+                    local doc_prop = self.ui.bookinfo:getDocProps(item.file, nil, true)[button_prop]
+                    if doc_prop == nil then
+                        doc_prop = { self.empty_prop }
+                    elseif button_prop == "series" then
+                        doc_prop = { doc_prop }
+                    elseif button_prop == "language" then
+                        doc_prop = { doc_prop:lower() }
+                    else -- "authors", "keywords"
+                        doc_prop = util.splitToArray(doc_prop, "\n")
+                    end
+                    for _, prop in ipairs(doc_prop) do
+                        prop_values[prop] = prop_values[prop] or {}
+                        table.insert(prop_values[prop], idx)
+                    end
+                end
+                self:showPropValueList(button_prop, prop_values)
+            end,
+        }
+    end
     local buttons = {
         {{
             text = _("Collections"),
@@ -233,14 +313,49 @@ function FileManagerCollection:showCollDialog()
             end,
         }},
         {}, -- separator
+        {
+            genFilterByStatusButton("new"),
+            genFilterByStatusButton("reading"),
+        },
+        {
+            genFilterByStatusButton("abandoned"),
+            genFilterByStatusButton("complete"),
+        },
+        {
+            genFilterByMetadataButton(_("Filter by authors"), "authors"),
+            genFilterByMetadataButton(_("Filter by series"), "series"),
+        },
+        {
+            genFilterByMetadataButton(_("Filter by language"), "language"),
+            genFilterByMetadataButton(_("Filter by keywords"), "keywords"),
+        },
+        {{
+            text = _("Reset all filters"),
+            enabled = self.match_table ~= nil,
+            callback = function()
+                UIManager:close(coll_dialog)
+                self.match_table = nil
+                self:updateItemTable()
+            end,
+        }},
+        {}, -- separator
+        {{
+            text = _("Book search"),
+            enabled = coll_not_empty,
+            callback = function()
+                UIManager:close(coll_dialog)
+                self:onShowCollectionsSearchDialog(nil, self.coll_menu.collection_name)
+            end,
+        }},
+        {}, -- separator
         {{
             text = _("Arrange books in collection"),
+            enabled = coll_not_empty,
             callback = function()
                 UIManager:close(coll_dialog)
                 self:sortCollection()
             end,
         }},
-        {}, -- separator
         {{
             text = _("Add all books from a folder"),
             callback = function()
@@ -255,7 +370,6 @@ function FileManagerCollection:showCollDialog()
                 self:addBooksFromFolder(true)
             end,
         }},
-        {}, -- separator
         {{
             text = _("Add a book to collection"),
             callback = function()
@@ -301,6 +415,38 @@ function FileManagerCollection:showCollDialog()
     UIManager:show(coll_dialog)
 end
 
+function FileManagerCollection:showPropValueList(prop, prop_values)
+    local prop_menu
+    local prop_item_table = {}
+    for value, item_idxs in pairs(prop_values) do
+        table.insert(prop_item_table, {
+            text = value,
+            mandatory = #item_idxs,
+            callback = function()
+                UIManager:close(prop_menu)
+                util.tableSetValue(self, value, "match_table", "props", prop)
+                local item_table = {}
+                for _, idx in ipairs(item_idxs) do
+                    table.insert(item_table, self.coll_menu.item_table[idx])
+                end
+                self:updateItemTable(nil, item_table)
+            end,
+        })
+    end
+    if #prop_item_table > 1 then
+        table.sort(prop_item_table, function(a, b) return ffiUtil.strcoll(a.text, b.text) end)
+    end
+    prop_menu = Menu:new{
+        title = T("%1 (%2)", self.ui.bookinfo.prop_text[prop]:sub(1, -2), #prop_item_table),
+        item_table = prop_item_table,
+        covers_fullscreen = true,
+        is_borderless = true,
+        is_popout = false,
+        title_bar_fm_style = true,
+    }
+    UIManager:show(prop_menu)
+end
+
 function FileManagerCollection:sortCollection()
     local sort_widget
     sort_widget = SortWidget:new{
@@ -321,7 +467,6 @@ function FileManagerCollection:addBooksFromFolder(include_subfolders)
         select_file = false,
         onConfirm = function(folder)
             local files_found = {}
-            local DocumentRegistry = require("document/documentregistry")
             util.findFiles(folder, function(file)
                 files_found[file] = DocumentRegistry:hasProvider(file) or nil
             end, include_subfolders)
@@ -657,8 +802,8 @@ function FileManagerCollection:sortCollections()
     UIManager:show(sort_widget)
 end
 
-function FileManagerCollection:onShowCollectionsSearchDialog(search_str)
-    local search_dialog, check_button_case
+function FileManagerCollection:onShowCollectionsSearchDialog(search_str, coll_name)
+    local search_dialog, check_button_case, check_button_content
     search_dialog = InputDialog:new{
         title = _("Enter text to search for"),
         input = search_str or self.search_str,
@@ -679,9 +824,10 @@ function FileManagerCollection:onShowCollectionsSearchDialog(search_str)
                         if str ~= "" then
                             self.search_str = str
                             self.case_sensitive = check_button_case.checked
+                            self.include_content = check_button_content.checked
                             local Trapper = require("ui/trapper")
                             Trapper:wrap(function()
-                                self:searchCollections()
+                                self:searchCollections(coll_name)
                             end)
                         end
                     end,
@@ -695,12 +841,22 @@ function FileManagerCollection:onShowCollectionsSearchDialog(search_str)
         parent = search_dialog,
     }
     search_dialog:addWidget(check_button_case)
+    check_button_content = CheckButton:new{
+        text = _("Also search in book content (slow)"),
+        checked = self.include_content,
+        parent = search_dialog,
+    }
+    if self.ui.document then
+        self.include_content = nil
+    else
+        search_dialog:addWidget(check_button_content)
+    end
     UIManager:show(search_dialog)
     search_dialog:onShowKeyboard()
     return true
 end
 
-function FileManagerCollection:searchCollections()
+function FileManagerCollection:searchCollections(coll_name)
     local function isFileMatch(file)
         if self.search_str == "*" then
             return true
@@ -708,31 +864,72 @@ function FileManagerCollection:searchCollections()
         if util.stringSearch(file:gsub(".*/", ""), self.search_str, self.case_sensitive) ~= 0 then
             return true
         end
-        local book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file) or
-                           self.ui.bookinfo.getDocProps(file, nil, true) -- do not open the document
+        if not DocumentRegistry:hasProvider(file) then
+            return false
+        end
+        local book_props = self.ui.bookinfo:getDocProps(file, nil, true) -- do not open the document
+        book_props.display_title = nil
         if next(book_props) ~= nil and self.ui.bookinfo:findInProps(book_props, self.search_str, self.case_sensitive) then
             return true
         end
+        if self.include_content then
+            logger.dbg("Search in book:", file)
+            local ReaderUI = require("apps/reader/readerui")
+            local provider = ReaderUI:extendProvider(file, DocumentRegistry:getProvider(file))
+            local document = DocumentRegistry:openDocument(file, provider)
+            if document then
+                local loaded, found
+                if document.loadDocument then -- CRE
+                    -- We will be half-loading documents and may mess with crengine's state.
+                    -- Fortunately, this is run in a subprocess, so we won't be affecting the
+                    -- main process's crengine state or any document opened in the main
+                    -- process (we furthermore prevent this feature when one is opened).
+                    -- To avoid creating half-rendered/invalide cache files, it's best to disable
+                    -- crengine saving of such cache files.
+                    if not self.is_cre_cache_disabled then
+                        local cre = require("document/credocument"):engineInit()
+                        cre.initCache("", 0, true, 40)
+                        self.is_cre_cache_disabled = true
+                    end
+                    loaded = document:loadDocument()
+                else
+                    loaded = true
+                end
+                if loaded then
+                    found = document:findText(self.search_str, 0, 0, not self.case_sensitive, 1, false, 1)
+                end
+                document:close()
+                if found then
+                    return true
+                end
+            end
+        end
+        return false
     end
 
+    local collections = coll_name and { coll_name = ReadCollection.coll[coll_name] } or ReadCollection.coll
     local Trapper = require("ui/trapper")
     local info = InfoMessage:new{ text = _("Searching… (tap to cancel)") }
     UIManager:show(info)
     UIManager:forceRePaint()
     local completed, files_found, files_found_order = Trapper:dismissableRunInSubprocess(function()
-        local _files_found, _files_found_order = {}, {}
-        for coll_name, coll in pairs(ReadCollection.coll) do
-            local coll_order = ReadCollection.coll_order[coll_name]
+        local match_cache, _files_found, _files_found_order = {}, {}, {}
+        for collection_name, coll in pairs(collections) do
+            local coll_order = ReadCollection.coll_order[collection_name]
             for _, item in pairs(coll) do
-                if isFileMatch(item.file) then
-                    local order_idx = _files_found[item.file]
+                local file = item.file
+                if match_cache[file] == nil then -- a book can be included to several collections
+                    match_cache[file] = isFileMatch(file)
+                end
+                if match_cache[file] then
+                    local order_idx = _files_found[file]
                     if order_idx == nil then -- new
                         table.insert(_files_found_order, {
-                            file = item.file,
+                            file = file,
                             coll_order = coll_order,
                             item_order = item.order,
                         })
-                        _files_found[item.file] = #_files_found_order -- order_idx
+                        _files_found[file] = #_files_found_order -- order_idx
                     else -- previously found, update orders
                         if _files_found_order[order_idx].coll_order > coll_order then
                             _files_found_order[order_idx].coll_order = coll_order
@@ -758,16 +955,20 @@ function FileManagerCollection:searchCollections()
             end
             return a.item_order < b.item_order
         end)
-        local coll_name = T(_("Search results: %1"), self.search_str)
-        ReadCollection:removeCollection(coll_name, true)
-        ReadCollection:addCollection(coll_name, true)
-        ReadCollection:addItemsMultiple(files_found, { [coll_name] = true }, true)
-        ReadCollection:updateCollectionOrder(coll_name, files_found_order)
+        local new_coll_name = T(_("Search results: %1"), self.search_str)
+        if coll_name then
+            new_coll_name = new_coll_name .. " " .. T(_"(in %1)", coll_name)
+            self.coll_menu.close_callback()
+        end
+        ReadCollection:removeCollection(new_coll_name, true)
+        ReadCollection:addCollection(new_coll_name, true)
+        ReadCollection:addItemsMultiple(files_found, { [new_coll_name] = true }, true)
+        ReadCollection:updateCollectionOrder(new_coll_name, files_found_order)
         if self.coll_list ~= nil then
             UIManager:close(self.coll_list)
             self.coll_list = nil
         end
-        self:onShowColl(coll_name)
+        self:onShowColl(new_coll_name)
     end
 end
 

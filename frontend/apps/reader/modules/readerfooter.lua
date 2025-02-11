@@ -1381,6 +1381,20 @@ function ReaderFooter:addToMainMenu(menu_items)
             {
                 text = _("Arrange items in status bar"),
                 separator = true,
+                keep_menu_open = true,
+                enabled_func = function()
+                    -- count enabled items
+                    local enabled_count = 0
+                    for _, m in ipairs(self.mode_index) do
+                        if self.settings[m] then
+                            enabled_count = enabled_count + 1
+                            if enabled_count > 1 then
+                                break
+                            end
+                        end
+                    end
+                    return enabled_count > 1
+                end,
                 callback = function()
                     local item_table = {}
                     for i=1, #self.mode_index do

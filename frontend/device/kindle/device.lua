@@ -1004,6 +1004,36 @@ local KindlePaperWhite5 = Kindle:extend{
     -- NOTE: Input device path is variable, see findInputDevices
 }
 
+local KindlePaperWhite5SE = Kindle:extend{
+    model = "KindlePaperWhite5SE", -- Signature Edition, has light sensor
+    isMTK = yes,
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    hasNaturalLight = yes,
+    hasNaturalLightMixer = yes,
+    hasLightSensor = yes,
+    display_dpi = 300,
+    canHWDither = no,
+    canDoSwipeAnimation = yes,
+}
+
+local KindlePaperWhite6 = Kindle:extend{
+    model = "KindlePaperWhite6",
+    isMTK = yes,
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    hasNaturalLight = yes,
+    -- NOTE: We *can* technically control both LEDs independently,
+    --       but the mix is device-specific, we don't have access to the LUT for the mix powerd is using,
+    --       and the widget is designed for the Kobo Aura One anyway, so, hahaha, nope.
+    hasNaturalLightMixer = yes,
+    display_dpi = 300,
+    -- NOTE: While hardware dithering (via MDP) should be a thing, it doesn't appear to do anything right now :/.
+    canHWDither = no, --- this is a guess i don't have a device to check
+    canDoSwipeAnimation = yes,
+    -- NOTE: Input device path is variable, see findInputDevices
+}
+
 local KindleBasic4 = Kindle:extend{
     model = "KindleBasic4",
     isMTK = yes,
@@ -1011,6 +1041,17 @@ local KindleBasic4 = Kindle:extend{
     hasFrontlight = yes,
     display_dpi = 300,
     canHWDither = no,
+    canDoSwipeAnimation = yes,
+    -- NOTE: Like the PW5, input device path is variable, see findInputDevices
+}
+
+local KindleBasic5 = Kindle:extend{
+    model = "KindleBasic5",
+    isMTK = yes,
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    display_dpi = 300,
+    canHWDither = no, --- this is a guess i don't have a device to check
     canDoSwipeAnimation = yes,
     -- NOTE: Like the PW5, input device path is variable, see findInputDevices
 }
@@ -1031,6 +1072,20 @@ local KindleScribe = Kindle:extend{
     touch_dev = "/dev/input/touch",
     canHWDither = yes,
     canDoSwipeAnimation = yes,
+}
+
+local KindleColorSoft = Kindle:extend{
+    model = "KindleColorSoft",
+    isMTK = yes,
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    hasNaturalLight = yes,
+    hasNaturalLightMixer = yes,
+    hasLightSensor = yes,
+    display_dpi = 300,
+    canHWDither = yes,
+    canDoSwipeAnimation = yes,
+    hasColorScreen = yes,
 }
 
 function Kindle2:init()
@@ -1566,6 +1621,24 @@ function KindlePaperWhite5:init()
 
     Kindle.init(self)
 end
+KindlePaperWhite5SE.init = KindlePaperWhite5.init
+
+function KindlePaperWhite6:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/fp9967-bl1/brightness",
+        warmth_intensity_file = "/sys/class/backlight/fp9967-bl0/brightness", --- guess based on colorsoft
+        batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
+        is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
+    }
+
+    -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
+    self.screen:_MTK_ToggleFastMode(true)
+
+    Kindle.init(self)
+end
 
 function KindleBasic4:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
@@ -1573,6 +1646,23 @@ function KindleBasic4:init()
         device = self,
         fl_intensity_file = "/sys/class/backlight/fp9966-bl1/brightness",
         warmth_intensity_file = "/sys/class/backlight/fp9966-bl0/brightness",
+        batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
+        is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
+    }
+
+    -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
+    self.screen:_MTK_ToggleFastMode(true)
+
+    Kindle.init(self)
+end
+
+function KindleBasic5:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/fp9967-bl1/brightness",
+        warmth_intensity_file = "/sys/class/backlight/fp9967-bl0/brightness", --- guess based on colorsoft
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
@@ -1646,6 +1736,25 @@ function KindleScribe:init()
     self.input.wacom_protocol = true
 end
 
+function KindleColorSoft:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/fp9967-bl1/brightness",
+        warmth_intensity_file = "/sys/class/backlight/fp9967-bl0/brightness",
+        batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
+        is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
+        hall_file = "/sys/devices/platform/eink_hall/hall_enable",
+    }
+
+    -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
+    self.screen:_MTK_ToggleFastMode(true)
+
+    Kindle.init(self)
+end
+
+
 function KindleTouch:exit()
     if self:isMTK() then
         -- Disable the so-called "fast" mode
@@ -1690,8 +1799,12 @@ KindlePaperWhite4.exit = KindleTouch.exit
 KindleBasic3.exit = KindleTouch.exit
 KindleOasis3.exit = KindleTouch.exit
 KindlePaperWhite5.exit = KindleTouch.exit
+KindlePaperWhite5SE.exit = KindleTouch.exit
+KindlePaperWhite6.exit = KindleTouch.exit
 KindleBasic4.exit = KindleTouch.exit
+KindleBasic5.exit = KindleTouch.exit
 KindleScribe.exit = KindleTouch.exit
+KindleColorSoft.exit = KindleTouch.exit
 
 function Kindle3:exit()
     -- send double menu key press events to trigger screen refresh
@@ -1745,9 +1858,14 @@ local pw4_set = Set { "0PP", "0T1", "0T2", "0T3", "0T4", "0T5", "0T6",
                   "16Q", "16R", "16S", "16T", "16U", "16V" }
 local kt4_set = Set { "10L", "0WF", "0WG", "0WH", "0WJ", "0VB" }
 local koa3_set = Set { "11L", "0WQ", "0WP", "0WN", "0WM", "0WL" }
-local pw5_set = Set { "1LG", "1Q0", "1PX", "1VD", "219", "21A", "2BH", "2BJ", "2DK" }
+local pw5_set = Set { "1Q0", "1PX", "1VD", "21A", "2BJ", "2DK" }
+local pw5se_set = Set { "1LG", "219", "2BH" }
 local kt5_set = Set { "22D", "25T", "23A", "2AQ", "2AP", "1XH", "22C" }
 local ks_set = Set { "27J", "2BL", "263", "227", "2BM", "23L", "23M", "270" }
+local kcs_set = Set { "3H2", "3H4", "3H6", "3H7", "3H9", "3JT", "3J6", "456", "34X", "3HB" }
+local kt6_set = Set { "A89", "3L2", "3L3", "3L4", "3L5", "3L6", "3KM" }
+local pw6_set = Set { "33W", "33X", "346", "349", "3H3", "3H5", "3H8", "3HA", "3J5", "3JS" } --- some of these are probably SE :/
+local ks2_set = Set { "3V0", "3V1", "3X5", "3UV", "3X4", "3X3", "41E", "410" }
 
 if kindle_sn_lead == "B" or kindle_sn_lead == "9" then
     local kindle_devcode = string.sub(kindle_sn, 3, 4)
@@ -1792,10 +1910,20 @@ else
         return KindleOasis3
     elseif pw5_set[kindle_devcode_v2] then
         return KindlePaperWhite5
+    elseif pw5se_set[kindle_devcode_v2] then
+        return KindlePaperWhite5SE
     elseif kt5_set[kindle_devcode_v2] then
         return KindleBasic4
     elseif ks_set[kindle_devcode_v2] then
         return KindleScribe
+    elseif kcs_set[kindle_devcode_v2] then
+        return KindleColorSoft
+    elseif kt6_set[kindle_devcode_v2] then
+        return KindleBasic5
+    elseif pw6_set[kindle_devcode_v2] then
+        return KindlePaperWhite6
+    elseif ks2_set[kindle_devcode_v2] then
+        return KindleScribe -- Scribe 1 and 2 are identical.
     end
 end
 

@@ -87,14 +87,14 @@ local BOOKINFO_COLS_SET = {
         "cover_sizetag",
         "ignore_meta",
         "ignore_cover",
-        "pages",
+        "pages", -- 13: start index for getDocProps()
         "title",
         "authors",
         "series",
         "series_index",
         "language",
         "keywords",
-        "description",
+        "description", -- 20: end index for getDocProps()
         "cover_w",
         "cover_h",
         "cover_bb_type",
@@ -400,6 +400,22 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
     end
 
     self.get_stmt:clearbind():reset() -- get ready for next query
+    return bookinfo
+end
+
+function BookInfoManager:getDocProps(filepath)
+    local bookinfo
+    local directory, filename = util.splitFilePathName(filepath)
+    self:openDbConnection()
+    local row = self.get_stmt:bind(directory, filename):step()
+    if row ~= nil then
+        bookinfo = {}
+        for i = 13, 20 do
+            bookinfo[BOOKINFO_COLS_SET[i]] = row[i]
+        end
+        bookinfo.pages = tonumber(bookinfo.pages)
+    end
+    self.get_stmt:clearbind():reset()
     return bookinfo
 end
 

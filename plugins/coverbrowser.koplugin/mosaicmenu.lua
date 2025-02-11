@@ -3,7 +3,6 @@ local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
-local DocSettings = require("docsettings")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -529,10 +528,6 @@ function MosaicMenuItem:update()
     else -- file
         self.file_deleted = self.entry.dim -- entry with deleted file from History or selected file from FM
 
-        if self.do_hint_opened and DocSettings:hasSidecarFile(self.filepath) then
-            self.been_opened = true
-        end
-
         local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.do_cover_image)
 
         if bookinfo and self.do_cover_image and not bookinfo.ignore_cover and not self.file_deleted then
@@ -556,26 +551,13 @@ function MosaicMenuItem:update()
             end
         end
 
+        local book_info = self.menu.getBookInfo(self.filepath)
+        self.been_opened = book_info.been_opened
         if bookinfo then -- This book is known
-            -- Current page / pages are available or more accurate in .sdr/metadata.lua
-            -- We use a cache (cleaned at end of this browsing session) to store
-            -- page, percent read and book status from sidecar files, to avoid
-            -- re-parsing them when re-rendering a visited page
-            -- This cache is shared with ListMenu, so we need to fill it with the same
-            -- info here than there, even if we don't need them all here.
-            if not self.menu.cover_info_cache then
-                self.menu.cover_info_cache = {}
-            end
-            local percent_finished, status
-            if DocSettings:hasSidecarFile(self.filepath) then
-                self.been_opened = true
-                self.menu:updateCache(self.filepath, nil, true, bookinfo.pages) -- create new cache entry if absent
-                dummy, percent_finished, status =
-                    unpack(self.menu.cover_info_cache[self.filepath], 1, self.menu.cover_info_cache[self.filepath].n)
-            end
-            self.percent_finished = percent_finished
-            self.status = status
-            self.show_progress_bar = self.status ~= "complete" and BookInfoManager:getSetting("show_progress_in_mosaic") and self.percent_finished
+            self.percent_finished = book_info.percent_finished
+            self.status = book_info.status
+            self.show_progress_bar = self.status ~= "complete"
+                and BookInfoManager:getSetting("show_progress_in_mosaic") and self.percent_finished
 
             local cover_bb_used = false
             self.bookinfo_found = true
@@ -613,31 +595,18 @@ function MosaicMenuItem:update()
                 self._has_cover_image = true
             else
                 -- add Series metadata if requested
-                local series_mode = BookInfoManager:getSetting("series_mode")
                 local title_add, authors_add
-                if bookinfo.series then
-                    if bookinfo.series_index then
-                        bookinfo.series = BD.auto(bookinfo.series .. " #" .. bookinfo.series_index)
-                    else
-                        bookinfo.series = BD.auto(bookinfo.series)
-                    end
+                local series_mode = BookInfoManager:getSetting("series_mode")
+                if series_mode and bookinfo.series then
+                    local series = bookinfo.series_index and bookinfo.series .. " #" .. bookinfo.series_index
+                        or bookinfo.series
+                    series = BD.auto(series)
                     if series_mode == "append_series_to_title" then
-                        if bookinfo.title then
-                            title_add = " - " .. bookinfo.series
-                        else
-                            title_add = bookinfo.series
-                        end
-                    end
-                    if not bookinfo.authors then
-                        if series_mode == "append_series_to_authors" or series_mode == "series_in_separate_line" then
-                            authors_add = bookinfo.series
-                        end
-                    else
-                        if series_mode == "append_series_to_authors" then
-                            authors_add = " - " .. bookinfo.series
-                        elseif series_mode == "series_in_separate_line" then
-                            authors_add = "\n \n" .. bookinfo.series
-                        end
+                        title_add = bookinfo.title and " - " .. series or series
+                    elseif series_mode == "append_series_to_authors" then
+                        authors_add = bookinfo.authors and " - " .. series or series
+                    else -- "series_in_separate_line"
+                        authors_add = bookinfo.authors and "\n \n" .. series or series
                     end
                 end
                 local bottom_pad = Size.padding.default

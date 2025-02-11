@@ -63,7 +63,7 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
     end
 
     -- Collect this stuff for later, with the single view.
-    local download_full_article = feed.download_full_article ~= false
+    local download_full_article = feed.download_full_article or false
     local include_images = feed.include_images ~= false
     local enable_filter = feed.enable_filter ~= false
     local filter_element = feed.filter_element
@@ -168,33 +168,19 @@ end
 -- up the food chain, so to speak
 --
 function FeedView:flattenArray(base_array, source_array)
-    for key, value in pairs(source_array) do
-        if value[2] == nil then
+    for _, value in pairs(source_array) do
+        if not value[2] then
             -- If the value is empty, then it's probably supposed to be a line
-            table.insert(
-                base_array,
-                "---"
-            )
+            table.insert(base_array, "---")
         else
-            if value["callback"] then
-                table.insert(
-                    base_array,
-                    {
-                        value[1], value[2], callback = value["callback"]
-                    }
-                )
-            else
-                table.insert(
-                    base_array,
-                    {
-                        value[1], value[2]
-                    }
-                )
-            end
+            table.insert(base_array, {
+                value[1],
+                value[2],
+                callback = value.callback,
+            })
         end
     end
     return base_array
 end
-
 
 return FeedView

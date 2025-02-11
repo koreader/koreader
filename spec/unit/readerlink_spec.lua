@@ -1,14 +1,13 @@
 describe("ReaderLink module", function()
-    local DocumentRegistry, ReaderUI, UIManager, sample_epub, sample_pdf, Event, Screen
+    local DocumentRegistry, ReaderUI, sample_epub, sample_pdf, Event, Screen
 
     setup(function()
         require("commonrequire")
-        package.unloadAll()
+        disable_plugins()
         require("document/canvascontext"):init(require("device"))
         DocumentRegistry = require("document/documentregistry")
         Event = require("ui/event")
         ReaderUI = require("apps/reader/readerui")
-        UIManager = require("ui/uimanager")
         Screen = require("device").screen
         sample_epub = "spec/front/unit/data/leaves.epub"
         sample_pdf = "spec/front/unit/data/paper.pdf"
@@ -16,18 +15,10 @@ describe("ReaderLink module", function()
 
     local readerui
 
-    local function fastforward_ui_events()
-        -- Fast forward all scheduled tasks.
-        UIManager:shiftScheduledTasksBy(-1e9)
-        UIManager:run()
-    end
-
     after_each(function()
         readerui:closeDocument()
         readerui:onClose()
         readerui = nil
-        UIManager:quit()
-        UIManager._exit_code = nil
     end)
 
     describe("with epub", function()

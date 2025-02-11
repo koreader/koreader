@@ -3,6 +3,7 @@ This module provides a way to display book information (filename and book metada
 ]]
 
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -79,8 +80,8 @@ function BookInfo:show(doc_settings_or_file, book_props)
         doc_settings_or_file = self.ui.doc_settings
         has_sidecar = true
     end
-    if not has_sidecar and DocSettings:hasSidecarFile(file) then
-        doc_settings_or_file = DocSettings:open(file)
+    if not has_sidecar and BookList.hasBookBeenOpened(file) then
+        doc_settings_or_file = BookList.getDocSettings(file)
         has_sidecar = true
     end
     local folder, filename = util.splitFilePathName(file)
@@ -99,7 +100,7 @@ function BookInfo:show(doc_settings_or_file, book_props)
     -- book_props may be provided if caller already has them available
     -- but it may lack "pages", that we may get from sidecar file
     if not book_props or not book_props.pages then
-        book_props = BookInfo.getDocProps(file, book_props)
+        book_props = self:getDocProps(file, book_props)
     end
     -- cover image
     self.custom_book_cover = DocSettings:findCustomCoverFile(file)
@@ -238,9 +239,17 @@ function BookInfo.extendProps(original_props, filepath)
 end
 
 -- Returns customized document metadata, including number of pages.
-function BookInfo.getDocProps(file, book_props, no_open_document)
-    if DocSettings:hasSidecarFile(file) then
-        local doc_settings = DocSettings:open(file)
+function BookInfo:getDocProps(file, book_props, no_open_document)
+    if self.ui.coverbrowser then
+        book_props = self.ui.coverbrowser.getDocProps(file)
+        if book_props ~= nil then -- already customized
+            book_props.display_title = book_props.title or filemanagerutil.splitFileNameType(file)
+            return book_props
+        end
+    end
+
+    if BookList.hasBookBeenOpened(file) then
+        local doc_settings = BookList.getDocSettings(file)
         if not book_props then
             -- Files opened after 20170701 have a "doc_props" setting with
             -- complete metadata and "doc_pages" with accurate nb of pages
@@ -340,7 +349,7 @@ end
 function BookInfo:onShowBookDescription(description, file)
     if not description then
         if file then
-            description = BookInfo.getDocProps(file).description
+            description = self:getDocProps(file).description
         elseif self.document then -- currently opened document
             description = self.ui.doc_props.description
         end
@@ -713,7 +722,7 @@ function BookInfo:showNotebookFileDialog(notebook_file, doc_settings_or_file, bo
     local file = has_sidecar and doc_settings_or_file:readSetting("doc_path") or doc_settings_or_file
     local function saveNotebookFile(new_notebook_file)
         if not has_sidecar then
-            doc_settings_or_file = DocSettings:open(doc_settings_or_file)
+            doc_settings_or_file = BookList.getDocSettings(doc_settings_or_file)
         end
         doc_settings_or_file:saveSetting("notebook_file", new_notebook_file)
         if not self.is_current_doc then

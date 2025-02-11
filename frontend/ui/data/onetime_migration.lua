@@ -6,12 +6,13 @@ local DataStorage = require("datastorage")
 local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local LuaSettings = require("luasettings")
 local SQ3 = require("lua-ljsqlite3/init")
 local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20241208
+local CURRENT_MIGRATION_DATE = 20250207
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -776,9 +777,75 @@ if last_migration_date < 20241208 then
     G_reader_settings:delSetting("kopt_full_screen")
 end
 
--- 20241220, Remove obsolete plugins
-if last_migration_date < 20241220 then
-    logger.info("Performing one-time migration for 20241220")
+-- 20241228, Refactor wallabag plugin.
+-- https://github.com/koreader/koreader/pull/12949
+if last_migration_date < 20241228 then
+    logger.info("Performing one-time migration for 20241228")
+
+    local wb_lua = DataStorage:getSettingsDir() .. "/wallabag.lua"
+    if lfs.attributes(wb_lua, "mode") == "file" then
+        local wb_settings = LuaSettings:open(wb_lua)
+        wb_settings:readSetting("wallabag")
+
+        local new_settings = {}
+        local migrate = {
+            download_queue = "offline_queue",
+            is_auto_delete = "auto_archive",
+            is_delete_abandoned = "archive_abandoned",
+            is_delete_finished = "archive_finished",
+            is_delete_read = "archive_read",
+            is_sync_remote_delete = "sync_remote_archive",
+        }
+
+        for old_key, value in pairs(wb_settings.data.wallabag) do
+            if migrate[old_key] ~= nil then
+                new_settings[migrate[old_key]] = value
+            elseif old_key == "is_archiving_deleted" then
+                new_settings["delete_instead"] = not value
+            else
+                new_settings[old_key] = value
+            end
+        end
+
+        wb_settings:saveSetting("wallabag", new_settings)
+        wb_settings:flush()
+    end
+end
+
+-- 20250207, Separate GoTo and Back actions for Reader and FileManager.
+-- https://github.com/koreader/koreader/pull/13167
+if last_migration_date < 20250207 then
+    logger.info("Performing one-time migration for 20250207")
+
+    local gestures_path = ffiUtil.joinPath(DataStorage:getSettingsDir(), "gestures.lua")
+    if lfs.attributes(gestures_path, "mode") == "file" then
+        local gestures = LuaSettings:open(gestures_path)
+        if next(gestures.data) and next(gestures.data.gesture_fm) then
+            local updated
+            for _, gesture in pairs(gestures.data.gesture_fm) do
+                for action in pairs(gesture) do
+                    if action == "go_to" then
+                        gesture.go_to = nil
+                        gesture.fm_go_to = true
+                        updated = true
+                    elseif action == "back" then
+                        gesture.back = nil
+                        gesture.fm_back = true
+                        updated = true
+                    end
+                end
+            end
+            if updated then
+                gestures:flush()
+            end
+        end
+    end
+end
+
+-- 20250212, Remove obsolete plugins
+-- https://github.com/koreader/koreader/pull/12932
+if last_migration_date < 20250212 then
+    logger.info("Performing one-time migration for 20250212")
     local base = DataStorage:getDataDir() .. "/plugins/"
     local old_plugins = { "autofrontlight", "backgroundrunner", "calibrecompanion",
         "evernote", "goodreads", "kobolight", "send2ebook", "storagestat", "zsync" }

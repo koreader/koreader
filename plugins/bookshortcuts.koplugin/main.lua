@@ -1,16 +1,16 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Dispatcher = require("dispatcher")
-local FFIUtil = require("ffi/util")
 local LuaSettings = require("luasettings")
 local PathChooser = require("ui/widget/pathchooser")
 local ReadHistory = require("readhistory")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
-local util = require("util")
 local _ = require("gettext")
-local T = FFIUtil.template
+local C_ = _.pgettext
+local T = ffiUtil.template
 
 local BookShortcuts = WidgetContainer:extend{
     name = "bookshortcuts",
@@ -20,32 +20,25 @@ local BookShortcuts = WidgetContainer:extend{
 
 function BookShortcuts:onDispatcherRegisterActions()
     for k,v in pairs(self.shortcuts.data) do
-        if util.pathExists(k) then
-            local title = k
-            if lfs.attributes(k, "mode") == "file" then
-                local directory, filename = util.splitFilePathName(k) -- luacheck: no unused
-                title = filename
-            end
+        local mode = lfs.attributes(k, "mode")
+        if mode then
+            local title = T(C_("File", "Open %1"), mode == "file" and k:gsub(".*/", "") or k)
             Dispatcher:registerAction(k, {category="none", event="BookShortcut", title=title, general=true, arg=k,})
         end
     end
 end
 
 function BookShortcuts:onBookShortcut(path)
-    if util.pathExists(path) then
+    local mode = lfs.attributes(path, "mode")
+    if mode then
         local file
-        if lfs.attributes(path, "mode") ~= "file" then
+        if mode ~= "file" then
             if G_reader_settings:readSetting("BookShortcuts_directory_action") == "FM" then
                 if self.ui.file_chooser then
                     self.ui.file_chooser:changeToPath(path)
                 else -- called from Reader
                     self.ui:onClose()
-                    local FileManager = require("apps/filemanager/filemanager")
-                    if FileManager.instance then
-                        FileManager.instance:reinit(path)
-                    else
-                        FileManager:showFiles(path)
-                    end
+                    self.ui:showFileManager(path)
                 end
             else
                 file = ReadHistory:getFileByDirectory(path, G_reader_settings:isTrue("BookShortcuts_recursive_directory"))
@@ -54,8 +47,8 @@ function BookShortcuts:onBookShortcut(path)
             file = path
         end
         if file then
-            local ReaderUI = require("apps/reader/readerui")
-            ReaderUI:showReader(file)
+            local FileManager = require("apps/filemanager/filemanager")
+            FileManager.openFile(self.ui, file)
         end
     end
 end
@@ -104,37 +97,42 @@ function BookShortcuts:getSubMenuItems()
             end,
         },
         {
-            text_func = function() return T(_("Folder action: %1"), G_reader_settings:readSetting("BookShortcuts_directory_action", "FM") == "FM" and FM_text or last_text) end,
+            text_func = function() return T(_("Folder action: %1"),
+                G_reader_settings:readSetting("BookShortcuts_directory_action", "FM") == "FM" and FM_text or last_text) end,
             keep_menu_open = true,
             sub_item_table = {
                 {
+                    text = FM_text,
+                    radio = true,
+                    checked_func = function() return G_reader_settings:readSetting("BookShortcuts_directory_action") == "FM" end,
+                    callback = function() G_reader_settings:saveSetting("BookShortcuts_directory_action", "FM") end,
+                },
+                {
                     text = last_text,
+                    radio = true,
                     checked_func = function() return G_reader_settings:readSetting("BookShortcuts_directory_action") == "Last" end,
                     callback = function() G_reader_settings:saveSetting("BookShortcuts_directory_action", "Last") end,
                 },
                 {
-                    text = FM_text,
-                    checked_func = function() return G_reader_settings:readSetting("BookShortcuts_directory_action") == "FM" end,
-                    callback = function() G_reader_settings:saveSetting("BookShortcuts_directory_action", "FM") end,
+                    text = _("Recursively search folders"),
+                    enabled_func = function() return G_reader_settings:readSetting("BookShortcuts_directory_action") == "Last" end,
+                    checked_func = function() return G_reader_settings:isTrue("BookShortcuts_recursive_directory") end,
+                    callback = function() G_reader_settings:flipNilOrFalse("BookShortcuts_recursive_directory") end,
                 },
             },
-        },
-        {
-            text = _("Recursively search folders"),
-            keep_menu_open = true,
-            checked_func = function() return G_reader_settings:isTrue("BookShortcuts_recursive_directory") end,
-            enabled_func = function() return G_reader_settings:readSetting("BookShortcuts_directory_action") == "Last" end,
-            callback = function() G_reader_settings:flipNilOrFalse("BookShortcuts_recursive_directory") end,
             separator = true,
-        }
+        },
     }
-    for k,v in FFIUtil.orderedPairs(self.shortcuts.data) do
+    for k in ffiUtil.orderedPairs(self.shortcuts.data) do
+        local mode = lfs.attributes(k, "mode")
+        local icon = mode and (mode == "file" and "\u{F016} " or "\u{F114} ") or "\u{F48E} "
+        local text = mode == "file" and k:gsub(".*/", "") or k
         table.insert(sub_item_table, {
-            text = k,
+            text = icon .. text,
             callback = function() self:onBookShortcut(k) end,
             hold_callback = function(touchmenu_instance)
                 UIManager:show(ConfirmBox:new{
-                    text = _("Do you want to delete this shortcut?"),
+                    text = _("Do you want to delete this shortcut?") .. "\n\n" .. k .. "\n",
                     ok_text = _("Delete"),
                     ok_callback = function()
                         self:deleteShortcut(k)
@@ -158,6 +156,9 @@ end
 function BookShortcuts:deleteShortcut(name)
     self.shortcuts.data[name] = nil
     Dispatcher:removeAction(name)
+    if self.ui.profiles then
+        self.ui.profiles:updateProfiles(name)
+    end
     self.updated = true
 end
 

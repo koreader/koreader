@@ -14,8 +14,8 @@ return {--do NOT change this line
  -- set 'limit' to "0" means no limit.
 
  -- 'download_full_article=true' - means download full article (may not always work correctly)
- -- 'download_full_article=false' - means use only feed description to create feeds (usually only beginning of the article)
- -- default value is 'true' (if no 'download_full_article' entry)
+ -- 'download_full_article=false' - means use only feed description to create feeds. Sometimes this is only a summary or the first few lines, sometimes it's the full article.
+ -- default value is 'false' (if no 'download_full_article' entry)
 
  -- 'include_images=true' - means download any images on the page and include them in the article
  -- 'include_images=false' - means ignore any images, only download the text (faster download, smaller file sizes)
@@ -38,7 +38,7 @@ return {--do NOT change this line
 
  -- LIST YOUR FEEDS HERE:
 
- { "https://github.com/koreader/koreader/releases.atom", limit = 3, download_full_article=true, include_images=false, enable_filter=true, filter_element = "div.release-main-section"},
+ { "https://github.com/koreader/koreader/releases.atom", limit = 3, download_full_article=false, include_images=false, enable_filter=true, filter_element = "div.release-main-section"},
  { "https://ourworldindata.org/atom.xml", limit = 5 , download_full_article=true, include_images=true, enable_filter=false, filter_element = ""},
 
 }--do NOT change this line

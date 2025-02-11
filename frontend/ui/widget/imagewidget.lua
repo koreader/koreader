@@ -88,7 +88,7 @@ local ImageWidget = Widget:extend{
     --   Special case: scale_factor == 0 : image will be scaled to best fit provided
     --   width and height, keeping aspect ratio (scale_factor will be updated
     --   from 0 to the factor used at _render() time)
-    -- If scale_factor is nil and stretch_limit_percantage is provided:
+    -- If scale_factor is nil and stretch_limit_percentage is provided:
     --   If the aspect ratios of the image and the width/height provided don't differ by more than
     --   stretch_limit_percentage, then stretch the image (as scale_factor=nil);
     --   otherwise, scale to best fit (as scale_factor=0)
@@ -140,7 +140,7 @@ function ImageWidget:_loadfile()
         -- and use them in cache hash, when self.scale_factor is nil, when we are sure
         -- we don't need to keep aspect ratio.
         local width, height
-        if self.scale_factor == nil then
+        if self.scale_factor == nil and self.stretch_limit_percentage == nil then
             width = self.width
             height = self.height
         end

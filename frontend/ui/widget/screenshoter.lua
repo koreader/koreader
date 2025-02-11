@@ -96,16 +96,18 @@ function Screenshoter:onScreenshot(screenshot_name, caller_callback)
                     UIManager:show(image_viewer)
                 end,
             },
-            {
-                text = _("Set as wallpaper"),
-                callback = function()
-                    G_reader_settings:saveSetting("screensaver_type", "image_file")
-                    G_reader_settings:saveSetting("screensaver_image", screenshot_name)
-                    dialog:onClose()
-                end,
-            },
         },
     }
+    if Device:supportsScreensaver() then
+        table.insert(buttons[2], {
+            text = _("Set as wallpaper"),
+            callback = function()
+                G_reader_settings:saveSetting("screensaver_type", "document_cover")
+                G_reader_settings:saveSetting("screensaver_document_cover", screenshot_name)
+                dialog:onClose()
+            end,
+        })
+    end
     dialog = ButtonDialog:new{
         title = _("Screenshot saved to:") .. "\n\n" .. BD.filepath(screenshot_name) .. "\n",
         modal = true,

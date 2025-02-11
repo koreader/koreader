@@ -378,7 +378,7 @@ local highlight_dialog_position = {
     {_("Top"), "top"},
     {_("Center"), "center"},
     {_("Bottom"), "bottom"},
-    {_("Gesture position"), "gesture"},
+    {_("Highlight position"), "gesture"},
 }
 
 function ReaderHighlight:addToMainMenu(menu_items)
@@ -826,7 +826,7 @@ Except when in two columns mode, where this is limited to showing only the previ
     if not Device:isTouchDevice() and Device:hasDPad() then
         table.insert(menu_items.long_press.sub_item_table, {
             text_func = function()
-                return T(_("Rate of movement in content selection: %1"), G_reader_settings:readSetting("highlight_non_touch_factor") or 4)
+                return T(_("Crosshairs speed for text selection: %1"), G_reader_settings:readSetting("highlight_non_touch_factor") or 4)
             end,
             callback = function(touchmenu_instance)
                 local curr_val = G_reader_settings:readSetting("highlight_non_touch_factor") or 4
@@ -837,8 +837,8 @@ Except when in two columns mode, where this is limited to showing only the previ
                     precision = "%.2f",
                     value_step = 0.25,
                     default_value = 4,
-                    title_text = _("Rate of movement"),
-                    info_text = _("Select a decimal value from 0.25 to 5. A smaller value results in a larger travel distance per keystroke. Font size and this value are inversely correlated, meaning a smaller font size requires a larger value and vice versa."),
+                    title_text = _("Crosshairs speed"),
+                    info_text = _("Select a decimal value from 0.25 to 5. A smaller value increases the travel distance of the crosshairs per keystroke. Font size and this value are inversely correlated, meaning a smaller font size requires a larger value and vice versa."),
                     callback = function(spin)
                         G_reader_settings:saveSetting("highlight_non_touch_factor", spin.value)
                         if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -848,7 +848,7 @@ Except when in two columns mode, where this is limited to showing only the previ
             end,
         })
         table.insert(menu_items.long_press.sub_item_table, {
-            text = _("Speed-up rate on multiple keystrokes"),
+            text = _("Increase crosshairs speed on consecutive keystrokes"),
             checked_func = function()
                 return G_reader_settings:nilOrTrue("highlight_non_touch_spedup")
             end,
@@ -862,7 +862,7 @@ Except when in two columns mode, where this is limited to showing only the previ
         table.insert(menu_items.long_press.sub_item_table, {
             text_func = function()
                 local highlight_non_touch_interval = G_reader_settings:readSetting("highlight_non_touch_interval") or 1
-                return T(N_("Speed-up rate interval: 1 second", "Speed-up rate interval: %1 seconds", highlight_non_touch_interval), highlight_non_touch_interval)
+                return T(N_("Interval for crosshairs speed increase: 1 second", "Interval for crosshairs speed increase: %1 seconds", highlight_non_touch_interval), highlight_non_touch_interval)
             end,
             enabled_func = function()
                 return not self.view.highlight.disabled and G_reader_settings:nilOrTrue("highlight_non_touch_spedup")
@@ -877,7 +877,7 @@ Except when in two columns mode, where this is limited to showing only the previ
                     value_step = 0.1,
                     default_value = 1,
                     title_text = _("Time interval"),
-                    info_text = _("Select a decimal value up to 1 second. This is the period of time within which multiple keystrokes will speed-up rate of travel."),
+                    info_text = _("Select a decimal value up to 1 second. This defines the time period within which multiple keystrokes will trigger an increase in the crosshairs speed."),
                     callback = function(spin)
                         G_reader_settings:saveSetting("highlight_non_touch_interval", spin.value)
                         if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -887,10 +887,10 @@ Except when in two columns mode, where this is limited to showing only the previ
             end,
         })
 
-        -- long_press setting is under taps_and_gestures menu which is not available for non-touch devices
-        -- Clone long_press setting and change its label, making it much more meaningful for non-touch device users.
+        -- long_press settings are under the taps_and_gestures menu, which is not available for non-touch devices
+        -- Clone long_press settings, and change its label, making it much more meaningful for non-touch device users.
         menu_items.selection_text = menu_items.long_press
-        menu_items.selection_text.text = _("Selection on text")
+        menu_items.selection_text.text = _("Text selection tools")
         menu_items.long_press = nil
     end
 
@@ -2051,7 +2051,7 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
         end
         local index = self.ui.annotation:addItem(item)
         self.view.footer:maybeUpdateFooter()
-        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = 1 }))
+        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = 1, index_modified = index }))
         return index
     end
 end
@@ -2460,37 +2460,94 @@ end
 -- dpad/keys support
 
 function ReaderHighlight:onHighlightPress()
-    if self._current_indicator_pos then
-        if not self._start_indicator_highlight then
-            -- try a tap at current indicator position to open any existing highlight
-            if not self:onTap(nil, self:_createHighlightGesture("tap")) then
-                -- no existing highlight at current indicator position: start hold
-                self._start_indicator_highlight = true
-                self:onHold(nil, self:_createHighlightGesture("hold"))
-                -- With crengine, selected_text.sboxes does return good coordinates.
-                if self.ui.rolling and self.selected_text and self.selected_text.sboxes and #self.selected_text.sboxes > 0 then
-                    local pos = self.selected_text.sboxes[1]
-                    -- set hold_pos to center of selected_test to make center selection more stable, not jitted at edge
-                    self.hold_pos = self.view:screenToPageTransform({
-                        x = pos.x + pos.w / 2,
-                        y = pos.y + pos.h / 2
-                    })
-                    -- move indicator to center selected text making succeed same row selection much accurate.
-                    UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
-                    self._current_indicator_pos.x = pos.x + pos.w / 2 - self._current_indicator_pos.w / 2
-                    self._current_indicator_pos.y = pos.y + pos.h / 2 - self._current_indicator_pos.h / 2
-                    UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
-                end
-            else
-                self:onStopHighlightIndicator(true) -- need_clear_selection=true
-            end
-        else
-            self:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
-            self:onStopHighlightIndicator()
-        end
+    if not self._current_indicator_pos then return false end
+    if self._start_indicator_highlight then
+        self:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
+        self:onStopHighlightIndicator()
         return true
     end
-    return false
+    -- Attempt to open an existing highlight
+    if self:onTap(nil, self:_createHighlightGesture("tap")) then
+        self:onStopHighlightIndicator(true) -- need_clear_selection=true
+        return true
+    end
+    -- no existing highlight at current indicator position: start hold
+    self._start_indicator_highlight = true
+    self:onHold(nil, self:_createHighlightGesture("hold"))
+
+    if not (self.ui.rolling and self.selected_text and self.selected_text.sboxes and #self.selected_text.sboxes > 0) then
+        return true
+    end
+    -- With crengine, selected_text.sboxes have good coordinates, so we'll borrow them.
+    local pos = self.selected_text.sboxes[1]
+    local margins = self.ui.document.configurable.h_page_margins[1] + self.ui.document.configurable.h_page_margins[2]
+    local two_column_mode = self.ui.document.configurable.visible_pages == 2
+    local effective_width = two_column_mode and (self.screen_w - margins) / 2 or self.screen_w - margins
+    -- When words are split (and hyphenated) due to line breaks, they create selection boxes that are almost as wide as the
+    -- effective_width, so we need to check if that is the case, in order to handle those cases properly. We cannot precisely
+    -- and easily recognise hyphenated words in the front end, so a heuristic approach is used, it goes in two steps.
+    -- Step one: check if our box is a 'big boy'. We must allow some room for unknown variables like publisher-embedded padding, etc.
+    local is_word_split = pos.w > 0.7 * effective_width
+    -- Step two: weed out false positives (i.e long words) by comparing words found at different box coordinates.
+    if is_word_split then
+        -- In the case of a split (and hyphenated) word, we should get distinct words at different coordinates inside the box,
+        -- false positives on the other hand, should return the same word at different coordinates.
+        local word_at_pos1 = self.ui.document:getWordFromPosition({
+            x = BD.mirroredUILayout() and pos.x + pos.w or pos.x,
+            y = pos.y + pos.h * 1/4 -- puts us at a potential line 1 of 2
+        })
+        local word_at_pos2 = self.ui.document:getWordFromPosition({
+            x = BD.mirroredUILayout() and pos.x or pos.x + pos.w,
+            y = pos.y + pos.h * 3/4 -- puts us at a potential line 2 of 2
+        })
+        local does_word_at_pos1_match = word_at_pos1 and word_at_pos1.word == self.selected_text.text
+        local does_word_at_pos2_match = word_at_pos2 and word_at_pos2.word == self.selected_text.text
+        -- If all 3 words are a match, then we're likely not a split word, just a very long one, something worthy of floccinaucinihilipilification.
+        if does_word_at_pos1_match and does_word_at_pos2_match then
+            is_word_split = false -- check mate
+        else -- We're reasonably sure the word was split (and hyphenated). Re-select the original word to ensure the correct word is highlighted.
+            self.ui.document:getWordFromPosition({
+                x = BD.mirroredUILayout() and pos.x + pos.w or pos.x,
+                y = pos.y + pos.h * 3/4
+            })
+        end
+    end
+
+    -- helper function to update crosshairs positioning and self.hold_pos
+    local function updatePositions(hold_x, hold_y, indicator_x, indicator_y)
+        self.hold_pos = self.view:screenToPageTransform({ x = hold_x, y = hold_y })
+        UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
+        self._current_indicator_pos.x = indicator_x
+        self._current_indicator_pos.y = indicator_y
+    end
+    -- Determine positions based on word type and layout.
+    if is_word_split then
+        if BD.mirroredUILayout() then -- RTL
+            updatePositions(
+                pos.x + pos.w,          -- rightmost point
+                pos.y + pos.h * 3 / 4,  -- adjusted vertical position
+                pos.x + pos.w,
+                pos.y + pos.h * 3 / 4 - self._current_indicator_pos.h / 2
+            )
+        else
+            updatePositions(
+                pos.x,                  -- leftmost point
+                pos.y + pos.h * 3 / 4,  -- adjusted vertical position
+                pos.x,
+                pos.y + pos.h * 3 / 4 - self._current_indicator_pos.h / 2
+            )
+        end
+    else
+        updatePositions(
+            -- set hold_pos to center of selected_text to make center selection more stable, not JITted at edge
+            pos.x + pos.w / 2,          -- center of word horizontally
+            pos.y + pos.h / 2,          -- center of word vertically
+            pos.x + pos.w / 2 - self._current_indicator_pos.w / 2,
+            pos.y + pos.h / 2 - self._current_indicator_pos.h / 2
+        )
+    end
+    UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
+    return true
 end
 
 function ReaderHighlight:onStartHighlightIndicator()

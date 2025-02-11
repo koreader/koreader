@@ -3,6 +3,7 @@ This module contains miscellaneous helper functions for FileManager
 ]]
 
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local Event = require("ui/event")
@@ -51,22 +52,15 @@ function filemanagerutil.splitFileNameType(filepath)
 end
 
 function filemanagerutil.getRandomFile(dir, match_func)
-    if not dir:match("/$") then
-        dir = dir .. "/"
-    end
     local files = {}
-    local ok, iter, dir_obj = pcall(lfs.dir, dir)
-    if ok then
-        for entry in iter, dir_obj do
-            local file = dir .. entry
-            if lfs.attributes(file, "mode") == "file" and match_func(file) then
-                table.insert(files, entry)
-            end
+    util.findFiles(dir, function(file)
+        if match_func(file) then
+            table.insert(files, file)
         end
-        if #files > 0 then
-            math.randomseed(os.time())
-            return dir .. files[math.random(#files)]
-        end
+    end, false)
+    if #files > 0 then
+        math.randomseed(os.time())
+        return files[math.random(#files)]
     end
 end
 
@@ -99,19 +93,8 @@ function filemanagerutil.resetDocumentSettings(file)
         end
         doc_settings:makeTrue("docsettings_reset_done") -- for readertypeset block_rendering_mode
         doc_settings:flush()
+        BookList.setBookInfoCache(file_abs_path, doc_settings)
     end
-end
-
--- Get a document status ("new", "reading", "complete", or "abandoned")
-function filemanagerutil.getStatus(file)
-    if DocSettings:hasSidecarFile(file) then
-        local summary = DocSettings:open(file):readSetting("summary")
-        if summary and summary.status and summary.status ~= "" then
-            return summary.status
-        end
-        return "reading"
-    end
-    return "new"
 end
 
 function filemanagerutil.saveSummary(doc_settings_or_file, summary)
@@ -125,17 +108,6 @@ function filemanagerutil.saveSummary(doc_settings_or_file, summary)
     return doc_settings_or_file
 end
 
-function filemanagerutil.statusToString(status)
-    local status_to_text = {
-        new       = _("Unread"),
-        reading   = _("Reading"),
-        abandoned = _("On hold"),
-        complete  = _("Finished"),
-    }
-
-    return status_to_text[status]
-end
-
 -- Generate all book status file dialog buttons in a row
 function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callback)
     local file, summary, status
@@ -146,16 +118,16 @@ function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callba
     else
         file = doc_settings_or_file
         summary = {}
-        status = filemanagerutil.getStatus(file)
+        status = BookList.getBookStatus(file)
     end
     local function genStatusButton(to_status)
         return {
-            text = filemanagerutil.statusToString(to_status) .. (status == to_status and "  ✓" or ""),
+            text = BookList.getBookStatusString(to_status) .. (status == to_status and "  ✓" or ""),
             enabled = status ~= to_status,
             callback = function()
                 summary.status = to_status
                 filemanagerutil.saveSummary(doc_settings_or_file, summary)
-                UIManager:broadcastEvent(Event:new("DocSettingsItemsChanged", file, { summary = summary })) -- for CoverBrowser
+                BookList.setBookInfoCacheProperty(file, "status", to_status)
                 caller_callback()
             end,
         }
@@ -176,7 +148,7 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
         has_sidecar_file = true
     else
         file = ffiUtil.realpath(doc_settings_or_file) or doc_settings_or_file
-        has_sidecar_file = DocSettings:hasSidecarFile(file)
+        has_sidecar_file = BookList.hasBookBeenOpened(file)
     end
     local custom_cover_file = DocSettings:findCustomCoverFile(file)
     local has_custom_cover_file = custom_cover_file and true or false
@@ -205,7 +177,7 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
                         UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
                     end
                     if data_to_purge.doc_settings then
-                        UIManager:broadcastEvent(Event:new("DocSettingsItemsChanged", file)) -- for CoverBrowser
+                        BookList.setBookInfoCacheProperty(file, "been_opened", false)
                         require("readhistory"):fileSettingsPurged(file)
                     end
                     caller_callback()

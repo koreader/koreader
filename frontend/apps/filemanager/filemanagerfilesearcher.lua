@@ -1,14 +1,13 @@
+local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local FileChooser = require("ui/widget/filechooser")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
-local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
@@ -215,12 +214,9 @@ function FileSearcher:isFileMatch(filename, fullpath, search_string, is_file)
         return true
     end
     if self.include_metadata and is_file and DocumentRegistry:hasProvider(fullpath) then
-        local book_props = self.ui.coverbrowser:getBookInfo(fullpath) or
-                           self.ui.bookinfo.getDocProps(fullpath, nil, true) -- do not open the document
+        local book_props = self.ui.bookinfo:getDocProps(fullpath, nil, true) -- do not open the document
         if next(book_props) ~= nil then
-            if self.ui.bookinfo:findInProps(book_props, search_string, self.case_sensitive) then
-                return true
-            end
+            return self.ui.bookinfo:findInProps(book_props, search_string, self.case_sensitive)
         else
             self.no_metadata_count = self.no_metadata_count + 1
         end
@@ -262,12 +258,8 @@ function FileSearcher:onShowSearchResults(not_cached)
         return
     end
 
-    self.search_menu = Menu:new{
+    self.search_menu = BookList:new{
         subtitle = T(_("Query: %1"), FileSearcher.search_string),
-        covers_fullscreen = true, -- hint for UIManager:_repaint()
-        is_borderless = true,
-        is_popout = false,
-        title_bar_fm_style = true,
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:setSelectMode() end,
         onMenuSelect = self.onMenuSelect,
@@ -326,11 +318,11 @@ function FileSearcher:showFileDialog(item)
     if item.is_file then
         local is_currently_opened = self.ui.document and self.ui.document.file == file
         local has_provider = DocumentRegistry:hasProvider(file)
-        local has_sidecar = DocSettings:hasSidecarFile(file)
+        local been_opened = BookList.hasBookBeenOpened(file)
         local doc_settings_or_file = is_currently_opened and self.ui.doc_settings
-            or (has_sidecar and DocSettings:open(file) or file)
-        if has_provider or has_sidecar then
-            bookinfo = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
+            or (been_opened and BookList.getDocSettings(file) or file)
+        if has_provider or been_opened then
+            bookinfo = self.ui.bookinfo:getDocProps(file, nil, true)
             table.insert(buttons, filemanagerutil.genStatusButtonsRow(doc_settings_or_file, close_dialog_callback))
             table.insert(buttons, {}) -- separator
             table.insert(buttons, {

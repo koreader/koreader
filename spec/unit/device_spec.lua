@@ -31,7 +31,7 @@ describe("device module", function()
             end
         }
         require("commonrequire")
-        package.unloadAll()
+        disable_plugins()
         ffi = require("ffi")
         C = ffi.C
         require("ffi/linux_input_h")

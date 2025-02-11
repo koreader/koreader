@@ -5,7 +5,7 @@ describe("WakeupMgr", function()
 
     setup(function()
         require("commonrequire")
-        package.unloadAll()
+        disable_plugins()
         RTC = require("ffi/rtc")
         WakeupMgr = require("device/wakeupmgr"):new{}
         -- We could theoretically test this by running the tests as root locally.

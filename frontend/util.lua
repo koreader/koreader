@@ -716,7 +716,7 @@ end
 
 --- Computes the currently available memory
 ---- @treturn tuple of ints: memavailable, memtotal (or nil, nil on unsupported platforms).
-function util:calcFreeMem()
+function util.calcFreeMem()
     local memtotal, memfree, memavailable, buffers, cached
 
     local meminfo = io.open("/proc/meminfo", "r")

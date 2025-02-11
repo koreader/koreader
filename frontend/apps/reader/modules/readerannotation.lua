@@ -60,20 +60,21 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
         end
     end
     return { -- annotation
-        datetime    = bm.datetime, -- creation time, not changeable
-        drawer      = hl.drawer,   -- highlight drawer
-        color       = hl.color,    -- highlight color
-        text        = bm.notes,    -- highlighted text, editable
-        text_edited = hl.edited,   -- true if highlighted text has been edited
-        note        = note,        -- user's note, editable
-        chapter     = chapter,     -- book chapter title
-        pageno      = pageno,      -- book page number (continuous numbering, used by KOHighlights)
-        pageref     = pageref,     -- book page number (iff: reference pages or hidden flows)
-        page        = bm.page,     -- highlight location, xPointer or number (pdf)
-        pos0        = bm.pos0,     -- highlight start position, xPointer (== page) or table (pdf)
-        pos1        = bm.pos1,     -- highlight end position, xPointer or table (pdf)
-        pboxes      = hl.pboxes,   -- pdf pboxes, used only and changeable by addMarkupAnnotation
-        ext         = hl.ext,      -- pdf multi-page highlight
+        datetime         = bm.datetime, -- creation time, not changeable
+        datetime_updated = nil,         -- last modification time
+        drawer           = hl.drawer,   -- highlight drawer
+        color            = hl.color,    -- highlight color
+        text             = bm.notes,    -- highlighted text, editable
+        text_edited      = hl.edited,   -- true if highlighted text has been edited
+        note             = note,        -- user's note, editable
+        chapter          = chapter,     -- book chapter title
+        pageno           = pageno,      -- book page number (continuous numbering, used by KOHighlights)
+        pageref          = pageref,     -- book page number (iff: reference pages or hidden flows)
+        page             = bm.page,     -- highlight location, xPointer or number (pdf)
+        pos0             = bm.pos0,     -- highlight start position, xPointer (== page) or table (pdf)
+        pos1             = bm.pos1,     -- highlight end position, xPointer or table (pdf)
+        pboxes           = hl.pboxes,   -- pdf pboxes, used only and changeable by addMarkupAnnotation
+        ext              = hl.ext,      -- pdf multi-page highlight
     }
 end
 
@@ -349,8 +350,7 @@ function ReaderAnnotation:getMatchFunc()
     if self.ui.rolling then
         doesMatch = function(a, b)
             if (a.datetime ~= nil and b.datetime ~= nil and a.datetime ~= b.datetime)
-                    or (not a.drawer) ~= (not b.drawer)
-                    or a.page ~= b.page
+                    or a.pos0 ~= b.pos0
                     or a.pos1 ~= b.pos1 then
                 return false
             end
@@ -359,7 +359,6 @@ function ReaderAnnotation:getMatchFunc()
     else
         doesMatch = function(a, b)
             if (a.datetime ~= nil and b.datetime ~= nil and a.datetime ~= b.datetime)
-                    or (not a.drawer) ~= (not b.drawer)
                     or a.page ~= b.page
                     or (a.pos0 and (a.pos0.x ~= b.pos0.x or a.pos1.x ~= b.pos1.x
                                  or a.pos0.y ~= b.pos0.y or a.pos1.y ~= b.pos1.y)) then
@@ -418,6 +417,12 @@ function ReaderAnnotation:addItem(item)
     local index = self:getInsertionIndex(item)
     table.insert(self.annotations, index, item)
     return index
+end
+
+function ReaderAnnotation:onAnnotationsModified(items)
+    if items.index_modified == nil then -- not needed when annotation added or removed
+        items[1].datetime_updated = os.date("%Y-%m-%d %H:%M:%S")
+    end
 end
 
 -- info

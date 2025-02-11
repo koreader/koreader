@@ -447,6 +447,7 @@ function KOSync:login(menu)
                     text = _("Login"),
                     callback = function()
                         local username, password = unpack(dialog:getFields())
+                        username = util.trim(username)
                         local ok, err = validateUser(username, password)
                         if not ok then
                             UIManager:show(InfoMessage:new{
@@ -469,6 +470,7 @@ function KOSync:login(menu)
                     text = _("Register"),
                     callback = function()
                         local username, password = unpack(dialog:getFields())
+                        username = util.trim(username)
                         local ok, err = validateUser(username, password)
                         if not ok then
                             UIManager:show(InfoMessage:new{

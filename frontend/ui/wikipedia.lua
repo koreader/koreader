@@ -4,6 +4,7 @@ local Screen = require("device").screen
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
 local T = ffiutil.template
@@ -698,6 +699,10 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
             logger.info("no src found in ", img_tag)
             return nil
         end
+        if src:sub(1,5) == "data:" then
+            logger.dbg("skipping data URI", src)
+            return nil
+        end
         if src:sub(1,2) == "//" then
             src = "https:" .. src -- Wikipedia redirects from http to https, so use https
         elseif src:sub(1,1) == "/" then -- non absolute url
@@ -842,7 +847,7 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
 
     -- ----------------------------------------------------------------
     -- /mimetype : always "application/epub+zip"
-    epub:add("mimetype", "application/epub+zip")
+    epub:add("mimetype", "application/epub+zip", true)
 
     -- ----------------------------------------------------------------
     -- /META-INF/container.xml : always the same content
@@ -1453,12 +1458,12 @@ abbr.abbr {
 
     if self.wiki_prettify then
         -- Prepend some symbols to section titles for a better visual feeling of hierarchy
-        html = html:gsub("<h1>", "<h1> "..h1_sym.." ")
-        html = html:gsub("<h2>", "<h2> "..h2_sym.." ")
-        html = html:gsub("<h3>", "<h3> "..h3_sym.." ")
-        html = html:gsub("<h4>", "<h4> "..h4_sym.." ")
-        html = html:gsub("<h5>", "<h5> "..h5_sym.." ")
-        html = html:gsub("<h6>", "<h6> "..h6_sym.." ")
+        html = html:gsub("(<h1[^>]*>)", "%1 "..h1_sym.." ")
+        html = html:gsub("(<h2[^>]*>)", "%1 "..h2_sym.." ")
+        html = html:gsub("(<h3[^>]*>)", "%1 "..h3_sym.." ")
+        html = html:gsub("(<h4[^>]*>)", "%1 "..h4_sym.." ")
+        html = html:gsub("(<h5[^>]*>)", "%1 "..h5_sym.." ")
+        html = html:gsub("(<h6[^>]*>)", "%1 "..h6_sym.." ")
     end
 
     -- Note: in all the gsub patterns above, we used lowercase for tags and attributes
@@ -1499,14 +1504,22 @@ abbr.abbr {
     -- OEBPS/images/*
     if include_images then
         local nb_images = #images
+        local before_images_time = time.now()
+        local time_prev = before_images_time
         for inum, img in ipairs(images) do
-            -- Process can be interrupted at this point between each image download
+            -- Process can be interrupted every second between image downloads
             -- by tapping while the InfoMessage is displayed
             -- We use the fast_refresh option from image #2 for a quicker download
-            local go_on = UI:info(T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2)
-            if not go_on then
-                cancelled = true
-                break
+            local go_on
+            if time.to_ms(time.since(time_prev)) > 1000 then
+                time_prev = time.now()
+                go_on = UI:info(T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2)
+                if not go_on then
+                    cancelled = true
+                    break
+                end
+            else
+                UI:info(T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2, true)
             end
             local src = img.src
             if use_img_2x and img.src2x then
@@ -1535,6 +1548,7 @@ abbr.abbr {
                 end
             end
         end
+        logger.dbg("Image download time for:", page_htmltitle, time.to_ms(time.since(before_images_time)), "ms")
     end
 
     -- Done with adding files

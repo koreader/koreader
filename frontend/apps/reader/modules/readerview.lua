@@ -988,7 +988,11 @@ function ReaderView:onReadSettings(config)
     end
     self:resetLayout()
     self.page_scroll = (config:readSetting("kopt_page_scroll") or self.document.configurable.page_scroll) == 1
-    self.inverse_reading_order = config:isTrue("inverse_reading_order") or G_reader_settings:isTrue("inverse_reading_order")
+    if config:has("inverse_reading_order") then
+        self.inverse_reading_order = config:isTrue("inverse_reading_order")
+    else
+        self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
+    end
     self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or G_defaults:readSetting("DSHOWOVERLAP")
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
     self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height")
@@ -1145,7 +1149,7 @@ function ReaderView:onSetViewMode(new_mode)
 end
 
 function ReaderView:resetHighlightBoxesCache(items)
-    if items == nil then
+    if type(items) ~= "table" then
         self.highlight.page_boxes = {}
     else
         for _, item in ipairs(items) do
@@ -1160,6 +1164,19 @@ function ReaderView:resetHighlightBoxesCache(items)
                 end
                 for page = page0, page1 do
                     self.highlight.page_boxes[page] = nil
+                end
+            end
+        end
+        if items.index_modified then -- annotation added or removed, shift annotations indexes
+            local index, index_shift = items.index_modified, 1
+            if index < 0 then
+                index, index_shift = -index, -1
+            end
+            for _, page_boxes in pairs(self.highlight.page_boxes) do
+                for _, box in ipairs(page_boxes) do
+                    if box.index >= index then
+                        box.index = box.index + index_shift
+                    end
                 end
             end
         end
@@ -1279,11 +1296,16 @@ function ReaderView:setupTouchZones()
     (self.ui.rolling or self.ui.paging):setupTouchZones()
 end
 
-function ReaderView:onToggleReadingOrder()
-    self.inverse_reading_order = not self.inverse_reading_order
-    self:setupTouchZones()
-    local is_rtl = self.inverse_reading_order ~= BD.mirroredUILayout() -- mirrored reading
-    Notification:notify(is_rtl and _("RTL page turning.") or _("LTR page turning."))
+function ReaderView:onToggleReadingOrder(toggle)
+    if toggle == nil then
+        toggle = not self.inverse_reading_order
+    end
+    if self.inverse_reading_order ~= toggle then
+        self.inverse_reading_order = toggle
+        self:setupTouchZones()
+        local is_rtl = self.inverse_reading_order ~= BD.mirroredUILayout() -- mirrored reading
+        Notification:notify(is_rtl and _("RTL page turning.") or _("LTR page turning."))
+    end
     return true
 end
 

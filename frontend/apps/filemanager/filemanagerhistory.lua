@@ -1,10 +1,9 @@
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
-local DocSettings = require("docsettings")
 local InputDialog = require("ui/widget/inputdialog")
-local Menu = require("ui/widget/menu")
 local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -12,20 +11,10 @@ local Utf8Proc = require("ffi/utf8proc")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("util")
 local _ = require("gettext")
-local C_ = _.pgettext
 local T = require("ffi/util").template
 
 local FileManagerHistory = WidgetContainer:extend{
     hist_menu_title = _("History"),
-}
-
-local filter_text = {
-    all       = C_("Book status filter", "All"),
-    reading   = C_("Book status filter", "Reading"),
-    abandoned = C_("Book status filter", "On hold"),
-    complete  = C_("Book status filter", "Finished"),
-    deleted   = C_("Book status filter", "Deleted"),
-    new       = C_("Book status filter", "New"),
 }
 
 function FileManagerHistory:init()
@@ -49,10 +38,7 @@ function FileManagerHistory:fetchStatuses(count)
         elseif v.file == (self.ui.document and self.ui.document.file) then -- currently opened file
             status = self.ui.doc_settings:readSetting("summary").status
         else
-            status = filemanagerutil.getStatus(v.file)
-        end
-        if not filter_text[status] then
-            status = "reading"
+            status = BookList.getBookStatus(v.file)
         end
         if count then
             self.count[status] = self.count[status] + 1
@@ -81,28 +67,33 @@ function FileManagerHistory:updateItemTable()
             self.count[v.status] = self.count[v.status] + 1
         end
     end
+    local title = T("%1 (%2)", self.hist_menu_title, #item_table)
     local subtitle = ""
     if self.search_string then
-        subtitle = T(_("Search results (%1)"), #item_table)
+        subtitle = T(_("Query: %1"), self.search_string)
     elseif self.selected_collections then
-        subtitle = T(_("Filtered by collections (%1)"), #item_table)
+        local collections = {}
+        for collection in pairs(self.selected_collections) do
+            table.insert(collections, self.ui.collections:getCollectionTitle(collection))
+        end
+        if #collections == 1 then
+            collections = collections[1]
+        else
+            table.sort(collections)
+            collections = table.concat(collections, ", ")
+        end
+        subtitle = T(_("Collections: %1"), collections)
     elseif self.filter ~= "all" then
-        subtitle = T(_("Status: %1 (%2)"), filter_text[self.filter]:lower(), #item_table)
+        subtitle = BookList.getBookStatusString(self.filter, true)
     end
-    self.hist_menu:switchItemTable(nil, item_table, -1, nil, subtitle)
+    self.hist_menu:switchItemTable(title, item_table, -1, nil, subtitle)
 end
 
 function FileManagerHistory:isItemMatch(item)
     if self.search_string then
         local filename = self.case_sensitive and item.text or Utf8Proc.lowercase(util.fixUtf8(item.text, "?"))
         if not filename:find(self.search_string) then
-            local book_props
-            if self.ui.coverbrowser then
-                book_props = self.ui.coverbrowser:getBookInfo(item.file)
-            end
-            if not book_props then
-                book_props = self.ui.bookinfo.getDocProps(item.file, nil, true) -- do not open the document
-            end
+            local book_props = self.ui.bookinfo:getDocProps(item.file, nil, true) -- do not open the document
             if not self.ui.bookinfo:findInProps(book_props, self.search_string, self.case_sensitive) then
                 return false
             end
@@ -135,7 +126,7 @@ end
 function FileManagerHistory:onMenuHold(item)
     local file = item.file
     self.file_dialog = nil
-    self.book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
+    local book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
 
     local function close_dialog_callback()
         UIManager:close(self.file_dialog)
@@ -152,7 +143,7 @@ function FileManagerHistory:onMenuHold(item)
             self._manager.statuses_fetched = false
         end
         self._manager:updateItemTable()
-        self._manager.files_updated = true -- sidecar folder may be created/deleted
+        self._manager.files_updated = true
     end
     local function update_callback()
         self._manager:updateItemTable()
@@ -163,17 +154,17 @@ function FileManagerHistory:onMenuHold(item)
     local doc_settings_or_file
     if is_currently_opened then
         doc_settings_or_file = self.ui.doc_settings
-        if not self.book_props then
-            self.book_props = self.ui.doc_props
-            self.book_props.has_cover = true
+        if not book_props then
+            book_props = self.ui.doc_props
+            book_props.has_cover = true
         end
     else
-        if DocSettings:hasSidecarFile(file) then
-            doc_settings_or_file = DocSettings:open(file)
-            if not self.book_props then
+        if BookList.hasBookBeenOpened(file) then
+            doc_settings_or_file = BookList.getDocSettings(file)
+            if not book_props then
                 local props = doc_settings_or_file:readSetting("doc_props")
-                self.book_props = self.ui.bookinfo.extendProps(props, file)
-                self.book_props.has_cover = true
+                book_props = self.ui.bookinfo.extendProps(props, file)
+                book_props.has_cover = true
             end
         else
             doc_settings_or_file = file
@@ -212,16 +203,16 @@ function FileManagerHistory:onMenuHold(item)
     })
     table.insert(buttons, {
         filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback, item.dim),
-        filemanagerutil.genBookInformationButton(doc_settings_or_file, self.book_props, close_dialog_callback, item.dim),
+        filemanagerutil.genBookInformationButton(doc_settings_or_file, book_props, close_dialog_callback, item.dim),
     })
     table.insert(buttons, {
-        filemanagerutil.genBookCoverButton(file, self.book_props, close_dialog_callback, item.dim),
-        filemanagerutil.genBookDescriptionButton(file, self.book_props, close_dialog_callback, item.dim),
+        filemanagerutil.genBookCoverButton(file, book_props, close_dialog_callback, item.dim),
+        filemanagerutil.genBookDescriptionButton(file, book_props, close_dialog_callback, item.dim),
     })
 
     if self._manager.file_dialog_added_buttons ~= nil then
         for _, row_func in ipairs(self._manager.file_dialog_added_buttons) do
-            local row = row_func(file, true, self.book_props)
+            local row = row_func(file, true, book_props)
             if row ~= nil then
                 table.insert(buttons, row)
             end
@@ -243,22 +234,27 @@ function FileManagerHistory.getMenuInstance()
 end
 
 function FileManagerHistory:onShowHist(search_info)
-    self.hist_menu = Menu:new{
-        ui = self.ui,
-        covers_fullscreen = true, -- hint for UIManager:_repaint()
-        is_borderless = true,
-        is_popout = false,
-        title = self.hist_menu_title,
-        -- item and book cover thumbnail dimensions in Mosaic and Detailed list display modes
-        -- must be equal in File manager, History and Collection windows to avoid image scaling
-        title_bar_fm_style = true,
+    self.hist_menu = BookList:new{
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showHistDialog() end,
         onMenuChoice = self.onMenuChoice,
         onMenuHold = self.onMenuHold,
+        ui = self.ui,
         _manager = self,
         _recreate_func = function() self:onShowHist(search_info) end,
     }
+    self.hist_menu.close_callback = function()
+        if self.files_updated then -- refresh Filemanager list of files
+            if self.ui.file_chooser then
+                self.ui.file_chooser:refreshPath()
+            end
+            self.files_updated = nil
+        end
+        self.statuses_fetched = nil
+        UIManager:close(self.hist_menu)
+        self.hist_menu = nil
+        G_reader_settings:saveSetting("history_filter", self.filter)
+    end
 
     if search_info then
         self.search_string = search_info.search_string
@@ -273,18 +269,6 @@ function FileManagerHistory:onShowHist(search_info)
         self:fetchStatuses(false)
     end
     self:updateItemTable()
-    self.hist_menu.close_callback = function()
-        if self.files_updated then -- refresh Filemanager list of files
-            if self.ui.file_chooser then
-                self.ui.file_chooser:refreshPath()
-            end
-            self.files_updated = nil
-        end
-        self.statuses_fetched = nil
-        UIManager:close(self.hist_menu)
-        self.hist_menu = nil
-        G_reader_settings:saveSetting("history_filter", self.filter)
-    end
     UIManager:show(self.hist_menu, "flashui")
     return true
 end
@@ -298,7 +282,7 @@ function FileManagerHistory:showHistDialog()
     local buttons = {}
     local function genFilterButton(filter)
         return {
-            text = T(_("%1 (%2)"), filter_text[filter], self.count[filter]),
+            text = T(_("%1 (%2)"), BookList.getBookStatusString(filter), self.count[filter]),
             callback = function()
                 UIManager:close(hist_dialog)
                 self.filter = filter

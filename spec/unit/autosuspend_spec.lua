@@ -1,7 +1,7 @@
 describe("AutoSuspend", function()
     setup(function()
         require("commonrequire")
-        package.unloadAll()
+        disable_plugins()
         require("document/canvascontext"):init(require("device"))
     end)
 

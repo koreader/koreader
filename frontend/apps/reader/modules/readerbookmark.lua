@@ -336,6 +336,7 @@ function ReaderBookmark:toggleBookmark(pageno)
     local index = self:getDogearBookmarkIndex(pn_or_xp)
     if index then
         item = table.remove(self.ui.annotation.annotations, index)
+        index = -index
     else
         local text
         local chapter = self.ui.toc:getTocTitleByPage(pn_or_xp)
@@ -350,9 +351,9 @@ function ReaderBookmark:toggleBookmark(pageno)
             text = text,
             chapter = chapter,
         }
-        self.ui.annotation:addItem(item)
+        index = self.ui.annotation:addItem(item)
     end
-    self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
+    self.ui:handleEvent(Event:new("AnnotationsModified", { item, index_modified = index }))
 end
 
 function ReaderBookmark:setDogearVisibility(pn_or_xp)
@@ -416,9 +417,9 @@ function ReaderBookmark:removeItemByIndex(index)
     local item = self.ui.annotation.annotations[index]
     local item_type = self.getBookmarkType(item)
     if item_type == "highlight" then
-        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = -1 }))
+        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = -1, index_modified = -index }))
     elseif item_type == "note" then
-        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_notes_added = -1 }))
+        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_notes_added = -1, index_modified = -index }))
     end
     table.remove(self.ui.annotation.annotations, index)
     self.view.footer:maybeUpdateFooter()

@@ -110,6 +110,16 @@ function MultiInputDialog:init()
     self:onCloseKeyboard()
     self._input_widget:onCloseWidget()
 
+    -- Reset self.keyboard_visible because InputDialog:onCloseKeyboard sets it to false, which can lead to an incorrect keyboard
+    -- visibility state since we still might want our very own virtual keyboard.
+    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+        do end -- luacheck: ignore 541
+    elseif self.readonly then
+        do end -- luacheck: ignore 541
+    else
+        self.keyboard_visible = true
+    end
+
     local VerticalGroupData = VerticalGroup:new{
         align = "left",
         self.title_bar,
@@ -208,10 +218,11 @@ function MultiInputDialog:init()
 
     self._input_widget = self.input_fields[self.focused_field_idx]
 
+    local keyboard_height = self.keyboard_visible and self._input_widget:getKeyboardDimen().h or 0
     self[1] = CenterContainer:new{
         dimen = Geom:new{
             w = Screen:getWidth(),
-            h = Screen:getHeight() - self._input_widget:getKeyboardDimen().h,
+            h = Screen:getHeight() - keyboard_height,
         },
         ignore_if_over = "height",
         self.dialog_frame,
@@ -253,10 +264,10 @@ function MultiInputDialog:onSwitchFocus(inputbox)
     self.focused_field_idx = inputbox.idx
 
     if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
-         -- do not load virtual keyboard when user is hiding it.
-         return
-     end
-     -- Otherwise make sure we have a (new) visible keyboard
+        -- do not load virtual keyboard when user is hiding it.
+        return
+    end
+    -- Otherwise make sure we have a (new) visible keyboard
     self:onShowKeyboard()
 end
 

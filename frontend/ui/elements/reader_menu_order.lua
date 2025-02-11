@@ -161,7 +161,7 @@ local order = {
         "gesture_intervals",
         "----------------------------",
         "ignore_hold_corners",
-        "screen_disable_double_tab",
+        "screen_disable_double_tap",
         "----------------------------",
         "follow_links",
         "----------------------------",

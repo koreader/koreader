@@ -5,6 +5,7 @@ It works using data gathered from a document interface.
 ]]--
 
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
 local Device = require("device")
 local DeviceListener = require("device/devicelistener")
 local DocCache = require("document/doccache")
@@ -475,7 +476,7 @@ function ReaderUI:init()
     end
 
     local summary = self.doc_settings:readSetting("summary", {})
-    if summary.status == nil then
+    if BookList.getBookStatusString(summary.status) == nil then
         summary.status = "reading"
         summary.modified = os.date("%Y-%m-%d", os.time())
     end
@@ -517,14 +518,14 @@ function ReaderUI:registerKeyEvents()
         self.key_events.Home = { { "Home" } }
         self.key_events.Reload = { { "F5" } }
         if Device:hasDPad() and Device:useDPadAsActionKeys() then
-            self.key_events.KeyContentSelection = { { { "Up", "Down" } }, event = "StartHighlightIndicator" }
+            self.key_events.StartHighlightIndicator = { { { "Up", "Down" } } }
         end
         if Device:hasScreenKB() or Device:hasSymKey() then
             if Device:hasKeyboard() then
-                self.key_events.KeyToggleWifi = { { "Shift", "Home" }, event = "ToggleWifi" }
+                self.key_events.ToggleWifi = { { "Shift", "Home" } }
                 self.key_events.OpenLastDoc = { { "Shift", "Back" } }
             else -- Currently exclusively targets Kindle 4.
-                self.key_events.KeyToggleWifi = { { "ScreenKB", "Home" }, event = "ToggleWifi" }
+                self.key_events.ToggleWifi = { { "ScreenKB", "Home" } }
                 self.key_events.OpenLastDoc = { { "ScreenKB", "Back" } }
             end
         end
@@ -557,8 +558,6 @@ function ReaderUI:getLastDirFile(to_file_browser)
 end
 
 function ReaderUI:showFileManager(file, selected_files)
-    local FileManager = require("apps/filemanager/filemanager")
-
     local last_dir, last_file
     if file then
         last_dir = util.splitFilePathName(file)
@@ -566,11 +565,8 @@ function ReaderUI:showFileManager(file, selected_files)
     else
         last_dir, last_file = self:getLastDirFile(true)
     end
-    if FileManager.instance then
-        FileManager.instance:reinit(last_dir, last_file)
-    else
-        FileManager:showFiles(last_dir, last_file, selected_files)
-    end
+    local FileManager = require("apps/filemanager/filemanager")
+    FileManager:showFiles(last_dir, last_file, selected_files)
 end
 
 function ReaderUI:onShowingReader()
@@ -814,6 +810,7 @@ function ReaderUI:onClose(full_refresh)
         self:saveSettings()
     end
     if self.document ~= nil then
+        BookList.setBookInfoCache(self.document.file, self.doc_settings)
         require("readhistory"):updateLastBookTime(self.tearing_down)
         -- Serialize the most recently displayed page for later launch
         DocCache:serialize(self.document.file)

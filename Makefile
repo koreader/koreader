@@ -112,6 +112,8 @@ endef
 
 # Globally excluded.
 define UPDATE_GLOBAL_EXCLUDES
+*.dbg
+*.dSYM
 *.orig
 *.swo
 *.swp
