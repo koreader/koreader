@@ -323,6 +323,7 @@ end
 function OPDSBrowser:getServerFileName(item_url)
     local headers = self:fetchFeed(item_url, true)
     if headers then
+        logger.dbg("OPDSBrowser: server file headers", headers)
         local header = headers["content-disposition"]
         if header then
             return header:match('filename="*([^"]+)"*')
