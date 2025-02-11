@@ -860,14 +860,11 @@ function BookMapWidget:registerKeyEvents()
         if Device:isTouchDevice() then
             self.key_events.ScrollRowUp = { { "Up" } }
             self.key_events.ScrollRowDown = { { "Down" } }
-        elseif Device:hasKeyboard() then
-            self.key_events.ScrollRowUp = { { "Shift", "Up" } }
-            self.key_events.ScrollRowDown = { { "Shift", "Down" } }
-            self.key_events.CloseAll = { { "Shift", "Back" }, event = "Close", args = true }
-        elseif Device:hasScreenKB() then
-            self.key_events.ScrollRowUp = { { "ScreenKB", "Up" } }
-            self.key_events.ScrollRowDown = { { "ScreenKB", "Down" } }
-            self.key_events.CloseAll = { { "ScreenKB", "Back" }, event = "Close", args = true }
+        elseif Device:hasScreenKB() or Device:hasKeyboard() then
+            local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+            self.key_events.ScrollRowUp = { { modifier, "Up" } }
+            self.key_events.ScrollRowDown = { { modifier, "Down" } }
+            self.key_events.CloseAll = { { modifier, "Back" }, event = "Close", args = true }
         end
     end
 end
