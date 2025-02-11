@@ -163,12 +163,10 @@ function socketutil.redact_request(request)
     for key, value in pairs(request) do
         if sensitive_props[key] then
             safe_request[key] = "REDACTED"
+        elseif key == "headers" then
+            safe_request[key] = socketutil.redact_headers(value)
         else
-            if key == "headers" then
-                safe_request[key] = socketutil.redact_headers(value)
-            else
-                safe_request[key] = value
-            end
+            safe_request[key] = value
         end
     end
     return safe_request
