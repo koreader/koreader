@@ -842,6 +842,7 @@ Except when in two columns mode, where this is limited to showing only the previ
                     left_default = 4,
                     left_precision = "%.2f",
                     left_step = 0.25,
+                    left_hold_step = 0.05,
                     right_text = _("Dictionary"),
                     right_value = dict_speed,
                     right_min = 0.25,
@@ -849,6 +850,7 @@ Except when in two columns mode, where this is limited to showing only the previ
                     right_default = 3,
                     right_precision = "%.2f",
                     right_step = 0.25,
+                    right_hold_step = 0.05,
                     title_text = _("Crosshairs speed"),
                     info_text = _("Select decimal values from 0.25 to 5. A smaller value increases the travel distance of the crosshairs per keystroke. Font size and these values are inversely correlated, meaning a smaller font size requires a larger value and vice versa."),
                     callback = function(left_value, right_value)

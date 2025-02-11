@@ -1705,11 +1705,10 @@ function DictQuickLookup:onStartTextSelectorIndicator()
             y = self.button_table.selected.y
         }
         -- it's complicated, but we need two rounds of refocusing in order to clear up the existing focus
+        local FocusManager = require("ui/widget/focusmanager")
         self.button_table:moveFocusTo(1, 1)
-        local NOT_FOCUS = 2
-        self.button_table:moveFocusTo(1, 1, NOT_FOCUS)
+        self.button_table:moveFocusTo(1, 1, FocusManager.NOT_FOCUS)
     end
-
     -- Create rect with coordinates relative to the content area
     local rect = self._previous_indicator_pos
     if not rect then
@@ -1720,7 +1719,6 @@ function DictQuickLookup:onStartTextSelectorIndicator()
         rect.h = rect.w
     end
     self.text_widget.text_selector.indicator = rect
-
     -- Mark the entire definition widget area as dirty to ensure the indicator is drawn
     UIManager:setDirty(self, function()
         return "ui", self.definition_widget.dimen
@@ -1742,13 +1740,9 @@ function DictQuickLookup:onStopTextSelectorIndicator(need_clear_selection)
     self.button_table.key_events_enabled = true
     -- Restore previous focus if it was saved
     if self._save_focused_item then
-        self.button_table:moveFocusTo(
-            self._save_focused_item.x,
-            self._save_focused_item.y
-        )
+        self.button_table:moveFocusTo(self._save_focused_item.x, self._save_focused_item.y)
         self._save_focused_item = nil
     end
-
     local rect = self.text_widget.text_selector.indicator
     self._previous_indicator_pos = rect
     self._text_selection_started = false
@@ -1826,7 +1820,7 @@ function DictQuickLookup:onMoveTextSelectorIndicator(args)
     if self._text_selection_started then
         local selection_widget = self:_getSelectionWidget(self)
         if selection_widget then
-            selection_widget:onHoldPanText(nil, self:_createHighlightGesture("hold_pan"))
+            selection_widget:onHoldPanText(nil, self:_createTextSelectionGesture("hold_pan"))
         end
     end
     return true
@@ -1852,7 +1846,7 @@ function DictQuickLookup:onTextSelectorPress()
         local selection_widget = self:_getSelectionWidget(self)
         if selection_widget then
             -- first, process the hold release event which finalizes text selection
-            selection_widget:onHoldReleaseText(nil, self:_createHighlightGesture("hold_release"))
+            selection_widget:onHoldReleaseText(nil, self:_createTextSelectionGesture("hold_release"))
             local hold_duration = time.to_s(time.since(self._hold_duration))
             -- After hold release, highlight_text should contain the complete selection
             local selected_text = selection_widget.highlight_text
@@ -1883,7 +1877,7 @@ function DictQuickLookup:onTextSelectorPress()
     local selection_widget = self:_getSelectionWidget(self)
     if selection_widget then
         self._hold_duration = time.now() -- on your marks, get set, go!
-        selection_widget:onHoldStartText(nil, self:_createHighlightGesture("hold"))
+        selection_widget:onHoldStartText(nil, self:_createTextSelectionGesture("hold"))
         -- center indicator on selected text if available
         if selection_widget.highlight_rects and #selection_widget.highlight_rects > 0 then
             local highlight = selection_widget.highlight_rects[1]
@@ -1904,6 +1898,7 @@ function DictQuickLookup:onStartOrMoveTextSelectorIndicator(args)
         return true
     end
     self:onMoveTextSelectorIndicator(args)
+    return true
 end
 
 -- Local helper function to get the actual widget that handles text selection
@@ -1911,7 +1906,7 @@ function DictQuickLookup:_getSelectionWidget(instance)
     return instance.is_html and instance.text_widget.htmlbox_widget or instance.text_widget.text_widget
 end
 
-function DictQuickLookup:_createHighlightGesture(gesture)
+function DictQuickLookup:_createTextSelectionGesture(gesture)
     local point = self.text_widget.text_selector.indicator:copy()
     -- Add the definition_widget's absolute position to get correct screen coordinates
     point.x = point.x + point.w / 2 + self.definition_widget.dimen.x
