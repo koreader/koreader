@@ -358,7 +358,9 @@ end
 --[[
 This method updates the widget's value based on the direction of the spin.
 
-@param direction {number}. The direction of the spin (-1 for decrease, 1 for increase)
+@param args {table} A table containing:
+    - direction {number}. The direction of the spin (-1 for decrease, 1 for increase)
+    - is_hold_event {boolean}. True if the event is a hold event, false otherwise
 @return boolean Always returns true to indicate the event was handled
 ]]
 function SpinWidget:onSpinButtonPressed(args)

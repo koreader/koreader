@@ -380,6 +380,7 @@ step value to either the left or right widget component.
 @param args {table} A table containing:
     - is_left_widget {boolean}. True for self.left_widget or False for self.right_widget
     - direction {int}. The direction of change (1 for increase, -1 for decrease)
+    - is_hold_event {boolean}. True if the event is a hold event, false otherwise
 @return {boolean} Returns true to indicate the event was handled
 ]]
 function DoubleSpinWidget:onDoubleSpinButtonPressed(args)
