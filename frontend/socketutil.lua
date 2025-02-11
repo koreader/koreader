@@ -164,7 +164,11 @@ function socketutil.redact_request(request)
         if sensitive_props[key] then
             safe_request[key] = "REDACTED"
         else
-            safe_request[key] = value
+            if key == "headers" then
+                safe_request[key] = socketutil.redact_headers(value)
+            else
+                safe_request[key] = value
+            end
         end
     end
     return safe_request
