@@ -136,7 +136,7 @@ function socketutil.file_sink(handle, io_err)
     end
 end
 
-function socketutil.safe_headers(headers)
+function socketutil.redact_headers(headers)
     local sensitive_headers = {
         ["authorization"] = true,
         ["cookie"] = true,
@@ -154,7 +154,7 @@ function socketutil.safe_headers(headers)
     return safe_headers
 end
 
-function socketutil.safe_request(request)
+function socketutil.redact_request(request)
     local sensitive_props = {
         ["password"] = true,
         ["user"] = true,
