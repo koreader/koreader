@@ -73,6 +73,14 @@ function DoubleSpinWidget:init()
             self.key_events.LeftWidgetValueDown  = { { "LPgBack" }, event = "DoubleSpinButtonPressed", args = { true,  -1 } }
             self.key_events.RightWidgetValueUp   = { { "RPgFwd"  }, event = "DoubleSpinButtonPressed", args = { false,  1 } }
             self.key_events.RightWidgetValueDown = { { "RPgBack" }, event = "DoubleSpinButtonPressed", args = { false, -1 } }
+            if Device:hasScreenKB() or Device:hasKeyboard() then
+                local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+                local HOLD = true -- use hold step value
+                self.key_events.LeftWidgetHoldValueUp    = { { modifier, "LPgFwd"  }, event = "DoubleSpinButtonPressed", args = { true,   1, HOLD } }
+                self.key_events.LeftWidgetHoldValueDown  = { { modifier, "LPgBack" }, event = "DoubleSpinButtonPressed", args = { true,  -1, HOLD } }
+                self.key_events.RightWidgetHoldValueUp   = { { modifier, "RPgFwd"  }, event = "DoubleSpinButtonPressed", args = { false,  1, HOLD } }
+                self.key_events.RightWidgetHoldValueDown = { { modifier, "RPgBack" }, event = "DoubleSpinButtonPressed", args = { false, -1, HOLD } }
+            end
         end
     end
     if Device:isTouchDevice() then
@@ -375,9 +383,10 @@ step value to either the left or right widget component.
 @return {boolean} Returns true to indicate the event was handled
 ]]
 function DoubleSpinWidget:onDoubleSpinButtonPressed(args)
-    local is_left_widget, direction = unpack(args)
+    local is_left_widget, direction, is_hold_event = unpack(args)
     local target_widget = is_left_widget and self.left_widget or self.right_widget
-    target_widget.value = target_widget:changeValue(target_widget.value_step * direction)
+    local step = is_hold_event and target_widget.value_hold_step or target_widget.value_step
+    target_widget.value = target_widget:changeValue(step * direction)
     target_widget:update()
     return true
 end

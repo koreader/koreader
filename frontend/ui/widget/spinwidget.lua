@@ -68,6 +68,12 @@ function SpinWidget:init()
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.WidgetValueUp    = { { Device.input.group.PgFwd  }, event = "SpinButtonPressed", args =  1 }
         self.key_events.WidgetValueDown  = { { Device.input.group.PgBack }, event = "SpinButtonPressed", args = -1 }
+        if Device:hasScreenKB() or Device:hasKeyboard() then
+            local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+            local HOLD = true -- use hold step value
+            self.key_events.WidgetHoldValueUp    = { { modifier, Device.input.group.PgFwd  },  event = "DoubleSpinButtonPressed", args = {  1, HOLD } }
+            self.key_events.WidgetHoldValueDown  = { { modifier, Device.input.group.LPgBack }, event = "DoubleSpinButtonPressed", args = { -1, HOLD } }
+        end
     end
     if Device:isTouchDevice() then
         self.ges_events.TapClose = {
@@ -355,8 +361,10 @@ This method updates the widget's value based on the direction of the spin.
 @param direction {number}. The direction of the spin (-1 for decrease, 1 for increase)
 @return boolean Always returns true to indicate the event was handled
 ]]
-function SpinWidget:onSpinButtonPressed(direction)
-    self.value_widget.value = self.value_widget:changeValue(self.value_step * direction)
+function SpinWidget:onSpinButtonPressed(args)
+    local direction, is_hold_event = unpack(args)
+    local step = is_hold_event and self.value_hold_step or self.value_step
+    self.value_widget.value = self.value_widget:changeValue(step * direction)
     self.value_widget:update()
     return true
 end
