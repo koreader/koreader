@@ -257,7 +257,7 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
         user     = self.root_catalog_username,
         password = self.root_catalog_password,
     }
-    logger.dbg("Request:", socketutil.safe_request(request))
+    logger.dbg("Request:", socketutil.redact_request(request))
     local code, headers, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
 
@@ -323,7 +323,7 @@ end
 function OPDSBrowser:getServerFileName(item_url)
     local headers = self:fetchFeed(item_url, true)
     if headers then
-        logger.dbg("OPDSBrowser: server file headers", socketutil.safe_headers(headers))
+        logger.dbg("OPDSBrowser: server file headers", socketutil.redact_headers(headers))
         local header = headers["content-disposition"]
         if header then
             return header:match('filename="*([^"]+)"*')
