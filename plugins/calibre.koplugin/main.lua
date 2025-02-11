@@ -54,7 +54,7 @@ function Calibre:onStartWirelessConnection()
             text = _("Connecting to calibre")
         })
     end)
-    UIManager:scheduleIn(0.1, function()
+    UIManager:tickAfterNext(function()
         self:startWirelessConnection()
     end)
 end
