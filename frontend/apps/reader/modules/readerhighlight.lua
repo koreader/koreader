@@ -857,7 +857,7 @@ Except when in two columns mode, where this is limited to showing only the previ
                         G_reader_settings:saveSetting("highlight_non_touch_factor", left_value)
                         G_reader_settings:saveSetting("highlight_non_touch_factor_dict", right_value)
                         if touchmenu_instance then touchmenu_instance:updateItems() end
-                    end,
+                    end
                 }
                 UIManager:show(double_spin_widget)
             end,

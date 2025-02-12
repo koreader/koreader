@@ -53,6 +53,7 @@ local DictQuickLookup = InputContainer:extend{
     dict_index = 1,
     width = nil,
     height = nil,
+    nt_text_selector_indicator = nil, -- crosshairs for text selection on non-touch devices
     -- sboxes containing highlighted text, quick lookup window tries to not hide the word
     word_boxes = nil,
 
@@ -66,7 +67,6 @@ local DictQuickLookup = InputContainer:extend{
     window_list = {},
     -- Static class member, used by ReaderWiktionary to communicate state from a closed widget to the next opened one.
     rotated_update_wiki_languages_on_close = nil,
-    nt_text_selector_indicator = nil, -- crosshairs for text selection on non-touch devices
 }
 
 function DictQuickLookup.getWikiSaveEpubDefaultDir()
@@ -1814,10 +1814,10 @@ function DictQuickLookup:onTextSelectorPress()
             local selected_text
             -- both text widget and html widget handle text parsing a bit differently, ¯\_(ツ)_/¯
             if self.is_html then
-                -- For dictionary content, highlight_text should contain the complete text selection
+                -- For HtmlBoxWidget, highlight_text should contain the complete text selection.
                 selected_text = selection_widget.highlight_text
             else
-                -- For wiki and non-html content, extract the selected text using the indices
+                -- For TextBoxWidget, extract the selected text using the indices.
                 selected_text = selection_widget.text:sub(
                     selection_widget.highlight_start_idx,
                     selection_widget.highlight_end_idx
