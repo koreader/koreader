@@ -1817,7 +1817,7 @@ function DictQuickLookup:onTextSelectorPress()
                 -- For dictionary content, highlight_text should contain the complete text selection
                 selected_text = selection_widget.highlight_text
             else
-                -- For wiki content, extract the selected text using the indices
+                -- For wiki and non-html content, extract the selected text using the indices
                 selected_text = selection_widget.text:sub(
                     selection_widget.highlight_start_idx,
                     selection_widget.highlight_end_idx
