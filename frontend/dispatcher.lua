@@ -1192,21 +1192,23 @@ function Dispatcher:execute(settings, exec_props)
             end
             local category = settingsList[k].category
             local event = settingsList[k].event
+            local arg = settingsList[k].arg
             if category == "none" then
-                if settingsList[k].arg ~= nil then
-                    UIManager:sendEvent(Event:new(event, settingsList[k].arg, exec_props))
+                if arg ~= nil then
+                    UIManager:sendEvent(Event:new(event, arg, exec_props))
                 else
                     UIManager:sendEvent(Event:new(event))
                 end
             elseif category == "absolutenumber" or category == "string" then
-                UIManager:sendEvent(Event:new(event, v))
+                arg = arg ~= nil and { arg, v } or v
+                UIManager:sendEvent(Event:new(event, arg))
             elseif category == "arg" then
                 -- the event can accept a gesture object or an argument
-                local arg = gesture or settingsList[k].arg
+                arg = gesture or arg
                 UIManager:sendEvent(Event:new(event, arg))
             elseif category == "incrementalnumber" then
                 -- the event can accept a gesture object or a number
-                local arg = v ~= 0 and v or gesture or 0
+                arg = v ~= 0 and v or gesture or 0
                 UIManager:sendEvent(Event:new(event, arg))
             end
         end
