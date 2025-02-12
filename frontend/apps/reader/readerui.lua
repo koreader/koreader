@@ -824,7 +824,7 @@ function ReaderUI:onClose(full_refresh)
     end
     UIManager:close(self.dialog, full_refresh ~= false and "full")
     if file then
-        BookList.resetBookInfoCache(file, self.doc_settings)
+        BookList.setBookInfoCache(file, self.doc_settings)
     end
 end
 
