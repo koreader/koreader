@@ -353,4 +353,11 @@ function ScrollTextWidget:onPanReleaseText(arg, ges)
     return false
 end
 
+function ScrollTextWidget:paintTo(bb, x, y)
+    self.text_widget:paintTo(bb, x, y)
+    if self.post_paintTo_func then
+        self.post_paintTo_func(self, bb, x, y)
+    end
+end
+
 return ScrollTextWidget

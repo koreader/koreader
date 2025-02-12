@@ -66,6 +66,7 @@ local DictQuickLookup = InputContainer:extend{
     window_list = {},
     -- Static class member, used by ReaderWiktionary to communicate state from a closed widget to the next opened one.
     rotated_update_wiki_languages_on_close = nil,
+    nt_text_selector_indicator = nil, -- crosshairs for text selection on non-touch devices
 }
 
 function DictQuickLookup.getWikiSaveEpubDefaultDir()
@@ -849,19 +850,13 @@ function DictQuickLookup:_instantiateScrollWidget()
             width = self.content_width,
             height = self.definition_height,
             dialog = self,
-            text_selector = { indicator = nil, }, -- Add this for indicator visibility
             highlight_text_selection = true,
             html_link_tapped_callback = function(link)
                 self.html_dictionary_link_tapped_callback(self.dictionary, link)
             end,
-            -- We should override the widget's paintTo method to draw our indicator
-            paintTo = function(widget, bb, x, y)
-                -- Call original paintTo from ScrollHtmlWidget
-                ScrollHtmlWidget.paintTo(widget, bb, x, y)
-                -- Draw our indicator on top if we have one
-                if widget.text_selector.indicator then
-                    local rect = widget.text_selector.indicator
-                    -- Draw indicator - use crosshair style
+            post_paintTo_func = function(widget, bb, x, y)
+                if self.nt_text_selector_indicator then
+                    local rect = self.nt_text_selector_indicator
                     bb:paintRect(rect.x + x, rect.y + y + rect.h/2 - 1, rect.w, 2, Blitbuffer.COLOR_BLACK)
                     bb:paintRect(rect.x + x + rect.w/2 - 1, rect.y + y, 2, rect.h, Blitbuffer.COLOR_BLACK)
                 end
@@ -881,16 +876,10 @@ function DictQuickLookup:_instantiateScrollWidget()
             auto_para_direction = not self.is_wiki, -- only for dict results (we don't know their lang)
             image_alt_face = self.image_alt_face,
             images = self.images,
-            text_selector = { indicator = nil, }, -- Add this for indicator visibility
             highlight_text_selection = true,
-            -- We should override the widget's paintTo method to draw our indicator
-            paintTo = function(widget, bb, x, y)
-                -- Call original paintTo from ScrollTextWidget
-                ScrollTextWidget.paintTo(widget, bb, x, y)
-                -- Draw our indicator on top if we have one
-                if widget.text_selector.indicator then
-                    local rect = widget.text_selector.indicator
-                    -- Draw indicator - use crosshairs style
+            post_paintTo_func = function(widget, bb, x, y)
+                if self.nt_text_selector_indicator then
+                    local rect = self.nt_text_selector_indicator
                     bb:paintRect(rect.x + x, rect.y + y + rect.h/2 - 1, rect.w, 2, Blitbuffer.COLOR_BLACK)
                     bb:paintRect(rect.x + x + rect.w/2 - 1, rect.y + y, 2, rect.h, Blitbuffer.COLOR_BLACK)
                 end
@@ -1202,7 +1191,7 @@ function DictQuickLookup:onTap(arg, ges_ev)
 end
 
 function DictQuickLookup:onClose(no_clear)
-    if self.text_widget.text_selector.indicator then
+    if self.nt_text_selector_indicator then
         -- If we're in text selection mode, stop it
         self:onStopTextSelectorIndicator(true)
         return true
@@ -1684,7 +1673,7 @@ This function initializes and displays a text selection indicator in the diction
 ]]
 function DictQuickLookup:onStartTextSelectorIndicator()
     if not self.definition_widget then return false end -- not yet set up
-    if self.text_widget.text_selector.indicator then return false end -- already started
+    if self.nt_text_selector_indicator then return false end -- already started
     -- Suspend focus management from button_table instance to prevent the d-pad
     -- and press keys from moving focus during text selection.
     self.button_table.movement_allowed = { x = false, y = false }
@@ -1711,7 +1700,7 @@ function DictQuickLookup:onStartTextSelectorIndicator()
         rect.w = Size.item.height_default
         rect.h = rect.w
     end
-    self.text_widget.text_selector.indicator = rect
+    self.nt_text_selector_indicator = rect
     -- Mark the entire definition widget area as dirty to ensure the indicator is drawn
     UIManager:setDirty(self, function()
         return "ui", self.definition_widget.dimen
@@ -1725,7 +1714,7 @@ Stops the text selector indicator and restores normal UI behavior.
 @return boolean Returns true if indicator was stopped, false if no indicator existed
 ]]
 function DictQuickLookup:onStopTextSelectorIndicator(need_clear_selection)
-    if not self.text_widget.text_selector.indicator then return false end
+    if not self.nt_text_selector_indicator then return false end
     -- resume focus manager's normal operation
     self.button_table.movement_allowed = { x = true, y = true }
     -- and re-enable key_events
@@ -1735,10 +1724,10 @@ function DictQuickLookup:onStopTextSelectorIndicator(need_clear_selection)
         self.button_table:moveFocusTo(self._save_focused_item.x, self._save_focused_item.y)
         self._save_focused_item = nil
     end
-    local rect = self.text_widget.text_selector.indicator
+    local rect = self.nt_text_selector_indicator
     self._previous_indicator_pos = rect
     self._text_selection_started = false
-    self.text_widget.text_selector.indicator = nil
+    self.nt_text_selector_indicator = nil
     -- Mark definition widget area as dirty for clean re-draw
     UIManager:setDirty(self, function()
         return "ui", self.definition_widget.dimen
@@ -1761,10 +1750,10 @@ the boundaries of the content area and updates the display accordingly.
                  indicator is not available
 ]]
 function DictQuickLookup:onMoveTextSelectorIndicator(args)
-    if not (self.text_widget and self.text_widget.text_selector.indicator) then return false end
+    if not (self.text_widget and self.nt_text_selector_indicator) then return false end
     local dx, dy, quick_move = unpack(args)
     local move_distance = Size.item.height_default / (G_reader_settings:readSetting("highlight_non_touch_factor_dict") or 3)
-    local rect = self.text_widget.text_selector.indicator:copy()
+    local rect = self.nt_text_selector_indicator:copy()
     local quick_move_distance_dx = self.content_width * (1/4)
     local quick_move_distance_dy = self.definition_height * (1/4)
     if quick_move then
@@ -1792,14 +1781,14 @@ function DictQuickLookup:onMoveTextSelectorIndicator(args)
         rect.y = self.definition_height - rect.h
     end
     -- Update widget state
-    self.text_widget.text_selector.indicator = rect
+    self.nt_text_selector_indicator = rect
     if self._text_selection_started then
         local selection_widget = self:_getSelectionWidget(self)
         if selection_widget then
             selection_widget:onHoldPanText(nil, self:_createTextSelectionGesture("hold_pan"))
         end
     end
-    -- mark widget dirty to ensure the paintTo method that draws the crosshair is called
+    -- mark widget dirty to ensure the paintTo method that draws the crosshairs is called
     UIManager:setDirty(self, function()
         return "ui", self.definition_widget.dimen
     end)
@@ -1814,7 +1803,7 @@ end
         * Handles Wikipedia/Dictionary lookup
 ]]
 function DictQuickLookup:onTextSelectorPress()
-    if not self.text_widget.text_selector.indicator then return false end
+    if not self.nt_text_selector_indicator then return false end
     if self._text_selection_started then
         -- Show menu with selected text from dictionary widget
         local selection_widget = self:_getSelectionWidget(self)
@@ -1861,7 +1850,7 @@ function DictQuickLookup:onTextSelectorPress()
         -- center indicator on selected text if available
         if selection_widget.highlight_rects and #selection_widget.highlight_rects > 0 then
             local highlight = selection_widget.highlight_rects[1]
-            local indicator = self.text_widget.text_selector.indicator
+            local indicator = self.nt_text_selector_indicator
             indicator.x = highlight.x + (highlight.w/2) - (indicator.w/2)
             indicator.y = highlight.y + (highlight.h/2) - (indicator.h/2)
             UIManager:setDirty(self, function()
@@ -1873,7 +1862,7 @@ function DictQuickLookup:onTextSelectorPress()
 end
 
 function DictQuickLookup:onStartOrMoveTextSelectorIndicator(args)
-    if not self.text_widget.text_selector.indicator then
+    if not self.nt_text_selector_indicator then
         self:onStartTextSelectorIndicator()
         return true
     end
@@ -1887,7 +1876,7 @@ function DictQuickLookup:_getSelectionWidget(instance)
 end
 
 function DictQuickLookup:_createTextSelectionGesture(gesture)
-    local point = self.text_widget.text_selector.indicator:copy()
+    local point = self.nt_text_selector_indicator:copy()
     -- Add the definition_widget's absolute position to get correct screen coordinates
     point.x = point.x + point.w / 2 + self.definition_widget.dimen.x
     point.y = point.y + point.h / 2 + self.definition_widget.dimen.y
