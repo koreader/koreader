@@ -1823,15 +1823,16 @@ function DictQuickLookup:onTextSelectorPress()
             selection_widget:onHoldReleaseText(nil, self:_createTextSelectionGesture("hold_release"))
             local hold_duration = time.to_s(time.since(self._hold_duration))
             local selected_text
-            if self.is_wiki and selection_widget.highlight_start_idx then
+            -- both text widget and html widget handle text parsing a bit differently, ¯\_(ツ)_/¯
+            if self.is_html then
+                -- For dictionary content, highlight_text should contain the complete text selection
+                selected_text = selection_widget.highlight_text
+            else
                 -- For wiki content, extract the selected text using the indices
                 selected_text = selection_widget.text:sub(
                     selection_widget.highlight_start_idx,
                     selection_widget.highlight_end_idx
                 )
-            else
-                -- For dictionary content, highlight_text should contain the complete selection
-                selected_text = selection_widget.highlight_text
             end
             if selected_text then
                 local lookup_wikipedia = self.is_wiki
@@ -1839,9 +1840,7 @@ function DictQuickLookup:onTextSelectorPress()
                     -- allow switching domain with a long hold (> 5 secs)
                     lookup_wikipedia = false
                 end
-                local new_dict_close_callback = function()
-                    self:clearDictionaryHighlight()
-                end
+                local new_dict_close_callback = function() self:clearDictionaryHighlight() end
                 if lookup_wikipedia then
                     self:lookupWikipedia(false, selected_text, nil, nil, new_dict_close_callback)
                 else
@@ -1852,10 +1851,11 @@ function DictQuickLookup:onTextSelectorPress()
         self:onStopTextSelectorIndicator()
         return true
     end
+    -- start text selection on first press
     self._text_selection_started = true
-    -- start text selection, we'll time the hold duration to allow switching from wiki to dict
     local selection_widget = self:_getSelectionWidget(self)
     if selection_widget then
+        -- we'll time the hold duration to allow switching from wiki to dict
         self._hold_duration = time.now() -- on your marks, get set, go!
         selection_widget:onHoldStartText(nil, self:_createTextSelectionGesture("hold"))
         -- center indicator on selected text if available
