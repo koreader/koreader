@@ -852,7 +852,7 @@ Except when in two columns mode, where this is limited to showing only the previ
                     right_step = 0.25,
                     right_hold_step = 0.05,
                     title_text = _("Crosshairs speed"),
-                    info_text = _("Select decimal values from 0.25 to 5. A smaller value increases the travel distance of the crosshairs per keystroke. Font size and these values are inversely correlated, meaning a smaller font size requires a larger value and vice versa."),
+                    info_text = _("Select a decimal value from 0.25 to 5. A smaller value increases the travel distance of the crosshairs per keystroke. Font size and this value are inversely correlated, meaning a smaller font size requires a larger value and vice versa."),
                     callback = function(left_value, right_value)
                         G_reader_settings:saveSetting("highlight_non_touch_factor", left_value)
                         G_reader_settings:saveSetting("highlight_non_touch_factor_dict", right_value)
