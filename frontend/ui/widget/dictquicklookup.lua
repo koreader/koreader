@@ -1822,15 +1822,21 @@ function DictQuickLookup:onTextSelectorPress()
             -- first, process the hold release event which finalizes text selection
             selection_widget:onHoldReleaseText(nil, self:_createTextSelectionGesture("hold_release"))
             local hold_duration = time.to_s(time.since(self._hold_duration))
-            -- After hold release, highlight_text should contain the complete selection
-            local selected_text = selection_widget.highlight_text
-            --[==[ HELP WANTED!
-            Wikipedia is currently broken, unsure what selected_text needs to be in that case, await confirmation
-            ]==]
+            local selected_text
+            if self.is_wiki and selection_widget.highlight_start_idx then
+                -- For wiki content, extract the selected text using the indices
+                selected_text = selection_widget.text:sub(
+                    selection_widget.highlight_start_idx,
+                    selection_widget.highlight_end_idx
+                )
+            else
+                -- For dictionary content, highlight_text should contain the complete selection
+                selected_text = selection_widget.highlight_text
+            end
             if selected_text then
                 local lookup_wikipedia = self.is_wiki
-                if lookup_wikipedia and hold_duration >= time.s(5) then
-                    -- allow switching domain with a long hold
+                if lookup_wikipedia and hold_duration > 5 then
+                    -- allow switching domain with a long hold (> 5 secs)
                     lookup_wikipedia = false
                 end
                 local new_dict_close_callback = function()
