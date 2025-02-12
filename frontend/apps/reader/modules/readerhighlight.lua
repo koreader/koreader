@@ -520,36 +520,8 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 end
             end
         end,
-        callback = function(touchmenu_instance)
-            local notemark = self.view.highlight.note_mark or "none"
-            local radio_buttons = {}
-            for _, v in ipairs(note_mark) do
-                table.insert(radio_buttons, {
-                    {
-                        text = v[1],
-                        checked = v[2] == notemark,
-                        provider = v[2],
-                    },
-                })
-            end
-            UIManager:show(RadioButtonWidget:new{
-                title_text = _("Note marker"),
-                width_factor = 0.5,
-                keep_shown_on_apply = true,
-                radio_buttons = radio_buttons,
-                callback = function(radio)
-                    if radio.provider == "none" then
-                        self.view.highlight.note_mark = nil
-                        G_reader_settings:delSetting("highlight_note_marker")
-                    else
-                        self.view.highlight.note_mark = radio.provider
-                        G_reader_settings:saveSetting("highlight_note_marker", radio.provider)
-                    end
-                    self.view:setupNoteMarkPosition()
-                    UIManager:setDirty(self.dialog, "ui")
-                    touchmenu_instance:updateItems()
-                end,
-            })
+        callback = function()
+            self:showNoteMarkerDialog()
         end,
         separator = true,
     })
@@ -970,7 +942,6 @@ function ReaderHighlight:clear(clear_id)
     end
     self.is_word_selection = false
     self.selected_text_start_xpointer = nil
-    self.gest_pos = nil
     if self.hold_pos then
         self.hold_pos = nil
         self.selected_text = nil
@@ -1132,11 +1103,8 @@ function ReaderHighlight:showChooseHighlightDialog(highlights)
             buttons[i] = {{
                 text = (item.note and self.ui.bookmark.display_prefix["note"]
                                    or self.ui.bookmark.display_prefix["highlight"]) .. item.text,
-                align = "left",
                 avoid_text_truncation = false,
-                font_face = "smallinfofont",
-                font_size = 22,
-                font_bold = false,
+                menu_style = true,
                 callback = function()
                     UIManager:close(dialog)
                     self:showHighlightNoteOrDialog(index)
@@ -1200,7 +1168,7 @@ function ReaderHighlight:showHighlightNoteOrDialog(index)
                         text = _("Highlight menu"),
                         callback = function()
                             UIManager:close(textviewer)
-                            self:onShowHighlightDialog(index)
+                            self:showHighlightDialog(index)
                         end,
                     },
                 },
@@ -1208,28 +1176,27 @@ function ReaderHighlight:showHighlightNoteOrDialog(index)
         }
         UIManager:show(textviewer)
     else
-        self:onShowHighlightDialog(index)
+        self:showHighlightDialog(index)
     end
 end
 
-function ReaderHighlight:onShowHighlightDialog(index)
+function ReaderHighlight:showHighlightDialog(index)
     local item = self.ui.annotation.annotations[index]
+    local edit_highlight_dialog
     local buttons = {
         {
             {
                 text = "\u{F48E}", -- Trash can (icon to prevent confusion of Delete/Details buttons)
                 callback = function()
                     self:deleteHighlight(index)
-                    UIManager:close(self.edit_highlight_dialog)
-                    self.edit_highlight_dialog = nil
+                    UIManager:close(edit_highlight_dialog)
                 end,
             },
             {
                 text = C_("Highlight", "Style"),
                 callback = function()
                     self:editHighlightStyle(index)
-                    UIManager:close(self.edit_highlight_dialog)
-                    self.edit_highlight_dialog = nil
+                    UIManager:close(edit_highlight_dialog)
                 end,
             },
             {
@@ -1237,24 +1204,21 @@ function ReaderHighlight:onShowHighlightDialog(index)
                 enabled = item.drawer ~= "invert",
                 callback = function()
                     self:editHighlightColor(index)
-                    UIManager:close(self.edit_highlight_dialog)
-                    self.edit_highlight_dialog = nil
+                    UIManager:close(edit_highlight_dialog)
                 end,
             },
             {
                 text = _("Note"),
                 callback = function()
                     self:editNote(index)
-                    UIManager:close(self.edit_highlight_dialog)
-                    self.edit_highlight_dialog = nil
+                    UIManager:close(edit_highlight_dialog)
                 end,
             },
             {
                 text = _("Details"),
                 callback = function()
                     self.ui.bookmark:showBookmarkDetails(index)
-                    UIManager:close(self.edit_highlight_dialog)
-                    self.edit_highlight_dialog = nil
+                    UIManager:close(edit_highlight_dialog)
                 end,
             },
             {
@@ -1262,8 +1226,7 @@ function ReaderHighlight:onShowHighlightDialog(index)
                 callback = function()
                     self.selected_text = util.tableDeepCopy(item)
                     self:onShowHighlightMenu(index)
-                    UIManager:close(self.edit_highlight_dialog)
-                    self.edit_highlight_dialog = nil
+                    UIManager:close(edit_highlight_dialog)
                 end,
             },
         },
@@ -1289,7 +1252,6 @@ function ReaderHighlight:onShowHighlightDialog(index)
                 end,
                 hold_callback = function()
                     self:updateHighlight(index, 0, -1, true)
-                    return true
                 end,
             },
             {
@@ -1300,7 +1262,6 @@ function ReaderHighlight:onShowHighlightDialog(index)
                 end,
                 hold_callback = function()
                     self:updateHighlight(index, 0, 1, true)
-                    return true
                 end,
             },
             {
@@ -1325,13 +1286,14 @@ function ReaderHighlight:onShowHighlightDialog(index)
             }
         })
     end
-    self.edit_highlight_dialog = ButtonDialog:new{ -- in self for unit tests
+    edit_highlight_dialog = ButtonDialog:new{
+        name = "edit_highlight_dialog", -- for unit tests
         buttons = buttons,
         anchor = function()
-            return self:_getDialogAnchor(self.edit_highlight_dialog, index)
+            return self:_getDialogAnchor(edit_highlight_dialog, index)
         end,
     }
-    UIManager:show(self.edit_highlight_dialog)
+    UIManager:show(edit_highlight_dialog)
     return true
 end
 
@@ -1512,7 +1474,6 @@ function ReaderHighlight:onHold(arg, ges)
         logger.dbg("not inside page area")
         return false
     end
-    self.gest_pos = { self.hold_pos, self.hold_pos }
 
     self.allow_hold_pan_corner_scroll = false -- reset this, don't allow that yet
 
@@ -1719,7 +1680,6 @@ function ReaderHighlight:onHoldPan(_, ges)
 
     local old_text = self.selected_text and self.selected_text.text
     self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.holdpan_pos)
-    self.gest_pos = { self.hold_pos, self.holdpan_pos }
     self.is_word_selection = false
 
     if self.selected_text and self.selected_text.pos0 then
@@ -2158,7 +2118,7 @@ function ReaderHighlight:editHighlightStyle(index)
         UIManager:setDirty(self.dialog, "ui")
         self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
     end
-    self:showHighlightStyleDialog(apply_drawer, item.drawer, index)
+    self:showHighlightStyleDialog(apply_drawer, index)
 end
 
 function ReaderHighlight:editHighlightColor(index)
@@ -2178,32 +2138,35 @@ function ReaderHighlight:editHighlightColor(index)
     self:showHighlightColorDialog(apply_color, item)
 end
 
-function ReaderHighlight:showHighlightStyleDialog(caller_callback, item_drawer)
-    local default_drawer, keep_shown_on_apply
-    if item_drawer then -- called from ReaderHighlight:editHighlightStyle()
-        default_drawer = self.view.highlight.saved_drawer
-        keep_shown_on_apply = true
+function ReaderHighlight:showHighlightStyleDialog(caller_callback, index)
+    local item_drawer = index and self.ui.annotation.annotations[index].drawer
+    local dialog
+    local buttons = {}
+    for i, v in ipairs(highlight_style) do
+        buttons[i] = {{
+            text = v[1] .. (v[2] == item_drawer and "  ✓" or ""),
+            menu_style = true,
+            callback = function()
+                caller_callback(v[2])
+                UIManager:close(dialog)
+            end,
+        }}
     end
-    local radio_buttons = {}
-    for _, v in ipairs(highlight_style) do
-        table.insert(radio_buttons, {
-            {
-                text = v[1],
-                checked = item_drawer == v[2],
-                provider = v[2],
-            },
-        })
+    if index then -- called from ReaderHighlight:editHighlightStyle()
+        table.insert(buttons, {}) -- separator
+        table.insert(buttons, {{
+            text = _("Highlight menu"),
+            callback = function()
+                self:showHighlightDialog(index)
+                UIManager:close(dialog)
+            end,
+        }})
     end
-    UIManager:show(RadioButtonWidget:new{
-        title_text = _("Highlight style"),
-        width_factor = 0.5,
-        keep_shown_on_apply = keep_shown_on_apply,
-        radio_buttons = radio_buttons,
-        default_provider = default_drawer,
-        callback = function(radio)
-            caller_callback(radio.provider)
-        end,
-    })
+    dialog = ButtonDialog:new{
+        width_factor = 0.4,
+        buttons = buttons,
+    }
+    UIManager:show(dialog)
 end
 
 function ReaderHighlight:showHighlightColorDialog(caller_callback, item)
@@ -2241,6 +2204,32 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, item)
         colorful = true,
         dithered = true,
     })
+end
+
+function ReaderHighlight:showNoteMarkerDialog()
+    local notemark = self.view.highlight.note_mark or "none"
+    local dialog
+    local buttons = {}
+    for i, v in ipairs(note_mark) do
+        local mark = v[2]
+        buttons[i] = {{
+            text = v[1] .. (mark == notemark and "  ✓" or ""),
+            menu_style = true,
+            callback = function()
+                self.view.highlight.note_mark = mark ~= "none" and mark or nil
+                G_reader_settings:saveSetting("highlight_note_marker", self.view.highlight.note_mark)
+                self.view:setupNoteMarkPosition()
+                UIManager:setDirty(self.dialog, "ui")
+                UIManager:close(dialog)
+                self:showNoteMarkerDialog()
+            end,
+        }}
+    end
+    dialog = ButtonDialog:new{
+        width_factor = 0.4,
+        buttons = buttons,
+    }
+    UIManager:show(dialog)
 end
 
 function ReaderHighlight:startSelection()

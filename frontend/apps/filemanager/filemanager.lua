@@ -22,7 +22,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LanguageSupport = require("languagesupport")
-local Menu = require("ui/widget/menu")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkListener = require("ui/network/networklistener")
 local PluginLoader = require("pluginloader")
@@ -1303,11 +1302,8 @@ function FileManager:onShowFolderMenu()
     local function genButton(button_text, button_path)
         return {{
             text = button_text,
-            align = "left",
-            font_face = "smallinfofont",
-            font_size = 22,
-            font_bold = false,
             avoid_text_truncation = false,
+            menu_style = true,
             callback = function()
                 UIManager:close(button_dialog)
                 self.file_chooser:changeToPath(button_path)
@@ -1383,19 +1379,13 @@ function FileManager:showSelectedFilesList()
     table.sort(selected_files, sorting)
 
     local menu
-    menu = Menu:new{
+    menu = BookList:new{
         title = T(_("Selected files (%1)"), #selected_files),
         item_table = selected_files,
-        is_borderless = true,
-        is_popout = false,
-        title_bar_fm_style = true,
         truncate_left = true,
         onMenuSelect = function(_, item)
             UIManager:close(menu)
             self.file_chooser:changeToPath(util.splitFilePathName(item.filepath), item.filepath)
-        end,
-        close_callback = function()
-            UIManager:close(menu)
         end,
     }
     UIManager:show(menu)
