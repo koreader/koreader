@@ -104,8 +104,8 @@ function DictQuickLookup:init()
         font_size_alt = 8
     end
     self.image_alt_face = Font:getFace("cfont", font_size_alt)
-    self.allow_nt_text_selection = Device:hasScreenKB() or Device:hasKeyboard()
-    if self.allow_nt_text_selection then
+    self.allow_key_text_selection = Device:hasScreenKB() or Device:hasKeyboard()
+    if self.allow_key_text_selection then
         self.text_selection_started = false
         self.previous_indicator_pos = nil
     end
@@ -858,11 +858,11 @@ function DictQuickLookup:_instantiateScrollWidget()
                 self.html_dictionary_link_tapped_callback(self.dictionary, link)
             end,
             -- We should override the widget's paintTo method to draw our indicator
-            paintTo = function(widget, bb, x, y)
+            paintTo = self.allow_key_text_selection and function(widget, bb, x, y)
                 -- Call original paintTo from ScrollHtmlWidget
                 ScrollHtmlWidget.paintTo(widget, bb, x, y)
                 -- Draw our indicator on top if we have one
-                if self.allow_nt_text_selection and self.nt_text_selector_indicator then
+                if self.nt_text_selector_indicator then
                     local rect = self.nt_text_selector_indicator
                     -- Draw indicator - use crosshairs style
                     bb:paintRect(rect.x + x, rect.y + y + rect.h/2 - 1, rect.w, 2, Blitbuffer.COLOR_BLACK)
@@ -886,11 +886,11 @@ function DictQuickLookup:_instantiateScrollWidget()
             images = self.images,
             highlight_text_selection = true,
             -- We should override the widget's paintTo method to draw our indicator
-            paintTo = function(widget, bb, x, y)
+            paintTo = self.allow_key_text_selection and function(widget, bb, x, y)
                 -- Call original paintTo from ScrollTextWidget
                 ScrollTextWidget.paintTo(widget, bb, x, y)
                 -- Draw our indicator on top if we have one
-                if self.allow_nt_text_selection and self.nt_text_selector_indicator then
+                if self.nt_text_selector_indicator then
                     local rect = self.nt_text_selector_indicator
                     -- Draw indicator - use crosshairs style
                     bb:paintRect(rect.x + x, rect.y + y + rect.h/2 - 1, rect.w, 2, Blitbuffer.COLOR_BLACK)
@@ -1204,7 +1204,7 @@ function DictQuickLookup:onTap(arg, ges_ev)
 end
 
 function DictQuickLookup:onClose(no_clear)
-    if self.allow_nt_text_selection and self.nt_text_selector_indicator then
+    if self.allow_key_text_selection and self.nt_text_selector_indicator then
         -- If we're in text selection mode, stop it
         self:onStopTextSelectorIndicator(true)
         return true
