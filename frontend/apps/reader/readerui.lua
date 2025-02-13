@@ -814,7 +814,7 @@ function ReaderUI:onClose(full_refresh)
         file = self.document.file
         require("readhistory"):updateLastBookTime(self.tearing_down)
         -- Serialize the most recently displayed page for later launch
-        DocCache:serialize(self.document.file)
+        DocCache:serialize(file)
         logger.dbg("closing document")
         self:handleEvent(Event:new("CloseDocument"))
         if self.document:isEdited() and not self.highlight.highlight_write_into_pdf then
