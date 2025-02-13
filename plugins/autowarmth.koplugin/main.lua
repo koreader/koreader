@@ -225,7 +225,7 @@ function AutoWarmth:_onToggleNightMode()
             {{
                 text = _("Hide this warning permanently"),
                 provider = function()
-                self.hide_nightmode_warning = true
+                    self.hide_nightmode_warning = true
                     G_reader_settings:saveSetting("hide_nightmode_warning", true)
                 end
             }},
