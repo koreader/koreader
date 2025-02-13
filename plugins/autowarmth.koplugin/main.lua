@@ -66,6 +66,7 @@ function AutoWarmth:init()
     self.longitude = G_reader_settings:readSetting("autowarmth_longitude") or -20.30
     self.altitude = G_reader_settings:readSetting("autowarmth_altitude") or 200
     self.timezone = G_reader_settings:readSetting("autowarmth_timezone") or 0
+	self.hide_nightmode_warning = G_reader_settings:isTrue("hide_nightmode_warning") or false
     self.scheduler_times = G_reader_settings:readSetting("autowarmth_scheduler_times")
         or {0.0, 5.5, 6.0, 6.5, 7.0, 13.0, 21.5, 22.0, 22.5, 23.0, 24.0}
     self.warmth = G_reader_settings:readSetting("autowarmth_warmth")
@@ -221,6 +222,13 @@ function AutoWarmth:_onToggleNightMode()
                     self.hide_nightmode_warning = true
                 end,
             }},
+			{{
+				text = _("Hide this warning permanently"),
+				provider = function()
+					self.hide_nightmode_warning = true
+					G_reader_settings:saveSetting("hide_nightmode_warning", true)
+				end
+			}},
             {{
                 text = _("Disable AutoWarmth's nightmode control"),
                 provider = function()
@@ -602,6 +610,16 @@ function AutoWarmth:getSubMenuItems()
             end,
             sub_item_table = self:getActivateMenu(),
         },
+		{
+			text = _("Enable night mode warning"),
+			checked_func = function()
+				return not self.hide_nightmode_warning
+			end,
+			callback = function()
+				self.hide_nightmode_warning = not self.hide_nightmode_warning
+				G_reader_settings:saveSetting("hide_nightmode_warning", self.hide_nightmode_warning)
+			end
+		},
         {
             text = _("Expert mode"),
             checked_func = function()
