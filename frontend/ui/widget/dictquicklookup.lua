@@ -747,7 +747,7 @@ function DictQuickLookup:init()
     -- NT: add dict_title.left_button and lookup_edit_button to FocusManager.
     -- It is better to add these two buttons into self.movable, but it is not a FocusManager.
     -- Only self.button_table is a FocusManager, so the workaround is inserting these two buttons into self.button_table.layout.
-    if Device:hasDPad() and not (Device:hasScreenKB() or Device:hasSymKey()) then
+    if Device:hasDPad() and not (Device:hasScreenKB() or Device:hasKeyboard()) then
         table.insert(self.button_table.layout, 1, { self.dict_title.left_button })
         table.insert(self.button_table.layout, 2, { lookup_edit_button })
         -- Refocus on the updated layout
