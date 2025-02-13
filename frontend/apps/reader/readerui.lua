@@ -809,11 +809,12 @@ function ReaderUI:onClose(full_refresh)
     if self.dialog ~= self then
         self:saveSettings()
     end
+    local file
     if self.document ~= nil then
-        BookList.setBookInfoCache(self.document.file, self.doc_settings)
+        file = self.document.file
         require("readhistory"):updateLastBookTime(self.tearing_down)
         -- Serialize the most recently displayed page for later launch
-        DocCache:serialize(self.document.file)
+        DocCache:serialize(file)
         logger.dbg("closing document")
         self:handleEvent(Event:new("CloseDocument"))
         if self.document:isEdited() and not self.highlight.highlight_write_into_pdf then
@@ -822,6 +823,9 @@ function ReaderUI:onClose(full_refresh)
         self:closeDocument()
     end
     UIManager:close(self.dialog, full_refresh ~= false and "full")
+    if file then
+        BookList.setBookInfoCache(file, self.doc_settings)
+    end
 end
 
 function ReaderUI:onCloseWidget()
