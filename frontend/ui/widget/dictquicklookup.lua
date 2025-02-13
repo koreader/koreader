@@ -781,7 +781,6 @@ function DictQuickLookup:registerKeyEvents()
                 -- same case as hasKeyboard
                 self.key_events.LookupInputWord = { { "ScreenKB", "Back" }, args = self.word .." " }
             end
-
         end
         if Device:hasDPad() then
             self.key_events.TextSelectorPress          = { { "Press" } }
@@ -868,7 +867,7 @@ function DictQuickLookup:_instantiateScrollWidget()
             html_link_tapped_callback = function(link)
                 self.html_dictionary_link_tapped_callback(self.dictionary, link)
             end,
-            -- We should override the widget's paintTo method to draw our indicator
+            -- We need to override the widget's paintTo method to draw our indicator
             paintTo = self.allow_key_text_selection and function(widget, bb, x, y)
                 -- Call original paintTo from ScrollHtmlWidget
                 ScrollHtmlWidget.paintTo(widget, bb, x, y)
@@ -896,7 +895,7 @@ function DictQuickLookup:_instantiateScrollWidget()
             image_alt_face = self.image_alt_face,
             images = self.images,
             highlight_text_selection = true,
-            -- We should override the widget's paintTo method to draw our indicator
+            -- We need to override the widget's paintTo method to draw our indicator
             paintTo = self.allow_key_text_selection and function(widget, bb, x, y)
                 -- Call original paintTo from ScrollTextWidget
                 ScrollTextWidget.paintTo(widget, bb, x, y)
@@ -1725,9 +1724,7 @@ function DictQuickLookup:onStartTextSelectorIndicator()
     end
     self.nt_text_selector_indicator = rect
     -- Mark the entire definition widget area as dirty to ensure the indicator is drawn
-    UIManager:setDirty(self, function()
-        return "ui", self.definition_widget.dimen
-    end)
+    UIManager:setDirty(self, function() return "ui", self.definition_widget.dimen end)
     return true
 end
 
@@ -1753,12 +1750,8 @@ function DictQuickLookup:onStopTextSelectorIndicator(need_clear_selection)
     self.nt_text_selector_indicator = nil
     if self._hold_duration then self._hold_duration = nil end
     -- Mark definition widget area as dirty for clean re-draw
-    UIManager:setDirty(self, function()
-        return "ui", self.definition_widget.dimen
-    end)
-    if need_clear_selection then
-        self:clearDictionaryHighlight()
-    end
+    UIManager:setDirty(self, function() return "ui", self.definition_widget.dimen end)
+    if need_clear_selection then self:clearDictionaryHighlight() end
     return true
 end
 
@@ -1787,10 +1780,8 @@ function DictQuickLookup:onMoveTextSelectorIndicator(args)
         rect.x = rect.x + move_distance * dx
         rect.y = rect.y + move_distance * dy
     end
-
-    if rect.x < 0 then
-        rect.x = 0
-    end
+    -- Ensure the indicator stays within the content area.
+    if rect.x < 0 then rect.x = 0 end
     if rect.x + rect.w > self.content_width then
         if Device:hasFewKeys() then
             rect.x = 0 -- wrap around to beginning when reaching end
@@ -1798,9 +1789,7 @@ function DictQuickLookup:onMoveTextSelectorIndicator(args)
             rect.x = self.content_width - rect.w
         end
     end
-    if rect.y < 0 then
-        rect.y = 0
-    end
+    if rect.y < 0 then rect.y = 0 end
     if rect.y + rect.h > self.definition_height then
         rect.y = self.definition_height - rect.h
     end
@@ -1813,9 +1802,7 @@ function DictQuickLookup:onMoveTextSelectorIndicator(args)
         end
     end
     -- mark widget dirty to ensure the paintTo method that draws the crosshairs is called
-    UIManager:setDirty(self, function()
-        return "ui", self.definition_widget.dimen
-    end)
+    UIManager:setDirty(self, function() return "ui", self.definition_widget.dimen end)
     return true
 end
 
@@ -1836,7 +1823,7 @@ function DictQuickLookup:onTextSelectorPress()
             selection_widget:onHoldReleaseText(nil, self:_createTextSelectionGesture("hold_release"))
             local hold_duration = time.to_s(time.since(self._hold_duration))
             local selected_text
-            -- both text widget and html widget handle text parsing a bit differently, ¯\_(ツ)_/¯
+            -- both text_widget and htmlbox_widget handle text parsing a bit differently, ¯\_(ツ)_/¯
             if self.is_html then
                 -- For HtmlBoxWidget, highlight_text should contain the complete text selection.
                 selected_text = selection_widget.highlight_text
@@ -1877,9 +1864,7 @@ function DictQuickLookup:onTextSelectorPress()
             local indicator = self.nt_text_selector_indicator
             indicator.x = highlight.x + (highlight.w/2) - (indicator.w/2)
             indicator.y = highlight.y + (highlight.h/2) - (indicator.h/2)
-            UIManager:setDirty(self, function()
-                return "ui", self.definition_widget.dimen
-            end)
+            UIManager:setDirty(self, function() return "ui", self.definition_widget.dimen end)
         end
     end
     return true
@@ -1888,9 +1873,9 @@ end
 function DictQuickLookup:onStartOrMoveTextSelectorIndicator(args)
     if not self.nt_text_selector_indicator then
         self:onStartTextSelectorIndicator()
-        return true
+    else
+        self:onMoveTextSelectorIndicator(args)
     end
-    self:onMoveTextSelectorIndicator(args)
     return true
 end
 
