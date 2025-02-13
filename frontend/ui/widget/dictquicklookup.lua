@@ -104,7 +104,7 @@ function DictQuickLookup:init()
         font_size_alt = 8
     end
     self.image_alt_face = Font:getFace("cfont", font_size_alt)
-    self.allow_key_text_selection = Device:hasScreenKB() or Device:hasKeyboard()
+    self.allow_key_text_selection = Device:hasDPad()
     if self.allow_key_text_selection then
         self.text_selection_started = false
         self.previous_indicator_pos = nil
@@ -525,6 +525,17 @@ function DictQuickLookup:init()
                 },
             },
         }
+        if self.allow_key_text_selection and Device:hasFewKeys() then
+            table.insert(buttons, 1, {
+                {
+                    id = "text_selection",
+                    text = _("Text selection"),
+                    callback = function()
+                        self:onStartTextSelectorIndicator()
+                    end,
+                }
+            })
+        end
         if not self.is_wiki and self.selected_link ~= nil then
             -- If highlighting some word part of a link (which should be rare),
             -- add a new first row with a single button to follow this link.
@@ -1680,8 +1691,7 @@ end
 This function initializes and displays a text selection indicator in the dictionary quick lookup widget.
     1. Suspends focus management and key events in the button table during text selection
     2. Saves and clears the current focus position (FocusManager)
-    3. Creates or reuses a rectangular indicator with specific dimensions
-    4. Updates the UI to show the indicator
+    3. Creates the indicator and updates the UI to show it on-screen
 @return boolean Returns true if the indicator was successfully started, false otherwise
 ]]
 function DictQuickLookup:onStartTextSelectorIndicator()
@@ -1741,6 +1751,7 @@ function DictQuickLookup:onStopTextSelectorIndicator(need_clear_selection)
     self._previous_indicator_pos = rect
     self._text_selection_started = false
     self.nt_text_selector_indicator = nil
+    if self._hold_duration then self._hold_duration = nil end
     -- Mark definition widget area as dirty for clean re-draw
     UIManager:setDirty(self, function()
         return "ui", self.definition_widget.dimen
