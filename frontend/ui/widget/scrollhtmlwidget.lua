@@ -212,11 +212,4 @@ function ScrollHtmlWidget:onScrollDown()
     -- let it propagate up (e.g. for quickdictlookup to go to next/prev result)
 end
 
-function ScrollHtmlWidget:paintTo(bb, x, y)
-    self.htmlbox_widget:paintTo(bb, x, y)
-    if self.post_paintTo_func then
-        self.post_paintTo_func(self, bb, x, y)
-    end
-end
-
 return ScrollHtmlWidget

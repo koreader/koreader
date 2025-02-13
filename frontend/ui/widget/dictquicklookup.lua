@@ -854,9 +854,14 @@ function DictQuickLookup:_instantiateScrollWidget()
             html_link_tapped_callback = function(link)
                 self.html_dictionary_link_tapped_callback(self.dictionary, link)
             end,
-            post_paintTo_func = function(widget, bb, x, y)
+            -- We should override the widget's paintTo method to draw our indicator
+            paintTo = function(widget, bb, x, y)
+                -- Call original paintTo from ScrollHtmlWidget
+                ScrollHtmlWidget.paintTo(widget, bb, x, y)
+                -- Draw our indicator on top if we have one
                 if self.nt_text_selector_indicator then
                     local rect = self.nt_text_selector_indicator
+                    -- Draw indicator - use crosshairs style
                     bb:paintRect(rect.x + x, rect.y + y + rect.h/2 - 1, rect.w, 2, Blitbuffer.COLOR_BLACK)
                     bb:paintRect(rect.x + x + rect.w/2 - 1, rect.y + y, 2, rect.h, Blitbuffer.COLOR_BLACK)
                 end
@@ -877,9 +882,14 @@ function DictQuickLookup:_instantiateScrollWidget()
             image_alt_face = self.image_alt_face,
             images = self.images,
             highlight_text_selection = true,
-            post_paintTo_func = function(widget, bb, x, y)
+            -- We should override the widget's paintTo method to draw our indicator
+            paintTo = function(widget, bb, x, y)
+                -- Call original paintTo from ScrollTextWidget
+                ScrollTextWidget.paintTo(widget, bb, x, y)
+                -- Draw our indicator on top if we have one
                 if self.nt_text_selector_indicator then
                     local rect = self.nt_text_selector_indicator
+                    -- Draw indicator - use crosshairs style
                     bb:paintRect(rect.x + x, rect.y + y + rect.h/2 - 1, rect.w, 2, Blitbuffer.COLOR_BLACK)
                     bb:paintRect(rect.x + x + rect.w/2 - 1, rect.y + y, 2, rect.h, Blitbuffer.COLOR_BLACK)
                 end
