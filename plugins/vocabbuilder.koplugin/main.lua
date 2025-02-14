@@ -2104,7 +2104,7 @@ function VocabBuilder:onWordLookedUp(word, title, is_manual)
     end
 
     local update = function() DB:insertOrUpdate({
-        book_title = (not word_from_dict) and title or "Dictionary",
+        book_title = not word_from_dict and title or "Dictionary",
         time = os.time(),
         word = word,
         prev_context = prev_context,
