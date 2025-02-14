@@ -240,7 +240,7 @@ function PocketBook:init()
     -- Unhandled events will leave Input:waitEvent() as "GenericInput"
     -- NOTE: This all happens in ffi/input_pocketbook.lua
 
-    self._model_init()
+    self:_model_init()
     -- NOTE: `self.input.open` is a method, and we want it to call `self.input.input.open`
     -- with `self.input` as first argument, which the imp supports to get access to
     -- `self.input.raw_input`, hence the double `self.input` arguments.

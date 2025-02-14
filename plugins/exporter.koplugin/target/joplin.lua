@@ -2,11 +2,9 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
 local http = require("socket.http")
-local json = require("json")
 local logger = require("logger")
 local ltn12 = require("ltn12")
 local md = require("template/md")
-local socketutil = require("socketutil")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -17,38 +15,6 @@ local JoplinExporter = require("base"):new {
     notebook_name = _("KOReader Notes"),
     version = "1.1.0",
 }
-
-local function makeRequest(url, method, request_body)
-    local sink = {}
-    local request_body_json = json.encode(request_body)
-    local source = ltn12.source.string(request_body_json)
-    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
-    http.request{
-        url     = url,
-        method  = method,
-        sink    = ltn12.sink.table(sink),
-        source  = source,
-        headers = {
-            ["Content-Length"] = #request_body_json,
-            ["Content-Type"] = "application/json"
-        },
-    }
-    socketutil:reset_timeout()
-
-    if not sink[1] then
-        return nil, "No response from Joplin Server"
-    end
-
-    local response = json.decode(sink[1])
-
-    if not response then
-        return nil, "Unknown response from Joplin Server"
-    elseif response.error then
-        return nil, response.error
-    end
-
-    return response
-end
 
 local function ping(ip, port)
     local sink = {}
@@ -75,7 +41,7 @@ function JoplinExporter:findNoteByTitle(title, notebook_id)
 
     repeat
         url = url_base..page
-        local notes, err = makeRequest(url, "GET")
+        local notes, err = self:makeJsonRequest(url, "GET")
         if not notes then
             logger.warn("Joplin findNoteByTitle error", err)
             return
@@ -101,7 +67,7 @@ function JoplinExporter:findNotebookByTitle(title)
 
     repeat
         url = url_base .. page
-        local folders, err = makeRequest(url, "GET")
+        local folders, err = self:makeJsonRequest(url, "GET")
         if not folders then
             logger.warn("Joplin findNotebookByTitle error", err)
             return
@@ -121,7 +87,7 @@ end
 function JoplinExporter:notebookExist(title)
     local url = string.format("http://%s:%s/folders?token=%s",
         self.settings.ip, self.settings.port, self.settings.token)
-    local response, err = makeRequest(url, "GET")
+    local response, err = self:makeJsonRequest(url, "GET")
     if not response then
         logger.warn("Joplin notebookExist error", err)
         return false
@@ -139,14 +105,14 @@ end
 
 -- If successful returns id of created notebook (folder).
 function JoplinExporter:createNotebook(title, created_time)
-    local request_body = {
+    local body = {
         title = title,
         created_time = created_time
     }
     local url = string.format("http://%s:%s/folders?token=%s",
         self.settings.ip, self.settings.port, self.settings.token)
 
-    local response, err = makeRequest(url, "POST", request_body)
+    local response, err = self:makeJsonRequest(url, "POST", body)
     if not response then
         logger.warn("Joplin createNotebook error", err)
         return
@@ -156,7 +122,7 @@ end
 
 -- If successful returns id of created note.
 function JoplinExporter:createNote(title, note, parent_id, created_time)
-    local request_body = {
+    local body = {
         title = title,
         body = note,
         parent_id = parent_id,
@@ -165,7 +131,7 @@ function JoplinExporter:createNote(title, note, parent_id, created_time)
     local url = string.format("http://%s:%s/notes?token=%s",
         self.settings.ip, self.settings.port, self.settings.token)
 
-    local response, err = makeRequest(url, "POST", request_body)
+    local response, err = self:makeJsonRequest(url, "POST", body)
     if not response then
         logger.warn("Joplin createNote error", err)
         return
@@ -175,14 +141,14 @@ end
 
 -- If successful returns id of updated note.
 function JoplinExporter:updateNote(note, note_id)
-    local request_body = {
+    local body = {
         body = note
     }
 
     local url = string.format("http://%s:%s/notes/%s?token=%s",
         self.settings.ip, self.settings.port, note_id, self.settings.token)
 
-    local response, err = makeRequest(url, "PUT", request_body)
+    local response, err = self:makeJsonRequest(url, "PUT", body)
     if not response then
         logger.warn("Joplin updateNote error", err)
         return

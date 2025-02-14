@@ -245,7 +245,8 @@ local settingsList = {
     embedded_css = {category="string", rolling=true},
     embedded_fonts = {category="string", rolling=true},
     smooth_scaling = {category="string", rolling=true},
-    nightmode_images = {category="string", rolling=true},
+    nightmode_images = {category="string", rolling=true, separator=true},
+    ----
 
     -- parsed from KoptOptions
     kopt_trim_page = {category="string", paging=true},
@@ -942,17 +943,15 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
 end
 
 function Dispatcher.removeActions(actions, do_remove)
-    if actions then
-        local count = Dispatcher:_itemsCount(actions)
-        if count == 1 then
-            do_remove()
-        elseif count > 1 then
-            local ConfirmBox = require("ui/widget/confirmbox")
-            UIManager:show(ConfirmBox:new{
-                text = T(NC_("Dispatcher", "1 action will be removed.", "%1 actions will be removed.", count), count),
-                ok_callback = do_remove,
-            })
-        end
+    local count = actions and Dispatcher:_itemsCount(actions) or 0
+    if count > 1 then
+        local ConfirmBox = require("ui/widget/confirmbox")
+        UIManager:show(ConfirmBox:new{
+            text = T(NC_("Dispatcher", "1 action will be removed.", "%1 actions will be removed.", count), count),
+            ok_callback = do_remove,
+        })
+    else
+        do_remove()
     end
 end
 
@@ -1121,10 +1120,7 @@ function Dispatcher._showAsMenu(settings, exec_props)
         table.insert(buttons, {{
             text = v.text,
             enabled = Dispatcher:isActionEnabled(settingsList[v.key]),
-            align = "left",
-            font_face = "smallinfofont",
-            font_size = 22,
-            font_bold = false,
+            menu_style = true,
             callback = function()
                 UIManager:close(quickmenu)
                 Dispatcher:execute({[v.key] = settings[v.key]})
