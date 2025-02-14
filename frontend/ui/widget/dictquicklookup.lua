@@ -1815,46 +1815,11 @@ end
 ]]
 function DictQuickLookup:onTextSelectorPress()
     if not self.nt_text_selector_indicator then return false end
-    if self._text_selection_started then
-        -- Show menu with selected text from dictionary widget
-        local selection_widget = self:_getSelectionWidget(self)
-        if selection_widget then
-            -- first, process the hold release event which finalizes text selection
-            selection_widget:onHoldReleaseText(nil, self:_createTextSelectionGesture("hold_release"))
-            local hold_duration = time.to_s(time.since(self._hold_duration))
-            local selected_text
-            -- both text_widget and htmlbox_widget handle text parsing a bit differently, ¯\_(ツ)_/¯
-            if self.is_html then
-                -- For HtmlBoxWidget, highlight_text should contain the complete text selection.
-                selected_text = selection_widget.highlight_text
-            else
-                -- For TextBoxWidget, extract the selected text using the indices.
-                selected_text = selection_widget.text:sub(
-                    selection_widget.highlight_start_idx,
-                    selection_widget.highlight_end_idx
-                )
-            end
-            if selected_text then
-                local lookup_wikipedia = self.is_wiki
-                if lookup_wikipedia and hold_duration > 5 then
-                    -- allow switching domain with a long hold (> 5 secs)
-                    lookup_wikipedia = false
-                end
-                local new_dict_close_callback = function() self:clearDictionaryHighlight() end
-                if lookup_wikipedia then
-                    self:lookupWikipedia(false, selected_text, nil, nil, new_dict_close_callback)
-                else
-                    self.ui:handleEvent(Event:new("LookupWord", selected_text, nil, nil, nil, nil, new_dict_close_callback))
-                end
-            end
-        end
-        self:onStopTextSelectorIndicator()
-        return true
-    end
-    -- start text selection on first press
-    self._text_selection_started = true
     local selection_widget = self:_getSelectionWidget(self)
-    if selection_widget then
+    if not selection_widget then self:onStopTextSelectorIndicator() return end
+    if not self._text_selection_started then
+        -- start text selection on first press
+        self._text_selection_started = true
         -- we'll time the hold duration to allow switching from wiki to dict
         self._hold_duration = time.now() -- on your marks, get set, go!
         selection_widget:onHoldStartText(nil, self:_createTextSelectionGesture("hold"))
@@ -1866,7 +1831,38 @@ function DictQuickLookup:onTextSelectorPress()
             indicator.y = highlight.y + (highlight.h/2) - (indicator.h/2)
             UIManager:setDirty(self, function() return "ui", self.definition_widget.dimen end)
         end
+        return true
     end
+    -- second press,
+    -- process the hold release event which finalizes text selection
+    selection_widget:onHoldReleaseText(nil, self:_createTextSelectionGesture("hold_release"))
+    local hold_duration = time.to_s(time.since(self._hold_duration))
+    local selected_text
+    -- both text_widget and htmlbox_widget handle text parsing a bit differently, ¯\_(ツ)_/¯
+    if self.is_html then
+        -- For HtmlBoxWidget, highlight_text should contain the complete text selection.
+        selected_text = selection_widget.highlight_text
+    else
+        -- For TextBoxWidget, extract the selected text using the indices.
+        selected_text = selection_widget.text:sub(
+            selection_widget.highlight_start_idx,
+            selection_widget.highlight_end_idx
+        )
+    end
+    if selected_text then
+        local lookup_wikipedia = self.is_wiki
+        if lookup_wikipedia and hold_duration > 5 then
+            -- allow switching domain with a long hold (> 5 secs)
+            lookup_wikipedia = false
+        end
+        local new_dict_close_callback = function() self:clearDictionaryHighlight() end
+        if lookup_wikipedia then
+            self:lookupWikipedia(false, selected_text, nil, nil, new_dict_close_callback)
+        else
+            self.ui:handleEvent(Event:new("LookupWord", selected_text, nil, nil, nil, nil, new_dict_close_callback))
+        end
+    end
+    self:onStopTextSelectorIndicator()
     return true
 end
 
