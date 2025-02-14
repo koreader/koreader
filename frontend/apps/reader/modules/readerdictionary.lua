@@ -99,7 +99,7 @@ local function getDictionaryFixHtmlFunc(path)
     end
 end
 
-local function calculateStringSimilarity(str1, str2, prefix_weight)
+local function calculateStringSimilarity(str1, str2, prefix_weight, threshold)
     str1, str2 = str1:lower(), str2:lower()
     if str1 == str2 then
         return 1.0
@@ -149,6 +149,9 @@ local function calculateStringSimilarity(str1, str2, prefix_weight)
         (matches - transpositions/2) / matches
     ) / 3
 
+   if distance < (threshold - (prefix_weight * 4 * (1 - distance))) then
+            return distance  -- return early if the score will never reach the threshold
+    end
     -- Set up for adjusting the score by prefix weight
     local prefix_length = 0
     for i = 1, math.min(4, math.min(len1, len2)) do
@@ -997,7 +1000,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
                 h = r.dict .. r.word .. r.definition
                 if seen_results[h] == nil then
                     if fuzzy_search then
-                        r.similarity = calculateStringSimilarity(word, r.word, self.prefix_weight)
+                        r.similarity = calculateStringSimilarity(word, r.word, self.prefix_weight, threshold)
                         if r.similarity > self.fuzzy_threshold then
                             r.preferred_order = #flat_results
                             table.insert(flat_results, r)
