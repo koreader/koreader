@@ -66,8 +66,8 @@ function SpinWidget:init()
     end
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
-        self.key_events.WidgetValueUp    = { { Device.input.group.PgFwd  }, event = "SpinButtonPressed", args =  1 }
-        self.key_events.WidgetValueDown  = { { Device.input.group.PgBack }, event = "SpinButtonPressed", args = -1 }
+        self.key_events.WidgetValueUp    = { { Device.input.group.PgFwd  }, event = "SpinButtonPressed", args = {  1, false } }
+        self.key_events.WidgetValueDown  = { { Device.input.group.PgBack }, event = "SpinButtonPressed", args = { -1, false } }
         if Device:hasScreenKB() or Device:hasKeyboard() then
             local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
             local HOLD = true -- use hold step value
