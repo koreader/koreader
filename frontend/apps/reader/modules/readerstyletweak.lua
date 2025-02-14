@@ -448,7 +448,7 @@ end
 
 local function dispatcherRegisterStyleTweak(tweak_id, tweak_title)
     Dispatcher:registerAction(ReaderStyleTweak.dispatcher_prefix_set..tweak_id,
-        {category="string", event="ToggleStyleTweak", arg=tweak_id, title=T(_("Style tweak '%1' set"), tweak_title), rolling=true,
+        {category="string", event="ToggleStyleTweak", arg=tweak_id, title=T(_("Style tweak '%1'"), tweak_title), rolling=true,
             args={true, false}, toggle={_("on"), _("off")}})
     Dispatcher:registerAction(ReaderStyleTweak.dispatcher_prefix_toggle..tweak_id,
         {category="none", event="ToggleStyleTweak", arg=tweak_id, title=T(_("Style tweak '%1' toggle"), tweak_title), rolling=true})
