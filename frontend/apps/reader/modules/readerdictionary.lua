@@ -1000,7 +1000,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
                 h = r.dict .. r.word .. r.definition
                 if seen_results[h] == nil then
                     if fuzzy_search then
-                        r.similarity = calculateStringSimilarity(word, r.word, self.prefix_weight, threshold)
+                        r.similarity = calculateStringSimilarity(word, r.word, self.prefix_weight, self.threshold)
                         if r.similarity > self.fuzzy_threshold then
                             r.preferred_order = #flat_results
                             table.insert(flat_results, r)
