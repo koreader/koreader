@@ -102,14 +102,14 @@ function NumberPickerWidget:init()
             if self.date_month and self.date_year then
                 self.value_max = self:getDaysInMonth(self.date_month:getValue(), self.date_year:getValue())
             end
-            self.value = self:changeValue(self.value_step * -1)
+            self.value = self:changeValue(-self.value_step)
             self:update()
         end,
         hold_callback = function()
             if self.date_month and self.date_year then
                 self.value_max = self:getDaysInMonth(self.date_month:getValue(), self.date_year:getValue())
             end
-            self.value = self:changeValue(self.value_hold_step * -1)
+            self.value = self:changeValue(-self.value_hold_step)
             self:update()
         end
     }
