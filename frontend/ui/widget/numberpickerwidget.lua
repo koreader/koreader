@@ -78,14 +78,14 @@ function NumberPickerWidget:init()
             if self.date_month and self.date_year then
                 self.value_max = self:getDaysInMonth(self.date_month:getValue(), self.date_year:getValue())
             end
-            self.value = self:changeValue(self.value, self.value_step, self.value_max, self.value_min, self.wrap)
+            self.value = self:changeValue(self.value_step)
             self:update()
         end,
         hold_callback = function()
             if self.date_month and self.date_year then
                 self.value_max = self:getDaysInMonth(self.date_month:getValue(), self.date_year:getValue())
             end
-            self.value = self:changeValue(self.value, self.value_hold_step, self.value_max, self.value_min, self.wrap)
+            self.value = self:changeValue(self.value_hold_step)
             self:update()
         end
     }
@@ -102,14 +102,14 @@ function NumberPickerWidget:init()
             if self.date_month and self.date_year then
                 self.value_max = self:getDaysInMonth(self.date_month:getValue(), self.date_year:getValue())
             end
-            self.value = self:changeValue(self.value, self.value_step * -1, self.value_max, self.value_min, self.wrap)
+            self.value = self:changeValue(-self.value_step)
             self:update()
         end,
         hold_callback = function()
             if self.date_month and self.date_year then
                 self.value_max = self:getDaysInMonth(self.date_month:getValue(), self.date_year:getValue())
             end
-            self.value = self:changeValue(self.value, self.value_hold_step * -1, self.value_max, self.value_min, self.wrap)
+            self.value = self:changeValue(-self.value_hold_step)
             self:update()
         end
     }
@@ -295,22 +295,22 @@ end
 --[[--
 Change value.
 --]]
-function NumberPickerWidget:changeValue(value, step, max, min, wrap)
+function NumberPickerWidget:changeValue(step)
+    local value
     if self.value_index then
         self.value_index = self.value_index + step
         if self.value_index > #self.value_table then
-            self.value_index = wrap and 1 or #self.value_table
-        elseif
-        self.value_index < 1 then
-            self.value_index = wrap and #self.value_table or 1
+            self.value_index = self.wrap and 1 or #self.value_table
+        elseif self.value_index < 1 then
+            self.value_index = self.wrap and #self.value_table or 1
         end
         value = self.value_table[self.value_index]
     else
-        value = value + step
-        if value > max then
-            value = wrap and min or max
-        elseif value < min then
-            value = wrap and max or min
+        value = self.value + step
+        if value > self.value_max then
+            value = self.wrap and self.value_min or self.value_max
+        elseif value < self.value_min then
+            value = self.wrap and self.value_max or self.value_min
         end
     end
     return value
