@@ -842,5 +842,18 @@ if last_migration_date < 20250207 then
     end
 end
 
+-- 20250212, Remove obsolete plugins
+-- https://github.com/koreader/koreader/pull/12932
+if last_migration_date < 20250212 then
+    logger.info("Performing one-time migration for 20250212")
+    local base = DataStorage:getDataDir() .. "/plugins/"
+    local old_plugins = { "autofrontlight", "backgroundrunner", "calibrecompanion",
+        "evernote", "goodreads", "kobolight", "send2ebook", "storagestat", "zsync" }
+
+    for _, v in ipairs(old_plugins) do
+        ffiUtil.purgeDir(base .. v .. ".koplugin")
+    end
+end
+
 -- We're done, store the current migration date
 G_reader_settings:saveSetting("last_migration_date", CURRENT_MIGRATION_DATE)
