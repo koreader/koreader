@@ -30,6 +30,7 @@ local FocusManager = InputContainer:extend{
     selected = nil, -- defaults to x=1, y=1
     layout = nil, -- mandatory
     movement_allowed = { x = true, y = true },
+    key_events_enabled = true,
 }
 
 -- Only build the default mappings once on initialization, or when an external keyboard is (dis-)/connected.
@@ -515,6 +516,14 @@ function FocusManager:refocusWidget(nextTick, focus_flags)
         self._parent:refocusWidget(nextTick, focus_flags)
         self._parent = nil
     end
+end
+
+function FocusManager:onKeyPress(key)
+    -- Add check for key_events_enabled
+    if not self.key_events_enabled then
+        return false
+    end
+    return InputContainer.onKeyPress(self, key)
 end
 
 return FocusManager
