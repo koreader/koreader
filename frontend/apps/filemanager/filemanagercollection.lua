@@ -28,6 +28,8 @@ local FileManagerCollection = WidgetContainer:extend{
 }
 
 function FileManagerCollection:init()
+    self.doc_props_cache = {}
+    self.updated_collections = {}
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -44,6 +46,13 @@ function FileManagerCollection:addToMainMenu(menu_items)
             self:onShowCollList()
         end,
     }
+end
+
+function FileManagerCollection:getDocProps(file)
+    if self.doc_props_cache[file] == nil then
+        self.doc_props_cache[file] = self.ui.bookinfo:getDocProps(file, nil, true) -- do not open the document
+    end
+    return self.doc_props_cache[file]
 end
 
 -- collection
@@ -66,6 +75,8 @@ end
 function FileManagerCollection:onShowColl(collection_name)
     collection_name = collection_name or ReadCollection.default_collection_name
     self.coll_menu = BookList:new{
+        name = "collection",
+        path = collection_name,
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showCollDialog() end,
         onReturn = function()
@@ -78,7 +89,6 @@ function FileManagerCollection:onShowColl(collection_name)
         ui = self.ui,
         _manager = self,
         _recreate_func = function() self:onShowColl(collection_name) end,
-        collection_name = collection_name,
     }
     table.insert(self.coll_menu.paths, true) -- enable onReturn button
     self.coll_menu.close_callback = function()
@@ -87,25 +97,60 @@ function FileManagerCollection:onShowColl(collection_name)
         self.coll_menu = nil
         self.match_table = nil
     end
+    self:setCollate()
     self:updateItemTable()
     UIManager:show(self.coll_menu)
     return true
 end
 
-function FileManagerCollection:updateItemTable(show_last_item, item_table)
+function FileManagerCollection:updateItemTable(item_table, focused_file)
     if item_table == nil then
         item_table = {}
-        for _, item in pairs(ReadCollection.coll[self.coll_menu.collection_name]) do
+        for _, item in pairs(ReadCollection.coll[self.coll_menu.path]) do
             if self:isItemMatch(item) then
-                table.insert(item_table, item)
+                local item_tmp = {
+                    file      = item.file,
+                    text      = item.text,
+                    order     = item.order,
+                    attr      = item.attr,
+                    mandatory = self.mandatory_func and self.mandatory_func(item) or util.getFriendlySize(item.attr.size or 0),
+                }
+                if self.item_func then
+                    self.item_func(item_tmp, self:getDocProps(item_tmp.file))
+                end
+                table.insert(item_table, item_tmp)
             end
         end
         if #item_table > 1 then
-            table.sort(item_table, function(v1, v2) return v1.order < v2.order end)
+            table.sort(item_table, self.sorting_func)
         end
     end
-    local collection_name = self:getCollectionTitle(self.coll_menu.collection_name)
-    local title = T("%1 (%2)", collection_name, #item_table)
+    local title, subtitle = self:getBookListTitle(item_table)
+    self.coll_menu:switchItemTable(title, item_table, -1, focused_file and { file = focused_file }, subtitle)
+end
+
+function FileManagerCollection:isItemMatch(item)
+    if self.match_table then
+        if self.match_table.status then
+            if self.match_table.status ~= BookList.getBookStatus(item.file) then
+                return false
+            end
+        end
+        if self.match_table.props then
+            local doc_props = self:getDocProps(item.file)
+            for prop, value in pairs(self.match_table.props) do
+                if (doc_props[prop] or self.empty_prop) ~= value then
+                    return false
+                end
+            end
+        end
+    end
+    return true
+end
+
+function FileManagerCollection:getBookListTitle(item_table)
+    local collection_title = self:getCollectionTitle(self.coll_menu.path)
+    local title = T("%1 (%2)", collection_title, #item_table)
     local subtitle = ""
     if self.match_table then
         subtitle = {}
@@ -125,27 +170,7 @@ function FileManagerCollection:updateItemTable(show_last_item, item_table)
             subtitle = table.concat(subtitle, " | ")
         end
     end
-    local item_number = show_last_item and #item_table or -1
-    self.coll_menu:switchItemTable(title, item_table, item_number, nil, subtitle)
-end
-
-function FileManagerCollection:isItemMatch(item)
-    if self.match_table then
-        if self.match_table.status then
-            if self.match_table.status ~= BookList.getBookStatus(item.file) then
-                return false
-            end
-        end
-        if self.match_table.props then
-            local doc_props = self.ui.bookinfo:getDocProps(item.file, nil, true)
-            for prop, value in pairs(self.match_table.props) do
-                if (doc_props[prop] or self.empty_prop) ~= value then
-                    return false
-                end
-            end
-        end
-    end
-    return true
+    return title, subtitle
 end
 
 function FileManagerCollection:onSetDimensions(dimen)
@@ -219,7 +244,8 @@ function FileManagerCollection:onMenuHold(item)
         {
             text = _("Remove from collection"),
             callback = function()
-                ReadCollection:removeItem(file, self.collection_name)
+                self._manager.updated_collections[self.path] = true
+                ReadCollection:removeItem(file, self.path, true)
                 close_dialog_update_callback()
             end,
         },
@@ -263,6 +289,7 @@ function FileManagerCollection.getMenuInstance()
 end
 
 function FileManagerCollection:showCollDialog()
+    local collection_name = self.coll_menu.path
     local coll_not_empty = #self.coll_menu.item_table > 0
     local coll_dialog
     local function genFilterByStatusButton(button_status)
@@ -284,7 +311,7 @@ function FileManagerCollection:showCollDialog()
                 UIManager:close(coll_dialog)
                 local prop_values = {}
                 for idx, item in ipairs(self.coll_menu.item_table) do
-                    local doc_prop = self.ui.bookinfo:getDocProps(item.file, nil, true)[button_prop]
+                    local doc_prop = self:getDocProps(item.file)[button_prop]
                     if doc_prop == nil then
                         doc_prop = { self.empty_prop }
                     elseif button_prop == "series" then
@@ -344,18 +371,18 @@ function FileManagerCollection:showCollDialog()
             enabled = coll_not_empty,
             callback = function()
                 UIManager:close(coll_dialog)
-                self:onShowCollectionsSearchDialog(nil, self.coll_menu.collection_name)
+                self:onShowCollectionsSearchDialog(nil, collection_name)
+            end,
+        }},
+        {{
+            text = _("Arrange books in collection"),
+            enabled = coll_not_empty and self.match_table == nil,
+            callback = function()
+                UIManager:close(coll_dialog)
+                self:showArrangeBooksDialog()
             end,
         }},
         {}, -- separator
-        {{
-            text = _("Arrange books in collection"),
-            enabled = coll_not_empty,
-            callback = function()
-                UIManager:close(coll_dialog)
-                self:sortCollection()
-            end,
-        }},
         {{
             text = _("Add all books from a folder"),
             callback = function()
@@ -379,9 +406,10 @@ function FileManagerCollection:showCollDialog()
                     path = G_reader_settings:readSetting("home_dir"),
                     select_directory = false,
                     onConfirm = function(file)
-                        if not ReadCollection:isFileInCollection(file, self.coll_menu.collection_name) then
-                            ReadCollection:addItem(file, self.coll_menu.collection_name)
-                            self:updateItemTable(true) -- show added item
+                        if not ReadCollection:isFileInCollection(file, collection_name) then
+                            self.updated_collections[collection_name] = true
+                            ReadCollection:addItem(file, collection_name)
+                            self:updateItemTable(nil, file) -- show added item
                             self.files_updated = true
                         end
                     end,
@@ -392,19 +420,21 @@ function FileManagerCollection:showCollDialog()
     }
     if self.ui.document then
         local file = self.ui.document.file
-        local is_in_collection = ReadCollection:isFileInCollection(file, self.coll_menu.collection_name)
+        local is_in_collection = ReadCollection:isFileInCollection(file, collection_name)
         table.insert(buttons, {{
             text_func = function()
                 return is_in_collection and _("Remove current book from collection") or _("Add current book to collection")
             end,
             callback = function()
                 UIManager:close(coll_dialog)
+                self.updated_collections[collection_name] = true
                 if is_in_collection then
-                    ReadCollection:removeItem(file, self.coll_menu.collection_name)
+                    ReadCollection:removeItem(file, collection_name, true)
+                    file = nil
                 else
-                    ReadCollection:addItem(file, self.coll_menu.collection_name)
+                    ReadCollection:addItem(file, collection_name)
                 end
-                self:updateItemTable(not is_in_collection)
+                self:updateItemTable(nil, file)
                 self.files_updated = true
             end,
         }})
@@ -429,7 +459,7 @@ function FileManagerCollection:showPropValueList(prop, prop_values)
                 for _, idx in ipairs(item_idxs) do
                     table.insert(item_table, self.coll_menu.item_table[idx])
                 end
-                self:updateItemTable(nil, item_table)
+                self:updateItemTable(item_table)
             end,
         })
     end
@@ -447,17 +477,104 @@ function FileManagerCollection:showPropValueList(prop, prop_values)
     UIManager:show(prop_menu)
 end
 
-function FileManagerCollection:sortCollection()
-    local sort_widget
-    sort_widget = SortWidget:new{
-        title = _("Arrange books in collection"),
-        item_table = ReadCollection:getOrderedCollection(self.coll_menu.collection_name),
-        callback = function()
-            ReadCollection:updateCollectionOrder(self.coll_menu.collection_name, sort_widget.item_table)
-            self:updateItemTable()
+function FileManagerCollection:setCollate(collate_id, collate_reverse)
+    local coll_settings = ReadCollection.coll_settings[self.coll_menu.path]
+    if collate_id == nil then
+        collate_id = coll_settings.collate
+    else
+        coll_settings.collate = collate_id or nil
+    end
+    if collate_reverse == nil then
+        collate_reverse = coll_settings.collate_reverse
+    else
+        coll_settings.collate_reverse = collate_reverse or nil
+    end
+    if collate_id then
+        local collate = BookList.metadata_collates[collate_id] or BookList.collates[collate_id]
+        self.item_func = collate.item_func
+        self.mandatory_func = collate.mandatory_func
+        self.sorting_func, self.sort_cache = collate.init_sort_func(self.sort_cache)
+        if collate_reverse then
+            local sorting_func_unreversed = self.sorting_func
+            self.sorting_func = function(a, b) return sorting_func_unreversed(b, a) end
         end
+    else -- manual
+        self.item_func = nil
+        self.mandatory_func = nil
+        self.sorting_func = function(a, b) return a.order < b.order end
+    end
+end
+
+function FileManagerCollection:showArrangeBooksDialog()
+    local collection_name = self.coll_menu.path
+    local coll_settings = ReadCollection.coll_settings[collection_name]
+    local curr_collate_id = coll_settings.collate
+    local arrange_dialog
+    local function genCollateButton(collate_id)
+        local collate = BookList.metadata_collates[collate_id] or BookList.collates[collate_id]
+        return {
+            text = collate.text .. (curr_collate_id == collate_id and "  ✓" or ""),
+            callback = function()
+                if curr_collate_id ~= collate_id then
+                    UIManager:close(arrange_dialog)
+                    self.updated_collections[collection_name] = true
+                    self:setCollate(collate_id)
+                    self:updateItemTable()
+                end
+            end,
+        }
+    end
+    local buttons = {
+        {
+            genCollateButton("authors"),
+            genCollateButton("title"),
+        },
+        {
+            genCollateButton("keywords"),
+            genCollateButton("series"),
+        },
+        {
+            genCollateButton("natural"),
+            genCollateButton("strcoll"),
+        },
+        {
+            genCollateButton("size"),
+            genCollateButton("access"),
+        },
+        {{
+            text = _("Reverse sorting") .. (coll_settings.collate_reverse and "  ✓" or ""),
+            enabled = curr_collate_id and true or false, -- disabled for manual sorting
+            callback = function()
+                UIManager:close(arrange_dialog)
+                self.updated_collections[collection_name] = true
+                self:setCollate(nil, not coll_settings.collate_reverse)
+                self:updateItemTable()
+            end,
+        }},
+        {}, -- separator
+        {{
+            text = _("Manual sorting") .. (curr_collate_id == nil and "  ✓" or ""),
+            callback = function()
+                UIManager:close(arrange_dialog)
+                UIManager:show(SortWidget:new{
+                    title = _("Arrange books in collection"),
+                    item_table = self.coll_menu.item_table,
+                    callback = function()
+                        ReadCollection:updateCollectionOrder(collection_name, self.coll_menu.item_table)
+                        self.updated_collections[collection_name] = true
+                        self:setCollate(false, false)
+                        self:updateItemTable()
+                    end,
+                })
+            end,
+        }},
     }
-    UIManager:show(sort_widget)
+    arrange_dialog = ButtonDialog:new{
+        title = _("Sort by"),
+        title_align = "center",
+        buttons = buttons,
+    }
+    UIManager:show(arrange_dialog)
 end
 
 function FileManagerCollection:addBooksFromFolder(include_subfolders)
@@ -470,11 +587,12 @@ function FileManagerCollection:addBooksFromFolder(include_subfolders)
             util.findFiles(folder, function(file)
                 files_found[file] = DocumentRegistry:hasProvider(file) or nil
             end, include_subfolders)
-            local count = ReadCollection:addItemsMultiple(files_found, { [self.coll_menu.collection_name] = true })
+            local count = ReadCollection:addItemsMultiple(files_found, { [self.coll_menu.path] = true })
             local text
             if count == 0 then
                 text = _("No books added to collection")
             else
+                self.updated_collections[self.coll_menu.path] = true
                 text = T(N_("1 book added to collection", "%1 books added to collection", count), count)
                 self:updateItemTable()
                 self.files_updated = true
@@ -485,9 +603,14 @@ function FileManagerCollection:addBooksFromFolder(include_subfolders)
     UIManager:show(path_chooser)
 end
 
-function FileManagerCollection:onBookMetadataChanged()
+function FileManagerCollection:onBookMetadataChanged(prop_updated)
+    local file
+    if prop_updated then
+        file = prop_updated.filepath
+        self.doc_props_cache[file] = prop_updated.doc_props
+    end
     if self.coll_menu then
-        self.coll_menu:updateItems()
+        self:updateItemTable(nil, file) -- keep showing the changed file
     end
 end
 
@@ -507,6 +630,7 @@ function FileManagerCollection:onShowCollList(file_or_selected_collections, call
         self.selected_collections = nil
     end
     self.coll_list = Menu:new{
+        path = true, -- draw focus
         subtitle = "",
         covers_fullscreen = true,
         is_borderless = true,
@@ -547,7 +671,7 @@ function FileManagerCollection:updateCollListItemTable(do_init, item_number)
                 text      = self:getCollectionTitle(name),
                 mandatory = mandatory,
                 name      = name,
-                order     = ReadCollection.coll_order[name],
+                order     = ReadCollection.coll_settings[name].order,
             })
         end
         if #item_table > 1 then
@@ -571,7 +695,6 @@ function FileManagerCollection:updateCollListItemTable(do_init, item_number)
         end
     elseif self.from_collection_name ~= nil then
         itemmatch = { text = self.from_collection_name }
-        self.coll_list.path = true -- draw focus
         self.from_collection_name = nil
     end
     self.coll_list:switchItemTable(title, item_table, item_number or -1, itemmatch, subtitle)
@@ -747,6 +870,7 @@ end
 
 function FileManagerCollection:addCollection()
     local editCallback = function(name)
+        self.updated_collections[name] = true
         ReadCollection:addCollection(name)
         local mandatory
         if self.selected_collections then
@@ -759,7 +883,7 @@ function FileManagerCollection:addCollection()
             text      = name,
             mandatory = mandatory,
             name      = name,
-            order     = ReadCollection.coll_order[name],
+            order     = ReadCollection.coll_settings[name].order,
         })
         self:updateCollListItemTable(false, #self.coll_list.item_table) -- show added item
     end
@@ -768,6 +892,7 @@ end
 
 function FileManagerCollection:renameCollection(item)
     local editCallback = function(name)
+        self.updated_collections[name] = true
         ReadCollection:renameCollection(item.name, name)
         self.coll_list.item_table[item.idx].text = name
         self.coll_list.item_table[item.idx].name = name
@@ -781,6 +906,7 @@ function FileManagerCollection:removeCollection(item)
         text = _("Remove collection?") .. "\n\n" .. item.text,
         ok_text = _("Remove"),
         ok_callback = function()
+            self.updated_collections[item.name] = true
             ReadCollection:removeCollection(item.name)
             table.remove(self.coll_list.item_table, item.idx)
             self:updateCollListItemTable()
@@ -795,6 +921,7 @@ function FileManagerCollection:sortCollections()
         title = _("Arrange collections"),
         item_table = util.tableDeepCopy(self.coll_list.item_table),
         callback = function()
+            self.updated_collections = { true } -- all
             ReadCollection:updateCollectionListOrder(sort_widget.item_table)
             self:updateCollListItemTable(true) -- init
         end,
@@ -867,8 +994,7 @@ function FileManagerCollection:searchCollections(coll_name)
         if not DocumentRegistry:hasProvider(file) then
             return false
         end
-        local book_props = self.ui.bookinfo:getDocProps(file, nil, true) -- do not open the document
-        book_props.display_title = nil
+        local book_props = self:getDocProps(file)
         if next(book_props) ~= nil and self.ui.bookinfo:findInProps(book_props, self.search_str, self.case_sensitive) then
             return true
         end
@@ -907,7 +1033,7 @@ function FileManagerCollection:searchCollections(coll_name)
         return false
     end
 
-    local collections = coll_name and { coll_name = ReadCollection.coll[coll_name] } or ReadCollection.coll
+    local collections = coll_name and { [coll_name] = ReadCollection.coll[coll_name] } or ReadCollection.coll
     local Trapper = require("ui/trapper")
     local info = InfoMessage:new{ text = _("Searching… (tap to cancel)") }
     UIManager:show(info)
@@ -915,7 +1041,7 @@ function FileManagerCollection:searchCollections(coll_name)
     local completed, files_found, files_found_order = Trapper:dismissableRunInSubprocess(function()
         local match_cache, _files_found, _files_found_order = {}, {}, {}
         for collection_name, coll in pairs(collections) do
-            local coll_order = ReadCollection.coll_order[collection_name]
+            local coll_order = ReadCollection.coll_settings[collection_name].order
             for _, item in pairs(coll) do
                 local file = item.file
                 if match_cache[file] == nil then -- a book can be included to several collections
@@ -960,15 +1086,22 @@ function FileManagerCollection:searchCollections(coll_name)
             new_coll_name = new_coll_name .. " " .. T(_"(in %1)", coll_name)
             self.coll_menu.close_callback()
         end
-        ReadCollection:removeCollection(new_coll_name, true)
-        ReadCollection:addCollection(new_coll_name, true)
-        ReadCollection:addItemsMultiple(files_found, { [new_coll_name] = true }, true)
+        self.updated_collections[new_coll_name] = true
+        ReadCollection:removeCollection(new_coll_name)
+        ReadCollection:addCollection(new_coll_name)
+        ReadCollection:addItemsMultiple(files_found, { [new_coll_name] = true })
         ReadCollection:updateCollectionOrder(new_coll_name, files_found_order)
         if self.coll_list ~= nil then
             UIManager:close(self.coll_list)
             self.coll_list = nil
         end
         self:onShowColl(new_coll_name)
+    end
+end
+
+function FileManagerCollection:onCloseWidget()
+    if next(self.updated_collections) then
+        ReadCollection:write(self.updated_collections)
     end
 end
 
@@ -984,6 +1117,9 @@ function FileManagerCollection:genAddToCollectionButton(file_or_files, caller_pr
                 caller_pre_callback()
             end
             local caller_callback = function(selected_collections)
+                for name in pairs(selected_collections) do
+                    self.updated_collections[name] = true
+                end
                 if is_single_file then
                     ReadCollection:addRemoveItemMultiple(file_or_files, selected_collections)
                 else -- selected files
