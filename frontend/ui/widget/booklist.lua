@@ -147,6 +147,7 @@ local BookList = Menu:extend{
         },
         percent_unopened_first = {
             text = _("percent - unopened first"),
+            bookinfo_required = true,
             menu_order = 70,
             can_collate_mixed = false,
             init_sort_func = function()
@@ -160,8 +161,7 @@ local BookList = Menu:extend{
                     return b.opened
                 end
             end,
-            item_func = function(item)
-                local book_info = BookList.getBookInfo(item.path)
+            item_func = function(item, book_info)
                 item.opened = book_info.been_opened
                 -- smooth 2 decimal points (0.00) instead of 16 decimal points
                 item.percent_finished = util.round_decimal(book_info.percent_finished or 0, 2)
@@ -172,6 +172,7 @@ local BookList = Menu:extend{
         },
         percent_unopened_last = {
             text = _("percent - unopened last"),
+            bookinfo_required = true,
             menu_order = 80,
             can_collate_mixed = false,
             init_sort_func = function()
@@ -185,8 +186,7 @@ local BookList = Menu:extend{
                     return a.opened
                 end
             end,
-            item_func = function(item)
-                local book_info = BookList.getBookInfo(item.path)
+            item_func = function(item, book_info)
                 item.opened = book_info.been_opened
                 -- smooth 2 decimal points (0.00) instead of 16 decimal points
                 item.percent_finished = util.round_decimal(book_info.percent_finished or 0, 2)
@@ -198,6 +198,7 @@ local BookList = Menu:extend{
         percent_natural = {
             -- sort 90% > 50% > 0% > on hold > unopened > 100% or finished
             text = _("percent – unopened – finished last"),
+            bookinfo_required = true,
             menu_order = 90,
             can_collate_mixed = false,
             init_sort_func = function(cache)
@@ -216,8 +217,7 @@ local BookList = Menu:extend{
                 end
                 return sortfunc, cache
             end,
-            item_func = function(item)
-                local book_info = BookList.getBookInfo(item.path)
+            item_func = function(item, book_info)
                 item.opened = book_info.been_opened
                 local percent_finished = book_info.percent_finished
                 local sort_percent
