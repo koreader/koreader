@@ -179,7 +179,7 @@ function InfoMessage:init()
 
     if not self.height then
         local max_height
-        if self.force_one_line and not self.text:find("\n") then
+        if self.force_one_line then
             local icon_height = self.show_icon and image_widget:getSize().h or 0
             -- Calculate the size of the frame container when it's only displaying one line.
             max_height = math.max(text_widget:getLineHeight(), icon_height) + 2*frame.bordersize + 2*frame.padding
@@ -189,6 +189,10 @@ function InfoMessage:init()
 
         -- Reduce font size if the text is too long
         local cur_size = frame:getSize()
+        if self.force_one_line and not (self._initial_orig_font and self._initial_orig_size) then
+            self._initial_orig_font = text_widget.face.orig_font
+            self._initial_orig_size = text_widget.face.orig_size
+        end
         if cur_size and cur_size.h > max_height then
             local orig_font = text_widget.face.orig_font
             local orig_size = text_widget.face.orig_size
@@ -203,6 +207,11 @@ function InfoMessage:init()
                     if self.face.size < real_size then
                         break
                     end
+                end
+                if self.force_one_line and orig_size == 11 then
+                    -- we reached the smallest font size, we are likely not going to fit in one line so disable it
+                    self.face = Font:getFace(self._initial_orig_font, self._initial_orig_size)
+                    self.force_one_line = false
                 end
                 -- re-init this widget
                 self:free()
