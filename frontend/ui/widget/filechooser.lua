@@ -165,7 +165,8 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         item.bidi_wrap_func = BD.filename
         item.is_file = true
         if collate.item_func ~= nil then
-            collate.item_func(item)
+            local book_info = collate.bookinfo_required and BookList.getBookInfo(item.path)
+            collate.item_func(item, book_info)
         end
         if show_file_in_bold ~= false then
             if item.opened == nil then -- could be set in item_func
@@ -186,7 +187,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
             item.text = item.text.."/"
             item.bidi_wrap_func = BD.directory
             if collate.can_collate_mixed and collate.item_func ~= nil then
-                collate.item_func(item, self)
+                collate.item_func(item)
             end
             if dirpath then -- file browser or PathChooser
                 item.mandatory = self:getMenuItemMandatory(item)
