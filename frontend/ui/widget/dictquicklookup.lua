@@ -878,7 +878,7 @@ function DictQuickLookup:_instantiateScrollWidget()
                     bb:paintRect(rect.x + x, rect.y + y + rect.h/2 - 1, rect.w, 2, Blitbuffer.COLOR_BLACK)
                     bb:paintRect(rect.x + x + rect.w/2 - 1, rect.y + y, 2, rect.h, Blitbuffer.COLOR_BLACK)
                 end
-            end,
+            end or nil,
         }
         self.text_widget = self.shw_widget
     else
@@ -906,7 +906,7 @@ function DictQuickLookup:_instantiateScrollWidget()
                     bb:paintRect(rect.x + x, rect.y + y + rect.h/2 - 1, rect.w, 2, Blitbuffer.COLOR_BLACK)
                     bb:paintRect(rect.x + x + rect.w/2 - 1, rect.y + y, 2, rect.h, Blitbuffer.COLOR_BLACK)
                 end
-            end,
+            end or nil,
         }
         self.text_widget = self.stw_widget
     end
