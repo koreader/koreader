@@ -7,7 +7,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
-local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local url = require("socket.url")
 local util = require("util")
