@@ -248,7 +248,8 @@ local ReaderStyleTweak = WidgetContainer:extend{
     nb_enabled_tweaks = 0, -- for use by main menu item
     css_text = nil, -- aggregated css text from tweaks individual css snippets
     enabled = true, -- allows for toggling between selected tweaks / none
-    dispatcher_prefix = "style_tweak_",
+    dispatcher_prefix_set = "style_tweak_set_",
+    dispatcher_prefix_toggle = "style_tweak_",
 }
 
 function ReaderStyleTweak:isTweakEnabled(tweak_id)
@@ -446,12 +447,16 @@ function ReaderStyleTweak:onSaveSettings()
 end
 
 local function dispatcherRegisterStyleTweak(tweak_id, tweak_title)
-    Dispatcher:registerAction(ReaderStyleTweak.dispatcher_prefix..tweak_id,
-        {category="none", event="ToggleStyleTweak", arg=tweak_id, title=T(_("Toggle style tweak: %1"), tweak_title), rolling=true})
+    Dispatcher:registerAction(ReaderStyleTweak.dispatcher_prefix_set..tweak_id,
+        {category="string", event="ToggleStyleTweak", arg=tweak_id, title=T(_("Style tweak '%1'"), tweak_title), rolling=true,
+            args={true, false}, toggle={_("on"), _("off")}})
+    Dispatcher:registerAction(ReaderStyleTweak.dispatcher_prefix_toggle..tweak_id,
+        {category="none", event="ToggleStyleTweak", arg=tweak_id, title=T(_("Style tweak '%1' toggle"), tweak_title), rolling=true})
 end
 
 local function dispatcherUnregisterStyleTweak(tweak_id)
-    Dispatcher:removeAction(ReaderStyleTweak.dispatcher_prefix..tweak_id)
+    Dispatcher:removeAction(ReaderStyleTweak.dispatcher_prefix_toggle..tweak_id)
+    Dispatcher:removeAction(ReaderStyleTweak.dispatcher_prefix_set..tweak_id)
 end
 
 function ReaderStyleTweak:init()
@@ -567,7 +572,8 @@ You can enable individual tweaks on this book with a tap, or view more details a
                                 self.tweaks_in_dispatcher[item.id] = nil
                                 dispatcherUnregisterStyleTweak(item.id)
                                 if self.ui.profiles then
-                                    self.ui.profiles:updateProfiles(self.dispatcher_prefix..item.id)
+                                    self.ui.profiles:updateProfiles(self.dispatcher_prefix_toggle..item.id)
+                                    self.ui.profiles:updateProfiles(self.dispatcher_prefix_set..item.id)
                                 end
                             else
                                 self.tweaks_in_dispatcher[item.id] = item.title
@@ -714,8 +720,13 @@ function ReaderStyleTweak:addToMainMenu(menu_items)
 end
 
 function ReaderStyleTweak:onToggleStyleTweak(tweak_id, item, no_notification)
-    local text
+    local toggle
+    if type(tweak_id) == "table" then -- Dispatcher action 'Style tweak set on/off'
+        tweak_id, toggle = unpack(tweak_id)
+    end
     local enabled, g_enabled = self:isTweakEnabled(tweak_id)
+    if enabled == toggle then return true end
+    local text
     if enabled then
         if g_enabled then
             -- if globally enabled, mark it as disabled
@@ -749,6 +760,7 @@ function ReaderStyleTweak:onToggleStyleTweak(tweak_id, item, no_notification)
             text = text,
         })
     end
+    return true
 end
 
 function ReaderStyleTweak:onDispatcherRegisterActions()
