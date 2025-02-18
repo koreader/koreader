@@ -1,5 +1,6 @@
 local DocSettings = require("docsettings")
 local Menu = require("ui/widget/menu")
+local Utf8Proc = require("ffi/utf8proc")
 local datetime = require("datetime")
 local ffiUtil = require("ffi/util")
 local sort = require("sort")
@@ -342,7 +343,13 @@ local status_strings = {
 
 function BookList.getBookStatusString(status, with_prefix)
     local status_string = status and status_strings[status]
-    return status_string and (with_prefix and T(_("Status: %1"), status_string:lower()) or status_string)
+    if status_string then
+        if with_prefix then
+            status_string = Utf8Proc.lowercase(util.fixUtf8(status_string, "?"))
+            return T(_("Status: %1"), status_string)
+        end
+        return status_string
+    end
 end
 
 return BookList
