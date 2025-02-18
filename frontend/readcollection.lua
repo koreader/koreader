@@ -120,21 +120,21 @@ function ReadCollection:getCollectionsWithFile(file)
     return collections
 end
 
-function ReadCollection:getCollectionMaxOrder(collection_name)
+function ReadCollection:getCollectionNextOrder(collection_name)
+    if self.coll_settings[collection_name].collate then return end
     local max_order = 0
     for _, item in pairs(self.coll[collection_name]) do
         if max_order < item.order then
             max_order = item.order
         end
     end
-    return max_order
+    return max_order + 1
 end
 
 -- manage items
 
 function ReadCollection:addItem(file, collection_name)
-    local max_order = self:getCollectionMaxOrder(collection_name)
-    local item = buildEntry(file, max_order + 1)
+    local item = buildEntry(file, self:getCollectionNextOrder(collection_name))
     self.coll[collection_name][item.file] = item
 end
 
@@ -143,8 +143,7 @@ function ReadCollection:addRemoveItemMultiple(file, collections_to_add)
     for coll_name, coll in pairs(self.coll) do
         if collections_to_add[coll_name] then
             if not coll[file] then
-                local max_order = self:getCollectionMaxOrder(coll_name)
-                coll[file] = buildEntry(file, max_order + 1)
+                coll[file] = buildEntry(file, self:getCollectionNextOrder(coll_name))
             end
         else
             if coll[file] then
@@ -161,8 +160,7 @@ function ReadCollection:addItemsMultiple(files, collections_to_add)
         for coll_name in pairs(collections_to_add) do
             local coll = self.coll[coll_name]
             if not coll[file] then
-                local max_order = self:getCollectionMaxOrder(coll_name)
-                coll[file] = buildEntry(file, max_order + 1)
+                coll[file] = buildEntry(file, self:getCollectionNextOrder(coll_name))
                 count = count + 1
             end
         end
