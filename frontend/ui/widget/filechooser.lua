@@ -6,12 +6,10 @@ local Event = require("ui/event")
 local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
 local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
-local datetime = require("datetime")
 local ffi = require("ffi")
 local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
-local sort = require("sort")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -76,175 +74,6 @@ local FileChooser = BookList:extend{
     },
     path_items = nil, -- hash, store last browsed location (item index) for each path
     goto_letter = true,
-    collates = {
-        strcoll = {
-            text = _("name"),
-            menu_order = 10,
-            can_collate_mixed = true,
-            init_sort_func = function(cache)
-                return function(a, b)
-                    return ffiUtil.strcoll(a.text, b.text)
-                end, cache
-            end,
-        },
-        natural = {
-            text = _("name (natural sorting)"),
-            menu_order = 20,
-            can_collate_mixed = true,
-            init_sort_func = function(cache)
-                local natsort
-                natsort, cache = sort.natsort_cmp(cache)
-                return function(a, b)
-                    return natsort(a.text, b.text)
-                end, cache
-            end
-        },
-        access = {
-            text = _("last read date"),
-            menu_order = 30,
-            can_collate_mixed = true,
-            init_sort_func = function(cache)
-                return function(a, b)
-                    return a.attr.access > b.attr.access
-                end, cache
-            end,
-            mandatory_func = function(item)
-                return datetime.secondsToDateTime(item.attr.access)
-            end,
-        },
-        date = {
-            text = _("date modified"),
-            menu_order = 40,
-            can_collate_mixed = true,
-            init_sort_func = function(cache)
-                return function(a, b)
-                    return a.attr.modification > b.attr.modification
-                end, cache
-            end,
-            mandatory_func = function(item)
-                return datetime.secondsToDateTime(item.attr.modification)
-            end,
-        },
-        size = {
-            text = _("size"),
-            menu_order = 50,
-            can_collate_mixed = false,
-            init_sort_func = function(cache)
-                return function(a, b)
-                    return a.attr.size < b.attr.size
-                end, cache
-            end,
-        },
-        type = {
-            text = _("type"),
-            menu_order = 60,
-            can_collate_mixed = false,
-            init_sort_func = function(cache)
-                return function(a, b)
-                    if (a.suffix or b.suffix) and a.suffix ~= b.suffix then
-                        return ffiUtil.strcoll(a.suffix, b.suffix)
-                    end
-                    return ffiUtil.strcoll(a.text, b.text)
-                end, cache
-            end,
-            item_func = function(item)
-                item.suffix = util.getFileNameSuffix(item.text)
-            end,
-        },
-        percent_unopened_first = {
-            text = _("percent - unopened first"),
-            menu_order = 70,
-            can_collate_mixed = false,
-            init_sort_func = function(cache)
-                return function(a, b)
-                    if a.opened == b.opened then
-                        if a.opened then
-                            return a.percent_finished < b.percent_finished
-                        end
-                        return ffiUtil.strcoll(a.text, b.text)
-                    end
-                    return b.opened
-                end, cache
-            end,
-            item_func = function(item)
-                local book_info = BookList.getBookInfo(item.path)
-                item.opened = book_info.been_opened
-                -- smooth 2 decimal points (0.00) instead of 16 decimal points
-                item.percent_finished = util.round_decimal(book_info.percent_finished or 0, 2)
-            end,
-            mandatory_func = function(item)
-                return item.opened and string.format("%d\u{202F}%%", 100 * item.percent_finished) or "–"
-            end,
-        },
-        percent_unopened_last = {
-            text = _("percent - unopened last"),
-            menu_order = 80,
-            can_collate_mixed = false,
-            init_sort_func = function(cache)
-                return function(a, b)
-                    if a.opened == b.opened then
-                        if a.opened then
-                            return a.percent_finished < b.percent_finished
-                        end
-                        return ffiUtil.strcoll(a.text, b.text)
-                    end
-                    return a.opened
-                end, cache
-            end,
-            item_func = function(item)
-                local book_info = BookList.getBookInfo(item.path)
-                item.opened = book_info.been_opened
-                -- smooth 2 decimal points (0.00) instead of 16 decimal points
-                item.percent_finished = util.round_decimal(book_info.percent_finished or 0, 2)
-            end,
-            mandatory_func = function(item)
-                return item.opened and string.format("%d\u{202F}%%", 100 * item.percent_finished) or "–"
-            end,
-        },
-        percent_natural = {
-            -- sort 90% > 50% > 0% > on hold > unopened > 100% or finished
-            text = _("percent – unopened – finished last"),
-            menu_order = 90,
-            can_collate_mixed = false,
-            init_sort_func = function(cache)
-                local natsort
-                natsort, cache = sort.natsort_cmp(cache)
-                local sortfunc =  function(a, b)
-                    if a.sort_percent == b.sort_percent then
-                        return natsort(a.text, b.text)
-                    elseif a.sort_percent == 1 then
-                        return false
-                    elseif b.sort_percent == 1 then
-                        return true
-                    else
-                        return a.sort_percent > b.sort_percent
-                    end
-                end
-
-                return sortfunc, cache
-            end,
-            item_func = function(item)
-                local book_info = BookList.getBookInfo(item.path)
-                item.opened = book_info.been_opened
-                local percent_finished = book_info.percent_finished
-                local sort_percent
-                if item.opened then
-                    -- books marked as "finished" or "on hold" should be considered the same as 100% and less than 0% respectively
-                    if book_info.status == "complete" then
-                        sort_percent = 1.0
-                    elseif book_info.status == "abandoned" then
-                        sort_percent = -0.01
-                    end
-                end
-                -- smooth 2 decimal points (0.00) instead of 16 decimal points
-                item.sort_percent = sort_percent or util.round_decimal(percent_finished or -1, 2)
-                item.percent_finished = percent_finished or 0
-            end,
-            mandatory_func = function(item)
-                return item.opened and string.format("%d\u{202F}%%", 100 * item.percent_finished) or "–"
-            end,
-        },
-    },
 }
 
 -- Cache of content we knew of for directories that are not readable
@@ -336,7 +165,8 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         item.bidi_wrap_func = BD.filename
         item.is_file = true
         if collate.item_func ~= nil then
-            collate.item_func(item)
+            local book_info = collate.bookinfo_required and BookList.getBookInfo(item.path)
+            collate.item_func(item, book_info)
         end
         if show_file_in_bold ~= false then
             if item.opened == nil then -- could be set in item_func
@@ -357,7 +187,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
             item.text = item.text.."/"
             item.bidi_wrap_func = BD.directory
             if collate.can_collate_mixed and collate.item_func ~= nil then
-                collate.item_func(item, self)
+                collate.item_func(item)
             end
             if dirpath then -- file browser or PathChooser
                 item.mandatory = self:getMenuItemMandatory(item)

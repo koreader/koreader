@@ -813,6 +813,7 @@ function ReaderUI:onClose(full_refresh)
     if self.document ~= nil then
         file = self.document.file
         require("readhistory"):updateLastBookTime(self.tearing_down)
+        require("readcollection"):updateLastBookTime(file)
         -- Serialize the most recently displayed page for later launch
         DocCache:serialize(file)
         logger.dbg("closing document")
