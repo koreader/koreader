@@ -13,7 +13,6 @@ local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
 local SpinWidget = require("ui/widget/spinwidget")
 local TextViewer = require("ui/widget/textviewer")
 local Translator = require("ui/translator")
-local ReaderSearchOnline = require("apps/reader/modules/readersearchonline")
 local UIManager = require("ui/uimanager")
 local ffiUtil = require("ffi/util")
 local logger = require("logger")
@@ -62,10 +61,6 @@ function ReaderHighlight:init()
     self._last_indicator_move_args = {dx = 0, dy = 0, distance = 0, time = time:now()}
     self._fallback_drawer = self.view.highlight.saved_drawer -- "lighten"
     self._fallback_color = self.view.highlight.saved_color -- "yellow" or "gray"
-
-    self.search_online = ReaderSearchOnline:new{ -- initialise this so the menu
-        ui = self.ui                             -- option appears from the start
-    }
 
     self:registerKeyEvents()
 
@@ -167,13 +162,17 @@ function ReaderHighlight:init()
         end,
     }
 
-    -- only devices with browsers
-    if Device:canOpenLink() then
-        self:addToHighlightDialog("08_search_online", function(this)
+    -- Android devices
+    if Device:canShareText() then
+        local action = _("Share Text")
+        self:addToHighlightDialog("08_share_text", function(this)
             return {
-                text = _("Search Online"),
+                text = action,
                 callback = function()
-                    this:ReaderSearchOnline()
+                    local text = util.cleanupSelectedText(this.selected_text.text)
+                    -- call self:onClose() before calling the android framework
+                    this:onClose()
+                    Device:doShareText(text, action)
                 end,
             }
         end)
@@ -1782,15 +1781,6 @@ function ReaderHighlight:viewSelectionHTML(debug_view, no_css_files_buttons)
         local ViewHtml = require("ui/viewhtml")
         ViewHtml:viewSelectionHTML(self.ui.document, self.selected_text)
     end
-end
-
-function ReaderHighlight:ReaderSearchOnline()
-    if not self.selected_text or not self.selected_text.text then
-        return
-    end
-
-    local query = util.cleanupSelectedText(self.selected_text.text)
-    self.search_online:chooseSearch(query)
 end
 
 function ReaderHighlight:translate(index)
