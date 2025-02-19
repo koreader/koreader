@@ -713,7 +713,7 @@ function MosaicMenuItem:paintTo(bb, x, y)
     -- other paintings are anchored to the sub-widget (cover image)
     local target =  self[1][1][1]
 
-    if self.menu.name ~= "collection" -- do not show collection mark in collections
+    if self.menu.name ~= "collections" -- do not show collection mark in collections
             and ReadCollection:isFileInCollections(self.filepath) then
         -- top right corner
         local ix, rect_ix
