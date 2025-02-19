@@ -33,13 +33,9 @@ function SearchOnline:init()
     if self.ui and self.ui.menu then
         self.ui.menu:registerToMainMenu(self)
     end
-    self.ui.highlight:addToHighlightDialog("12_onlinesearch", function(_reader_highlight_instance)
-        return self:createHighlightMenuItem(_reader_highlight_instance)
+    self.ui.highlight:addToHighlightDialog("12_onlinesearch", function(reader_highlight_instance)
+        return self:createHighlightMenuItem(reader_highlight_instance)
     end)
-
-    --if Device:hasKeyboard() then
-    --    self:registerKeyEvents()
-    --end
 
     -- Combine defaults with the user search engines
     self:rebuildSearchEngines()
@@ -60,34 +56,26 @@ function SearchOnline:rebuildSearchEngines()
 end
 
 
-function SearchOnline:getHighlight(_reader_highlight_instance)
-    if not _reader_highlight_instance.selected_text or not _reader_highlight_instance.selected_text.text then
+function SearchOnline:getHighlight(reader_highlight_instance)
+    if not reader_highlight_instance.selected_text or not reader_highlight_instance.selected_text.text then
         return
     end
 
-    local query = util.cleanupSelectedText(_reader_highlight_instance.selected_text.text)
+    local query = util.cleanupSelectedText(reader_highlight_instance.selected_text.text)
     return query
 end
 
-function SearchOnline:createHighlightMenuItem(_reader_highlight_instance)
+function SearchOnline:createHighlightMenuItem(reader_highlight_instance)
     return {
         text = _("Search online"),
         enabled = Device:canOpenLink(),
         callback = function()
             NetworkMgr:runWhenOnline(function()
-                self:chooseSearch(self:getHighlight(_reader_highlight_instance))
+                self:chooseSearch(self:getHighlight(reader_highlight_instance))
             end)
         end
     }
 end
-
-
--- I don't have a keyboard device but someone can add a search shorcut
---function SearchOnline:registerKeyEvents()
---    if Device:hasKeyboard() then
---        self.key_events.online_search_shortcut = {} -- Keyboard shortcut here
---    end
---end
 
 -- combines the query string with the URL string of the chosen
 -- search engine and passes it to `Device:openLink()`
@@ -123,7 +111,7 @@ end
 function SearchOnline:chooseSearch(query)
     local radio_buttons = {}
     for index, engine_url in ipairs(self.search_engines) do
-        table.insert(radio_buttons, { -- build a button for each 
+        table.insert(radio_buttons, { -- build a button for each
             {                         -- saved search engine
                 text = HandleUrlString:getDomainName(engine_url),
                 provider = engine_url,
@@ -183,7 +171,7 @@ function SearchOnline:addUserSearchEngine()
                     is_enter_default = true,
                     callback = function()
                         local input_text = self.user_input:getInputText()
-                        
+
                         -- Check if input is valid
                         if not input_text or input_text == "" then
                             UIManager:show(InfoMessage:new{
@@ -195,7 +183,7 @@ function SearchOnline:addUserSearchEngine()
                         if true then
                             -- Check for duplicates
                             for _, existing_url in ipairs(self.user_search_engines) do
-                                if existing_url == input_text then 
+                                if existing_url == input_text then
                                     UIManager:show(InfoMessage:new{
                                         text = _("This URL already exists"),
                                     })
@@ -203,18 +191,16 @@ function SearchOnline:addUserSearchEngine()
                                 end
                             end
 
-
-                            
                             -- Add the new URL
                             table.insert(self.user_search_engines, input_text)
                             table.insert(self.search_engines, input_text)
                             G_reader_settings:saveSetting("searchonline_user_search_engines", self.user_search_engines)
-                            
+
                             UIManager:show(InfoMessage:new{
                                 text = _("Search engine added successfully: " .. input_text),
                             })
                         end
-                        
+
                         self.user_input:onCloseKeyboard()
                         UIManager:close(self.user_input)
                     end,
