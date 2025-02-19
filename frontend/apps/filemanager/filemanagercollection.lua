@@ -75,7 +75,7 @@ end
 function FileManagerCollection:onShowColl(collection_name)
     collection_name = collection_name or ReadCollection.default_collection_name
     self.coll_menu = BookList:new{
-        name = "collection",
+        name = "collections",
         path = collection_name,
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showCollDialog() end,
