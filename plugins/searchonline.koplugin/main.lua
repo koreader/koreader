@@ -16,6 +16,10 @@ local util = require("util")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 
+if not Device:hasFrontlight() then
+    return { disabled = true, }
+end
+
 local SearchOnline = WidgetContainer:extend{
     default_search_engines = {
         "https://html.duckduckgo.com/html?q={q}",
