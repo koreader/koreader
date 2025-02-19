@@ -16,7 +16,7 @@ local util = require("util")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 
-if not Device:hasFrontlight() then
+if not Device:canOpenLink() then
     return { disabled = true, }
 end
 
@@ -84,8 +84,7 @@ end
 -- combines the query string with the URL string of the chosen
 -- search engine and passes it to `Device:openLink()`
 function SearchOnline:searchOnline(query, search_engine)
-    if not Device:canOpenLink() then return end
-
+    
     local chosen_engine = nil
     for _, engine in ipairs(self.search_engines) do
         if engine == search_engine then
