@@ -469,6 +469,29 @@ function HtmlBoxWidget:updateHighlight()
         if self.page_boxes == nil then
             local page = self.document:openPage(self.page_number)
             self.page_boxes = page:getPageText()
+
+            -- In same cases MuPDF returns a visually single line of text as multiple lines.
+            -- Merge such lines to ensure that getSelectedText works properly.
+            local line_index = 2
+            while line_index <= #self.page_boxes do
+                local prev_line = self.page_boxes[line_index - 1]
+                local line = self.page_boxes[line_index]
+                if line.y0 == prev_line.y0 and line.y1 == prev_line.y1 then
+                    if line.x0 < prev_line.x0 then
+                        prev_line.x0 = line.x0
+                    end
+                    if line.x1 > prev_line.x1 then
+                        prev_line.x1 = line.x1
+                    end
+                    for _, word in ipairs(line) do
+                        table.insert(prev_line, word)
+                    end
+                    table.remove(self.page_boxes, line_index)
+                else
+                    line_index = line_index + 1
+                end
+            end
+
             page:close()
         end
 
