@@ -233,6 +233,11 @@ function FileManagerCollection:onMenuHold(item)
         filemanagerutil.genResetSettingsButton(doc_settings_or_file, close_dialog_update_callback, is_currently_opened),
         self._manager:genAddToCollectionButton(file, close_dialog_callback, close_dialog_update_callback),
     })
+    if Device:canExecuteScript(file) then
+        table.insert(buttons, {
+            filemanagerutil.genExecuteScriptButton(file, close_dialog_menu_callback)
+        })
+    end
     table.insert(buttons, {
         {
             text = _("Delete"),
@@ -259,12 +264,6 @@ function FileManagerCollection:onMenuHold(item)
         filemanagerutil.genBookCoverButton(file, book_props, close_dialog_callback),
         filemanagerutil.genBookDescriptionButton(file, book_props, close_dialog_callback),
     })
-
-    if Device:canExecuteScript(file) then
-        table.insert(buttons, {
-            filemanagerutil.genExecuteScriptButton(file, close_dialog_menu_callback)
-        })
-    end
 
     if self._manager.file_dialog_added_buttons ~= nil then
         for _, row_func in ipairs(self._manager.file_dialog_added_buttons) do
