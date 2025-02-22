@@ -69,9 +69,9 @@ function FileConverter:isSupported(file)
 end
 
 function FileConverter:showConvertButtons(file, caller_post_callback)
-    local function writeData(data, _file)
+    local function writeData(data, target_file)
         UIManager:close(self.convert_dialog)
-        util.writeToFile(data, _file)
+        util.writeToFile(data, target_file)
         if caller_post_callback then
             caller_post_callback()
         end
