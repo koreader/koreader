@@ -387,14 +387,14 @@ function FileSearcher:onMenuHold(item)
     end
 
     local buttons = {}
-    local book_props
+    local book_props, is_currently_opened
     if is_file then
         local has_provider = DocumentRegistry:hasProvider(file)
         local been_opened = BookList.hasBookBeenOpened(file)
         local doc_settings_or_file = file
         if has_provider or been_opened then
             book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
-            local is_currently_opened = file == (self.ui.document and self.ui.document.file)
+            is_currently_opened = file == (self.ui.document and self.ui.document.file)
             if is_currently_opened then
                 doc_settings_or_file = self.ui.doc_settings
                 if not book_props then
