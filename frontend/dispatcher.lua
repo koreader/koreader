@@ -245,7 +245,8 @@ local settingsList = {
     embedded_css = {category="string", rolling=true},
     embedded_fonts = {category="string", rolling=true},
     smooth_scaling = {category="string", rolling=true},
-    nightmode_images = {category="string", rolling=true},
+    nightmode_images = {category="string", rolling=true, separator=true},
+    ----
 
     -- parsed from KoptOptions
     kopt_trim_page = {category="string", paging=true},
@@ -1119,10 +1120,7 @@ function Dispatcher._showAsMenu(settings, exec_props)
         table.insert(buttons, {{
             text = v.text,
             enabled = Dispatcher:isActionEnabled(settingsList[v.key]),
-            align = "left",
-            font_face = "smallinfofont",
-            font_size = 22,
-            font_bold = false,
+            menu_style = true,
             callback = function()
                 UIManager:close(quickmenu)
                 Dispatcher:execute({[v.key] = settings[v.key]})
@@ -1194,21 +1192,23 @@ function Dispatcher:execute(settings, exec_props)
             end
             local category = settingsList[k].category
             local event = settingsList[k].event
+            local arg = settingsList[k].arg
             if category == "none" then
-                if settingsList[k].arg ~= nil then
-                    UIManager:sendEvent(Event:new(event, settingsList[k].arg, exec_props))
+                if arg ~= nil then
+                    UIManager:sendEvent(Event:new(event, arg, exec_props))
                 else
                     UIManager:sendEvent(Event:new(event))
                 end
             elseif category == "absolutenumber" or category == "string" then
-                UIManager:sendEvent(Event:new(event, v))
+                arg = arg ~= nil and { arg, v } or v
+                UIManager:sendEvent(Event:new(event, arg))
             elseif category == "arg" then
                 -- the event can accept a gesture object or an argument
-                local arg = gesture or settingsList[k].arg
+                arg = gesture or arg
                 UIManager:sendEvent(Event:new(event, arg))
             elseif category == "incrementalnumber" then
                 -- the event can accept a gesture object or a number
-                local arg = v ~= 0 and v or gesture or 0
+                arg = v ~= 0 and v or gesture or 0
                 UIManager:sendEvent(Event:new(event, arg))
             end
         end

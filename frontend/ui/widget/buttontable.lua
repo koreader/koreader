@@ -94,6 +94,7 @@ function ButtonTable:init()
                 text_font_face = btn_entry.font_face,
                 text_font_size = btn_entry.font_size,
                 text_font_bold = btn_entry.font_bold,
+                menu_style = btn_entry.menu_style,
                 show_parent = self.show_parent,
             }
             if self.shrink_unneeded_width and not btn_entry.width and min_needed_button_width ~= false then

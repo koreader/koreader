@@ -493,7 +493,9 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
     dbrow.filemtime = file_attr.modification
 
     -- Proceed with extracting info
-    local document = DocumentRegistry:openDocument(filepath)
+    local ReaderUI = require("apps/reader/readerui")
+    local provider = ReaderUI:extendProvider(filepath, DocumentRegistry:getProvider(filepath))
+    local document = DocumentRegistry:openDocument(filepath, provider)
     local loaded = true
     if document then
         local pages
