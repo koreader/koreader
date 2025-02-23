@@ -75,6 +75,7 @@ end
 
 function FileManagerCollection:onShowColl(collection_name)
     collection_name = collection_name or ReadCollection.default_collection_name
+    -- This may be hijacked by CoverBrowser plugin and needs to be known as booklist_menu.
     self.booklist_menu = BookList:new{
         name = "collections",
         path = collection_name,
@@ -1077,7 +1078,10 @@ function FileManagerCollection:searchCollections(coll_name)
             if a.coll_order ~= b.coll_order then
                 return a.coll_order < b.coll_order
             end
-            return a.item_order < b.item_order
+            if a.item_order and b.item_order then
+                return a.item_order < b.item_order
+            end
+            return ffiUtil.strcoll(a.text, b.text)
         end)
         local new_coll_name = T(_("Search results: %1"), self.search_str)
         if coll_name then
