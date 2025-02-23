@@ -49,7 +49,14 @@ function Calibre:onClose()
 end
 
 function Calibre:onStartWirelessConnection()
-    self:startWirelessConnection()
+    UIManager:nextTick(function()
+        UIManager:show(InfoMessage:new{
+            text = _("Connecting to calibre")
+        })
+    end)
+    UIManager:tickAfterNext(function()
+        self:startWirelessConnection()
+    end)
 end
 
 function Calibre:onCloseWirelessConnection()

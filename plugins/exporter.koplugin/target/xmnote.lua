@@ -3,12 +3,7 @@ local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
-local http = require("socket.http")
-local json = require("json")
 local logger = require("logger")
-local ltn12 = require("ltn12")
-local socket = require("socket")
-local socketutil = require("socketutil")
 local util = require("ffi/util")
 local T = util.template
 local _ = require("gettext")
@@ -103,44 +98,11 @@ function XMNoteExporter:createRequestBody(booknotes)
     return book
 end
 
-function XMNoteExporter:makeRequest(endpoint, method, request_body)
-    local sink = {}
-    local request_body_json = json.encode(request_body)
-    local source = ltn12.source.string(request_body_json)
-    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
-    local url = "http://".. self.settings.ip .. ":" .. self.server_port .. endpoint
-    local request = {
-        url     = url,
-        method  = method,
-        sink    = ltn12.sink.table(sink),
-        source  = source,
-        headers = {
-            ["Content-Length"] = #request_body_json,
-            ["Content-Type"] = "application/json"
-        },
-    }
-    local code, headers, status = socket.skip(1, http.request(request))
-    socketutil:reset_timeout()
-
-    if code ~= 200 then
-        logger.warn("XMNoteClient: HTTP response code <> 200. Response status: ", status)
-        logger.dbg("Response headers:", headers)
-        return nil, status
-    end
-
-    local response = json.decode(sink[1])
-    local api_code = response["code"]
-    if api_code ~= nil and api_code ~= 200 then
-        logger.warn("XMNoteClient: response code <> 200. message: ", response["message"])
-        logger.dbg("Response headers:", headers)
-        return nil, status
-    end
-    return response
-end
-
 function XMNoteExporter:createHighlights(booknotes)
     local body = self:createRequestBody(booknotes)
-    local result, err = self:makeRequest("/send", "POST", body)
+    local url = "http://".. self.settings.ip .. ":" .. self.server_port .. "/send"
+
+    local result, err = self:makeJsonRequest(url, "POST", body)
     if not result then
         logger.warn("error creating highlights", err)
         return false
