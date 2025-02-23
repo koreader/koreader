@@ -295,7 +295,7 @@ function FileSearcher:onShowSearchResults(not_cached)
         self:onShowFileSearch()
         return true
     end
-
+    -- This may be hijacked by CoverBrowser plugin and needs to be known as booklist_menu.
     self.booklist_menu = BookList:new{
         name = "filesearcher",
         subtitle = T(_("Query: %1"), FileSearcher.search_string),
