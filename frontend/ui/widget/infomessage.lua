@@ -208,8 +208,9 @@ function InfoMessage:init()
                         break
                     end
                 end
-                if self.force_one_line and orig_size == 11 then
-                    -- we reached the smallest font size, we are likely not going to fit in one line so disable it
+                if self.force_one_line and orig_size < self._initial_orig_size * 0.7 then
+                    -- do not reduce font size by more than 30 percent, at around orig_size 15 or 16 (30% of defualt font size), our font is too small
+                    -- for the max_height check to be useful anymore, at those sizes (or lower) two lines fit inside the max_height so, disable it.
                     self.face = Font:getFace(self._initial_orig_font, self._initial_orig_size)
                     self.force_one_line = false
                 end
