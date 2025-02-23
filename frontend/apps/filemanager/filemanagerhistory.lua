@@ -58,6 +58,7 @@ function FileManagerHistory:refreshFileManager()
 end
 
 function FileManagerHistory:onShowHist(search_info)
+    -- This may be hijacked by CoverBrowser plugin and needs to be known as booklist_menu.
     self.booklist_menu = BookList:new{
         name = "history",
         title_bar_left_icon = "appbar.menu",
