@@ -40,11 +40,14 @@ For testing:
 Install the prerequisites using apk:
 
 ```
-sudo apk add autoconf automake bash cmake coreutils curl diffutils g++ \
-    gcc gettext-dev git grep gzip libtool linux-headers lua5.1-busted \
-    luarocks5.1 make meson ninja-build ninja-is-really-ninja patch \
-    perl pkgconf procps-ng sdl2 tar unzip wget
+sudo apk add autoconf automake bash cmake coreutils curl diffutils \
+    findutils g++ gcc gettext-dev git grep gzip libtool linux-headers \
+    lua5.1-busted luarocks5.1 make meson nasm ninja-build patch perl \
+    pkgconf procps-ng sdl2 tar unzip wget
 ```
+
+**Note:** don't forget to add `/usr/lib/ninja-build/bin` to `$PATH`
+so the real ninja is used (and not the binary provided by samurai).
 
 ### Arch Linux
 
