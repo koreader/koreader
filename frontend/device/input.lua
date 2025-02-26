@@ -775,25 +775,21 @@ function Input:handleKeyBoardEv(ev)
     elseif ev.value == KEY_REPEAT then
         -- NOTE: We only care about repeat events from the page-turn buttons (kobo) and cursor keys (kindle)...
         --       And we *definitely* don't want to flood the Event queue with useless SleepCover repeats!
-        local allowed_repeat_keys = {
-            "LPgBack", "RPgBack", "LPgFwd",  "RPgFwd", -- kobo
-            "Up", "Down", "Left", "Right" -- kindle (with the 5-way controller)
-        }
-        -- Check if the key being pressed is in the allowed list
         local is_allowed = false
-        for _, allowed_key in ipairs(allowed_repeat_keys) do
-            if keycode == allowed_key then
-                is_allowed = true
-                break
-            end
+        if keycode == "Up" or keycode == "Down" or keycode == "Left" or keycode == "Right"
+        or keycode == "RPgBack" or keycode == "RPgFwd" or keycode == "LPgBack" or keycode == "LPgFwd" then
+            is_allowed = true
         end
 
         if is_allowed then
+            --- @fixme Crappy event staggering!
+            --
             -- The Forma & co repeats every 80ms after a 400ms delay, and 500ms roughly corresponds to a flashing update,
             -- so stuff is usually in sync when you release the key.
             local rep_delay = self.device.key_repeat[C.REP_DELAY]
             if not rep_delay or rep_delay == 0 then return end
             local rep_period = self.device.key_repeat[C.REP_PERIOD]
+            if not rep_period or rep_period == 0 then return end
             -- Use timestamps for a more responsive key repeat system
             local now = time.now()
             if not self.last_repeat_time then
@@ -804,9 +800,7 @@ function Input:handleKeyBoardEv(ev)
                 -- Check if enough time has passed since last repeat
                 local time_diff = time.to_ms(now - self.last_repeat_time)
                 -- After initial delay, attempt to repeat every C.REP_PERIOD (ms)
-                if not rep_period or rep_period == 0 then
-                    return nil
-                elseif time_diff >= rep_period then
+                if time_diff >= rep_period then
                     self.last_repeat_time = now
                     return Event:new("KeyRepeat", key)
                 end
