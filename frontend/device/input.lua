@@ -773,7 +773,8 @@ function Input:handleKeyBoardEv(ev)
     if ev.value == KEY_PRESS then
         return Event:new("KeyPress", key)
     elseif ev.value == KEY_REPEAT then
-        -- NOTE: We only care about repeat events from the page-turn buttons (kobo) and cursor keys (kindle)...
+        if G_reader_settings:isTrue("input_no_key_repeat") then return end
+        -- NOTE: We only care about repeat events from the page-turn buttons and cursor keys...
         --       And we *definitely* don't want to flood the Event queue with useless SleepCover repeats!
         if keycode == "Up" or keycode == "Down" or keycode == "Left" or keycode == "Right"
         or keycode == "RPgBack" or keycode == "RPgFwd" or keycode == "LPgBack" or keycode == "LPgFwd" then
@@ -783,10 +784,8 @@ function Input:handleKeyBoardEv(ev)
             -- so stuff is usually in sync when you release the key.
             --
             -- A better approach would be an onKeyRelease handler that flushes the Event queue...
-            local rep_delay = self.device.key_repeat[C.REP_DELAY]
-            if not rep_delay or rep_delay == 0 then return end
-            local rep_period = self.device.key_repeat[C.REP_PERIOD]
-            if not rep_period or rep_period == 0 then return end
+            local rep_period = self.device.key_repeat and self.device.key_repeat[C.REP_PERIOD] or 120
+            if rep_period == 0 then return end
             local now = time.now()
             if not self.last_repeat_time then
                 self.last_repeat_time = now
