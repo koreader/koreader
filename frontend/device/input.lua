@@ -773,28 +773,47 @@ function Input:handleKeyBoardEv(ev)
     if ev.value == KEY_PRESS then
         return Event:new("KeyPress", key)
     elseif ev.value == KEY_REPEAT then
-        -- NOTE: We only care about repeat events from the pageturn buttons...
+        -- NOTE: We only care about repeat events from the page-turn buttons (kobo) and cursor keys (kindle)...
         --       And we *definitely* don't want to flood the Event queue with useless SleepCover repeats!
-        if keycode == "LPgBack"
-        or keycode == "RPgBack"
-        or keycode == "LPgFwd"
-        or keycode == "RPgFwd" then
-            --- @fixme Crappy event staggering!
-            --
+        local allowed_repeat_keys = {
+            "LPgBack", "RPgBack", "LPgFwd",  "RPgFwd", -- kobo
+            "Up", "Down", "Left", "Right" -- kindle (with the 5-way controller)
+        }
+        -- Check if the key being pressed is in the allowed list
+        local is_allowed = false
+        for _, allowed_key in ipairs(allowed_repeat_keys) do
+            if keycode == allowed_key then
+                is_allowed = true
+                break
+            end
+        end
+
+        if is_allowed then
             -- The Forma & co repeats every 80ms after a 400ms delay, and 500ms roughly corresponds to a flashing update,
             -- so stuff is usually in sync when you release the key.
-            -- Obvious downside is that this ends up slower than just mashing the key.
-            --
-            -- A better approach would be an onKeyRelease handler that flushes the Event queue...
-            self.repeat_count = self.repeat_count + 1
-            if self.repeat_count == 1 then
+            local rep_delay = self.device.key_repeat[C.REP_DELAY]
+            if not rep_delay or rep_delay == 0 then return end
+            local rep_period = self.device.key_repeat[C.REP_PERIOD]
+            -- Use timestamps for a more responsive key repeat system
+            local now = time.now()
+            if not self.last_repeat_time then
+                -- First repeat event, set initial timestamp
+                self.last_repeat_time = now
                 return Event:new("KeyRepeat", key)
-            elseif self.repeat_count >= 6 then
-                self.repeat_count = 0
+            else
+                -- Check if enough time has passed since last repeat
+                local time_diff = time.to_ms(now - self.last_repeat_time)
+                -- After initial delay, attempt to repeat every C.REP_PERIOD (ms)
+                if not rep_period or rep_period == 0 then
+                    return nil
+                elseif time_diff >= rep_period then
+                    self.last_repeat_time = now
+                    return Event:new("KeyRepeat", key)
+                end
             end
         end
     elseif ev.value == KEY_RELEASE then
-        self.repeat_count = 0
+        self.last_repeat_time = nil
         return Event:new("KeyRelease", key)
     end
 end

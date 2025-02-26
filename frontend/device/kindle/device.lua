@@ -543,6 +543,17 @@ function Kindle:otaModel()
     return model, "ota"
 end
 
+function Kindle:toggleKeyRepeat(toggle)
+    if toggle == true then
+        self.key_repeat[C.REP_DELAY] = 400
+        self.key_repeat[C.REP_PERIOD] = 120
+    else
+        self.key_repeat[C.REP_DELAY] = 0
+        self.key_repeat[C.REP_PERIOD] = 0
+    end
+    return true
+end
+
 function Kindle:init()
     -- Check if the device supports deep sleep/quick boot
     if lfs.attributes("/sys/devices/platform/falconblk/uevent", "mode") == "file" then
@@ -583,6 +594,19 @@ function Kindle:init()
     if self.powerd:hasHallSensor() then
         if G_reader_settings:has("kindle_hall_effect_sensor_enabled") then
             self.powerd:onToggleHallSensor(G_reader_settings:readSetting("kindle_hall_effect_sensor_enabled"))
+        end
+    end
+
+    -- cursor keys support key_repeat events, so we set them up here
+    if self:hasDPad() then
+        self.canKeyRepeat = yes
+        self.key_repeat = ffi.new("unsigned int[?]", C.REP_CNT)
+        if G_reader_settings:isTrue("input_no_key_repeat") then
+            self.key_repeat[C.REP_DELAY] = 0
+            self.key_repeat[C.REP_PERIOD] = 0
+        else
+            self.key_repeat[C.REP_DELAY] = 400
+            self.key_repeat[C.REP_PERIOD] = 120
         end
     end
 
