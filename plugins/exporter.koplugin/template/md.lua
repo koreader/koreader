@@ -13,6 +13,10 @@ local formatters = {
         formatter = "==%s==",
         label = _("Highlight")
     },
+    highlight_mark_tag = {
+        formatter = "==%s==",
+        label = _("Highlight (with <mark></mark> tags)")
+    },
     italic = {
         formatter = "*%s*",
         label = _("Italic")
@@ -38,23 +42,22 @@ local formatters = {
 local function prepareBookContent(book, formatting_options, highlight_formatting)
     local tbl = {}
     local current_chapter = nil
-    table.insert(tbl, "# " .. book.title)
     local author = book.author or _("N/A")
-    table.insert(tbl, "##### " .. author:gsub("\n", ", ") .. "\n")
+    table.insert(tbl, "# " .. book.title .. "( by " .. author:gsub("\n", ", ") .. ")\n")
     for _, note in ipairs(book) do
         local entry = note[1]
         if entry.chapter ~= current_chapter then
             current_chapter = entry.chapter
-            table.insert(tbl, "## " .. current_chapter)
+            table.insert(tbl, "\n## " .. current_chapter)
         end
-        table.insert(tbl, "### Page " .. entry.page .. " @ " .. os.date("%d %B %Y %I:%M:%S %p", entry.time))
+        table.insert(tbl, "\n### Page " .. entry.page .. " @ " .. os.date("%d %B %Y %H:%M:%S, entry.time))
         if highlight_formatting then
-            table.insert(tbl, string.format(formatters[formatting_options[entry.drawer]].formatter, entry.text))
+            table.insert(tbl, "> " .. string.format(formatters[formatting_options[entry.drawer]].formatter, entry.text))
         else
-            table.insert(tbl, entry.text)
+            table.insert(tbl, "> " .. entry.text)
         end
         if entry.note then
-            table.insert(tbl, "\n---\n" .. entry.note)
+            table.insert(tbl, entry.note)
         end
     end
     return tbl
