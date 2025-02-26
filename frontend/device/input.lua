@@ -775,31 +775,24 @@ function Input:handleKeyBoardEv(ev)
     elseif ev.value == KEY_REPEAT then
         -- NOTE: We only care about repeat events from the page-turn buttons (kobo) and cursor keys (kindle)...
         --       And we *definitely* don't want to flood the Event queue with useless SleepCover repeats!
-        local is_allowed = false
         if keycode == "Up" or keycode == "Down" or keycode == "Left" or keycode == "Right"
         or keycode == "RPgBack" or keycode == "RPgFwd" or keycode == "LPgBack" or keycode == "LPgFwd" then
-            is_allowed = true
-        end
-
-        if is_allowed then
             --- @fixme Crappy event staggering!
             --
             -- The Forma & co repeats every 80ms after a 400ms delay, and 500ms roughly corresponds to a flashing update,
             -- so stuff is usually in sync when you release the key.
+            --
+            -- A better approach would be an onKeyRelease handler that flushes the Event queue...
             local rep_delay = self.device.key_repeat[C.REP_DELAY]
             if not rep_delay or rep_delay == 0 then return end
             local rep_period = self.device.key_repeat[C.REP_PERIOD]
             if not rep_period or rep_period == 0 then return end
-            -- Use timestamps for a more responsive key repeat system
             local now = time.now()
             if not self.last_repeat_time then
-                -- First repeat event, set initial timestamp
                 self.last_repeat_time = now
                 return Event:new("KeyRepeat", key)
             else
-                -- Check if enough time has passed since last repeat
                 local time_diff = time.to_ms(now - self.last_repeat_time)
-                -- After initial delay, attempt to repeat every C.REP_PERIOD (ms)
                 if time_diff >= rep_period then
                     self.last_repeat_time = now
                     return Event:new("KeyRepeat", key)
