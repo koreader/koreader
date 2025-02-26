@@ -50,7 +50,7 @@ local function prepareBookContent(book, formatting_options, highlight_formatting
             current_chapter = entry.chapter
             table.insert(tbl, "\n## " .. current_chapter)
         end
-        table.insert(tbl, "\n### Page " .. entry.page .. " @ " .. os.date("%d %B %Y %H:%M:%S, entry.time))
+        table.insert(tbl, "\n### Page " .. entry.page .. " @ " .. os.date("%d %B %Y %H:%M:%S", entry.time))
         if highlight_formatting then
             table.insert(tbl, "> " .. string.format(formatters[formatting_options[entry.drawer]].formatter, entry.text))
         else
