@@ -597,7 +597,6 @@ function Kindle:init()
         end
     end
 
-    -- cursor keys support key_repeat events, so we set them up here
     if self:hasDPad() then
         self.canKeyRepeat = yes
         self.key_repeat = ffi.new("unsigned int[?]", C.REP_CNT)
