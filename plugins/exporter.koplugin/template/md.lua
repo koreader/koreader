@@ -43,7 +43,7 @@ local function prepareBookContent(book, formatting_options, highlight_formatting
     local tbl = {}
     local current_chapter = nil
     local author = book.author or _("N/A")
-    table.insert(tbl, "# " .. book.title .. "( by " .. author:gsub("\n", ", ") .. ")\n")
+    table.insert(tbl, "# " .. book.title .. "( —" .. author:gsub("\n", ", ") .. ")\n")
     for _, note in ipairs(book) do
         local entry = note[1]
         if entry.chapter ~= current_chapter then
