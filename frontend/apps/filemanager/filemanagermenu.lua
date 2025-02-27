@@ -388,6 +388,7 @@ To:
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrTrue("collection_show_mark")
+                    self.ui.collections.show_mark = G_reader_settings:nilOrTrue("collection_show_mark")
                     FileChooser:refreshPath()
                 end,
             },
@@ -802,28 +803,6 @@ To:
                 filemanagerRefresh()
                 UIManager:close(cloud_storage)
             end
-        end,
-    }
-
-    self.menu_items.file_search = {
-        -- @translators Search for files by name.
-        text = _("File search"),
-        help_text = _([[Search a book by filename in the current or home folder and its subfolders.
-
-Wildcards for one '?' or more '*' characters can be used.
-A search for '*' will show all files.
-
-The sorting order is the same as in filemanager.
-
-Tap a book in the search results to open it.]]),
-        callback = function()
-            self.ui.filesearcher:onShowFileSearch()
-        end,
-    }
-    self.menu_items.file_search_results = {
-        text = _("Last file search results"),
-        callback = function()
-            self.ui.filesearcher:onShowSearchResults()
         end,
     }
 

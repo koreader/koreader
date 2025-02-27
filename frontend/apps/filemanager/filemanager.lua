@@ -272,6 +272,16 @@ function FileManager:setupLayout()
                     file_manager.collections:genAddToCollectionButton(file, close_dialog_callback, refresh_callback),
                 })
             end
+            if Device:canExecuteScript(file) then
+                table.insert(buttons, {
+                    filemanagerutil.genExecuteScriptButton(file, close_dialog_callback),
+                })
+            end
+            if FileManagerConverter:isSupported(file) then
+                table.insert(buttons, {
+                    FileManagerConverter:genConvertButton(file, close_dialog_callback, refresh_callback)
+                })
+            end
             table.insert(buttons, {
                 {
                     text = _("Open with…"),
@@ -286,22 +296,6 @@ function FileManager:setupLayout()
                 table.insert(buttons, {
                     filemanagerutil.genBookCoverButton(file, book_props, close_dialog_callback),
                     filemanagerutil.genBookDescriptionButton(file, book_props, close_dialog_callback),
-                })
-            end
-            if Device:canExecuteScript(file) then
-                table.insert(buttons, {
-                    filemanagerutil.genExecuteScriptButton(file, close_dialog_callback),
-                })
-            end
-            if FileManagerConverter:isSupported(file) then
-                table.insert(buttons, {
-                    {
-                        text = _("Convert"),
-                        callback = function()
-                            UIManager:close(self.file_dialog)
-                            FileManagerConverter:showConvertButtons(file, self)
-                        end,
-                    },
                 })
             end
         else -- folder
@@ -450,14 +444,13 @@ function FileChooser:onBack()
         elseif back_to_exit == "disable" then
             return true
         elseif back_to_exit == "prompt" then
-                UIManager:show(ConfirmBox:new{
-                    text = _("Exit KOReader?"),
-                    ok_text = _("Exit"),
-                    ok_callback = function()
-                        self:onClose()
-                    end
-                })
-
+            UIManager:show(ConfirmBox:new{
+                text = _("Exit KOReader?"),
+                ok_text = _("Exit"),
+                ok_callback = function()
+                    self:onClose()
+                end,
+            })
             return true
         end
     elseif back_in_filemanager == "parent_folder" then
@@ -476,7 +469,8 @@ function FileManager:onSwipeFM(ges)
     return true
 end
 
-function FileManager:addFileDialogButtons(row_id, row_func) -- FileManager, History, Collections file_dialog
+function FileManager:addFileDialogButtons(row_id, row_func)
+    -- long-press file_dialog in FileManager, History, Collections, FileSearcher
     self.file_dialog_added_buttons = self.file_dialog_added_buttons or { index = {} }
     if self.file_dialog_added_buttons.index[row_id] == nil then
         table.insert(self.file_dialog_added_buttons, row_func)

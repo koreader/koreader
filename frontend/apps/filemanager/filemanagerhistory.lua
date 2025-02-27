@@ -14,7 +14,7 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 
 local FileManagerHistory = WidgetContainer:extend{
-    hist_menu_title = _("History"),
+    title = _("History"),
 }
 
 function FileManagerHistory:init()
@@ -23,7 +23,7 @@ end
 
 function FileManagerHistory:addToMainMenu(menu_items)
     menu_items.history = {
-        text = self.hist_menu_title,
+        text = self.title,
         callback = function()
             self:onShowHist()
         end,
@@ -48,6 +48,52 @@ function FileManagerHistory:fetchStatuses(count)
     self.statuses_fetched = true
 end
 
+function FileManagerHistory:refreshFileManager()
+    if self.files_updated then
+        if self.ui.file_chooser then
+            self.ui.file_chooser:refreshPath()
+        end
+        self.files_updated = nil
+    end
+end
+
+function FileManagerHistory:onShowHist(search_info)
+    -- This may be hijacked by CoverBrowser plugin and needs to be known as booklist_menu.
+    self.booklist_menu = BookList:new{
+        name = "history",
+        title_bar_left_icon = "appbar.menu",
+        onLeftButtonTap = function() self:showHistDialog() end,
+        onMenuChoice = self.onMenuChoice,
+        onMenuHold = self.onMenuHold,
+        ui = self.ui,
+        _manager = self,
+        _recreate_func = function() self:onShowHist(search_info) end,
+    }
+    self.booklist_menu.close_callback = function()
+        self:refreshFileManager()
+        UIManager:close(self.booklist_menu)
+        self.booklist_menu = nil
+        self.statuses_fetched = nil
+        G_reader_settings:saveSetting("history_filter", self.filter)
+    end
+
+    if search_info then
+        self.search_string = search_info.search_string
+        self.case_sensitive = search_info.case_sensitive
+    else
+        self.search_string = nil
+        self.selected_collections = nil
+    end
+    self.filter = G_reader_settings:readSetting("history_filter", "all")
+    self.is_frozen = G_reader_settings:isTrue("history_freeze_finished_books")
+    if self.filter ~= "all" or self.is_frozen then
+        self:fetchStatuses(false)
+    end
+    self:updateItemTable()
+    UIManager:show(self.booklist_menu)
+    return true
+end
+
 function FileManagerHistory:updateItemTable()
     self.count = { all = #require("readhistory").hist,
         reading = 0, abandoned = 0, complete = 0, deleted = 0, new = 0, }
@@ -67,26 +113,8 @@ function FileManagerHistory:updateItemTable()
             self.count[v.status] = self.count[v.status] + 1
         end
     end
-    local title = T("%1 (%2)", self.hist_menu_title, #item_table)
-    local subtitle = ""
-    if self.search_string then
-        subtitle = T(_("Query: %1"), self.search_string)
-    elseif self.selected_collections then
-        local collections = {}
-        for collection in pairs(self.selected_collections) do
-            table.insert(collections, self.ui.collections:getCollectionTitle(collection))
-        end
-        if #collections == 1 then
-            collections = collections[1]
-        else
-            table.sort(collections)
-            collections = table.concat(collections, ", ")
-        end
-        subtitle = T(_("Collections: %1"), collections)
-    elseif self.filter ~= "all" then
-        subtitle = BookList.getBookStatusString(self.filter, true)
-    end
-    self.hist_menu:switchItemTable(title, item_table, -1, nil, subtitle)
+    local title, subtitle = self:getBookListTitle(item_table)
+    self.booklist_menu:switchItemTable(title, item_table, -1, nil, subtitle)
 end
 
 function FileManagerHistory:isItemMatch(item)
@@ -107,6 +135,29 @@ function FileManagerHistory:isItemMatch(item)
         end
     end
     return self.filter == "all" or item.status == self.filter
+end
+
+function FileManagerHistory:getBookListTitle(item_table)
+    local title = T(_("History (%1)"), #item_table)
+    local subtitle = ""
+    if self.search_string then
+        subtitle = T(_("Query: %1"), self.search_string)
+    elseif self.selected_collections then
+        local collections = {}
+        for collection in pairs(self.selected_collections) do
+            table.insert(collections, self.ui.collections:getCollectionTitle(collection))
+        end
+        if #collections == 1 then
+            collections = collections[1]
+        else
+            table.sort(collections)
+            collections = table.concat(collections, ", ")
+        end
+        subtitle = T(_("Collections: %1"), collections)
+    elseif self.filter ~= "all" then
+        subtitle = BookList.getBookStatusString(self.filter, true)
+    end
+    return title, subtitle
 end
 
 function FileManagerHistory:onSetDimensions(dimen)
@@ -133,7 +184,7 @@ function FileManagerHistory:onMenuHold(item)
     end
     local function close_dialog_menu_callback()
         UIManager:close(self.file_dialog)
-        self._manager.hist_menu.close_callback()
+        self.close_callback()
     end
     local function close_dialog_update_callback()
         UIManager:close(self.file_dialog)
@@ -230,47 +281,7 @@ end
 
 function FileManagerHistory.getMenuInstance()
     local ui = require("apps/filemanager/filemanager").instance or require("apps/reader/readerui").instance
-    return ui.history.hist_menu
-end
-
-function FileManagerHistory:onShowHist(search_info)
-    self.hist_menu = BookList:new{
-        title_bar_left_icon = "appbar.menu",
-        onLeftButtonTap = function() self:showHistDialog() end,
-        onMenuChoice = self.onMenuChoice,
-        onMenuHold = self.onMenuHold,
-        ui = self.ui,
-        _manager = self,
-        _recreate_func = function() self:onShowHist(search_info) end,
-    }
-    self.hist_menu.close_callback = function()
-        if self.files_updated then -- refresh Filemanager list of files
-            if self.ui.file_chooser then
-                self.ui.file_chooser:refreshPath()
-            end
-            self.files_updated = nil
-        end
-        self.statuses_fetched = nil
-        UIManager:close(self.hist_menu)
-        self.hist_menu = nil
-        G_reader_settings:saveSetting("history_filter", self.filter)
-    end
-
-    if search_info then
-        self.search_string = search_info.search_string
-        self.case_sensitive = search_info.case_sensitive
-    else
-        self.search_string = nil
-        self.selected_collections = nil
-    end
-    self.filter = G_reader_settings:readSetting("history_filter", "all")
-    self.is_frozen = G_reader_settings:isTrue("history_freeze_finished_books")
-    if self.filter ~= "all" or self.is_frozen then
-        self:fetchStatuses(false)
-    end
-    self:updateItemTable()
-    UIManager:show(self.hist_menu, "flashui")
-    return true
+    return ui.history.booklist_menu
 end
 
 function FileManagerHistory:showHistDialog()
@@ -376,7 +387,7 @@ function FileManagerHistory:onSearchHistory()
                         if search_string ~= "" then
                             UIManager:close(search_dialog)
                             self.search_string = self.case_sensitive and search_string or search_string:lower()
-                            if self.hist_menu then -- called from History
+                            if self.booklist_menu then -- called from History
                                 self:updateItemTable()
                             else -- called by Dispatcher
                                 local search_info = {
@@ -406,8 +417,8 @@ function FileManagerHistory:onSearchHistory()
 end
 
 function FileManagerHistory:onBookMetadataChanged()
-    if self.hist_menu then
-        self.hist_menu:updateItems()
+    if self.booklist_menu then
+        self.booklist_menu:updateItems()
     end
 end
 
