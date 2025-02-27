@@ -776,16 +776,21 @@ function Input:handleKeyBoardEv(ev)
         if G_reader_settings:isTrue("input_no_key_repeat") then return end
         -- NOTE: We only care about repeat events from the page-turn buttons and cursor keys...
         --       And we *definitely* don't want to flood the Event queue with useless SleepCover repeats!
-        if keycode == "Up" or keycode == "Down" or keycode == "Left" or keycode == "Right"
-        or keycode == "RPgBack" or keycode == "RPgFwd" or keycode == "LPgBack" or keycode == "LPgFwd" then
+        local is_allowed = false
+        for _, allowed_key in ipairs(allowed_repeat_keys) do
+            if keycode == allowed_key then
+                is_allowed = true
+                break
+            end
+        end
+        if is_allowed then
             --- @fixme Crappy event staggering!
             --
             -- The Forma & co repeats every 80ms after a 400ms delay, and 500ms roughly corresponds to a flashing update,
             -- so stuff is usually in sync when you release the key.
             --
             -- A better approach would be an onKeyRelease handler that flushes the Event queue...
-            local rep_period = self.device.key_repeat and self.device.key_repeat[C.REP_PERIOD] or 120
-            if rep_period == 0 then return end
+            local rep_period = self.device.key_repeat and self.device.key_repeat[C.REP_PERIOD] or 80
             local now = time.now()
             if not self.last_repeat_time then
                 self.last_repeat_time = now
