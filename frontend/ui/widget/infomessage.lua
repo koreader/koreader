@@ -179,7 +179,7 @@ function InfoMessage:init()
 
     if not self.height then
         local max_height
-        if self.force_one_line then
+        if self.force_one_line and not self.text:find("\n") then
             local icon_height = self.show_icon and image_widget:getSize().h or 0
             -- Calculate the size of the frame container when it's only displaying one line.
             max_height = math.max(text_widget:getLineHeight(), icon_height) + 2*frame.bordersize + 2*frame.padding
@@ -209,8 +209,9 @@ function InfoMessage:init()
                     end
                 end
                 if self.force_one_line and orig_size < self._initial_orig_size * 0.7 then
-                    -- do not reduce font size by more than 30 percent, at around orig_size 15 or 16 (30% of defualt font size), our font is too small
-                    -- for the max_height check to be useful anymore, at those sizes (or lower) two lines fit inside the max_height so, disable it.
+                    -- Do not reduce the font size by more than 30 percent, at around orig_size 15 or 16 (30% of defualt font size), our font is too small
+                    -- for the max_height check to be useful anymore (when icon_height), at those sizes (or lower) two lines fit inside the max_height so,
+                    -- simply disable it.
                     self.face = Font:getFace(self._initial_orig_font, self._initial_orig_size)
                     self.force_one_line = false
                 end
