@@ -20,6 +20,7 @@ local function FTPurlEncode(str)
         return string.format("%%%02X", string.byte(c))
     end))
 end
+
 function Ftp:run(address, user, pass, path)
     path = FTPurlEncode(path)
     local url = FtpApi:generateUrl(address, util.urlEncode(user), util.urlEncode(pass)) .. path
