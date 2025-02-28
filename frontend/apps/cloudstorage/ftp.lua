@@ -14,12 +14,21 @@ local T = require("ffi/util").template
 
 local Ftp = {}
 
+local function FTPurlEncode(str)
+    if not str then return nil end
+    return (str:gsub("([^%w%.%-_%~:/@])", function(c)
+        return string.format("%%%02X", string.byte(c))
+    end))
+end
+  
 function Ftp:run(address, user, pass, path)
+    path = FTPurlEncode(path)
     local url = FtpApi:generateUrl(address, util.urlEncode(user), util.urlEncode(pass)) .. path
     return FtpApi:listFolder(url, path)
 end
 
 function Ftp:downloadFile(item, address, user, pass, path, callback_close)
+    item.url = FTPurlEncode(item.url)
     local url = FtpApi:generateUrl(address, util.urlEncode(user), util.urlEncode(pass)) .. item.url
     logger.dbg("downloadFile url", url)
     path = util.fixUtf8(path, "_")
