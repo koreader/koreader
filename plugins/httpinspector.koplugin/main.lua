@@ -290,6 +290,7 @@ function HttpInspector:sendResponse(reqinfo, http_code, content_type, body)
     if self.http_socket then -- in case the plugin is gone...
         self.http_socket:send(response, reqinfo.request_id)
     end
+    return Event:new("InputEvent")
 end
 
 -- Process a uri, stepping one fragment (consider ? / = as separators)

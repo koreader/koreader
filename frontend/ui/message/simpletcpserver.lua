@@ -50,7 +50,7 @@ function SimpleTCPServer:waitEvent()
                 logger.dbg("SimpleTCPServer: Received data: ", data)
                 -- Give us more time to process the request and send the response
                 client:settimeout(0.5, "t")
-                self.receiveCallback(data, client)
+                return self.receiveCallback(data, client)
                     -- This should call SimpleTCPServer:send() to send
                     -- the response and close this connection.
             else
