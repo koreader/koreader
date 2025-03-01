@@ -26,10 +26,6 @@ local OPDS = WidgetContainer:extend{
             url = "https://standardebooks.org/feeds/opds",
         },
         {
-            title = "Feedbooks",
-            url = "https://catalog.feedbooks.com/catalog/public_domain.atom",
-        },
-        {
             title = "ManyBooks",
             url = "http://manybooks.net/opds/index.php",
         },
