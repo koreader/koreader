@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20250207
+local CURRENT_MIGRATION_DATE = 20250302
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -839,6 +839,20 @@ if last_migration_date < 20250207 then
                 gestures:flush()
             end
         end
+    end
+end
+
+-- 20250302, Move OPDS settings from settings.reader.ui to settings/opds.lua.
+-- https://github.com/koreader/koreader/pull/13338
+if last_migration_date < 20250302 then
+    logger.info("Performing one-time migration for 20250302")
+
+    local servers = G_reader_settings:readSetting("opds_servers")
+    if servers then
+        G_reader_settings:delSetting("opds_servers")
+        local settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/opds.lua")
+        settings:saveSetting("servers", servers)
+        settings:flush()
     end
 end
 

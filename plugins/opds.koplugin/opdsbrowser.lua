@@ -9,6 +9,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
+local Notification = require("ui/widget/notification")
 local OPDSParser = require("opdsparser")
 local OPDSPSE = require("opdspse")
 local UIManager = require("ui/uimanager")
@@ -21,6 +22,7 @@ local socketutil = require("socketutil")
 local url = require("socket.url")
 local util = require("util")
 local _ = require("gettext")
+local N_ = _.ngettext
 local T = require("ffi/util").template
 
 -- cache catalog parsed from feed xml
@@ -30,37 +32,6 @@ local CatalogCache = Cache:new{
 }
 
 local OPDSBrowser = Menu:extend{
-    opds_servers = G_reader_settings:readSetting("opds_servers", {
-        {
-            title = "Project Gutenberg",
-            url = "https://m.gutenberg.org/ebooks.opds/?format=opds",
-        },
-        {
-            title = "Standard Ebooks",
-            url = "https://standardebooks.org/feeds/opds",
-        },
-        {
-            title = "Feedbooks",
-            url = "https://catalog.feedbooks.com/catalog/public_domain.atom",
-        },
-        {
-            title = "ManyBooks",
-            url = "http://manybooks.net/opds/index.php",
-        },
-        {
-            title = "Internet Archive",
-            url = "https://bookserver.archive.org/",
-        },
-        {
-            title = "textos.info (Spanish)",
-            url = "https://www.textos.info/catalogo.atom",
-        },
-        {
-            title = "Gallica (French)",
-            url = "https://gallica.bnf.fr/opds",
-        },
-    }),
-
     catalog_type         = "application/atom%+xml",
     search_type          = "application/opensearchdescription%+xml",
     search_template_type = "application/atom%+xml",
@@ -89,19 +60,28 @@ function OPDSBrowser:init()
     Menu.init(self) -- call parent's init()
 end
 
+local function buildRootEntry(server)
+    return {
+        text       = server.title,
+        mandatory  = server.username and "\u{f2c0}",
+        url        = server.url,
+        username   = server.username,
+        password   = server.password,
+        raw_names  = server.raw_names, -- use server raw filenames for download
+        searchable = server.url and server.url:match("%%s") and true or false,
+    }
+end
+
 -- Builds the root list of catalogs
 function OPDSBrowser:genItemTableFromRoot()
-    local item_table = {}
-    for _, server in ipairs(self.opds_servers) do
-        table.insert(item_table, {
-            text       = server.title,
-            mandatory  = server.username and "\u{f2c0}",
-            url        = server.url,
-            username   = server.username,
-            password   = server.password,
-            raw_names  = server.raw_names, -- use server raw filenames for download
-            searchable = server.url:match("%%s") and true or false,
-        })
+    local item_table = {
+        {
+            text = _("Downloads"),
+            mandatory = #self.downloads,
+        },
+    }
+    for _, server in ipairs(self.servers) do
+        table.insert(item_table, buildRootEntry(server))
     end
     return item_table
 end
@@ -193,7 +173,7 @@ function OPDSBrowser:addSubCatalog(item_url)
                             UIManager:close(dialog)
                             local fields = {name, item_url,
                                 self.root_catalog_username, self.root_catalog_password, self.root_catalog_raw_names}
-                            self:editCatalogFromInput(fields, false, true) -- no init, stay in the subcatalog
+                            self:editCatalogFromInput(fields, nil, true) -- no init, stay in the subcatalog
                         end
                     end,
                 },
@@ -205,40 +185,37 @@ function OPDSBrowser:addSubCatalog(item_url)
 end
 
 -- Saves catalog properties from input dialog
-function OPDSBrowser:editCatalogFromInput(fields, item, no_init)
-    local new_server
-    if item then -- edit old
-        for _, server in ipairs(self.opds_servers) do
-            if server.title == item.text and server.url == item.url then
-                new_server = server
-                break
-            end
-        end
-    else -- add new
-        new_server = {}
+function OPDSBrowser:editCatalogFromInput(fields, item, no_refresh)
+    local new_server = {
+        title     = fields[1],
+        url       = fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2],
+        username  = fields[3] ~= "" and fields[3] or nil,
+        password  = fields[4] ~= "" and fields[4] or nil,
+        raw_names = fields[5],
+    }
+    local new_item = buildRootEntry(new_server)
+    local new_idx, itemnumber
+    if item then
+        new_idx = item.idx
+        itemnumber = -1
+    else
+        new_idx = #self.servers + 2
+        itemnumber = new_idx
     end
-    new_server.title     = fields[1]
-    new_server.url       = fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2]
-    new_server.username  = fields[3] ~= "" and fields[3] or nil
-    new_server.password  = fields[4]
-    new_server.raw_names = fields[5]
-    if not item then
-        table.insert(self.opds_servers, new_server)
+    self.servers[new_idx - 1] = new_server
+    self.item_table[new_idx] = new_item
+    if not no_refresh then
+        self:switchItemTable(nil, self.item_table, itemnumber)
     end
-    if not no_init then
-        self:init()
-    end
+    self._manager.updated = true
 end
 
 -- Deletes catalog from the root list
 function OPDSBrowser:deleteCatalog(item)
-    for i, server in ipairs(self.opds_servers) do
-        if server.title == item.text and server.url == item.url then
-            table.remove(self.opds_servers, i)
-            break
-        end
-    end
-    self:init()
+    table.remove(self.servers, item.idx - 1)
+    table.remove(self.item_table, item.idx)
+    self:switchItemTable(nil, self.item_table, -1)
+    self._manager.updated = true
 end
 
 -- Fetches feed from server
@@ -642,10 +619,20 @@ function OPDSBrowser:showDownloads(item)
                 table.insert(download_buttons, {
                     text = text .. "\u{2B07}", -- append DOWNWARDS BLACK ARROW
                     callback = function()
-                        local file = filename and filename .. "." .. string.lower(filetype)
-                                               or self:getServerFileName(acquisition.href)
-                        self:downloadFile(file, acquisition.href)
                         UIManager:close(self.download_dialog)
+                        local local_path = self:getLocalDownloadPath(filename, filetype, acquisition.href)
+                        self:downloadFile(local_path, acquisition.href, self._manager.file_downloaded_callback)
+                    end,
+                    hold_callback = function()
+                        UIManager:close(self.download_dialog)
+                        table.insert(self.downloads, {
+                            file    = self:getLocalDownloadPath(filename, filetype, acquisition.href),
+                            url     = acquisition.href,
+                            info    = type(item.content) == "string" and util.htmlToPlainTextIfHtml(item.content),
+                            catalog = self.root_catalog_title,
+                        })
+                        self._manager.updated = true
+                        Notification:notify(_("Book added to download list"))
                     end,
                 })
             end
@@ -756,20 +743,24 @@ function OPDSBrowser.getCurrentDownloadDir()
     return G_reader_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
 end
 
--- Downloads a book (with "File already exists" dialog)
-function OPDSBrowser:downloadFile(filename, remote_url)
-    local download_dir = self.getCurrentDownloadDir()
-
+function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url)
+    local download_dir = OPDSBrowser.getCurrentDownloadDir()
+    filename = filename and filename .. "." .. filetype:lower() or self:getServerFileName(remote_url)
     filename = util.getSafeFilename(filename, download_dir)
-    local local_path = (download_dir ~= "/" and download_dir or "") .. '/' .. filename
-    local_path = util.fixUtf8(local_path, "_")
+    filename = (download_dir ~= "/" and download_dir or "") .. '/' .. filename
+    return util.fixUtf8(filename, "_")
+end
 
+-- Downloads a book (with "File already exists" dialog)
+function OPDSBrowser:downloadFile(local_path, remote_url, caller_callback)
+    local ask_to_overwrite = caller_callback ~= nil -- single file downloading
+    local code
     local function download()
-        UIManager:scheduleIn(1, function()
+--        UIManager:scheduleIn(1, function()
             logger.dbg("Downloading file", local_path, "from", remote_url)
             local parsed = url.parse(remote_url)
 
-            local code, headers, status
+            local headers, status
             if parsed.scheme == "http" or parsed.scheme == "https" then
                 socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
                 code, headers, status = socket.skip(1, http.request {
@@ -790,7 +781,9 @@ function OPDSBrowser:downloadFile(filename, remote_url)
 
             if code == 200 then
                 logger.dbg("File downloaded to", local_path)
-                self.file_downloaded_callback(local_path)
+                if caller_callback then
+                    caller_callback(local_path)
+                end
             elseif code == 302 and remote_url:match("^https") and headers.location:match("^http[^s]") then
                 util.removeFile(local_path)
                 UIManager:show(InfoMessage:new{
@@ -807,7 +800,7 @@ function OPDSBrowser:downloadFile(filename, remote_url)
                         status or code or "network unreachable"),
                 })
             end
-        end)
+--        end)
 
         UIManager:show(InfoMessage:new{
             text = _("Downloading may take several minutes…"),
@@ -815,7 +808,7 @@ function OPDSBrowser:downloadFile(filename, remote_url)
         })
     end
 
-    if lfs.attributes(local_path) then
+    if ask_to_overwrite and lfs.attributes(local_path) then
         UIManager:show(ConfirmBox:new{
             text = T(_("The file %1 already exists. Do you want to overwrite it?"), BD.filepath(local_path)),
             ok_text = _("Overwrite"),
@@ -826,6 +819,7 @@ function OPDSBrowser:downloadFile(filename, remote_url)
     else
         download()
     end
+    return code == 200
 end
 
 -- Menu action on item tap (Download a book / Show subcatalog / Search in catalog)
@@ -835,6 +829,12 @@ function OPDSBrowser:onMenuSelect(item)
         self:showDownloads(item)
     else -- catalog or Search item
         if #self.paths == 0 then -- root list
+            if item.idx == 1 then
+                if #self.downloads > 0 then
+                    self:showDownloadList()
+                end
+                return true
+            end
             self.root_catalog_title     = item.text
             self.root_catalog_username  = item.username
             self.root_catalog_password  = item.password
@@ -858,7 +858,7 @@ end
 
 -- Menu action on item long-press (dialog Edit / Delete catalog)
 function OPDSBrowser:onMenuHold(item)
-    if #self.paths > 0 then return end -- not root list
+    if #self.paths > 0 or item.idx == 1 then return true end -- not root list or Downloads item
     local dialog
     dialog = ButtonDialog:new{
         title = item.text,
@@ -894,31 +894,22 @@ end
 
 -- Menu action on return-arrow tap (go to one-level upper catalog)
 function OPDSBrowser:onReturn()
-    if #self.paths > 0 then -- not root list
-        table.remove(self.paths)
-        local path = self.paths[#self.paths]
-        if path then
-            -- return to last path
-            self.catalog_title = path.title
-            self:updateCatalog(path.url, true)
-        else
-            -- return to root path, we simply reinit opdsbrowser
-            self:init()
-        end
+    table.remove(self.paths)
+    local path = self.paths[#self.paths]
+    if path then
+        -- return to last path
+        self.catalog_title = path.title
+        self:updateCatalog(path.url, true)
+    else
+        -- return to root path, we simply reinit opdsbrowser
+        self:init()
     end
     return true
 end
 
--- Menu action on return-arrow long-press (go to the catalog home page)
+-- Menu action on return-arrow long-press (return to root path)
 function OPDSBrowser:onHoldReturn()
-    if #self.paths > 1 then -- not catalog home page
-        local path = self.paths[1]
-        for i = #self.paths, 2, -1 do
-            table.remove(self.paths)
-        end
-        self.catalog_title = path.title
-        self:updateCatalog(path.url, true)
-    end
+    self:init()
     return true
 end
 
@@ -942,6 +933,173 @@ function OPDSBrowser:onNextPage(fill_only)
         Menu.onNextPage(self)
     end
     return true
+end
+
+function OPDSBrowser:showDownloadList()
+    self.download_list = Menu:new{
+        covers_fullscreen = true,
+        is_borderless = true,
+        is_popout = false,
+        title_bar_fm_style = true,
+        onMenuSelect = self.showDownloadListItemDialog,
+        _manager = self,
+    }
+    self.download_list.close_callback = function()
+        UIManager:close(self.download_list)
+        self.download_list = nil
+        if self.download_list_updated then
+            self.download_list_updated = nil
+            self.item_table[1].mandatory = #self.downloads
+            self:updateItems(1, true)
+        end
+    end
+    self:updateDownloadListItemTable()
+    UIManager:show(self.download_list)
+end
+
+function OPDSBrowser:updateDownloadListItemTable(item_table)
+    if item_table == nil then
+        item_table = {}
+        for i, item in ipairs(self.downloads) do
+            item_table[i] = {
+                text      = item.file:gsub(".*/", ""),
+                mandatory = item.catalog,
+            }
+        end
+    end
+    local title = T(_("Downloads (%1)"), #item_table)
+    self.download_list:switchItemTable(title, item_table)
+end
+
+function OPDSBrowser:showDownloadListItemDialog(item)
+    local dl_item = self._manager.downloads[item.idx]
+    local textviewer
+    local function remove_item()
+        textviewer:onClose()
+        table.remove(self._manager.downloads, item.idx)
+        table.remove(self.item_table, item.idx)
+        self._manager:updateDownloadListItemTable(self.item_table)
+        self._manager.download_list_updated = true
+        self._manager._manager.updated = true
+    end
+    local buttons_table = {
+        {
+            {
+                text = _("Remove"),
+                callback = function()
+                    remove_item()
+                end,
+            },
+            {
+                text = _("Download"),
+                callback = function()
+                    local function file_downloaded_callback(local_path)
+                        remove_item()
+                        self._manager.file_downloaded_callback(local_path)
+                    end
+                    self._manager:downloadFile(dl_item.file, dl_item.url, file_downloaded_callback)
+                end,
+            },
+        },
+        {}, -- separator
+        {
+            {
+                text = _("Remove all"),
+                callback = function()
+                    textviewer:onClose()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Remove all downloads?"),
+                        ok_text = _("Remove"),
+                        ok_callback = function()
+                            for i in ipairs(self._manager.downloads) do
+                                self._manager.downloads[i] = nil
+                            end
+                            self._manager.download_list_updated = true
+                            self._manager._manager.updated = true
+                            self:close_callback()
+                        end,
+                    })
+                end,
+            },
+            {
+                text = _("Download all"),
+                callback = function()
+                    textviewer:onClose()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Download all books?\nExisting files will be overwritten."),
+                        ok_text = _("Download"),
+                        ok_callback = function()
+                            local Trapper = require("ui/trapper")
+                            Trapper:wrap(function()
+                                self._manager:downloadDownloadList()
+                            end)
+                        end,
+                    })
+                end,
+            },
+        },
+    }
+    local TextBoxWidget = require("ui/widget/textboxwidget")
+    local text = table.concat({
+        TextBoxWidget.PTF_HEADER,
+        TextBoxWidget.PTF_BOLD_START, _("Folder"), TextBoxWidget.PTF_BOLD_END, "\n",
+        util.splitFilePathName(dl_item.file), "\n", "\n",
+        TextBoxWidget.PTF_BOLD_START, _("File"), TextBoxWidget.PTF_BOLD_END, "\n",
+        item.text, "\n", "\n",
+        TextBoxWidget.PTF_BOLD_START, _("Description"), TextBoxWidget.PTF_BOLD_END, "\n",
+        dl_item.info,
+    })
+    local TextViewer = require("ui/widget/textviewer")
+    textviewer = TextViewer:new{
+        title = dl_item.catalog,
+        text = text,
+        text_type = "book_info",
+        buttons_table = buttons_table,
+    }
+    UIManager:show(textviewer)
+    return true
+end
+
+function OPDSBrowser:downloadDownloadList()
+    local info = InfoMessage:new{ text = _("Downloading… (tap to cancel)") }
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    local Trapper = require("ui/trapper")
+    local completed, downloaded = Trapper:dismissableRunInSubprocess(function()
+        local dl = {}
+        for _, item in ipairs(self.downloads) do
+            if self:downloadFile(item.file, item.url) then
+                dl[item.file] = true
+            end
+        end
+        return dl
+    end, info)
+    if completed then
+        UIManager:close(info)
+    end
+    local dl_count = #self.downloads
+    for i = dl_count, 1, -1 do
+        local item = self.downloads[i]
+        if downloaded and downloaded[item.file] then
+            table.remove(self.downloads, i)
+        else -- if subprocess has been interrupted, check for the downloaded file
+            local attr = lfs.attributes(item.file)
+            if attr then
+                if attr.size > 0 then
+                    table.remove(self.downloads, i)
+                else -- incomplete download
+                    os.remove(item.file)
+                end
+            end
+        end
+    end
+    dl_count = dl_count - #self.downloads
+    if dl_count > 0 then
+        self:updateDownloadListItemTable()
+        self.download_list_updated = true
+        self._manager.updated = true
+        UIManager:show(InfoMessage:new{ text = T(N_("1 book downloaded", "%1 books downloaded", dl_count), dl_count) })
+    end
 end
 
 return OPDSBrowser
