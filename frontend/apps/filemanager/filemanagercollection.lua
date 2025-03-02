@@ -75,6 +75,7 @@ end
 
 function FileManagerCollection:onShowColl(collection_name)
     collection_name = collection_name or ReadCollection.default_collection_name
+    ReadCollection:updateCollectionFromFolder(collection_name)
     -- This may be hijacked by CoverBrowser plugin and needs to be known as booklist_menu.
     self.booklist_menu = BookList:new{
         name = "collections",
@@ -152,7 +153,8 @@ end
 
 function FileManagerCollection:getBookListTitle(item_table)
     local collection_title = self:getCollectionTitle(self.booklist_menu.path)
-    local title = T("%1 (%2)", collection_title, #item_table)
+    local template = ReadCollection.coll_settings[self.booklist_menu.path].folders and "%1 (%2) \u{F114}" or "%1 (%2)"
+    local title = T(template, collection_title, #item_table)
     local subtitle = ""
     if self.match_table then
         subtitle = {}
@@ -667,6 +669,9 @@ function FileManagerCollection:updateCollListItemTable(do_init, item_number)
                 self.coll_list.items_mandatory_font_size = self.coll_list.font_size
             else
                 mandatory = util.tableSize(coll)
+                if ReadCollection.coll_settings[name].folders then
+                    mandatory = "\u{F114} " .. mandatory
+                end
             end
             table.insert(item_table, {
                 text      = self:getCollectionTitle(name),
@@ -717,14 +722,22 @@ function FileManagerCollection:onCollListChoice(item)
 end
 
 function FileManagerCollection:onCollListHold(item)
-    if item.name == ReadCollection.default_collection_name -- Favorites non-editable
-            or self._manager.selected_collections then -- select mode
-        return
+    if self._manager.selected_collections then -- select mode
+        return true
     end
 
     local button_dialog
     local buttons = {
         {
+            {
+                text = _("Connect folders"),
+                callback = function()
+                    UIManager:close(button_dialog)
+                    self._manager:showCollFolderList(item)
+                end
+            },
+        },
+        item.name ~= ReadCollection.default_collection_name and { -- Favorites non-editable
             {
                 text = _("Remove collection"),
                 callback = function()
@@ -739,7 +752,7 @@ function FileManagerCollection:onCollListHold(item)
                     self._manager:renameCollection(item)
                 end
             },
-        },
+        } or nil,
     }
     button_dialog = ButtonDialog:new{
         title = item.text,
@@ -748,6 +761,132 @@ function FileManagerCollection:onCollListHold(item)
     }
     UIManager:show(button_dialog)
     return true
+end
+
+function FileManagerCollection:showCollFolderList(item)
+    local coll_name = item.name
+    self.coll_folder_list = Menu:new{
+        path = coll_name,
+        title = item.text,
+        subtitle = "",
+        covers_fullscreen = true,
+        is_borderless = true,
+        is_popout = false,
+        title_bar_fm_style = true,
+        title_bar_left_icon = "plus",
+        onLeftButtonTap = function() self:showAddCollFolderDialog() end,
+        onMenuChoice = self.onCollFolderListChoice,
+        onMenuHold = self.onCollFolderListHold,
+        ui = self.ui,
+        _manager = self,
+    }
+    self.coll_folder_list.close_callback = function()
+        UIManager:close(self.coll_folder_list)
+        self.coll_folder_list = nil
+        if self.updated_collections[coll_name] then
+            -- folder has been connected, new books added to collection
+            local mandatory = util.tableSize(ReadCollection.coll[coll_name])
+            if ReadCollection.coll_settings[coll_name].folders then
+                mandatory = "\u{F114} " .. mandatory
+            end
+            self.coll_list.item_table[item.idx].mandatory = mandatory
+            self:updateCollListItemTable()
+        end
+    end
+    self:updateCollFolderListItemTable()
+    UIManager:show(self.coll_folder_list)
+end
+
+function FileManagerCollection:updateCollFolderListItemTable()
+    local item_table = {}
+    local folders = ReadCollection.coll_settings[self.coll_folder_list.path].folders
+    if folders then
+        for folder, folder_settings in pairs(folders) do
+            table.insert(item_table, {
+                text      = folder,
+                mandatory = folder_settings.subfolders and "\u{F114}" or nil,
+            })
+        end
+        if #item_table > 1 then
+            table.sort(item_table, function(a, b) return ffiUtil.strcoll(a.text, b.text) end)
+        end
+    end
+    local subtitle = T(_("Connected folders: %1"), #item_table)
+    self.coll_folder_list:switchItemTable(nil, item_table, -1, nil, subtitle)
+end
+
+function FileManagerCollection:onCollFolderListChoice(item)
+    self._manager.update_files = nil
+    self.close_callback()
+    self._manager.coll_list.close_callback()
+    if self.ui.file_chooser then
+        self.ui.file_chooser:changeToPath(item.text)
+    else -- called from Reader
+        self.ui:onClose()
+        self.ui:showFileManager(item.text .. "/")
+    end
+end
+
+function FileManagerCollection:onCollFolderListHold(item)
+    local folder = item.text
+    local coll_name = self.path
+    local coll_settings = ReadCollection.coll_settings[coll_name]
+    local button_dialog
+    local buttons = {
+        {
+            {
+                text = _("Disconnect folder"),
+                callback = function()
+                    UIManager:close(button_dialog)
+                    self._manager.updated_collections[coll_name] = true
+                    coll_settings.folders[folder] = nil
+                    if next(coll_settings.folders) == nil then
+                        coll_settings.folders = nil
+                    end
+                    self._manager:updateCollFolderListItemTable()
+                end
+            },
+            {
+                text = coll_settings.folders[folder].subfolders and _("Exclude subfolders") or _("Include subfolders"),
+                callback = function()
+                    UIManager:close(button_dialog)
+                    self._manager.updated_collections[coll_name] = true
+                    if coll_settings.folders[folder].subfolders then
+                        coll_settings.folders[folder].subfolders = false
+                    else
+                        coll_settings.folders[folder].subfolders = true
+                        ReadCollection:updateCollectionFromFolder(coll_name)
+                    end
+                    self._manager:updateCollFolderListItemTable()
+                end
+            },
+        },
+    }
+    button_dialog = ButtonDialog:new{
+        title = folder,
+        title_align = "center",
+        buttons = buttons,
+    }
+    UIManager:show(button_dialog)
+end
+
+function FileManagerCollection:showAddCollFolderDialog()
+    local PathChooser = require("ui/widget/pathchooser")
+    UIManager:show(PathChooser:new{
+        path = G_reader_settings:readSetting("home_dir"),
+        select_file = false,
+        onConfirm = function(folder)
+            local coll_name = self.coll_folder_list.path
+            local coll_settings = ReadCollection.coll_settings[coll_name]
+            coll_settings.folders = coll_settings.folders or {}
+            if coll_settings.folders[folder] == nil then
+                self.updated_collections[coll_name] = true
+                coll_settings.folders[folder] = { subfolders = false }
+                ReadCollection:updateCollectionFromFolder(coll_name)
+                self:updateCollFolderListItemTable()
+            end
+        end,
+    })
 end
 
 function FileManagerCollection:showCollListDialog(caller_callback, no_dialog)
