@@ -102,7 +102,7 @@ function Wallabag:init()
     self.remove_read_from_history      = self.wb_settings.data.wallabag.remove_read_from_history or false
     self.remove_abandoned_from_history = self.wb_settings.data.wallabag.remove_abandoned_from_history or false
     self.download_original_document    = self.wb_settings.data.wallabag.download_original_document or false
-    self.offline_queue                  = self.wb_settings.data.wallabag.offline_queue or {}
+    self.offline_queue                 = self.wb_settings.data.wallabag.offline_queue or {}
     self.use_local_archive             = self.wb_settings.data.wallabag.use_local_archive or false
 
     -- archive_directory only has a default if directory is set
@@ -664,25 +664,33 @@ function Wallabag:downloadArticle(article)
     local file_ext = ".epub"
     local item_url = "/api/entries/" .. article.id .. "/export.epub"
 
-    -- The mimetype is actually an HTTP Content-Type, so it can include a semicolon with stuff after it.
-    -- Just in case we also trim it, though that shouldn't be necessary.
-    -- A function represents `null` in our JSON.decode, because `nil` would just disappear.
-    -- We can simplify that to not a string.
-    local mimetype = type(article.mimetype) == string and util.trim(article.mimetype:match("^[^;]*")) or nil
+    -- The mimetype is actually an HTTP Content-Type, so we remove everything from the `;` onward
+    -- Wallabag returns `null` if no mimetype is known, which is JSON.decoded to a function,
+    -- which in turn is converted to `nil` here
+    local mimetype = type(article.mimetype) == "string" and util.trim(article.mimetype:match("^[^;]*")) or nil
 
-    -- If the article links to a supported file type, we will download it directly.
-    -- All webpages are HTML. Ignore them since we want the Wallabag EPUB instead!
     if self.download_original_document then
-        if mimetype ~= "text/html" and DocumentRegistry:hasProvider(nil, mimetype) then
+        -- Download any filetype that we have a provider for, other than HTML, from the original URL
+        if mimetype == "text/html" then
+            logger.dbg("Wallabag:downloadArticle: not ignoring EPUB, because", article.url, "is HTML")
+        elseif mimetype == nil then -- base ourselves on the file extension
+            if util.getFileNameSuffix(article.url):lower() == "html" then
+                logger.dbg("Wallabag:downloadArticle: not ignoring EPUB, because", article.url, "appears to be HTML")
+            elseif DocumentRegistry:hasProvider(article.url) then
+                logger.dbg("Wallabag:downloadArticle: ignoring EPUB in favor of original", article.url)
+                file_ext = "." .. util.getFileNameSuffix(article.url)
+                item_url = article.url
+                -- Fix duplicate extensions (e.g. `.txt.txt`)
+                title = util.trim(title:gsub("%" .. file_ext .. "$", ""))
+            else
+                logger.dbg("Wallabag:downloadArticle: not ignoring EPUB, because there is no provider for", article.url)
+            end
+        elseif DocumentRegistry:hasProvider(nil, mimetype) then
             logger.dbg("Wallabag:downloadArticle: ignoring EPUB in favor of mimetype", mimetype)
-            file_ext = "."..DocumentRegistry:mimeToExt(article.mimetype)
-            item_url = article.url
-        elseif mimetype == nil and DocumentRegistry:hasProvider(article.url) then
-            logger.dbg("Wallabag:downloadArticle: ignoring EPUB in favor of original", article.url)
-            file_ext = "."..util.getFileNameSuffix(article.url)
+            file_ext = "." .. DocumentRegistry:mimeToExt(article.mimetype)
             item_url = article.url
         else
-            logger.dbg("Wallabag:downloadArticle: not ignoring EPUB, because", article.url, "is HTML")
+            logger.dbg("Wallabag:downloadArticle: not ignoring EPUB, because there is no provider for", mimetype)
         end
     end
 
