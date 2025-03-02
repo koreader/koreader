@@ -2631,11 +2631,18 @@ function ReaderHighlight:onMoveHighlightIndicator(args)
         if rect.x + rect.w > self.view.visible_area.w then
             rect.x = self.view.visible_area.w - rect.w
         end
-        if rect.y < 0 then
-            rect.y = 0
+        -- make sure we account for both the status bar and alt status bar so we don't overlap them with the indicator
+        local alt_status_bar_height = 0
+        if self.ui.rolling and self.ui.document.configurable.status_line == 0 then
+            alt_status_bar_height = self.ui.document:getHeaderHeight()
         end
-        if rect.y + rect.h > self.view.visible_area.h then
-            rect.y = self.view.visible_area.h - rect.h
+        if rect.y < alt_status_bar_height then
+            rect.y = alt_status_bar_height
+        end
+        local footer_height = self.view.footer_visible and self.view.footer:getHeight() or 0
+        local status_bar_height = self.ui.rolling and footer_height or 0 -- for PDFs, status bar is already accounted for
+        if rect.y + rect.h > self.view.visible_area.h - status_bar_height then
+            rect.y = self.view.visible_area.h - status_bar_height - rect.h
         end
         UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
         self._current_indicator_pos = rect
