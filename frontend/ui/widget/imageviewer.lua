@@ -194,19 +194,6 @@ function ImageViewer:init()
                 end,
             },
             {
-                id = "scale_width",
-                text = _("Fit to Width"),
-                callback = function()
-                    if self.image:getWidth() and self.width then
-                        self.scale_factor = self.width / self.image:getWidth()
-                        self._center_x_ratio = 0.5
-                        self._center_y_ratio = 0.0
-                        self._scale_to_fit = false
-                        self:update()
-                    end
-                end,
-            },
-            {
                 id = "rotate",
                 text = self.rotated and _("No rotation") or _("Rotate"),
                 callback = function()

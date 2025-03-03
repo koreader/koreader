@@ -418,12 +418,12 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                         -- https://vaemendis.net/opds-pse/
                         -- «count» MUST provide the number of pages of the document
                         -- namespace may be not "pse"
-                        local count, lastRead
+                        local count, last_read
                         for k, v in pairs(link) do
                             if k:sub(-6) == ":count" then
                                 count = tonumber(v)
                             elseif k:sub(-9) == ":lastRead" then
-                                lastRead = tonumber(v)
+                                last_read = tonumber(v)
                             end
                         end
                         if count then
@@ -433,8 +433,8 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                                 title = link.title,
                                 count = count,
                             }
-                            if lastRead and lastRead > 0 then
-                                acquisition.lastRead = lastRead -- Only add if lastRead > 0
+                            if last_read and last_read > 0 then
+                                acquisition.last_read = last_read
                             end
                             table.insert(item.acquisitions, acquisition)
                         end
@@ -565,8 +565,7 @@ function OPDSBrowser:searchCatalog(item_url)
     dialog:onShowKeyboard()
 end
 
--- Show the Page Stream Dialog
-function OPDSBrowser:createPageStreamDialog(acquisition)
+function OPDSBrowser:showPageStreamDialog(acquisition)
     local page_stream_dialog
 
     local buttons = {
@@ -590,12 +589,12 @@ function OPDSBrowser:createPageStreamDialog(acquisition)
         },
     }
 
-    if acquisition.lastRead then
+    if acquisition.last_read then
         table.insert(buttons, {
             {
-                text = _("\u{25B6} Resume from Page ") .. acquisition.lastRead,
+                text = _("\u{25B6} Resume from Page ") .. acquisition.last_read,
                 callback = function()
-                    OPDSPSE:streamPages(acquisition.href, acquisition.count, false, self.root_catalog_username, self.root_catalog_password, acquisition.lastRead)
+                    OPDSPSE:streamPages(acquisition.href, acquisition.count, false, self.root_catalog_username, self.root_catalog_password, acquisition.last_read)
                     UIManager:close(page_stream_dialog)
                     UIManager:close(self.download_dialog)
                 end,
@@ -604,7 +603,6 @@ function OPDSBrowser:createPageStreamDialog(acquisition)
     end
 
     page_stream_dialog = ButtonDialog:new{
-        -- @translators "Stream" here refers to being able to read documents from an OPDS server without downloading them completely, on a page by page basis.
         title = _("Select Page Stream Option \u{2B0C}\n"),
         title_align = "center",
         buttons = buttons,
@@ -637,9 +635,9 @@ function OPDSBrowser:showDownloads(item)
         if acquisition.count then
             stream_buttons = {
                 {
-                    text = _("Page stream"),
+                    text = _("Page stream \u{2B0C}"),
                     callback = function()
-                        self:createPageStreamDialog(acquisition)
+                        self:showPageStreamDialog(acquisition)
                     end,
                 },
             }
@@ -790,9 +788,8 @@ function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url, filena
     local filename_from_server
     if self.root_catalog_raw_names then
         filename_from_server = self:getServerFileName(remote_url)
-        -- if fileNameFromServer is not found and use filename_orig instead
         if not filename_from_server or filename_from_server == "" then
-            logger.warn("No fileName found: falling back to default name")
+            logger.warn("No filename found: falling back to default name")
             filename_from_server = filename_orig .. "." .. filetype:lower()
         end
     end
