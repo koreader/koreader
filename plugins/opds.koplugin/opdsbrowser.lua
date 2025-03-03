@@ -571,7 +571,7 @@ function OPDSBrowser:showPageStreamDialog(acquisition)
     local buttons = {
         {
             {
-                text = _("\u{23EE} Beginning"),
+                text = "\u{23EE} " .. _("Beginning"),
                 callback = function()
                     OPDSPSE:streamPages(acquisition.href, acquisition.count, false, self.root_catalog_username, self.root_catalog_password)
                     UIManager:close(page_stream_dialog)
@@ -579,7 +579,7 @@ function OPDSBrowser:showPageStreamDialog(acquisition)
                 end,
             },
             {
-                text = _("\u{23E9} Go to Page"),
+                text = _("Go to page") .. " \u{23E9}",
                 callback = function()
                     OPDSPSE:streamPages(acquisition.href, acquisition.count, true, self.root_catalog_username, self.root_catalog_password)
                     UIManager:close(page_stream_dialog)
@@ -592,7 +592,7 @@ function OPDSBrowser:showPageStreamDialog(acquisition)
     if acquisition.last_read then
         table.insert(buttons, {
             {
-                text = _("\u{25B6} Resume from Page ") .. acquisition.last_read,
+                text = "\u{25B6} " .. _("Resume from page") .. " " .. acquisition.last_read,
                 callback = function()
                     OPDSPSE:streamPages(acquisition.href, acquisition.count, false, self.root_catalog_username, self.root_catalog_password, acquisition.last_read)
                     UIManager:close(page_stream_dialog)
@@ -603,7 +603,7 @@ function OPDSBrowser:showPageStreamDialog(acquisition)
     end
 
     page_stream_dialog = ButtonDialog:new{
-        title = _("Select Page Stream Option \u{2B0C}\n"),
+        title = _("Select page stream option") .. " \u{2B0C}\n",
         title_align = "center",
         buttons = buttons,
     }
@@ -635,7 +635,8 @@ function OPDSBrowser:showDownloads(item)
         if acquisition.count then
             stream_buttons = {
                 {
-                    text = _("Page stream \u{2B0C}"),
+                    -- @translators "Stream" here refers to being able to read documents from an OPDS server without downloading them completely, on a page by page basis.
+                    text = _("Page stream") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
                     callback = function()
                         self:showPageStreamDialog(acquisition)
                     end,
