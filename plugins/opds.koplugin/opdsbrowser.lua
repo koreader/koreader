@@ -639,7 +639,7 @@ function OPDSBrowser:showDownloads(item)
                 {
                     text = _("Page stream"),
                     callback = function()
-                        self:createPageStreamDialog(acquisition, self)
+                        self:createPageStreamDialog(acquisition)
                     end,
                 },
             }
