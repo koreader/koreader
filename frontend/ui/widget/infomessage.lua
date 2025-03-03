@@ -208,7 +208,7 @@ function InfoMessage:init()
                         break
                     end
                 end
-                if self.force_one_line and orig_font == "xx_smallinfofont" and orig_size < 16 then
+                if self.force_one_line and orig_size < 16 then
                     -- Do not reduce the font size any longer, at around this point, our font is too small for the max_height check to be useful
                     -- anymore (when icon_height), at those sizes (or lower) two lines fit inside the max_height so, simply disable it.
                     self.face = Font:getFace(self._initial_orig_font, self._initial_orig_size)
