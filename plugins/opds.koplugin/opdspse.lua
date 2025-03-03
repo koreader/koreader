@@ -92,7 +92,7 @@ function OPDSPSE:getLastPage(remote_url, username, password)
     return last_page;
 end
 
-function OPDSPSE:streamPages(remote_url, count, continue, username, password)
+function OPDSPSE:streamPages(remote_url, count, continue, username, password, lastPageRead)
     -- attempt to pull chapter progress from Kavita if user pressed
     -- "Page Stream" button.
     -- We have to pull the progress here, otherwise the creation of the page_table
@@ -159,6 +159,9 @@ function OPDSPSE:streamPages(remote_url, count, continue, username, password)
     UIManager:show(viewer)
     if continue then
         self:jumpToPage(viewer, count)
+    elseif lastPageRead then
+        -- Switch to the last page that was read
+        viewer:switchToImageNum(lastPageRead)
     else
         -- add 1 since Kavita's Page count is zero based
         -- and ImageViewer is not.
