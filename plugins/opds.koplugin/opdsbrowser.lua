@@ -787,18 +787,18 @@ function OPDSBrowser.getCurrentDownloadDir()
 end
 
 function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url, filename_orig)
-    local fileNameFromServer
+    local filename_from_server
     if self.root_catalog_raw_names then
-        fileNameFromServer = self:getServerFileName(remote_url)
-    end
-    -- if fileNameFromServer is not found and use filename_orig instead
-    if not fileNameFromServer or fileNameFromServer == "" then
-        logger.warn("No fileName found: falling back to default name")
-        fileNameFromServer = filename_orig
+        filename_from_server = self:getServerFileName(remote_url)
+        -- if fileNameFromServer is not found and use filename_orig instead
+        if not filename_from_server or filename_from_server == "" then
+            logger.warn("No fileName found: falling back to default name")
+            filename_from_server = filename_orig .. "." .. filetype:lower()
+        end
     end
 
     local download_dir = OPDSBrowser.getCurrentDownloadDir()
-    filename = filename and filename .. "." .. filetype:lower() or fileNameFromServer
+    filename = filename and filename .. "." .. filetype:lower() or filename_from_server
     filename = util.getSafeFilename(filename, download_dir)
     filename = (download_dir ~= "/" and download_dir or "") .. '/' .. filename
     return util.fixUtf8(filename, "_")
