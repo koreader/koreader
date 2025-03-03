@@ -566,7 +566,7 @@ function OPDSBrowser:searchCatalog(item_url)
 end
 
 -- Show the Page Stream Dialog
-function createPageStreamDialog(acquisition, self)
+function OPDSBrowser:createPageStreamDialog(acquisition, self)
     local page_stream_dialog
 
     local buttons = {
@@ -596,7 +596,7 @@ function createPageStreamDialog(acquisition, self)
                 text = _("\u{25B6} Resume from Page ") .. acquisition.lastRead,
                 callback = function()
                     OPDSPSE:streamPages(acquisition.href, acquisition.count, false, self.root_catalog_username, self.root_catalog_password, acquisition.lastRead)
-                    UIManager:close(stream_dialog)
+                    UIManager:close(page_stream_dialog)
                     UIManager:close(self.download_dialog)
                 end,
             },
@@ -639,7 +639,7 @@ function OPDSBrowser:showDownloads(item)
                 {
                     text = _("Page stream"),
                     callback = function()
-                        createPageStreamDialog(acquisition, self)
+                        OPDSBrowser:createPageStreamDialog(acquisition, self)
                     end,
                 },
             }
