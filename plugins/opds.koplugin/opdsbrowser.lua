@@ -566,7 +566,7 @@ function OPDSBrowser:searchCatalog(item_url)
 end
 
 -- Show the Page Stream Dialog
-function OPDSBrowser:createPageStreamDialog(acquisition, self)
+function OPDSBrowser:createPageStreamDialog(acquisition)
     local page_stream_dialog
 
     local buttons = {
@@ -639,7 +639,7 @@ function OPDSBrowser:showDownloads(item)
                 {
                     text = _("Page stream"),
                     callback = function()
-                        OPDSBrowser:createPageStreamDialog(acquisition, self)
+                        self:createPageStreamDialog(acquisition, self)
                     end,
                 },
             }
