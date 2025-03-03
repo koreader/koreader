@@ -418,20 +418,25 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                         -- https://vaemendis.net/opds-pse/
                         -- «count» MUST provide the number of pages of the document
                         -- namespace may be not "pse"
-                        local count
+                        local count, lastRead
                         for k, v in pairs(link) do
                             if k:sub(-6) == ":count" then
                                 count = tonumber(v)
-                                break
+                            elseif k:sub(-9) == ":lastRead" then
+                                lastRead = tonumber(v)
                             end
                         end
                         if count then
-                            table.insert(item.acquisitions, {
+                            local acquisition = {
                                 type  = link.type,
                                 href  = link_href,
                                 title = link.title,
                                 count = count,
-                            })
+                            }
+                            if lastRead and lastRead > 0 then
+                                acquisition.lastRead = lastRead -- Only add if lastRead > 0
+                            end
+                            table.insert(item.acquisitions, acquisition)
                         end
                     elseif link.rel == self.thumbnail_rel or link.rel == self.thumbnail_rel_alt then
                         item.thumbnail = link_href
@@ -560,6 +565,54 @@ function OPDSBrowser:searchCatalog(item_url)
     dialog:onShowKeyboard()
 end
 
+-- Show the Page Stream Dialog
+function createPageStreamDialog(acquisition, self)
+    local page_stream_dialog
+
+    local buttons = {
+        {
+            {
+                text = _("\u{23EE} Beginning"),
+                callback = function()
+                    OPDSPSE:streamPages(acquisition.href, acquisition.count, false, self.root_catalog_username, self.root_catalog_password)
+                    UIManager:close(page_stream_dialog)
+                    UIManager:close(self.download_dialog)
+                end,
+            },
+            {
+                text = _("\u{23E9} Go to Page"),
+                callback = function()
+                    OPDSPSE:streamPages(acquisition.href, acquisition.count, true, self.root_catalog_username, self.root_catalog_password)
+                    UIManager:close(page_stream_dialog)
+                    UIManager:close(self.download_dialog)
+                end,
+            },
+        },
+    }
+
+    if acquisition.lastRead then
+        table.insert(buttons, {
+            {
+                text = _("\u{25B6} Resume from Page ") .. acquisition.lastRead,
+                callback = function()
+                    OPDSPSE:streamPages(acquisition.href, acquisition.count, false, self.root_catalog_username, self.root_catalog_password, acquisition.lastRead)
+                    UIManager:close(stream_dialog)
+                    UIManager:close(self.download_dialog)
+                end,
+            },
+        })
+    end
+
+    page_stream_dialog = ButtonDialog:new{
+        -- @translators "Stream" here refers to being able to read documents from an OPDS server without downloading them completely, on a page by page basis.
+        title = _("Select Page Stream Option \u{2B0C}\n"),
+        title_align = "center",
+        buttons = buttons,
+    }
+
+    UIManager:show(page_stream_dialog)
+end
+
 -- Shows dialog to download / stream a book
 function OPDSBrowser:showDownloads(item)
     local acquisitions = item.acquisitions
@@ -584,19 +637,9 @@ function OPDSBrowser:showDownloads(item)
         if acquisition.count then
             stream_buttons = {
                 {
-                    -- @translators "Stream" here refers to being able to read documents from an OPDS server without downloading them completely, on a page by page basis.
-                    text = _("Page stream") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
+                    text = _("Page stream"),
                     callback = function()
-                        OPDSPSE:streamPages(acquisition.href, acquisition.count, false, self.root_catalog_username, self.root_catalog_password)
-                        UIManager:close(self.download_dialog)
-                    end,
-                },
-                {
-                    -- @translators "Stream" here refers to being able to read documents from an OPDS server without downloading them completely, on a page by page basis.
-                    text = _("Stream from page") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
-                    callback = function()
-                        OPDSPSE:streamPages(acquisition.href, acquisition.count, true, self.root_catalog_username, self.root_catalog_password)
-                        UIManager:close(self.download_dialog)
+                        createPageStreamDialog(acquisition, self)
                     end,
                 },
             }
@@ -620,13 +663,13 @@ function OPDSBrowser:showDownloads(item)
                     text = text .. "\u{2B07}", -- append DOWNWARDS BLACK ARROW
                     callback = function()
                         UIManager:close(self.download_dialog)
-                        local local_path = self:getLocalDownloadPath(filename, filetype, acquisition.href)
+                        local local_path = self:getLocalDownloadPath(filename, filetype, acquisition.href, filename_orig)
                         self:downloadFile(local_path, acquisition.href, self._manager.file_downloaded_callback)
                     end,
                     hold_callback = function()
                         UIManager:close(self.download_dialog)
                         table.insert(self.downloads, {
-                            file    = self:getLocalDownloadPath(filename, filetype, acquisition.href),
+                            file    = self:getLocalDownloadPath(filename, filetype, acquisition.href, filename_orig),
                             url     = acquisition.href,
                             info    = type(item.content) == "string" and util.htmlToPlainTextIfHtml(item.content),
                             catalog = self.root_catalog_title,
@@ -743,9 +786,19 @@ function OPDSBrowser.getCurrentDownloadDir()
     return G_reader_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
 end
 
-function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url)
+function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url, filename_orig)
+    local fileNameFromServer
+    if self.root_catalog_raw_names then
+        fileNameFromServer = self:getServerFileName(remote_url)
+    end
+    -- if fileNameFromServer is not found and use filename_orig instead
+    if not fileNameFromServer or fileNameFromServer == "" then
+        logger.warn("No fileName found: falling back to default name")
+        fileNameFromServer = filename_orig
+    end
+
     local download_dir = OPDSBrowser.getCurrentDownloadDir()
-    filename = filename and filename .. "." .. filetype:lower() or self:getServerFileName(remote_url)
+    filename = filename and filename .. "." .. filetype:lower() or fileNameFromServer
     filename = util.getSafeFilename(filename, download_dir)
     filename = (download_dir ~= "/" and download_dir or "") .. '/' .. filename
     return util.fixUtf8(filename, "_")
