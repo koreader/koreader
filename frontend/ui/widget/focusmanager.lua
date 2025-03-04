@@ -167,7 +167,7 @@ function FocusManager:onFocusHalfMove(args)
         if dx == 0 then
             dx = 1
         elseif dx + x > #row then
-            dx = #row - y -- last column
+            dx = #row - x -- last column
         end
     end
     return self:onFocusMove({dx, dy})
