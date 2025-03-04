@@ -1,9 +1,10 @@
-local bit = require("bit")
+local BD = require("ui/bidi")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local logger = require("logger")
 local UIManager = require("ui/uimanager")
+local bit = require("bit")
+local logger = require("logger")
 local util = require("util")
 --[[
 Wrapper Widget that manages focus for a whole dialog
@@ -213,6 +214,11 @@ function FocusManager:onFocusMove(args)
         return false
     end
     local dx, dy = unpack(args)
+
+    -- Flip horizontal direction in RTL mode
+    if dx ~= 0 and BD.mirroredUILayout() then
+        dx = -dx
+    end
 
     if (dx ~= 0 and not self.movement_allowed.x)
         or (dy ~= 0 and not self.movement_allowed.y) then
