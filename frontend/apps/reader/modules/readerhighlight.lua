@@ -1039,6 +1039,8 @@ function ReaderHighlight:updateHighlight(index, side, direction, move_by_char)
     end
     if is_updated then
         highlight.text = util.cleanupSelectedText(highlight.text)
+        self:writePdfAnnotation("delete", highlight_before)
+        self:writePdfAnnotation("save", highlight)
         self.ui:handleEvent(Event:new("AnnotationsModified", { highlight, highlight_before }))
         UIManager:setDirty(self.dialog, "ui")
     end
