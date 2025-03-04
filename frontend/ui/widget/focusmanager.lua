@@ -156,19 +156,23 @@ function FocusManager:onFocusHalfMove(args)
             dy = #self.layout - y -- last row
         end
     elseif direction == "left" then
-        dx = - math.floor(#row / 2)
+        dx = BD.mirroredUILayout() and math.floor(#row / 2) or -math.floor(#row / 2)
         if dx == 0 then
             dx = -1
         elseif dx + x <= 0 then
             dx = -x + 1 -- first column
         end
     elseif direction == "right" then
-        dx = math.floor(#row / 2)
+        dx = BD.mirroredUILayout() and -math.floor(#row / 2) or math.floor(#row / 2)
         if dx == 0 then
             dx = 1
         elseif dx + x > #row then
             dx = #row - x -- last column
         end
+    end
+    -- Flip horizontal direction in RTL mode
+    if dx ~= 0 and BD.mirroredUILayout() then
+        dx = -dx
     end
     return self:onFocusMove({dx, dy})
 end
