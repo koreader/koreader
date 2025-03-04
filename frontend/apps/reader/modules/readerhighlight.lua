@@ -1233,7 +1233,7 @@ function ReaderHighlight:updateHighlightPaging(highlight, side, direction)
             end
         end
     end
-    local start_box, end_box = page_boxes[new_start_i][new_start_j], page_boxes[new_end_i][new_end_j]
+    start_box, end_box = page_boxes[new_start_i][new_start_j], page_boxes[new_end_i][new_end_j]
     if highlight.ext then -- multipage highlight
         if side == 0 then -- we move pos0
             highlight.pos0.x = (start_box.x0 + start_box.x1) / 2
