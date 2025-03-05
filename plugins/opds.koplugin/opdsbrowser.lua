@@ -418,11 +418,12 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                         -- https://vaemendis.net/opds-pse/
                         -- «count» MUST provide the number of pages of the document
                         -- namespace may be not "pse"
-                        local count
+                        local count, last_read
                         for k, v in pairs(link) do
                             if k:sub(-6) == ":count" then
                                 count = tonumber(v)
-                                break
+                            elseif k:sub(-9) == ":lastRead" then
+                                last_read = tonumber(v)
                             end
                         end
                         if count then
@@ -431,6 +432,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                                 href  = link_href,
                                 title = link.title,
                                 count = count,
+                                last_read = last_read and last_read > 0 and last_read or nil
                             })
                         end
                     elseif link.rel == self.thumbnail_rel or link.rel == self.thumbnail_rel_alt then
@@ -584,22 +586,37 @@ function OPDSBrowser:showDownloads(item)
         if acquisition.count then
             stream_buttons = {
                 {
-                    -- @translators "Stream" here refers to being able to read documents from an OPDS server without downloading them completely, on a page by page basis.
-                    text = _("Page stream") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
-                    callback = function()
-                        OPDSPSE:streamPages(acquisition.href, acquisition.count, false, self.root_catalog_username, self.root_catalog_password)
-                        UIManager:close(self.download_dialog)
-                    end,
-                },
-                {
-                    -- @translators "Stream" here refers to being able to read documents from an OPDS server without downloading them completely, on a page by page basis.
-                    text = _("Stream from page") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
-                    callback = function()
-                        OPDSPSE:streamPages(acquisition.href, acquisition.count, true, self.root_catalog_username, self.root_catalog_password)
-                        UIManager:close(self.download_dialog)
-                    end,
+                    {
+                        -- @translators "Stream" here refers to being able to read documents from an OPDS server without downloading them completely, on a page by page basis.
+                        text = "\u{23EE} " .. _("Page stream"), -- prepend BLACK LEFT-POINTING DOUBLE TRIANGLE WITH BAR
+                        callback = function()
+                            OPDSPSE:streamPages(acquisition.href, acquisition.count, false, self.root_catalog_username, self.root_catalog_password)
+                            UIManager:close(self.download_dialog)
+                        end,
+                    },
+                    {
+                        -- @translators "Stream" here refers to being able to read documents from an OPDS server without downloading them completely, on a page by page basis.
+                        text = _("Stream from page") .. " \u{23E9}", -- append BLACK RIGHT-POINTING DOUBLE TRIANGLE
+                        callback = function()
+                            OPDSPSE:streamPages(acquisition.href, acquisition.count, true, self.root_catalog_username, self.root_catalog_password)
+                            UIManager:close(self.download_dialog)
+                        end,
+                    },
                 },
             }
+
+            if acquisition.last_read then
+                table.insert(stream_buttons, {
+                    {
+                        -- @translators "Stream" here refers to being able to read documents from an OPDS server without downloading them completely, on a page by page basis.
+                        text = "\u{25B6} " .. _("Resume stream from page") .. " " .. acquisition.last_read, -- prepend BLACK RIGHT-POINTING TRIANGLE
+                        callback = function()
+                            OPDSPSE:streamPages(acquisition.href, acquisition.count, false, self.root_catalog_username, self.root_catalog_password, acquisition.last_read)
+                            UIManager:close(self.download_dialog)
+                        end,
+                    },
+                })
+            end
         elseif acquisition.type == "borrow" then
             table.insert(download_buttons, {
                 text = _("Borrow"),
@@ -654,7 +671,9 @@ function OPDSBrowser:showDownloads(item)
         table.insert(buttons, {}) -- separator
     end
     if stream_buttons then
-        table.insert(buttons, stream_buttons)
+        for _, button_list in ipairs(stream_buttons) do
+            table.insert(buttons, button_list)
+        end
         table.insert(buttons, {}) -- separator
     end
     table.insert(buttons, { -- action buttons
