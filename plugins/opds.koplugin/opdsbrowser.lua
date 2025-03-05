@@ -588,7 +588,7 @@ function OPDSBrowser:showDownloads(item)
                 {
                     {
                         -- @translators "Stream" here refers to being able to read documents from an OPDS server without downloading them completely, on a page by page basis.
-                        text = "\u{23EE} " .. _("Page stream"),
+                        text = "\u{23EE} " .. _("Page stream"), -- prepend BLACK LEFT-POINTING DOUBLE TRIANGLE WITH BAR
                         callback = function()
                             OPDSPSE:streamPages(acquisition.href, acquisition.count, false, self.root_catalog_username, self.root_catalog_password)
                             UIManager:close(self.download_dialog)
@@ -596,7 +596,7 @@ function OPDSBrowser:showDownloads(item)
                     },
                     {
                         -- @translators "Stream" here refers to being able to read documents from an OPDS server without downloading them completely, on a page by page basis.
-                        text = _("Stream from page") .. " \u{23E9}",
+                        text = _("Stream from page") .. " \u{23E9}", -- append BLACK RIGHT-POINTING DOUBLE TRIANGLE
                         callback = function()
                             OPDSPSE:streamPages(acquisition.href, acquisition.count, true, self.root_catalog_username, self.root_catalog_password)
                             UIManager:close(self.download_dialog)
@@ -609,7 +609,7 @@ function OPDSBrowser:showDownloads(item)
                 table.insert(stream_buttons, {
                     {
                         -- @translators "Stream" here refers to being able to read documents from an OPDS server without downloading them completely, on a page by page basis.
-                        text = "\u{25B6} " .. _("Resume stream from page") .. " " .. acquisition.last_read,
+                        text = "\u{25B6} " .. _("Resume stream from page") .. " " .. acquisition.last_read, -- prepend BLACK RIGHT-POINTING TRIANGLE
                         callback = function()
                             OPDSPSE:streamPages(acquisition.href, acquisition.count, false, self.root_catalog_username, self.root_catalog_password, acquisition.last_read)
                             UIManager:close(self.download_dialog)
