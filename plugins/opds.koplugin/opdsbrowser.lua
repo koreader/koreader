@@ -427,16 +427,13 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                             end
                         end
                         if count then
-                            local acquisition = {
+                            table.insert(item.acquisitions, {
                                 type  = link.type,
                                 href  = link_href,
                                 title = link.title,
                                 count = count,
-                            }
-                            if last_read and last_read > 0 then
-                                acquisition.last_read = last_read
-                            end
-                            table.insert(item.acquisitions, acquisition)
+                                last_read = last_read and last_read > 0 and last_read or nil
+                            })
                         end
                     elseif link.rel == self.thumbnail_rel or link.rel == self.thumbnail_rel_alt then
                         item.thumbnail = link_href
