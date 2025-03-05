@@ -776,18 +776,8 @@ function Input:handleKeyBoardEv(ev)
         if G_reader_settings:isTrue("input_no_key_repeat") then return end
         -- NOTE: We only care about repeat events from the page-turn buttons and cursor keys...
         --       And we *definitely* don't want to flood the Event queue with useless SleepCover repeats!
-        local allowed_repeat_keys = {
-            "LPgBack", "RPgBack", "LPgFwd",  "RPgFwd", -- kobo
-            "Up", "Down", "Left", "Right" -- kindle (with the 5-way controller)
-        }
-        local is_allowed = false
-        for _, allowed_key in ipairs(allowed_repeat_keys) do
-            if keycode == allowed_key then
-                is_allowed = true
-                break
-            end
-        end
-        if is_allowed then
+        if keycode == "Up" or keycode == "Down" or keycode == "Left" or keycode == "Right"
+        or keycode == "RPgBack" or keycode == "RPgFwd" or keycode == "LPgBack" or keycode == "LPgFwd" then
             --- @fixme Crappy event staggering!
             --
             -- The Forma & co repeats every 80ms after a 400ms delay, and 500ms roughly corresponds to a flashing update,
