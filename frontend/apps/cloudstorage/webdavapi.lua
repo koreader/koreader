@@ -114,7 +114,6 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
             local item_content_length_match = item:match("<[^:]*:getcontentlength[^>]*>(%d+)</[^:]*:getcontentlength>")
             if item_content_length_match then
                 item_filesize = tonumber(item_content_length_match)
-                item_filesize = util.getFriendlySize(item_filesize)
             end
 
             if item:find("<[^:]*:collection[^<]*/>") then
@@ -152,7 +151,8 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
             text = files.text,
             url = files.url,
             type = files.type,
-            filesize = files.filesize or nil
+            filesize = files.filesize or nil,
+            mandatory = util.getFriendlySize(files.filesize) or nil
         })
     end
     if folder_mode then

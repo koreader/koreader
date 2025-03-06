@@ -19,6 +19,7 @@ local logger = require("logger")
 local _ = require("gettext")
 local N_ = _.ngettext
 local T = require("ffi/util").template
+local util = require("util")
 
 local CloudStorage = Menu:extend{
     no_title = false,
@@ -228,15 +229,17 @@ function CloudStorage:downloadFile(item)
     end
 
     local function createTitle(filename_orig, filesize, filename, path) -- title for ButtonDialog
+        local filesize_str = filesize and util.getFriendlySize(filesize) or _("N/A")
+
         return T(_("Filename:\n%1\n\nFile size:\n%2\n\nDownload filename:\n%3\n\nDownload folder:\n%4"),
-            filename_orig, filesize, filename, BD.dirpath(path))
+            filename_orig, filesize_str, filename, BD.dirpath(path))
     end
 
     local cs_settings = self:readSettings()
     local download_dir = cs_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
     local filename_orig = item.text
     local filename = filename_orig
-    local filesize = item.filesize or "N/A"
+    local filesize = item.filesize
 
     local buttons = {
         {
