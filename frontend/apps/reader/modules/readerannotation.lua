@@ -265,6 +265,7 @@ function ReaderAnnotation:onExportAnnotations(on_closing)
         local device_id = G_reader_settings:readSetting("device_id", random.uuid())
         anno:saveSetting("device_id", device_id)
         anno:saveSetting("datetime", os.date("%Y-%m-%d %H:%M:%S"))
+        anno:saveSetting("paging", self.ui.paging and true)
         anno:saveSetting("annotations", self.annotations)
         anno:flush()
         os.remove(file .. ".old")
@@ -280,7 +281,7 @@ function ReaderAnnotation:importAnnotations()
     local anno = LuaSettings:open(file)
     if anno:readSetting("device_id") == G_reader_settings:readSetting("device_id") then return end -- same device
     local new_annotations = anno:readSetting("annotations")
-    if (not self.ui.paging) ~= (not new_annotations[1].pboxes) then return end -- incompatible annotations type
+    if (self.ui.paging and true) ~= anno:readSetting("paging") then return end -- incompatible annotations type
     local new_datetime = anno:readSetting("datetime")
     os.remove(file)
     if #self.annotations == 0 then
