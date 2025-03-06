@@ -231,7 +231,7 @@ function CloudStorage:downloadFile(item)
     local function createTitle(filename_orig, filesize, filename, path) -- title for ButtonDialog
         local filesize_str = filesize and util.getFriendlySize(filesize) or _("N/A")
 
-        return T(_("Filename:\n%1\n\nFile size:\n%2\n\nDownload filename:\n%3\n\nDownload folder:\n%4"),
+        return T(_("Filename (Filesize):\n%1 (%2)\n\nDownload filename:\n%3\n\nDownload folder:\n%4"),
             filename_orig, filesize_str, filename, BD.dirpath(path))
     end
 
