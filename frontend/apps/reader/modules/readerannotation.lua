@@ -280,7 +280,7 @@ function ReaderAnnotation:importAnnotations()
     local anno = LuaSettings:open(file)
     if anno:readSetting("device_id") == G_reader_settings:readSetting("device_id") then return end -- same device
     local new_annotations = anno:readSetting("annotations")
-    if not self.ui.paging ~= not new_annotations[1].pboxes then return end -- incompatible annotations type
+    if (not self.ui.paging) ~= (not new_annotations[1].pboxes) then return end -- incompatible annotations type
     local new_datetime = anno:readSetting("datetime")
     os.remove(file)
     if #self.annotations == 0 then
@@ -290,14 +290,14 @@ function ReaderAnnotation:importAnnotations()
     local doesMatch
     if self.ui.rolling then
         doesMatch = function(a, b)
-            if not a.drawer ~= not b.drawer or a.page ~= b.page or a.pos1 ~= b.pos1 then
+            if (not a.drawer) ~= (not b.drawer) or a.page ~= b.page or a.pos1 ~= b.pos1 then
                 return false
             end
             return true
         end
     else
         doesMatch = function(a, b)
-            if not a.drawer ~= not b.drawer or a.page ~= b.page
+            if (not a.drawer) ~= (not b.drawer) or a.page ~= b.page
                 or (a.pos0 and (a.pos0.x ~= b.pos0.x or a.pos1.x ~= b.pos1.x
                              or a.pos0.y ~= b.pos0.y or a.pos1.y ~= b.pos1.y)) then
                 return false
