@@ -67,7 +67,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
     end
 
     local sink = {}
-    local data = [[<?xml version="1.0"?><a:propfind xmlns:a="DAV:"><a:prop><a:resourcetype/></a:prop></a:propfind>]]
+    local data = [[<?xml version="1.0"?><a:propfind xmlns:a="DAV:"><a:prop><a:resourcetype/><a:getcontentlength/></a:prop></a:propfind>]]
     socketutil:set_timeout()
     local request = {
         url      = webdav_url,
@@ -109,6 +109,14 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
                                       item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
             local item_path = path .. "/" .. item_name
 
+            -- only available for files, not directories/collections
+            local item_filesize = nil
+            local item_content_length_match = item:match("<[^:]*:getcontentlength[^>]*>(%d+)</[^:]*:getcontentlength>")
+            if item_content_length_match then
+                item_filesize = tonumber(item_content_length_match)
+                item_filesize = util.getFriendlySize(item_filesize)
+            end
+
             if item:find("<[^:]*:collection[^<]*/>") then
                 item_name = item_name .. "/"
                 if not is_current_dir then
@@ -124,6 +132,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
                     text = item_name,
                     url = item_path,
                     type = "file",
+                    filesize = item_filesize
                 })
             end
         end
@@ -143,6 +152,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
             text = files.text,
             url = files.url,
             type = files.type,
+            filesize = files.filesize or nil
         })
     end
     if folder_mode then

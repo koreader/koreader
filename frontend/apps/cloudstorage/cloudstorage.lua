@@ -227,15 +227,16 @@ function CloudStorage:downloadFile(item)
         })
     end
 
-    local function createTitle(filename_orig, filename, path) -- title for ButtonDialog
-        return T(_("Filename:\n%1\n\nDownload filename:\n%2\n\nDownload folder:\n%3"),
-            filename_orig, filename, BD.dirpath(path))
+    local function createTitle(filename_orig, filesize, filename, path) -- title for ButtonDialog
+        return T(_("Filename:\n%1\n\nFile size:\n%2\n\nDownload filename:\n%3\n\nDownload folder:\n%4"),
+            filename_orig, filesize, filename, BD.dirpath(path))
     end
 
     local cs_settings = self:readSettings()
     local download_dir = cs_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
     local filename_orig = item.text
     local filename = filename_orig
+    local filesize = item.filesize or "N/A"
 
     local buttons = {
         {
@@ -247,7 +248,7 @@ function CloudStorage:downloadFile(item)
                             self.cs_settings:saveSetting("download_dir", path)
                             self.cs_settings:flush()
                             download_dir = path
-                            self.download_dialog:setTitle(createTitle(filename_orig, filename, download_dir))
+                            self.download_dialog:setTitle(createTitle(filename_orig, filesize, filename, download_dir))
                         end,
                     }:chooseDir(download_dir)
                 end,
@@ -278,7 +279,7 @@ function CloudStorage:downloadFile(item)
                                             filename = filename_orig
                                         end
                                         UIManager:close(input_dialog)
-                                        self.download_dialog:setTitle(createTitle(filename_orig, filename, download_dir))
+                                        self.download_dialog:setTitle(createTitle(filename_orig, filesize, filename, download_dir))
                                     end,
                                 },
                             }
@@ -318,7 +319,7 @@ function CloudStorage:downloadFile(item)
     }
 
     self.download_dialog = ButtonDialog:new{
-        title = createTitle(filename_orig, filename, download_dir),
+        title = createTitle(filename_orig, filesize, filename, download_dir),
         buttons = buttons,
     }
     UIManager:show(self.download_dialog)
@@ -388,7 +389,6 @@ function CloudStorage:onMenuHold(item)
                     callback = function()
                         UIManager:close(cs_server_dialog)
                         self:editCloudServer(item)
-
                     end
                 },
                 {
