@@ -1048,6 +1048,10 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
     return total_pages, total_time
 end
 
+function ReaderStatistics:usePageMapForPageNumbers()
+    return self.ui.doc_settings:isTrue("pagemap_use_page_labels") and self.document:getPageMap()
+end
+
 function ReaderStatistics:onToggleStatistics(no_notification)
     if self.settings.is_enabled then -- save data to file
         self:insertDB()
@@ -1057,7 +1061,11 @@ function ReaderStatistics:onToggleStatistics(no_notification)
         if self.settings.is_enabled then
             self:initData()
             self.start_current_period = os.time()
-            self.curr_page = self.ui:getCurrentPage()
+            if self:usePageMapForPageNumbers() then
+                self.curr_page = self.ui.document:getPageMapCurrentPageLabel()
+            else
+                self.curr_page = self.ui:getCurrentPage()
+            end
             self:resetVolatileStats(self.start_current_period)
         end
         self.view.footer:maybeUpdateFooter()
@@ -1641,7 +1649,11 @@ function ReaderStatistics:getCurrentStat()
     if first_open == nil then
         first_open = now_ts
     end
-    self.data.pages = self.document:getPageCount()
+    if self:usePageMapForPageNumbers() then
+        self.data.pages = self.document:getPageMapLastPageLabel()
+    else
+        self.data.pages = self.document:getPageCount()
+    end
     total_time_book = tonumber(total_time_book)
     total_read_pages = tonumber(total_read_pages)
 
@@ -1660,7 +1672,11 @@ function ReaderStatistics:getCurrentStat()
             page_progress_string = ("[%d / %d]%d (%d%%)"):format(current_page, total_pages, flow, percent_read)
         end
     else
-        current_page = self.ui:getCurrentPage()
+        if self:usePageMapForPageNumbers() then
+            current_page = self.document:getPageMapCurrentPageLabel()
+        else
+            current_page = self.ui:getCurrentPage()
+        end
         total_pages = self.data.pages
         percent_read = Math.round(100*current_page/total_pages)
         page_progress_string = ("%d / %d (%d%%)"):format(current_page, total_pages, percent_read)
