@@ -149,7 +149,8 @@ local settingsList = {
     ----
     show_config_menu = {category="none", event="ShowConfigMenu", title=_("Show bottom menu"), reader=true},
     toggle_status_bar = {category="none", event="ToggleFooterMode", title=_("Toggle status bar"), reader=true},
-    toggle_chapter_progress_bar = {category="none", event="ToggleChapterProgressBar", title=_("Toggle chapter progress bar"), reader=true, separator=true},
+    toggle_chapter_progress_bar = {category="none", event="ToggleChapterProgressBar", title=_("Toggle chapter progress bar"), reader=true},
+    toggle_progress_bar_direction = {category="none", event="ToggleProgressBarDirection", title=_("Toggle progress bar direction"), reader=true, separator=true},
     ----
     prev_chapter = {category="none", event="GotoPrevChapter", title=_("Previous chapter"), reader=true},
     next_chapter = {category="none", event="GotoNextChapter", title=_("Next chapter"), reader=true},
@@ -384,6 +385,7 @@ local dispatcher_menu_order = {
     "show_config_menu",
     "toggle_status_bar",
     "toggle_chapter_progress_bar",
+    "toggle_progress_bar_direction",
     ----
     "prev_chapter",
     "next_chapter",
