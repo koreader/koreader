@@ -297,15 +297,17 @@ local KeyValuePage = FocusManager:extend{
 }
 
 function KeyValuePage:init()
+    local screen_w = Screen:getWidth()
+    local screen_h = Screen:getHeight()
     self.show_parent = self.show_parent or self
     self.kv_pairs = self.kv_pairs or {}
     self.dimen = Geom:new{
         x = 0,
         y = 0,
-        w = self.width or Screen:getWidth(),
-        h = self.height or Screen:getHeight(),
+        w = self.width or screen_w,
+        h = self.height or screen_h,
     }
-    if self.dimen.w == Screen:getWidth() and self.dimen.h == Screen:getHeight() then
+    if self.dimen.w == screen_w and self.dimen.h == screen_h then
         self.covers_fullscreen = true -- hint for UIManager:_repaint()
     end
 
@@ -466,7 +468,8 @@ function KeyValuePage:init()
                          - 2*Size.line.thick
                             -- account for possibly 2 separator lines added
 
-    self.items_per_page = G_reader_settings:readSetting("keyvalues_per_page") or self.getDefaultItemsPerPage()
+    local nb_items_landscape, nb_items_portrait = KeyValuePage.getCurrentItemsPerPage()
+    self.items_per_page = screen_h < screen_w and nb_items_landscape or nb_items_portrait
     if self.single_page and self.items_per_page < #self.kv_pairs then
         self.items_per_page = #self.kv_pairs
     end
@@ -520,10 +523,24 @@ end
 function KeyValuePage.getDefaultItemsPerPage()
     -- Get a default according to Screen DPI (roughly following
     -- the former implementation building logic)
+    local screen_w = Screen:getWidth()
+    local screen_h = Screen:getHeight()
+    if screen_w > screen_h then
+        screen_w, screen_h = screen_h, screen_w
+    end
     local default_item_height = Size.item.height_default * 1.5 -- we were adding 1/2 as margin
-    local nb_items = math.floor(Screen:getHeight() / default_item_height)
-    nb_items = nb_items - 3 -- account for title and footer heights
-    return nb_items
+    local nb_items_landscape = math.floor(screen_w / default_item_height) - 3 -- account for title and footer heights
+    local nb_items_portrait = math.floor(screen_h / default_item_height) - 3
+    return nb_items_landscape, nb_items_portrait
+end
+
+function KeyValuePage.getCurrentItemsPerPage(nb_items_landscape_default, nb_items_portrait_default)
+    if nb_items_landscape_default == nil then
+        nb_items_landscape_default, nb_items_portrait_default = KeyValuePage.getDefaultItemsPerPage()
+    end
+    local nb_items_landscape = G_reader_settings:readSetting("keyvalues_per_page_landscape") or nb_items_landscape_default
+    local nb_items_portrait = G_reader_settings:readSetting("keyvalues_per_page") or nb_items_portrait_default
+    return nb_items_landscape, nb_items_portrait
 end
 
 function KeyValuePage:nextPage()
