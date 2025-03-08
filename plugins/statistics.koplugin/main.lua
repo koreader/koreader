@@ -91,7 +91,7 @@ ReaderStatistics.default_settings = {
     calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS,
     calendar_show_histogram = true,
     calendar_browse_future_months = false,
-    when_use_reference_pages = 1,
+    use_reference_pages = 1,
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
@@ -1056,14 +1056,14 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
 end
 
 function ReaderStatistics:usePageMapForPageNumbers()
-    if self.settings.when_use_reference_pages == 1 then
+    if self.settings.use_reference_pages == 1 then
         local use_page_map_from_document_config = self.ui.doc_settings:isTrue("pagemap_use_page_labels")
         local use_global_config = not self.ui.doc_settings:has("pagemap_use_page_labels")
         local use_page_map_from_global_config = G_reader_settings:isTrue("pagemap_use_page_labels")
         return (use_page_map_from_document_config or (use_global_config and use_page_map_from_global_config)) and self.document:hasPageMap()
     end
 
-    if self.settings.when_use_reference_pages == 2 then
+    if self.settings.use_reference_pages == 2 then
         return self.document:hasPageMap()
     end
 
@@ -1193,33 +1193,33 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                     {
                         text_func = function()
                             local option
-                            local setting_value = self.settings.when_use_reference_pages
+                            local setting_value = self.settings.use_reference_pages
 
                             if setting_value == 1 then
-                                option = "When used for document"
+                                option = _("When used for document")
                             elseif setting_value == 2 then
-                                option = "When available"
+                                option = _("When available")
                             else
-                                option = "Never"
+                                option = _("Never")
                             end
 
                             return T(_("Use reference pages: %1"), option)
                         end,
                         sub_item_table = {
                             {
-                                text = "When being used for current document",
-                                checked_func = function() return self.settings.when_use_reference_pages == 1 end,
-                                callback = function() self.settings.when_use_reference_pages = 1 end
+                                text = _("When being used for current document"),
+                                checked_func = function() return self.settings.use_reference_pages == 1 end,
+                                callback = function() self.settings.use_reference_pages = 1 end
                             },
                             {
-                                text = "When available for current document",
-                                checked_func = function() return self.settings.when_use_reference_pages == 2 end,
-                                callback = function() self.settings.when_use_reference_pages = 2 end
+                                text = _("When available for current document"),
+                                checked_func = function() return self.settings.use_reference_pages == 2 end,
+                                callback = function() self.settings.use_reference_pages = 2 end
                             },
                             {
-                                text = "Never",
-                                checked_func = function() return self.settings.when_use_reference_pages == nil end,
-                                callback = function() self.settings.when_use_reference_pages = nil end
+                                text = _("Never"),
+                                checked_func = function() return self.settings.use_reference_pages == nil end,
+                                callback = function() self.settings.use_reference_pages = nil end
                             },
                         },
                     },
@@ -1662,8 +1662,6 @@ function ReaderStatistics:getSequenceNumberForPageLabel(label, page_map)
             return i
         end
     end
-
-    return nil
 end
 
 
