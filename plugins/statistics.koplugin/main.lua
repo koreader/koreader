@@ -1049,7 +1049,11 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
 end
 
 function ReaderStatistics:usePageMapForPageNumbers()
-    return self.ui.doc_settings:isTrue("pagemap_use_page_labels") and self.document:getPageMap()
+    local use_page_map_from_document_config = self.ui.doc_settings:isTrue("pagemap_use_page_labels")
+    local use_global_config = not self.ui.doc_settings:has("pagemap_use_page_labels")
+    local use_page_map_from_global_config = G_reader_settings:isTrue("pagemap_use_page_labels")
+
+    return (use_page_map_from_document_config or (use_global_config and use_page_map_from_global_config)) and self.document:hasPageMap()
 end
 
 function ReaderStatistics:onToggleStatistics(no_notification)
@@ -1604,6 +1608,17 @@ function ReaderStatistics:getCurrentBookStats()
     return current_duration, current_pages
 end
 
+function ReaderStatistics:GetSequenceNumberForPageLabel(label, page_map)
+    for i = 1, #page_map do
+        if page_map[i].label == label then
+            return i
+        end
+    end
+
+    return nil
+end
+
+
 function ReaderStatistics:getCurrentStat()
     self:insertDB()
     local id_book = self.id_curr_book
@@ -1658,6 +1673,7 @@ function ReaderStatistics:getCurrentStat()
     total_read_pages = tonumber(total_read_pages)
 
     local current_page
+    local current_page_label
     local total_pages
     local page_progress_string
     local percent_read
@@ -1673,13 +1689,18 @@ function ReaderStatistics:getCurrentStat()
         end
     else
         if self:usePageMapForPageNumbers() then
-            current_page = self.document:getPageMapCurrentPageLabel()
+            local page_map = self.document:getPageMap()
+            current_page_label = self.document:getPageMapCurrentPageLabel()
+            current_page = self:GetSequenceNumberForPageLabel(current_page_label, page_map)
+            total_pages = #page_map
+            percent_read = Math.round(100*current_page/total_pages)
+            page_progress_string = ("%s / %d (%d%%)"):format(current_page_label, self.data.pages , percent_read)
         else
             current_page = self.ui:getCurrentPage()
+            total_pages = self.data.pages
+            percent_read = Math.round(100*current_page/total_pages)
+            page_progress_string = ("%d / %d (%d%%)"):format(current_page, total_pages, percent_read)
         end
-        total_pages = self.data.pages
-        percent_read = Math.round(100*current_page/total_pages)
-        page_progress_string = ("%d / %d (%d%%)"):format(current_page, total_pages, percent_read)
     end
 
     local first_open_days_ago = math.floor(tonumber(now_ts - first_open)/86400)
@@ -2659,6 +2680,14 @@ end
 
 
 function ReaderStatistics:onPosUpdate(pos, pageno)
+    if self:usePageMapForPageNumbers() then
+        if self.curr_page ~= self:GetSequenceNumberForPageLabel(self.document:getPageMapCurrentPageLabel(),self.document:getPageMap()) then
+            self:onPageUpdate(pageno)
+
+        end
+        return
+    end
+
     if self.curr_page ~= pageno then
         self:onPageUpdate(pageno)
     end
@@ -2685,6 +2714,10 @@ function ReaderStatistics:onPageUpdate(pageno)
     if pageno == false then -- from onCloseDocument()
         closing = true
         pageno = self.curr_page -- avoid issues in following code
+    end
+
+    if self:usePageMapForPageNumbers() then
+        pageno = self:GetSequenceNumberForPageLabel(self.document:getPageMapCurrentPageLabel(),self.document:getPageMap()) or pageno
     end
 
     self.pageturn_count = self.pageturn_count + 1
