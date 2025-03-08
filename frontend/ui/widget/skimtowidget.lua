@@ -17,8 +17,10 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
+
 
 local SkimToWidget = FocusManager:extend{}
 
@@ -96,7 +98,7 @@ function SkimToWidget:init()
     local invert_buttons = self.progress_bar.invert_direction
     -- Bottom row buttons
     local button_minus = Button:new{
-        text = invert_buttons and "+1" or "-1",
+        text = "-1",
         text_font_size = button_font_size,
         radius = 0,
         width = button_width,
@@ -104,11 +106,11 @@ function SkimToWidget:init()
         show_parent = self,
         vsync = true,
         callback = function()
-            self:goToPage(self.curr_page + (invert_buttons and 1 or -1))
+            self:goToPage(self.curr_page - 1)
         end,
     }
     local button_minus_ten = Button:new{
-        text = invert_buttons and "+10" or "-10",
+        text = "-10",
         text_font_size = button_font_size,
         radius = 0,
         width = button_width,
@@ -116,11 +118,11 @@ function SkimToWidget:init()
         show_parent = self,
         vsync = true,
         callback = function()
-            self:goToPage(self.curr_page + (invert_buttons and 10 or -10))
+            self:goToPage(self.curr_page - 10)
         end,
     }
     local button_plus = Button:new{
-        text = invert_buttons and "-1" or "+1",
+        text = "+1",
         text_font_size = button_font_size,
         radius = 0,
         width = button_width,
@@ -128,11 +130,11 @@ function SkimToWidget:init()
         show_parent = self,
         vsync = true,
         callback = function()
-            self:goToPage(self.curr_page + (invert_buttons and -1 or 1))
+            self:goToPage(self.curr_page + 1)
         end,
     }
     local button_plus_ten = Button:new{
-        text = invert_buttons and "-10" or "+10",
+        text = "+10",
         text_font_size = button_font_size,
         radius = 0,
         width = button_width,
@@ -140,7 +142,7 @@ function SkimToWidget:init()
         show_parent = self,
         vsync = true,
         callback = function()
-            self:goToPage(self.curr_page + (invert_buttons and -10 or 10))
+            self:goToPage(self.curr_page + 10)
         end,
     }
     self.current_page_text = Button:new{
@@ -185,7 +187,7 @@ function SkimToWidget:init()
     local bookmark_prev_text = "◁\u{202F}\u{F097}"
     local bookmark_enabled_text = "\u{F02E}"
     local bookmark_disabled_text = "\u{F097}"
-    if BD.mirroredUILayout() then
+    if BD.mirroredUILayout() or invert_buttons then
         chapter_next_text, chapter_prev_text = chapter_prev_text, chapter_next_text
         bookmark_next_text, bookmark_prev_text = bookmark_prev_text, bookmark_next_text
     end
@@ -198,18 +200,13 @@ function SkimToWidget:init()
         show_parent = self,
         vsync = true,
         callback = function()
-            local page
-            if invert_buttons then
-                page = self.ui.toc:getPreviousChapter(self.curr_page)
-            else
-                page = self.ui.toc:getNextChapter(self.curr_page)
-            end
+            local page = self.ui.toc:getNextChapter(self.curr_page)
             if page and page >= 1 and page <= self.page_count then
                 self:goToPage(page)
             end
         end,
         hold_callback = function()
-            self:goToPage(invert_buttons and 1 or self.page_count)
+            self:goToPage(self.page_count)
         end,
     }
     local button_chapter_prev = Button:new{
@@ -221,18 +218,13 @@ function SkimToWidget:init()
         show_parent = self,
         vsync = true,
         callback = function()
-            local page
-            if invert_buttons then
-                page = self.ui.toc:getNextChapter(self.curr_page)
-            else
-                page = self.ui.toc:getPreviousChapter(self.curr_page)
-            end
+            local page = self.ui.toc:getPreviousChapter(self.curr_page)
             if page and page >= 1 and page <= self.page_count then
                 self:goToPage(page)
             end
         end,
         hold_callback = function()
-            self:goToPage(invert_buttons and self.page_count or 1)
+            self:goToPage(1)
         end,
     }
     local button_bookmark_next = Button:new{
@@ -244,18 +236,10 @@ function SkimToWidget:init()
         show_parent = self,
         vsync = true,
         callback = function()
-            if invert_buttons then
-                self:goToByEvent("GotoPreviousBookmarkFromPage")
-            else
-                self:goToByEvent("GotoNextBookmarkFromPage")
-            end
+            self:goToByEvent("GotoNextBookmarkFromPage")
         end,
         hold_callback = function()
-            if invert_buttons then
-                self:goToByEvent("GotoFirstBookmark")
-            else
-                self:goToByEvent("GotoLastBookmark")
-            end
+            self:goToByEvent("GotoLastBookmark")
         end,
     }
     local button_bookmark_prev = Button:new{
@@ -267,18 +251,10 @@ function SkimToWidget:init()
         show_parent = self,
         vsync = true,
         callback = function()
-            if invert_buttons then
-                self:goToByEvent("GotoNextBookmarkFromPage")
-            else
-                self:goToByEvent("GotoPreviousBookmarkFromPage")
-            end
+            self:goToByEvent("GotoPreviousBookmarkFromPage")
         end,
         hold_callback = function()
-            if invert_buttons then
-                self:goToByEvent("GotoLastBookmark")
-            else
-                self:goToByEvent("GotoFirstBookmark")
-            end
+            self:goToByEvent("GotoFirstBookmark")
         end,
     }
     self.button_bookmark_toggle = Button:new{
@@ -331,6 +307,10 @@ function SkimToWidget:init()
             button_plus_ten,
         }
         radius = Size.radius.window
+        if invert_buttons then
+            util.arrayReverse(top_buttons_row)
+            util.arrayReverse(bottom_buttons_row)
+        end
     else
         top_row_span = VerticalSpan:new{ width = Size.padding.default }
         top_buttons_row = HorizontalGroup:new{
@@ -357,6 +337,9 @@ function SkimToWidget:init()
             small_button_span,
             button_plus,
         }
+        if invert_buttons then
+            util.arrayReverse(top_buttons_row)
+        end
         if skim_dialog_position == "top" then
             bottom_row_span, bottom_buttons_row = top_row_span, top_buttons_row
             top_buttons_row = VerticalSpan:new{ width = 0 }
@@ -403,6 +386,15 @@ function SkimToWidget:init()
                 { button_chapter_prev, button_chapter_next, button_bookmark_prev, button_bookmark_next, self.button_bookmark_toggle,
                   self.current_page_text, button_orig_page, button_minus_ten, button_plus_ten, button_minus, button_plus },
             }
+        end
+        -- Invert D-Pad navigation layout to match visual button order
+        if invert_buttons then
+            if full_mode then
+                util.arrayReverse(self.layout[1])
+                util.arrayReverse(self.layout[2])
+            else
+                util.arrayReverse(self.layout[1])
+            end
         end
         self:moveFocusTo(1, 1)
     end
