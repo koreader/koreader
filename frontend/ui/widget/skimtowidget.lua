@@ -21,7 +21,6 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
-
 local SkimToWidget = FocusManager:extend{}
 
 function SkimToWidget:init()
