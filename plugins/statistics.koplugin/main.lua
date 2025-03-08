@@ -238,7 +238,13 @@ function ReaderStatistics:onDocumentRerendered()
     --   - we only then update self.data.pages=254 as the new page count
     -- - 5 minutes later, on the next insertDB(), (153, now-5mn, 42, 254) will be inserted in DB
 
-    local new_pagecount = self.document:getPageCount()
+    local new_pagecount
+
+    if ReaderStatistics:usePageMapForPageNumbers() then
+        new_pagecount = self.document:getCurrentPageLabel()
+    else
+        new_pagecount = self.document:getPageCount()
+    end
 
     if new_pagecount ~= self.data.pages then
         logger.dbg("ReaderStatistics: Pagecount change, flushing volatile book statistics")
@@ -1608,7 +1614,7 @@ function ReaderStatistics:getCurrentBookStats()
     return current_duration, current_pages
 end
 
-function ReaderStatistics:GetSequenceNumberForPageLabel(label, page_map)
+function ReaderStatistics:getSequenceNumberForPageLabel(label, page_map)
     for i = 1, #page_map do
         if page_map[i].label == label then
             return i
@@ -1691,7 +1697,7 @@ function ReaderStatistics:getCurrentStat()
         if self:usePageMapForPageNumbers() then
             local page_map = self.document:getPageMap()
             current_page_label = self.document:getPageMapCurrentPageLabel()
-            current_page = self:GetSequenceNumberForPageLabel(current_page_label, page_map)
+            current_page = self:getSequenceNumberForPageLabel(current_page_label, page_map)
             total_pages = #page_map
             percent_read = Math.round(100*current_page/total_pages)
             page_progress_string = ("%s / %d (%d%%)"):format(current_page_label, self.data.pages , percent_read)
@@ -2681,10 +2687,13 @@ end
 
 function ReaderStatistics:onPosUpdate(pos, pageno)
     if self:usePageMapForPageNumbers() then
-        if self.curr_page ~= self:GetSequenceNumberForPageLabel(self.document:getPageMapCurrentPageLabel(),self.document:getPageMap()) then
+        local current_page_label = self.document:getPageMapCurrentPageLabel()
+        local page_map = self.document:getPageMap()
+        local page_sequence_number = self:getSequenceNumberForPageLabel(current_page_label,page_map)
+        if self.curr_page ~= page_sequence_number then
             self:onPageUpdate(pageno)
-
         end
+
         return
     end
 
@@ -2717,7 +2726,10 @@ function ReaderStatistics:onPageUpdate(pageno)
     end
 
     if self:usePageMapForPageNumbers() then
-        pageno = self:GetSequenceNumberForPageLabel(self.document:getPageMapCurrentPageLabel(),self.document:getPageMap()) or pageno
+        local current_page_label = self.document:getPageMapCurrentPageLabel()
+        local page_map = self.document:getPageMap()
+        local page_sequence_number = self:getSequenceNumberForPageLabel(current_page_label,page_map)
+        pageno = page_sequence_number
     end
 
     self.pageturn_count = self.pageturn_count + 1
