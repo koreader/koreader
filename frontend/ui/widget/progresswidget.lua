@@ -191,14 +191,15 @@ function ProgressWidget:paintTo(bb, x, y)
         if self.initial_pos_marker and self.initial_percentage >= 0 then
             local marker_x, icon_x, icon_y
             if _mirroredUI then
-                marker_x = x + self.margin_h + self.bordersize + (fill_width - (fill_width * self.initial_percentage))
+                marker_x = x + self.margin_h + self.bordersize + math.ceil(fill_width - (fill_width * self.initial_percentage))
             else
-                marker_x = x + self.margin_h + self.bordersize + (fill_width * self.initial_percentage)
+                marker_x = x + self.margin_h + self.bordersize + math.ceil(fill_width * self.initial_percentage)
             end
-            icon_x = marker_x - math.floor(self.initial_pos_icon:getSize().w / 2)
             if self.height <= INITIAL_MARKER_HEIGHT_THRESHOLD then
-                icon_y = y - Math.round(self.height / 6)
+                icon_x = Math.round(marker_x - self.height * (1/4))
+                icon_y = y - Math.round(self.height * (1/6))
             else
+                icon_x = Math.round(marker_x - self.height * (1/2))
                 icon_y = y
             end
             self.initial_pos_icon:paintTo(bb, icon_x, icon_y)
