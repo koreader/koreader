@@ -93,8 +93,7 @@ function SkimToWidget:init()
     }
 
     -- Determine if we need to invert the button functionality and labels
-    local invert_buttons = self.ui.view.footer.settings.invert_progress_direction
-
+    local invert_buttons = self.progress_bar.invert_direction
     -- Bottom row buttons
     local button_minus = Button:new{
         text = invert_buttons and "+1" or "-1",
