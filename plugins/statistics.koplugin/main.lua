@@ -91,7 +91,8 @@ ReaderStatistics.default_settings = {
     calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS,
     calendar_show_histogram = true,
     calendar_browse_future_months = false,
-    use_reference_pages = 1,
+    use_reference_pages = true,
+    use_reference_pages_option = 1,
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
@@ -1056,13 +1057,15 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
 end
 
 function ReaderStatistics:usePageMapForPageNumbers()
-    if self.settings.use_reference_pages == 1 then
-        local use_page_map_from_document_config = self.ui.doc_settings:isTrue("pagemap_use_page_labels")
-        local use_global_config = not self.ui.doc_settings:has("pagemap_use_page_labels")
-        local use_page_map_from_global_config = G_reader_settings:isTrue("pagemap_use_page_labels")
-        return (use_page_map_from_document_config or (use_global_config and use_page_map_from_global_config)) and self.document:hasPageMap()
-    elseif self.settings.use_reference_pages == 2 then
-        return self.document:hasPageMap()
+    if self.settings.use_reference_pages then
+        if self.settings.use_reference_pages_option == 1 then
+            local use_page_map_from_document_config = self.ui.doc_settings:isTrue("pagemap_use_page_labels")
+            local use_global_config = not self.ui.doc_settings:has("pagemap_use_page_labels")
+            local use_page_map_from_global_config = G_reader_settings:isTrue("pagemap_use_page_labels")
+            return (use_page_map_from_document_config or (use_global_config and use_page_map_from_global_config)) and self.document:hasPageMap()
+        elseif self.settings.use_reference_pages_option == 2 then
+            return self.document:hasPageMap()
+        end
     end
 
     return false
@@ -1201,27 +1204,6 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                     },
                     {
                         text_func = function()
-                            local option
-                            local setting_value = self.settings.use_reference_pages
-
-                            if setting_value == 1 then
-                                option = _("When used for document")
-                            elseif setting_value == 2 then
-                                option = _("When available")
-                            else
-                                option = _("Never")
-                            end
-
-                            return T(_("Use reference pages: %1"), option)
-                        end,
-                        sub_item_table = {
-                                genGenericRadioEntry("When being used for current document", "use_reference_pages", 1),
-                                genGenericRadioEntry("When available for current document", "use_reference_pages", 2),
-                                genGenericRadioEntry("Never", "use_reference_pages", nil),
-                        },
-                    },
-                    {
-                        text_func = function()
                             return T(_("Books per calendar day: %1"), self.settings.calendar_nb_book_spans)
                         end,
                         callback = function(touchmenu_instance)
@@ -1255,6 +1237,40 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         callback = function()
                             self.settings.calendar_browse_future_months = not self.settings.calendar_browse_future_months
                         end,
+                        separator = true,
+                    },
+                    {
+                        text = _("Use reference pages"),
+                        checked_func = function ()
+                            return self.settings.use_reference_pages
+                        end,
+                        callback = function()
+                            self.settings.use_reference_pages = not self.settings.use_reference_pages
+                            if not self.settings.use_reference_pages_option then
+                                self.settings.use_reference_pages_option = 1
+                            end
+                        end
+                    },
+                    {
+                        text_func = function()
+                            local option
+                            local setting_value = self.settings.use_reference_pages_option
+
+                            if setting_value == 1 then
+                                option = _("used for document")
+                            elseif setting_value == 2 then
+                                option = _("available")
+                            end
+
+                            return T(_("Use reference pages when: %1"), option)
+                        end,
+                        enabled_func = function ()
+                            return self.settings.use_reference_pages
+                        end,
+                        sub_item_table = {
+                                genGenericRadioEntry("When being used for current document", "use_reference_pages_option", 1),
+                                genGenericRadioEntry("When available for current document", "use_reference_pages_option", 2),
+                        },
                         separator = true,
                     },
                     {
