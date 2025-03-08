@@ -1061,14 +1061,11 @@ function ReaderStatistics:usePageMapForPageNumbers()
         local use_global_config = not self.ui.doc_settings:has("pagemap_use_page_labels")
         local use_page_map_from_global_config = G_reader_settings:isTrue("pagemap_use_page_labels")
         return (use_page_map_from_document_config or (use_global_config and use_page_map_from_global_config)) and self.document:hasPageMap()
-    end
-
-    if self.settings.use_reference_pages == 2 then
+    elseif self.settings.use_reference_pages == 2 then
         return self.document:hasPageMap()
     end
 
     return false
-
 end
 
 function ReaderStatistics:onToggleStatistics(no_notification)
@@ -1096,6 +1093,18 @@ function ReaderStatistics:onToggleStatistics(no_notification)
 end
 
 function ReaderStatistics:addToMainMenu(menu_items)
+    local function genGenericRadioEntry(title, setting, value)
+        return {
+            text = title,
+            checked_func = function()
+                return self.settings[setting] == value
+            end,
+            radio = true,
+            callback = function()
+                self.settings[setting] = value
+            end,
+        }
+    end
     menu_items.statistics = {
         text = _("Reading statistics"),
         sub_item_table = {
@@ -1206,21 +1215,9 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                             return T(_("Use reference pages: %1"), option)
                         end,
                         sub_item_table = {
-                            {
-                                text = _("When being used for current document"),
-                                checked_func = function() return self.settings.use_reference_pages == 1 end,
-                                callback = function() self.settings.use_reference_pages = 1 end
-                            },
-                            {
-                                text = _("When available for current document"),
-                                checked_func = function() return self.settings.use_reference_pages == 2 end,
-                                callback = function() self.settings.use_reference_pages = 2 end
-                            },
-                            {
-                                text = _("Never"),
-                                checked_func = function() return self.settings.use_reference_pages == nil end,
-                                callback = function() self.settings.use_reference_pages = nil end
-                            },
+                                genGenericRadioEntry("When being used for current document", "use_reference_pages", 1),
+                                genGenericRadioEntry("When available for current document", "use_reference_pages", 2),
+                                genGenericRadioEntry("Never", "use_reference_pages", nil),
                         },
                     },
                     {
