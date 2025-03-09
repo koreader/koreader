@@ -464,7 +464,7 @@ function InputText:initTextBox(text, char_added)
             padding = self.padding,
             padding_top = 0,
             padding_bottom = 0,
-            margin = self.margin,
+            margin = self.margin + self.bordersize,
             self._check_button,
         }
     else
