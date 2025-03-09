@@ -1215,9 +1215,9 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                             return T(_("Use reference pages: %1"), option)
                         end,
                         sub_item_table = {
-                                genGenericRadioEntry("When being used for current document", "use_reference_pages", 1),
-                                genGenericRadioEntry("When available for current document", "use_reference_pages", 2),
-                                genGenericRadioEntry("Never", "use_reference_pages", nil),
+                                genGenericRadioEntry(_("When being used for current document"), "use_reference_pages", 1),
+                                genGenericRadioEntry(_("When available for current document"), "use_reference_pages", 2),
+                                genGenericRadioEntry(_("Never"), "use_reference_pages", nil),
                         },
                     },
                     {
