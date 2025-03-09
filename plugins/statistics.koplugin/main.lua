@@ -2840,13 +2840,15 @@ function ReaderStatistics:onReadingResumed()
 end
 
 function ReaderStatistics:onReaderReady(config)
-    if self.settings.is_enabled then
-        self.data = config:readSetting("stats", { performance_in_pages = {} })
-        self.doc_md5 = config:readSetting("partial_md5_checksum")
-        -- we have correct page count now, do the actual initialization work
-        self:initData()
-        self.view.footer:maybeUpdateFooter()
-    end
+    UIManager:nextTick(function()
+        if self.settings.is_enabled then
+            self.data = config:readSetting("stats", { performance_in_pages = {} })
+            self.doc_md5 = config:readSetting("partial_md5_checksum")
+            -- we have correct page count now, do the actual initialization work
+            self:initData()
+            self.view.footer:maybeUpdateFooter()
+        end
+    end)
 end
 
 function ReaderStatistics:onShowCalendarView()
