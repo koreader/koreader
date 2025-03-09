@@ -1743,16 +1743,11 @@ function ReaderStatistics:getCurrentStat()
         logger.dbg("use_pagemap_for_stats: " .. tostring(self.use_pagemap_for_stats))
         if self.use_pagemap_for_stats then
             local page_map = self.document:getPageMap()
-            local total_pages_label = tonumber(self.document:getPageMapLastPageLabel())
-            current_page_label, current_page = self.document:getPageMapCurrentPageLabel()
+            _, current_page = self.document:getPageMapCurrentPageLabel()
             total_pages = #page_map
             percent_read = Math.round(100*current_page/total_pages)
             self.data.pages = total_pages
-            if total_pages_label then
-                page_progress_string = ("%s / %d (%d%%)"):format(current_page_label, total_pages_label , percent_read)
-            else
-                page_progress_string = ("%s / %d (%d%%)"):format(current_page, self.data.pages , percent_read)
-            end
+            page_progress_string = ("%s / %d (%d%%)"):format(current_page, self.data.pages , percent_read)
         else
             current_page = self.ui:getCurrentPage()
             total_pages = self.data.pages
