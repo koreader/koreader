@@ -481,6 +481,7 @@ ReaderFooter.default_settings = {
     progress_pct_format = "0",
     pages_left_includes_current_page = false,
     initial_marker = false,
+    invert_progress_direction = false,
 }
 
 function ReaderFooter:init()
@@ -580,6 +581,7 @@ function ReaderFooter:init()
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
         initial_pos_marker = self.settings.initial_marker,
+        invert_direction = self.settings.invert_progress_direction,
     }
 
     if self.settings.progress_style_thin then
@@ -1125,6 +1127,19 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self:onToggleChapterProgressBar()
+                end,
+            },
+            {
+                text = _("Invert progress bar direction"),
+                help_text = _("Invert the direction of the progress bar, useful for manga and right-to-left reading."),
+                checked_func = function()
+                    return self.settings.invert_progress_direction == true
+                end,
+                enabled_func = function()
+                    return not self.settings.disable_progress_bar
+                end,
+                callback = function()
+                    self:onToggleProgressBarDirection()
                 end,
             },
             {
@@ -2334,6 +2349,20 @@ function ReaderFooter:onToggleChapterProgressBar()
     self:setTocMarkers()
     if self.progress_bar.initial_pos_marker and not self.settings.chapter_progress_bar then
         self.progress_bar.initial_percentage = self.initial_pageno / self.pages
+    end
+    self:refreshFooter(true)
+end
+
+function ReaderFooter:onToggleProgressBarDirection(inverted)
+    if inverted == true then
+        self.settings.invert_progress_direction = true
+        self.progress_bar.invert_direction = true
+    elseif inverted == false then
+        self.settings.invert_progress_direction = false
+        self.progress_bar.invert_direction = false
+    else
+        self.settings.invert_progress_direction = not self.settings.invert_progress_direction
+        self.progress_bar.invert_direction = self.settings.invert_progress_direction
     end
     self:refreshFooter(true)
 end
