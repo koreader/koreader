@@ -243,7 +243,7 @@ function ReaderStatistics:onDocumentRerendered()
 
     local new_pagecount
     if ReaderStatistics:usePageMapForPageNumbers() then
-        local _ , new_pagecount = self.document:getCurrentPageLabel()
+        new_pagecount = ({self.document:getCurrentPageLabel()})[2]
     else
         new_pagecount = self.document:getPageCount()
     end
@@ -1725,7 +1725,6 @@ function ReaderStatistics:getCurrentStat()
     total_read_pages = tonumber(total_read_pages)
 
     local current_page
-    local current_page_label
     local total_pages
     local page_progress_string
     local percent_read
@@ -1743,7 +1742,7 @@ function ReaderStatistics:getCurrentStat()
         logger.dbg("use_pagemap_for_stats: " .. tostring(self.use_pagemap_for_stats))
         if self.use_pagemap_for_stats then
             local page_map = self.document:getPageMap()
-            local _, current_page = self.document:getPageMapCurrentPageLabel()
+            current_page = ({self.document:getPageMapCurrentPageLabel()})[2]
             total_pages = #page_map
             percent_read = Math.round(100*current_page/total_pages)
             self.data.pages = total_pages
@@ -2771,7 +2770,7 @@ function ReaderStatistics:onPageUpdate(pageno)
     end
 
     if self:usePageMapForPageNumbers() then
-        local _, page_sequence_number = self.document.getPageMapCurrentPageLabel()
+        page_sequence_number = ({self.document.getPageMapCurrentPageLabel()})[2]
         pageno = page_sequence_number
     end
 
