@@ -930,11 +930,11 @@ end
 function Profiles:executeAutoExecEvent(event)
     if self.autoexec[event] == nil then return end
     for profile_name in pairs(self.autoexec[event]) do
-        self:executeAutoExec(profile_name)
+        self:executeAutoExec(profile_name, event)
     end
 end
 
-function Profiles:executeAutoExec(profile_name)
+function Profiles:executeAutoExec(profile_name, event)
     local profile = self.data[profile_name]
     if profile == nil then return end
     if profile.settings.auto_exec_ask then
@@ -950,9 +950,15 @@ function Profiles:executeAutoExec(profile_name)
         })
     else
         logger.dbg("Profiles - auto executing:", profile_name)
-        UIManager:tickAfterNext(function()
-            Dispatcher:execute(self.data[profile_name])
-        end)
+        if event == "CloseDocument" or event == "CloseDocumentAll" then
+            UIManager:tickAfterNext(function()
+                Dispatcher:execute(self.data[profile_name])
+            end)
+        else
+            UIManager:nextTick(function()
+                Dispatcher:execute(self.data[profile_name])
+            end)
+        end
     end
 end
 
@@ -1004,7 +1010,7 @@ function Profiles:executeAutoExecDocConditional(event)
                 end
             end
             if do_execute then
-                self:executeAutoExec(profile_name)
+                self:executeAutoExec(profile_name, event)
             end
         end
     end
