@@ -133,6 +133,7 @@ function ReaderStatistics:init()
     self:resetVolatileStats()
 
     self.settings = G_reader_settings:readSetting("statistics", self.default_settings)
+    self.use_pagemap_for_stats = false
 
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
@@ -174,6 +175,7 @@ function ReaderStatistics:initData()
     self.is_doc = true
     self.is_doc_not_finished = self.ui.doc_settings:readSetting("summary").status ~= "complete"
     self.is_doc_not_frozen = self.is_doc_not_finished or not self.settings.freeze_finished_books
+    self.use_pagemap_for_stats = self:usePageMapForPageNumbers()
 
     -- first execution
     local book_properties = self.ui.doc_props
@@ -239,13 +241,7 @@ function ReaderStatistics:onDocumentRerendered()
     --   - we only then update self.data.pages=254 as the new page count
     -- - 5 minutes later, on the next insertDB(), (153, now-5mn, 42, 254) will be inserted in DB
 
-    local new_pagecount
-
-    if ReaderStatistics:usePageMapForPageNumbers() then
-        new_pagecount = self.document:getCurrentPageLabel()
-    else
-        new_pagecount = self.document:getPageCount()
-    end
+    local new_pagecount = self.document:getPageCount()
 
     if new_pagecount ~= self.data.pages then
         logger.dbg("ReaderStatistics: Pagecount change, flushing volatile book statistics")
@@ -1056,13 +1052,23 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
 end
 
 function ReaderStatistics:usePageMapForPageNumbers()
-    if self.settings.use_reference_pages == 1 then
-        local use_page_map_from_document_config = self.ui.doc_settings:isTrue("pagemap_use_page_labels")
-        local use_global_config = not self.ui.doc_settings:has("pagemap_use_page_labels")
-        local use_page_map_from_global_config = G_reader_settings:isTrue("pagemap_use_page_labels")
-        return (use_page_map_from_document_config or (use_global_config and use_page_map_from_global_config)) and self.document:hasPageMap()
-    elseif self.settings.use_reference_pages == 2 then
-        return self.document:hasPageMap()
+    if not self.ui.rolling then
+        return false
+    elseif not self.document:hasPageMap() then
+        return false
+    elseif self.settings.use_reference_pages == nil then
+        return false
+    end
+
+    if self.settings.use_reference_pages == 2 then
+        return true
+    elseif self.ui.doc_settings:has("pagemap_use_page_labels") then
+            if self.ui.doc_settings:isTrue("pagemap_use_page_labels") then
+                return true
+            end
+            return false
+    elseif G_reader_settings:isTrue("pagemap_use_page_labels") then
+        return true
     end
 
     return false
@@ -1077,7 +1083,7 @@ function ReaderStatistics:onToggleStatistics(no_notification)
         if self.settings.is_enabled then
             self:initData()
             self.start_current_period = os.time()
-            if self:usePageMapForPageNumbers() then
+            if self.use_pagemap_for_stats then
                 self.curr_page = self.ui.document:getPageMapCurrentPageLabel()
             else
                 self.curr_page = self.ui:getCurrentPage()
@@ -1093,7 +1099,7 @@ function ReaderStatistics:onToggleStatistics(no_notification)
 end
 
 function ReaderStatistics:addToMainMenu(menu_items)
-    local function genGenericRadioEntry(title, setting, value)
+    local function genReferencePageRadioEntry(title, setting, value)
         return {
             text = title,
             checked_func = function()
@@ -1102,6 +1108,10 @@ function ReaderStatistics:addToMainMenu(menu_items)
             radio = true,
             callback = function()
                 self.settings[setting] = value
+                if self.is_doc then
+                    self.use_pagemap_for_stats = self:usePageMapForPageNumbers()
+                    logger.dbg("refershed use_pagemap_for_stats value")
+                end
             end,
         }
     end
@@ -1203,7 +1213,6 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         text_func = function()
                             local option
                             local setting_value = self.settings.use_reference_pages
-
                             if setting_value == 1 then
                                 option = _("When used for document")
                             elseif setting_value == 2 then
@@ -1211,13 +1220,12 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                             else
                                 option = _("Never")
                             end
-
                             return T(_("Use reference pages: %1"), option)
                         end,
                         sub_item_table = {
-                                genGenericRadioEntry(_("When being used for current document"), "use_reference_pages", 1),
-                                genGenericRadioEntry(_("When available for current document"), "use_reference_pages", 2),
-                                genGenericRadioEntry(_("Never"), "use_reference_pages", nil),
+                                genReferencePageRadioEntry(_("When being used for current document"), "use_reference_pages", 1),
+                                genReferencePageRadioEntry(_("When available for current document"), "use_reference_pages", 2),
+                                genReferencePageRadioEntry(_("Never"), "use_reference_pages", nil),
                         },
                     },
                     {
@@ -1707,11 +1715,7 @@ function ReaderStatistics:getCurrentStat()
     if first_open == nil then
         first_open = now_ts
     end
-    if self:usePageMapForPageNumbers() then
-        self.data.pages = self.document:getPageMapLastPageLabel()
-    else
-        self.data.pages = self.document:getPageCount()
-    end
+    self.data.pages = self.document:getPageCount()
     total_time_book = tonumber(total_time_book)
     total_read_pages = tonumber(total_read_pages)
 
@@ -1731,13 +1735,19 @@ function ReaderStatistics:getCurrentStat()
             page_progress_string = ("[%d / %d]%d (%d%%)"):format(current_page, total_pages, flow, percent_read)
         end
     else
-        if self:usePageMapForPageNumbers() then
+        logger.dbg("use_pagemap_for_stats: " .. tostring(self.use_pagemap_for_stats))
+        if self.use_pagemap_for_stats then
             local page_map = self.document:getPageMap()
-            current_page_label = self.document:getPageMapCurrentPageLabel()
-            current_page = self:getSequenceNumberForPageLabel(current_page_label, page_map)
+            local total_pages_label = tonumber(self.document:getPageMapLastPageLabel())
+            current_page_label, current_page = self.document:getPageMapCurrentPageLabel()
             total_pages = #page_map
             percent_read = Math.round(100*current_page/total_pages)
-            page_progress_string = ("%s / %d (%d%%)"):format(current_page_label, self.data.pages , percent_read)
+            if total_pages_label then
+                page_progress_string = ("%s / %d (%d%%)"):format(current_page_label, total_pages_label , percent_read)
+            else
+                self.data.pages = total_pages
+                page_progress_string = ("%s / %d (%d%%)"):format(current_page, self.data.pages , percent_read)
+            end
         else
             current_page = self.ui:getCurrentPage()
             total_pages = self.data.pages
@@ -2723,10 +2733,8 @@ end
 
 
 function ReaderStatistics:onPosUpdate(pos, pageno)
-    if self:usePageMapForPageNumbers() then
-        local current_page_label = self.document:getPageMapCurrentPageLabel()
-        local page_map = self.document:getPageMap()
-        local page_sequence_number = self:getSequenceNumberForPageLabel(current_page_label,page_map)
+    if self.use_pagemap_for_stats then
+        local page_sequence_number = self.document:getPageMapCurrentPageLabel()
         if self.curr_page ~= page_sequence_number then
             self:onPageUpdate(pageno)
         end
@@ -2763,9 +2771,7 @@ function ReaderStatistics:onPageUpdate(pageno)
     end
 
     if self:usePageMapForPageNumbers() then
-        local current_page_label = self.document:getPageMapCurrentPageLabel()
-        local page_map = self.document:getPageMap()
-        local page_sequence_number = self:getSequenceNumberForPageLabel(current_page_label,page_map)
+        local page_label, page_sequence_number = self.document.getPageMapCurrentPageLabel()
         pageno = page_sequence_number
     end
 
