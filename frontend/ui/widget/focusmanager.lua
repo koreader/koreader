@@ -172,8 +172,10 @@ function FocusManager:onFocusHalfMove(args)
             dx = #row - x -- last column
         end
     end
-    -- Flip horizontal direction in RTL mode
     if dx ~= 0 and BD.mirroredUILayout() then
+        -- When in RTL we mirror horizontally the elements/buttons on the screen, however we don't mirror self.layout
+        -- therefore we must account for this when moving the focus. Since we're already inverting dx in the FocusMove
+        -- method, we need to "unfix" our value here, before calling onFocusMove, where it will be flipped again.
         dx = -dx
     end
     return self:onFocusMove({dx, dy})
@@ -223,6 +225,8 @@ function FocusManager:onFocusMove(args)
 
     -- Flip horizontal direction in RTL mode
     if dx ~= 0 and BD.mirroredUILayout() then
+        -- When in RTL we mirror horizontally the elements/buttons on the screen, however we don't mirror self.layout
+        -- therefore we must account for this when moving the focus.
         dx = -dx
     end
 
