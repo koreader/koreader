@@ -1,5 +1,10 @@
+local DocSettings = require("docsettings")
+local LuaSettings = require("luasettings")
+local Notification = require("ui/widget/notification")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local random = require("random")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -106,11 +111,11 @@ end
 
 function ReaderAnnotation:onReadSettings(config)
     local annotations = config:readSetting("annotations")
+    -- KOHighlights may set this key when it has merged annotations from different sources:
+    -- we want to make sure they are updated and sorted
+    local needs_update = annotations and config:isTrue("annotations_externally_modified")
+    local needs_sort -- if incompatible annotations were built of old highlights/bookmarks
     if annotations then
-        -- KOHighlights may set this key when it has merged annotations from different sources:
-        -- we want to make sure they are updated and sorted
-        local needs_update = config:isTrue("annotations_externally_modified")
-        local needs_sort -- if incompatible annotations were built of old highlights/bookmarks
         -- Annotation formats in crengine and mupdf are incompatible.
         local has_annotations = #annotations > 0
         local annotations_type = has_annotations and type(annotations[1].page)
@@ -131,12 +136,6 @@ function ReaderAnnotation:onReadSettings(config)
             needs_sort = true
         end
         self.annotations = annotations
-        if needs_update or needs_sort then
-            self.ui:registerPostReaderReadyCallback(function()
-                self:updateAnnotations(needs_update, needs_sort)
-            end)
-            config:delSetting("annotations_externally_modified")
-        end
     else -- first run
         if self.ui.rolling then
             self.ui:registerPostInitCallback(function()
@@ -145,6 +144,15 @@ function ReaderAnnotation:onReadSettings(config)
         else
             self:migrateToAnnotations(config)
         end
+    end
+    if self:importAnnotations() then
+        needs_update = true
+    end
+    if needs_update or needs_sort then
+        self.ui:registerPostReaderReadyCallback(function()
+            self:updateAnnotations(needs_update, needs_sort)
+        end)
+        config:delSetting("annotations_externally_modified")
     end
 end
 
@@ -240,6 +248,90 @@ end
 function ReaderAnnotation:onSaveSettings()
     self:updatePageNumbers()
     self.ui.doc_settings:saveSetting("annotations", self.annotations)
+    self:onExportAnnotations(true)
+end
+
+function ReaderAnnotation:getExportAnnotationsFilepath()
+    local dir = G_reader_settings:readSetting("annotations_export_folder") or DocSettings:getSidecarDir(self.document.file)
+    local filename = self.document.file:gsub(".*/", "")
+    return dir .. "/" .. filename .. ".annotations.lua"
+end
+
+function ReaderAnnotation:onExportAnnotations(on_closing)
+    local do_export = not on_closing or G_reader_settings:isTrue("annotations_export_on_closing")
+    if do_export and self:hasAnnotations() then
+        local file = self:getExportAnnotationsFilepath()
+        local anno = LuaSettings:open(file)
+        local device_id = G_reader_settings:readSetting("device_id", random.uuid())
+        anno:saveSetting("device_id", device_id)
+        anno:saveSetting("datetime", os.date("%Y-%m-%d %H:%M:%S"))
+        anno:saveSetting("paging", self.ui.paging and true)
+        anno:saveSetting("annotations", self.annotations)
+        anno:flush()
+        os.remove(file .. ".old")
+        if not on_closing then
+            Notification:notify(_"Annotations exported")
+        end
+    end
+end
+
+function ReaderAnnotation:importAnnotations()
+    local file = self:getExportAnnotationsFilepath()
+    if lfs.attributes(file, "mode") ~= "file" then return end -- no import file
+    local anno = LuaSettings:open(file)
+    if anno:readSetting("device_id") == G_reader_settings:readSetting("device_id") then return end -- same device
+    local new_annotations = anno:readSetting("annotations")
+    if (self.ui.paging and true) ~= anno:readSetting("paging") then return end -- incompatible annotations type
+    local new_datetime = anno:readSetting("datetime")
+    os.remove(file)
+    if #self.annotations == 0 then
+        self.annotations = new_annotations
+        return true
+    end
+    local doesMatch
+    if self.ui.rolling then
+        doesMatch = function(a, b)
+            if (not a.drawer) ~= (not b.drawer) or a.page ~= b.page or a.pos1 ~= b.pos1 then
+                return false
+            end
+            return true
+        end
+    else
+        doesMatch = function(a, b)
+            if (not a.drawer) ~= (not b.drawer) or a.page ~= b.page
+                or (a.pos0 and (a.pos0.x ~= b.pos0.x or a.pos1.x ~= b.pos1.x
+                             or a.pos0.y ~= b.pos0.y or a.pos1.y ~= b.pos1.y)) then
+                return false
+            end
+            return true
+        end
+    end
+    for i = #self.annotations, 1, -1 do
+        local item = self.annotations[i]
+        local item_datetime = item.datetime_updated or item.datetime
+        local found
+        for j = #new_annotations, 1, -1 do
+            local new_item = new_annotations[j]
+            if doesMatch(item, new_item) then
+                if item_datetime < (new_item.datetime_updated or new_item.datetime) then
+                    table.remove(self.annotations, i) -- new is newer, replace old with it
+                else
+                    table.remove(new_annotations, j) -- old is newer, keep it
+                end
+                found = true
+                break
+            end
+        end
+        if not found then
+            if item_datetime < new_datetime then
+                table.remove(self.annotations, i) -- export is newer, remove old
+            end
+        end
+    end
+    if #new_annotations > 0 then
+        table.move(new_annotations, 1, #new_annotations, #self.annotations + 1, self.annotations)
+    end
+    return true
 end
 
 -- items handling
