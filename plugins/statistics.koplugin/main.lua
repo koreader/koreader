@@ -241,7 +241,12 @@ function ReaderStatistics:onDocumentRerendered()
     --   - we only then update self.data.pages=254 as the new page count
     -- - 5 minutes later, on the next insertDB(), (153, now-5mn, 42, 254) will be inserted in DB
 
-    local new_pagecount = self.document:getPageCount()
+    local new_pagecount
+    if ReaderStatistics:usePageMapForPageNumbers() then
+        _ , new_pagecount = self.document:getCurrentPageLabel()
+    else
+        new_pagecount = self.document:getPageCount()
+    end
 
     if new_pagecount ~= self.data.pages then
         logger.dbg("ReaderStatistics: Pagecount change, flushing volatile book statistics")
