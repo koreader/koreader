@@ -1747,10 +1747,10 @@ function ReaderStatistics:getCurrentStat()
             current_page_label, current_page = self.document:getPageMapCurrentPageLabel()
             total_pages = #page_map
             percent_read = Math.round(100*current_page/total_pages)
+            self.data.pages = total_pages
             if total_pages_label then
                 page_progress_string = ("%s / %d (%d%%)"):format(current_page_label, total_pages_label , percent_read)
             else
-                self.data.pages = total_pages
                 page_progress_string = ("%s / %d (%d%%)"):format(current_page, self.data.pages , percent_read)
             end
         else
