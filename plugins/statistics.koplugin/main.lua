@@ -94,13 +94,23 @@ ReaderStatistics.default_settings = {
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
-    Dispatcher:registerAction("toggle_statistics", {category="none", event="ToggleStatistics", title=_("Reading statistics: toggle"), general=true})
-    Dispatcher:registerAction("reading_progress", {category="none", event="ShowReaderProgress", title=_("Reading statistics: show progress"), general=true})
-    Dispatcher:registerAction("stats_time_range", {category="none", event="ShowTimeRange", title=_("Reading statistics: show time range"), general=true})
-    Dispatcher:registerAction("stats_calendar_view", {category="none", event="ShowCalendarView", title=_("Reading statistics: show calendar view"), general=true})
-    Dispatcher:registerAction("stats_calendar_day_view", {category="none", event="ShowCalendarDayView", title=_("Reading statistics: show today's timeline"), general=true})
-    Dispatcher:registerAction("stats_sync", {category="none", event="SyncBookStats", title=_("Reading statistics: synchronize"), general=true, separator=true})
-    Dispatcher:registerAction("book_statistics", {category="none", event="ShowBookStats", title=_("Reading statistics: current book"), reader=true})
+    Dispatcher:registerAction("enable_statistics",
+        {category="string", event="ToggleStatistics", title=_("Reading statistics"), general=true,
+        args={true, false}, toggle={_("enable"), _("disable")}, arg=false})
+    Dispatcher:registerAction("toggle_statistics",
+        {category="none", event="ToggleStatistics", title=_("Reading statistics: toggle"), general=true})
+    Dispatcher:registerAction("reading_progress",
+        {category="none", event="ShowReaderProgress", title=_("Reading statistics: show progress"), general=true})
+    Dispatcher:registerAction("stats_time_range",
+        {category="none", event="ShowTimeRange", title=_("Reading statistics: show time range"), general=true})
+    Dispatcher:registerAction("stats_calendar_view",
+        {category="none", event="ShowCalendarView", title=_("Reading statistics: show calendar view"), general=true})
+    Dispatcher:registerAction("stats_calendar_day_view",
+        {category="none", event="ShowCalendarDayView", title=_("Reading statistics: show today's timeline"), general=true})
+    Dispatcher:registerAction("stats_sync",
+        {category="none", event="SyncBookStats", title=_("Reading statistics: synchronize"), general=true, separator=true})
+    Dispatcher:registerAction("book_statistics",
+        {category="none", event="ShowBookStats", title=_("Reading statistics: current book"), reader=true})
 end
 
 function ReaderStatistics:init()
@@ -1048,11 +1058,19 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
     return total_pages, total_time
 end
 
-function ReaderStatistics:onToggleStatistics(no_notification)
+function ReaderStatistics:onToggleStatistics(arg)
+    local no_notification, toggle
+    if type(arg) == "table" then -- Dispatcher-enable/disable
+        no_notification, toggle = unpack(arg)
+        if toggle == self.settings.is_enabled then return end
+    else -- Dispatcher-toggle or Menu-toggle
+        no_notification = arg
+        toggle = not self.settings.is_enabled
+    end
     if self.settings.is_enabled then -- save data to file
         self:insertDB()
     end
-    self.settings.is_enabled = not self.settings.is_enabled
+    self.settings.is_enabled = toggle
     if self.is_doc then
         if self.settings.is_enabled then
             self:initData()
@@ -1078,7 +1096,7 @@ function ReaderStatistics:addToMainMenu(menu_items)
                     return self.settings.is_enabled
                 end,
                 callback = function()
-                    self:onToggleStatistics(true)
+                    self:onToggleStatistics(true) -- no notification
                 end,
             },
             {
@@ -2822,11 +2840,13 @@ function ReaderStatistics:onReadingResumed()
 end
 
 function ReaderStatistics:onReaderReady(config)
-    self.data = config:readSetting("stats", { performance_in_pages = {} })
-    self.doc_md5 = config:readSetting("partial_md5_checksum")
-    -- we have correct page count now, do the actual initialization work
-    self:initData()
-    self.view.footer:maybeUpdateFooter()
+    if self.settings.is_enabled then
+        self.data = config:readSetting("stats", { performance_in_pages = {} })
+        self.doc_md5 = config:readSetting("partial_md5_checksum")
+        -- we have correct page count now, do the actual initialization work
+        self:initData()
+        self.view.footer:maybeUpdateFooter()
+    end
 end
 
 function ReaderStatistics:onShowCalendarView()
