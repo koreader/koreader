@@ -2770,7 +2770,7 @@ function ReaderStatistics:onPageUpdate(pageno)
     end
 
     if self:usePageMapForPageNumbers() then
-        page_sequence_number = ({self.document.getPageMapCurrentPageLabel()})[2]
+        local page_sequence_number = ({self.document.getPageMapCurrentPageLabel()})[2]
         pageno = page_sequence_number
     end
 
