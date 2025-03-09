@@ -1508,7 +1508,7 @@ function UIManager:handleInput()
         self._pm_consume_input_early = false
     end
 
-    local powersave_time = Device:prepareAutosleep(deadline - now)
+    local powersave_time = Device:prepareAutosleep(deadline and deadline - now)
 
     -- wait for next batch of events
     local input_events = Input:waitEvent(now, deadline, powersave_time)

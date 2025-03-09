@@ -49,6 +49,25 @@ local function checkStandby(target_state)
     return no
 end
 
+-- checks if standby is available on the device
+local function checkAutosleep()
+    logger.dbg("Kobo: checking if autosleep is possible ...")
+    local f = io.open("/sys/power/autosleep")
+    if not f then
+        logger.dbg("Kobo: target autosleep is unsupported")
+        return no
+    end
+    f:close()
+    f = io.open("/sys/power/wake_lock")
+    if not f then
+        logger.dbg("Kobo: target wake_lock is unsupported")
+        return no
+    end
+    f:close()
+    logger.dbg("Kobo: target autosleep and wake_lock are supported")
+    return yes
+end
+
 -- Return the highest core number
 local function getCPUCount()
     local fd = io.open("/sys/devices/system/cpu/possible", "re")
@@ -100,6 +119,7 @@ local Kobo = Generic:extend{
     hasWifiManager = yes,
     hasWifiRestore = yes,
     canStandby = no, -- will get updated by checkStandby()
+    canAutosleep = no, -- will get updated by checkAutosleep()
     canReboot = yes,
     canPowerOff = yes,
     canSuspend = yes,
@@ -427,7 +447,6 @@ local KoboCadmus = Kobo:extend{
     model = "Kobo_cadmus",
     isSunxi = yes,
     hasEclipseWfm = yes,
-    canAutosleep = yes,
     canToggleChargingLED = yes,
     led_uses_channel_3 = true,
     hasFrontlight = yes,
@@ -823,6 +842,21 @@ function Kobo:init()
         battery_sysfs = self.battery_sysfs,
         aux_battery_sysfs = self.aux_battery_sysfs,
     }
+
+    -- On MTK, the "standby" power state is unavailable, and Nickel instead uses "mem" (and /sys/power/mem_sleep doesn't exist either)
+    if self:isMTK() then
+        self.standby_state = "mem"
+    end
+
+    self.canStandby = checkStandby(self.standby_state)
+    if self.canStandby() and (self:isMk7() or self:isSunxi()) then
+        -- NOTE: Do *NOT* enable this on MTK. What happens if you do can only be described as "shit hits the fan".
+        --       (Nickel doesn't).
+        self.canPowerSaveWhileCharging = yes
+    end
+
+    self.canAutosleep = self.canStandby and checkAutosleep()
+
     -- NOTE: For the Forma, with the buttons on the right, 193 is Top, 194 Bottom.
     self.input = require("device/input"):new{
         device = self,
@@ -953,18 +987,6 @@ function Kobo:init()
 
     -- Only enable a single core on startup
     self:enableCPUCores(1)
-
-    -- On MTK, the "standby" power state is unavailable, and Nickel instead uses "mem" (and /sys/power/mem_sleep doesn't exist either)
-    if self:isMTK() then
-        self.standby_state = "mem"
-    end
-
-    self.canStandby = checkStandby(self.standby_state)
-    if self.canStandby() and (self:isMk7() or self:isSunxi()) then
-        -- NOTE: Do *NOT* enable this on MTK. What happens if you do can only be described as "shit hits the fan".
-        --       (Nickel doesn't).
-        self.canPowerSaveWhileCharging = yes
-    end
 
     -- Check if the device has a Neonode IR grid (to tone down the chatter on resume ;)).
     if lfs.attributes("/sys/devices/virtual/input/input1/neocmd", "mode") == "file" then
@@ -1328,9 +1350,8 @@ function Kobo:standby(max_duration_s)
     UIManager:tickAfterNext(self.defaultCPUGovernor, self)
 end
 
-
-function Kobo:setAutosleepTime(time)
-    self.autosleep_time = time
+function Kobo:setAutosleepTime(sleep_in_time)
+    self.autosleep_time = sleep_in_time
 end
 
 --- Just a helper for wakeup_mgr

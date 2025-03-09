@@ -561,7 +561,7 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
         -- If GestureDetector's clock source probing was inconclusive, do this on the UI timescale instead.
         if clock_id == -1 then
             deadline = time.now() + delay
-            clock_id = C.CLOCK_BOOTTIME
+            clock_id = self.device.canAutosleep() and C.CLOCK_BOOTTIME or C.CLOCK_MONOTONIC
         else
             deadline = origin + delay
         end
