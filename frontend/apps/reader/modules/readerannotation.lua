@@ -254,9 +254,11 @@ function ReaderAnnotation:updatePageNumbers(force_update)
     self.needs_update = nil
 end
 
-function ReaderAnnotation:onUseReferencePageUpdate()
+function ReaderAnnotation:onUsePageLabelsUpdated()
     self:updatePageNumbers(true)
 end
+
+ReaderAnnotation.onUsePageLabelsUpdated = ReaderAnnotation.setNeedsUpdateFlag
 
 function ReaderAnnotation:sortItems(items)
     if #items > 1 then

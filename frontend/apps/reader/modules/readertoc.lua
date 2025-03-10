@@ -116,9 +116,7 @@ function ReaderToc:resetToc()
     self.expanded_nodes = {}
 end
 
-function ReaderToc:onUseReferencePageUpdate()
-    self:resetToc()
-end
+ReaderToc.onUsePageLabelsUpdated = ReaderToc.resetToc
 
 function ReaderToc:onUpdateToc()
     self:resetToc()

@@ -349,7 +349,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                     self.ui.doc_settings:saveSetting("pagemap_use_page_labels", self.use_page_labels)
                     -- Reset a few stuff that may use page labels
                     local Event = require("ui/event")
-                    UIManager:broadcastEvent(Event:new("UseReferencePageUpdate"))
+                    UIManager:broadcastEvent(Event:new("UsePageLabelsUpdated"))
                     UIManager:setDirty(self.view.dialog, "partial")
                 end,
                 hold_callback = function(touchmenu_instance)

@@ -2026,10 +2026,6 @@ function ReaderFooter:onUpdateFooter(force_repaint, full_repaint)
     end
 end
 
-function ReaderFooter:onUseReferencePageUpdate()
-    self:onUpdateFooter()
-end
-
 function ReaderFooter:updateFooterPage(force_repaint, full_repaint)
     if type(self.pageno) ~= "number" then return end
     if self.settings.chapter_progress_bar then
@@ -2505,5 +2501,7 @@ end
 function ReaderFooter:onCloseWidget()
     self:free()
 end
+
+ReaderFooter.onUsePageLabelsUpdated = ReaderFooter.onUpdateFooter
 
 return ReaderFooter

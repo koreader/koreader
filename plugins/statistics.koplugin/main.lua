@@ -1464,7 +1464,7 @@ Time is in hours and minutes.]]),
     }
 end
 
-function ReaderStatistics:onUseReferencePageUpdate()
+function ReaderStatistics:onUsePageLabelsUpdated()
     self.use_pagemap_for_stats = self:usePageMapForPageNumbers()
 end
 
