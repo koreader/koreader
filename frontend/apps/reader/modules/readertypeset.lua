@@ -329,7 +329,7 @@ This stylesheet is to be used only with FB2 and FB3 documents, which are not cla
             callback = function()
                 self.txt_preformatted = self.txt_preformatted == 1 and 0 or 1
                 self.ui.doc_settings:saveSetting("txt_preformatted", self.txt_preformatted)
-                -- setting txt_preformatted for the open document causes segfault, hence reload
+                -- setting txt_preformatted for the opened document causes segfault, hence reload
                 self.ui.rolling:showReloadConfirmBox()
             end,
             hold_callback = function(touchmenu_instance)
