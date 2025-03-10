@@ -204,6 +204,7 @@ local settingsList = {
     ----
     flush_settings = {category="none", event="FlushSettings", arg=true, title=_("Save book metadata"), reader=true, separator=true},
     ----
+    export_annotations = {category="none", event="ExportAnnotations", title=_("Export annotations"), reader=true},
 
     -- Reflowable documents
     set_font = {category="string", event="SetFont", title=_("Font face"), rolling=true, args_func=require("fontlist").getFontArgFunc,},
@@ -438,6 +439,7 @@ local dispatcher_menu_order = {
     ----
     "flush_settings",
     ----
+    "export_annotations",
 
     -- Reflowable documents
     "set_font",
