@@ -91,6 +91,7 @@ ReaderStatistics.default_settings = {
     calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS,
     calendar_show_histogram = true,
     calendar_browse_future_months = false,
+    use_reference_pages = 1,
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
@@ -132,6 +133,7 @@ function ReaderStatistics:init()
     self:resetVolatileStats()
 
     self.settings = G_reader_settings:readSetting("statistics", self.default_settings)
+    self.use_pagemap_for_stats = false
 
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
@@ -173,6 +175,7 @@ function ReaderStatistics:initData()
     self.is_doc = true
     self.is_doc_not_finished = self.ui.doc_settings:readSetting("summary").status ~= "complete"
     self.is_doc_not_frozen = self.is_doc_not_finished or not self.settings.freeze_finished_books
+    self.use_pagemap_for_stats = self:usePageMapForPageNumbers()
 
     -- first execution
     local book_properties = self.ui.doc_props
@@ -238,7 +241,12 @@ function ReaderStatistics:onDocumentRerendered()
     --   - we only then update self.data.pages=254 as the new page count
     -- - 5 minutes later, on the next insertDB(), (153, now-5mn, 42, 254) will be inserted in DB
 
-    local new_pagecount = self.document:getPageCount()
+    local new_pagecount
+    if ReaderStatistics:usePageMapForPageNumbers() then
+        new_pagecount = ({self.document:getCurrentPageLabel()})[2]
+    else
+        new_pagecount = self.document:getPageCount()
+    end
 
     if new_pagecount ~= self.data.pages then
         logger.dbg("ReaderStatistics: Pagecount change, flushing volatile book statistics")
@@ -1048,6 +1056,29 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
     return total_pages, total_time
 end
 
+function ReaderStatistics:usePageMapForPageNumbers()
+    if not self.ui.rolling then
+        return false
+    elseif not self.document:hasPageMap() then
+        return false
+    elseif self.settings.use_reference_pages == nil then
+        return false
+    end
+
+    if self.settings.use_reference_pages == 2 then
+        return true
+    elseif self.ui.doc_settings:has("pagemap_use_page_labels") then
+            if self.ui.doc_settings:isTrue("pagemap_use_page_labels") then
+                return true
+            end
+            return false
+    elseif G_reader_settings:isTrue("pagemap_use_page_labels") then
+        return true
+    end
+
+    return false
+end
+
 function ReaderStatistics:onToggleStatistics(no_notification)
     if self.settings.is_enabled then -- save data to file
         self:insertDB()
@@ -1057,7 +1088,11 @@ function ReaderStatistics:onToggleStatistics(no_notification)
         if self.settings.is_enabled then
             self:initData()
             self.start_current_period = os.time()
-            self.curr_page = self.ui:getCurrentPage()
+            if self.use_pagemap_for_stats then
+                self.curr_page = self.ui.document:getPageMapCurrentPageLabel()
+            else
+                self.curr_page = self.ui:getCurrentPage()
+            end
             self:resetVolatileStats(self.start_current_period)
         end
         self.view.footer:maybeUpdateFooter()
@@ -1069,6 +1104,22 @@ function ReaderStatistics:onToggleStatistics(no_notification)
 end
 
 function ReaderStatistics:addToMainMenu(menu_items)
+    local function genReferencePageRadioEntry(title, setting, value)
+        return {
+            text = title,
+            checked_func = function()
+                return self.settings[setting] == value
+            end,
+            radio = true,
+            callback = function()
+                self.settings[setting] = value
+                if self.is_doc then
+                    self.use_pagemap_for_stats = self:usePageMapForPageNumbers()
+                    logger.dbg("refershed use_pagemap_for_stats value")
+                end
+            end,
+        }
+    end
     menu_items.statistics = {
         text = _("Reading statistics"),
         sub_item_table = {
@@ -1161,6 +1212,25 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 2 end,
                                 callback = function() self.settings.calendar_start_day_of_week = 2 end
                             },
+                        },
+                    },
+                    {
+                        text_func = function()
+                            local option
+                            local setting_value = self.settings.use_reference_pages
+                            if setting_value == 1 then
+                                option = _("When used for document")
+                            elseif setting_value == 2 then
+                                option = _("When available")
+                            else
+                                option = _("Never")
+                            end
+                            return T(_("Use reference pages: %1"), option)
+                        end,
+                        sub_item_table = {
+                                genReferencePageRadioEntry(_("When being used for current document"), "use_reference_pages", 1),
+                                genReferencePageRadioEntry(_("When available for current document"), "use_reference_pages", 2),
+                                genReferencePageRadioEntry(_("Never"), "use_reference_pages", nil),
                         },
                     },
                     {
@@ -1596,6 +1666,15 @@ function ReaderStatistics:getCurrentBookStats()
     return current_duration, current_pages
 end
 
+function ReaderStatistics:getSequenceNumberForPageLabel(label, page_map)
+    for i = 1, #page_map do
+        if page_map[i].label == label then
+            return i
+        end
+    end
+end
+
+
 function ReaderStatistics:getCurrentStat()
     self:insertDB()
     local id_book = self.id_curr_book
@@ -1660,10 +1739,20 @@ function ReaderStatistics:getCurrentStat()
             page_progress_string = ("[%d / %d]%d (%d%%)"):format(current_page, total_pages, flow, percent_read)
         end
     else
-        current_page = self.ui:getCurrentPage()
-        total_pages = self.data.pages
-        percent_read = Math.round(100*current_page/total_pages)
-        page_progress_string = ("%d / %d (%d%%)"):format(current_page, total_pages, percent_read)
+        logger.dbg("use_pagemap_for_stats: " .. tostring(self.use_pagemap_for_stats))
+        if self.use_pagemap_for_stats then
+            local page_map = self.document:getPageMap()
+            current_page = ({self.document:getPageMapCurrentPageLabel()})[2]
+            total_pages = #page_map
+            percent_read = Math.round(100*current_page/total_pages)
+            self.data.pages = total_pages
+            page_progress_string = ("%s / %d (%d%%)"):format(current_page, self.data.pages , percent_read)
+        else
+            current_page = self.ui:getCurrentPage()
+            total_pages = self.data.pages
+            percent_read = Math.round(100*current_page/total_pages)
+            page_progress_string = ("%d / %d (%d%%)"):format(current_page, total_pages, percent_read)
+        end
     end
 
     local first_open_days_ago = math.floor(tonumber(now_ts - first_open)/86400)
@@ -2643,6 +2732,15 @@ end
 
 
 function ReaderStatistics:onPosUpdate(pos, pageno)
+    if self.use_pagemap_for_stats then
+        local page_sequence_number = self.document:getPageMapCurrentPageLabel()
+        if self.curr_page ~= page_sequence_number then
+            self:onPageUpdate(pageno)
+        end
+
+        return
+    end
+
     if self.curr_page ~= pageno then
         self:onPageUpdate(pageno)
     end
@@ -2669,6 +2767,11 @@ function ReaderStatistics:onPageUpdate(pageno)
     if pageno == false then -- from onCloseDocument()
         closing = true
         pageno = self.curr_page -- avoid issues in following code
+    end
+
+    if self:usePageMapForPageNumbers() then
+        local page_sequence_number = ({self.document.getPageMapCurrentPageLabel()})[2]
+        pageno = page_sequence_number
     end
 
     self.pageturn_count = self.pageturn_count + 1
