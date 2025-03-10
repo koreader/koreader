@@ -173,12 +173,6 @@ local Input = {
         ScreenKB = false,
     },
 
-    -- keys with key-repeat events
-    KeyRepeat = {
-        Up = true, Down = true, Left = true, Right = true,
-        LPgBack = true, RPgBack = true, LPgFwd = true, RPgFwd = true
-    },
-
     -- repeat state:
     repeat_count = 0,
 
@@ -781,7 +775,8 @@ function Input:handleKeyBoardEv(ev)
     elseif ev.value == KEY_REPEAT then
         -- NOTE: We only care about repeat events from the page-turn buttons and cursor keys...
         --       And we *definitely* don't want to flood the Event queue with useless SleepCover repeats!
-        if self.KeyRepeat[keycode] then
+        if keycode == "Up" or keycode == "Down" or keycode == "Left" or keycode == "Right"
+         or keycode == "RPgBack" or keycode == "RPgFwd" or keycode == "LPgBack" or keycode == "LPgFwd" then
             --- @fixme Crappy event staggering!
             --
             -- The Forma & co repeats every 80ms after a 400ms delay, and 500ms roughly corresponds to a flashing update,
