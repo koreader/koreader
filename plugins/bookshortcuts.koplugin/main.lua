@@ -1,5 +1,6 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local Device = require("device")
 local Dispatcher = require("dispatcher")
 local LuaSettings = require("luasettings")
 local PathChooser = require("ui/widget/pathchooser")
@@ -47,8 +48,13 @@ function BookShortcuts:onBookShortcut(path)
             file = path
         end
         if file then
-            local FileManager = require("apps/filemanager/filemanager")
-            FileManager.openFile(self.ui, file)
+            if Device:canExecuteScript(file) then
+                local filemanagerutil = require("apps/filemanager/filemanagerutil")
+                filemanagerutil.executeScript(file)
+            else
+                local FileManager = require("apps/filemanager/filemanager")
+                FileManager.openFile(self.ui, file)
+            end
         end
     end
 end
