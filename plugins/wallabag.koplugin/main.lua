@@ -674,7 +674,7 @@ function Wallabag:downloadArticle(article)
         if mimetype == "text/html" then
             logger.dbg("Wallabag:downloadArticle: not ignoring EPUB, because", article.url, "is HTML")
         elseif mimetype == nil then -- base ourselves on the file extension
-            if util.getFileNameSuffix(article.url):lower() == "html" then
+            if util.getFileNameSuffix(article.url):lower():find("^html?$") then
                 logger.dbg("Wallabag:downloadArticle: not ignoring EPUB, because", article.url, "appears to be HTML")
             elseif DocumentRegistry:hasProvider(article.url) then
                 logger.dbg("Wallabag:downloadArticle: ignoring EPUB in favor of original", article.url)
