@@ -75,10 +75,15 @@ function ReaderTypeset:onReadSettings(config)
     self:onSetPageMargins(self.unscaled_margins)
     self.sync_t_b_page_margins = self.configurable.sync_t_b_page_margins == 1 and true or false
 
-    -- default to disable TXT formatting as it does more harm than good (the setting is not in UI)
-    self.txt_preformatted = config:readSetting("txt_preformatted")
-                         or G_reader_settings:readSetting("txt_preformatted")
-                         or 1
+    if self.ui.document.is_txt then
+        -- default to disable TXT formatting as it does more harm than good
+        self.txt_preformatted = config:readSetting("txt_preformatted")
+                             or G_reader_settings:readSetting("txt_preformatted")
+                             or 1
+    else
+        -- for other formats, it affects crengine cache
+        self.txt_preformatted = 1
+    end
     self.ui.document:setTxtPreFormatted(self.txt_preformatted)
 
     -- default to disable smooth scaling
@@ -307,11 +312,36 @@ This stylesheet is to be used only with FB2 and FB3 documents, which are not cla
             end
             return text
         end,
-        sub_item_table = obsoleted_table,
         checked_func = function()
             return obsoleted_css[self.css] ~= nil
-        end
+        end,
+        sub_item_table = obsoleted_table,
+        separator = true,
     })
+    if self.ui.document.is_txt then
+        table.insert(style_table, {
+            text_func = function()
+                return _("Auto-detect TXT files layout") .. (G_reader_settings:has("txt_preformatted") and "   ★" or "")
+            end,
+            checked_func = function()
+                return self.txt_preformatted == 0
+            end,
+            callback = function()
+                self.txt_preformatted = self.txt_preformatted == 1 and 0 or 1
+                self.ui.doc_settings:saveSetting("txt_preformatted", self.txt_preformatted)
+                -- setting txt_preformatted for the opened document causes segfault, hence reload
+                self.ui.rolling:showReloadConfirmBox()
+            end,
+            hold_callback = function(touchmenu_instance)
+                if G_reader_settings:has("txt_preformatted") then
+                    G_reader_settings:delSetting("txt_preformatted")
+                else
+                    G_reader_settings:saveSetting("txt_preformatted", 0)
+                end
+                touchmenu_instance:updateItems()
+            end,
+        })
+    end
     return style_table
 end
 
