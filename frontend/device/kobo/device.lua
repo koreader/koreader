@@ -855,7 +855,9 @@ function Kobo:init()
         self.canPowerSaveWhileCharging = yes
     end
 
-    self.canAutosleep = self.canStandby and checkAutosleep()
+    if self.canStandby() then
+        self.canAutosleep = checkAutosleep() -- autosleep is only possible with standby
+    end
 
     -- NOTE: For the Forma, with the buttons on the right, 193 is Top, 194 Bottom.
     self.input = require("device/input"):new{
