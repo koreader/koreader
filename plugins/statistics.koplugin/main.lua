@@ -243,7 +243,8 @@ function ReaderStatistics:onDocumentRerendered()
 
     local new_pagecount
     if ReaderStatistics:usePageMapForPageNumbers() then
-        __, new_pagecount = self.document:getCurrentPageLabel()
+        local __, new_pagecount_t = self.document:getPageMapCurrentPageLabel()
+        new_pagecount = new_pagecount_t
     else
         new_pagecount = self.document:getPageCount()
     end
@@ -1089,7 +1090,8 @@ function ReaderStatistics:onToggleStatistics(no_notification)
             self:initData()
             self.start_current_period = os.time()
             if self.use_pagemap_for_stats then
-                __, self.curr_page = self.ui.document:getCurrentPageLabel()
+                local __, curr_page_t = self.ui.document:getPageMapCurrentPageLabel()
+                self.curr_page = curr_page_t
             else
                 self.curr_page = self.ui:getCurrentPage()
             end
@@ -1742,7 +1744,8 @@ function ReaderStatistics:getCurrentStat()
         logger.dbg("use_pagemap_for_stats: " .. tostring(self.use_pagemap_for_stats))
         if self.use_pagemap_for_stats then
             local page_map = self.document:getPageMap()
-            __, current_page = self.document:getPageMapCurrentPageLabel()
+            local  __, current_page_t = self.document:getPageMapCurrentPageLabel()
+            current_page = current_page_t
             total_pages = #page_map
             percent_read = Math.round(100*current_page/total_pages)
             self.data.pages = total_pages
@@ -2770,7 +2773,8 @@ function ReaderStatistics:onPageUpdate(pageno)
     end
 
     if self.use_pagemap_for_stats then
-        __, pageno = self.document.getPageMapCurrentPageLabel()
+        local __, pageno_t = self.document:getPageMapCurrentPageLabel()
+        pageno = pageno_t
     end
 
     self.pageturn_count = self.pageturn_count + 1
