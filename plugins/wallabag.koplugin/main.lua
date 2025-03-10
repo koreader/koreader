@@ -664,13 +664,13 @@ function Wallabag:downloadArticle(article)
     local file_ext = ".epub"
     local item_url = "/api/entries/" .. article.id .. "/export.epub"
 
-    -- The mimetype is actually an HTTP Content-Type, so we remove everything from the `;` onward
-    -- Wallabag returns `null` if no mimetype is known, which is JSON.decoded to a function,
-    -- which in turn is converted to `nil` here
+    -- The mimetype is actually an HTTP Content-Type, so it can include a semicolon with stuff after it.
+    -- Just in case we also trim it, though that shouldn't be necessary.
+    -- A function represents `null` in our JSON.decode, because `nil` would just disappear.
+    -- We can simplify that to 'not a string'.
     local mimetype = type(article.mimetype) == "string" and util.trim(article.mimetype:match("^[^;]*")) or nil
 
     if self.download_original_document then
-        -- Download any filetype that we have a provider for, other than HTML, from the original URL
         if mimetype == "text/html" then
             logger.dbg("Wallabag:downloadArticle: not ignoring EPUB, because", article.url, "is HTML")
         elseif mimetype == nil then -- base ourselves on the file extension
@@ -680,7 +680,9 @@ function Wallabag:downloadArticle(article)
                 logger.dbg("Wallabag:downloadArticle: ignoring EPUB in favor of original", article.url)
                 file_ext = "." .. util.getFileNameSuffix(article.url)
                 item_url = article.url
-                -- Fix duplicate extensions (e.g. `.txt.txt`)
+                -- If an article does not have a title in its metadata (e.g. txt files),
+                -- its filename (including extension) is used instead. This would cause it to be
+                -- saved with a duplicate extension. So we remove the extension from the title
                 title = util.trim(title:gsub("%" .. file_ext .. "$", ""))
             else
                 logger.dbg("Wallabag:downloadArticle: not ignoring EPUB, because there is no provider for", article.url)
