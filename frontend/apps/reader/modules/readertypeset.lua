@@ -75,7 +75,7 @@ function ReaderTypeset:onReadSettings(config)
     self:onSetPageMargins(self.unscaled_margins)
     self.sync_t_b_page_margins = self.configurable.sync_t_b_page_margins == 1 and true or false
 
-    -- default to disable TXT formatting as it does more harm than good (the setting is not in UI)
+    -- default to disable TXT formatting as it does more harm than good
     self.txt_preformatted = config:readSetting("txt_preformatted")
                          or G_reader_settings:readSetting("txt_preformatted")
                          or 1
@@ -307,10 +307,32 @@ This stylesheet is to be used only with FB2 and FB3 documents, which are not cla
             end
             return text
         end,
-        sub_item_table = obsoleted_table,
         checked_func = function()
             return obsoleted_css[self.css] ~= nil
-        end
+        end,
+        sub_item_table = obsoleted_table,
+        separator = true,
+    })
+    table.insert(style_table, {
+        text_func = function()
+            return _("Preformatted text in TXT files") .. (G_reader_settings:has("txt_preformatted") and "" or "   ★")
+        end,
+        checked_func = function()
+            return self.txt_preformatted == 1
+        end,
+        callback = function()
+            self.txt_preformatted = self.txt_preformatted == 1 and 0 or 1
+            self.ui.doc_settings:saveSetting("txt_preformatted", self.txt_preformatted)
+            self.ui.rolling:showReloadConfirmBox()
+        end,
+        hold_callback = function(touchmenu_instance)
+            if G_reader_settings:has("txt_preformatted") then
+                G_reader_settings:delSetting("txt_preformatted")
+            else
+                G_reader_settings:saveSetting("txt_preformatted", 0)
+            end
+            touchmenu_instance:updateItems()
+        end,
     })
     return style_table
 end
