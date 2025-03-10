@@ -156,7 +156,7 @@ function FocusManager:onFocusHalfMove(args)
             dy = #self.layout - y -- last row
         end
     elseif direction == "left" then
-        dx = -math.floor(#row / 2)
+        dx = - math.floor(#row / 2)
         if BD.mirroredUILayout() then dx = -dx end
         if dx == 0 then
             dx = -1
