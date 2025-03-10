@@ -6,7 +6,6 @@ local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
 local DocSettings = require("docsettings")
-local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local KeyValuePage = require("ui/widget/keyvaluepage")
@@ -1741,7 +1740,7 @@ function ReaderStatistics:getCurrentStat()
         logger.dbg("use_pagemap_for_stats: " .. tostring(self.use_pagemap_for_stats))
         if self.use_pagemap_for_stats then
             local page_map = self.document:getPageMap()
-            local  __, current_page_t = self.document:getPageMapCurrentPageLabel()
+            local  ___, current_page_t = self.document:getPageMapCurrentPageLabel()
             current_page = current_page_t
             total_pages = #page_map
             percent_read = Math.round(100*current_page/total_pages)
