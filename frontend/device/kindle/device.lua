@@ -547,9 +547,20 @@ function Kindle:toggleKeyRepeat(toggle)
     if toggle == true then
         self.key_repeat[C.REP_DELAY] = 400
         self.key_repeat[C.REP_PERIOD] = 120
+
+        -- We can't easily clear existing hooks, but we can overwrite the eventAdjustHook
+        -- with the default empty implementation to effectively remove previous hooks
+        self.input.eventAdjustHook = self.input.gestureAdjustHook
     else
         self.key_repeat[C.REP_DELAY] = 0
         self.key_repeat[C.REP_PERIOD] = 0
+
+        -- Register an event hook that filters out KEY_REPEAT events
+        self.input:registerEventAdjustHook(function(this, ev)
+            if ev.type == C.EV_KEY and ev.value == 2 then -- KEY_REPEAT = 2
+                ev.value = -1 -- Set to an invalid value that will be ignored
+            end
+        end)
     end
     return true
 end
