@@ -91,7 +91,7 @@ ReaderStatistics.default_settings = {
     calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS,
     calendar_show_histogram = true,
     calendar_browse_future_months = false,
-    use_reference_pages = 1,
+    use_reference_pages = "never",
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
@@ -243,7 +243,7 @@ function ReaderStatistics:onDocumentRerendered()
 
     local new_pagecount
     if ReaderStatistics:usePageMapForPageNumbers() then
-        new_pagecount = ({self.document:getCurrentPageLabel()})[2]
+        __, new_pagecount = self.document:getCurrentPageLabel()
     else
         new_pagecount = self.document:getPageCount()
     end
@@ -1061,11 +1061,11 @@ function ReaderStatistics:usePageMapForPageNumbers()
         return false
     elseif not self.document:hasPageMap() then
         return false
-    elseif self.settings.use_reference_pages == nil then
+    elseif self.settings.use_reference_pages == nil or self.settings_use_reference_pages == "never" then
         return false
     end
 
-    if self.settings.use_reference_pages == 2 then
+    if self.settings.use_reference_pages == "when_available" then
         return true
     elseif self.ui.doc_settings:has("pagemap_use_page_labels") then
             if self.ui.doc_settings:isTrue("pagemap_use_page_labels") then
@@ -1089,7 +1089,7 @@ function ReaderStatistics:onToggleStatistics(no_notification)
             self:initData()
             self.start_current_period = os.time()
             if self.use_pagemap_for_stats then
-                self.curr_page = self.ui.document:getPageMapCurrentPageLabel()
+                __, self.curr_page = self.ui.document:getCurrentPageLabel()
             else
                 self.curr_page = self.ui:getCurrentPage()
             end
@@ -1108,7 +1108,7 @@ function ReaderStatistics:addToMainMenu(menu_items)
         return {
             text = title,
             checked_func = function()
-                return self.settings[setting] == value
+                return (self.settings[setting] or self.default_settings[setting]) == value
             end,
             radio = true,
             callback = function()
@@ -1218,9 +1218,9 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         text_func = function()
                             local option
                             local setting_value = self.settings.use_reference_pages
-                            if setting_value == 1 then
+                            if setting_value == "when_on" then
                                 option = _("When used for document")
-                            elseif setting_value == 2 then
+                            elseif setting_value == "when_available" then
                                 option = _("When available")
                             else
                                 option = _("Never")
@@ -1228,9 +1228,9 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                             return T(_("Use reference pages: %1"), option)
                         end,
                         sub_item_table = {
-                                genReferencePageRadioEntry(_("When being used for current document"), "use_reference_pages", 1),
-                                genReferencePageRadioEntry(_("When available for current document"), "use_reference_pages", 2),
-                                genReferencePageRadioEntry(_("Never"), "use_reference_pages", nil),
+                                genReferencePageRadioEntry(_("When being used for current document"), "use_reference_pages", "when_on"),
+                                genReferencePageRadioEntry(_("When available for current document"), "use_reference_pages", "when_available"),
+                                genReferencePageRadioEntry(_("Never"), "use_reference_pages", "never"),
                         },
                     },
                     {
@@ -1742,7 +1742,7 @@ function ReaderStatistics:getCurrentStat()
         logger.dbg("use_pagemap_for_stats: " .. tostring(self.use_pagemap_for_stats))
         if self.use_pagemap_for_stats then
             local page_map = self.document:getPageMap()
-            current_page = ({self.document:getPageMapCurrentPageLabel()})[2]
+            __, current_page = self.document:getPageMapCurrentPageLabel()
             total_pages = #page_map
             percent_read = Math.round(100*current_page/total_pages)
             self.data.pages = total_pages
@@ -2769,9 +2769,8 @@ function ReaderStatistics:onPageUpdate(pageno)
         pageno = self.curr_page -- avoid issues in following code
     end
 
-    if self:usePageMapForPageNumbers() then
-        local page_sequence_number = ({self.document.getPageMapCurrentPageLabel()})[2]
-        pageno = page_sequence_number
+    if self.use_pagemap_for_stats then
+        __, pageno = self.document.getPageMapCurrentPageLabel()
     end
 
     self.pageturn_count = self.pageturn_count + 1
