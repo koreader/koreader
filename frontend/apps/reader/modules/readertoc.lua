@@ -116,6 +116,10 @@ function ReaderToc:resetToc()
     self.expanded_nodes = {}
 end
 
+function ReaderToc:onUseReferencePageUpdate()
+    self:resetToc()
+end
+
 function ReaderToc:onUpdateToc()
     self:resetToc()
     self.ui:handleEvent(Event:new("TocReset"))

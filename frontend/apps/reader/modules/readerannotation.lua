@@ -254,6 +254,10 @@ function ReaderAnnotation:updatePageNumbers(force_update)
     self.needs_update = nil
 end
 
+function ReaderAnnotation:onUseReferencePageUpdate()
+    self:updatePageNumbers(true)
+end
+
 function ReaderAnnotation:sortItems(items)
     if #items > 1 then
         local sort_func = self.ui.rolling and function(a, b) return self:isItemInPositionOrderRolling(a, b) end

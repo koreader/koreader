@@ -6,6 +6,7 @@ local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
 local DocSettings = require("docsettings")
+local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local KeyValuePage = require("ui/widget/keyvaluepage")
@@ -1464,6 +1465,10 @@ Time is in hours and minutes.]]),
     }
 end
 
+function ReaderStatistics:onUseReferencePageUpdate()
+    self.use_pagemap_for_stats = self:usePageMapForPageNumbers()
+end
+
 function ReaderStatistics:onShowTimeRange()
     self.kv = KeyValuePage:new{
         title = _("Time range statistics"),
@@ -1666,14 +1671,6 @@ function ReaderStatistics:getCurrentBookStats()
     current_duration = tonumber(current_duration)
     current_pages = tonumber(current_pages)
     return current_duration, current_pages
-end
-
-function ReaderStatistics:getSequenceNumberForPageLabel(label, page_map)
-    for i = 1, #page_map do
-        if page_map[i].label == label then
-            return i
-        end
-    end
 end
 
 
