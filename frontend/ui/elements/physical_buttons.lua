@@ -62,7 +62,7 @@ if Device:hasDPad() and Device:useDPadAsActionKeys() then
 end
 
 if Device:canKeyRepeat() then
-    table.insert(PhysicalButtons.sub_item_table, {
+    table.insert(PhysicalButtons.sub_item_table, 1, {
         text = _("Disable key repeat"),
         help_text = _("Useful if you don't like the behavior or if your device has faulty switches"),
         checked_func = function()
