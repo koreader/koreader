@@ -52,7 +52,6 @@ function ReaderPageMap:_postInit()
     self:resetLayout()
     self.ui.menu:registerToMainMenu(self)
     self.view:registerViewModule("pagemap", self)
-    self.page_map = self.ui.document:getPageMap()
 end
 
 function ReaderPageMap:resetLayout()
@@ -271,10 +270,6 @@ end
 
 function ReaderPageMap:wantsPageLabels()
     return self.has_pagemap and self.use_page_labels
-end
-
-function ReaderPageMap:getPageMap()
-    return self.page_map
 end
 
 function ReaderPageMap:getCurrentPageLabel(clean_label)

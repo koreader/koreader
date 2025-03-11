@@ -1057,7 +1057,7 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
 end
 
 function ReaderStatistics:usePageMapForPageNumbers()
-    if not self.ui.rolling then
+    if not self.ui.pagemap then
         return false
     elseif not self.ui.pagemap.has_pagemap then
         return false
@@ -1737,9 +1737,8 @@ function ReaderStatistics:getCurrentStat()
         end
     else
         if self.use_pagemap_for_stats then
-            local page_map = self.ui.pagemap:getPageMap()
             current_page = select(2,self.ui.pagemap:getCurrentPageLabel())
-            total_pages = #page_map
+            total_pages = select(3, self.ui.pagemap:getCurrentPageLabel())
             self.data.pages = total_pages
             percent_read = Math.round(100*current_page/total_pages)
         else
