@@ -191,7 +191,11 @@ function ReaderStatistics:initData()
     end
     self.data.series = series or "N/A"
 
-    self.data.pages = self.document:getPageCount()
+    if self.use_pagemap_for_stats then
+        self.data.pages = select(3, self.ui.pagemap:getCurrentPageLabel())
+    else
+        self.data.pages = self.document:getPageCount()
+    end
     -- Update these numbers to what's actually stored in the settings
     self.data.highlights, self.data.notes = self.ui.annotation:getNumberOfHighlightsAndNotes()
     self.id_curr_book = self:getIdBookDB()
@@ -1741,12 +1745,13 @@ function ReaderStatistics:getCurrentStat()
             total_pages = select(3, self.ui.pagemap:getCurrentPageLabel())
             self.data.pages = total_pages
             percent_read = Math.round(100*current_page/total_pages)
+            page_progress_string = ("%s / %s (%d%%)"):format(self.ui.pagemap:getCurrentPageLabel(), tonumber(self.ui.pagemap:getLastPageLabel()), percent_read)
         else
             current_page = self.ui:getCurrentPage()
             total_pages = self.data.pages
             percent_read = Math.round(100*current_page/total_pages)
+            page_progress_string = ("%d / %d (%d%%)"):format(current_page, total_pages, percent_read)
         end
-        page_progress_string = ("%d / %d (%d%%)"):format(current_page, total_pages, percent_read)
     end
 
     local first_open_days_ago = math.floor(tonumber(now_ts - first_open)/86400)
