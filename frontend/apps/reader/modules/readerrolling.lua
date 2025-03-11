@@ -311,11 +311,11 @@ function ReaderRolling:onCheckDomStyleCoherence()
         -- When using an older DOM version, bookmarks may break
         local bookmarks_warn_txt = self.using_non_normalized_xpointers and self.ui.annotation:hasAnnotations()
             and _("\nNote that this change in styles may render your bookmarks or highlights no more valid.\nIf some of them do not show anymore, you can just revert the change you just made to have them shown again.\n\n")
-        self:showReloadConfirmBox(bookmarks_warn_txt)
+        self:showSuggestReloadConfirmBox(bookmarks_warn_txt)
     end
 end
 
-function ReaderRolling:showReloadConfirmBox(warn_txt)
+function ReaderRolling:showSuggestReloadConfirmBox(warn_txt)
     UIManager:show(ConfirmBox:new{
         text = T(_("Styles have changed in such a way that fully reloading the document may be needed for a correct rendering.\n%1Do you want to reload the document?"),
             warn_txt or ""),
