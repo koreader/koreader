@@ -243,7 +243,7 @@ function ReaderStatistics:onDocumentRerendered()
 
     local new_pagecount
     if ReaderStatistics:usePageMapForPageNumbers() then
-        new_pagecount = select(2, self.ui.pagemap:getCurrentPageLabel())
+        new_pagecount = select(3, self.ui.pagemap:getCurrentPageLabel())
     else
         new_pagecount = self.document:getPageCount()
     end
