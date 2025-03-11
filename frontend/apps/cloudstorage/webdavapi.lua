@@ -110,11 +110,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
             local item_path = path .. "/" .. item_name
 
             -- only available for files, not directories/collections
-            local item_filesize = nil
-            local item_content_length_match = item:match("<[^:]*:getcontentlength[^>]*>(%d+)</[^:]*:getcontentlength>")
-            if item_content_length_match then
-                item_filesize = tonumber(item_content_length_match)
-            end
+            local item_filesize = item:match("<[^:]*:getcontentlength[^>]*>(%d+)</[^:]*:getcontentlength>")
 
             if item:find("<[^:]*:collection[^<]*/>") then
                 item_name = item_name .. "/"
@@ -131,7 +127,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
                     text = item_name,
                     url = item_path,
                     type = "file",
-                    filesize = item_filesize
+                    filesize = tonumber(item_filesize)
                 })
             end
         end
