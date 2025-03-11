@@ -76,12 +76,13 @@ function ReaderTypeset:onReadSettings(config)
     self.sync_t_b_page_margins = self.configurable.sync_t_b_page_margins == 1 and true or false
 
     if self.ui.document.is_txt then
-        -- default to disable TXT formatting as it does more harm than good
+        -- default to no fancy detection and formatting, leave lines as is
         self.txt_preformatted = config:readSetting("txt_preformatted")
                              or G_reader_settings:readSetting("txt_preformatted")
                              or 1
     else
-        -- for other formats, it affects crengine cache
+        -- for other formats than txt, we should keep this setting fixed
+        -- or it could create multiple cache files
         self.txt_preformatted = 1
     end
     self.ui.document:setTxtPreFormatted(self.txt_preformatted)
@@ -329,8 +330,11 @@ This stylesheet is to be used only with FB2 and FB3 documents, which are not cla
             callback = function()
                 self.txt_preformatted = self.txt_preformatted == 1 and 0 or 1
                 self.ui.doc_settings:saveSetting("txt_preformatted", self.txt_preformatted)
-                -- setting txt_preformatted for the opened document causes segfault, hence reload
-                self.ui.rolling:showReloadConfirmBox()
+                -- Calling document:setTxtPreFormatted() here could cause a segfault (there is something
+                -- really fishy about its handling, like bits of partial rerenderings happening while it is
+                -- disabled...). It's safer to just not notify crengine, and propose the user to reload the
+                -- document and restart from a sane state.
+                self.ui.rolling:showSuggestReloadConfirmBox()
             end,
             hold_callback = function(touchmenu_instance)
                 if G_reader_settings:has("txt_preformatted") then
