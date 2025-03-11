@@ -169,11 +169,11 @@ function Profiles:getSubMenuItems()
                                 return v.settings.auto_exec_time_interval and true
                             end,
                             sub_item_table_func = function()
-                                local sub_item_table = {}
+                                local sub_sub_item_table = {}
                                 local points = { _("start: "), _("end: ") }
                                 local titles = { _("Set start time"), _("Set end time") }
                                 for i, point in ipairs(points) do
-                                    sub_item_table[i] = {
+                                    sub_sub_item_table[i] = {
                                         text_func = function()
                                             local interval = v.settings.auto_exec_time_interval
                                             return point .. (interval and interval[i] or "--:--")
@@ -202,7 +202,7 @@ function Profiles:getSubMenuItems()
                                         end,
                                     }
                                 end
-                                return sub_item_table
+                                return sub_sub_item_table
                             end,
                             hold_callback = function(touchmenu_instance)
                                 v.settings.auto_exec_time_interval = nil
