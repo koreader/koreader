@@ -232,6 +232,7 @@ function ReaderAnnotation:setNeedsUpdateFlag()
 end
 
 ReaderAnnotation.onDocumentRerendered = ReaderAnnotation.setNeedsUpdateFlag
+ReaderAnnotation.onUsePageLabelsUpdated = ReaderAnnotation.setNeedsUpdateFlag
 
 function ReaderAnnotation:onCloseDocument()
     self:updatePageNumbers()
@@ -253,12 +254,6 @@ function ReaderAnnotation:updatePageNumbers(force_update)
     end
     self.needs_update = nil
 end
-
-function ReaderAnnotation:onUsePageLabelsUpdated()
-    self:updatePageNumbers(true)
-end
-
-ReaderAnnotation.onUsePageLabelsUpdated = ReaderAnnotation.setNeedsUpdateFlag
 
 function ReaderAnnotation:sortItems(items)
     if #items > 1 then

@@ -2502,6 +2502,6 @@ function ReaderFooter:onCloseWidget()
     self:free()
 end
 
-ReaderFooter.onUsePageLabelsUpdated = ReaderFooter.onUpdateFooter
+ReaderFooter.onUsePageLabelsUpdated = ReaderFooter.maybeUpdateFooter
 
 return ReaderFooter

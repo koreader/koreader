@@ -243,8 +243,7 @@ function ReaderStatistics:onDocumentRerendered()
 
     local new_pagecount
     if ReaderStatistics:usePageMapForPageNumbers() then
-        local __, new_pagecount_t = self.document:getPageMapCurrentPageLabel()
-        new_pagecount = new_pagecount_t
+        new_pagecount = select(2, self.ui.pagemap:getCurrentPageLabel())
     else
         new_pagecount = self.document:getPageCount()
     end
@@ -1060,7 +1059,7 @@ end
 function ReaderStatistics:usePageMapForPageNumbers()
     if not self.ui.rolling then
         return false
-    elseif not self.document:hasPageMap() then
+    elseif not self.ui.pagemap.has_pagemap then
         return false
     elseif self.settings.use_reference_pages == nil or self.settings_use_reference_pages == "never" then
         return false
@@ -1090,8 +1089,7 @@ function ReaderStatistics:onToggleStatistics(no_notification)
             self:initData()
             self.start_current_period = os.time()
             if self.use_pagemap_for_stats then
-                local __, curr_page_t = self.ui.document:getPageMapCurrentPageLabel()
-                self.curr_page = curr_page_t
+                self.curr_page = select(2,self.ui.pagemap:getCurrentPageLabel())
             else
                 self.curr_page = self.ui:getCurrentPage()
             end
@@ -1106,7 +1104,8 @@ function ReaderStatistics:onToggleStatistics(no_notification)
 end
 
 function ReaderStatistics:addToMainMenu(menu_items)
-    local function genReferencePageRadioEntry(title, setting, value)
+    local function genReferencePageRadioEntry(title, value)
+        local setting = "use_reference_pages"
         return {
             text = title,
             checked_func = function()
@@ -1230,9 +1229,9 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                             return T(_("Use reference pages: %1"), option)
                         end,
                         sub_item_table = {
-                                genReferencePageRadioEntry(_("When being used for current document"), "use_reference_pages", "when_on"),
-                                genReferencePageRadioEntry(_("When available for current document"), "use_reference_pages", "when_available"),
-                                genReferencePageRadioEntry(_("Never"), "use_reference_pages", "never"),
+                                genReferencePageRadioEntry(_("When being used for current document"), "when_on"),
+                                genReferencePageRadioEntry(_("When available for current document"), "when_available"),
+                                genReferencePageRadioEntry(_("Never"), "never"),
                         },
                     },
                     {
@@ -1737,21 +1736,18 @@ function ReaderStatistics:getCurrentStat()
             page_progress_string = ("[%d / %d]%d (%d%%)"):format(current_page, total_pages, flow, percent_read)
         end
     else
-        logger.dbg("use_pagemap_for_stats: " .. tostring(self.use_pagemap_for_stats))
         if self.use_pagemap_for_stats then
-            local page_map = self.document:getPageMap()
-            local  ___, current_page_t = self.document:getPageMapCurrentPageLabel()
-            current_page = current_page_t
+            local page_map = self.ui.pagemap:getPageMap()
+            current_page = select(2,self.ui.pagemap:getCurrentPageLabel())
             total_pages = #page_map
-            percent_read = Math.round(100*current_page/total_pages)
             self.data.pages = total_pages
-            page_progress_string = ("%s / %d (%d%%)"):format(current_page, self.data.pages , percent_read)
+            percent_read = Math.round(100*current_page/total_pages)
         else
             current_page = self.ui:getCurrentPage()
             total_pages = self.data.pages
             percent_read = Math.round(100*current_page/total_pages)
-            page_progress_string = ("%d / %d (%d%%)"):format(current_page, total_pages, percent_read)
         end
+        page_progress_string = ("%d / %d (%d%%)"):format(current_page, total_pages, percent_read)
     end
 
     local first_open_days_ago = math.floor(tonumber(now_ts - first_open)/86400)
@@ -2732,7 +2728,7 @@ end
 
 function ReaderStatistics:onPosUpdate(pos, pageno)
     if self.use_pagemap_for_stats then
-        local page_sequence_number = self.document:getPageMapCurrentPageLabel()
+        local __, page_sequence_number = self.ui.pagemap:getCurrentPageLabel()
         if self.curr_page ~= page_sequence_number then
             self:onPageUpdate(pageno)
         end
@@ -2769,8 +2765,7 @@ function ReaderStatistics:onPageUpdate(pageno)
     end
 
     if self.use_pagemap_for_stats then
-        local __, pageno_t = self.document:getPageMapCurrentPageLabel()
-        pageno = pageno_t
+        pageno = select(2, self.ui.pagemap:getCurrentPageLabel())
     end
 
     self.pageturn_count = self.pageturn_count + 1
