@@ -1745,7 +1745,7 @@ function ReaderStatistics:getCurrentStat()
             total_pages = select(3, self.ui.pagemap:getCurrentPageLabel())
             self.data.pages = total_pages
             percent_read = Math.round(100*current_page/total_pages)
-            page_progress_string = ("%s / %s (%d%%)"):format(self.ui.pagemap:getCurrentPageLabel(), tonumber(self.ui.pagemap:getLastPageLabel()), percent_read)
+            page_progress_string = ("%s / %s (%d%%)"):format(self.ui.pagemap:getCurrentPageLabel(), self.ui.pagemap:getLastPageLabel(), percent_read)
         else
             current_page = self.ui:getCurrentPage()
             total_pages = self.data.pages
