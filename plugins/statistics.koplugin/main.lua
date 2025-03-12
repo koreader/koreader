@@ -246,7 +246,7 @@ function ReaderStatistics:onDocumentRerendered()
     -- - 5 minutes later, on the next insertDB(), (153, now-5mn, 42, 254) will be inserted in DB
 
     local new_pagecount
-    if ReaderStatistics:usePageMapForPageNumbers() then
+    if self:usePageMapForPageNumbers() then
         new_pagecount = select(3, self.ui.pagemap:getCurrentPageLabel())
     else
         new_pagecount = self.document:getPageCount()
@@ -1065,7 +1065,7 @@ function ReaderStatistics:usePageMapForPageNumbers()
         return false
     elseif not self.ui.pagemap.has_pagemap then
         return false
-    elseif self.settings.use_reference_pages == nil or self.settings_use_reference_pages == "never" then
+    elseif self.settings.use_reference_pages == nil or self.settings.use_reference_pages == "never" then
         return false
     end
 
@@ -1741,8 +1741,7 @@ function ReaderStatistics:getCurrentStat()
         end
     else
         if self.use_pagemap_for_stats then
-            current_page = select(2,self.ui.pagemap:getCurrentPageLabel())
-            total_pages = select(3, self.ui.pagemap:getCurrentPageLabel())
+            current_page, total_pages = select(2,self.ui.pagemap:getCurrentPageLabel())
             self.data.pages = total_pages
             percent_read = Math.round(100*current_page/total_pages)
             page_progress_string = ("%s / %s (%d%%)"):format(self.ui.pagemap:getCurrentPageLabel(), self.ui.pagemap:getLastPageLabel(), percent_read)
@@ -2757,20 +2756,24 @@ function ReaderStatistics:onPageUpdate(pageno)
         return
     end
 
+    local closing = false
+    if self.use_pagemap_for_stats then
+        if pageno == false then
+            closing = true
+        end
+        pageno = select(2, self.ui.pagemap:getCurrentPageLabel())
+    end
+
     -- We only care about *actual* page turns ;)
     if self.curr_page == pageno then
         return
     end
 
-    local closing = false
     if pageno == false then -- from onCloseDocument()
         closing = true
         pageno = self.curr_page -- avoid issues in following code
     end
 
-    if self.use_pagemap_for_stats then
-        pageno = select(2, self.ui.pagemap:getCurrentPageLabel())
-    end
 
     self.pageturn_count = self.pageturn_count + 1
     local now_ts = os.time()
