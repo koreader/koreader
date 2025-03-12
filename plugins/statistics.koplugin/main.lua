@@ -91,7 +91,6 @@ ReaderStatistics.default_settings = {
     calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS,
     calendar_show_histogram = true,
     calendar_browse_future_months = false,
-    use_reference_pages = "never",
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
@@ -1065,13 +1064,9 @@ function ReaderStatistics:usePageMapForPageNumbers()
         return false
     elseif not self.ui.pagemap.has_pagemap then
         return false
-    elseif self.settings.use_reference_pages == nil or self.settings.use_reference_pages == "never" then
-        return false
     end
 
-    if self.settings.use_reference_pages == "when_available" then
-        return true
-    elseif self.ui.doc_settings:has("pagemap_use_page_labels") then
+    if self.ui.doc_settings:has("pagemap_use_page_labels")  then
             if self.ui.doc_settings:isTrue("pagemap_use_page_labels") then
                 return true
             end
@@ -1108,23 +1103,6 @@ function ReaderStatistics:onToggleStatistics(no_notification)
 end
 
 function ReaderStatistics:addToMainMenu(menu_items)
-    local function genReferencePageRadioEntry(title, value)
-        local setting = "use_reference_pages"
-        return {
-            text = title,
-            checked_func = function()
-                return (self.settings[setting] or self.default_settings[setting]) == value
-            end,
-            radio = true,
-            callback = function()
-                self.settings[setting] = value
-                if self.is_doc then
-                    self.use_pagemap_for_stats = self:usePageMapForPageNumbers()
-                    logger.dbg("refershed use_pagemap_for_stats value")
-                end
-            end,
-        }
-    end
     menu_items.statistics = {
         text = _("Reading statistics"),
         sub_item_table = {
@@ -1217,25 +1195,6 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 2 end,
                                 callback = function() self.settings.calendar_start_day_of_week = 2 end
                             },
-                        },
-                    },
-                    {
-                        text_func = function()
-                            local option
-                            local setting_value = self.settings.use_reference_pages
-                            if setting_value == "when_on" then
-                                option = _("When used for document")
-                            elseif setting_value == "when_available" then
-                                option = _("When available")
-                            else
-                                option = _("Never")
-                            end
-                            return T(_("Use reference pages: %1"), option)
-                        end,
-                        sub_item_table = {
-                                genReferencePageRadioEntry(_("When being used for current document"), "when_on"),
-                                genReferencePageRadioEntry(_("When available for current document"), "when_available"),
-                                genReferencePageRadioEntry(_("Never"), "never"),
                         },
                     },
                     {
