@@ -245,7 +245,7 @@ function ReaderStatistics:onDocumentRerendered()
     -- - 5 minutes later, on the next insertDB(), (153, now-5mn, 42, 254) will be inserted in DB
 
     local new_pagecount
-    if self:usePageMapForPageNumbers() then
+    if self.use_pagemap_for_stats then
         new_pagecount = select(3, self.ui.pagemap:getCurrentPageLabel())
     else
         new_pagecount = self.document:getPageCount()
