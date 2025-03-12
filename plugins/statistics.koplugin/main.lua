@@ -1428,6 +1428,7 @@ end
 
 function ReaderStatistics:onUsePageLabelsUpdated()
     self.use_pagemap_for_stats = self:usePageMapForPageNumbers()
+    self:onDocumentRerendered()
 end
 
 function ReaderStatistics:onShowTimeRange()
