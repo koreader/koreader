@@ -1635,7 +1635,6 @@ function ReaderStatistics:getCurrentBookStats()
     return current_duration, current_pages
 end
 
-
 function ReaderStatistics:getCurrentStat()
     self:insertDB()
     local id_book = self.id_curr_book
