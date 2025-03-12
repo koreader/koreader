@@ -1067,10 +1067,7 @@ function ReaderStatistics:usePageMapForPageNumbers()
     end
 
     if self.ui.doc_settings:has("pagemap_use_page_labels")  then
-            if self.ui.doc_settings:isTrue("pagemap_use_page_labels") then
-                return true
-            end
-            return false
+        return self.ui.doc_settings:isTrue("pagemap_use_page_labels") 
     elseif G_reader_settings:isTrue("pagemap_use_page_labels") then
         return true
     end
