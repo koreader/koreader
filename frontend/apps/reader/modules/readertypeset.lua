@@ -210,7 +210,7 @@ function ReaderTypeset:genStyleSheetMenu()
                 return css_file == self.css
             end,
             enabled_func = function()
-                if fb2_compatible == true and not self.ui.document.is_fb2 then
+                if fb2_compatible == true and not (self.ui.document.is_fb2 or self.ui.document.is_txt) then
                     return false
                 end
                 if fb2_compatible == false and self.ui.document.is_fb2 then
