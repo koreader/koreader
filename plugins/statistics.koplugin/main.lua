@@ -174,7 +174,7 @@ function ReaderStatistics:initData()
     self.is_doc = true
     self.is_doc_not_finished = self.ui.doc_settings:readSetting("summary").status ~= "complete"
     self.is_doc_not_frozen = self.is_doc_not_finished or not self.settings.freeze_finished_books
-    self.use_pagemap_for_stats = self:usePageMapForPageNumbers()
+    self.use_pagemap_for_stats = self:usePageMapForStats()
 
     -- first execution
     local book_properties = self.ui.doc_props
@@ -1059,7 +1059,7 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
     return total_pages, total_time
 end
 
-function ReaderStatistics:usePageMapForPageNumbers()
+function ReaderStatistics:usePageMapForStats()
     if not self.ui.pagemap then
         return false
     elseif not self.ui.pagemap.has_pagemap then
@@ -1067,7 +1067,7 @@ function ReaderStatistics:usePageMapForPageNumbers()
     end
 
     if self.ui.doc_settings:has("pagemap_use_page_labels")  then
-        return self.ui.doc_settings:isTrue("pagemap_use_page_labels") 
+        return self.ui.doc_settings:isTrue("pagemap_use_page_labels")
     elseif G_reader_settings:isTrue("pagemap_use_page_labels") then
         return true
     end
@@ -1424,7 +1424,7 @@ Time is in hours and minutes.]]),
 end
 
 function ReaderStatistics:onUsePageLabelsUpdated()
-    self.use_pagemap_for_stats = self:usePageMapForPageNumbers()
+    self.use_pagemap_for_stats = self:usePageMapForStats()
     self:onDocumentRerendered()
 end
 
@@ -2689,8 +2689,8 @@ end
 
 function ReaderStatistics:onPosUpdate(pos, pageno)
     if self.use_pagemap_for_stats then
-        local __, page_sequence_number = self.ui.pagemap:getCurrentPageLabel()
-        if self.curr_page ~= page_sequence_number then
+        local pageidx = select(2, self.ui.pagemap:getCurrentPageLabel())
+        if self.curr_page ~= pageidx then
             self:onPageUpdate(pageno)
         end
 
