@@ -2736,7 +2736,6 @@ function ReaderStatistics:onPageUpdate(pageno)
         pageno = self.curr_page -- avoid issues in following code
     end
 
-
     self.pageturn_count = self.pageturn_count + 1
     local now_ts = os.time()
 
