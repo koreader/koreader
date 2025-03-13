@@ -761,8 +761,34 @@ function Menu:init()
     self.page_info_first_chev:hide()
     self.page_info_last_chev:hide()
 
-    local title_goto, type_goto, hint_func
     local buttons = {
+        {
+            {
+                text = self.search_callback and _("Search…") or _("Search"),
+                callback = function()
+                    local search_string = self.page_info_text.input_dialog:getInputText()
+                    if self.search_callback then
+                        self.search_callback(search_string)
+                        self.page_info_text:closeInputDialog()
+                    else
+                        if search_string ~= "" then
+                            self:searchStringInMenuItems(search_string)
+                            self.page_info_text:closeInputDialog()
+                        end
+                    end
+                end,
+            },
+            {
+                text = _("Go to letter"),
+                callback = function()
+                    local search_string = self.page_info_text.input_dialog:getInputText()
+                    if search_string ~= "" then
+                        self:searchStringInMenuItems(search_string, true)
+                        self.page_info_text:closeInputDialog()
+                    end
+                end,
+            },
+        },
         {
             {
                 text = _("Cancel"),
@@ -773,7 +799,6 @@ function Menu:init()
             },
             {
                 text = _("Go to page"),
-                is_enter_default = not self.goto_letter,
                 callback = function()
                     local page = tonumber(self.page_info_text.input_dialog:getInputText())
                     if page and page >= 1 and page <= self.page_num then
@@ -784,59 +809,19 @@ function Menu:init()
             },
         },
     }
-
-    if self.goto_letter then
-        title_goto = _("Enter letter or page number")
-        hint_func = function()
-            -- @translators First group is the standard range for alphabetic searches, second group is a page number range
-            return T(_("(a - z) or (1 - %1)"), self.page_num)
-        end
-        table.insert(buttons, 1, {
-            {
-                text = _("File search"),
-                callback = function()
-                    self.page_info_text:closeInputDialog()
-                    UIManager:sendEvent(Event:new("ShowFileSearch", self.page_info_text.input_dialog:getInputText()))
-                end,
-            },
-            {
-                text = _("Go to letter"),
-                is_enter_default = true,
-                callback = function()
-                    local search_string = self.page_info_text.input_dialog:getInputText()
-                    if search_string == "" then return end
-                    search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
-                    for k, v in ipairs(self.item_table) do
-                        local filename = Utf8Proc.lowercase(util.fixUtf8(ffiUtil.basename(v.path), "?"))
-                        local i = filename:find(search_string)
-                        if i == 1 and not v.is_go_up then
-                            self:onGotoPage(self:getPageNumber(k))
-                            break
-                        end
-                    end
-                    self.page_info_text:closeInputDialog()
-                end,
-            },
-        })
-    else
-        title_goto = _("Enter page number")
-        type_goto = "number"
-        hint_func = function()
-            return string.format("(1 - %s)", self.page_num)
-        end
-    end
-
     self.page_info_text = self.page_info_text or Button:new{
         text = "",
+        text_font_bold = false,
+        bordersize = 0,
+        call_hold_input_on_tap = true,
         hold_input = {
-            title = title_goto,
-            input_type = type_goto,
-            hint_func = hint_func,
+            title = _("Enter text, letter or page number"),
+            hint_func = function()
+                -- @translators First group is the standard range for alphabetic searches, second group is a page number range
+                return T(_("(a - z) or (1 - %1)"), self.page_num)
+            end,
             buttons = buttons,
         },
-        call_hold_input_on_tap = true,
-        bordersize = 0,
-        text_font_bold = false,
     }
     self.page_info = HorizontalGroup:new{
         self.page_info_first_chev,
@@ -1313,6 +1298,21 @@ function Menu:onSelectByShortCut(_, keyevent)
         end
     end
     return true
+end
+
+function Menu:searchStringInMenuItems(search_string, goto_letter)
+    search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
+    for i, item in ipairs(self.item_table) do
+        if not item.is_go_up and not (goto_letter and item.is_file == false) then -- skip folders in "Go to letter"
+            local item_text = Utf8Proc.lowercase(util.fixUtf8(item.text, "?"))
+            local idx = item_text:find(search_string)
+            if idx and (idx == 1 or not goto_letter) then
+                self.itemnumber = i -- draw focus
+                self:onGotoPage(self:getPageNumber(i))
+                break
+            end
+        end
+    end
 end
 
 function Menu:onShowGotoDialog()
