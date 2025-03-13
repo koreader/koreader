@@ -1686,7 +1686,12 @@ function ReaderStatistics:getCurrentStat()
     if first_open == nil then
         first_open = now_ts
     end
-    self.data.pages = self.document:getPageCount()
+    if self.use_pagemap_for_stats then
+        self.data.pages = select(3, self.ui.pagemap:getCurrentPageLabel())
+
+    else
+        self.data.pages = self.document:getPageCount()
+    end
     total_time_book = tonumber(total_time_book)
     total_read_pages = tonumber(total_read_pages)
 
@@ -1709,7 +1714,6 @@ function ReaderStatistics:getCurrentStat()
             local current_page_label
             current_page_label, current_page, total_pages = self.ui.pagemap:getCurrentPageLabel()
             local last_page_label = self.ui.pagemap:getLastPageLabel()
-            self.data.pages = total_pages
             percent_read = Math.round(100*current_page/total_pages)
             page_progress_string = ("%s / %s (%d%%)"):format(current_page_label, last_page_label, percent_read)
         else
