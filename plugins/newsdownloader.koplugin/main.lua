@@ -586,14 +586,14 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, limit, download_f
         local feed_description
         if feed_type == FEED_TYPE_RSS then
             feed_title = feed.title
-            feed_description = feed.description[1] or feed.description --- @todo This should select the one with type="html" if there is a choice.
+            feed.description = feed.description and feed.description[1] or feed.description --- @todo This should select the one with type="html" if there is a choice.
             if feed["content:encoded"] ~= nil then
                 -- Spec: https://web.resource.org/rss/1.0/modules/content/
                 feed_description = feed["content:encoded"]
             end
         elseif feed_type == FEED_TYPE_ATOM then
             feed_title = feed.title and feed.title[1] or feed.title
-            feed_description = feed.content[1] or feed.content --- @todo This should select the one with type="html" if there is a choice.
+            feed_description = feed.content and feed.content[1] or feed.content --- @todo This should select the one with type="html" if there is a choice.
         else
             feed_title = feed.title and feed.title[1] or feed.title
             feed_description = feed.summary
@@ -613,7 +613,7 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, limit, download_f
             self:createFromDescription(
                 feed,
                 feed_title,
-                feed_description,
+                feed_description or "",
                 feed_output_dir,
                 include_images,
                 article_message
