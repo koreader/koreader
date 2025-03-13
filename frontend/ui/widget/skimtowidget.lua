@@ -186,7 +186,7 @@ function SkimToWidget:init()
     local bookmark_prev_text = "◁\u{202F}\u{F097}"
     local bookmark_enabled_text = "\u{F02E}"
     local bookmark_disabled_text = "\u{F097}"
-    if (BD.mirroredUILayout() or invert_buttons) and not (BD.mirroredUILayout() and invert_buttons) then
+    if BD.mirroredUILayout() ~= invert_buttons then -- XOR operation
         chapter_next_text, chapter_prev_text = chapter_prev_text, chapter_next_text
         bookmark_next_text, bookmark_prev_text = bookmark_prev_text, bookmark_next_text
     end
