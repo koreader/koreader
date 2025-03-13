@@ -34,14 +34,6 @@ local NewsDownloader = WidgetContainer:extend{
     download_dir = nil,
     file_extension = ".epub",
     config_key_custom_dl_dir = "custom_dl_dir",
-    empty_feed = {
-        [1] = "https://",
-        limit = 5,
-        download_full_article = false,
-        include_images = true,
-        enable_filter = false,
-        filter_element = ""
-    },
     kv = nil, -- KeyValuePage
 }
 
@@ -57,6 +49,18 @@ local function getFeedTitle(possible_title)
     elseif possible_title[1] and type(possible_title[1]) == "string" then
         return util.htmlEntitiesToUtf8(possible_title[1])
     end
+end
+
+--- Return a new empty field that can be modified by the caller
+local function getEmptyFeed()
+   return {
+        [1] = "https://",
+        limit = 5,
+        download_full_article = false,
+        include_images = true,
+        enable_filter = false,
+        filter_element = ""
+    }
 end
 
 -- There can be multiple links.
@@ -225,7 +229,7 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
             -- add a feed to their list.
             local feed_item_vc = FeedView:getItem(
                 1,
-                self.empty_feed,
+                getEmptyFeed(),
                 function(id, edit_key, value)
                     self:editFeedAttribute(id, edit_key, value)
                 end
@@ -796,7 +800,7 @@ function NewsDownloader:viewFeedList()
                 -- Prepare the view with all the callbacks for editing the attributes
                 local feed_item_vc = FeedView:getItem(
                     #feed_config + 1,
-                    self.empty_feed,
+                    getEmptyFeed(),
                     function(id, edit_key, value)
                         self:editFeedAttribute(id, edit_key, value)
                     end
@@ -960,7 +964,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
     if id > #feed_config then
         table.insert(
             feed_config,
-            self.empty_feed
+            getEmptyFeed()
         )
     end
 
