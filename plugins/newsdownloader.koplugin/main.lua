@@ -611,7 +611,7 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, limit, download_f
             self:createFromDescription(
                 feed,
                 feed_title,
-                feed_description or "No description available",
+                feed_description or "",
                 feed_output_dir,
                 include_images,
                 article_message
