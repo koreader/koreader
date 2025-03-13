@@ -1425,6 +1425,15 @@ end
 
 function ReaderStatistics:onUsePageLabelsUpdated()
     self.use_pagemap_for_stats = self:usePageMapForStats()
+    if self.document:hasHiddenFlows() and self.view.state.page then
+        self:onPageUpdate(self.document:getPageNumberInFlow(self.view.state.page))
+    else
+        if self.use_pagemap_for_stats then
+            self:onPageUpdate(select(2,self.ui.pagemap.getCurrentPageLabel()))
+        else
+            self:onPageUpdate(self.ui.getCurrentPage())
+        end
+    end
     self:onDocumentRerendered()
 end
 
