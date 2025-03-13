@@ -2691,7 +2691,7 @@ function ReaderStatistics:onPosUpdate(pos, pageno)
     if self.use_pagemap_for_stats then
         local pageidx = select(2, self.ui.pagemap:getCurrentPageLabel())
         if self.curr_page ~= pageidx then
-            self:onPageUpdate(pageno)
+            self:onPageUpdate(pageidx)
         end
 
         return
@@ -2715,12 +2715,6 @@ function ReaderStatistics:onPageUpdate(pageno)
     end
 
     local closing = false
-    if self.use_pagemap_for_stats then
-        if pageno == false then
-            closing = true
-        end
-        pageno = select(2, self.ui.pagemap:getCurrentPageLabel())
-    end
 
     -- We only care about *actual* page turns ;)
     if self.curr_page == pageno then
