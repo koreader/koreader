@@ -54,17 +54,17 @@ local function checkAutosleep()
     logger.dbg("Kobo: checking if autosleep is possible ...")
     local f = io.open("/sys/power/autosleep")
     if not f then
-        logger.dbg("Kobo: target autosleep is unsupported")
+        logger.dbg("Kobo: autosleep is unsupported")
         return no
     end
     f:close()
     f = io.open("/sys/power/wake_lock")
     if not f then
-        logger.dbg("Kobo: target wake_lock is unsupported")
+        logger.dbg("Kobo: wake_lock is unsupported")
         return no
     end
     f:close()
-    logger.dbg("Kobo: target autosleep and wake_lock are supported")
+    logger.dbg("Kobo: autosleep and wake_lock are supported")
     return yes
 end
 
@@ -1368,17 +1368,17 @@ local function _standby_alarm() end
 -- return nil ... autosleep not activated
 --        min_duration ... returns the minimal duration to stay awake for input
 function Kobo:prepareAutosleep(max_duration)
+    self._old_time_diff = nil
+
     if not self.canAutosleep() or not self.autosleep_time or self.autosleep_time <= 0 then
         return
     end
-    local min_duration = self.autosleep_time
-    self._old_time_diff = nil
     if self.nb_online_CPUs > 1 then
         return -- only standby if single threaded
     end
+
     max_duration = max_duration or math.huge
-    min_duration = min_duration
-    if max_duration <= min_duration then
+    if max_duration <= self.autosleep_time then
         return
     end
 
@@ -1403,14 +1403,12 @@ function Kobo:prepareAutosleep(max_duration)
     --       (It won't have any impact on power efficiency *during* suspend, so there's not really any drawback).
     self:performanceCPUGovernor()
 
-    if max_duration then
-        self.wakeup_mgr:addTask(math.floor(time.to_s(max_duration) + 1), _standby_alarm)
-    end
+    self.wakeup_mgr:addTask(math.floor(time.to_s(max_duration) + 1), _standby_alarm)
 
     -- boottime ticks during stanby, monotonic does not.
     -- So we check the differnce of both before a potential standby.
     self._old_time_diff = time.boottime() - time.monotonic()
-    return min_duration
+    return self.autosleep_time
 end
 
 --- Cleanup the things done in prepareAutosleep (wakealarm) and do the timeshift again.
@@ -1419,21 +1417,22 @@ function Kobo:cleanupAutosleep()
         return
     end
 
-    self:defaultCPUGovernor()
-
     self.wakeup_mgr:removeTasks(nil, _standby_alarm)
 
-    -- boottime ticks during stanby, monotonic does not.
+    -- boottime ticks during standby, monotonic does not.
     -- Here we get the standby time
     local standby_time = time.boottime() - time.monotonic() - self._old_time_diff
-
 
     if time.to_s(standby_time) > 0.001 then -- don't process standby times below 1ms
         logger.dbg("Kobo standby: last standby_time = ", time.to_s(standby_time))
         self.last_standby_time = standby_time
-        self.total_standby_time = self.total_standby_time + self.last_standby_time
-        UIManager:shiftScheduledTasksBy( - self.last_standby_time) -- correct scheduled times by last_standby_time
+        self.total_standby_time = self.total_standby_time + standby_time
+        UIManager:shiftScheduledTasksBy( - standby_time) -- correct scheduled times by last_standby_time
     end
+
+    -- And restore the standard CPU scheduler once we're done dealing with the wakeup event.
+    UIManager:tickAfterNext(self.defaultCPUGovernor, self)
+--    self:defaultCPUGovernor()
 end
 
 function Kobo:suspend()
