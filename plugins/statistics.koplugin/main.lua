@@ -2722,6 +2722,7 @@ function ReaderStatistics:onPageUpdate(pageno)
         return
     end
 
+    local closing = false
     -- We only care about *actual* page turns ;)
     if self.curr_page == pageno then
         return
