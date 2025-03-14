@@ -344,7 +344,7 @@ function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_f
     -- Check if we have a cached response first
     local cache = DownloadBackend:getCache()
     local cached_response = cache:check(url)
-    local ok, response
+    local ok, error, response
 
     local cookies = nil
     if credentials ~= nil then
@@ -479,7 +479,7 @@ function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_f
 
     -- Process the feeds accordingly.
     if is_atom then
-        ok = pcall(function()
+        ok, error = pcall(function()
                 return self:processFeed(
                     FEED_TYPE_ATOM,
                     feeds,
@@ -493,7 +493,7 @@ function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_f
                 )
         end)
     elseif is_rss then
-        ok = pcall(function()
+        ok, error = pcall(function()
                 return self:processFeed(
                     FEED_TYPE_RSS,
                     feeds,
@@ -513,6 +513,7 @@ function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_f
     if not ok or (not is_rss and not is_atom) then
         local error_message
         if not ok then
+            logger.err("NewsDownloader: Error processing feed", error)
             error_message = _("(Reason: Failed to download content)")
         elseif not is_rss then
             error_message = _("(Reason: Couldn't process RSS)")
