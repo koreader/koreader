@@ -1064,14 +1064,11 @@ function ReaderStatistics:usePageMapForStats()
         return false
     elseif not self.ui.pagemap.has_pagemap then
         return false
-    end
-
-    if self.ui.doc_settings:has("pagemap_use_page_labels")  then
+    elseif self.ui.doc_settings:has("pagemap_use_page_labels")  then
         return self.ui.doc_settings:isTrue("pagemap_use_page_labels")
     elseif G_reader_settings:isTrue("pagemap_use_page_labels") then
         return true
     end
-
     return false
 end
 
@@ -1688,7 +1685,6 @@ function ReaderStatistics:getCurrentStat()
     end
     if self.use_pagemap_for_stats then
         self.data.pages = select(3, self.ui.pagemap:getCurrentPageLabel())
-
     else
         self.data.pages = self.document:getPageCount()
     end
@@ -2702,11 +2698,10 @@ end
 
 function ReaderStatistics:onPosUpdate(pos, pageno)
     if self.use_pagemap_for_stats then
-        local pageidx = select(2, self.ui.pagemap:getCurrentPageLabel())
-        if self.curr_page ~= pageidx then
-            self:onPageUpdate(pageidx)
+        local current_page = select(2, self.ui.pagemap:getCurrentPageLabel())
+        if self.curr_page ~= current_page then
+            self:onPageUpdate(current_page)
         end
-
         return
     end
 
@@ -2726,8 +2721,6 @@ function ReaderStatistics:onPageUpdate(pageno)
         self._reading_paused_curr_page = pageno
         return
     end
-
-    local closing = false
 
     -- We only care about *actual* page turns ;)
     if self.curr_page == pageno then
