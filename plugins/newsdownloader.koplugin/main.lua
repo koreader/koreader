@@ -51,7 +51,7 @@ local function getFeedTitle(possible_title)
     end
 end
 
---- Return a new empty field that can be modified by the caller
+-- Returns a new empty field that can be modified by the caller
 local function getEmptyFeed()
    return {
         [1] = "https://",
