@@ -771,7 +771,7 @@ function Menu:init()
                         self.page_info_text:closeInputDialog()
                     else
                         if search_string ~= "" then
-                            self:searchStringInMenuItems(search_string)
+                            self:goToMenuItemMatching(search_string)
                             self.page_info_text:closeInputDialog()
                         end
                     end
@@ -782,7 +782,7 @@ function Menu:init()
                 callback = function()
                     local search_string = self.page_info_text.input_dialog:getInputText()
                     if search_string ~= "" then
-                        self:searchStringInMenuItems(search_string, true)
+                        self:goToMenuItemMatching(search_string, true)
                         self.page_info_text:closeInputDialog()
                     end
                 end,
@@ -1299,7 +1299,7 @@ function Menu:onSelectByShortCut(_, keyevent)
     return true
 end
 
-function Menu:searchStringInMenuItems(search_string, goto_letter)
+function Menu:goToMenuItemMatching(search_string, goto_letter)
     search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
     for i, item in ipairs(self.item_table) do
         if not item.is_go_up and not (goto_letter and item.is_file == false) then -- skip folders in "Go to letter"
