@@ -116,13 +116,15 @@ end
 function ReaderRolling:onGesture() end
 
 function ReaderRolling:registerKeyEvents()
+    local nextKey = BD.mirroredUILayout() and "Left" or "Right"
+    local prevKey = BD.mirroredUILayout() and "Right" or "Left"
     if Device:hasDPad() and Device:useDPadAsActionKeys() then
         if G_reader_settings:isTrue("left_right_keys_turn_pages") then
-            self.key_events.GotoNextView = { { { "LPgFwd", "Right" } }, event = "GotoViewRel", args = 1, }
-            self.key_events.GotoPrevView = { { { "LPgBack", "Left" } }, event = "GotoViewRel", args = -1, }
+            self.key_events.GotoNextView = { { { "LPgFwd", nextKey } }, event = "GotoViewRel", args = 1, }
+            self.key_events.GotoPrevView = { { { "LPgBack", prevKey } }, event = "GotoViewRel", args = -1, }
         elseif G_reader_settings:nilOrFalse("left_right_keys_turn_pages") then
-            self.key_events.GotoNextChapter = { { "Right" }, event = "GotoNextChapter", args = 1, }
-            self.key_events.GotoPrevChapter = { { "Left" }, event = "GotoPrevChapter", args = -1, }
+            self.key_events.GotoNextChapter = { { nextKey }, event = "GotoNextChapter", args = 1, }
+            self.key_events.GotoPrevChapter = { { prevKey }, event = "GotoPrevChapter", args = -1, }
             self.key_events.GotoNextView = { { "LPgFwd" }, event = "GotoViewRel", args = 1, }
             self.key_events.GotoPrevView = { { "LPgBack" }, event = "GotoViewRel", args = -1, }
         end
@@ -133,8 +135,8 @@ function ReaderRolling:registerKeyEvents()
         self.key_events.MoveDown = { { "Down" }, event = "Panning", args = {0,  1}, }
     end
     if (Device:hasDPad() and not Device:useDPadAsActionKeys()) or (Device:hasKeys() and not Device:useDPadAsActionKeys()) then
-        self.key_events.GotoNextView = { { { "RPgFwd", "LPgFwd", "Right" } }, event = "GotoViewRel", args = 1, }
-        self.key_events.GotoPrevView = { { { "RPgBack", "LPgBack", "Left" } }, event = "GotoViewRel", args = -1, }
+        self.key_events.GotoNextView = { { { "RPgFwd", "LPgFwd", nextKey } }, event = "GotoViewRel", args = 1, }
+        self.key_events.GotoPrevView = { { { "RPgBack", "LPgBack", prevKey } }, event = "GotoViewRel", args = -1, }
     end
     if Device:hasKeyboard() and not Device.k3_alt_plus_key_kernel_translated then
         self.key_events.GotoFirst = { { "1" }, event = "GotoPercent", args = 0,   }
