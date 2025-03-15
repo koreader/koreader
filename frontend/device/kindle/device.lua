@@ -1,4 +1,5 @@
 local Generic = require("device/generic/device")
+local Input = require("device/input")
 local UIManager
 local time = require("ui/time")
 local lfs = require("libs/libkoreader-lfs")
