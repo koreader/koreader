@@ -269,41 +269,47 @@ end
 
 -- Generate "Execute script" file dialog button
 function filemanagerutil.genExecuteScriptButton(file, caller_callback)
-    local InfoMessage = require("ui/widget/infomessage")
     return {
         -- @translators This is the script's programming language (e.g., shell or python)
         text = T(_("Execute %1 script"), util.getScriptType(file)),
         callback = function()
-            caller_callback()
-            local script_is_running_msg = InfoMessage:new{
-                -- @translators %1 is the script's programming language (e.g., shell or python), %2 is the filename
-                text = T(_("Running %1 script %2…"), util.getScriptType(file), BD.filename(ffiUtil.basename(file))),
-            }
-            UIManager:show(script_is_running_msg)
-            UIManager:scheduleIn(0.5, function()
-                local rv
-                if Device:isAndroid() then
-                    Device:setIgnoreInput(true)
-                    rv = os.execute("sh " .. ffiUtil.realpath(file)) -- run by sh, because sdcard has no execute permissions
-                    Device:setIgnoreInput(false)
-                else
-                    rv = os.execute(ffiUtil.realpath(file))
-                end
-                UIManager:close(script_is_running_msg)
-                if rv == 0 then
-                    UIManager:show(InfoMessage:new{
-                        text = _("The script exited successfully."),
-                    })
-                else
-                    --- @note: Lua 5.1 returns the raw return value from the os's system call. Counteract this madness.
-                    UIManager:show(InfoMessage:new{
-                        text = T(_("The script returned a non-zero status code: %1!"), bit.rshift(rv, 8)),
-                        icon = "notice-warning",
-                    })
-                end
-            end)
+            filemanagerutil.executeScript(file, caller_callback)
         end,
     }
+end
+
+function filemanagerutil.executeScript(file, caller_callback)
+    if caller_callback then
+        caller_callback()
+    end
+    local InfoMessage = require("ui/widget/infomessage")
+    local script_is_running_msg = InfoMessage:new{
+        -- @translators %1 is the script's programming language (e.g., shell or python), %2 is the filename
+        text = T(_("Running %1 script %2…"), util.getScriptType(file), BD.filename(ffiUtil.basename(file))),
+    }
+    UIManager:show(script_is_running_msg)
+    UIManager:scheduleIn(0.5, function()
+        local rv
+        if Device:isAndroid() then
+            Device:setIgnoreInput(true)
+            rv = os.execute("sh " .. ffiUtil.realpath(file)) -- run by sh, because sdcard has no execute permissions
+            Device:setIgnoreInput(false)
+        else
+            rv = os.execute(ffiUtil.realpath(file))
+        end
+        UIManager:close(script_is_running_msg)
+        if rv == 0 then
+            UIManager:show(InfoMessage:new{
+                text = _("The script exited successfully."),
+            })
+        else
+            --- @note: Lua 5.1 returns the raw return value from the os's system call. Counteract this madness.
+            UIManager:show(InfoMessage:new{
+                text = T(_("The script returned a non-zero status code: %1!"), bit.rshift(rv, 8)),
+                icon = "notice-warning",
+            })
+        end
+    end)
 end
 
 function filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, default_path, file_filter)
