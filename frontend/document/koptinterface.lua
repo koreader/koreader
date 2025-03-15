@@ -1443,6 +1443,10 @@ local function get_pattern_list(pattern, case_insensitive)
             table.insert(plist, case_insensitive and Utf8Proc.lowercase(util.fixUtf8(word, "?")) or word)
         end
     end
+    if #plist == 1 then
+        plist.from_start = pattern:sub(1, 1) == " "
+        plist.from_end = pattern:sub(-1) == " "
+    end
     return plist
 end
 
@@ -1464,7 +1468,17 @@ local function all_matches(boxes, plist, case_insensitive)
             local pword = plist[pindex]
             local matched
             if pnb == 1 then -- single word in plist
-                matched = word:find(pword, 1, true)
+                if plist.from_start or plist.from_end then
+                    if plist.from_start and plist.from_end then
+                        matched = word == pword
+                    elseif plist.from_start then
+                        matched = word:sub(1, #pword) == pword
+                    else -- plist.from_end
+                        matched = word:sub(-#pword) == pword
+                    end
+                else
+                    matched = word:find(pword, 1, true)
+                end
             else -- multiple words in plist
                 if pindex == 1 then
                     -- first word of query should match at end of a word from the document
