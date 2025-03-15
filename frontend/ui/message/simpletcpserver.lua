@@ -23,7 +23,11 @@ function SimpleTCPServer:new(o)
 end
 
 function SimpleTCPServer:start()
-    self.server = socket.bind(self.host, self.port)
+    local server, err = socket.bind(self.host, self.port)
+    if not server then
+        return false, err or ""
+    end
+    self.server = server
     self.server:settimeout(0.01) -- set timeout (10ms)
     logger.dbg("SimpleTCPServer: Server listening on port " .. self.port)
 end
