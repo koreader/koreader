@@ -109,7 +109,7 @@ function HttpInspector:start()
         self.http_socket = nil
         local InfoMessage = require("ui/widget/infomessage")
         UIManager:show(InfoMessage:new{
-            text = T(_("Failed to start HTTP inspector on port %1."), self.port) .. "\n" .. err,
+            text = T(_("Failed to start HTTP inspector on port %1."), self.port) .. "\n\n" .. err,
         })
     end
 end
