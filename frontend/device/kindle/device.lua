@@ -550,7 +550,7 @@ function Kindle:toggleKeyRepeat(toggle)
 
         -- We can't easily clear existing hooks, but we can overwrite the eventAdjustHook
         -- with the default empty implementation to effectively remove previous hooks
-        self.input.eventAdjustHook = self.input.gestureAdjustHook
+        self.input.eventAdjustHook = Input.eventAdjustHook
     else
         self.key_repeat[C.REP_DELAY] = 0
         self.key_repeat[C.REP_PERIOD] = 0
