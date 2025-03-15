@@ -1,5 +1,4 @@
 local Generic = require("device/generic/device")
-local Input = require("device/input")
 local UIManager
 local time = require("ui/time")
 local lfs = require("libs/libkoreader-lfs")
@@ -551,6 +550,7 @@ function Kindle:toggleKeyRepeat(toggle)
 
         -- We can't easily clear existing hooks, but we can overwrite the eventAdjustHook
         -- with the default empty implementation to effectively remove previous hooks
+        local Input = require("device/input")
         self.input.eventAdjustHook = Input.eventAdjustHook
     else
         self.key_repeat[C.REP_DELAY] = 0
