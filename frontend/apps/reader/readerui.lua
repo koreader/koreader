@@ -648,6 +648,7 @@ function ReaderUI:extendProvider(file, provider, is_provider_forced)
         end
     end
     provider.is_fb2 = file_type:sub(1, 2) == "fb"
+    provider.is_txt = file_type == "txt"
     return provider
 end
 

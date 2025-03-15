@@ -1853,6 +1853,12 @@ function ReaderHighlight:onHoldPan(_, ges)
 
     local old_text = self.selected_text and self.selected_text.text
     self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.holdpan_pos)
+    if self.selected_text and self.selected_text.sboxes and #self.selected_text.sboxes == 0 then
+        -- abort highlighting if crengine doesn't provide sboxes for current positions
+        -- may happen in TXT files with disabled txt_preformatted
+        self:clear()
+        return true
+    end
     self.is_word_selection = false
 
     if self.selected_text and self.selected_text.pos0 then
