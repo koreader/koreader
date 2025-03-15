@@ -73,7 +73,6 @@ local FileChooser = BookList:extend{
         "^%.metadata%.json$",
     },
     path_items = nil, -- hash, store last browsed location (item index) for each path
-    goto_letter = true,
 }
 
 -- Cache of content we knew of for directories that are not readable
@@ -186,6 +185,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         else
             item.text = item.text.."/"
             item.bidi_wrap_func = BD.directory
+            item.is_file = false
             if collate.can_collate_mixed and collate.item_func ~= nil then
                 collate.item_func(item)
             end

@@ -92,6 +92,9 @@ function FileManagerCollection:onShowColl(collection_name)
         ui = self.ui,
         _manager = self,
         _recreate_func = function() self:onShowColl(collection_name) end,
+        search_callback = function(search_string)
+            self:onShowCollectionsSearchDialog(search_string, collection_name)
+        end,
     }
     table.insert(self.booklist_menu.paths, true) -- enable onReturn button
     self.booklist_menu.close_callback = function()

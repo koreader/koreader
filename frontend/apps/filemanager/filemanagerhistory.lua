@@ -68,6 +68,10 @@ function FileManagerHistory:onShowHist(search_info)
         ui = self.ui,
         _manager = self,
         _recreate_func = function() self:onShowHist(search_info) end,
+        search_callback = function(search_string)
+            self.search_string = search_string
+            self:onSearchHistory()
+        end,
     }
     self.booklist_menu.close_callback = function()
         self:refreshFileManager()
