@@ -186,11 +186,15 @@ function SkimToWidget:init()
     local bookmark_prev_text = "\u{25C1}\u{202F}\u{F097}"
     local bookmark_enabled_text = "\u{F02E}"
     local bookmark_disabled_text = "\u{F097}"
-    if BD.mirroredUILayout() ~= invert_buttons then -- XOR operation
+    if BD.mirroredUILayout() ~= invert_buttons then -- -- XOR operation
         -- We need this discrepency to keep BiDi from reordering our space in RTL
-        chapter_prev_text = BD.ltr(chapter_next_text)
-        chapter_next_text = "\u{2002}" .. BD.ltr("\u{2595}\u{25C1}")
+        chapter_prev_text = BD.ltr("\u{2002}\u{25B7}\u{258F}")
+        chapter_next_text = BD.ltr("\u{2595}\u{25C1}\u{2002}")
         bookmark_next_text, bookmark_prev_text = bookmark_prev_text, bookmark_next_text
+    else
+        -- Keep original LTR text order
+        chapter_prev_text = BD.ltr(chapter_prev_text)
+        chapter_next_text = BD.ltr(chapter_next_text)
     end
     local button_chapter_next = Button:new{
         text = chapter_next_text,
