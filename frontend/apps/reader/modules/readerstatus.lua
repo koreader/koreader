@@ -171,20 +171,24 @@ function ReaderStatus:openFileBrowser()
     self.ui:showFileManager(file)
 end
 
-function ReaderStatus:onOpenNextDocumentInFolder()
+function ReaderStatus:onOpenNextOrPreviousFileInFolder(prev)
+    local collate = G_reader_settings:readSetting("collate")
+    if collate == "access" or collate == "date" then return true end
     local FileChooser = require("ui/widget/filechooser")
-    local next_file = FileChooser:getNextFile(self.document.file)
-    if next_file then
+    local file = FileChooser:getNextOrPreviousFileInFolder(self.document.file, prev)
+    if file then
         -- Delay until the next tick, as this will destroy the Document instance,
         -- but we may not be the final Event caught by said Document...
         UIManager:nextTick(function()
-            self.ui:switchDocument(next_file)
+            self.ui:switchDocument(file)
         end)
     else
         UIManager:show(InfoMessage:new{
-            text = _("This is the last file in the current folder. No next file to open."),
+            text = prev and _("This is the first file in the folder. No previous file to open.")
+                         or _("This is the last file in the folder. No next file to open."),
         })
     end
+    return true
 end
 
 function ReaderStatus:deleteFile()
