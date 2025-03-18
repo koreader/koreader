@@ -1414,21 +1414,16 @@ end
 function ReaderStatistics:onUsePageLabelsUpdated()
     self.use_pagemap_for_stats = self:usePageMapForStats()
     local new_current_page
-
     if self.document:hasHiddenFlows() and self.view.state.page then
         return
     end
     if self.use_pagemap_for_stats then
         new_current_page = select(2, self.ui.pagemap.getCurrentPageLabel())
-
     else
         new_current_page = self.ui:getCurrentPage()
     end
-
     self:onPageUpdate(new_current_page)
-
     self:onDocumentRerendered()
-
 end
 
 function ReaderStatistics:onShowTimeRange()
