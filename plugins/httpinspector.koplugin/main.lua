@@ -100,10 +100,18 @@ function HttpInspector:start()
         port = self.port,
         receiveCallback = function(data, id) return self:onRequest(data, id) end,
     }
-    self.http_socket:start()
-    self.http_messagequeue = UIManager:insertZMQ(self.http_socket)
-
-    logger.dbg("HttpInspector: Server listening on port " .. self.port)
+    local ok, err = self.http_socket:start()
+    if ok then
+        self.http_messagequeue = UIManager:insertZMQ(self.http_socket)
+        logger.dbg("HttpInspector: Server listening on port " .. self.port)
+    else
+        logger.err("HttpInspector: Failed to start server:", err)
+        self.http_socket = nil
+        local InfoMessage = require("ui/widget/infomessage")
+        UIManager:show(InfoMessage:new{
+            text = T(_("Failed to start HTTP inspector on port %1."), self.port) .. "\n\n" .. err,
+        })
+    end
 end
 
 function HttpInspector:stop()
