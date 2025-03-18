@@ -39,7 +39,7 @@ function ReaderStatus:onEndOfBook()
     local QuickStart = require("ui/quickstart")
     local last_file = G_reader_settings:readSetting("lastfile")
     if last_file == QuickStart.quickstart_filename then
-        -- Like onOpenNextDocumentInFolder, delay this so as not to break instance lifecycle
+        -- Like onOpenNextOrPreviousFileInFolder, delay this so as not to break instance lifecycle
         UIManager:nextTick(function()
             self:openFileBrowser()
         end)
@@ -91,7 +91,7 @@ function ReaderStatus:onEndOfBook()
                     enabled = next_file_enabled,
                     callback = function()
                         UIManager:close(button_dialog)
-                        self:onOpenNextDocumentInFolder()
+                        self:onOpenNextOrPreviousFileInFolder()
                     end,
                 },
             },
@@ -132,7 +132,7 @@ function ReaderStatus:onEndOfBook()
             UIManager:show(info)
             UIManager:forceRePaint()
             UIManager:close(info)
-            self:onOpenNextDocumentInFolder()
+            self:onOpenNextOrPreviousFileInFolder()
         else
             UIManager:show(InfoMessage:new{
                 text = _("Could not open next file. Sort by date does not support this feature."),
