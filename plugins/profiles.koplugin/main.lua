@@ -212,6 +212,7 @@ function Profiles:getSubMenuItems()
                         },
                         self:genAutoExecMenuItem(_("on KOReader start"), "Start", k),
                         self:genAutoExecMenuItem(_("on wake-up"), "Resume", k),
+                        self:genAutoExecMenuItem(_("on exiting sleep screen"), "OutOfScreenSaver", k),
                         self:genAutoExecMenuItem(_("on rotation"), "SetRotationMode", k),
                         self:genAutoExecMenuItem(_("on showing folder"), "PathChanged", k, true),
                         -- separator
@@ -925,6 +926,10 @@ end
 
 function Profiles:onResume() -- global
     self:executeAutoExecEvent("Resume")
+end
+
+function Profiles:onOutOfScreenSaver() -- global
+    self:executeAutoExecEvent("OutOfScreenSaver")
 end
 
 function Profiles:onSetRotationMode(mode) -- global
