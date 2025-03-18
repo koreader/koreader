@@ -1060,16 +1060,7 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
 end
 
 function ReaderStatistics:usePageMapForStats()
-    if not self.ui.pagemap then
-        return false
-    elseif not self.ui.pagemap.has_pagemap then
-        return false
-    elseif self.ui.doc_settings:has("pagemap_use_page_labels")  then
-        return self.ui.doc_settings:isTrue("pagemap_use_page_labels")
-    elseif G_reader_settings:isTrue("pagemap_use_page_labels") then
-        return true
-    end
-    return false
+    return self.ui.pagemap and self.ui.pagemap:wantsPageLabels()
 end
 
 function ReaderStatistics:onToggleStatistics(no_notification)
@@ -1422,16 +1413,22 @@ end
 
 function ReaderStatistics:onUsePageLabelsUpdated()
     self.use_pagemap_for_stats = self:usePageMapForStats()
+    local new_current_page
+
     if self.document:hasHiddenFlows() and self.view.state.page then
-        self:onPageUpdate(self.document:getPageNumberInFlow(self.view.state.page))
-    else
-        if self.use_pagemap_for_stats then
-            self:onPageUpdate(select(2,self.ui.pagemap.getCurrentPageLabel()))
-        else
-            self:onPageUpdate(self.ui.getCurrentPage())
-        end
+        return
     end
+    if self.use_pagemap_for_stats then
+        new_current_page = select(2, self.ui.pagemap.getCurrentPageLabel())
+
+    else
+        new_current_page = self.ui:getCurrentPage()
+    end
+
+    self:onPageUpdate(new_current_page)
+
     self:onDocumentRerendered()
+
 end
 
 function ReaderStatistics:onShowTimeRange()
@@ -2700,7 +2697,7 @@ function ReaderStatistics:onPosUpdate(pos, pageno)
     if self.use_pagemap_for_stats then
         local current_page = select(2, self.ui.pagemap:getCurrentPageLabel())
         if self.curr_page ~= current_page then
-            self:onPageUpdate(current_page)
+            self:onPageUpdate(pageno)
         end
         return
     end
@@ -2711,6 +2708,10 @@ function ReaderStatistics:onPosUpdate(pos, pageno)
 end
 
 function ReaderStatistics:onPageUpdate(pageno)
+    if self.use_pagemap_for_stats and pageno ~= false then
+        pageno = select(2, self.ui.pagemap:getCurrentPageLabel())
+    end
+
     if not self:isEnabledAndNotFrozen() then
         return
     end
