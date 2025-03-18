@@ -648,6 +648,7 @@ function ReaderUI:extendProvider(file, provider, is_provider_forced)
         end
     end
     provider.is_fb2 = file_type:sub(1, 2) == "fb"
+    provider.is_txt = file_type == "txt"
     return provider
 end
 
@@ -809,11 +810,13 @@ function ReaderUI:onClose(full_refresh)
     if self.dialog ~= self then
         self:saveSettings()
     end
+    local file
     if self.document ~= nil then
-        BookList.setBookInfoCache(self.document.file, self.doc_settings)
+        file = self.document.file
         require("readhistory"):updateLastBookTime(self.tearing_down)
+        require("readcollection"):updateLastBookTime(file)
         -- Serialize the most recently displayed page for later launch
-        DocCache:serialize(self.document.file)
+        DocCache:serialize(file)
         logger.dbg("closing document")
         self:handleEvent(Event:new("CloseDocument"))
         if self.document:isEdited() and not self.highlight.highlight_write_into_pdf then
@@ -822,6 +825,9 @@ function ReaderUI:onClose(full_refresh)
         self:closeDocument()
     end
     UIManager:close(self.dialog, full_refresh ~= false and "full")
+    if file then
+        BookList.setBookInfoCache(file, self.doc_settings)
+    end
 end
 
 function ReaderUI:onCloseWidget()

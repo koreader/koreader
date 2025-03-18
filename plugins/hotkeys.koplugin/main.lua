@@ -203,11 +203,7 @@ function HotKeys:genMenu(hotkey)
                     self.updated = true
                     touchmenu_instance:updateItems()
                 end
-                if self.hotkeys[hotkey] and next(self.hotkeys[hotkey]) then
-                    Dispatcher.removeActions(self.hotkeys[hotkey], do_remove)
-                else -- If no actions are selected, just update the defaults
-                    do_remove()
-                end
+                Dispatcher.removeActions(self.hotkeys[hotkey], do_remove)
             end,
         })
     end
@@ -225,11 +221,7 @@ function HotKeys:genMenu(hotkey)
                 self.updated = true
                 touchmenu_instance:updateItems()
             end
-            if self.hotkeys[hotkey] and next(self.hotkeys[hotkey]) then
-                Dispatcher.removeActions(self.hotkeys[hotkey], do_remove)
-            else
-                do_remove()
-            end
+            Dispatcher.removeActions(self.hotkeys[hotkey], do_remove)
         end,
     })
     Dispatcher:addSubMenu(self, sub_items, self.hotkeys, hotkey)
@@ -428,6 +420,9 @@ function HotKeys:overrideConflictingKeyEvents()
     if not self.is_docless then
         self.ui.bookmark.key_events = {} -- reset it.
         logger.dbg("Hotkey ReaderBookmark:registerKeyEvents() overridden.")
+
+        self.ui.font.key_events = {} -- reset it.
+        logger.dbg("Hotkey ReaderFont:registerKeyEvents() overridden.")
 
         if Device:hasScreenKB() or Device:hasSymKey() then
             local readerconfig = self.ui.config

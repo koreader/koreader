@@ -22,7 +22,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LanguageSupport = require("languagesupport")
-local Menu = require("ui/widget/menu")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkListener = require("ui/network/networklistener")
 local PluginLoader = require("pluginloader")
@@ -150,6 +149,9 @@ function FileManager:setupLayout()
         filemanager = self,
         -- Tell FileChooser (i.e., Menu) to use our own title bar instead of Menu's default one
         custom_title_bar = self.title_bar,
+        search_callback = function(search_string)
+            self.filesearcher:onShowFileSearch(search_string)
+        end,
     }
     self.file_chooser = file_chooser
     self.focused_file = nil -- use it only once
@@ -273,6 +275,16 @@ function FileManager:setupLayout()
                     file_manager.collections:genAddToCollectionButton(file, close_dialog_callback, refresh_callback),
                 })
             end
+            if Device:canExecuteScript(file) then
+                table.insert(buttons, {
+                    filemanagerutil.genExecuteScriptButton(file, close_dialog_callback),
+                })
+            end
+            if FileManagerConverter:isSupported(file) then
+                table.insert(buttons, {
+                    FileManagerConverter:genConvertButton(file, close_dialog_callback, refresh_callback)
+                })
+            end
             table.insert(buttons, {
                 {
                     text = _("Open with…"),
@@ -287,22 +299,6 @@ function FileManager:setupLayout()
                 table.insert(buttons, {
                     filemanagerutil.genBookCoverButton(file, book_props, close_dialog_callback),
                     filemanagerutil.genBookDescriptionButton(file, book_props, close_dialog_callback),
-                })
-            end
-            if Device:canExecuteScript(file) then
-                table.insert(buttons, {
-                    filemanagerutil.genExecuteScriptButton(file, close_dialog_callback),
-                })
-            end
-            if FileManagerConverter:isSupported(file) then
-                table.insert(buttons, {
-                    {
-                        text = _("Convert"),
-                        callback = function()
-                            UIManager:close(self.file_dialog)
-                            FileManagerConverter:showConvertButtons(file, self)
-                        end,
-                    },
                 })
             end
         else -- folder
@@ -451,14 +447,13 @@ function FileChooser:onBack()
         elseif back_to_exit == "disable" then
             return true
         elseif back_to_exit == "prompt" then
-                UIManager:show(ConfirmBox:new{
-                    text = _("Exit KOReader?"),
-                    ok_text = _("Exit"),
-                    ok_callback = function()
-                        self:onClose()
-                    end
-                })
-
+            UIManager:show(ConfirmBox:new{
+                text = _("Exit KOReader?"),
+                ok_text = _("Exit"),
+                ok_callback = function()
+                    self:onClose()
+                end,
+            })
             return true
         end
     elseif back_in_filemanager == "parent_folder" then
@@ -477,7 +472,8 @@ function FileManager:onSwipeFM(ges)
     return true
 end
 
-function FileManager:addFileDialogButtons(row_id, row_func) -- FileManager, History, Collections file_dialog
+function FileManager:addFileDialogButtons(row_id, row_func)
+    -- long-press file_dialog in FileManager, History, Collections, FileSearcher
     self.file_dialog_added_buttons = self.file_dialog_added_buttons or { index = {} }
     if self.file_dialog_added_buttons.index[row_id] == nil then
         table.insert(self.file_dialog_added_buttons, row_func)
@@ -1303,11 +1299,8 @@ function FileManager:onShowFolderMenu()
     local function genButton(button_text, button_path)
         return {{
             text = button_text,
-            align = "left",
-            font_face = "smallinfofont",
-            font_size = 22,
-            font_bold = false,
             avoid_text_truncation = false,
+            menu_style = true,
             callback = function()
                 UIManager:close(button_dialog)
                 self.file_chooser:changeToPath(button_path)
@@ -1383,19 +1376,13 @@ function FileManager:showSelectedFilesList()
     table.sort(selected_files, sorting)
 
     local menu
-    menu = Menu:new{
+    menu = BookList:new{
         title = T(_("Selected files (%1)"), #selected_files),
         item_table = selected_files,
-        is_borderless = true,
-        is_popout = false,
-        title_bar_fm_style = true,
         truncate_left = true,
         onMenuSelect = function(_, item)
             UIManager:close(menu)
             self.file_chooser:changeToPath(util.splitFilePathName(item.filepath), item.filepath)
-        end,
-        close_callback = function()
-            UIManager:close(menu)
         end,
     }
     UIManager:show(menu)
@@ -1625,6 +1612,21 @@ end
 function FileManager:onSetMixedSorting(toggle)
     G_reader_settings:saveSetting("collate_mixed", toggle or nil)
     self.file_chooser:refreshPath()
+    return true
+end
+
+function FileManager:onOpenNextOrPreviousFileInFolder(prev)
+    local last_file = G_reader_settings:readSetting("lastfile")
+    if not last_file then return true end
+    local file = self.file_chooser:getNextOrPreviousFileInFolder(last_file, prev)
+    if file then
+        self:openFile(file)
+    else
+        UIManager:show(InfoMessage:new{
+            text = prev and _("Last book is the first file in the folder. No previous file to open.")
+                         or _("Last book is the last file in the folder. No next file to open."),
+        })
+    end
     return true
 end
 

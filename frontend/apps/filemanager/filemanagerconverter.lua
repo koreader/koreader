@@ -68,7 +68,14 @@ function FileConverter:isSupported(file)
     return self.formats_from[util.getFileNameSuffix(file)] and true or false
 end
 
-function FileConverter:showConvertButtons(file, ui)
+function FileConverter:showConvertButtons(file, caller_post_callback)
+    local function writeData(data, target_file)
+        UIManager:close(self.convert_dialog)
+        util.writeToFile(data, target_file)
+        if caller_post_callback then
+            caller_post_callback()
+        end
+    end
     local __, filename_pure = util.splitFilePathName(file)
     local filename_suffix = util.getFileNameSuffix(file)
     local filetype_name = self.formats_from[filename_suffix].name
@@ -87,14 +94,11 @@ function FileConverter:showConvertButtons(file, ui)
                                 text = _("Overwrite existing HTML file?"),
                                 ok_text = _("Overwrite"),
                                 ok_callback = function()
-                                    util.writeToFile(html, filename_html)
-                                    UIManager:close(self.convert_dialog)
+                                    writeData(html, filename_html)
                                 end,
                             })
                         else
-                            util.writeToFile(html, filename_html)
-                            ui:refreshPath()
-                            UIManager:close(self.convert_dialog)
+                            writeData(html, filename_html)
                         end
                     end,
                 },
@@ -115,6 +119,18 @@ end
 
 function FileConverter:cleanup()
     self.convert_dialog = nil
+end
+
+function FileConverter:genConvertButton(file, caller_pre_callback, caller_post_callback)
+    return {
+        text = _("Convert"),
+        callback = function()
+            if caller_pre_callback then
+                caller_pre_callback()
+            end
+            self:showConvertButtons(file, caller_post_callback)
+        end,
+    }
 end
 
 return FileConverter
