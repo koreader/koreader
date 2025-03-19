@@ -2727,12 +2727,13 @@ function ReaderStatistics:onPosUpdate(pos, pageno)
 end
 
 function ReaderStatistics:onPageUpdate(pageno)
-    if self.use_pagemap_for_stats and pageno ~= false then
-        pageno = select(2, self.ui.pagemap:getCurrentPageLabel())
-    end
 
     if not self:isEnabledAndNotFrozen() then
         return
+    end
+
+    if self.use_pagemap_for_stats and pageno ~= false then
+        pageno = select(2, self.ui.pagemap:getCurrentPageLabel())
     end
 
     if self._reading_paused_ts then
