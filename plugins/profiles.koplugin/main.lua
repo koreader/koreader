@@ -527,6 +527,13 @@ function Profiles:genAutoExecMenuItem(text, event, profile_name, separator)
     end
     return {
         text = text,
+        enabled_func = function()
+            if event == "Resume" then
+                local screensaver_delay = G_reader_settings:readSetting("screensaver_delay")
+                return screensaver_delay == nil or screensaver_delay == "disable"
+            end
+            return true
+        end,
         checked_func = function()
             return util.tableGetValue(self.autoexec, event, profile_name)
         end,
