@@ -2727,7 +2727,6 @@ function ReaderStatistics:onPosUpdate(pos, pageno)
 end
 
 function ReaderStatistics:onPageUpdate(pageno)
-
     if not self:isEnabledAndNotFrozen() then
         return
     end
