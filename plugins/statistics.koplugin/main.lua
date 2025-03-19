@@ -1431,10 +1431,16 @@ end
 
 function ReaderStatistics:onUsePageLabelsUpdated()
     self.use_pagemap_for_stats = self:usePageMapForStats()
-    local new_current_page
+
+    -- Statistics plugin defaults to using regular current pages when hidden flow is in use
+    -- due to compatability issues between page map page numbers and hidden page flow
+    -- (eg skipping large amounts of pages in count). So no need to deal with the transition
+    -- between the plugin using the pagemap pages and reader pages for statistics.
     if self.document:hasHiddenFlows() and self.view.state.page then
         return
     end
+
+    local new_current_page
     if self.use_pagemap_for_stats then
         new_current_page = select(2, self.ui.pagemap.getCurrentPageLabel())
     else
