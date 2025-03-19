@@ -433,11 +433,7 @@ function MenuItem:init()
         HorizontalSpan:new{ width = self.items_padding or Size.padding.fullscreen },
     }
     if self.shortcut then
-        table.insert(hgroup, ItemShortCutIcon:new{
-            dimen = shortcut_icon_dimen,
-            key = self.shortcut,
-            style = self.shortcut_style,
-        })
+        table.insert(hgroup, self.menu:getItemShortCutIcon(shortcut_icon_dimen, self.shortcut, self.shortcut_style))
         table.insert(hgroup, HorizontalSpan:new{ width = Size.span.horizontal_default })
     end
     table.insert(hgroup, self._underline_container)
@@ -624,6 +620,14 @@ local Menu = FocusManager:extend{
     linesize = Size.line.medium,
     line_color = Blitbuffer.COLOR_DARK_GRAY,
 }
+
+function Menu:getItemShortCutIcon(dimen, key, style)
+    return ItemShortCutIcon:new{
+        dimen = dimen,
+        key = key,
+        style = style,
+    }
+end
 
 function Menu:_recalculateDimen(no_recalculate_dimen)
     local perpage = self.items_per_page or G_reader_settings:readSetting("items_per_page") or self.items_per_page_default
