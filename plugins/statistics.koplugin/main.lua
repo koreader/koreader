@@ -180,6 +180,10 @@ function ReaderStatistics:init()
     end
 end
 
+function ReaderStatistics:usePageMapForStats()
+    return self.ui.pagemap and self.ui.pagemap:wantsPageLabels()
+end
+
 function ReaderStatistics:initData()
     self.is_doc = true
     self.is_doc_not_finished = self.ui.doc_settings:readSetting("summary").status ~= "complete"
@@ -1067,10 +1071,6 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
         total_time = 0
     end
     return total_pages, total_time
-end
-
-function ReaderStatistics:usePageMapForStats()
-    return self.ui.pagemap and self.ui.pagemap:wantsPageLabels()
 end
 
 function ReaderStatistics:onToggleStatistics(arg)
