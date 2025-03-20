@@ -5,6 +5,7 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local DocSettings = require("docsettings")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
@@ -17,6 +18,7 @@ local SpinWidget = require("ui/widget/spinwidget")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
@@ -239,6 +241,37 @@ function ReaderBookmark:addToMainMenu(menu_items)
                         end,
                     },
                 },
+                separator = true,
+            },
+            {
+                text = _("Export annotations on book closing"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("annotations_export_on_closing")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("annotations_export_on_closing")
+                end,
+            },
+            {
+                text_func = function()
+                    return T(_("Export / import folder: %1"),
+                        G_reader_settings:readSetting("annotations_export_folder") or _("book metadata folder"))
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local title_header = _("Current annotations export folder:")
+                    local default_path = DocSettings:getSidecarDir(self.ui.document.file)
+                    local current_path = G_reader_settings:readSetting("annotations_export_folder") or default_path
+                    local caller_callback = function(path)
+                        if path == default_path then
+                            G_reader_settings:delSetting("annotations_export_folder")
+                        else
+                            G_reader_settings:saveSetting("annotations_export_folder", path)
+                        end
+                        touchmenu_instance:updateItems()
+                    end
+                    filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, default_path)
+                end,
             },
         },
     }
@@ -897,6 +930,16 @@ function ReaderBookmark:onShowBookmark()
                     callback = function()
                         UIManager:close(bm_dialog)
                         bookmark:filterByHighlightStyle()
+                    end,
+                },
+            })
+            table.insert(buttons, {}) -- separator
+            table.insert(buttons, {
+                {
+                    text = _("Export annotations"),
+                    callback = function()
+                        UIManager:close(bm_dialog)
+                        bookmark.ui.annotation:onExportAnnotations()
                     end,
                 },
             })

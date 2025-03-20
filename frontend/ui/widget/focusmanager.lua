@@ -528,5 +528,6 @@ function FocusManager:onKeyPress(key)
     end
     return InputContainer.onKeyPress(self, key)
 end
+FocusManager.onKeyRepeat = FocusManager.onKeyPress
 
 return FocusManager

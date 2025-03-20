@@ -645,7 +645,7 @@ function OPDSBrowser:showDownloads(item)
                         table.insert(self.downloads, {
                             file    = self:getLocalDownloadPath(filename, filetype, acquisition.href),
                             url     = acquisition.href,
-                            info    = type(item.content) == "string" and util.htmlToPlainTextIfHtml(item.content),
+                            info    = type(item.content) == "string" and util.htmlToPlainTextIfHtml(item.content) or "",
                             catalog = self.root_catalog_title,
                         })
                         self._manager.updated = true
@@ -1016,7 +1016,9 @@ function OPDSBrowser:showDownloadListItemDialog(item)
                         remove_item()
                         self._manager.file_downloaded_callback(local_path)
                     end
-                    self._manager:downloadFile(dl_item.file, dl_item.url, file_downloaded_callback)
+                    NetworkMgr:runWhenConnected(function()
+                        self._manager:downloadFile(dl_item.file, dl_item.url, file_downloaded_callback)
+                    end)
                 end,
             },
         },
@@ -1048,9 +1050,11 @@ function OPDSBrowser:showDownloadListItemDialog(item)
                         text = _("Download all books?\nExisting files will be overwritten."),
                         ok_text = _("Download"),
                         ok_callback = function()
-                            local Trapper = require("ui/trapper")
-                            Trapper:wrap(function()
-                                self._manager:downloadDownloadList()
+                            NetworkMgr:runWhenConnected(function()
+                                local Trapper = require("ui/trapper")
+                                Trapper:wrap(function()
+                                    self._manager:downloadDownloadList()
+                                end)
                             end)
                         end,
                     })

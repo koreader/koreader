@@ -63,6 +63,8 @@ local settingsList = {
     ----
     show_menu = {category="none", event="ShowMenu", title=_("Show menu"), general=true},
     menu_search = {category="none", event="MenuSearch", title=_("Menu search"), general=true},
+    open_next_document_in_folder = {category="none", event="OpenNextOrPreviousFileInFolder", title=_("Open next file in last book folder"), general=true},
+    open_previous_document_in_folder = {category="none", event="OpenNextOrPreviousFileInFolder", arg=true, title=_("Open previous file in last book folder"), general=true},
     notebook_file = {category="none", event="ShowNotebookFile", title=_("Notebook file"), general=true},
     screenshot = {category="none", event="Screenshot", title=_("Screenshot"), general=true, separator=true},
     ----
@@ -145,8 +147,6 @@ local settingsList = {
     ----
 
     -- Reader
-    open_next_document_in_folder = {category="none", event="OpenNextDocumentInFolder", title=_("Open next document in folder"), reader=true, separator=true},
-    ----
     show_config_menu = {category="none", event="ShowConfigMenu", title=_("Show bottom menu"), reader=true},
     toggle_status_bar = {category="none", event="ToggleFooterMode", title=_("Toggle status bar"), reader=true},
     toggle_chapter_progress_bar = {category="none", event="ToggleChapterProgressBar", title=_("Toggle chapter progress bar"), reader=true, separator=true},
@@ -204,6 +204,7 @@ local settingsList = {
     ----
     flush_settings = {category="none", event="FlushSettings", arg=true, title=_("Save book metadata"), reader=true, separator=true},
     ----
+    export_annotations = {category="none", event="ExportAnnotations", title=_("Export annotations"), reader=true},
 
     -- Reflowable documents
     set_font = {category="string", event="SetFont", title=_("Font face"), rolling=true, args_func=require("fontlist").getFontArgFunc,},
@@ -297,6 +298,8 @@ local dispatcher_menu_order = {
     ----
     "show_menu",
     "menu_search",
+    "open_next_document_in_folder",
+    "open_previous_document_in_folder",
     "notebook_file",
     "screenshot",
     ----
@@ -379,8 +382,6 @@ local dispatcher_menu_order = {
     ----
 
     -- Reader
-    "open_next_document_in_folder",
-    ----
     "show_config_menu",
     "toggle_status_bar",
     "toggle_chapter_progress_bar",
@@ -438,6 +439,7 @@ local dispatcher_menu_order = {
     ----
     "flush_settings",
     ----
+    "export_annotations",
 
     -- Reflowable documents
     "set_font",

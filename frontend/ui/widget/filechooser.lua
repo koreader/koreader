@@ -73,7 +73,6 @@ local FileChooser = BookList:extend{
         "^%.metadata%.json$",
     },
     path_items = nil, -- hash, store last browsed location (item index) for each path
-    goto_letter = true,
 }
 
 -- Cache of content we knew of for directories that are not readable
@@ -186,6 +185,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         else
             item.text = item.text.."/"
             item.bidi_wrap_func = BD.directory
+            item.is_file = false
             if collate.can_collate_mixed and collate.item_func ~= nil then
                 collate.item_func(item)
             end
@@ -430,23 +430,29 @@ function FileChooser:onFileHold(item)
     return true
 end
 
--- Used in ReaderStatus:onOpenNextDocumentInFolder().
-function FileChooser:getNextFile(curr_file)
+function FileChooser:getNextOrPreviousFileInFolder(curr_file, prev)
     local show_finished = FileChooser.show_finished
     FileChooser.show_finished = true
     local curr_path = curr_file:match(".*/"):gsub("/$", "")
     local item_table = self:genItemTableFromPath(curr_path)
     FileChooser.show_finished = show_finished
-    local is_curr_file_found
-    for i, item in ipairs(item_table) do
-        if not is_curr_file_found and item.path == curr_file then
+    local top_i, step, is_curr_file_found
+    if prev then
+        top_i = #item_table + 1
+        step = -1
+    else
+        step = 1
+    end
+    for i = 1, #item_table do
+        local idx = prev and top_i - i or i
+        if not is_curr_file_found and item_table[idx].path == curr_file then
             is_curr_file_found = true
         end
         if is_curr_file_found then
-            local next_file = item_table[i+1]
-            if next_file and next_file.is_file and DocumentRegistry:hasProvider(next_file.path)
-                    and BookList.getBookStatus(next_file.path) ~= "complete" then
-                return next_file.path
+            local file = item_table[idx + step]
+            if file and file.is_file and DocumentRegistry:hasProvider(file.path)
+                    and BookList.getBookStatus(file.path) ~= "complete" then
+                return file.path
             end
         end
     end
