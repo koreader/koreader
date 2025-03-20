@@ -883,7 +883,9 @@ dbg:guard(FileManagerMenu, 'setUpdateItemTable',
     end)
 
 function FileManagerMenu:getSortingMenuTable()
-    local sub_item_table = {}
+    local sub_item_table = {
+        max_per_page = 9, -- metadata collates in page 2
+    }
     for k, v in pairs(self.ui.file_chooser.collates) do
         table.insert(sub_item_table, {
             text = v.text,
