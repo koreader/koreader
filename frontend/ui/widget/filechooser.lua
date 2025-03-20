@@ -352,7 +352,7 @@ function FileChooser:changeToPath(path, focused_path)
     end
 
     self:refreshPath()
-    if self._manager then
+    if self.name == "filemanager" then
         self._manager:handleEvent(Event:new("PathChanged", path))
     end
 end
