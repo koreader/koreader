@@ -74,7 +74,7 @@ local CoverBrowser = WidgetContainer:extend{
 }
 
 function CoverBrowser:init()
-    if self.ui.file_chooser then -- FileManager menu only
+    if not self.ui.document then -- FileManager menu only
         self.ui.menu:registerToMainMenu(self)
     end
 
