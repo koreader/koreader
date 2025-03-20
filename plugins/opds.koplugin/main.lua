@@ -62,7 +62,7 @@ function OPDS:onDispatcherRegisterActions()
 end
 
 function OPDS:addToMainMenu(menu_items)
-    if self.ui.file_chooser then
+    if not self.ui.document then -- FileManager menu only
         menu_items.opds = {
             text = _("OPDS catalog"),
             callback = function()
