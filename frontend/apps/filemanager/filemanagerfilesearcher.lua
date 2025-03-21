@@ -151,17 +151,17 @@ function FileSearcher:doSearch()
         FileSearcher.search_hash = search_hash
         self.no_metadata_count = no_metadata_count
         -- Cannot do this in getList() within Trapper (cannot serialize function)
-        local collate = FileChooser:getCollate()
+        local fc = self.ui.file_chooser or FileChooser:new{ _manager = self.ui }
+        local collate = fc:getCollate()
         for i, v in ipairs(dirs) do
             local f, fullpath, attributes = unpack(v)
-            dirs[i] = FileChooser:getListItem(nil, f, fullpath, attributes, collate)
+            dirs[i] = fc:getListItem(nil, f, fullpath, attributes, collate)
         end
         for i, v in ipairs(files) do
             local f, fullpath, attributes = unpack(v)
-            files[i] = FileChooser:getListItem(nil, f, fullpath, attributes, collate)
+            files[i] = fc:getListItem(nil, f, fullpath, attributes, collate)
         end
-        -- If we have a FileChooser instance, use it, to be able to make use of its natsort cache
-        FileSearcher.search_results = (self.ui.file_chooser or FileChooser):genItemTable(dirs, files)
+        FileSearcher.search_results = fc:genItemTable(dirs, files)
     end
     if #FileSearcher.search_results > 0 then
         self:onShowSearchResults(not_cached)
