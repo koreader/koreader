@@ -511,7 +511,11 @@ function ReaderTypeset:onSetPageTopAndBottomMargin(t_b_margins, when_applied_cal
 end
 
 function ReaderTypeset:onSyncPageTopBottomMargins(toggle, when_applied_callback)
-    self.sync_t_b_page_margins = not self.sync_t_b_page_margins
+    if toggle == nil then
+        self.sync_t_b_page_margins = not self.sync_t_b_page_margins
+    else
+        self.sync_t_b_page_margins = toggle
+    end
     if self.sync_t_b_page_margins then
         -- Adjust current top and bottom margins if needed
         if self.unscaled_margins[2] ~= self.unscaled_margins[4] then
