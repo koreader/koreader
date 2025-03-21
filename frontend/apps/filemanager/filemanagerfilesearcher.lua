@@ -151,7 +151,7 @@ function FileSearcher:doSearch()
         FileSearcher.search_hash = search_hash
         self.no_metadata_count = no_metadata_count
         -- Cannot do this in getList() within Trapper (cannot serialize function)
-        local fc = self.ui.file_chooser or FileChooser:new{ _manager = self.ui }
+        local fc = self.ui.file_chooser or FileChooser:new{ ui = self.ui }
         local collate = fc:getCollate()
         for i, v in ipairs(dirs) do
             local f, fullpath, attributes = unpack(v)
