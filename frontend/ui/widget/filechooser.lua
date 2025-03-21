@@ -164,7 +164,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         item.bidi_wrap_func = BD.filename
         item.is_file = true
         if collate.item_func ~= nil then
-            collate.item_func(item, self._manager)
+            collate.item_func(item, self.ui)
         end
         if show_file_in_bold ~= false then
             if item.opened == nil then -- could be set in item_func
@@ -175,7 +175,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
                 item.bold = not item.bold
             end
         end
-        item.dim = self._manager and self._manager.selected_files and self._manager.selected_files[item.path]
+        item.dim = self.ui and self.ui.selected_files and self.ui.selected_files[item.path]
         item.mandatory = self:getMenuItemMandatory(item, collate)
     else -- folder
         if item.text == "./." then -- added as content of an unreadable directory
@@ -353,7 +353,7 @@ function FileChooser:changeToPath(path, focused_path)
 
     self:refreshPath()
     if self.name == "filemanager" then
-        self._manager:handleEvent(Event:new("PathChanged", path))
+        self.ui:handleEvent(Event:new("PathChanged", path))
     end
 end
 
@@ -462,7 +462,7 @@ function FileChooser:selectAllFilesInFolder(do_select)
     for _, item in ipairs(self.item_table) do
         if item.is_file then
             if do_select then
-                self._manager.selected_files[item.path] = true
+                self.ui.selected_files[item.path] = true
                 item.dim = true
             else
                 item.dim = nil
