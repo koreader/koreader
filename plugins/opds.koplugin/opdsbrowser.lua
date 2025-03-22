@@ -638,7 +638,7 @@ function OPDSBrowser:showDownloads(item)
                     callback = function()
                         UIManager:close(self.download_dialog)
                         local local_path = self:getLocalDownloadPath(filename, filetype, acquisition.href)
-                        self:downloadFile(local_path, acquisition.href, self._manager.file_downloaded_callback)
+                        self:downloadFile(local_path, acquisition.href, self.file_downloaded_callback)
                     end,
                     hold_callback = function()
                         UIManager:close(self.download_dialog)
