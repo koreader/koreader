@@ -74,7 +74,7 @@ local CoverBrowser = WidgetContainer:extend{
 }
 
 function CoverBrowser:init()
-    if self.ui.file_chooser then -- FileManager menu only
+    if not self.ui.document then -- FileManager menu only
         self.ui.menu:registerToMainMenu(self)
     end
 
@@ -675,13 +675,6 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
 
     if init_done then
         self:refreshFileManagerInstance()
-    else
-        -- If KOReader has started directly to FileManager, the FileManager
-        -- instance is being init()'ed and there is no FileManager.instance yet,
-        -- but there'll be one at next tick.
-        UIManager:nextTick(function()
-            self:refreshFileManagerInstance()
-        end)
     end
 end
 

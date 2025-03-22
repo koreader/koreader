@@ -205,12 +205,14 @@ function FileManagerMenu:setUpdateItemTable()
                     },
                     {
                         text_func = function()
-                            return T(_("Item font size: %1"), FileChooser.font_size)
-                        end,
-                        callback = function(touchmenu_instance)
-                            local current_value = FileChooser.font_size
                             local default_value = FileChooser.getItemFontSize(G_reader_settings:readSetting("items_per_page")
                                 or FileChooser.items_per_page_default)
+                            return T(_("Item font size: %1"), FileChooser.font_size or default_value)
+                        end,
+                        callback = function(touchmenu_instance)
+                            local default_value = FileChooser.getItemFontSize(G_reader_settings:readSetting("items_per_page")
+                                or FileChooser.items_per_page_default)
+                            local current_value = FileChooser.font_size or default_value
                             local widget = SpinWidget:new{
                                 title_text =  _("Item font size"),
                                 value = current_value,
@@ -883,7 +885,9 @@ dbg:guard(FileManagerMenu, 'setUpdateItemTable',
     end)
 
 function FileManagerMenu:getSortingMenuTable()
-    local sub_item_table = {}
+    local sub_item_table = {
+        max_per_page = 9, -- metadata collates in page 2
+    }
     for k, v in pairs(self.ui.file_chooser.collates) do
         table.insert(sub_item_table, {
             text = v.text,
@@ -893,9 +897,7 @@ function FileManagerMenu:getSortingMenuTable()
                 return k == id
             end,
             callback = function()
-                G_reader_settings:saveSetting("collate", k)
-                self.ui.file_chooser:clearSortingCache()
-                self.ui.file_chooser:refreshPath()
+                self.ui:onSetSortBy(k)
             end,
         })
     end

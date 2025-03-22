@@ -284,7 +284,7 @@ function BookInfo:getDocProps(file, book_props, no_open_document)
 
     -- If still no book_props, open the document to get them
     if not book_props and not no_open_document then
-        local document = DocumentRegistry:openDocument(file)
+        local document = DocumentRegistry:hasProvider(file) and DocumentRegistry:openDocument(file)
         if document then
             local loaded = true
             local pages

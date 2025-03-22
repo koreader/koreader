@@ -920,7 +920,7 @@ function Menu:init()
         }
     end
     -- delegate swipe gesture to GestureManager in filemanager
-    if not self.filemanager then
+    if self.name ~= "filemanager" then
         self.ges_events.Swipe = {
             GestureRange:new{
                 ges = "swipe",
