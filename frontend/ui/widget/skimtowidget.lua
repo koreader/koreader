@@ -179,23 +179,23 @@ function SkimToWidget:init()
         end,
     }
 
-   -- Top row buttons
-   local chapter_prev_text = "\u{2595}\u{25C1}\u{2002}"
-   local chapter_next_text = "\u{2002}\u{25B7}\u{258F}"
-   local bookmark_prev_text = "\u{F097}\u{25C1}"
-   local bookmark_next_text = "\u{25B7}\u{F097}"
-   local bookmark_enabled_text = "\u{F02E}"
-   local bookmark_disabled_text = "\u{F097}"
-   if BD.mirroredUILayout() then
-       chapter_prev_text = BD.ltr(chapter_next_text)
-       -- (We need this trick to keep BiDi from reordering chapter_next_text's leading space in RTL)
-       chapter_next_text = "\u{2002}" .. BD.ltr("\u{2595}\u{25C1}")
-       bookmark_next_text, bookmark_prev_text = BD.ltr(bookmark_prev_text), BD.ltr(bookmark_next_text)
-   end
-   if invert_buttons then
-       chapter_next_text, chapter_prev_text = chapter_prev_text, chapter_next_text
-       bookmark_next_text, bookmark_prev_text = bookmark_prev_text, bookmark_next_text
-   end
+    -- Top row buttons
+    local chapter_prev_text = "\u{2595}\u{25C1}\u{2002}"
+    local chapter_next_text = "\u{2002}\u{25B7}\u{258F}"
+    local bookmark_prev_text = "\u{F097}\u{25C1}"
+    local bookmark_next_text = "\u{25B7}\u{F097}"
+    local bookmark_enabled_text = "\u{F02E}"
+    local bookmark_disabled_text = "\u{F097}"
+    if BD.mirroredUILayout() then
+        chapter_prev_text = BD.ltr(chapter_next_text)
+        -- (We need this trick to keep BiDi from reordering chapter_next_text's leading space in RTL)
+        chapter_next_text = "\u{2002}" .. BD.ltr("\u{2595}\u{25C1}")
+        bookmark_next_text, bookmark_prev_text = BD.ltr(bookmark_prev_text), BD.ltr(bookmark_next_text)
+    end
+    if invert_buttons then
+        chapter_next_text, chapter_prev_text = chapter_prev_text, chapter_next_text
+        bookmark_next_text, bookmark_prev_text = bookmark_prev_text, bookmark_next_text
+    end
     local button_chapter_next = Button:new{
         text = chapter_next_text,
         text_font_size = button_font_size,
