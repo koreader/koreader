@@ -17,6 +17,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
@@ -89,8 +90,11 @@ function SkimToWidget:init()
         last = self.page_count,
         alt = self.ui.document.flows,
         initial_pos_marker = true,
+        invert_direction = self.ui.view.footer.settings.invert_progress_direction,
     }
 
+    -- Determine if we need to invert the button functionality and labels
+    local invert_buttons = self.progress_bar.invert_direction
     -- Bottom row buttons
     local button_minus = Button:new{
         text = "-1",
@@ -308,6 +312,10 @@ function SkimToWidget:init()
             button_plus_ten,
         }
         radius = Size.radius.window
+        if invert_buttons then
+            util.arrayReverse(top_buttons_row)
+            util.arrayReverse(bottom_buttons_row)
+        end
     else
         top_row_span = VerticalSpan:new{ width = Size.padding.default }
         top_buttons_row = HorizontalGroup:new{
@@ -334,6 +342,9 @@ function SkimToWidget:init()
             small_button_span,
             button_plus,
         }
+        if invert_buttons then
+            util.arrayReverse(top_buttons_row)
+        end
         if skim_dialog_position == "top" then
             bottom_row_span, bottom_buttons_row = top_row_span, top_buttons_row
             top_buttons_row = VerticalSpan:new{ width = 0 }
@@ -380,6 +391,15 @@ function SkimToWidget:init()
                 { button_chapter_prev, button_chapter_next, button_bookmark_prev, button_bookmark_next, self.button_bookmark_toggle,
                   self.current_page_text, button_orig_page, button_minus_ten, button_plus_ten, button_minus, button_plus },
             }
+        end
+        -- Invert D-Pad navigation layout to match visual button order
+        if invert_buttons then
+            if full_mode then
+                util.arrayReverse(self.layout[1])
+                util.arrayReverse(self.layout[2])
+            else
+                util.arrayReverse(self.layout[1])
+            end
         end
         self:moveFocusTo(1, 1)
     end
