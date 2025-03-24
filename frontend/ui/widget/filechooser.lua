@@ -164,8 +164,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         item.bidi_wrap_func = BD.filename
         item.is_file = true
         if collate.item_func ~= nil then
-            local book_info = collate.bookinfo_required and BookList.getBookInfo(item.path)
-            collate.item_func(item, book_info)
+            collate.item_func(item, self.ui)
         end
         if show_file_in_bold ~= false then
             if item.opened == nil then -- could be set in item_func
@@ -176,8 +175,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
                 item.bold = not item.bold
             end
         end
-        item.dim = self.filemanager and self.filemanager.selected_files
-                   and self.filemanager.selected_files[item.path]
+        item.dim = self.ui and self.ui.selected_files and self.ui.selected_files[item.path]
         item.mandatory = self:getMenuItemMandatory(item, collate)
     else -- folder
         if item.text == "./." then -- added as content of an unreadable directory
@@ -186,7 +184,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
             item.text = item.text.."/"
             item.bidi_wrap_func = BD.directory
             item.is_file = false
-            if collate.can_collate_mixed and collate.item_func ~= nil then
+            if collate.can_collate_mixed and collate.item_func ~= nil then -- used by user plugin/patch, don't remove
                 collate.item_func(item)
             end
             if dirpath then -- file browser or PathChooser
@@ -328,7 +326,7 @@ function FileChooser:refreshPath()
         self.prev_focused_path = self.focused_path
         self.focused_path = nil
     end
-    local subtitle = self.filemanager == nil and BD.directory(filemanagerutil.abbreviate(self.path))
+    local subtitle = self.name ~= "filemanager" and BD.directory(filemanagerutil.abbreviate(self.path)) -- PathChooser
     self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path], itemmatch, subtitle)
 end
 
@@ -354,8 +352,8 @@ function FileChooser:changeToPath(path, focused_path)
     end
 
     self:refreshPath()
-    if self.filemanager then
-        self.filemanager:handleEvent(Event:new("PathChanged", path))
+    if self.name == "filemanager" then
+        self.ui:handleEvent(Event:new("PathChanged", path))
     end
 end
 
@@ -464,7 +462,7 @@ function FileChooser:selectAllFilesInFolder(do_select)
     for _, item in ipairs(self.item_table) do
         if item.is_file then
             if do_select then
-                self.filemanager.selected_files[item.path] = true
+                self.ui.selected_files[item.path] = true
                 item.dim = true
             else
                 item.dim = nil
