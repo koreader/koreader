@@ -616,8 +616,9 @@ function Dispatcher:removeAction(name)
 end
 
 local function iter_func(settings)
-    if settings and settings.settings and settings.settings.order then
-        return ipairs(settings.settings.order)
+    local order = util.tableGetValue(settings, "settings", "order")
+    if order and #order > 1 then
+        return ipairs(order)
     else
         return pairs(settings)
     end
