@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local BlitBuffer = require("ffi/blitbuffer")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -10,6 +11,7 @@ local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local Math = require("optmath")
+local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderProgress = require("readerprogress")
 local ReadHistory = require("readhistory")
@@ -91,6 +93,7 @@ ReaderStatistics.default_settings = {
     calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS,
     calendar_show_histogram = true,
     calendar_browse_future_months = false,
+    use_color_rendering = false,
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
@@ -113,11 +116,16 @@ function ReaderStatistics:onDispatcherRegisterActions()
         {category="none", event="ShowBookStats", title=_("Reading statistics: current book"), reader=true})
 end
 
+function ReaderStatistics:useColorRendering()
+    return Device:hasColorScreen() and (not G_reader_settings:has("color_rendering") or G_reader_settings:isTrue("color_rendering"))
+end
+
 function ReaderStatistics:init()
     if self.document and self.document.is_pic then
         return -- disable in PIC documents
     end
 
+    self.use_color_rendering = self:useColorRendering()
     self.is_doc = false
     self.is_doc_not_frozen = false -- freeze finished books statistics
 
@@ -177,6 +185,10 @@ function ReaderStatistics:init()
         end
         return readingprogress
     end
+end
+
+function ReaderStatistics:onColorRenderingUpdate()
+    self.use_color_rendering = self:useColorRendering()
 end
 
 function ReaderStatistics:initData()
