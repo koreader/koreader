@@ -212,6 +212,7 @@ function Profiles:getSubMenuItems()
                         },
                         self:genAutoExecMenuItem(_("on KOReader start"), "Start", k),
                         self:genAutoExecMenuItem(_("on wake-up"), "Resume", k),
+                        self:genAutoExecMenuItem(_("on exiting sleep screen"), "OutOfScreenSaver", k),
                         self:genAutoExecMenuItem(_("on rotation"), "SetRotationMode", k),
                         self:genAutoExecMenuItem(_("on showing folder"), "PathChanged", k, true),
                         -- separator
@@ -398,9 +399,9 @@ function Profiles:getProfileFromCurrentBookSettings(new_name)
             "word_expansion",
             "visible_pages",
             "h_page_margins",
-            "sync_t_b_page_margins",
             "t_page_margin",
             "b_page_margin",
+            "sync_t_b_page_margins",
             "view_mode",
             "block_rendering_mode",
             "render_dpi",
@@ -526,6 +527,13 @@ function Profiles:genAutoExecMenuItem(text, event, profile_name, separator)
     end
     return {
         text = text,
+        enabled_func = function()
+            if event == "Resume" then
+                local screensaver_delay = G_reader_settings:readSetting("screensaver_delay")
+                return screensaver_delay == nil or screensaver_delay == "disable"
+            end
+            return true
+        end,
         checked_func = function()
             return util.tableGetValue(self.autoexec, event, profile_name)
         end,
@@ -925,6 +933,10 @@ end
 
 function Profiles:onResume() -- global
     self:executeAutoExecEvent("Resume")
+end
+
+function Profiles:onOutOfScreenSaver() -- global
+    self:executeAutoExecEvent("OutOfScreenSaver")
 end
 
 function Profiles:onSetRotationMode(mode) -- global

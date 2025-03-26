@@ -49,13 +49,6 @@ function FileManagerCollection:addToMainMenu(menu_items)
     }
 end
 
-function FileManagerCollection:getDocProps(file)
-    if self.doc_props_cache[file] == nil then
-        self.doc_props_cache[file] = self.ui.bookinfo:getDocProps(file, nil, true) -- do not open the document
-    end
-    return self.doc_props_cache[file]
-end
-
 -- collection
 
 function FileManagerCollection:getCollectionTitle(collection_name)
@@ -92,6 +85,9 @@ function FileManagerCollection:onShowColl(collection_name)
         ui = self.ui,
         _manager = self,
         _recreate_func = function() self:onShowColl(collection_name) end,
+        search_callback = function(search_string)
+            self:onShowCollectionsSearchDialog(search_string, collection_name)
+        end,
     }
     table.insert(self.booklist_menu.paths, true) -- enable onReturn button
     self.booklist_menu.close_callback = function()
@@ -119,7 +115,7 @@ function FileManagerCollection:updateItemTable(item_table, focused_file)
                     mandatory = self.mandatory_func and self.mandatory_func(item) or util.getFriendlySize(item.attr.size or 0),
                 }
                 if self.item_func then
-                    self.item_func(item_tmp, self:getDocProps(item_tmp.file))
+                    self.item_func(item_tmp, self.ui)
                 end
                 table.insert(item_table, item_tmp)
             end
@@ -140,7 +136,7 @@ function FileManagerCollection:isItemMatch(item)
             end
         end
         if self.match_table.props then
-            local doc_props = self:getDocProps(item.file)
+            local doc_props = self.ui.bookinfo:getDocProps(item.file, nil, true)
             for prop, value in pairs(self.match_table.props) do
                 if (doc_props[prop] or self.empty_prop) ~= value then
                     return false
@@ -314,7 +310,7 @@ function FileManagerCollection:showCollDialog()
                 UIManager:close(coll_dialog)
                 local prop_values = {}
                 for idx, item in ipairs(self.booklist_menu.item_table) do
-                    local doc_prop = self:getDocProps(item.file)[button_prop]
+                    local doc_prop = self.ui.bookinfo:getDocProps(item.file, nil, true)[button_prop]
                     if doc_prop == nil then
                         doc_prop = { self.empty_prop }
                     elseif button_prop == "series" then
@@ -493,7 +489,7 @@ function FileManagerCollection:setCollate(collate_id, collate_reverse)
         coll_settings.collate_reverse = collate_reverse or nil
     end
     if collate_id then
-        local collate = BookList.metadata_collates[collate_id] or BookList.collates[collate_id]
+        local collate = BookList.collates[collate_id]
         self.item_func = collate.item_func
         self.mandatory_func = collate.mandatory_func
         self.sorting_func, self.sort_cache = collate.init_sort_func(self.sort_cache)
@@ -514,7 +510,7 @@ function FileManagerCollection:showArrangeBooksDialog()
     local curr_collate_id = coll_settings.collate
     local arrange_dialog
     local function genCollateButton(collate_id)
-        local collate = BookList.metadata_collates[collate_id] or BookList.collates[collate_id]
+        local collate = BookList.collates[collate_id]
         return {
             text = collate.text .. (curr_collate_id == collate_id and "  ✓" or ""),
             callback = function()
@@ -1132,7 +1128,7 @@ function FileManagerCollection:searchCollections(coll_name)
         if not DocumentRegistry:hasProvider(file) then
             return false
         end
-        local book_props = self:getDocProps(file)
+        local book_props = self.ui.bookinfo:getDocProps(file, nil, true)
         if next(book_props) ~= nil and self.ui.bookinfo:findInProps(book_props, self.search_str, self.case_sensitive) then
             return true
         end

@@ -773,28 +773,31 @@ function Input:handleKeyBoardEv(ev)
     if ev.value == KEY_PRESS then
         return Event:new("KeyPress", key)
     elseif ev.value == KEY_REPEAT then
-        -- NOTE: We only care about repeat events from the pageturn buttons...
+        -- NOTE: We only care about repeat events from the page-turn buttons and cursor keys...
         --       And we *definitely* don't want to flood the Event queue with useless SleepCover repeats!
-        if keycode == "LPgBack"
-        or keycode == "RPgBack"
-        or keycode == "LPgFwd"
-        or keycode == "RPgFwd" then
+        if keycode == "Up" or keycode == "Down" or keycode == "Left" or keycode == "Right"
+         or keycode == "RPgBack" or keycode == "RPgFwd" or keycode == "LPgBack" or keycode == "LPgFwd" then
             --- @fixme Crappy event staggering!
             --
             -- The Forma & co repeats every 80ms after a 400ms delay, and 500ms roughly corresponds to a flashing update,
             -- so stuff is usually in sync when you release the key.
-            -- Obvious downside is that this ends up slower than just mashing the key.
             --
             -- A better approach would be an onKeyRelease handler that flushes the Event queue...
-            self.repeat_count = self.repeat_count + 1
-            if self.repeat_count == 1 then
+            local rep_period = self.device.key_repeat and self.device.key_repeat[C.REP_PERIOD] or 80
+            local now = time.now()
+            if not self.last_repeat_time then
+                self.last_repeat_time = now
                 return Event:new("KeyRepeat", key)
-            elseif self.repeat_count >= 6 then
-                self.repeat_count = 0
+            else
+                local time_diff = time.to_ms(now - self.last_repeat_time)
+                if time_diff >= rep_period then
+                    self.last_repeat_time = now
+                    return Event:new("KeyRepeat", key)
+                end
             end
         end
     elseif ev.value == KEY_RELEASE then
-        self.repeat_count = 0
+        self.last_repeat_time = nil
         return Event:new("KeyRelease", key)
     end
 end

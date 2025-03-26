@@ -138,6 +138,7 @@ function FileManager:setupLayout()
     }
 
     local file_chooser = FileChooser:new{
+        name = "filemanager",
         path = self.root_path,
         focused_path = self.focused_file,
         show_parent = self.show_parent,
@@ -146,9 +147,12 @@ function FileManager:setupLayout()
         -- allow left bottom tap gesture, otherwise it is eaten by hidden return button
         return_arrow_propagation = true,
         -- allow Menu widget to delegate handling of some gestures to GestureManager
-        filemanager = self,
+        ui = self,
         -- Tell FileChooser (i.e., Menu) to use our own title bar instead of Menu's default one
         custom_title_bar = self.title_bar,
+        search_callback = function(search_string)
+            self.filesearcher:onShowFileSearch(search_string)
+        end,
     }
     self.file_chooser = file_chooser
     self.focused_file = nil -- use it only once
@@ -341,10 +345,6 @@ function FileManager:setupLayout()
 
     self[1] = fm_ui
 
-    self.menu = FileManagerMenu:new{
-        ui = self
-    }
-
     -- No need to reinvent the wheel, use FileChooser's layout
     self.layout = file_chooser.layout
 
@@ -387,15 +387,13 @@ end
 
 -- NOTE: The only thing that will *ever* instantiate a new FileManager object is our very own showFiles below!
 function FileManager:init()
-    self:setupLayout()
     self.active_widgets = {}
 
     self:registerModule("screenshot", Screenshoter:new{
         prefix = "FileManager",
         ui = self,
     }, true)
-
-    self:registerModule("menu", self.menu)
+    self:registerModule("menu", FileManagerMenu:new{ ui = self })
     self:registerModule("history", FileManagerHistory:new{ ui = self })
     self:registerModule("bookinfo", FileManagerBookInfo:new{ ui = self })
     self:registerModule("collections", FileManagerCollection:new{ ui = self })
@@ -422,6 +420,7 @@ function FileManager:init()
         end
     end
 
+    self:setupLayout()
     self:initGesListener()
     self:handleEvent(Event:new("SetDimensions", self.dimen))
     self:handleEvent(Event:new("PathChanged", self.file_chooser.path))
@@ -1609,6 +1608,21 @@ end
 function FileManager:onSetMixedSorting(toggle)
     G_reader_settings:saveSetting("collate_mixed", toggle or nil)
     self.file_chooser:refreshPath()
+    return true
+end
+
+function FileManager:onOpenNextOrPreviousFileInFolder(prev)
+    local last_file = G_reader_settings:readSetting("lastfile")
+    if not last_file then return true end
+    local file = self.file_chooser:getNextOrPreviousFileInFolder(last_file, prev)
+    if file then
+        self:openFile(file)
+    else
+        UIManager:show(InfoMessage:new{
+            text = prev and _("Last book is the first file in the folder. No previous file to open.")
+                         or _("Last book is the last file in the folder. No next file to open."),
+        })
+    end
     return true
 end
 
