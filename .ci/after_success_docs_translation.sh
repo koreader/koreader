@@ -7,7 +7,7 @@ source "${CI_DIR}/common.sh"
 set +e
 
 echo -e "\\n${ANSI_GREEN}Updating translation source file."
-pushd l10n && git checkout master && popd || exit 1
+pushd l10n && git fetch origin && git checkout master && popd || exit 1
 make pot
 pushd l10n && {
     # If only one line was added and removed, it was just the timestamp.
