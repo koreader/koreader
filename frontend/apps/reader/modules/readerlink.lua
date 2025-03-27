@@ -703,6 +703,16 @@ function ReaderLink:onTap(_, ges)
     end
 end
 
+-- Toggle tap to follow links functionality
+function ReaderLink:onToggleTapLinks()
+    G_reader_settings:flipNilOrTrue("tap_to_follow_links")
+    local tap_links_status = isTapToFollowLinksOn() and _("on") or _("off")
+    UIManager:show(Notification:new{
+        text = T(_("Tap to follow links: %1"), tap_links_status),
+    })
+    return true
+end
+
 function ReaderLink:getCurrentLocation()
     return self.ui.paging and self.ui.paging:getBookLocation()
                            or {xpointer = self.ui.rolling:getBookLocation()}
