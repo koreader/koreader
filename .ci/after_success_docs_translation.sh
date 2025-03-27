@@ -7,9 +7,9 @@ source "${CI_DIR}/common.sh"
 set +e
 
 echo -e "\\n${ANSI_GREEN}Updating translation source file."
+pushd l10n && git checkout master && popd || exit 1
 make pot
 pushd l10n && {
-    git checkout -f master
     # If only one line was added and removed, it was just the timestamp.
     git diff --numstat | grep "1[[:space:]]1[[:space:]]templates/koreader.pot" && echo -e "\\n${ANSI_GREEN}No updated translations found." || {
         git -c user.name="KOReader build bot" -c user.email="non-reply@koreader.rocks" \
