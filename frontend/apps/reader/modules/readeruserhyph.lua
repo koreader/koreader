@@ -73,7 +73,7 @@ end
 -- if reload==true reload
 function ReaderUserHyph:loadUserDictionary(reload)
     self:loadDictionary(self:isAvailable() and self:getDictionaryPath() or "", reload and true or false)
-    self.ui:handleEvent(Event:new("UpdatePos"))
+    self.ui:handleEvent(Event:new("UpdatePos", true))
 end
 
 -- Functions to use with the UI
