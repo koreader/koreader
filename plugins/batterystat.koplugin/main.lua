@@ -213,7 +213,7 @@ function BatteryStat:showStatistics()
                                 end)
                             end})
     self.kv_page = KeyValuePage:new{
-        title = T(_("Battery statistics (now at %1%)"), self.awake_state.percentage),
+        title = T(_("Battery statistics (%1%"), self.awake_state.percentage),
         kv_pairs = kv_pairs,
         single_page = true,
     }
