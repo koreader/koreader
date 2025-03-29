@@ -10,7 +10,6 @@ local datetime = require("datetime")
 local dbg = require("dbg")
 local time = require("ui/time")
 local _ = require("gettext")
-local T = require("ffi/util").template
 
 local State = {}
 
