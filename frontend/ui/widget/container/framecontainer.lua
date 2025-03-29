@@ -129,11 +129,11 @@ function FrameContainer:paintTo(bb, x, y)
         local color_bg = not Blitbuffer.isColor8(self.background)
         if color_bg then
             if not self.radius or not self.bordersize then
-                paintRoundedRectRGB(bb, x, y,
+                bb:paintRoundedRectRGB32(x, y,
                                     container_width, container_height,
                                     self.background, self.radius)
             else
-                paintRoundedRectRGB(bb, x, y,
+                bb:paintRoundedRectRGB32(x, y,
                                     container_width, container_height,
                                     self.background, self.radius + self.bordersize)
             end
