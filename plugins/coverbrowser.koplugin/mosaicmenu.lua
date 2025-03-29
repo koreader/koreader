@@ -18,11 +18,9 @@ local ProgressWidget = require("ui/widget/progresswidget")
 local ReadCollection = require("readcollection")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
-local TextWidget = require("ui/widget/textwidget")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -46,49 +44,6 @@ local abandoned_mark
 local complete_mark
 local collection_mark
 local progress_widget
-
--- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
--- so we need to redefine it
-local ItemShortCutIcon = WidgetContainer:extend{
-    dimen = Geom:new{ x = 0, y = 0, w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
-    key = nil,
-    bordersize = Size.border.default,
-    radius = 0,
-    style = "square",
-}
-
-function ItemShortCutIcon:init()
-    if not self.key then
-        return
-    end
-    local radius = 0
-    local background = Blitbuffer.COLOR_WHITE
-    if self.style == "rounded_corner" then
-        radius = math.floor(self.width/2)
-    elseif self.style == "grey_square" then
-        background = Blitbuffer.COLOR_LIGHT_GRAY
-    end
-    local sc_face
-    if self.key:len() > 1 then
-        sc_face = Font:getFace("ffont", 14)
-    else
-        sc_face = Font:getFace("scfont", 22)
-    end
-    self[1] = FrameContainer:new{
-        padding = 0,
-        bordersize = self.bordersize,
-        radius = radius,
-        background = background,
-        dimen = self.dimen:copy(),
-        CenterContainer:new{
-            dimen = self.dimen,
-            TextWidget:new{
-                text = self.key,
-                face = sc_face,
-            },
-        },
-    }
-end
 
 -- We may find a better algorithm, or just a set of
 -- nice looking combinations of 3 sizes to iterate thru
@@ -375,11 +330,7 @@ function MosaicMenuItem:init()
         }
         -- To keep a simpler widget structure, this shortcut icon will not
         -- be part of it, but will be painted over the widget in our paintTo
-        self.shortcut_icon = ItemShortCutIcon:new{
-            dimen = shortcut_icon_dimen,
-            key = self.shortcut,
-            style = self.shortcut_style,
-        }
+        self.shortcut_icon = self.menu:getItemShortCutIcon(shortcut_icon_dimen, self.shortcut, self.shortcut_style)
     end
 
     self.percent_finished = nil

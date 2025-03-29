@@ -73,7 +73,6 @@ local FileChooser = BookList:extend{
         "^%.metadata%.json$",
     },
     path_items = nil, -- hash, store last browsed location (item index) for each path
-    goto_letter = true,
 }
 
 -- Cache of content we knew of for directories that are not readable
@@ -165,8 +164,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         item.bidi_wrap_func = BD.filename
         item.is_file = true
         if collate.item_func ~= nil then
-            local book_info = collate.bookinfo_required and BookList.getBookInfo(item.path)
-            collate.item_func(item, book_info)
+            collate.item_func(item, self.ui)
         end
         if show_file_in_bold ~= false then
             if item.opened == nil then -- could be set in item_func
@@ -177,8 +175,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
                 item.bold = not item.bold
             end
         end
-        item.dim = self.filemanager and self.filemanager.selected_files
-                   and self.filemanager.selected_files[item.path]
+        item.dim = self.ui and self.ui.selected_files and self.ui.selected_files[item.path]
         item.mandatory = self:getMenuItemMandatory(item, collate)
     else -- folder
         if item.text == "./." then -- added as content of an unreadable directory
@@ -186,7 +183,8 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         else
             item.text = item.text.."/"
             item.bidi_wrap_func = BD.directory
-            if collate.can_collate_mixed and collate.item_func ~= nil then
+            item.is_file = false
+            if collate.can_collate_mixed and collate.item_func ~= nil then -- used by user plugin/patch, don't remove
                 collate.item_func(item)
             end
             if dirpath then -- file browser or PathChooser
@@ -328,7 +326,7 @@ function FileChooser:refreshPath()
         self.prev_focused_path = self.focused_path
         self.focused_path = nil
     end
-    local subtitle = self.filemanager == nil and BD.directory(filemanagerutil.abbreviate(self.path))
+    local subtitle = self.name ~= "filemanager" and BD.directory(filemanagerutil.abbreviate(self.path)) -- PathChooser
     self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path], itemmatch, subtitle)
 end
 
@@ -354,8 +352,8 @@ function FileChooser:changeToPath(path, focused_path)
     end
 
     self:refreshPath()
-    if self.filemanager then
-        self.filemanager:handleEvent(Event:new("PathChanged", path))
+    if self.name == "filemanager" then
+        self.ui:handleEvent(Event:new("PathChanged", path))
     end
 end
 
@@ -430,23 +428,29 @@ function FileChooser:onFileHold(item)
     return true
 end
 
--- Used in ReaderStatus:onOpenNextDocumentInFolder().
-function FileChooser:getNextFile(curr_file)
+function FileChooser:getNextOrPreviousFileInFolder(curr_file, prev)
     local show_finished = FileChooser.show_finished
     FileChooser.show_finished = true
     local curr_path = curr_file:match(".*/"):gsub("/$", "")
     local item_table = self:genItemTableFromPath(curr_path)
     FileChooser.show_finished = show_finished
-    local is_curr_file_found
-    for i, item in ipairs(item_table) do
-        if not is_curr_file_found and item.path == curr_file then
+    local top_i, step, is_curr_file_found
+    if prev then
+        top_i = #item_table + 1
+        step = -1
+    else
+        step = 1
+    end
+    for i = 1, #item_table do
+        local idx = prev and top_i - i or i
+        if not is_curr_file_found and item_table[idx].path == curr_file then
             is_curr_file_found = true
         end
         if is_curr_file_found then
-            local next_file = item_table[i+1]
-            if next_file and next_file.is_file and DocumentRegistry:hasProvider(next_file.path)
-                    and BookList.getBookStatus(next_file.path) ~= "complete" then
-                return next_file.path
+            local file = item_table[idx + step]
+            if file and file.is_file and DocumentRegistry:hasProvider(file.path)
+                    and BookList.getBookStatus(file.path) ~= "complete" then
+                return file.path
             end
         end
     end
@@ -458,7 +462,7 @@ function FileChooser:selectAllFilesInFolder(do_select)
     for _, item in ipairs(self.item_table) do
         if item.is_file then
             if do_select then
-                self.filemanager.selected_files[item.path] = true
+                self.ui.selected_files[item.path] = true
                 item.dim = true
             else
                 item.dim = nil

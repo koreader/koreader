@@ -163,7 +163,7 @@ function CreDocument:init()
     -- The other css files (htm.css, rtf.css...) have not been updated in the
     -- same way, and are kept as-is for when a previously opened document
     -- requests one of them.
-    self.default_css = self.is_fb2 and "./data/fb2.css" or "./data/epub.css"
+    self.default_css = (self.is_fb2 or self.is_txt) and "./data/fb2.css" or "./data/epub.css"
 
     -- This mode must be the same as the default one set as ReaderView.view_mode
     self._view_mode = G_defaults:readSetting("DCREREADER_VIEW_MODE") == "scroll" and self.SCROLL_VIEW_MODE or self.PAGE_VIEW_MODE
@@ -702,13 +702,15 @@ function CreDocument:getScreenBoxesFromPositions(pos0, pos1, get_segments)
     local line_boxes = {}
     if pos0 and pos1 then
         local word_boxes = self._document:getWordBoxesFromPositions(pos0, pos1, get_segments)
-        for i = 1, #word_boxes do
-            local line_box = word_boxes[i]
-            table.insert(line_boxes, Geom:new{
-                x = line_box.x0, y = line_box.y0,
-                w = line_box.x1 - line_box.x0,
-                h = line_box.y1 - line_box.y0,
-            })
+        if word_boxes then
+            for i = 1, #word_boxes do
+                local line_box = word_boxes[i]
+                table.insert(line_boxes, Geom:new{
+                    x = line_box.x0, y = line_box.y0,
+                    w = line_box.x1 - line_box.x0,
+                    h = line_box.y1 - line_box.y0,
+                })
+            end
         end
     end
     return line_boxes

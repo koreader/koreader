@@ -2,6 +2,7 @@ local BD = require("ui/bidi")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local DoubleSpinWidget = require("ui/widget/doublespinwidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local PluginLoader = require("pluginloader")
@@ -204,12 +205,14 @@ function FileManagerMenu:setUpdateItemTable()
                     },
                     {
                         text_func = function()
-                            return T(_("Item font size: %1"), FileChooser.font_size)
-                        end,
-                        callback = function(touchmenu_instance)
-                            local current_value = FileChooser.font_size
                             local default_value = FileChooser.getItemFontSize(G_reader_settings:readSetting("items_per_page")
                                 or FileChooser.items_per_page_default)
+                            return T(_("Item font size: %1"), FileChooser.font_size or default_value)
+                        end,
+                        callback = function(touchmenu_instance)
+                            local default_value = FileChooser.getItemFontSize(G_reader_settings:readSetting("items_per_page")
+                                or FileChooser.items_per_page_default)
+                            local current_value = FileChooser.font_size or default_value
                             local widget = SpinWidget:new{
                                 title_text =  _("Item font size"),
                                 value = current_value,
@@ -394,9 +397,8 @@ To:
             },
             {
                 text_func = function()
-                    local default_value = KeyValuePage.getDefaultItemsPerPage()
-                    local current_value = G_reader_settings:readSetting("keyvalues_per_page") or default_value
-                    return T(_("Info lists items per page: %1"), current_value)
+                    local nb_items_landscape, nb_items_portrait = KeyValuePage.getCurrentItemsPerPage()
+                    return T(_("Info lists items per page: %1 / %2"), nb_items_portrait, nb_items_landscape)
                 end,
                 help_text = _([[This sets the number of items per page in:
 - Book information
@@ -405,25 +407,38 @@ To:
 - A few other plugins]]),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
-                    local default_value = KeyValuePage.getDefaultItemsPerPage()
-                    local current_value = G_reader_settings:readSetting("keyvalues_per_page") or default_value
-                    local widget = SpinWidget:new{
-                        value = current_value,
-                        value_min = 10,
-                        value_max = 30,
-                        default_value = default_value,
+                    local nb_items_landscape_default, nb_items_portrait_default = KeyValuePage.getDefaultItemsPerPage()
+                    local nb_items_landscape, nb_items_portrait =
+                        KeyValuePage.getCurrentItemsPerPage(nb_items_landscape_default, nb_items_portrait_default)
+                    local widget = DoubleSpinWidget:new{
                         title_text =  _("Info lists items per page"),
-                        callback = function(spin)
-                            if spin.value == default_value then
-                                -- We can't know if the user has set a value or hit "Use default", but
-                                -- assume that if it is the default, he will prefer to stay with our
-                                -- default if he later changes screen DPI
+                        width_factor = 0.6,
+                        left_text = _("Portrait"),
+                        left_value = nb_items_portrait,
+                        left_min = 10,
+                        left_max = 30,
+                        left_default = nb_items_portrait_default,
+                        right_text = _("Landscape"),
+                        right_value = nb_items_landscape,
+                        right_min = 10,
+                        right_max = 30,
+                        right_default = nb_items_landscape_default,
+                        callback = function(left_value, right_value)
+                            -- We can't know if the user has set a value or hit "Use default", but
+                            -- assume that if it is the default, he will prefer to stay with our
+                            -- default if he later changes screen DPI
+                            if left_value == nb_items_portrait_default then
                                 G_reader_settings:delSetting("keyvalues_per_page")
                             else
-                                G_reader_settings:saveSetting("keyvalues_per_page", spin.value)
+                                G_reader_settings:saveSetting("keyvalues_per_page", left_value)
+                            end
+                            if right_value == nb_items_landscape_default then
+                                G_reader_settings:delSetting("keyvalues_per_page_landscape")
+                            else
+                                G_reader_settings:saveSetting("keyvalues_per_page_landscape", right_value)
                             end
                             touchmenu_instance:updateItems()
-                        end
+                        end,
                     }
                     UIManager:show(widget)
                 end,
@@ -870,7 +885,9 @@ dbg:guard(FileManagerMenu, 'setUpdateItemTable',
     end)
 
 function FileManagerMenu:getSortingMenuTable()
-    local sub_item_table = {}
+    local sub_item_table = {
+        max_per_page = 9, -- metadata collates in page 2
+    }
     for k, v in pairs(self.ui.file_chooser.collates) do
         table.insert(sub_item_table, {
             text = v.text,
@@ -880,9 +897,7 @@ function FileManagerMenu:getSortingMenuTable()
                 return k == id
             end,
             callback = function()
-                G_reader_settings:saveSetting("collate", k)
-                self.ui.file_chooser:clearSortingCache()
-                self.ui.file_chooser:refreshPath()
+                self.ui:onSetSortBy(k)
             end,
         })
     end

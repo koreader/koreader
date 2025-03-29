@@ -1,5 +1,6 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local DateTimeWidget = require("ui/widget/datetimewidget")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
 local InfoMessage = require("ui/widget/infomessage")
@@ -157,10 +158,61 @@ function Profiles:getSubMenuItems()
                                 self.data[k].settings.auto_exec_ask = not v.settings.auto_exec_ask and true or nil
                                 self.updated = true
                             end,
+                        },
+                        {
+                            text_func = function()
+                                local interval = v.settings.auto_exec_time_interval
+                                return _("Execute within time interval") ..
+                                    (interval and ": " .. interval[1] .. " - " .. interval[2] or "")
+                            end,
+                            checked_func = function()
+                                return v.settings.auto_exec_time_interval and true
+                            end,
+                            sub_item_table_func = function()
+                                local sub_sub_item_table = {}
+                                local points = { _("start: "), _("end: ") }
+                                local titles = { _("Set start time"), _("Set end time") }
+                                for i, point in ipairs(points) do
+                                    sub_sub_item_table[i] = {
+                                        text_func = function()
+                                            local interval = v.settings.auto_exec_time_interval
+                                            return point .. (interval and interval[i] or "--:--")
+                                        end,
+                                        keep_menu_open = true,
+                                        callback = function(touchmenu_instance)
+                                            local interval = v.settings.auto_exec_time_interval
+                                            local time_str = interval and interval[i] or os.date("%H:%M")
+                                            local h, m = time_str:match("(%d+):(%d+)")
+                                            UIManager:show(DateTimeWidget:new{
+                                                title_text = titles[i],
+                                                info_text = _("Enter time in hours and minutes."),
+                                                hour = tonumber(h),
+                                                min = tonumber(m),
+                                                ok_text = _("Set time"),
+                                                callback = function(new_time)
+                                                    local str = string.format("%02d:%02d", new_time.hour, new_time.min)
+                                                    if interval then
+                                                        v.settings.auto_exec_time_interval[i] = str
+                                                    else
+                                                        v.settings.auto_exec_time_interval = { str, str }
+                                                    end
+                                                    touchmenu_instance:updateItems()
+                                                end,
+                                            })
+                                        end,
+                                    }
+                                end
+                                return sub_sub_item_table
+                            end,
+                            hold_callback = function(touchmenu_instance)
+                                v.settings.auto_exec_time_interval = nil
+                                touchmenu_instance:updateItems()
+                            end,
                             separator = true,
                         },
                         self:genAutoExecMenuItem(_("on KOReader start"), "Start", k),
                         self:genAutoExecMenuItem(_("on wake-up"), "Resume", k),
+                        self:genAutoExecMenuItem(_("on exiting sleep screen"), "OutOfScreenSaver", k),
                         self:genAutoExecMenuItem(_("on rotation"), "SetRotationMode", k),
                         self:genAutoExecMenuItem(_("on showing folder"), "PathChanged", k, true),
                         -- separator
@@ -347,9 +399,9 @@ function Profiles:getProfileFromCurrentBookSettings(new_name)
             "word_expansion",
             "visible_pages",
             "h_page_margins",
-            "sync_t_b_page_margins",
             "t_page_margin",
             "b_page_margin",
+            "sync_t_b_page_margins",
             "view_mode",
             "block_rendering_mode",
             "render_dpi",
@@ -475,6 +527,13 @@ function Profiles:genAutoExecMenuItem(text, event, profile_name, separator)
     end
     return {
         text = text,
+        enabled_func = function()
+            if event == "Resume" then
+                local screensaver_delay = G_reader_settings:readSetting("screensaver_delay")
+                return screensaver_delay == nil or screensaver_delay == "disable"
+            end
+            return true
+        end,
         checked_func = function()
             return util.tableGetValue(self.autoexec, event, profile_name)
         end,
@@ -876,6 +935,10 @@ function Profiles:onResume() -- global
     self:executeAutoExecEvent("Resume")
 end
 
+function Profiles:onOutOfScreenSaver() -- global
+    self:executeAutoExecEvent("OutOfScreenSaver")
+end
+
 function Profiles:onSetRotationMode(mode) -- global
     local event = "SetRotationMode"
     if self.autoexec[event] == nil then return end
@@ -930,13 +993,24 @@ end
 function Profiles:executeAutoExecEvent(event)
     if self.autoexec[event] == nil then return end
     for profile_name in pairs(self.autoexec[event]) do
-        self:executeAutoExec(profile_name)
+        self:executeAutoExec(profile_name, event)
     end
 end
 
-function Profiles:executeAutoExec(profile_name)
+function Profiles:executeAutoExec(profile_name, event)
     local profile = self.data[profile_name]
     if profile == nil then return end
+    if profile.settings.auto_exec_time_interval then
+        local now = os.date("%H:%M")
+        local start_time, end_time = unpack(profile.settings.auto_exec_time_interval)
+        local do_execute
+        if start_time < end_time then
+            do_execute = start_time <= now and now <= end_time
+        else
+            do_execute = (start_time <= now and now <= "23:59") or ("00:00" <= now and now <= end_time)
+        end
+        if not do_execute then return end
+    end
     if profile.settings.auto_exec_ask then
         UIManager:show(ConfirmBox:new{
             text = _("Do you want to execute profile?") .. "\n\n" .. profile_name .. "\n",
@@ -950,9 +1024,15 @@ function Profiles:executeAutoExec(profile_name)
         })
     else
         logger.dbg("Profiles - auto executing:", profile_name)
-        UIManager:tickAfterNext(function()
-            Dispatcher:execute(self.data[profile_name])
-        end)
+        if event == "CloseDocument" or event == "CloseDocumentAll" then
+            UIManager:tickAfterNext(function()
+                Dispatcher:execute(self.data[profile_name])
+            end)
+        else
+            UIManager:nextTick(function()
+                Dispatcher:execute(self.data[profile_name])
+            end)
+        end
     end
 end
 
@@ -1004,7 +1084,7 @@ function Profiles:executeAutoExecDocConditional(event)
                 end
             end
             if do_execute then
-                self:executeAutoExec(profile_name)
+                self:executeAutoExec(profile_name, event)
             end
         end
     end

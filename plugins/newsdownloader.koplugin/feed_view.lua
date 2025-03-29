@@ -169,7 +169,7 @@ end
 --
 function FeedView:flattenArray(base_array, source_array)
     for _, value in pairs(source_array) do
-        if not value[2] then
+        if value[2] == nil then
             -- If the value is empty, then it's probably supposed to be a line
             table.insert(base_array, "---")
         else

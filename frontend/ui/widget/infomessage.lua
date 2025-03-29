@@ -189,6 +189,10 @@ function InfoMessage:init()
 
         -- Reduce font size if the text is too long
         local cur_size = frame:getSize()
+        if self.force_one_line and not (self._initial_orig_font and self._initial_orig_size) then
+            self._initial_orig_font = text_widget.face.orig_font
+            self._initial_orig_size = text_widget.face.orig_size
+        end
         if cur_size and cur_size.h > max_height then
             local orig_font = text_widget.face.orig_font
             local orig_size = text_widget.face.orig_size
@@ -203,6 +207,12 @@ function InfoMessage:init()
                     if self.face.size < real_size then
                         break
                     end
+                end
+                if self.force_one_line and orig_size < 16 then
+                    -- Do not reduce the font size any longer, at around this point, our font is too small for the max_height check to be useful
+                    -- anymore (when icon_height), at those sizes (or lower) two lines fit inside the max_height so, simply disable it.
+                    self.face = Font:getFace(self._initial_orig_font, self._initial_orig_size)
+                    self.force_one_line = false
                 end
                 -- re-init this widget
                 self:free()

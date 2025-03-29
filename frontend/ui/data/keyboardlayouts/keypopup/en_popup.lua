@@ -513,6 +513,7 @@ return {
         southwest = "Ů",
         "Ū",
         "ɒ", -- turned alpha, open back rounded vowel IPA
+        "Ŭ", -- U with breve from Belarusan Latin alphabet
     },
     _u_ = {
         "u",
@@ -526,6 +527,7 @@ return {
         southwest = "ů",
         "ū",
         "ɒ", -- turned alpha, open back rounded vowel IPA
+        "ŭ", -- u with breve from Belarusan Latin alphabet
     },
     _V_ = {
         "V",
