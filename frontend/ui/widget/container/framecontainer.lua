@@ -90,6 +90,21 @@ function FrameContainer:onUnfocus()
     return false
 end
 
+local floor = math.floor
+local ceil = math.ceil
+
+local function paintRoundedRectRGB(bb, x, y, w, h, c, r)
+    x, y = ceil(x), ceil(y)
+    h, w = ceil(h), ceil(w)
+    if not r or r == 0 then
+        bb:paintRectRGB32(x, y, w, h, c)
+    else
+        if h < 2*r then r = floor(h/2) end
+        if w < 2*r then r = floor(w/2) end
+        bb:paintBorder(x, y, w, h, r, c, r)
+        bb:paintRectRGB32(x+r, y+r, w-2*r, h-2*r, c)
+    end
+end
 
 function FrameContainer:paintTo(bb, x, y)
     local my_size = self:getSize()
@@ -111,14 +126,27 @@ function FrameContainer:paintTo(bb, x, y)
     end
 
     if self.background then
-        if not self.radius or not self.bordersize then
-            bb:paintRoundedRect(x, y,
-                                container_width, container_height,
-                                self.background, self.radius)
+        local color_bg = not Blitbuffer.isColor8(self.background)
+        if color_bg then
+            if not self.radius or not self.bordersize then
+                paintRoundedRectRGB(bb, x, y,
+                                    container_width, container_height,
+                                    self.background, self.radius)
+            else
+                paintRoundedRectRGB(bb, x, y,
+                                    container_width, container_height,
+                                    self.background, self.radius + self.bordersize)
+            end
         else
-            bb:paintRoundedRect(x, y,
-                                container_width, container_height,
-                                self.background, self.radius + self.bordersize)
+            if not self.radius or not self.bordersize then
+                bb:paintRoundedRect(x, y,
+                                    container_width, container_height,
+                                    self.background, self.radius)
+            else
+                bb:paintRoundedRect(x, y,
+                                    container_width, container_height,
+                                    self.background, self.radius + self.bordersize)
+            end
         end
     end
     if self.stripe_width and self.stripe_color and not self.stripe_over then
