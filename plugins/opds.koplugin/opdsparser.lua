@@ -24,7 +24,7 @@ local function unescape(str)
             return unescape_map[s]
         elseif n == "#" then  -- unescape unicode
             local codePoint
-            -- Determine if thhe code point s is written in decimal or hexidecimal
+            -- Determine if the code point s is written as a decimal or hexidecimal number
             if string.sub(s,1,1) == "x" then
                 codePoint = tonumber(string.sub(s,2),16)
             else
