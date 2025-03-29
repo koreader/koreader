@@ -11,7 +11,6 @@ local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local Math = require("optmath")
-local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderProgress = require("readerprogress")
 local ReadHistory = require("readhistory")
@@ -93,7 +92,7 @@ ReaderStatistics.default_settings = {
     calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS,
     calendar_show_histogram = true,
     calendar_browse_future_months = false,
-    use_color_rendering = false,
+    color = false,
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
@@ -125,7 +124,7 @@ function ReaderStatistics:init()
         return -- disable in PIC documents
     end
 
-    self.use_color_rendering = self:useColorRendering()
+    self.color = self:useColorRendering()
     self.is_doc = false
     self.is_doc_not_frozen = false -- freeze finished books statistics
 
@@ -188,7 +187,7 @@ function ReaderStatistics:init()
 end
 
 function ReaderStatistics:onColorRenderingUpdate()
-    self.use_color_rendering = self:useColorRendering()
+    self.color = self:useColorRendering()
 end
 
 function ReaderStatistics:initData()

@@ -183,7 +183,7 @@ local CalendarWeek = InputContainer:extend{
     span_height = nil,
     font_size = 0,
     font_face = "xx_smallinfofont",
-    use_color_rendering = false,
+    color = false,
 }
 
 function CalendarWeek:init()
@@ -329,7 +329,7 @@ function CalendarWeek:update()
         for row, book in ipairs(day_books) do
             if book and book.start_day == col then
                 local fgcolor, bgcolor
-                if self.use_color_rendering then
+                if self.color then
                     fgcolor, bgcolor = unpack(SPAN_COLORS_RGB[(book.id % #SPAN_COLORS_RGB)+1])
                 else
                     fgcolor, bgcolor = unpack(SPAN_COLORS[(book.id % #SPAN_COLORS)+1])
@@ -391,7 +391,7 @@ local BookDailyItem = InputContainer:extend{
     width = nil,
     height = nil,
     padding = Size.padding.default,
-    use_color_rendering = false,
+    color = false,
 }
 
 function BookDailyItem:init()
@@ -417,7 +417,7 @@ function BookDailyItem:init()
 
     local title_max_width = self.dimen.w - 2 * Size.padding.default - checked_widget:getSize().w  - self.value_width
     local fgcolor, bgcolor
-    if self.use_color_rendering then
+    if self.color then
         fgcolor, bgcolor = unpack(SPAN_COLORS_RGB[(self.item.book_id % #SPAN_COLORS_RGB)+1])
     else
         fgcolor, bgcolor = unpack(SPAN_COLORS[(self.item.book_id % #SPAN_COLORS)+1])
@@ -865,7 +865,7 @@ function CalendarDayView:_populateBooks()
             value_width = value_width,
             height = self.book_item_height,
             show_parent = self,
-            use_color_rendering = self.reader_statistics.use_color_rendering,
+            color = self.reader_statistics.color,
         }
         table.insert(self.layout, { item })
         table.insert(self.book_items, item)
@@ -984,7 +984,7 @@ function CalendarDayView:refreshTimeline()
     for _, v in ipairs(self.kv_pairs) do
         if v.checked and v.periods then
             local fgcolor, bgcolor
-            if self.use_color_rendering then
+            if self.color then
                 fgcolor, bgcolor = unpack(SPAN_COLORS_RGB[(v.book_id % #SPAN_COLORS_RGB)+1])
             else
                 fgcolor, bgcolor = unpack(SPAN_COLORS[(v.book_id % #SPAN_COLORS)+1])
@@ -1400,7 +1400,7 @@ function CalendarView:_populateItems()
                 font_face = self.font_face,
                 font_size = self.span_font_size,
                 show_parent = self,
-                use_color_rendering = self.reader_statistics.use_color_rendering,
+                color = self.reader_statistics.color,
             }
             layout_row = {}
             table.insert(self.layout, layout_row)
@@ -1462,7 +1462,7 @@ function CalendarView:_populateItems()
                         end)
                     end,
                     min_month = self.min_month,
-                    use_color_rendering = self.reader_statistics.use_color_rendering,
+                    color = self.reader_statistics.color,
                 })
             end
         }
@@ -1490,7 +1490,7 @@ function CalendarView:showCalendarDayView(reader_statistics)
         day_ts = os.time({ year = date.year, month = date.month, day = date.day, hour = reader_statistics.settings.calendar_day_start_hour or 0, min = reader_statistics.settings.calendar_day_start_minute or 0 }),
         reader_statistics = reader_statistics,
         min_month = self.min_month,
-        use_color_rendering = reader_statistics.use_color_rendering,
+        color = reader_statistics.color,
     })
 end
 
