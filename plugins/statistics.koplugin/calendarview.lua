@@ -526,7 +526,7 @@ local CalendarDayView = FocusManager:extend{
     show_page = 1,
     kv_pairs = {},
     NB_VERTICAL_SEPARATORS_PER_HOUR = 6, -- one vertical line every 10 minutes
-    reader_statistics = nil,
+    color = false
 }
 
 function CalendarDayView:init()
