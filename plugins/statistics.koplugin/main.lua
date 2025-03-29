@@ -1,5 +1,4 @@
 local BD = require("ui/bidi")
-local BlitBuffer = require("ffi/blitbuffer")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
