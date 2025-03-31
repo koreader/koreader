@@ -1027,9 +1027,15 @@ function TouchMenu:search(search_for)
         for i, v in ipairs(item_table) do
             if type(v) == "table" and not v.ignored_by_menu_search then
                 local entry_text = v.text_func and v.text_func() or v.text
+                local entry_displayed_text = entry_text
                 is_disabled = is_disabled or v.enabled == false or (v.enabled_func and v.enabled_func() == false)
-                local entry_displayed_text = is_disabled and "▒ " .. entry_text or entry_text
-                local indent = text and ((" "):rep(math.min(depth-1, 6)) .. "→ ") or "→ " -- all spaces here and above are Hair Space U+200A
+                if is_disabled then
+                    entry_displayed_text = "\u{2592}\u{200A}" .. entry_displayed_text -- Medium Shade (▒) + Hair Space
+                end
+                local indent = "\u{2192}\u{200A}" -- Rightwards Arrow (→) + Hair Space
+                if text then
+                    indent = ("\u{200A}"):rep(2*math.min(depth-1, 6)) .. indent
+                end
                 local walk_text = text and (text .. "\n" .. indent .. entry_displayed_text) or (indent .. entry_displayed_text)
                 local walk_path = path .. "." .. i
                 if Utf8Proc.lowercase(entry_text):find(search_for, 1, true) then
