@@ -964,13 +964,9 @@ function FileManagerMenu:exitOrRestart(callback, force)
     end
 end
 
-function FileManagerMenu:onShowMenu(tab_index)
+function FileManagerMenu:onShowMenu(tab_index, do_not_show)
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
-    end
-
-    if not tab_index then
-        tab_index = G_reader_settings:readSetting("filemanagermenu_tab_index") or 1
     end
 
     local menu_container = CenterContainer:new{
@@ -983,9 +979,10 @@ function FileManagerMenu:onShowMenu(tab_index)
         local TouchMenu = require("ui/widget/touchmenu")
         main_menu = TouchMenu:new{
             width = Screen:getWidth(),
-            last_index = tab_index,
+            last_index = tab_index or G_reader_settings:readSetting("filemanagermenu_tab_index") or 1,
             tab_item_table = self.tab_item_table,
             show_parent = menu_container,
+            not_shown = do_not_show,
         }
     else
         local Menu = require("ui/widget/menu")
@@ -1004,7 +1001,9 @@ function FileManagerMenu:onShowMenu(tab_index)
     menu_container[1] = main_menu
     -- maintain a reference to menu_container
     self.menu_container = menu_container
-    UIManager:show(menu_container)
+    if not do_not_show then
+        UIManager:show(menu_container)
+    end
     return true
 end
 
@@ -1062,7 +1061,7 @@ function FileManagerMenu:onSetDimensions(dimen)
 end
 
 function FileManagerMenu:onMenuSearch()
-    self:onShowMenu()
+    self:onShowMenu(nil, true)
     self.menu_container[1]:onShowMenuSearch()
 end
 
