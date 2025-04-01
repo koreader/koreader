@@ -1016,7 +1016,7 @@ function TouchMenu:search(search_for)
     local found_menu_items = {}
 
     local MAX_MENU_DEPTH = 10 -- our menu max depth is currently 6
-    local function recurse(item_table, path, text, icon, depth)
+    local function recurse(item_table, path, text, icon, depth, is_disabled)
         if item_table.ignored_by_menu_search then
             return
         end
@@ -1027,8 +1027,16 @@ function TouchMenu:search(search_for)
         for i, v in ipairs(item_table) do
             if type(v) == "table" and not v.ignored_by_menu_search then
                 local entry_text = v.text_func and v.text_func() or v.text
-                local indent = text and ((" "):rep(math.min(depth-1, 6)) .. "→ ") or "→ " -- all spaces here are Hair Space U+200A
-                local walk_text = text and (text .. "\n" .. indent .. entry_text) or (indent .. entry_text)
+                local entry_displayed_text = entry_text
+                is_disabled = is_disabled or v.enabled == false or (v.enabled_func and v.enabled_func() == false)
+                if is_disabled then
+                    entry_displayed_text = "\u{2592}\u{200A}" .. entry_displayed_text -- Medium Shade (▒) + Hair Space
+                end
+                local indent = "\u{2192}\u{200A}" -- Rightwards Arrow (→) + Hair Space
+                if text then
+                    indent = ("\u{200A}"):rep(2*math.min(depth-1, 6)) .. indent
+                end
+                local walk_text = text and (text .. "\n" .. indent .. entry_displayed_text) or (indent .. entry_displayed_text)
                 local walk_path = path .. "." .. i
                 if Utf8Proc.lowercase(entry_text):find(search_for, 1, true) then
                     table.insert(found_menu_items, {entry_text, icon, walk_path, walk_text})
@@ -1038,7 +1046,7 @@ function TouchMenu:search(search_for)
                     sub_item_table = v.sub_item_table_func()
                 end
                 if sub_item_table and not sub_item_table.ignored_by_menu_search then
-                    recurse(sub_item_table, walk_path, walk_text, icon, depth)
+                    recurse(sub_item_table, walk_path, walk_text, icon, depth, is_disabled)
                 end
             end
         end
@@ -1053,6 +1061,9 @@ function TouchMenu:search(search_for)
 end
 
 function TouchMenu:openMenu(path, with_animation)
+    if self.not_shown then
+        UIManager:show(self.show_parent)
+    end
     local parts = {}
     for part in util.gsplit(path, "%.", false) do -- path is ie. "2.3.3.1"
         table.insert(parts, tonumber(part))
@@ -1157,24 +1168,30 @@ function TouchMenu:openMenu(path, with_animation)
                 end
             end
         elseif step == STEPS.MENU_ITEM_HIGHLIGHT then
-            if with_animation or #parts == 0 then
-                -- Even if no animation, highlight the final item (and don't unhighlight it)
-                local item_visible_index = (item_nb - 1) % self.perpage + 1
-                local item_widget
-                for i, w in ipairs(self.item_group) do
-                    if w.item_visible_index == item_visible_index then
-                        item_widget = w
-                        break
-                    end
-                end
-                if item_widget then
-                    highlightWidget(item_widget)
+            local item_visible_index = (item_nb - 1) % self.perpage + 1
+            local item_widget
+            for i, w in ipairs(self.item_group) do
+                if w.item_visible_index == item_visible_index then
+                    item_widget = w
+                    break
                 end
             end
-            if #parts == 0 then
-                step = STEPS.DONE
+            if item_widget then
+                local is_disabled = item_widget.item.enabled == false
+                    or (item_widget.item.enabled_func and item_widget.item.enabled_func() == false)
+                if is_disabled then
+                    -- do not go down to disabled submenu
+                    -- do not highlight, text of highlighted disabled item is not visible
+                    step = STEPS.DONE
+                else
+                    if with_animation or #parts == 0 then
+                        -- Even if no animation, highlight the final item (and don't unhighlight it)
+                        highlightWidget(item_widget)
+                    end
+                    step = #parts == 0 and STEPS.DONE or STEPS.MENU_ITEM_ENTER
+                end
             else
-                step = STEPS.MENU_ITEM_ENTER
+                step = STEPS.DONE
             end
         elseif step == STEPS.MENU_ITEM_ENTER then
             self:onMenuSelect(self.item_table[item_nb])
@@ -1290,6 +1307,7 @@ function TouchMenu:onShowMenuSearch()
         if #found_menu_items > 0 then
             local results_menu = Menu:new{
                 title = _("Search results"),
+                subtitle = T(_("Query: %1"), search_string),
                 item_table = get_current_search_results(),
                 width = math.floor(Screen:getWidth() * 0.9),
                 height = math.floor(Screen:getHeight() * 0.9),
