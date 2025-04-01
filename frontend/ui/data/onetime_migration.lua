@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20250302
+local CURRENT_MIGRATION_DATE = 20250318
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
