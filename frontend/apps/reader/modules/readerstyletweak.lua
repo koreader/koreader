@@ -720,11 +720,11 @@ function ReaderStyleTweak:addToMainMenu(menu_items)
 end
 
 function ReaderStyleTweak:onToggleStyleTweak(tweak_id, item, no_notification)
-    if self.tweaks_by_id[tweak_id] == nil then return true end
     local toggle
     if type(tweak_id) == "table" then -- Dispatcher action 'Style tweak set on/off'
         tweak_id, toggle = unpack(tweak_id)
     end
+    if self.tweaks_by_id[tweak_id] == nil then return true end
     local enabled, g_enabled = self:isTweakEnabled(tweak_id)
     if enabled == toggle then return true end
     local text
