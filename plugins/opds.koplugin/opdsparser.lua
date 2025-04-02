@@ -23,14 +23,14 @@ local function unescape(str)
         if unescape_map[s] then
             return unescape_map[s]
         elseif n == "#" then  -- unescape unicode
-            local codePoint
-            -- Determine if the code point s is written as a decimal or hexidecimal number
-            if string.sub(s,1,1) == "x" then
-                codePoint = tonumber(string.sub(s,2),16)
+            local codepoint
+            -- Determine if the code point is written as a decimal or hexadecimal number
+            if string.sub(s, 1, 1) == "x" then
+                codepoint = tonumber(string.sub(s, 2), 16)
             else
-                codePoint = tonumber(s)
+                codepoint = tonumber(s)
             end
-            return util.unicodeCodepointToUtf8(codePoint)
+            return util.unicodeCodepointToUtf8(codepoint)
         else
             return orig
         end
