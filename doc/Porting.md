@@ -25,7 +25,7 @@ Otherwise, when there'd be significant gain in doing so (i.e., when displaying m
 
 The actual framebuffer content is then refreshed (i.e., displayed) via device-specific ioctls, making the best effort in using device-specific capabilities, whether that be [optimized waveform modes](https://github.com/koreader/koreader-base/blob/a1fc4e43b7cce7a76b13224e145f9bada343d8ea/ffi/framebuffer_mxcfb.lua#L643-L655), hardware dithering or [hardware inversion](https://github.com/koreader/koreader-base/blob/a1fc4e43b7cce7a76b13224e145f9bada343d8ea/ffi/framebuffer_mxcfb.lua#L253-L256).
 
-The platform-specific Lua FFI modules for using the mxcfb driver are generated from the [kernel header files](https://github.com/koreader/koreader-base/ffi-cdecl/include) using [ffi-cdecl](https://github.com/koreader/ffi-cdecl). `ffi-cdecl` operates on [C files](https://github.com/koreader/koreader-base/ffi-cdecl/) which specify what to export.
+The platform-specific Lua FFI modules for using the mxcfb driver are generated from the [kernel header files](https://github.com/koreader/koreader-base/tree/master/ffi-cdecl/include) using [ffi-cdecl](https://github.com/koreader/ffi-cdecl). `ffi-cdecl` operates on [C files](https://github.com/koreader/koreader-base/tree/master/ffi-cdecl) which specify what to export.
 
 To use `ffi-cdecl` first you need to build the gcc plugin for the platform toolchain, e.g.:
 ```
@@ -33,7 +33,7 @@ cd ffi-cdecl
 make clean
 PATH=$HOME/x-tools/arm-remarkable-linux-gnueabihf/bin/:$PATH make CHOST=arm-remarkable-linux-gnueabihf CROSS_DIR=$HOME/x-tools/arm-remarkable-linux-gnueabihf/
 ```
-Then you can (re)generate the [ffi lua files](https://github.com/koreader/koreader-base/ffi), e.g.
+Then you can (re)generate the [ffi lua files](https://github.com/koreader/koreader-base/tree/master/ffi), e.g.
 ```
 PATH=$HOME/x-tools/arm-remarkable-linux-gnueabihf/bin/:$PATH ./ffi-cdecl arm-remarkable-linux-gnueabihf-gcc ../koreader/base/ffi-cdecl/mxcfb_remarkable_decl.c ../koreader/base/ffi/mxcfb_remarkable_h.lua
 ```
