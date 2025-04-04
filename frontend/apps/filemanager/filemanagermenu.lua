@@ -1056,7 +1056,7 @@ function FileManagerMenu:onShowMenu(tab_index, do_not_show)
     menu_container[1] = main_menu
     -- maintain a reference to menu_container
     self.menu_container = menu_container
-    if do_not_show ~= true then -- Menu search does not open the menu when called by a gesture
+    if not do_not_show then
         UIManager:show(menu_container)
     end
     return true
