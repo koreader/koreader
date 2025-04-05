@@ -7,13 +7,6 @@ command_exists() {
     type "$1" >/dev/null 2>/dev/null
 }
 
-link_fonts() {
-    syspath="../../../../share/fonts/truetype/$(basename "$1")"
-    for FILE in "$1"/*.ttf; do
-        ln -snf "${syspath}/${FILE##*/}" "${FILE}"
-    done
-}
-
 uname_to_debian() {
     case "$1" in
         x86_64) echo "amd64" ;;
@@ -27,17 +20,22 @@ write_changelog() {
     CHANGELOG_PATH="${1}/share/doc/koreader/changelog.Debian.gz"
     CHANGELOG=$(
         cat <<'END_HEREDOC'
+koreader (0.2) unstable; urgency=low
+  * don't use debian fonts: https://github.com/koreader/koreader/issues/13509
+
+ -- koreader <null@koreader.rocks>  Sat, 05 Apr 2025 00:00:00 +0100
+
 koreader (0.1) unstable; urgency=low
 
   * Fixes most lintian errors and warnings
 
- -- Martín Fdez <paziusss@gmail.com>  Thu, 14 May 2020 00:00:00 +0100
+ -- koreader <null@koreader.rocks>  Thu, 14 May 2020 00:00:00 +0100
 
 koreader (0.0.1) experimental; urgency=low
 
   * Initial release as Debian package (Closes: https://github.com/koreader/koreader/issues/3108)
 
- -- Martín Fdez <paziusss@gmail.com>  Tue, 03 Jan 2019 00:00:00 +0100
+ -- koreader <null@koreader.rocks>  Tue, 03 Jan 2019 00:00:00 +0100
 END_HEREDOC
     )
 
@@ -76,12 +74,12 @@ mkdir -p "${BASE_DIR}/DEBIAN"
 cat >"${BASE_DIR}/DEBIAN/control" <<EOF
 Section: graphics
 Priority: optional
-Depends: libsdl2-2.0-0, fonts-noto-hinted, fonts-droid-fallback, libc6 (>= 2.31)
+Depends: libsdl2-2.0-0, libc6 (>= 2.31)
 Architecture: ${DEB_ARCH}
 Version: ${VERSION}
 Installed-Size: $(du -ks "${BASE_DIR}/usr/" | cut -f 1)
 Package: koreader
-Maintainer: Martín Fdez <paziusss@gmail.com>
+Maintainer: koreader <null@koreader.rocks>
 Homepage: https://koreader.rocks
 Description: Ebook reader optimized for e-ink screens.
  It can open many formats and provides advanced text adjustments.
@@ -107,13 +105,6 @@ EOF
 
 # use absolute path to luajit in reader.lua
 sed -i 's,./luajit,/usr/lib/koreader/luajit,' "${BASE_DIR}/usr/lib/koreader/reader.lua"
-
-# use debian packaged fonts instead of our embedded ones to save a couple of MB.
-# Note: avoid linking against fonts-noto-cjk-extra, cause it weights ~200MB.
-link_fonts "${BASE_DIR}/usr/lib/koreader/fonts/noto"
-
-# DroidSansMono has a restrictive license. Replace it with DroidSansFallback
-ln -snf ../../../../share/fonts-droid-fallback/truetype/DroidSansFallback.ttf "${BASE_DIR}/usr/lib/koreader/fonts/droid/DroidSansMono.ttf"
 
 # lintian complains if shared libraries have execute rights.
 find "${BASE_DIR}" -type f -perm /+x -name '*.so*' -print0 | xargs -0 chmod a-x

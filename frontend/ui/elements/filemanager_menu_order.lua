@@ -13,6 +13,7 @@ local order = {
         "filemanager_display_mode",
         "filebrowser_settings",
         "----------------------------",
+        "show_filter",
         "sort_by",
         "reverse_sorting",
         "sort_mixed",

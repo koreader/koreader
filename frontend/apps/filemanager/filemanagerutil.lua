@@ -122,7 +122,7 @@ function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callba
     end
     local function genStatusButton(to_status)
         return {
-            text = BookList.getBookStatusString(to_status) .. (status == to_status and "  ✓" or ""),
+            text = BookList.getBookStatusString(to_status, false, true) .. (status == to_status and "  ✓" or ""),
             enabled = status ~= to_status,
             callback = function()
                 summary.status = to_status

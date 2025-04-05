@@ -20,7 +20,7 @@ local FileChooser = BookList:extend{
     path = lfs.currentdir(),
     show_path = true,
     parent = nil,
-    show_finished    = G_reader_settings:readSetting("show_finished", true), -- books marked as finished
+    show_filter      = G_reader_settings:readSetting("show_filter", {}),
     show_hidden      = G_reader_settings:readSetting("show_hidden", false), -- folders/files starting with "."
     show_unsupported = G_reader_settings:readSetting("show_unsupported", false), -- set to true to ignore file_filter
     file_filter = nil, -- function defined in the caller, returns true for files to be shown
@@ -92,7 +92,8 @@ function FileChooser:show_file(filename, fullpath)
         if filename:match(pattern) then return false end
     end
     if not self.show_unsupported and self.file_filter ~= nil and not self.file_filter(filename) then return false end
-    if not FileChooser.show_finished and fullpath ~= nil and BookList.getBookStatus(fullpath) == "complete" then return false end
+    if FileChooser.show_filter.status and fullpath ~= nil
+        and not FileChooser.show_filter.status[BookList.getBookStatus(fullpath)] then return false end
     return true
 end
 
@@ -164,8 +165,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         item.bidi_wrap_func = BD.filename
         item.is_file = true
         if collate.item_func ~= nil then
-            local book_info = collate.bookinfo_required and BookList.getBookInfo(item.path)
-            collate.item_func(item, book_info)
+            collate.item_func(item, self.ui)
         end
         if show_file_in_bold ~= false then
             if item.opened == nil then -- could be set in item_func
@@ -176,8 +176,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
                 item.bold = not item.bold
             end
         end
-        item.dim = self.filemanager and self.filemanager.selected_files
-                   and self.filemanager.selected_files[item.path]
+        item.dim = self.ui and self.ui.selected_files and self.ui.selected_files[item.path]
         item.mandatory = self:getMenuItemMandatory(item, collate)
     else -- folder
         if item.text == "./." then -- added as content of an unreadable directory
@@ -186,7 +185,7 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
             item.text = item.text.."/"
             item.bidi_wrap_func = BD.directory
             item.is_file = false
-            if collate.can_collate_mixed and collate.item_func ~= nil then
+            if collate.can_collate_mixed and collate.item_func ~= nil then -- used by user plugin/patch, don't remove
                 collate.item_func(item)
             end
             if dirpath then -- file browser or PathChooser
@@ -328,7 +327,7 @@ function FileChooser:refreshPath()
         self.prev_focused_path = self.focused_path
         self.focused_path = nil
     end
-    local subtitle = self.filemanager == nil and BD.directory(filemanagerutil.abbreviate(self.path))
+    local subtitle = self.name ~= "filemanager" and BD.directory(filemanagerutil.abbreviate(self.path)) -- PathChooser
     self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path], itemmatch, subtitle)
 end
 
@@ -354,8 +353,8 @@ function FileChooser:changeToPath(path, focused_path)
     end
 
     self:refreshPath()
-    if self.filemanager then
-        self.filemanager:handleEvent(Event:new("PathChanged", path))
+    if self.name == "filemanager" then
+        self.ui:handleEvent(Event:new("PathChanged", path))
     end
 end
 
@@ -399,7 +398,7 @@ function FileChooser:changePageToPath(path)
 end
 
 function FileChooser:toggleShowFilesMode(mode)
-    -- modes: "show_finished", "show_hidden", "show_unsupported"
+    -- modes: "show_hidden", "show_unsupported"
     FileChooser[mode] = not FileChooser[mode]
     G_reader_settings:saveSetting(mode, FileChooser[mode])
     self:refreshPath()
@@ -431,11 +430,11 @@ function FileChooser:onFileHold(item)
 end
 
 function FileChooser:getNextOrPreviousFileInFolder(curr_file, prev)
-    local show_finished = FileChooser.show_finished
-    FileChooser.show_finished = true
+    local show_filter = FileChooser.show_filter
+    FileChooser.show_filter = {}
     local curr_path = curr_file:match(".*/"):gsub("/$", "")
     local item_table = self:genItemTableFromPath(curr_path)
-    FileChooser.show_finished = show_finished
+    FileChooser.show_filter = show_filter
     local top_i, step, is_curr_file_found
     if prev then
         top_i = #item_table + 1
@@ -464,7 +463,7 @@ function FileChooser:selectAllFilesInFolder(do_select)
     for _, item in ipairs(self.item_table) do
         if item.is_file then
             if do_select then
-                self.filemanager.selected_files[item.path] = true
+                self.ui.selected_files[item.path] = true
                 item.dim = true
             else
                 item.dim = nil

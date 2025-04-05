@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -156,11 +157,6 @@ function FileManagerMenu:setUpdateItemTable()
         text = _("Settings"),
         sub_item_table = {
             {
-                text = _("Show finished books"),
-                checked_func = function() return FileChooser.show_finished end,
-                callback = function() FileChooser:toggleShowFilesMode("show_finished") end,
-            },
-            {
                 text = _("Show hidden files"),
                 checked_func = function() return FileChooser.show_hidden end,
                 callback = function() FileChooser:toggleShowFilesMode("show_hidden") end,
@@ -205,12 +201,14 @@ function FileManagerMenu:setUpdateItemTable()
                     },
                     {
                         text_func = function()
-                            return T(_("Item font size: %1"), FileChooser.font_size)
-                        end,
-                        callback = function(touchmenu_instance)
-                            local current_value = FileChooser.font_size
                             local default_value = FileChooser.getItemFontSize(G_reader_settings:readSetting("items_per_page")
                                 or FileChooser.items_per_page_default)
+                            return T(_("Item font size: %1"), FileChooser.font_size or default_value)
+                        end,
+                        callback = function(touchmenu_instance)
+                            local default_value = FileChooser.getItemFontSize(G_reader_settings:readSetting("items_per_page")
+                                or FileChooser.items_per_page_default)
+                            local current_value = FileChooser.font_size or default_value
                             local widget = SpinWidget:new{
                                 title_text =  _("Item font size"),
                                 value = current_value,
@@ -451,6 +449,7 @@ To:
         end
     end
 
+    self.menu_items.show_filter = self:getShowFilterMenuTable()
     self.menu_items.sort_by = self:getSortingMenuTable()
     self.menu_items.reverse_sorting = {
         text = _("Reverse sorting"),
@@ -882,8 +881,68 @@ dbg:guard(FileManagerMenu, 'setUpdateItemTable',
         end
     end)
 
+function FileManagerMenu:getShowFilterMenuTable()
+    local FileChooser = require("ui/widget/filechooser")
+    local statuses = { "new", "reading", "abandoned", "complete" }
+    local sub_item_table = {
+        {
+            text = BookList.getBookStatusString("all"):lower(),
+            checked_func = function()
+                return FileChooser.show_filter.status == nil
+            end,
+            radio = true,
+            callback = function()
+                FileChooser.show_filter.status = nil
+                self.ui.file_chooser:refreshPath()
+            end,
+            separator = true,
+        },
+    }
+    for _, v in ipairs(statuses) do
+        table.insert(sub_item_table, {
+            text = BookList.getBookStatusString(v):lower(),
+            checked_func = function()
+                return FileChooser.show_filter.status and FileChooser.show_filter.status[v]
+            end,
+            callback = function()
+                FileChooser.show_filter.status = FileChooser.show_filter.status or {}
+                FileChooser.show_filter.status[v] = not FileChooser.show_filter.status[v] or nil
+                local statuses_nb = util.tableSize(FileChooser.show_filter.status)
+                if statuses_nb == 0 or statuses_nb == #statuses then
+                    FileChooser.show_filter.status = nil
+                end
+                self.ui.file_chooser:refreshPath()
+            end,
+        })
+    end
+    return {
+        text_func = function()
+            local text
+            if FileChooser.show_filter.status == nil then
+                text = BookList.getBookStatusString("all"):lower()
+            else
+                for _, v in ipairs(statuses) do
+                    if FileChooser.show_filter.status[v] then
+                        local status_string = BookList.getBookStatusString(v):lower()
+                        text = text and text .. ", " .. status_string or status_string
+                    end
+                end
+            end
+            return T(_("Book status: %1"), text)
+        end,
+        sub_item_table = sub_item_table,
+        hold_callback = function(touchmenu_instance)
+            FileChooser.show_filter.status = nil
+            self.ui.file_chooser:refreshPath()
+            touchmenu_instance:updateItems()
+        end,
+    }
+end
+
 function FileManagerMenu:getSortingMenuTable()
-    local sub_item_table = {}
+    local sub_item_table = {
+        max_per_page = 9, -- metadata collates in page 2
+    }
     for k, v in pairs(self.ui.file_chooser.collates) do
         table.insert(sub_item_table, {
             text = v.text,
@@ -893,9 +952,7 @@ function FileManagerMenu:getSortingMenuTable()
                 return k == id
             end,
             callback = function()
-                G_reader_settings:saveSetting("collate", k)
-                self.ui.file_chooser:clearSortingCache()
-                self.ui.file_chooser:refreshPath()
+                self.ui:onSetSortBy(k)
             end,
         })
     end
@@ -962,13 +1019,9 @@ function FileManagerMenu:exitOrRestart(callback, force)
     end
 end
 
-function FileManagerMenu:onShowMenu(tab_index)
+function FileManagerMenu:onShowMenu(tab_index, do_not_show)
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
-    end
-
-    if not tab_index then
-        tab_index = G_reader_settings:readSetting("filemanagermenu_tab_index") or 1
     end
 
     local menu_container = CenterContainer:new{
@@ -981,9 +1034,10 @@ function FileManagerMenu:onShowMenu(tab_index)
         local TouchMenu = require("ui/widget/touchmenu")
         main_menu = TouchMenu:new{
             width = Screen:getWidth(),
-            last_index = tab_index,
+            last_index = tab_index or G_reader_settings:readSetting("filemanagermenu_tab_index") or 1,
             tab_item_table = self.tab_item_table,
             show_parent = menu_container,
+            not_shown = do_not_show,
         }
     else
         local Menu = require("ui/widget/menu")
@@ -1002,7 +1056,9 @@ function FileManagerMenu:onShowMenu(tab_index)
     menu_container[1] = main_menu
     -- maintain a reference to menu_container
     self.menu_container = menu_container
-    UIManager:show(menu_container)
+    if not do_not_show then
+        UIManager:show(menu_container)
+    end
     return true
 end
 
@@ -1060,7 +1116,7 @@ function FileManagerMenu:onSetDimensions(dimen)
 end
 
 function FileManagerMenu:onMenuSearch()
-    self:onShowMenu()
+    self:onShowMenu(nil, true)
     self.menu_container[1]:onShowMenuSearch()
 end
 

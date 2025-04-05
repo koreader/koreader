@@ -172,6 +172,7 @@ local settingsList = {
     follow_nearest_internal_link = {category="arg", event="GoToInternalPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest internal link"), reader=true},
     select_prev_page_link = { category="none", event = "SelectPrevPageLink", title=_("Select previous link in current page"), reader=true, condition=not Device:isTouchDevice()},
     select_next_page_link = { category="none", event = "SelectNextPageLink", title=_("Select next link in current page"), reader=true, condition=not Device:isTouchDevice()},
+    toggle_tap_links = {category="none", event="ToggleTapLinks", title=_("Toggle tap-to-follow links"), reader=true, condition=Device:isTouchDevice()},
     add_location_to_history = {category="none", event="AddCurrentLocationToStack", arg=true, title=_("Add current location to history"), reader=true},
     clear_location_history = {category="none", event="ClearLocationStack", arg=true, title=_("Clear location history"), reader=true, separator=true},
     ----
@@ -407,6 +408,7 @@ local dispatcher_menu_order = {
     "follow_nearest_internal_link",
     "select_prev_page_link",
     "select_next_page_link",
+    "toggle_tap_links",
     "add_location_to_history",
     "clear_location_history",
     ----
@@ -616,8 +618,9 @@ function Dispatcher:removeAction(name)
 end
 
 local function iter_func(settings)
-    if settings and settings.settings and settings.settings.order then
-        return ipairs(settings.settings.order)
+    local order = util.tableGetValue(settings, "settings", "order")
+    if order and #order > 1 then
+        return ipairs(order)
     else
         return pairs(settings)
     end
@@ -654,7 +657,8 @@ function Dispatcher:getNameFromItem(item, settings, dont_show_value)
                 settingsList[item].args, settingsList[item].toggle = settingsList[item].args_func()
             end
             local value_num = util.arrayContains(settingsList[item].args, value)
-            display_value = settingsList[item].toggle[value_num] or string.format("%.1f", value)
+            display_value = settingsList[item].toggle[value_num]
+                or (type(value) == "number" and string.format("%.1f", value) or value)
         end
     elseif category == "absolutenumber" then
         display_value = tostring(value)

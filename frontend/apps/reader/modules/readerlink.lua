@@ -460,15 +460,15 @@ From the footnote popup, you can jump to the footnote location in the book by sw
         local footnote_popup_settings_items = {}
         table.insert(menu_items.follow_links.sub_item_table, 5, {
             text = _("Footnote popup settings"),
+            enabled_func = function()
+                return isFootnoteLinkInPopupEnabled() and
+                    (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
+            end,
             sub_item_table = footnote_popup_settings_items,
             separator = true,
         })
         table.insert(footnote_popup_settings_items, {
             text = _("Show more links as footnotes"),
-            enabled_func = function()
-                return isFootnoteLinkInPopupEnabled() and
-                    (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
-            end,
             checked_func = isPreferFootnoteEnabled,
             callback = function()
                 G_reader_settings:saveSetting("link_prefer_footnote",
@@ -479,10 +479,6 @@ From the footnote popup, you can jump to the footnote location in the book by sw
         })
         table.insert(footnote_popup_settings_items, {
             text = _("Use book font as popup font"),
-            enabled_func = function()
-                return isFootnoteLinkInPopupEnabled() and
-                    (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
-            end,
             checked_func = function()
                 return G_reader_settings:isTrue("footnote_popup_use_book_font")
             end,
@@ -493,10 +489,6 @@ From the footnote popup, you can jump to the footnote location in the book by sw
         })
         table.insert(footnote_popup_settings_items, {
             text = _("Set footnote popup font size"),
-            enabled_func = function()
-                return isFootnoteLinkInPopupEnabled() and
-                    (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
-            end,
             keep_menu_open = true,
             callback = function()
                 local spin_widget
@@ -701,6 +693,15 @@ function ReaderLink:onTap(_, ges)
         end
         return self:onGoToPageLink(ges, isTapIgnoreExternalLinksEnabled(), max_distance)
     end
+end
+
+function ReaderLink:onToggleTapLinks()
+    G_reader_settings:flipNilOrTrue("tap_to_follow_links")
+    local tap_links_status = isTapToFollowLinksOn() and _("on") or _("off")
+    UIManager:show(Notification:new{
+        text = T(_("Tap to follow links: %1"), tap_links_status),
+    })
+    return true
 end
 
 function ReaderLink:getCurrentLocation()

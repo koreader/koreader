@@ -920,7 +920,7 @@ function Menu:init()
         }
     end
     -- delegate swipe gesture to GestureManager in filemanager
-    if not self.filemanager then
+    if self.name ~= "filemanager" then
         self.ges_events.Swipe = {
             GestureRange:new{
                 ges = "swipe",
@@ -1306,7 +1306,7 @@ end
 function Menu:goToMenuItemMatching(search_string, goto_letter)
     search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
     for i, item in ipairs(self.item_table) do
-        if not item.is_go_up and not (goto_letter and item.is_file == false) then -- skip folders in "Go to letter"
+        if not item.is_go_up then
             local item_text = Utf8Proc.lowercase(util.fixUtf8(item.text, "?"))
             local idx = item_text:find(search_string)
             if idx and (idx == 1 or not goto_letter) then
