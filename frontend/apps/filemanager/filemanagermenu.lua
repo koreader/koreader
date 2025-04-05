@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -155,11 +156,6 @@ function FileManagerMenu:setUpdateItemTable()
     self.menu_items.filebrowser_settings = {
         text = _("Settings"),
         sub_item_table = {
-            {
-                text = _("Show finished books"),
-                checked_func = function() return FileChooser.show_finished end,
-                callback = function() FileChooser:toggleShowFilesMode("show_finished") end,
-            },
             {
                 text = _("Show hidden files"),
                 checked_func = function() return FileChooser.show_hidden end,
@@ -453,6 +449,7 @@ To:
         end
     end
 
+    self.menu_items.show_filter = self:getShowFilterMenuTable()
     self.menu_items.sort_by = self:getSortingMenuTable()
     self.menu_items.reverse_sorting = {
         text = _("Reverse sorting"),
@@ -883,6 +880,64 @@ dbg:guard(FileManagerMenu, 'setUpdateItemTable',
             widget:addToMainMenu(mock_menu_items)
         end
     end)
+
+function FileManagerMenu:getShowFilterMenuTable()
+    local FileChooser = require("ui/widget/filechooser")
+    local statuses = { "new", "reading", "abandoned", "complete" }
+    local sub_item_table = {
+        {
+            text = BookList.getBookStatusString("all"):lower(),
+            checked_func = function()
+                return FileChooser.show_filter.status == nil
+            end,
+            radio = true,
+            callback = function()
+                FileChooser.show_filter.status = nil
+                self.ui.file_chooser:refreshPath()
+            end,
+            separator = true,
+        },
+    }
+    for _, v in ipairs(statuses) do
+        table.insert(sub_item_table, {
+            text = BookList.getBookStatusString(v):lower(),
+            checked_func = function()
+                return FileChooser.show_filter.status and FileChooser.show_filter.status[v]
+            end,
+            callback = function()
+                FileChooser.show_filter.status = FileChooser.show_filter.status or {}
+                FileChooser.show_filter.status[v] = not FileChooser.show_filter.status[v] or nil
+                local statuses_nb = util.tableSize(FileChooser.show_filter.status)
+                if statuses_nb == 0 or statuses_nb == #statuses then
+                    FileChooser.show_filter.status = nil
+                end
+                self.ui.file_chooser:refreshPath()
+            end,
+        })
+    end
+    return {
+        text_func = function()
+            local text
+            if FileChooser.show_filter.status == nil then
+                text = BookList.getBookStatusString("all"):lower()
+            else
+                for _, v in ipairs(statuses) do
+                    if FileChooser.show_filter.status[v] then
+                        local status_string = BookList.getBookStatusString(v):lower()
+                        text = text and text .. ", " .. status_string or status_string
+                    end
+                end
+            end
+            return T(_("Book status: %1"), text)
+        end,
+        sub_item_table = sub_item_table,
+        hold_callback = function(touchmenu_instance)
+            FileChooser.show_filter.status = nil
+            self.ui.file_chooser:refreshPath()
+            touchmenu_instance:updateItems()
+        end,
+    }
+end
 
 function FileManagerMenu:getSortingMenuTable()
     local sub_item_table = {

@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20250318
+local CURRENT_MIGRATION_DATE = 20250405
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -867,6 +867,23 @@ if last_migration_date < 20250318 then
     for _, v in ipairs(old_plugins) do
         ffiUtil.purgeDir(base .. v .. ".koplugin")
     end
+end
+
+-- 20250405, Modify file browser show_finished setting to show_filter table.
+-- https://github.com/koreader/koreader/pull/13503
+if last_migration_date < 20250405 then
+    logger.info("Performing one-time migration for 20250405")
+
+    if G_reader_settings:isFalse("show_finished") then
+        G_reader_settings:saveSetting("show_filter", {
+            status = {
+                new       = true,
+                reading   = true,
+                abandoned = true,
+            },
+        })
+    end
+    G_reader_settings:delSetting("show_finished")
 end
 
 -- We're done, store the current migration date
