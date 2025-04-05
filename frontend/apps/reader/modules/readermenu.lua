@@ -495,7 +495,7 @@ function ReaderMenu:onPressMenu()
     return true
 end
 
-function FileManagerMenu:onKeyPressShowMenu(_, key_ev)
+function ReaderMenu:onKeyPressShowMenu(_, key_ev)
     return self:onShowMenu()
 end
 
