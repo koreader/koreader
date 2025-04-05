@@ -20,6 +20,7 @@ local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local Widget = require("ui/widget/widget")
 local Input = Device.input
 local Screen = Device.screen
 local logger = require("logger")
@@ -194,6 +195,7 @@ function PageBrowserWidget:init()
 end
 
 function PageBrowserWidget:registerKeyEvents()
+    -- XXX be really sure we are coherent with when we set self.build_focus_layout in :init()
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.ShowMenu = { { "Menu" } }
@@ -351,6 +353,8 @@ function PageBrowserWidget:updateLayout()
     self.grid:clear()
     local focus_row = nil
     local focus_row_index = 0
+    local focus_nav_border = Screen:scaleBySize(3)
+    local focus_grid_items = {}
     for idx = 1, self.nb_grid_items do
         local row = math.floor((idx-1)/self.nb_cols) -- start from 0
         local col = (idx-1) % self.nb_cols
@@ -368,26 +372,45 @@ function PageBrowserWidget:updateLayout()
         local grid_item = CenterContainer:new{
             dimen = self.grid_item_dimen:copy(),
         }
-        local grid_item_frame = FrameContainer:new{
+        table.insert(self.grid, FrameContainer:new{
             show_pagenum = show_pagenum,
             overlap_offset = {offset_x, offset_y},
             margin = 0,
-            padding = Size.border.thin,
+            padding = 0,
             bordersize = 0,
-            focusable = true,
-            focus_border_size = Size.border.thin * 2,
-            focus_inner_border = true,
             background = Blitbuffer.COLOR_WHITE,
             grid_item,
-        }
-        table.insert(self.grid, grid_item_frame)
+        })
         if self.build_focus_layout then
-            if (not focus_row or focus_row_index ~= row) then
+            local nav_item_frame = FrameContainer:new{
+                is_nav_item = true,
+                overlap_offset = {offset_x, offset_y},
+                initial_overlap_offset = {offset_x, offset_y},
+                margin = 0,
+                padding = 0,
+                bordersize = 0,
+                focusable = true,
+                focus_border_size = focus_nav_border,
+                focus_inner_border = true,
+                -- background = Blitbuffer.COLOR_WHITE,
+                Widget:new{
+                    dimen = self.grid_item_dimen:copy()
+                }
+            }
+            table.insert(focus_grid_items, nav_item_frame)
+            if not focus_row or focus_row_index ~= row then
                 focus_row = {}
                 focus_row_index = row
                 table.insert(self.layout, focus_row)
             end
-            table.insert(focus_row, grid_item_frame)
+            table.insert(focus_row, nav_item_frame)
+        end
+    end
+    if self.build_focus_layout then
+        -- Append these just after the grid items, so we can access them
+        -- by tile index with just adding self.nb_grid_items
+        while #focus_grid_items > 0 do
+            table.insert(self.grid, table.remove(focus_grid_items, 1))
         end
     end
 
@@ -426,6 +449,15 @@ function PageBrowserWidget:update()
             local widget = table.remove(self.grid, i)
             widget:free()
         end
+        -- We could restore original offset and dimen as pages may not all have
+        -- the same size with PDF. But it feels best to keep using the previous
+        -- thumbnail size as most often, the new thumbnail will have that size.
+        --[[
+        if self.grid[i] and self.grid[i].is_nav_item then
+            self.grid[i].overlap_offset = self.grid[i].initial_overlap_offset
+            self.grid[i][1].dimen = self.grid_item_dimen:copy()
+        end
+        ]]--
     end
 
     if not self.focus_page then
@@ -641,19 +673,6 @@ function PageBrowserWidget:update()
         -- extended_sep_pages = extended_sep_pages,
     }
     self.row[1] = row
-    if self.build_focus_layout then
-        -- NT: update layout
-        -- remove existing BookMapRow from layout
-        if #self.layout > self.nb_rows then
-            for i = self.nb_rows + 1, #self.layout do
-                self.layout[i] = nil
-            end
-        end
-        -- add new BookMapRow layout
-        for _, focus_row in ipairs(row.focus_layout) do
-            table.insert(self.layout, focus_row)
-        end
-    end
 
     local bd_mirrored_left_spacing = 0
     if BD.mirroredUILayout() and blank_page_slots_after_end > 0 then
@@ -720,7 +739,11 @@ function PageBrowserWidget:update()
             end
         end
     end
-    self:moveFocusTo(1, 1, FocusManager.FOCUS_ONLY_ON_NT)
+    if self.build_focus_layout then
+        self.selected.x = math.min(self.selected.x, self.nb_cols)
+        self.selected.y = math.min(self.selected.y, self.nb_rows)
+        self:moveFocusTo(self.selected.x, self.selected.y, FocusManager.FOCUS_ONLY_ON_NT)
+    end
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
@@ -859,6 +882,23 @@ function PageBrowserWidget:showTile(grid_idx, page, tile, do_refresh)
         table.insert(self.grid, page_num_widget)
     end
 
+    local prev_nav_item_dimen
+    if self.build_focus_layout then
+        -- Resize the focus navigation frame from the grid item size to the page thumbnail size
+        local nav_item_frame = self.grid[self.nb_grid_items + grid_idx]
+        prev_nav_item_dimen = nav_item_frame.dimen and nav_item_frame.dimen:copy()
+        local thumb_frame_dimen = thumb_frame:getSize():copy()
+        local dw = self.grid_item_width - thumb_frame_dimen.w
+        local dh = self.grid_item_height - thumb_frame_dimen.h
+        local dx = math.floor(dw/2)
+        local dy = math.floor(dh/2)
+        local offset_x = nav_item_frame.initial_overlap_offset[1] + dx
+        local offset_y = nav_item_frame.initial_overlap_offset[2] + dy
+        nav_item_frame.overlap_offset = {offset_x, offset_y}
+        nav_item_frame[1].dimen = thumb_frame_dimen
+        nav_item_frame.dimen = nil
+    end
+
     if do_refresh then
         if self.wait_for_refresh_on_show_tile then
             self.wait_for_refresh_on_show_tile = nil
@@ -872,10 +912,14 @@ function PageBrowserWidget:showTile(grid_idx, page, tile, do_refresh)
                 -- by a BookMap launched from the ribbon: don't refresh.
                 return
             end
+            local dimen = thumb_frame.dimen
             if page_num_widget then
-                return "ui", thumb_frame.dimen:combine(page_num_widget.dimen)
+                dimen = dimen:combine(page_num_widget.dimen)
             end
-            return "ui", thumb_frame.dimen
+            if prev_nav_item_dimen then
+                dimen = dimen:combine(prev_nav_item_dimen)
+            end
+            return "ui", dimen
         end)
     end
 end
@@ -1351,6 +1395,46 @@ end
 function PageBrowserWidget:onScrollRowDown()
     if self:updateFocusPage(self.nb_cols, true) then
         self:update()
+    end
+    return true
+end
+
+function PageBrowserWidget:_wrapAroundY(dy)
+    if dy > 0 then
+        self:onScrollRowDown()
+    elseif dy < 0 then
+        self:onScrollRowUp()
+    end
+    return true
+end
+
+function PageBrowserWidget:_wrapAroundX(dx)
+    if dx < 0 then
+        if self.nb_rows == 1 then
+            -- With a single row, it's best to slide one item rather
+            -- than the full row and getting a bit lost
+            if self:updateFocusPage(-1, true) then
+                self:update()
+            end
+        elseif self.selected.y == 1 then
+            self:onScrollRowUp()
+            self.selected.x = self.nb_cols
+        else
+            self.selected.y = self.selected.y - 1
+            self.selected.x = self.nb_cols
+        end
+    elseif dx > 0 then
+        if self.nb_rows == 1 then
+            if self:updateFocusPage(1, true) then
+                self:update()
+            end
+        elseif self.selected.y == self.nb_rows then
+            self:onScrollRowDown()
+            self.selected.x = 1
+        else
+            self.selected.y = self.selected.y + 1
+            self.selected.x = 1
+        end
     end
     return true
 end

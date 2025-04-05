@@ -530,4 +530,18 @@ function FocusManager:onKeyPress(key)
 end
 FocusManager.onKeyRepeat = FocusManager.onKeyPress
 
+function FocusManager:getFocusableWidgetXY(widget)
+    if not self.layout then
+        return
+    end
+    for y, row in ipairs(self.layout) do
+        for x, w in ipairs(row) do
+            if w == widget then
+                return x, y
+            end
+        end
+    end
+end
+
+
 return FocusManager

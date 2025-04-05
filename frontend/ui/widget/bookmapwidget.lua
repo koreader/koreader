@@ -113,7 +113,6 @@ end
 
 function BookMapRow:init()
     self.focus_layout = {}
-    local enable_invisible_focus_page_slot = Device:hasDPad() and Device:useDPadAsActionKeys()
     local _mirroredUI = BD.mirroredUILayout()
     self.dimen = Geom:new{ x = 0, y = 0, w = self.width, h = self.height }
 
@@ -252,8 +251,8 @@ function BookMapRow:init()
                     padding = 0,
                     bordersize = self.toc_span_border,
                     background = bgcolor,
-                    focusable = true,
-                    focus_border_size = self.toc_span_border * 3,
+                    focusable = self.enable_focus_navigation,
+                    focus_border_size = self.focus_nav_border,
                     focus_inner_border = true,
                     CenterContainer:new{
                         dimen = Geom:new{
@@ -264,8 +263,8 @@ function BookMapRow:init()
                     }
                 }
                 table.insert(self.pages_frame, span_w)
-                if enable_invisible_focus_page_slot then
-                    if (not focus_row or focus_row_offset_y ~= offset_y) then
+                if self.enable_focus_navigation then
+                    if not focus_row or focus_row_offset_y ~= offset_y then
                         focus_row = {}
                         focus_row_offset_y = offset_y
                         table.insert(self.focus_layout, focus_row)
@@ -357,17 +356,11 @@ function BookMapRow:init()
     self.pages_markers = {}
     self.indicators = {}
     self.bottom_texts = {}
-    local invisible_focusable_page_slots = nil
-    local focus_border_size = Size.border.thin * 3;
-    local invisible_widget = nil
-    if enable_invisible_focus_page_slot then
-        invisible_focusable_page_slots = {}
-        invisible_widget = Widget:new{
-            dimen = Geom:new{
-                w = self.page_slot_width + 1 - focus_border_size * 2,
-                h = self.span_height - focus_border_size * 2,
-            }
-        }
+
+    -- For focus navigation (with keys), we need empty widgets over page slots,
+    -- that will only get a border when focused and lose it when unfocused.
+    local invisible_focusable_page_slots = {}
+    if self.enable_focus_navigation then
         table.insert(self.focus_layout, invisible_focusable_page_slots)
     end
 
@@ -432,25 +425,44 @@ function BookMapRow:init()
             end
             prev_page_was_read = false
         end
-        if enable_invisible_focus_page_slot then
+        if self.enable_focus_navigation then
             local x
             if _mirroredUI then
-                x = self:getPageX(page, true) - Size.line.thin
+                x = self:getPageX(page, true)
             else
                 x = self:getPageX(page)
             end
+            local x = self:getPageX(page)
+            local w = self:getPageX(page, true) - x
+            -- This + 1 and the one below for overlap_offset seem to give the right
+            -- appearance (but I can't really logically make out why...)
+            if self.with_page_sep then
+                w = w + 1
+            end
+            if (not _mirroredUI and page == self.end_page) or
+                   (_mirroredUI and page == self.start_page) then
+                w = w - 1 -- needed visual fix for similar look at start and end
+            end
             local invisible_focusable_page_slot = FrameContainer:new{
-                overlap_offset = {x, self.pages_frame_height - self.span_height},
+                overlap_offset = {x + 1 - self.focus_nav_border, self.pages_frame_height - self.span_height},
                 margin = 0,
-                padding = focus_border_size,
+                padding = self.focus_nav_border,
                 bordersize = 0,
                 focusable = true,
-                focus_border_size = focus_border_size,
+                focus_border_size = self.focus_nav_border,
                 focus_inner_border = true,
-                invisible_widget
+                Widget:new{
+                    dimen = Geom:new{
+                        w = w,-- + 2*self.focus_nav_border,
+                        h = math.floor(1.2 * self.span_height) - 2*self.focus_nav_border,
+                    }
+                }
             }
             table.insert(self.pages_frame, invisible_focusable_page_slot)
             table.insert(invisible_focusable_page_slots, invisible_focusable_page_slot)
+            if page == self.focus_nav_page then
+                invisible_focusable_page_slots.focused_widget_idx = #invisible_focusable_page_slots
+            end
         end
         -- Extended separators below the baseline if requested (by PageBrowser
         -- to show the start of thumbnail rows)
@@ -654,7 +666,8 @@ end
 -- BookMapWidget: shows a map of content, including TOC, bookmarks, read pages, non-linear flows...
 local BookMapWidget = FocusManager:extend{
     -- Focus page: show the BookMapRow containing this page
-    -- in the middle of screen
+    -- in the middle of screen (despite its name, this has
+    -- nothing to do with FocusManager and focus navigation)
     focus_page = nil,
     -- Should only be nil on the first launch via ReaderThumbnail
     launcher = nil,
@@ -663,14 +676,20 @@ local BookMapWidget = FocusManager:extend{
     -- Restricted mode, as initial view (all on one screen), but allowing chapter levels changes
     overview_mode = false,
 
+    -- Border around focused items (page slots, chapter titles) on non-touch devices
+    -- (this needs to be wider than BookMapRow.toc_span_border or they won't show)
+    focus_nav_border = Size.border.thick,
+
     -- Make this local subwidget available for reuse by PageBrowser
     BookMapRow = BookMapRow,
 }
 
 function BookMapWidget:init()
-    self.layout = {}
-    self.scroll_row_layout = {}
-    self.need_focus_print = false
+    -- On Touch devices, even with keys, we don't really need to be able
+    -- to navigate focus with keys, and we can avoid consuming memory
+    -- with its huge data structures.
+    self.enable_focus_navigation = not Device:isTouchDevice() and Device:hasDPad() and Device:useDPadAsActionKeys()
+
     if self.ui.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
@@ -811,6 +830,12 @@ function BookMapWidget:init()
         ignore_events = {"swipe"},
         self.vgroup,
     }
+    -- Our event handlers are named the same as in ScrollableContainer, so even
+    -- if we'd add the key event in ignore_events above, if we register them here
+    -- with these same names, they'll be processed by ScrollableContainer's own
+    -- handlers. So, override its handlers so they become pass-through.
+    self.cropping_widget.onScrollPageUp = function() return false end
+    self.cropping_widget.onScrollPageDown = function() return false end
 
     self[1] = FrameContainer:new{
         width = self.dimen.w,
@@ -852,12 +877,17 @@ function BookMapWidget:init()
 end
 
 function BookMapWidget:registerKeyEvents()
+    -- XXX be really sure we are coherent with when we set self.enable_focus_navigation in :init()
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.ShowBookMapMenu = { { "Menu" } }
         self.key_events.ScrollPageUp = { { Input.group.PgBack } }
         self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
         if Device:isTouchDevice() then
+            -- Remove Up/down handling by FocusManager (there is no ordering/priority
+            -- handling for key_events, unlike touch zones)
+            self.key_events.FocusUp = nil
+            self.key_events.FocusDown = nil
             self.key_events.ScrollRowUp = { { "Up" } }
             self.key_events.ScrollRowDown = { { "Down" } }
         elseif Device:hasScreenKB() or Device:hasKeyboard() then
@@ -896,7 +926,9 @@ function BookMapWidget:updateEditableStuff(update_view)
 end
 
 function BookMapWidget:update()
-    self.scroll_row_layout = {}
+    self.layout = {}
+    self.cur_focused_widget = nil
+
     if not self.focus_page then -- Initial display
         -- Focus (show at the middle of screen) on the BookMapRow that contains
         -- current page
@@ -917,7 +949,6 @@ function BookMapWidget:update()
     -- Reset main widgets
     self.vgroup:clear()
     self.cropping_widget:reset()
-    self:moveFocusTo(1, 1, FocusManager.FOCUS_ONLY_ON_NT)
 
     self.alt_theme = G_reader_settings:isTrue("book_map_alt_theme")
 
@@ -1041,13 +1072,19 @@ function BookMapWidget:update()
                 if self.flat_map then
                     if item.page == p_start then
                         cur_left_spacing = self.row_left_spacing + self.flat_toc_level_indent * (item.depth-1)
-                        local txt_max_width = self.row_width - cur_left_spacing
+                        -- We'll display focus with inner borders, possibly drawn over the text.
+                        -- Adding top and bottom padding does not seem needed, but we need
+                        -- some left and right padding (for the border, and some thin one before the text)
+                        local h_padding = self.enable_focus_navigation and Size.border.default + Size.border.thin or 0
+                        local txt_max_width = self.row_width - cur_left_spacing - 2*h_padding
                         local toc_title = FrameContainer:new{
                             margin = 0,
-                            padding = Size.border.thin * 3,
+                            padding = 0,
+                            padding_left = h_padding,
+                            padding_right = h_padding,
                             bordersize = 0,
-                            focusable = true,
-                            focus_border_size = Size.border.thin * 3,
+                            focusable = self.enable_focus_navigation,
+                            focus_border_size = self.focus_nav_border,
                             focus_inner_border = true,
                             TextBoxWidget:new{
                                 text = self.ui.toc:cleanUpTocTitle(item.title, true),
@@ -1055,7 +1092,9 @@ function BookMapWidget:update()
                                 face = self.flat_toc_depth_faces[item.depth],
                             }
                         }
-                        table.insert(self.scroll_row_layout, {toc_title})
+                        if self.enable_focus_navigation then
+                            table.insert(self.layout, {toc_title})
+                        end
                         table.insert(self.vgroup, HorizontalGroup:new{
                             HorizontalSpan:new{
                                 width = cur_left_spacing,
@@ -1066,7 +1105,7 @@ function BookMapWidget:update()
                         })
                         -- Add a bit more spacing for the BookMapRow(s) underneath this Toc item title
                         -- (so the page number painted in this spacing feels included in the indentation)
-                        cur_left_spacing = cur_left_spacing + Size.span.horizontal_default + toc_title.padding
+                        cur_left_spacing = cur_left_spacing + Size.span.horizontal_default + toc_title.padding_left
                         -- Note: this variable indentation may make the page slot widths variable across
                         -- rows from different levels (and self.fit_pages_per_row not really accurate) :/
                         -- Hopefully, it won't be noticeable.
@@ -1220,10 +1259,15 @@ function BookMapWidget:update()
             read_pages = self.read_pages,
             current_session_duration = self.current_session_duration,
             extended_sep_pages = extended_sep_pages,
+            enable_focus_navigation = self.enable_focus_navigation,
+            focus_nav_page = self.focus_page,
+            focus_nav_border = self.focus_nav_border,
         }
         table.insert(self.vgroup, row)
-        for _, focus_row in ipairs(row.focus_layout) do
-            table.insert(self.scroll_row_layout, focus_row)
+        if self.enable_focus_navigation then
+            for _, focus_row in ipairs(row.focus_layout) do
+                table.insert(self.layout, focus_row)
+            end
         end
         if not self.page_slot_width then
             self.page_slot_width = row.page_slot_width
@@ -1264,8 +1308,6 @@ function BookMapWidget:update()
     end
     self.initial_scroll_offset_y = self.cropping_widget._scroll_offset_y
 
-    self:moveFocusTo(1, 1, FocusManager.FOCUS_ONLY_ON_NT)
-    self.need_focus_print = true
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
@@ -1574,6 +1616,7 @@ function BookMapWidget:onScrollPageUp()
         to_keep = row_h - (scroll_offset_y - row_y)
     end
     self.cropping_widget:_scrollBy(0, -(self.crop_height - to_keep))
+    self:updateFocusAfterScroll()
     return true
 end
 
@@ -1586,6 +1629,7 @@ function BookMapWidget:onScrollPageDown()
     else
         self.cropping_widget:_scrollBy(0, self.crop_height)
     end
+    self:updateFocusAfterScroll()
     return true
 end
 
@@ -1594,6 +1638,7 @@ function BookMapWidget:onScrollRowUp()
     local row, row_idx, row_y, row_h = self:getVGroupRowAtY(-1) -- luacheck: no unused
     if row then
         self.cropping_widget:_scrollBy(0, row_y - scroll_offset_y)
+        self:updateFocusAfterScroll()
     end
     return true
 end
@@ -1603,6 +1648,7 @@ function BookMapWidget:onScrollRowDown()
     local row, row_idx, row_y, row_h = self:getVGroupRowAtY(0) -- luacheck: no unused
     if row then
         self.cropping_widget:_scrollBy(0, row_y + row_h - scroll_offset_y)
+        self:updateFocusAfterScroll()
     end
     return true
 end
@@ -1879,6 +1925,100 @@ function BookMapWidget:onTap(arg, ges)
     return true
 end
 
+function BookMapWidget:updateFocusAfterScroll()
+    if not self.enable_focus_navigation then
+        return
+    end
+    -- Set this flag so the next call to updateFocus() from paintTo() will know
+    -- we've just scrolled and we don't have to force the current focused item
+    -- into view, but possibly change what is the current focus item.
+    self.update_focus_after_scroll = true
+end
+
+function BookMapWidget:updateFocus()
+    -- To work with up to date widget positions, this must be called after paintTo()
+    -- has done its job as it is it that updates all widget coordinates
+
+    if not self.enable_focus_navigation then
+        return
+    end
+
+    if not self.cur_focused_widget then -- first call after first paintTo()
+        for y, r in ipairs(self.layout) do
+            if r.focused_widget_idx then -- this row contains the focused widget
+                self:moveFocusTo(r.focused_widget_idx, y)
+                break
+            end
+        end
+        self.cur_focused_widget = self:getFocusItem()
+        -- This will cause a repaint and have the focus border appears
+        self:refocusWidget(FocusManager.RENDER_IN_NEXT_TICK, FocusManager.FORCED_FOCUS)
+        return
+    end
+
+    if not self.update_focus_after_scroll then -- regular painTo() not caused by scrolling
+        local cur_focused_widget = self:getFocusItem()
+        if cur_focused_widget ~= self.cur_focused_widget then
+            -- The focused widget has changed: this is expected to happen only
+            -- from the paintTo after the user has used keys to move the
+            -- focused item.
+            self.cur_focused_widget = cur_focused_widget
+        else
+            -- Nothing to do, this is a regular repaint without any move
+            return
+        end
+    end
+
+    local focused_widget_dimen = self.cur_focused_widget.dimen
+
+    if self.update_focus_after_scroll then
+        if focused_widget_dimen.y < self.cropping_widget.dimen.y
+                or focused_widget_dimen.y + focused_widget_dimen.h >= self.cropping_widget.dimen.y + self.crop_height then
+            -- The current focused widget is not fully in the viewport
+            -- The user has scrolled one page or one row, and the focused widget moved out
+            -- of the updated view: forget that focused widget and change it to a widget
+            -- in the middle of the new view.
+            logger.warn("  scrolled out of view, finding a new focus widget")
+            for y, focus_row in ipairs(self.layout) do
+                if #focus_row > 0 then
+                    local dimen = focus_row[1].dimen
+                    if dimen.y + dimen.h > self.cropping_widget.dimen.y + self.crop_height/2 then
+                        self:moveFocusTo(1, y)
+                        break
+                    end
+                end
+            end
+            self.cur_focused_widget = self:getFocusItem()
+            -- This will cause a repaint and have us called again (where we should do nothing)
+            self:refocusWidget(FocusManager.RENDER_IN_NEXT_TICK, FocusManager.FORCED_FOCUS)
+        else
+            logger.warn("  in view, no scrolling")
+        end
+    else
+        -- The focused widget was changed by the users with keys, it may have moved out of view.
+        -- For a smooth experience, we can't move just the focused page slot into view and have
+        -- parts of its BookMapRow (chapter titles above in grid mode) truncated (borders, icons
+        -- below baseline): we need to move this BookMapRow fully into view.
+        local row, row_idx, row_y, row_h = self:getVGroupRowAtY(focused_widget_dimen.y - self.title_bar_h) -- luacheck: no unused
+        if row then
+            logger.warn("  scrolling into view")
+            row_y = row_y - self.cropping_widget._scroll_offset_y
+            if row_y < 0 then
+                self.cropping_widget:_scrollBy(0, row_y)
+                -- This will cause a repaint and have us called again (where we should do nothing)
+                -- (We shouldn't need to refocus, but somehow, this works while a classic setDirty doesn't)
+                self:refocusWidget(FocusManager.RENDER_IN_NEXT_TICK, FocusManager.FORCED_FOCUS)
+            elseif row_y + row_h > self.crop_height then
+                self.cropping_widget:_scrollBy(0, row_y + row_h - self.crop_height)
+                self:refocusWidget(FocusManager.RENDER_IN_NEXT_TICK, FocusManager.FORCED_FOCUS)
+            else
+                logger.warn("  in view, no scrolling")
+            end
+        end
+    end
+    self.update_focus_after_scroll = false
+end
+
 function BookMapWidget:paintTo(bb, x, y)
     -- Paint regular sub widgets the classic way
     InputContainer.paintTo(self, bb, x, y)
@@ -1887,37 +2027,7 @@ function BookMapWidget:paintTo(bb, x, y)
     if not self.overview_mode then
         self:paintBottomHorizontalSwipeHint(bb, x, y)
     end
-    -- widgets already have screen position
-    -- NT: build focus layout, ignore invisible row in ScrollContainer
-    local focused_widget = self:getFocusItem()
-    if focused_widget then
-        -- clear the existing focused widget style before applying the new layout (scroll up or down)
-        -- not a perfect solution
-        focused_widget:handleEvent(Event:new("Unfocus"))
-    end
-    self.layout = {}
-    local row_added_to_focus_layout = false
-    for _, focus_row in ipairs(self.scroll_row_layout) do
-        if #focus_row > 0 then
-            -- widgets in row has same height, so just check one widget
-            local dimen = focus_row[1].dimen
-            local widget_invisible = dimen:notIntersectWith(self.cropping_widget.dimen)
-            if not widget_invisible then
-                local row, row_idx, row_y, row_h = self:getVGroupRowAtY(dimen.y-self.title_bar_h) -- luacheck: no unused
-                widget_invisible = not row
-            end
-            if not widget_invisible then
-                table.insert(self.layout, focus_row)
-                row_added_to_focus_layout = true
-            elseif row_added_to_focus_layout then -- reached end of ScrollContainer
-                break
-            end
-        end
-    end
-    if self.need_focus_print then
-        self.need_focus_print = false
-        self:refocusWidget(FocusManager.RENDER_IN_NEXT_TICK, FocusManager.FOCUS_ONLY_ON_NT)
-    end
+    self:updateFocus()
 end
 
 function BookMapWidget:paintLeftVerticalSwipeHint(bb, x, y)
