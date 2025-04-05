@@ -514,7 +514,7 @@ function HotKeys:overrideConflictingKeyEvents()
     if self.is_docless then
         local filemanagermenu = self.ui.menu
         filemanagermenu.key_events = {} -- reset it.
-        filemanagermenu.key_events.ShowMenu = { { "Menu" } }
+        filemanagermenu.key_events.KeyPressShowMenu = { { "Menu" } }
         logger.dbg("Hotkey FileManagerMenu:registerKeyEvents() overridden.")
     end
 end -- overrideConflictingKeyEvents()

@@ -81,11 +81,9 @@ function ReaderMenu:registerKeyEvents()
             end
         else
             -- Map Menu key to top menu only, because the bottom menu is only designed for touch devices.
-            --- @fixme: Is this still the case?
-            ---         (Swapping between top and bottom might not be implemented, though, so it might still be a good idea).
-            self.key_events.ShowMenu = { { "Menu" } }
+            self.key_events.KeyPressShowMenu = { { "Menu" } }
             if Device:hasFewKeys() then
-                self.key_events.ShowMenu = { { { "Menu", "Right" } } }
+                self.key_events.KeyPressShowMenu = { { { "Menu", "Right" } } }
             end
         end
     end
@@ -495,6 +493,10 @@ function ReaderMenu:onPressMenu()
     end
     self:onShowMenu()
     return true
+end
+
+function ReaderMenu:onKeyPressShowMenu(_, key_ev)
+    return self:onShowMenu()
 end
 
 function ReaderMenu:onTapCloseMenu()

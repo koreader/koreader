@@ -62,7 +62,10 @@ end
 
 function FileManagerMenu:registerKeyEvents()
     if Device:hasKeys() then
-        self.key_events.ShowMenu = { { "Menu" } }
+        self.key_events.KeyPressShowMenu = { { "Menu" } }
+        if Device:hasFewKeys() then
+            self.key_events.KeyPressShowMenu = { { { "Menu", "Right" } } }
+        end
         if Device:hasScreenKB() then
             self.key_events.OpenLastDoc = { { "ScreenKB", "Back" } }
         end
@@ -1102,6 +1105,10 @@ function FileManagerMenu:onSwipeShowMenu(ges)
         self:onShowMenu(self:_getTabIndexFromLocation(ges))
         return true
     end
+end
+
+function FileManagerMenu:onKeyPressShowMenu(_, key_ev)
+    return self:onShowMenu()
 end
 
 function FileManagerMenu:onSetDimensions(dimen)
