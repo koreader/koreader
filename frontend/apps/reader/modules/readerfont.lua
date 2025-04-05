@@ -296,10 +296,15 @@ end
 
 function ReaderFont:onSetFont(face)
     if face and self.font_face ~= face then
-        self.font_face = face
-        self.ui.document:setFontFace(face)
-        -- signal readerrolling to update pos in new height
-        self.ui:handleEvent(Event:new("UpdatePos"))
+        for _, fontinfo in pairs(FontList.fontinfo) do
+            if fontinfo[1].name == face then
+                self.font_face = face
+                self.ui.document:setFontFace(face)
+                -- signal readerrolling to update pos in new height
+                self.ui:handleEvent(Event:new("UpdatePos"))
+                return
+            end
+        end
     end
 end
 
