@@ -518,6 +518,22 @@ function CoverBrowser:genExtractBookInfoButton(close_dialog_callback) -- for Fil
     }
 end
 
+function CoverBrowser:genMultipleRefreshBookInfoButton(close_dialog_toggle_select_mode_callback, button_disabled)
+    return curr_display_modes["filemanager"] and {
+        {
+            text = _("Refresh cached book information"),
+            enabled = not button_disabled,
+            callback = function()
+                for file in pairs(self.ui.selected_files) do
+                    BookInfoManager:deleteBookInfo(file)
+                    self.ui.file_chooser.resetBookInfoCache(file)
+                end
+                close_dialog_toggle_select_mode_callback()
+            end,
+        },
+    }
+end
+
 function CoverBrowser.initGrid(menu, display_mode)
     if menu == nil then return end
     if menu.nb_cols_portrait == nil then
