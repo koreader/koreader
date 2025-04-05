@@ -432,7 +432,6 @@ function BookMapRow:init()
             else
                 x = self:getPageX(page)
             end
-            local x = self:getPageX(page)
             local w = self:getPageX(page, true) - x
             -- This + 1 and the one below for overlap_offset seem to give the right
             -- appearance (but I can't really logically make out why...)
