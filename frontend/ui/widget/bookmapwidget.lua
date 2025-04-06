@@ -440,7 +440,7 @@ function BookMapRow:init()
             end
             if (not _mirroredUI and page == self.end_page) or
                    (_mirroredUI and page == self.start_page) then
-                w = w - 1 -- needed visual fix for similar look at start and end
+                w = w - 1 -- needed visual tweak, to match appearance at start and end
             end
             local invisible_focusable_page_slot = FrameContainer:new{
                 overlap_offset = {x + 1 - self.focus_nav_border, self.pages_frame_height - self.span_height},
@@ -452,7 +452,7 @@ function BookMapRow:init()
                 focus_inner_border = true,
                 Widget:new{
                     dimen = Geom:new{
-                        w = w,-- + 2*self.focus_nav_border,
+                        w = w, -- + 2*self.focus_nav_border,
                         h = math.floor(1.2 * self.span_height) - 2*self.focus_nav_border,
                     }
                 }
@@ -684,9 +684,8 @@ local BookMapWidget = FocusManager:extend{
 }
 
 function BookMapWidget:init()
-    -- On Touch devices, even with keys, we don't really need to be able
-    -- to navigate focus with keys, and we can avoid consuming memory
-    -- with its huge data structures.
+    -- On touch devices (even with keys), we don't really need to navigate focus with keys,
+    -- so we should avoid allocating memory to huge data structures.
     self.enable_focus_navigation = not Device:isTouchDevice() and Device:hasDPad() and Device:useDPadAsActionKeys()
 
     if self.ui.view:shouldInvertBiDiLayoutMirroring() then
@@ -829,10 +828,10 @@ function BookMapWidget:init()
         ignore_events = {"swipe"},
         self.vgroup,
     }
-    -- Our event handlers are named the same as in ScrollableContainer, so even
-    -- if we'd add the key event in ignore_events above, if we register them here
-    -- with these same names, they'll be processed by ScrollableContainer's own
-    -- handlers. So, override its handlers so they become pass-through.
+    -- Our event handlers are similarly named as those in ScrollableContainer, so even
+    -- if we add the key event to ignore_events above, registering them here with the
+    -- same names means they'll still be handled by ScrollableContainer's own handlers.
+    -- Therefore, we override its handlers to make them pass-through.
     self.cropping_widget.onScrollPageUp = function() return false end
     self.cropping_widget.onScrollPageDown = function() return false end
 
@@ -1938,9 +1937,7 @@ function BookMapWidget:updateFocus()
     -- To work with up to date widget positions, this must be called after paintTo()
     -- has done its job as it is it that updates all widget coordinates
 
-    if not self.enable_focus_navigation then
-        return
-    end
+    if not self.enable_focus_navigation then return end
 
     if not self.cur_focused_widget then -- first call after first paintTo()
         for y, r in ipairs(self.layout) do
@@ -1950,7 +1947,7 @@ function BookMapWidget:updateFocus()
             end
         end
         self.cur_focused_widget = self:getFocusItem()
-        -- This will cause a repaint and have the focus border appears
+        -- This will cause a repaint and have the focus border appear
         self:refocusWidget(FocusManager.RENDER_IN_NEXT_TICK, FocusManager.FORCED_FOCUS)
         return
     end
@@ -1958,7 +1955,7 @@ function BookMapWidget:updateFocus()
     if not self.update_focus_after_scroll then -- regular painTo() not caused by scrolling
         local cur_focused_widget = self:getFocusItem()
         if cur_focused_widget ~= self.cur_focused_widget then
-            -- The focused widget has changed: this is expected to happen only
+            -- The focused widget has changed; this is expected to happen only
             -- from the paintTo after the user has used keys to move the
             -- focused item.
             self.cur_focused_widget = cur_focused_widget
@@ -1988,13 +1985,13 @@ function BookMapWidget:updateFocus()
                 end
             end
             self.cur_focused_widget = self:getFocusItem()
-            -- This will cause a repaint and have us called again (where we should do nothing)
+            -- This will trigger a repaint and cause us to be called again (at which point we should do nothing).
             self:refocusWidget(FocusManager.RENDER_IN_NEXT_TICK, FocusManager.FORCED_FOCUS)
         else
             logger.warn("  in view, no scrolling")
         end
     else
-        -- The focused widget was changed by the users with keys, it may have moved out of view.
+        -- The focused widget was changed by the user (with keys), it may have moved out of view.
         -- For a smooth experience, we can't move just the focused page slot into view and have
         -- parts of its BookMapRow (chapter titles above in grid mode) truncated (borders, icons
         -- below baseline): we need to move this BookMapRow fully into view.
@@ -2004,7 +2001,7 @@ function BookMapWidget:updateFocus()
             row_y = row_y - self.cropping_widget._scroll_offset_y
             if row_y < 0 then
                 self.cropping_widget:_scrollBy(0, row_y)
-                -- This will cause a repaint and have us called again (where we should do nothing)
+                -- This will trigger a repaint and cause us to be called again (at which point we should do nothing).
                 -- (We shouldn't need to refocus, but somehow, this works while a classic setDirty doesn't)
                 self:refocusWidget(FocusManager.RENDER_IN_NEXT_TICK, FocusManager.FORCED_FOCUS)
             elseif row_y + row_h > self.crop_height then

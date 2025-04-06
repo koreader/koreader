@@ -449,8 +449,8 @@ function PageBrowserWidget:update()
             local widget = table.remove(self.grid, i)
             widget:free()
         end
-        -- We could restore original offset and dimen as pages may not all have
-        -- the same size with PDF. But it feels best to keep using the previous
+        -- We could restore the original offset and dimen, as pages may not all have
+        -- the same dimentions on PDFs. But it feels best to keep using the previous
         -- thumbnail size as most often, the new thumbnail will have that size.
         --[[
         if self.grid[i] and self.grid[i].is_nav_item then
@@ -1626,7 +1626,7 @@ end
 function PageBrowserWidget:onHold(arg, ges)
     if not ges.pos then
         if self:getFocusItem() then
-            -- emulator: triggered by ContextMenu key with focused widget, no pos inforamtion in event
+            -- emulator: triggered by ContextMenu key with focused widget, no pos information in event
             -- set pos to center of widget
             local pos = self:getFocusItem().dimen:copy()
             pos.x = pos.x + pos.w / 2
