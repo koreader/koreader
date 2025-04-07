@@ -875,17 +875,11 @@ function BookMapWidget:init()
 end
 
 function BookMapWidget:registerKeyEvents()
-    -- XXX be really sure we are coherent with when we set self.enable_focus_navigation in :init()
     if Device:hasKeys() then
-        self.key_events.Close = { { Device.input.group.Back } }
-        self.key_events.ShowBookMapMenu = { { "Menu" } }
-        self.key_events.ScrollPageUp = { { Input.group.PgBack } }
-        self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
         if Device:isTouchDevice() then
-            -- Remove Up/down handling by FocusManager (there is no ordering/priority
-            -- handling for key_events, unlike touch zones)
-            self.key_events.FocusUp = nil
-            self.key_events.FocusDown = nil
+            -- Remove key handling by FocusManager (there is no ordering/priority
+            -- handling for key_events, unlike with touch zones)
+            self.key_events = {}
             self.key_events.ScrollRowUp = { { "Up" } }
             self.key_events.ScrollRowDown = { { "Down" } }
         elseif Device:hasScreenKB() or Device:hasKeyboard() then
@@ -894,6 +888,10 @@ function BookMapWidget:registerKeyEvents()
             self.key_events.ScrollRowDown = { { modifier, "Down" } }
             self.key_events.CloseAll = { { modifier, "Back" }, event = "Close", args = true }
         end
+        self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.ShowBookMapMenu = { { "Menu" } }
+        self.key_events.ScrollPageUp = { { Input.group.PgBack } }
+        self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
     end
 end
 BookMapWidget.onPhysicalKeyboardConnected = BookMapWidget.registerKeyEvents

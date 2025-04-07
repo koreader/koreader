@@ -45,10 +45,7 @@ local PageBrowserWidget = FocusManager:extend{
 
 function PageBrowserWidget:init()
     self.layout = {}
-    self.build_focus_layout = false
-    if Device:hasDPad() and Device:useDPadAsActionKeys() then
-        self.build_focus_layout = true
-    end
+    self.build_focus_layout = Device:hasDPad() and Device:useDPadAsActionKeys()
     if self.ui.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
@@ -195,24 +192,26 @@ function PageBrowserWidget:init()
 end
 
 function PageBrowserWidget:registerKeyEvents()
-    -- XXX be really sure we are coherent with when we set self.build_focus_layout in :init()
     if Device:hasKeys() then
-        self.key_events.Close = { { Device.input.group.Back } }
-        self.key_events.ShowMenu = { { "Menu" } }
-        self.key_events.ScrollPageUp = { { Input.group.PgBack } }
-        self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
         if Device:isTouchDevice() then
+            -- Remove key handling by FocusManager (there is no ordering/priority
+            -- handling for key_events, unlike with touch zones)
+            self.key_events = {}
             self.key_events.ScrollRowUp = { { "Up" } }
             self.key_events.ScrollRowDown = { { "Down" } }
         elseif Device:hasScreenKB() or Device:hasKeyboard() then
             local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
             self.key_events.ScrollRowUp = { { modifier, "Up" } }
             self.key_events.ScrollRowDown = { { modifier, "Down" } }
-            -- same events as page turn buttons for mod+up/down. it gives the impression of movement through the bottom ribbon
+            -- same events as page-turn buttons for mod+left/right. it gives the impression of movement through the bottom ribbon
             self.key_events.SwipeRibbonLeftNT = { { modifier, "Left" }, event = "ScrollPageUp" }
             self.key_events.SwipeRibbonRightNT = { { modifier, "Right" }, event = "ScrollPageDown" }
             self.key_events.CloseAll = { { modifier, "Back" }, event = "Close", args = true }
         end
+        self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.ShowMenu = { { "Menu" } }
+        self.key_events.ScrollPageUp = { { Input.group.PgBack } }
+        self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
     end
 end
 PageBrowserWidget.onPhysicalKeyboardConnected = PageBrowserWidget.registerKeyEvents
