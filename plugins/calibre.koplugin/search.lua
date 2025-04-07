@@ -141,8 +141,8 @@ local function getBookInfo(book)
         return id
     end
     -- all entries can be empty, except size, which is always filled by calibre.
-    local title = _("Title:") .. " " .. book.title or "-"
-    local authors = _("Author(s):") .. " " .. getEntries(book.authors) or "-"
+    local title = _("Title:") .. " " .. (book.title or "-")
+    local authors = _("Author(s):") .. " " .. (getEntries(book.authors) or "-")
     local size = _("Size:") .. " " .. util.getFriendlySize(book.size) or _("Unknown")
     local tags = getEntries(book.tags)
     if tags then
