@@ -684,7 +684,7 @@ local BookMapWidget = FocusManager:extend{
 }
 
 function BookMapWidget:init()
-    -- On touch devices (even with keys), we don't really need to navigate focus with keys,
+    -- On touch devices (with keys), we don't really need to navigate focus with keys,
     -- so we should avoid allocating memory to huge data structures.
     self.enable_focus_navigation = not Device:isTouchDevice() and Device:hasDPad() and Device:useDPadAsActionKeys()
 
@@ -1323,7 +1323,7 @@ function BookMapWidget:onShowBookMapMenu()
             end,
         }},
         {{
-            text = Device:isTouchDevice() and _("Available gestures") or _("Key controls"),
+            text = Device:isTouchDevice() and _("Available gestures") or _("Controls"),
             align = "left",
             callback = function()
                 self:showGestures()

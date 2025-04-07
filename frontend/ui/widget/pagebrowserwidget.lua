@@ -45,7 +45,7 @@ local PageBrowserWidget = FocusManager:extend{
 
 function PageBrowserWidget:init()
     self.layout = {}
-    self.build_focus_layout = Device:hasDPad() and Device:useDPadAsActionKeys()
+    self.build_focus_layout = not Device:isTouchDevice() and Device:hasDPad() and Device:useDPadAsActionKeys()
     if self.ui.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
@@ -978,7 +978,7 @@ function PageBrowserWidget:onShowMenu()
             end,
         }},
         {{
-            text = Device:isTouchDevice() and _("Available gestures") or _("Key controls"),
+            text = Device:isTouchDevice() and _("Available gestures") or _("Controls"),
             align = "left",
             callback = function()
                 self:showGestures()
@@ -1161,6 +1161,8 @@ Press Shift+Up to move up by one row, or either previous-page-turn-button to mov
 
 Press Shift+Down to move down by one row, or either next-page-turn-button to move one screen.
 
+Press Shift+Press on a thumbnail, to open more settings.
+
 Select a thumbnail to read that page.]])
         elseif Device:hasScreenKB() then
             text = _([[
@@ -1169,6 +1171,8 @@ The settings (in this menu) can be used to change the number of rows and columns
 Press ScreenKB+Up to move up by one row, or either previous-page-turn-button to move one screen.
 
 Press ScreenKB+Down to move down by one row, or either next-page-turn-button to move one screen.
+
+Press ScreenKB+Press on a thumbnail, to open more settings.
 
 Select a thumbnail to read that page.]])
         end
@@ -1647,7 +1651,7 @@ function PageBrowserWidget:onHold(arg, ges)
     if ges.pos.y > Screen:getHeight() - self.row_height then
         local page = self.row[1]:getPageAtX(ges.pos.x)
         if page then
-            self:openBookMap(page)
+            openBookMap(page)
         end
         return true
     end
@@ -1674,7 +1678,7 @@ function PageBrowserWidget:onHold(arg, ges)
     return true
 end
 
-function PageBrowserWidget:openBookMap(page)
+local function openBookMap(page)
     local extra_symbols_pages = {}
     extra_symbols_pages[self.focus_page] = 0x25A2 -- white square with rounder corners
     UIManager:show(BookMapWidget:new{
@@ -1690,6 +1694,7 @@ function PageBrowserWidget:onThumbnailHold(page, ges)
     local handmade_hidden_flows_edit_enabled = self.ui.handmade:isHandmadeHiddenFlowsEnabled() and self.ui.handmade:isHandmadeHiddenFlowsEditEnabled()
     if Device:isTouchDevice() and not handmade_toc_edit_enabled and not handmade_hidden_flows_edit_enabled then
         -- No other feature enabled: we can toggle bookmark directly
+        -- On NT, we need to add "Go to book map" so we will never be here.
         self.ui.bookmark:toggleBookmark(page)
         self:updateEditableStuff(true)
         return
@@ -1712,7 +1717,7 @@ function PageBrowserWidget:onThumbnailHold(page, ges)
             align = "left",
             callback = function()
                 UIManager:close(button_dialog)
-                self:openBookMap(page)
+                openBookMap(page)
             end,
         }})
     end
