@@ -1323,7 +1323,7 @@ function BookMapWidget:onShowBookMapMenu()
             end,
         }},
         {{
-            text = _("Available gestures"),
+            text = Device:isTouchDevice() and _("Available gestures") or _("Key controls"),
             align = "left",
             callback = function()
                 self:showGestures()

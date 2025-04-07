@@ -978,7 +978,7 @@ function PageBrowserWidget:onShowMenu()
             end,
         }},
         {{
-            text = _("Available gestures"),
+            text = Device:isTouchDevice() and _("Available gestures") or _("Key controls"),
             align = "left",
             callback = function()
                 self:showGestures()
@@ -1647,14 +1647,7 @@ function PageBrowserWidget:onHold(arg, ges)
     if ges.pos.y > Screen:getHeight() - self.row_height then
         local page = self.row[1]:getPageAtX(ges.pos.x)
         if page then
-            local extra_symbols_pages = {}
-            extra_symbols_pages[self.focus_page] = 0x25A2 -- white square with rounder corners
-            UIManager:show(BookMapWidget:new{
-                launcher = self,
-                ui = self.ui,
-                focus_page = page,
-                extra_symbols_pages = extra_symbols_pages,
-            })
+            self:openBookMap(page)
         end
         return true
     end
@@ -1681,10 +1674,21 @@ function PageBrowserWidget:onHold(arg, ges)
     return true
 end
 
+function PageBrowserWidget:openBookMap(page)
+    local extra_symbols_pages = {}
+    extra_symbols_pages[self.focus_page] = 0x25A2 -- white square with rounder corners
+    UIManager:show(BookMapWidget:new{
+        launcher = self,
+        ui = self.ui,
+        focus_page = page,
+        extra_symbols_pages = extra_symbols_pages,
+    })
+end
+
 function PageBrowserWidget:onThumbnailHold(page, ges)
     local handmade_toc_edit_enabled = self.ui.handmade:isHandmadeTocEnabled() and self.ui.handmade:isHandmadeTocEditEnabled()
     local handmade_hidden_flows_edit_enabled = self.ui.handmade:isHandmadeHiddenFlowsEnabled() and self.ui.handmade:isHandmadeHiddenFlowsEditEnabled()
-    if not handmade_toc_edit_enabled and not handmade_hidden_flows_edit_enabled then
+    if Device:isTouchDevice() and not handmade_toc_edit_enabled and not handmade_hidden_flows_edit_enabled then
         -- No other feature enabled: we can toggle bookmark directly
         self.ui.bookmark:toggleBookmark(page)
         self:updateEditableStuff(true)
@@ -1702,6 +1706,16 @@ function PageBrowserWidget:onThumbnailHold(page, ges)
             end,
         }},
     }
+    if not Device:isTouchDevice() then
+        table.insert(buttons, {{
+            text = _("Go to book map"),
+            align = "left",
+            callback = function()
+                UIManager:close(button_dialog)
+                self:openBookMap(page)
+            end,
+        }})
+    end
     if handmade_toc_edit_enabled then
         local has_toc_item = self.ui.handmade:hasPageTocItem(page)
         table.insert(buttons, {{
