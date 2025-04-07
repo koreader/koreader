@@ -188,7 +188,7 @@ function CoverBrowser:addToMainMenu(menu_items)
         }
     end
 
-    table.insert (menu_items.filebrowser_settings.sub_item_table, 5, {
+    table.insert (menu_items.filebrowser_settings.sub_item_table, 4, {
         text = _("Mosaic and detailed list settings"),
         separator = true,
         sub_item_table = {
