@@ -96,8 +96,8 @@ function CoverBrowser:init()
     end
 
     self:setupFileManagerDisplayMode(BookInfoManager:getSetting("filemanager_display_mode"))
-    CoverBrowser.setupWidgetDisplayMode("history")
-    CoverBrowser.setupWidgetDisplayMode("collections")
+    CoverBrowser.setupWidgetDisplayMode("history", true)
+    CoverBrowser.setupWidgetDisplayMode("collections", true)
     series_mode = BookInfoManager:getSetting("series_mode")
     init_done = true
     BookInfoManager:closeDbConnection() -- will be re-opened if needed
@@ -518,6 +518,22 @@ function CoverBrowser:genExtractBookInfoButton(close_dialog_callback) -- for Fil
     }
 end
 
+function CoverBrowser:genMultipleRefreshBookInfoButton(close_dialog_toggle_select_mode_callback, button_disabled)
+    return curr_display_modes["filemanager"] and {
+        {
+            text = _("Refresh cached book information"),
+            enabled = not button_disabled,
+            callback = function()
+                for file in pairs(self.ui.selected_files) do
+                    BookInfoManager:deleteBookInfo(file)
+                    self.ui.file_chooser.resetBookInfoCache(file)
+                end
+                close_dialog_toggle_select_mode_callback()
+            end,
+        },
+    }
+end
+
 function CoverBrowser.initGrid(menu, display_mode)
     if menu == nil then return end
     if menu.nb_cols_portrait == nil then
@@ -679,7 +695,9 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
 end
 
 function CoverBrowser.setupWidgetDisplayMode(widget_id, display_mode)
-    display_mode = display_mode or BookInfoManager:getSetting(display_mode_db_names[widget_id])
+    if display_mode == true then -- init
+        display_mode = BookInfoManager:getSetting(display_mode_db_names[widget_id])
+    end
     if not DISPLAY_MODES[display_mode] then
         display_mode = nil -- unknown mode, fallback to classic
     end

@@ -4,6 +4,8 @@ This module contains miscellaneous helper functions for FileManager
 
 local BD = require("ui/bidi")
 local BookList = require("ui/widget/booklist")
+local CheckButton = require("ui/widget/checkbutton")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local Event = require("ui/event")
@@ -139,6 +141,36 @@ function filemanagerutil.genStatusButtonsRow(doc_settings_or_file, caller_callba
     }
 end
 
+function filemanagerutil.genMultipleStatusButtonsRow(files, caller_callback, button_disabled)
+    local function genStatusButton(to_status)
+        return {
+            text = BookList.getBookStatusString(to_status, false, true),
+            enabled = not button_disabled,
+            callback = function()
+                UIManager:show(ConfirmBox:new{
+                    text = _("Set selected documents status?"),
+                    ok_text = _("Set"),
+                    ok_callback = function()
+                        for file in pairs(files) do
+                            local doc_settings = BookList.getDocSettings(file)
+                            local summary = doc_settings:readSetting("summary") or {}
+                            summary.status = to_status
+                            filemanagerutil.saveSummary(doc_settings, summary)
+                            BookList.setBookInfoCacheProperty(file, "status", to_status)
+                        end
+                        caller_callback()
+                    end,
+                })
+            end,
+        }
+    end
+    return {
+        genStatusButton("reading"),
+        genStatusButton("abandoned"),
+        genStatusButton("complete"),
+    }
+end
+
 -- Generate "Reset" file dialog button
 function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_callback, button_disabled)
     local doc_settings, file, has_sidecar_file
@@ -158,8 +190,6 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
         text = _("Reset"),
         enabled = not button_disabled and (has_sidecar_file or has_custom_metadata_file or has_custom_cover_file),
         callback = function()
-            local CheckButton = require("ui/widget/checkbutton")
-            local ConfirmBox = require("ui/widget/confirmbox")
             local check_button_settings, check_button_cover, check_button_metadata
             local confirmbox = ConfirmBox:new{
                 text = T(_("Reset this document?") .. "\n\n%1\n\n" ..
@@ -205,6 +235,31 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
             }
             confirmbox:addWidget(check_button_metadata)
             UIManager:show(confirmbox)
+        end,
+    }
+end
+
+function filemanagerutil.genMultipleResetSettingsButton(files, caller_callback, button_disabled)
+    return {
+        text = _("Reset"),
+        enabled = not button_disabled,
+        callback = function()
+            UIManager:show(ConfirmBox:new{
+                text = _("Reset selected documents?") .. "\n" ..
+                       _("Information will be permanently lost."),
+                ok_text = _("Reset"),
+                ok_callback = function()
+                    for file in pairs(files) do
+                        if BookList.hasBookBeenOpened(file) then
+                            DocSettings:open(file):purge()
+                            UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
+                            BookList.setBookInfoCacheProperty(file, "been_opened", false)
+                            require("readhistory"):fileSettingsPurged(file)
+                        end
+                    end
+                    caller_callback()
+                end,
+            })
         end,
     }
 end
