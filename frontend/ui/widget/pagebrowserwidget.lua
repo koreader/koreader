@@ -1626,6 +1626,17 @@ function PageBrowserWidget:onTap(arg, ges)
     return true
 end
 
+local function openBookMap(self, page)
+    local extra_symbols_pages = {}
+    extra_symbols_pages[self.focus_page] = 0x25A2 -- white square with rounder corners
+    UIManager:show(BookMapWidget:new{
+        launcher = self,
+        ui = self.ui,
+        focus_page = page,
+        extra_symbols_pages = extra_symbols_pages,
+    })
+end
+
 function PageBrowserWidget:onHold(arg, ges)
     if not ges.pos then
         if self:getFocusItem() then
@@ -1651,7 +1662,7 @@ function PageBrowserWidget:onHold(arg, ges)
     if ges.pos.y > Screen:getHeight() - self.row_height then
         local page = self.row[1]:getPageAtX(ges.pos.x)
         if page then
-            openBookMap(page)
+            openBookMap(self, page)
         end
         return true
     end
@@ -1676,17 +1687,6 @@ function PageBrowserWidget:onHold(arg, ges)
         end
     end
     return true
-end
-
-local function openBookMap(page)
-    local extra_symbols_pages = {}
-    extra_symbols_pages[self.focus_page] = 0x25A2 -- white square with rounder corners
-    UIManager:show(BookMapWidget:new{
-        launcher = self,
-        ui = self.ui,
-        focus_page = page,
-        extra_symbols_pages = extra_symbols_pages,
-    })
 end
 
 function PageBrowserWidget:onThumbnailHold(page, ges)
@@ -1717,7 +1717,7 @@ function PageBrowserWidget:onThumbnailHold(page, ges)
             align = "left",
             callback = function()
                 UIManager:close(button_dialog)
-                openBookMap(page)
+                openBookMap(self, page)
             end,
         }})
     end
