@@ -108,6 +108,7 @@ local Exporter = WidgetContainer:extend{
 
 function Exporter:init()
     self.parser = MyClipping:new{}
+    self.targets = genExportersTable(self.path)
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
 end
