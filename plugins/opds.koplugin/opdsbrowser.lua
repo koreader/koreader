@@ -37,11 +37,17 @@ local OPDSBrowser = Menu:extend{
     search_template_type = "application/atom%+xml",
     acquisition_rel      = "^http://opds%-spec%.org/acquisition",
     borrow_rel           = "http://opds-spec.org/acquisition/borrow",
-    image_rel            = "http://opds-spec.org/image",
-    image_rel_alt        = "http://opds-spec.org/cover", -- ManyBooks.net, not in spec
-    thumbnail_rel        = "http://opds-spec.org/image/thumbnail",
-    thumbnail_rel_alt    = "http://opds-spec.org/thumbnail", -- ManyBooks.net, not in spec
     stream_rel           = "http://vaemendis.net/opds-pse/stream",
+    image_rel            = {
+        ["http://opds-spec.org/image"] = true,
+        ["http://opds-spec.org/cover"] = true, -- ManyBooks.net, not in spec
+        ["x-stanza-cover-image"] = true,
+    },
+    thumbnail_rel        = {
+        ["http://opds-spec.org/image/thumbnail"] = true,
+        ["http://opds-spec.org/thumbnail"] = true, -- ManyBooks.net, not in spec
+        ["x-stanza-cover-image-thumbnail"] = true,
+    },
 
     root_catalog_title    = nil,
     root_catalog_username = nil,
@@ -435,10 +441,16 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                                 last_read = last_read and last_read > 0 and last_read or nil
                             })
                         end
-                    elseif link.rel == self.thumbnail_rel or link.rel == self.thumbnail_rel_alt then
+                    elseif self.thumbnail_rel[link.rel] then
                         item.thumbnail = link_href
-                    elseif link.rel == self.image_rel or link.rel == self.image_rel_alt then
+                    elseif self.image_rel[link.rel] then
                         item.image = link_href
+                    elseif link.rel ~= "alternate" and DocumentRegistry:hasProvider(nil, link.type) then
+                        table.insert(item.acquisitions, {
+                            type  = link.type,
+                            href  = link_href,
+                            title = link.title,
+                        })
                     end
                     -- This statement grabs the catalog items that are
                     -- indicated by title="pdf" or whose type is
