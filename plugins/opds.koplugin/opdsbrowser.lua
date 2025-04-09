@@ -392,7 +392,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
     end
     item_table.hrefs = hrefs
 
-    for _, entry in ipairs(feed.entry or {}) do
+    for __, entry in ipairs(feed.entry or {}) do
         local item = {}
         item.acquisitions = {}
         if entry.link then
@@ -471,7 +471,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                 end
             end
         end
-        local title = "Unknown"
+        local title = _("Unknown")
         if type(entry.title) == "string" then
             title = entry.title
         elseif type(entry.title) == "table" then
@@ -480,7 +480,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
             end
         end
         item.text = title
-        local author = "Unknown Author"
+        local author = _("Unknown Author")
         if type(entry.author) == "table" and entry.author.name then
             author = entry.author.name
             if type(author) == "table" then
