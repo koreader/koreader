@@ -396,7 +396,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
         local item = {}
         item.acquisitions = {}
         if entry.link then
-            for __, link in ipairs(entry.link) do
+            for ___, link in ipairs(entry.link) do
                 local link_href = build_href(link.href)
                 if link.type and link.type:find(self.catalog_type)
                         and (not link.rel
