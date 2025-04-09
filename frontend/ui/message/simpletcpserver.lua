@@ -32,6 +32,7 @@ function SimpleTCPServer:start()
     self.server = server
     self.server:settimeout(0.01) -- set timeout (10ms)
     logger.dbg("SimpleTCPServer: Server listening on port " .. self.port)
+    return true
 end
 
 function SimpleTCPServer:stop()
