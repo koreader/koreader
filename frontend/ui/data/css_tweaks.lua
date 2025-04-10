@@ -1031,6 +1031,40 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
             ]],
             separator = true,
         },
+        {
+            id = "following-footnote-inpage_all",
+            conflicts_with = function(id) return util.stringStartsWith(id, "following-footnote-inpage_") end,
+            title = _("Extend in-page footnotes until next footnote"),
+            description = _([[
+Extend in-page footnotes shown at the bottom of pages to include text up to the next footnote.
+This is needed when books don't correctly mark all text that belongs to the footnote.]]),
+            css = [[
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: following-inpage-footnote -inpage-footnote;
+    -cr-hint: extend-footnote-inpage;
+    margin: 0 !important;
+}
+            ]],
+        },
+        {
+            id = "following-footnote-inpage_until_heading",
+            conflicts_with = function(id) return util.stringStartsWith(id, "following-footnote-inpage_") end,
+            title = _("Extend in-page footnotes until next heading or footnote"),
+            description = _([[
+Extend in-page footnotes shown at the bottom of pages to include text up to the next footnote or heading.
+This is needed when books don't correctly mark all text that belongs to the footnote.
+This tweak can be duplicated as a user style tweak when a book contains other elements between footnotes that should not be shown in-page.]]),
+            css = [[
+*:not(h1, h2, h3, h4, h5, h6), autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: following-inpage-footnote -inpage-footnote;
+    -cr-hint: extend-footnote-inpage;
+    margin: 0 !important;
+}
+            ]],
+            separator = true,
+        },
         -- Next tweaks, with the help of crengine, will apply only to elements that were
         -- matched by previous tweaks that have set them the "footnote-inpage" cr-hint,
         -- and their children (their content).
