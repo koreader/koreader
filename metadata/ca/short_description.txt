@@ -1,1 +1,1 @@
-Lector de llibres electrònics amb suport per a diversos formats com PDF, DjVu, EPUB, FB2, CBZ.
+Lector de llibres electrònics
