@@ -449,7 +449,7 @@ function PageBrowserWidget:update()
             widget:free()
         end
         -- We could restore the original offset and dimen, as pages may not all have
-        -- the same dimentions on PDFs. But it feels best to keep using the previous
+        -- the same dimensions on PDFs. But it feels best to keep using the previous
         -- thumbnail size as most often, the new thumbnail will have that size.
         --[[
         if self.grid[i] and self.grid[i].is_nav_item then
@@ -1161,7 +1161,9 @@ Press Shift+Up to move up by one row, or either previous-page-turn-button to mov
 
 Press Shift+Down to move down by one row, or either next-page-turn-button to move one screen.
 
-Press Shift+Press on a thumbnail, to open more settings.
+Press Shift+Press on a thumbnail, to open more options.
+
+Press Shift+Back closes all instances of Page Browser and Book Map.
 
 Select a thumbnail to read that page.]])
         elseif Device:hasScreenKB() then
@@ -1172,7 +1174,9 @@ Press ScreenKB+Up to move up by one row, or either previous-page-turn-button to 
 
 Press ScreenKB+Down to move down by one row, or either next-page-turn-button to move one screen.
 
-Press ScreenKB+Press on a thumbnail, to open more settings.
+Press ScreenKB+Press on a thumbnail, to open more options.
+
+Press ScreenKB+Back closes all instances of Page Browser and Book Map.
 
 Select a thumbnail to read that page.]])
         end
@@ -1626,17 +1630,6 @@ function PageBrowserWidget:onTap(arg, ges)
     return true
 end
 
-local function openBookMap(self, page)
-    local extra_symbols_pages = {}
-    extra_symbols_pages[self.focus_page] = 0x25A2 -- white square with rounder corners
-    UIManager:show(BookMapWidget:new{
-        launcher = self,
-        ui = self.ui,
-        focus_page = page,
-        extra_symbols_pages = extra_symbols_pages,
-    })
-end
-
 function PageBrowserWidget:onHold(arg, ges)
     if not ges.pos then
         if self:getFocusItem() then
@@ -1662,7 +1655,7 @@ function PageBrowserWidget:onHold(arg, ges)
     if ges.pos.y > Screen:getHeight() - self.row_height then
         local page = self.row[1]:getPageAtX(ges.pos.x)
         if page then
-            openBookMap(self, page)
+            self:openBookMap(page)
         end
         return true
     end
@@ -1687,6 +1680,17 @@ function PageBrowserWidget:onHold(arg, ges)
         end
     end
     return true
+end
+
+function PageBrowserWidget:openBookMap(page)
+    local extra_symbols_pages = {}
+    extra_symbols_pages[self.focus_page] = 0x25A2 -- white square with rounder corners
+    UIManager:show(BookMapWidget:new{
+        launcher = self,
+        ui = self.ui,
+        focus_page = page,
+        extra_symbols_pages = extra_symbols_pages,
+    })
 end
 
 function PageBrowserWidget:onThumbnailHold(page, ges)
@@ -1717,7 +1721,7 @@ function PageBrowserWidget:onThumbnailHold(page, ges)
             align = "left",
             callback = function()
                 UIManager:close(button_dialog)
-                openBookMap(self, page)
+                self:openBookMap(page)
             end,
         }})
     end
