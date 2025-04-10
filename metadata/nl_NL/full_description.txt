@@ -7,5 +7,5 @@
   <li>Unieke boekkaart- en paginaverkennerfuncties om door je boek te navigeren.</li>
   <li>Speciale markeermodus voor meerdere pagina&#39;s met veel lokale en online exportopties.</li>
   <li>Kan leesvoortgang over meerdere KOReader-apparaten synchroniseren.</li>
-  <li>Integrated with Calibre, Wallabag, Wikipedia, Google Translate and other content providers.</li>
+  <li>Geïntegreerd met Calibre, Wallabag, Wikipedia, Google Translate en andere inhoudaanbieders.</li>
 </ul>

@@ -1,14 +1,11 @@
-* Taşınabilir: Gömülü aygıtlarda (Cervantes, Kindle, Kobo, PocketBook), Android ve Linux bilgisayarlarda çalışır. Geliştiriciler, Linux ve macOS üzerinde bir KOReader öykünücüsü çalıştırabilir.
-
-* Çok biçimli belgeler: Sabit sayfa biçimleri (PDF, DjVu, CBT, CBZ) ve yeniden düzenlenebilir e-kitap biçimleri (EPUB, FB2, Mobi, DOC, CHM, TXT) desteklenir. Taranan PDF/DjVu belgeleri, yerleşik K2pdfopt kitaplığı ile yeniden düzenlenebilir.
-
-* Tam özellikli okuma: Son derece özelleştirilebilir okuyucu görünümü ve birçok dizgi seçeneği ile çok dilli kullanıcı arabirimi. İsteğe bağlı sayfa kenar boşlukları ayarlayabilir, satır aralığını değiştirebilir ve dış yazı tipleri ile biçemleri seçebilirsiniz. Uygulamada çok dilli tireleme sözlükleri de bulunur.
-
-* Calibre (üst veri arama, kablosuz olarak e-kitap alma, OPDS aracılığıyla kitaplığa göz atma), Wallabag, Vikipedi, Google Translate ve diğer içerik sağlayıcılarla bütünleşik.
-
-* E-mürekkep aygıtları ile uyumlu hale getirilmiş: Sayfalandırılmış menüler, ayarlanabilir metin karşıtlığı ve içeriği veya sayfalı ortama sığdırmak için kolay yakınlaştırma ile canlandırma olmayan özel kullanıcı arayüzü.
-
-* Uygulama ekleri ile zenginleştirilebilir
-
-* Ve pek çok diğer özellik: StarDict sözlükleri / Wikipedia ile sözcük arama, kendi çevrim içi OPDS kataloglarınızı ve RSS akışlarınızı ekleyebilme, çevrim içi kablosuz yazılım güncellemeleri, bir FTP istemcisi, bir SSH sunucusu, …
-
+<p>KOReader, e-mürekkep ekranları için optimize edilmiş bir e-kitap okuyucudur. Birçok formatı açabilir ve gelişmiş metin ayarlamaları sağlar.</p>
+<p>Birçok özelliğinden bir seçki için aşağıya bakın:</p>
+<ul>
+  <li>Hem sabit sayfa formatlarını (PDF, DjVu, CBT, CBZ) hem de yeniden akıtılabilir e-kitap formatlarını (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML) destekler. Taranan PDF&#47;DjVu belgeleri yeniden akıtılabilir. Çift sütunlu PDF&#39;leri ve mangaları okumak için özel akış yönleri.</li>
+  <li>E-mürekkep ekranları için optimize edilmiş çok dilli kullanıcı arayüzü. Eksiksiz dizgi seçenekleriyle son derece özelleştirilebilir okuyucu görünümü. Çok dilli tireleme sözlükleri paket halindedir.</li>
+  <li>İbranice, Arapça, Farsça, Rusça, Çince, Japonca ve Korece dilleri de dahil olmak üzere kitaplar için Latince olmayan alfabe desteği.</li>
+  <li>Kitabınızda gezinmenizi sağlayacak benzersiz Kitap Haritası ve Sayfa Tarayıcı özellikleri.</li>
+  <li>Birçok yerel ve çevrim içi dışa aktarma seçeneği bulunan özel çok sayfalı vurgulama kipi.</li>
+  <li>Okuma ilerlemenizi KOReader&#39;ı çalıştıran tüm cihazlarınızda senkronize edebilir.</li>
+  <li>Calibre, Wallabag, Wikipedia, Google Translate ve diğer içerik sağlayıcılarla entegre edilmiştir.</li>
+</ul>
