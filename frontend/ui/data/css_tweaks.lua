@@ -1031,6 +1031,46 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
             ]],
             separator = true,
         },
+        {
+            id = "following-footnote-inpage_cr_only_if",
+            conflicts_with = function(id) return util.stringStartsWith(id, "following-footnote-inpage_") end,
+            title = _("Extend in-page footnotes until next footnote"),
+            description = _([[
+Show blocks following footnotes as part of the footnote.]]),
+            css = [[
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: following-inpage-footnote -inpage-footnote;
+    -cr-hint: extend-footnote-inpage;
+    margin: 0 !important;
+}
+            ]],
+        },
+        {
+            id = "following-footnote-inpage_css_only",
+            conflicts_with = function(id) return util.stringStartsWith(id, "following-footnote-inpage_") end,
+            title = _("Extend in-page footnotes until next footnote (css-only)"),
+            description = _([[
+Show blocks following footnotes as part of the footnote.]]),
+            css = [[
+.footnote ~ *, .footnotes ~ *, .fn ~ *,
+.note ~ *, .note1 ~ *, .note2 ~ *, .note3 ~ *,
+.ntb ~ *, .ntb-txt ~ *, .ntb-txt-j ~ *,
+.przypis ~ *, .przypis1 ~ *, /* Polish footnotes */
+.voetnoten ~ *, /* Dutch footnotes */
+.footnote ~ autoBoxing, .footnotes ~ autoBoxing, .fn ~ autoBoxing,
+.note ~ autoBoxing, .note1 ~ autoBoxing, .note2 ~ autoBoxing, .note3 ~ autoBoxing,
+.ntb ~ autoBoxing, .ntb-txt ~ autoBoxing, .ntb-txt-j ~ autoBoxing,
+.przypis ~ autoBoxing, .przypis1 ~ autoBoxing, /* Polish footnotes */
+.voetnoten ~ autoBoxing /* Dutch footnotes */
+{
+    -cr-hint: late;
+    -cr-only-if: -inpage-footnote;
+    -cr-hint: extend-footnote-inpage;
+    margin: 0 !important;
+}
+            ]],
+        },
         -- Next tweaks, with the help of crengine, will apply only to elements that were
         -- matched by previous tweaks that have set them the "footnote-inpage" cr-hint,
         -- and their children (their content).
