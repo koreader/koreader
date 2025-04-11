@@ -891,7 +891,7 @@ function ReaderPaging:onScrollPageRel(page_diff)
         return true
     elseif page_diff > 0 then
         -- page down, last page should be moved to top
-        local last_page_state = table.remove(self.view.page_states)
+        local last_page_state = self.view.page_states[#self.view.page_states]
         local last_visible_area = last_page_state.visible_area
         if self.ui.document:getNextPage(last_page_state.page) == 0 and
                 last_visible_area.y + last_visible_area.h >= last_page_state.page_area.h then
@@ -913,7 +913,7 @@ function ReaderPaging:onScrollPageRel(page_diff)
         local blank_area = Geom:new()
         blank_area:setSizeTo(self.view.visible_area)
         local overlap = self.overlap
-        local first_page_state = table.remove(self.view.page_states, 1)
+        local first_page_state = self.view.page_states[1]
         local offset = Geom:new{
             x = 0,
             y = -first_page_state.visible_area.h + overlap
