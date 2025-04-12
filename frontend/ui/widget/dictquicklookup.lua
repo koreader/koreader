@@ -218,7 +218,7 @@ function DictQuickLookup:init()
     if is_large_window then
         self.width = Screen:getWidth() - 2*Size.margin.default
     else
-        self.width = Screen:getWidth() - Screen:scaleBySize(80)
+        self.width = self.width or Screen:getWidth() - Screen:scaleBySize(80) -- user patchable
     end
     local frame_bordersize = Size.border.window
     local inner_width = self.width - 2*frame_bordersize
