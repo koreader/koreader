@@ -81,11 +81,9 @@ function ReaderMenu:registerKeyEvents()
             end
         else
             -- Map Menu key to top menu only, because the bottom menu is only designed for touch devices.
-            --- @fixme: Is this still the case?
-            ---         (Swapping between top and bottom might not be implemented, though, so it might still be a good idea).
-            self.key_events.ShowMenu = { { "Menu" } }
+            self.key_events.KeyPressShowMenu = { { "Menu" } }
             if Device:hasFewKeys() then
-                self.key_events.ShowMenu = { { { "Menu", "Right" } } }
+                self.key_events.KeyPressShowMenu = { { { "Menu", "Right" } } }
             end
         end
     end
@@ -381,13 +379,9 @@ function ReaderMenu:exitOrRestart(callback, force)
     end)
 end
 
-function ReaderMenu:onShowMenu(tab_index)
+function ReaderMenu:onShowMenu(tab_index, do_not_show)
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
-    end
-
-    if not tab_index then
-        tab_index = self.last_tab_index
     end
 
     local menu_container = CenterContainer:new{
@@ -401,9 +395,10 @@ function ReaderMenu:onShowMenu(tab_index)
         local TouchMenu = require("ui/widget/touchmenu")
         main_menu = TouchMenu:new{
             width = Screen:getWidth(),
-            last_index = tab_index,
+            last_index = tab_index or self.last_tab_index,
             tab_item_table = self.tab_item_table,
             show_parent = menu_container,
+            not_shown = do_not_show,
         }
     else
         local Menu = require("ui/widget/menu")
@@ -426,7 +421,9 @@ function ReaderMenu:onShowMenu(tab_index)
     menu_container[1] = main_menu
     -- maintain a reference to menu_container
     self.menu_container = menu_container
-    UIManager:show(menu_container)
+    if not do_not_show then
+        UIManager:show(menu_container)
+    end
     return true
 end
 
@@ -498,6 +495,10 @@ function ReaderMenu:onPressMenu()
     return true
 end
 
+function ReaderMenu:onKeyPressShowMenu(_, key_ev)
+    return self:onShowMenu()
+end
+
 function ReaderMenu:onTapCloseMenu()
     self:onCloseReaderMenu()
     self.ui:handleEvent(Event:new("CloseConfigMenu"))
@@ -512,7 +513,7 @@ function ReaderMenu:onSaveSettings()
 end
 
 function ReaderMenu:onMenuSearch()
-    self:onShowMenu()
+    self:onShowMenu(nil, true)
     self.menu_container[1]:onShowMenuSearch()
 end
 

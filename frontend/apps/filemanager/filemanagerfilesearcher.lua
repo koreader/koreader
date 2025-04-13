@@ -27,7 +27,7 @@ local FileSearcher = InputContainer:extend{
 
 function FileSearcher:init()
     self:registerKeyEvents()
-    if self.ui.file_chooser then
+    if not self.ui.document then
         self.ui.menu:registerToMainMenu(self)
     end
 end

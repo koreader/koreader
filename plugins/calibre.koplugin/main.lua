@@ -51,7 +51,8 @@ end
 function Calibre:onStartWirelessConnection()
     UIManager:nextTick(function()
         UIManager:show(InfoMessage:new{
-            text = _("Connecting to calibre")
+            text = _("Connecting to calibre"),
+            timeout = 2,
         })
     end)
     UIManager:tickAfterNext(function()

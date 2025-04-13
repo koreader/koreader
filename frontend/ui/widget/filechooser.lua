@@ -20,7 +20,7 @@ local FileChooser = BookList:extend{
     path = lfs.currentdir(),
     show_path = true,
     parent = nil,
-    show_finished    = G_reader_settings:readSetting("show_finished", true), -- books marked as finished
+    show_filter      = G_reader_settings:readSetting("show_filter", {}),
     show_hidden      = G_reader_settings:readSetting("show_hidden", false), -- folders/files starting with "."
     show_unsupported = G_reader_settings:readSetting("show_unsupported", false), -- set to true to ignore file_filter
     file_filter = nil, -- function defined in the caller, returns true for files to be shown
@@ -92,7 +92,8 @@ function FileChooser:show_file(filename, fullpath)
         if filename:match(pattern) then return false end
     end
     if not self.show_unsupported and self.file_filter ~= nil and not self.file_filter(filename) then return false end
-    if not FileChooser.show_finished and fullpath ~= nil and BookList.getBookStatus(fullpath) == "complete" then return false end
+    if FileChooser.show_filter.status and fullpath ~= nil
+        and not FileChooser.show_filter.status[BookList.getBookStatus(fullpath)] then return false end
     return true
 end
 
@@ -397,7 +398,7 @@ function FileChooser:changePageToPath(path)
 end
 
 function FileChooser:toggleShowFilesMode(mode)
-    -- modes: "show_finished", "show_hidden", "show_unsupported"
+    -- modes: "show_hidden", "show_unsupported"
     FileChooser[mode] = not FileChooser[mode]
     G_reader_settings:saveSetting(mode, FileChooser[mode])
     self:refreshPath()
@@ -429,11 +430,11 @@ function FileChooser:onFileHold(item)
 end
 
 function FileChooser:getNextOrPreviousFileInFolder(curr_file, prev)
-    local show_finished = FileChooser.show_finished
-    FileChooser.show_finished = true
+    local show_filter = FileChooser.show_filter
+    FileChooser.show_filter = {}
     local curr_path = curr_file:match(".*/"):gsub("/$", "")
     local item_table = self:genItemTableFromPath(curr_path)
-    FileChooser.show_finished = show_finished
+    FileChooser.show_filter = show_filter
     local top_i, step, is_curr_file_found
     if prev then
         top_i = #item_table + 1
