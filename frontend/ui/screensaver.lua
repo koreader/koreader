@@ -137,7 +137,7 @@ function Screensaver:_calcAverageTimeForPages(pages)
     return sec
 end
 
-function Screensaver:expandSpecial(message, fallback)
+function Screensaver:expandSpecial(message)
     -- Expand special character sequences in given message.
     -- %T document title
     -- %A document authors
@@ -150,12 +150,8 @@ function Screensaver:expandSpecial(message, fallback)
     -- %b battery level
     -- %B battery symbol
 
-    if G_reader_settings:hasNot("lastfile") then
-        return fallback
-    end
-
-    local ret = message
     local lastfile = G_reader_settings:readSetting("lastfile")
+    if lastfile == nil then return end
 
     local totalpages = 0
     local percent = 0
@@ -245,9 +241,7 @@ function Screensaver:expandSpecial(message, fallback)
         ["%b"] = batt_lvl,
         ["%B"] = batt_symbol,
     }
-    ret = ret:gsub("(%%%a)", replace)
-
-    return ret
+    return message:gsub("(%%%a)", replace)
 end
 
 local function addOverlayMessage(widget, widget_height, text)
@@ -680,7 +674,7 @@ function Screensaver:show()
 
         -- NOTE: Only attempt to expand if there are special characters in the message.
         if screensaver_message:find("%%") then
-            screensaver_message = self:expandSpecial(screensaver_message, self.event_message or self.default_screensaver_message)
+            screensaver_message = self:expandSpecial(screensaver_message) or self.event_message or self.default_screensaver_message
         end
 
         local message_pos
