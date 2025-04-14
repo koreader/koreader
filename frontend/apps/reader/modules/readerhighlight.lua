@@ -851,6 +851,7 @@ Except when in two columns mode, where this is limited to showing only the previ
                 local highlight_non_touch_interval = G_reader_settings:readSetting("highlight_non_touch_interval") or 1
                 return T(N_("Interval for crosshairs speed increase: 1 second", "Interval for crosshairs speed increase: %1 seconds", highlight_non_touch_interval), highlight_non_touch_interval)
             end,
+            separator = true,
             enabled_func = function()
                 return not self.view.highlight.disabled and G_reader_settings:nilOrTrue("highlight_non_touch_spedup")
             end,
