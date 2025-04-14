@@ -144,7 +144,7 @@ return {
             {
                 text = _("Custom images"),
                 enabled_func = function()
-                    return isRandomImageFolder() or G_reader_settings:readSetting("screensaver_type") == "document_cover"
+                    return mayUseRandomImageFolder() or G_reader_settings:readSetting("screensaver_type") == "document_cover"
                 end,
                 sub_item_table = {
                     {
