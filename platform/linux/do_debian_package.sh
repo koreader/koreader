@@ -103,13 +103,13 @@ sed -i 's,./luajit,/usr/lib/koreader/luajit,' "${BASE_DIR}/usr/lib/koreader/read
 find "${BASE_DIR}" -type f -perm /+x -name '*.so*' -print0 | xargs -0 chmod a-x
 
 # remove misc files that are already resumed in usr/share/doc/koreader
-find ${BASE_DIR} '(' -name "*.md" -o -name "LICENSE" ')' -type f -print0 | xargs -0 rm -rf
+find "${BASE_DIR}" '(' -name "*.md" -o -name "LICENSE" ')' -type f -print0 | xargs -0 rm -rf
 
 # remove tools
-rm -rf ${BASE_DIR}/usr/lib/koreader/tools
+rm -rf "${BASE_DIR}/usr/lib/koreader/tools"
 
 # add debian changelog
-write_changelog ${BASE_DIR}/usr "${VERSION}"
+write_changelog "${BASE_DIR}/usr" "${VERSION}"
 
 fakeroot dpkg-deb -b "${BASE_DIR}" "koreader-${VERSION}-${DEB_ARCH}.deb"
 rm -rf tmp-debian
