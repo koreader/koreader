@@ -19,25 +19,14 @@ uname_to_debian() {
 write_changelog() {
     CHANGELOG_PATH="${1}/share/doc/koreader/changelog.Debian.gz"
     CHANGELOG=$(
-        cat <<'END_HEREDOC'
-koreader (0.2) unstable; urgency=low
-  * don't use debian fonts: https://github.com/koreader/koreader/issues/13509
+        cat << END_HEREDOC
+koreader ($2) stable; urgency=low
+  * Changelog is available at https://github.com/koreader/koreader/releases
 
- -- koreader <null@koreader.rocks>  Sat, 05 Apr 2025 00:00:00 +0100
-
-koreader (0.1) unstable; urgency=low
-
-  * Fixes most lintian errors and warnings
-
- -- koreader <null@koreader.rocks>  Thu, 14 May 2020 00:00:00 +0100
-
-koreader (0.0.1) experimental; urgency=low
-
-  * Initial release as Debian package (Closes: https://github.com/koreader/koreader/issues/3108)
-
- -- koreader <null@koreader.rocks>  Tue, 03 Jan 2019 00:00:00 +0100
+ -- koreader <null@koreader.rocks>  $(date -R)
 END_HEREDOC
     )
+
 
     echo "${CHANGELOG}" | gzip -cn9 >"${CHANGELOG_PATH}"
     chmod 644 "${CHANGELOG_PATH}"
@@ -81,18 +70,22 @@ Installed-Size: $(du -ks "${BASE_DIR}/usr/" | cut -f 1)
 Package: koreader
 Maintainer: koreader <null@koreader.rocks>
 Homepage: https://koreader.rocks
-Description: Ebook reader optimized for e-ink screens.
+Description: ebook reader optimized for e-ink screens.
  It can open many formats and provides advanced text adjustments.
  .
  See below for a selection of its many features:
  .
- Supports both fixed page formats (PDF, DjVu, CBT, CBZ) and reflowable e-book formats (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). 
- Scanned PDF/DjVu documents can be reflowed. Special flow directions for reading double column PDFs and manga.
+ Supports both fixed page formats (PDF, DjVu, CBT, CBZ)
+ and reflowable e-book formats (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML).
+ Scanned PDF/DjVu documents can be reflowed.
+ Special flow directions for reading double column PDFs and manga.
  .
  Multi-lingual user interface optimized for e-ink screens.
- Highly customizable reader view with complete typesetting options. Multi-lingual hyphenation dictionaries are bundled in.
+ Highly customizable reader view with complete typesetting options.
+ Multi-lingual hyphenation dictionaries are bundled in.
  .
- Non-Latin script support for books, including the Hebrew, Arabic, Persian, Russian, Chinese, Japanese and Korean languages.
+ Non-Latin script support for books, including the Hebrew, Arabic,
+ Persian, Russian, Chinese, Japanese and Korean languages.
  .
  Unique Book Map and Page Browser features to navigate your book.
  .
@@ -100,7 +93,8 @@ Description: Ebook reader optimized for e-ink screens.
  .
  Can synchronize your reading progress across all your KOReader running devices.
  .
- Integrated with Calibre, Wallabag, Wikipedia, Google translate and other content providers.
+ Integrated with Calibre, Wallabag, Wikipedia,
+ Google Translate and other content providers.
 EOF
 
 # use absolute path to luajit in reader.lua
@@ -109,8 +103,14 @@ sed -i 's,./luajit,/usr/lib/koreader/luajit,' "${BASE_DIR}/usr/lib/koreader/read
 # lintian complains if shared libraries have execute rights.
 find "${BASE_DIR}" -type f -perm /+x -name '*.so*' -print0 | xargs -0 chmod a-x
 
-# add debian changelog
-write_changelog "${BASE_DIR}/usr"
+# remove misc files that are already resumed in usr/share/doc/koreader
+find ${BASE_DIR} '(' -name "*.md" -o -name "LICENSE" ')' -type f -print0 | xargs -0 rm -rf
 
-fakeroot dpkg-deb -b "${BASE_DIR}" "koreader-${VERSION}-${DEB_ARCH}.deb"
+# remove tools
+rm -rf ${BASE_DIR}/usr/lib/koreader/tools
+
+# add debian changelog
+write_changelog ${BASE_DIR}/usr "${VERSION}"
+
+fakeroot dpkg-deb -b ${BASE_DIR} koreader-"${VERSION}"-"${DEB_ARCH}".deb
 rm -rf tmp-debian
