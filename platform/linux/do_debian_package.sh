@@ -21,9 +21,22 @@ write_changelog() {
     CHANGELOG=$(
         cat <<END_HEREDOC
 koreader ($2) stable; urgency=low
+
   * Changelog is available at https://github.com/koreader/koreader/releases
 
  -- koreader <null@koreader.rocks>  $(date -R)
+
+koreader (2025.04) unstable; urgency=low
+
+  * don't use debian fonts: https://github.com/koreader/koreader/issues/13509
+
+ -- koreader <null@koreader.rocks>  Thu, 10 Apr 2025 00:00:00 +0200
+
+koreader (0.0.1) experimental; urgency=low
+
+  * initial release as debian package: https://github.com/koreader/koreader/issues/3108
+
+ -- koreader <null@koreader.rocks>  Tue, 03 Jan 2019 00:00:00 +0100
 END_HEREDOC
     )
 
@@ -102,7 +115,7 @@ sed -i 's,./luajit,/usr/lib/koreader/luajit,' "${BASE_DIR}/usr/lib/koreader/read
 # lintian complains if shared libraries have execute rights.
 find "${BASE_DIR}" -type f -perm /+x -name '*.so*' -print0 | xargs -0 chmod a-x
 
-# remove misc files that are already resumed in usr/share/doc/koreader
+# remove misc files that are already summarized in usr/share/doc/koreader
 find "${BASE_DIR}" '(' -name "*.md" -o -name "LICENSE" ')' -type f -print0 | xargs -0 rm -rf
 
 # add debian changelog
