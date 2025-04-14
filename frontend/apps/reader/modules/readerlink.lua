@@ -443,8 +443,13 @@ This allows you to specify how much smaller or larger it should be relative to t
         return temp_menu_items
     end
 
-    if Device:isTouchDevice() then
-        -- Add footnote settings directly to main menu for touch devices
+    if not Device:isTouchDevice() then
+        -- on NT devices, add all settings directly to the parent menu_items, to avoid unnecessary sub_menus
+        local items = subItemTable()
+        for _, item in ipairs(items) do
+            table.insert(menu_items, item)
+        end
+    else
         table.insert(menu_items, {
             text = _("Footnote popup settings"),
             enabled_func = function()
@@ -454,12 +459,6 @@ This allows you to specify how much smaller or larger it should be relative to t
             separator = true,
             sub_item_table = subItemTable(),
         })
-    else
-        -- Add footnote settings to submenu for non-touch devices
-        local elements = subItemTable()
-        for _, element in ipairs(elements) do
-            table.insert(menu_items, element)
-        end
     end
     return menu_items
 end
