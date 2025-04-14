@@ -111,5 +111,5 @@ rm -rf ${BASE_DIR}/usr/lib/koreader/tools
 # add debian changelog
 write_changelog ${BASE_DIR}/usr "${VERSION}"
 
-fakeroot dpkg-deb -b ${BASE_DIR} koreader-"${VERSION}"-"${DEB_ARCH}".deb
+fakeroot dpkg-deb -b "${BASE_DIR}" "koreader-${VERSION}-${DEB_ARCH}.deb"
 rm -rf tmp-debian
