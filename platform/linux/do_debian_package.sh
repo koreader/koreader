@@ -19,7 +19,7 @@ uname_to_debian() {
 write_changelog() {
     CHANGELOG_PATH="${1}/share/doc/koreader/changelog.Debian.gz"
     CHANGELOG=$(
-        cat << END_HEREDOC
+        cat <<END_HEREDOC
 koreader ($2) stable; urgency=low
   * Changelog is available at https://github.com/koreader/koreader/releases
 
