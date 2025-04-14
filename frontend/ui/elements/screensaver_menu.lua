@@ -14,11 +14,12 @@ local function isReaderProgressEnabled()
 end
 
 local function mayUseRandomImageFolder()
-    local ignore_book_cover = G_reader_settings:isTrue("screensaver_exclude_on_hold_books")
+    local may_ignore_book_cover = G_reader_settings:isTrue("screensaver_exclude_on_hold_books")
         or G_reader_settings:isTrue("screensaver_exclude_finished_books")
         or G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
+        or Screensaver:isExcluded()
     return G_reader_settings:readSetting("screensaver_type") == "random_image"
-            or (G_reader_settings:readSetting("screensaver_type") == "cover" and ignore_book_cover)
+            or (G_reader_settings:readSetting("screensaver_type") == "cover" and may_ignore_book_cover)
 end
 
 local function genMenuItem(text, setting, value, enabled_func, separator)
