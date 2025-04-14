@@ -27,7 +27,6 @@ koreader ($2) stable; urgency=low
 END_HEREDOC
     )
 
-
     echo "${CHANGELOG}" | gzip -cn9 >"${CHANGELOG_PATH}"
     chmod 644 "${CHANGELOG_PATH}"
 }
@@ -70,7 +69,7 @@ Installed-Size: $(du -ks "${BASE_DIR}/usr/" | cut -f 1)
 Package: koreader
 Maintainer: koreader <null@koreader.rocks>
 Homepage: https://koreader.rocks
-Description: ebook reader optimized for e-ink screens.
+Description: Ebook reader optimized for e-ink screens.
  It can open many formats and provides advanced text adjustments.
  .
  See below for a selection of its many features:
