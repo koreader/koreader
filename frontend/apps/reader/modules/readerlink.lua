@@ -355,7 +355,7 @@ From the footnote popup, you can jump to the footnote location in the book by sw
                 separator = Device:isTouchDevice() and true or false,
             },
             {
-                text = _("Use book font as popup font"),
+                text = _("Use book font in popups"),
                 enabled_func = function()
                     return isFootnoteLinkInPopupEnabled() and
                         (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
@@ -366,10 +366,10 @@ From the footnote popup, you can jump to the footnote location in the book by sw
                 callback = function()
                     G_reader_settings:flipNilOrFalse("footnote_popup_use_book_font")
                 end,
-                help_text = _([[Display the footnote popup text with the font set as the document font (the book text may still render with a different font if the book uses embedded fonts).]]),
+                help_text = _([[Display the footnote popup text with the font set as that of the document (the book text may still render with a different font if the book uses embedded fonts).]]),
             },
             {
-                text = _("Set footnote popup font size"),
+                text = _("Footnote popup font size"),
                 enabled_func = function()
                     return isFootnoteLinkInPopupEnabled() and
                         (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
@@ -497,7 +497,7 @@ function ReaderLink:addToMainMenu(menu_items)
     }
     if not Device:isTouchDevice() then
         if self.ui.rolling then
-            -- Add footnote settings directly to main menu for non-touch devices
+            -- Add footnote settings to the selection_text menu (readerhighlight)
             local footnote_items = self:getFootnoteSettingsMenuTable()
             menu_items.typesetfootnotes = {
                 text = _("Footnotes and links"),
