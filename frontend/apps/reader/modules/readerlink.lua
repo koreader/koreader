@@ -597,8 +597,9 @@ If any of the other Swipe to follow link options is enabled, this will work only
 
         -- Insert footnote settings as 4th and 5th items in the submenu
         local footnote_items = self:getFootnoteSettingsMenuTable()
-        table.insert(menu_items.follow_links.sub_item_table, 4, footnote_items[1])
-        table.insert(menu_items.follow_links.sub_item_table, 5, footnote_items[2])
+        for i = 1, #footnote_items do
+            table.insert(menu_items.follow_links.sub_item_table, i+3, footnote_items[i])
+        end
     end
 end
 
