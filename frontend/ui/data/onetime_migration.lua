@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20250405
+local CURRENT_MIGRATION_DATE = 20250417
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -884,6 +884,32 @@ if last_migration_date < 20250405 then
         })
     end
     G_reader_settings:delSetting("show_finished")
+end
+
+-- 20250417, Refactor default footnote style tweaks
+-- https://github.com/koreader/koreader/pull/XXX
+if last_migration_date < 20250417 then
+    local global_tweaks = G_reader_settings:readSetting("style_tweaks")
+
+    if global_tweaks then
+        if global_tweaks["footnote-inpage_epub_smaller"] then
+            global_tweaks["footnote-inpage_epub"] = true
+        end
+        if global_tweaks["footnote-inpage_wikipedia_smaller"] then
+            global_tweaks["footnote-inpage_wikipedia"] = true
+        end
+        if global_tweaks["footnote-inpage_classic_classnames_smaller"] then
+            global_tweaks["footnote-inpage_classic_classnames"] = true
+        end
+        if global_tweaks["footnote-inpage_epub_smaller"] or global_tweaks["footnote-inpage_wikipedia_smaller"] or global_tweaks["footnote-inpage_classic_classnames_smaller"] then
+            global_tweaks["smaller_footnote-inpage"] = true
+        end
+        global_tweaks["footnote-inpage_epub_smaller"] = nil
+        global_tweaks["footnote-inpage_wikipedia_smaller"] = nil
+        global_tweaks["footnote-inpage_classic_classnames_smaller"] = nil
+
+        G_reader_settings:saveSetting("style_tweaks", global_tweaks)
+    end
 end
 
 -- We're done, store the current migration date
