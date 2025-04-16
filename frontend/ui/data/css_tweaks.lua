@@ -943,6 +943,15 @@ This only works with footnotes that have specific attributes set by the publishe
     -cr-only-if: -fb2-document;
         -cr-hint: footnote-inpage;
         margin: 0 !important;
+}
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: inpage-footnote;
+        font-size: 0.8rem !important;
+}
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: extended-inpage-footnote;
         font-size: 0.8rem !important;
 }
             ]],
@@ -976,7 +985,16 @@ ol.references > li {
     -cr-hint: footnote-inpage;
     list-style-position: -cr-outside;
     margin: 0 !important;
-    font-size: 0.8rem !important;
+}
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: inpage-footnote;
+        font-size: 0.8rem !important;
+}
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: extended-inpage-footnote;
+        font-size: 0.8rem !important;
 }
 /* hide backlinks */
 ol.references > li > .noprint { display: none; }
@@ -1026,7 +1044,16 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
 {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
-    font-size: 0.8rem !important;
+}
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: inpage-footnote;
+        font-size: 0.8rem !important;
+}
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: extended-inpage-footnote;
+        font-size: 0.8rem !important;
 }
             ]],
             separator = true,
