@@ -590,10 +590,7 @@ function ReaderPaging:getBookLocation()
     if ctx then
         -- We need a copy, as we're getting references to
         -- objects ReaderPaging/ReaderView may still modify
-        local current_location = {}
-        for i=1, #ctx do
-            current_location[i] = util.tableDeepCopy(ctx[i])
-        end
+        local current_location = util.tableDeepCopy(ctx)
         return current_location
     end
 end
