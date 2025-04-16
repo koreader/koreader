@@ -1203,7 +1203,7 @@ function Gestures:onIgnoreHoldCorners(ignore_hold_corners, no_notification)
     end
     self.ignore_hold_corners = G_reader_settings:isTrue("ignore_hold_corners")
 
-    if no_notification then return true end -- when toggled from menu
+    if no_notification then return true end
 
     local Notification = require("ui/widget/notification")
     if G_reader_settings:readSetting("ignore_hold_corners") then
