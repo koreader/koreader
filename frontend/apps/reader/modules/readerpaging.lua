@@ -596,6 +596,9 @@ function ReaderPaging:getBookLocation()
 end
 
 function ReaderPaging:onRestoreBookLocation(saved_location)
+    if not saved_location or not saved_location[1] then
+        return
+    end
     if self.view.page_scroll then
         if self.view:restoreViewContext(saved_location) then
             self:_gotoPage(saved_location[1].page, "scrolling")
