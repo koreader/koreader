@@ -35,6 +35,7 @@ local TweakInfoWidget = InputContainer:extend{
     tweak = nil,
     is_global_default = nil,
     toggle_global_default_callback = function() end,
+    css_text_callback = function() end,
     modal = true,
     width = math.floor(Screen:getWidth() * 0.75),
 }
@@ -82,21 +83,11 @@ function TweakInfoWidget:init()
     -- This css TextBoxWidget may make the widget overflow screen with
     -- large css text. For now, we don't bother with the complicated
     -- setup of a scrollable ScrollTextWidget.
-    local css = tweak.css
-    if not css and tweak.css_path then
-        css = ""
-        local f = io.open(tweak.css_path, "r")
-        if f then
-            css = f:read("*all")
-            f:close()
-        end
-    end
-    self.css_text = util.trim(css)
     self.css_frame = FrameContainer:new{
         bordersize = Size.border.thin,
         padding = Size.padding.large,
         TextBoxWidget:new{
-            text = self.css_text,
+            text = self:css_text_callback(),
             face = Font:getFace("infont", 16),
             width = self.width - 2*Size.padding.large,
             para_direction_rtl = false, -- LTR
@@ -207,7 +198,7 @@ function TweakInfoWidget:onTap(arg, ges)
         -- Tap inside CSS text copies it into clipboard (so it
         -- can be pasted into the book-specific tweak editor)
         -- (Add \n on both sides for easier pasting)
-        Device.input.setClipboardText("\n"..self.css_text.."\n")
+        Device.input.setClipboardText("\n"..self:css_text_callback().."\n")
         UIManager:show(Notification:new{
             text = _("CSS text copied to clipboard"),
         })
@@ -366,44 +357,57 @@ function ReaderStyleTweak:getCssText()
     return self.css_text
 end
 
+function ReaderStyleTweak:getEnabledTweaks()
+    local tweaks = {}
+    for id, enabled in pairs(self.global_tweaks) do
+        -- there are only enabled tweaks in global_tweaks, but we don't
+        -- add them here if they appear in doc_tweaks (if enabled in
+        -- doc_tweaks, they'll be added below; if disabled, they should
+        -- not be added)
+        if self.doc_tweaks[id] == nil then
+            table.insert(tweaks, self.tweaks_by_id[id])
+        end
+    end
+    for id, enabled in pairs(self.doc_tweaks) do
+        -- there are enabled (true) and disabled (false) tweaks in doc_tweaks
+        if self.doc_tweaks[id] == true then
+            table.insert(tweaks, self.tweaks_by_id[id])
+        end
+    end
+    table.sort(tweaks, tweakOrdering)
+    return tweaks
+end
+
+function ReaderStyleTweak:getCssTweakText(tweak, enabled_tweaks)
+    local css
+    if tweak.css_func then
+        css = [[
+/* Hint dynamically generated based on other hints */
+]] .. tweak.css_func(enabled_tweaks)
+    elseif tweak.css_path then
+        -- We could store what's been read into tweak.css and avoid
+        -- re-reading it, but this will allow a user to experiment
+        -- without having to restart KOReader
+        local f = io.open(tweak.css_path, "r")
+        if f then
+            css = f:read("*all")
+            f:close()
+        end
+    else
+        css = tweak.css
+    end
+    return css
+end
+
 -- Build css_text, and request ReaderTypeset to apply it if wanted
 function ReaderStyleTweak:updateCssText(apply)
     if self.enabled then
-        local tweaks = {}
-        for id, enabled in pairs(self.global_tweaks) do
-            -- there are only enabled tweaks in global_tweaks, but we don't
-            -- add them here if they appear in doc_tweaks (if enabled in
-            -- doc_tweaks, they'll be added below; if disabled, they should
-            -- not be added)
-            if self.doc_tweaks[id] == nil then
-                table.insert(tweaks, self.tweaks_by_id[id])
-            end
-        end
-        for id, enabled in pairs(self.doc_tweaks) do
-            -- there are enabled (true) and disabled (false) tweaks in doc_tweaks
-            if self.doc_tweaks[id] == true then
-                table.insert(tweaks, self.tweaks_by_id[id])
-            end
-        end
-        table.sort(tweaks, tweakOrdering)
+        local tweaks = self:getEnabledTweaks()
         self.nb_enabled_tweaks = 0
         local css_snippets = {}
         for _, tweak in ipairs(tweaks) do
             self.nb_enabled_tweaks = self.nb_enabled_tweaks + 1
-            local css = tweak.css
-            if not css and tweak.css_path then
-                css = ""
-                local f = io.open(tweak.css_path, "r")
-                if f then
-                    css = f:read("*all")
-                    f:close()
-                end
-                -- We could store what's been read into tweak.css to avoid
-                -- re-reading it, but this will allow a user to experiment
-                -- without having to restart KOReader
-            end
-            css = util.trim(css)
-            table.insert(css_snippets, css)
+            table.insert(css_snippets, util.trim(self:getCssTweakText(tweak, tweaks)))
         end
         if self.book_style_tweak and self.book_style_tweak_enabled then
             self.nb_enabled_tweaks = self.nb_enabled_tweaks + 1
@@ -566,6 +570,10 @@ You can enable individual tweaks on this book with a tap, or view more details a
                             touchmenu_instance:updateItems()
                             self:updateCssText(true) -- apply it immediately
                         end,
+                        css_text_callback = function()
+                            local tweaks = self:getEnabledTweaks()
+                            return util.trim(self:getCssTweakText(item, tweaks))
+                            end,
                         is_tweak_in_dispatcher = self.tweaks_in_dispatcher[item.id],
                         toggle_tweak_in_dispatcher_callback = function()
                             if self.tweaks_in_dispatcher[item.id] then

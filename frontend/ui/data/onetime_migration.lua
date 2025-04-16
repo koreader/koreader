@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20250405
+local CURRENT_MIGRATION_DATE = 20250420
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -884,6 +884,43 @@ if last_migration_date < 20250405 then
         })
     end
     G_reader_settings:delSetting("show_finished")
+end
+
+-- 20250420, Remove separate "smaller footnotes" tweak
+-- https://github.com/koreader/koreader/pull/13639
+if last_migration_date < 20250420 then
+    local global_tweaks = G_reader_settings:readSetting("style_tweaks")
+
+    if global_tweaks then
+        for __, pct in ipairs( { 100, 90, 85, 80, 75, 70, 65 } ) do
+            if global_tweaks["font-size_" .. pct] then
+                global_tweaks["inpage_footnote_text_force_size"] = true
+            end
+        end
+        -- if the force flag isn't set then none of the size hints
+        -- were set before and we should keep the "small" setting
+        if not global_tweaks["inpage_footnote_text_force_size"]
+            and (global_tweaks["footnote-inpage_epub_smaller"]
+                or global_tweaks["footnote-inpage_wikipedia_smaller"]
+                or global_tweaks["footnote-inpage_classic_classnames_smaller"]
+        ) then
+            global_tweaks["inpage_footnote_font-size_80"] = true
+        end
+
+        if global_tweaks["footnote-inpage_epub_smaller"] then
+            global_tweaks["footnote-inpage_epub"] = true
+        end
+        if global_tweaks["footnote-inpage_wikipedia_smaller"] then
+            global_tweaks["footnote-inpage_wikipedia"] = true
+        end
+        if global_tweaks["footnote-inpage_classic_classnames_smaller"] then
+            global_tweaks["footnote-inpage_classic_classnames"] = true
+        end
+
+        global_tweaks["footnote-inpage_epub_smaller"] = nil
+        global_tweaks["footnote-inpage_wikipedia_smaller"] = nil
+        global_tweaks["footnote-inpage_classic_classnames_smaller"] = nil
+    end
 end
 
 -- We're done, store the current migration date
