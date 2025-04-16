@@ -1195,13 +1195,22 @@ function Gestures:multiswipeAction(multiswipe_directions, ges)
     end
 end
 
-function Gestures:onIgnoreHoldCorners(ignore_hold_corners)
+function Gestures:onIgnoreHoldCorners(ignore_hold_corners, no_notification)
     if ignore_hold_corners == nil then
         G_reader_settings:flipNilOrFalse("ignore_hold_corners")
     else
         G_reader_settings:saveSetting("ignore_hold_corners", ignore_hold_corners)
     end
     self.ignore_hold_corners = G_reader_settings:isTrue("ignore_hold_corners")
+    
+    if no_notification then return true end -- when toggled from menu
+    
+    local Notification = require("ui/widget/notification")
+    if G_reader_settings:readSetting("ignore_hold_corners") then
+        Notification:notify(_("Ignore long-press on corners: on"))
+    else
+        Notification:notify(_("Ignore long-press on corners: off"))
+    end
     return true
 end
 
