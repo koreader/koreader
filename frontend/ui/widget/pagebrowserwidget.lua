@@ -1636,8 +1636,8 @@ function PageBrowserWidget:onHold(arg, ges)
             -- emulator: triggered by ContextMenu key with focused widget, no pos information in event
             -- set pos to center of widget
             local pos = self:getFocusItem().dimen:copy()
-            pos.x = pos.x + pos.w / 2
-            pos.y = pos.y + pos.h / 2
+            pos.x = pos.x + math.floor(pos.w / 2)
+            pos.y = pos.y + math.floor(pos.h / 2)
             pos.w = 0
             pos.h = 0
             ges.pos = pos;
