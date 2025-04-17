@@ -127,6 +127,9 @@ local RemarkablePaperPro = Remarkable:extend{
     hasFrontlight = yes,
     canTurnFrontlightOff = yes,
     hasColorScreen = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/rm_frontlight",
+    }
 }
 
 function RemarkablePaperPro:adjustTouchEvent(ev, by)
@@ -286,6 +289,10 @@ function Remarkable:setDateTime(year, month, day, hour, min, sec)
         command = string.format("timedatectl set-time '%d:%d'",hour, min)
     end
     return os.execute(command) == 0
+end
+
+function Remarkable:saveSettings()
+    self.powerd:saveSettings()
 end
 
 function Remarkable:resume()
