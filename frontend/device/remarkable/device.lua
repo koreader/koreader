@@ -17,7 +17,7 @@ local function getModel()
     end
     local model = f:read("*line")
     f:close()
-    return model == "reMarkable 2.0", model == "reMarkable Ferrari", model
+    return model
 end
 
 -- Resolutions from libremarkable src/framebuffer/common.rs
@@ -25,7 +25,9 @@ local screen_width = 1404 -- unscaled_size_check: ignore
 local screen_height = 1872 -- unscaled_size_check: ignore
 local wacom_width = 15725 -- unscaled_size_check: ignore
 local wacom_height = 20967 -- unscaled_size_check: ignore
-local isRm2, isRmPaperPro, rm_model = getModel()
+local rm_model = getModel()
+local isRm2 = rm_model == "reMarkable 2.0"
+local isRmPaperPro = rm_model == "reMarkable Ferrari"
 
 if isRmPaperPro then
     screen_width = 1620 -- unscaled_size_check: ignore
