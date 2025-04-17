@@ -122,7 +122,7 @@ local RemarkablePaperPro = Remarkable:extend{
     input_buttons = "/dev/input/event2",
     battery_path = "/sys/class/power_supply/max1726x_battery/capacity",
     status_path = "/sys/class/power_supply/max1726x_battery/status",
-    hasFrontlight = yes, -- Paper Pro has frontlight and color display
+    hasFrontlight = yes,
     canTurnFrontlightOff = yes,
     hasColorScreen = yes,
 }
@@ -335,16 +335,16 @@ function Remarkable:setEventHandlers(UIManager)
     end
 end
 
-if isRmPaperPro then
-    if not os.getenv("LD_PRELOAD") then
-        error("reMarkable Paper Pro requires qtfb and qtfb-rmpp-shim to work")
-    end
-    return RemarkablePaperPro
-elseif isRm2 then
+if isRm2 then
     if not os.getenv("RM2FB_SHIM") then
         error("reMarkable2 requires RM2FB to work (https://github.com/ddvk/remarkable2-framebuffer)")
     end
     return Remarkable2
+elseif isRmPaperPro then
+    if not os.getenv("LD_PRELOAD") then
+        error("reMarkable Paper Pro requires qtfb and qtfb-rmpp-shim to work")
+    end
+    return RemarkablePaperPro
 else
     return Remarkable1
 end
