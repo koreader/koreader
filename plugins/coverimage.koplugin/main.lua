@@ -10,8 +10,7 @@ if not (Device.isAndroid() or Device.isEmulator() or Device.isRemarkable() or De
     return { disabled = true }
 end
 
----@diagnostic disable-next-line: unused-local
-local _unused, android = pcall(require, "android") -- luacheck: ignore
+local dummy, android = pcall(require, "android")
 local Blitbuffer = require("ffi/blitbuffer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
@@ -61,8 +60,7 @@ local function isFileOk(filename)
 end
 
 local function getExtension(filename)
-    ---@diagnostic disable-next-line: unused-local, redefined-local
-    local _unused, name = util.splitFilePathName(filename) -- luacheck: ignore
+    local dummy, name = util.splitFilePathName(filename)
     return util.getFileNameSuffix(name):lower()
 end
 
@@ -235,8 +233,7 @@ end
 
 function CoverImage:getCacheFile(custom_cover)
     local custom_cover_mtime = custom_cover and lfs.attributes(custom_cover, "modification") or ""
-    ---@diagnostic disable-next-line: unused-local, redefined-local
-    local _unused, document_name = util.splitFilePathName(self.ui.document.file) -- luacheck: ignore
+    local dummy, document_name = util.splitFilePathName(self.ui.document.file)
     local rotated = ""
     if self.cover_image_rotate then
         rotated = "_rotated_"
@@ -672,7 +669,7 @@ function CoverImage:menuEntrySBF()
                 text = _("Rotate image"),
                 keep_menu_open = true,
                 help_text_func = function()
-                    return T(_("Rotate the generated image to follow the device orientation. This when the system does not rotate the background image to follow system orientation. Disable this option if your device handles correctly screen saver rotation."), self.cover_image_stretch_limit)
+                    return T(_("Rotate the generated image to follow the device orientation. Enable this when the native system does not rotate the background image to follow system orientation. Disable this if your device correctly handles screen saver rotation."), self.cover_image_stretch_limit)
                 end,
                 checked_func = function()
                     return self.cover_image_rotate
