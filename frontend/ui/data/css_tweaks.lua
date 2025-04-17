@@ -1063,7 +1063,7 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
             {
                 id = "following-footnote-inpage_all",
                 conflicts_with = function(id) return util.stringStartsWith(id, "following-footnote-inpage_") end,
-                title = _("Extend footnotes until next footnote"),
+                title = _("Extend footnote content until next entry"),
                 description = _([[
 Extend in-page footnotes shown at the bottom of pages to include text up to the next footnote.
 This is needed when books don't correctly mark all text that belongs to the footnote.]]),
@@ -1078,7 +1078,7 @@ This is needed when books don't correctly mark all text that belongs to the foot
             {
                 id = "following-footnote-inpage_until_heading",
                 conflicts_with = function(id) return util.stringStartsWith(id, "following-footnote-inpage_") end,
-                title = _("Extend footnotes until next heading or footnote"),
+                title = _("Extend footnote content until next header"),
                 description = _([[
 Extend in-page footnotes shown at the bottom of pages to include text up to the next footnote or heading.
 This is needed when books don't correctly mark all text that belongs to the footnote.
