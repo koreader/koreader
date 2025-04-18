@@ -119,9 +119,9 @@ local RemarkablePaperPro = Remarkable:extend{
     mt_width = 2064,
     mt_height = 2832,
     display_dpi = 229,
-    input_wacom = "/dev/input/event0",
-    input_ts = "/dev/input/event1",
-    input_buttons = "/dev/input/event2",
+    input_wacom = "/dev/input/event2",
+    input_ts = "/dev/input/event3",
+    input_buttons = "/dev/input/event0",
     battery_path = "/sys/class/power_supply/max1726x_battery/capacity",
     status_path = "/sys/class/power_supply/max1726x_battery/status",
     hasFrontlight = yes,
@@ -136,10 +136,10 @@ function RemarkablePaperPro:adjustTouchEvent(ev, by)
     if ev.type == C.EV_ABS then
         -- Mirror X and Y and scale up both X & Y as touch input is different res from display
         if ev.code == C.ABS_MT_POSITION_X then
-            ev.value = (RemarkablePaperPro.mt_width - ev.value) * by.mt_scale_x
+            ev.value = (ev.value) * by.mt_scale_x
         end
         if ev.code == C.ABS_MT_POSITION_Y then
-            ev.value = (RemarkablePaperPro.mt_height - ev.value) * by.mt_scale_y
+            ev.value = (ev.value) * by.mt_scale_y
         end
     end
 end
@@ -155,6 +155,19 @@ local adjustAbsEvt = function(self, ev)
         end
     end
 end
+
+if isRmPaperPro then
+    adjustAbsEvt = function(self, ev)
+        if ev.type == C.EV_ABS then
+            if ev.code == C.ABS_X then
+                ev.value = ev.value * wacom_scale_x
+            elseif ev.code == C.ABS_Y then
+                ev.value = ev.value * wacom_scale_y
+            end
+        end
+    end
+end
+
 
 function Remarkable:init()
     local oxide_running = os.execute("systemctl is-active --quiet tarnish") == 0
@@ -206,7 +219,7 @@ function Remarkable:init()
         self.input_ts = "/dev/input/touchscreen0"
     end
 
-    self.input:open(self.input_wacom) -- Wacom
+    self.input:open(self.input_wacom) -- Wacom (it's not Wacom on Paper Pro but it should work)
     self.input:open(self.input_ts) -- Touchscreen
     self.input:open(self.input_buttons) -- Buttons
 
@@ -352,6 +365,12 @@ if isRm2 then
 elseif isRmPaperPro then
     if not os.getenv("LD_PRELOAD") then
         error("reMarkable Paper Pro requires qtfb and qtfb-rmpp-shim to work")
+    end
+    if not (os.getenv("QTFB_SHIM_INPUT") == "false" and os.getenv("QTFB_SHIM_MODEL") == "false") then
+        error("You must set both QTFB_SHIM_INPUT and QTFB_SHIM_MODEL to false")
+    end
+    if not os.getenv("QTFB_SHIM_MODE") == "RGB565" then
+        error("You must set QTFB_SHIM_MODE to RGB565")
     end
     return RemarkablePaperPro
 else
