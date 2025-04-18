@@ -280,7 +280,7 @@ if Device:isTouchDevice() then
             return G_reader_settings:isTrue("ignore_hold_corners")
         end,
         callback = function()
-            UIManager:broadcastEvent(Event:new("IgnoreHoldCorners"))
+            UIManager:broadcastEvent(Event:new("IgnoreHoldCorners", nil, true)) -- no notification
         end,
     }
     common_settings.screen_disable_double_tap = {
