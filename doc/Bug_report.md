@@ -1,9 +1,8 @@
 # Before reporting
 
 A bug that's not reproducible on the latest **nightly** (or development branch) is not a bug anymore.
-Make sure you're able to reproduce the issue on the latest **nightly**
 
-In the case you're able to reproduce the bug make sure it isn't already reported. Please **do not open duplicates**
+Please try to reproduce the issue on the latest **nightly** before submitting a bug preport. In case the bug is still there please make sure it isn't already reported. Please **do not open duplicates**
 
 # How to report
 
