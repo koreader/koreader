@@ -17,7 +17,7 @@ local function getModel()
     end
     local model = f:read("*line")
     f:close()
-    return model == "reMarkable 2.0", model
+    return model
 end
 
 -- Resolutions from libremarkable src/framebuffer/common.rs
@@ -25,9 +25,19 @@ local screen_width = 1404 -- unscaled_size_check: ignore
 local screen_height = 1872 -- unscaled_size_check: ignore
 local wacom_width = 15725 -- unscaled_size_check: ignore
 local wacom_height = 20967 -- unscaled_size_check: ignore
+local rm_model = getModel()
+local isRm2 = rm_model == "reMarkable 2.0"
+local isRmPaperPro = rm_model == "reMarkable Ferrari"
+
+if isRmPaperPro then
+    screen_width = 1620 -- unscaled_size_check: ignore
+    screen_height = 2160 -- unscaled_size_check: ignore
+    wacom_width = 11180 -- unscaled_size_check: ignore
+    wacom_height = 15340 -- unscaled_size_check: ignore
+end
+
 local wacom_scale_x = screen_width / wacom_width
 local wacom_scale_y = screen_height / wacom_height
-local isRm2, rm_model = getModel()
 
 local Remarkable = Generic:extend{
     isRemarkable = yes,
@@ -105,6 +115,35 @@ function Remarkable2:adjustTouchEvent(ev, by)
     end
 end
 
+local RemarkablePaperPro = Remarkable:extend{
+    mt_width = 2064,
+    mt_height = 2832,
+    display_dpi = 229,
+    input_wacom = "/dev/input/event2",
+    input_ts = "/dev/input/event3",
+    input_buttons = "/dev/input/event0",
+    battery_path = "/sys/class/power_supply/max1726x_battery/capacity",
+    status_path = "/sys/class/power_supply/max1726x_battery/status",
+    hasFrontlight = yes,
+    canTurnFrontlightOff = yes,
+    hasColorScreen = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/rm_frontlight",
+    }
+}
+
+function RemarkablePaperPro:adjustTouchEvent(ev, by)
+    if ev.type == C.EV_ABS then
+        -- Mirror X and Y and scale up both X & Y as touch input is different res from display
+        if ev.code == C.ABS_MT_POSITION_X then
+            ev.value = (ev.value) * by.mt_scale_x
+        end
+        if ev.code == C.ABS_MT_POSITION_Y then
+            ev.value = (ev.value) * by.mt_scale_y
+        end
+    end
+end
+
 local adjustAbsEvt = function(self, ev)
     if ev.type == C.EV_ABS then
         if ev.code == C.ABS_X then
@@ -116,6 +155,19 @@ local adjustAbsEvt = function(self, ev)
         end
     end
 end
+
+if isRmPaperPro then
+    adjustAbsEvt = function(self, ev)
+        if ev.type == C.EV_ABS then
+            if ev.code == C.ABS_X then
+                ev.value = ev.value * wacom_scale_x
+            elseif ev.code == C.ABS_Y then
+                ev.value = ev.value * wacom_scale_y
+            end
+        end
+    end
+end
+
 
 function Remarkable:init()
     local oxide_running = os.execute("systemctl is-active --quiet tarnish") == 0
@@ -167,7 +219,7 @@ function Remarkable:init()
         self.input_ts = "/dev/input/touchscreen0"
     end
 
-    self.input:open(self.input_wacom) -- Wacom
+    self.input:open(self.input_wacom) -- Wacom (it's not Wacom on Paper Pro but it should work)
     self.input:open(self.input_ts) -- Touchscreen
     self.input:open(self.input_buttons) -- Buttons
 
@@ -252,6 +304,10 @@ function Remarkable:setDateTime(year, month, day, hour, min, sec)
     return os.execute(command) == 0
 end
 
+function Remarkable:saveSettings()
+    self.powerd:saveSettings()
+end
+
 function Remarkable:resume()
 end
 
@@ -306,6 +362,17 @@ if isRm2 then
         error("reMarkable2 requires RM2FB to work (https://github.com/ddvk/remarkable2-framebuffer)")
     end
     return Remarkable2
+elseif isRmPaperPro then
+    if not os.getenv("LD_PRELOAD") then
+        error("reMarkable Paper Pro requires qtfb and qtfb-rmpp-shim to work")
+    end
+    if not (os.getenv("QTFB_SHIM_INPUT") == "false" and os.getenv("QTFB_SHIM_MODEL") == "false") then
+        error("You must set both QTFB_SHIM_INPUT and QTFB_SHIM_MODEL to false")
+    end
+    if not os.getenv("QTFB_SHIM_MODE") == "RGB565" then
+        error("You must set QTFB_SHIM_MODE to RGB565")
+    end
+    return RemarkablePaperPro
 else
     return Remarkable1
 end
