@@ -190,6 +190,7 @@ function KeyValueItem:init()
         bordersize = 0,
         focusable = true,
         focus_border_size = Size.border.thin,
+        focus_inner_border = true,
         background = Blitbuffer.COLOR_WHITE,
         HorizontalGroup:new{
             dimen = content_dimen,
