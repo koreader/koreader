@@ -81,6 +81,9 @@ function SkimToWidget:init()
     self.curr_page = self.ui:getCurrentPage()
     self.page_count = self.ui.document:getPageCount()
 
+    -- Determine if we need to invert the button functionality and labels
+    local invert_buttons = self.ui.view:shouldInvertBiDiLayoutMirroring()
+
     self.progress_bar = ProgressWidget:new{
         width = inner_width,
         height = progress_bar_height,
@@ -90,11 +93,9 @@ function SkimToWidget:init()
         last = self.page_count,
         alt = self.ui.document.flows,
         initial_pos_marker = true,
-        invert_direction = self.ui.view.footer.settings.invert_progress_direction,
+        invert_direction = invert_buttons,
     }
 
-    -- Determine if we need to invert the button functionality and labels
-    local invert_buttons = self.progress_bar.invert_direction
     -- Bottom row buttons
     local button_minus = Button:new{
         text = "-1",

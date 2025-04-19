@@ -581,7 +581,7 @@ function ReaderFooter:init()
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
         initial_pos_marker = self.settings.initial_marker,
-        invert_direction = self.settings.invert_progress_direction,
+        invert_direction = G_reader_settings:isTrue("invert_ui_layout_mirroring"),
     }
 
     if self.settings.progress_style_thin then
@@ -2353,17 +2353,8 @@ function ReaderFooter:onToggleChapterProgressBar()
     self:refreshFooter(true)
 end
 
-function ReaderFooter:onToggleProgressBarDirection(inverted)
-    if inverted == true then
-        self.settings.invert_progress_direction = true
-        self.progress_bar.invert_direction = true
-    elseif inverted == false then
-        self.settings.invert_progress_direction = false
-        self.progress_bar.invert_direction = false
-    else
-        self.settings.invert_progress_direction = not self.settings.invert_progress_direction
-        self.progress_bar.invert_direction = self.settings.invert_progress_direction
-    end
+function ReaderFooter:onToggleBiDiLayoutMirroring()
+    self.progress_bar.invert_direction = not self.progress_bar.invert_direction
     self:refreshFooter(true)
 end
 
