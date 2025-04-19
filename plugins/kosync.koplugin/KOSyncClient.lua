@@ -163,10 +163,8 @@ function KOSyncClient:get_progress(
                 document = document,
             })
         end)
-		
         if ok then
 			local body = res.body
-			
 			if type(body) == "string" then
 				local rapidjson = require("rapidjson")
 				local success, decoded_or_error = pcall(rapidjson.decode, res.body)
@@ -182,7 +180,6 @@ function KOSyncClient:get_progress(
 				callback(false, nil)
 				return
 			end
-			
 			callback(res.status == 200, body)
         else
             logger.dbg("KOSyncClient:get_progress failure:", res)
