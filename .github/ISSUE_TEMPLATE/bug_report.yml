@@ -69,14 +69,12 @@ body:
       label: Log
       description: |
         Logs are written to `crash.log`. It can normally be found in the KOReader directory:
-        | Device      | Path                        |
-        |-------------|-----------------------------|
-        | Cervantes   | `/mnt/private/koreader`      |
-        | Kindle      | `koreader/`                  |
-        | Kobo        | `.adds/koreader/`            |
-        | Pocketbook  | `applications/koreader/`     |
-        | Android | Logs are kept in memory. Please go to [Menu] → Help → Bug Report to save these logs to a file. |
-        | Deb / Flatpak / AppImage | Logs can be obtained by running `koreader-20xx 2>&1 \| tee log.txt` from the terminal. |
+        * Cervantes: `/mnt/private/koreader`
+        * Kindle: `koreader/`
+        * Kobo: `.adds/koreader/`
+        * Pocketbook: `applications/koreader/`
+        * Android: Go to [Menu] → Help → Bug Report to save logs to a file
+        * Deb / Flatpak / AppImage: Run `koreader-20xx 2>&1 | tee log.txt` from the terminal
       placeholder: Paste the log here or drag and drop the file (zipped if necessary)
       render: shell
     validations:
