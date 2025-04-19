@@ -1002,7 +1002,11 @@ end
 
 function ReaderView:shouldInvertBiDiLayoutMirroring()
     -- A few widgets may temporarily invert UI layout mirroring when both these settings are true
-    return self.inverse_reading_order and G_reader_settings:isTrue("invert_ui_layout_mirroring")
+    return G_reader_settings:isTrue("invert_ui_layout_mirroring")
+end
+
+function ReaderView:onToggleBiDiLayoutMirroring()
+    G_reader_settings:flipNilOrFalse("invert_ui_layout_mirroring")
 end
 
 function ReaderView:onPageUpdate(new_page_no)
