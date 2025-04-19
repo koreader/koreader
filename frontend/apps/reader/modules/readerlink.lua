@@ -366,7 +366,7 @@ From the footnote popup, you can jump to the footnote location in the book by sw
                 callback = function()
                     G_reader_settings:flipNilOrFalse("footnote_popup_use_book_font")
                 end,
-                help_text = _([[Display the footnote popup text with the font set as that of the document (the book text may still render with a different font if the book uses embedded fonts).]]),
+                help_text = _([[Display the footnote popup text with the configured document font (the book text may still render with a different font if the book uses embedded fonts).]]),
             },
             {
                 text = _("Footnote popup font size"),

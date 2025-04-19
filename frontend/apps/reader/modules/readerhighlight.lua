@@ -894,9 +894,9 @@ Except when in two columns mode, where this is limited to showing only the previ
                 }
             }
         }
-        local post_long_press_action = #menu_items.selection_text.sub_item_table + #long_press_action -- index after long_press_action
+        local post_long_press_action_index = #menu_items.selection_text.sub_item_table + #long_press_action -- index after long_press_action
         -- Copy remaining items (anything after long_press_action) directly to selection_text's sub_item_table
-        for i = post_long_press_action, #menu_items.long_press.sub_item_table do
+        for i = post_long_press_action_index, #menu_items.long_press.sub_item_table do
             table.insert(menu_items.selection_text.sub_item_table, menu_items.long_press.sub_item_table[i])
         end
         menu_items.long_press = nil
