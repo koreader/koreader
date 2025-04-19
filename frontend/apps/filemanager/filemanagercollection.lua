@@ -74,13 +74,22 @@ function FileManagerCollection:onShowColl(collection_name)
         name = "collections",
         path = collection_name,
         title_bar_left_icon = "appbar.menu",
-        onLeftButtonTap = function() self:showCollDialog() end,
+        onLeftButtonTap = function()
+            if self.selected_files then
+                self:showSelectModeDialog()
+            else
+                self:showCollDialog()
+            end
+        end,
+        onLeftButtonHold = function()
+            self:toggleSelectMode()
+        end,
         onReturn = function()
             self.from_collection_name = self:getCollectionTitle(collection_name)
             self.booklist_menu.close_callback()
             self:onShowCollList()
         end,
-        onMenuChoice = self.onMenuChoice,
+        onMenuSelect = self.onMenuSelect,
         onMenuHold = self.onMenuHold,
         ui = self.ui,
         _manager = self,
@@ -95,6 +104,7 @@ function FileManagerCollection:onShowColl(collection_name)
         UIManager:close(self.booklist_menu)
         self.booklist_menu = nil
         self.match_table = nil
+        self.selected_files = nil
     end
     self:setCollate()
     self:updateItemTable()
@@ -177,17 +187,29 @@ function FileManagerCollection:onSetDimensions(dimen)
     self.dimen = dimen
 end
 
-function FileManagerCollection:onMenuChoice(item)
-    if self.ui.document then
-        if self.ui.document.file ~= item.file then
-            self.ui:switchDocument(item.file)
-        end
+function FileManagerCollection:onMenuSelect(item)
+    if self._manager.selected_files then
+        item.dim = not item.dim and true or nil
+        self._manager.selected_files[item.file] = item.dim
+        self._manager:updateItemTable(self.item_table)
     else
-        self.ui:openFile(item.file)
+        self.close_callback()
+        if self.ui.document then
+            if self.ui.document.file ~= item.file then
+                self.ui:switchDocument(item.file)
+            end
+        else
+            self.ui:openFile(item.file)
+        end
     end
 end
 
 function FileManagerCollection:onMenuHold(item)
+    if self._manager.selected_files then
+        self._manager:showSelectModeDialog()
+        return true
+    end
+
     local file = item.file
     self.file_dialog = nil
     local book_props = self.ui.coverbrowser and self.ui.coverbrowser:getBookInfo(file)
@@ -287,6 +309,161 @@ function FileManagerCollection.getMenuInstance()
     return ui.collections.booklist_menu
 end
 
+function FileManagerCollection:toggleSelectMode(rebuild)
+    if self.selected_files then
+        local item_table
+        if not rebuild then
+            item_table = self.booklist_menu.item_table
+            for _, item in ipairs(item_table) do
+                item.dim = nil
+            end
+        end
+        self:updateItemTable(item_table)
+        self.booklist_menu:setTitleBarLeftIcon("appbar.menu")
+        self.selected_files = nil
+    else
+        self.booklist_menu:setTitleBarLeftIcon("check")
+        self.selected_files = {}
+    end
+end
+
+function FileManagerCollection:showSelectModeDialog()
+    local collection_name = self.booklist_menu.path
+    local item_table = self.booklist_menu.item_table
+    local select_count = util.tableSize(self.selected_files)
+    local actions_enabled = select_count > 0
+    local title = actions_enabled and T(N_("1 book selected", "%1 books selected", select_count), select_count)
+        or _("No books selected")
+    local select_dialog
+    local buttons = {
+        {
+            {
+                text = _("Remove from collection"),
+                enabled = actions_enabled,
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Remove selected books from collection?"),
+                        ok_text = _("Remove"),
+                        ok_callback = function()
+                            UIManager:close(select_dialog)
+                            self.updated_collections[collection_name] = true
+                            for file in pairs(self.selected_files) do
+                                ReadCollection:removeItem(file, collection_name, true)
+                            end
+                            self.files_updated = self.show_mark
+                            self:toggleSelectMode(true)
+                        end,
+                    })
+                end,
+            },
+        },
+        {
+            {
+                text = _("Move to collection"),
+                enabled = actions_enabled,
+                callback = function()
+                    UIManager:close(select_dialog)
+                    local caller_callback = function(selected_collections)
+                        for name in pairs(selected_collections) do
+                            self.updated_collections[name] = true
+                        end
+                        ReadCollection:addItemsMultiple(self.selected_files, selected_collections)
+                        self.updated_collections[collection_name] = true
+                        for file in pairs(self.selected_files) do
+                            ReadCollection:removeItem(file, collection_name, true)
+                        end
+                        self.files_updated = self.show_mark
+                        self:toggleSelectMode(true)
+                    end
+                    self:onShowCollList({}, caller_callback)
+                end,
+            },
+            {
+                text = _("Copy to collection"),
+                enabled = actions_enabled,
+                callback = function()
+                    UIManager:close(select_dialog)
+                    local caller_callback = function(selected_collections)
+                        for name in pairs(selected_collections) do
+                            self.updated_collections[name] = true
+                        end
+                        ReadCollection:addItemsMultiple(self.selected_files, selected_collections)
+                        self.files_updated = self.show_mark
+                        self:toggleSelectMode()
+                    end
+                    self:onShowCollList({}, caller_callback)
+                end,
+            },
+        },
+        {}, -- separator
+        {
+            {
+                text = _("Deselect all"),
+                enabled = actions_enabled,
+                callback = function()
+                    UIManager:close(select_dialog)
+                    for file in pairs (self.selected_files) do
+                        self.selected_files[file] = nil
+                    end
+                    for _, item in ipairs(item_table) do
+                        item.dim = nil
+                    end
+                    self:updateItemTable(item_table)
+                end,
+            },
+            {
+                text = _("Select all"),
+                callback = function()
+                    UIManager:close(select_dialog)
+                    for _, item in ipairs(item_table) do
+                        item.dim = true
+                        self.selected_files[item.file] = true
+                    end
+                    self:updateItemTable(item_table)
+                end,
+            },
+        },
+        {
+            {
+                text = _("Exit select mode"),
+                callback = function()
+                    UIManager:close(select_dialog)
+                    self:toggleSelectMode()
+                end,
+            },
+            {
+                text = _("Select in file browser"),
+                enabled = actions_enabled,
+                callback = function()
+                    UIManager:close(select_dialog)
+                    local selected_files = self.selected_files
+                    local files_updated = self.files_updated
+                    self.files_updated = nil -- refresh fm later
+                    self.booklist_menu.close_callback()
+                    if self.ui.document then
+                        self.ui:onClose()
+                        self.ui:showFileManager(self.ui.document.file, selected_files)
+                    else
+                        self.ui.selected_files = selected_files
+                        self.ui.title_bar:setRightIcon("check")
+                        if files_updated then
+                            self.ui.file_chooser:refreshPath()
+                        else -- dim only
+                            self.ui.file_chooser:updateItems(1, true)
+                        end
+                    end
+                end,
+            },
+        },
+    }
+    select_dialog = ButtonDialog:new{
+        title = title,
+        title_align = "center",
+        buttons = buttons,
+    }
+    UIManager:show(select_dialog)
+end
+
 function FileManagerCollection:showCollDialog()
     local collection_name = self.booklist_menu.path
     local coll_not_empty = #self.booklist_menu.item_table > 0
@@ -365,14 +542,24 @@ function FileManagerCollection:showCollDialog()
             end,
         }},
         {}, -- separator
-        {{
-            text = _("Book search"),
-            enabled = coll_not_empty,
-            callback = function()
-                UIManager:close(coll_dialog)
-                self:onShowCollectionsSearchDialog(nil, collection_name)
-            end,
-        }},
+        {
+            {
+                text = _("Select"),
+                enabled = coll_not_empty,
+                callback = function()
+                    UIManager:close(coll_dialog)
+                    self:toggleSelectMode()
+                end,
+            },
+            {
+                text = _("Search"),
+                enabled = coll_not_empty,
+                callback = function()
+                    UIManager:close(coll_dialog)
+                    self:onShowCollectionsSearchDialog(nil, collection_name)
+                end,
+            },
+        },
         {{
             text = _("Arrange books in collection"),
             enabled = coll_not_empty and self.match_table == nil,
