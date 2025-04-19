@@ -163,8 +163,27 @@ function KOSyncClient:get_progress(
                 document = document,
             })
         end)
+		
         if ok then
-            callback(res.status == 200, res.body)
+			local body = res.body
+			
+			if type(body) == "string" then
+				local rapidjson = require("rapidjson")
+				local success, decoded_or_error = pcall(rapidjson.decode, res.body)
+				if success then
+					body = decoded_or_error
+				else
+					logger.dbg("KOSyncClient:get_progress failure:", decoded_or_error)
+					callback(false, nil)
+					return
+				end
+			elseif type(body) ~= "table" then
+				logger.dbg("KOSyncClient:get_progress failure:", type(body))
+				callback(false, nil)
+				return
+			end
+			
+			callback(res.status == 200, body)
         else
             logger.dbg("KOSyncClient:get_progress failure:", res)
             callback(false, res.body)
