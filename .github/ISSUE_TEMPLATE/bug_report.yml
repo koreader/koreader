@@ -55,7 +55,7 @@ body:
     attributes:
       label: Steps to reproduce
       description: How can we reproduce this issue?
-      placeholder: |
+      value: |
         1. Go to '...'
         2. Click on '...'
         3. Scroll down to '...'
