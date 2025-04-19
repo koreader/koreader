@@ -1130,19 +1130,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Invert progress bar direction"),
-                help_text = _("Invert the direction of the progress bar, useful for manga and right-to-left reading."),
-                checked_func = function()
-                    return self.settings.invert_progress_direction == true
-                end,
-                enabled_func = function()
-                    return not self.settings.disable_progress_bar
-                end,
-                callback = function()
-                    self:onToggleProgressBarDirection()
-                end,
-            },
-            {
                 text_func = function()
                     return T(_("Position: %1"), self:genProgressBarPositionMenuItems())
                 end,
