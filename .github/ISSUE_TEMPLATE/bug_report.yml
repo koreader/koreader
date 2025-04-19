@@ -74,7 +74,7 @@ body:
         * Kobo: `.adds/koreader/`
         * Pocketbook: `applications/koreader/`
         * Android: Go to [Menu] → Help → Bug Report to save logs to a file
-        * Deb / Flatpak / AppImage: Run `koreader-20xx 2>&1 | tee -a crash.log` from the terminal (or `koreader-20xx.AppImage` for AppImage)
+        * Deb / Flatpak / AppImage: Run `koreader-20xx 2>&1 | tee crash.log` from the terminal (or `koreader-20xx.AppImage` for AppImage)
       placeholder: Paste the log here or drag and drop the file (zipped if necessary)
       render: shell
     validations:
