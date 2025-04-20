@@ -16,9 +16,13 @@ body:
         - Kobo
         - Cervantes
         - Pocketbook
+        - ReMarkable
         - Android
-        - Linux Desktop (Deb / Flatpak / AppImage)
-        - Mac
+        - Linux (AppImage)
+        - Linux (Deb / generic)
+        - Linux (Flatpak)
+        - MacOS (Intel)
+        - MacOS (Apple Silicon, M1, M2, …)
         - Other (please specify in additional information)
     validations:
       required: true
@@ -74,7 +78,9 @@ body:
         * Kobo: `.adds/koreader/`
         * Pocketbook: `applications/koreader/`
         * Android: Go to [Menu] → Help → Bug Report to save logs to a file
-        * Deb / Flatpak / AppImage: Run `koreader-20xx 2>&1 | tee crash.log` from the terminal (or `koreader-20xx.AppImage` for AppImage)
+        * AppImage: Run `koreader-20xx.AppImage 2>&1 | tee crash.log` from the terminal
+        * Deb / Linux: Run `koreader-20xx 2>&1 | tee crash.log` from the terminal
+        * Flatpak: Run `flatpak run rocks.koreader.KOReader 2>&1 | tee crash.log` from the terminal
       placeholder: Paste the log here or drag and drop the file (zipped if necessary)
       render: shell
     validations:
