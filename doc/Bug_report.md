@@ -1,8 +1,8 @@
 # Before reporting
 
-A bug that's not reproducible on the latest **nightly** (or development branch) is not a bug anymore.
+Before opening a new ticket, take some time to review the existing issues (and pull requests) to ensure your issue or request hasn't been already reported, requested or resolved.
 
-Please try to reproduce the issue on the latest **nightly** before submitting a bug preport. In case the bug is still there please make sure it isn't already reported. Please **do not open duplicates**
+If your current issue hasn't been already reported, make sure you are running the latest available version (ideally the latest nightly) and that you can replicate it with verbose logs on.
 
 # How to report
 
