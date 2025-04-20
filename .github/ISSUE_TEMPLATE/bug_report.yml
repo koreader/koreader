@@ -39,9 +39,9 @@ body:
   - type: input
     id: device-model
     attributes:
-      label: Model
-      description: Please specify your device model if applicable
-      placeholder: e.g., Kindle Paperwhite 4, Kobo Clara HD
+      label: Model and firmware version
+      description: Please specify your device model and firmware version if applicable
+      placeholder: e.g., Kindle Paperwhite 4 (5.16.3), Kobo Clara HD (4.38.23171)
     validations:
       required: false
 
