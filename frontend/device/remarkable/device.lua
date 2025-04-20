@@ -208,7 +208,7 @@ function Remarkable:init()
         std_out:close()
         release = release:match("^(%d+%.%d+)%.%d+.*$")
         release = tonumber(release)
-        if release and release >= 6.2 then
+        if release and release >= 6.2 and not isRmPaperPro then -- seems like it triggers on rMPP 3.19+ so just disable it on rMPP
             is_mainline = true
         end
     end
@@ -272,12 +272,20 @@ function Remarkable:supportsScreensaver() return true end
 
 function Remarkable:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback, interactive)
-        os.execute("./enable-wifi.sh")
+        if isRmPaperPro then
+            os.execute("/usr/bin/csl wifi -p on")
+        else
+            os.execute("./enable-wifi.sh")
+        end
         return self:reconnectOrShowNetworkMenu(complete_callback, interactive)
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
-        os.execute("./disable-wifi.sh")
+        if isRmPaperPro then
+            os.execute("/usr/bin/csl wifi -p off")
+        else
+            os.execute("./disable-wifi.sh")
+        end
         if complete_callback then
             complete_callback()
         end
