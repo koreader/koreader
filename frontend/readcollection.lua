@@ -289,9 +289,9 @@ function ReadCollection:updateCollectionFromFolder(collection_name)
     local count = 0
     if self.coll_settings[collection_name].folders then
         local coll = self.coll[collection_name]
-        local function add_item_callback(file, filename, attr)
+        local function add_item_callback(file, f, attr)
             file = ffiUtil.realpath(file)
-            if coll[file] == nil and DocumentRegistry:hasProvider(file) then
+            if coll[file] == nil and not util.stringStartsWith(f, "._") and DocumentRegistry:hasProvider(file) then
                 self:addItem(file, collection_name, attr)
                 count = count + 1
             end
