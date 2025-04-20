@@ -116,8 +116,8 @@ function Remarkable2:adjustTouchEvent(ev, by)
 end
 
 local RemarkablePaperPro = Remarkable:extend{
-    mt_width = 2064,
-    mt_height = 2832,
+    mt_width = 2064, -- unscaled_size_check: ignore
+    mt_height = 2832, -- unscaled_size_check: ignore
     display_dpi = 229,
     input_wacom = "/dev/input/event2",
     input_ts = "/dev/input/event3",
