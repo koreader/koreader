@@ -770,8 +770,10 @@ function FileManagerCollection:addBooksFromFolder(include_subfolders)
         select_file = false,
         onConfirm = function(folder)
             local files_found = {}
-            util.findFiles(folder, function(file)
-                files_found[file] = DocumentRegistry:hasProvider(file) or nil
+            util.findFiles(folder, function(file, f)
+                if not util.stringStartsWith(f, "._") and DocumentRegistry:hasProvider(file) then
+                    files_found[file] = true
+                end
             end, include_subfolders)
             local count = ReadCollection:addItemsMultiple(files_found, { [self.booklist_menu.path] = true })
             local text
