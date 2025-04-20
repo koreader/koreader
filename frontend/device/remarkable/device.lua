@@ -124,6 +124,8 @@ local RemarkablePaperPro = Remarkable:extend{
     input_buttons = "/dev/input/event0",
     battery_path = "/sys/class/power_supply/max1726x_battery/capacity",
     status_path = "/sys/class/power_supply/max1726x_battery/status",
+    canSuspend = no, -- Suspend and Standby should be handled by xochitl with KO_DONT_GRAB_INPUT=1 set, otherwise bad things will happen
+    canStandby = no,
     hasFrontlight = yes,
     canTurnFrontlightOff = yes,
     hasColorScreen = yes,
