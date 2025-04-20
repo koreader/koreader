@@ -956,6 +956,8 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
             }
             for __, rem in ipairs( { 1.0, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65 } ) do
                 local pct = rem * 100
+                local fb2_notes_rem = 0.75 * rem / 0.8
+                local fb2_comments_rem = 0.85 * rem / 0.8
                 table.insert(sub_table, {
                     id = T("inpage_footnote_font-size_%1", pct),
                     conflicts_with = function(id) return util.stringStartsWith(id, "inpage_footnote_font-size_") end,
@@ -965,21 +967,45 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
                             for _, tweak in ipairs(tweaks) do
                                 if tweak.id == "inpage_footnote_text_force_size" then
                                     return T([[
+body[name="notes"] > section,
+body[name="notes"] > section *,
+body[name="notes"] > section autoBoxing
+{
+    -cr-hint: late;
+    -cr-only-if: fb2-document inside-inpage-footnote -inline;
+        font-size: %2rem !important;
+}
+body[name="comments"] > section,
+body[name="comments"] > section *,
+body[name="comments"] > section autoBoxing
+{
+    -cr-hint: late;
+    -cr-only-if: fb2-document inside-inpage-footnote -inline;
+        font-size: %3rem !important;
+}
 *, autoBoxing {
     -cr-hint: late;
-    -cr-only-if: inside-inpage-footnote -inline;
+    -cr-only-if: -fb2-document inside-inpage-footnote -inline;
         font-size: %1rem !important;
 }
-                                    ]], rem)
+                                    ]], rem, fb2_notes_rem, fb2_comments_rem)
                                 end
                             end
                             return T([[
+body[name="notes"] > section {
+    -cr-only-if: fb2-document inpage-footnote;
+        font-size: %2rem;
+}
+body[name="comments"] > section {
+    -cr-only-if: fb2-document inpage-footnote;
+        font-size: %3rem;
+}
 *, autoBoxing {
     -cr-hint: late;
-    -cr-only-if: inpage-footnote;
+    -cr-only-if: -fb2-document inpage-footnote;
         font-size: %1rem !important;
 }
-                            ]], rem)
+                            ]], rem, fb2_notes_rem, fb2_comments_rem)
                         end
                     ),
                 })
