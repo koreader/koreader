@@ -379,7 +379,7 @@ elseif isRmPaperPro then
     if not (os.getenv("QTFB_SHIM_INPUT") == "false" and os.getenv("QTFB_SHIM_MODEL") == "false") then
         error("You must set both QTFB_SHIM_INPUT and QTFB_SHIM_MODEL to false")
     end
-    if not os.getenv("QTFB_SHIM_MODE") == "RGB565" then
+    if not (os.getenv("QTFB_SHIM_MODE") == "RGB565") then
         error("You must set QTFB_SHIM_MODE to RGB565")
     end
     return RemarkablePaperPro
