@@ -1,7 +1,6 @@
 --[[--
 ReaderView module handles all the screen painting for document browsing.
 ]]
-
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
@@ -45,6 +44,10 @@ local ReaderView = OverlapGroup:extend{
     page_scroll = nil,
     page_bgcolor = Blitbuffer.gray(G_defaults:readSetting("DBACKGROUND_COLOR") * (1/15)),
     page_states = nil, -- table
+    -- CBZ show 2 pages at once
+    -- FIXME(ogkevin): make this configurable so that it can be set to true
+    -- for now, its always false and needs to be set to true during development
+    dual_page_mode = false,
     -- properties of the gap drawn between each page in scroll mode:
     page_gap = nil, -- table
     -- DjVu page rendering mode (used in djvu.c:drawPage())
@@ -76,6 +79,26 @@ local ReaderView = OverlapGroup:extend{
     img_count = nil,
     img_coverage = nil,
 }
+
+-- Given the base page via onPageUpdate through readerpaging,
+-- get the correct page pair to display in dual page mode
+local function get_pair_from_base(base, total_pages)
+    -- Special case for cover page
+    -- TODO(ogkevin): atm its an assumption that page 1 will always be a cover
+    -- and needs to be shown on its on.
+    -- This needs onfirming
+    if base == 1 then
+        return { 1 }
+    end
+
+    -- Regular spread handling
+    local pair = { base }
+    if base + 1 <= total_pages then
+        table.insert(pair, base + 1)
+    end
+
+    return pair
+end
 
 function ReaderView:init()
     self.view_modules = {}
@@ -194,6 +217,8 @@ function ReaderView:paintTo(bb, x, y)
     if self.ui.paging then
         if self.page_scroll then
             self:drawScrollPages(bb, x, y)
+        elseif self.dual_page_mode then
+            self:draw2Pages(bb, x, y)
         else
             self:drawSinglePage(bb, x, y)
         end
@@ -371,6 +396,67 @@ function ReaderView:drawPageSurround(bb, x, y)
         bb:paintRect(x + self.dimen.w - self.state.offset.x - 1, y,
             self.state.offset.x + 1, self.dimen.h, self.outer_page_color)
     end
+end
+
+-- TODO(ogkevin): this one works, clean this up
+-- This method draws 2 pages next to each other.
+-- Usefull for PDF or CBZ etc
+function ReaderView:draw2Pages(bb, x, y)
+    local visible_area = Geom:new({
+        w = Screen:getWidth(),
+        h = Screen:getHeight(),
+    })
+
+    local sizes = {}
+    local max_height = visible_area.h
+    local total_width = 0
+
+    local pages = get_pair_from_base(self.state.page, self.document.info.number_of_pages)
+
+    for i, page in ipairs(pages) do
+        local dimen = self.document:getPageDimensions(page, 1, 0)
+        logger.dbg("readerview.draw2pages: old page dimen", i, dimen.w, dimen.h)
+
+        local zoom = 1
+        local scaled_w = dimen.w
+        local scaled_h = dimen.h
+
+        if dimen.h ~= max_height then
+            zoom = max_height / dimen.h
+            scaled_w = dimen.w * zoom
+            scaled_h = max_height
+        end
+
+        logger.dbg("readerview.draw2pages: new page dimen", i, scaled_w, scaled_h)
+
+        sizes[i] = {
+            w = scaled_w,
+            h = scaled_h,
+            zoom = zoom,
+        }
+
+        total_width = total_width + scaled_w
+    end
+
+    -- Calculate positioning
+    local x_offset = (visible_area.w - total_width) / 2
+
+    -- Render pages
+    -- FIXME(ogkevin): assuming that all documents are RTL
+    for i = #pages, 1, -1 do
+        local size = sizes[i]
+        local zoom = size.zoom
+        local y_pos = (Screen:getHeight() - size.h) / 2
+
+        local area = Geom:new({ h = max_height, w = total_width })
+
+        self.document:drawPage(bb, x_offset, y_pos, area, pages[i], zoom, self.state.rotation, self.state.gamma)
+
+        x_offset = x_offset + size.w
+    end
+
+    -- TODO(ogkevin): add hinting for page pairs
+    UIManager:nextTick(self.emitHintPageEvent)
 end
 
 function ReaderView:drawScrollPages(bb, x, y)
@@ -761,6 +847,7 @@ end
 
 --[[
 This method is supposed to be only used by ReaderPaging
+TODO(ogkevin): figure out what changes needs to be made here to support dual pages
 --]]
 function ReaderView:recalculate()
     -- Start by resetting the dithering flag early, so it doesn't carry over from the previous page.
@@ -1005,7 +1092,10 @@ function ReaderView:shouldInvertBiDiLayoutMirroring()
     return self.inverse_reading_order and G_reader_settings:isTrue("invert_ui_layout_mirroring")
 end
 
+-- if dual page is enabled for cbz, then readerpagging will set the correct base page.
 function ReaderView:onPageUpdate(new_page_no)
+    logger.dbg("readerview: on page update", new_page_no)
+
     self.state.page = new_page_no
     self.state.drawn = false
     self:recalculate()
@@ -1021,6 +1111,7 @@ function ReaderView:onPosUpdate(new_pos)
 end
 
 function ReaderView:onZoomUpdate(zoom)
+    logger.dbg("readerview: updating zoom ", zoom)
     self.state.zoom = zoom
     self:recalculate()
     self.highlight.temp = {}

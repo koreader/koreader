@@ -29,6 +29,15 @@ end
 local ReaderPaging = InputContainer:extend{
     pan_rate = 30,  -- default 30 ops, will be adjusted in readerui
     current_page = 0,
+
+    -- CBZ show 2 pages at once
+    -- FIXME(ogkevin): make this configurable so that it can be set to true
+    -- for now, its always false and needs to be set to true during development
+    dual_page_mode = false,
+    -- In dual page mode, this holds the base pair that we are at.
+    -- This is needed to do relative page changes.
+    current_pair_base = 0,
+
     number_of_pages = 0,
     visible_area = nil,
     page_area = nil,
@@ -533,6 +542,17 @@ function ReaderPaging:onZoomModeUpdate(new_mode)
 end
 
 function ReaderPaging:onPageUpdate(new_page_no, orig_mode)
+    -- TODO(ogkevin): ATM it's an assumption that page 1 is a special
+    -- case due to it being the cover.
+    -- This assumption needs confirmation.
+    if new_page_no == 1 then
+        self.current_pair_base = 1
+    else
+        self.current_pair_base = new_page_no % 2 == 0 and new_page_no or (new_page_no - 1)
+    end
+
+    logger.dbg("readerpaging: onpageupdate", new_page_no, self.current_pair_base)
+
     self.current_page = new_page_no
     if self.view.page_scroll and orig_mode ~= "scrolling" then
         self.ui:handleEvent(Event:new("InitScrollPageStates", orig_mode))
@@ -930,6 +950,40 @@ function ReaderPaging:onScrollPageRel(page_diff)
     return true
 end
 
+-- given the current base and the relative page movements,
+-- return the right base for dual page navigation.
+
+-- So if we are at base 1, and make a relative move +1, return 2
+-- which will make readerview render page 2,3
+--
+-- We start counting paris after page 1, due to the assumption that page 1
+-- will always be shown on its own due to being the cover page.
+local function get_relative_base(current_base, relative_pairs, total_pages)
+    if current_base == 1 then
+        -- Handle cover page navigation
+        if relative_pairs <= 0 then
+            return 1 -- Stay on cover
+        else
+            -- Jump to first spread (2) + subsequent spreads
+            return math.min(2 + (relative_pairs - 1) * 2, total_pages % 2 == 0 and total_pages or total_pages - 1)
+        end
+    end
+
+    -- Calculate new base for spreads
+    local new_base = current_base + (relative_pairs * 2)
+
+    -- Clamp to valid range
+    local max_base = total_pages % 2 == 0 and total_pages or total_pages - 1
+    new_base = math.max(1, math.min(new_base, max_base))
+
+    -- Handle backward navigation to cover
+    if new_base < 2 then
+        return total_pages >= 1 and 1 or new_base
+    end
+
+    return new_base
+end
+
 function ReaderPaging:onGotoPageRel(diff)
     logger.dbg("goto relative page:", diff)
     local new_va = self.visible_area:copy()
@@ -1012,7 +1066,16 @@ function ReaderPaging:onGotoPageRel(diff)
                 new_page = test_page
             end
         else
-            new_page = self.current_page + diff
+            if self.dual_page_mode then
+                new_page = get_relative_base(self.current_pair_base, diff, self.number_of_pages)
+                logger.dbg("readerpaging: relative page move to", new_page)
+
+                if self.current_pair_base == new_page and diff > 0 then
+                    new_page = self.number_of_pages + 1
+                end
+            else
+                new_page = self.current_page + diff
+            end
         end
         if new_page > self.number_of_pages then
             self.ui:handleEvent(Event:new("EndOfBook"))
