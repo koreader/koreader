@@ -1001,7 +1001,7 @@ function ReaderView:onReadSettings(config)
 end
 
 function ReaderView:shouldInvertBiDiLayoutMirroring()
-    -- A few widgets may temporarily invert UI layout mirroring when both these settings are true
+    -- A few widgets may temporarily invert UI layout mirroring
     return G_reader_settings:isTrue("invert_ui_layout_mirroring")
 end
 

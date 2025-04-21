@@ -161,7 +161,7 @@ local PageTurns = {
             end,
             help_text = _([[
 When enabled the UI direction for the Table of Contents, Book Map, and Page Browser dialogs will mirror the default UI direction.
-Useful together with Invert page turns above.]]),
+Useful when used alongside Invert page turns.]]),
             separator = true,
         },
         Device:canDoSwipeAnimation() and {
