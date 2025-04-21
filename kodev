@@ -147,6 +147,7 @@ TARGET:
     macos                     MacOS app bundle
     pocketbook
     remarkable
+    remarkable-aarch64
     sony-prstux
     ubuntu-touch
     win32
@@ -179,6 +180,7 @@ function setup_target() {
         kobo | kobov4 | kobov5) ;;
         pocketbook) ;;
         remarkable) ;;
+        remarkable-aarch64) ;;
         sony-prstux) ;;
         ubuntu-touch) ;;
         # Invalid.

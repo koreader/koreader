@@ -17,7 +17,7 @@ local function getModel()
     end
     local model = f:read("*line")
     f:close()
-    return model == "reMarkable 2.0", model
+    return model
 end
 
 -- Resolutions from libremarkable src/framebuffer/common.rs
@@ -25,9 +25,19 @@ local screen_width = 1404 -- unscaled_size_check: ignore
 local screen_height = 1872 -- unscaled_size_check: ignore
 local wacom_width = 15725 -- unscaled_size_check: ignore
 local wacom_height = 20967 -- unscaled_size_check: ignore
+local rm_model = getModel()
+local isRm2 = rm_model == "reMarkable 2.0"
+local isRmPaperPro = rm_model == "reMarkable Ferrari"
+
+if isRmPaperPro then
+    screen_width = 1620 -- unscaled_size_check: ignore
+    screen_height = 2160 -- unscaled_size_check: ignore
+    wacom_width = 11180 -- unscaled_size_check: ignore
+    wacom_height = 15340 -- unscaled_size_check: ignore
+end
+
 local wacom_scale_x = screen_width / wacom_width
 local wacom_scale_y = screen_height / wacom_height
-local isRm2, rm_model = getModel()
 
 local Remarkable = Generic:extend{
     isRemarkable = yes,
@@ -105,6 +115,37 @@ function Remarkable2:adjustTouchEvent(ev, by)
     end
 end
 
+local RemarkablePaperPro = Remarkable:extend{
+    mt_width = 2064, -- unscaled_size_check: ignore
+    mt_height = 2832, -- unscaled_size_check: ignore
+    display_dpi = 229,
+    input_wacom = "/dev/input/event2",
+    input_ts = "/dev/input/event3",
+    input_buttons = "/dev/input/event0",
+    battery_path = "/sys/class/power_supply/max1726x_battery/capacity",
+    status_path = "/sys/class/power_supply/max1726x_battery/status",
+    canSuspend = no, -- Suspend and Standby should be handled by xochitl with KO_DONT_GRAB_INPUT=1 set, otherwise bad things will happen
+    canStandby = no,
+    hasFrontlight = yes,
+    canTurnFrontlightOff = yes,
+    hasColorScreen = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/rm_frontlight",
+    }
+}
+
+function RemarkablePaperPro:adjustTouchEvent(ev, by)
+    if ev.type == C.EV_ABS then
+        -- Mirror X and Y and scale up both X & Y as touch input is different res from display
+        if ev.code == C.ABS_MT_POSITION_X then
+            ev.value = ev.value * by.mt_scale_x
+        end
+        if ev.code == C.ABS_MT_POSITION_Y then
+            ev.value = ev.value * by.mt_scale_y
+        end
+    end
+end
+
 local adjustAbsEvt = function(self, ev)
     if ev.type == C.EV_ABS then
         if ev.code == C.ABS_X then
@@ -116,6 +157,19 @@ local adjustAbsEvt = function(self, ev)
         end
     end
 end
+
+if isRmPaperPro then
+    adjustAbsEvt = function(self, ev)
+        if ev.type == C.EV_ABS then
+            if ev.code == C.ABS_X then
+                ev.value = ev.value * wacom_scale_x
+            elseif ev.code == C.ABS_Y then
+                ev.value = ev.value * wacom_scale_y
+            end
+        end
+    end
+end
+
 
 function Remarkable:init()
     local oxide_running = os.execute("systemctl is-active --quiet tarnish") == 0
@@ -156,7 +210,7 @@ function Remarkable:init()
         std_out:close()
         release = release:match("^(%d+%.%d+)%.%d+.*$")
         release = tonumber(release)
-        if release and release >= 6.2 then
+        if release and release >= 6.2 and not isRmPaperPro then -- seems like it triggers on rMPP 3.19+ so just disable it on rMPP
             is_mainline = true
         end
     end
@@ -167,7 +221,7 @@ function Remarkable:init()
         self.input_ts = "/dev/input/touchscreen0"
     end
 
-    self.input:open(self.input_wacom) -- Wacom
+    self.input:open(self.input_wacom) -- Wacom (it's not Wacom on Paper Pro but it should work)
     self.input:open(self.input_ts) -- Touchscreen
     self.input:open(self.input_buttons) -- Buttons
 
@@ -220,12 +274,20 @@ function Remarkable:supportsScreensaver() return true end
 
 function Remarkable:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback, interactive)
-        os.execute("./enable-wifi.sh")
+        if isRmPaperPro then
+            os.execute("/usr/bin/csl wifi -p on")
+        else
+            os.execute("./enable-wifi.sh")
+        end
         return self:reconnectOrShowNetworkMenu(complete_callback, interactive)
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
-        os.execute("./disable-wifi.sh")
+        if isRmPaperPro then
+            os.execute("/usr/bin/csl wifi -p off")
+        else
+            os.execute("./disable-wifi.sh")
+        end
         if complete_callback then
             complete_callback()
         end
@@ -250,6 +312,10 @@ function Remarkable:setDateTime(year, month, day, hour, min, sec)
         command = string.format("timedatectl set-time '%d:%d'",hour, min)
     end
     return os.execute(command) == 0
+end
+
+function Remarkable:saveSettings()
+    self.powerd:saveSettings()
 end
 
 function Remarkable:resume()
@@ -306,6 +372,17 @@ if isRm2 then
         error("reMarkable2 requires RM2FB to work (https://github.com/ddvk/remarkable2-framebuffer)")
     end
     return Remarkable2
+elseif isRmPaperPro then
+    if not os.getenv("LD_PRELOAD") then
+        error("reMarkable Paper Pro requires qtfb and qtfb-rmpp-shim to work")
+    end
+    if os.getenv("QTFB_SHIM_INPUT") ~= "false" or os.getenv("QTFB_SHIM_MODEL") ~= "false" then
+        error("You must set both QTFB_SHIM_INPUT and QTFB_SHIM_MODEL to false")
+    end
+    if os.getenv("QTFB_SHIM_MODE") ~= "RGB565" then
+        error("You must set QTFB_SHIM_MODE to RGB565")
+    end
+    return RemarkablePaperPro
 else
     return Remarkable1
 end
