@@ -235,7 +235,7 @@ function ReaderMenu:setUpdateItemTable()
         -- This menu entry is a duplicate of the one found in page_turns for touch devices
         -- but we need to add it here for non-touch devices.
         table.insert(self.menu_items.document_settings.sub_item_table, {
-            text = _("Invert document-related dialogs"),
+            text = _("Invert document-related UI dialogs"),
             checked_func = function()
                 return G_reader_settings:isTrue("invert_ui_layout_mirroring")
             end,
